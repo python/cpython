@@ -16,20 +16,8 @@ from test.support import requires
 from tkinter import Tk
 import unittest
 from unittest import mock
-from idlelib.idle_test.mock_tk import Var, Mbox_func
+from idlelib.idle_test.mock_tk import Var
 from idlelib import query
-
-# Mock entry.showerror messagebox so don't need click to continue
-# when entry_ok and path_ok methods call it to display errors.
-
-orig_showerror = query.showerror
-showerror = Mbox_func()  # Instance has __call__ method.
-
-def setUpModule():
-    query.showerror = showerror
-
-def tearDownModule():
-    query.showerror = orig_showerror
 
 
 # NON-GUI TESTS
@@ -42,59 +30,49 @@ class QueryTest(unittest.TestCase):
         entry_ok = query.Query.entry_ok
         ok = query.Query.ok
         cancel = query.Query.cancel
-        # Add attributes needed for the tests.
+        # Add attributes and initialization needed for tests.
         entry = Var()
-        result = None
-        destroyed = False
+        entry_error = {}
+        def __init__(self, dummy_entry):
+            self.entry.set(dummy_entry)
+            self.entry_error['text'] = ''
+            self.result = None
+            self.destroyed = False
+        def showerror(self, message):
+            self.entry_error['text'] = message
         def destroy(self):
             self.destroyed = True
 
-    dialog = Dummy_Query()
-
-    def setUp(self):
-        showerror.title = None
-        self.dialog.result = None
-        self.dialog.destroyed = False
-
     def test_entry_ok_blank(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.entry.set(' ')
-        Equal(dialog.entry_ok(), None)
-        Equal((dialog.result, dialog.destroyed), (None, False))
-        Equal(showerror.title, 'Entry Error')
-        self.assertIn('Blank', showerror.message)
+        dialog = self.Dummy_Query(' ')
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertEqual((dialog.result, dialog.destroyed), (None, False))
+        self.assertIn('blank line', dialog.entry_error['text'])
 
     def test_entry_ok_good(self):
-        dialog = self.dialog
+        dialog = self.Dummy_Query('  good ')
         Equal = self.assertEqual
-        dialog.entry.set('  good ')
         Equal(dialog.entry_ok(), 'good')
         Equal((dialog.result, dialog.destroyed), (None, False))
-        Equal(showerror.title, None)
+        Equal(dialog.entry_error['text'], '')
 
     def test_ok_blank(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.entry.set('')
+        dialog = self.Dummy_Query('')
         dialog.entry.focus_set = mock.Mock()
-        Equal(dialog.ok(), None)
+        self.assertEqual(dialog.ok(), None)
         self.assertTrue(dialog.entry.focus_set.called)
         del dialog.entry.focus_set
-        Equal((dialog.result, dialog.destroyed), (None, False))
+        self.assertEqual((dialog.result, dialog.destroyed), (None, False))
 
     def test_ok_good(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.entry.set('good')
-        Equal(dialog.ok(), None)
-        Equal((dialog.result, dialog.destroyed), ('good', True))
+        dialog = self.Dummy_Query('good')
+        self.assertEqual(dialog.ok(), None)
+        self.assertEqual((dialog.result, dialog.destroyed), ('good', True))
 
     def test_cancel(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        Equal(self.dialog.cancel(), None)
-        Equal((dialog.result, dialog.destroyed), (None, True))
+        dialog = self.Dummy_Query('does not matter')
+        self.assertEqual(dialog.cancel(), None)
+        self.assertEqual((dialog.result, dialog.destroyed), (None, True))
 
 
 class SectionNameTest(unittest.TestCase):
@@ -104,42 +82,32 @@ class SectionNameTest(unittest.TestCase):
         entry_ok = query.SectionName.entry_ok  # Function being tested.
         used_names = ['used']
         entry = Var()
-
-    dialog = Dummy_SectionName()
-
-    def setUp(self):
-        showerror.title = None
+        entry_error = {}
+        def __init__(self, dummy_entry):
+            self.entry.set(dummy_entry)
+            self.entry_error['text'] = ''
+        def showerror(self, message):
+            self.entry_error['text'] = message
 
     def test_blank_section_name(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.entry.set(' ')
-        Equal(dialog.entry_ok(), None)
-        Equal(showerror.title, 'Name Error')
-        self.assertIn('No', showerror.message)
+        dialog = self.Dummy_SectionName(' ')
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('no name', dialog.entry_error['text'])
 
     def test_used_section_name(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.entry.set('used')
-        Equal(self.dialog.entry_ok(), None)
-        Equal(showerror.title, 'Name Error')
-        self.assertIn('use', showerror.message)
+        dialog = self.Dummy_SectionName('used')
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('use', dialog.entry_error['text'])
 
     def test_long_section_name(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.entry.set('good'*8)
-        Equal(self.dialog.entry_ok(), None)
-        Equal(showerror.title, 'Name Error')
-        self.assertIn('too long', showerror.message)
+        dialog = self.Dummy_SectionName('good'*8)
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('longer than 30', dialog.entry_error['text'])
 
     def test_good_section_name(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.entry.set('  good ')
-        Equal(dialog.entry_ok(), 'good')
-        Equal(showerror.title, None)
+        dialog = self.Dummy_SectionName('  good ')
+        self.assertEqual(dialog.entry_ok(), 'good')
+        self.assertEqual(dialog.entry_error['text'], '')
 
 
 class ModuleNameTest(unittest.TestCase):
@@ -149,42 +117,32 @@ class ModuleNameTest(unittest.TestCase):
         entry_ok = query.ModuleName.entry_ok  # Function being tested.
         text0 = ''
         entry = Var()
-
-    dialog = Dummy_ModuleName()
-
-    def setUp(self):
-        showerror.title = None
+        entry_error = {}
+        def __init__(self, dummy_entry):
+            self.entry.set(dummy_entry)
+            self.entry_error['text'] = ''
+        def showerror(self, message):
+            self.entry_error['text'] = message
 
     def test_blank_module_name(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.entry.set(' ')
-        Equal(dialog.entry_ok(), None)
-        Equal(showerror.title, 'Name Error')
-        self.assertIn('No', showerror.message)
+        dialog = self.Dummy_ModuleName(' ')
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('no name', dialog.entry_error['text'])
 
     def test_bogus_module_name(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.entry.set('__name_xyz123_should_not_exist__')
-        Equal(self.dialog.entry_ok(), None)
-        Equal(showerror.title, 'Import Error')
-        self.assertIn('not found', showerror.message)
+        dialog = self.Dummy_ModuleName('__name_xyz123_should_not_exist__')
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('not found', dialog.entry_error['text'])
 
     def test_c_source_name(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.entry.set('itertools')
-        Equal(self.dialog.entry_ok(), None)
-        Equal(showerror.title, 'Import Error')
-        self.assertIn('source-based', showerror.message)
+        dialog = self.Dummy_ModuleName('itertools')
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('source-based', dialog.entry_error['text'])
 
     def test_good_module_name(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.entry.set('idlelib')
+        dialog = self.Dummy_ModuleName('idlelib')
         self.assertTrue(dialog.entry_ok().endswith('__init__.py'))
-        Equal(showerror.title, None)
+        self.assertEqual(dialog.entry_error['text'], '')
 
 
 # 3 HelpSource test classes each test one function.
@@ -198,13 +156,13 @@ class HelpsourceBrowsefileTest(unittest.TestCase):
         browse_file = query.HelpSource.browse_file
         pathvar = Var()
 
-    dialog = Dummy_HelpSource()
-
     def test_file_replaces_path(self):
-        # Path is widget entry, file is file dialog return.
-        dialog = self.dialog
+        dialog = self.Dummy_HelpSource()
+        # Path is widget entry, either '' or something.
+        # Func return is file dialog return, either '' or something.
+        # Func return should override widget entry.
+        # We need all 4 combination to test all (most) code paths.
         for path, func, result in (
-                # We need all combination to test all (most) code paths.
                 ('', lambda a,b,c:'', ''),
                 ('', lambda a,b,c: __file__, __file__),
                 ('htest', lambda a,b,c:'', 'htest'),
@@ -217,78 +175,72 @@ class HelpsourceBrowsefileTest(unittest.TestCase):
 
 
 class HelpsourcePathokTest(unittest.TestCase):
-    "Test path_ok method of ModuleName subclass of Query."
+    "Test path_ok method of HelpSource subclass of Query."
 
     class Dummy_HelpSource:
         path_ok = query.HelpSource.path_ok
         path = Var()
-
-    dialog = Dummy_HelpSource()
+        path_error = {}
+        def __init__(self, dummy_path):
+            self.path.set(dummy_path)
+            self.path_error['text'] = ''
+        def showerror(self, message, widget=None):
+            self.path_error['text'] = message
 
     @classmethod
     def tearDownClass(cls):
         query.platform = orig_platform
 
-    def setUp(self):
-        showerror.title = None
-
     def test_path_ok_blank(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.path.set(' ')
-        Equal(dialog.path_ok(), None)
-        Equal(showerror.title, 'File Path Error')
-        self.assertIn('No help', showerror.message)
+        dialog = self.Dummy_HelpSource(' ')
+        self.assertEqual(dialog.path_ok(), None)
+        self.assertIn('no help file', dialog.path_error['text'])
 
     def test_path_ok_bad(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
-        dialog.path.set(__file__ + 'bad-bad-bad')
-        Equal(dialog.path_ok(), None)
-        Equal(showerror.title, 'File Path Error')
-        self.assertIn('not exist', showerror.message)
+        dialog = self.Dummy_HelpSource(__file__ + 'bad-bad-bad')
+        self.assertEqual(dialog.path_ok(), None)
+        self.assertIn('not exist', dialog.path_error['text'])
 
     def test_path_ok_web(self):
-        dialog = self.dialog
+        dialog = self.Dummy_HelpSource('')
         Equal = self.assertEqual
         for url in 'www.py.org', 'http://py.org':
             with self.subTest():
                 dialog.path.set(url)
-                Equal(dialog.path_ok(), url)
-                Equal(showerror.title, None)
+                self.assertEqual(dialog.path_ok(), url)
+                self.assertEqual(dialog.path_error['text'], '')
 
     def test_path_ok_file(self):
-        dialog = self.dialog
-        Equal = self.assertEqual
+        dialog = self.Dummy_HelpSource('')
         for platform, prefix in ('darwin', 'file://'), ('other', ''):
             with self.subTest():
                 query.platform = platform
                 dialog.path.set(__file__)
-                Equal(dialog.path_ok(), prefix + __file__)
-                Equal(showerror.title, None)
+                self.assertEqual(dialog.path_ok(), prefix + __file__)
+                self.assertEqual(dialog.path_error['text'], '')
 
 
 class HelpsourceEntryokTest(unittest.TestCase):
-    "Test entry_ok method of ModuleName subclass of Query."
+    "Test entry_ok method of HelpSource subclass of Query."
 
     class Dummy_HelpSource:
         entry_ok = query.HelpSource.entry_ok
+        entry_error = {}
+        path_error = {}
         def item_ok(self):
             return self.name
         def path_ok(self):
             return self.path
 
-    dialog = Dummy_HelpSource()
-
     def test_entry_ok_helpsource(self):
-        dialog = self.dialog
+        dialog = self.Dummy_HelpSource()
         for name, path, result in ((None, None, None),
                                    (None, 'doc.txt', None),
                                    ('doc', None, None),
                                    ('doc', 'doc.txt', ('doc', 'doc.txt'))):
             with self.subTest():
                 dialog.name, dialog.path = name, path
-                self.assertEqual(self.dialog.entry_ok(), result)
+                self.assertEqual(dialog.entry_ok(), result)
 
 
 # GUI TESTS
@@ -344,10 +296,10 @@ class SectionnameGuiTest(unittest.TestCase):
         root = Tk()
         dialog =  query.SectionName(root, 'T', 't', {'abc'}, _utest=True)
         Equal = self.assertEqual
-        Equal(dialog.used_names, {'abc'})
+        self.assertEqual(dialog.used_names, {'abc'})
         dialog.entry.insert(0, 'okay')
         dialog.button_ok.invoke()
-        Equal(dialog.result, 'okay')
+        self.assertEqual(dialog.result, 'okay')
         del dialog
         root.destroy()
         del root
@@ -362,9 +314,8 @@ class ModulenameGuiTest(unittest.TestCase):
     def test_click_module_name(self):
         root = Tk()
         dialog =  query.ModuleName(root, 'T', 't', 'idlelib', _utest=True)
-        Equal = self.assertEqual
-        Equal(dialog.text0, 'idlelib')
-        Equal(dialog.entry.get(), 'idlelib')
+        self.assertEqual(dialog.text0, 'idlelib')
+        self.assertEqual(dialog.entry.get(), 'idlelib')
         dialog.button_ok.invoke()
         self.assertTrue(dialog.result.endswith('__init__.py'))
         del dialog
