@@ -29,6 +29,7 @@ class SearchDialogTest(unittest.TestCase):
     def setUp(self):
         self.engine = se.SearchEngine(self.root)
         self.dialog = sd.SearchDialog(self.root, self.engine)
+        self.dialog.bell = lambda: None
         self.text = tk.Text(self.root)
         self.text.insert('1.0', 'Hello World!')
 
@@ -38,6 +39,7 @@ class SearchDialogTest(unittest.TestCase):
 
         self.engine.setpat('')
         self.assertFalse(self.dialog.find_again(text))
+        self.dialog.bell = lambda: None
 
         self.engine.setpat('Hello')
         self.assertTrue(self.dialog.find_again(text))

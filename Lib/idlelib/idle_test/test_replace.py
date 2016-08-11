@@ -7,7 +7,7 @@ from unittest.mock import Mock
 from tkinter import Tk, Text
 from idlelib.idle_test.mock_tk import Mbox
 import idlelib.searchengine as se
-import idlelib.replace as rd
+from idlelib.replace import ReplaceDialog
 
 orig_mbox = se.tkMessageBox
 showerror = Mbox.showerror
@@ -21,7 +21,8 @@ class ReplaceDialogTest(unittest.TestCase):
         cls.root.withdraw()
         se.tkMessageBox = Mbox
         cls.engine = se.SearchEngine(cls.root)
-        cls.dialog = rd.ReplaceDialog(cls.root, cls.engine)
+        cls.dialog = ReplaceDialog(cls.root, cls.engine)
+        cls.dialog.bell = lambda: None
         cls.dialog.ok = Mock()
         cls.text = Text(cls.root)
         cls.text.undo_block_start = Mock()
@@ -70,7 +71,6 @@ class ReplaceDialogTest(unittest.TestCase):
         # text found and replaced
         pv.set('a')
         rv.set('asdf')
-        self.dialog.open(self.text)
         replace()
         equal(text.get('1.8', '1.12'), 'asdf')
 

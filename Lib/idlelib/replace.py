@@ -95,7 +95,7 @@ class ReplaceDialog(SearchDialogBase):
         text = self.text
         res = self.engine.search_text(text, prog)
         if not res:
-            text.bell()
+            self.bell()
             return
         text.tag_remove("sel", "1.0", "end")
         text.tag_remove("hit", "1.0", "end")
@@ -142,7 +142,7 @@ class ReplaceDialog(SearchDialogBase):
         text = self.text
         res = self.engine.search_text(text, None, ok)
         if not res:
-            text.bell()
+            self.bell()
             return False
         line, m = res
         i, j = m.span()
@@ -204,8 +204,8 @@ class ReplaceDialog(SearchDialogBase):
 
 
 def _replace_dialog(parent):  # htest #
-    from tkinter import Toplevel, Text
-    from tkiter.ttk import Button
+    from tkinter import Toplevel, Text, END, SEL
+    from tkinter.ttk import Button
 
     box = Toplevel(parent)
     box.title("Test ReplaceDialog")

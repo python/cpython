@@ -79,6 +79,7 @@ class SearchDialogBase:
         top.wm_title(self.title)
         top.wm_iconname(self.icon)
         self.top = top
+        self.bell = top.bell
 
         self.row = 0
         self.top.grid_columnconfigure(0, pad=2, weight=0)
@@ -188,7 +189,7 @@ class _searchbase(SearchDialogBase):  # htest #
         width,height, x,y = list(map(int, re.split('[x+]', parent.geometry())))
         self.top.geometry("+%d+%d" % (x + 40, y + 175))
 
-    def default_command(self): pass
+    def default_command(self, dummy): pass
 
 if __name__ == '__main__':
     import unittest
