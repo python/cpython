@@ -29,8 +29,8 @@ class UndoDelegatorTest(unittest.TestCase):
 
     def setUp(self):
         self.delegator = UndoDelegator()
+        self.delegator.bell = Mock()
         self.percolator.insertfilter(self.delegator)
-        self.delegator.bell = Mock(wraps=self.delegator.bell)
 
     def tearDown(self):
         self.percolator.removefilter(self.delegator)

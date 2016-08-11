@@ -64,6 +64,7 @@ class ParenMatch:
         # and deactivate_restore (which calls event_delete).
         editwin.text.bind(self.RESTORE_VIRTUAL_EVENT_NAME,
                           self.restore_event)
+        self.bell = self.text.bell if self.BELL else lambda: None
         self.counter = 0
         self.is_restore_active = 0
         self.set_style(self.STYLE)
@@ -93,7 +94,7 @@ class ParenMatch:
         indices = (HyperParser(self.editwin, "insert")
                    .get_surrounding_brackets())
         if indices is None:
-            self.warn_mismatched()
+            self.bell()
             return
         self.activate_restore()
         self.create_tag(indices)
@@ -109,7 +110,7 @@ class ParenMatch:
             return
         indices = hp.get_surrounding_brackets(_openers[closer], True)
         if indices is None:
-            self.warn_mismatched()
+            self.bell()
             return
         self.activate_restore()
         self.create_tag(indices)
@@ -123,10 +124,6 @@ class ParenMatch:
     def handle_restore_timer(self, timer_count):
         if timer_count == self.counter:
             self.restore_event()
-
-    def warn_mismatched(self):
-        if self.BELL:
-            self.text.bell()
 
     # any one of the create_tag_XXX methods can be used depending on
     # the style

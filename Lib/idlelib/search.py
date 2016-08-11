@@ -51,7 +51,7 @@ class SearchDialog(SearchDialogBase):
                 selfirst = text.index("sel.first")
                 sellast = text.index("sel.last")
                 if selfirst == first and sellast == last:
-                    text.bell()
+                    self.bell()
                     return False
             except TclError:
                 pass
@@ -61,7 +61,7 @@ class SearchDialog(SearchDialogBase):
             text.see("insert")
             return True
         else:
-            text.bell()
+            self.bell()
             return False
 
     def find_selection(self, text):
