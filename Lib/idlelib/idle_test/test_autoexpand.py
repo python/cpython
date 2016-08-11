@@ -22,6 +22,7 @@ class AutoExpandTest(unittest.TestCase):
         else:
             cls.text = Text()
         cls.auto_expand = AutoExpand(Dummy_Editwin(cls.text))
+        cls.auto_expand.bell = lambda: None
 
     @classmethod
     def tearDownClass(cls):
@@ -136,6 +137,7 @@ class AutoExpandTest(unittest.TestCase):
         expand('event')
         new_state = self.auto_expand.state
         self.assertNotEqual(initial_state, new_state)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

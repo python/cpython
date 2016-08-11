@@ -31,6 +31,7 @@ class AutoExpand:
 
     def __init__(self, editwin):
         self.text = editwin.text
+        self.bell = self.text.bell
         self.state = None
 
     def expand_word_event(self, event):
@@ -46,14 +47,14 @@ class AutoExpand:
                 words = self.getwords()
                 index = 0
         if not words:
-            self.text.bell()
+            self.bell()
             return "break"
         word = self.getprevword()
         self.text.delete("insert - %d chars" % len(word), "insert")
         newword = words[index]
         index = (index + 1) % len(words)
         if index == 0:
-            self.text.bell()            # Warn we cycled around
+            self.bell()            # Warn we cycled around
         self.text.insert("insert", newword)
         curinsert = self.text.index("insert")
         curline = self.text.get("insert linestart", "insert lineend")
@@ -98,6 +99,7 @@ class AutoExpand:
         while i > 0 and line[i-1] in self.wordchars:
             i = i-1
         return line[i:]
+
 
 if __name__ == '__main__':
     import unittest
