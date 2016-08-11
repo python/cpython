@@ -15,7 +15,6 @@ import pickle
 import random
 import struct
 import unittest
-import sysconfig
 
 from array import array
 
@@ -4591,13 +4590,16 @@ class ZoneInfo(tzinfo):
     def zonenames(cls, zonedir=None):
         if zonedir is None:
             zonedir = cls.zoneroot
-        for root, _, files in os.walk(zonedir):
-            for f in files:
-                p = os.path.join(root, f)
-                with open(p, 'rb') as o:
-                    magic =  o.read(4)
-                if magic == b'TZif':
-                    yield p[len(zonedir) + 1:]
+        zone_tab = os.path.join(zonedir, 'zone.tab')
+        try:
+            f = open(zone_tab)
+        except OSError:
+            return
+        with f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    yield line.split()[2]
 
     @classmethod
     def stats(cls, start_year=1):
@@ -4692,7 +4694,6 @@ class ZoneInfoTest(unittest.TestCase):
     zonename = 'America/New_York'
 
     def setUp(self):
-        self.sizeof_time_t = sysconfig.get_config_var('SIZEOF_TIME_T')
         if sys.platform == "win32":
             self.skipTest("Skipping zoneinfo tests on Windows")
         try:
@@ -4765,11 +4766,10 @@ class ZoneInfoTest(unittest.TestCase):
         try:
             _time.tzset()
             for udt, shift in tz.transitions():
-                if self.zonename == 'Europe/Tallinn' and udt.date() == date(1999, 10, 31):
+                if (self.zonename == 'Europe/Tallinn' and udt.date() == date(1999, 10, 31) or
+                    self.zonename.endswith(('Casablanca', 'El_Aaiun')) and
+                                udt.date() == date(2037, 10, 4)):
                     print("Skip %s %s transition" % (self.zonename, udt))
-                    continue
-                if self.sizeof_time_t == 4 and udt.year >= 2037:
-                    print("Skip %s %s transition for 32-bit time_t" % (self.zonename, udt))
                     continue
                 s0 = (udt - datetime(1970, 1, 1)) // SEC
                 ss = shift // SEC   # shift seconds
