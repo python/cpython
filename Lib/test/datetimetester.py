@@ -4766,9 +4766,11 @@ class ZoneInfoTest(unittest.TestCase):
         try:
             _time.tzset()
             for udt, shift in tz.transitions():
-                if (self.zonename == 'Europe/Tallinn' and udt.date() == date(1999, 10, 31) or
-                    self.zonename.endswith(('Casablanca', 'El_Aaiun')) and
-                                udt.date() == date(2037, 10, 4)):
+                if udt.year >= 2037:
+                    # System support for times around the end of 32-bit time_t
+                    # and later is flaky on many systems.
+                    break
+                if self.zonename == 'Europe/Tallinn' and udt.date() == date(1999, 10, 31):
                     print("Skip %s %s transition" % (self.zonename, udt))
                     continue
                 s0 = (udt - datetime(1970, 1, 1)) // SEC
