@@ -154,6 +154,9 @@ Windows
 Build
 -----
 
+- Issue #25825: Correct the references to Modules/python.exp, which is
+  required on AIX.  The references were accidentally changed in 3.5.0a1.
+
 - Issue #27453: CPP invocation in configure must use CPPFLAGS. Patch by
   Chi Hsuan Yen.
 
