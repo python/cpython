@@ -1402,6 +1402,7 @@ class HTTPSTest(TestCase):
             resp = h.getresponse()
             h.close()
             self.assertIn('nginx', resp.getheader('server'))
+            resp.close()
 
     @support.system_must_validate_cert
     def test_networked_trusted_by_default_cert(self):
@@ -1412,6 +1413,7 @@ class HTTPSTest(TestCase):
             h.request('GET', '/')
             resp = h.getresponse()
             content_type = resp.getheader('content-type')
+            resp.close()
             h.close()
             self.assertIn('text/html', content_type)
 
@@ -1427,6 +1429,7 @@ class HTTPSTest(TestCase):
             h.request('GET', '/')
             resp = h.getresponse()
             server_string = resp.getheader('server')
+            resp.close()
             h.close()
             self.assertIn('nginx', server_string)
 
@@ -1460,8 +1463,10 @@ class HTTPSTest(TestCase):
         context.verify_mode = ssl.CERT_REQUIRED
         context.load_verify_locations(CERT_localhost)
         h = client.HTTPSConnection('localhost', server.port, context=context)
+        self.addCleanup(h.close)
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
+        self.addCleanup(resp.close)
         self.assertEqual(resp.status, 404)
 
     def test_local_bad_hostname(self):
@@ -1486,13 +1491,18 @@ class HTTPSTest(TestCase):
                                    check_hostname=False)
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
+        resp.close()
+        h.close()
         self.assertEqual(resp.status, 404)
         # The context's check_hostname setting is used if one isn't passed to
         # HTTPSConnection.
         context.check_hostname = False
         h = client.HTTPSConnection('localhost', server.port, context=context)
         h.request('GET', '/nonexistent')
-        self.assertEqual(h.getresponse().status, 404)
+        resp = h.getresponse()
+        self.assertEqual(resp.status, 404)
+        resp.close()
+        h.close()
         # Passing check_hostname to HTTPSConnection should override the
         # context's setting.
         h = client.HTTPSConnection('localhost', server.port, context=context,
