@@ -653,7 +653,7 @@ can *only* be used with positional-only parameters.
           Functions that use *any* other approach for parsing arguments
           should *almost never* be converted to Argument Clinic using
           optional groups.  Functions using optional groups currently
-          cannot have accurate sigantures in Python, because Python just
+          cannot have accurate signatures in Python, because Python just
           doesn't understand the concept.  Please avoid using optional
           groups wherever possible.
 
@@ -1337,7 +1337,7 @@ every line of Clinic's generated output.
 
 While changing Clinic's output in this manner can be a boon to readability,
 it may result in Clinic code using types before they are defined, or
-your code attempting to use Clinic-generated code befire it is defined.
+your code attempting to use Clinic-generated code before it is defined.
 These problems can be easily solved by rearranging the declarations in your file,
 or moving where Clinic's generated code goes.  (This is why the default behavior
 of Clinic is to output everything into the current block; while many people
@@ -1381,7 +1381,7 @@ Let's start with defining some terminology:
 
   ``buffer``
     A text buffer where you can save text for later.  Text sent
-    here is appended to the end of any exsiting text.  It's an
+    here is appended to the end of any existing text.  It's an
     error to have any text left in the buffer when Clinic finishes
     processing a file.
 
@@ -1653,7 +1653,7 @@ undefined, this turns into nothing.
 
 However, this causes one ticklish problem: where should Argument Clinic put this
 extra code when using the "block" output preset?  It can't go in the output block,
-because that could be decativated by the ``#ifdef``.  (That's the whole point!)
+because that could be deactivated by the ``#ifdef``.  (That's the whole point!)
 
 In this situation, Argument Clinic writes the extra code to the "buffer" destination.
 This may mean that you get a complaint from Argument Clinic::
