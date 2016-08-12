@@ -1407,10 +1407,10 @@ libainstall:	all python-config
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	$(INSTALL_SCRIPT) python-config.py $(DESTDIR)$(LIBPL)/python-config.py
 	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python$(LDVERSION)-config
-	@if [ -s Programs/python.exp -a \
+	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
 		echo; echo "Installing support files for building shared extension modules on AIX:"; \
-		$(INSTALL_DATA) Programs/python.exp		\
+		$(INSTALL_DATA) Modules/python.exp		\
 				$(DESTDIR)$(LIBPL)/python.exp;		\
 		echo; echo "$(LIBPL)/python.exp";		\
 		$(INSTALL_SCRIPT) $(srcdir)/Modules/makexp_aix	\
@@ -1620,7 +1620,7 @@ distclean: clobber
 	done
 	-rm -f core Makefile Makefile.pre config.status \
 		Modules/Setup Modules/Setup.local Modules/Setup.config \
-		Modules/ld_so_aix Programs/python.exp Misc/python.pc
+		Modules/ld_so_aix Modules/python.exp Misc/python.pc
 	-rm -f python*-gdb.py
 	find $(srcdir)/[a-zA-Z]* '(' -name '*.fdc' -o -name '*~' \
 				     -o -name '[@,#]*' -o -name '*.old' \
