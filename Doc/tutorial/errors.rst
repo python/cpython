@@ -244,29 +244,7 @@ User-defined Exceptions
 
 Programs may name their own exceptions by creating a new exception class (see
 :ref:`tut-classes` for more about Python classes).  Exceptions should typically
-be derived from the :exc:`Exception` class, either directly or indirectly.  For
-example::
-
-   >>> class MyError(Exception):
-   ...     def __init__(self, value):
-   ...         self.value = value
-   ...     def __str__(self):
-   ...         return repr(self.value)
-   ...
-   >>> try:
-   ...     raise MyError(2*2)
-   ... except MyError as e:
-   ...     print('My exception occurred, value:', e.value)
-   ...
-   My exception occurred, value: 4
-   >>> raise MyError('oops!')
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
-   __main__.MyError: 'oops!'
-
-In this example, the default :meth:`__init__` of :class:`Exception` has been
-overridden.  The new behavior simply creates the *value* attribute.  This
-replaces the default behavior of creating the *args* attribute.
+be derived from the :exc:`Exception` class, either directly or indirectly.
 
 Exception classes can be defined which do anything any other class can do, but
 are usually kept simple, often only offering a number of attributes that allow
