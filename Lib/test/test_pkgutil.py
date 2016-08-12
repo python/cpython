@@ -413,6 +413,7 @@ class ImportlibMigrationTests(unittest.TestCase):
             self.assertIsNotNone(pkgutil.get_loader("test.support"))
             self.assertEqual(len(w.warnings), 0)
 
+    @unittest.skipIf(__name__ == '__main__', 'not compatible with __main__')
     def test_get_loader_handles_missing_loader_attribute(self):
         global __loader__
         this_loader = __loader__
