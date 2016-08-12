@@ -96,6 +96,9 @@ Library
 Tests
 -----
 
+- Issue #25805: Skip a test in test_pkgutil as needed that doesn't work when
+  ``__name__ == __main__``. Patch by SilentGhost.
+
 - Issue #27472: Add test.support.unix_shell as the path to the default shell.
 
 - Issue #27369: In test_pyexpat, avoid testing an error message detail that
