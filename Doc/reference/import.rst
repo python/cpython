@@ -774,7 +774,7 @@ hooks <path entry hook>` in this list is called with a single argument, the
 path entry to be searched.  This callable may either return a :term:`path
 entry finder` that can handle the path entry, or it may raise
 :exc:`ImportError`.  An :exc:`ImportError` is used by the path based finder to
-signal that the hook cannot find a :term:`path entry finder`.
+signal that the hook cannot find a :term:`path entry finder`
 for that :term:`path entry`.  The
 exception is ignored and :term:`import path` iteration continues.  The hook
 should expect either a string or bytes object; the encoding of bytes objects
@@ -828,7 +828,7 @@ portion.
 
    Older path entry finders may implement one of these two deprecated methods
    instead of ``find_spec()``.  The methods are still respected for the
-   sake of backward compatibility.  Howevever, if ``find_spec()`` is
+   sake of backward compatibility.  However, if ``find_spec()`` is
    implemented on the path entry finder, the legacy methods are ignored.
 
    :meth:`~importlib.abc.PathEntryFinder.find_loader` takes one argument, the
