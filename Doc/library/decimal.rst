@@ -883,11 +883,13 @@ Decimal objects
 
    .. method:: to_eng_string([context])
 
-      Convert to an engineering-type string.
+      Convert to a string, using engineering notation if an exponent is needed.
 
-      Engineering notation has an exponent which is a multiple of 3, so there
-      are up to 3 digits left of the decimal place.  For example, converts
-      ``Decimal('123E+1')`` to ``Decimal('1.23E+3')``.
+      Engineering notation has an exponent which is a multiple of 3.  This
+      can leave up to 3 digits to the left of the decimal place and may
+      require the addition of either one or two trailing zeros.
+
+      For example, this converts ``Decimal('123E+1')`` to ``Decimal('1.23E+3')``.
 
    .. method:: to_integral([rounding[, context]])
 
@@ -1453,7 +1455,11 @@ In addition to the three supplied contexts, new contexts can be created with the
 
    .. method:: to_eng_string(x)
 
-      Converts a number to a string, using scientific notation.
+      Convert to a string, using engineering notation if an exponent is needed.
+
+      Engineering notation has an exponent which is a multiple of 3.  This
+      can leave up to 3 digits to the left of the decimal place and may
+      require the addition of either one or two trailing zeros.
 
 
    .. method:: to_integral_exact(x)
