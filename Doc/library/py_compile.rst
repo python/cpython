@@ -29,7 +29,7 @@ byte-code cache files in the directory containing the source code.
 .. function:: compile(file[, cfile[, dfile[, doraise]]])
 
    Compile a source file to byte-code and write out the byte-code cache  file.  The
-   source code is loaded from the file name *file*.  The  byte-code is written to
+   source code is loaded from the file named *file*.  The  byte-code is written to
    *cfile*, which defaults to *file* ``+`` ``'c'`` (``'o'`` if optimization is
    enabled in the current interpreter).  If *dfile* is specified, it is used as the
    name of the source file in error messages instead of *file*.  If *doraise* is
