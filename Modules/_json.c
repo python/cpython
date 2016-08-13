@@ -211,6 +211,10 @@ ascii_escape_unicode(PyObject *pystr)
     input_unicode = PyUnicode_AS_UNICODE(pystr);
 
     /* One char input can be up to 6 chars output, estimate 4 of these */
+    if (input_chars > (PY_SSIZE_T_MAX - 2)/ MAX_EXPANSION) {
+        PyErr_SetString(PyExc_OverflowError, "string is too long to escape");
+        return NULL;
+    }
     output_size = 2 + (MIN_EXPANSION * 4) + input_chars;
     max_output_size = 2 + (input_chars * MAX_EXPANSION);
     rval = PyString_FromStringAndSize(NULL, output_size);
