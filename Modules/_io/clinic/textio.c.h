@@ -24,12 +24,13 @@ static int
 _io_IncrementalNewlineDecoder___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"decoder", "translate", "errors", NULL};
+    static const char * const _keywords[] = {"decoder", "translate", "errors", NULL};
+    static _PyArg_Parser _parser = {"Oi|O:IncrementalNewlineDecoder", _keywords, 0};
     PyObject *decoder;
     int translate;
     PyObject *errors = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Oi|O:IncrementalNewlineDecoder", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &decoder, &translate, &errors)) {
         goto exit;
     }
@@ -55,11 +56,12 @@ static PyObject *
 _io_IncrementalNewlineDecoder_decode(nldecoder_object *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"input", "final", NULL};
+    static const char * const _keywords[] = {"input", "final", NULL};
+    static _PyArg_Parser _parser = {"O|i:decode", _keywords, 0};
     PyObject *input;
     int final = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|i:decode", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &input, &final)) {
         goto exit;
     }
@@ -155,7 +157,8 @@ static int
 _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"buffer", "encoding", "errors", "newline", "line_buffering", "write_through", NULL};
+    static const char * const _keywords[] = {"buffer", "encoding", "errors", "newline", "line_buffering", "write_through", NULL};
+    static _PyArg_Parser _parser = {"O|zzzii:TextIOWrapper", _keywords, 0};
     PyObject *buffer;
     const char *encoding = NULL;
     const char *errors = NULL;
@@ -163,7 +166,7 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int line_buffering = 0;
     int write_through = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|zzzii:TextIOWrapper", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &buffer, &encoding, &errors, &newline, &line_buffering, &write_through)) {
         goto exit;
     }
@@ -461,4 +464,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=31a39bbbe07ae4e7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7ec624a9bf6393f5 input=a9049054013a1b77]*/

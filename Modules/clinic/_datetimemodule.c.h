@@ -23,10 +23,11 @@ static PyObject *
 datetime_datetime_now(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"tz", NULL};
+    static const char * const _keywords[] = {"tz", NULL};
+    static _PyArg_Parser _parser = {"|O:now", _keywords, 0};
     PyObject *tz = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:now", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &tz)) {
         goto exit;
     }
@@ -35,4 +36,4 @@ datetime_datetime_now(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a82e6bd057a5dab9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=61f85af5637df8b5 input=a9049054013a1b77]*/

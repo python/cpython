@@ -458,12 +458,13 @@ static PyObject *
 _ssl__SSLContext_load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"certfile", "keyfile", "password", NULL};
+    static const char * const _keywords[] = {"certfile", "keyfile", "password", NULL};
+    static _PyArg_Parser _parser = {"O|OO:load_cert_chain", _keywords, 0};
     PyObject *certfile;
     PyObject *keyfile = NULL;
     PyObject *password = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OO:load_cert_chain", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &certfile, &keyfile, &password)) {
         goto exit;
     }
@@ -491,12 +492,13 @@ static PyObject *
 _ssl__SSLContext_load_verify_locations(PySSLContext *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"cafile", "capath", "cadata", NULL};
+    static const char * const _keywords[] = {"cafile", "capath", "cadata", NULL};
+    static _PyArg_Parser _parser = {"|OOO:load_verify_locations", _keywords, 0};
     PyObject *cafile = NULL;
     PyObject *capath = NULL;
     PyObject *cadata = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OOO:load_verify_locations", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &cafile, &capath, &cadata)) {
         goto exit;
     }
@@ -530,12 +532,13 @@ static PyObject *
 _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"sock", "server_side", "server_hostname", NULL};
+    static const char * const _keywords[] = {"sock", "server_side", "server_hostname", NULL};
+    static _PyArg_Parser _parser = {"O!i|O:_wrap_socket", _keywords, 0};
     PyObject *sock;
     int server_side;
     PyObject *hostname_obj = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!i|O:_wrap_socket", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         PySocketModule.Sock_Type, &sock, &server_side, &hostname_obj)) {
         goto exit;
     }
@@ -563,13 +566,14 @@ static PyObject *
 _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"incoming", "outgoing", "server_side", "server_hostname", NULL};
+    static const char * const _keywords[] = {"incoming", "outgoing", "server_side", "server_hostname", NULL};
+    static _PyArg_Parser _parser = {"O!O!i|O:_wrap_bio", _keywords, 0};
     PySSLMemoryBIO *incoming;
     PySSLMemoryBIO *outgoing;
     int server_side;
     PyObject *hostname_obj = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!i|O:_wrap_bio", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &PySSLMemoryBIO_Type, &incoming, &PySSLMemoryBIO_Type, &outgoing, &server_side, &hostname_obj)) {
         goto exit;
     }
@@ -684,10 +688,11 @@ static PyObject *
 _ssl__SSLContext_get_ca_certs(PySSLContext *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"binary_form", NULL};
+    static const char * const _keywords[] = {"binary_form", NULL};
+    static _PyArg_Parser _parser = {"|p:get_ca_certs", _keywords, 0};
     int binary_form = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|p:get_ca_certs", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &binary_form)) {
         goto exit;
     }
@@ -994,11 +999,12 @@ static PyObject *
 _ssl_txt2obj(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"txt", "name", NULL};
+    static const char * const _keywords[] = {"txt", "name", NULL};
+    static _PyArg_Parser _parser = {"s|p:txt2obj", _keywords, 0};
     const char *txt;
     int name = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|p:txt2obj", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &txt, &name)) {
         goto exit;
     }
@@ -1059,10 +1065,11 @@ static PyObject *
 _ssl_enum_certificates(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"store_name", NULL};
+    static const char * const _keywords[] = {"store_name", NULL};
+    static _PyArg_Parser _parser = {"s:enum_certificates", _keywords, 0};
     const char *store_name;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s:enum_certificates", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &store_name)) {
         goto exit;
     }
@@ -1097,10 +1104,11 @@ static PyObject *
 _ssl_enum_crls(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"store_name", NULL};
+    static const char * const _keywords[] = {"store_name", NULL};
+    static _PyArg_Parser _parser = {"s:enum_crls", _keywords, 0};
     const char *store_name;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s:enum_crls", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &store_name)) {
         goto exit;
     }
@@ -1135,4 +1143,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=02444732c19722b3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6057f95343369849 input=a9049054013a1b77]*/

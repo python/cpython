@@ -26,11 +26,12 @@ static PyObject *
 bytes_split(PyBytesObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"sep", "maxsplit", NULL};
+    static const char * const _keywords[] = {"sep", "maxsplit", NULL};
+    static _PyArg_Parser _parser = {"|On:split", _keywords, 0};
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|On:split", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &sep, &maxsplit)) {
         goto exit;
     }
@@ -144,11 +145,12 @@ static PyObject *
 bytes_rsplit(PyBytesObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"sep", "maxsplit", NULL};
+    static const char * const _keywords[] = {"sep", "maxsplit", NULL};
+    static _PyArg_Parser _parser = {"|On:rsplit", _keywords, 0};
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|On:rsplit", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &sep, &maxsplit)) {
         goto exit;
     }
@@ -429,11 +431,12 @@ static PyObject *
 bytes_decode(PyBytesObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"encoding", "errors", NULL};
+    static const char * const _keywords[] = {"encoding", "errors", NULL};
+    static _PyArg_Parser _parser = {"|ss:decode", _keywords, 0};
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:decode", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &encoding, &errors)) {
         goto exit;
     }
@@ -462,10 +465,11 @@ static PyObject *
 bytes_splitlines(PyBytesObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"keepends", NULL};
+    static const char * const _keywords[] = {"keepends", NULL};
+    static _PyArg_Parser _parser = {"|i:splitlines", _keywords, 0};
     int keepends = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i:splitlines", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &keepends)) {
         goto exit;
     }
@@ -504,4 +508,4 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6fe884a74e7d49cf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=637c2c14610d3c8d input=a9049054013a1b77]*/

@@ -324,11 +324,12 @@ static int
 _io_BufferedReader___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"raw", "buffer_size", NULL};
+    static const char * const _keywords[] = {"raw", "buffer_size", NULL};
+    static _PyArg_Parser _parser = {"O|n:BufferedReader", _keywords, 0};
     PyObject *raw;
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|n:BufferedReader", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &raw, &buffer_size)) {
         goto exit;
     }
@@ -356,11 +357,12 @@ static int
 _io_BufferedWriter___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"raw", "buffer_size", NULL};
+    static const char * const _keywords[] = {"raw", "buffer_size", NULL};
+    static _PyArg_Parser _parser = {"O|n:BufferedWriter", _keywords, 0};
     PyObject *raw;
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|n:BufferedWriter", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &raw, &buffer_size)) {
         goto exit;
     }
@@ -459,11 +461,12 @@ static int
 _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"raw", "buffer_size", NULL};
+    static const char * const _keywords[] = {"raw", "buffer_size", NULL};
+    static _PyArg_Parser _parser = {"O|n:BufferedRandom", _keywords, 0};
     PyObject *raw;
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|n:BufferedRandom", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &raw, &buffer_size)) {
         goto exit;
     }
@@ -472,4 +475,4 @@ _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4f6196c756b880c8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a956f394ecde4cf9 input=a9049054013a1b77]*/

@@ -112,11 +112,12 @@ static PyObject *
 binascii_b2a_base64(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"data", "newline", NULL};
+    static const char * const _keywords[] = {"data", "newline", NULL};
+    static _PyArg_Parser _parser = {"y*|$i:b2a_base64", _keywords, 0};
     Py_buffer data = {NULL, NULL};
     int newline = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|$i:b2a_base64", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &data, &newline)) {
         goto exit;
     }
@@ -488,11 +489,12 @@ static PyObject *
 binascii_a2b_qp(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"data", "header", NULL};
+    static const char * const _keywords[] = {"data", "header", NULL};
+    static _PyArg_Parser _parser = {"O&|i:a2b_qp", _keywords, 0};
     Py_buffer data = {NULL, NULL};
     int header = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|i:a2b_qp", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         ascii_buffer_converter, &data, &header)) {
         goto exit;
     }
@@ -527,13 +529,14 @@ static PyObject *
 binascii_b2a_qp(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"data", "quotetabs", "istext", "header", NULL};
+    static const char * const _keywords[] = {"data", "quotetabs", "istext", "header", NULL};
+    static _PyArg_Parser _parser = {"y*|iii:b2a_qp", _keywords, 0};
     Py_buffer data = {NULL, NULL};
     int quotetabs = 0;
     int istext = 1;
     int header = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|iii:b2a_qp", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &data, &quotetabs, &istext, &header)) {
         goto exit;
     }
@@ -547,4 +550,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d91d1058dc0590e1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=12611b05d8bf4a9c input=a9049054013a1b77]*/
