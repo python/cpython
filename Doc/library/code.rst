@@ -147,6 +147,9 @@ interpreter objects as well as the following additions.
    .. versionchanged:: 3.4
       To suppress printing any banner, pass an empty string.
 
+   .. versionchanged:: 3.6
+      Now prints a brief message when exiting.
+
 
 .. method:: InteractiveConsole.push(line)
 
