@@ -148,6 +148,8 @@ The module defines three convenience functions and a public class:
         If *callback* is given and is not *None*, it will be called after
         each trial with two arguments: ``callback(number, time_taken)``.
 
+        .. versionadded:: 3.6
+
 
    .. method:: Timer.repeat(repeat=3, number=1000000)
 
