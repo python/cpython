@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- In the curses module, raise an error if window.getstr() is passed a negative
+  value.
+
 - Issue #27758: Fix possible integer overflow in the _csv module for large record
   lengths.
 

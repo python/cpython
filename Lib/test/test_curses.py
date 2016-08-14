@@ -185,6 +185,9 @@ class TestCurses(unittest.TestCase):
         if hasattr(curses, 'enclose'):
             stdscr.enclose()
 
+        self.assertRaises(ValueError, stdscr.getstr, -400)
+        self.assertRaises(ValueError, stdscr.getstr, 2, 3, -400)
+
 
     def test_module_funcs(self):
         "Test module-level functions"

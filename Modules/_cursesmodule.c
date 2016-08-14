@@ -918,6 +918,10 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
     case 1:
         if (!PyArg_ParseTuple(args,"i;n", &n))
             return NULL;
+        if (n < 0) {
+            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
+            return NULL;
+        }
         Py_BEGIN_ALLOW_THREADS
         rtn2 = wgetnstr(self->win,rtn,MIN(n, 1023));
         Py_END_ALLOW_THREADS
@@ -936,6 +940,10 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
     case 3:
         if (!PyArg_ParseTuple(args,"iii;y,x,n", &y, &x, &n))
             return NULL;
+        if (n < 0) {
+            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
+            return NULL;
+        }
 #ifdef STRICT_SYSV_CURSES
         Py_BEGIN_ALLOW_THREADS
         rtn2 = wmove(self->win,y,x)==ERR ? ERR :
