@@ -354,6 +354,28 @@ class TestTimeit(unittest.TestCase):
             s = self.run_main(switches=['-n1', '1/0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
+    def autorange(self, callback=None):
+        timer = FakeTimer(seconds_per_increment=0.001)
+        t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=timer)
+        return t.autorange(callback)
+
+    def test_autorange(self):
+        num_loops, time_taken = self.autorange()
+        self.assertEqual(num_loops, 1000)
+        self.assertEqual(time_taken, 1.0)
+
+    def test_autorange_with_callback(self):
+        def callback(a, b):
+            print("{} {:.3f}".format(a, b))
+        with captured_stdout() as s:
+            num_loops, time_taken = self.autorange(callback)
+        self.assertEqual(num_loops, 1000)
+        self.assertEqual(time_taken, 1.0)
+        expected = ('10 0.010\n'
+                    '100 0.100\n'
+                    '1000 1.000\n')
+        self.assertEqual(s.getvalue(), expected)
+
 
 if __name__ == '__main__':
     unittest.main()
