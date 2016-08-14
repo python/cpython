@@ -69,7 +69,7 @@ class TestInteractiveConsole(unittest.TestCase):
         # with banner
         self.infunc.side_effect = EOFError('Finished')
         self.console.interact(banner='Foo')
-        self.assertEqual(len(self.stderr.method_calls), 2)
+        self.assertEqual(len(self.stderr.method_calls), 3)
         banner_call = self.stderr.method_calls[0]
         self.assertEqual(banner_call, ['write', ('Foo\n',), {}])
 
@@ -77,7 +77,15 @@ class TestInteractiveConsole(unittest.TestCase):
         self.stderr.reset_mock()
         self.infunc.side_effect = EOFError('Finished')
         self.console.interact(banner='')
-        self.assertEqual(len(self.stderr.method_calls), 1)
+        self.assertEqual(len(self.stderr.method_calls), 2)
+
+    def test_exit_msg(self):
+        self.infunc.side_effect = EOFError('Finished')
+        self.console.interact(banner='')
+        self.assertEqual(len(self.stderr.method_calls), 2)
+        err_msg = self.stderr.method_calls[1]
+        expected = 'now exiting InteractiveConsole...\n'
+        self.assertEqual(err_msg, ['write', (expected,), {}])
 
     def test_cause_tb(self):
         self.infunc.side_effect = ["raise ValueError('') from AttributeError",

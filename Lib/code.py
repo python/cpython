@@ -230,6 +230,7 @@ class InteractiveConsole(InteractiveInterpreter):
                 self.write("\nKeyboardInterrupt\n")
                 self.resetbuffer()
                 more = 0
+        self.write('now exiting %s...\n' % self.__class__.__name__)
 
     def push(self, line):
         """Push a line to the interpreter.
