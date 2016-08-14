@@ -207,6 +207,26 @@ class Timer:
             r.append(t)
         return r
 
+    def autorange(self, callback=None):
+        """Return the number of loops so that total time >= 0.2.
+
+        Calls the timeit method with *number* set to successive powers of
+        ten (10, 100, 1000, ...) up to a maximum of one billion, until
+        the time taken is at least 0.2 second, or the maximum is reached.
+        Returns ``(number, time_taken)``.
+
+        If *callback* is given and is not None, it will be called after
+        each trial with two arguments: ``callback(number, time_taken)``.
+        """
+        for i in range(1, 10):
+            number = 10**i
+            time_taken = self.timeit(number)
+            if callback:
+                callback(number, time_taken)
+            if time_taken >= 0.2:
+                break
+        return (number, time_taken)
+
 def timeit(stmt="pass", setup="pass", timer=default_timer,
            number=default_number, globals=None):
     """Convenience function to create Timer object and call timeit method."""
@@ -295,17 +315,16 @@ def main(args=None, *, _wrap_timer=None):
     t = Timer(stmt, setup, timer)
     if number == 0:
         # determine number so that 0.2 <= total time < 2.0
-        for i in range(1, 10):
-            number = 10**i
-            try:
-                x = t.timeit(number)
-            except:
-                t.print_exc()
-                return 1
-            if verbose:
-                print("%d loops -> %.*g secs" % (number, precision, x))
-            if x >= 0.2:
-                break
+        callback = None
+        if verbose:
+            def callback(number, time_taken):
+                msg = "{num} loops -> {secs:.{prec}g} secs"
+                print(msg.format(num=number, secs=time_taken, prec=precision))
+        try:
+            number, _ = t.autorange(callback)
+        except:
+            t.print_exc()
+            return 1
     try:
         r = t.repeat(repeat, number)
     except:
