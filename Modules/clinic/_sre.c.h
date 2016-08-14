@@ -80,13 +80,14 @@ static PyObject *
 _sre_SRE_Pattern_match(PatternObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", "pos", "endpos", "pattern", NULL};
+    static const char * const _keywords[] = {"string", "pos", "endpos", "pattern", NULL};
+    static _PyArg_Parser _parser = {"|Onn$O:match", _keywords, 0};
     PyObject *string = NULL;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
     PyObject *pattern = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Onn$O:match", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string, &pos, &endpos, &pattern)) {
         goto exit;
     }
@@ -115,13 +116,14 @@ static PyObject *
 _sre_SRE_Pattern_fullmatch(PatternObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", "pos", "endpos", "pattern", NULL};
+    static const char * const _keywords[] = {"string", "pos", "endpos", "pattern", NULL};
+    static _PyArg_Parser _parser = {"|Onn$O:fullmatch", _keywords, 0};
     PyObject *string = NULL;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
     PyObject *pattern = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Onn$O:fullmatch", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string, &pos, &endpos, &pattern)) {
         goto exit;
     }
@@ -152,13 +154,14 @@ static PyObject *
 _sre_SRE_Pattern_search(PatternObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", "pos", "endpos", "pattern", NULL};
+    static const char * const _keywords[] = {"string", "pos", "endpos", "pattern", NULL};
+    static _PyArg_Parser _parser = {"|Onn$O:search", _keywords, 0};
     PyObject *string = NULL;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
     PyObject *pattern = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Onn$O:search", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string, &pos, &endpos, &pattern)) {
         goto exit;
     }
@@ -187,13 +190,14 @@ static PyObject *
 _sre_SRE_Pattern_findall(PatternObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", "pos", "endpos", "source", NULL};
+    static const char * const _keywords[] = {"string", "pos", "endpos", "source", NULL};
+    static _PyArg_Parser _parser = {"|Onn$O:findall", _keywords, 0};
     PyObject *string = NULL;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
     PyObject *source = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Onn$O:findall", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string, &pos, &endpos, &source)) {
         goto exit;
     }
@@ -222,12 +226,13 @@ static PyObject *
 _sre_SRE_Pattern_finditer(PatternObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", "pos", "endpos", NULL};
+    static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
+    static _PyArg_Parser _parser = {"O|nn:finditer", _keywords, 0};
     PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nn:finditer", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string, &pos, &endpos)) {
         goto exit;
     }
@@ -253,12 +258,13 @@ static PyObject *
 _sre_SRE_Pattern_scanner(PatternObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", "pos", "endpos", NULL};
+    static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
+    static _PyArg_Parser _parser = {"O|nn:scanner", _keywords, 0};
     PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nn:scanner", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string, &pos, &endpos)) {
         goto exit;
     }
@@ -285,12 +291,13 @@ static PyObject *
 _sre_SRE_Pattern_split(PatternObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", "maxsplit", "source", NULL};
+    static const char * const _keywords[] = {"string", "maxsplit", "source", NULL};
+    static _PyArg_Parser _parser = {"|On$O:split", _keywords, 0};
     PyObject *string = NULL;
     Py_ssize_t maxsplit = 0;
     PyObject *source = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|On$O:split", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string, &maxsplit, &source)) {
         goto exit;
     }
@@ -317,12 +324,13 @@ static PyObject *
 _sre_SRE_Pattern_sub(PatternObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"repl", "string", "count", NULL};
+    static const char * const _keywords[] = {"repl", "string", "count", NULL};
+    static _PyArg_Parser _parser = {"OO|n:sub", _keywords, 0};
     PyObject *repl;
     PyObject *string;
     Py_ssize_t count = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|n:sub", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &repl, &string, &count)) {
         goto exit;
     }
@@ -349,12 +357,13 @@ static PyObject *
 _sre_SRE_Pattern_subn(PatternObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"repl", "string", "count", NULL};
+    static const char * const _keywords[] = {"repl", "string", "count", NULL};
+    static _PyArg_Parser _parser = {"OO|n:subn", _keywords, 0};
     PyObject *repl;
     PyObject *string;
     Py_ssize_t count = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|n:subn", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &repl, &string, &count)) {
         goto exit;
     }
@@ -396,10 +405,11 @@ static PyObject *
 _sre_SRE_Pattern___deepcopy__(PatternObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"memo", NULL};
+    static const char * const _keywords[] = {"memo", NULL};
+    static _PyArg_Parser _parser = {"O:__deepcopy__", _keywords, 0};
     PyObject *memo;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:__deepcopy__", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &memo)) {
         goto exit;
     }
@@ -427,7 +437,8 @@ static PyObject *
 _sre_compile(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"pattern", "flags", "code", "groups", "groupindex", "indexgroup", NULL};
+    static const char * const _keywords[] = {"pattern", "flags", "code", "groups", "groupindex", "indexgroup", NULL};
+    static _PyArg_Parser _parser = {"OiO!nOO:compile", _keywords, 0};
     PyObject *pattern;
     int flags;
     PyObject *code;
@@ -435,7 +446,7 @@ _sre_compile(PyObject *module, PyObject *args, PyObject *kwargs)
     PyObject *groupindex;
     PyObject *indexgroup;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OiO!nOO:compile", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &pattern, &flags, &PyList_Type, &code, &groups, &groupindex, &indexgroup)) {
         goto exit;
     }
@@ -461,10 +472,11 @@ static PyObject *
 _sre_SRE_Match_expand(MatchObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"template", NULL};
+    static const char * const _keywords[] = {"template", NULL};
+    static _PyArg_Parser _parser = {"O:expand", _keywords, 0};
     PyObject *template;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:expand", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &template)) {
         goto exit;
     }
@@ -493,10 +505,11 @@ static PyObject *
 _sre_SRE_Match_groups(MatchObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"default", NULL};
+    static const char * const _keywords[] = {"default", NULL};
+    static _PyArg_Parser _parser = {"|O:groups", _keywords, 0};
     PyObject *default_value = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:groups", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &default_value)) {
         goto exit;
     }
@@ -525,10 +538,11 @@ static PyObject *
 _sre_SRE_Match_groupdict(MatchObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"default", NULL};
+    static const char * const _keywords[] = {"default", NULL};
+    static _PyArg_Parser _parser = {"|O:groupdict", _keywords, 0};
     PyObject *default_value = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:groupdict", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &default_value)) {
         goto exit;
     }
@@ -667,10 +681,11 @@ static PyObject *
 _sre_SRE_Match___deepcopy__(MatchObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"memo", NULL};
+    static const char * const _keywords[] = {"memo", NULL};
+    static _PyArg_Parser _parser = {"O:__deepcopy__", _keywords, 0};
     PyObject *memo;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:__deepcopy__", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &memo)) {
         goto exit;
     }
@@ -713,4 +728,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=af9455cb54b2a907 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2cbc2b1482738e54 input=a9049054013a1b77]*/

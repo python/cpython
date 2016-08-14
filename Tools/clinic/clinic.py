@@ -743,7 +743,10 @@ class CLanguage(Language):
             return output()
 
         def insert_keywords(s):
-            return linear_format(s, declarations="static char *_keywords[] = {{{keywords}, NULL}};\n{declarations}")
+            return linear_format(s, declarations=
+                'static const char * const _keywords[] = {{{keywords}, NULL}};\n'
+                'static _PyArg_Parser _parser = {{"{format_units}:{name}", _keywords, 0}};\n'
+                '{declarations}')
 
         if not parameters:
             # no parameters, METH_NOARGS
@@ -849,17 +852,12 @@ class CLanguage(Language):
             parser_prototype = parser_prototype_keyword
 
             body = normalize_snippet("""
-                if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
+                if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
                     {parse_arguments})) {{
                     goto exit;
                 }}
                 """, indent=4)
-            parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
-                    {parse_arguments})) {{
-                    goto exit;
-                }}
-                """, indent=4))
+            parser_definition = parser_body(parser_prototype, body)
             parser_definition = insert_keywords(parser_definition)
 
 

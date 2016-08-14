@@ -243,12 +243,13 @@ static PyObject *
 pyexpat_ParserCreate(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"encoding", "namespace_separator", "intern", NULL};
+    static const char * const _keywords[] = {"encoding", "namespace_separator", "intern", NULL};
+    static _PyArg_Parser _parser = {"|zzO:ParserCreate", _keywords, 0};
     const char *encoding = NULL;
     const char *namespace_separator = NULL;
     PyObject *intern = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|zzO:ParserCreate", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &encoding, &namespace_separator, &intern)) {
         goto exit;
     }
@@ -288,4 +289,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=9de21f46734b1311 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=93cfe662f2bc48e5 input=a9049054013a1b77]*/

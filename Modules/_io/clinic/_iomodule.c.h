@@ -138,7 +138,8 @@ static PyObject *
 _io_open(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"file", "mode", "buffering", "encoding", "errors", "newline", "closefd", "opener", NULL};
+    static const char * const _keywords[] = {"file", "mode", "buffering", "encoding", "errors", "newline", "closefd", "opener", NULL};
+    static _PyArg_Parser _parser = {"O|sizzziO:open", _keywords, 0};
     PyObject *file;
     const char *mode = "r";
     int buffering = -1;
@@ -148,7 +149,7 @@ _io_open(PyObject *module, PyObject *args, PyObject *kwargs)
     int closefd = 1;
     PyObject *opener = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|sizzziO:open", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &file, &mode, &buffering, &encoding, &errors, &newline, &closefd, &opener)) {
         goto exit;
     }
@@ -157,4 +158,4 @@ _io_open(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ae2facf262cf464e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=14769629391a3130 input=a9049054013a1b77]*/

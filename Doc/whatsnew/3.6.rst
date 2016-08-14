@@ -579,6 +579,13 @@ Optimizations
   deserializing many small objects (Contributed by Victor Stinner in
   :issue:`27056`).
 
+- Passing :term:`keyword arguments <keyword argument>` to a function has an
+  overhead in comparison with passing :term:`positional arguments
+  <positional argument>`.  Now in extension functions implemented with using
+  Argument Clinic this overhead is significantly decreased.
+  (Contributed by Serhiy Storchaka in :issue:`27574`).
+
+
 Build and C API Changes
 =======================
 

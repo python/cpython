@@ -93,12 +93,13 @@ static int
 _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"file", "protocol", "fix_imports", NULL};
+    static const char * const _keywords[] = {"file", "protocol", "fix_imports", NULL};
+    static _PyArg_Parser _parser = {"O|Op:Pickler", _keywords, 0};
     PyObject *file;
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Op:Pickler", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &file, &protocol, &fix_imports)) {
         goto exit;
     }
@@ -285,13 +286,14 @@ static int
 _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
+    static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
+    static _PyArg_Parser _parser = {"O|$pss:Unpickler", _keywords, 0};
     PyObject *file;
     int fix_imports = 1;
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|$pss:Unpickler", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &file, &fix_imports, &encoding, &errors)) {
         goto exit;
     }
@@ -392,13 +394,14 @@ static PyObject *
 _pickle_dump(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"obj", "file", "protocol", "fix_imports", NULL};
+    static const char * const _keywords[] = {"obj", "file", "protocol", "fix_imports", NULL};
+    static _PyArg_Parser _parser = {"OO|O$p:dump", _keywords, 0};
     PyObject *obj;
     PyObject *file;
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|O$p:dump", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &obj, &file, &protocol, &fix_imports)) {
         goto exit;
     }
@@ -437,12 +440,13 @@ static PyObject *
 _pickle_dumps(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"obj", "protocol", "fix_imports", NULL};
+    static const char * const _keywords[] = {"obj", "protocol", "fix_imports", NULL};
+    static _PyArg_Parser _parser = {"O|O$p:dumps", _keywords, 0};
     PyObject *obj;
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O$p:dumps", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &obj, &protocol, &fix_imports)) {
         goto exit;
     }
@@ -492,13 +496,14 @@ static PyObject *
 _pickle_load(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
+    static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
+    static _PyArg_Parser _parser = {"O|$pss:load", _keywords, 0};
     PyObject *file;
     int fix_imports = 1;
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|$pss:load", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &file, &fix_imports, &encoding, &errors)) {
         goto exit;
     }
@@ -539,13 +544,14 @@ static PyObject *
 _pickle_loads(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"data", "fix_imports", "encoding", "errors", NULL};
+    static const char * const _keywords[] = {"data", "fix_imports", "encoding", "errors", NULL};
+    static _PyArg_Parser _parser = {"O|$pss:loads", _keywords, 0};
     PyObject *data;
     int fix_imports = 1;
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|$pss:loads", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &data, &fix_imports, &encoding, &errors)) {
         goto exit;
     }
@@ -554,4 +560,4 @@ _pickle_loads(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5c5f9149df292ce4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=50f9127109673c98 input=a9049054013a1b77]*/

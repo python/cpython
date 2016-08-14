@@ -36,12 +36,13 @@ static PyObject *
 os_stat(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "dir_fd", "follow_symlinks", NULL};
+    static const char * const _keywords[] = {"path", "dir_fd", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"O&|$O&p:stat", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("stat", "path", 0, 1);
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&p:stat", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, FSTATAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks)) {
         goto exit;
     }
@@ -73,11 +74,12 @@ static PyObject *
 os_lstat(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "dir_fd", NULL};
+    static const char * const _keywords[] = {"path", "dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&|$O&:lstat", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("lstat", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:lstat", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, FSTATAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -133,7 +135,8 @@ static PyObject *
 os_access(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "mode", "dir_fd", "effective_ids", "follow_symlinks", NULL};
+    static const char * const _keywords[] = {"path", "mode", "dir_fd", "effective_ids", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"O&i|$O&pp:access", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("access", "path", 0, 1);
     int mode;
     int dir_fd = DEFAULT_DIR_FD;
@@ -141,7 +144,7 @@ os_access(PyObject *module, PyObject *args, PyObject *kwargs)
     int follow_symlinks = 1;
     int _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&i|$O&pp:access", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, &mode, FACCESSAT_DIR_FD_CONVERTER, &dir_fd, &effective_ids, &follow_symlinks)) {
         goto exit;
     }
@@ -239,10 +242,11 @@ static PyObject *
 os_chdir(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {"O&:chdir", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("chdir", "path", 0, PATH_HAVE_FCHDIR);
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&:chdir", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path)) {
         goto exit;
     }
@@ -276,10 +280,11 @@ static PyObject *
 os_fchdir(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
+    static const char * const _keywords[] = {"fd", NULL};
+    static _PyArg_Parser _parser = {"O&:fchdir", _keywords, 0};
     int fd;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&:fchdir", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         fildes_converter, &fd)) {
         goto exit;
     }
@@ -328,13 +333,14 @@ static PyObject *
 os_chmod(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "mode", "dir_fd", "follow_symlinks", NULL};
+    static const char * const _keywords[] = {"path", "mode", "dir_fd", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"O&i|$O&p:chmod", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("chmod", "path", 0, PATH_HAVE_FCHMOD);
     int mode;
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&i|$O&p:chmod", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, &mode, FCHMODAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks)) {
         goto exit;
     }
@@ -367,11 +373,12 @@ static PyObject *
 os_fchmod(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", "mode", NULL};
+    static const char * const _keywords[] = {"fd", "mode", NULL};
+    static _PyArg_Parser _parser = {"ii:fchmod", _keywords, 0};
     int fd;
     int mode;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ii:fchmod", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &fd, &mode)) {
         goto exit;
     }
@@ -404,11 +411,12 @@ static PyObject *
 os_lchmod(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "mode", NULL};
+    static const char * const _keywords[] = {"path", "mode", NULL};
+    static _PyArg_Parser _parser = {"O&i:lchmod", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("lchmod", "path", 0, 0);
     int mode;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&i:lchmod", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, &mode)) {
         goto exit;
     }
@@ -448,12 +456,13 @@ static PyObject *
 os_chflags(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "flags", "follow_symlinks", NULL};
+    static const char * const _keywords[] = {"path", "flags", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"O&k|p:chflags", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("chflags", "path", 0, 0);
     unsigned long flags;
     int follow_symlinks = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&k|p:chflags", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, &flags, &follow_symlinks)) {
         goto exit;
     }
@@ -489,11 +498,12 @@ static PyObject *
 os_lchflags(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "flags", NULL};
+    static const char * const _keywords[] = {"path", "flags", NULL};
+    static _PyArg_Parser _parser = {"O&k:lchflags", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("lchflags", "path", 0, 0);
     unsigned long flags;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&k:lchflags", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, &flags)) {
         goto exit;
     }
@@ -526,10 +536,11 @@ static PyObject *
 os_chroot(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {"O&:chroot", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("chroot", "path", 0, 0);
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&:chroot", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path)) {
         goto exit;
     }
@@ -562,10 +573,11 @@ static PyObject *
 os_fsync(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
+    static const char * const _keywords[] = {"fd", NULL};
+    static _PyArg_Parser _parser = {"O&:fsync", _keywords, 0};
     int fd;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&:fsync", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         fildes_converter, &fd)) {
         goto exit;
     }
@@ -617,10 +629,11 @@ static PyObject *
 os_fdatasync(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
+    static const char * const _keywords[] = {"fd", NULL};
+    static _PyArg_Parser _parser = {"O&:fdatasync", _keywords, 0};
     int fd;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&:fdatasync", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         fildes_converter, &fd)) {
         goto exit;
     }
@@ -675,14 +688,15 @@ static PyObject *
 os_chown(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "uid", "gid", "dir_fd", "follow_symlinks", NULL};
+    static const char * const _keywords[] = {"path", "uid", "gid", "dir_fd", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"O&O&O&|$O&p:chown", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("chown", "path", 0, PATH_HAVE_FCHOWN);
     uid_t uid;
     gid_t gid;
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&O&|$O&p:chown", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, _Py_Uid_Converter, &uid, _Py_Gid_Converter, &gid, FCHOWNAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks)) {
         goto exit;
     }
@@ -717,12 +731,13 @@ static PyObject *
 os_fchown(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", "uid", "gid", NULL};
+    static const char * const _keywords[] = {"fd", "uid", "gid", NULL};
+    static _PyArg_Parser _parser = {"iO&O&:fchown", _keywords, 0};
     int fd;
     uid_t uid;
     gid_t gid;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iO&O&:fchown", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &fd, _Py_Uid_Converter, &uid, _Py_Gid_Converter, &gid)) {
         goto exit;
     }
@@ -755,12 +770,13 @@ static PyObject *
 os_lchown(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "uid", "gid", NULL};
+    static const char * const _keywords[] = {"path", "uid", "gid", NULL};
+    static _PyArg_Parser _parser = {"O&O&O&:lchown", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("lchown", "path", 0, 0);
     uid_t uid;
     gid_t gid;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&O&:lchown", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, _Py_Uid_Converter, &uid, _Py_Gid_Converter, &gid)) {
         goto exit;
     }
@@ -841,14 +857,15 @@ static PyObject *
 os_link(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", "follow_symlinks", NULL};
+    static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"O&O&|$O&O&p:link", _keywords, 0};
     path_t src = PATH_T_INITIALIZE("link", "src", 0, 0);
     path_t dst = PATH_T_INITIALIZE("link", "dst", 0, 0);
     int src_dir_fd = DEFAULT_DIR_FD;
     int dst_dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&|$O&O&p:link", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &src, path_converter, &dst, dir_fd_converter, &src_dir_fd, dir_fd_converter, &dst_dir_fd, &follow_symlinks)) {
         goto exit;
     }
@@ -892,10 +909,11 @@ static PyObject *
 os_listdir(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {"|O&:listdir", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("listdir", "path", 1, PATH_HAVE_FDOPENDIR);
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&:listdir", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path)) {
         goto exit;
     }
@@ -1023,10 +1041,11 @@ static PyObject *
 os__getvolumepathname(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {"U:_getvolumepathname", _keywords, 0};
     PyObject *path;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "U:_getvolumepathname", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &path)) {
         goto exit;
     }
@@ -1061,12 +1080,13 @@ static PyObject *
 os_mkdir(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "mode", "dir_fd", NULL};
+    static const char * const _keywords[] = {"path", "mode", "dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&|i$O&:mkdir", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("mkdir", "path", 0, 0);
     int mode = 511;
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|i$O&:mkdir", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, &mode, MKDIRAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -1128,11 +1148,12 @@ static PyObject *
 os_getpriority(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"which", "who", NULL};
+    static const char * const _keywords[] = {"which", "who", NULL};
+    static _PyArg_Parser _parser = {"ii:getpriority", _keywords, 0};
     int which;
     int who;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ii:getpriority", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &which, &who)) {
         goto exit;
     }
@@ -1162,12 +1183,13 @@ static PyObject *
 os_setpriority(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"which", "who", "priority", NULL};
+    static const char * const _keywords[] = {"which", "who", "priority", NULL};
+    static _PyArg_Parser _parser = {"iii:setpriority", _keywords, 0};
     int which;
     int who;
     int priority;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iii:setpriority", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &which, &who, &priority)) {
         goto exit;
     }
@@ -1202,13 +1224,14 @@ static PyObject *
 os_rename(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
+    static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&O&|$O&O&:rename", _keywords, 0};
     path_t src = PATH_T_INITIALIZE("rename", "src", 0, 0);
     path_t dst = PATH_T_INITIALIZE("rename", "dst", 0, 0);
     int src_dir_fd = DEFAULT_DIR_FD;
     int dst_dir_fd = DEFAULT_DIR_FD;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&|$O&O&:rename", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &src, path_converter, &dst, dir_fd_converter, &src_dir_fd, dir_fd_converter, &dst_dir_fd)) {
         goto exit;
     }
@@ -1246,13 +1269,14 @@ static PyObject *
 os_replace(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
+    static const char * const _keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&O&|$O&O&:replace", _keywords, 0};
     path_t src = PATH_T_INITIALIZE("replace", "src", 0, 0);
     path_t dst = PATH_T_INITIALIZE("replace", "dst", 0, 0);
     int src_dir_fd = DEFAULT_DIR_FD;
     int dst_dir_fd = DEFAULT_DIR_FD;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&|$O&O&:replace", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &src, path_converter, &dst, dir_fd_converter, &src_dir_fd, dir_fd_converter, &dst_dir_fd)) {
         goto exit;
     }
@@ -1288,11 +1312,12 @@ static PyObject *
 os_rmdir(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "dir_fd", NULL};
+    static const char * const _keywords[] = {"path", "dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&|$O&:rmdir", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("rmdir", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:rmdir", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, UNLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -1323,11 +1348,12 @@ static PyObject *
 os_system(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"command", NULL};
+    static const char * const _keywords[] = {"command", NULL};
+    static _PyArg_Parser _parser = {"u:system", _keywords, 0};
     Py_UNICODE *command;
     long _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "u:system", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &command)) {
         goto exit;
     }
@@ -1361,11 +1387,12 @@ static PyObject *
 os_system(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"command", NULL};
+    static const char * const _keywords[] = {"command", NULL};
+    static _PyArg_Parser _parser = {"O&:system", _keywords, 0};
     PyObject *command = NULL;
     long _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&:system", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         PyUnicode_FSConverter, &command)) {
         goto exit;
     }
@@ -1432,11 +1459,12 @@ static PyObject *
 os_unlink(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "dir_fd", NULL};
+    static const char * const _keywords[] = {"path", "dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&|$O&:unlink", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("unlink", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:unlink", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, UNLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -1470,11 +1498,12 @@ static PyObject *
 os_remove(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "dir_fd", NULL};
+    static const char * const _keywords[] = {"path", "dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&|$O&:remove", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("remove", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&:remove", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, UNLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -1552,14 +1581,15 @@ static PyObject *
 os_utime(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "times", "ns", "dir_fd", "follow_symlinks", NULL};
+    static const char * const _keywords[] = {"path", "times", "ns", "dir_fd", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"O&|O$OO&p:utime", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("utime", "path", 0, PATH_UTIME_HAVE_FD);
     PyObject *times = NULL;
     PyObject *ns = NULL;
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|O$OO&p:utime", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, &times, &ns, FUTIMENSAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks)) {
         goto exit;
     }
@@ -1588,10 +1618,11 @@ static PyObject *
 os__exit(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
+    static const char * const _keywords[] = {"status", NULL};
+    static _PyArg_Parser _parser = {"i:_exit", _keywords, 0};
     int status;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:_exit", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &status)) {
         goto exit;
     }
@@ -1667,12 +1698,13 @@ static PyObject *
 os_execve(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "argv", "env", NULL};
+    static const char * const _keywords[] = {"path", "argv", "env", NULL};
+    static _PyArg_Parser _parser = {"O&OO:execve", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("execve", "path", 0, PATH_HAVE_FEXECVE);
     PyObject *argv;
     PyObject *env;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&OO:execve", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, &argv, &env)) {
         goto exit;
     }
@@ -1845,10 +1877,11 @@ static PyObject *
 os_sched_get_priority_max(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"policy", NULL};
+    static const char * const _keywords[] = {"policy", NULL};
+    static _PyArg_Parser _parser = {"i:sched_get_priority_max", _keywords, 0};
     int policy;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:sched_get_priority_max", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &policy)) {
         goto exit;
     }
@@ -1878,10 +1911,11 @@ static PyObject *
 os_sched_get_priority_min(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"policy", NULL};
+    static const char * const _keywords[] = {"policy", NULL};
+    static _PyArg_Parser _parser = {"i:sched_get_priority_min", _keywords, 0};
     int policy;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:sched_get_priority_min", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &policy)) {
         goto exit;
     }
@@ -1944,10 +1978,11 @@ static PyObject *
 os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"sched_priority", NULL};
+    static const char * const _keywords[] = {"sched_priority", NULL};
+    static _PyArg_Parser _parser = {"O:sched_param", _keywords, 0};
     PyObject *sched_priority;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:sched_param", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &sched_priority)) {
         goto exit;
     }
@@ -2372,10 +2407,11 @@ static PyObject *
 os_getpgid(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"pid", NULL};
+    static const char * const _keywords[] = {"pid", NULL};
+    static _PyArg_Parser _parser = {"" _Py_PARSE_PID ":getpgid", _keywords, 0};
     pid_t pid;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "" _Py_PARSE_PID ":getpgid", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &pid)) {
         goto exit;
     }
@@ -2821,10 +2857,11 @@ static PyObject *
 os_wait3(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"options", NULL};
+    static const char * const _keywords[] = {"options", NULL};
+    static _PyArg_Parser _parser = {"i:wait3", _keywords, 0};
     int options;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:wait3", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &options)) {
         goto exit;
     }
@@ -2857,11 +2894,12 @@ static PyObject *
 os_wait4(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"pid", "options", NULL};
+    static const char * const _keywords[] = {"pid", "options", NULL};
+    static _PyArg_Parser _parser = {"" _Py_PARSE_PID "i:wait4", _keywords, 0};
     pid_t pid;
     int options;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "" _Py_PARSE_PID "i:wait4", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &pid, &options)) {
         goto exit;
     }
@@ -3048,13 +3086,14 @@ static PyObject *
 os_symlink(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"src", "dst", "target_is_directory", "dir_fd", NULL};
+    static const char * const _keywords[] = {"src", "dst", "target_is_directory", "dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&O&|p$O&:symlink", _keywords, 0};
     path_t src = PATH_T_INITIALIZE("symlink", "src", 0, 0);
     path_t dst = PATH_T_INITIALIZE("symlink", "dst", 0, 0);
     int target_is_directory = 0;
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&|p$O&:symlink", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &src, path_converter, &dst, &target_is_directory, SYMLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -3268,14 +3307,15 @@ static PyObject *
 os_open(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "flags", "mode", "dir_fd", NULL};
+    static const char * const _keywords[] = {"path", "flags", "mode", "dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&i|i$O&:open", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("open", "path", 0, 0);
     int flags;
     int mode = 511;
     int dir_fd = DEFAULT_DIR_FD;
     int _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&i|i$O&:open", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, &flags, &mode, OPENAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -3308,10 +3348,11 @@ static PyObject *
 os_close(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
+    static const char * const _keywords[] = {"fd", NULL};
+    static _PyArg_Parser _parser = {"i:close", _keywords, 0};
     int fd;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:close", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &fd)) {
         goto exit;
     }
@@ -3398,12 +3439,13 @@ static PyObject *
 os_dup2(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", "fd2", "inheritable", NULL};
+    static const char * const _keywords[] = {"fd", "fd2", "inheritable", NULL};
+    static _PyArg_Parser _parser = {"ii|p:dup2", _keywords, 0};
     int fd;
     int fd2;
     int inheritable = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ii|p:dup2", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &fd, &fd2, &inheritable)) {
         goto exit;
     }
@@ -3662,10 +3704,11 @@ static PyObject *
 os_fstat(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
+    static const char * const _keywords[] = {"fd", NULL};
+    static _PyArg_Parser _parser = {"i:fstat", _keywords, 0};
     int fd;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:fstat", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &fd)) {
         goto exit;
     }
@@ -3884,12 +3927,13 @@ static PyObject *
 os_mkfifo(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "mode", "dir_fd", NULL};
+    static const char * const _keywords[] = {"path", "mode", "dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&|i$O&:mkfifo", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("mkfifo", "path", 0, 0);
     int mode = 438;
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|i$O&:mkfifo", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, &mode, MKFIFOAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -3935,13 +3979,14 @@ static PyObject *
 os_mknod(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "mode", "device", "dir_fd", NULL};
+    static const char * const _keywords[] = {"path", "mode", "device", "dir_fd", NULL};
+    static _PyArg_Parser _parser = {"O&|iO&$O&:mknod", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("mknod", "path", 0, 0);
     int mode = 384;
     dev_t device = 0;
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|iO&$O&:mknod", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, &mode, _Py_Dev_Converter, &device, MKNODAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -4120,11 +4165,12 @@ static PyObject *
 os_truncate(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "length", NULL};
+    static const char * const _keywords[] = {"path", "length", NULL};
+    static _PyArg_Parser _parser = {"O&O&:truncate", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("truncate", "path", 0, PATH_HAVE_FTRUNCATE);
     Py_off_t length;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&:truncate", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, Py_off_t_converter, &length)) {
         goto exit;
     }
@@ -4410,11 +4456,12 @@ static PyObject *
 os_WIFCONTINUED(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
+    static const char * const _keywords[] = {"status", NULL};
+    static _PyArg_Parser _parser = {"i:WIFCONTINUED", _keywords, 0};
     int status;
     int _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:WIFCONTINUED", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &status)) {
         goto exit;
     }
@@ -4448,11 +4495,12 @@ static PyObject *
 os_WIFSTOPPED(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
+    static const char * const _keywords[] = {"status", NULL};
+    static _PyArg_Parser _parser = {"i:WIFSTOPPED", _keywords, 0};
     int status;
     int _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:WIFSTOPPED", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &status)) {
         goto exit;
     }
@@ -4486,11 +4534,12 @@ static PyObject *
 os_WIFSIGNALED(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
+    static const char * const _keywords[] = {"status", NULL};
+    static _PyArg_Parser _parser = {"i:WIFSIGNALED", _keywords, 0};
     int status;
     int _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:WIFSIGNALED", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &status)) {
         goto exit;
     }
@@ -4524,11 +4573,12 @@ static PyObject *
 os_WIFEXITED(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
+    static const char * const _keywords[] = {"status", NULL};
+    static _PyArg_Parser _parser = {"i:WIFEXITED", _keywords, 0};
     int status;
     int _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:WIFEXITED", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &status)) {
         goto exit;
     }
@@ -4562,11 +4612,12 @@ static PyObject *
 os_WEXITSTATUS(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
+    static const char * const _keywords[] = {"status", NULL};
+    static _PyArg_Parser _parser = {"i:WEXITSTATUS", _keywords, 0};
     int status;
     int _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:WEXITSTATUS", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &status)) {
         goto exit;
     }
@@ -4600,11 +4651,12 @@ static PyObject *
 os_WTERMSIG(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
+    static const char * const _keywords[] = {"status", NULL};
+    static _PyArg_Parser _parser = {"i:WTERMSIG", _keywords, 0};
     int status;
     int _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:WTERMSIG", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &status)) {
         goto exit;
     }
@@ -4638,11 +4690,12 @@ static PyObject *
 os_WSTOPSIG(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
+    static const char * const _keywords[] = {"status", NULL};
+    static _PyArg_Parser _parser = {"i:WSTOPSIG", _keywords, 0};
     int status;
     int _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:WSTOPSIG", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &status)) {
         goto exit;
     }
@@ -4713,10 +4766,11 @@ static PyObject *
 os_statvfs(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {"O&:statvfs", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("statvfs", "path", 0, PATH_HAVE_FSTATVFS);
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&:statvfs", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path)) {
         goto exit;
     }
@@ -4749,10 +4803,11 @@ static PyObject *
 os__getdiskusage(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {"u:_getdiskusage", _keywords, 0};
     Py_UNICODE *path;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "u:_getdiskusage", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &path)) {
         goto exit;
     }
@@ -4826,12 +4881,13 @@ static PyObject *
 os_pathconf(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "name", NULL};
+    static const char * const _keywords[] = {"path", "name", NULL};
+    static _PyArg_Parser _parser = {"O&O&:pathconf", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("pathconf", "path", 0, PATH_HAVE_FPATHCONF);
     int name;
     long _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&:pathconf", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, conv_path_confname, &name)) {
         goto exit;
     }
@@ -4983,10 +5039,11 @@ static PyObject *
 os_device_encoding(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
+    static const char * const _keywords[] = {"fd", NULL};
+    static _PyArg_Parser _parser = {"i:device_encoding", _keywords, 0};
     int fd;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:device_encoding", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &fd)) {
         goto exit;
     }
@@ -5132,12 +5189,13 @@ static PyObject *
 os_getxattr(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "attribute", "follow_symlinks", NULL};
+    static const char * const _keywords[] = {"path", "attribute", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"O&O&|$p:getxattr", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("getxattr", "path", 0, 1);
     path_t attribute = PATH_T_INITIALIZE("getxattr", "attribute", 0, 0);
     int follow_symlinks = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&|$p:getxattr", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, path_converter, &attribute, &follow_symlinks)) {
         goto exit;
     }
@@ -5179,14 +5237,15 @@ static PyObject *
 os_setxattr(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "attribute", "value", "flags", "follow_symlinks", NULL};
+    static const char * const _keywords[] = {"path", "attribute", "value", "flags", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"O&O&y*|i$p:setxattr", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("setxattr", "path", 0, 1);
     path_t attribute = PATH_T_INITIALIZE("setxattr", "attribute", 0, 0);
     Py_buffer value = {NULL, NULL};
     int flags = 0;
     int follow_symlinks = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&y*|i$p:setxattr", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, path_converter, &attribute, &value, &flags, &follow_symlinks)) {
         goto exit;
     }
@@ -5231,12 +5290,13 @@ static PyObject *
 os_removexattr(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "attribute", "follow_symlinks", NULL};
+    static const char * const _keywords[] = {"path", "attribute", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"O&O&|$p:removexattr", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("removexattr", "path", 0, 1);
     path_t attribute = PATH_T_INITIALIZE("removexattr", "attribute", 0, 0);
     int follow_symlinks = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&O&|$p:removexattr", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, path_converter, &attribute, &follow_symlinks)) {
         goto exit;
     }
@@ -5277,11 +5337,12 @@ static PyObject *
 os_listxattr(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "follow_symlinks", NULL};
+    static const char * const _keywords[] = {"path", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"|O&$p:listxattr", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("listxattr", "path", 1, 1);
     int follow_symlinks = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&$p:listxattr", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         path_converter, &path, &follow_symlinks)) {
         goto exit;
     }
@@ -5496,10 +5557,11 @@ static PyObject *
 os_fspath(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {"O:fspath", _keywords, 0};
     PyObject *path;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:fspath", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &path)) {
         goto exit;
     }
@@ -5980,4 +6042,4 @@ exit:
 #ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
-/*[clinic end generated code: output=e91e62d8e8f1b6ac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=97180b6734421a7d input=a9049054013a1b77]*/

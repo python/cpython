@@ -81,10 +81,11 @@ static PyObject *
 _sha1_sha1(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", NULL};
+    static const char * const _keywords[] = {"string", NULL};
+    static _PyArg_Parser _parser = {"|O:sha1", _keywords, 0};
     PyObject *string = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:sha1", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string)) {
         goto exit;
     }
@@ -93,4 +94,4 @@ _sha1_sha1(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=475c4cc749ab31b1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=549a5d08c248337d input=a9049054013a1b77]*/

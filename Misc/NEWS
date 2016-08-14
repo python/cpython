@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 4
 Core and Builtins
 -----------------
 
+- Issue #27574: Decreased an overhead of parsing keyword arguments in functions
+  implemented with using Argument Clinic.
+
 - Issue #22557: Now importing already imported modules is up to 2.5 times faster.
 
 - Issue #17596: Include <wincrypt.h> to help with Min GW building.

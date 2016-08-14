@@ -221,11 +221,12 @@ static int
 _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"initial_value", "newline", NULL};
+    static const char * const _keywords[] = {"initial_value", "newline", NULL};
+    static _PyArg_Parser _parser = {"|OO:StringIO", _keywords, 0};
     PyObject *value = NULL;
     PyObject *newline_obj = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OO:StringIO", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &value, &newline_obj)) {
         goto exit;
     }
@@ -288,4 +289,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=0513219581cbe952 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5dd5c2a213e75405 input=a9049054013a1b77]*/

@@ -861,14 +861,15 @@ static PyObject *
 cmath_isclose(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
+    static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
+    static _PyArg_Parser _parser = {"DD|$dd:isclose", _keywords, 0};
     Py_complex a;
     Py_complex b;
     double rel_tol = 1e-09;
     double abs_tol = 0.0;
     int _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "DD|$dd:isclose", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &a, &b, &rel_tol, &abs_tol)) {
         goto exit;
     }
@@ -881,4 +882,4 @@ cmath_isclose(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0f49dd11b50175bc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aa2e77ca9fc26928 input=a9049054013a1b77]*/

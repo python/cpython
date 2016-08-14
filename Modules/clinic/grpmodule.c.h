@@ -20,10 +20,11 @@ static PyObject *
 grp_getgrgid(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"id", NULL};
+    static const char * const _keywords[] = {"id", NULL};
+    static _PyArg_Parser _parser = {"O:getgrgid", _keywords, 0};
     PyObject *id;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:getgrgid", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &id)) {
         goto exit;
     }
@@ -51,10 +52,11 @@ static PyObject *
 grp_getgrnam(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"name", NULL};
+    static const char * const _keywords[] = {"name", NULL};
+    static _PyArg_Parser _parser = {"U:getgrnam", _keywords, 0};
     PyObject *name;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "U:getgrnam", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &name)) {
         goto exit;
     }
@@ -84,4 +86,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=8b7502970a29e7f1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c06081097b7fffe7 input=a9049054013a1b77]*/
