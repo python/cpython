@@ -1316,6 +1316,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
     /* First, scan to see how many characters need to be encoded */
     in = 0;
     while (in < datalen) {
+        Py_ssize_t delta = 0;
         if ((data[in] > 126) ||
             (data[in] == '=') ||
             (header && data[in] == '_') ||
@@ -1331,12 +1332,12 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
             if ((linelen + 3) >= MAXLINESIZE) {
                 linelen = 0;
                 if (crlf)
-                    odatalen += 3;
+                    delta += 3;
                 else
-                    odatalen += 2;
+                    delta += 2;
             }
             linelen += 3;
-            odatalen += 3;
+            delta += 3;
             in++;
         }
         else {
@@ -1348,11 +1349,11 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
                 linelen = 0;
                 /* Protect against whitespace on end of line */
                 if (in && ((data[in-1] == ' ') || (data[in-1] == '\t')))
-                    odatalen += 2;
+                    delta += 2;
                 if (crlf)
-                    odatalen += 2;
+                    delta += 2;
                 else
-                    odatalen += 1;
+                    delta += 1;
                 if (data[in] == '\r')
                     in += 2;
                 else
@@ -1364,15 +1365,21 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
                     (linelen + 1) >= MAXLINESIZE) {
                     linelen = 0;
                     if (crlf)
-                        odatalen += 3;
+                        delta += 3;
                     else
-                        odatalen += 2;
+                        delta += 2;
                 }
                 linelen++;
-                odatalen++;
+                delta++;
                 in++;
             }
         }
+        if (PY_SSIZE_T_MAX - delta < odatalen) {
+            PyBuffer_Release(&pdata);
+            PyErr_NoMemory();
+            return NULL;
+        }
+        odatalen += delta;
     }
 
     /* We allocate the output same size as input, this is overkill.
