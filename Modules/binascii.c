@@ -1408,6 +1408,7 @@ binascii_b2a_qp_impl(PyModuleDef *module, Py_buffer *data, int quotetabs, int is
     /* First, scan to see how many characters need to be encoded */
     in = 0;
     while (in < datalen) {
+        Py_ssize_t delta = 0;
         if ((databuf[in] > 126) ||
             (databuf[in] == '=') ||
             (header && databuf[in] == '_') ||
@@ -1422,12 +1423,12 @@ binascii_b2a_qp_impl(PyModuleDef *module, Py_buffer *data, int quotetabs, int is
             if ((linelen + 3) >= MAXLINESIZE) {
                 linelen = 0;
                 if (crlf)
-                    odatalen += 3;
+                    delta += 3;
                 else
-                    odatalen += 2;
+                    delta += 2;
             }
             linelen += 3;
-            odatalen += 3;
+            delta += 3;
             in++;
         }
         else {
@@ -1439,11 +1440,11 @@ binascii_b2a_qp_impl(PyModuleDef *module, Py_buffer *data, int quotetabs, int is
                 linelen = 0;
                 /* Protect against whitespace on end of line */
                 if (in && ((databuf[in-1] == ' ') || (databuf[in-1] == '\t')))
-                    odatalen += 2;
+                    delta += 2;
                 if (crlf)
-                    odatalen += 2;
+                    delta += 2;
                 else
-                    odatalen += 1;
+                    delta += 1;
                 if (databuf[in] == '\r')
                     in += 2;
                 else
@@ -1455,15 +1456,20 @@ binascii_b2a_qp_impl(PyModuleDef *module, Py_buffer *data, int quotetabs, int is
                     (linelen + 1) >= MAXLINESIZE) {
                     linelen = 0;
                     if (crlf)
-                        odatalen += 3;
+                        delta += 3;
                     else
-                        odatalen += 2;
+                        delta += 2;
                 }
                 linelen++;
-                odatalen++;
+                delta++;
                 in++;
             }
         }
+        if (PY_SSIZE_T_MAX - delta < odatalen) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        odatalen += delta;
     }
 
     /* We allocate the output same size as input, this is overkill.
