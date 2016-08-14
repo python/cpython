@@ -25,11 +25,12 @@ static PyObject *
 _multibytecodec_MultibyteCodec_encode(MultibyteCodecObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"input", "errors", NULL};
+    static const char * const _keywords[] = {"input", "errors", NULL};
+    static _PyArg_Parser _parser = {"O|z:encode", _keywords, 0};
     PyObject *input;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|z:encode", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &input, &errors)) {
         goto exit;
     }
@@ -62,11 +63,12 @@ static PyObject *
 _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"input", "errors", NULL};
+    static const char * const _keywords[] = {"input", "errors", NULL};
+    static _PyArg_Parser _parser = {"y*|z:decode", _keywords, 0};
     Py_buffer input = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|z:decode", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &input, &errors)) {
         goto exit;
     }
@@ -98,11 +100,12 @@ static PyObject *
 _multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"input", "final", NULL};
+    static const char * const _keywords[] = {"input", "final", NULL};
+    static _PyArg_Parser _parser = {"O|i:encode", _keywords, 0};
     PyObject *input;
     int final = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|i:encode", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &input, &final)) {
         goto exit;
     }
@@ -146,11 +149,12 @@ static PyObject *
 _multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"input", "final", NULL};
+    static const char * const _keywords[] = {"input", "final", NULL};
+    static _PyArg_Parser _parser = {"y*|i:decode", _keywords, 0};
     Py_buffer input = {NULL, NULL};
     int final = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|i:decode", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &input, &final)) {
         goto exit;
     }
@@ -326,4 +330,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=f837bc56b2fa2a4e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8e86fa162c85230b input=a9049054013a1b77]*/

@@ -146,11 +146,12 @@ static PyObject *
 _elementtree_Element_find(ElementObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "namespaces", NULL};
+    static const char * const _keywords[] = {"path", "namespaces", NULL};
+    static _PyArg_Parser _parser = {"O|O:find", _keywords, 0};
     PyObject *path;
     PyObject *namespaces = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:find", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &path, &namespaces)) {
         goto exit;
     }
@@ -177,12 +178,13 @@ static PyObject *
 _elementtree_Element_findtext(ElementObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "default", "namespaces", NULL};
+    static const char * const _keywords[] = {"path", "default", "namespaces", NULL};
+    static _PyArg_Parser _parser = {"O|OO:findtext", _keywords, 0};
     PyObject *path;
     PyObject *default_value = Py_None;
     PyObject *namespaces = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OO:findtext", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &path, &default_value, &namespaces)) {
         goto exit;
     }
@@ -208,11 +210,12 @@ static PyObject *
 _elementtree_Element_findall(ElementObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "namespaces", NULL};
+    static const char * const _keywords[] = {"path", "namespaces", NULL};
+    static _PyArg_Parser _parser = {"O|O:findall", _keywords, 0};
     PyObject *path;
     PyObject *namespaces = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:findall", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &path, &namespaces)) {
         goto exit;
     }
@@ -238,11 +241,12 @@ static PyObject *
 _elementtree_Element_iterfind(ElementObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "namespaces", NULL};
+    static const char * const _keywords[] = {"path", "namespaces", NULL};
+    static _PyArg_Parser _parser = {"O|O:iterfind", _keywords, 0};
     PyObject *path;
     PyObject *namespaces = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:iterfind", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &path, &namespaces)) {
         goto exit;
     }
@@ -268,11 +272,12 @@ static PyObject *
 _elementtree_Element_get(ElementObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"key", "default", NULL};
+    static const char * const _keywords[] = {"key", "default", NULL};
+    static _PyArg_Parser _parser = {"O|O:get", _keywords, 0};
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:get", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &key, &default_value)) {
         goto exit;
     }
@@ -314,10 +319,11 @@ static PyObject *
 _elementtree_Element_iter(ElementObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"tag", NULL};
+    static const char * const _keywords[] = {"tag", NULL};
+    static _PyArg_Parser _parser = {"|O:iter", _keywords, 0};
     PyObject *tag = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:iter", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &tag)) {
         goto exit;
     }
@@ -501,10 +507,11 @@ static int
 _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"element_factory", NULL};
+    static const char * const _keywords[] = {"element_factory", NULL};
+    static _PyArg_Parser _parser = {"|O:TreeBuilder", _keywords, 0};
     PyObject *element_factory = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:TreeBuilder", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &element_factory)) {
         goto exit;
     }
@@ -585,12 +592,13 @@ static int
 _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"html", "target", "encoding", NULL};
+    static const char * const _keywords[] = {"html", "target", "encoding", NULL};
+    static _PyArg_Parser _parser = {"|OOz:XMLParser", _keywords, 0};
     PyObject *html = NULL;
     PyObject *target = NULL;
     const char *encoding = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OOz:XMLParser", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &html, &target, &encoding)) {
         goto exit;
     }
@@ -694,4 +702,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=491eb5718c1ae64b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4c5e94c28a009ce6 input=a9049054013a1b77]*/

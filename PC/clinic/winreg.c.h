@@ -87,12 +87,13 @@ static PyObject *
 winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"exc_type", "exc_value", "traceback", NULL};
+    static const char * const _keywords[] = {"exc_type", "exc_value", "traceback", NULL};
+    static _PyArg_Parser _parser = {"OOO:__exit__", _keywords, 0};
     PyObject *exc_type;
     PyObject *exc_value;
     PyObject *traceback;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOO:__exit__", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &exc_type, &exc_value, &traceback)) {
         goto exit;
     }
@@ -244,14 +245,15 @@ static PyObject *
 winreg_CreateKeyEx(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"key", "sub_key", "reserved", "access", NULL};
+    static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
+    static _PyArg_Parser _parser = {"O&Z|ii:CreateKeyEx", _keywords, 0};
     HKEY key;
     Py_UNICODE *sub_key;
     int reserved = 0;
     REGSAM access = KEY_WRITE;
     HKEY _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&Z|ii:CreateKeyEx", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         clinic_HKEY_converter, &key, &sub_key, &reserved, &access)) {
         goto exit;
     }
@@ -342,13 +344,14 @@ static PyObject *
 winreg_DeleteKeyEx(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"key", "sub_key", "access", "reserved", NULL};
+    static const char * const _keywords[] = {"key", "sub_key", "access", "reserved", NULL};
+    static _PyArg_Parser _parser = {"O&u|ii:DeleteKeyEx", _keywords, 0};
     HKEY key;
     Py_UNICODE *sub_key;
     REGSAM access = KEY_WOW64_64KEY;
     int reserved = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&u|ii:DeleteKeyEx", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         clinic_HKEY_converter, &key, &sub_key, &access, &reserved)) {
         goto exit;
     }
@@ -627,14 +630,15 @@ static PyObject *
 winreg_OpenKey(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"key", "sub_key", "reserved", "access", NULL};
+    static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
+    static _PyArg_Parser _parser = {"O&Z|ii:OpenKey", _keywords, 0};
     HKEY key;
     Py_UNICODE *sub_key;
     int reserved = 0;
     REGSAM access = KEY_READ;
     HKEY _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&Z|ii:OpenKey", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         clinic_HKEY_converter, &key, &sub_key, &reserved, &access)) {
         goto exit;
     }
@@ -678,14 +682,15 @@ static PyObject *
 winreg_OpenKeyEx(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"key", "sub_key", "reserved", "access", NULL};
+    static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
+    static _PyArg_Parser _parser = {"O&Z|ii:OpenKeyEx", _keywords, 0};
     HKEY key;
     Py_UNICODE *sub_key;
     int reserved = 0;
     REGSAM access = KEY_READ;
     HKEY _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&Z|ii:OpenKeyEx", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         clinic_HKEY_converter, &key, &sub_key, &reserved, &access)) {
         goto exit;
     }
@@ -1086,4 +1091,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c35ce71f825424d1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5b53d19cbe3f37cd input=a9049054013a1b77]*/

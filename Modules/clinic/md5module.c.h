@@ -81,10 +81,11 @@ static PyObject *
 _md5_md5(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", NULL};
+    static const char * const _keywords[] = {"string", NULL};
+    static _PyArg_Parser _parser = {"|O:md5", _keywords, 0};
     PyObject *string = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:md5", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string)) {
         goto exit;
     }
@@ -93,4 +94,4 @@ _md5_md5(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8f640a98761daffe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f86fc2f3f21831e2 input=a9049054013a1b77]*/

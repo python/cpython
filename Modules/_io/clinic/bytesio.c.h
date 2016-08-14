@@ -415,10 +415,11 @@ static int
 _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"initial_bytes", NULL};
+    static const char * const _keywords[] = {"initial_bytes", NULL};
+    static _PyArg_Parser _parser = {"|O:BytesIO", _keywords, 0};
     PyObject *initvalue = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:BytesIO", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &initvalue)) {
         goto exit;
     }
@@ -427,4 +428,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3fdb62f3e3b0544d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6382e8eb578eea64 input=a9049054013a1b77]*/

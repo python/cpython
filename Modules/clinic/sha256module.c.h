@@ -81,10 +81,11 @@ static PyObject *
 _sha256_sha256(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", NULL};
+    static const char * const _keywords[] = {"string", NULL};
+    static _PyArg_Parser _parser = {"|O:sha256", _keywords, 0};
     PyObject *string = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:sha256", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string)) {
         goto exit;
     }
@@ -110,10 +111,11 @@ static PyObject *
 _sha256_sha224(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", NULL};
+    static const char * const _keywords[] = {"string", NULL};
+    static _PyArg_Parser _parser = {"|O:sha224", _keywords, 0};
     PyObject *string = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:sha224", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string)) {
         goto exit;
     }
@@ -122,4 +124,4 @@ _sha256_sha224(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a41a21c08fcddd70 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1296ba6d0780051 input=a9049054013a1b77]*/

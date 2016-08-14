@@ -99,10 +99,11 @@ static PyObject *
 _sha512_sha512(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", NULL};
+    static const char * const _keywords[] = {"string", NULL};
+    static _PyArg_Parser _parser = {"|O:sha512", _keywords, 0};
     PyObject *string = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:sha512", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string)) {
         goto exit;
     }
@@ -132,10 +133,11 @@ static PyObject *
 _sha512_sha384(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", NULL};
+    static const char * const _keywords[] = {"string", NULL};
+    static _PyArg_Parser _parser = {"|O:sha384", _keywords, 0};
     PyObject *string = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:sha384", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &string)) {
         goto exit;
     }
@@ -170,4 +172,4 @@ exit:
 #ifndef _SHA512_SHA384_METHODDEF
     #define _SHA512_SHA384_METHODDEF
 #endif /* !defined(_SHA512_SHA384_METHODDEF) */
-/*[clinic end generated code: output=e314c0f773abd5d7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cf0da76cb603d1bf input=a9049054013a1b77]*/

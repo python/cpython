@@ -105,11 +105,12 @@ static PyObject *
 _winapi_ConnectNamedPipe(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"handle", "overlapped", NULL};
+    static const char * const _keywords[] = {"handle", "overlapped", NULL};
+    static _PyArg_Parser _parser = {"" F_HANDLE "|i:ConnectNamedPipe", _keywords, 0};
     HANDLE handle;
     int use_overlapped = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "" F_HANDLE "|i:ConnectNamedPipe", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &handle, &use_overlapped)) {
         goto exit;
     }
@@ -679,12 +680,13 @@ static PyObject *
 _winapi_ReadFile(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"handle", "size", "overlapped", NULL};
+    static const char * const _keywords[] = {"handle", "size", "overlapped", NULL};
+    static _PyArg_Parser _parser = {"" F_HANDLE "i|i:ReadFile", _keywords, 0};
     HANDLE handle;
     int size;
     int use_overlapped = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "" F_HANDLE "i|i:ReadFile", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &handle, &size, &use_overlapped)) {
         goto exit;
     }
@@ -872,12 +874,13 @@ static PyObject *
 _winapi_WriteFile(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"handle", "buffer", "overlapped", NULL};
+    static const char * const _keywords[] = {"handle", "buffer", "overlapped", NULL};
+    static _PyArg_Parser _parser = {"" F_HANDLE "O|i:WriteFile", _keywords, 0};
     HANDLE handle;
     PyObject *buffer;
     int use_overlapped = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "" F_HANDLE "O|i:WriteFile", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &handle, &buffer, &use_overlapped)) {
         goto exit;
     }
@@ -886,4 +889,4 @@ _winapi_WriteFile(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8032f3371c14749e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4bfccfb32ab726e8 input=a9049054013a1b77]*/

@@ -49,13 +49,14 @@ static int
 _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"file", "mode", "closefd", "opener", NULL};
+    static const char * const _keywords[] = {"file", "mode", "closefd", "opener", NULL};
+    static _PyArg_Parser _parser = {"O|siO:FileIO", _keywords, 0};
     PyObject *nameobj;
     const char *mode = "r";
     int closefd = 1;
     PyObject *opener = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|siO:FileIO", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &nameobj, &mode, &closefd, &opener)) {
         goto exit;
     }
@@ -372,4 +373,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=bf4b4bd6b976346d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=51924bc0ee11d58e input=a9049054013a1b77]*/

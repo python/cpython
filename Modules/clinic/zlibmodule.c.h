@@ -23,11 +23,12 @@ static PyObject *
 zlib_compress(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"", "level", NULL};
+    static const char * const _keywords[] = {"", "level", NULL};
+    static _PyArg_Parser _parser = {"y*|i:compress", _keywords, 0};
     Py_buffer data = {NULL, NULL};
     int level = Z_DEFAULT_COMPRESSION;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|i:compress", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &data, &level)) {
         goto exit;
     }
@@ -126,7 +127,8 @@ static PyObject *
 zlib_compressobj(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"level", "method", "wbits", "memLevel", "strategy", "zdict", NULL};
+    static const char * const _keywords[] = {"level", "method", "wbits", "memLevel", "strategy", "zdict", NULL};
+    static _PyArg_Parser _parser = {"|iiiiiy*:compressobj", _keywords, 0};
     int level = Z_DEFAULT_COMPRESSION;
     int method = DEFLATED;
     int wbits = MAX_WBITS;
@@ -134,7 +136,7 @@ zlib_compressobj(PyObject *module, PyObject *args, PyObject *kwargs)
     int strategy = Z_DEFAULT_STRATEGY;
     Py_buffer zdict = {NULL, NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iiiiiy*:compressobj", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &level, &method, &wbits, &memLevel, &strategy, &zdict)) {
         goto exit;
     }
@@ -171,11 +173,12 @@ static PyObject *
 zlib_decompressobj(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"wbits", "zdict", NULL};
+    static const char * const _keywords[] = {"wbits", "zdict", NULL};
+    static _PyArg_Parser _parser = {"|iO:decompressobj", _keywords, 0};
     int wbits = MAX_WBITS;
     PyObject *zdict = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO:decompressobj", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &wbits, &zdict)) {
         goto exit;
     }
@@ -460,4 +463,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=9046866b1ac5de7e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1fed251c15a9bffa input=a9049054013a1b77]*/

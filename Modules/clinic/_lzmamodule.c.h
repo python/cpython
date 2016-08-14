@@ -91,11 +91,12 @@ static PyObject *
 _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"data", "max_length", NULL};
+    static const char * const _keywords[] = {"data", "max_length", NULL};
+    static _PyArg_Parser _parser = {"y*|n:decompress", _keywords, 0};
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|n:decompress", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &data, &max_length)) {
         goto exit;
     }
@@ -141,12 +142,13 @@ static int
 _lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static char *_keywords[] = {"format", "memlimit", "filters", NULL};
+    static const char * const _keywords[] = {"format", "memlimit", "filters", NULL};
+    static _PyArg_Parser _parser = {"|iOO:LZMADecompressor", _keywords, 0};
     int format = FORMAT_AUTO;
     PyObject *memlimit = Py_None;
     PyObject *filters = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iOO:LZMADecompressor", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &format, &memlimit, &filters)) {
         goto exit;
     }
@@ -254,4 +256,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=25bf57a0845d147a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9434583fe111c771 input=a9049054013a1b77]*/

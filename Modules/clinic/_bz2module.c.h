@@ -125,11 +125,12 @@ static PyObject *
 _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"data", "max_length", NULL};
+    static const char * const _keywords[] = {"data", "max_length", NULL};
+    static _PyArg_Parser _parser = {"y*|n:decompress", _keywords, 0};
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|n:decompress", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &data, &max_length)) {
         goto exit;
     }
@@ -173,4 +174,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=71be22f38224fe84 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=40e5ef049f9e719b input=a9049054013a1b77]*/

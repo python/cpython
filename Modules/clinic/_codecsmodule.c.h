@@ -65,12 +65,13 @@ static PyObject *
 _codecs_encode(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"obj", "encoding", "errors", NULL};
+    static const char * const _keywords[] = {"obj", "encoding", "errors", NULL};
+    static _PyArg_Parser _parser = {"O|ss:encode", _keywords, 0};
     PyObject *obj;
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|ss:encode", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &obj, &encoding, &errors)) {
         goto exit;
     }
@@ -103,12 +104,13 @@ static PyObject *
 _codecs_decode(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"obj", "encoding", "errors", NULL};
+    static const char * const _keywords[] = {"obj", "encoding", "errors", NULL};
+    static _PyArg_Parser _parser = {"O|ss:decode", _keywords, 0};
     PyObject *obj;
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|ss:decode", _keywords,
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &obj, &encoding, &errors)) {
         goto exit;
     }
@@ -1455,4 +1457,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=6e89ff4423c12a9b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0221e4eece62c905 input=a9049054013a1b77]*/
