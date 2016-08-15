@@ -49,6 +49,12 @@ Library
 - Issue #27664: Add to concurrent.futures.thread.ThreadPoolExecutor()
   the ability to specify a thread name prefix.
 
+- Issue #27181: Add geometric_mean and harmonic_mean to statistics module.
+
+- Issue #27573: code.interact now prints an message when exiting.
+
+- Issue #6422: Add autorange method to timeit.Timer objects.
+
 - Issue #26750: unittest.mock.create_autospec() now works properly for
   subclasses of property() and other data descriptors.  Removes the never
   publicly used, never documented unittest.mock.DescriptorTypes tuple.
