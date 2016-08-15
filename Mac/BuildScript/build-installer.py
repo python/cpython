@@ -1249,6 +1249,8 @@ def buildPython():
         LDVERSION = LDVERSION.replace('$(VERSION)', VERSION)
         LDVERSION = LDVERSION.replace('$(ABIFLAGS)', ABIFLAGS)
         config_suffix = '-' + LDVERSION
+        if getVersionMajorMinor() >= (3, 6):
+            config_suffix = config_suffix + '-darwin'
     else:
         config_suffix = ''      # Python 2.x
 
@@ -1274,7 +1276,7 @@ def buildPython():
     fp.write(data)
     fp.close()
 
-    # fix _sysconfigdata if it exists
+    # fix _sysconfigdata
     #
     # TODO: make this more robust!  test_sysconfig_module of
     # distutils.tests.test_sysconfig.SysconfigTestCase tests that
@@ -1288,28 +1290,30 @@ def buildPython():
     # _sysconfigdata.py).
 
     import pprint
-    path = os.path.join(path_to_lib, '_sysconfigdata.py')
-    if os.path.exists(path):
-        fp = open(path, 'r')
-        data = fp.read()
-        fp.close()
-        # create build_time_vars dict
-        exec(data)
-        vars = {}
-        for k, v in build_time_vars.items():
-            if type(v) == type(''):
-                for p in (include_path, lib_path):
-                    v = v.replace(' ' + p, '')
-                    v = v.replace(p + ' ', '')
-            vars[k] = v
+    if getVersionMajorMinor() >= (3, 6):
+        path = os.path.join(path_to_lib, 'plat-darwin', '_sysconfigdata_m.py')
+    else:
+        path = os.path.join(path_to_lib, '_sysconfigdata.py')
+    fp = open(path, 'r')
+    data = fp.read()
+    fp.close()
+    # create build_time_vars dict
+    exec(data)
+    vars = {}
+    for k, v in build_time_vars.items():
+        if type(v) == type(''):
+            for p in (include_path, lib_path):
+                v = v.replace(' ' + p, '')
+                v = v.replace(p + ' ', '')
+        vars[k] = v
 
-        fp = open(path, 'w')
-        # duplicated from sysconfig._generate_posix_vars()
-        fp.write('# system configuration generated and used by'
-                    ' the sysconfig module\n')
-        fp.write('build_time_vars = ')
-        pprint.pprint(vars, stream=fp)
-        fp.close()
+    fp = open(path, 'w')
+    # duplicated from sysconfig._generate_posix_vars()
+    fp.write('# system configuration generated and used by'
+                ' the sysconfig module\n')
+    fp.write('build_time_vars = ')
+    pprint.pprint(vars, stream=fp)
+    fp.close()
 
     # Add symlinks in /usr/local/bin, using relative links
     usr_local_bin = os.path.join(rootDir, 'usr', 'local', 'bin')
