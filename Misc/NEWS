@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 4
 Core and Builtins
 -----------------
 
+- Issue #16764: Support keyword arguments to zlib.decompress().  Patch by
+  Xiang Zhang.
+
 - Issue #27704: Optimized creating bytes and bytearray from byte-like objects
   and iterables.  Speed up to 3 times for short objects.  Original patch by
   Naoki Inada.
