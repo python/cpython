@@ -795,17 +795,15 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     }
 
     /* Is it an int? */
-    count = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
-    if (count == -1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
+    if (PyIndex_Check(arg)) {
+        count = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
+        if (count == -1 && PyErr_Occurred()) {
             return -1;
-        PyErr_Clear();
-    }
-    else if (count < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative count");
-        return -1;
-    }
-    else {
+        }
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError, "negative count");
+            return -1;
+        }
         if (count > 0) {
             if (PyByteArray_Resize((PyObject *)self, count))
                 return -1;

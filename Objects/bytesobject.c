@@ -2563,17 +2563,15 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     /* Is it an integer? */
-    size = PyNumber_AsSsize_t(x, PyExc_OverflowError);
-    if (size == -1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
+    if (PyIndex_Check(x)) {
+        size = PyNumber_AsSsize_t(x, PyExc_OverflowError);
+        if (size == -1 && PyErr_Occurred()) {
             return NULL;
-        PyErr_Clear();
-    }
-    else if (size < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative count");
-        return NULL;
-    }
-    else {
+        }
+        if (size < 0) {
+            PyErr_SetString(PyExc_ValueError, "negative count");
+            return NULL;
+        }
         new = _PyBytes_FromSize(size, 1);
         if (new == NULL)
             return NULL;
