@@ -2144,6 +2144,7 @@ PyInit_math(void)
 
     PyModule_AddObject(m, "pi", PyFloat_FromDouble(Py_MATH_PI));
     PyModule_AddObject(m, "e", PyFloat_FromDouble(Py_MATH_E));
+    PyModule_AddObject(m, "tau", PyFloat_FromDouble(Py_MATH_TAU));  /* 2pi */
     PyModule_AddObject(m, "inf", PyFloat_FromDouble(m_inf()));
 #if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
     PyModule_AddObject(m, "nan", PyFloat_FromDouble(m_nan()));

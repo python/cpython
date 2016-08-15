@@ -55,6 +55,12 @@ extern double pow(double, double);
 #define Py_MATH_E 2.7182818284590452354
 #endif
 
+/* Tau (2pi) to 40 digits, taken from tauday.com/tau-digits. */
+#ifndef Py_MATH_TAU
+#define Py_MATH_TAU 6.2831853071795864769252867665590057683943L
+#endif
+
+
 /* On x86, Py_FORCE_DOUBLE forces a floating-point number out of an x87 FPU
    register and into a 64-bit memory location, rounding from extended
    precision to double precision in the process.  On other platforms it does

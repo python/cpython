@@ -426,6 +426,13 @@ Constants
 
    The mathematical constant e = 2.718281..., to available precision.
 
+.. data:: tau
+
+   The mathematical constant τ = 6.283185..., to available precision.
+   Tau is a circle constant equal to 2π, the ratio of a circle's circumference to
+   its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
+   Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
+   `Tau day <http://tauday.com/>`_ by eating twice as much pie!
 
 .. data:: inf
 
