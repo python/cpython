@@ -412,6 +412,11 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
 {
     int err = 0;
     long depth = 0;
+    PyObject *last_file = NULL;
+    int last_line = -1;
+    PyObject *last_name = NULL;
+    long cnt = 0;
+    PyObject *line;
     PyTracebackObject *tb1 = tb;
     while (tb1 != NULL) {
         depth++;
@@ -419,15 +424,38 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
     }
     while (tb != NULL && err == 0) {
         if (depth <= limit) {
-            err = tb_displayline(f,
-                                 tb->tb_frame->f_code->co_filename,
-                                 tb->tb_lineno,
-                                 tb->tb_frame->f_code->co_name);
+            if (last_file != NULL &&
+                tb->tb_frame->f_code->co_filename == last_file &&
+                last_line != -1 && tb->tb_lineno == last_line &&
+                last_name != NULL &&
+                tb->tb_frame->f_code->co_name == last_name) {
+                    cnt++;
+                } else {
+                    if (cnt > 3) {
+                        line = PyUnicode_FromFormat(
+                        "  [Previous line repeated %d more times]\n", cnt-3);
+                        err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
+                    }
+                    last_file = tb->tb_frame->f_code->co_filename;
+                    last_line = tb->tb_lineno;
+                    last_name = tb->tb_frame->f_code->co_name;
+                    cnt = 0;
+                }
+            if (cnt < 3)
+                err = tb_displayline(f,
+                                     tb->tb_frame->f_code->co_filename,
+                                     tb->tb_lineno,
+                                     tb->tb_frame->f_code->co_name);
         }
         depth--;
         tb = tb->tb_next;
         if (err == 0)
             err = PyErr_CheckSignals();
+    }
+    if (cnt > 3) {
+        line = PyUnicode_FromFormat(
+        "  [Previous line repeated %d more times]\n", cnt-3);
+        err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
     }
     return err;
 }

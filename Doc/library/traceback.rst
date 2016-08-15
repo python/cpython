@@ -291,6 +291,21 @@ capture data for later printing in a lightweight fashion.
       of tuples. Each tuple should be a 4-tuple with filename, lineno, name,
       line as the elements.
 
+   .. method:: format()
+
+      Returns a list of strings ready for printing.  Each string in the
+      resulting list corresponds to a single frame from the stack.
+      Each string ends in a newline; the strings may contain internal
+      newlines as well, for those items with source text lines.
+
+      For long sequences of the same frame and line, the first few
+      repetitions are shown, followed by a summary line stating the exact
+      number of further repetitions.
+
+    .. versionchanged:: 3.6
+
+    Long sequences of repeated frames are now abbreviated.
+
 
 :class:`FrameSummary` Objects
 -----------------------------
