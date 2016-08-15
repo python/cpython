@@ -318,11 +318,11 @@ zlib.decompress
 
     data: Py_buffer
         Compressed data.
+    /
     wbits: int(c_default="MAX_WBITS") = MAX_WBITS
         The window buffer size and container format.
     bufsize: ssize_t(c_default="DEF_BUF_SIZE") = DEF_BUF_SIZE
         The initial output buffer size.
-    /
 
 Returns a bytes object containing the uncompressed data.
 [clinic start generated code]*/
@@ -330,7 +330,7 @@ Returns a bytes object containing the uncompressed data.
 static PyObject *
 zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      Py_ssize_t bufsize)
-/*[clinic end generated code: output=77c7e35111dc8c42 input=c13dd2c5696cd17f]*/
+/*[clinic end generated code: output=77c7e35111dc8c42 input=21960936208e9a5b]*/
 {
     PyObject *RetVal = NULL;
     Byte *ibuf;
@@ -750,11 +750,11 @@ zlib.Decompress.decompress
 
     data: Py_buffer
         The binary data to decompress.
+    /
     max_length: ssize_t = 0
         The maximum allowable length of the decompressed data.
         Unconsumed input data will be stored in
         the unconsumed_tail attribute.
-    /
 
 Return a bytes object containing the decompressed version of the data.
 
@@ -766,7 +766,7 @@ Call the flush() method to clear these buffers.
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
                                 Py_ssize_t max_length)
-/*[clinic end generated code: output=6e5173c74e710352 input=d6de9b53c4566b8a]*/
+/*[clinic end generated code: output=6e5173c74e710352 input=b85a212a012b770a]*/
 {
     int err = Z_OK;
     Py_ssize_t ibuflen, obuflen = DEF_BUF_SIZE, hard_limit;

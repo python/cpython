@@ -44,7 +44,7 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_decompress__doc__,
-"decompress($module, data, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE, /)\n"
+"decompress($module, data, /, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)\n"
 "--\n"
 "\n"
 "Returns a bytes object containing the uncompressed data.\n"
@@ -57,21 +57,23 @@ PyDoc_STRVAR(zlib_decompress__doc__,
 "    The initial output buffer size.");
 
 #define ZLIB_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)zlib_decompress, METH_VARARGS, zlib_decompress__doc__},
+    {"decompress", (PyCFunction)zlib_decompress, METH_VARARGS|METH_KEYWORDS, zlib_decompress__doc__},
 
 static PyObject *
 zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      Py_ssize_t bufsize);
 
 static PyObject *
-zlib_decompress(PyObject *module, PyObject *args)
+zlib_decompress(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "wbits", "bufsize", NULL};
+    static _PyArg_Parser _parser = {"y*|iO&:decompress", _keywords, 0};
     Py_buffer data = {NULL, NULL};
     int wbits = MAX_WBITS;
     Py_ssize_t bufsize = DEF_BUF_SIZE;
 
-    if (!PyArg_ParseTuple(args, "y*|iO&:decompress",
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &data, &wbits, ssize_t_converter, &bufsize)) {
         goto exit;
     }
@@ -228,7 +230,7 @@ exit:
 }
 
 PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
-"decompress($self, data, max_length=0, /)\n"
+"decompress($self, data, /, max_length=0)\n"
 "--\n"
 "\n"
 "Return a bytes object containing the decompressed version of the data.\n"
@@ -245,20 +247,22 @@ PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
 "Call the flush() method to clear these buffers.");
 
 #define ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)zlib_Decompress_decompress, METH_VARARGS, zlib_Decompress_decompress__doc__},
+    {"decompress", (PyCFunction)zlib_Decompress_decompress, METH_VARARGS|METH_KEYWORDS, zlib_Decompress_decompress__doc__},
 
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
                                 Py_ssize_t max_length);
 
 static PyObject *
-zlib_Decompress_decompress(compobject *self, PyObject *args)
+zlib_Decompress_decompress(compobject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "max_length", NULL};
+    static _PyArg_Parser _parser = {"y*|O&:decompress", _keywords, 0};
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|O&:decompress",
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &data, ssize_t_converter, &max_length)) {
         goto exit;
     }
@@ -463,4 +467,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=1fed251c15a9bffa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=48911ef429b65903 input=a9049054013a1b77]*/
