@@ -1239,6 +1239,7 @@ PyInit_cmath(void)
     PyModule_AddObject(m, "pi",
                        PyFloat_FromDouble(Py_MATH_PI));
     PyModule_AddObject(m, "e", PyFloat_FromDouble(Py_MATH_E));
+    PyModule_AddObject(m, "tau", PyFloat_FromDouble(Py_MATH_TAU)); /* 2pi */
 
     /* initialize special value tables */
 

@@ -253,6 +253,10 @@ Constants
 
    The mathematical constant *e*, as a float.
 
+.. data:: tau
+
+   The mathematical constant *τ*, as a float.
+
 .. index:: module: math
 
 Note that the selection of functions is similar, but not identical, to that in
@@ -276,5 +280,3 @@ cuts for numerical purposes, a good reference should be the following:
    Kahan, W:  Branch cuts for complex elementary functions; or, Much ado about
    nothing's sign bit.  In Iserles, A., and Powell, M. (eds.), The state of the art
    in numerical analysis. Clarendon Press (1987) pp165-211.
-
-
