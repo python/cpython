@@ -10,6 +10,10 @@ What's New in Python 3.6.0 alpha 4
 Core and Builtins
 -----------------
 
+- Issue #27704: Optimized creating bytes and bytearray from byte-like objects
+  and iterables.  Speed up to 3 times for short objects.  Original patch by
+  Naoki Inada.
+
 - Issue #26823: Large sections of repeated lines in tracebacks are now
   abbreviated as "[Previous line repeated {count} more times]" by the builtin
   traceback rendering. Patch by Emanuel Barry.
