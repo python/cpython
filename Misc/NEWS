@@ -61,7 +61,7 @@ Library
   to ref count problem introduced in code for Issue #27038 in 3.6.0a3.
   Patch by Xiang Zhang.
 
-- Issue #12345: Add mathemathcal constant tau to math and cmath. See also
+- Issue #12345: Add mathemathical constant tau to math and cmath. See also
   PEP 628.
 
 - Issue #26823: traceback.StackSummary.format now abbreviates large sections of
