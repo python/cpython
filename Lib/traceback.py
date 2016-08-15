@@ -385,9 +385,30 @@ class StackSummary(list):
         resulting list corresponds to a single frame from the stack.
         Each string ends in a newline; the strings may contain internal
         newlines as well, for those items with source text lines.
+
+        For long sequences of the same frame and line, the first few
+        repetitions are shown, followed by a summary line stating the exact
+        number of further repetitions.
         """
         result = []
+        last_file = None
+        last_line = None
+        last_name = None
+        count = 0
         for frame in self:
+            if (last_file is not None and last_file == frame.filename and
+                last_line is not None and last_line == frame.lineno and
+                last_name is not None and last_name == frame.name):
+                count += 1
+            else:
+                if count > 3:
+                    result.append(f'  [Previous line repeated {count-3} more times]\n')
+                last_file = frame.filename
+                last_line = frame.lineno
+                last_name = frame.name
+                count = 0
+            if count >= 3:
+                continue
             row = []
             row.append('  File "{}", line {}, in {}\n'.format(
                 frame.filename, frame.lineno, frame.name))
@@ -397,6 +418,8 @@ class StackSummary(list):
                 for name, value in sorted(frame.locals.items()):
                     row.append('    {name} = {value}\n'.format(name=name, value=value))
             result.append(''.join(row))
+        if count > 3:
+            result.append(f'  [Previous line repeated {count-3} more times]\n')
         return result
 
 

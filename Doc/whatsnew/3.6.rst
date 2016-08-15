@@ -438,6 +438,14 @@ not work in future versions of Tcl.
 (Contributed by Serhiy Storchaka in :issue:`22115`).
 
 
+traceback
+---------
+
+The :meth:`~traceback.StackSummary.format` method now abbreviates long sequences
+of repeated lines as ``"[Previous line repeated {count} more times]"``.
+(Contributed by Emanuel Barry in :issue:`26823`.)
+
+
 typing
 ------
 
@@ -596,6 +604,10 @@ Build and C API Changes
   parameters <positional-only_parameter>`.  Positional-only parameters are
   defined by empty names.
   (Contributed by Serhiy Storchaka in :issue:`26282`).
+
+* ``PyTraceback_Print`` method now abbreviates long sequences of repeated lines
+  as ``"[Previous line repeated {count} more times]"``.
+  (Contributed by Emanuel Barry in :issue:`26823`.)
 
 
 Deprecated
