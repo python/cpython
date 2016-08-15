@@ -652,6 +652,33 @@ The module defines the following classes, functions and decorators:
               yield start
               start += 1
 
+.. class:: AnyStr
+
+   ``AnyStr`` is a type variable defined as
+   ``AnyStr = TypeVar('AnyStr', str, bytes)``.
+
+   It is meant to be used for functions that may accept any kind of string
+   without allowing different kinds of strings to mix. For example::
+
+      def concat(a: AnyStr, b: AnyStr) -> AnyStr:
+          return a + b
+
+      concat(u"foo", u"bar")  # Ok, output has type 'unicode'
+      concat(b"foo", b"bar")  # Ok, output has type 'bytes'
+      concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
+
+.. class:: Text
+
+   ``Text`` is an alias for ``str``. It is provided to supply a forward
+   compatible path for Python 2 code: in Python 2, ``Text`` is an alias for
+   ``unicode``.
+
+   Use ``Text`` to indicate that a value must contain a unicode string in
+   a manner that is compatible with both Python 2 and Python 3::
+
+       def add_unicode_checkmark(text: Text) -> Text:
+           return text + u' \u2713'
+
 .. class:: io
 
    Wrapper namespace for I/O stream types.
