@@ -677,7 +677,9 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 
 #ifdef __FreeBSD__
 #include <osreldate.h>
-#if __FreeBSD_version > 500039
+#if (__FreeBSD_version >= 500040 && __FreeBSD_version < 602113) || \
+    (__FreeBSD_version >= 700000 && __FreeBSD_version < 700054) || \
+    (__FreeBSD_version >= 800000 && __FreeBSD_version < 800001)
 # define _PY_PORT_CTYPE_UTF8_ISSUE
 #endif
 #endif
@@ -688,6 +690,12 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #endif
 
 #ifdef _PY_PORT_CTYPE_UTF8_ISSUE
+#ifndef __cplusplus
+   /* The workaround below is unsafe in C++ because
+    * the <locale> defines these symbols as real functions,
+    * with a slightly different signature.
+    * See issue #10910
+    */
 #include <ctype.h>
 #include <wctype.h>
 #undef isalnum
@@ -704,6 +712,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #define tolower(c) towlower(btowc(c))
 #undef toupper
 #define toupper(c) towupper(btowc(c))
+#endif
 #endif
 
 
