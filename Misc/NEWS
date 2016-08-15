@@ -175,6 +175,10 @@ Build
 - Issue #26662: Set PYTHON_FOR_GEN in configure as the Python program to be
   used for file generation during the build.
 
+- Issue #10910: Avoid C++ compilation errors on FreeBSD and OS X.
+  Also update FreedBSD version checks for the original ctype UTF-8 workaround.
+
+
 What's New in Python 3.5.2?
 ===========================
 
