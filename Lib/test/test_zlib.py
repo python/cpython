@@ -169,6 +169,14 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
         self.assertEqual(zlib.decompress(x), HAMLET_SCENE)
         with self.assertRaises(TypeError):
             zlib.compress(data=HAMLET_SCENE, level=3)
+        self.assertEqual(zlib.decompress(x,
+                                         wbits=zlib.MAX_WBITS,
+                                         bufsize=zlib.DEF_BUF_SIZE),
+                         HAMLET_SCENE)
+        with self.assertRaises(TypeError):
+            zlib.decompress(data=x,
+                            wbits=zlib.MAX_WBITS,
+                            bufsize=zlib.DEF_BUF_SIZE)
 
     def test_speech128(self):
         # compress more data
@@ -240,6 +248,27 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
             self.assertIsInstance(dco.unconsumed_tail, bytes)
             self.assertIsInstance(dco.unused_data, bytes)
 
+    def test_keywords(self):
+        level = 2
+        method = zlib.DEFLATED
+        wbits = -12
+        memLevel = 9
+        strategy = zlib.Z_FILTERED
+        co = zlib.compressobj(level=level,
+                              method=method,
+                              wbits=wbits,
+                              memLevel=memLevel,
+                              strategy=strategy,
+                              zdict=b"")
+        do = zlib.decompressobj(wbits=wbits, zdict=b"")
+        with self.assertRaises(TypeError):
+            co.compress(data=HAMLET_SCENE)
+        with self.assertRaises(TypeError):
+            do.decompress(data=zlib.compress(HAMLET_SCENE))
+        x = co.compress(HAMLET_SCENE) + co.flush()
+        y = do.decompress(x, max_length=len(HAMLET_SCENE)) + do.flush()
+        self.assertEqual(HAMLET_SCENE, y)
+
     def test_compressoptions(self):
         # specify lots of options to compressobj()
         level = 2
@@ -254,10 +283,6 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         y1 = dco.decompress(x1 + x2)
         y2 = dco.flush()
         self.assertEqual(HAMLET_SCENE, y1 + y2)
-
-        # keyword arguments should also be supported
-        zlib.compressobj(level=level, method=method, wbits=wbits,
-            memLevel=memLevel, strategy=strategy, zdict=b"")
 
     def test_compressincremental(self):
         # compress object in steps, decompress object as one-shot

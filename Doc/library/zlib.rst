@@ -129,7 +129,7 @@ The available exception and functions in this module are:
       platforms, use ``crc32(data) & 0xffffffff``.
 
 
-.. function:: decompress(data[, wbits[, bufsize]])
+.. function:: decompress(data, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)
 
    Decompresses the bytes in *data*, returning a bytes object containing the
    uncompressed data.  The *wbits* parameter depends on
@@ -164,14 +164,16 @@ The available exception and functions in this module are:
    When decompressing a stream, the window size must not be smaller
    than the size originally used to compress the stream; using a too-small
    value may result in an :exc:`error` exception. The default *wbits* value
-   is 15, which corresponds to the largest window size and requires a zlib
-   header and trailer to be included.
+   corresponds to the largest window size and requires a zlib header and
+   trailer to be included.
 
    *bufsize* is the initial size of the buffer used to hold decompressed data.  If
    more space is required, the buffer size will be increased as needed, so you
    don't have to get this value exactly right; tuning it will only save a few calls
-   to :c:func:`malloc`.  The default size is 16384.
+   to :c:func:`malloc`.
 
+   .. versionchanged:: 3.6
+      *wbits* and *bufsize* can be used as keyword arguments.
 
 .. function:: decompressobj(wbits=15[, zdict])
 
@@ -257,7 +259,7 @@ Decompression objects support the following methods and attributes:
    .. versionadded:: 3.3
 
 
-.. method:: Decompress.decompress(data[, max_length])
+.. method:: Decompress.decompress(data, max_length=0)
 
    Decompress *data*, returning a bytes object containing the uncompressed data
    corresponding to at least part of the data in *string*.  This data should be
@@ -269,9 +271,11 @@ Decompression objects support the following methods and attributes:
    no longer than *max_length*. This may mean that not all of the compressed input
    can be processed; and unconsumed data will be stored in the attribute
    :attr:`unconsumed_tail`. This bytestring must be passed to a subsequent call to
-   :meth:`decompress` if decompression is to continue.  If *max_length* is not
-   supplied then the whole input is decompressed, and :attr:`unconsumed_tail` is
-   empty.
+   :meth:`decompress` if decompression is to continue.  If *max_length* is zero
+   then the whole input is decompressed, and :attr:`unconsumed_tail` is empty.
+
+   .. versionchanged:: 3.6
+      *max_length* can be used as a keyword argument.
 
 
 .. method:: Decompress.flush([length])
