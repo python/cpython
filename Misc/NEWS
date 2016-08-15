@@ -57,6 +57,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12345: Add mathemathcal constant tau to math and cmath. See also
+  PEP 628.
+
 - Issue #26823: traceback.StackSummary.format now abbreviates large sections of
   repeated lines as "[Previous line repeated {count} more times]" (this change
   then further affects other traceback display operations in the module). Patch
