@@ -97,6 +97,13 @@ Tests
 - Issue #27369: In test_pyexpat, avoid testing an error message detail that
   changed in Expat 2.2.0.
 
+Build
+-----
+
+- Issue #10910: Avoid C++ compilation errors on FreeBSD and OS X.
+  Also update FreedBSD version checks for the original ctype UTF-8 workaround.
+
+
 What's New in Python 2.7.12?
 ============================
 
