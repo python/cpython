@@ -207,7 +207,12 @@ Example of fatal error on buffer overflow using
 Other Language Changes
 ======================
 
-* None yet.
+Some smaller changes made to the core Python language are:
+
+* Long sequences of repeated traceback lines are now abbreviated as
+  ``"[Previous line repeated {count} more times]"`` (see
+  :ref:`py36-traceback` for an example).
+  (Contributed by Emanuel Barry in :issue:`26823`.)
 
 
 New Modules
@@ -438,11 +443,26 @@ not work in future versions of Tcl.
 (Contributed by Serhiy Storchaka in :issue:`22115`).
 
 
+.. _py36-traceback:
+
 traceback
 ---------
 
-The :meth:`~traceback.StackSummary.format` method now abbreviates long sequences
-of repeated lines as ``"[Previous line repeated {count} more times]"``.
+Both the traceback module and the interpreter's builtin exception display now
+abbreviate long sequences of repeated lines in tracebacks as shown in the
+following example::
+
+    >>> def f(): f()
+    ...
+    >>> f()
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "<stdin>", line 1, in f
+      File "<stdin>", line 1, in f
+      File "<stdin>", line 1, in f
+      [Previous line repeated 995 more times]
+    RecursionError: maximum recursion depth exceeded
+
 (Contributed by Emanuel Barry in :issue:`26823`.)
 
 
