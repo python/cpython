@@ -191,10 +191,13 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
             }
 
             if (errno == EINTR) {
-                if (PyErr_CheckSignals()) {
-                    return -1;
+                if (raise) {
+                    if (PyErr_CheckSignals()) {
+                        return -1;
+                    }
                 }
-                /* retry getrandom() */
+
+                /* retry getrandom() if it was interrupted by a signal */
                 continue;
             }
 
