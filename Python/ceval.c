@@ -3795,8 +3795,8 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     PyObject **fastlocals, **freevars;
     PyThreadState *tstate;
     PyObject *x, *u;
-    int total_args = co->co_argcount + co->co_kwonlyargcount;
-    int i, n;
+    const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
+    Py_ssize_t i, n;
     PyObject *kwdict;
 
     assert((kwcount == 0) || (kws != NULL));
@@ -3864,7 +3864,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         PyObject **co_varnames;
         PyObject *keyword = kws[2*i];
         PyObject *value = kws[2*i + 1];
-        int j;
+        Py_ssize_t j;
 
         if (keyword == NULL || !PyUnicode_Check(keyword)) {
             PyErr_Format(PyExc_TypeError,
@@ -3928,11 +3928,13 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
 
     /* Add missing positional arguments (copy default values from defs) */
     if (argcount < co->co_argcount) {
-        int m = co->co_argcount - defcount;
-        int missing = 0;
-        for (i = argcount; i < m; i++)
-            if (GETLOCAL(i) == NULL)
+        Py_ssize_t m = co->co_argcount - defcount;
+        Py_ssize_t missing = 0;
+        for (i = argcount; i < m; i++) {
+            if (GETLOCAL(i) == NULL) {
                 missing++;
+            }
+        }
         if (missing) {
             missing_arguments(co, missing, defcount, fastlocals);
             goto fail;
@@ -3952,7 +3954,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
 
     /* Add missing keyword arguments (copy default values from kwdefs) */
     if (co->co_kwonlyargcount > 0) {
-        int missing = 0;
+        Py_ssize_t missing = 0;
         for (i = co->co_argcount; i < total_args; i++) {
             PyObject *name;
             if (GETLOCAL(i) != NULL)
