@@ -1456,6 +1456,10 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
     case 1:
         if (!PyArg_ParseTuple(args,"i;n", &n))
             return NULL;
+        if (n < 0) {
+            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
+            return NULL;
+        }
         rtn2 = winnstr(self->win, rtn, Py_MIN(n, 1023));
         break;
     case 2:
@@ -1466,6 +1470,10 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
     case 3:
         if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
             return NULL;
+        if (n < 0) {
+            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
+            return NULL;
+        }
         rtn2 = mvwinnstr(self->win, y, x, rtn, Py_MIN(n,1023));
         break;
     default:
