@@ -30,6 +30,7 @@ import linecache
 from code import InteractiveInterpreter
 from platform import python_version, system
 
+from idlelib import testing
 from idlelib.editor import EditorWindow, fixwordbreaks
 from idlelib.filelist import FileList
 from idlelib.colorizer import ColorDelegator
@@ -1448,8 +1449,9 @@ def main():
     enable_edit = enable_edit or edit_start
     enable_shell = enable_shell or not enable_edit
 
-    # Setup root.
-    if use_subprocess:  # Don't break user code run in IDLE process
+    # Setup root.  Don't break user code run in IDLE process.
+    # Don't change environment when testing.
+    if use_subprocess and not testing:
         NoDefaultRoot()
     root = Tk(className="Idle")
     root.withdraw()
