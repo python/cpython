@@ -77,7 +77,7 @@ win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
 }
 
 /* Issue #25003: Don't use getentropy() on Solaris (available since
- * Solaris 11.3), it is blocking whereas os.urandom() should not block. */
+   Solaris 11.3), it is blocking whereas os.urandom() should not block. */
 #elif defined(HAVE_GETENTROPY) && !defined(sun)
 #define PY_GETENTROPY 1
 
@@ -119,25 +119,32 @@ py_getentropy(char *buffer, Py_ssize_t size, int raise)
 #if defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)
 #define PY_GETRANDOM 1
 
+/* Call getrandom()
+   - Return 1 on success
+   - Return 0 if getrandom() syscall is not available (fails with ENOSYS).
+   - Raise an exception (if raise is non-zero) and return -1 on error:
+     getrandom() failed with EINTR and the Python signal handler raised an
+     exception, or getrandom() failed with a different error. */
 static int
 py_getrandom(void *buffer, Py_ssize_t size, int raise)
 {
     /* Is getrandom() supported by the running kernel?
-     * Need Linux kernel 3.17 or newer, or Solaris 11.3 or newer */
+       Need Linux kernel 3.17 or newer, or Solaris 11.3 or newer */
     static int getrandom_works = 1;
 
     /* getrandom() on Linux will block if called before the kernel has
-     * initialized the urandom entropy pool. This will cause Python
-     * to hang on startup if called very early in the boot process -
-     * see https://bugs.python.org/issue26839. To avoid this, use the
-     * GRND_NONBLOCK flag. */
+       initialized the urandom entropy pool. This will cause Python
+       to hang on startup if called very early in the boot process -
+       see https://bugs.python.org/issue26839. To avoid this, use the
+       GRND_NONBLOCK flag. */
     const int flags = GRND_NONBLOCK;
 
     char *dest;
     long n;
 
-    if (!getrandom_works)
+    if (!getrandom_works) {
         return 0;
+    }
 
     dest = buffer;
     while (0 < size) {
@@ -161,8 +168,8 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
         }
 #else
         /* On Linux, use the syscall() function because the GNU libc doesn't
-         * expose the Linux getrandom() syscall yet. See:
-         * https://sourceware.org/bugzilla/show_bug.cgi?id=17252 */
+           expose the Linux getrandom() syscall yet. See:
+           https://sourceware.org/bugzilla/show_bug.cgi?id=17252 */
         if (raise) {
             Py_BEGIN_ALLOW_THREADS
             n = syscall(SYS_getrandom, dest, n, flags);
@@ -180,12 +187,12 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
             }
             if (errno == EAGAIN) {
                 /* If we failed with EAGAIN, the entropy pool was
-                 * uninitialized. In this case, we return failure to fall
-                 * back to reading from /dev/urandom.
-                 *
-                 * Note: In this case the data read will not be random so
-                 * should not be used for cryptographic purposes. Retaining
-                 * the existing semantics for practical purposes. */
+                   uninitialized. In this case, we return failure to fall
+                   back to reading from /dev/urandom.
+
+                   Note: In this case the data read will not be random so
+                   should not be used for cryptographic purposes. Retaining
+                   the existing semantics for practical purposes. */
                 getrandom_works = 0;
                 return 0;
             }
@@ -221,130 +228,117 @@ static struct {
 } urandom_cache = { -1 };
 
 
-/* Read size bytes from /dev/urandom into buffer.
-   Return 0 success, or return -1 on error. */
+/* Read 'size' random bytes from getrandom(). Fall back on reading from
+   /dev/urandom if getrandom() is not available.
+
+   Return 0 on success. Raise an exception (if raise is non-zero) and return -1
+   on error. */
 static int
-dev_urandom_noraise(char *buffer, Py_ssize_t size)
+dev_urandom(char *buffer, Py_ssize_t size, int raise)
 {
     int fd;
     Py_ssize_t n;
-
-    assert (0 < size);
-
-#ifdef PY_GETRANDOM
-    if (py_getrandom(buffer, size, 0) == 1) {
-        return 0;
-    }
-    /* getrandom() is not supported by the running kernel, fall back
-     * on reading /dev/urandom */
-#endif
-
-    fd = _Py_open_noraise("/dev/urandom", O_RDONLY);
-    if (fd < 0) {
-        return -1;
-    }
-
-    while (0 < size)
-    {
-        do {
-            n = read(fd, buffer, (size_t)size);
-        } while (n < 0 && errno == EINTR);
-
-        if (n <= 0) {
-            /* stop on error or if read(size) returned 0 */
-            return -1;
-        }
-
-        buffer += n;
-        size -= n;
-    }
-    close(fd);
-
-    return 0;
-}
-
-/* Read size bytes from /dev/urandom into buffer.
-   Return 0 on success, raise an exception and return -1 on error. */
-static int
-dev_urandom_python(char *buffer, Py_ssize_t size)
-{
-    int fd;
-    Py_ssize_t n;
-    struct _Py_stat_struct st;
 #ifdef PY_GETRANDOM
     int res;
 #endif
 
-    if (size <= 0)
-        return 0;
+    assert(size > 0);
 
 #ifdef PY_GETRANDOM
-    res = py_getrandom(buffer, size, 1);
-    if (res < 0)
+    res = py_getrandom(buffer, size, raise);
+    if (res < 0) {
         return -1;
-    if (res == 1)
+    }
+    if (res == 1) {
         return 0;
+    }
     /* getrandom() is not supported by the running kernel, fall back
-     * on reading /dev/urandom */
+       on reading /dev/urandom */
 #endif
 
-    if (urandom_cache.fd >= 0) {
-        /* Does the fd point to the same thing as before? (issue #21207) */
-        if (_Py_fstat_noraise(urandom_cache.fd, &st)
-            || st.st_dev != urandom_cache.st_dev
-            || st.st_ino != urandom_cache.st_ino) {
-            /* Something changed: forget the cached fd (but don't close it,
-               since it probably points to something important for some
-               third-party code). */
-            urandom_cache.fd = -1;
-        }
-    }
-    if (urandom_cache.fd >= 0)
-        fd = urandom_cache.fd;
-    else {
-        fd = _Py_open("/dev/urandom", O_RDONLY);
-        if (fd < 0) {
-            if (errno == ENOENT || errno == ENXIO ||
-                errno == ENODEV || errno == EACCES)
-                PyErr_SetString(PyExc_NotImplementedError,
-                                "/dev/urandom (or equivalent) not found");
-            /* otherwise, keep the OSError exception raised by _Py_open() */
-            return -1;
-        }
+
+    if (raise) {
+        struct _Py_stat_struct st;
+
         if (urandom_cache.fd >= 0) {
-            /* urandom_fd was initialized by another thread while we were
-               not holding the GIL, keep it. */
-            close(fd);
-            fd = urandom_cache.fd;
+            /* Does the fd point to the same thing as before? (issue #21207) */
+            if (_Py_fstat_noraise(urandom_cache.fd, &st)
+                || st.st_dev != urandom_cache.st_dev
+                || st.st_ino != urandom_cache.st_ino) {
+                /* Something changed: forget the cached fd (but don't close it,
+                   since it probably points to something important for some
+                   third-party code). */
+                urandom_cache.fd = -1;
+            }
         }
+        if (urandom_cache.fd >= 0)
+            fd = urandom_cache.fd;
         else {
-            if (_Py_fstat(fd, &st)) {
-                close(fd);
+            fd = _Py_open("/dev/urandom", O_RDONLY);
+            if (fd < 0) {
+                if (errno == ENOENT || errno == ENXIO ||
+                    errno == ENODEV || errno == EACCES)
+                    PyErr_SetString(PyExc_NotImplementedError,
+                                    "/dev/urandom (or equivalent) not found");
+                /* otherwise, keep the OSError exception raised by _Py_open() */
                 return -1;
             }
+            if (urandom_cache.fd >= 0) {
+                /* urandom_fd was initialized by another thread while we were
+                   not holding the GIL, keep it. */
+                close(fd);
+                fd = urandom_cache.fd;
+            }
             else {
-                urandom_cache.fd = fd;
-                urandom_cache.st_dev = st.st_dev;
-                urandom_cache.st_ino = st.st_ino;
+                if (_Py_fstat(fd, &st)) {
+                    close(fd);
+                    return -1;
+                }
+                else {
+                    urandom_cache.fd = fd;
+                    urandom_cache.st_dev = st.st_dev;
+                    urandom_cache.st_ino = st.st_ino;
+                }
             }
         }
-    }
 
-    do {
-        n = _Py_read(fd, buffer, (size_t)size);
-        if (n == -1)
-            return -1;
-        if (n == 0) {
-            PyErr_Format(PyExc_RuntimeError,
-                    "Failed to read %zi bytes from /dev/urandom",
-                    size);
+        do {
+            n = _Py_read(fd, buffer, (size_t)size);
+            if (n == -1)
+                return -1;
+            if (n == 0) {
+                PyErr_Format(PyExc_RuntimeError,
+                        "Failed to read %zi bytes from /dev/urandom",
+                        size);
+                return -1;
+            }
+
+            buffer += n;
+            size -= n;
+        } while (0 < size);
+    }
+    else {
+        fd = _Py_open_noraise("/dev/urandom", O_RDONLY);
+        if (fd < 0) {
             return -1;
         }
 
-        buffer += n;
-        size -= n;
-    } while (0 < size);
+        while (0 < size)
+        {
+            do {
+                n = read(fd, buffer, (size_t)size);
+            } while (n < 0 && errno == EINTR);
 
+            if (n <= 0) {
+                /* stop on error or if read(size) returned 0 */
+                return -1;
+            }
+
+            buffer += n;
+            size -= n;
+        }
+        close(fd);
+    }
     return 0;
 }
 
@@ -381,10 +375,10 @@ lcg_urandom(unsigned int x0, unsigned char *buffer, size_t size)
 }
 
 /* If raise is zero:
- * - Don't raise exceptions on error
- * - Don't call PyErr_CheckSignals() on EINTR (retry directly the interrupted
- *   syscall)
- * - Don't release the GIL to call syscalls. */
+   - Don't raise exceptions on error
+   - Don't call PyErr_CheckSignals() on EINTR (retry directly the interrupted
+     syscall)
+   - Don't release the GIL to call syscalls. */
 static int
 pyurandom(void *buffer, Py_ssize_t size, int raise)
 {
@@ -405,12 +399,7 @@ pyurandom(void *buffer, Py_ssize_t size, int raise)
 #elif defined(PY_GETENTROPY)
     return py_getentropy(buffer, size, raise);
 #else
-    if (raise) {
-        return dev_urandom_python(buffer, size);
-    }
-    else {
-        return dev_urandom_noraise(buffer, size);
-    }
+    return dev_urandom(buffer, size, raise);
 #endif
 }
 
@@ -466,7 +455,7 @@ _PyRandom_Init(void)
         int res;
 
         /* _PyRandom_Init() is called very early in the Python initialization
-         * and so exceptions cannot be used. */
+           and so exceptions cannot be used (use raise=0). */
         res = pyurandom(secret, secret_size, 0);
         if (res < 0) {
             Py_FatalError("failed to get random numbers to initialize Python");
