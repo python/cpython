@@ -434,6 +434,8 @@ Constants
    Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
    `Tau day <http://tauday.com/>`_ by eating twice as much pie!
 
+   .. versionadded:: 3.6
+
 .. data:: inf
 
    A floating-point positive infinity.  (For negative infinity, use
