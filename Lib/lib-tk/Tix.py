@@ -26,8 +26,10 @@
 # appreciate the advantages.
 #
 
+import os
+import Tkinter
 from Tkinter import *
-from Tkinter import _flatten, _cnfmerge, _default_root
+from Tkinter import _flatten, _cnfmerge
 
 # WARNING - TkVersion is a limited precision floating point number
 if TkVersion < 3.999:
@@ -72,7 +74,6 @@ TCL_ALL_EVENTS    = 0
 # BEWARE - this is implemented by copying some code from the Widget class
 #          in Tkinter (to override Widget initialization) and is therefore
 #          liable to break.
-import Tkinter, os
 
 # Could probably add this to Tkinter.Misc
 class tixCommand:
@@ -476,7 +477,7 @@ class DisplayStyle:
     (multiple) Display Items"""
 
     def __init__(self, itemtype, cnf={}, **kw):
-        master = _default_root              # global from Tkinter
+        master = Tkinter._default_root
         if not master and 'refwindow' in cnf: master=cnf['refwindow']
         elif not master and 'refwindow' in kw:  master= kw['refwindow']
         elif not master: raise RuntimeError, "Too early to create display style: no root window"
