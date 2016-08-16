@@ -302,9 +302,8 @@ capture data for later printing in a lightweight fashion.
       repetitions are shown, followed by a summary line stating the exact
       number of further repetitions.
 
-    .. versionchanged:: 3.6
-
-    Long sequences of repeated frames are now abbreviated.
+      .. versionchanged:: 3.6
+         Long sequences of repeated frames are now abbreviated.
 
 
 :class:`FrameSummary` Objects
