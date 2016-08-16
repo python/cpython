@@ -331,6 +331,7 @@ dev_urandom(char *buffer, Py_ssize_t size, int raise)
 
             if (n <= 0) {
                 /* stop on error or if read(size) returned 0 */
+                close(fd);
                 return -1;
             }
 
