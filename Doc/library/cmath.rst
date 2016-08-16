@@ -257,6 +257,8 @@ Constants
 
    The mathematical constant *τ*, as a float.
 
+   .. versionadded:: 3.6
+
 .. index:: module: math
 
 Note that the selection of functions is similar, but not identical, to that in
