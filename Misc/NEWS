@@ -102,8 +102,8 @@ Library
 
 - Issue #27661: Added tzinfo keyword argument to datetime.combine.
 
-- In the curses module, raise an error if window.getstr() is passed a negative
-  value.
+- In the curses module, raise an error if window.getstr() or window.instr() is
+  passed a negative value.
 
 - Issue #27760: Fix possible integer overflow in binascii.b2a_qp.
 
