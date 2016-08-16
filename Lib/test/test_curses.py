@@ -187,6 +187,8 @@ class TestCurses(unittest.TestCase):
 
         self.assertRaises(ValueError, stdscr.getstr, -400)
         self.assertRaises(ValueError, stdscr.getstr, 2, 3, -400)
+        self.assertRaises(ValueError, stdscr.instr, -2)
+        self.assertRaises(ValueError, stdscr.instr, 2, 3, -2)
 
 
     def test_module_funcs(self):

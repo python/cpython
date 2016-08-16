@@ -31,8 +31,8 @@ Library
 
 - Issue #27760: Fix possible integer overflow in binascii.b2a_qp.
 
-- In the curses module, raise an error if window.getstr() is passed a negative
-  value.
+- In the curses module, raise an error if window.getstr() or window.instr() is
+  passed a negative value.
 
 - Issue #27758: Fix possible integer overflow in the _csv module for large record
   lengths.
