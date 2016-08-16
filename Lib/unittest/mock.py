@@ -72,12 +72,6 @@ DescriptorTypes = (
 )
 
 
-def _is_data_descriptor(obj):
-    # Data descriptors are Properties, slots, getsets and C data members.
-    return ((hasattr(obj, '__set__') or hasattr(obj, '__del__')) and
-            hasattr(obj, '__get__'))
-
-
 def _get_signature_object(func, as_instance, eat_self):
     """
     Given an arbitrary, possibly callable object, try to create a suitable
@@ -2138,7 +2132,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     _kwargs.update(kwargs)
 
     Klass = MagicMock
-    if _is_data_descriptor(spec):
+    if inspect.isdatadescriptor(spec):
         # descriptors don't have a spec
         # because we don't know what type they return
         _kwargs = {}
