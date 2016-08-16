@@ -763,7 +763,7 @@ Named tuples assign meaning to each position in a tuple and allow for more reada
 self-documenting code.  They can be used wherever regular tuples are used, and
 they add the ability to access fields by name instead of position index.
 
-.. function:: namedtuple(typename, field_names, verbose=False, rename=False)
+.. function:: namedtuple(typename, field_names, *, verbose=False, rename=False)
 
     Returns a new tuple subclass named *typename*.  The new subclass is used to
     create tuple-like objects that have fields accessible by attribute lookup as
@@ -799,7 +799,11 @@ they add the ability to access fields by name instead of position index.
     a namedtuple.
 
     .. versionchanged:: 3.1
-        Added support for *rename*.
+       Added support for *rename*.
+
+    .. versionchanged:: 3.6
+       The *verbose* and *rename* parameters became
+       :ref:`keyword-only arguments <keyword-only_parameter>`.
 
 
 .. doctest::

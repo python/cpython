@@ -73,6 +73,9 @@ Library
   to ref count problem introduced in code for Issue #27038 in 3.6.0a3.
   Patch by Xiang Zhang.
 
+- Issue #25628:  The *verbose* and *rename* parameters for collections.namedtuple
+  are now keyword-only.
+
 - Issue #12345: Add mathemathical constant tau to math and cmath. See also
   PEP 628.
 
