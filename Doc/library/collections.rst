@@ -850,7 +850,9 @@ field names, the method and attribute names start with an underscore.
 .. method:: somenamedtuple._asdict()
 
     Return a new :class:`OrderedDict` which maps field names to their corresponding
-    values::
+    values:
+
+    .. doctest::
 
         >>> p = Point(x=11, y=22)
         >>> p._asdict()
@@ -912,7 +914,9 @@ Since a named tuple is a regular Python class, it is easy to add or change
 functionality with a subclass.  Here is how to add a calculated field and
 a fixed-width print format:
 
-    >>> class Point(namedtuple('Point', 'x y')):
+.. doctest::
+
+    >>> class Point(namedtuple('Point', ['x', 'y'])):
     ...     __slots__ = ()
     ...     @property
     ...     def hypot(self):
@@ -963,8 +967,10 @@ customize a prototype instance:
       constructor that is convenient for use cases where named tuples are being
       subclassed.
 
-    * :meth:`types.SimpleNamespace` for a mutable namespace based on an underlying
-      dictionary instead of a tuple.
+    * See :meth:`types.SimpleNamespace` for a mutable namespace based on an
+      underlying dictionary instead of a tuple.
+
+    * See :meth:`typing.NamedTuple` for a way to add type hints for named tuples.
 
 
 :class:`OrderedDict` objects
