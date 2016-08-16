@@ -487,7 +487,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 {
     PySSLSocket *self;
     SSL_CTX *ctx = sslctx->ctx;
-    PyObject *hostname;
     long mode;
 
     self = PyObject_New(PySSLSocket, &PySSLSocket_Type);
@@ -501,16 +500,16 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->shutdown_seen_zero = 0;
     self->handshake_done = 0;
     self->owner = NULL;
+    self->server_hostname = NULL;
     if (server_hostname != NULL) {
-        hostname = PyUnicode_Decode(server_hostname, strlen(server_hostname),
-                                   "idna", "strict");
+        PyObject *hostname = PyUnicode_Decode(server_hostname, strlen(server_hostname),
+                                              "idna", "strict");
         if (hostname == NULL) {
             Py_DECREF(self);
             return NULL;
         }
         self->server_hostname = hostname;
-    } else
-        self->server_hostname = NULL;
+    }
 
     Py_INCREF(sslctx);
 
@@ -563,7 +562,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         self->Socket = PyWeakref_NewRef((PyObject *) sock, NULL);
         if (self->Socket == NULL) {
             Py_DECREF(self);
-            Py_XDECREF(self->server_hostname);
             return NULL;
         }
     }
