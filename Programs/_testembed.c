@@ -41,7 +41,7 @@ static void test_repeated_init_and_subinterpreters(void)
 #endif
     int i, j;
 
-    for (i=0; i<3; i++) {
+    for (i=0; i<15; i++) {
         printf("--- Pass %d ---\n", i);
         _testembed_Py_Initialize();
         mainstate = PyThreadState_Get();
