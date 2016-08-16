@@ -412,6 +412,18 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(NTColor._fields, ('red', 'green', 'blue'))
         globals().pop('NTColor', None)          # clean-up after this test
 
+    def test_keyword_only_arguments(self):
+        # See issue 25628
+        with support.captured_stdout() as template:
+            NT = namedtuple('NT', ['x', 'y'], verbose=True)
+        self.assertIn('class NT', NT._source)
+        with self.assertRaises(TypeError):
+            NT = namedtuple('NT', ['x', 'y'], True)
+
+        NT = namedtuple('NT', ['abc', 'def'], rename=True)
+        self.assertEqual(NT._fields, ('abc', '_1'))
+        with self.assertRaises(TypeError):
+            NT = namedtuple('NT', ['abc', 'def'], False, True)
 
     def test_namedtuple_subclass_issue_24931(self):
         class Point(namedtuple('_Point', ['x', 'y'])):
