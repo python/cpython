@@ -150,7 +150,7 @@ Library
 - Issue 27512: Fix a segfault when os.fspath() called a an __fspath__() method
   that raised an exception. Patch by Xiang Zhang.
 
-- Issue 26988: Add AutoEnum.
+- Issue #26988: Add AutoEnum.
 
 Tests
 -----
