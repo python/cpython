@@ -2194,10 +2194,8 @@ _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value)
         if (!key)
             goto failed;
         value = match_getslice(self, key, default_value);
-        if (!value) {
-            Py_DECREF(key);
+        if (!value)
             goto failed;
-        }
         status = PyDict_SetItem(result, key, value);
         Py_DECREF(value);
         if (status < 0)
