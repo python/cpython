@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #27774: Fix possible Py_DECREF on unowned object in _sre.
+
 - Issue #27760: Fix possible integer overflow in binascii.b2a_qp.
 
 - In the curses module, raise an error if window.getstr() or window.instr() is
