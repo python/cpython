@@ -931,7 +931,7 @@ static PyObject *
 methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     methodcallerobject *mc;
-    PyObject *name, *newargs;
+    PyObject *name;
 
     if (PyTuple_GET_SIZE(args) < 1) {
         PyErr_SetString(PyExc_TypeError, "methodcaller needs at least "
@@ -951,19 +951,19 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (mc == NULL)
         return NULL;
 
-    newargs = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
-    if (newargs == NULL) {
-        Py_DECREF(mc);
-        return NULL;
-    }
-    mc->args = newargs;
-
+    name = PyTuple_GET_ITEM(args, 0);
     Py_INCREF(name);
     PyUnicode_InternInPlace(&name);
     mc->name = name;
 
     Py_XINCREF(kwds);
     mc->kwds = kwds;
+
+    mc->args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
+    if (mc->args == NULL) {
+        Py_DECREF(mc);
+        return NULL;
+    }
 
     PyObject_GC_Track(mc);
     return (PyObject *)mc;
