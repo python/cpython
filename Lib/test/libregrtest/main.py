@@ -296,15 +296,18 @@ class Regrtest:
                 print("- %s: %s" % (test, format_duration(time)))
 
         if self.bad:
+            print()
             print(count(len(self.bad), "test"), "failed:")
             printlist(self.bad)
 
         if self.environment_changed:
+            print()
             print("{} altered the execution environment:".format(
                      count(len(self.environment_changed), "test")))
             printlist(self.environment_changed)
 
         if self.skipped and not self.ns.quiet:
+            print()
             print(count(len(self.skipped), "test"), "skipped:")
             printlist(self.skipped)
 
