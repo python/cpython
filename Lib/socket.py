@@ -519,6 +519,7 @@ else:
         finally:
             lsock.close()
         return (ssock, csock)
+    __all__.append("socketpair")
 
 socketpair.__doc__ = """socketpair([family[, type[, proto]]]) -> (socket object, socket object)
 Create a pair of socket objects from the sockets returned by the platform
