@@ -109,7 +109,7 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertEqual(ns.verbose, 0)
 
     def test_slow(self):
-        for opt in '-o', '--slow':
+        for opt in '-o', '--slowest':
             with self.subTest(opt=opt):
                 ns = libregrtest._parse_args([opt])
                 self.assertTrue(ns.print_slow)
@@ -661,9 +661,9 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, test, omitted=test)
 
     def test_slow(self):
-        # test --slow
+        # test --slowest
         tests = [self.create_test() for index in range(3)]
-        output = self.run_tests("--slow", *tests)
+        output = self.run_tests("--slowest", *tests)
         self.check_executed_tests(output, tests)
         regex = ('10 slowest tests:\n'
                  '(?:%s: [0-9]+\.[0-9]+s\n){%s}'
@@ -671,15 +671,15 @@ class ArgsTestCase(BaseTestCase):
         self.check_line(output, regex)
 
     def test_slow_interrupted(self):
-        # Issue #25373: test --slow with an interrupted test
+        # Issue #25373: test --slowest with an interrupted test
         code = TEST_INTERRUPTED
         test = self.create_test("sigint", code=code)
 
         for multiprocessing in (False, True):
             if multiprocessing:
-                args = ("--slow", "-j2", test)
+                args = ("--slowest", "-j2", test)
             else:
-                args = ("--slow", test)
+                args = ("--slowest", test)
             output = self.run_tests(*args, exitcode=1)
             self.check_executed_tests(output, test, omitted=test)
             regex = ('10 slowest tests:\n')
