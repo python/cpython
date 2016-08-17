@@ -349,7 +349,7 @@ class BaseTestCase(unittest.TestCase):
         return list(match.group(1) for match in parser)
 
     def check_executed_tests(self, output, tests, skipped=(), failed=(),
-                             omitted=(), randomize=False):
+                             omitted=(), randomize=False, interrupted=False):
         if isinstance(tests, str):
             tests = [tests]
         if isinstance(skipped, str):
@@ -397,6 +397,17 @@ class BaseTestCase(unittest.TestCase):
             if not skipped and not failed and good > 1:
                 regex = 'All %s' % regex
             self.check_line(output, regex)
+
+        if interrupted:
+            self.check_line(output, 'Test suite interrupted by signal SIGINT.')
+
+        if nfailed:
+            result = 'FAILURE'
+        elif interrupted:
+            result = 'INTERRUPTED'
+        else:
+            result = 'SUCCESS'
+        self.check_line(output, 'Result: %s' % result)
 
     def parse_random_seed(self, output):
         match = self.regex_search(r'Using random seed ([0-9]+)', output)
@@ -658,7 +669,8 @@ class ArgsTestCase(BaseTestCase):
         code = TEST_INTERRUPTED
         test = self.create_test('sigint', code=code)
         output = self.run_tests(test, exitcode=1)
-        self.check_executed_tests(output, test, omitted=test)
+        self.check_executed_tests(output, test, omitted=test,
+                                  interrupted=True)
 
     def test_slowest(self):
         # test --slowest
@@ -681,10 +693,11 @@ class ArgsTestCase(BaseTestCase):
             else:
                 args = ("--slowest", test)
             output = self.run_tests(*args, exitcode=1)
-            self.check_executed_tests(output, test, omitted=test)
+            self.check_executed_tests(output, test,
+                                      omitted=test, interrupted=True)
+
             regex = ('10 slowest tests:\n')
             self.check_line(output, regex)
-            self.check_line(output, 'Test suite interrupted by signal SIGINT.')
 
     def test_coverage(self):
         # test --coverage
