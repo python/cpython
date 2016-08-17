@@ -1239,9 +1239,10 @@ When programming in a compiled language, shared libraries are accessed when
 compiling/linking a program, and when the program is run.
 
 The purpose of the :func:`find_library` function is to locate a library in a way
-similar to what the compiler does (on platforms with several versions of a
-shared library the most recent should be loaded), while the ctypes library
-loaders act like when a program is run, and call the runtime loader directly.
+similar to what the compiler or runtime loader does (on platforms with several
+versions of a shared library the most recent should be loaded), while the ctypes
+library loaders act like when a program is run, and call the runtime loader
+directly.
 
 The :mod:`ctypes.util` module provides a function which can help to determine
 the library to load.
@@ -1259,8 +1260,14 @@ the library to load.
 The exact functionality is system dependent.
 
 On Linux, :func:`find_library` tries to run external programs
-(``/sbin/ldconfig``, ``gcc``, and ``objdump``) to find the library file.  It
-returns the filename of the library file.  Here are some examples::
+(``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the library file.
+It returns the filename of the library file.
+
+.. versionchanged:: 3.6
+   On Linux, the value of the environment variable ``LD_LIBRARY_PATH`` is used
+   when searching for libraries, if a library cannot be found by any other means.
+
+Here are some examples::
 
    >>> from ctypes.util import find_library
    >>> find_library("m")

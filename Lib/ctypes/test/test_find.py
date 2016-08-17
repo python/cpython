@@ -69,6 +69,49 @@ class Test_OpenGL_libs(unittest.TestCase):
         self.assertFalse(os.path.lexists(test.support.TESTFN))
         self.assertIsNone(result)
 
+
+@unittest.skipUnless(sys.platform.startswith('linux'),
+                     'Test only valid for Linux')
+class LibPathFindTest(unittest.TestCase):
+    def test_find_on_libpath(self):
+        import subprocess
+        import tempfile
+
+        try:
+            p = subprocess.Popen(['gcc', '--version'], stdout=subprocess.PIPE,
+                                 stderr=subprocess.DEVNULL)
+            out, _ = p.communicate()
+        except OSError:
+            raise unittest.SkipTest('gcc, needed for test, not available')
+        with tempfile.TemporaryDirectory() as d:
+            # create an empty temporary file
+            srcname = os.path.join(d, 'dummy.c')
+            libname = 'py_ctypes_test_dummy'
+            dstname = os.path.join(d, 'lib%s.so' % libname)
+            with open(srcname, 'w') as f:
+                pass
+            self.assertTrue(os.path.exists(srcname))
+            # compile the file to a shared library
+            cmd = ['gcc', '-o', dstname, '--shared',
+                   '-Wl,-soname,lib%s.so' % libname, srcname]
+            out = subprocess.check_output(cmd)
+            self.assertTrue(os.path.exists(dstname))
+            # now check that the .so can't be found (since not in
+            # LD_LIBRARY_PATH)
+            self.assertIsNone(find_library(libname))
+            # now add the location to LD_LIBRARY_PATH
+            with test.support.EnvironmentVarGuard() as env:
+                KEY = 'LD_LIBRARY_PATH'
+                if KEY not in env:
+                    v = d
+                else:
+                    v = '%s:%s' % (env[KEY], d)
+                env.set(KEY, v)
+                # now check that the .so can be found (since in
+                # LD_LIBRARY_PATH)
+                self.assertEqual(find_library(libname), 'lib%s.so' % libname)
+
+
 # On platforms where the default shared library suffix is '.so',
 # at least some libraries can be loaded as attributes of the cdll
 # object, since ctypes now tries loading the lib again
