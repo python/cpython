@@ -1566,7 +1566,7 @@ tags::
 	ctags -w Include/*.h; \
 	for i in $(SRCDIRS); do ctags -w -a $$i/*.[ch]; \
 	done; \
-	sort -o tags tags
+	LC_ALL=C sort -o tags tags
 
 # Create a tags file for GNU Emacs
 TAGS::
