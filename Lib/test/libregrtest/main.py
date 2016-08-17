@@ -431,6 +431,14 @@ class Regrtest:
         duration = time.monotonic() - self.start_time
         print("Total duration: %s" % format_duration(duration))
 
+        if self.bad:
+            result = "FAILURE"
+        elif self.interrupted:
+            result = "INTERRUPTED"
+        else:
+            result = "SUCCESS"
+        print("Result: %s" % result)
+
         if self.ns.runleaks:
             os.system("leaks %d" % os.getpid())
 
