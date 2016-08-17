@@ -299,7 +299,7 @@ access e.g. the ``importlib.abc`` module by doing the following::
 
   import sys
 
-  if sys.version[0] == 3:
+  if sys.version_info[0] == 3:
       from importlib import abc
   else:
       from importlib2 import abc
@@ -311,7 +311,7 @@ Python 2::
 
   import sys
 
-  if sys.version[0] > 2:
+  if sys.version_info[0] > 2:
       from importlib import abc
   else:
       from importlib2 import abc
