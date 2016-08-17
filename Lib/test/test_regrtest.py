@@ -660,13 +660,13 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests(test, exitcode=1)
         self.check_executed_tests(output, test, omitted=test)
 
-    def test_slow(self):
+    def test_slowest(self):
         # test --slowest
         tests = [self.create_test() for index in range(3)]
         output = self.run_tests("--slowest", *tests)
         self.check_executed_tests(output, tests)
         regex = ('10 slowest tests:\n'
-                 '(?:%s: [0-9]+\.[0-9]+s\n){%s}'
+                 '(?:- %s: .*\n){%s}'
                  % (self.TESTNAME_REGEX, len(tests)))
         self.check_line(output, regex)
 
