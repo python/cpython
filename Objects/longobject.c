@@ -3000,9 +3000,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
     }
     assert(borrow == 0);
     if (sign < 0) {
-        _PyLong_Negate(&z);
-        if (z == NULL)
-            return NULL;
+        Py_SIZE(z) = -Py_SIZE(z);
     }
     return long_normalize(z);
 }
