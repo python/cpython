@@ -729,7 +729,7 @@ class CPyTimeTestCase:
         for seconds in (_testcapi.INT_MIN, _testcapi.INT_MAX):
             ns_timestamps.append(seconds * SEC_TO_NS)
         if use_float:
-            # numbers with an extract representation in IEEE 754 (base 2)
+            # numbers with an exact representation in IEEE 754 (base 2)
             for pow2 in (3, 7, 10, 15):
                 ns = 2.0 ** (-pow2)
                 ns_timestamps.extend((-ns, ns))
