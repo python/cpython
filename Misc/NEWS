@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9998: On Linux, ctypes.util.find_library now looks in LD_LIBRARY_PATH
+  for shared libraries.
 
 What's New in Python 3.6.0 alpha 4
 ==================================
