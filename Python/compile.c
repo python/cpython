@@ -4963,7 +4963,7 @@ assemble(struct compiler *c, int addNone)
 
     /* Set firstlineno if it wasn't explicitly set. */
     if (!c->u->u_firstlineno) {
-        if (entryblock && entryblock->b_instr)
+        if (entryblock && entryblock->b_instr && entryblock->b_instr->i_lineno)
             c->u->u_firstlineno = entryblock->b_instr->i_lineno;
         else
             c->u->u_firstlineno = 1;

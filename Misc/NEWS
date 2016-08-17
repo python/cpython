@@ -167,6 +167,10 @@ Tests
 - Issue #27369: In test_pyexpat, avoid testing an error message detail that
   changed in Expat 2.2.0.
 
+- Issue #27594: Prevent assertion error when running test_ast with coverage
+  enabled: ensure code object has a valid first line number.
+  Patch suggested by Ivan Levkivskyi.
+
 Windows
 -------
 
