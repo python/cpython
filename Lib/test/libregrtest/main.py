@@ -254,6 +254,7 @@ class Regrtest:
                 self.ns.verbose = True
                 ok = runtest(self.ns, test)
             except KeyboardInterrupt:
+                self.interrupted = True
                 # print a newline separate from the ^C
                 print()
                 break
@@ -341,8 +342,8 @@ class Regrtest:
                 try:
                     result = runtest(self.ns, test)
                 except KeyboardInterrupt:
-                    self.accumulate_result(test, (INTERRUPTED, None))
                     self.interrupted = True
+                    self.accumulate_result(test, (INTERRUPTED, None))
                     break
                 else:
                     self.accumulate_result(test, result)
