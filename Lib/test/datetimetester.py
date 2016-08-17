@@ -4770,9 +4770,6 @@ class ZoneInfoTest(unittest.TestCase):
                     # System support for times around the end of 32-bit time_t
                     # and later is flaky on many systems.
                     break
-                if self.zonename == 'Europe/Tallinn' and udt.date() == date(1999, 10, 31):
-                    print("Skip %s %s transition" % (self.zonename, udt))
-                    continue
                 s0 = (udt - datetime(1970, 1, 1)) // SEC
                 ss = shift // SEC   # shift seconds
                 for x in [-40 * 3600, -20*3600, -1, 0,
