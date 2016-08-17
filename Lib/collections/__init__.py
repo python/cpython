@@ -393,7 +393,7 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False):
                 field_names[index] = '_%d' % index
             seen.add(name)
     for name in [typename] + field_names:
-        if type(name) != str:
+        if type(name) is not str:
             raise TypeError('Type names and field names must be strings')
         if not name.isidentifier():
             raise ValueError('Type names and field names must be valid '
