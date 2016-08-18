@@ -223,7 +223,7 @@ class TestReversed(unittest.TestCase, PickleTest):
     def test_objmethods(self):
         # Objects must have __len__() and __getitem__() implemented.
         class NoLen(object):
-            def __getitem__(self): return 1
+            def __getitem__(self, i): return 1
         nl = NoLen()
         self.assertRaises(TypeError, reversed, nl)
 
@@ -231,6 +231,13 @@ class TestReversed(unittest.TestCase, PickleTest):
             def __len__(self): return 2
         ngi = NoGetItem()
         self.assertRaises(TypeError, reversed, ngi)
+
+        class Blocked(object):
+            def __getitem__(self, i): return 1
+            def __len__(self): return 2
+            __reversed__ = None
+        b = Blocked()
+        self.assertRaises(TypeError, reversed, b)
 
     def test_pickle(self):
         for data in 'abc', range(5), tuple(enumerate('abc')), range(1,17,5):

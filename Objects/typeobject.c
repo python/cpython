@@ -5856,6 +5856,13 @@ slot_sq_contains(PyObject *self, PyObject *value)
     _Py_IDENTIFIER(__contains__);
 
     func = lookup_maybe(self, &PyId___contains__);
+    if (func == Py_None) {
+        Py_DECREF(func);
+        PyErr_Format(PyExc_TypeError,
+                     "'%.200s' object is not a container",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     if (func != NULL) {
         args = PyTuple_Pack(1, value);
         if (args == NULL)
@@ -6241,6 +6248,13 @@ slot_tp_iter(PyObject *self)
     _Py_IDENTIFIER(__iter__);
 
     func = lookup_method(self, &PyId___iter__);
+    if (func == Py_None) {
+        Py_DECREF(func);
+        PyErr_Format(PyExc_TypeError,
+                     "'%.200s' object is not iterable",
+                     Py_TYPE(self)->tp_name);
+        return NULL;
+    }
     if (func != NULL) {
         PyObject *args;
         args = res = PyTuple_New(0);

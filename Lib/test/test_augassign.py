@@ -83,6 +83,10 @@ class AugAssignTest(unittest.TestCase):
             def __iadd__(self, val):
                 return aug_test3(self.val + val)
 
+        class aug_test4(aug_test3):
+            """Blocks inheritance, and fallback to __add__"""
+            __iadd__ = None
+
         x = aug_test(1)
         y = x
         x += 10
@@ -105,6 +109,10 @@ class AugAssignTest(unittest.TestCase):
         self.assertIsInstance(x, aug_test3)
         self.assertTrue(y is not x)
         self.assertEqual(x.val, 13)
+
+        x = aug_test4(4)
+        with self.assertRaises(TypeError):
+            x += 10
 
 
     def testCustomMethods2(test_self):

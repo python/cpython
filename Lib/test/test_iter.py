@@ -54,6 +54,14 @@ class UnlimitedSequenceClass:
     def __getitem__(self, i):
         return i
 
+class DefaultIterClass:
+    pass
+
+class NoIterClass:
+    def __getitem__(self, i):
+        return i
+    __iter__ = None
+
 # Main test suite
 
 class TestCase(unittest.TestCase):
@@ -994,6 +1002,10 @@ class TestCase(unittest.TestCase):
 
     def test_free_after_iterating(self):
         check_free_after_iterating(self, iter, SequenceClass, (0,))
+
+    def test_error_iter(self):
+        for typ in (DefaultIterClass, NoIterClass):
+            self.assertRaises(TypeError, iter, typ())
 
 
 def test_main():
