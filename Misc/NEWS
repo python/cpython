@@ -10,6 +10,10 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #27558: Fix a SystemError in the implementation of "raise" statement.
+  In a brand new thread, raise a RuntimeError since there is no active
+  exception to reraise. Patch written by Xiang Zhang.
+
 - Issue #27419: Standard __import__() no longer look up "__import__" in globals
   or builtins for importing submodules or "from import".  Fixed handling an
   error of non-string package name.
