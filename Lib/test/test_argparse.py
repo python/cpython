@@ -1842,6 +1842,22 @@ class TestAddSubparsers(TestCase):
         parser3.add_argument('t', type=int, help='t help')
         parser3.add_argument('u', nargs='...', help='u help')
 
+        # add fourth sub-parser (to test abbreviations)
+        parser4_kwargs = dict(description='lost description')
+        if subparser_help:
+            parser4_kwargs['help'] = 'lost help'
+        parser4 = subparsers.add_parser('lost', **parser4_kwargs)
+        parser4.add_argument('-w', type=int, help='w help')
+        parser4.add_argument('x', choices='abc', help='x help')
+
+        # add fifth sub-parser, with longer name (to test abbreviations)
+        parser5_kwargs = dict(description='long description')
+        if subparser_help:
+            parser5_kwargs['help'] = 'long help'
+        parser5 = subparsers.add_parser('long', **parser5_kwargs)
+        parser5.add_argument('-w', type=int, help='w help')
+        parser5.add_argument('x', choices='abc', help='x help')
+
         # return the main parser
         return parser
 
@@ -1856,6 +1872,24 @@ class TestAddSubparsers(TestCase):
                          '0.5 1 -y', '0.5 2 -w']:
             args = args_str.split()
             self.assertArgumentParserError(self.parser.parse_args, args)
+
+    def test_parse_args_abbreviation(self):
+        # check some non-failure cases:
+        self.assertEqual(
+            self.parser.parse_args('0.5 long b -w 7'.split()),
+            NS(foo=False, bar=0.5, w=7, x='b'),
+        )
+        self.assertEqual(
+            self.parser.parse_args('0.5 lon b -w 7'.split()),
+            NS(foo=False, bar=0.5, w=7, x='b'),
+        )
+        self.assertEqual(
+            self.parser.parse_args('0.5 los b -w 7'.split()),
+            NS(foo=False, bar=0.5, w=7, x='b'),
+        )
+        # check a failure case: 'lo' is ambiguous
+        self.assertArgumentParserError(self.parser.parse_args,
+                                       '0.5 lo b -w 7'.split())
 
     def test_parse_args(self):
         # check some non-failure cases:
@@ -1909,78 +1943,80 @@ class TestAddSubparsers(TestCase):
 
     def test_help(self):
         self.assertEqual(self.parser.format_usage(),
-                         'usage: PROG [-h] [--foo] bar {1,2,3} ...\n')
+                         'usage: PROG [-h] [--foo] bar {1,2,3,lost,long} ...\n')
         self.assertEqual(self.parser.format_help(), textwrap.dedent('''\
-            usage: PROG [-h] [--foo] bar {1,2,3} ...
+            usage: PROG [-h] [--foo] bar {1,2,3,lost,long} ...
 
             main description
 
             positional arguments:
-              bar         bar help
-              {1,2,3}     command help
+              bar                bar help
+              {1,2,3,lost,long}  command help
 
             optional arguments:
-              -h, --help  show this help message and exit
-              --foo       foo help
+              -h, --help         show this help message and exit
+              --foo              foo help
             '''))
 
     def test_help_extra_prefix_chars(self):
         # Make sure - is still used for help if it is a non-first prefix char
         parser = self._get_parser(prefix_chars='+:-')
         self.assertEqual(parser.format_usage(),
-                         'usage: PROG [-h] [++foo] bar {1,2,3} ...\n')
+                         'usage: PROG [-h] [++foo] bar {1,2,3,lost,long} ...\n')
         self.assertEqual(parser.format_help(), textwrap.dedent('''\
-            usage: PROG [-h] [++foo] bar {1,2,3} ...
+            usage: PROG [-h] [++foo] bar {1,2,3,lost,long} ...
 
             main description
 
             positional arguments:
-              bar         bar help
-              {1,2,3}     command help
+              bar                bar help
+              {1,2,3,lost,long}  command help
 
             optional arguments:
-              -h, --help  show this help message and exit
-              ++foo       foo help
+              -h, --help         show this help message and exit
+              ++foo              foo help
             '''))
 
 
     def test_help_alternate_prefix_chars(self):
         parser = self._get_parser(prefix_chars='+:/')
         self.assertEqual(parser.format_usage(),
-                         'usage: PROG [+h] [++foo] bar {1,2,3} ...\n')
+                         'usage: PROG [+h] [++foo] bar {1,2,3,lost,long} ...\n')
         self.assertEqual(parser.format_help(), textwrap.dedent('''\
-            usage: PROG [+h] [++foo] bar {1,2,3} ...
+            usage: PROG [+h] [++foo] bar {1,2,3,lost,long} ...
 
             main description
 
             positional arguments:
-              bar         bar help
-              {1,2,3}     command help
+              bar                bar help
+              {1,2,3,lost,long}  command help
 
             optional arguments:
-              +h, ++help  show this help message and exit
-              ++foo       foo help
+              +h, ++help         show this help message and exit
+              ++foo              foo help
             '''))
 
     def test_parser_command_help(self):
         self.assertEqual(self.command_help_parser.format_usage(),
-                         'usage: PROG [-h] [--foo] bar {1,2,3} ...\n')
+                         'usage: PROG [-h] [--foo] bar {1,2,3,lost,long} ...\n')
         self.assertEqual(self.command_help_parser.format_help(),
                          textwrap.dedent('''\
-            usage: PROG [-h] [--foo] bar {1,2,3} ...
+            usage: PROG [-h] [--foo] bar {1,2,3,lost,long} ...
 
             main description
 
             positional arguments:
-              bar         bar help
-              {1,2,3}     command help
-                1         1 help
-                2         2 help
-                3         3 help
+              bar                bar help
+              {1,2,3,lost,long}  command help
+                1                1 help
+                2                2 help
+                3                3 help
+                lost             lost help
+                long             long help
 
             optional arguments:
-              -h, --help  show this help message and exit
-              --foo       foo help
+              -h, --help         show this help message and exit
+              --foo              foo help
             '''))
 
     def test_subparser_title_help(self):
@@ -2083,6 +2119,8 @@ class TestAddSubparsers(TestCase):
                                     1 help
                 2                   2 help
                 3                   3 help
+                lost                lost help
+                long                long help
             """))
 
 # ============
