@@ -250,6 +250,13 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
 
     reversed_meth = _PyObject_LookupSpecial(seq, &PyId___reversed__);
+    if (reversed_meth == Py_None) {
+        Py_DECREF(reversed_meth);
+        PyErr_Format(PyExc_TypeError,
+                     "'%.200s' object is not reversible",
+                     Py_TYPE(seq)->tp_name);
+        return NULL;
+    }
     if (reversed_meth != NULL) {
         PyObject *res = PyObject_CallFunctionObjArgs(reversed_meth, NULL);
         Py_DECREF(reversed_meth);
@@ -259,8 +266,9 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
 
     if (!PySequence_Check(seq)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "argument to reversed() must be a sequence");
+        PyErr_Format(PyExc_TypeError,
+                     "'%.200s' object is not reversible",
+                     Py_TYPE(seq)->tp_name);
         return NULL;
     }
 

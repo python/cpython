@@ -333,6 +333,17 @@ class BoolTest(unittest.TestCase):
                 except (Exception) as e_len:
                     self.assertEqual(str(e_bool), str(e_len))
 
+    def test_blocked(self):
+        class A:
+            __bool__ = None
+        self.assertRaises(TypeError, bool, A())
+
+        class B:
+            def __len__(self):
+                return 10
+            __bool__ = None
+        self.assertRaises(TypeError, bool, B())
+
     def test_real_and_imag(self):
         self.assertEqual(True.real, 1)
         self.assertEqual(True.imag, 0)

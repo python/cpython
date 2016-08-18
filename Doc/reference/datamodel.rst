@@ -1063,6 +1063,12 @@ to ``type(x).__getitem__(x, i)``.  Except where mentioned, attempts to execute a
 operation raise an exception when no appropriate method is defined (typically
 :exc:`AttributeError` or :exc:`TypeError`).
 
+Setting a special method to ``None`` indicates that the corresponding
+operation is not available.  For example, if a class sets
+:meth:`__iter__` to ``None``, the class is not iterable, so calling
+:func:`iter` on its instances will raise a :exc:`TypeError` (without
+falling back to :meth:`__getitem__`). [#]_
+
 When implementing a class that emulates any built-in type, it is important that
 the emulation only be implemented to the degree that it makes sense for the
 object being modelled.  For example, some sequences may work well with retrieval
@@ -2113,7 +2119,7 @@ left undefined.
    (``+``, ``-``, ``*``, ``@``, ``/``, ``//``, ``%``, :func:`divmod`,
    :func:`pow`, ``**``, ``<<``, ``>>``, ``&``, ``^``, ``|``) with reflected
    (swapped) operands.  These functions are only called if the left operand does
-   not support the corresponding operation and the operands are of different
+   not support the corresponding operation [#]_ and the operands are of different
    types. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
    an instance of a class that has an :meth:`__rsub__` method, ``y.__rsub__(x)``
    is called if ``x.__sub__(y)`` returns *NotImplemented*.
@@ -2528,6 +2534,17 @@ An example of an asynchronous context manager class::
 .. [#] It *is* possible in some cases to change an object's type, under certain
    controlled conditions. It generally isn't a good idea though, since it can
    lead to some very strange behaviour if it is handled incorrectly.
+
+.. [#] The :meth:`__hash__`, :meth:`__iter__`, :meth:`__reversed__`, and
+   :meth:`__contains__` methods have special handling for this; others
+   will still raise a :exc:`TypeError`, but may do so by relying on
+   the behavior that ``None`` is not callable.
+
+.. [#] "Does not support" here means that the class has no such method, or
+   the method returns ``NotImplemented``.  Do not set the method to
+   ``None`` if you want to force fallback to the right operand's reflected
+   method--that will instead have the opposite effect of explicitly
+   *blocking* such fallback.
 
 .. [#] For operands of the same type, it is assumed that if the non-reflected method
    (such as :meth:`__add__`) fails the operation is not supported, which is why the

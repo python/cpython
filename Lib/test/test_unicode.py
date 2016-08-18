@@ -986,6 +986,19 @@ class UnicodeTest(string_tests.CommonTest,
             def __format__(self, format_spec):
                 return int.__format__(self * 2, format_spec)
 
+        class M:
+            def __init__(self, x):
+                self.x = x
+            def __repr__(self):
+                return 'M(' + self.x + ')'
+            __str__ = None
+
+        class N:
+            def __init__(self, x):
+                self.x = x
+            def __repr__(self):
+                return 'N(' + self.x + ')'
+            __format__ = None
 
         self.assertEqual(''.format(), '')
         self.assertEqual('abc'.format(), 'abc')
@@ -1199,6 +1212,16 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(ValueError, "{[}".format, 42)
 
         self.assertEqual("0x{:0{:d}X}".format(0x0,16), "0x0000000000000000")
+
+        # Blocking fallback
+        m = M('data')
+        self.assertEqual("{!r}".format(m), 'M(data)')
+        self.assertRaises(TypeError, "{!s}".format, m)
+        self.assertRaises(TypeError, "{}".format, m)
+        n = N('data')
+        self.assertEqual("{!r}".format(n), 'N(data)')
+        self.assertEqual("{!s}".format(n), 'N(data)')
+        self.assertRaises(TypeError, "{}".format, n)
 
     def test_format_map(self):
         self.assertEqual(''.format_map({}), '')
