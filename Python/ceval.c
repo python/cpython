@@ -4154,7 +4154,7 @@ do_raise(PyObject *exc, PyObject *cause)
         type = tstate->exc_type;
         value = tstate->exc_value;
         tb = tstate->exc_traceback;
-        if (type == Py_None) {
+        if (type == Py_None || type == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "No active exception to reraise");
             return 0;
