@@ -173,10 +173,6 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
                                          wbits=zlib.MAX_WBITS,
                                          bufsize=zlib.DEF_BUF_SIZE),
                          HAMLET_SCENE)
-        with self.assertRaises(TypeError):
-            zlib.decompress(data=x,
-                            wbits=zlib.MAX_WBITS,
-                            bufsize=zlib.DEF_BUF_SIZE)
 
     def test_speech128(self):
         # compress more data
