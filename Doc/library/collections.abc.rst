@@ -114,7 +114,8 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
 .. class:: Reversible
 
-   ABC for classes that provide the :meth:`__reversed__` method.
+   ABC for iterable classes that also provide the :meth:`__reversed__`
+   method.
 
    .. versionadded:: 3.6
 

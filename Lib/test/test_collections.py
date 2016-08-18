@@ -499,6 +499,9 @@ class ABCTestCase(unittest.TestCase):
             self.assertTrue(other.right_side,'Right side not called for %s.%s'
                             % (type(instance), name))
 
+def _test_gen():
+    yield
+
 class TestOneTrickPonyABCs(ABCTestCase):
 
     def test_Awaitable(self):
@@ -686,7 +689,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
         samples = [bytes(), str(),
                    tuple(), list(), set(), frozenset(), dict(),
                    dict().keys(), dict().items(), dict().values(),
-                   (lambda: (yield))(),
+                   _test_gen(),
                    (x for x in []),
                    ]
         for x in samples:
@@ -700,6 +703,15 @@ class TestOneTrickPonyABCs(ABCTestCase):
         self.assertFalse(issubclass(str, I))
         self.validate_abstract_methods(Iterable, '__iter__')
         self.validate_isinstance(Iterable, '__iter__')
+        # Check None blocking
+        class It:
+            def __iter__(self): return iter([])
+        class ItBlocked(It):
+            __iter__ = None
+        self.assertTrue(issubclass(It, Iterable))
+        self.assertTrue(isinstance(It(), Iterable))
+        self.assertFalse(issubclass(ItBlocked, Iterable))
+        self.assertFalse(isinstance(ItBlocked(), Iterable))
 
     def test_Reversible(self):
         # Check some non-reversibles
@@ -707,8 +719,18 @@ class TestOneTrickPonyABCs(ABCTestCase):
         for x in non_samples:
             self.assertNotIsInstance(x, Reversible)
             self.assertFalse(issubclass(type(x), Reversible), repr(type(x)))
-        # Check some reversibles
-        samples = [tuple(), list()]
+        # Check some non-reversible iterables
+        non_reversibles = [dict().keys(), dict().items(), dict().values(),
+                           Counter(), Counter().keys(), Counter().items(),
+                           Counter().values(), _test_gen(),
+                           (x for x in []), iter([]), reversed([])]
+        for x in non_reversibles:
+            self.assertNotIsInstance(x, Reversible)
+            self.assertFalse(issubclass(type(x), Reversible), repr(type(x)))
+        # Check some reversible iterables
+        samples = [bytes(), str(), tuple(), list(), OrderedDict(),
+                   OrderedDict().keys(), OrderedDict().items(),
+                   OrderedDict().values()]
         for x in samples:
             self.assertIsInstance(x, Reversible)
             self.assertTrue(issubclass(type(x), Reversible), repr(type(x)))
@@ -725,6 +747,29 @@ class TestOneTrickPonyABCs(ABCTestCase):
         self.assertEqual(list(reversed(R())), [])
         self.assertFalse(issubclass(float, R))
         self.validate_abstract_methods(Reversible, '__reversed__', '__iter__')
+        # Check reversible non-iterable (which is not Reversible)
+        class RevNoIter:
+            def __reversed__(self): return reversed([])
+        class RevPlusIter(RevNoIter):
+            def __iter__(self): return iter([])
+        self.assertFalse(issubclass(RevNoIter, Reversible))
+        self.assertFalse(isinstance(RevNoIter(), Reversible))
+        self.assertTrue(issubclass(RevPlusIter, Reversible))
+        self.assertTrue(isinstance(RevPlusIter(), Reversible))
+        # Check None blocking
+        class Rev:
+            def __iter__(self): return iter([])
+            def __reversed__(self): return reversed([])
+        class RevItBlocked(Rev):
+            __iter__ = None
+        class RevRevBlocked(Rev):
+            __reversed__ = None
+        self.assertTrue(issubclass(Rev, Reversible))
+        self.assertTrue(isinstance(Rev(), Reversible))
+        self.assertFalse(issubclass(RevItBlocked, Reversible))
+        self.assertFalse(isinstance(RevItBlocked(), Reversible))
+        self.assertFalse(issubclass(RevRevBlocked, Reversible))
+        self.assertFalse(isinstance(RevRevBlocked(), Reversible))
 
     def test_Iterator(self):
         non_samples = [None, 42, 3.14, 1j, b"", "", (), [], {}, set()]
@@ -736,7 +781,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
                    iter(set()), iter(frozenset()),
                    iter(dict().keys()), iter(dict().items()),
                    iter(dict().values()),
-                   (lambda: (yield))(),
+                   _test_gen(),
                    (x for x in []),
                    ]
         for x in samples:
@@ -824,7 +869,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
     def test_Sized(self):
         non_samples = [None, 42, 3.14, 1j,
-                       (lambda: (yield))(),
+                       _test_gen(),
                        (x for x in []),
                        ]
         for x in non_samples:
@@ -842,7 +887,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
 
     def test_Container(self):
         non_samples = [None, 42, 3.14, 1j,
-                       (lambda: (yield))(),
+                       _test_gen(),
                        (x for x in []),
                        ]
         for x in non_samples:
@@ -861,7 +906,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
     def test_Callable(self):
         non_samples = [None, 42, 3.14, 1j,
                        "", b"", (), [], {}, set(),
-                       (lambda: (yield))(),
+                       _test_gen(),
                        (x for x in []),
                        ]
         for x in non_samples:
@@ -1276,6 +1321,7 @@ class TestCollectionABCs(ABCTestCase):
             def __iter__(self):
                 return iter(())
         self.validate_comparison(MyMapping())
+        self.assertRaises(TypeError, reversed, MyMapping())
 
     def test_MutableMapping(self):
         for sample in [dict]:

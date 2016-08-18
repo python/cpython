@@ -62,6 +62,18 @@ del _coro
 
 ### ONE-TRICK PONIES ###
 
+def _check_methods(C, *methods):
+    mro = C.__mro__
+    for method in methods:
+        for B in mro:
+            if method in B.__dict__:
+                if B.__dict__[method] is None:
+                    return NotImplemented
+                break
+        else:
+            return NotImplemented
+    return True
+
 class Hashable(metaclass=ABCMeta):
 
     __slots__ = ()
@@ -73,11 +85,7 @@ class Hashable(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Hashable:
-            for B in C.__mro__:
-                if "__hash__" in B.__dict__:
-                    if B.__dict__["__hash__"]:
-                        return True
-                    break
+            return _check_methods(C, "__hash__")
         return NotImplemented
 
 
@@ -92,11 +100,7 @@ class Awaitable(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Awaitable:
-            for B in C.__mro__:
-                if "__await__" in B.__dict__:
-                    if B.__dict__["__await__"]:
-                        return True
-                    break
+            return _check_methods(C, "__await__")
         return NotImplemented
 
 
@@ -137,14 +141,7 @@ class Coroutine(Awaitable):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Coroutine:
-            mro = C.__mro__
-            for method in ('__await__', 'send', 'throw', 'close'):
-                for base in mro:
-                    if method in base.__dict__:
-                        break
-                else:
-                    return NotImplemented
-            return True
+            return _check_methods(C, '__await__', 'send', 'throw', 'close')
         return NotImplemented
 
 
@@ -162,8 +159,7 @@ class AsyncIterable(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is AsyncIterable:
-            if any("__aiter__" in B.__dict__ for B in C.__mro__):
-                return True
+            return _check_methods(C, "__aiter__")
         return NotImplemented
 
 
@@ -182,9 +178,7 @@ class AsyncIterator(AsyncIterable):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is AsyncIterator:
-            if (any("__anext__" in B.__dict__ for B in C.__mro__) and
-                any("__aiter__" in B.__dict__ for B in C.__mro__)):
-                return True
+            return _check_methods(C, "__anext__", "__aiter__")
         return NotImplemented
 
 
@@ -200,8 +194,7 @@ class Iterable(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Iterable:
-            if any("__iter__" in B.__dict__ for B in C.__mro__):
-                return True
+            return _check_methods(C, "__iter__")
         return NotImplemented
 
 
@@ -220,9 +213,7 @@ class Iterator(Iterable):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Iterator:
-            if (any("__next__" in B.__dict__ for B in C.__mro__) and
-                any("__iter__" in B.__dict__ for B in C.__mro__)):
-                return True
+            return _check_methods(C, '__iter__', '__next__')
         return NotImplemented
 
 Iterator.register(bytes_iterator)
@@ -246,16 +237,13 @@ class Reversible(Iterable):
 
     @abstractmethod
     def __reversed__(self):
-        return NotImplemented
+        while False:
+            yield None
 
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Reversible:
-            for B in C.__mro__:
-                if "__reversed__" in B.__dict__:
-                    if B.__dict__["__reversed__"] is not None:
-                        return True
-                    break
+            return _check_methods(C, "__reversed__", "__iter__")
         return NotImplemented
 
 
@@ -302,16 +290,9 @@ class Generator(Iterator):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Generator:
-            mro = C.__mro__
-            for method in ('__iter__', '__next__', 'send', 'throw', 'close'):
-                for base in mro:
-                    if method in base.__dict__:
-                        break
-                else:
-                    return NotImplemented
-            return True
+            return _check_methods(C, '__iter__', '__next__',
+                                  'send', 'throw', 'close')
         return NotImplemented
-
 
 Generator.register(generator)
 
@@ -327,8 +308,7 @@ class Sized(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Sized:
-            if any("__len__" in B.__dict__ for B in C.__mro__):
-                return True
+            return _check_methods(C, "__len__")
         return NotImplemented
 
 
@@ -343,8 +323,7 @@ class Container(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Container:
-            if any("__contains__" in B.__dict__ for B in C.__mro__):
-                return True
+            return _check_methods(C, "__contains__")
         return NotImplemented
 
 
@@ -359,8 +338,7 @@ class Callable(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Callable:
-            if any("__call__" in B.__dict__ for B in C.__mro__):
-                return True
+            return _check_methods(C, "__call__")
         return NotImplemented
 
 
@@ -639,6 +617,8 @@ class Mapping(Sized, Iterable, Container):
         if not isinstance(other, Mapping):
             return NotImplemented
         return dict(self.items()) == dict(other.items())
+
+    __reversed__ = None
 
 Mapping.register(mappingproxy)
 
