@@ -3,11 +3,7 @@ import httplib
 import sys
 from test import test_support
 threading = test_support.import_module('threading')
-import time
-import socket
 import unittest
-
-PORT = None
 
 def make_request_and_skipIf(condition, reason):
     # If we skip the test, we have to make a request because
@@ -23,13 +19,10 @@ def make_request_and_skipIf(condition, reason):
     return decorator
 
 
-def server(evt, numrequests):
+def make_server():
     serv = DocXMLRPCServer(("localhost", 0), logRequests=False)
 
     try:
-        global PORT
-        PORT = serv.socket.getsockname()[1]
-
         # Add some documentation
         serv.set_server_title("DocXMLRPCServer Test Documentation")
         serv.set_server_name("DocXMLRPCServer Test Docs")
@@ -56,42 +49,31 @@ def server(evt, numrequests):
 
         serv.register_function(add)
         serv.register_function(lambda x, y: x-y)
-
-        while numrequests > 0:
-            serv.handle_request()
-            numrequests -= 1
-    except socket.timeout:
-        pass
-    finally:
+        return serv
+    except:
         serv.server_close()
-        PORT = None
-        evt.set()
+        raise
 
 class DocXMLRPCHTTPGETServer(unittest.TestCase):
     def setUp(self):
-        self._threads = test_support.threading_setup()
         # Enable server feedback
         DocXMLRPCServer._send_traceback_header = True
 
-        self.evt = threading.Event()
-        threading.Thread(target=server, args=(self.evt, 1)).start()
+        self.serv = make_server()
+        self.thread = threading.Thread(target=self.serv.serve_forever)
+        self.thread.start()
 
-        # wait for port to be assigned
-        n = 1000
-        while n > 0 and PORT is None:
-            time.sleep(0.001)
-            n -= 1
-
+        PORT = self.serv.server_address[1]
         self.client = httplib.HTTPConnection("localhost:%d" % PORT)
 
     def tearDown(self):
         self.client.close()
 
-        self.evt.wait()
-
         # Disable server feedback
         DocXMLRPCServer._send_traceback_header = False
-        test_support.threading_cleanup(*self._threads)
+        self.serv.shutdown()
+        self.thread.join()
+        self.serv.server_close()
 
     def test_valid_get_response(self):
         self.client.request("GET", "/")
