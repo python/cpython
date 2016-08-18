@@ -10,11 +10,16 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27558: Fix a SystemError in the implementation of "raise" statement.
+  In a brand new thread, raise a RuntimeError since there is no active
+  exception to reraise. Patch written by Xiang Zhang.
+
 Library
 -------
 
 - Issue #9998: On Linux, ctypes.util.find_library now looks in LD_LIBRARY_PATH
   for shared libraries.
+
 
 What's New in Python 3.6.0 alpha 4
 ==================================

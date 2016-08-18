@@ -1043,6 +1043,24 @@ class ThreadingExceptionTests(BaseTestCase):
         self.assertEqual(out, b'')
         self.assertNotIn("Unhandled exception", err.decode())
 
+    def test_bare_raise_in_brand_new_thread(self):
+        def bare_raise():
+            raise
+
+        class Issue27558(threading.Thread):
+            exc = None
+
+            def run(self):
+                try:
+                    bare_raise()
+                except Exception as exc:
+                    self.exc = exc
+
+        thread = Issue27558()
+        thread.start()
+        thread.join()
+        self.assertIsNotNone(thread.exc)
+        self.assertIsInstance(thread.exc, RuntimeError)
 
 class TimerTests(BaseTestCase):
 
