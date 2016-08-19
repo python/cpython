@@ -41,7 +41,8 @@ Library
 - Issue #2466: posixpath.ismount now correctly recognizes mount points which
   the user does not have permission to access.
 
-- Issue #27773: Correct some memory management errors server_hostname in _ssl.wrap_socket().
+- Issue #27773: Correct some memory management errors server_hostname in
+  _ssl.wrap_socket().
 
 - Issue #26750: unittest.mock.create_autospec() now works properly for
   subclasses of property() and other data descriptors.
@@ -49,14 +50,15 @@ Library
 - In the curses module, raise an error if window.getstr() or window.instr() is
   passed a negative value.
 
-- Issue #27783: Fix possible usage of uninitialized memory in operator.methodcaller.
+- Issue #27783: Fix possible usage of uninitialized memory in
+  operator.methodcaller.
 
 - Issue #27774: Fix possible Py_DECREF on unowned object in _sre.
 
 - Issue #27760: Fix possible integer overflow in binascii.b2a_qp.
 
-- Issue #27758: Fix possible integer overflow in the _csv module for large record
-  lengths.
+- Issue #27758: Fix possible integer overflow in the _csv module for large
+  record lengths.
 
 - Issue #27568: Prevent HTTPoxy attack (CVE-2016-1000110). Ignore the
   HTTP_PROXY variable when REQUEST_METHOD environment is set, which indicates
@@ -116,9 +118,9 @@ Library
   when exiting, let the new chained one through.  This avoids the PEP 479
   bug described in issue25782.
 
-- [Security] Issue #27278: Fix os.urandom() implementation using getrandom() on Linux.
-  Truncate size to INT_MAX and loop until we collected enough random bytes,
-  instead of casting a directly Py_ssize_t to int.
+- [Security] Issue #27278: Fix os.urandom() implementation using getrandom() on
+  Linux.  Truncate size to INT_MAX and loop until we collected enough random
+  bytes, instead of casting a directly Py_ssize_t to int.
 
 - Issue #26386: Fixed ttk.TreeView selection operations with item id's
   containing spaces.
@@ -319,7 +321,8 @@ Core and Builtins
   This allows sys.getsize() to work correctly with their subclasses with
   __slots__ defined.
 
-- Issue #25709: Fixed problem with in-place string concatenation and utf-8 cache.
+- Issue #25709: Fixed problem with in-place string concatenation and utf-8
+  cache.
 
 - Issue #27147: Mention PEP 420 in the importlib docs.
 
@@ -377,9 +380,10 @@ Library
 - Issue #21313: Fix the "platform" module to tolerate when sys.version
   contains truncated build information.
 
-- [Security] Issue #26839: On Linux, :func:`os.urandom` now calls ``getrandom()`` with
-  ``GRND_NONBLOCK`` to fall back on reading ``/dev/urandom`` if the urandom
-  entropy pool is not initialized yet. Patch written by Colm Buckley.
+- [Security] Issue #26839: On Linux, :func:`os.urandom` now calls
+  ``getrandom()`` with ``GRND_NONBLOCK`` to fall back on reading
+  ``/dev/urandom`` if the urandom entropy pool is not initialized yet. Patch
+  written by Colm Buckley.
 
 - Issue #27164: In the zlib module, allow decompressing raw Deflate streams
   with a predefined zdict.  Based on patch by Xiang Zhang.
@@ -485,9 +489,9 @@ Library
 - Issue #24838: tarfile's ustar and gnu formats now correctly calculate name
   and link field limits for multibyte character encodings like utf-8.
 
-- [Security] Issue #26657: Fix directory traversal vulnerability with http.server on
-  Windows.  This fixes a regression that was introduced in 3.3.4rc1 and
-  3.4.0rc1.  Based on patch by Philipp Hagemeister.
+- [Security] Issue #26657: Fix directory traversal vulnerability with
+  http.server on Windows.  This fixes a regression that was introduced in
+  3.3.4rc1 and 3.4.0rc1.  Based on patch by Philipp Hagemeister.
 
 - Issue #26717: Stop encoding Latin-1-ized WSGI paths with UTF-8.  Patch by
   Anthony Sottile.
@@ -534,8 +538,8 @@ Library
 - Issue #26560: Avoid potential ValueError in BaseHandler.start_response.
   Initial patch by Peter Inglesby.
 
-- [Security] Issue #26313: ssl.py _load_windows_store_certs fails if windows cert store
-  is empty. Patch by Baji.
+- [Security] Issue #26313: ssl.py _load_windows_store_certs fails if windows
+  cert store is empty. Patch by Baji.
 
 - Issue #26569: Fix :func:`pyclbr.readmodule` and :func:`pyclbr.readmodule_ex`
   to support importing packages.
@@ -564,7 +568,8 @@ Library
   The bufsize parameter is no longer used.
 
 - Issue #2202: Fix UnboundLocalError in
-  AbstractDigestAuthHandler.get_algorithm_impls.  Initial patch by Mathieu Dupuy.
+  AbstractDigestAuthHandler.get_algorithm_impls.  Initial patch by Mathieu
+  Dupuy.
 
 - Issue #25718: Fixed pickling and copying the accumulate() iterator with
   total is None.
@@ -596,7 +601,8 @@ Library
   the connected socket) when verify_request() returns false.  Patch by Aviv
   Palivoda.
 
-- [Security] Issue #25939: On Windows open the cert store readonly in ssl.enum_certificates.
+- [Security] Issue #25939: On Windows open the cert store readonly in
+  ssl.enum_certificates.
 
 - Issue #25995: os.walk() no longer uses FDs proportional to the tree depth.
 
@@ -2000,8 +2006,8 @@ Library
 - Issue #1322: platform.dist() and platform.linux_distribution() functions are
   now deprecated.  Initial patch by Vajrasky Kok.
 
-- Issue #22486: Added the math.gcd() function.  The fractions.gcd() function now is
-  deprecated.  Based on patch by Mark Dickinson.
+- Issue #22486: Added the math.gcd() function.  The fractions.gcd() function
+  now is deprecated.  Based on patch by Mark Dickinson.
 
 - Issue #24064: Property() docstrings are now writeable.
   (Patch by Berker Peksag.)
