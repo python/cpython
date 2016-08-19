@@ -5808,38 +5808,46 @@ slot_sq_length(PyObject *self)
 static PyObject *
 slot_sq_item(PyObject *self, Py_ssize_t i)
 {
-    PyObject *func, *args = NULL, *ival = NULL, *retval = NULL;
+    PyObject *func, *ival = NULL, *args, *retval = NULL;
     descrgetfunc f;
 
     func = _PyType_LookupId(Py_TYPE(self), &PyId___getitem__);
-    if (func != NULL) {
-        if ((f = Py_TYPE(func)->tp_descr_get) == NULL)
-            Py_INCREF(func);
-        else {
-            func = f(func, self, (PyObject *)(Py_TYPE(self)));
-            if (func == NULL) {
-                return NULL;
-            }
-        }
-        ival = PyLong_FromSsize_t(i);
-        if (ival != NULL) {
-            args = PyTuple_New(1);
-            if (args != NULL) {
-                PyTuple_SET_ITEM(args, 0, ival);
-                retval = PyObject_Call(func, args, NULL);
-                Py_DECREF(args);
-                Py_DECREF(func);
-                return retval;
-            }
-        }
-    }
-    else {
+    if (func == NULL) {
         PyObject *getitem_str = _PyUnicode_FromId(&PyId___getitem__);
         PyErr_SetObject(PyExc_AttributeError, getitem_str);
+        return NULL;
     }
-    Py_XDECREF(args);
+
+    f = Py_TYPE(func)->tp_descr_get;
+    if (f == NULL) {
+        Py_INCREF(func);
+    }
+    else {
+        func = f(func, self, (PyObject *)(Py_TYPE(self)));
+        if (func == NULL) {
+            return NULL;
+        }
+    }
+
+    ival = PyLong_FromSsize_t(i);
+    if (ival == NULL) {
+        goto error;
+    }
+
+    args = PyTuple_New(1);
+    if (args == NULL) {
+        goto error;
+    }
+
+    PyTuple_SET_ITEM(args, 0, ival);
+    retval = PyObject_Call(func, args, NULL);
+    Py_DECREF(func);
+    Py_DECREF(args);
+    return retval;
+
+error:
+    Py_DECREF(func);
     Py_XDECREF(ival);
-    Py_XDECREF(func);
     return NULL;
 }
 
