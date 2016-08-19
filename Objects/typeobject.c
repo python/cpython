@@ -5808,7 +5808,7 @@ slot_sq_length(PyObject *self)
 static PyObject *
 slot_sq_item(PyObject *self, Py_ssize_t i)
 {
-    PyObject *func, *ival = NULL, *args, *retval = NULL;
+    PyObject *func, *ival = NULL, *retval = NULL;
     descrgetfunc f;
 
     func = _PyType_LookupId(Py_TYPE(self), &PyId___getitem__);
@@ -5834,20 +5834,13 @@ slot_sq_item(PyObject *self, Py_ssize_t i)
         goto error;
     }
 
-    args = PyTuple_New(1);
-    if (args == NULL) {
-        goto error;
-    }
-
-    PyTuple_SET_ITEM(args, 0, ival);
-    retval = PyObject_Call(func, args, NULL);
+    retval = _PyObject_FastCall(func, &ival, 1, NULL);
     Py_DECREF(func);
-    Py_DECREF(args);
+    Py_DECREF(ival);
     return retval;
 
 error:
     Py_DECREF(func);
-    Py_XDECREF(ival);
     return NULL;
 }
 
