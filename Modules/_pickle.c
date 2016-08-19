@@ -345,7 +345,6 @@ static PyObject *
 _Pickle_FastCall(PyObject *func, PyObject *obj)
 {
     PyObject *result;
-    PyObject *arg_tuple = PyTuple_New(1);
 
     /* Note: this function used to reuse the argument tuple. This used to give
        a slight performance boost with older pickle implementations where many
@@ -358,13 +357,8 @@ _Pickle_FastCall(PyObject *func, PyObject *obj)
        significantly reduced the number of function calls we do. Thus, the
        benefits became marginal at best. */
 
-    if (arg_tuple == NULL) {
-        Py_DECREF(obj);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(arg_tuple, 0, obj);
-    result = PyObject_Call(func, arg_tuple, NULL);
-    Py_CLEAR(arg_tuple);
+    result = _PyObject_FastCall(func, &obj, 1, NULL);
+    Py_DECREF(obj);
     return result;
 }
 
@@ -1157,9 +1151,7 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
         return -1;
 
     if (n == READ_WHOLE_LINE) {
-        PyObject *empty_tuple = PyTuple_New(0);
-        data = PyObject_Call(self->readline, empty_tuple, NULL);
-        Py_DECREF(empty_tuple);
+        data = _PyObject_FastCall(self->readline, NULL, 0, NULL);
     }
     else {
         PyObject *len;
@@ -3956,10 +3948,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             /* Check for a __reduce__ method. */
             reduce_func = _PyObject_GetAttrId(obj, &PyId___reduce__);
             if (reduce_func != NULL) {
-                PyObject *empty_tuple = PyTuple_New(0);
-                reduce_value = PyObject_Call(reduce_func, empty_tuple,
-                                             NULL);
-                Py_DECREF(empty_tuple);
+                reduce_value = _PyObject_FastCall(reduce_func, NULL, 0, NULL);
             }
             else {
                 PyErr_Format(st->PicklingError,
