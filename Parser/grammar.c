@@ -122,7 +122,13 @@ findlabel(labellist *ll, int type, const char *str)
     }
     fprintf(stderr, "Label %d/'%s' not found\n", type, str);
     Py_FatalError("grammar.c:findlabel()");
+
+    /* Py_FatalError() is declared with __attribute__((__noreturn__)).
+       GCC emits a warning without "return 0;" (compiler bug!), but Clang is
+       smarter and emits a warning on the return... */
+#ifndef __clang__
     return 0; /* Make gcc -Wall happy */
+#endif
 }
 
 /* Forward */
