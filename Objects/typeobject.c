@@ -5946,7 +5946,7 @@ SLOT0(slot_nb_absolute, "__abs__")
 static int
 slot_nb_bool(PyObject *self)
 {
-    PyObject *func, *args, *value;
+    PyObject *func, *value;
     int result;
     int using_len = 0;
     _Py_IDENTIFIER(__bool__);
@@ -5967,13 +5967,7 @@ slot_nb_bool(PyObject *self)
         using_len = 1;
     }
 
-    args = PyTuple_New(0);
-    if (args == NULL) {
-        goto error;
-    }
-
-    value = PyObject_Call(func, args, NULL);
-    Py_DECREF(args);
+    value = _PyObject_FastCall(func, NULL, 0, NULL);
     if (value == NULL) {
         goto error;
     }
