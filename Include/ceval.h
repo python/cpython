@@ -8,7 +8,7 @@ extern "C" {
 /* Interface to random parts in ceval.c */
 
 PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
-    PyObject *, PyObject *, PyObject *);
+    PyObject *func, PyObject *args, PyObject *kwargs);
 
 /* Inline this */
 #define PyEval_CallObject(func,arg) \
