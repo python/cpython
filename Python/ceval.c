@@ -5247,7 +5247,8 @@ static PyObject *
 import_name(PyFrameObject *f, PyObject *name, PyObject *fromlist, PyObject *level)
 {
     _Py_IDENTIFIER(__import__);
-    PyObject *import_func, *args, *res;
+    PyObject *import_func, *res;
+    PyObject* stack[5];
 
     import_func = _PyDict_GetItemId(f->f_builtins, &PyId___import__);
     if (import_func == NULL) {
@@ -5271,18 +5272,13 @@ import_name(PyFrameObject *f, PyObject *name, PyObject *fromlist, PyObject *leve
     }
 
     Py_INCREF(import_func);
-    args = PyTuple_Pack(5,
-                        name,
-                        f->f_globals,
-                        f->f_locals == NULL ? Py_None : f->f_locals,
-                        fromlist,
-                        level);
-    if (args == NULL) {
-        Py_DECREF(import_func);
-        return NULL;
-    }
-    res = PyEval_CallObject(import_func, args);
-    Py_DECREF(args);
+
+    stack[0] = name;
+    stack[1] = f->f_globals;
+    stack[2] = f->f_locals == NULL ? Py_None : f->f_locals;
+    stack[3] = fromlist;
+    stack[4] = level;
+    res = _PyObject_FastCall(import_func, stack, 5, NULL);
     Py_DECREF(import_func);
     return res;
 }
