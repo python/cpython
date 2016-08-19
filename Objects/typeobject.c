@@ -5946,44 +5946,60 @@ SLOT0(slot_nb_absolute, "__abs__")
 static int
 slot_nb_bool(PyObject *self)
 {
-    PyObject *func, *args;
-    int result = -1;
+    PyObject *func, *args, *value;
+    int result;
     int using_len = 0;
     _Py_IDENTIFIER(__bool__);
 
     func = lookup_maybe(self, &PyId___bool__);
     if (func == NULL) {
-        if (PyErr_Occurred())
+        if (PyErr_Occurred()) {
             return -1;
+        }
+
         func = lookup_maybe(self, &PyId___len__);
-        if (func == NULL)
-            return PyErr_Occurred() ? -1 : 1;
+        if (func == NULL) {
+            if (PyErr_Occurred()) {
+                return -1;
+            }
+            return 1;
+        }
         using_len = 1;
     }
+
     args = PyTuple_New(0);
-    if (args != NULL) {
-        PyObject *temp = PyObject_Call(func, args, NULL);
-        Py_DECREF(args);
-        if (temp != NULL) {
-            if (using_len) {
-                /* enforced by slot_nb_len */
-                result = PyObject_IsTrue(temp);
-            }
-            else if (PyBool_Check(temp)) {
-                result = PyObject_IsTrue(temp);
-            }
-            else {
-                PyErr_Format(PyExc_TypeError,
-                             "__bool__ should return "
-                             "bool, returned %s",
-                             Py_TYPE(temp)->tp_name);
-                result = -1;
-            }
-            Py_DECREF(temp);
-        }
+    if (args == NULL) {
+        goto error;
     }
+
+    value = PyObject_Call(func, args, NULL);
+    Py_DECREF(args);
+    if (value == NULL) {
+        goto error;
+    }
+
+    if (using_len) {
+        /* bool type enforced by slot_nb_len */
+        result = PyObject_IsTrue(value);
+    }
+    else if (PyBool_Check(value)) {
+        result = PyObject_IsTrue(value);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "__bool__ should return "
+                     "bool, returned %s",
+                     Py_TYPE(value)->tp_name);
+        result = -1;
+    }
+
+    Py_DECREF(value);
     Py_DECREF(func);
     return result;
+
+error:
+    Py_DECREF(func);
+    return -1;
 }
 
 
