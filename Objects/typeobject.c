@@ -6264,16 +6264,13 @@ slot_tp_iter(PyObject *self)
                      Py_TYPE(self)->tp_name);
         return NULL;
     }
+
     if (func != NULL) {
-        PyObject *args;
-        args = res = PyTuple_New(0);
-        if (args != NULL) {
-            res = PyObject_Call(func, args, NULL);
-            Py_DECREF(args);
-        }
+        res = _PyObject_FastCall(func, NULL, 0, NULL);
         Py_DECREF(func);
         return res;
     }
+
     PyErr_Clear();
     func = lookup_method(self, &PyId___getitem__);
     if (func == NULL) {
