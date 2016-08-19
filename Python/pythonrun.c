@@ -630,8 +630,13 @@ PyErr_PrintEx(int set_sys_last_vars)
     }
     hook = _PySys_GetObjectId(&PyId_excepthook);
     if (hook) {
-        PyObject *args = PyTuple_Pack(3, exception, v, tb);
-        PyObject *result = PyEval_CallObject(hook, args);
+        PyObject* stack[3];
+        PyObject *result;
+
+        stack[0] = exception;
+        stack[1] = v;
+        stack[2] = tb;
+        result = _PyObject_FastCall(hook, stack, 3, NULL);
         if (result == NULL) {
             PyObject *exception2, *v2, *tb2;
             if (PyErr_ExceptionMatches(PyExc_SystemExit)) {
@@ -660,7 +665,6 @@ PyErr_PrintEx(int set_sys_last_vars)
             Py_XDECREF(tb2);
         }
         Py_XDECREF(result);
-        Py_XDECREF(args);
     } else {
         PySys_WriteStderr("sys.excepthook is missing\n");
         PyErr_Display(exception, v, tb);
