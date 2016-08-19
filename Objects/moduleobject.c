@@ -444,8 +444,7 @@ PyModule_GetDict(PyObject *m)
         return NULL;
     }
     d = ((PyModuleObject *)m) -> md_dict;
-    if (d == NULL)
-        ((PyModuleObject *)m) -> md_dict = d = PyDict_New();
+    assert(d != NULL);
     return d;
 }
 
