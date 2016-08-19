@@ -2112,7 +2112,7 @@ PySys_SetArgv(int argc, wchar_t **argv)
 static int
 sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
 {
-    PyObject *writer = NULL, *args = NULL, *result = NULL;
+    PyObject *writer = NULL, *result = NULL;
     int err;
 
     if (file == NULL)
@@ -2122,11 +2122,7 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
     if (writer == NULL)
         goto error;
 
-    args = PyTuple_Pack(1, unicode);
-    if (args == NULL)
-        goto error;
-
-    result = PyEval_CallObject(writer, args);
+    result = _PyObject_FastCall(writer, &unicode, 1, NULL);
     if (result == NULL) {
         goto error;
     } else {
@@ -2138,7 +2134,6 @@ error:
     err = -1;
 finally:
     Py_XDECREF(writer);
-    Py_XDECREF(args);
     Py_XDECREF(result);
     return err;
 }
