@@ -76,6 +76,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2466: posixpath.ismount now correctly recognizes mount points which
+  the user does not have permission to access.
+
 - Issue #25958: Support "anti-registration" of special methods from
   various ABCs, like __hash__, __iter__ or __len__.  All these (and
   several more) can be set to None in an implementation class and the
