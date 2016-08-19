@@ -368,34 +368,25 @@ static PyObject *
 call_trampoline(PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
-    PyObject *args;
-    PyObject *whatstr;
     PyObject *result;
+    PyObject *stack[3];
 
-    args = PyTuple_New(3);
-    if (args == NULL)
+    if (PyFrame_FastToLocalsWithError(frame) < 0) {
         return NULL;
-    if (PyFrame_FastToLocalsWithError(frame) < 0)
-        return NULL;
+    }
 
-    Py_INCREF(frame);
-    whatstr = whatstrings[what];
-    Py_INCREF(whatstr);
-    if (arg == NULL)
-        arg = Py_None;
-    Py_INCREF(arg);
-    PyTuple_SET_ITEM(args, 0, (PyObject *)frame);
-    PyTuple_SET_ITEM(args, 1, whatstr);
-    PyTuple_SET_ITEM(args, 2, arg);
+    stack[0] = (PyObject *)frame;
+    stack[1] = whatstrings[what];
+    stack[2] = (arg != NULL) ? arg : Py_None;
 
     /* call the Python-level function */
-    result = PyEval_CallObject(callback, args);
-    PyFrame_LocalsToFast(frame, 1);
-    if (result == NULL)
-        PyTraceBack_Here(frame);
+    result = _PyObject_FastCall(callback, stack, 3, NULL);
 
-    /* cleanup */
-    Py_DECREF(args);
+    PyFrame_LocalsToFast(frame, 1);
+    if (result == NULL) {
+        PyTraceBack_Here(frame);
+    }
+
     return result;
 }
 
