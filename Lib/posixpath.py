@@ -193,6 +193,7 @@ def ismount(path):
         parent = join(path, b'..')
     else:
         parent = join(path, '..')
+    parent = realpath(parent)
     try:
         s2 = os.lstat(parent)
     except OSError:
