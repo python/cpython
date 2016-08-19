@@ -59,10 +59,13 @@ Module Objects
    .. index:: single: __dict__ (module attribute)
 
    Return the dictionary object that implements *module*'s namespace; this object
-   is the same as the :attr:`~object.__dict__` attribute of the module object.  This
-   function never fails.  It is recommended extensions use other
-   :c:func:`PyModule_\*` and :c:func:`PyObject_\*` functions rather than directly
-   manipulate a module's :attr:`~object.__dict__`.
+   is the same as the :attr:`~object.__dict__` attribute of the module object.
+   If *module* is not a module object (or a subtype of a module object),
+   :exc:`SystemError` is raised and *NULL* is returned.
+
+   It is recommended extensions use other :c:func:`PyModule_\*` and
+   :c:func:`PyObject_\*` functions rather than directly manipulate a module's
+   :attr:`~object.__dict__`.
 
 
 .. c:function:: PyObject* PyModule_GetNameObject(PyObject *module)
