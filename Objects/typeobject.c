@@ -1480,8 +1480,10 @@ call_maybe(PyObject *o, _Py_Identifier *nameid, const char *format, ...)
 
     va_end(va);
 
-    if (args == NULL)
+    if (args == NULL) {
+        Py_DECREF(func);
         return NULL;
+    }
 
     assert(PyTuple_Check(args));
     retval = PyObject_Call(func, args, NULL);
