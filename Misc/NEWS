@@ -38,6 +38,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2466: posixpath.ismount now correctly recognizes mount points which
+  the user does not have permission to access.
+
 - Issue #27773: Correct some memory management errors server_hostname in _ssl.wrap_socket().
 
 - Issue #26750: unittest.mock.create_autospec() now works properly for

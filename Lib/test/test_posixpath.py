@@ -1,7 +1,5 @@
-import itertools
 import os
 import posixpath
-import sys
 import unittest
 import warnings
 from posixpath import realpath, abspath, dirname, basename
@@ -203,6 +201,28 @@ class PosixPathTest(unittest.TestCase):
         def fake_lstat(path):
             st_ino = 0
             st_dev = 0
+            if path == ABSTFN:
+                st_dev = 1
+                st_ino = 1
+            return posix.stat_result((0, st_ino, st_dev, 0, 0, 0, 0, 0, 0, 0))
+        try:
+            os.lstat = fake_lstat
+            self.assertIs(posixpath.ismount(ABSTFN), True)
+        finally:
+            os.lstat = save_lstat
+
+    @unittest.skipIf(posix is None, "Test requires posix module")
+    def test_ismount_directory_not_readable(self):
+        # issue #2466: Simulate ismount run on a directory that is not
+        # readable, which used to return False.
+        save_lstat = os.lstat
+        def fake_lstat(path):
+            st_ino = 0
+            st_dev = 0
+            if path.startswith(ABSTFN) and path != ABSTFN:
+                # ismount tries to read something inside the ABSTFN directory;
+                # simulate this being forbidden (no read permission).
+                raise OSError("Fake [Errno 13] Permission denied")
             if path == ABSTFN:
                 st_dev = 1
                 st_ino = 1
