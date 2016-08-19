@@ -2193,6 +2193,82 @@ PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw)
     return _Py_CheckFunctionResult(func, result, NULL);
 }
 
+PyObject*
+_PyStack_AsTuple(PyObject **stack, Py_ssize_t nargs)
+{
+    PyObject *args;
+    Py_ssize_t i;
+
+    args = PyTuple_New(nargs);
+    if (args == NULL) {
+        return NULL;
+    }
+
+    for (i=0; i < nargs; i++) {
+        PyObject *item = stack[i];
+        Py_INCREF(item);
+        PyTuple_SET_ITEM(args, i, item);
+    }
+
+    return args;
+}
+
+PyObject *
+_PyObject_FastCall(PyObject *func, PyObject **args, int nargs, PyObject *kwargs)
+{
+    ternaryfunc call;
+    PyObject *result = NULL;
+
+    /* _PyObject_FastCall() must not be called with an exception set,
+       because it may clear it (directly or indirectly) and so the
+       caller loses its exception */
+    assert(!PyErr_Occurred());
+
+    assert(func != NULL);
+    assert(nargs >= 0);
+    assert(nargs == 0 || args != NULL);
+    /* issue #27128: support for keywords will come later:
+       _PyFunction_FastCall() doesn't support keyword arguments yet */
+    assert(kwargs == NULL);
+
+    if (Py_EnterRecursiveCall(" while calling a Python object")) {
+        return NULL;
+    }
+
+    if (PyFunction_Check(func)) {
+        result = _PyFunction_FastCall(func, args, nargs, kwargs);
+    }
+    else if (PyCFunction_Check(func)) {
+        result = _PyCFunction_FastCall(func, args, nargs, kwargs);
+    }
+    else {
+        PyObject *tuple;
+
+        /* Slow-path: build a temporary tuple */
+        call = func->ob_type->tp_call;
+        if (call == NULL) {
+            PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
+                         func->ob_type->tp_name);
+            goto exit;
+        }
+
+        tuple = _PyStack_AsTuple(args, nargs);
+        if (tuple == NULL) {
+            goto exit;
+        }
+
+        result = (*call)(func, tuple, kwargs);
+        Py_DECREF(tuple);
+    }
+
+    result = _Py_CheckFunctionResult(func, result, NULL);
+
+exit:
+    Py_LeaveRecursiveCall();
+
+    return result;
+}
+
 static PyObject*
 call_function_tail(PyObject *callable, PyObject *args)
 {
