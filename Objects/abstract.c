@@ -2272,27 +2272,20 @@ exit:
 static PyObject*
 call_function_tail(PyObject *callable, PyObject *args)
 {
-    PyObject *retval;
+    PyObject *result;
 
     if (args == NULL)
         return NULL;
 
     if (!PyTuple_Check(args)) {
-        PyObject *a;
-
-        a = PyTuple_New(1);
-        if (a == NULL) {
-            Py_DECREF(args);
-            return NULL;
-        }
-        PyTuple_SET_ITEM(a, 0, args);
-        args = a;
+        result = _PyObject_FastCall(callable, &args, 1, NULL);
     }
-    retval = PyObject_Call(callable, args, NULL);
+    else {
+        result = PyObject_Call(callable, args, NULL);
+    }
 
     Py_DECREF(args);
-
-    return retval;
+    return result;
 }
 
 PyObject *
