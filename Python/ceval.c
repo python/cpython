@@ -113,7 +113,7 @@ static PyObject * call_function(PyObject ***, int, uint64*, uint64*);
 #else
 static PyObject * call_function(PyObject ***, int);
 #endif
-static PyObject * fast_function(PyObject *, PyObject ***, int, int, int);
+static PyObject * fast_function(PyObject *, PyObject **, int, int, int);
 static PyObject * do_call(PyObject *, PyObject ***, int, int);
 static PyObject * ext_do_call(PyObject *, PyObject ***, int, int, int);
 static PyObject * update_keyword_args(PyObject *, int, PyObject ***,
@@ -3779,6 +3779,7 @@ too_many_positional(PyCodeObject *co, int given, int defcount, PyObject **fastlo
     Py_DECREF(kwonly_sig);
 }
 
+
 /* This is gonna seem *real weird*, but if you put some other code between
    PyEval_EvalFrame() and PyEval_EvalCodeEx() you will need to adjust
    the test in the if statements in Misc/gdbinit (pystack and pystackv). */
@@ -4068,8 +4069,10 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
            PyObject **defs, int defcount, PyObject *kwdefs, PyObject *closure)
 {
     return _PyEval_EvalCodeWithName(_co, globals, locals,
-                                    args, argcount, kws, kwcount,
-                                    defs, defcount, kwdefs, closure,
+                                    args, argcount,
+                                    kws, kwcount,
+                                    defs, defcount,
+                                    kwdefs, closure,
                                     NULL, NULL);
 }
 
@@ -4757,10 +4760,12 @@ call_function(PyObject ***pp_stack, int oparg
         } else
             Py_INCREF(func);
         READ_TIMESTAMP(*pintr0);
-        if (PyFunction_Check(func))
-            x = fast_function(func, pp_stack, n, na, nk);
-        else
+        if (PyFunction_Check(func)) {
+            x = fast_function(func, (*pp_stack) - n, n, na, nk);
+        }
+        else {
             x = do_call(func, pp_stack, na, nk);
+        }
         READ_TIMESTAMP(*pintr1);
         Py_DECREF(func);
 
@@ -4790,62 +4795,124 @@ call_function(PyObject ***pp_stack, int oparg
    done before evaluating the frame.
 */
 
+static PyObject*
+_PyFunction_FastCallNoKw(PyObject **args, Py_ssize_t na,
+                         PyCodeObject *co, PyObject *globals)
+{
+    PyFrameObject *f;
+    PyThreadState *tstate = PyThreadState_GET();
+    PyObject **fastlocals;
+    Py_ssize_t i;
+    PyObject *result;
+
+    PCALL(PCALL_FASTER_FUNCTION);
+    assert(globals != NULL);
+    /* XXX Perhaps we should create a specialized
+       PyFrame_New() that doesn't take locals, but does
+       take builtins without sanity checking them.
+       */
+    assert(tstate != NULL);
+    f = PyFrame_New(tstate, co, globals, NULL);
+    if (f == NULL) {
+        return NULL;
+    }
+
+    fastlocals = f->f_localsplus;
+
+    for (i = 0; i < na; i++) {
+        Py_INCREF(*args);
+        fastlocals[i] = *args++;
+    }
+    result = PyEval_EvalFrameEx(f,0);
+
+    ++tstate->recursion_depth;
+    Py_DECREF(f);
+    --tstate->recursion_depth;
+
+    return result;
+}
+
 static PyObject *
-fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
+fast_function(PyObject *func, PyObject **stack, int n, int na, int nk)
 {
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
     PyObject *globals = PyFunction_GET_GLOBALS(func);
     PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
-    PyObject *kwdefs = PyFunction_GET_KW_DEFAULTS(func);
-    PyObject *name = ((PyFunctionObject *)func) -> func_name;
-    PyObject *qualname = ((PyFunctionObject *)func) -> func_qualname;
-    PyObject **d = NULL;
-    int nd = 0;
+    PyObject *kwdefs, *closure, *name, *qualname;
+    PyObject **d;
+    int nd;
 
     PCALL(PCALL_FUNCTION);
     PCALL(PCALL_FAST_FUNCTION);
-    if (argdefs == NULL && co->co_argcount == n &&
-        co->co_kwonlyargcount == 0 && nk==0 &&
-        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE)) {
-        PyFrameObject *f;
-        PyObject *retval = NULL;
-        PyThreadState *tstate = PyThreadState_GET();
-        PyObject **fastlocals, **stack;
-        int i;
 
-        PCALL(PCALL_FASTER_FUNCTION);
-        assert(globals != NULL);
-        /* XXX Perhaps we should create a specialized
-           PyFrame_New() that doesn't take locals, but does
-           take builtins without sanity checking them.
-        */
-        assert(tstate != NULL);
-        f = PyFrame_New(tstate, co, globals, NULL);
-        if (f == NULL)
-            return NULL;
-
-        fastlocals = f->f_localsplus;
-        stack = (*pp_stack) - n;
-
-        for (i = 0; i < n; i++) {
-            Py_INCREF(*stack);
-            fastlocals[i] = *stack++;
-        }
-        retval = PyEval_EvalFrameEx(f,0);
-        ++tstate->recursion_depth;
-        Py_DECREF(f);
-        --tstate->recursion_depth;
-        return retval;
+    if (argdefs == NULL && co->co_argcount == na &&
+        co->co_kwonlyargcount == 0 && nk == 0 &&
+        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
+    {
+        return _PyFunction_FastCallNoKw(stack, na, co, globals);
     }
+
+    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
+    closure = PyFunction_GET_CLOSURE(func);
+    name = ((PyFunctionObject *)func) -> func_name;
+    qualname = ((PyFunctionObject *)func) -> func_qualname;
+
     if (argdefs != NULL) {
         d = &PyTuple_GET_ITEM(argdefs, 0);
         nd = Py_SIZE(argdefs);
     }
-    return _PyEval_EvalCodeWithName((PyObject*)co, globals,
-                                    (PyObject *)NULL, (*pp_stack)-n, na,
-                                    (*pp_stack)-2*nk, nk, d, nd, kwdefs,
-                                    PyFunction_GET_CLOSURE(func),
-                                    name, qualname);
+    else {
+        d = NULL;
+        nd = 0;
+    }
+    return _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
+                                    stack, na,
+                                    stack + na, nk,
+                                    d, nd, kwdefs,
+                                    closure, name, qualname);
+}
+
+PyObject *
+_PyFunction_FastCall(PyObject *func, PyObject **args, int nargs, PyObject *kwargs)
+{
+    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
+    PyObject *globals = PyFunction_GET_GLOBALS(func);
+    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
+    PyObject *kwdefs, *closure, *name, *qualname;
+    PyObject **d;
+    int nd;
+
+    PCALL(PCALL_FUNCTION);
+    PCALL(PCALL_FAST_FUNCTION);
+
+    /* issue #27128: support for keywords will come later */
+    assert(kwargs == NULL);
+
+    if (argdefs == NULL && co->co_argcount == nargs &&
+        co->co_kwonlyargcount == 0 &&
+        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
+    {
+        return _PyFunction_FastCallNoKw(args, nargs, co, globals);
+    }
+
+    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
+    closure = PyFunction_GET_CLOSURE(func);
+    name = ((PyFunctionObject *)func) -> func_name;
+    qualname = ((PyFunctionObject *)func) -> func_qualname;
+
+    if (argdefs != NULL) {
+        d = &PyTuple_GET_ITEM(argdefs, 0);
+        nd = Py_SIZE(argdefs);
+    }
+    else {
+        d = NULL;
+        nd = 0;
+    }
+    return _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
+                                     args, nargs,
+                                    NULL, 0,
+                                    d, nd, kwdefs,
+                                    closure, name, qualname);
 }
 
 static PyObject *

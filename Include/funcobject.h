@@ -58,6 +58,13 @@ PyAPI_FUNC(int) PyFunction_SetClosure(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetAnnotations(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject *) _PyFunction_FastCall(
+    PyObject *func,
+    PyObject **args, int nargs,
+    PyObject *kwargs);
+#endif
+
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #define PyFunction_GET_CODE(func) \

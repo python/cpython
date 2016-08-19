@@ -267,10 +267,26 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
                                           PyObject *args, PyObject *kw);
 
 #ifndef Py_LIMITED_API
+    PyAPI_FUNC(PyObject*) _PyStack_AsTuple(PyObject **stack,
+        Py_ssize_t nargs);
+
+     /* Call the callable object func with the "fast call" calling convention:
+        args is a C array for positional parameters (nargs is the number of
+        positional paramater), kwargs is a dictionary for keyword parameters.
+
+        If nargs is equal to zero, args can be NULL. kwargs can be NULL.
+        nargs must be greater or equal to zero.
+
+        Return the result on success. Raise an exception on return NULL on
+        error. */
+     PyAPI_FUNC(PyObject *) _PyObject_FastCall(PyObject *func,
+                                               PyObject **args, int nargs,
+                                               PyObject *kwargs);
+
      PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *func,
                                                     PyObject *result,
                                                     const char *where);
-#endif
+#endif   /* Py_LIMITED_API */
 
        /*
      Call a callable Python object, callable_object, with

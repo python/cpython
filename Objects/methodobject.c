@@ -145,6 +145,99 @@ PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwds)
     return _Py_CheckFunctionResult(func, res, NULL);
 }
 
+PyObject *
+_PyCFunction_FastCall(PyObject *func_obj, PyObject **args, int nargs,
+                      PyObject *kwargs)
+{
+    PyCFunctionObject* func = (PyCFunctionObject*)func_obj;
+    PyCFunction meth = PyCFunction_GET_FUNCTION(func);
+    PyObject *self = PyCFunction_GET_SELF(func);
+    PyObject *result;
+    int flags;
+
+    /* _PyCFunction_FastCall() must not be called with an exception set,
+       because it may clear it (directly or indirectly) and so the
+       caller loses its exception */
+    assert(!PyErr_Occurred());
+
+    flags = PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC | METH_COEXIST);
+
+    switch (flags)
+    {
+    case METH_NOARGS:
+        if (kwargs != NULL && PyDict_Size(kwargs) != 0) {
+            PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
+                         func->m_ml->ml_name);
+            return NULL;
+        }
+
+        if (nargs != 0) {
+            PyErr_Format(PyExc_TypeError,
+                "%.200s() takes no arguments (%zd given)",
+                func->m_ml->ml_name, nargs);
+            return NULL;
+        }
+
+        result = (*meth) (self, NULL);
+        break;
+
+    case METH_O:
+        if (kwargs != NULL && PyDict_Size(kwargs) != 0) {
+            PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
+                         func->m_ml->ml_name);
+            return NULL;
+        }
+
+        if (nargs != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "%.200s() takes exactly one argument (%zd given)",
+                func->m_ml->ml_name, nargs);
+            return NULL;
+        }
+
+        result = (*meth) (self, args[0]);
+        break;
+
+    case METH_VARARGS:
+    case METH_VARARGS | METH_KEYWORDS:
+    {
+        /* Slow-path: create a temporary tuple */
+        PyObject *tuple;
+
+        if (!(flags & METH_KEYWORDS) && kwargs != NULL && PyDict_Size(kwargs) != 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s() takes no keyword arguments",
+                         func->m_ml->ml_name);
+            return NULL;
+        }
+
+        tuple = _PyStack_AsTuple(args, nargs);
+        if (tuple == NULL) {
+            return NULL;
+        }
+
+        if (flags & METH_KEYWORDS) {
+            result = (*(PyCFunctionWithKeywords)meth) (self, tuple, kwargs);
+        }
+        else {
+            result = (*meth) (self, tuple);
+        }
+        Py_DECREF(tuple);
+        break;
+    }
+
+    default:
+        PyErr_SetString(PyExc_SystemError,
+                        "Bad call flags in PyCFunction_Call. "
+                        "METH_OLDARGS is no longer supported!");
+        return NULL;
+    }
+
+    result = _Py_CheckFunctionResult(func_obj, result, NULL);
+
+    return result;
+}
+
 /* Methods (the standard built-in methods, that is) */
 
 static void
