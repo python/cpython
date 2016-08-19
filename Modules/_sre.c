@@ -1056,7 +1056,6 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
     PyObject* joiner;
     PyObject* item;
     PyObject* filter;
-    PyObject* args;
     PyObject* match;
     void* ptr;
     Py_ssize_t status;
@@ -1158,13 +1157,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
             match = pattern_new_match(self, &state, 1);
             if (!match)
                 goto error;
-            args = PyTuple_Pack(1, match);
-            if (!args) {
-                Py_DECREF(match);
-                goto error;
-            }
-            item = PyObject_CallObject(filter, args);
-            Py_DECREF(args);
+            item = _PyObject_FastCall(filter, &match, 1, NULL);
             Py_DECREF(match);
             if (!item)
                 goto error;
