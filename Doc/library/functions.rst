@@ -1463,6 +1463,9 @@ are always available.  They are listed here in alphabetical order.
 
    See also :ref:`bltin-type-objects`.
 
+   .. versionchanged:: 3.6
+      Subclasses of :class:`type` which don't override ``type.__new__`` may no
+      longer use the one-argument form to get the type of an object.
 
 .. function:: vars([object])
 

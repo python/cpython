@@ -1000,6 +1000,24 @@ class ClassCreationTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             X = types.new_class("X", (int(), C))
 
+    def test_one_argument_type(self):
+        expected_message = 'type.__new__() takes exactly 3 arguments (1 given)'
+
+        # Only type itself can use the one-argument form (#27157)
+        self.assertIs(type(5), int)
+
+        class M(type):
+            pass
+        with self.assertRaises(TypeError) as cm:
+            M(5)
+        self.assertEqual(str(cm.exception), expected_message)
+
+        class N(type, metaclass=M):
+            pass
+        with self.assertRaises(TypeError) as cm:
+            N(5)
+        self.assertEqual(str(cm.exception), expected_message)
+
 
 class SimpleNamespaceTests(unittest.TestCase):
 
