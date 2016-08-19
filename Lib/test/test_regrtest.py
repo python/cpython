@@ -407,7 +407,7 @@ class BaseTestCase(unittest.TestCase):
             result = 'INTERRUPTED'
         else:
             result = 'SUCCESS'
-        self.check_line(output, 'Result: %s' % result)
+        self.check_line(output, 'Tests result: %s' % result)
 
     def parse_random_seed(self, output):
         match = self.regex_search(r'Using random seed ([0-9]+)', output)

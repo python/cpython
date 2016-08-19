@@ -437,7 +437,7 @@ class Regrtest:
             result = "INTERRUPTED"
         else:
             result = "SUCCESS"
-        print("Result: %s" % result)
+        print("Tests result: %s" % result)
 
         if self.ns.runleaks:
             os.system("leaks %d" % os.getpid())
