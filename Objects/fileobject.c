@@ -127,7 +127,7 @@ PyFile_GetLine(PyObject *f, int n)
 int
 PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 {
-    PyObject *writer, *value, *args, *result;
+    PyObject *writer, *value, *result;
     _Py_IDENTIFIER(write);
 
     if (f == NULL) {
@@ -146,14 +146,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
         Py_DECREF(writer);
         return -1;
     }
-    args = PyTuple_Pack(1, value);
-    if (args == NULL) {
-        Py_DECREF(value);
-        Py_DECREF(writer);
-        return -1;
-    }
-    result = PyEval_CallObject(writer, args);
-    Py_DECREF(args);
+    result = _PyObject_FastCall(writer, &value, 1, NULL);
     Py_DECREF(value);
     Py_DECREF(writer);
     if (result == NULL)
