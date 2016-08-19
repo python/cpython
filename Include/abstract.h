@@ -264,7 +264,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
      PyAPI_FUNC(PyObject *) PyObject_Call(PyObject *callable_object,
-                                          PyObject *args, PyObject *kw);
+                                          PyObject *args, PyObject *kwargs);
 
 #ifndef Py_LIMITED_API
     PyAPI_FUNC(PyObject*) _PyStack_AsTuple(PyObject **stack,
