@@ -2343,9 +2343,10 @@ callmethod(PyObject* func, const char *format, va_list va, int is_size_t)
 {
     PyObject *args, *result;
 
+    assert(func != NULL);
+
     if (!PyCallable_Check(func)) {
         type_error("attribute of type '%.200s' is not callable", func);
-        Py_XDECREF(func);
         return NULL;
     }
 
@@ -2363,7 +2364,6 @@ callmethod(PyObject* func, const char *format, va_list va, int is_size_t)
     }
 
     result = call_function_tail(func, args);
-    Py_XDECREF(func);
     Py_DECREF(args);
     return result;
 }
@@ -2385,6 +2385,7 @@ PyObject_CallMethod(PyObject *o, const char *name, const char *format, ...)
     va_start(va, format);
     retval = callmethod(func, format, va, 0);
     va_end(va);
+    Py_DECREF(func);
     return retval;
 }
 
@@ -2406,6 +2407,7 @@ _PyObject_CallMethodId(PyObject *o, _Py_Identifier *name,
     va_start(va, format);
     retval = callmethod(func, format, va, 0);
     va_end(va);
+    Py_DECREF(func);
     return retval;
 }
 
@@ -2426,6 +2428,7 @@ _PyObject_CallMethod_SizeT(PyObject *o, const char *name,
     va_start(va, format);
     retval = callmethod(func, format, va, 1);
     va_end(va);
+    Py_DECREF(func);
     return retval;
 }
 
@@ -2447,6 +2450,7 @@ _PyObject_CallMethodId_SizeT(PyObject *o, _Py_Identifier *name,
     va_start(va, format);
     retval = callmethod(func, format, va, 1);
     va_end(va);
+    Py_DECREF(func);
     return retval;
 }
 
