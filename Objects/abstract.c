@@ -2274,8 +2274,7 @@ call_function_tail(PyObject *callable, PyObject *args)
 {
     PyObject *result;
 
-    if (args == NULL)
-        return NULL;
+    assert(args != NULL);
 
     if (!PyTuple_Check(args)) {
         result = _PyObject_FastCall(callable, &args, 1, NULL);
@@ -2284,7 +2283,6 @@ call_function_tail(PyObject *callable, PyObject *args)
         result = PyObject_Call(callable, args, NULL);
     }
 
-    Py_DECREF(args);
     return result;
 }
 
@@ -2292,7 +2290,7 @@ PyObject *
 PyObject_CallFunction(PyObject *callable, const char *format, ...)
 {
     va_list va;
-    PyObject *args;
+    PyObject *args, *result;
 
     if (callable == NULL)
         return null_error();
@@ -2302,19 +2300,23 @@ PyObject_CallFunction(PyObject *callable, const char *format, ...)
         args = Py_VaBuildValue(format, va);
         va_end(va);
     }
-    else
+    else {
         args = PyTuple_New(0);
-    if (args == NULL)
+    }
+    if (args == NULL) {
         return NULL;
+    }
 
-    return call_function_tail(callable, args);
+    result = call_function_tail(callable, args);
+    Py_DECREF(args);
+    return result;
 }
 
 PyObject *
 _PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
 {
     va_list va;
-    PyObject *args;
+    PyObject *args, *result;
 
     if (callable == NULL)
         return null_error();
@@ -2324,21 +2326,27 @@ _PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
         args = _Py_VaBuildValue_SizeT(format, va);
         va_end(va);
     }
-    else
+    else {
         args = PyTuple_New(0);
+    }
+    if (args == NULL) {
+        return NULL;
+    }
 
-    return call_function_tail(callable, args);
+    result = call_function_tail(callable, args);
+    Py_DECREF(args);
+    return result;
 }
 
 static PyObject*
 callmethod(PyObject* func, const char *format, va_list va, int is_size_t)
 {
-    PyObject *retval = NULL;
-    PyObject *args;
+    PyObject *args, *result;
 
     if (!PyCallable_Check(func)) {
         type_error("attribute of type '%.200s' is not callable", func);
-        goto exit;
+        Py_XDECREF(func);
+        return NULL;
     }
 
     if (format && *format) {
@@ -2347,16 +2355,17 @@ callmethod(PyObject* func, const char *format, va_list va, int is_size_t)
         else
             args = Py_VaBuildValue(format, va);
     }
-    else
+    else {
         args = PyTuple_New(0);
+    }
+    if (args == NULL) {
+        return NULL;
+    }
 
-    retval = call_function_tail(func, args);
-
-  exit:
-    /* args gets consumed in call_function_tail */
+    result = call_function_tail(func, args);
     Py_XDECREF(func);
-
-    return retval;
+    Py_DECREF(args);
+    return result;
 }
 
 PyObject *
