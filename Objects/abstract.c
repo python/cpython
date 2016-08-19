@@ -2324,14 +2324,13 @@ PyObject_CallFunction(PyObject *callable, const char *format, ...)
         return null_error();
     }
 
-    if (format && *format) {
-        va_start(va, format);
-        args = Py_VaBuildValue(format, va);
-        va_end(va);
+    if (!format || !*format) {
+        return _PyObject_FastCall(callable, NULL, 0, NULL);
     }
-    else {
-        args = PyTuple_New(0);
-    }
+
+    va_start(va, format);
+    args = Py_VaBuildValue(format, va);
+    va_end(va);
     if (args == NULL) {
         return NULL;
     }
@@ -2351,14 +2350,13 @@ _PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
         return null_error();
     }
 
-    if (format && *format) {
-        va_start(va, format);
-        args = _Py_VaBuildValue_SizeT(format, va);
-        va_end(va);
+    if (!format || !*format) {
+        return _PyObject_FastCall(callable, NULL, 0, NULL);
     }
-    else {
-        args = PyTuple_New(0);
-    }
+
+    va_start(va, format);
+    args = _Py_VaBuildValue_SizeT(format, va);
+    va_end(va);
     if (args == NULL) {
         return NULL;
     }
@@ -2380,14 +2378,15 @@ callmethod(PyObject* func, const char *format, va_list va, int is_size_t)
         return NULL;
     }
 
-    if (format && *format) {
-        if (is_size_t)
-            args = _Py_VaBuildValue_SizeT(format, va);
-        else
-            args = Py_VaBuildValue(format, va);
+    if (!format || !*format) {
+        return _PyObject_FastCall(func, NULL, 0, NULL);
+    }
+
+    if (is_size_t) {
+        args = _Py_VaBuildValue_SizeT(format, va);
     }
     else {
-        args = PyTuple_New(0);
+        args = Py_VaBuildValue(format, va);
     }
     if (args == NULL) {
         return NULL;
