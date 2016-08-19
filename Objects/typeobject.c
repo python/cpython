@@ -1424,7 +1424,7 @@ static PyObject *
 call_method(PyObject *o, _Py_Identifier *nameid, const char *format, ...)
 {
     va_list va;
-    PyObject *args, *func = 0, *retval;
+    PyObject *func = NULL, *retval;
 
     func = lookup_maybe(o, nameid);
     if (func == NULL) {
@@ -1434,22 +1434,25 @@ call_method(PyObject *o, _Py_Identifier *nameid, const char *format, ...)
     }
 
     if (format && *format) {
+        PyObject *args;
+
         va_start(va, format);
         args = Py_VaBuildValue(format, va);
         va_end(va);
+
+        if (args == NULL) {
+            Py_DECREF(func);
+            return NULL;
+        }
+        assert(PyTuple_Check(args));
+
+        retval = PyObject_Call(func, args, NULL);
+        Py_DECREF(args);
     }
     else {
-        args = PyTuple_New(0);
-    }
-    if (args == NULL) {
-        Py_DECREF(func);
-        return NULL;
+        retval = _PyObject_FastCall(func, NULL, 0, NULL);
     }
 
-    assert(PyTuple_Check(args));
-    retval = PyObject_Call(func, args, NULL);
-
-    Py_DECREF(args);
     Py_DECREF(func);
 
     return retval;
@@ -1461,7 +1464,7 @@ static PyObject *
 call_maybe(PyObject *o, _Py_Identifier *nameid, const char *format, ...)
 {
     va_list va;
-    PyObject *args, *func = 0, *retval;
+    PyObject *func = NULL, *retval;
 
     func = lookup_maybe(o, nameid);
     if (func == NULL) {
@@ -1471,22 +1474,25 @@ call_maybe(PyObject *o, _Py_Identifier *nameid, const char *format, ...)
     }
 
     if (format && *format) {
+        PyObject *args;
+
         va_start(va, format);
         args = Py_VaBuildValue(format, va);
         va_end(va);
+
+        if (args == NULL) {
+            Py_DECREF(func);
+            return NULL;
+        }
+        assert(PyTuple_Check(args));
+
+        retval = PyObject_Call(func, args, NULL);
+        Py_DECREF(args);
     }
     else {
-        args = PyTuple_New(0);
-    }
-    if (args == NULL) {
-        Py_DECREF(func);
-        return NULL;
+        retval = _PyObject_FastCall(func, NULL, 0, NULL);
     }
 
-    assert(PyTuple_Check(args));
-    retval = PyObject_Call(func, args, NULL);
-
-    Py_DECREF(args);
     Py_DECREF(func);
 
     return retval;
