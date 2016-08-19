@@ -461,12 +461,12 @@ static PyObject *
 keyobject_richcompare(PyObject *ko, PyObject *other, int op)
 {
     PyObject *res;
-    PyObject *args;
     PyObject *x;
     PyObject *y;
     PyObject *compare;
     PyObject *answer;
     static PyObject *zero;
+    PyObject* stack[2];
 
     if (zero == NULL) {
         zero = PyLong_FromLong(0);
@@ -490,17 +490,13 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     /* Call the user's comparison function and translate the 3-way
      * result into true or false (or error).
      */
-    args = PyTuple_New(2);
-    if (args == NULL)
+    stack[0] = x;
+    stack[1] = y;
+    res = _PyObject_FastCall(compare, stack, 2, NULL);
+    if (res == NULL) {
         return NULL;
-    Py_INCREF(x);
-    Py_INCREF(y);
-    PyTuple_SET_ITEM(args, 0, x);
-    PyTuple_SET_ITEM(args, 1, y);
-    res = PyObject_Call(compare, args, NULL);
-    Py_DECREF(args);
-    if (res == NULL)
-        return NULL;
+    }
+
     answer = PyObject_RichCompare(res, zero, op);
     Py_DECREF(res);
     return answer;
