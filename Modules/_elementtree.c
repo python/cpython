@@ -819,9 +819,8 @@ LOCAL(PyObject *)
 deepcopy(PyObject *object, PyObject *memo)
 {
     /* do a deep copy of the given object */
-    PyObject *args;
-    PyObject *result;
     elementtreestate *st;
+    PyObject *stack[2];
 
     /* Fast paths */
     if (object == Py_None || PyUnicode_CheckExact(object)) {
@@ -857,12 +856,9 @@ deepcopy(PyObject *object, PyObject *memo)
         return NULL;
     }
 
-    args = PyTuple_Pack(2, object, memo);
-    if (!args)
-        return NULL;
-    result = PyObject_CallObject(st->deepcopy_obj, args);
-    Py_DECREF(args);
-    return result;
+    stack[0] = object;
+    stack[1] = memo;
+    return _PyObject_FastCall(st->deepcopy_obj, stack, 2, NULL);
 }
 
 
