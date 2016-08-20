@@ -11,7 +11,7 @@ Transports
 
 Transports are classes provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.  You generally won't instantiate
-a transport yourself; instead, you will call a :class:`AbstractEventLoop` method
+a transport yourself; instead, you will call an :class:`AbstractEventLoop` method
 which will create the transport and try to initiate the underlying
 communication channel, calling you back when it succeeds.
 

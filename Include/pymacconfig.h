@@ -63,7 +63,7 @@
 #    if defined(__LP64__)
      /* MacOSX 10.4 (the first release to support 64-bit code
       * at all) only supports 64-bit in the UNIX layer.
-      * Therefore surpress the toolbox-glue in 64-bit mode.
+      * Therefore suppress the toolbox-glue in 64-bit mode.
       */
 
     /* In 64-bit mode setpgrp always has no arguments, in 32-bit
@@ -91,7 +91,7 @@
      *
      * Specifically: OSX 10.4 has limited supported for '%zd', while
      * 10.5 has full support for '%zd'. A binary built on 10.5 won't
-     * work properly on 10.4 unless we surpress the definition
+     * work properly on 10.4 unless we suppress the definition
      * of PY_FORMAT_SIZE_T
      */
 #undef  PY_FORMAT_SIZE_T
