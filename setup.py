@@ -1652,7 +1652,7 @@ class PyBuildExt(build_ext):
             if int(os.uname()[2].split('.')[0]) >= 8:
                 # We're on Mac OS X 10.4 or later, the compiler should
                 # support '-Wno-deprecated-declarations'. This will
-                # surpress deprecation warnings for the Carbon extensions,
+                # suppress deprecation warnings for the Carbon extensions,
                 # these extensions wrap the Carbon APIs and even those
                 # parts that are deprecated.
                 carbon_extra_compile_args = ['-Wno-deprecated-declarations']
