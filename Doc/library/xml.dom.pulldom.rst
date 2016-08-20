@@ -74,7 +74,7 @@ and switch to DOM-related processing.
 .. function:: parse(stream_or_string, parser=None, bufsize=None)
 
    Return a :class:`DOMEventStream` from the given input. *stream_or_string* may be
-   either a file name, or a file-like object. *parser*, if given, must be a
+   either a file name, or a file-like object. *parser*, if given, must be an
    :class:`~xml.sax.xmlreader.XMLReader` object. This function will change the
    document handler of the
    parser and activate namespace support; other parser configuration (like
