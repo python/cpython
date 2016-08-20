@@ -532,7 +532,7 @@ implemented by Vinay Sajip, are:
   calling ``log.getChild('network.listen')`` is equivalent to
   ``getLogger('app.network.listen')``.
 
-* The :class:`~logging.LoggerAdapter` class gained a
+* The :class:`~logging.LoggerAdapter` class gained an
   :meth:`~logging.LoggerAdapter.isEnabledFor` method that takes a
   *level* and returns whether the underlying logger would
   process a message of that level of importance.
