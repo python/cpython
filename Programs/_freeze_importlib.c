@@ -77,6 +77,7 @@ main(int argc, char *argv[])
     Py_NoUserSiteDirectory++;
     Py_NoSiteFlag++;
     Py_IgnoreEnvironmentFlag++;
+    Py_FrozenFlag++;
 
     Py_SetProgramName(L"./_freeze_importlib");
     /* Don't install importlib, since it could execute outdated bytecode. */
