@@ -64,9 +64,11 @@ class _EnumDict(dict):
 
         """
         if _is_sunder(key):
-            raise ValueError('_names_ are reserved for future Enum use')
+            if key not in ('_order_', ):
+                raise ValueError('_names_ are reserved for future Enum use')
         elif _is_dunder(key):
-            pass
+            if key == '__order__':
+                key = '_order_'
         elif key in self._member_names:
             # descriptor overwriting an enum?
             raise TypeError('Attempted to reuse key: %r' % key)
@@ -105,6 +107,9 @@ class EnumMeta(type):
         members = {k: classdict[k] for k in classdict._member_names}
         for name in classdict._member_names:
             del classdict[name]
+
+        # adjust the sunders
+        _order_ = classdict.pop('_order_', None)
 
         # check for illegal enum names (any others?)
         invalid_names = set(members) & {'mro', }
@@ -210,6 +215,14 @@ class EnumMeta(type):
             if save_new:
                 enum_class.__new_member__ = __new__
             enum_class.__new__ = Enum.__new__
+
+        # py3 support for definition order (helps keep py2/py3 code in sync)
+        if _order_ is not None:
+            if isinstance(_order_, str):
+                _order_ = _order_.replace(',', ' ').split()
+            if _order_ != enum_class._member_names_:
+                raise TypeError('member order does not match _order_')
+
         return enum_class
 
     def __bool__(self):

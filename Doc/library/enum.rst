@@ -257,7 +257,7 @@ members are not integers (but see `IntEnum`_ below)::
     >>> Color.red < Color.blue
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    TypeError: unorderable types: Color() < Color()
+    TypeError: '<' not supported between instances of 'Color' and 'Color'
 
 Equality comparisons are defined though::
 
@@ -776,3 +776,22 @@ appropriately.
 If you wish to change how :class:`Enum` members are looked up you should either
 write a helper function or a :func:`classmethod` for the :class:`Enum`
 subclass.
+
+To help keep Python 2 / Python 3 code in sync a user-specified :attr:`_order_`,
+if provided, will be checked to ensure the actual order of the enumeration
+matches::
+
+    >>> class Color(Enum):
+    ...     _order_ = 'red green blue'
+    ...     red = 1
+    ...     blue = 3
+    ...     green = 2
+    ...
+    Traceback (most recent call last):
+    ...
+    TypeError: member order does not match _order_
+
+.. note::
+
+    In Python 2 code the :attr:`_order_` attribute is necessary as definition
+    order is lost during class creation.
