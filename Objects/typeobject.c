@@ -7018,6 +7018,11 @@ init_subclass(PyTypeObject *type, PyObject *kwds)
         return -1;
 
     tuple = PyTuple_New(0);
+    if (tuple == NULL) {
+        Py_DECREF(func);
+        return 0;
+    }
+
     tmp = PyObject_Call(func, tuple, kwds);
     Py_DECREF(tuple);
     Py_DECREF(func);
