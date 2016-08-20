@@ -107,7 +107,7 @@ Library
 - Issue #25628:  The *verbose* and *rename* parameters for
   collections.namedtuple are now keyword-only.
 
-- Issue #12345: Add mathemathical constant tau to math and cmath. See also
+- Issue #12345: Add mathematical constant tau to math and cmath. See also
   PEP 628.
 
 - Issue #26823: traceback.StackSummary.format now abbreviates large sections of
@@ -182,7 +182,7 @@ Library
 
 - Issue #27522: Avoid an unintentional reference cycle in email.feedparser.
 
-- Issue #27512: Fix a segfault when os.fspath() called a an __fspath__() method
+- Issue #27512: Fix a segfault when os.fspath() called an __fspath__() method
   that raised an exception. Patch by Xiang Zhang.
 
 Tests
