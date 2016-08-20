@@ -177,6 +177,9 @@ Windows
 Build
 -----
 
+- Issue #27713: Surpress spurious build warnings when updating importlib's
+  bootstrap files.  Patch by Xiang Zhang
+
 - Issue #25825: Correct the references to Modules/python.exp, which is
   required on AIX.  The references were accidentally changed in 3.5.0a1.
 
