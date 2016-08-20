@@ -137,6 +137,9 @@ Library
 - Issue #26800: Undocumented support of general bytes-like objects
   as paths in os functions is now deprecated.
 
+- Issue #26981: Add _order_ compatibility ship to enum.Enum for
+  Python 2/3 code bases.
+
 - Issue #27661: Added tzinfo keyword argument to datetime.combine.
 
 - In the curses module, raise an error if window.getstr() or window.instr() is
