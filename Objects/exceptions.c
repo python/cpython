@@ -230,7 +230,7 @@ BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb)
         return -1;
     }
 
-    Py_XINCREF(tb);
+    Py_INCREF(tb);
     Py_XSETREF(self->traceback, tb);
     return 0;
 }
@@ -985,7 +985,7 @@ OSError_init(PyOSErrorObject *self, PyObject *args, PyObject *kwds)
     return 0;
 
 error:
-    Py_XDECREF(args);
+    Py_DECREF(args);
     return -1;
 }
 
@@ -1065,8 +1065,7 @@ OSError_str(PyOSErrorObject *self)
     }
     if (self->myerrno && self->strerror)
         return PyUnicode_FromFormat("[Errno %S] %S",
-                                    self->myerrno ? self->myerrno: Py_None,
-                                    self->strerror ? self->strerror: Py_None);
+                                    self->myerrno, self->strerror);
     return BaseException_str((PyBaseExceptionObject *)self);
 }
 
