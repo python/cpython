@@ -435,6 +435,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
                         line = PyUnicode_FromFormat(
                         "  [Previous line repeated %d more times]\n", cnt-3);
                         err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
+                        Py_DECREF(line);
                     }
                     last_file = tb->tb_frame->f_code->co_filename;
                     last_line = tb->tb_lineno;
@@ -456,6 +457,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
         line = PyUnicode_FromFormat(
         "  [Previous line repeated %d more times]\n", cnt-3);
         err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
+        Py_DECREF(line);
     }
     return err;
 }
