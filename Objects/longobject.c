@@ -2771,8 +2771,8 @@ PyLong_AsDouble(PyObject *v)
     }
     if (Py_ABS(Py_SIZE(v)) <= 1) {
         /* Fast path; single digit long (31 bits) will cast safely
-	   to double.  This improves performance of FP/long operations
-	   by 20%.
+           to double.  This improves performance of FP/long operations
+           by 20%.
         */
         return (double)MEDIUM_VALUE((PyLongObject *)v);
     }
