@@ -306,6 +306,16 @@ directives ``%G``, ``%u`` and ``%V``.
 (Contributed by Ashley Anderson in :issue:`12006`.)
 
 
+distutils.command.sdist
+-----------------------
+
+The ``default_format`` attribute has been removed from
+:class:`distutils.command.sdist.sdist` and the ``formats``
+attribute defaults to ``['gztar']``. Although not anticipated,
+Any code relying on the presence of ``default_format`` may
+need to be adapted. See :issue:`27819` for more details.
+
+
 faulthandler
 ------------
 
@@ -821,6 +831,19 @@ Changes in the Python API
   accepting additional keyword arguments will need to adjust their calls to
   :meth:`type.__new__` (whether direct or via :class:`super`) accordingly.
 
+* In :class:`distutils.command.sdist.sdist`, the ``default_format``
+  attribute has been removed and is no longer honored. Instead, the
+  gzipped tarfile format is the default on all platforms and no
+  platform-specific selection is made.
+  In environments where distributions are
+  built on Windows and zip distributions are required, configure
+  the project with a ``setup.cfg`` file containing the following::
+
+    [sdist]
+    formats=zip
+
+  This behavior has also been backported to earlier Python versions
+  by Setuptools 26.0.0.
 
 Changes in the C API
 --------------------
