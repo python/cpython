@@ -10,6 +10,10 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27662: Fix an overflow check in ``List_New``: the original code was
+  checking against ``Py_SIZE_MAX`` instead of the correct upper bound of
+  ``Py_SSIZE_T_MAX``. Patch by Xiang Zhang.
+
 - Issue #27782: Multi-phase extension module import now correctly allows the
   ``m_methods`` field to be used to add module level functions to instances
   of non-module types returned from ``Py_create_mod``. Patch by Xiang Zhang.
