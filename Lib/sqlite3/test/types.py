@@ -274,6 +274,45 @@ class ColNamesTests(unittest.TestCase):
         self.cur.execute("select * from test where 0 = 1")
         self.assertEqual(self.cur.description[0][0], "x")
 
+    def CheckCursorDescriptionInsert(self):
+        self.cur.execute("insert into test values (1)")
+        self.assertIsNone(self.cur.description)
+
+
+@unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "CTEs not supported")
+class CommonTableExpressionTests(unittest.TestCase):
+
+    def setUp(self):
+        self.con = sqlite.connect(":memory:")
+        self.cur = self.con.cursor()
+        self.cur.execute("create table test(x foo)")
+
+    def tearDown(self):
+        self.cur.close()
+        self.con.close()
+
+    def CheckCursorDescriptionCTESimple(self):
+        self.cur.execute("with one as (select 1) select * from one")
+        self.assertIsNotNone(self.cur.description)
+        self.assertEqual(self.cur.description[0][0], "1")
+
+    def CheckCursorDescriptionCTESMultipleColumns(self):
+        self.cur.execute("insert into test values(1)")
+        self.cur.execute("insert into test values(2)")
+        self.cur.execute("with testCTE as (select * from test) select * from testCTE")
+        self.assertIsNotNone(self.cur.description)
+        self.assertEqual(self.cur.description[0][0], "x")
+
+    def CheckCursorDescriptionCTE(self):
+        self.cur.execute("insert into test values (1)")
+        self.cur.execute("with bar as (select * from test) select * from test where x = 1")
+        self.assertIsNotNone(self.cur.description)
+        self.assertEqual(self.cur.description[0][0], "x")
+        self.cur.execute("with bar as (select * from test) select * from test where x = 2")
+        self.assertIsNotNone(self.cur.description)
+        self.assertEqual(self.cur.description[0][0], "x")
+
+
 class ObjectAdaptationTests(unittest.TestCase):
     def cast(obj):
         return float(obj)
@@ -372,7 +411,8 @@ def suite():
     adaptation_suite = unittest.makeSuite(ObjectAdaptationTests, "Check")
     bin_suite = unittest.makeSuite(BinaryConverterTests, "Check")
     date_suite = unittest.makeSuite(DateTimeTests, "Check")
-    return unittest.TestSuite((sqlite_type_suite, decltypes_type_suite, colnames_type_suite, adaptation_suite, bin_suite, date_suite))
+    cte_suite = unittest.makeSuite(CommonTableExpressionTests, "Check")
+    return unittest.TestSuite((sqlite_type_suite, decltypes_type_suite, colnames_type_suite, adaptation_suite, bin_suite, date_suite, cte_suite))
 
 def test():
     runner = unittest.TextTestRunner()
