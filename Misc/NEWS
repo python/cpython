@@ -10,6 +10,10 @@ What's New in Python 2.7.13?
 Core and Builtins
 -----------------
 
+- Issue #25604: Fix a minor bug in integer true division; this bug could
+  potentially have caused off-by-one-ulp results on platforms with
+  unreliable ldexp implementations.
+
 - Issue #27473: Fixed possible integer overflow in str, unicode and bytearray
   concatenations and repetitions.  Based on patch by Xiang Zhang.
 

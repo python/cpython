@@ -3315,9 +3315,9 @@ long_true_divide(PyObject *v, PyObject *w)
     /* Round by directly modifying the low digit of x. */
     mask = (digit)1 << (extra_bits - 1);
     low = x->ob_digit[0] | inexact;
-    if (low & mask && low & (3*mask-1))
+    if ((low & mask) && (low & (3U*mask-1U)))
         low += mask;
-    x->ob_digit[0] = low & ~(mask-1U);
+    x->ob_digit[0] = low & ~(2U*mask-1U);
 
     /* Convert x to a double dx; the conversion is exact. */
     dx = x->ob_digit[--x_size];
