@@ -4,16 +4,16 @@ What's New in IDLE 3.6.0?
 
 - Issue #27714: text_textview and test_autocomplete now pass when re-run
   in the same process.  This occurs when test_idle fails when run with the
-  -w option but without -jn.  Fix warning tom test_config.
+  -w option but without -jn.  Fix warning from test_config.
 
 - Issue #27621: Put query response validation error messages in the query
-  box itself instead of a separate massagebox.  Redo tests to match.
+  box itself instead of in a separate massagebox.  Redo tests to match.
   Add Mac OSX refinements.  Original patch by Mark Roseman.
 
 - Issue #27620: Escape key now closes Query box as cancelled.
 
 - Issue #27609: IDLE: tab after initial whitespace should tab, not
-  autocomplete. This fixes problem with writing docstrings at lease
+  autocomplete. This fixes problem with writing docstrings at least
   twice indented.
 
 - Issue #27609: Explicitly return None when there are also non-None
