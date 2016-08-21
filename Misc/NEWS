@@ -36,6 +36,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21718: cursor.description is now available for queries using CTEs.
+
 - Issue #27819: In distutils sdists, simply produce the "gztar" (gzipped tar
   format) distributions on all platforms unless "formats" is supplied.
 
