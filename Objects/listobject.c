@@ -140,7 +140,6 @@ PyObject *
 PyList_New(Py_ssize_t size)
 {
     PyListObject *op;
-    size_t nbytes;
 #ifdef SHOW_ALLOC_COUNT
     static int initialized = 0;
     if (!initialized) {
@@ -153,11 +152,6 @@ PyList_New(Py_ssize_t size)
         PyErr_BadInternalCall();
         return NULL;
     }
-    /* Check for overflow without an actual overflow,
-     *  which can cause compiler to optimise out */
-    if ((size_t)size > PY_SIZE_MAX / sizeof(PyObject *))
-        return PyErr_NoMemory();
-    nbytes = size * sizeof(PyObject *);
     if (numfree) {
         numfree--;
         op = free_list[numfree];
@@ -176,12 +170,11 @@ PyList_New(Py_ssize_t size)
     if (size <= 0)
         op->ob_item = NULL;
     else {
-        op->ob_item = (PyObject **) PyMem_MALLOC(nbytes);
+        op->ob_item = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
         if (op->ob_item == NULL) {
             Py_DECREF(op);
             return PyErr_NoMemory();
         }
-        memset(op->ob_item, 0, nbytes);
     }
     Py_SIZE(op) = size;
     op->allocated = size;
@@ -2502,9 +2495,6 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
                 start = stop + step*(slicelength - 1) - 1;
                 step = -step;
             }
-
-            assert((size_t)slicelength <=
-                   PY_SIZE_MAX / sizeof(PyObject*));
 
             garbage = (PyObject**)
                 PyMem_MALLOC(slicelength*sizeof(PyObject*));
