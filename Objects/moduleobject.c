@@ -130,6 +130,34 @@ check_api_version(const char *name, int module_api_version)
     return 1;
 }
 
+static int
+_add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
+{
+    PyObject *func;
+    PyMethodDef *fdef;
+
+    for (fdef = functions; fdef->ml_name != NULL; fdef++) {
+        if ((fdef->ml_flags & METH_CLASS) ||
+            (fdef->ml_flags & METH_STATIC)) {
+            PyErr_SetString(PyExc_ValueError,
+                            "module functions cannot set"
+                            " METH_CLASS or METH_STATIC");
+            return -1;
+        }
+        func = PyCFunction_NewEx(fdef, (PyObject*)module, name);
+        if (func == NULL) {
+            return -1;
+        }
+        if (PyObject_SetAttrString(module, fdef->ml_name, func) != 0) {
+            Py_DECREF(func);
+            return -1;
+        }
+        Py_DECREF(func);
+    }
+
+    return 0;
+}
+
 PyObject *
 PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 {
@@ -269,7 +297,7 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
             }
         }
     } else {
-        m = PyModule_New(name);
+        m = PyModule_NewObject(nameobj);
         if (m == NULL) {
             goto error;
         }
@@ -297,7 +325,7 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
     }
 
     if (def->m_methods != NULL) {
-        ret = PyModule_AddFunctions(m, def->m_methods);
+        ret = _add_methods_to_object(m, nameobj, def->m_methods);
         if (ret != 0) {
             goto error;
         }
@@ -331,7 +359,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
         return -1;
     }
 
-    if (PyModule_Check(module) && def->m_size >= 0) {
+    if (def->m_size >= 0) {
         PyModuleObject *md = (PyModuleObject*)module;
         if (md->md_state == NULL) {
             /* Always set a state pointer; this serves as a marker to skip
@@ -387,37 +415,15 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
 int
 PyModule_AddFunctions(PyObject *m, PyMethodDef *functions)
 {
-    PyObject *name, *func;
-    PyMethodDef *fdef;
-
-    name = PyModule_GetNameObject(m);
+    int res;
+    PyObject *name = PyModule_GetNameObject(m);
     if (name == NULL) {
         return -1;
     }
 
-    for (fdef = functions; fdef->ml_name != NULL; fdef++) {
-        if ((fdef->ml_flags & METH_CLASS) ||
-            (fdef->ml_flags & METH_STATIC)) {
-            PyErr_SetString(PyExc_ValueError,
-                            "module functions cannot set"
-                            " METH_CLASS or METH_STATIC");
-            Py_DECREF(name);
-            return -1;
-        }
-        func = PyCFunction_NewEx(fdef, (PyObject*)m, name);
-        if (func == NULL) {
-            Py_DECREF(name);
-            return -1;
-        }
-        if (PyObject_SetAttrString(m, fdef->ml_name, func) != 0) {
-            Py_DECREF(func);
-            Py_DECREF(name);
-            return -1;
-        }
-        Py_DECREF(func);
-    }
+    res = _add_methods_to_object(m, name, functions);
     Py_DECREF(name);
-    return 0;
+    return res;
 }
 
 int
