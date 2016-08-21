@@ -46,6 +46,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21718: cursor.description is now available for queries using CTEs.
+
 - Issue #2466: posixpath.ismount now correctly recognizes mount points which
   the user does not have permission to access.
 
