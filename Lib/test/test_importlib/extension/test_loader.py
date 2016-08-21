@@ -212,6 +212,15 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         self.assertNotEqual(type(mod), type(unittest))
         self.assertEqual(mod.three, 3)
 
+    # issue 27782
+    def test_nonmodule_with_methods(self):
+        '''Test creating a non-module object with methods defined'''
+        name = self.name + '_nonmodule_with_methods'
+        mod = self.load_module_by_name(name)
+        self.assertNotEqual(type(mod), type(unittest))
+        self.assertEqual(mod.three, 3)
+        self.assertEqual(mod.bar(10, 1), 9)
+
     def test_null_slots(self):
         '''Test that NULL slots aren't a problem'''
         name = self.name + '_null_slots'

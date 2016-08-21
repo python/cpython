@@ -324,7 +324,7 @@ The available slot types are:
    :c:type:`PyModule_Type`. Any type can be used, as long as it supports
    setting and getting import-related attributes.
    However, only ``PyModule_Type`` instances may be returned if the
-   ``PyModuleDef`` has non-*NULL* ``m_methods``, ``m_traverse``, ``m_clear``,
+   ``PyModuleDef`` has non-*NULL* ``m_traverse``, ``m_clear``,
    ``m_free``; non-zero ``m_size``; or slots other than ``Py_mod_create``.
 
 .. c:var:: Py_mod_exec

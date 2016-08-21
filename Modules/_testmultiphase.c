@@ -248,6 +248,7 @@ PyInit__testmultiphase(PyObject *spec)
 /**** Importing a non-module object ****/
 
 static PyModuleDef def_nonmodule;
+static PyModuleDef def_nonmodule_with_methods;
 
 /* Create a SimpleNamespace(three=3) */
 static PyObject*
@@ -255,7 +256,7 @@ createfunc_nonmodule(PyObject *spec, PyModuleDef *def)
 {
     PyObject *dct, *ns, *three;
 
-    if (def != &def_nonmodule) {
+    if (def != &def_nonmodule && def != &def_nonmodule_with_methods) {
         PyErr_SetString(PyExc_SystemError, "def does not match");
         return NULL;
     }
@@ -289,6 +290,36 @@ PyMODINIT_FUNC
 PyInit__testmultiphase_nonmodule(PyObject *spec)
 {
     return PyModuleDef_Init(&def_nonmodule);
+}
+
+PyDoc_STRVAR(nonmodule_bar_doc,
+"bar(i,j)\n\
+\n\
+Return the difference of i - j.");
+
+static PyObject *
+nonmodule_bar(PyObject *self, PyObject *args)
+{
+    long i, j;
+    long res;
+    if (!PyArg_ParseTuple(args, "ll:bar", &i, &j))
+        return NULL;
+    res = i - j;
+    return PyLong_FromLong(res);
+}
+
+static PyMethodDef nonmodule_methods[] = {
+    {"bar", nonmodule_bar, METH_VARARGS, nonmodule_bar_doc},
+    {NULL, NULL}           /* sentinel */
+};
+
+static PyModuleDef def_nonmodule_with_methods = TEST_MODULE_DEF(
+    "_testmultiphase_nonmodule_with_methods", slots_create_nonmodule, nonmodule_methods);
+
+PyMODINIT_FUNC
+PyInit__testmultiphase_nonmodule_with_methods(PyObject *spec)
+{
+    return PyModuleDef_Init(&def_nonmodule_with_methods);
 }
 
 /**** Non-ASCII-named modules ****/
