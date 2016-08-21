@@ -426,8 +426,9 @@ class CmdLineTest(unittest.TestCase):
         # Exercise error reporting for various invalid package executions
         tests = (
             ('builtins', br'No code object available'),
-            ('builtins.x', br'Error while finding spec.*AttributeError'),
-            ('builtins.x.y', br'Error while finding spec.*'
+            ('builtins.x', br'Error while finding module specification.*'
+                br'AttributeError'),
+            ('builtins.x.y', br'Error while finding module specification.*'
                 br'ImportError.*No module named.*not a package'),
             ('os.path', br'loader.*cannot handle'),
             ('importlib', br'No module named.*'
@@ -450,7 +451,8 @@ class CmdLineTest(unittest.TestCase):
             with open('test_pkg/__init__.pyc', 'wb'):
                 pass
             err = self.check_dash_m_failure('test_pkg')
-            self.assertRegex(err, br'Error while finding spec.*'
+            self.assertRegex(err,
+                br'Error while finding module specification.*'
                 br'ImportError.*bad magic number')
             self.assertNotIn(b'is a package', err)
             self.assertNotIn(b'Traceback', err)
