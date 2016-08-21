@@ -4,7 +4,7 @@ What's New in IDLE 3.5.3?
 
 - Issue #27714: text_textview and test_autocomplete now pass when re-run
   in the same process.  This occurs when test_idle fails when run with the
-  -w option but without -jn.  Fix warning tom test_config.
+  -w option but without -jn.  Fix warning from test_config.
 
 - Issue #25507: IDLE no longer runs buggy code because of its tkinter imports.
   Users must include the same imports required to run directly in Python.
