@@ -7,6 +7,7 @@ import re
 import tempfile
 import importlib, importlib.machinery, importlib.util
 import py_compile
+import warnings
 from test.support import (
     forget, make_legacy_pyc, unload, verbose, no_tracing,
     create_empty_file, temp_dir)
@@ -246,7 +247,7 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
                                                           mod_fname)
         return pkg_dir, mod_fname, mod_name, mod_spec
 
-    def _del_pkg(self, top, depth, mod_name):
+    def _del_pkg(self, top):
         for entry in list(sys.modules):
             if entry.startswith("__runpy_pkg__"):
                 del sys.modules[entry]
@@ -320,7 +321,7 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
                 self._fix_ns_for_legacy_pyc(expected_ns, alter_sys)
                 self.check_code_execution(create_ns, expected_ns)
         finally:
-            self._del_pkg(pkg_dir, depth, mod_name)
+            self._del_pkg(pkg_dir)
         if verbose > 1: print("Module executed successfully")
 
     def _check_package(self, depth, alter_sys=False,
@@ -361,7 +362,7 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
                 self._fix_ns_for_legacy_pyc(expected_ns, alter_sys)
                 self.check_code_execution(create_ns, expected_ns)
         finally:
-            self._del_pkg(pkg_dir, depth, pkg_name)
+            self._del_pkg(pkg_dir)
         if verbose > 1: print("Package executed successfully")
 
     def _add_relative_modules(self, base_dir, source, depth):
@@ -424,7 +425,7 @@ from ..uncle.cousin import nephew
                 self.assertIn("nephew", d2)
                 del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
-            self._del_pkg(pkg_dir, depth, mod_name)
+            self._del_pkg(pkg_dir)
         if verbose > 1: print("Module executed successfully")
 
     def test_run_module(self):
@@ -447,7 +448,7 @@ from ..uncle.cousin import nephew
         result = self._make_pkg("", 1, "__main__")
         pkg_dir, _, mod_name, _ = result
         mod_name = mod_name.replace(".__main__", "")
-        self.addCleanup(self._del_pkg, pkg_dir, 1, mod_name)
+        self.addCleanup(self._del_pkg, pkg_dir)
         init = os.path.join(pkg_dir, "__runpy_pkg__", "__init__.py")
 
         exceptions = (ImportError, AttributeError, TypeError, ValueError)
@@ -469,6 +470,31 @@ from ..uncle.cousin import nephew
                     self.assertNotIn("finding spec", format(err))
                 else:
                     self.fail("Nothing raised; expected {}".format(name))
+
+    def test_submodule_imported_warning(self):
+        pkg_dir, _, mod_name, _ = self._make_pkg("", 1)
+        try:
+            __import__(mod_name)
+            with self.assertWarnsRegex(RuntimeWarning,
+                    r"found in sys\.modules"):
+                run_module(mod_name)
+        finally:
+            self._del_pkg(pkg_dir)
+
+    def test_package_imported_no_warning(self):
+        pkg_dir, _, mod_name, _ = self._make_pkg("", 1, "__main__")
+        self.addCleanup(self._del_pkg, pkg_dir)
+        package = mod_name.replace(".__main__", "")
+        # No warning should occur if we only imported the parent package
+        __import__(package)
+        self.assertIn(package, sys.modules)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            run_module(package)
+        # But the warning should occur if we imported the __main__ submodule
+        __import__(mod_name)
+        with self.assertWarnsRegex(RuntimeWarning, r"found in sys\.modules"):
+            run_module(package)
 
     def test_run_package_in_namespace_package(self):
         for depth in range(1, 4):
@@ -524,7 +550,7 @@ from ..uncle.cousin import nephew
         try:
             self.check_code_execution(create_ns, expected_ns)
         finally:
-            self._del_pkg(pkg_dir, depth, mod_name)
+            self._del_pkg(pkg_dir)
 
     def test_pkgutil_walk_packages(self):
         # This is a dodgy hack to use the test_runpy infrastructure to test
@@ -548,7 +574,7 @@ from ..uncle.cousin import nephew
         expected_modules.add(pkg_name + ".runpy_test")
         pkg_dir, mod_fname, mod_name, mod_spec = (
                self._make_pkg("", max_depth))
-        self.addCleanup(self._del_pkg, pkg_dir, max_depth, mod_name)
+        self.addCleanup(self._del_pkg, pkg_dir)
         for depth in range(2, max_depth+1):
             self._add_relative_modules(pkg_dir, "", depth)
         for finder, mod_name, ispkg in pkgutil.walk_packages([pkg_dir]):
