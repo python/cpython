@@ -430,21 +430,24 @@ class IntTestCases(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             n = int(bad_int)
         self.assertEqual(n, 1)
+        self.assertIs(type(n), int)
 
         bad_int = BadInt2()
         with self.assertWarns(DeprecationWarning):
             n = int(bad_int)
         self.assertEqual(n, 1)
+        self.assertIs(type(n), int)
 
         bad_int = TruncReturnsBadInt()
         with self.assertWarns(DeprecationWarning):
             n = int(bad_int)
         self.assertEqual(n, 1)
+        self.assertIs(type(n), int)
 
         good_int = TruncReturnsIntSubclass()
         n = int(good_int)
         self.assertEqual(n, 1)
-        self.assertIs(type(n), bool)
+        self.assertIs(type(n), int)
         n = IntSubclass(good_int)
         self.assertEqual(n, 1)
         self.assertIs(type(n), IntSubclass)

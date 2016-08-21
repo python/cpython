@@ -10,6 +10,8 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #26984: int() now always returns an instance of exact int.
+
 - Issue #25604: Fix a minor bug in integer true division; this bug could
   potentially have caused off-by-one-ulp results on platforms with
   unreliable ldexp implementations.

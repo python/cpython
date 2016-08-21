@@ -1281,6 +1281,7 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 PyObject *
 PyNumber_Long(PyObject *o)
 {
+    PyObject *result;
     PyNumberMethods *m;
     PyObject *trunc_func;
     Py_buffer view;
@@ -1296,29 +1297,39 @@ PyNumber_Long(PyObject *o)
     }
     m = o->ob_type->tp_as_number;
     if (m && m->nb_int) { /* This should include subclasses of int */
-        return (PyObject *)_PyLong_FromNbInt(o);
+        result = (PyObject *)_PyLong_FromNbInt(o);
+        if (result != NULL && !PyLong_CheckExact(result)) {
+            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
+        }
+        return result;
     }
     trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
     if (trunc_func) {
-        PyObject *truncated = PyEval_CallObject(trunc_func, NULL);
-        PyObject *int_instance;
+        result = PyEval_CallObject(trunc_func, NULL);
         Py_DECREF(trunc_func);
-        if (truncated == NULL || PyLong_Check(truncated))
-            return truncated;
+        if (result == NULL || PyLong_CheckExact(result)) {
+            return result;
+        }
+        if (PyLong_Check(result)) {
+            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
+            return result;
+        }
         /* __trunc__ is specified to return an Integral type,
            but int() needs to return an int. */
-        m = truncated->ob_type->tp_as_number;
+        m = result->ob_type->tp_as_number;
         if (m == NULL || m->nb_int == NULL) {
             PyErr_Format(
                 PyExc_TypeError,
                 "__trunc__ returned non-Integral (type %.200s)",
-                truncated->ob_type->tp_name);
-            Py_DECREF(truncated);
+                result->ob_type->tp_name);
+            Py_DECREF(result);
             return NULL;
         }
-        int_instance = (PyObject *)_PyLong_FromNbInt(truncated);
-        Py_DECREF(truncated);
-        return int_instance;
+        Py_SETREF(result, (PyObject *)_PyLong_FromNbInt(result));
+        if (result != NULL && !PyLong_CheckExact(result)) {
+            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
+        }
+        return result;
     }
     if (PyErr_Occurred())
         return NULL;
@@ -1340,7 +1351,7 @@ PyNumber_Long(PyObject *o)
                                  PyByteArray_GET_SIZE(o), 10);
 
     if (PyObject_GetBuffer(o, &view, PyBUF_SIMPLE) == 0) {
-        PyObject *result, *bytes;
+        PyObject *bytes;
 
         /* Copy to NUL-terminated buffer. */
         bytes = PyBytes_FromStringAndSize((const char *)view.buf, view.len);
