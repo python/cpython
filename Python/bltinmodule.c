@@ -2087,10 +2087,11 @@ PyDoc_STRVAR(builtin_sorted__doc__,
 static PyObject *
 builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *newlist, *v, *seq, *keyfunc=NULL, *newargs;
+    PyObject *newlist, *v, *seq, *keyfunc=NULL, **newargs;
     PyObject *callable;
     static char *kwlist[] = {"iterable", "key", "reverse", 0};
     int reverse;
+    int nargs;
 
     /* args 1-3 should match listsort in Objects/listobject.c */
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|Oi:sorted",
@@ -2107,15 +2108,9 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    newargs = PyTuple_GetSlice(args, 1, 4);
-    if (newargs == NULL) {
-        Py_DECREF(newlist);
-        Py_DECREF(callable);
-        return NULL;
-    }
-
-    v = PyObject_Call(callable, newargs, kwds);
-    Py_DECREF(newargs);
+    newargs = &PyTuple_GET_ITEM(args, 1);
+    nargs = PyTuple_GET_SIZE(args) - 1;
+    v = _PyObject_FastCallDict(callable, newargs, nargs, kwds);
     Py_DECREF(callable);
     if (v == NULL) {
         Py_DECREF(newlist);
