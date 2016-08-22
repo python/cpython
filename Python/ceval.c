@@ -4801,8 +4801,8 @@ call_function(PyObject ***pp_stack, int oparg
 */
 
 static PyObject*
-_PyFunction_FastCallNoKw(PyObject **args, Py_ssize_t na,
-                         PyCodeObject *co, PyObject *globals)
+_PyFunction_FastCallNoKw(PyCodeObject *co, PyObject **args, Py_ssize_t na,
+                         PyObject *globals)
 {
     PyFrameObject *f;
     PyThreadState *tstate = PyThreadState_GET();
@@ -4837,8 +4837,10 @@ _PyFunction_FastCallNoKw(PyObject **args, Py_ssize_t na,
     return result;
 }
 
+/* Similar to _PyFunction_FastCall() but keywords are passed a (key, value)
+   pairs in stack */
 static PyObject *
-fast_function(PyObject *func, PyObject **stack, int n, int na, int nk)
+fast_function(PyObject *func, PyObject **stack, int n, int nargs, int nk)
 {
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
     PyObject *globals = PyFunction_GET_GLOBALS(func);
@@ -4850,11 +4852,20 @@ fast_function(PyObject *func, PyObject **stack, int n, int na, int nk)
     PCALL(PCALL_FUNCTION);
     PCALL(PCALL_FAST_FUNCTION);
 
-    if (argdefs == NULL && co->co_argcount == na &&
-        co->co_kwonlyargcount == 0 && nk == 0 &&
+    if (co->co_kwonlyargcount == 0 && nk == 0 &&
         co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
-        return _PyFunction_FastCallNoKw(stack, na, co, globals);
+        if (argdefs == NULL && co->co_argcount == nargs) {
+            return _PyFunction_FastCallNoKw(co, stack, nargs, globals);
+        }
+        else if (nargs == 0 && argdefs != NULL
+                 && co->co_argcount == Py_SIZE(argdefs)) {
+            /* function called with no arguments, but all parameters have
+               a default value: use default values as arguments .*/
+            stack = &PyTuple_GET_ITEM(argdefs, 0);
+            return _PyFunction_FastCallNoKw(co, stack, Py_SIZE(argdefs),
+                                            globals);
+        }
     }
 
     kwdefs = PyFunction_GET_KW_DEFAULTS(func);
@@ -4871,8 +4882,8 @@ fast_function(PyObject *func, PyObject **stack, int n, int na, int nk)
         nd = 0;
     }
     return _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
-                                    stack, na,
-                                    stack + na, nk,
+                                    stack, nargs,
+                                    stack + nargs, nk,
                                     d, nd, kwdefs,
                                     closure, name, qualname);
 }
@@ -4893,11 +4904,20 @@ _PyFunction_FastCall(PyObject *func, PyObject **args, int nargs, PyObject *kwarg
     /* issue #27128: support for keywords will come later */
     assert(kwargs == NULL);
 
-    if (argdefs == NULL && co->co_argcount == nargs &&
-        co->co_kwonlyargcount == 0 &&
+    if (co->co_kwonlyargcount == 0 && kwargs == NULL &&
         co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
-        return _PyFunction_FastCallNoKw(args, nargs, co, globals);
+        if (argdefs == NULL && co->co_argcount == nargs) {
+            return _PyFunction_FastCallNoKw(co, args, nargs, globals);
+        }
+        else if (nargs == 0 && argdefs != NULL
+                 && co->co_argcount == Py_SIZE(argdefs)) {
+            /* function called with no arguments, but all parameters have
+               a default value: use default values as arguments .*/
+            args = &PyTuple_GET_ITEM(argdefs, 0);
+            return _PyFunction_FastCallNoKw(co, args, Py_SIZE(argdefs),
+                                            globals);
+        }
     }
 
     kwdefs = PyFunction_GET_KW_DEFAULTS(func);
