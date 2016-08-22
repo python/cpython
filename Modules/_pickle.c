@@ -357,7 +357,7 @@ _Pickle_FastCall(PyObject *func, PyObject *obj)
        significantly reduced the number of function calls we do. Thus, the
        benefits became marginal at best. */
 
-    result = _PyObject_FastCall(func, &obj, 1, NULL);
+    result = _PyObject_CallArg1(func, obj);
     Py_DECREF(obj);
     return result;
 }
@@ -1151,7 +1151,7 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
         return -1;
 
     if (n == READ_WHOLE_LINE) {
-        data = _PyObject_FastCall(self->readline, NULL, 0, NULL);
+        data = _PyObject_CallNoArg(self->readline);
     }
     else {
         PyObject *len;
@@ -3948,7 +3948,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             /* Check for a __reduce__ method. */
             reduce_func = _PyObject_GetAttrId(obj, &PyId___reduce__);
             if (reduce_func != NULL) {
-                reduce_value = _PyObject_FastCall(reduce_func, NULL, 0, NULL);
+                reduce_value = _PyObject_CallNoArg(reduce_func);
             }
             else {
                 PyErr_Format(st->PicklingError,

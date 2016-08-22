@@ -2255,12 +2255,12 @@ _PyStack_AsTuple(PyObject **stack, Py_ssize_t nargs)
 }
 
 PyObject *
-_PyObject_FastCall(PyObject *func, PyObject **args, int nargs, PyObject *kwargs)
+_PyObject_FastCallDict(PyObject *func, PyObject **args, int nargs, PyObject *kwargs)
 {
     ternaryfunc call;
     PyObject *result = NULL;
 
-    /* _PyObject_FastCall() must not be called with an exception set,
+    /* _PyObject_FastCallDict() must not be called with an exception set,
        because it may clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
@@ -2318,7 +2318,7 @@ call_function_tail(PyObject *callable, PyObject *args)
     assert(args != NULL);
 
     if (!PyTuple_Check(args)) {
-        result = _PyObject_FastCall(callable, &args, 1, NULL);
+        result = _PyObject_CallArg1(callable, args);
     }
     else {
         result = PyObject_Call(callable, args, NULL);
@@ -2338,7 +2338,7 @@ PyObject_CallFunction(PyObject *callable, const char *format, ...)
     }
 
     if (!format || !*format) {
-        return _PyObject_FastCall(callable, NULL, 0, NULL);
+        return _PyObject_CallNoArg(callable);
     }
 
     va_start(va, format);
@@ -2364,7 +2364,7 @@ _PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
     }
 
     if (!format || !*format) {
-        return _PyObject_FastCall(callable, NULL, 0, NULL);
+        return _PyObject_CallNoArg(callable);
     }
 
     va_start(va, format);
@@ -2392,7 +2392,7 @@ callmethod(PyObject* func, const char *format, va_list va, int is_size_t)
     }
 
     if (!format || !*format) {
-        return _PyObject_FastCall(func, NULL, 0, NULL);
+        return _PyObject_CallNoArg(func);
     }
 
     if (is_size_t) {

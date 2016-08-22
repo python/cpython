@@ -380,7 +380,7 @@ call_trampoline(PyObject* callback,
     stack[2] = (arg != NULL) ? arg : Py_None;
 
     /* call the Python-level function */
-    result = _PyObject_FastCall(callback, stack, 3, NULL);
+    result = _PyObject_FastCall(callback, stack, 3);
 
     PyFrame_LocalsToFast(frame, 1);
     if (result == NULL) {
@@ -2122,7 +2122,7 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
     if (writer == NULL)
         goto error;
 
-    result = _PyObject_FastCall(writer, &unicode, 1, NULL);
+    result = _PyObject_CallArg1(writer, unicode);
     if (result == NULL) {
         goto error;
     } else {

@@ -4593,7 +4593,7 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *args, PyObject *kwargs)
 
     if (args == NULL) {
         if (kwargs == NULL) {
-            return _PyObject_FastCall(func, NULL, 0, 0);
+            return _PyObject_CallNoArg(func);
         }
 
         args = PyTuple_New(0);
@@ -5298,7 +5298,7 @@ import_name(PyFrameObject *f, PyObject *name, PyObject *fromlist, PyObject *leve
     stack[2] = f->f_locals == NULL ? Py_None : f->f_locals;
     stack[3] = fromlist;
     stack[4] = level;
-    res = _PyObject_FastCall(import_func, stack, 5, NULL);
+    res = _PyObject_FastCall(import_func, stack, 5);
     Py_DECREF(import_func);
     return res;
 }

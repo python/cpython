@@ -492,7 +492,7 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
      */
     stack[0] = x;
     stack[1] = y;
-    res = _PyObject_FastCall(compare, stack, 2, NULL);
+    res = _PyObject_FastCall(compare, stack, 2);
     if (res == NULL) {
         return NULL;
     }
