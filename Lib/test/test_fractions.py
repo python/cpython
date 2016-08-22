@@ -356,6 +356,19 @@ class FractionTest(unittest.TestCase):
         z = pow(F(-1), F(1, 2))
         self.assertAlmostEqual(z.real, 0)
         self.assertEqual(z.imag, 1)
+        # Regression test for #27539.
+        p = F(-1, 2) ** 0
+        self.assertEqual(p, F(1, 1))
+        self.assertEqual(p.numerator, 1)
+        self.assertEqual(p.denominator, 1)
+        p = F(-1, 2) ** -1
+        self.assertEqual(p, F(-2, 1))
+        self.assertEqual(p.numerator, -2)
+        self.assertEqual(p.denominator, 1)
+        p = F(-1, 2) ** -2
+        self.assertEqual(p, F(4, 1))
+        self.assertEqual(p.numerator, 4)
+        self.assertEqual(p.denominator, 1)
 
     def testMixedArithmetic(self):
         self.assertTypedEquals(F(11, 10), F(1, 10) + 1)

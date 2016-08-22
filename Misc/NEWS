@@ -46,6 +46,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27539: Fix unnormalised ``Fraction.__pow__`` result in the case
+  of negative exponent and negative base.
+
 - Issue #21718: cursor.description is now available for queries using CTEs.
 
 - Issue #2466: posixpath.ismount now correctly recognizes mount points which
