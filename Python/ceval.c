@@ -4580,8 +4580,6 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 PyObject *
 PyEval_CallObjectWithKeywords(PyObject *func, PyObject *args, PyObject *kwargs)
 {
-    PyObject *result;
-
 #ifdef Py_DEBUG
     /* PyEval_CallObjectWithKeywords() must not be called with an exception
        set. It raises a new exception if parameters are invalid or if
@@ -4605,11 +4603,7 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    Py_INCREF(args);
-    result = PyObject_Call(func, args, kwargs);
-    Py_DECREF(args);
-
-    return result;
+    return PyObject_Call(func, args, kwargs);
 }
 
 const char *
