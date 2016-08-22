@@ -1111,6 +1111,8 @@ methodcaller_reduce(methodcallerobject *mc)
         PyObject *functools;
         PyObject *partial;
         PyObject *constructor;
+        PyObject *newargs[2];
+
         _Py_IDENTIFIER(partial);
         functools = PyImport_ImportModule("functools");
         if (!functools)
@@ -1119,17 +1121,11 @@ methodcaller_reduce(methodcallerobject *mc)
         Py_DECREF(functools);
         if (!partial)
             return NULL;
-        newargs = PyTuple_New(2);
-        if (newargs == NULL) {
-            Py_DECREF(partial);
-            return NULL;
-        }
-        Py_INCREF(Py_TYPE(mc));
-        PyTuple_SET_ITEM(newargs, 0, (PyObject *)Py_TYPE(mc));
-        Py_INCREF(mc->name);
-        PyTuple_SET_ITEM(newargs, 1, mc->name);
-        constructor = PyObject_Call(partial, newargs, mc->kwds);
-        Py_DECREF(newargs);
+
+        newargs[0] = (PyObject *)Py_TYPE(mc);
+        newargs[1] = mc->name;
+        constructor = _PyObject_FastCallDict(partial, newargs, 2, mc->kwds);
+
         Py_DECREF(partial);
         return Py_BuildValue("NO", constructor, mc->args);
     }
