@@ -2458,8 +2458,11 @@ long_divrem(PyLongObject *a, PyLongObject *b,
         *pdiv = (PyLongObject*)PyLong_FromLong(0);
         if (*pdiv == NULL)
             return -1;
-        Py_INCREF(a);
-        *prem = (PyLongObject *) a;
+        *prem = (PyLongObject *)long_long((PyObject *)a);
+        if (*prem == NULL) {
+            Py_CLEAR(*pdiv);
+            return -1;
+        }
         return 0;
     }
     if (size_b == 1) {
