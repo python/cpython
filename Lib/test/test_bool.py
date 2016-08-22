@@ -96,6 +96,13 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(False/1, 0)
         self.assertIsNot(False/1, False)
 
+        self.assertEqual(True%1, 0)
+        self.assertIsNot(True%1, False)
+        self.assertEqual(True%2, 1)
+        self.assertIsNot(True%2, True)
+        self.assertEqual(False%1, 0)
+        self.assertIsNot(False%1, False)
+
         for b in False, True:
             for i in 0, 1, 2:
                 self.assertEqual(b**i, int(b)**i)
