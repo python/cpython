@@ -277,11 +277,9 @@ class saved_test_environment:
                 self.changed = True
                 restore(original)
                 if not self.quiet and not self.pgo:
-                    print("Warning -- {} was modified by {}".format(
-                                                 name, self.testname),
-                                                 file=sys.stderr)
+                    print(f"Warning -- {name} was modified by {self.testname}",
+                          file=sys.stderr, flush=True)
                     if self.verbose > 1:
-                        print("  Before: {}\n  After:  {} ".format(
-                                                  original, current),
-                                                  file=sys.stderr)
+                        print(f"  Before: {original}\n  After:  {current} ",
+                              file=sys.stderr, flush=True)
         return False
