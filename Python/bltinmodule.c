@@ -169,12 +169,8 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
                              NULL, 0, NULL, 0, NULL, 0, NULL,
                              PyFunction_GET_CLOSURE(func));
     if (cell != NULL) {
-        PyObject *margs;
-        margs = PyTuple_Pack(3, name, bases, ns);
-        if (margs != NULL) {
-            cls = PyEval_CallObjectWithKeywords(meta, margs, mkw);
-            Py_DECREF(margs);
-        }
+        PyObject *margs[3] = {name, bases, ns};
+        cls = _PyObject_FastCallDict(meta, margs, 3, mkw);
         if (cls != NULL && PyCell_Check(cell))
             PyCell_Set(cell, cls);
         Py_DECREF(cell);
