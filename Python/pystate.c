@@ -285,14 +285,16 @@ int
 _PyState_AddModule(PyObject* module, struct PyModuleDef* def)
 {
     PyInterpreterState *state;
+    if (!def) {
+        assert(PyErr_Occurred());
+        return -1;
+    }
     if (def->m_slots) {
         PyErr_SetString(PyExc_SystemError,
                         "PyState_AddModule called on module with slots");
         return -1;
     }
     state = GET_INTERP_STATE();
-    if (!def)
-        return -1;
     if (!state->modules_by_index) {
         state->modules_by_index = PyList_New(0);
         if (!state->modules_by_index)
