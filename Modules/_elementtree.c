@@ -858,7 +858,7 @@ deepcopy(PyObject *object, PyObject *memo)
 
     stack[0] = object;
     stack[1] = memo;
-    return _PyObject_FastCall(st->deepcopy_obj, stack, 2, NULL);
+    return _PyObject_FastCall(st->deepcopy_obj, stack, 2);
 }
 
 
