@@ -3878,28 +3878,28 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
            normally interned this should almost always hit. */
         co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
         for (j = 0; j < total_args; j++) {
-            PyObject *nm = co_varnames[j];
-            if (nm == keyword)
+            PyObject *name = co_varnames[j];
+            if (name == keyword) {
                 goto kw_found;
+            }
         }
 
         /* Slow fallback, just in case */
         for (j = 0; j < total_args; j++) {
-            PyObject *nm = co_varnames[j];
-            int cmp = PyObject_RichCompareBool(
-                keyword, nm, Py_EQ);
-            if (cmp > 0)
+            PyObject *name = co_varnames[j];
+            int cmp = PyObject_RichCompareBool( keyword, name, Py_EQ);
+            if (cmp > 0) {
                 goto kw_found;
-            else if (cmp < 0)
+            }
+            else if (cmp < 0) {
                 goto fail;
+            }
         }
 
         if (j >= total_args && kwdict == NULL) {
             PyErr_Format(PyExc_TypeError,
-                         "%U() got an unexpected "
-                         "keyword argument '%S'",
-                         co->co_name,
-                         keyword);
+                         "%U() got an unexpected keyword argument '%S'",
+                         co->co_name, keyword);
             goto fail;
         }
 
@@ -3911,10 +3911,8 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
       kw_found:
         if (GETLOCAL(j) != NULL) {
             PyErr_Format(PyExc_TypeError,
-                         "%U() got multiple "
-                         "values for argument '%S'",
-                         co->co_name,
-                         keyword);
+                         "%U() got multiple values for argument '%S'",
+                         co->co_name, keyword);
             goto fail;
         }
         Py_INCREF(value);
