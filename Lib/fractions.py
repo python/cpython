@@ -484,9 +484,13 @@ class Fraction(numbers.Rational):
                     return Fraction(a._numerator ** power,
                                     a._denominator ** power,
                                     _normalize=False)
-                else:
+                elif a._numerator >= 0:
                     return Fraction(a._denominator ** -power,
                                     a._numerator ** -power,
+                                    _normalize=False)
+                else:
+                    return Fraction((-a._denominator) ** -power,
+                                    (-a._numerator) ** -power,
                                     _normalize=False)
             else:
                 # A fractional power will generally produce an
