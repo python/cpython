@@ -518,15 +518,13 @@ static PyTypeObject Dialect_Type = {
 static PyObject *
 _call_dialect(PyObject *dialect_inst, PyObject *kwargs)
 {
-    PyObject *ctor_args;
-    PyObject *dialect;
-
-    ctor_args = Py_BuildValue(dialect_inst ? "(O)" : "()", dialect_inst);
-    if (ctor_args == NULL)
-        return NULL;
-    dialect = PyObject_Call((PyObject *)&Dialect_Type, ctor_args, kwargs);
-    Py_DECREF(ctor_args);
-    return dialect;
+    PyObject *type = (PyObject *)&Dialect_Type;
+    if (dialect_inst) {
+        return _PyObject_FastCallDict(type, &dialect_inst, 1, kwargs);
+    }
+    else {
+        return _PyObject_FastCallDict(type, NULL, 0, kwargs);
+    }
 }
 
 /*
