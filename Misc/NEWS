@@ -10,6 +10,10 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27587: Fix another issue found by PVS-Studio: Null pointer check
+  after use of 'def' in _PyState_AddModule().
+  Initial patch by Christian Heimes.
+
 - Issue #27792: The modulo operation applied to ``bool`` and other
   ``int`` subclasses now always returns an ``int``. Previously
   the return type depended on the input values. Patch by Xiang Zhang.
