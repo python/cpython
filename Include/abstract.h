@@ -279,9 +279,18 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
         Return the result on success. Raise an exception on return NULL on
         error. */
-     PyAPI_FUNC(PyObject *) _PyObject_FastCall(PyObject *func,
-                                               PyObject **args, int nargs,
-                                               PyObject *kwargs);
+     PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(PyObject *func,
+                                                   PyObject **args, int nargs,
+                                                   PyObject *kwargs);
+
+#define _PyObject_FastCall(func, args, nargs) \
+    _PyObject_FastCallDict((func), (args), (nargs), NULL)
+
+#define _PyObject_CallNoArg(func) \
+    _PyObject_FastCall((func), NULL, 0)
+
+#define _PyObject_CallArg1(func, arg) \
+    _PyObject_FastCall((func), &(arg), 1)
 
      PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *func,
                                                     PyObject *result,
@@ -291,7 +300,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        /*
      Call a callable Python object, callable_object, with
      arguments and keywords arguments.  The 'args' argument can not be
-     NULL, but the 'kw' argument can be NULL.
+     NULL.
        */
 
      PyAPI_FUNC(PyObject *) PyObject_CallObject(PyObject *callable_object,

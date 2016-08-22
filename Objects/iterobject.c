@@ -214,7 +214,7 @@ calliter_iternext(calliterobject *it)
         return NULL;
     }
 
-    result = _PyObject_FastCall(it->it_callable, NULL, 0, NULL);
+    result = _PyObject_CallNoArg(it->it_callable);
     if (result != NULL) {
         int ok;
 

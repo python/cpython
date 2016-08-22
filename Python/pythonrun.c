@@ -636,7 +636,7 @@ PyErr_PrintEx(int set_sys_last_vars)
         stack[0] = exception;
         stack[1] = v;
         stack[2] = tb;
-        result = _PyObject_FastCall(hook, stack, 3, NULL);
+        result = _PyObject_FastCall(hook, stack, 3);
         if (result == NULL) {
             PyObject *exception2, *v2, *tb2;
             if (PyErr_ExceptionMatches(PyExc_SystemExit)) {
