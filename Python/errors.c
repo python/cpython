@@ -699,18 +699,14 @@ PyObject *PyErr_SetFromWindowsErrWithUnicodeFilename(
 PyObject *
 PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
 {
-    PyObject *args, *kwargs, *error;
+    PyObject *kwargs, *error;
 
-    if (msg == NULL)
+    if (msg == NULL) {
         return NULL;
-
-    args = PyTuple_New(1);
-    if (args == NULL)
-        return NULL;
+    }
 
     kwargs = PyDict_New();
     if (kwargs == NULL) {
-        Py_DECREF(args);
         return NULL;
     }
 
@@ -722,22 +718,20 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
         path = Py_None;
     }
 
-    Py_INCREF(msg);
-    PyTuple_SET_ITEM(args, 0, msg);
-
-    if (PyDict_SetItemString(kwargs, "name", name) < 0)
+    if (PyDict_SetItemString(kwargs, "name", name) < 0) {
         goto done;
-    if (PyDict_SetItemString(kwargs, "path", path) < 0)
+    }
+    if (PyDict_SetItemString(kwargs, "path", path) < 0) {
         goto done;
+    }
 
-    error = PyObject_Call(PyExc_ImportError, args, kwargs);
+    error = _PyObject_FastCallDict(PyExc_ImportError, &msg, 1, kwargs);
     if (error != NULL) {
         PyErr_SetObject((PyObject *)Py_TYPE(error), error);
         Py_DECREF(error);
     }
 
 done:
-    Py_DECREF(args);
     Py_DECREF(kwargs);
     return NULL;
 }
