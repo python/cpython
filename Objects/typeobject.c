@@ -7007,30 +7007,28 @@ set_names(PyTypeObject *type)
 static int
 init_subclass(PyTypeObject *type, PyObject *kwds)
 {
-    PyObject *super, *func, *tmp, *tuple;
+    PyObject *super, *func, *result;
+    PyObject *args[2] = {(PyObject *)type, (PyObject *)type};
 
-    super = PyObject_CallFunctionObjArgs((PyObject *) &PySuper_Type,
-                                         type, type, NULL);
-    func = _PyObject_GetAttrId(super, &PyId___init_subclass__);
-    Py_DECREF(super);
-
-    if (func == NULL)
+    super = _PyObject_FastCall((PyObject *)&PySuper_Type, args, 2);
+    if (super == NULL) {
         return -1;
-
-    tuple = PyTuple_New(0);
-    if (tuple == NULL) {
-        Py_DECREF(func);
-        return 0;
     }
 
-    tmp = PyObject_Call(func, tuple, kwds);
-    Py_DECREF(tuple);
-    Py_DECREF(func);
-
-    if (tmp == NULL)
+    func = _PyObject_GetAttrId(super, &PyId___init_subclass__);
+    Py_DECREF(super);
+    if (func == NULL) {
         return -1;
+    }
 
-    Py_DECREF(tmp);
+
+    result = _PyObject_FastCallDict(func, NULL, 0, kwds);
+    Py_DECREF(func);
+    if (result == NULL) {
+        return -1;
+    }
+
+    Py_DECREF(result);
     return 0;
 }
 
