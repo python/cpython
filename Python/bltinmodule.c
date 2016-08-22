@@ -155,16 +155,8 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
         }
     }
     else {
-        PyObject *pargs = PyTuple_Pack(2, name, bases);
-        if (pargs == NULL) {
-            Py_DECREF(prep);
-            Py_DECREF(meta);
-            Py_XDECREF(mkw);
-            Py_DECREF(bases);
-            return NULL;
-        }
-        ns = PyEval_CallObjectWithKeywords(prep, pargs, mkw);
-        Py_DECREF(pargs);
+        PyObject *pargs[2] = {name, bases};
+        ns = _PyObject_FastCallDict(prep, pargs, 2, mkw);
         Py_DECREF(prep);
     }
     if (ns == NULL) {
