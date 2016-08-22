@@ -3133,37 +3133,34 @@ Fail:
 static PyObject *
 tzinfo_reduce(PyObject *self)
 {
-    PyObject *args, *state, *tmp;
+    PyObject *args, *state;
     PyObject *getinitargs, *getstate;
     _Py_IDENTIFIER(__getinitargs__);
     _Py_IDENTIFIER(__getstate__);
 
-    tmp = PyTuple_New(0);
-    if (tmp == NULL)
-        return NULL;
-
     getinitargs = _PyObject_GetAttrId(self, &PyId___getinitargs__);
     if (getinitargs != NULL) {
-        args = PyObject_CallObject(getinitargs, tmp);
+        args = _PyObject_CallNoArg(getinitargs);
         Py_DECREF(getinitargs);
         if (args == NULL) {
-            Py_DECREF(tmp);
             return NULL;
         }
     }
     else {
         PyErr_Clear();
-        args = tmp;
-        Py_INCREF(args);
+
+        args = PyTuple_New(0);
+        if (args == NULL) {
+            return NULL;
+        }
     }
 
     getstate = _PyObject_GetAttrId(self, &PyId___getstate__);
     if (getstate != NULL) {
-        state = PyObject_CallObject(getstate, tmp);
+        state = _PyObject_CallNoArg(getstate);
         Py_DECREF(getstate);
         if (state == NULL) {
             Py_DECREF(args);
-            Py_DECREF(tmp);
             return NULL;
         }
     }
@@ -3172,12 +3169,11 @@ tzinfo_reduce(PyObject *self)
         PyErr_Clear();
         state = Py_None;
         dictptr = _PyObject_GetDictPtr(self);
-        if (dictptr && *dictptr && PyDict_Size(*dictptr))
+        if (dictptr && *dictptr && PyDict_Size(*dictptr)) {
             state = *dictptr;
+        }
         Py_INCREF(state);
     }
-
-    Py_DECREF(tmp);
 
     if (state == Py_None) {
         Py_DECREF(state);
