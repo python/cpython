@@ -1156,43 +1156,27 @@ map_traverse(mapobject *lz, visitproc visit, void *arg)
 static PyObject *
 map_next(mapobject *lz)
 {
-    PyObject *small_stack[5];
-    PyObject **stack;
-    Py_ssize_t niters, nargs, i;
-    PyObject *result = NULL;
+    PyObject *val;
+    PyObject *argtuple;
+    PyObject *result;
+    Py_ssize_t numargs, i;
 
-    niters = PyTuple_GET_SIZE(lz->iters);
-    if (niters <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
-        stack = small_stack;
-    }
-    else {
-        stack = PyMem_Malloc(niters * sizeof(PyObject*));
-        if (stack == NULL) {
-            PyErr_NoMemory();
+    numargs = PyTuple_GET_SIZE(lz->iters);
+    argtuple = PyTuple_New(numargs);
+    if (argtuple == NULL)
+        return NULL;
+
+    for (i=0 ; i<numargs ; i++) {
+        PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
+        val = Py_TYPE(it)->tp_iternext(it);
+        if (val == NULL) {
+            Py_DECREF(argtuple);
             return NULL;
         }
+        PyTuple_SET_ITEM(argtuple, i, val);
     }
-
-    nargs = 0;
-    for (i=0; i < niters; i++) {
-        PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
-        PyObject *val = Py_TYPE(it)->tp_iternext(it);
-        if (val == NULL) {
-            goto exit;
-        }
-        stack[i] = val;
-        nargs++;
-    }
-
-    result = _PyObject_FastCall(lz->func, stack, nargs);
-
-exit:
-    for (i=0; i < nargs; i++) {
-        Py_DECREF(stack[i]);
-    }
-    if (stack != small_stack) {
-        PyMem_Free(stack);
-    }
+    result = PyObject_Call(lz->func, argtuple, NULL);
+    Py_DECREF(argtuple);
     return result;
 }
 
