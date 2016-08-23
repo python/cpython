@@ -1713,4 +1713,4 @@ class TunnelTests(TestCase):
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main(verbosity=2)
