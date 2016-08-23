@@ -39,6 +39,8 @@ or sample.
 
 =======================  =============================================
 :func:`mean`             Arithmetic mean ("average") of data.
+:func:`geometric_mean`   Geometric mean of data.
+:func:`harmonic_mean`    Harmonic mean of data.
 :func:`median`           Median (middle value) of data.
 :func:`median_low`       Low median of data.
 :func:`median_high`      High median of data.
@@ -109,6 +111,62 @@ However, for reading convenience, most of the examples show sorted sequences.
       ``mean(sample)`` converges on the true mean of the entire population.  If
       *data* represents the entire population rather than a sample, then
       ``mean(data)`` is equivalent to calculating the true population mean μ.
+
+
+.. function:: geometric_mean(data)
+
+   Return the geometric mean of *data*, a sequence or iterator of
+   real-valued numbers.
+
+   The geometric mean is the *n*-th root of the product of *n* data points.
+   It is a type of average, a measure of the central location of the data.
+
+   The geometric mean is appropriate when averaging quantities which
+   are multiplied together rather than added, for example growth rates.
+   Suppose an investment grows by 10% in the first year, falls by 5% in
+   the second, then grows by 12% in the third, what is the average rate
+   of growth over the three years?
+
+   .. doctest::
+
+      >>> geometric_mean([1.10, 0.95, 1.12])
+      1.0538483123382172
+
+   giving an average growth of 5.385%. Using the arithmetic mean will
+   give approximately 5.667%, which is too high.
+
+   :exc:``StatisticsError`` is raised if *data* is empty, or any
+   element is less than zero.
+
+
+.. function:: harmonic_mean(data)
+
+   Return the harmonic mean of *data*, a sequence or iterator of
+   real-valued numbers.
+
+   The harmonic mean, sometimes called the subcontrary mean, is the
+   reciprocal of the arithmetic :func:``mean`` of the reciprocals of the
+   data. For example, the harmonic mean of three values *a*, *b* and *c*
+   will be equivalent to ``3/(1/a + 1/b + 1/c)``.
+
+   The harmonic mean is a type of average, a measure of the central
+   location of the data.  It is often appropriate when averaging quantities
+   which are rates or ratios, for example speeds. For example:
+
+   Suppose an investor purchases an equal value of shares in each of
+   three companies, with P/E (price/earning) ratios of 2.5, 3 and 10.
+   What is the average P/E ratio for the investor's portfolio?
+
+   .. doctest::
+
+      >>> harmonic_mean([2.5, 3, 10])  # For an equal investment portfolio.
+      3.6
+
+   Using the arithmetic mean would give an average of about 5.167, which
+   is too high.
+
+   :exc:``StatisticsError`` is raised if *data* is empty, or any element
+   is less than zero.
 
 
 .. function:: median(data)
