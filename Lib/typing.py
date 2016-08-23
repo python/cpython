@@ -57,6 +57,7 @@ __all__ = [
     'DefaultDict',
     'List',
     'Set',
+    'FrozenSet',
     'NamedTuple',  # Not really a type.
     'Generator',
 
@@ -160,12 +161,6 @@ class _ForwardRef(TypingMeta):
         return self
 
     def _eval_type(self, globalns, localns):
-        if not isinstance(localns, dict):
-            raise TypeError('ForwardRef localns must be a dict -- got %r' %
-                            (localns,))
-        if not isinstance(globalns, dict):
-            raise TypeError('ForwardRef globalns must be a dict -- got %r' %
-                            (globalns,))
         if not self.__forward_evaluated__:
             if globalns is None and localns is None:
                 globalns = localns = {}
@@ -388,9 +383,10 @@ class TypeVar(TypingMeta, metaclass=TypingMeta, _root=True):
     and issubclass(bytes, A) are true, and issubclass(int, A) is
     false.  (TODO: Why is this needed?  This may change.  See #136.)
 
-    Type variables may be marked covariant or contravariant by passing
-    covariant=True or contravariant=True.  See PEP 484 for more
-    details.  By default type variables are invariant.
+    Type variables defined with covariant=True or contravariant=True
+    can be used do declare covariant or contravariant generic types.
+    See PEP 484 for more details. By default generic types are invariant
+    in all type variables.
 
     Type variables can be introspected. e.g.:
 
@@ -405,7 +401,7 @@ class TypeVar(TypingMeta, metaclass=TypingMeta, _root=True):
                 covariant=False, contravariant=False):
         self = super().__new__(cls, name, (Final,), {}, _root=True)
         if covariant and contravariant:
-            raise ValueError("Bivariant type variables are not supported.")
+            raise ValueError("Bivariant types are not supported.")
         self.__covariant__ = bool(covariant)
         self.__contravariant__ = bool(contravariant)
         if constraints and bound is not None:
@@ -782,7 +778,7 @@ class CallableMeta(TypingMeta):
         return self
 
     def _get_type_vars(self, tvars):
-        if self.__args__:
+        if self.__args__ and self.__args__ is not Ellipsis:
             _get_type_vars(self.__args__, tvars)
 
     def _eval_type(self, globalns, localns):
@@ -1044,7 +1040,7 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
         if cls is Any:
             return True
         if isinstance(cls, GenericMeta):
-            # For a class C(Generic[T]) where T is co-variant,
+            # For a covariant class C(Generic[T]),
             # C[X] is a subclass of C[Y] iff X is a subclass of Y.
             origin = self.__origin__
             if origin is not None and origin is cls.__origin__:
@@ -1434,31 +1430,53 @@ class Container(Generic[T_co], extra=collections_abc.Container):
     __slots__ = ()
 
 
+if hasattr(collections_abc, 'Collection'):
+    class Collection(Sized, Iterable[T_co], Container[T_co],
+                     extra=collections_abc.Collection):
+        __slots__ = ()
+
+    __all__.append('Collection')
+
+
 # Callable was defined earlier.
 
-
-class AbstractSet(Sized, Iterable[T_co], Container[T_co],
-                  extra=collections_abc.Set):
-    pass
+if hasattr(collections_abc, 'Collection'):
+    class AbstractSet(Collection[T_co],
+                      extra=collections_abc.Set):
+        pass
+else:
+    class AbstractSet(Sized, Iterable[T_co], Container[T_co],
+                      extra=collections_abc.Set):
+        pass
 
 
 class MutableSet(AbstractSet[T], extra=collections_abc.MutableSet):
     pass
 
 
-# NOTE: Only the value type is covariant.
-class Mapping(Sized, Iterable[KT], Container[KT], Generic[KT, VT_co],
-              extra=collections_abc.Mapping):
-    pass
+# NOTE: It is only covariant in the value type.
+if hasattr(collections_abc, 'Collection'):
+    class Mapping(Collection[KT], Generic[KT, VT_co],
+                  extra=collections_abc.Mapping):
+        pass
+else:
+    class Mapping(Sized, Iterable[KT], Container[KT], Generic[KT, VT_co],
+                  extra=collections_abc.Mapping):
+        pass
 
 
 class MutableMapping(Mapping[KT, VT], extra=collections_abc.MutableMapping):
     pass
 
 if hasattr(collections_abc, 'Reversible'):
-    class Sequence(Sized, Reversible[T_co], Container[T_co],
-               extra=collections_abc.Sequence):
-        pass
+    if hasattr(collections_abc, 'Collection'):
+        class Sequence(Reversible[T_co], Collection[T_co],
+                   extra=collections_abc.Sequence):
+            pass
+    else:
+        class Sequence(Sized, Reversible[T_co], Container[T_co],
+                   extra=collections_abc.Sequence):
+            pass
 else:
     class Sequence(Sized, Iterable[T_co], Container[T_co],
                    extra=collections_abc.Sequence):
@@ -1583,11 +1601,11 @@ class Generator(Iterator[T_co], Generic[T_co, T_contra, V_co],
 
 
 # Internal type variable used for Type[].
-CT = TypeVar('CT', covariant=True, bound=type)
+CT_co = TypeVar('CT_co', covariant=True, bound=type)
 
 
 # This is not a real generic class.  Don't use outside annotations.
-class Type(type, Generic[CT], extra=type):
+class Type(type, Generic[CT_co], extra=type):
     """A special construct usable to annotate class objects.
 
     For example, suppose we have the following classes::
