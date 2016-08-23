@@ -940,6 +940,7 @@ class BasicTest(TestCase):
 
         thread = threading.Thread(target=run_server)
         thread.start()
+        self.addCleanup(thread.join, float(1))
         conn = client.HTTPConnection(*serv.getsockname())
         conn.request("CONNECT", "dummy:1234")
         response = conn.getresponse()
@@ -953,7 +954,7 @@ class BasicTest(TestCase):
         finally:
             response.close()
             conn.close()
-            thread.join()
+        thread.join()
         self.assertEqual(result, b"proxied data\n")
 
 class ExtendedReadTest(TestCase):
@@ -1710,14 +1711,6 @@ class TunnelTests(TestCase):
         lines = output.getvalue().splitlines()
         self.assertIn('header: {}'.format(expected_header), lines)
 
-
-@support.reap_threads
-def test_main(verbose=None):
-    support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest,
-                         PersistenceTest,
-                         HTTPSTest, RequestBodyTest, SourceAddressTest,
-                         HTTPResponseTest, ExtendedReadTest,
-                         ExtendedReadTestChunked, TunnelTests)
 
 if __name__ == '__main__':
     test_main()
