@@ -186,7 +186,7 @@ def ismount(path):
         return False
     try:
         s1 = os.lstat(path)
-        s2 = os.lstat(join(path, '..'))
+        s2 = os.lstat(realpath(join(path, '..')))
     except os.error:
         return False # It doesn't exist -- so not a mount point :-)
     dev1 = s1.st_dev
