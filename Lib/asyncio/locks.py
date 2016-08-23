@@ -166,7 +166,7 @@ class Lock(_ContextManagerMixin):
         This method blocks until the lock is unlocked, then sets it to
         locked and returns True.
         """
-        if not self._waiters and not self._locked:
+        if not self._locked and all(w.cancelled() for w in self._waiters):
             self._locked = True
             return True
 
