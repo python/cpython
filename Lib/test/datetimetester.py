@@ -4477,11 +4477,11 @@ class ZoneInfo(tzinfo):
 
     @staticmethod
     def invert(ut, ti):
-        lt = (ut.__copy__(), ut.__copy__())
+        lt = (array('q', ut), array('q', ut))
         if ut:
             offset = ti[0][0] // SEC
-            lt[0][0] = max(-2**31, lt[0][0] + offset)
-            lt[1][0] = max(-2**31, lt[1][0] + offset)
+            lt[0][0] += offset
+            lt[1][0] += offset
             for i in range(1, len(ut)):
                 lt[0][i] += ti[i-1][0] // SEC
                 lt[1][i] += ti[i][0] // SEC
