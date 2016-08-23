@@ -135,8 +135,10 @@ However, for reading convenience, most of the examples show sorted sequences.
    giving an average growth of 5.385%. Using the arithmetic mean will
    give approximately 5.667%, which is too high.
 
-   :exc:``StatisticsError`` is raised if *data* is empty, or any
+   :exc:`StatisticsError` is raised if *data* is empty, or any
    element is less than zero.
+
+   .. versionadded:: 3.6
 
 
 .. function:: harmonic_mean(data)
@@ -145,7 +147,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    real-valued numbers.
 
    The harmonic mean, sometimes called the subcontrary mean, is the
-   reciprocal of the arithmetic :func:``mean`` of the reciprocals of the
+   reciprocal of the arithmetic :func:`mean` of the reciprocals of the
    data. For example, the harmonic mean of three values *a*, *b* and *c*
    will be equivalent to ``3/(1/a + 1/b + 1/c)``.
 
@@ -165,8 +167,10 @@ However, for reading convenience, most of the examples show sorted sequences.
    Using the arithmetic mean would give an average of about 5.167, which
    is too high.
 
-   :exc:``StatisticsError`` is raised if *data* is empty, or any element
+   :exc:`StatisticsError` is raised if *data* is empty, or any element
    is less than zero.
+
+   .. versionadded:: 3.6
 
 
 .. function:: median(data)
