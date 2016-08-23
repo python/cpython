@@ -126,6 +126,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 27598: Add Collections to collections.abc.
+  Patch by Ivan Levkivskyi, docs by Neil Girdhar.
+
 - Issue #25958: Support "anti-registration" of special methods from
   various ABCs, like __hash__, __iter__ or __len__.  All these (and
   several more) can be set to None in an implementation class and the
