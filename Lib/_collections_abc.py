@@ -11,7 +11,7 @@ import sys
 
 __all__ = ["Awaitable", "Coroutine", "AsyncIterable", "AsyncIterator",
            "Hashable", "Iterable", "Iterator", "Generator", "Reversible",
-           "Sized", "Container", "Callable",
+           "Sized", "Container", "Callable", "Collection",
            "Set", "MutableSet",
            "Mapping", "MutableMapping",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
@@ -326,6 +326,15 @@ class Container(metaclass=ABCMeta):
             return _check_methods(C, "__contains__")
         return NotImplemented
 
+class Collection(Sized, Iterable, Container):
+
+    __slots__ = ()
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Collection:
+            return _check_methods(C,  "__len__", "__iter__", "__contains__")
+        return NotImplemented
 
 class Callable(metaclass=ABCMeta):
 
@@ -345,7 +354,7 @@ class Callable(metaclass=ABCMeta):
 ### SETS ###
 
 
-class Set(Sized, Iterable, Container):
+class Set(Collection):
 
     """A set is a finite, iterable container.
 
@@ -570,7 +579,7 @@ MutableSet.register(set)
 ### MAPPINGS ###
 
 
-class Mapping(Sized, Iterable, Container):
+class Mapping(Collection):
 
     __slots__ = ()
 
@@ -794,7 +803,7 @@ MutableMapping.register(dict)
 ### SEQUENCES ###
 
 
-class Sequence(Sized, Reversible, Container):
+class Sequence(Reversible, Collection):
 
     """All the operations on a read-only sequence.
 

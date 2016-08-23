@@ -1548,13 +1548,15 @@ class TestSingleDispatch(unittest.TestCase):
         bases = [c.Sequence, c.MutableMapping, c.Mapping, c.Set]
         for haystack in permutations(bases):
             m = mro(dict, haystack)
-            self.assertEqual(m, [dict, c.MutableMapping, c.Mapping, c.Sized,
-                                 c.Iterable, c.Container, object])
+            self.assertEqual(m, [dict, c.MutableMapping, c.Mapping,
+                                 c.Collection, c.Sized, c.Iterable,
+                                 c.Container, object])
         bases = [c.Container, c.Mapping, c.MutableMapping, c.OrderedDict]
         for haystack in permutations(bases):
             m = mro(c.ChainMap, haystack)
             self.assertEqual(m, [c.ChainMap, c.MutableMapping, c.Mapping,
-                                 c.Sized, c.Iterable, c.Container, object])
+                                 c.Collection, c.Sized, c.Iterable,
+                                 c.Container, object])
 
         # If there's a generic function with implementations registered for
         # both Sized and Container, passing a defaultdict to it results in an
@@ -1575,9 +1577,9 @@ class TestSingleDispatch(unittest.TestCase):
         bases = [c.MutableSequence, c.MutableMapping]
         for haystack in permutations(bases):
             m = mro(D, bases)
-            self.assertEqual(m, [D, c.MutableSequence, c.Sequence,
-                                 c.defaultdict, dict, c.MutableMapping,
-                                 c.Mapping, c.Sized, c.Reversible, c.Iterable, c.Container,
+            self.assertEqual(m, [D, c.MutableSequence, c.Sequence, c.Reversible,
+                                 c.defaultdict, dict, c.MutableMapping, c.Mapping,
+                                 c.Collection, c.Sized, c.Iterable, c.Container,
                                  object])
 
         # Container and Callable are registered on different base classes and
@@ -1590,7 +1592,8 @@ class TestSingleDispatch(unittest.TestCase):
         for haystack in permutations(bases):
             m = mro(C, haystack)
             self.assertEqual(m, [C, c.Callable, c.defaultdict, dict, c.Mapping,
-                                 c.Sized, c.Iterable, c.Container, object])
+                                 c.Collection, c.Sized, c.Iterable,
+                                 c.Container, object])
 
     def test_register_abc(self):
         c = collections
