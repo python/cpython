@@ -512,6 +512,10 @@ class CallableTests(BaseTestCase):
         self.assertEqual(get_type_hints(foo, globals(), locals()),
                          {'a': Callable[..., T]})
 
+    def test_ellipsis_in_generic(self):
+        # Shouldn't crash; see https://github.com/python/typing/issues/259
+        typing.List[Callable[..., str]]
+
 
 XK = TypeVar('XK', str, bytes)
 XV = TypeVar('XV')
@@ -852,7 +856,7 @@ class VarianceTests(BaseTestCase):
 
     def test_covariance_sequence(self):
         # Check covariance for Sequence (which is just a generic class
-        # for this purpose, but using a covariant type variable).
+        # for this purpose, but using a type variable with covariant=True).
         self.assertIsSubclass(typing.Sequence[Manager],
                               typing.Sequence[Employee])
         self.assertNotIsSubclass(typing.Sequence[Employee],
@@ -1184,6 +1188,13 @@ class CollectionsAbcTests(BaseTestCase):
     def test_container(self):
         self.assertIsInstance([], typing.Container)
         self.assertNotIsInstance(42, typing.Container)
+
+    def test_collection(self):
+        if hasattr(typing, 'Collection'):
+            self.assertIsInstance(tuple(), typing.Collection)
+            self.assertIsInstance(frozenset(), typing.Collection)
+            self.assertIsSubclass(dict, typing.Collection)
+            self.assertNotIsInstance(42, typing.Collection)
 
     def test_abstractset(self):
         self.assertIsInstance(set(), typing.AbstractSet)
