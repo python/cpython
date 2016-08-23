@@ -60,9 +60,6 @@ Library
 - Issue #9998: On Linux, ctypes.util.find_library now looks in LD_LIBRARY_PATH
   for shared libraries.
 
-- Issue #12713: Allowed abbreviation of subcommands by end-users for users of
-  argparse.
-
 Tests
 -----
 

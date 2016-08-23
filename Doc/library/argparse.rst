@@ -1668,18 +1668,6 @@ Sub-commands
      >>> parser.parse_args(['co', 'bar'])
      Namespace(foo='bar')
 
-   argparse supports non-ambiguous abbreviations of subparser names.
-
-   For example, the following three calls are all supported
-   and do the same thing, as the abbreviations used are not ambiguous::
-
-     >>> parser.parse_args(['checkout', 'bar'])
-     Namespace(foo='bar')
-     >>> parser.parse_args(['check', 'bar'])
-     Namespace(foo='bar')
-     >>> parser.parse_args(['che', 'bar'])
-     Namespace(foo='bar')
-
    One particularly effective way of handling sub-commands is to combine the use
    of the :meth:`add_subparsers` method with calls to :meth:`set_defaults` so
    that each subparser knows which Python function it should execute.  For

@@ -1110,12 +1110,6 @@ class _SubParsersAction(Action):
         parser_name = values[0]
         arg_strings = values[1:]
 
-        # get full parser_name from (optional) abbreviated one
-        for p in self._name_parser_map:
-            if p.startswith(parser_name):
-                parser_name = p
-                break
-
         # set the parser name if requested
         if self.dest is not SUPPRESS:
             setattr(namespace, self.dest, parser_name)
@@ -2313,18 +2307,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
     def _check_value(self, action, value):
         # converted value must be one of the choices (if specified)
-        if action.choices is not None:
-            ac = [ax for ax in action.choices if str(ax).startswith(str(value))]
-            if len(ac) == 0:
-                args = {'value': value,
-                        'choices': ', '.join(map(repr, action.choices))}
-                msg = _('invalid choice: %(value)r (choose from %(choices)s)')
-                raise ArgumentError(action, msg % args)
-            elif len(ac) > 1:
-                args = {'value': value,
-                        'choices': ', '.join(ac)}
-                msg = _('ambiguous choice: %(value)r could match %(choices)s')
-                raise ArgumentError(action, msg % args)
+        if action.choices is not None and value not in action.choices:
+            args = {'value': value,
+                    'choices': ', '.join(map(repr, action.choices))}
+            msg = _('invalid choice: %(value)r (choose from %(choices)s)')
+            raise ArgumentError(action, msg % args)
 
     # =======================
     # Help-formatting methods
