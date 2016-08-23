@@ -72,9 +72,6 @@ Library
 Tests
 -----
 
-- Issue #26040: Improve math and cmath test coverage and rigour. Patch by
-  Jeff Allen.
-
 - Issue #27787: Call gc.collect() before checking each test for "dangling
   threads", since the dangling threads are weak references.
 
