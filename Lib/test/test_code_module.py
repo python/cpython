@@ -80,12 +80,32 @@ class TestInteractiveConsole(unittest.TestCase):
         self.assertEqual(len(self.stderr.method_calls), 2)
 
     def test_exit_msg(self):
+        # default exit message
         self.infunc.side_effect = EOFError('Finished')
         self.console.interact(banner='')
         self.assertEqual(len(self.stderr.method_calls), 2)
         err_msg = self.stderr.method_calls[1]
         expected = 'now exiting InteractiveConsole...\n'
         self.assertEqual(err_msg, ['write', (expected,), {}])
+
+        # no exit message
+        self.stderr.reset_mock()
+        self.infunc.side_effect = EOFError('Finished')
+        self.console.interact(banner='', exitmsg='')
+        self.assertEqual(len(self.stderr.method_calls), 1)
+
+        # custom exit message
+        self.stderr.reset_mock()
+        message = (
+            'bye! \N{GREEK SMALL LETTER ZETA}\N{CYRILLIC SMALL LETTER ZHE}'
+            )
+        self.infunc.side_effect = EOFError('Finished')
+        self.console.interact(banner='', exitmsg=message)
+        self.assertEqual(len(self.stderr.method_calls), 2)
+        err_msg = self.stderr.method_calls[1]
+        expected = message + '\n'
+        self.assertEqual(err_msg, ['write', (expected,), {}])
+
 
     def test_cause_tb(self):
         self.infunc.side_effect = ["raise ValueError('') from AttributeError",

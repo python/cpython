@@ -30,15 +30,19 @@ build applications which provide an interactive interpreter prompt.
    ``sys.ps1`` and ``sys.ps2``, and input buffering.
 
 
-.. function:: interact(banner=None, readfunc=None, local=None)
+.. function:: interact(banner=None, readfunc=None, local=None, exitmsg=None)
 
    Convenience function to run a read-eval-print loop.  This creates a new
    instance of :class:`InteractiveConsole` and sets *readfunc* to be used as
    the :meth:`InteractiveConsole.raw_input` method, if provided.  If *local* is
    provided, it is passed to the :class:`InteractiveConsole` constructor for
    use as the default namespace for the interpreter loop.  The :meth:`interact`
-   method of the instance is then run with *banner* passed as the banner to
-   use, if provided.  The console object is discarded after use.
+   method of the instance is then run with *banner* and *exitmsg* passed as the
+   banner and exit message to use, if provided.  The console object is discarded
+   after use.
+
+   .. versionchanged:: 3.6
+      Added *exitmsg* parameter.
 
 
 .. function:: compile_command(source, filename="<input>", symbol="single")
@@ -136,7 +140,7 @@ The :class:`InteractiveConsole` class is a subclass of
 interpreter objects as well as the following additions.
 
 
-.. method:: InteractiveConsole.interact(banner=None)
+.. method:: InteractiveConsole.interact(banner=None, exitmsg=None)
 
    Closely emulate the interactive Python console. The optional *banner* argument
    specify the banner to print before the first interaction; by default it prints a
@@ -144,11 +148,15 @@ interpreter objects as well as the following additions.
    by the class name of the console object in parentheses (so as not to confuse
    this with the real interpreter -- since it's so close!).
 
+   The optional *exitmsg* argument specifies an exit message printed when exiting.
+   Pass the empty string to suppress the exit message. If *exitmsg* is not given or
+   None, a default message is printed.
+
    .. versionchanged:: 3.4
       To suppress printing any banner, pass an empty string.
 
    .. versionchanged:: 3.6
-      Now prints a brief message when exiting.
+      Print an exit message when exiting.
 
 
 .. method:: InteractiveConsole.push(line)
