@@ -128,44 +128,60 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kw)
 {
     PyObject *ret;
     PyObject *argappl, *kwappl;
+    PyObject **stack;
+    Py_ssize_t nargs;
 
     assert (PyCallable_Check(pto->fn));
     assert (PyTuple_Check(pto->args));
     assert (PyDict_Check(pto->kw));
 
     if (PyTuple_GET_SIZE(pto->args) == 0) {
-        argappl = args;
-        Py_INCREF(args);
-    } else if (PyTuple_GET_SIZE(args) == 0) {
-        argappl = pto->args;
-        Py_INCREF(pto->args);
-    } else {
+        stack = &PyTuple_GET_ITEM(args, 0);
+        nargs = PyTuple_GET_SIZE(args);
+        argappl = NULL;
+    }
+    else if (PyTuple_GET_SIZE(args) == 0) {
+        stack = &PyTuple_GET_ITEM(pto->args, 0);
+        nargs = PyTuple_GET_SIZE(pto->args);
+        argappl = NULL;
+    }
+    else {
+        stack = NULL;
         argappl = PySequence_Concat(pto->args, args);
-        if (argappl == NULL)
+        if (argappl == NULL) {
             return NULL;
+        }
+
         assert(PyTuple_Check(argappl));
     }
 
     if (PyDict_Size(pto->kw) == 0) {
         kwappl = kw;
         Py_XINCREF(kwappl);
-    } else {
+    }
+    else {
         kwappl = PyDict_Copy(pto->kw);
         if (kwappl == NULL) {
-            Py_DECREF(argappl);
+            Py_XDECREF(argappl);
             return NULL;
         }
+
         if (kw != NULL) {
             if (PyDict_Merge(kwappl, kw, 1) != 0) {
-                Py_DECREF(argappl);
+                Py_XDECREF(argappl);
                 Py_DECREF(kwappl);
                 return NULL;
             }
         }
     }
 
-    ret = PyObject_Call(pto->fn, argappl, kwappl);
-    Py_DECREF(argappl);
+    if (stack) {
+        ret = _PyObject_FastCallDict(pto->fn, stack, nargs, kwappl);
+    }
+    else {
+        ret = PyObject_Call(pto->fn, argappl, kwappl);
+        Py_DECREF(argappl);
+    }
     Py_XDECREF(kwappl);
     return ret;
 }
