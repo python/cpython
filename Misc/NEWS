@@ -46,6 +46,12 @@ Core and Builtins
 Library
 -------
 
+- A new version of typing.py from https://github.com/python/typing:
+  - Collection (only for 3.6) (Issue #27598)
+  - Add FrozenSet to __all__ (upstream #261)
+  - fix crash in _get_type_vars() (upstream #259)
+  - Remove the dict constraint in ForwardRef._eval_type (upstream #252)
+
 - Issue #27832: Make ``_normalize`` parameter to ``Fraction`` constuctor
   keyword-only, so that ``Fraction(2, 3, 4)`` now raises ``TypeError``.
 
