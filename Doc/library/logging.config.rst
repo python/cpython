@@ -144,7 +144,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    (perhaps if decryption were performed).
 
    To send a configuration to the socket, read in the configuration file and
-   send it to the socket as a string of bytes preceded by a four-byte length
+   send it to the socket as a sequence of bytes preceded by a four-byte length
    string packed in binary using ``struct.pack('>L', n)``.
 
    .. note::
