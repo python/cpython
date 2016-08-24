@@ -327,21 +327,24 @@ timed intervals.
    You can use the *when* to specify the type of *interval*. The list of possible
    values is below.  Note that they are not case sensitive.
 
-   +----------------+-----------------------+
-   | Value          | Type of interval      |
-   +================+=======================+
-   | ``'S'``        | Seconds               |
-   +----------------+-----------------------+
-   | ``'M'``        | Minutes               |
-   +----------------+-----------------------+
-   | ``'H'``        | Hours                 |
-   +----------------+-----------------------+
-   | ``'D'``        | Days                  |
-   +----------------+-----------------------+
-   | ``'W0'-'W6'``  | Weekday (0=Monday)    |
-   +----------------+-----------------------+
-   | ``'midnight'`` | Roll over at midnight |
-   +----------------+-----------------------+
+   +----------------+----------------------------+-------------------------+
+   | Value          | Type of interval           | If/how *atTime* is used |
+   +================+============================+=========================+
+   | ``'S'``        | Seconds                    | Ignored                 |
+   +----------------+----------------------------+-------------------------+
+   | ``'M'``        | Minutes                    | Ignored                 |
+   +----------------+----------------------------+-------------------------+
+   | ``'H'``        | Hours                      | Ignored                 |
+   +----------------+----------------------------+-------------------------+
+   | ``'D'``        | Days                       | Ignored                 |
+   +----------------+----------------------------+-------------------------+
+   | ``'W0'-'W6'``  | Weekday (0=Monday)         | Used to compute initial |
+   |                |                            | rollover time           |
+   +----------------+----------------------------+-------------------------+
+   | ``'midnight'`` | Roll over at midnight, if  | Used to compute initial |
+   |                | *atTime* not specified,    | rollover time           |
+   |                | else at time *atTime*      |                         |
+   +----------------+----------------------------+-------------------------+
 
    When using weekday-based rotation, specify 'W0' for Monday, 'W1' for
    Tuesday, and so on up to 'W6' for Sunday. In this case, the value passed for
@@ -369,7 +372,23 @@ timed intervals.
 
    If *atTime* is not ``None``, it must be a ``datetime.time`` instance which
    specifies the time of day when rollover occurs, for the cases where rollover
-   is set to happen "at midnight" or "on a particular weekday".
+   is set to happen "at midnight" or "on a particular weekday". Note that in
+   these cases, the *atTime* value is effectively used to compute the *initial*
+   rollover, and subsequent rollovers would be calculated via the normal
+   interval calculation.
+
+   .. note:: Calculation of the initial rollover time is done when the handler
+      is initialised. Calculation of subsequent rollover times is done only
+      when rollover occurs, and rollover occurs only when emitting output. If
+      this is not kept in mind, it might lead to some confusion. For example,
+      if an interval of "every minute" is set, that does not mean you will
+      always see log files with times (in the filename) separated by a minute;
+      if, during application execution, logging output is generated more
+      frequently than once a minute, *then* you can expect to see log files
+      with times separated by a minute. If, on the other hand, logging messages
+      are only output once every five minutes (say), then there will be gaps in
+      the file times corresponding to the minutes where no output (and hence no
+      rollover) occurred.
 
    .. versionchanged:: 3.4
       *atTime* parameter was added.
@@ -381,7 +400,6 @@ timed intervals.
    .. method:: doRollover()
 
       Does a rollover, as described above.
-
 
    .. method:: emit(record)
 
