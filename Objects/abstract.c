@@ -2365,7 +2365,7 @@ _PyObject_FastCallKeywords(PyObject *func, PyObject **stack, Py_ssize_t nargs,
     }
 
     if (PyCFunction_Check(func) && nkwargs == 0) {
-        return _PyCFunction_FastCallDict(func, args, nargs, NULL);
+        return _PyCFunction_FastCallDict(func, stack, nargs, NULL);
     }
 
     /* Slow-path: build temporary tuple and/or dict */
