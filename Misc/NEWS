@@ -160,6 +160,14 @@ Library
   then further affects other traceback display operations in the module). Patch
   by Emanuel Barry.
 
+- Issue #12319: Chunked transfer encoding support added to
+  http.client.HTTPConnection requests.  The
+  urllib.request.AbstractHTTPHandler class does not enforce a Content-Length
+  header any more.  If a HTTP request has a non-empty body, but no
+  Content-Length header, and the content length cannot be determined
+  up front, rather than throwing an error, the library now falls back
+  to use chunked transfer encoding.
+
 - Issue #27664: Add to concurrent.futures.thread.ThreadPoolExecutor()
   the ability to specify a thread name prefix.
 

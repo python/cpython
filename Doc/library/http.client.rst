@@ -219,38 +219,61 @@ HTTPConnection Objects
 :class:`HTTPConnection` instances have the following methods:
 
 
-.. method:: HTTPConnection.request(method, url, body=None, headers={})
+.. method:: HTTPConnection.request(method, url, body=None, headers={}, *, \
+            encode_chunked=False)
 
    This will send a request to the server using the HTTP request
    method *method* and the selector *url*.
 
    If *body* is specified, the specified data is sent after the headers are
-   finished.  It may be a string, a :term:`bytes-like object`, an open
-   :term:`file object`, or an iterable of :term:`bytes-like object`\s.  If
-   *body* is a string, it is encoded as ISO-8859-1, the default for HTTP.  If
-   it is a bytes-like object the bytes are sent as is.  If it is a :term:`file
-   object`, the contents of the file is sent; this file object should support
-   at least the ``read()`` method.  If the file object has a ``mode``
-   attribute, the data returned by the ``read()`` method will be encoded as
-   ISO-8859-1 unless the ``mode`` attribute contains the substring ``b``,
-   otherwise the data returned by ``read()`` is sent as is.  If *body* is an
-   iterable, the elements of the iterable are sent as is until the iterable is
-   exhausted.
+   finished.  It may be a :class:`str`, a :term:`bytes-like object`, an
+   open :term:`file object`, or an iterable of :class:`bytes`.  If *body*
+   is a string, it is encoded as ISO-8859-1, the default for HTTP.  If it
+   is a bytes-like object, the bytes are sent as is.  If it is a :term:`file
+   object`, the contents of the file is sent; this file object should
+   support at least the ``read()`` method.  If the file object is an
+   instance of :class:`io.TextIOBase`, the data returned by the ``read()``
+   method will be encoded as ISO-8859-1, otherwise the data returned by
+   ``read()`` is sent as is.  If *body* is an iterable, the elements of the
+   iterable are sent as is until the iterable is exhausted.
 
-   The *headers* argument should be a mapping of extra HTTP
-   headers to send with the request.
+   The *headers* argument should be a mapping of extra HTTP headers to send
+   with the request.
 
-   If *headers* does not contain a Content-Length item, one is added
-   automatically if possible.  If *body* is ``None``, the Content-Length header
-   is set to ``0`` for methods that expect a body (``PUT``, ``POST``, and
-   ``PATCH``).  If *body* is a string or bytes object, the Content-Length
-   header is set to its length.  If *body* is a :term:`file object` and it
-   works to call :func:`~os.fstat` on the result of its ``fileno()`` method,
-   then the Content-Length header is set to the ``st_size`` reported by the
-   ``fstat`` call.  Otherwise no Content-Length header is added.
+   If *headers* contains neither Content-Length nor Transfer-Encoding, a
+   Content-Length header will be added automatically if possible.  If
+   *body* is ``None``, the Content-Length header is set to ``0`` for
+   methods that expect a body (``PUT``, ``POST``, and ``PATCH``).  If
+   *body* is a string or bytes-like object, the Content-Length header is
+   set to its length.  If *body* is a binary :term:`file object`
+   supporting :meth:`~io.IOBase.seek`, this will be used to determine
+   its size.  Otherwise, the Content-Length header is not added
+   automatically.  In cases where determining the Content-Length up
+   front is not possible, the body will be chunk-encoded and the
+   Transfer-Encoding header will automatically be set.
+
+   The *encode_chunked* argument is only relevant if Transfer-Encoding is
+   specified in *headers*.  If *encode_chunked* is ``False``, the
+   HTTPConnection object assumes that all encoding is handled by the
+   calling code.  If it is ``True``, the body will be chunk-encoded.
+
+   .. note::
+      Chunked transfer encoding has been added to the HTTP protocol
+      version 1.1.  Unless the HTTP server is known to handle HTTP 1.1,
+      the caller must either specify the Content-Length or must use a
+      body representation whose length can be determined automatically.
 
    .. versionadded:: 3.2
       *body* can now be an iterable.
+
+   .. versionchanged:: 3.6
+      If neither Content-Length nor Transfer-Encoding are set in
+      *headers* and Content-Length cannot be determined, *body* will now
+      be automatically chunk-encoded.  The *encode_chunked* argument
+      was added.
+      The Content-Length for binary file objects is determined with seek.
+      No attempt is made to determine the Content-Length for text file
+      objects.
 
 .. method:: HTTPConnection.getresponse()
 
@@ -336,13 +359,32 @@ also send your request step by step, by using the four functions below.
    an argument.
 
 
-.. method:: HTTPConnection.endheaders(message_body=None)
+.. method:: HTTPConnection.endheaders(message_body=None, *, encode_chunked=False)
 
    Send a blank line to the server, signalling the end of the headers. The
    optional *message_body* argument can be used to pass a message body
-   associated with the request.  The message body will be sent in the same
-   packet as the message headers if it is string, otherwise it is sent in a
-   separate packet.
+   associated with the request.
+
+   If *encode_chunked* is ``True``, the result of each iteration of
+   *message_body* will be chunk-encoded as specified in :rfc:`7230`,
+   Section 3.3.1.  How the data is encoded is dependent on the type of
+   *message_body*.  If *message_body* implements the :ref:`buffer interface
+   <bufferobjects>` the encoding will result in a single chunk.
+   If *message_body* is a :class:`collections.Iterable`, each iteration
+   of *message_body* will result in a chunk.  If *message_body* is a
+   :term:`file object`, each call to ``.read()`` will result in a chunk.
+   The method automatically signals the end of the chunk-encoded data
+   immediately after *message_body*.
+
+   .. note:: Due to the chunked encoding specification, empty chunks
+      yielded by an iterator body will be ignored by the chunk-encoder.
+      This is to avoid premature termination of the read of the request by
+      the target server due to malformed encoding.
+
+   .. versionadded:: 3.6
+      Chunked encoding support.  The *encode_chunked* parameter was
+      added.
+
 
 .. method:: HTTPConnection.send(data)
 
