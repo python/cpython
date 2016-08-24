@@ -1,5 +1,4 @@
 import unittest
-from test import symlink_support
 from test import test_support, test_genericpath
 from test import test_support as support
 
@@ -106,7 +105,7 @@ class PosixPathTest(unittest.TestCase):
             f.write("foo")
             f.close()
             self.assertIs(posixpath.islink(test_support.TESTFN + "1"), False)
-            if symlink_support.can_symlink():
+            if hasattr(os, 'symlink'):
                 os.symlink(test_support.TESTFN + "1", test_support.TESTFN + "2")
                 self.assertIs(posixpath.islink(test_support.TESTFN + "2"), True)
                 os.remove(test_support.TESTFN + "1")
@@ -211,7 +210,8 @@ class PosixPathTest(unittest.TestCase):
         finally:
             safe_rmdir(ABSTFN)
 
-    @symlink_support.skip_unless_symlink
+    @unittest.skipUnless(hasattr(os, 'symlink'),
+                         'Requires functional symlink implementation')
     def test_ismount_symlinks(self):
         # Symlinks are never mountpoints.
         try:
