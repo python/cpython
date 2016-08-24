@@ -2388,6 +2388,45 @@ _PyObject_FastCallKeywords(PyObject *func, PyObject **stack, Py_ssize_t nargs,
     return result;
 }
 
+/* Positional arguments are obj followed args. */
+PyObject *
+_PyObject_Call_Prepend(PyObject *func,
+                       PyObject *obj, PyObject *args, PyObject *kwargs)
+{
+    PyObject *small_stack[8];
+    PyObject **stack;
+    Py_ssize_t argcount;
+    PyObject *result;
+
+    assert(PyTuple_Check(args));
+
+    argcount = PyTuple_GET_SIZE(args);
+    if (argcount + 1 <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
+        stack = small_stack;
+    }
+    else {
+        stack = PyMem_Malloc((argcount + 1) * sizeof(PyObject *));
+        if (stack == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+    }
+
+    /* use borrowed references */
+    stack[0] = obj;
+    Py_MEMCPY(&stack[1],
+              &PyTuple_GET_ITEM(args, 0),
+              argcount * sizeof(PyObject *));
+
+    result = _PyObject_FastCallDict(func,
+                                    stack, argcount + 1,
+                                    kwargs);
+    if (stack != small_stack) {
+        PyMem_Free(stack);
+    }
+    return result;
+}
+
 static PyObject*
 call_function_tail(PyObject *callable, PyObject *args)
 {

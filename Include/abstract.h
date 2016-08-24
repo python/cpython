@@ -309,6 +309,10 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
                                 Py_ssize_t nargs,
                                 Py_ssize_t nkwargs);
 
+    PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(PyObject *func,
+                                                  PyObject *obj, PyObject *args,
+                                                  PyObject *kwargs);
+
      PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *func,
                                                     PyObject *result,
                                                     const char *where);
