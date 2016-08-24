@@ -112,7 +112,7 @@ Wave_read objects, as returned by :func:`.open`, have the following methods:
 
 .. method:: Wave_read.readframes(n)
 
-   Reads and returns at most *n* frames of audio, as a string of bytes.
+   Reads and returns at most *n* frames of audio, as a :class:`bytes` object.
 
 
 .. method:: Wave_read.rewind()
