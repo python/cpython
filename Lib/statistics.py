@@ -11,6 +11,7 @@ Calculating averages
 Function            Description
 ==================  =============================================
 mean                Arithmetic mean (average) of data.
+geometric_mean      Geometric mean of data.
 harmonic_mean       Harmonic mean of data.
 median              Median (middle value) of data.
 median_low          Low median of data.
@@ -79,7 +80,7 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 __all__ = [ 'StatisticsError',
             'pstdev', 'pvariance', 'stdev', 'variance',
             'median',  'median_low', 'median_high', 'median_grouped',
-            'mean', 'mode', 'harmonic_mean',
+            'mean', 'mode', 'geometric_mean', 'harmonic_mean',
           ]
 
 import collections
