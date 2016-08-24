@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+import sysconfig
 import unittest
 import sysconfig
 
@@ -76,6 +77,9 @@ def run_gdb(*args, **env_vars):
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
         ).communicate()
     return out, err
+
+if not sysconfig.is_python_build():
+    raise unittest.SkipTest("test_gdb only works on source builds at the moment.")
 
 # Verify that "gdb" was built with the embedded python support enabled:
 gdbpy_version, _ = run_gdb("--eval-command=python import sys; print(sys.version_info)")
