@@ -30,18 +30,9 @@ The :mod:`urllib.request` module defines the following functions:
    Open the URL *url*, which can be either a string or a
    :class:`Request` object.
 
-   *data* must be a bytes object specifying additional data to be sent to the
-   server, or ``None`` if no such data is needed. *data* may also be an
-   iterable object and in that case Content-Length value must be specified in
-   the headers. Currently HTTP requests are the only ones that use *data*; the
-   HTTP request will be a POST instead of a GET when the *data* parameter is
-   provided.
-
-   *data* should be a buffer in the standard
-   :mimetype:`application/x-www-form-urlencoded` format.  The
-   :func:`urllib.parse.urlencode` function takes a mapping or sequence of
-   2-tuples and returns an ASCII text string in this format. It should
-   be encoded to bytes before being used as the *data* parameter.
+   *data* must be an object specifying additional data to be sent to the
+   server, or ``None`` if no such data is needed.  See :class:`Request`
+   for details.
 
    urllib.request module uses HTTP/1.1 and includes ``Connection:close`` header
    in its HTTP requests.
@@ -192,14 +183,22 @@ The following classes are provided:
 
    *url* should be a string containing a valid URL.
 
-   *data* must be a bytes object specifying additional data to send to the
-   server, or ``None`` if no such data is needed.  Currently HTTP requests are
-   the only ones that use *data*; the HTTP request will be a POST instead of a
-   GET when the *data* parameter is provided.  *data* should be a buffer in the
-   standard :mimetype:`application/x-www-form-urlencoded` format.
-   The :func:`urllib.parse.urlencode` function takes a mapping or sequence of
-   2-tuples and returns an ASCII string in this format. It should be
-   encoded to bytes before being used as the *data* parameter.
+   *data* must be an object specifying additional data to send to the
+   server, or ``None`` if no such data is needed.  Currently HTTP
+   requests are the only ones that use *data*.  The supported object
+   types include bytes, file-like objects, and iterables.  If no
+   ``Content-Length`` header has been provided, :class:`HTTPHandler` will
+   try to determine the length of *data* and set this header accordingly.
+   If this fails, ``Transfer-Encoding: chunked`` as specified in
+   :rfc:`7230`, Section 3.3.1 will be used to send the data.  See
+   :meth:`http.client.HTTPConnection.request` for details on the
+   supported object types and on how the content length is determined.
+
+   For an HTTP POST request method, *data* should be a buffer in the
+   standard :mimetype:`application/x-www-form-urlencoded` format.  The
+   :func:`urllib.parse.urlencode` function takes a mapping or sequence
+   of 2-tuples and returns an ASCII string in this format. It should
+   be encoded to bytes before being used as the *data* parameter.
 
    *headers* should be a dictionary, and will be treated as if
    :meth:`add_header` was called with each key and value as arguments.
@@ -211,8 +210,10 @@ The following classes are provided:
    :mod:`urllib`'s default user agent string is
    ``"Python-urllib/2.6"`` (on Python 2.6).
 
-   An example of using ``Content-Type`` header with *data* argument would be
-   sending a dictionary like ``{"Content-Type": "application/x-www-form-urlencoded"}``.
+   An appropriate ``Content-Type`` header should be included if the *data*
+   argument is present.  If this header has not been provided and *data*
+   is not None, ``Content-Type: application/x-www-form-urlencoded`` will
+   be added as a default.
 
    The final two arguments are only of interest for correct handling
    of third-party HTTP cookies:
@@ -235,8 +236,17 @@ The following classes are provided:
    *method* should be a string that indicates the HTTP request method that
    will be used (e.g. ``'HEAD'``).  If provided, its value is stored in the
    :attr:`~Request.method` attribute and is used by :meth:`get_method()`.
-   Subclasses may indicate a default method by setting the
+   The default is ``'GET'`` if *data* is ``None`` or ``'POST'`` otherwise.
+   Subclasses may indicate a different default method by setting the
    :attr:`~Request.method` attribute in the class itself.
+
+   .. note::
+      The request will not work as expected if the data object is unable
+      to deliver its content more than once (e.g. a file or an iterable
+      that can produce the content only once) and the request is retried
+      for HTTP redirects or authentication.  The *data* is sent to the
+      HTTP server right away after the headers.  There is no support for
+      a 100-continue expectation in the library.
 
    .. versionchanged:: 3.3
       :attr:`Request.method` argument is added to the Request class.
@@ -244,6 +254,10 @@ The following classes are provided:
    .. versionchanged:: 3.4
       Default :attr:`Request.method` may be indicated at the class level.
 
+   .. versionchanged:: 3.6
+      Do not raise an error if the ``Content-Length`` has not been
+      provided and could not be determined.  Fall back to use chunked
+      transfer encoding instead.
 
 .. class:: OpenerDirector()
 

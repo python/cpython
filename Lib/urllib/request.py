@@ -141,17 +141,9 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
             *, cafile=None, capath=None, cadefault=False, context=None):
     '''Open the URL url, which can be either a string or a Request object.
 
-    *data* must be a bytes object specifying additional data to be sent to the
-    server, or None if no such data is needed. data may also be an iterable
-    object and in that case Content-Length value must be specified in the
-    headers. Currently HTTP requests are the only ones that use data; the HTTP
-    request will be a POST instead of a GET when the data parameter is
-    provided.
-
-    *data* should be a buffer in the standard application/x-www-form-urlencoded
-    format. The urllib.parse.urlencode() function takes a mapping or sequence
-    of 2-tuples and returns an ASCII text string in this format. It should be
-    encoded to bytes before being used as the data parameter.
+    *data* must be an object specifying additional data to be sent to
+    the server, or None if no such data is needed.  See Request for
+    details.
 
     urllib.request module uses HTTP/1.1 and includes a "Connection:close"
     header in its HTTP requests.
@@ -1235,6 +1227,11 @@ class AbstractHTTPHandler(BaseHandler):
     def set_http_debuglevel(self, level):
         self._debuglevel = level
 
+    def _get_content_length(self, request):
+        return http.client.HTTPConnection._get_content_length(
+            request.data,
+            request.get_method())
+
     def do_request_(self, request):
         host = request.host
         if not host:
@@ -1243,24 +1240,22 @@ class AbstractHTTPHandler(BaseHandler):
         if request.data is not None:  # POST
             data = request.data
             if isinstance(data, str):
-                msg = "POST data should be bytes or an iterable of bytes. " \
-                      "It cannot be of type str."
+                msg = "POST data should be bytes, an iterable of bytes, " \
+                      "or a file object. It cannot be of type str."
                 raise TypeError(msg)
             if not request.has_header('Content-type'):
                 request.add_unredirected_header(
                     'Content-type',
                     'application/x-www-form-urlencoded')
-            if not request.has_header('Content-length'):
-                try:
-                    mv = memoryview(data)
-                except TypeError:
-                    if isinstance(data, collections.Iterable):
-                        raise ValueError("Content-Length should be specified "
-                                "for iterable data of type %r %r" % (type(data),
-                                data))
+            if (not request.has_header('Content-length')
+                    and not request.has_header('Transfer-encoding')):
+                content_length = self._get_content_length(request)
+                if content_length is not None:
+                    request.add_unredirected_header(
+                            'Content-length', str(content_length))
                 else:
                     request.add_unredirected_header(
-                            'Content-length', '%d' % (len(mv) * mv.itemsize))
+                            'Transfer-encoding', 'chunked')
 
         sel_host = host
         if request.has_proxy():
@@ -1316,7 +1311,8 @@ class AbstractHTTPHandler(BaseHandler):
 
         try:
             try:
-                h.request(req.get_method(), req.selector, req.data, headers)
+                h.request(req.get_method(), req.selector, req.data, headers,
+                          encode_chunked=req.has_header('Transfer-encoding'))
             except OSError as err: # timeout error
                 raise URLError(err)
             r = h.getresponse()
