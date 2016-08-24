@@ -281,6 +281,10 @@ Constants
    in the Unix header files are defined; for a few symbols, default values are
    provided.
 
+   .. versionchanged:: 3.6
+      ``SO_DOMAIN``, ``SO_PROTOCOL``, ``SO_PEERSEC``, ``SO_PASSSEC``
+      were added.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*

@@ -6582,6 +6582,12 @@ PyInit__socket(void)
 #ifdef  LOCAL_PEERCRED
     PyModule_AddIntMacro(m, LOCAL_PEERCRED);
 #endif
+#ifdef  SO_PASSSEC
+    PyModule_AddIntMacro(m, SO_PASSSEC);
+#endif
+#ifdef  SO_PEERSEC
+    PyModule_AddIntMacro(m, SO_PEERSEC);
+#endif
 #ifdef  SO_BINDTODEVICE
     PyModule_AddIntMacro(m, SO_BINDTODEVICE);
 #endif
@@ -6590,6 +6596,12 @@ PyInit__socket(void)
 #endif
 #ifdef  SO_MARK
     PyModule_AddIntMacro(m, SO_MARK);
+#endif
+#ifdef SO_DOMAIN
+    PyModule_AddIntMacro(m, SO_DOMAIN);
+#endif
+#ifdef SO_PROTOCOL
+    PyModule_AddIntMacro(m, SO_PROTOCOL);
 #endif
 
     /* Maximum number of connections for "listen" */
