@@ -542,7 +542,7 @@ Cursor Objects
       .. literalinclude:: ../includes/sqlite3/execute_1.py
 
       :meth:`execute` will only execute a single SQL statement. If you try to execute
-      more than one statement with it, it will raise an :exc:`.Warning`. Use
+      more than one statement with it, it will raise a :exc:`.Warning`. Use
       :meth:`executescript` if you want to execute multiple SQL statements with one
       call.
 
