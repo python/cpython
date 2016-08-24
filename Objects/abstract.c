@@ -2299,9 +2299,9 @@ _PyObject_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
         result = (*call)(func, tuple, kwargs);
         Py_DECREF(tuple);
-    }
 
-    result = _Py_CheckFunctionResult(func, result, NULL);
+        result = _Py_CheckFunctionResult(func, result, NULL);
+    }
 
 exit:
     Py_LeaveRecursiveCall();
