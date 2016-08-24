@@ -61,7 +61,8 @@ PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyFunction_FastCallDict(
     PyObject *func,
-    PyObject **args, int nargs,
+    PyObject **args,
+    Py_ssize_t nargs,
     PyObject *kwargs);
 #endif
 

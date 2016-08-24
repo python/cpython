@@ -2095,7 +2095,7 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *callable;
     static char *kwlist[] = {"iterable", "key", "reverse", 0};
     int reverse;
-    int nargs;
+    Py_ssize_t nargs;
 
     /* args 1-3 should match listsort in Objects/listobject.c */
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|Oi:sorted",

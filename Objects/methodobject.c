@@ -146,14 +146,19 @@ PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwds)
 }
 
 PyObject *
-_PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, int nargs,
+_PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
                           PyObject *kwargs)
 {
-    PyCFunctionObject* func = (PyCFunctionObject*)func_obj;
+    PyCFunctionObject *func = (PyCFunctionObject*)func_obj;
     PyCFunction meth = PyCFunction_GET_FUNCTION(func);
     PyObject *self = PyCFunction_GET_SELF(func);
     PyObject *result;
     int flags;
+
+    assert(func != NULL);
+    assert(nargs >= 0);
+    assert(nargs == 0 || args != NULL);
+    assert(kwargs == NULL || PyDict_Check(kwargs));
 
     /* _PyCFunction_FastCallDict() must not be called with an exception set,
        because it may clear it (directly or indirectly) and so the

@@ -2255,7 +2255,7 @@ _PyStack_AsTuple(PyObject **stack, Py_ssize_t nargs)
 }
 
 PyObject *
-_PyObject_FastCallDict(PyObject *func, PyObject **args, int nargs,
+_PyObject_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
                        PyObject *kwargs)
 {
     ternaryfunc call;
