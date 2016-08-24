@@ -113,7 +113,6 @@ static PyObject * call_function(PyObject ***, int, uint64*, uint64*);
 #else
 static PyObject * call_function(PyObject ***, int);
 #endif
-static PyObject * fast_function(PyObject *, PyObject **, Py_ssize_t, Py_ssize_t);
 static PyObject * do_call(PyObject *, PyObject ***, Py_ssize_t, Py_ssize_t);
 static PyObject * ext_do_call(PyObject *, PyObject ***, int, Py_ssize_t, Py_ssize_t);
 static PyObject * update_keyword_args(PyObject *, Py_ssize_t, PyObject ***,
@@ -4767,7 +4766,7 @@ call_function(PyObject ***pp_stack, int oparg
         }
         READ_TIMESTAMP(*pintr0);
         if (PyFunction_Check(func)) {
-            x = fast_function(func, (*pp_stack) - n, nargs, nkwargs);
+            x = _PyFunction_FastCallKeywords(func, (*pp_stack) - n, nargs, nkwargs);
         }
         else {
             x = do_call(func, pp_stack, nargs, nkwargs);
@@ -4780,7 +4779,7 @@ call_function(PyObject ***pp_stack, int oparg
 
     /* Clear the stack of the function object.  Also removes
        the arguments in case they weren't consumed already
-       (fast_function() and err_args() leave them on the stack).
+       (_PyFunction_FastCallKeywords() and err_args() leave them on the stack).
      */
     while ((*pp_stack) > pfunc) {
         w = EXT_POP(*pp_stack);
@@ -4792,7 +4791,7 @@ call_function(PyObject ***pp_stack, int oparg
     return x;
 }
 
-/* The fast_function() function optimize calls for which no argument
+/* The _PyFunction_FastCallKeywords() function optimize calls for which no argument
    tuple is necessary; the objects are passed directly from the stack.
    For the simplest case -- a function that takes only positional
    arguments and is called with only positional arguments -- it
@@ -4840,8 +4839,9 @@ _PyFunction_FastCallNoKw(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
 
 /* Similar to _PyFunction_FastCall() but keywords are passed a (key, value)
    pairs in stack */
-static PyObject *
-fast_function(PyObject *func, PyObject **stack, Py_ssize_t nargs, Py_ssize_t nkwargs)
+PyObject *
+_PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
+                             Py_ssize_t nargs, Py_ssize_t nkwargs)
 {
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
     PyObject *globals = PyFunction_GET_GLOBALS(func);
@@ -4849,6 +4849,11 @@ fast_function(PyObject *func, PyObject **stack, Py_ssize_t nargs, Py_ssize_t nkw
     PyObject *kwdefs, *closure, *name, *qualname;
     PyObject **d;
     int nd;
+
+    assert(func != NULL);
+    assert(nargs >= 0);
+    assert(nkwargs >= 0);
+    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
 
     PCALL(PCALL_FUNCTION);
     PCALL(PCALL_FAST_FUNCTION);
@@ -4902,13 +4907,13 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
     Py_ssize_t nd, nk;
     PyObject *result;
 
-    PCALL(PCALL_FUNCTION);
-    PCALL(PCALL_FAST_FUNCTION);
-
     assert(func != NULL);
     assert(nargs >= 0);
     assert(nargs == 0 || args != NULL);
     assert(kwargs == NULL || PyDict_Check(kwargs));
+
+    PCALL(PCALL_FUNCTION);
+    PCALL(PCALL_FAST_FUNCTION);
 
     if (co->co_kwonlyargcount == 0 &&
         (kwargs == NULL || PyDict_Size(kwargs) == 0) &&
