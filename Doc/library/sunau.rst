@@ -158,7 +158,7 @@ AU_read objects, as returned by :func:`.open` above, have the following methods:
 
 .. method:: AU_read.readframes(n)
 
-   Reads and returns at most *n* frames of audio, as a string of bytes.  The data
+   Reads and returns at most *n* frames of audio, as a :class:`bytes` object.  The data
    will be returned in linear format.  If the original data is in u-LAW format, it
    will be converted.
 
