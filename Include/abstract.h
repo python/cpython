@@ -280,7 +280,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
         Return the result on success. Raise an exception on return NULL on
         error. */
      PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(PyObject *func,
-                                                   PyObject **args, int nargs,
+                                                   PyObject **args, Py_ssize_t nargs,
                                                    PyObject *kwargs);
 
 #define _PyObject_FastCall(func, args, nargs) \
