@@ -346,17 +346,6 @@ _Pickle_FastCall(PyObject *func, PyObject *obj)
 {
     PyObject *result;
 
-    /* Note: this function used to reuse the argument tuple. This used to give
-       a slight performance boost with older pickle implementations where many
-       unbuffered reads occurred (thus needing many function calls).
-
-       However, this optimization was removed because it was too complicated
-       to get right. It abused the C API for tuples to mutate them which led
-       to subtle reference counting and concurrency bugs. Furthermore, the
-       introduction of protocol 4 and the prefetching optimization via peek()
-       significantly reduced the number of function calls we do. Thus, the
-       benefits became marginal at best. */
-
     result = _PyObject_CallArg1(func, obj);
     Py_DECREF(obj);
     return result;
