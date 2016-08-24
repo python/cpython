@@ -292,6 +292,23 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 #define _PyObject_CallArg1(func, arg) \
     _PyObject_FastCall((func), &(arg), 1)
 
+     /* Call the callable object func with the "fast call" calling convention:
+        args is a C array for positional arguments followed by (key, value)
+        pairs for keyword arguments.
+
+        nargs is the number of positional parameters at the beginning of stack.
+        nkwargs is the number of (key, value) pairs at the end of stack.
+
+        If nargs and nkwargs are equal to zero, stack can be NULL.
+
+        Return the result on success. Raise an exception and return NULL on
+        error. */
+     PyAPI_FUNC(PyObject *) _PyObject_FastCallKeywords(
+                                PyObject *func,
+                                PyObject **stack,
+                                Py_ssize_t nargs,
+                                Py_ssize_t nkwargs);
+
      PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *func,
                                                     PyObject *result,
                                                     const char *where);
