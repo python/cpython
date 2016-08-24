@@ -406,6 +406,10 @@ The :func:`~socket.socket.ioctl` function now supports the :data:`~socket.SIO_LO
 control code.
 (Contributed by Daniel Stokes in :issue:`26536`.)
 
+The :meth:`~socket.socket.getsockopt` constants ``SO_DOMAIN``,
+``SO_PROTOCOL``, ``SO_PEERSEC``, and ``SO_PASSSEC`` are now supported.
+(Contributed by Christian Heimes in :issue:`26907`.)
+
 
 socketserver
 ------------
