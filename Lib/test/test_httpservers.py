@@ -190,7 +190,7 @@ class BaseHTTPServerTestCase(BaseTestCase):
         res = self.con.getresponse()
         self.assertEqual(res.status, HTTPStatus.NOT_IMPLEMENTED)
 
-    def test_head_keep_alive(self):
+    def test_header_keep_alive(self):
         self.con._http_vsn_str = 'HTTP/1.1'
         self.con.putrequest('GET', '/')
         self.con.putheader('Connection', 'keep-alive')
