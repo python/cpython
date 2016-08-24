@@ -1041,11 +1041,11 @@ class Test_Product(NumericTestCase):
         self.assertEqual(mant, F(10))
         self.assertTrue(isinstance(mant, F))
 
-    @unittest.expectedFailure
     def test_decimal(self):
         D = Decimal
         data = [D('24.5'), D('17.6'), D('0.025'), D('1.3')]
-        assert False
+        expected = D('14.014000')
+        self.assertEqual(statistics._product(data), (0, expected))
 
     def test_mixed_decimal_float(self):
         # Test that mixed Decimal and float raises.
