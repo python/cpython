@@ -324,6 +324,15 @@ exceptions: see :func:`faulthandler.enable`. (Contributed by Victor Stinner in
 :issue:`23848`.)
 
 
+http.client
+-----------
+
+:meth:`HTTPConnection.request() <http.client.HTTPConnection.request>` and
+:meth:`~http.client.HTTPConnection.endheaders` both now support
+chunked encoding request bodies.
+(Contributed by Demian Brecht and Rolf Krahl in :issue:`12319`.)
+
+
 idlelib and IDLE
 ----------------
 
@@ -498,6 +507,16 @@ The :class:`~unittest.mock.Mock` class has the following improvements:
   <unittest.mock.Mock.assert_called_once>` to check if the mock object
   was called.
   (Contributed by Amit Saha in :issue:`26323`.)
+
+
+urllib.request
+--------------
+
+If a HTTP request has a non-empty body but no Content-Length header
+and the content length cannot be determined up front, rather than
+throwing an error, :class:`~urllib.request.AbstractHTTPHandler` now
+falls back to use chunked transfer encoding.
+(Contributed by Demian Brecht and Rolf Krahl in :issue:`12319`.)
 
 
 urllib.robotparser
