@@ -69,6 +69,8 @@ Library
 - Issue #9998: On Linux, ctypes.util.find_library now looks in LD_LIBRARY_PATH
   for shared libraries.
 
+- Issue #27573: exit message for code.interact is now configurable.
+
 Tests
 -----
 
@@ -259,7 +261,7 @@ IDLE
   Add tests for the changes to the config module.
 
 - Issue #27452: add line counter and crc to IDLE configHandler test dump.
-  
+
 Tests
 -----
 
