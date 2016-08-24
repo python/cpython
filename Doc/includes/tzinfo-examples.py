@@ -1,46 +1,13 @@
-from datetime import tzinfo, timedelta, datetime
+from datetime import tzinfo, timedelta, datetime, timezone
 
 ZERO = timedelta(0)
 HOUR = timedelta(hours=1)
-
-# A UTC class.
-
-class UTC(tzinfo):
-    """UTC"""
-
-    def utcoffset(self, dt):
-        return ZERO
-
-    def tzname(self, dt):
-        return "UTC"
-
-    def dst(self, dt):
-        return ZERO
-
-utc = UTC()
-
-# A class building tzinfo objects for fixed-offset time zones.
-# Note that FixedOffset(0, "UTC") is a different way to build a
-# UTC tzinfo object.
-
-class FixedOffset(tzinfo):
-    """Fixed offset in minutes east from UTC."""
-
-    def __init__(self, offset, name):
-        self.__offset = timedelta(minutes=offset)
-        self.__name = name
-
-    def utcoffset(self, dt):
-        return self.__offset
-
-    def tzname(self, dt):
-        return self.__name
-
-    def dst(self, dt):
-        return ZERO
+SECOND = timedelta(seconds=1)
 
 # A class capturing the platform's idea of local time.
-
+# (May result in wrong values on historical times in
+#  timezones where UTC offset and/or the DST rules had
+#  changed in the past.)
 import time as _time
 
 STDOFFSET = timedelta(seconds = -_time.timezone)
@@ -52,6 +19,16 @@ else:
 DSTDIFF = DSTOFFSET - STDOFFSET
 
 class LocalTimezone(tzinfo):
+
+    def fromutc(self, dt):
+        assert dt.tzinfo is self
+        stamp = (dt - datetime(1970, 1, 1, tzinfo=self)) // SECOND
+        args = _time.localtime(stamp)[:6]
+        dst_diff = DSTDIFF // SECOND
+        # Detect fold
+        fold = (args == _time.localtime(stamp - dst_diff))
+        return datetime(*args, microsecond=dt.microsecond,
+                        tzinfo=self, fold=fold)
 
     def utcoffset(self, dt):
         if self._isdst(dt):
@@ -99,19 +76,36 @@ def first_sunday_on_or_after(dt):
 # In the US, since 2007, DST starts at 2am (standard time) on the second
 # Sunday in March, which is the first Sunday on or after Mar 8.
 DSTSTART_2007 = datetime(1, 3, 8, 2)
-# and ends at 2am (DST time; 1am standard time) on the first Sunday of Nov.
-DSTEND_2007 = datetime(1, 11, 1, 1)
+# and ends at 2am (DST time) on the first Sunday of Nov.
+DSTEND_2007 = datetime(1, 11, 1, 2)
 # From 1987 to 2006, DST used to start at 2am (standard time) on the first
-# Sunday in April and to end at 2am (DST time; 1am standard time) on the last
+# Sunday in April and to end at 2am (DST time) on the last
 # Sunday of October, which is the first Sunday on or after Oct 25.
 DSTSTART_1987_2006 = datetime(1, 4, 1, 2)
-DSTEND_1987_2006 = datetime(1, 10, 25, 1)
+DSTEND_1987_2006 = datetime(1, 10, 25, 2)
 # From 1967 to 1986, DST used to start at 2am (standard time) on the last
-# Sunday in April (the one on or after April 24) and to end at 2am (DST time;
-# 1am standard time) on the last Sunday of October, which is the first Sunday
+# Sunday in April (the one on or after April 24) and to end at 2am (DST time)
+# on the last Sunday of October, which is the first Sunday
 # on or after Oct 25.
 DSTSTART_1967_1986 = datetime(1, 4, 24, 2)
 DSTEND_1967_1986 = DSTEND_1987_2006
+
+def us_dst_range(year):
+    # Find start and end times for US DST. For years before 1967, return
+    # start = end for no DST.
+    if 2006 < year:
+        dststart, dstend = DSTSTART_2007, DSTEND_2007
+    elif 1986 < year < 2007:
+        dststart, dstend = DSTSTART_1987_2006, DSTEND_1987_2006
+    elif 1966 < year < 1987:
+        dststart, dstend = DSTSTART_1967_1986, DSTEND_1967_1986
+    else:
+        return (datetime(year, 1, 1), ) * 2
+
+    start = first_sunday_on_or_after(dststart.replace(year=year))
+    end = first_sunday_on_or_after(dstend.replace(year=year))
+    return start, end
+
 
 class USTimeZone(tzinfo):
 
@@ -141,27 +135,39 @@ class USTimeZone(tzinfo):
             # implementation) passes a datetime with dt.tzinfo is self.
             return ZERO
         assert dt.tzinfo is self
-
-        # Find start and end times for US DST. For years before 1967, return
-        # ZERO for no DST.
-        if 2006 < dt.year:
-            dststart, dstend = DSTSTART_2007, DSTEND_2007
-        elif 1986 < dt.year < 2007:
-            dststart, dstend = DSTSTART_1987_2006, DSTEND_1987_2006
-        elif 1966 < dt.year < 1987:
-            dststart, dstend = DSTSTART_1967_1986, DSTEND_1967_1986
-        else:
-            return ZERO
-
-        start = first_sunday_on_or_after(dststart.replace(year=dt.year))
-        end = first_sunday_on_or_after(dstend.replace(year=dt.year))
-
+        start, end = us_dst_range(dt.year)
         # Can't compare naive to aware objects, so strip the timezone from
         # dt first.
-        if start <= dt.replace(tzinfo=None) < end:
+        dt = dt.replace(tzinfo=None)
+        if start + HOUR <= dt < end - HOUR:
+            # DST is in effect.
             return HOUR
-        else:
-            return ZERO
+        if end - HOUR <= dt < end:
+            # Fold (an ambiguous hour): use dt.fold to disambiguate.
+            return ZERO if dt.fold else HOUR
+        if start <= dt < start + HOUR:
+            # Gap (a non-existent hour): reverse the fold rule.
+            return HOUR if dt.fold else ZERO
+        # DST is off.
+        return ZERO
+
+    def fromutc(self, dt):
+        assert dt.tzinfo is self
+        start, end = us_dst_range(dt.year)
+        start = start.replace(tzinfo=self)
+        end = end.replace(tzinfo=self)
+        std_time = dt + self.stdoffset
+        dst_time = std_time + HOUR
+        if end <= dst_time < end + HOUR:
+            # Repeated hour
+            return std_time.replace(fold=1)
+        if std_time < start or dst_time >= end:
+            # Standard time
+            return std_time
+        if start <= std_time < end - HOUR:
+            # Daylight saving time
+            return dst_time
+
 
 Eastern  = USTimeZone(-5, "Eastern",  "EST", "EDT")
 Central  = USTimeZone(-6, "Central",  "CST", "CDT")
