@@ -302,34 +302,19 @@ method_traverse(PyMethodObject *im, visitproc visit, void *arg)
 }
 
 static PyObject *
-method_call(PyObject *func, PyObject *arg, PyObject *kw)
+method_call(PyObject *method, PyObject *args, PyObject *kwargs)
 {
-    PyObject *self = PyMethod_GET_SELF(func);
-    PyObject *result;
+    PyObject *self, *func;
 
-    func = PyMethod_GET_FUNCTION(func);
+    self = PyMethod_GET_SELF(method);
     if (self == NULL) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    else {
-        Py_ssize_t argcount = PyTuple_Size(arg);
-        PyObject *newarg = PyTuple_New(argcount + 1);
-        int i;
-        if (newarg == NULL)
-            return NULL;
-        Py_INCREF(self);
-        PyTuple_SET_ITEM(newarg, 0, self);
-        for (i = 0; i < argcount; i++) {
-            PyObject *v = PyTuple_GET_ITEM(arg, i);
-            Py_XINCREF(v);
-            PyTuple_SET_ITEM(newarg, i+1, v);
-        }
-        arg = newarg;
-    }
-    result = PyObject_Call((PyObject *)func, arg, kw);
-    Py_DECREF(arg);
-    return result;
+
+    func = PyMethod_GET_FUNCTION(method);
+
+    return _PyObject_Call_Prepend(func, self, args, kwargs);
 }
 
 static PyObject *

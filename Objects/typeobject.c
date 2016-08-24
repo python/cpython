@@ -6356,29 +6356,16 @@ slot_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *func;
-    PyObject *newargs, *x;
-    Py_ssize_t i, n;
+    PyObject *func, *result;
 
     func = _PyObject_GetAttrId((PyObject *)type, &PyId___new__);
-    if (func == NULL)
+    if (func == NULL) {
         return NULL;
-    assert(PyTuple_Check(args));
-    n = PyTuple_GET_SIZE(args);
-    newargs = PyTuple_New(n+1);
-    if (newargs == NULL)
-        return NULL;
-    Py_INCREF(type);
-    PyTuple_SET_ITEM(newargs, 0, (PyObject *)type);
-    for (i = 0; i < n; i++) {
-        x = PyTuple_GET_ITEM(args, i);
-        Py_INCREF(x);
-        PyTuple_SET_ITEM(newargs, i+1, x);
     }
-    x = PyObject_Call(func, newargs, kwds);
-    Py_DECREF(newargs);
+
+    result = _PyObject_Call_Prepend(func, (PyObject *)type, args, kwds);
     Py_DECREF(func);
-    return x;
+    return result;
 }
 
 static void
