@@ -204,7 +204,9 @@ Other functions
 
 .. function:: is_python_build()
 
-   Return ``True`` if the current Python installation was built from source.
+   Return ``True`` if the running Python interpreter was built from source and
+   is being run from its built location, and not from a location resulting from
+   e.g. running ``make install`` or installing via a binary installer.
 
 
 .. function:: parse_config_h(fp[, vars])
