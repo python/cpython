@@ -2343,51 +2343,6 @@ _PyStack_AsDict(PyObject **stack, Py_ssize_t nkwargs, PyObject *func)
     return kwdict;
 }
 
-PyObject *
-_PyObject_FastCallKeywords(PyObject *func, PyObject **stack, Py_ssize_t nargs,
-                           Py_ssize_t nkwargs)
-{
-    PyObject *args, *kwdict, *result;
-
-    /* _PyObject_FastCallKeywords() must not be called with an exception set,
-       because it may clear it (directly or indirectly) and so the
-       caller loses its exception */
-    assert(!PyErr_Occurred());
-
-    assert(func != NULL);
-    assert(nargs >= 0);
-    assert(nkwargs >= 0);
-    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
-
-    if (PyFunction_Check(func)) {
-        /* Fast-path: avoid temporary tuple or dict */
-        return _PyFunction_FastCallKeywords(func, stack, nargs, nkwargs);
-    }
-
-    if (PyCFunction_Check(func) && nkwargs == 0) {
-        return _PyCFunction_FastCallDict(func, stack, nargs, NULL);
-    }
-
-    /* Slow-path: build temporary tuple and/or dict */
-    args = _PyStack_AsTuple(stack, nargs);
-
-    if (nkwargs > 0) {
-        kwdict = _PyStack_AsDict(stack + nargs, nkwargs, func);
-        if (kwdict == NULL) {
-            Py_DECREF(args);
-            return NULL;
-        }
-    }
-    else {
-        kwdict = NULL;
-    }
-
-    result = PyObject_Call(func, args, kwdict);
-    Py_DECREF(args);
-    Py_XDECREF(kwdict);
-    return result;
-}
-
 /* Positional arguments are obj followed args. */
 PyObject *
 _PyObject_Call_Prepend(PyObject *func,
