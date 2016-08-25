@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-    <title>24.6. IDLE &mdash; Python 2.7.11 documentation</title>
+    <title>24.6. IDLE &#8212; Python 2.7.12 documentation</title>
 
     <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.7.11',
+        VERSION:     '2.7.12',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,11 +25,11 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/sidebar.js"></script>
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 2.7.11 documentation"
+          title="Search within Python 2.7.12 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="copyright" title="Copyright" href="../copyright.html" />
-    <link rel="top" title="Python 2.7.11 documentation" href="../contents.html" />
+    <link rel="top" title="Python 2.7.12 documentation" href="../contents.html" />
     <link rel="up" title="24. Graphical User Interfaces with Tk" href="tk.html" />
     <link rel="next" title="24.7. Other Graphical User Interface Packages" href="othergui.html" />
     <link rel="prev" title="24.5. turtle — Turtle graphics for Tk" href="turtle.html" />
@@ -58,13 +58,13 @@
              accesskey="P">previous</a> |</li>
         <li><img src="../_static/py.png" alt=""
                  style="vertical-align: middle; margin-top: -1px"/></li>
-        <li><a href="https://www.python.org/">Python</a> &raquo;</li>
+        <li><a href="https://www.python.org/">Python</a> &#187;</li>
         <li>
-          <a href="../index.html">Python 2.7.11 documentation</a> &raquo;
+          <a href="../index.html">Python 2.7.12 documentation</a> &#187;
         </li>
 
-          <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &raquo;</li>
-          <li class="nav-item nav-item-2"><a href="tk.html" accesskey="U">24. Graphical User Interfaces with Tk</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="tk.html" accesskey="U">24. Graphical User Interfaces with Tk</a> &#187;</li>
       </ul>
     </div>
 
@@ -490,7 +490,7 @@ executed in the Tk namespace, so this file is not useful for importing
 functions to be used from IDLE&#8217;s Python shell.</p>
 <div class="section" id="command-line-usage">
 <h3>24.6.3.1. Command line usage<a class="headerlink" href="#command-line-usage" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre>idle.py [-c command] [-d] [-e] [-h] [-i] [-r file] [-s] [-t title] [-] [arg] ...
+<div class="highlight-none"><div class="highlight"><pre><span></span>idle.py [-c command] [-d] [-e] [-h] [-i] [-r file] [-s] [-t title] [-] [arg] ...
 
 -c command  run command in the shell window
 -d          enable debugger and open shell window
@@ -527,7 +527,9 @@ and screen will not work.  If <code class="docutils literal"><span class="pre">s
 IDLE&#8217;s changes are lost and things like <code class="docutils literal"><span class="pre">input</span></code>, <code class="docutils literal"><span class="pre">raw_input</span></code>, and
 <code class="docutils literal"><span class="pre">print</span></code> will not work correctly.</p>
 <p>With IDLE&#8217;s Shell, one enters, edits, and recalls complete statements.
-Some consoles only work with a single physical line at a time.</p>
+Some consoles only work with a single physical line at a time.  IDLE uses
+<code class="docutils literal"><span class="pre">exec</span></code> to run each statement.  As a result, <code class="docutils literal"><span class="pre">'__builtins__'</span></code> is always
+defined for each statement.</p>
 </div>
 <div class="section" id="running-without-a-subprocess">
 <h3>24.6.3.3. Running without a subprocess<a class="headerlink" href="#running-without-a-subprocess" title="Permalink to this headline">¶</a></h3>
@@ -655,14 +657,11 @@ are currently:</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -686,13 +685,13 @@ are currently:</p>
              >previous</a> |</li>
         <li><img src="../_static/py.png" alt=""
                  style="vertical-align: middle; margin-top: -1px"/></li>
-        <li><a href="https://www.python.org/">Python</a> &raquo;</li>
+        <li><a href="https://www.python.org/">Python</a> &#187;</li>
         <li>
-          <a href="../index.html">Python 2.7.11 documentation</a> &raquo;
+          <a href="../index.html">Python 2.7.12 documentation</a> &#187;
         </li>
 
-          <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &raquo;</li>
-          <li class="nav-item nav-item-2"><a href="tk.html" >24. Graphical User Interfaces with Tk</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="tk.html" >24. Graphical User Interfaces with Tk</a> &#187;</li>
       </ul>
     </div>
     <div class="footer">
@@ -701,10 +700,10 @@ are currently:</p>
     The Python Software Foundation is a non-profit corporation.
     <a href="https://www.python.org/psf/donations/">Please donate.</a>
     <br />
-    Last updated on May 02, 2016.
+    Last updated on Aug 25, 2016.
     <a href="../bugs.html">Found a bug</a>?
     <br />
-    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.3.3.
+    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.4.6.
     </div>
 
   </body>

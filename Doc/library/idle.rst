@@ -562,7 +562,9 @@ IDLE's changes are lost and things like ``input``, ``raw_input``, and
 ``print`` will not work correctly.
 
 With IDLE's Shell, one enters, edits, and recalls complete statements.
-Some consoles only work with a single physical line at a time.
+Some consoles only work with a single physical line at a time.  IDLE uses
+``exec`` to run each statement.  As a result, ``'__builtins__'`` is always
+defined for each statement.
 
 Running without a subprocess
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

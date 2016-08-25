@@ -150,7 +150,8 @@ class HelpParser(HTMLParser):
             self.text.insert('end', d, (self.tags, self.chartags))
 
     def handle_charref(self, name):
-        self.text.insert('end', unichr(int(name)))
+        if self.show:
+            self.text.insert('end', unichr(int(name)))
 
 
 class HelpText(Text):
