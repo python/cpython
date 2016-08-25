@@ -394,7 +394,7 @@ class IdleConf:
         'name2' may still be set, but it is ignored.
         """
         cfgname = 'highlight' if section == 'Theme' else 'keys'
-        default = self.GetOption('main', 'Theme', 'default',
+        default = self.GetOption('main', section, 'default',
                                  type='bool', default=True)
         name = ''
         if default:

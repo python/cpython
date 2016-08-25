@@ -28,52 +28,114 @@ def tearDownModule():
 
 
 class CurrentColorKeysTest(unittest.TestCase):
-    """Test correct scenarios for colorkeys and wrap functions.
+    """ Test colorkeys function with user config [Theme] and [Keys] patterns.
 
-        The 5 correct patterns are possible results of config dialog.
+        colorkeys = config.IdleConf.current_colors_and_keys
+        Test all patterns written by IDLE and some errors
+        Item 'default' should really be 'builtin' (versus 'custom).
     """
     colorkeys = idleConf.current_colors_and_keys
+    default_theme = 'IDLE Classic'
+    default_keys = idleConf.default_keys()
 
-    def test_old_default(self):
-        # name2 must be blank
+    def test_old_builtin_theme(self):
+        # On initial installation, user main is blank.
+        self.assertEqual(self.colorkeys('Theme'), self.default_theme)
+        # For old default, name2 must be blank.
         usermain.read_string('''
             [Theme]
-            default= 1
+            default = True
             ''')
-        self.assertEqual(self.colorkeys('Theme'), 'IDLE Classic')
+        # IDLE omits 'name' for default old builtin theme.
+        self.assertEqual(self.colorkeys('Theme'), self.default_theme)
+        # IDLE adds 'name' for non-default old builtin theme.
         usermain['Theme']['name'] = 'IDLE New'
         self.assertEqual(self.colorkeys('Theme'), 'IDLE New')
-        usermain['Theme']['name'] = 'non-default'  # error
-        self.assertEqual(self.colorkeys('Theme'), 'IDLE Classic')
+        # Erroneous non-default old builtin reverts to default.
+        usermain['Theme']['name'] = 'non-existent'
+        self.assertEqual(self.colorkeys('Theme'), self.default_theme)
         usermain.remove_section('Theme')
 
-    def test_new_default(self):
-        # name2 overrides name
+    def test_new_builtin_theme(self):
+        # IDLE writes name2 for new builtins.
         usermain.read_string('''
             [Theme]
-            default= 1
-            name= IDLE New
-            name2= IDLE Dark
+            default = True
+            name2 = IDLE Dark
             ''')
         self.assertEqual(self.colorkeys('Theme'), 'IDLE Dark')
-        usermain['Theme']['name2'] = 'non-default'  # error
-        self.assertEqual(self.colorkeys('Theme'), 'IDLE Classic')
+        # Leftover 'name', not removed, is ignored.
+        usermain['Theme']['name'] = 'IDLE New'
+        self.assertEqual(self.colorkeys('Theme'), 'IDLE Dark')
+        # Erroneous non-default new builtin reverts to default.
+        usermain['Theme']['name2'] = 'non-existent'
+        self.assertEqual(self.colorkeys('Theme'), self.default_theme)
         usermain.remove_section('Theme')
 
-    def test_user_override(self):
-        # name2 does not matter
+    def test_user_override_theme(self):
+        # Erroneous custom name (no definition) reverts to default.
         usermain.read_string('''
             [Theme]
-            default= 0
-            name= Custom Dark
-            ''')  # error until set userhigh
-        self.assertEqual(self.colorkeys('Theme'), 'IDLE Classic')
+            default = False
+            name = Custom Dark
+            ''')
+        self.assertEqual(self.colorkeys('Theme'), self.default_theme)
+        # Custom name is valid with matching Section name.
         userhigh.read_string('[Custom Dark]\na=b')
         self.assertEqual(self.colorkeys('Theme'), 'Custom Dark')
-        usermain['Theme']['name2'] = 'IDLE Dark'
+        # Name2 is ignored.
+        usermain['Theme']['name2'] = 'non-existent'
         self.assertEqual(self.colorkeys('Theme'), 'Custom Dark')
         usermain.remove_section('Theme')
         userhigh.remove_section('Custom Dark')
+
+    def test_old_builtin_keys(self):
+        # On initial installation, user main is blank.
+        self.assertEqual(self.colorkeys('Keys'), self.default_keys)
+        # For old default, name2 must be blank, name is always used.
+        usermain.read_string('''
+            [Keys]
+            default = True
+            name = IDLE Classic Unix
+            ''')
+        self.assertEqual(self.colorkeys('Keys'), 'IDLE Classic Unix')
+        # Erroneous non-default old builtin reverts to default.
+        usermain['Keys']['name'] = 'non-existent'
+        self.assertEqual(self.colorkeys('Keys'), self.default_keys)
+        usermain.remove_section('Keys')
+
+    def test_new_builtin_keys(self):
+        # IDLE writes name2 for new builtins.
+        usermain.read_string('''
+            [Keys]
+            default = True
+            name2 = IDLE Modern Unix
+            ''')
+        self.assertEqual(self.colorkeys('Keys'), 'IDLE Modern Unix')
+        # Leftover 'name', not removed, is ignored.
+        usermain['Keys']['name'] = 'IDLE Classic Unix'
+        self.assertEqual(self.colorkeys('Keys'), 'IDLE Modern Unix')
+        # Erroneous non-default new builtin reverts to default.
+        usermain['Keys']['name2'] = 'non-existent'
+        self.assertEqual(self.colorkeys('Keys'), self.default_keys)
+        usermain.remove_section('Keys')
+
+    def test_user_override_keys(self):
+        # Erroneous custom name (no definition) reverts to default.
+        usermain.read_string('''
+            [Keys]
+            default = False
+            name = Custom Keys
+            ''')
+        self.assertEqual(self.colorkeys('Keys'), self.default_keys)
+        # Custom name is valid with matching Section name.
+        userkeys.read_string('[Custom Keys]\na=b')
+        self.assertEqual(self.colorkeys('Keys'), 'Custom Keys')
+        # Name2 is ignored.
+        usermain['Keys']['name2'] = 'non-existent'
+        self.assertEqual(self.colorkeys('Keys'), 'Custom Keys')
+        usermain.remove_section('Keys')
+        userkeys.remove_section('Custom Keys')
 
 
 class WarningTest(unittest.TestCase):
