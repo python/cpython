@@ -450,16 +450,15 @@ class CommonTest(GenericTest):
             with self.assertRaisesRegex(TypeError, errmsg):
                 self.pathmodule.join('str', b'bytes')
             # regression, see #15377
-            errmsg = r'join\(\) argument must be str or bytes, not %r'
-            with self.assertRaisesRegex(TypeError, errmsg % 'int'):
+            with self.assertRaisesRegex(TypeError, 'int'):
                 self.pathmodule.join(42, 'str')
-            with self.assertRaisesRegex(TypeError, errmsg % 'int'):
+            with self.assertRaisesRegex(TypeError, 'int'):
                 self.pathmodule.join('str', 42)
-            with self.assertRaisesRegex(TypeError, errmsg % 'int'):
+            with self.assertRaisesRegex(TypeError, 'int'):
                 self.pathmodule.join(42)
-            with self.assertRaisesRegex(TypeError, errmsg % 'list'):
+            with self.assertRaisesRegex(TypeError, 'list'):
                 self.pathmodule.join([])
-            with self.assertRaisesRegex(TypeError, errmsg % 'bytearray'):
+            with self.assertRaisesRegex(TypeError, 'bytearray'):
                 self.pathmodule.join(bytearray(b'foo'), bytearray(b'bar'))
 
     def test_relpath_errors(self):
@@ -471,13 +470,58 @@ class CommonTest(GenericTest):
                 self.pathmodule.relpath(b'bytes', 'str')
             with self.assertRaisesRegex(TypeError, errmsg):
                 self.pathmodule.relpath('str', b'bytes')
-            errmsg = r'relpath\(\) argument must be str or bytes, not %r'
-            with self.assertRaisesRegex(TypeError, errmsg % 'int'):
+            with self.assertRaisesRegex(TypeError, 'int'):
                 self.pathmodule.relpath(42, 'str')
-            with self.assertRaisesRegex(TypeError, errmsg % 'int'):
+            with self.assertRaisesRegex(TypeError, 'int'):
                 self.pathmodule.relpath('str', 42)
-            with self.assertRaisesRegex(TypeError, errmsg % 'bytearray'):
+            with self.assertRaisesRegex(TypeError, 'bytearray'):
                 self.pathmodule.relpath(bytearray(b'foo'), bytearray(b'bar'))
+
+
+class PathLikeTests(unittest.TestCase):
+
+    class PathLike:
+        def __init__(self, path=''):
+            self.path = path
+        def __fspath__(self):
+            if isinstance(self.path, BaseException):
+                raise self.path
+            else:
+                return self.path
+
+    def setUp(self):
+        self.file_name = support.TESTFN.lower()
+        self.file_path = self.PathLike(support.TESTFN)
+        self.addCleanup(support.unlink, self.file_name)
+        create_file(self.file_name, b"test_genericpath.PathLikeTests")
+
+    def assertPathEqual(self, func):
+        self.assertEqual(func(self.file_path), func(self.file_name))
+
+    def test_path_exists(self):
+        self.assertPathEqual(os.path.exists)
+
+    def test_path_isfile(self):
+        self.assertPathEqual(os.path.isfile)
+
+    def test_path_isdir(self):
+        self.assertPathEqual(os.path.isdir)
+
+    def test_path_commonprefix(self):
+        self.assertEqual(os.path.commonprefix([self.file_path, self.file_name]),
+                         self.file_name)
+
+    def test_path_getsize(self):
+        self.assertPathEqual(os.path.getsize)
+
+    def test_path_getmtime(self):
+        self.assertPathEqual(os.path.getatime)
+
+    def test_path_getctime(self):
+        self.assertPathEqual(os.path.getctime)
+
+    def test_path_samefile(self):
+        self.assertTrue(os.path.samefile(self.file_path, self.file_name))
 
 
 if __name__=="__main__":

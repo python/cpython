@@ -874,10 +874,12 @@ class WalkTests(unittest.TestCase):
         self.assertEqual(all[2 + flipped], (self.sub11_path, [], []))
         self.assertEqual(all[3 - 2 * flipped], self.sub2_tree)
 
-    def test_walk_prune(self):
+    def test_walk_prune(self, walk_path=None):
+        if walk_path is None:
+            walk_path = self.walk_path
         # Prune the search.
         all = []
-        for root, dirs, files in self.walk(self.walk_path):
+        for root, dirs, files in self.walk(walk_path):
             all.append((root, dirs, files))
             # Don't descend into SUB1.
             if 'SUB1' in dirs:
@@ -886,10 +888,21 @@ class WalkTests(unittest.TestCase):
 
         self.assertEqual(len(all), 2)
         self.assertEqual(all[0],
-                         (self.walk_path, ["SUB2"], ["tmp1"]))
+                         (str(walk_path), ["SUB2"], ["tmp1"]))
 
         all[1][-1].sort()
         self.assertEqual(all[1], self.sub2_tree)
+
+    def test_file_like_path(self):
+        class FileLike:
+            def __init__(self, path):
+                self._path = path
+            def __str__(self):
+                return str(self._path)
+            def __fspath__(self):
+                return self._path
+
+        self.test_walk_prune(FileLike(self.walk_path))
 
     def test_walk_bottom_up(self):
         # Walk bottom-up.
@@ -2805,6 +2818,70 @@ class FDInheritanceTests(unittest.TestCase):
         self.addCleanup(os.close, slave_fd)
         self.assertEqual(os.get_inheritable(master_fd), False)
         self.assertEqual(os.get_inheritable(slave_fd), False)
+
+
+class PathTConverterTests(unittest.TestCase):
+    # tuples of (function name, allows fd arguments, additional arguments to
+    # function, cleanup function)
+    functions = [
+        ('stat', True, (), None),
+        ('lstat', False, (), None),
+        ('access', True, (os.F_OK,), None),
+        ('chflags', False, (0,), None),
+        ('lchflags', False, (0,), None),
+        ('open', False, (0,), getattr(os, 'close', None)),
+    ]
+
+    def test_path_t_converter(self):
+        class PathLike:
+            def __init__(self, path):
+                self.path = path
+
+            def __fspath__(self):
+                return self.path
+
+        str_filename = support.TESTFN
+        bytes_filename = support.TESTFN.encode('ascii')
+        bytearray_filename = bytearray(bytes_filename)
+        fd = os.open(PathLike(str_filename), os.O_WRONLY|os.O_CREAT)
+        self.addCleanup(os.close, fd)
+        self.addCleanup(support.unlink, support.TESTFN)
+
+        int_fspath = PathLike(fd)
+        str_fspath = PathLike(str_filename)
+        bytes_fspath = PathLike(bytes_filename)
+        bytearray_fspath = PathLike(bytearray_filename)
+
+        for name, allow_fd, extra_args, cleanup_fn in self.functions:
+            with self.subTest(name=name):
+                try:
+                    fn = getattr(os, name)
+                except AttributeError:
+                    continue
+
+                for path in (str_filename, bytes_filename, bytearray_filename,
+                             str_fspath, bytes_fspath):
+                    with self.subTest(name=name, path=path):
+                        result = fn(path, *extra_args)
+                        if cleanup_fn is not None:
+                            cleanup_fn(result)
+
+                with self.assertRaisesRegex(
+                        TypeError, 'should be string, bytes'):
+                    fn(int_fspath, *extra_args)
+                with self.assertRaisesRegex(
+                        TypeError, 'should be string, bytes'):
+                    fn(bytearray_fspath, *extra_args)
+
+                if allow_fd:
+                    result = fn(fd, *extra_args)  # should not fail
+                    if cleanup_fn is not None:
+                        cleanup_fn(result)
+                else:
+                    with self.assertRaisesRegex(
+                            TypeError,
+                            'os.PathLike'):
+                        fn(fd, *extra_args)
 
 
 @unittest.skipUnless(hasattr(os, 'get_blocking'),

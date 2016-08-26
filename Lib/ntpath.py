@@ -46,6 +46,7 @@ def normcase(s):
     """Normalize case of pathname.
 
     Makes all characters lowercase and all slashes into backslashes."""
+    s = os.fspath(s)
     try:
         if isinstance(s, bytes):
             return s.replace(b'/', b'\\').lower()
@@ -66,12 +67,14 @@ def normcase(s):
 
 def isabs(s):
     """Test whether a path is absolute"""
+    s = os.fspath(s)
     s = splitdrive(s)[1]
     return len(s) > 0 and s[0] in _get_bothseps(s)
 
 
 # Join two (or more) paths.
 def join(path, *paths):
+    path = os.fspath(path)
     if isinstance(path, bytes):
         sep = b'\\'
         seps = b'\\/'
@@ -84,7 +87,7 @@ def join(path, *paths):
         if not paths:
             path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         result_drive, result_path = splitdrive(path)
-        for p in paths:
+        for p in map(os.fspath, paths):
             p_drive, p_path = splitdrive(p)
             if p_path and p_path[0] in seps:
                 # Second path is absolute
@@ -136,6 +139,7 @@ def splitdrive(p):
     Paths cannot contain both a drive letter and a UNC path.
 
     """
+    p = os.fspath(p)
     if len(p) >= 2:
         if isinstance(p, bytes):
             sep = b'\\'
@@ -199,7 +203,7 @@ def split(p):
 
     Return tuple (head, tail) where tail is everything after the final slash.
     Either part may be empty."""
-
+    p = os.fspath(p)
     seps = _get_bothseps(p)
     d, p = splitdrive(p)
     # set i to index beyond p's last slash
@@ -218,6 +222,7 @@ def split(p):
 # It is always true that root + ext == p.
 
 def splitext(p):
+    p = os.fspath(p)
     if isinstance(p, bytes):
         return genericpath._splitext(p, b'\\', b'/', b'.')
     else:
@@ -278,6 +283,7 @@ except ImportError:
 def ismount(path):
     """Test whether a path is a mount point (a drive root, the root of a
     share, or a mounted volume)"""
+    path = os.fspath(path)
     seps = _get_bothseps(path)
     path = abspath(path)
     root, rest = splitdrive(path)
@@ -305,6 +311,7 @@ def expanduser(path):
     """Expand ~ and ~user constructs.
 
     If user or $HOME is unknown, do nothing."""
+    path = os.fspath(path)
     if isinstance(path, bytes):
         tilde = b'~'
     else:
@@ -354,6 +361,7 @@ def expandvars(path):
     """Expand shell variables of the forms $var, ${var} and %var%.
 
     Unknown variables are left unchanged."""
+    path = os.fspath(path)
     if isinstance(path, bytes):
         if b'$' not in path and b'%' not in path:
             return path
@@ -464,6 +472,7 @@ def expandvars(path):
 
 def normpath(path):
     """Normalize path, eliminating double slashes, etc."""
+    path = os.fspath(path)
     if isinstance(path, bytes):
         sep = b'\\'
         altsep = b'/'
@@ -518,6 +527,7 @@ try:
 except ImportError: # not running on Windows - mock up something sensible
     def abspath(path):
         """Return the absolute version of a path."""
+        path = os.fspath(path)
         if not isabs(path):
             if isinstance(path, bytes):
                 cwd = os.getcwdb()
@@ -531,6 +541,7 @@ else:  # use native Windows method on Windows
         """Return the absolute version of a path."""
 
         if path: # Empty path must return current working directory.
+            path = os.fspath(path)
             try:
                 path = _getfullpathname(path)
             except OSError:
@@ -549,6 +560,7 @@ supports_unicode_filenames = (hasattr(sys, "getwindowsversion") and
 
 def relpath(path, start=None):
     """Return a relative version of a path"""
+    path = os.fspath(path)
     if isinstance(path, bytes):
         sep = b'\\'
         curdir = b'.'
@@ -564,6 +576,7 @@ def relpath(path, start=None):
     if not path:
         raise ValueError("no path specified")
 
+    start = os.fspath(start)
     try:
         start_abs = abspath(normpath(start))
         path_abs = abspath(normpath(path))
@@ -607,6 +620,7 @@ def commonpath(paths):
     if not paths:
         raise ValueError('commonpath() arg is an empty sequence')
 
+    paths = tuple(map(os.fspath, paths))
     if isinstance(paths[0], bytes):
         sep = b'\\'
         altsep = b'/'

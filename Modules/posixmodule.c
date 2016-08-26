@@ -834,8 +834,11 @@ static int
 path_converter(PyObject *o, void *p)
 {
     path_t *path = (path_t *)p;
-    PyObject *bytes;
+    PyObject *bytes, *to_cleanup = NULL;
     Py_ssize_t length;
+    int is_index, is_buffer, is_bytes, is_unicode;
+    /* Default to failure, forcing explicit signaling of succcess. */
+    int ret = 0;
     const char *narrow;
 
 #define FORMAT_EXCEPTION(exc, fmt) \
@@ -850,7 +853,7 @@ path_converter(PyObject *o, void *p)
         return 1;
     }
 
-    /* ensure it's always safe to call path_cleanup() */
+    /* Ensure it's always safe to call path_cleanup(). */
     path->cleanup = NULL;
 
     if ((o == Py_None) && path->nullable) {
@@ -862,21 +865,54 @@ path_converter(PyObject *o, void *p)
         return 1;
     }
 
-    if (PyUnicode_Check(o)) {
+    /* Only call this here so that we don't treat the return value of
+       os.fspath() as an fd or buffer. */
+    is_index = path->allow_fd && PyIndex_Check(o);
+    is_buffer = PyObject_CheckBuffer(o);
+    is_bytes = PyBytes_Check(o);
+    is_unicode = PyUnicode_Check(o);
+
+    if (!is_index && !is_buffer && !is_unicode && !is_bytes) {
+        /* Inline PyOS_FSPath() for better error messages. */
+        _Py_IDENTIFIER(__fspath__);
+        PyObject *func = NULL;
+
+        func = _PyObject_LookupSpecial(o, &PyId___fspath__);
+        if (NULL == func) {
+            goto error_exit;
+        }
+
+        o = to_cleanup = PyObject_CallFunctionObjArgs(func, NULL);
+        Py_DECREF(func);
+        if (NULL == o) {
+            goto error_exit;
+        }
+        else if (PyUnicode_Check(o)) {
+            is_unicode = 1;
+        }
+        else if (PyBytes_Check(o)) {
+            is_bytes = 1;
+        }
+        else {
+            goto error_exit;
+        }
+    }
+
+    if (is_unicode) {
 #ifdef MS_WINDOWS
         const wchar_t *wide;
 
         wide = PyUnicode_AsUnicodeAndSize(o, &length);
         if (!wide) {
-            return 0;
+            goto exit;
         }
         if (length > 32767) {
             FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
-            return 0;
+            goto exit;
         }
         if (wcslen(wide) != length) {
             FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
-            return 0;
+            goto exit;
         }
 
         path->wide = wide;
@@ -884,66 +920,71 @@ path_converter(PyObject *o, void *p)
         path->length = length;
         path->object = o;
         path->fd = -1;
-        return 1;
+        ret = 1;
+        goto exit;
 #else
         if (!PyUnicode_FSConverter(o, &bytes)) {
-            return 0;
+            goto exit;
         }
 #endif
     }
-    else if (PyBytes_Check(o)) {
+    else if (is_bytes) {
 #ifdef MS_WINDOWS
         if (win32_warn_bytes_api()) {
-            return 0;
+            goto exit;
         }
 #endif
         bytes = o;
         Py_INCREF(bytes);
     }
-    else if (PyObject_CheckBuffer(o)) {
+    else if (is_buffer) {
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
             "%s%s%s should be %s, not %.200s",
             path->function_name ? path->function_name : "",
             path->function_name ? ": "                : "",
             path->argument_name ? path->argument_name : "path",
-            path->allow_fd && path->nullable ? "string, bytes, integer or None" :
-            path->allow_fd ? "string, bytes or integer" :
-            path->nullable ? "string, bytes or None" :
-                             "string or bytes",
+            path->allow_fd && path->nullable ? "string, bytes, os.PathLike, "
+                                               "integer or None" :
+            path->allow_fd ? "string, bytes, os.PathLike or integer" :
+            path->nullable ? "string, bytes, os.PathLike or None" :
+                             "string, bytes or os.PathLike",
             Py_TYPE(o)->tp_name)) {
-            return 0;
+            goto exit;
         }
 #ifdef MS_WINDOWS
         if (win32_warn_bytes_api()) {
-            return 0;
+            goto exit;
         }
 #endif
         bytes = PyBytes_FromObject(o);
         if (!bytes) {
-            return 0;
+            goto exit;
         }
     }
     else if (path->allow_fd && PyIndex_Check(o)) {
         if (!_fd_converter(o, &path->fd)) {
-            return 0;
+            goto exit;
         }
         path->wide = NULL;
         path->narrow = NULL;
         path->length = 0;
         path->object = o;
-        return 1;
+        ret = 1;
+        goto exit;
     }
     else {
+ error_exit:
         PyErr_Format(PyExc_TypeError, "%s%s%s should be %s, not %.200s",
             path->function_name ? path->function_name : "",
             path->function_name ? ": "                : "",
             path->argument_name ? path->argument_name : "path",
-            path->allow_fd && path->nullable ? "string, bytes, integer or None" :
-            path->allow_fd ? "string, bytes or integer" :
-            path->nullable ? "string, bytes or None" :
-                             "string or bytes",
+            path->allow_fd && path->nullable ? "string, bytes, os.PathLike, "
+                                               "integer or None" :
+            path->allow_fd ? "string, bytes, os.PathLike or integer" :
+            path->nullable ? "string, bytes, os.PathLike or None" :
+                             "string, bytes or os.PathLike",
             Py_TYPE(o)->tp_name);
-        return 0;
+        goto exit;
     }
 
     length = PyBytes_GET_SIZE(bytes);
@@ -951,7 +992,7 @@ path_converter(PyObject *o, void *p)
     if (length > MAX_PATH-1) {
         FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
         Py_DECREF(bytes);
-        return 0;
+        goto exit;
     }
 #endif
 
@@ -959,7 +1000,7 @@ path_converter(PyObject *o, void *p)
     if ((size_t)length != strlen(narrow)) {
         FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
         Py_DECREF(bytes);
-        return 0;
+        goto exit;
     }
 
     path->wide = NULL;
@@ -969,12 +1010,15 @@ path_converter(PyObject *o, void *p)
     path->fd = -1;
     if (bytes == o) {
         Py_DECREF(bytes);
-        return 1;
+        ret = 1;
     }
     else {
         path->cleanup = bytes;
-        return Py_CLEANUP_SUPPORTED;
+        ret = Py_CLEANUP_SUPPORTED;
     }
+ exit:
+    Py_XDECREF(to_cleanup);
+    return ret;
 }
 
 static void
@@ -12329,6 +12373,8 @@ error:
 PyObject *
 PyOS_FSPath(PyObject *path)
 {
+    /* For error message reasons, this function is manually inlined in
+       path_converter(). */
     _Py_IDENTIFIER(__fspath__);
     PyObject *func = NULL;
     PyObject *path_repr = NULL;
