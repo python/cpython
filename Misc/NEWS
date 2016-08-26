@@ -33,6 +33,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10513: Fix a regression in Connection.commit().  Statements should
+  not be reset after a commit.
+
 - Issue #2466: posixpath.ismount now correctly recognizes mount points which
   the user does not have permission to access.
 
