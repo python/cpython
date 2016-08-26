@@ -397,7 +397,7 @@ class PosixTester(unittest.TestCase):
             self.assertTrue(posix.stat(fp.fileno()))
 
             self.assertRaisesRegex(TypeError,
-                    'should be string, bytes or integer, not',
+                    'should be string, bytes, os.PathLike or integer, not',
                     posix.stat, float(fp.fileno()))
         finally:
             fp.close()
@@ -409,16 +409,16 @@ class PosixTester(unittest.TestCase):
         self.assertTrue(posix.stat(os.fsencode(support.TESTFN)))
 
         self.assertWarnsRegex(DeprecationWarning,
-                'should be string, bytes or integer, not',
+                'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, bytearray(os.fsencode(support.TESTFN)))
         self.assertRaisesRegex(TypeError,
-                'should be string, bytes or integer, not',
+                'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, None)
         self.assertRaisesRegex(TypeError,
-                'should be string, bytes or integer, not',
+                'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, list(support.TESTFN))
         self.assertRaisesRegex(TypeError,
-                'should be string, bytes or integer, not',
+                'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, list(os.fsencode(support.TESTFN)))
 
     @unittest.skipUnless(hasattr(posix, 'mkfifo'), "don't have mkfifo()")

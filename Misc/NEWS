@@ -142,7 +142,10 @@ Core and Builtins
 Library
 -------
 
-- Issue 27598: Add Collections to collections.abc.
+- Issue #26027, #27524: Add PEP 519/__fspath__() support to the os and os.path
+  modules. Includes code from Jelle Zijlstra.
+
+- Issue #27598: Add Collections to collections.abc.
   Patch by Ivan Levkivskyi, docs by Neil Girdhar.
 
 - Issue #25958: Support "anti-registration" of special methods from

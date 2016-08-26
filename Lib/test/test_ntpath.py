@@ -452,5 +452,88 @@ class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     attributes = ['relpath', 'splitunc']
 
 
+class PathLikeTests(unittest.TestCase):
+
+    path = ntpath
+
+    class PathLike:
+        def __init__(self, path=''):
+            self.path = path
+        def __fspath__(self):
+            if isinstance(self.path, BaseException):
+                raise self.path
+            else:
+                return self.path
+
+    def setUp(self):
+        self.file_name = support.TESTFN.lower()
+        self.file_path = self.PathLike(support.TESTFN)
+        self.addCleanup(support.unlink, self.file_name)
+        with open(self.file_name, 'xb', 0) as file:
+            file.write(b"test_ntpath.PathLikeTests")
+
+    def assertPathEqual(self, func):
+        self.assertEqual(func(self.file_path), func(self.file_name))
+
+    def test_path_normcase(self):
+        self.assertPathEqual(self.path.normcase)
+
+    def test_path_isabs(self):
+        self.assertPathEqual(self.path.isabs)
+
+    def test_path_join(self):
+        self.assertEqual(self.path.join('a', self.PathLike('b'), 'c'),
+                         self.path.join('a', 'b', 'c'))
+
+    def test_path_split(self):
+        self.assertPathEqual(self.path.split)
+
+    def test_path_splitext(self):
+        self.assertPathEqual(self.path.splitext)
+
+    def test_path_splitdrive(self):
+        self.assertPathEqual(self.path.splitdrive)
+
+    def test_path_basename(self):
+        self.assertPathEqual(self.path.basename)
+
+    def test_path_dirname(self):
+        self.assertPathEqual(self.path.dirname)
+
+    def test_path_islink(self):
+        self.assertPathEqual(self.path.islink)
+
+    def test_path_lexists(self):
+        self.assertPathEqual(self.path.lexists)
+
+    def test_path_ismount(self):
+        self.assertPathEqual(self.path.ismount)
+
+    def test_path_expanduser(self):
+        self.assertPathEqual(self.path.expanduser)
+
+    def test_path_expandvars(self):
+        self.assertPathEqual(self.path.expandvars)
+
+    def test_path_normpath(self):
+        self.assertPathEqual(self.path.normpath)
+
+    def test_path_abspath(self):
+        self.assertPathEqual(self.path.abspath)
+
+    def test_path_realpath(self):
+        self.assertPathEqual(self.path.realpath)
+
+    def test_path_relpath(self):
+        self.assertPathEqual(self.path.relpath)
+
+    def test_path_commonpath(self):
+        common_path = self.path.commonpath([self.file_path, self.file_name])
+        self.assertEqual(common_path, self.file_name)
+
+    def test_path_isdir(self):
+        self.assertPathEqual(self.path.isdir)
+
+
 if __name__ == "__main__":
     unittest.main()
