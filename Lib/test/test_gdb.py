@@ -90,7 +90,7 @@ if not gdbpy_version:
     raise unittest.SkipTest("gdb not built with embedded python support")
 
 # Verify that "gdb" can load our custom hooks, as OS security settings may
-# disallow this without a customised .gdbinit.
+# disallow this without a customized .gdbinit.
 _, gdbpy_errors = run_gdb('--args', sys.executable)
 if "auto-loading has been declined" in gdbpy_errors:
     msg = "gdb security settings prevent use of custom hooks: "
