@@ -1117,7 +1117,7 @@ Basic customization
    instance; for example: ``BaseClass.__init__(self, [args...])``.
 
    Because :meth:`__new__` and :meth:`__init__` work together in constructing
-   objects (:meth:`__new__` to create it, and :meth:`__init__` to customise it),
+   objects (:meth:`__new__` to create it, and :meth:`__init__` to customize it),
    no non-``None`` value may be returned by :meth:`__init__`; doing so will
    cause a :exc:`TypeError` to be raised at runtime.
 
@@ -1637,7 +1637,7 @@ By default, classes are constructed using :func:`type`. The class body is
 executed in a new namespace and the class name is bound locally to the
 result of ``type(name, bases, namespace)``.
 
-The class creation process can be customised by passing the ``metaclass``
+The class creation process can be customized by passing the ``metaclass``
 keyword argument in the class definition line, or by inheriting from an
 existing class that included such an argument. In the following example,
 both ``MyClass`` and ``MySubclass`` are instances of ``Meta``::
