@@ -66,6 +66,10 @@ New syntax features:
 
 * PEP 498: :ref:`Formatted string literals <whatsnew-fstrings>`
 
+Standard library improvements:
+
+* PEP 519: :ref:`Adding a file system path protocol <pep-519>`
+
 Windows improvements:
 
 * The ``py.exe`` launcher, when used interactively, no longer prefers
@@ -91,6 +95,69 @@ Windows improvements:
 
 New Features
 ============
+
+.. _pep-519:
+
+PEP 519: Adding a file system path protocol
+===========================================
+
+File system paths have historically been represented as :class:`str`
+or :class:`bytes` objects. This has led to people who write code which
+operate on file system paths to assume that such objects are only one
+of those two types (an :class:`int` representing a file descriptor
+does not count as that is not a file path). Unfortunately that
+assumption prevents alternative object representations of file system
+paths like :mod:`pathlib` from working with pre-existing code,
+including Python's standard library.
+
+To fix this situation, a new interface represented by
+:class:`os.PathLike` has been defined. By implementing the
+:meth:`~os.PathLike.__fspath__` method, an object signals that it
+represents a path. An object can then provide a low-level
+representation of a file system path as a :class:`str` or
+:class:`bytes` object. This means an object is considered
+:term:`path-like <path-like object>` if it implements
+:class:`os.PathLike` or is a :class:`str` or :class:`bytes` object
+which represents a file system path. Code can use :func:`os.fspath`,
+:func:`os.fsdecode`, or :func:`os.fsencode` to explicitly get a
+:class:`str` and/or :class:`bytes` representation of a path-like
+object.
+
+The built-in :func:`open` function has been updated to accept
+:class:`os.PathLike` objects as have all relevant functions in the
+:mod:`os` and :mod:`os.path` modules. The :class:`os.DirEntry` class
+and relevant classes in :mod:`pathlib` have also been updated to
+implement :class:`os.PathLike`. The hope is that updating the
+fundamental functions for operating on file system paths will lead
+to third-party code to implicitly support all
+:term:`path-like objects <path-like object>` without any code changes
+or at least very minimal ones (e.g. calling :func:`os.fspath` at the
+beginning of code before operating on a path-like object).
+
+Here are some examples of how the new interface allows for
+:class:`pathlib.Path` to be used more easily and transparently with
+pre-existing code::
+
+  >>> import pathlib
+  >>> with open(pathlib.Path("README")) as f:
+  ...     contents = f.read()
+  ...
+  >>> import os.path
+  >>> os.path.splitext(pathlib.Path("some_file.txt"))
+  ('some_file', '.txt')
+  >>> os.path.join("/a/b", pathlib.Path("c"))
+  '/a/b/c'
+  >>> import os
+  >>> os.fspath(pathlib.Path("some_file.txt"))
+  'some_file.txt'
+
+(Implemented by Brett Cannon, Ethan Furman, Dusty Phillips, and Jelle Zijlstra.)
+
+.. seealso::
+
+    :pep:`519` - Adding a file system path protocol
+       PEP written by Brett Cannon and Koos Zevenhoven.
+
 
 .. _whatsnew-fstrings:
 
