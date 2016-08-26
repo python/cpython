@@ -1263,7 +1263,7 @@ SimpleExtendsException(PyExc_Exception, AttributeError,
  *    SyntaxError extends Exception
  */
 
-/* Helper function to customise error message for some syntax errors */
+/* Helper function to customize error message for some syntax errors */
 static int _report_missing_parentheses(PySyntaxErrorObject *self);
 
 static int
