@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10513: Fix a regression in Connection.commit().  Statements should
+  not be reset after a commit.
+
 - A new version of typing.py from https://github.com/python/typing:
   - Collection (only for 3.6) (Issue #27598)
   - Add FrozenSet to __all__ (upstream #261)
