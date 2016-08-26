@@ -353,7 +353,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             dirs.remove('CVS')  # don't visit CVS directories
 
     """
-
+    top = fspath(top)
     dirs = []
     nondirs = []
     walk_dirs = []
@@ -536,6 +536,8 @@ if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
             if 'CVS' in dirs:
                 dirs.remove('CVS')  # don't visit CVS directories
         """
+        if not isinstance(top, int) or not hasattr(top, '__index__'):
+            top = fspath(top)
         # Note: To guard against symlink races, we use the standard
         # lstat()/open()/fstat() trick.
         orig_st = stat(top, follow_symlinks=False, dir_fd=dir_fd)
