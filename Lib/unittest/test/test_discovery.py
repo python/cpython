@@ -275,7 +275,7 @@ class TestDiscovery(unittest.TestCase):
         self.assertEqual(Module.load_tests_args,
                          [(loader, [], 'test*.py')])
 
-    def test_find_tests_customise_via_package_pattern(self):
+    def test_find_tests_customize_via_package_pattern(self):
         # This test uses the example 'do-nothing' load_tests from
         # https://docs.python.org/3/library/unittest.html#load-tests-protocol
         # to make sure that that actually works.

@@ -166,7 +166,7 @@ encoding.  Encodings are named by strings, such as ``'ascii'``, ``'utf-8'``,
 registering new encodings that are then available throughout a Python program.
 If an encoding isn't specified, the default encoding is usually 7-bit ASCII,
 though it can be changed for your Python installation by calling the
-``sys.setdefaultencoding(encoding)`` function in a customised version of
+``sys.setdefaultencoding(encoding)`` function in a customized version of
 :file:`site.py`.
 
 Combining 8-bit and Unicode strings always coerces to Unicode, using the default
@@ -1139,7 +1139,7 @@ module.
   Unix, not to be confused with :program:`gzip`\ -format files (which are
   supported by the :mod:`gzip` module) (Contributed by James C. Ahlstrom.)
 
-* :mod:`imputil`: A module that provides a simpler way for writing customised
+* :mod:`imputil`: A module that provides a simpler way for writing customized
   import hooks, in comparison to the existing :mod:`ihooks` module.  (Implemented
   by Greg Stein, with much discussion on python-dev along the way.)
 

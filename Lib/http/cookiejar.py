@@ -833,7 +833,7 @@ class CookiePolicy:
     May also modify cookies, though this is probably a bad idea.
 
     The subclass DefaultCookiePolicy defines the standard rules for Netscape
-    and RFC 2965 cookies -- override that if you want a customised policy.
+    and RFC 2965 cookies -- override that if you want a customized policy.
 
     """
     def set_ok(self, cookie, request):
