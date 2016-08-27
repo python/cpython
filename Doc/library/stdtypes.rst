@@ -2631,8 +2631,8 @@ arbitrary binary data.
    The prefix(es) to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.translate(table[, delete])
-            bytearray.translate(table[, delete])
+.. method:: bytes.translate(table, delete=b'')
+            bytearray.translate(table, delete=b'')
 
    Return a copy of the bytes or bytearray object where all bytes occurring in
    the optional argument *delete* are removed, and the remaining bytes have
@@ -2647,6 +2647,9 @@ arbitrary binary data.
 
       >>> b'read this short text'.translate(None, b'aeiou')
       b'rd ths shrt txt'
+
+   .. versionchanged:: 3.6
+      *delete* is now supported as a keyword argument.
 
 
 The following methods on bytes and bytearray objects have default behaviours

@@ -689,6 +689,37 @@ class BaseBytesTest:
         test.support.check_free_after_iterating(self, iter, self.type2test)
         test.support.check_free_after_iterating(self, reversed, self.type2test)
 
+    def test_translate(self):
+        b = self.type2test(b'hello')
+        rosetta = bytearray(range(256))
+        rosetta[ord('o')] = ord('e')
+
+        self.assertRaises(TypeError, b.translate)
+        self.assertRaises(TypeError, b.translate, None, None)
+        self.assertRaises(ValueError, b.translate, bytes(range(255)))
+
+        c = b.translate(rosetta, b'hello')
+        self.assertEqual(b, b'hello')
+        self.assertIsInstance(c, self.type2test)
+
+        c = b.translate(rosetta)
+        d = b.translate(rosetta, b'')
+        self.assertEqual(c, d)
+        self.assertEqual(c, b'helle')
+
+        c = b.translate(rosetta, b'l')
+        self.assertEqual(c, b'hee')
+        c = b.translate(None, b'e')
+        self.assertEqual(c, b'hllo')
+
+        # test delete as a keyword argument
+        c = b.translate(rosetta, delete=b'')
+        self.assertEqual(c, b'helle')
+        c = b.translate(rosetta, delete=b'l')
+        self.assertEqual(c, b'hee')
+        c = b.translate(None, delete=b'e')
+        self.assertEqual(c, b'hllo')
+
 
 class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
@@ -1448,24 +1479,6 @@ class AssortedBytesTest(unittest.TestCase):
         for c in range(128, 256):
             self.assertRaises(SyntaxError, eval,
                               'b"%s"' % chr(c))
-
-    def test_translate(self):
-        b = b'hello'
-        ba = bytearray(b)
-        rosetta = bytearray(range(0, 256))
-        rosetta[ord('o')] = ord('e')
-        c = b.translate(rosetta, b'l')
-        self.assertEqual(b, b'hello')
-        self.assertEqual(c, b'hee')
-        c = ba.translate(rosetta, b'l')
-        self.assertEqual(ba, b'hello')
-        self.assertEqual(c, b'hee')
-        c = b.translate(None, b'e')
-        self.assertEqual(c, b'hllo')
-        c = ba.translate(None, b'e')
-        self.assertEqual(c, b'hllo')
-        self.assertRaises(TypeError, b.translate, None, None)
-        self.assertRaises(TypeError, ba.translate, None, None)
 
     def test_split_bytearray(self):
         self.assertEqual(b'a b'.split(memoryview(b' ')), [b'a', b'b'])

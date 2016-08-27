@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27506: Support passing the bytes/bytearray.translate() "delete"
+  argument by keyword.
+
 - Issue #27587: Fix another issue found by PVS-Studio: Null pointer check
   after use of 'def' in _PyState_AddModule().
   Initial patch by Christian Heimes.

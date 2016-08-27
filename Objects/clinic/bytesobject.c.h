@@ -269,47 +269,38 @@ exit:
 }
 
 PyDoc_STRVAR(bytes_translate__doc__,
-"translate(table, [deletechars])\n"
+"translate($self, table, /, delete=b\'\')\n"
+"--\n"
+"\n"
 "Return a copy with each character mapped by the given translation table.\n"
 "\n"
 "  table\n"
 "    Translation table, which must be a bytes object of length 256.\n"
 "\n"
-"All characters occurring in the optional argument deletechars are removed.\n"
+"All characters occurring in the optional argument delete are removed.\n"
 "The remaining characters are mapped through the given translation table.");
 
 #define BYTES_TRANSLATE_METHODDEF    \
-    {"translate", (PyCFunction)bytes_translate, METH_VARARGS, bytes_translate__doc__},
+    {"translate", (PyCFunction)bytes_translate, METH_VARARGS|METH_KEYWORDS, bytes_translate__doc__},
 
 static PyObject *
-bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1,
+bytes_translate_impl(PyBytesObject *self, PyObject *table,
                      PyObject *deletechars);
 
 static PyObject *
-bytes_translate(PyBytesObject *self, PyObject *args)
+bytes_translate(PyBytesObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "delete", NULL};
+    static _PyArg_Parser _parser = {"O|O:translate", _keywords, 0};
     PyObject *table;
-    int group_right_1 = 0;
     PyObject *deletechars = NULL;
 
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "O:translate", &table)) {
-                goto exit;
-            }
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "OO:translate", &table, &deletechars)) {
-                goto exit;
-            }
-            group_right_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "bytes.translate requires 1 to 2 arguments");
-            goto exit;
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &table, &deletechars)) {
+        goto exit;
     }
-    return_value = bytes_translate_impl(self, table, group_right_1, deletechars);
+    return_value = bytes_translate_impl(self, table, deletechars);
 
 exit:
     return return_value;
@@ -508,4 +499,4 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=637c2c14610d3c8d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5618c05c24c1e617 input=a9049054013a1b77]*/
