@@ -2847,8 +2847,8 @@ class PathTConverterTests(unittest.TestCase):
             bytes_filename = support.TESTFN.encode('ascii')
             bytes_fspath = PathLike(bytes_filename)
         fd = os.open(PathLike(str_filename), os.O_WRONLY|os.O_CREAT)
-        self.addCleanup(os.close, fd)
         self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os.close, fd)
 
         int_fspath = PathLike(fd)
         str_fspath = PathLike(str_filename)
