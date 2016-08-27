@@ -220,8 +220,10 @@ Build
 - Issue #27713: Suppress spurious build warnings when updating importlib's
   bootstrap files.  Patch by Xiang Zhang
 
-- Issue #25825: Correct the references to Modules/python.exp, which is
-  required on AIX.  The references were accidentally changed in 3.5.0a1.
+- Issue #25825: Correct the references to Modules/python.exp and ld_so_aix,
+  which are required on AIX.  This updates references to an installation path
+  that was changed in 3.2a4, and undoes changed references to the build tree
+  that were made in 3.5.0a1.
 
 - Issue #27453: CPP invocation in configure must use CPPFLAGS. Patch by
   Chi Hsuan Yen.

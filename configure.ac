@@ -2284,7 +2284,7 @@ then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*)
 		BLDSHARED="\$(srcdir)/Modules/ld_so_aix \$(CC) -bI:\$(srcdir)/Modules/python.exp"
-		LDSHARED="\$(BINLIBDEST)/config/ld_so_aix \$(CC) -bI:\$(BINLIBDEST)/config/python.exp"
+		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
 	IRIX/5*) LDSHARED="ld -shared";;
 	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
