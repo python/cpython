@@ -240,17 +240,17 @@ HTTPConnection Objects
    The *headers* argument should be a mapping of extra HTTP headers to send
    with the request.
 
-   If *headers* contains neither Content-Length nor Transfer-Encoding, a
-   Content-Length header will be added automatically if possible.  If
+   If *headers* contains neither Content-Length nor Transfer-Encoding,
+   but there is a request body, one of those
+   header fields will be added automatically.  If
    *body* is ``None``, the Content-Length header is set to ``0`` for
    methods that expect a body (``PUT``, ``POST``, and ``PATCH``).  If
-   *body* is a string or bytes-like object, the Content-Length header is
-   set to its length.  If *body* is a binary :term:`file object`
-   supporting :meth:`~io.IOBase.seek`, this will be used to determine
-   its size.  Otherwise, the Content-Length header is not added
-   automatically.  In cases where determining the Content-Length up
-   front is not possible, the body will be chunk-encoded and the
-   Transfer-Encoding header will automatically be set.
+   *body* is a string or a bytes-like object that is not also a
+   :term:`file <file object>`, the Content-Length header is
+   set to its length.  Any other type of *body* (files
+   and iterables in general) will be chunk-encoded, and the
+   Transfer-Encoding header will automatically be set instead of
+   Content-Length.
 
    The *encode_chunked* argument is only relevant if Transfer-Encoding is
    specified in *headers*.  If *encode_chunked* is ``False``, the
@@ -260,19 +260,18 @@ HTTPConnection Objects
    .. note::
       Chunked transfer encoding has been added to the HTTP protocol
       version 1.1.  Unless the HTTP server is known to handle HTTP 1.1,
-      the caller must either specify the Content-Length or must use a
-      body representation whose length can be determined automatically.
+      the caller must either specify the Content-Length, or must pass a
+      :class:`str` or bytes-like object that is not also a file as the
+      body representation.
 
    .. versionadded:: 3.2
       *body* can now be an iterable.
 
    .. versionchanged:: 3.6
       If neither Content-Length nor Transfer-Encoding are set in
-      *headers* and Content-Length cannot be determined, *body* will now
-      be automatically chunk-encoded.  The *encode_chunked* argument
-      was added.
-      The Content-Length for binary file objects is determined with seek.
-      No attempt is made to determine the Content-Length for text file
+      *headers*, file and iterable *body* objects are now chunk-encoded.
+      The *encode_chunked* argument was added.
+      No attempt is made to determine the Content-Length for file
       objects.
 
 .. method:: HTTPConnection.getresponse()

@@ -579,8 +579,8 @@ The :class:`~unittest.mock.Mock` class has the following improvements:
 urllib.request
 --------------
 
-If a HTTP request has a non-empty body but no Content-Length header
-and the content length cannot be determined up front, rather than
+If a HTTP request has a file or iterable body (other than a
+bytes object) but no Content-Length header, rather than
 throwing an error, :class:`~urllib.request.AbstractHTTPHandler` now
 falls back to use chunked transfer encoding.
 (Contributed by Demian Brecht and Rolf Krahl in :issue:`12319`.)
@@ -934,6 +934,13 @@ Changes in the Python API
 
   This behavior has also been backported to earlier Python versions
   by Setuptools 26.0.0.
+
+* In the :mod:`urllib.request` module and the
+  :meth:`http.client.HTTPConnection.request` method, if no Content-Length
+  header field has been specified and the request body is a file object,
+  it is now sent with HTTP 1.1 chunked encoding. If a file object has to
+  be sent to a HTTP 1.0 server, the Content-Length value now has to be
+  specified by the caller. See :issue:`12319`.
 
 Changes in the C API
 --------------------

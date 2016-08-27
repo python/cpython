@@ -913,40 +913,50 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(req.unredirected_hdrs["Spam"], "foo")
 
     def test_http_body_file(self):
-        # A regular file - Content Length is calculated unless already set.
+        # A regular file - chunked encoding is used unless Content Length is
+        # already set.
 
         h = urllib.request.AbstractHTTPHandler()
         o = h.parent = MockOpener()
 
         file_obj = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
         file_path = file_obj.name
-        file_obj.write(b"Something\nSomething\nSomething\n")
         file_obj.close()
+        self.addCleanup(os.unlink, file_path)
 
-        for headers in {}, {"Content-Length": 30}:
-            with open(file_path, "rb") as f:
-                req = Request("http://example.com/", f, headers)
-                newreq = h.do_request_(req)
-                self.assertEqual(int(newreq.get_header('Content-length')), 30)
+        with open(file_path, "rb") as f:
+            req = Request("http://example.com/", f, {})
+            newreq = h.do_request_(req)
+            te = newreq.get_header('Transfer-encoding')
+            self.assertEqual(te, "chunked")
+            self.assertFalse(newreq.has_header('Content-length'))
 
-        os.unlink(file_path)
+        with open(file_path, "rb") as f:
+            req = Request("http://example.com/", f, {"Content-Length": 30})
+            newreq = h.do_request_(req)
+            self.assertEqual(int(newreq.get_header('Content-length')), 30)
+            self.assertFalse(newreq.has_header("Transfer-encoding"))
 
     def test_http_body_fileobj(self):
-        # A file object - Content Length is calculated unless already set.
+        # A file object - chunked encoding is used
+        # unless Content Length is already set.
         # (Note that there are some subtle differences to a regular
         # file, that is why we are testing both cases.)
 
         h = urllib.request.AbstractHTTPHandler()
         o = h.parent = MockOpener()
-
         file_obj = io.BytesIO()
-        file_obj.write(b"Something\nSomething\nSomething\n")
 
-        for headers in {}, {"Content-Length": 30}:
-            file_obj.seek(0)
-            req = Request("http://example.com/", file_obj, headers)
-            newreq = h.do_request_(req)
-            self.assertEqual(int(newreq.get_header('Content-length')), 30)
+        req = Request("http://example.com/", file_obj, {})
+        newreq = h.do_request_(req)
+        self.assertEqual(newreq.get_header('Transfer-encoding'), 'chunked')
+        self.assertFalse(newreq.has_header('Content-length'))
+
+        headers = {"Content-Length": 30}
+        req = Request("http://example.com/", file_obj, headers)
+        newreq = h.do_request_(req)
+        self.assertEqual(int(newreq.get_header('Content-length')), 30)
+        self.assertFalse(newreq.has_header("Transfer-encoding"))
 
         file_obj.close()
 
@@ -959,9 +969,7 @@ class HandlerTests(unittest.TestCase):
         h = urllib.request.AbstractHTTPHandler()
         o = h.parent = MockOpener()
 
-        cmd = [sys.executable, "-c",
-               r"import sys; "
-               r"sys.stdout.buffer.write(b'Something\nSomething\nSomething\n')"]
+        cmd = [sys.executable, "-c", r"pass"]
         for headers in {}, {"Content-Length": 30}:
             with subprocess.Popen(cmd, stdout=subprocess.PIPE) as proc:
                 req = Request("http://example.com/", proc.stdout, headers)
@@ -983,8 +991,6 @@ class HandlerTests(unittest.TestCase):
 
         def iterable_body():
             yield b"one"
-            yield b"two"
-            yield b"three"
 
         for headers in {}, {"Content-Length": 11}:
             req = Request("http://example.com/", iterable_body(), headers)
@@ -995,6 +1001,14 @@ class HandlerTests(unittest.TestCase):
                                  'chunked')
             else:
                 self.assertEqual(int(newreq.get_header('Content-length')), 11)
+
+    def test_http_body_empty_seq(self):
+        # Zero-length iterable body should be treated like any other iterable
+        h = urllib.request.AbstractHTTPHandler()
+        h.parent = MockOpener()
+        req = h.do_request_(Request("http://example.com/", ()))
+        self.assertEqual(req.get_header("Transfer-encoding"), "chunked")
+        self.assertFalse(req.has_header("Content-length"))
 
     def test_http_body_array(self):
         # array.array Iterable - Content Length is calculated

@@ -187,12 +187,11 @@ The following classes are provided:
    server, or ``None`` if no such data is needed.  Currently HTTP
    requests are the only ones that use *data*.  The supported object
    types include bytes, file-like objects, and iterables.  If no
-   ``Content-Length`` header has been provided, :class:`HTTPHandler` will
-   try to determine the length of *data* and set this header accordingly.
-   If this fails, ``Transfer-Encoding: chunked`` as specified in
-   :rfc:`7230`, Section 3.3.1 will be used to send the data.  See
-   :meth:`http.client.HTTPConnection.request` for details on the
-   supported object types and on how the content length is determined.
+   ``Content-Length`` nor ``Transfer-Encoding`` header field
+   has been provided, :class:`HTTPHandler` will set these headers according
+   to the type of *data*.  ``Content-Length`` will be used to send
+   bytes objects, while ``Transfer-Encoding: chunked`` as specified in
+   :rfc:`7230`, Section 3.3.1 will be used to send files and other iterables.
 
    For an HTTP POST request method, *data* should be a buffer in the
    standard :mimetype:`application/x-www-form-urlencoded` format.  The
@@ -256,8 +255,8 @@ The following classes are provided:
 
    .. versionchanged:: 3.6
       Do not raise an error if the ``Content-Length`` has not been
-      provided and could not be determined.  Fall back to use chunked
-      transfer encoding instead.
+      provided and *data* is neither ``None`` nor a bytes object.
+      Fall back to use chunked transfer encoding instead.
 
 .. class:: OpenerDirector()
 
