@@ -1175,21 +1175,19 @@ bytearray.translate
 
     table: object
         Translation table, which must be a bytes object of length 256.
-    [
-    deletechars: object
-    ]
     /
+    delete as deletechars: object(c_default="NULL") = b''
 
 Return a copy with each character mapped by the given translation table.
 
-All characters occurring in the optional argument deletechars are removed.
+All characters occurring in the optional argument delete are removed.
 The remaining characters are mapped through the given translation table.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_translate_impl(PyByteArrayObject *self, PyObject *table,
-                         int group_right_1, PyObject *deletechars)
-/*[clinic end generated code: output=2bebc86a9a1ff083 input=846a01671bccc1c5]*/
+                         PyObject *deletechars)
+/*[clinic end generated code: output=b6a8f01c2a74e446 input=cfff956d4d127a9b]*/
 {
     char *input, *output;
     const char *table_chars;
@@ -1258,8 +1256,7 @@ bytearray_translate_impl(PyByteArrayObject *self, PyObject *table,
     for (i = inlen; --i >= 0; ) {
         c = Py_CHARMASK(*input++);
         if (trans_table[c] != -1)
-            if (Py_CHARMASK(*output++ = (char)trans_table[c]) == c)
-                    continue;
+            *output++ = (char)trans_table[c];
     }
     /* Fix the size of the resulting string */
     if (inlen > 0)

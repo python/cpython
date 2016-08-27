@@ -39,47 +39,38 @@ bytearray_copy(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(bytearray_translate__doc__,
-"translate(table, [deletechars])\n"
+"translate($self, table, /, delete=b\'\')\n"
+"--\n"
+"\n"
 "Return a copy with each character mapped by the given translation table.\n"
 "\n"
 "  table\n"
 "    Translation table, which must be a bytes object of length 256.\n"
 "\n"
-"All characters occurring in the optional argument deletechars are removed.\n"
+"All characters occurring in the optional argument delete are removed.\n"
 "The remaining characters are mapped through the given translation table.");
 
 #define BYTEARRAY_TRANSLATE_METHODDEF    \
-    {"translate", (PyCFunction)bytearray_translate, METH_VARARGS, bytearray_translate__doc__},
+    {"translate", (PyCFunction)bytearray_translate, METH_VARARGS|METH_KEYWORDS, bytearray_translate__doc__},
 
 static PyObject *
 bytearray_translate_impl(PyByteArrayObject *self, PyObject *table,
-                         int group_right_1, PyObject *deletechars);
+                         PyObject *deletechars);
 
 static PyObject *
-bytearray_translate(PyByteArrayObject *self, PyObject *args)
+bytearray_translate(PyByteArrayObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "delete", NULL};
+    static _PyArg_Parser _parser = {"O|O:translate", _keywords, 0};
     PyObject *table;
-    int group_right_1 = 0;
     PyObject *deletechars = NULL;
 
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "O:translate", &table)) {
-                goto exit;
-            }
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "OO:translate", &table, &deletechars)) {
-                goto exit;
-            }
-            group_right_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "bytearray.translate requires 1 to 2 arguments");
-            goto exit;
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &table, &deletechars)) {
+        goto exit;
     }
-    return_value = bytearray_translate_impl(self, table, group_right_1, deletechars);
+    return_value = bytearray_translate_impl(self, table, deletechars);
 
 exit:
     return return_value;
@@ -720,4 +711,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=0af30f8c0b1ecd76 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=59a0c86b29ff06d1 input=a9049054013a1b77]*/
