@@ -805,35 +805,21 @@ class HTTPConnection:
     def _get_content_length(body, method):
         """Get the content-length based on the body.
 
-        If the body is "empty", we set Content-Length: 0 for methods
-        that expect a body (RFC 7230, Section 3.3.2). If the body is
-        set for other methods, we set the header provided we can
-        figure out what the length is.
+        If the body is None, we set Content-Length: 0 for methods that expect
+        a body (RFC 7230, Section 3.3.2). We also set the Content-Length for
+        any method if the body is a str or bytes-like object and not a file.
         """
-        if not body:
+        if body is None:
             # do an explicit check for not None here to distinguish
             # between unset and set but empty
-            if method.upper() in _METHODS_EXPECTING_BODY or body is not None:
+            if method.upper() in _METHODS_EXPECTING_BODY:
                 return 0
             else:
                 return None
 
         if hasattr(body, 'read'):
             # file-like object.
-            if HTTPConnection._is_textIO(body):
-                # text streams are unpredictable because it depends on
-                # character encoding and line ending translation.
-                return None
-            else:
-                # Is it seekable?
-                try:
-                    curpos = body.tell()
-                    sz = body.seek(0, io.SEEK_END)
-                except (TypeError, AttributeError, OSError):
-                    return None
-                else:
-                    body.seek(curpos)
-                    return sz - curpos
+            return None
 
         try:
             # does it implement the buffer protocol (bytes, bytearray, array)?
@@ -1266,8 +1252,7 @@ class HTTPConnection:
         # the caller passes encode_chunked=True or the following
         # conditions hold:
         # 1. content-length has not been explicitly set
-        # 2. the length of the body cannot be determined
-        #    (e.g. it is a generator or unseekable file)
+        # 2. the body is a file or iterable, but not a str or bytes-like
         # 3. Transfer-Encoding has NOT been explicitly set by the caller
 
         if 'content-length' not in header_names:
@@ -1280,7 +1265,7 @@ class HTTPConnection:
                 encode_chunked = False
                 content_length = self._get_content_length(body, method)
                 if content_length is None:
-                    if body:
+                    if body is not None:
                         if self.debuglevel > 0:
                             print('Unable to determine size of %r' % body)
                         encode_chunked = True

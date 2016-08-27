@@ -381,6 +381,16 @@ class TransferEncodingTest(TestCase):
             # same request
             self.assertNotIn('content-length', [k.lower() for k in headers])
 
+    def test_empty_body(self):
+        # Zero-length iterable should be treated like any other iterable
+        conn = client.HTTPConnection('example.com')
+        conn.sock = FakeSocket(b'')
+        conn.request('POST', '/', ())
+        _, headers, body = self._parse_request(conn.sock.data)
+        self.assertEqual(headers['Transfer-Encoding'], 'chunked')
+        self.assertNotIn('content-length', [k.lower() for k in headers])
+        self.assertEqual(body, b"0\r\n\r\n")
+
     def _make_body(self, empty_lines=False):
         lines = self.expected_body.split(b' ')
         for idx, line in enumerate(lines):
@@ -652,7 +662,9 @@ class BasicTest(TestCase):
 
     def test_send_file(self):
         expected = (b'GET /foo HTTP/1.1\r\nHost: example.com\r\n'
-                    b'Accept-Encoding: identity\r\nContent-Length:')
+                    b'Accept-Encoding: identity\r\n'
+                    b'Transfer-Encoding: chunked\r\n'
+                    b'\r\n')
 
         with open(__file__, 'rb') as body:
             conn = client.HTTPConnection('example.com')
@@ -1717,7 +1729,7 @@ class RequestBodyTest(TestCase):
         self.assertEqual("5", message.get("content-length"))
         self.assertEqual(b'body\xc1', f.read())
 
-    def test_file_body(self):
+    def test_text_file_body(self):
         self.addCleanup(support.unlink, support.TESTFN)
         with open(support.TESTFN, "w") as f:
             f.write("body")
@@ -1726,10 +1738,8 @@ class RequestBodyTest(TestCase):
             message, f = self.get_headers_and_fp()
             self.assertEqual("text/plain", message.get_content_type())
             self.assertIsNone(message.get_charset())
-            # Note that the length of text files is unpredictable
-            # because it depends on character encoding and line ending
-            # translation.  No content-length will be set, the body
-            # will be sent using chunked transfer encoding.
+            # No content-length will be determined for files; the body
+            # will be sent using chunked transfer encoding instead.
             self.assertIsNone(message.get("content-length"))
             self.assertEqual("chunked", message.get("transfer-encoding"))
             self.assertEqual(b'4\r\nbody\r\n0\r\n\r\n', f.read())
@@ -1743,8 +1753,9 @@ class RequestBodyTest(TestCase):
             message, f = self.get_headers_and_fp()
             self.assertEqual("text/plain", message.get_content_type())
             self.assertIsNone(message.get_charset())
-            self.assertEqual("5", message.get("content-length"))
-            self.assertEqual(b'body\xc1', f.read())
+            self.assertEqual("chunked", message.get("Transfer-Encoding"))
+            self.assertNotIn("Content-Length", message)
+            self.assertEqual(b'5\r\nbody\xc1\r\n0\r\n\r\n', f.read())
 
 
 class HTTPResponseTest(TestCase):
