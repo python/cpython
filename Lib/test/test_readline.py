@@ -44,7 +44,7 @@ class TestHistoryManipulation (unittest.TestCase):
 
 class TestReadline(unittest.TestCase):
 
-    @unittest.skipIf(readline._READLINE_VERSION < 0x0600
+    @unittest.skipIf(readline._READLINE_VERSION < 0x0601
                      and "libedit" not in readline.__doc__,
                      "not supported in this library version")
     def test_init(self):

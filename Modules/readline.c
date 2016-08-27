@@ -961,19 +961,22 @@ setup_readline(void)
     begidx = PyInt_FromLong(0L);
     endidx = PyInt_FromLong(0L);
 
-#ifndef __APPLE__
-    if (!isatty(STDOUT_FILENO)) {
-        /* Issue #19884: stdout is not a terminal. Disable meta modifier
-           keys to not write the ANSI sequence "\033[1034h" into stdout. On
-           terminals supporting 8 bit characters like TERM=xterm-256color
-           (which is now the default Fedora since Fedora 18), the meta key is
-           used to enable support of 8 bit characters (ANSI sequence
-           "\033[1034h").
-
-           With libedit, this call makes readline() crash. */
-        rl_variable_bind ("enable-meta-key", "off");
-    }
+#ifdef __APPLE__
+    if (!using_libedit_emulation)
 #endif
+    {
+        if (!isatty(STDOUT_FILENO)) {
+            /* Issue #19884: stdout is not a terminal. Disable meta modifier
+               keys to not write the ANSI sequence "\033[1034h" into stdout. On
+               terminals supporting 8 bit characters like TERM=xterm-256color
+               (which is now the default Fedora since Fedora 18), the meta key is
+               used to enable support of 8 bit characters (ANSI sequence
+               "\033[1034h").
+
+               With libedit, this call makes readline() crash. */
+            rl_variable_bind ("enable-meta-key", "off");
+        }
+    }
 
     /* Initialize (allows .inputrc to override)
      *
