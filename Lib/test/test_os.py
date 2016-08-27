@@ -2842,7 +2842,6 @@ class PathTConverterTests(unittest.TestCase):
 
         str_filename = support.TESTFN
         bytes_filename = support.TESTFN.encode('ascii')
-        bytearray_filename = bytearray(bytes_filename)
         fd = os.open(PathLike(str_filename), os.O_WRONLY|os.O_CREAT)
         self.addCleanup(os.close, fd)
         self.addCleanup(support.unlink, support.TESTFN)
@@ -2850,7 +2849,6 @@ class PathTConverterTests(unittest.TestCase):
         int_fspath = PathLike(fd)
         str_fspath = PathLike(str_filename)
         bytes_fspath = PathLike(bytes_filename)
-        bytearray_fspath = PathLike(bytearray_filename)
 
         for name, allow_fd, extra_args, cleanup_fn in self.functions:
             with self.subTest(name=name):
@@ -2859,8 +2857,8 @@ class PathTConverterTests(unittest.TestCase):
                 except AttributeError:
                     continue
 
-                for path in (str_filename, bytes_filename, bytearray_filename,
-                             str_fspath, bytes_fspath):
+                for path in (str_filename, bytes_filename, str_fspath,
+                             bytes_fspath):
                     with self.subTest(name=name, path=path):
                         result = fn(path, *extra_args)
                         if cleanup_fn is not None:
@@ -2869,9 +2867,6 @@ class PathTConverterTests(unittest.TestCase):
                 with self.assertRaisesRegex(
                         TypeError, 'should be string, bytes'):
                     fn(int_fspath, *extra_args)
-                with self.assertRaisesRegex(
-                        TypeError, 'should be string, bytes'):
-                    fn(bytearray_fspath, *extra_args)
 
                 if allow_fd:
                     result = fn(fd, *extra_args)  # should not fail
