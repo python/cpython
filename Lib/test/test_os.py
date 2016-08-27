@@ -2841,14 +2841,17 @@ class PathTConverterTests(unittest.TestCase):
                 return self.path
 
         str_filename = support.TESTFN
-        bytes_filename = support.TESTFN.encode('ascii')
+        if os.name == 'nt':
+            bytes_fspath = bytes_filename = None
+        else:
+            bytes_filename = support.TESTFN.encode('ascii')
+            bytes_fspath = PathLike(bytes_filename)
         fd = os.open(PathLike(str_filename), os.O_WRONLY|os.O_CREAT)
         self.addCleanup(os.close, fd)
         self.addCleanup(support.unlink, support.TESTFN)
 
         int_fspath = PathLike(fd)
         str_fspath = PathLike(str_filename)
-        bytes_fspath = PathLike(bytes_filename)
 
         for name, allow_fd, extra_args, cleanup_fn in self.functions:
             with self.subTest(name=name):
@@ -2859,6 +2862,8 @@ class PathTConverterTests(unittest.TestCase):
 
                 for path in (str_filename, bytes_filename, str_fspath,
                              bytes_fspath):
+                    if path is None:
+                        continue
                     with self.subTest(name=name, path=path):
                         result = fn(path, *extra_args)
                         if cleanup_fn is not None:
