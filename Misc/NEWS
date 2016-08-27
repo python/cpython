@@ -89,6 +89,12 @@ Tests
 - Issue #27787: Call gc.collect() before checking each test for "dangling
   threads", since the dangling threads are weak references.
 
+Build
+-----
+
+- Issue #25825: Update references to the $(LIBPL) installation path on AIX.
+  This path was changed in 3.2a4.
+
 
 What's New in Python 3.6.0 alpha 4
 ==================================
