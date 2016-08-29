@@ -10,6 +10,10 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #25402: In int-to-decimal-string conversion, improve the estimate
+  of the intermediate memory required, and remove an unnecessarily strict
+  overflow check. Patch by Serhiy Storchaka.
+
 - Issue #27214: In long_invert, be more careful about modifying object
   returned by long_add, and remove an unnecessary check for small longs.
   Thanks Oren Milman for analysis and patch.
