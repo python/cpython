@@ -48,16 +48,17 @@ invalid_comma_type(Py_UCS4 presentation_type)
     returns -1 on error.
 */
 static int
-get_integer(PyObject *str, Py_ssize_t *pos, Py_ssize_t end,
+get_integer(PyObject *str, Py_ssize_t *ppos, Py_ssize_t end,
                   Py_ssize_t *result)
 {
-    Py_ssize_t accumulator, digitval;
+    Py_ssize_t accumulator, digitval, pos = *ppos;
     int numdigits;
+    int kind = PyUnicode_KIND(str);
+    void *data = PyUnicode_DATA(str);
+
     accumulator = numdigits = 0;
-    for (;;(*pos)++, numdigits++) {
-        if (*pos >= end)
-            break;
-        digitval = Py_UNICODE_TODECIMAL(PyUnicode_READ_CHAR(str, *pos));
+    for (; pos < end; pos++, numdigits++) {
+        digitval = Py_UNICODE_TODECIMAL(PyUnicode_READ(kind, data, pos));
         if (digitval < 0)
             break;
         /*
@@ -69,10 +70,12 @@ get_integer(PyObject *str, Py_ssize_t *pos, Py_ssize_t end,
         if (accumulator > (PY_SSIZE_T_MAX - digitval) / 10) {
             PyErr_Format(PyExc_ValueError,
                          "Too many decimal digits in format string");
+            *ppos = pos;
             return -1;
         }
         accumulator = accumulator * 10 + digitval;
     }
+    *ppos = pos;
     *result = accumulator;
     return numdigits;
 }
@@ -150,9 +153,11 @@ parse_internal_render_format_spec(PyObject *format_spec,
                                   char default_align)
 {
     Py_ssize_t pos = start;
+    int kind = PyUnicode_KIND(format_spec);
+    void *data = PyUnicode_DATA(format_spec);
     /* end-pos is used throughout this code to specify the length of
        the input string */
-#define READ_spec(index) PyUnicode_READ_CHAR(format_spec, index)
+#define READ_spec(index) PyUnicode_READ(kind, data, index)
 
     Py_ssize_t consumed;
     int align_specified = 0;
@@ -402,13 +407,15 @@ parse_number(PyObject *s, Py_ssize_t pos, Py_ssize_t end,
              Py_ssize_t *n_remainder, int *has_decimal)
 {
     Py_ssize_t remainder;
+    int kind = PyUnicode_KIND(s);
+    void *data = PyUnicode_DATA(s);
 
-    while (pos<end && Py_ISDIGIT(PyUnicode_READ_CHAR(s, pos)))
+    while (pos<end && Py_ISDIGIT(PyUnicode_READ(kind, data, pos)))
         ++pos;
     remainder = pos;
 
     /* Does remainder start with a decimal point? */
-    *has_decimal = pos<end && PyUnicode_READ_CHAR(s, remainder) == '.';
+    *has_decimal = pos<end && PyUnicode_READ(kind, data, remainder) == '.';
 
     /* Skip the decimal point. */
     if (*has_decimal)
