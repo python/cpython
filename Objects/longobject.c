@@ -3715,6 +3715,11 @@ long_lshift(PyObject *v, PyObject *w)
         PyErr_SetString(PyExc_ValueError, "negative shift count");
         goto lshift_error;
     }
+
+    if (Py_SIZE(a) == 0) {
+        return PyLong_FromLong(0);
+    }
+
     /* wordshift, remshift = divmod(shiftby, PyLong_SHIFT) */
     wordshift = shiftby / PyLong_SHIFT;
     remshift  = shiftby - wordshift * PyLong_SHIFT;

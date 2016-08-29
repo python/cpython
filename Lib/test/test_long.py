@@ -202,6 +202,21 @@ class LongTest(test_int.IntLongCommonTests, unittest.TestCase):
                 self.assertEqual(x, y,
                     Frm("bad result for a*b: a=%r, b=%r, x=%r, y=%r", a, b, x, y))
 
+    def test_lshift_of_zero(self):
+        self.assertEqual(0L << 0, 0)
+        self.assertEqual(0L << 10, 0)
+        with self.assertRaises(ValueError):
+            0L << -1
+
+    @test_support.cpython_only
+    def test_huge_lshift_of_zero(self):
+        # Shouldn't try to allocate memory for a huge shift. See issue #27870.
+        # Other implementations may have a different boundary for overflow,
+        # or not raise at all.
+        self.assertEqual(0L << sys.maxsize, 0)
+        with self.assertRaises(OverflowError):
+            0L << (sys.maxsize + 1)
+
     def check_bitop_identities_1(self, x):
         eq = self.assertEqual
         eq(x & 0, 0, Frm("x & 0 != 0 for x=%r", x))

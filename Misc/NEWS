@@ -10,6 +10,9 @@ What's New in Python 2.7.13?
 Core and Builtins
 -----------------
 
+- Issue #27870: A left shift of zero by a large integer no longer attempts
+  to allocate large amounts of memory.
+
 - Issue #25604: Fix a minor bug in integer true division; this bug could
   potentially have caused off-by-one-ulp results on platforms with
   unreliable ldexp implementations.
