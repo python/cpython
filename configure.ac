@@ -882,6 +882,8 @@ if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
   if test x$PLATFORM_TRIPLET != x$MULTIARCH; then
     AC_MSG_ERROR([internal configure error for the platform triplet, please file a bug report])
   fi
+elif test x$PLATFORM_TRIPLET != x && test x$MULTIARCH = x; then
+  MULTIARCH=$PLATFORM_TRIPLET
 fi
 if test x$PLATFORM_TRIPLET = x; then
   PLATDIR=plat-$MACHDEP
