@@ -878,6 +878,21 @@ class LongTest(unittest.TestCase):
             self.check_truediv(-x, y)
             self.check_truediv(-x, -y)
 
+    def test_lshift_of_zero(self):
+        self.assertEqual(0 << 0, 0)
+        self.assertEqual(0 << 10, 0)
+        with self.assertRaises(ValueError):
+            0 << -1
+
+    @support.cpython_only
+    def test_huge_lshift_of_zero(self):
+        # Shouldn't try to allocate memory for a huge shift. See issue #27870.
+        # Other implementations may have a different boundary for overflow,
+        # or not raise at all.
+        self.assertEqual(0 << sys.maxsize, 0)
+        with self.assertRaises(OverflowError):
+            0 << (sys.maxsize + 1)
+
     def test_small_ints(self):
         for i in range(-5, 257):
             self.assertIs(i, i + 0)
