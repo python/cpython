@@ -324,7 +324,7 @@ error:
 
 PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
-    static char *kwlist[] = {"factory", NULL, NULL};
+    static char *kwlist[] = {"factory", NULL};
     PyObject* factory = NULL;
     PyObject* cursor;
 
@@ -341,7 +341,16 @@ PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, 
         factory = (PyObject*)&pysqlite_CursorType;
     }
 
-    cursor = PyObject_CallFunction(factory, "O", self);
+    cursor = PyObject_CallFunctionObjArgs(factory, (PyObject *)self, NULL);
+    if (cursor == NULL)
+        return NULL;
+    if (!PyObject_TypeCheck(cursor, &pysqlite_CursorType)) {
+        PyErr_Format(PyExc_TypeError,
+                     "factory must return a cursor, not %.100s",
+                     Py_TYPE(cursor)->tp_name);
+        Py_DECREF(cursor);
+        return NULL;
+    }
 
     _pysqlite_drop_unused_cursor_references(self);
 

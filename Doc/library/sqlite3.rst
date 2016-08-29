@@ -256,11 +256,11 @@ Connection Objects
       :ref:`sqlite3-controlling-transactions` for a more detailed explanation.
 
 
-   .. method:: cursor([cursorClass])
+   .. method:: cursor(factory=Cursor)
 
-      The cursor method accepts a single optional parameter *cursorClass*. If
-      supplied, this must be a custom cursor class that extends
-      :class:`sqlite3.Cursor`.
+      The cursor method accepts a single optional parameter *factory*. If
+      supplied, this must be a callable returning an instance of :class:`Cursor`
+      or its subclasses.
 
    .. method:: commit()
 
