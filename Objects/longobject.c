@@ -4170,8 +4170,10 @@ long_invert(PyLongObject *v)
     Py_DECREF(w);
     if (x == NULL)
         return NULL;
-    Py_SIZE(x) = -(Py_SIZE(x));
-    return (PyObject *)maybe_small_long(x);
+    _PyLong_Negate(&x);
+    /* No need for maybe_small_long here, since any small
+       longs will have been caught in the Py_SIZE <= 1 fast path. */
+    return (PyObject *)x;
 }
 
 static PyObject *
