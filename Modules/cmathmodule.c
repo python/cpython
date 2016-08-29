@@ -81,6 +81,54 @@ else {
 #endif
 #define CM_SCALE_DOWN (-(CM_SCALE_UP+1)/2)
 
+/* Constants cmath.inf, cmath.infj, cmath.nan, cmath.nanj.
+   cmath.nan and cmath.nanj are defined only when either
+   PY_NO_SHORT_FLOAT_REPR is *not* defined (which should be
+   the most common situation on machines using an IEEE 754
+   representation), or Py_NAN is defined. */
+
+static double
+m_inf(void)
+{
+#ifndef PY_NO_SHORT_FLOAT_REPR
+    return _Py_dg_infinity(0);
+#else
+    return Py_HUGE_VAL;
+#endif
+}
+
+static Py_complex
+c_infj(void)
+{
+    Py_complex r;
+    r.real = 0.0;
+    r.imag = m_inf();
+    return r;
+}
+
+#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+
+static double
+m_nan(void)
+{
+#ifndef PY_NO_SHORT_FLOAT_REPR
+    return _Py_dg_stdnan(0);
+#else
+    return Py_NAN;
+#endif
+}
+
+static Py_complex
+c_nanj(void)
+{
+    Py_complex r;
+    r.real = 0.0;
+    r.imag = m_nan();
+    return r;
+}
+
+#endif
+
 /* forward declarations */
 static Py_complex cmath_asinh_impl(PyObject *, Py_complex);
 static Py_complex cmath_atanh_impl(PyObject *, Py_complex);
@@ -1240,6 +1288,12 @@ PyInit_cmath(void)
                        PyFloat_FromDouble(Py_MATH_PI));
     PyModule_AddObject(m, "e", PyFloat_FromDouble(Py_MATH_E));
     PyModule_AddObject(m, "tau", PyFloat_FromDouble(Py_MATH_TAU)); /* 2pi */
+    PyModule_AddObject(m, "inf", PyFloat_FromDouble(m_inf()));
+    PyModule_AddObject(m, "infj", PyComplex_FromCComplex(c_infj()));
+#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+    PyModule_AddObject(m, "nan", PyFloat_FromDouble(m_nan()));
+    PyModule_AddObject(m, "nanj", PyComplex_FromCComplex(c_nanj()));
+#endif
 
     /* initialize special value tables */
 
