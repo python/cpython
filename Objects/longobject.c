@@ -1591,6 +1591,7 @@ long_to_decimal_string_internal(PyObject *aa,
     Py_ssize_t size, strlen, size_a, i, j;
     digit *pout, *pin, rem, tenpow;
     int negative;
+    int d;
     enum PyUnicode_Kind kind;
 
     a = (PyLongObject *)aa;
@@ -1608,15 +1609,17 @@ long_to_decimal_string_internal(PyObject *aa,
 
        But log2(a) < size_a * PyLong_SHIFT, and
        log2(_PyLong_DECIMAL_BASE) = log2(10) * _PyLong_DECIMAL_SHIFT
-                                  > 3 * _PyLong_DECIMAL_SHIFT
+                                  > 3.3 * _PyLong_DECIMAL_SHIFT
+
+         size_a * PyLong_SHIFT / (3.3 * _PyLong_DECIMAL_SHIFT) =
+             size_a + size_a / d < size_a + size_a / floor(d),
+       where d = (3.3 * _PyLong_DECIMAL_SHIFT) /
+                 (PyLong_SHIFT - 3.3 * _PyLong_DECIMAL_SHIFT)
     */
-    if (size_a > PY_SSIZE_T_MAX / PyLong_SHIFT) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "int too large to format");
-        return -1;
-    }
-    /* the expression size_a * PyLong_SHIFT is now safe from overflow */
-    size = 1 + size_a * PyLong_SHIFT / (3 * _PyLong_DECIMAL_SHIFT);
+    d = (33 * _PyLong_DECIMAL_SHIFT) /
+        (10 * PyLong_SHIFT - 33 * _PyLong_DECIMAL_SHIFT);
+    assert(size_a < PY_SSIZE_T_MAX/2);
+    size = 1 + size_a + size_a / d;
     scratch = _PyLong_New(size);
     if (scratch == NULL)
         return -1;
