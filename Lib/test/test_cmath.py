@@ -154,6 +154,23 @@ class CMathTests(unittest.TestCase):
         self.assertAlmostEqual(cmath.e, e_expected, places=9,
             msg="cmath.e is {}; should be {}".format(cmath.e, e_expected))
 
+    def test_infinity_and_nan_constants(self):
+        self.assertEqual(cmath.inf.real, math.inf)
+        self.assertEqual(cmath.inf.imag, 0.0)
+        self.assertEqual(cmath.infj.real, 0.0)
+        self.assertEqual(cmath.infj.imag, math.inf)
+
+        self.assertTrue(math.isnan(cmath.nan.real))
+        self.assertEqual(cmath.nan.imag, 0.0)
+        self.assertEqual(cmath.nanj.real, 0.0)
+        self.assertTrue(math.isnan(cmath.nanj.imag))
+
+        # Check consistency with reprs.
+        self.assertEqual(repr(cmath.inf), "inf")
+        self.assertEqual(repr(cmath.infj), "infj")
+        self.assertEqual(repr(cmath.nan), "nan")
+        self.assertEqual(repr(cmath.nanj), "nanj")
+
     def test_user_object(self):
         # Test automatic calling of __complex__ and __float__ by cmath
         # functions
