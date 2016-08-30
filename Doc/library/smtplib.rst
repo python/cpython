@@ -439,7 +439,7 @@ An :class:`SMTP` instance has the following methods:
    and the accompanying error message sent by the server.
 
    If ``SMTPUTF8`` is included in *mail_options*, and the server supports it,
-   *from_addr* and *to_addr* may contain non-ASCII characters.
+   *from_addr* and *to_addrs* may contain non-ASCII characters.
 
    This method may raise the following exceptions:
 
