@@ -527,7 +527,7 @@ Command line usage
    -c command  run command in the shell window
    -d          enable debugger and open shell window
    -e          open editor window
-   -h          print help message with legal combinatios and exit
+   -h          print help message with legal combinations and exit
    -i          open shell window
    -r file     run file in shell window
    -s          run $IDLESTARTUP or $PYTHONSTARTUP first, in shell window
