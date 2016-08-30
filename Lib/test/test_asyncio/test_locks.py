@@ -130,8 +130,8 @@ class LockTests(test_utils.TestCase):
     def test_cancel_race(self):
         # Several tasks:
         # - A acquires the lock
-        # - B is blocked in aqcuire()
-        # - C is blocked in aqcuire()
+        # - B is blocked in acquire()
+        # - C is blocked in acquire()
         #
         # Now, concurrently:
         # - B is cancelled

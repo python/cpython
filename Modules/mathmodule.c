@@ -1274,7 +1274,7 @@ count_set_bits(unsigned long n)
 
 /* Divide-and-conquer factorial algorithm
  *
- * Based on the formula and psuedo-code provided at:
+ * Based on the formula and pseudo-code provided at:
  * http://www.luschny.de/math/factorial/binarysplitfact.html
  *
  * Faster algorithms exist, but they're more complicated and depend on

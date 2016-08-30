@@ -247,7 +247,7 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
             ++f;
         }
 
-        /* substract bytes preallocated for the format string
+        /* subtract bytes preallocated for the format string
            (ex: 2 for "%s") */
         writer.min_size -= (f - p + 1);
 
@@ -1093,7 +1093,7 @@ _PyBytes_DecodeEscapeRecode(const char **s, const char *end,
     assert(PyBytes_Check(w));
 
     /* Append bytes to output buffer. */
-    writer->min_size--;   /* substract 1 preallocated byte */
+    writer->min_size--;   /* subtract 1 preallocated byte */
     p = _PyBytesWriter_WriteBytes(writer, p,
                                   PyBytes_AS_STRING(w),
                                   PyBytes_GET_SIZE(w));

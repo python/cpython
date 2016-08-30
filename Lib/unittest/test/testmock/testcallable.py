@@ -27,7 +27,7 @@ class TestCallable(unittest.TestCase):
             self.assertIn(mock.__class__.__name__, repr(mock))
 
 
-    def test_heirarchy(self):
+    def test_hierarchy(self):
         self.assertTrue(issubclass(MagicMock, Mock))
         self.assertTrue(issubclass(NonCallableMagicMock, NonCallableMock))
 

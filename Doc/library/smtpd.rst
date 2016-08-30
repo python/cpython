@@ -44,7 +44,7 @@ SMTPServer Objects
    dictionary is a suitable value).  If not specified the :mod:`asyncore`
    global socket map is used.
 
-   *enable_SMTPUTF8* determins whether the ``SMTPUTF8`` extension (as defined
+   *enable_SMTPUTF8* determines whether the ``SMTPUTF8`` extension (as defined
    in :RFC:`6531`) should be enabled.  The default is ``False``.
    When ``True``, ``SMTPUTF8`` is accepted as a parameter to the ``MAIL``
    command and when present is passed to :meth:`process_message` in the
@@ -162,7 +162,7 @@ SMTPChannel Objects
    accepted in a ``DATA`` command.  A value of ``None`` or ``0`` means no
    limit.
 
-   *enable_SMTPUTF8* determins whether the ``SMTPUTF8`` extension (as defined
+   *enable_SMTPUTF8* determines whether the ``SMTPUTF8`` extension (as defined
    in :RFC:`6531`) should be enabled.  The default is ``False``.
    *decode_data* and *enable_SMTPUTF8* cannot be set to ``True`` at the same
    time.

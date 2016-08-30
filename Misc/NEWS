@@ -425,7 +425,7 @@ Library
 - Issue #27079: Fixed curses.ascii functions isblank(), iscntrl() and ispunct().
 
 - Issue #27294: Numerical state in the repr for Tkinter event objects is now
-  represented as a compination of known flags.
+  represented as a combination of known flags.
 
 - Issue #27177: Match objects in the re module now support index-like objects
   as group indices.  Based on patches by Jeroen Demeyer and Xiang Zhang.
@@ -5662,7 +5662,7 @@ Tools/Demos
 
 - Issue #22120: For functions using an unsigned integer return converter,
   Argument Clinic now generates a cast to that type for the comparison
-  to -1 in the generated code.  (This supresses a compilation warning.)
+  to -1 in the generated code.  (This suppresses a compilation warning.)
 
 - Issue #18974: Tools/scripts/diff.py now uses argparse instead of optparse.
 
@@ -6762,7 +6762,7 @@ Core and Builtins
 
 - Issue #19466: Clear the frames of daemon threads earlier during the
   Python shutdown to call objects destructors. So "unclosed file" resource
-  warnings are now corretly emitted for daemon threads.
+  warnings are now correctly emitted for daemon threads.
 
 - Issue #19514: Deduplicate some _Py_IDENTIFIER declarations.
   Patch by Andrei Dorian Duma.
@@ -7692,7 +7692,7 @@ Library
 
 - Issue #18709: Fix CVE-2013-4238. The SSL module now handles NULL bytes
   inside subjectAltName correctly. Formerly the module has used OpenSSL's
-  GENERAL_NAME_print() function to get the string represention of ASN.1
+  GENERAL_NAME_print() function to get the string representation of ASN.1
   strings for ``rfc822Name`` (email), ``dNSName`` (DNS) and
   ``uniformResourceIdentifier`` (URI).
 
@@ -7785,7 +7785,7 @@ IDLE
 Documentation
 -------------
 
-- Issue #18743: Fix references to non-existant "StringIO" module.
+- Issue #18743: Fix references to non-existent "StringIO" module.
 
 - Issue #18783: Removed existing mentions of Python long type in docstrings,
   error messages and comments.
@@ -8724,7 +8724,7 @@ Library
   specifically addresses a stack misalignment issue on x86 and issues on
   some more recent platforms.
 
-- Issue #8862: Fixed curses cleanup when getkey is interrputed by a signal.
+- Issue #8862: Fixed curses cleanup when getkey is interrupted by a signal.
 
 - Issue #17443: imaplib.IMAP4_stream was using the default unbuffered IO
   in subprocess, but the imap code assumes buffered IO.  In Python2 this

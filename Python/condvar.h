@@ -238,7 +238,7 @@ _PyCOND_WAIT_MS(PyCOND_T *cv, PyMUTEX_T *cs, DWORD ms)
     cv->waiting++;
     PyMUTEX_UNLOCK(cs);
     /* "lost wakeup bug" would occur if the caller were interrupted here,
-     * but we are safe because we are using a semaphore wich has an internal
+     * but we are safe because we are using a semaphore which has an internal
      * count.
      */
     wait = WaitForSingleObjectEx(cv->sem, ms, FALSE);

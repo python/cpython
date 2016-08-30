@@ -121,7 +121,7 @@ typedef struct {
 } InternalFormatSpec;
 
 #if 0
-/* Occassionally useful for debugging. Should normally be commented out. */
+/* Occasionally useful for debugging. Should normally be commented out. */
 static void
 DEBUG_PRINT_FORMAT_SPEC(InternalFormatSpec *format)
 {

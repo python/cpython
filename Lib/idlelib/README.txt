@@ -65,7 +65,7 @@ pathbrowser.py    # Create path browser window.
 percolator.py     # Manage delegator stack (nim).
 pyparse.py        # Give information on code indentation
 pyshell.py        # Start IDLE, manage shell, complete editor window
-query.py          # Query user for informtion
+query.py          # Query user for information
 redirector.py     # Intercept widget subcommands (for percolator) (nim).
 replace.py        # Search and replace pattern in text.
 rpc.py            # Commuicate between idle and user processes (nim).
