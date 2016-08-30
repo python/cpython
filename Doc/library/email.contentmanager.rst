@@ -433,5 +433,5 @@ Currently the email package provides only one concrete content manager,
 
        If *headers* is specified and is a list of strings of the form
        ``headername: headervalue`` or a list of ``header`` objects
-       (distinguised from strings by having a ``name`` attribute), add the
+       (distinguished from strings by having a ``name`` attribute), add the
        headers to *msg*.

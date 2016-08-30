@@ -1842,7 +1842,7 @@ Note that the :class:`datetime` instances that differ only by the value of the
 :attr:`~datetime.fold` attribute are considered equal in comparisons.
 
 Applications that can't bear wall-time ambiguities should explicitly check the
-value of the :attr:`~datetime.fold` atribute or avoid using hybrid
+value of the :attr:`~datetime.fold` attribute or avoid using hybrid
 :class:`tzinfo` subclasses; there are no ambiguities when using :class:`timezone`,
 or any other fixed-offset :class:`tzinfo` subclass (such as a class representing
 only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).

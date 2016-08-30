@@ -2131,7 +2131,7 @@ raw_unicode_escape(PyObject *obj)
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         /* Map 32-bit characters to '\Uxxxxxxxx' */
         if (ch >= 0x10000) {
-            /* -1: substract 1 preallocated byte */
+            /* -1: subtract 1 preallocated byte */
             p = _PyBytesWriter_Prepare(&writer, p, 10-1);
             if (p == NULL)
                 goto error;
@@ -2149,7 +2149,7 @@ raw_unicode_escape(PyObject *obj)
         }
         /* Map 16-bit characters, '\\' and '\n' to '\uxxxx' */
         else if (ch >= 256 || ch == '\\' || ch == '\n') {
-            /* -1: substract 1 preallocated byte */
+            /* -1: subtract 1 preallocated byte */
             p = _PyBytesWriter_Prepare(&writer, p, 6-1);
             if (p == NULL)
                 goto error;

@@ -1306,10 +1306,10 @@ class TestShutil(unittest.TestCase):
             shutil.chown(filename)
 
         with self.assertRaises(LookupError):
-            shutil.chown(filename, user='non-exising username')
+            shutil.chown(filename, user='non-existing username')
 
         with self.assertRaises(LookupError):
-            shutil.chown(filename, group='non-exising groupname')
+            shutil.chown(filename, group='non-existing groupname')
 
         with self.assertRaises(TypeError):
             shutil.chown(filename, b'spam')

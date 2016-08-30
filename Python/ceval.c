@@ -2090,16 +2090,16 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
         TARGET(YIELD_FROM) {
             PyObject *v = POP();
-            PyObject *reciever = TOP();
+            PyObject *receiver = TOP();
             int err;
-            if (PyGen_CheckExact(reciever) || PyCoro_CheckExact(reciever)) {
-                retval = _PyGen_Send((PyGenObject *)reciever, v);
+            if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) {
+                retval = _PyGen_Send((PyGenObject *)receiver, v);
             } else {
                 _Py_IDENTIFIER(send);
                 if (v == Py_None)
-                    retval = Py_TYPE(reciever)->tp_iternext(reciever);
+                    retval = Py_TYPE(receiver)->tp_iternext(receiver);
                 else
-                    retval = _PyObject_CallMethodIdObjArgs(reciever, &PyId_send, v, NULL);
+                    retval = _PyObject_CallMethodIdObjArgs(receiver, &PyId_send, v, NULL);
             }
             Py_DECREF(v);
             if (retval == NULL) {
@@ -2110,7 +2110,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 err = _PyGen_FetchStopIterationValue(&val);
                 if (err < 0)
                     goto error;
-                Py_DECREF(reciever);
+                Py_DECREF(receiver);
                 SET_TOP(val);
                 DISPATCH();
             }

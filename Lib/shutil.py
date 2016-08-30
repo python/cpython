@@ -64,7 +64,7 @@ class ReadError(OSError):
 
 class RegistryError(Exception):
     """Raised when a registry operation with the archiving
-    and unpacking registeries fails"""
+    and unpacking registries fails"""
 
 
 def copyfileobj(fsrc, fdst, length=16*1024):

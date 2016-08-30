@@ -694,7 +694,7 @@ search doesn't reduce the quadratic data movement costs.
 
 But in CPython's case, comparisons are extraordinarily expensive compared to
 moving data, and the details matter.  Moving objects is just copying
-pointers.  Comparisons can be arbitrarily expensive (can invoke arbitary
+pointers.  Comparisons can be arbitrarily expensive (can invoke arbitrary
 user-supplied Python code), but even in simple cases (like 3 < 4) _all_
 decisions are made at runtime:  what's the type of the left comparand?  the
 type of the right?  do they need to be coerced to a common type?  where's the

@@ -1954,7 +1954,7 @@ ssl
   :attr:`~ssl.OP_NO_COMPRESSION` can be used to disable compression.
   (Contributed by Antoine Pitrou in :issue:`13634`.)
 
-* Support has been added for the Next Procotol Negotiation extension using
+* Support has been added for the Next Protocol Negotiation extension using
   the :meth:`ssl.SSLContext.set_npn_protocols` method.
   (Contributed by Colin Marc in :issue:`14204`.)
 

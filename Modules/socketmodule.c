@@ -6611,7 +6611,7 @@ PyInit__socket(void)
     PyModule_AddIntConstant(m, "SOMAXCONN", 5); /* Common value */
 #endif
 
-    /* Ancilliary message types */
+    /* Ancillary message types */
 #ifdef  SCM_RIGHTS
     PyModule_AddIntMacro(m, SCM_RIGHTS);
 #endif

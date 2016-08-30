@@ -122,17 +122,17 @@ patch914575_nonascii_to1 = """
 """
 
 patch914575_from2 = """
-\t\tLine 1: preceeded by from:[tt] to:[ssss]
-  \t\tLine 2: preceeded by from:[sstt] to:[sssst]
-  \t \tLine 3: preceeded by from:[sstst] to:[ssssss]
+\t\tLine 1: preceded by from:[tt] to:[ssss]
+  \t\tLine 2: preceded by from:[sstt] to:[sssst]
+  \t \tLine 3: preceded by from:[sstst] to:[ssssss]
 Line 4:  \thas from:[sst] to:[sss] after :
 Line 5: has from:[t] to:[ss] at end\t
 """
 
 patch914575_to2 = """
-    Line 1: preceeded by from:[tt] to:[ssss]
-    \tLine 2: preceeded by from:[sstt] to:[sssst]
-      Line 3: preceeded by from:[sstst] to:[ssssss]
+    Line 1: preceded by from:[tt] to:[ssss]
+    \tLine 2: preceded by from:[sstt] to:[sssst]
+      Line 3: preceded by from:[sstst] to:[ssssss]
 Line 4:   has from:[sst] to:[sss] after :
 Line 5: has from:[t] to:[ss] at end
 """
