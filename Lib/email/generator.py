@@ -97,7 +97,7 @@ class Generator:
         self._NL = policy.linesep
         self._encoded_NL = self._encode(self._NL)
         self._EMPTY = ''
-        self._encoded_EMTPY = self._encode('')
+        self._encoded_EMPTY = self._encode('')
         # Because we use clone (below) when we recursively process message
         # subparts, and because clone uses the computed policy (not None),
         # submessages will automatically get set to the computed policy when

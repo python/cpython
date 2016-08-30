@@ -131,7 +131,7 @@ PyAPI_FUNC(Py_ssize_t) _PyBytes_InsertThousandsGrouping(char *buffer,
 #define F_ZERO	(1<<4)
 
 #ifndef Py_LIMITED_API
-/* The _PyBytesWriter structure is big: it contains an embeded "stack buffer".
+/* The _PyBytesWriter structure is big: it contains an embedded "stack buffer".
    A _PyBytesWriter variable must be declared at the end of variables in a
    function to optimize the memory allocation on the stack. */
 typedef struct {

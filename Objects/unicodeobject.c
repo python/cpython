@@ -6110,7 +6110,7 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 
         /* Escape backslashes */
         if (ch == '\\') {
-            /* -1: substract 1 preallocated byte */
+            /* -1: subtract 1 preallocated byte */
             p = _PyBytesWriter_Prepare(&writer, p, 2-1);
             if (p == NULL)
                 goto error;
@@ -6183,7 +6183,7 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 
         /* Map non-printable US ASCII to '\xhh' */
         else if (ch < ' ' || ch >= 0x7F) {
-            /* -1: substract 1 preallocated byte */
+            /* -1: subtract 1 preallocated byte */
             p = _PyBytesWriter_Prepare(&writer, p, 4-1);
             if (p == NULL)
                 goto error;
@@ -6363,7 +6363,7 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
         if (ch >= 0x10000) {
             assert(ch <= MAX_UNICODE);
 
-            /* -1: substract 1 preallocated byte */
+            /* -1: subtract 1 preallocated byte */
             p = _PyBytesWriter_Prepare(&writer, p, 10-1);
             if (p == NULL)
                 goto error;
@@ -6381,7 +6381,7 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
         }
         /* Map 16-bit characters to '\uxxxx' */
         else if (ch >= 256) {
-            /* -1: substract 1 preallocated byte */
+            /* -1: subtract 1 preallocated byte */
             p = _PyBytesWriter_Prepare(&writer, p, 6-1);
             if (p == NULL)
                 goto error;
@@ -6705,7 +6705,7 @@ unicode_encode_ucs1(PyObject *unicode,
                 break;
 
             case _Py_ERROR_BACKSLASHREPLACE:
-                /* substract preallocated bytes */
+                /* subtract preallocated bytes */
                 writer.min_size -= (collend - collstart);
                 str = backslashreplace(&writer, str,
                                        unicode, collstart, collend);
@@ -6715,7 +6715,7 @@ unicode_encode_ucs1(PyObject *unicode,
                 break;
 
             case _Py_ERROR_XMLCHARREFREPLACE:
-                /* substract preallocated bytes */
+                /* subtract preallocated bytes */
                 writer.min_size -= (collend - collstart);
                 str = xmlcharrefreplace(&writer, str,
                                         unicode, collstart, collend);
@@ -6747,7 +6747,7 @@ unicode_encode_ucs1(PyObject *unicode,
                 if (rep == NULL)
                     goto onError;
 
-                /* substract preallocated bytes */
+                /* subtract preallocated bytes */
                 writer.min_size -= 1;
 
                 if (PyBytes_Check(rep)) {

@@ -245,7 +245,7 @@ class Event:
         if self.delta == 0:
             del attrs['delta']
         # widget usually is known
-        # serial and time are not very interesing
+        # serial and time are not very interesting
         # keysym_num duplicates keysym
         # x_root and y_root mostly duplicate x and y
         keys = ('send_event',

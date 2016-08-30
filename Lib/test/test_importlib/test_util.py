@@ -372,7 +372,7 @@ class ResolveNameTests:
         # bacon
         self.assertEqual('bacon', self.util.resolve_name('bacon', None))
 
-    def test_aboslute_within_package(self):
+    def test_absolute_within_package(self):
         # bacon in spam
         self.assertEqual('bacon', self.util.resolve_name('bacon', 'spam'))
 

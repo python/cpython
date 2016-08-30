@@ -837,7 +837,7 @@ binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
     if (in_byte == RUNCHAR) {
         INBYTE(in_repeat);
         /* only 1 byte will be written, but 2 bytes were preallocated:
-           substract 1 byte to prevent overallocation */
+           subtract 1 byte to prevent overallocation */
         writer.min_size--;
 
         if (in_repeat != 0) {
@@ -858,7 +858,7 @@ binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
         if (in_byte == RUNCHAR) {
             INBYTE(in_repeat);
             /* only 1 byte will be written, but 2 bytes were preallocated:
-               substract 1 byte to prevent overallocation */
+               subtract 1 byte to prevent overallocation */
             writer.min_size--;
 
             if ( in_repeat == 0 ) {
