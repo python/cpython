@@ -4,8 +4,12 @@ import os
 import unittest
 
 from test.support.script_helper import assert_python_ok
-from test.test_tools import toolsdir
+from test.test_tools import skip_if_missing, toolsdir
 from test.support import temp_cwd
+
+
+skip_if_missing()
+
 
 class Test_pygettext(unittest.TestCase):
     """Tests for the pygettext.py tool"""
