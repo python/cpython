@@ -10,6 +10,7 @@ import csv
 import gc
 import pickle
 from test import support
+from itertools import permutations
 
 class Test_Csv(unittest.TestCase):
     """
@@ -1092,6 +1093,21 @@ class TestUnicode(unittest.TestCase):
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), expected)
 
+class KeyOrderingTest(unittest.TestCase):
+
+    def test_ordering_for_the_dict_reader_and_writer(self):
+        resultset = set()
+        for keys in permutations("abcde"):
+            with TemporaryFile('w+', newline='', encoding="utf-8") as fileobject:
+                dw = csv.DictWriter(fileobject, keys)
+                dw.writeheader()
+                fileobject.seek(0)
+                dr = csv.DictReader(fileobject)
+                kt = tuple(dr.fieldnames)
+                self.assertEqual(keys, kt)
+                resultset.add(kt)
+        # Final sanity check: were all permutations unique?
+        self.assertEqual(len(resultset), 120, "Key ordering: some key permutations not collected (expected 120)")
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
