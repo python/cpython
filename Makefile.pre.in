@@ -1221,6 +1221,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		importlib test/test_importlib test/test_importlib/builtin \
 		test/test_importlib/extension test/test_importlib/frozen \
 		test/test_importlib/import_ test/test_importlib/source \
+		test/test_tools test/test_warnings \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \
 		unittest unittest/test unittest/test/testmock \
