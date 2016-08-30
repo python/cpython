@@ -2053,7 +2053,7 @@ Loading and running tests
    The *failfast*, *catchbreak* and *buffer* parameters have the same
    effect as the same-name `command-line options`_.
 
-   The *warning* argument specifies the :ref:`warning filter <warning-filter>`
+   The *warnings* argument specifies the :ref:`warning filter <warning-filter>`
    that should be used while running the tests.  If it's not specified, it will
    remain ``None`` if a :option:`-W` option is passed to :program:`python`,
    otherwise it will be set to ``'default'``.
