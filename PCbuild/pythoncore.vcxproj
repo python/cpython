@@ -270,6 +270,7 @@
     <ClCompile Include="..\Modules\_io\bufferedio.c" />
     <ClCompile Include="..\Modules\_io\iobase.c" />
     <ClCompile Include="..\Modules\_io\textio.c" />
+    <ClCompile Include="..\Modules\_io\winconsoleio.c" />
     <ClCompile Include="..\Modules\_io\_iomodule.c" />
     <ClCompile Include="..\Modules\zlib\adler32.c" />
     <ClCompile Include="..\Modules\zlib\compress.c" />

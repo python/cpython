@@ -31,6 +31,9 @@
 #ifdef MS_WINDOWS
 #undef BYTE
 #include "windows.h"
+
+extern PyTypeObject PyWindowsConsoleIO_Type;
+#define PyWindowsConsoleIO_Check(op) (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
 #endif
 
 _Py_IDENTIFIER(flush);
@@ -92,6 +95,7 @@ int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
 int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
 #ifdef MS_WINDOWS
 int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
+int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
 
 PyThreadState *_Py_Finalizing = NULL;
@@ -154,6 +158,12 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
             return -3;
         }
     }
+#ifdef MS_WINDOWS
+    if (_Py_StandardStreamEncoding) {
+        /* Overriding the stream encoding implies legacy streams */
+        Py_LegacyWindowsStdioFlag = 1;
+    }
+#endif
     return 0;
 }
 
@@ -327,6 +337,8 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 #ifdef MS_WINDOWS
     if ((p = Py_GETENV("PYTHONLEGACYWINDOWSFSENCODING")) && *p != '\0')
         Py_LegacyWindowsFSEncodingFlag = add_flag(Py_LegacyWindowsFSEncodingFlag, p);
+    if ((p = Py_GETENV("PYTHONLEGACYWINDOWSSTDIO")) && *p != '\0')
+        Py_LegacyWindowsStdioFlag = add_flag(Py_LegacyWindowsStdioFlag, p);
 #endif
 
     _PyRandom_Init();
@@ -1088,6 +1100,12 @@ create_stdio(PyObject* io,
         raw = buf;
         Py_INCREF(raw);
     }
+
+#ifdef MS_WINDOWS
+    /* Windows console IO is always UTF-8 encoded */
+    if (PyWindowsConsoleIO_Check(raw))
+        encoding = "utf-8";
+#endif
 
     text = PyUnicode_FromString(name);
     if (text == NULL || _PyObject_SetAttrId(raw, &PyId_name, text) < 0)

@@ -20,6 +20,9 @@
 #include <sys/stat.h>
 #endif /* HAVE_SYS_STAT_H */
 
+#ifdef MS_WINDOWS
+#include <consoleapi.h>
+#endif
 
 /* Various interned strings */
 
@@ -52,7 +55,6 @@ PyObject *_PyIO_empty_str;
 PyObject *_PyIO_empty_bytes;
 PyObject *_PyIO_zero;
 
-
 PyDoc_STRVAR(module_doc,
 "The io module provides the Python interfaces to stream handling. The\n"
 "builtin open function is defined in this module.\n"
@@ -362,8 +364,18 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     }
 
     /* Create the Raw file stream */
-    raw = PyObject_CallFunction((PyObject *)&PyFileIO_Type,
-                                "OsiO", path_or_fd, rawmode, closefd, opener);
+    {
+        PyObject *RawIO_class = (PyObject *)&PyFileIO_Type;
+#ifdef MS_WINDOWS
+        if (!Py_LegacyWindowsStdioFlag && _PyIO_get_console_type(path_or_fd) != '\0') {
+            RawIO_class = (PyObject *)&PyWindowsConsoleIO_Type;
+            encoding = "utf-8";
+        }
+#endif
+        raw = PyObject_CallFunction(RawIO_class,
+                                    "OsiO", path_or_fd, rawmode, closefd, opener);
+    }
+
     if (raw == NULL)
         goto error;
     result = raw;
@@ -707,6 +719,12 @@ PyInit__io(void)
     /* StringIO */
     PyStringIO_Type.tp_base = &PyTextIOBase_Type;
     ADD_TYPE(&PyStringIO_Type, "StringIO");
+
+#ifdef MS_WINDOWS
+    /* WindowsConsoleIO */
+    PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
+    ADD_TYPE(&PyWindowsConsoleIO_Type, "_WindowsConsoleIO");
+#endif
 
     /* BufferedReader */
     PyBufferedReader_Type.tp_base = &PyBufferedIOBase_Type;

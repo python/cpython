@@ -90,3 +90,10 @@ for klass in (BytesIO, BufferedReader, BufferedWriter, BufferedRandom,
 for klass in (StringIO, TextIOWrapper):
     TextIOBase.register(klass)
 del klass
+
+try:
+    from _io import _WindowsConsoleIO
+except ImportError:
+    pass
+else:
+    RawIOBase.register(_WindowsConsoleIO)

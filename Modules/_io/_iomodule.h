@@ -19,6 +19,12 @@ extern PyTypeObject PyBufferedRandom_Type;
 extern PyTypeObject PyTextIOWrapper_Type;
 extern PyTypeObject PyIncrementalNewlineDecoder_Type;
 
+#ifndef Py_LIMITED_API
+#ifdef MS_WINDOWS
+extern PyTypeObject PyWindowsConsoleIO_Type;
+#define PyWindowsConsoleIO_Check(op) (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
+#endif /* MS_WINDOWS */
+#endif /* Py_LIMITED_API */
 
 extern int _PyIO_ConvertSsize_t(PyObject *, void *);
 
@@ -144,6 +150,10 @@ typedef struct {
 
 extern _PyIO_State *_PyIO_get_module_state(void);
 extern PyObject *_PyIO_get_locale_module(_PyIO_State *);
+
+#ifdef MS_WINDOWS
+extern char _PyIO_get_console_type(PyObject *);
+#endif
 
 extern PyObject *_PyIO_str_close;
 extern PyObject *_PyIO_str_closed;

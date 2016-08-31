@@ -78,6 +78,8 @@ Windows improvements:
 
 * PEP 529: :ref:`Change Windows filesystem encoding to UTF-8 <pep-529>`
 
+* PEP 528: :ref:`Change Windows console encoding to UTF-8 <pep-528>`
+
 * The ``py.exe`` launcher, when used interactively, no longer prefers
   Python 2 over Python 3 when the user doesn't specify a version (via
   command line arguments or a config file).  Handling of shebang lines
@@ -267,6 +269,23 @@ Also see :pep:`487` and the updated class customization documentation at
 
 (Contributed by Martin Teichmann in :issue:`27366`)
 
+.. _pep-528:
+
+PEP 528: Change Windows console encoding to UTF-8
+-------------------------------------------------
+
+The default console on Windows will now accept all Unicode characters and
+provide correctly read str objects to Python code. ``sys.stdin``,
+``sys.stdout`` and ``sys.stderr`` now default to utf-8 encoding.
+
+This change only applies when using an interactive console, and not when
+redirecting files or pipes. To revert to the previous behaviour for interactive
+console use, set :envvar:`PYTHONLEGACYWINDOWSIOENCODING`.
+
+.. seealso::
+
+   :pep:`528` -- Change Windows console encoding to UTF-8
+      PEP written and implemented by Steve Dower.
 
 PYTHONMALLOC environment variable
 =================================
