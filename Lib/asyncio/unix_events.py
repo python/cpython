@@ -422,10 +422,10 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         self._pipe = pipe
         self._fileno = pipe.fileno()
         mode = os.fstat(self._fileno).st_mode
+        is_char = stat.S_ISCHR(mode)
+        is_fifo = stat.S_ISFIFO(mode)
         is_socket = stat.S_ISSOCK(mode)
-        if not (is_socket or
-                stat.S_ISFIFO(mode) or
-                stat.S_ISCHR(mode)):
+        if not (is_char or is_fifo or is_socket):
             raise ValueError("Pipe transport is only for "
                              "pipes, sockets and character devices")
         _set_nonblocking(self._fileno)
@@ -439,7 +439,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         # On AIX, the reader trick (to be notified when the read end of the
         # socket is closed) only works for sockets. On other platforms it
         # works for pipes and sockets. (Exception: OS X 10.4?  Issue #19294.)
-        if is_socket or not sys.platform.startswith("aix"):
+        if is_socket or (is_fifo and not sys.platform.startswith("aix")):
             # only start reading when connection_made() has been called
             self._loop.call_soon(self._loop.add_reader,
                                  self._fileno, self._read_ready)
