@@ -104,7 +104,8 @@ class InstallLibTestCase(support.TempdirManager,
         finally:
             sys.dont_write_bytecode = old_dont_write_bytecode
 
-        self.assertIn('byte-compiling is disabled', self.logs[0][1])
+        self.assertIn('byte-compiling is disabled',
+                      self.logs[0][1] % self.logs[0][2])
 
 
 def test_suite():
