@@ -204,7 +204,7 @@ A user-defined class can be defined as a generic class.
            return self.value
 
        def log(self, message: str) -> None:
-           self.logger.info('{}: {}'.format(self.name, message))
+           self.logger.info('%s: %s', self.name, message)
 
 ``Generic[T]`` as a base class defines that the class ``LoggedVar`` takes a
 single type parameter ``T`` . This also makes ``T`` valid as a type within the

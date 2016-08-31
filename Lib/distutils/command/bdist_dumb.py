@@ -85,7 +85,7 @@ class bdist_dumb(Command):
         install.skip_build = self.skip_build
         install.warn_dir = 0
 
-        log.info("installing to %s" % self.bdist_dir)
+        log.info("installing to %s", self.bdist_dir)
         self.run_command('install')
 
         # And make an archive relative to the root of the

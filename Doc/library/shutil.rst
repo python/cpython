@@ -425,7 +425,7 @@ Another example that uses the *ignore* argument to add a logging call::
    import logging
 
    def _logpath(path, names):
-       logging.info('Working in %s' % path)
+       logging.info('Working in %s', path)
        return []   # nothing will be ignored
 
    copytree(source, destination, ignore=_logpath)

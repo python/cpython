@@ -105,11 +105,11 @@ class BuildSSL:
 
     def _subprocess_call(self, cmd, stdout=subprocess.DEVNULL, env=None,
                          **kwargs):
-        log.debug("Call '{}'".format(" ".join(cmd)))
+        log.debug("Call '%s'", " ".join(cmd))
         return subprocess.check_call(cmd, stdout=stdout, env=env, **kwargs)
 
     def _subprocess_output(self, cmd, env=None, **kwargs):
-        log.debug("Call '{}'".format(" ".join(cmd)))
+        log.debug("Call '%s'", " ".join(cmd))
         out = subprocess.check_output(cmd, env=env)
         return out.strip().decode("utf-8")
 
@@ -168,7 +168,7 @@ class BuildSSL:
             if not self.has_src:
                 self._download_openssl()
             else:
-                log.debug("Already has src {}".format(self.src_file))
+                log.debug("Already has src %s", self.src_file)
             self._unpack_openssl()
             self._build_openssl()
             self._install_openssl()
