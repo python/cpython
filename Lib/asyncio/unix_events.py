@@ -305,14 +305,20 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         self._loop = loop
         self._pipe = pipe
         self._fileno = pipe.fileno()
+        self._protocol = protocol
+        self._closing = False
+
         mode = os.fstat(self._fileno).st_mode
         if not (stat.S_ISFIFO(mode) or
                 stat.S_ISSOCK(mode) or
                 stat.S_ISCHR(mode)):
+            self._pipe = None
+            self._fileno = None
+            self._protocol = None
             raise ValueError("Pipe transport is for pipes/sockets only.")
+
         _set_nonblocking(self._fileno)
-        self._protocol = protocol
-        self._closing = False
+
         self._loop.call_soon(self._protocol.connection_made, self)
         # only start reading when connection_made() has been called
         self._loop.call_soon(self._loop.add_reader,
@@ -421,18 +427,23 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         self._extra['pipe'] = pipe
         self._pipe = pipe
         self._fileno = pipe.fileno()
+        self._protocol = protocol
+        self._buffer = []
+        self._conn_lost = 0
+        self._closing = False  # Set when close() or write_eof() called.
+
         mode = os.fstat(self._fileno).st_mode
         is_char = stat.S_ISCHR(mode)
         is_fifo = stat.S_ISFIFO(mode)
         is_socket = stat.S_ISSOCK(mode)
         if not (is_char or is_fifo or is_socket):
+            self._pipe = None
+            self._fileno = None
+            self._protocol = None
             raise ValueError("Pipe transport is only for "
                              "pipes, sockets and character devices")
+
         _set_nonblocking(self._fileno)
-        self._protocol = protocol
-        self._buffer = []
-        self._conn_lost = 0
-        self._closing = False  # Set when close() or write_eof() called.
 
         self._loop.call_soon(self._protocol.connection_made, self)
 
