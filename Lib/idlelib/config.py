@@ -18,10 +18,10 @@ configuration problem notification and resolution.
 """
 # TODOs added Oct 2014, tjr
 
+from configparser import ConfigParser
 import os
 import sys
 
-from configparser import ConfigParser
 from tkinter.font import Font, nametofont
 
 class InvalidConfigType(Exception): pass

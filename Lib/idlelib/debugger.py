@@ -1,10 +1,12 @@
-import os
 import bdb
+import os
+
 from tkinter import *
 from tkinter.ttk import Scrollbar
-from idlelib.windows import ListedToplevel
-from idlelib.scrolledlist import ScrolledList
+
 from idlelib import macosx
+from idlelib.scrolledlist import ScrolledList
+from idlelib.windows import ListedToplevel
 
 
 class Idb(bdb.Bdb):

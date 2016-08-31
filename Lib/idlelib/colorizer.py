@@ -1,9 +1,10 @@
-import time
-import re
-import keyword
 import builtins
-from idlelib.delegator import Delegator
+import keyword
+import re
+import time
+
 from idlelib.config import idleConf
+from idlelib.delegator import Delegator
 
 DEBUG = False
 

@@ -285,6 +285,7 @@ class TabSet(Frame):
             # placed hide it
             self.tab_set.lower()
 
+
 class TabbedPageSet(Frame):
     """A Tkinter tabbed-pane widget.
 
@@ -302,6 +303,7 @@ class TabbedPageSet(Frame):
     remove_page() methods.
 
     """
+
     class Page(object):
         """Abstract base class for TabbedPageSet's pages.
 
@@ -466,6 +468,7 @@ class TabbedPageSet(Frame):
             self.pages[page_name]._show()
 
         self._tab_set.set_selected_tab(page_name)
+
 
 def _tabbed_pages(parent):  # htest #
     top=Toplevel(parent)

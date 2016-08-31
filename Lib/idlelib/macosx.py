@@ -2,8 +2,9 @@
 A number of functions that enhance IDLE on Mac OSX.
 """
 from sys import platform  # Used in _init_tk_type, changed by test.
-import tkinter
 import warnings
+
+import tkinter
 
 
 ## Define functions that query the Mac graphics type.

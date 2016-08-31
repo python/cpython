@@ -4,7 +4,6 @@ When you hit a right paren, the cursor should move briefly to the left
 paren.  Paren here is used generically; the matching applies to
 parentheses, square brackets, and curly braces.
 """
-
 from idlelib.hyperparser import HyperParser
 from idlelib.config import idleConf
 

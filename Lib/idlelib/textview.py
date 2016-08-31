@@ -1,10 +1,10 @@
 """Simple text browser for IDLE
 
 """
-
 from tkinter import *
 from tkinter.ttk import Scrollbar
 from tkinter.messagebox import showerror
+
 
 class TextViewer(Toplevel):
     """A simple text viewer dialog for IDLE

@@ -1,5 +1,6 @@
 from tkinter import *
 
+
 class WindowList:
 
     def __init__(self):
@@ -47,6 +48,7 @@ class WindowList:
             except:
                 t, v, tb = sys.exc_info()
                 print("warning: callback failed in WindowList", t, ":", v)
+
 
 registry = WindowList()
 

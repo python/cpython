@@ -1,11 +1,12 @@
-import os
-import sys
 import linecache
+import os
 import re
+import sys
+
 import tkinter as tk
 
-from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 from idlelib.debugobj import ObjectTreeItem, make_objecttreeitem
+from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 
 def StackBrowser(root, flist=None, tb=None, top=None):
     if top is None:
@@ -15,6 +16,7 @@ def StackBrowser(root, flist=None, tb=None, top=None):
     item = StackTreeItem(flist, tb)
     node = TreeNode(sc.canvas, None, item)
     node.expand()
+
 
 class StackTreeItem(TreeItem):
 
@@ -53,6 +55,7 @@ class StackTreeItem(TreeItem):
             item = FrameTreeItem(info, self.flist)
             sublist.append(item)
         return sublist
+
 
 class FrameTreeItem(TreeItem):
 
@@ -95,6 +98,7 @@ class FrameTreeItem(TreeItem):
             if os.path.isfile(filename):
                 self.flist.gotofileline(filename, lineno)
 
+
 class VariablesTreeItem(ObjectTreeItem):
 
     def GetText(self):
@@ -118,6 +122,7 @@ class VariablesTreeItem(ObjectTreeItem):
             item = make_objecttreeitem(key + " =", value, setfunction)
             sublist.append(item)
         return sublist
+
 
 def _stack_viewer(parent):  # htest #
     from idlelib.pyshell import PyShellFileList

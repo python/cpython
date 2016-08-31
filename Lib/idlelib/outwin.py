@@ -1,8 +1,11 @@
-from tkinter import *
-from idlelib.editor import EditorWindow
 import re
+
+from tkinter import *
 import tkinter.messagebox as tkMessageBox
+
+from idlelib.editor import EditorWindow
 from idlelib import iomenu
+
 
 class OutputWindow(EditorWindow):
 

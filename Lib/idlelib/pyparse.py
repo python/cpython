@@ -1,6 +1,6 @@
+from collections import Mapping
 import re
 import sys
-from collections import Mapping
 
 # Reason last stmt is continued (or C_NONE if it's not).
 (C_NONE, C_BACKSLASH, C_STRING_FIRST_LINE,

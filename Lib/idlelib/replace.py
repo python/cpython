@@ -3,12 +3,12 @@ Uses idlelib.SearchEngine for search capability.
 Defines various replace related functions like replace, replace all,
 replace+find.
 """
-from tkinter import StringVar, TclError
-
-from idlelib import searchengine
-from idlelib.searchbase import SearchDialogBase
 import re
 
+from tkinter import StringVar, TclError
+
+from idlelib.searchbase import SearchDialogBase
+from idlelib import searchengine
 
 def replace(text):
     """Returns a singleton ReplaceDialog instance.The single dialog

@@ -14,9 +14,10 @@ Known problems with comment reformatting:
   spaces, they will not be considered part of the same block.
 * Fancy comments, like this bulleted list, aren't handled :-)
 """
-
 import re
+
 from idlelib.config import idleConf
+
 
 class FormatParagraph:
 
@@ -188,6 +189,7 @@ def get_comment_header(line):
     m = re.match(r"^([ \t]*#*)", line)
     if m is None: return ""
     return m.group(1)
+
 
 if __name__ == "__main__":
     import unittest

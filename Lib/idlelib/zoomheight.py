@@ -5,6 +5,7 @@ import sys
 
 from idlelib import macosx
 
+
 class ZoomHeight:
 
     menudefs = [
@@ -19,6 +20,7 @@ class ZoomHeight:
     def zoom_height_event(self, event):
         top = self.editwin.top
         zoom_height(top)
+
 
 def zoom_height(top):
     geom = top.wm_geometry()
