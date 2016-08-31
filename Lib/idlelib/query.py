@@ -23,9 +23,10 @@ Subclass HelpSource gets menu item and path for additions to Help menu.
 import importlib
 import os
 from sys import executable, platform  # Platform is set for one test.
+
 from tkinter import Toplevel, StringVar, W, E, N, S
-from tkinter import filedialog
 from tkinter.ttk import Frame, Button, Entry, Label
+from tkinter import filedialog
 from tkinter.font import Font
 
 class Query(Toplevel):

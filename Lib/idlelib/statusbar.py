@@ -1,5 +1,6 @@
 from tkinter import Frame, Label
 
+
 class MultiStatusBar(Frame):
 
     def __init__(self, master, **kw):
@@ -16,6 +17,7 @@ class MultiStatusBar(Frame):
         if width != 0:
             label.config(width=width)
         label.config(text=text)
+
 
 def _multistatus_bar(parent):  # htest #
     from tkinter import Toplevel, Frame, Text, Button

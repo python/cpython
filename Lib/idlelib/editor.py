@@ -6,24 +6,28 @@ import platform
 import re
 import string
 import sys
+import tokenize
+import traceback
+import webbrowser
+
 from tkinter import *
 from tkinter.ttk import Scrollbar
 import tkinter.simpledialog as tkSimpleDialog
 import tkinter.messagebox as tkMessageBox
-import traceback
-import webbrowser
 
-from idlelib.multicall import MultiCallCreator
-from idlelib import query
-from idlelib import windows
-from idlelib import search
-from idlelib import grep
-from idlelib import replace
-from idlelib import pyparse
 from idlelib.config import idleConf
-from idlelib import help_about, textview, configdialog
-from idlelib import macosx
+from idlelib import configdialog
+from idlelib import grep
 from idlelib import help
+from idlelib import help_about
+from idlelib import macosx
+from idlelib.multicall import MultiCallCreator
+from idlelib import pyparse
+from idlelib import query
+from idlelib import replace
+from idlelib import search
+from idlelib import textview
+from idlelib import windows
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -1515,9 +1519,6 @@ def classifyws(s, tabwidth):
             break
     return raw, effective
 
-import tokenize
-_tokenize = tokenize
-del tokenize
 
 class IndentSearcher(object):
 
@@ -1542,8 +1543,8 @@ class IndentSearcher(object):
         return self.text.get(mark, mark + " lineend+1c")
 
     def tokeneater(self, type, token, start, end, line,
-                   INDENT=_tokenize.INDENT,
-                   NAME=_tokenize.NAME,
+                   INDENT=tokenize.INDENT,
+                   NAME=tokenize.NAME,
                    OPENERS=('class', 'def', 'for', 'if', 'try', 'while')):
         if self.finished:
             pass
@@ -1554,19 +1555,19 @@ class IndentSearcher(object):
             self.finished = 1
 
     def run(self):
-        save_tabsize = _tokenize.tabsize
-        _tokenize.tabsize = self.tabwidth
+        save_tabsize = tokenize.tabsize
+        tokenize.tabsize = self.tabwidth
         try:
             try:
-                tokens = _tokenize.generate_tokens(self.readline)
+                tokens = tokenize.generate_tokens(self.readline)
                 for token in tokens:
                     self.tokeneater(*token)
-            except (_tokenize.TokenError, SyntaxError):
+            except (tokenize.TokenError, SyntaxError):
                 # since we cut off the tokenizer early, we can trigger
                 # spurious errors
                 pass
         finally:
-            _tokenize.tabsize = save_tabsize
+            tokenize.tabsize = save_tabsize
         return self.blkopenline, self.indentedline
 
 ### end autoindent code ###

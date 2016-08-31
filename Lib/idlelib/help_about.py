@@ -1,11 +1,13 @@
 """About Dialog for IDLE
 
 """
-
 import os
 from sys import version
+
 from tkinter import *
+
 from idlelib import textview
+
 
 class AboutDialog(Toplevel):
     """Modal about dialog for idle
@@ -143,6 +145,7 @@ class AboutDialog(Toplevel):
 
     def Ok(self, event=None):
         self.destroy()
+
 
 if __name__ == '__main__':
     import unittest

@@ -1,5 +1,6 @@
 '''Define SearchEngine for search dialogs.'''
 import re
+
 from tkinter import StringVar, BooleanVar, TclError
 import tkinter.messagebox as tkMessageBox
 
@@ -13,6 +14,7 @@ def get(root):
         root._searchengine = SearchEngine(root)
         # This creates a cycle that persists until root is deleted.
     return root._searchengine
+
 
 class SearchEngine:
     """Handles searching a text widget for Find, Replace, and Grep."""
@@ -185,6 +187,7 @@ class SearchEngine:
             chars = text.get("%d.0" % line, "%d.0" % (line+1))
             col = len(chars) - 1
         return None
+
 
 def search_reverse(prog, chars, col):
     '''Search backwards and return an re match object or None.

@@ -20,11 +20,12 @@ XXX GvR Redesign this interface (yet again) as follows:
 import os
 import tabnanny
 import tokenize
+
 import tkinter.messagebox as tkMessageBox
-from idlelib import pyshell
 
 from idlelib.config import idleConf
 from idlelib import macosx
+from idlelib import pyshell
 
 indent_message = """Error: Inconsistent indentation detected!
 

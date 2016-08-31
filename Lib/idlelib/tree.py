@@ -15,10 +15,12 @@
 # - optimize tree redraw after expand of subnode
 
 import os
+
 from tkinter import *
 from tkinter.ttk import Scrollbar
-from idlelib import zoomheight
+
 from idlelib.config import idleConf
+from idlelib import zoomheight
 
 ICONDIR = "Icons"
 

@@ -1,11 +1,14 @@
-import os
 import fnmatch
+import os
 import sys
+
 from tkinter import StringVar, BooleanVar
 from tkinter.ttk import Checkbutton
-from idlelib import searchengine
+
 from idlelib.searchbase import SearchDialogBase
-# Importing OutputWindow fails due to import loop
+from idlelib import searchengine
+
+# Importing OutputWindow here fails due to import loop
 # EditorWindow -> GrepDialop -> OutputWindow -> EditorWindow
 
 def grep(text, io=None, flist=None):
@@ -127,9 +130,9 @@ class GrepDialog(SearchDialogBase):
 
 
 def _grep_dialog(parent):  # htest #
-    from idlelib.pyshell import PyShellFileList
     from tkinter import Toplevel, Text, SEL, END
     from tkinter.ttk import Button
+    from idlelib.pyshell import PyShellFileList
     top = Toplevel(parent)
     top.title("Test GrepDialog")
     x, y = map(int, parent.geometry().split('+')[1:])

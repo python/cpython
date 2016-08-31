@@ -1,5 +1,7 @@
 import string
+
 from idlelib.delegator import Delegator
+
 # tkintter import not needed because module does not create widgets,
 # although many methods operate on text widget arguments.
 
@@ -158,7 +160,6 @@ class UndoDelegator(Delegator):
 
 
 class Command:
-
     # Base class for Undoable commands
 
     tags = None
@@ -204,7 +205,6 @@ class Command:
 
 
 class InsertCommand(Command):
-
     # Undoable insert command
 
     def __init__(self, index1, chars, tags=None):
@@ -262,7 +262,6 @@ class InsertCommand(Command):
 
 
 class DeleteCommand(Command):
-
     # Undoable delete command
 
     def __init__(self, index1, index2=None):
@@ -297,8 +296,8 @@ class DeleteCommand(Command):
         text.see('insert')
         ##sys.__stderr__.write("undo: %s\n" % self)
 
-class CommandSequence(Command):
 
+class CommandSequence(Command):
     # Wrapper for a sequence of undoable cmds to be undone/redone
     # as a unit
 

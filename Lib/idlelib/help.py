@@ -27,9 +27,11 @@ show_idlehelp - Create HelpWindow.  Called in EditorWindow.help_dialog.
 from html.parser import HTMLParser
 from os.path import abspath, dirname, isfile, join
 from platform import python_version
+
 from tkinter import Toplevel, Frame, Text, Menu
 from tkinter.ttk import Menubutton, Scrollbar
 from tkinter import font as tkfont
+
 from idlelib.config import idleConf
 
 ## About IDLE ##

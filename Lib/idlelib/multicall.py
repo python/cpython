@@ -28,9 +28,9 @@ The order by which events are called is defined by these rules:
    unless this conflicts with the first rule.
 Each function will be called at most once for each event.
 """
-
-import sys
 import re
+import sys
+
 import tkinter
 
 # the event type constants, which define the meaning of mc_type

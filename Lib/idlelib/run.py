@@ -2,21 +2,21 @@ import io
 import linecache
 import queue
 import sys
-import _thread as thread
-import threading
 import time
 import traceback
-import tkinter
+import _thread as thread
+import threading
+import warnings
 
-from idlelib import calltips
-from idlelib import autocomplete
+import tkinter  # Tcl, deletions, messagebox if startup fails
 
-from idlelib import debugger_r
-from idlelib import debugobj_r
-from idlelib import stackviewer
-from idlelib import rpc
-from idlelib import iomenu
-
+from idlelib import autocomplete  # AutoComplete, fetch_encodings
+from idlelib import calltips  # CallTips
+from idlelib import debugger_r  # start_debugger
+from idlelib import debugobj_r  # remote_object_tree_item
+from idlelib import iomenu  # encoding
+from idlelib import rpc  # multiple objects
+from idlelib import stackviewer  # StackTreeItem
 import __main__
 
 for mod in ('simpledialog', 'messagebox', 'font',
@@ -27,7 +27,6 @@ for mod in ('simpledialog', 'messagebox', 'font',
 
 LOCALHOST = '127.0.0.1'
 
-import warnings
 
 def idle_formatwarning(message, category, filename, lineno, line=None):
     """Format warnings the IDLE way."""
@@ -279,6 +278,7 @@ def exit():
         atexit._clear()
     capture_warnings(False)
     sys.exit(0)
+
 
 class MyRPCServer(rpc.RPCServer):
 

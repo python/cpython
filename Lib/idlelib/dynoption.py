@@ -3,6 +3,7 @@ OptionMenu widget modified to allow dynamic menu reconfiguration
 and setting of highlightthickness
 """
 import copy
+
 from tkinter import OptionMenu, _setit, StringVar, Button
 
 class DynOptionMenu(OptionMenu):

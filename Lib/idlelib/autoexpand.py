@@ -12,8 +12,8 @@ its state.
 
 This is an extension file and there is only one instance of AutoExpand.
 '''
-import string
 import re
+import string
 
 ###$ event <<expand-word>>
 ###$ win <Alt-slash>
@@ -99,7 +99,6 @@ class AutoExpand:
         while i > 0 and line[i-1] in self.wordchars:
             i = i-1
         return line[i:]
-
 
 if __name__ == '__main__':
     import unittest

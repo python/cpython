@@ -3,6 +3,7 @@
 from tkinter import Toplevel, Frame
 from tkinter.ttk import Entry, Label, Button, Checkbutton, Radiobutton
 
+
 class SearchDialogBase:
     '''Create most of a 3 or 4 row, 3 column search dialog.
 
