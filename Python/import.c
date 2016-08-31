@@ -1047,7 +1047,7 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
     mod = _PyImport_FindExtensionObject(name, name);
     if (mod || PyErr_Occurred()) {
         Py_DECREF(name);
-        Py_INCREF(mod);
+        Py_XINCREF(mod);
         return mod;
     }
 
