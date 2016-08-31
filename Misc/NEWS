@@ -72,6 +72,11 @@ Library
 
 - Issue #19884: Avoid spurious output on OS X with Gnu Readline.
 
+- Issue #27706: Restore deterministic behavior of random.Random().seed()
+  for string seeds using seeding version 1.  Allows sequences of calls
+  to random() to exactly match those obtained in Python 2.
+  Patch by Nofar Schnider.
+
 - Issue #10513: Fix a regression in Connection.commit().  Statements should
   not be reset after a commit.
 
