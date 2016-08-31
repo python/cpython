@@ -385,7 +385,7 @@ class install(Command):
             else:
                 opt_name = opt_name.translate(longopt_xlate)
                 val = getattr(self, opt_name)
-            log.debug("  %s: %s" % (opt_name, val))
+            log.debug("  %s: %s", opt_name, val)
 
     def finalize_unix(self):
         """Finalizes options for posix platforms."""

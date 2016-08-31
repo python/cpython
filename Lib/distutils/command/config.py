@@ -337,7 +337,7 @@ def dump_file(filename, head=None):
     If head is not None, will be dumped before the file content.
     """
     if head is None:
-        log.info('%s' % filename)
+        log.info('%s', filename)
     else:
         log.info(head)
     file = open(filename)

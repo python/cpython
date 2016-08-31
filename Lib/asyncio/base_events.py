@@ -1069,7 +1069,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport = yield from self._make_subprocess_transport(
             protocol, cmd, True, stdin, stdout, stderr, bufsize, **kwargs)
         if self._debug:
-            logger.info('%s: %r' % (debug_log, transport))
+            logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 
     @coroutine
@@ -1099,7 +1099,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             protocol, popen_args, False, stdin, stdout, stderr,
             bufsize, **kwargs)
         if self._debug:
-            logger.info('%s: %r' % (debug_log, transport))
+            logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 
     def get_exception_handler(self):

@@ -363,9 +363,9 @@ class build_ext(Command):
 
             ext_name, build_info = ext
 
-            log.warn(("old-style (ext_name, build_info) tuple found in "
-                      "ext_modules for extension '%s'"
-                      "-- please convert to Extension instance" % ext_name))
+            log.warn("old-style (ext_name, build_info) tuple found in "
+                     "ext_modules for extension '%s'"
+                     "-- please convert to Extension instance", ext_name)
 
             if not (isinstance(ext_name, str) and
                     extension_name_re.match(ext_name)):
