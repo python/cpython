@@ -242,8 +242,8 @@ Sort 'from idlelib import mod1' and 'from idlelib.mod2 import object'
 together by module, ignoring within module objects.
 Put 'import __main__' after other idlelib imports.
 
-Imports only needed for testing are not at the top but are put in the
-htest function def or the "if __name__ == '__main__'" clause.
+Imports only needed for testing are put not at the top but in an
+htest function def or "if __name__ == '__main__'" clause.
 
 Within module imports like "from idlelib.mod import class" may cause
 circular imports to deadlock.  Even without this, circular imports may
