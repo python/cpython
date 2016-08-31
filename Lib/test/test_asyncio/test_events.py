@@ -763,11 +763,11 @@ class EventLoopTestsMixin:
         addr = lsock.getsockname()
 
         message = b'test data'
-        reponse = None
+        response = None
         expected_response = b'roger'
 
         def client():
-            global response
+            nonlocal response
             try:
                 csock = socket.socket()
                 if client_ssl is not None:
