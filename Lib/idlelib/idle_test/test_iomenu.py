@@ -1,6 +1,7 @@
 import unittest
 import io
-from idlelib.pyshell import PseudoInputFile, PseudoOutputFile
+
+from idlelib.run import PseudoInputFile, PseudoOutputFile
 
 
 class S(str):
@@ -230,4 +231,4 @@ class PseudeInputFilesTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

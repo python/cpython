@@ -228,4 +228,23 @@ Help
 
 <No menu>
 Center Insert      # eEW.center_insert_event
-   
+
+  
+CODE STYLE -- Generally PEP 8.
+
+import
+------
+Put import at the top, unless there is a good reason otherwise.
+PEP 8 says to group stdlib, 3rd-party dependencies, and package imports.
+For idlelib, the groups are general stdlib, tkinter, and idlelib.
+Sort modules within each group, except that tkinter.ttk follows tkinter.
+Sort 'from idlelib import mod1' and 'from idlelib.mod2 import object'
+together by module, ignoring within module objects.
+Put 'import __main__' after other idlelib imports.
+
+Imports only needed for testing are not at the top but are put in the
+htest function def or the "if __name__ == '__main__'" clause.
+
+Within module imports like "from idlelib.mod import class" may cause
+circular imports to deadlock.  Even without this, circular imports may
+require at least one of the imports to be delayed until a function call.

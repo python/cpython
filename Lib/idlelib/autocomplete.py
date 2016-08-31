@@ -4,25 +4,26 @@ This extension can complete either attribute names or file names. It can pop
 a window with all available names, for the user to select from.
 """
 import os
-import sys
 import string
+import sys
 
-from idlelib.config import idleConf
-
-# This string includes all chars that may be in an identifier
-ID_CHARS = string.ascii_letters + string.digits + "_"
-
-# These constants represent the two different types of completions
+# These constants represent the two different types of completions.
+# They must be defined here so autocomple_w can import them.
 COMPLETE_ATTRIBUTES, COMPLETE_FILES = range(1, 2+1)
 
 from idlelib import autocomplete_w
+from idlelib.config import idleConf
 from idlelib.hyperparser import HyperParser
-
 import __main__
+
+# This string includes all chars that may be in an identifier.
+# TODO Update this here and elsewhere.
+ID_CHARS = string.ascii_letters + string.digits + "_"
 
 SEPS = os.sep
 if os.altsep:  # e.g. '/' on Windows...
     SEPS += os.altsep
+
 
 class AutoComplete:
 

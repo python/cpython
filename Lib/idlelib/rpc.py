@@ -26,23 +26,21 @@ See the Idle run.main() docstring for further information on how this was
 accomplished in Idle.
 
 """
-
-import sys
-import os
+import builtins
+import copyreg
 import io
-import socket
+import marshal
+import os
+import pickle
+import queue
 import select
+import socket
 import socketserver
 import struct
-import pickle
+import sys
 import threading
-import queue
 import traceback
-import copyreg
 import types
-import marshal
-import builtins
-
 
 def unpickle_code(ms):
     co = marshal.loads(ms)
@@ -60,9 +58,11 @@ def dumps(obj, protocol=None):
     p.dump(obj)
     return f.getvalue()
 
+
 class CodePickler(pickle.Pickler):
     dispatch_table = {types.CodeType: pickle_code}
     dispatch_table.update(copyreg.dispatch_table)
+
 
 BUFSIZE = 8*1024
 LOCALHOST = '127.0.0.1'
@@ -487,15 +487,18 @@ class RemoteObject(object):
     # Token mix-in class
     pass
 
+
 def remoteref(obj):
     oid = id(obj)
     objecttable[oid] = obj
     return RemoteProxy(oid)
 
+
 class RemoteProxy(object):
 
     def __init__(self, oid):
         self.oid = oid
+
 
 class RPCHandler(socketserver.BaseRequestHandler, SocketIO):
 
@@ -513,6 +516,7 @@ class RPCHandler(socketserver.BaseRequestHandler, SocketIO):
 
     def get_remote_proxy(self, oid):
         return RPCProxy(self, oid)
+
 
 class RPCClient(SocketIO):
 
@@ -538,6 +542,7 @@ class RPCClient(SocketIO):
 
     def get_remote_proxy(self, oid):
         return RPCProxy(self, oid)
+
 
 class RPCProxy(object):
 
@@ -586,6 +591,7 @@ def _getattributes(obj, attributes):
         attr = getattr(obj, name)
         if not callable(attr):
             attributes[name] = 1
+
 
 class MethodProxy(object):
 

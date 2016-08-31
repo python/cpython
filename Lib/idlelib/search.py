@@ -24,6 +24,7 @@ def find_selection(text):
     "Handle the editor edit menu item and corresponding event."
     return _setup(text).find_selection(text)
 
+
 class SearchDialog(SearchDialogBase):
 
     def create_widgets(self):

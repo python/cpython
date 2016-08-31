@@ -4,11 +4,10 @@ HyperParser uses PyParser.  PyParser mostly gives information on the
 proper indentation of code.  HyperParser gives additional information on
 the structure of code.
 """
-
-import string
 from keyword import iskeyword
-from idlelib import pyparse
+import string
 
+from idlelib import pyparse
 
 # all ASCII chars that may be in an identifier
 _ASCII_ID_CHARS = frozenset(string.ascii_letters + string.digits + "_")

@@ -15,9 +15,13 @@ if TkVersion < 8.5:
             parent=root)
     sys.exit(1)
 
+from code import InteractiveInterpreter
 import getopt
+import io
+import linecache
 import os
 import os.path
+from platform import python_version, system
 import re
 import socket
 import subprocess
@@ -25,23 +29,20 @@ import sys
 import threading
 import time
 import tokenize
+import warnings
 
-import linecache
-from code import InteractiveInterpreter
-from platform import python_version, system
-
-from idlelib import testing
-from idlelib.editor import EditorWindow, fixwordbreaks
-from idlelib.filelist import FileList
+from idlelib import testing  # bool value
 from idlelib.colorizer import ColorDelegator
-from idlelib.undo import UndoDelegator
-from idlelib.outwin import OutputWindow
 from idlelib.config import idleConf
-from idlelib.run import idle_formatwarning, PseudoInputFile, PseudoOutputFile
-from idlelib import rpc
 from idlelib import debugger
 from idlelib import debugger_r
+from idlelib.editor import EditorWindow, fixwordbreaks
+from idlelib.filelist import FileList
 from idlelib import macosx
+from idlelib.outwin import OutputWindow
+from idlelib import rpc
+from idlelib.run import idle_formatwarning, PseudoInputFile, PseudoOutputFile
+from idlelib.undo import UndoDelegator
 
 HOST = '127.0.0.1' # python execution server on localhost loopback
 PORT = 0  # someday pass in host, port for remote debug capability
@@ -51,7 +52,6 @@ PORT = 0  # someday pass in host, port for remote debug capability
 # temporarily redirect the stream to the shell window to display warnings when
 # checking user's code.
 warning_stream = sys.__stderr__  # None, at least on Windows, if no console.
-import warnings
 
 def idle_showwarning(
         message, category, filename, lineno, file=None, line=None):

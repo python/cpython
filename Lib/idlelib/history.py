@@ -2,6 +2,7 @@
 
 from idlelib.config import idleConf
 
+
 class History:
     ''' Implement Idle Shell history mechanism.
 
@@ -99,6 +100,7 @@ class History:
         self.pointer = None
         self.prefix = None
 
+
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_idlehistory', verbosity=2, exit=False)
+    main('idlelib.idle_test.test_history', verbosity=2, exit=False)

@@ -11,17 +11,17 @@ Refer to comments in EditorWindow autoindent code for details.
 """
 from tkinter import *
 from tkinter.ttk import Scrollbar
-import tkinter.messagebox as tkMessageBox
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
+import tkinter.messagebox as tkMessageBox
 
 from idlelib.config import idleConf
-from idlelib.dynoption import DynOptionMenu
 from idlelib.config_key import GetKeysDialog
+from idlelib.dynoption import DynOptionMenu
+from idlelib import macosx
 from idlelib.query import SectionName, HelpSource
 from idlelib.tabbedpages import TabbedPageSet
 from idlelib.textview import view_text
-from idlelib import macosx
 
 class ConfigDialog(Toplevel):
 
