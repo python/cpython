@@ -1012,7 +1012,8 @@ class ConfigDialog(Toplevel):
             pass
         ##font size dropdown
         self.optMenuFontSize.SetMenu(('7', '8', '9', '10', '11', '12', '13',
-                                      '14', '16', '18', '20', '22'), fontSize )
+                                      '14', '16', '18', '20', '22',
+                                      '25', '29', '34', '40'), fontSize )
         ##fontWeight
         self.fontBold.set(fontBold)
         ##font sample
