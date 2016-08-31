@@ -300,6 +300,8 @@ Build
 Windows
 -------
 
+- Issue #1602: Windows console doesn't input or print Unicode (PEP 528)
+
 - Issue #27781: Change file system encoding on Windows to UTF-8 (PEP 529)
 
 - Issue #27731: Opt-out of MAX_PATH on Windows 10
@@ -555,7 +557,6 @@ Build
 
 - Issue #10910: Avoid C++ compilation errors on FreeBSD and OS X.
   Also update FreedBSD version checks for the original ctype UTF-8 workaround.
-
 
 What's New in Python 3.6.0 alpha 3
 ==================================

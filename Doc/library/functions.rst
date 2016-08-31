@@ -1055,30 +1055,38 @@ are always available.  They are listed here in alphabetical order.
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
 
-   .. versionchanged:: 3.3
-      The *opener* parameter was added.
-      The ``'x'`` mode was added.
-      :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
-      :exc:`FileExistsError` is now raised if the file opened in exclusive
-      creation mode (``'x'``) already exists.
+   .. versionchanged::
+      3.3
 
-   .. versionchanged:: 3.4
-      The file is now non-inheritable.
+         * The *opener* parameter was added.
+         * The ``'x'`` mode was added.
+         * :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
+         * :exc:`FileExistsError` is now raised if the file opened in exclusive
+         * creation mode (``'x'``) already exists.
+
+   .. versionchanged::
+      3.4
+
+         * The file is now non-inheritable.
 
    .. deprecated-removed:: 3.4 4.0
 
       The ``'U'`` mode.
 
-   .. versionchanged:: 3.5
-      If the system call is interrupted and the signal handler does not raise an
-      exception, the function now retries the system call instead of raising an
-      :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+   .. versionchanged::
+      3.5
 
-   .. versionchanged:: 3.5
-      The ``'namereplace'`` error handler was added.
+         * If the system call is interrupted and the signal handler does not raise an
+           exception, the function now retries the system call instead of raising an
+           :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+         * The ``'namereplace'`` error handler was added.
 
-   .. versionchanged:: 3.6
-      Support added to accept objects implementing :class:`os.PathLike`.
+   .. versionchanged::
+      3.6
+
+         * Support added to accept objects implementing :class:`os.PathLike`.
+         * On Windows, opening a console buffer may return a subclass of
+           :class:`io.RawIOBase` other than :class:`io.FileIO`.
 
 .. function:: ord(c)
 

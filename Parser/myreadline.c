@@ -98,6 +98,100 @@ my_fgets(char *buf, int len, FILE *fp)
     /* NOTREACHED */
 }
 
+#ifdef MS_WINDOWS
+/* Readline implementation using ReadConsoleW */
+
+extern char _get_console_type(HANDLE handle);
+
+char *
+_PyOS_WindowsConsoleReadline(HANDLE hStdIn)
+{
+    static wchar_t wbuf_local[1024 * 16];
+    const DWORD chunk_size = 1024;
+
+    DWORD n_read, total_read, wbuflen, u8len;
+    wchar_t *wbuf;
+    char *buf = NULL;
+    int err = 0;
+
+    n_read = 0;
+    total_read = 0;
+    wbuf = wbuf_local;
+    wbuflen = sizeof(wbuf_local) / sizeof(wbuf_local[0]) - 1;
+    while (1) {
+        if (!ReadConsoleW(hStdIn, &wbuf[total_read], wbuflen - total_read, &n_read, NULL)) {
+            err = GetLastError();
+            goto exit;
+        }
+        if (n_read == 0) {
+            int s;
+            err = GetLastError();
+            if (err != ERROR_OPERATION_ABORTED)
+                goto exit;
+            err = 0;
+            HANDLE hInterruptEvent = _PyOS_SigintEvent();
+            if (WaitForSingleObjectEx(hInterruptEvent, 100, FALSE)
+                    == WAIT_OBJECT_0) {
+                ResetEvent(hInterruptEvent);
+#ifdef WITH_THREAD
+                PyEval_RestoreThread(_PyOS_ReadlineTState);
+#endif
+                s = PyErr_CheckSignals();
+#ifdef WITH_THREAD
+                PyEval_SaveThread();
+#endif
+                if (s < 0)
+                    goto exit;
+            }
+            break;
+        }
+
+        total_read += n_read;
+        if (total_read == 0 || wbuf[total_read - 1] == L'\n') {
+            break;
+        }
+        wbuflen += chunk_size;
+        if (wbuf == wbuf_local) {
+            wbuf[total_read] = '\0';
+            wbuf = (wchar_t*)PyMem_RawMalloc(wbuflen * sizeof(wchar_t));
+            if (wbuf)
+                wcscpy_s(wbuf, wbuflen, wbuf_local);
+        }
+        else
+            wbuf = (wchar_t*)PyMem_RawRealloc(wbuf, wbuflen * sizeof(wchar_t));
+    }
+
+    if (wbuf[0] == '\x1a') {
+        buf = PyMem_RawMalloc(1);
+        if (buf)
+            buf[0] = '\0';
+        goto exit;
+    }
+
+    u8len = WideCharToMultiByte(CP_UTF8, 0, wbuf, total_read, NULL, 0, NULL, NULL);
+    buf = PyMem_RawMalloc(u8len + 1);
+    u8len = WideCharToMultiByte(CP_UTF8, 0, wbuf, total_read, buf, u8len, NULL, NULL);
+    buf[u8len] = '\0';
+    
+exit:
+    if (wbuf != wbuf_local)
+        PyMem_RawFree(wbuf);
+
+    if (err) {
+#ifdef WITH_THREAD
+        PyEval_RestoreThread(_PyOS_ReadlineTState);
+#endif
+        PyErr_SetFromWindowsErr(err);
+#ifdef WITH_THREAD
+        PyEval_SaveThread();
+#endif
+    }
+
+    return buf;
+}
+
+#endif
+
 
 /* Readline implementation using fgets() */
 
@@ -106,6 +200,25 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
     size_t n;
     char *p, *pr;
+
+#ifdef MS_WINDOWS
+    if (!Py_LegacyWindowsStdioFlag && sys_stdin == stdin) {
+        HANDLE hStdIn;
+        
+        _Py_BEGIN_SUPPRESS_IPH
+        hStdIn = (HANDLE)_get_osfhandle(fileno(sys_stdin));
+        _Py_END_SUPPRESS_IPH
+        
+        if (_get_console_type(hStdIn) == 'r') {
+            fflush(sys_stdout);
+            if (prompt)
+                fprintf(stderr, "%s", prompt);
+            fflush(stderr);
+            clearerr(sys_stdin);
+            return _PyOS_WindowsConsoleReadline(hStdIn);
+        }
+    }
+#endif
 
     n = 100;
     p = (char *)PyMem_RawMalloc(n);
