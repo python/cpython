@@ -171,7 +171,7 @@ def make_zipfile(base_name, base_dir, verbose=0, dry_run=0):
                     path = os.path.normpath(os.path.join(dirpath, name))
                     if os.path.isfile(path):
                         zip.write(path, path)
-                        log.info("adding '%s'" % path)
+                        log.info("adding '%s'", path)
             zip.close()
 
     return zip_filename

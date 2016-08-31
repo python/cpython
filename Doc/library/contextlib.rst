@@ -590,10 +590,10 @@ single definition::
             self.name = name
 
         def __enter__(self):
-            logging.info('Entering: {}'.format(self.name))
+            logging.info('Entering: %s', self.name)
 
         def __exit__(self, exc_type, exc, exc_tb):
-            logging.info('Exiting: {}'.format(self.name))
+            logging.info('Exiting: %s', self.name)
 
 Instances of this class can be used as both a context manager::
 

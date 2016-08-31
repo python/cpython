@@ -186,7 +186,7 @@ def find_module_file(module, dirlist):
     if not list:
         return module
     if len(list) > 1:
-        log.info("WARNING: multiple copies of %s found"%module)
+        log.info("WARNING: multiple copies of %s found", module)
     return os.path.join(list[0], module)
 
 class PyBuildExt(build_ext):
@@ -2213,7 +2213,7 @@ class PyBuildScripts(build_scripts):
                 newfilename = filename + fullversion
             else:
                 newfilename = filename + minoronly
-            log.info('renaming {} to {}'.format(filename, newfilename))
+            log.info('renaming %s to %s', filename, newfilename)
             os.rename(filename, newfilename)
             newoutfiles.append(newfilename)
             if filename in updated_files:

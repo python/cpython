@@ -1253,9 +1253,9 @@ definition::
 
     @contextmanager
     def track_entry_and_exit(name):
-        logging.info('Entering: {}'.format(name))
+        logging.info('Entering: %s', name)
         yield
-        logging.info('Exiting: {}'.format(name))
+        logging.info('Exiting: %s', name)
 
 Formerly, this would have only been usable as a context manager::
 

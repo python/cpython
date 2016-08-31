@@ -94,7 +94,7 @@ class register(PyPIRCCommand):
         '''
         # send the info to the server and report the result
         (code, result) = self.post_to_server(self.build_post_data('verify'))
-        log.info('Server response (%s): %s' % (code, result))
+        log.info('Server response (%s): %s', code, result)
 
     def send_metadata(self):
         ''' Send the metadata to the package index server.
@@ -205,7 +205,7 @@ Your selection [default 1]: ''', log.INFO)
                 data['email'] = input('   EMail: ')
             code, result = self.post_to_server(data)
             if code != 200:
-                log.info('Server response (%s): %s' % (code, result))
+                log.info('Server response (%s): %s', code, result)
             else:
                 log.info('You will receive an email shortly.')
                 log.info(('Follow the instructions in it to '
@@ -216,7 +216,7 @@ Your selection [default 1]: ''', log.INFO)
             while not data['email']:
                 data['email'] = input('Your email address: ')
             code, result = self.post_to_server(data)
-            log.info('Server response (%s): %s' % (code, result))
+            log.info('Server response (%s): %s', code, result)
 
     def build_post_data(self, action):
         # figure the data to send - the metadata plus some additional
