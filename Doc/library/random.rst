@@ -80,6 +80,9 @@ Bookkeeping functions:
    they are used instead of the system time (see the :func:`os.urandom` function
    for details on availability).
 
+   If a :term:`hashable` object is given, deterministic results are only assured
+   when :envvar:`PYTHONHASHSEED` is disabled.
+
    .. versionchanged:: 2.4
       formerly, operating system resources were not used.
 
