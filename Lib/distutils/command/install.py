@@ -175,6 +175,7 @@ class install(Command):
         self.compile = None
         self.optimize = None
 
+        # Deprecated
         # These two are for putting non-packagized distributions into their
         # own directory and creating a .pth file if it makes sense.
         # 'extra_path' comes from the setup file; 'install_path_file' can
@@ -344,6 +345,7 @@ class install(Command):
                            'scripts', 'data', 'headers',
                            'userbase', 'usersite')
 
+        # Deprecated
         # Well, we're not actually fully completely finalized yet: we still
         # have to deal with 'extra_path', which is the hack for allowing
         # non-packagized module distributions (hello, Numerical Python!) to
@@ -490,6 +492,10 @@ class install(Command):
             self.extra_path = self.distribution.extra_path
 
         if self.extra_path is not None:
+            log.warn(
+                "Distribution option extra_path is deprecated. "
+                "See issue27919 for details."
+            )
             if isinstance(self.extra_path, str):
                 self.extra_path = self.extra_path.split(',')
 
