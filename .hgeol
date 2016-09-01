@@ -14,6 +14,7 @@
 **.aiff = BIN
 **.au   = BIN
 **.bmp  = BIN
+**.blob = BIN
 **.db   = BIN
 **.exe  = BIN
 **.icns = BIN

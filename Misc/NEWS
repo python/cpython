@@ -131,6 +131,11 @@ Build
 - Issue #10910: Avoid C++ compilation errors on FreeBSD and OS X.
   Also update FreedBSD version checks for the original ctype UTF-8 workaround.
 
+Windows
+-------
+
+- Issue #27888: Prevent Windows installer from displaying console windows and
+  failing when pip cannot be installed/uninstalled.
 
 What's New in Python 2.7.12?
 ============================
