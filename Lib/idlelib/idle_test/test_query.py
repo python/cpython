@@ -252,6 +252,7 @@ class QueryGuiTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = root = Tk()
+        cls.root.withdraw()
         cls.dialog = query.Query(root, 'TEST', 'test', _utest=True)
         cls.dialog.destroy = mock.Mock()
 
@@ -295,6 +296,7 @@ class SectionnameGuiTest(unittest.TestCase):
 
     def test_click_section_name(self):
         root = Tk()
+        root.withdraw()
         dialog =  query.SectionName(root, 'T', 't', {'abc'}, _utest=True)
         Equal = self.assertEqual
         self.assertEqual(dialog.used_names, {'abc'})
@@ -314,6 +316,7 @@ class ModulenameGuiTest(unittest.TestCase):
 
     def test_click_module_name(self):
         root = Tk()
+        root.withdraw()
         dialog =  query.ModuleName(root, 'T', 't', 'idlelib', _utest=True)
         self.assertEqual(dialog.text0, 'idlelib')
         self.assertEqual(dialog.entry.get(), 'idlelib')
@@ -332,6 +335,7 @@ class HelpsourceGuiTest(unittest.TestCase):
 
     def test_click_help_source(self):
         root = Tk()
+        root.withdraw()
         dialog =  query.HelpSource(root, 'T', menuitem='__test__',
                                    filepath=__file__, _utest=True)
         Equal = self.assertEqual
