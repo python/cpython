@@ -70,6 +70,9 @@ Library
 - Issue #27842: The csv.DictReader now returns rows of type OrderedDict.
   (Contributed by Steve Holden.)
 
+- Issue #27881: Fixed possible bugs when setting sqlite3.Connection.isolation_level.
+  Based on patch by Xiang Zhang.
+
 - Issue #27861: Fixed a crash in sqlite3.Connection.cursor() when a factory
   creates not a cursor.  Patch by Xiang Zhang.
 
