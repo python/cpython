@@ -22,6 +22,7 @@ class InitTktypeTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = tk.Tk()
+        cls.root.withdraw()
         cls.orig_platform = macosx.platform
 
     @classmethod
@@ -76,6 +77,7 @@ class SetupTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = tk.Tk()
+        cls.root.withdraw()
 
     @classmethod
     def tearDownClass(cls):

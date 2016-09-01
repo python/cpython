@@ -37,6 +37,7 @@ class HyperParserTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = Tk()
+        cls.root.withdraw()
         cls.text = Text(cls.root)
         cls.editwin = DummyEditwin(cls.text)
 
