@@ -782,6 +782,12 @@ Deprecated features
   now deprecated.
   (Contributed by Serhiy Storchaka in :issue:`25791` and :issue:`26754`.)
 
+* The undocumented ``extra_path`` argument to a distutils Distribution
+  is now considered
+  deprecated, will raise a warning during install if set. Support for this
+  parameter will be dropped in a future Python release and likely earlier
+  through third party tools. See :issue:`27919` for details.
+
 
 Deprecated Python behavior
 --------------------------
