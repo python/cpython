@@ -119,12 +119,11 @@ class Random(_random.Random):
             x ^= len(a)
             a = -2 if x == -1 else x
 
-        if version == 2:
-            if isinstance(a, (str, bytes, bytearray)):
-                if isinstance(a, str):
-                    a = a.encode()
-                a += _sha512(a).digest()
-                a = int.from_bytes(a, 'big')
+        if version == 2 and isinstance(a, (str, bytes, bytearray)):
+            if isinstance(a, str):
+                a = a.encode()
+            a += _sha512(a).digest()
+            a = int.from_bytes(a, 'big')
 
         super().seed(a)
         self.gauss_next = None
