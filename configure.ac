@@ -768,7 +768,31 @@ cat >> conftest.c <<EOF
 #undef powerpc
 #undef sparc
 #undef unix
-#if defined(__linux__)
+#if defined(__ANDROID__)
+# if defined(__x86_64__) && defined(__LP64__)
+        x86_64-linux-android
+# elif defined(__i386__)
+        i686-linux-android
+# elif defined(__aarch64__) && defined(__AARCH64EL__)
+#  if defined(__ILP32__)
+        aarch64_ilp32-linux-android
+#  else
+        aarch64-linux-android
+#  endif
+# elif defined(__ARM_EABI__) && defined(__ARMEL__)
+        arm-linux-androideabi
+# elif defined(__mips_hard_float) && defined(_MIPSEL)
+#  if _MIPS_SIM == _ABIO32
+        mipsel-linux-android
+#  elif _MIPS_SIM == _ABI64
+        mips64el-linux-android
+#  else
+#   error unknown platform triplet
+#  endif
+# else
+#   error unknown platform triplet
+# endif
+#elif defined(__linux__)
 # if defined(__x86_64__) && defined(__LP64__)
         x86_64-linux-gnu
 # elif defined(__x86_64__) && defined(__ILP32__)
