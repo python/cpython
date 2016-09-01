@@ -9,7 +9,7 @@ from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox
 
 
-class TV(tv.TextViewer):  # used by TextViewTest
+class TV(tv.TextViewer):  # Use in TextViewTest
     transient = Func()
     grab_set = Func()
     wait_window = Func()
@@ -20,6 +20,7 @@ class textviewClassTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = Tk()
+        cls.root.withdraw()
 
     @classmethod
     def tearDownClass(cls):
@@ -50,8 +51,8 @@ class textviewClassTest(unittest.TestCase):
         view.destroy = Func()
         view.Ok()
         self.assertTrue(view.destroy.called)
-        del view.destroy  # unmask real function
-        view.destroy
+        del view.destroy  # Unmask the real function.
+        view.destroy()
 
 
 class ViewFunctionTest(unittest.TestCase):
@@ -60,6 +61,7 @@ class ViewFunctionTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = Tk()
+        cls.root.withdraw()
         cls.orig_mbox = tv.tkMessageBox
         tv.tkMessageBox = Mbox
 
@@ -71,9 +73,10 @@ class ViewFunctionTest(unittest.TestCase):
         del cls.orig_mbox
 
     def test_view_text(self):
-        # If modal True, tkinter will error with 'can't invoke "event" command'
+        # If modal True, get tkinter error 'can't invoke "event" command'.
         view = tv.view_text(self.root, 'Title', 'test text', modal=False)
         self.assertIsInstance(view, tv.TextViewer)
+        view.Ok()
 
     def test_view_file(self):
         test_dir = os.path.dirname(__file__)
@@ -83,7 +86,7 @@ class ViewFunctionTest(unittest.TestCase):
         self.assertIn('Test', view.textView.get('1.0', '1.end'))
         view.Ok()
 
-        # Mock messagebox will be used and view_file will not return anything
+        # Mock messagebox will be used; view_file will return None.
         testfile = os.path.join(test_dir, '../notthere.py')
         view = tv.view_file(self.root, 'Title', testfile, modal=False)
         self.assertIsNone(view)

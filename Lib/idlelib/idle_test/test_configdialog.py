@@ -16,6 +16,7 @@ class ConfigDialogTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = Tk()
+        cls.root.withdraw()
         _initializeTkVariantTests(cls.root)
 
     @classmethod

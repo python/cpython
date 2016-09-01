@@ -18,6 +18,7 @@ class PasteTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = root = tk.Tk()
+        root.withdraw()
         PyShell.fix_x11_paste(root)
         cls.text = tk.Text(root)
         cls.entry = tk.Entry(root)
