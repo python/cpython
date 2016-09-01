@@ -20,15 +20,16 @@ from idlelib.idle_test.mock_tk import Mbox
 def setUpModule():
     global root
     root = Tk()
+    root.withdraw()
 
 def tearDownModule():
     global root
     root.update_idletasks()
-    root.destroy()  # pyflakes falsely sees root as undefined
+    root.destroy()  # Pyflakes falsely sees root as undefined.
     del root
 
 
-class TV(tv.TextViewer):  # used by TextViewTest
+class TV(tv.TextViewer):  # Used in TextViewTest.
     transient = Func()
     grab_set = Func()
     wait_window = Func()
@@ -59,8 +60,8 @@ class TextViewTest(unittest.TestCase):
         view.destroy = Func()
         view.Ok()
         self.assertTrue(view.destroy.called)
-        del view.destroy  # unmask real function
-        view.destroy
+        del view.destroy  # Unmask real function.
+        view.destroy()
 
 
 class textviewTest(unittest.TestCase):
@@ -76,9 +77,10 @@ class textviewTest(unittest.TestCase):
         del cls.orig_mbox
 
     def test_view_text(self):
-        # If modal True, tkinter will error with 'can't invoke "event" command'
+        # If modal True, get tk error 'can't invoke "event" command'.
         view = tv.view_text(root, 'Title', 'test text', modal=False)
         self.assertIsInstance(view, tv.TextViewer)
+        view.Ok()
 
     def test_view_file(self):
         test_dir = os.path.dirname(__file__)

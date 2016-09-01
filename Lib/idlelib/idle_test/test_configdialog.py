@@ -15,6 +15,7 @@ class ConfigDialogTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.root = Tk()
+        cls.root.withdraw()
         macosx._initializeTkVariantTests(cls.root)
 
     @classmethod
