@@ -146,11 +146,34 @@ class RegressionTests(unittest.TestCase):
         self.assertRaises(TypeError, sqlite.register_adapter, {}, None)
 
     def CheckSetIsolationLevel(self):
-        """
-        See issue 3312.
-        """
+        # See issue 27881.
+        class CustomStr(str):
+            def upper(self):
+                return None
+            def __del__(self):
+                con.isolation_level = ""
+
         con = sqlite.connect(":memory:")
-        setattr(con, "isolation_level", "\xe9")
+        con.isolation_level = None
+        for level in "", "DEFERRED", "IMMEDIATE", "EXCLUSIVE":
+            with self.subTest(level=level):
+                con.isolation_level = level
+                con.isolation_level = level.lower()
+                con.isolation_level = level.capitalize()
+                con.isolation_level = CustomStr(level)
+
+        # setting isolation_level failure should not alter previous state
+        con.isolation_level = None
+        con.isolation_level = "DEFERRED"
+        pairs = [
+            (1, TypeError), (b'', TypeError), ("abc", ValueError),
+            ("IMMEDIATE\0EXCLUSIVE", ValueError), ("\xe9", ValueError),
+        ]
+        for value, exc in pairs:
+            with self.subTest(level=value):
+                with self.assertRaises(exc):
+                    con.isolation_level = value
+                self.assertEqual(con.isolation_level, "DEFERRED")
 
     def CheckCursorConstructorCallCheck(self):
         """
