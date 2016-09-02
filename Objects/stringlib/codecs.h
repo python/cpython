@@ -314,8 +314,9 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
         else if (Py_UNICODE_IS_SURROGATE(ch)) {
             Py_ssize_t startpos, endpos, newpos;
             Py_ssize_t k;
-            if (error_handler == _Py_ERROR_UNKNOWN)
+            if (error_handler == _Py_ERROR_UNKNOWN) {
                 error_handler = get_error_handler(errors);
+            }
 
             startpos = i-1;
             endpos = startpos+1;
