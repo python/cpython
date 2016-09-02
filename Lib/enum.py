@@ -714,6 +714,9 @@ class Flag(Enum):
                     '|'.join([str(m._name_ or m._value_) for m in members]),
                     )
 
+    def __bool__(self):
+        return bool(self._value_)
+
     def __or__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
