@@ -546,6 +546,10 @@ members also subclass :class:`int` and can be used wherever an :class:`int` is.
 Any operation on an :class:`IntFlag` member besides the bit-wise operations
 will lose the :class:`IntFlag` membership.
 
+.. versionadded:: 3.6
+
+Sample :class:`IntFlag` class::
+
     >>> from enum import IntFlag
     >>> class Perm(IntFlag):
     ...     R = 4
@@ -560,18 +564,70 @@ will lose the :class:`IntFlag` membership.
     >>> Perm.R in RW
     True
 
-.. versionadded:: 3.6
+It is also possible to name the combinations::
+
+    >>> class Perm(IntFlag):
+    ...     R = 4
+    ...     W = 2
+    ...     X = 1
+    ...     RWX = 7
+    >>> Perm.RWX
+    <Perm.RWX: 7>
+    >>> ~Perm.RWX
+    <Perm.0: 0>
+
+Another important difference between :class:`IntFlag` and :class:`Enum` is that
+if no flags are set (the value is 0), its boolean evaluation is :data:`False`::
+
+    >>> Perm.R & Perm.X
+    <Perm.0: 0>
+    >>> bool(Perm.R & Perm.X)
+    False
+
+Because :class:`IntFlag` members are also subclasses of :class:`int` they can
+be combined with them::
+
+    >>> Perm.X | 8
+    <Perm.8|X: 9>
 
 
 Flag
 ^^^^
 
 The last variation is :class:`Flag`.  Like :class:`IntFlag`, :class:`Flag`
-members can be combined using the bitwise operators (^, \|, ^, ~).  Unlike
+members can be combined using the bitwise operators (&, \|, ^, ~).  Unlike
 :class:`IntFlag`, they cannot be combined with, nor compared against, any
-other :class:`Flag` enumeration nor :class:`int`.
+other :class:`Flag` enumeration, nor :class:`int`.
 
 .. versionadded:: 3.6
+
+Like :class:`IntFlag`, if a combination of :class:`Flag` members results in no
+flags being set, the boolean evaluation is :data:`False`::
+
+    >>> from enum import Flag
+    >>> class Color(Flag):
+    ...     red = 1
+    ...     blue = 2
+    ...     green = 4
+    ...
+    >>> Color.red & Color.green
+    <Color.0: 0>
+    >>> bool(Color.red & Color.green)
+    False
+
+Giving a name to the "no flags set" condition does not change its boolean
+value::
+
+    >>> class Color(Flag):
+    ...     black = 0
+    ...     red = 1
+    ...     blue = 2
+    ...     green = 4
+    ...
+    >>> Color.black
+    <Color.black: 0>
+    >>> bool(Color.black)
+    False
 
 .. note::
 

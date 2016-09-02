@@ -1767,6 +1767,14 @@ class TestFlag(unittest.TestCase):
         self.assertIs(Open.WO & ~Open.WO, Open.RO)
         self.assertIs((Open.WO|Open.CE) & ~Open.WO, Open.CE)
 
+    def test_bool(self):
+        Perm = self.Perm
+        for f in Perm:
+            self.assertTrue(f)
+        Open = self.Open
+        for f in Open:
+            self.assertEqual(bool(f.value), bool(f))
+
     def test_programatic_function_string(self):
         Perm = Flag('Perm', 'R W X')
         lst = list(Perm)
@@ -2136,6 +2144,14 @@ class TestIntFlag(unittest.TestCase):
         self.assertFalse(R in WX)
         self.assertFalse(W in RX)
         self.assertFalse(X in RW)
+
+    def test_bool(self):
+        Perm = self.Perm
+        for f in Perm:
+            self.assertTrue(f)
+        Open = self.Open
+        for f in Open:
+            self.assertEqual(bool(f.value), bool(f))
 
 class TestUnique(unittest.TestCase):
 
