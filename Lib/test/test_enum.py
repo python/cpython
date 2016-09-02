@@ -3,7 +3,7 @@ import inspect
 import pydoc
 import unittest
 from collections import OrderedDict
-from enum import Enum, IntEnum, EnumMeta, Flags, IntFlags, unique
+from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -32,6 +32,14 @@ try:
         MOE = 3.142596
 except Exception as exc:
     FloatStooges = exc
+
+try:
+    class FlagStooges(Flag):
+        LARRY = 1
+        CURLY = 2
+        MOE = 3
+except Exception as exc:
+    FlagStooges = exc
 
 # for pickle test and subclass tests
 try:
@@ -1633,13 +1641,13 @@ class TestOrder(unittest.TestCase):
                 verde = green
 
 
-class TestFlags(unittest.TestCase):
+class TestFlag(unittest.TestCase):
     """Tests of the Flags."""
 
-    class Perm(Flags):
+    class Perm(Flag):
         R, W, X = 4, 2, 1
 
-    class Open(Flags):
+    class Open(Flag):
         RO = 0
         WO = 1
         RW = 2
@@ -1760,7 +1768,7 @@ class TestFlags(unittest.TestCase):
         self.assertIs((Open.WO|Open.CE) & ~Open.WO, Open.CE)
 
     def test_programatic_function_string(self):
-        Perm = Flags('Perm', 'R W X')
+        Perm = Flag('Perm', 'R W X')
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
         self.assertEqual(len(Perm), 3, Perm)
@@ -1775,7 +1783,7 @@ class TestFlags(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
     def test_programatic_function_string_with_start(self):
-        Perm = Flags('Perm', 'R W X', start=8)
+        Perm = Flag('Perm', 'R W X', start=8)
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
         self.assertEqual(len(Perm), 3, Perm)
@@ -1790,7 +1798,7 @@ class TestFlags(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
     def test_programatic_function_string_list(self):
-        Perm = Flags('Perm', ['R', 'W', 'X'])
+        Perm = Flag('Perm', ['R', 'W', 'X'])
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
         self.assertEqual(len(Perm), 3, Perm)
@@ -1805,7 +1813,7 @@ class TestFlags(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
     def test_programatic_function_iterable(self):
-        Perm = Flags('Perm', (('R', 2), ('W', 8), ('X', 32)))
+        Perm = Flag('Perm', (('R', 2), ('W', 8), ('X', 32)))
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
         self.assertEqual(len(Perm), 3, Perm)
@@ -1820,7 +1828,7 @@ class TestFlags(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
     def test_programatic_function_from_dict(self):
-        Perm = Flags('Perm', OrderedDict((('R', 2), ('W', 8), ('X', 32))))
+        Perm = Flag('Perm', OrderedDict((('R', 2), ('W', 8), ('X', 32))))
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
         self.assertEqual(len(Perm), 3, Perm)
@@ -1834,16 +1842,42 @@ class TestFlags(unittest.TestCase):
             self.assertIn(e, Perm)
             self.assertIs(type(e), Perm)
 
+    def test_pickle(self):
+        if isinstance(FlagStooges, Exception):
+            raise FlagStooges
+        test_pickle_dump_load(self.assertIs, FlagStooges.CURLY|FlagStooges.MOE)
+        test_pickle_dump_load(self.assertIs, FlagStooges)
 
-class TestIntFlags(unittest.TestCase):
+
+    def test_containment(self):
+        Perm = self.Perm
+        R, W, X = Perm
+        RW = R | W
+        RX = R | X
+        WX = W | X
+        RWX = R | W | X
+        self.assertTrue(R in RW)
+        self.assertTrue(R in RX)
+        self.assertTrue(R in RWX)
+        self.assertTrue(W in RW)
+        self.assertTrue(W in WX)
+        self.assertTrue(W in RWX)
+        self.assertTrue(X in RX)
+        self.assertTrue(X in WX)
+        self.assertTrue(X in RWX)
+        self.assertFalse(R in WX)
+        self.assertFalse(W in RX)
+        self.assertFalse(X in RW)
+
+class TestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
 
-    class Perm(IntFlags):
+    class Perm(IntFlag):
         X = 1 << 0
         W = 1 << 1
         R = 1 << 2
 
-    class Open(IntFlags):
+    class Open(IntFlag):
         RO = 0
         WO = 1
         RW = 2
@@ -2003,7 +2037,7 @@ class TestIntFlags(unittest.TestCase):
         self.assertIs((Open.WO|Open.CE) & ~Open.WO, Open.CE)
 
     def test_programatic_function_string(self):
-        Perm = IntFlags('Perm', 'R W X')
+        Perm = IntFlag('Perm', 'R W X')
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
         self.assertEqual(len(Perm), 3, Perm)
@@ -2019,7 +2053,7 @@ class TestIntFlags(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
     def test_programatic_function_string_with_start(self):
-        Perm = IntFlags('Perm', 'R W X', start=8)
+        Perm = IntFlag('Perm', 'R W X', start=8)
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
         self.assertEqual(len(Perm), 3, Perm)
@@ -2035,7 +2069,7 @@ class TestIntFlags(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
     def test_programatic_function_string_list(self):
-        Perm = IntFlags('Perm', ['R', 'W', 'X'])
+        Perm = IntFlag('Perm', ['R', 'W', 'X'])
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
         self.assertEqual(len(Perm), 3, Perm)
@@ -2051,7 +2085,7 @@ class TestIntFlags(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
     def test_programatic_function_iterable(self):
-        Perm = IntFlags('Perm', (('R', 2), ('W', 8), ('X', 32)))
+        Perm = IntFlag('Perm', (('R', 2), ('W', 8), ('X', 32)))
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
         self.assertEqual(len(Perm), 3, Perm)
@@ -2067,7 +2101,7 @@ class TestIntFlags(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
     def test_programatic_function_from_dict(self):
-        Perm = IntFlags('Perm', OrderedDict((('R', 2), ('W', 8), ('X', 32))))
+        Perm = IntFlag('Perm', OrderedDict((('R', 2), ('W', 8), ('X', 32))))
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
         self.assertEqual(len(Perm), 3, Perm)
@@ -2082,6 +2116,26 @@ class TestIntFlags(unittest.TestCase):
             self.assertIn(e, Perm)
             self.assertIs(type(e), Perm)
 
+
+    def test_containment(self):
+        Perm = self.Perm
+        R, W, X = Perm
+        RW = R | W
+        RX = R | X
+        WX = W | X
+        RWX = R | W | X
+        self.assertTrue(R in RW)
+        self.assertTrue(R in RX)
+        self.assertTrue(R in RWX)
+        self.assertTrue(W in RW)
+        self.assertTrue(W in WX)
+        self.assertTrue(W in RWX)
+        self.assertTrue(X in RX)
+        self.assertTrue(X in WX)
+        self.assertTrue(X in RWX)
+        self.assertFalse(R in WX)
+        self.assertFalse(W in RX)
+        self.assertFalse(X in RW)
 
 class TestUnique(unittest.TestCase):
 
