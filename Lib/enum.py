@@ -10,7 +10,7 @@ except ImportError:
     from collections import OrderedDict
 
 
-__all__ = ['EnumMeta', 'Enum', 'IntEnum', 'Flags', 'IntFlags', 'unique']
+__all__ = ['EnumMeta', 'Enum', 'IntEnum', 'Flag', 'IntFlag', 'unique']
 
 
 def _is_descriptor(obj):
@@ -104,7 +104,7 @@ class EnumMeta(type):
             enum_dict['_generate_next_value_'] = getattr(first_enum, '_generate_next_value_', None)
         return enum_dict
 
-    def __new__(metacls, cls, bases, classdict, **kwds):
+    def __new__(metacls, cls, bases, classdict):
         # an Enum class is final once enumeration items have been defined; it
         # cannot be mixed with other types (int, float, etc.) if it has an
         # inherited __new__ unless a new __new__ is defined (or the resulting
@@ -614,7 +614,7 @@ class IntEnum(int, Enum):
 def _reduce_ex_by_name(self, proto):
     return self.name
 
-class Flags(Enum):
+class Flag(Enum):
     """Support for flags"""
     @staticmethod
     def _generate_next_value_(name, start, count, last_value):
@@ -736,7 +736,7 @@ class Flags(Enum):
         return self.__class__(inverted)
 
 
-class IntFlags(int, Flags):
+class IntFlag(int, Flag):
     """Support for integer-based Flags"""
 
     @classmethod
