@@ -23,9 +23,9 @@ by identity, and the enumeration itself can be iterated over.
 Module Contents
 ---------------
 
-This module defines two enumeration classes that can be used to define unique
-sets of names and values: :class:`Enum` and :class:`IntEnum`.  It also defines
-one decorator, :func:`unique`.
+This module defines four enumeration classes that can be used to define unique
+sets of names and values: :class:`Enum`, :class:`IntEnum`, and
+:class:`IntFlags`.  It also defines one decorator, :func:`unique`.
 
 .. class:: Enum
 
@@ -37,9 +37,22 @@ one decorator, :func:`unique`.
     Base class for creating enumerated constants that are also
     subclasses of :class:`int`.
 
+.. class:: IntFlag
+
+    Base class for creating enumerated constants that can be combined using
+    the bitwise operators without losing their :class:`IntFlag` membership.
+    :class:`IntFlag` members are also subclasses of :class:`int`.
+
+.. class:: Flag
+
+    Base class for creating enumerated constants that can be combined using
+    the bitwise operations without losing their :class:`Flag` membership.
+
 .. function:: unique
 
     Enum class decorator that ensures only one name is bound to any one value.
+
+.. versionadded:: 3.6  ``Flag``, ``IntFlag``
 
 
 Creating an Enum
@@ -478,7 +491,7 @@ Derived Enumerations
 IntEnum
 ^^^^^^^
 
-A variation of :class:`Enum` is provided which is also a subclass of
+The first variation of :class:`Enum` that is provided is also a subclass of
 :class:`int`.  Members of an :class:`IntEnum` can be compared to integers;
 by extension, integer enumerations of different types can also be compared
 to each other::
@@ -521,13 +534,54 @@ However, they still can't be compared to standard :class:`Enum` enumerations::
     >>> [i for i in range(Shape.square)]
     [0, 1]
 
-For the vast majority of code, :class:`Enum` is strongly recommended,
-since :class:`IntEnum` breaks some semantic promises of an enumeration (by
-being comparable to integers, and thus by transitivity to other
-unrelated enumerations).  It should be used only in special cases where
-there's no other choice; for example, when integer constants are
-replaced with enumerations and backwards compatibility is required with code
-that still expects integers.
+
+IntFlag
+^^^^^^^
+
+The next variation of :class:`Enum` provided, :class:`IntFlag`, is also based
+on :class:`int`.  The difference being :class:`IntFlag` members can be combined
+using the bitwise operators (&, \|, ^, ~) and the result is still an
+:class:`IntFlag` member.  However, as the name implies, :class:`IntFlag`
+members also subclass :class:`int` and can be used wherever an :class:`int` is.
+Any operation on an :class:`IntFlag` member besides the bit-wise operations
+will lose the :class:`IntFlag` membership.
+
+    >>> from enum import IntFlag
+    >>> class Perm(IntFlag):
+    ...     R = 4
+    ...     W = 2
+    ...     X = 1
+    ...
+    >>> Perm.R | Perm.W
+    <Perm.R|W: 6>
+    >>> Perm.R + Perm.W
+    6
+    >>> RW = Perm.R | Perm.W
+    >>> Perm.R in RW
+    True
+
+.. versionadded:: 3.6
+
+
+Flag
+^^^^
+
+The last variation is :class:`Flag`.  Like :class:`IntFlag`, :class:`Flag`
+members can be combined using the bitwise operators (^, \|, ^, ~).  Unlike
+:class:`IntFlag`, they cannot be combined with, nor compared against, any
+other :class:`Flag` enumeration nor :class:`int`.
+
+.. versionadded:: 3.6
+
+.. note::
+
+    For the majority of new code, :class:`Enum` and :class:`Flag` are strongly
+    recommended, since :class:`IntEnum` and :class:`IntFlag` break some
+    semantic promises of an enumeration (by being comparable to integers, and
+    thus by transitivity to other unrelated enumerations).  :class:`IntEnum`
+    and :class:`IntFlag` should be used only in cases where :class:`Enum` and
+    :class:`Flag` will not do; for example, when integer constants are replaced
+    with enumerations, or for interoperability with other systems.
 
 
 Others
@@ -567,10 +621,10 @@ Some rules:
 Interesting examples
 --------------------
 
-While :class:`Enum` and :class:`IntEnum` are expected to cover the majority of
-use-cases, they cannot cover them all.  Here are recipes for some different
-types of enumerations that can be used directly, or as examples for creating
-one's own.
+While :class:`Enum`, :class:`IntEnum`, :class:`IntFlag`, and :class:`Flag` are
+expected to cover the majority of use-cases, they cannot cover them all.  Here
+are recipes for some different types of enumerations that can be used directly,
+or as examples for creating one's own.
 
 
 AutoNumber
@@ -731,55 +785,33 @@ member instances.
 Finer Points
 ^^^^^^^^^^^^
 
-:class:`Enum` members are instances of an :class:`Enum` class, and even
-though they are accessible as `EnumClass.member`, they should not be accessed
-directly from the member as that lookup may fail or, worse, return something
-besides the :class:`Enum` member you looking for::
+Supported ``__dunder__`` names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    >>> class FieldTypes(Enum):
-    ...     name = 0
-    ...     value = 1
-    ...     size = 2
-    ...
-    >>> FieldTypes.value.size
-    <FieldTypes.size: 2>
-    >>> FieldTypes.size.value
-    2
+:attr:`__members__` is an :class:`OrderedDict` of ``member_name``:``member``
+items.  It is only available on the class.
 
-.. versionchanged:: 3.5
+:meth:`__new__`, if specified, must create and return the enum members; it is
+also a very good idea to set the member's :attr:`_value_` appropriately.  Once
+all the members are created it is no longer used.
 
-Boolean evaluation: Enum classes that are mixed with non-Enum types (such as
-:class:`int`, :class:`str`, etc.) are evaluated according to the mixed-in
-type's rules; otherwise, all members evaluate as ``True``.  To make your own
-Enum's boolean evaluation depend on the member's value add the following to
-your class::
 
-    def __bool__(self):
-        return bool(self.value)
+Supported ``_sunder_`` names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The :attr:`__members__` attribute is only available on the class.
+- ``_name_`` -- name of the member
+- ``_value_`` -- value of the member; can be set / modified in ``__new__``
 
-If you give your :class:`Enum` subclass extra methods, like the `Planet`_
-class above, those methods will show up in a :func:`dir` of the member,
-but not of the class::
+- ``_missing_`` -- a lookup function used when a value is not found; may be
+  overridden
+- ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
+  (class attribute, removed during class creation)
 
-    >>> dir(Planet)
-    ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
-    >>> dir(Planet.EARTH)
-    ['__class__', '__doc__', '__module__', 'name', 'surface_gravity', 'value']
+.. versionadded:: 3.6 ``_missing_``, ``_order_``
 
-The :meth:`__new__` method will only be used for the creation of the
-:class:`Enum` members -- after that it is replaced.  Any custom :meth:`__new__`
-method must create the object and set the :attr:`_value_` attribute
-appropriately.
-
-If you wish to change how :class:`Enum` members are looked up you should either
-write a helper function or a :func:`classmethod` for the :class:`Enum`
-subclass.
-
-To help keep Python 2 / Python 3 code in sync a user-specified :attr:`_order_`,
-if provided, will be checked to ensure the actual order of the enumeration
-matches::
+To help keep Python 2 / Python 3 code in sync an :attr:`_order_` attribute can
+be provided.  It will be checked against the actual order of the enumeration
+and raise an error if the two do not match::
 
     >>> class Color(Enum):
     ...     _order_ = 'red green blue'
@@ -794,4 +826,53 @@ matches::
 .. note::
 
     In Python 2 code the :attr:`_order_` attribute is necessary as definition
-    order is lost during class creation.
+    order is lost before it can be recorded.
+
+``Enum`` member type
+~~~~~~~~~~~~~~~~~~~~
+
+:class:`Enum` members are instances of an :class:`Enum` class, and even
+though they are accessible as `EnumClass.member`, they should not be accessed
+directly from the member as that lookup may fail or, worse, return something
+besides the ``Enum`` member you looking for::
+
+    >>> class FieldTypes(Enum):
+    ...     name = 0
+    ...     value = 1
+    ...     size = 2
+    ...
+    >>> FieldTypes.value.size
+    <FieldTypes.size: 2>
+    >>> FieldTypes.size.value
+    2
+
+.. versionchanged:: 3.5
+
+
+Boolean value of ``Enum`` classes and members
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``Enum`` members that are mixed with non-Enum types (such as
+:class:`int`, :class:`str`, etc.) are evaluated according to the mixed-in
+type's rules; otherwise, all members evaluate as :data:`True`.  To make your own
+Enum's boolean evaluation depend on the member's value add the following to
+your class::
+
+    def __bool__(self):
+        return bool(self.value)
+
+``Enum`` classes always evaluate as :data:`True`.
+
+
+``Enum`` classes with methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you give your :class:`Enum` subclass extra methods, like the `Planet`_
+class above, those methods will show up in a :func:`dir` of the member,
+but not of the class::
+
+    >>> dir(Planet)
+    ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
+    >>> dir(Planet.EARTH)
+    ['__class__', '__doc__', '__module__', 'name', 'surface_gravity', 'value']
+
