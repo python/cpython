@@ -784,13 +784,8 @@ class IntFlag(int, Flag):
 
 
 def _high_bit(value):
-    """return the highest bit set in value"""
-    bit = 0
-    while 'looking for the highest bit':
-        limit = 2 ** bit
-        if limit > value:
-            return bit - 1
-        bit += 1
+    """returns index of highest bit, or -1 if value is zero or negative"""
+    return value.bit_length() - 1 if value > 0 else -1
 
 def unique(enumeration):
     """Class decorator for enumerations ensuring unique member values."""
