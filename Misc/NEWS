@@ -70,6 +70,8 @@ Library
 - Issue #27842: The csv.DictReader now returns rows of type OrderedDict.
   (Contributed by Steve Holden.)
 
+- Issue #12285: Fix error when distutils encounters symlink.
+
 - Issue #27881: Fixed possible bugs when setting sqlite3.Connection.isolation_level.
   Based on patch by Xiang Zhang.
 
