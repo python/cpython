@@ -54,6 +54,7 @@ def normalize_encoding(encoding):
     """
     if isinstance(encoding, bytes):
         encoding = str(encoding, "ascii")
+
     chars = []
     punct = False
     for c in encoding:
