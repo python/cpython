@@ -9,7 +9,7 @@ from distutils.filelist import glob_to_re, translate_pattern, FileList
 from distutils import filelist
 
 import test.support
-from test.support import captured_stdout
+from test.support import captured_stdout, run_unittest
 from distutils.tests import support
 
 MANIFEST_IN = """\
@@ -329,5 +329,12 @@ class FindAllTestCase(unittest.TestCase):
             self.assertEqual(filelist.findall(temp_dir), expected)
 
 
+def test_suite():
+    return unittest.TestSuite([
+        unittest.makeSuite(FileListTestCase),
+        unittest.makeSuite(FindAllTestCase),
+    ])
+
+
 if __name__ == "__main__":
-    unittest.main()
+    run_unittest(test_suite())
