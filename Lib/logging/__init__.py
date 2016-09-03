@@ -108,6 +108,7 @@ _levelToName = {
 }
 _nameToLevel = {
     'CRITICAL': CRITICAL,
+    'FATAL': FATAL,
     'ERROR': ERROR,
     'WARN': WARNING,
     'WARNING': WARNING,
