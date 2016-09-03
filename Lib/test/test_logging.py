@@ -309,6 +309,10 @@ class BuiltinLevelsTest(BaseTest):
         self.assertEqual(logging.getLevelName('INFO'), logging.INFO)
         self.assertEqual(logging.getLevelName(logging.INFO), 'INFO')
 
+    def test_issue27935(self):
+        fatal = logging.getLevelName('FATAL')
+        self.assertEqual(fatal, logging.FATAL)
+
 class BasicFilterTest(BaseTest):
 
     """Test the bundled Filter class."""
