@@ -325,13 +325,13 @@ class TracebackFormatTests(unittest.TestCase):
         lineno_f = f.__code__.co_firstlineno
         result_f = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_f+5}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_f+5}, in _check_recursive_traceback_display''\n'
             '    f()\n'
-            f'  File "{__file__}", line {lineno_f+1}, in f\n'
+            f'  File "{__file__}", line {lineno_f+1}, in f''\n'
             '    f()\n'
-            f'  File "{__file__}", line {lineno_f+1}, in f\n'
+            f'  File "{__file__}", line {lineno_f+1}, in f''\n'
             '    f()\n'
-            f'  File "{__file__}", line {lineno_f+1}, in f\n'
+            f'  File "{__file__}", line {lineno_f+1}, in f''\n'
             '    f()\n'
             # XXX: The following line changes depending on whether the tests
             # are run through the interactive interpreter or with -m
@@ -370,20 +370,20 @@ class TracebackFormatTests(unittest.TestCase):
 
         lineno_g = g.__code__.co_firstlineno
         result_g = (
-            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            f'  File "{__file__}", line {lineno_g+2}, in g''\n'
             '    return g(count-1)\n'
-            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            f'  File "{__file__}", line {lineno_g+2}, in g''\n'
             '    return g(count-1)\n'
-            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            f'  File "{__file__}", line {lineno_g+2}, in g''\n'
             '    return g(count-1)\n'
             '  [Previous line repeated 6 more times]\n'
-            f'  File "{__file__}", line {lineno_g+3}, in g\n'
+            f'  File "{__file__}", line {lineno_g+3}, in g''\n'
             '    raise ValueError\n'
             'ValueError\n'
         )
         tb_line = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_g+7}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_g+7}, in _check_recursive_traceback_display''\n'
             '    g()\n'
         )
         expected = (tb_line + result_g).splitlines()
@@ -407,16 +407,16 @@ class TracebackFormatTests(unittest.TestCase):
         lineno_h = h.__code__.co_firstlineno
         result_h = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_h+7}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_h+7}, in _check_recursive_traceback_display''\n'
             '    h()\n'
-            f'  File "{__file__}", line {lineno_h+2}, in h\n'
+            f'  File "{__file__}", line {lineno_h+2}, in h''\n'
             '    return h(count-1)\n'
-            f'  File "{__file__}", line {lineno_h+2}, in h\n'
+            f'  File "{__file__}", line {lineno_h+2}, in h''\n'
             '    return h(count-1)\n'
-            f'  File "{__file__}", line {lineno_h+2}, in h\n'
+            f'  File "{__file__}", line {lineno_h+2}, in h''\n'
             '    return h(count-1)\n'
             '  [Previous line repeated 6 more times]\n'
-            f'  File "{__file__}", line {lineno_h+3}, in h\n'
+            f'  File "{__file__}", line {lineno_h+3}, in h''\n'
             '    g()\n'
         )
         expected = (result_h + result_g).splitlines()
