@@ -138,10 +138,6 @@ class UnparseTestCase(ASTTestCase):
         # See issue 25180
         self.check_roundtrip(r"""f'{f"{0}"*3}'""")
         self.check_roundtrip(r"""f'{f"{y}"*3}'""")
-        self.check_roundtrip(r"""f'{f"{\'x\'}"*3}'""")
-
-        self.check_roundtrip(r'''f"{r'x' f'{\"s\"}'}"''')
-        self.check_roundtrip(r'''f"{r'x'rf'{\"s\"}'}"''')
 
     def test_del_statement(self):
         self.check_roundtrip("del x, y, z")

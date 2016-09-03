@@ -10,6 +10,11 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27921: Disallow backslashes in f-strings. This is a temporary
+  restriction: in beta 2, backslashes will only be disallowed inside
+  the braces (where the expressions are). This is a breaking change
+  from the 3.6 alpha releases.
+  
 - Issue #27870: A left shift of zero by a large integer no longer attempts
   to allocate large amounts of memory.
 

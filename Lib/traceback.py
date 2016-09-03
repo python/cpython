@@ -402,7 +402,7 @@ class StackSummary(list):
                 count += 1
             else:
                 if count > 3:
-                    result.append(f'  [Previous line repeated {count-3} more times]\n')
+                    result.append(f'  [Previous line repeated {count-3} more times]''\n')
                 last_file = frame.filename
                 last_line = frame.lineno
                 last_name = frame.name
@@ -419,7 +419,7 @@ class StackSummary(list):
                     row.append('    {name} = {value}\n'.format(name=name, value=value))
             result.append(''.join(row))
         if count > 3:
-            result.append(f'  [Previous line repeated {count-3} more times]\n')
+            result.append(f'  [Previous line repeated {count-3} more times]''\n')
         return result
 
 
