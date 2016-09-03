@@ -267,6 +267,33 @@ get_size_t(PyObject *v, size_t *p)
 /* Floating point helpers */
 
 static PyObject *
+unpack_halffloat(const char *p,  /* start of 2-byte string */
+                 int le)         /* true for little-endian, false for big-endian */
+{
+    double x;
+
+    x = _PyFloat_Unpack2((unsigned char *)p, le);
+    if (x == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyFloat_FromDouble(x);
+}
+
+static int
+pack_halffloat(char *p,      /* start of 2-byte string */
+               PyObject *v,  /* value to pack */
+               int le)       /* true for little-endian, false for big-endian */
+{
+    double x = PyFloat_AsDouble(v);
+    if (x == -1.0 && PyErr_Occurred()) {
+        PyErr_SetString(StructError,
+                        "required argument is not a float");
+        return -1;
+    }
+    return _PyFloat_Pack2(x, (unsigned char *)p, le);
+}
+
+static PyObject *
 unpack_float(const char *p,  /* start of 4-byte string */
          int le)             /* true for little-endian, false for big-endian */
 {
@@ -468,6 +495,16 @@ nu_bool(const char *p, const formatdef *f)
     return PyBool_FromLong(x != 0);
 }
 
+
+static PyObject *
+nu_halffloat(const char *p, const formatdef *f)
+{
+#if PY_LITTLE_ENDIAN
+    return unpack_halffloat(p, 1);
+#else
+    return unpack_halffloat(p, 0);
+#endif    
+}
 
 static PyObject *
 nu_float(const char *p, const formatdef *f)
@@ -681,6 +718,16 @@ np_bool(char *p, PyObject *v, const formatdef *f)
 }
 
 static int
+np_halffloat(char *p, PyObject *v, const formatdef *f)
+{
+#if PY_LITTLE_ENDIAN
+    return pack_halffloat(p, v, 1);
+#else
+    return pack_halffloat(p, v, 0);
+#endif
+}
+
+static int
 np_float(char *p, PyObject *v, const formatdef *f)
 {
     float x = (float)PyFloat_AsDouble(v);
@@ -743,6 +790,7 @@ static const formatdef native_table[] = {
     {'Q',       sizeof(PY_LONG_LONG), LONG_LONG_ALIGN, nu_ulonglong,np_ulonglong},
 #endif
     {'?',       sizeof(BOOL_TYPE),      BOOL_ALIGN,     nu_bool,        np_bool},
+    {'e',       sizeof(short),  SHORT_ALIGN,    nu_halffloat,   np_halffloat},
     {'f',       sizeof(float),  FLOAT_ALIGN,    nu_float,       np_float},
     {'d',       sizeof(double), DOUBLE_ALIGN,   nu_double,      np_double},
     {'P',       sizeof(void *), VOID_P_ALIGN,   nu_void_p,      np_void_p},
@@ -823,6 +871,12 @@ bu_ulonglong(const char *p, const formatdef *f)
                                   0, /* little-endian */
                       0  /* signed */);
 #endif
+}
+
+static PyObject *
+bu_halffloat(const char *p, const formatdef *f)
+{
+    return unpack_halffloat(p, 0);
 }
 
 static PyObject *
@@ -922,6 +976,12 @@ bp_ulonglong(char *p, PyObject *v, const formatdef *f)
 }
 
 static int
+bp_halffloat(char *p, PyObject *v, const formatdef *f)
+{
+    return pack_halffloat(p, v, 0);
+}
+
+static int
 bp_float(char *p, PyObject *v, const formatdef *f)
 {
     double x = PyFloat_AsDouble(v);
@@ -972,6 +1032,7 @@ static formatdef bigendian_table[] = {
     {'q',       8,              0,              bu_longlong,    bp_longlong},
     {'Q',       8,              0,              bu_ulonglong,   bp_ulonglong},
     {'?',       1,              0,              bu_bool,        bp_bool},
+    {'e',       2,              0,              bu_halffloat,   bp_halffloat},
     {'f',       4,              0,              bu_float,       bp_float},
     {'d',       8,              0,              bu_double,      bp_double},
     {0}
@@ -1051,6 +1112,12 @@ lu_ulonglong(const char *p, const formatdef *f)
                                   1, /* little-endian */
                       0  /* signed */);
 #endif
+}
+
+static PyObject *
+lu_halffloat(const char *p, const formatdef *f)
+{
+    return unpack_halffloat(p, 1);
 }
 
 static PyObject *
@@ -1142,6 +1209,12 @@ lp_ulonglong(char *p, PyObject *v, const formatdef *f)
 }
 
 static int
+lp_halffloat(char *p, PyObject *v, const formatdef *f)
+{
+    return pack_halffloat(p, v, 1);
+}
+
+static int
 lp_float(char *p, PyObject *v, const formatdef *f)
 {
     double x = PyFloat_AsDouble(v);
@@ -1182,6 +1255,7 @@ static formatdef lilendian_table[] = {
     {'Q',       8,              0,              lu_ulonglong,   lp_ulonglong},
     {'?',       1,              0,              bu_bool,        bp_bool}, /* Std rep not endian dep,
         but potentially different from native rep -- reuse bx_bool funcs. */
+    {'e',       2,              0,              lu_halffloat,   lp_halffloat},
     {'f',       4,              0,              lu_float,       lp_float},
     {'d',       8,              0,              lu_double,      lp_double},
     {0}
@@ -2239,7 +2313,7 @@ these can be preceded by a decimal repeat count:\n\
   x: pad byte (no data); c:char; b:signed byte; B:unsigned byte;\n\
   ?: _Bool (requires C99; if not available, char is used instead)\n\
   h:short; H:unsigned short; i:int; I:unsigned int;\n\
-  l:long; L:unsigned long; f:float; d:double.\n\
+  l:long; L:unsigned long; f:float; d:double; e:half-float.\n\
 Special cases (preceding decimal count indicates length):\n\
   s:string (array of char); p: pascal string (with count byte).\n\
 Special cases (only available in native format):\n\

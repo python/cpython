@@ -216,6 +216,8 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``N``  | :c:type:`size_t`         | integer            |                | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
+| ``e``  | \(7)                     | float              | 2              | \(5)       |
++--------+--------------------------+--------------------+----------------+------------+
 | ``f``  | :c:type:`float`          | float              | 4              | \(5)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``d``  | :c:type:`double`         | float              | 8              | \(5)       |
@@ -257,9 +259,10 @@ Notes:
    fits your application.
 
 (5)
-   For the ``'f'`` and ``'d'`` conversion codes, the packed representation uses
-   the IEEE 754 binary32 (for ``'f'``) or binary64 (for ``'d'``) format,
-   regardless of the floating-point format used by the platform.
+   For the ``'f'``, ``'d'`` and ``'e'`` conversion codes, the packed
+   representation uses the IEEE 754 binary32, binary64 or binary16 format (for
+   ``'f'``, ``'d'`` or ``'e'`` respectively), regardless of the floating-point
+   format used by the platform.
 
 (6)
    The ``'P'`` format character is only available for the native byte ordering
@@ -267,6 +270,16 @@ Notes:
    order character ``'='`` chooses to use little- or big-endian ordering based
    on the host system. The struct module does not interpret this as native
    ordering, so the ``'P'`` format is not available.
+
+(7)
+   The IEEE 754 binary16 "half precision" type was introduced in the 2008
+   revision of the `IEEE 754 standard <ieee 754 standard_>`_. It has a sign
+   bit, a 5-bit exponent and 11-bit precision (with 10 bits explicitly stored),
+   and can represent numbers between approximately ``6.1e-05`` and ``6.5e+04``
+   at full precision. This type is not widely supported by C compilers: on a
+   typical machine, an unsigned short can be used for storage, but not for math
+   operations. See the Wikipedia page on the `half-precision floating-point
+   format <half precision format_>`_ for more information.
 
 
 A format character may be preceded by an integral repeat count.  For example,
@@ -430,3 +443,7 @@ The :mod:`struct` module also defines the following type:
       The calculated size of the struct (and hence of the bytes object produced
       by the :meth:`pack` method) corresponding to :attr:`format`.
 
+
+.. _half precision format: https://en.wikipedia.org/wiki/Half-precision_floating-point_format
+
+.. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_floating_point#IEEE_754-2008
