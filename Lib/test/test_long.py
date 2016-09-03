@@ -967,7 +967,7 @@ class LongTest(unittest.TestCase):
             self.assertIs(type(got), int)
 
         # bad second argument
-        bad_exponents = ('brian', 2.0, 0j, None)
+        bad_exponents = ('brian', 2.0, 0j)
         for e in bad_exponents:
             self.assertRaises(TypeError, round, 3, e)
 
