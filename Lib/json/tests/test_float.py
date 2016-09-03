@@ -32,6 +32,17 @@ class TestFloat(object):
                 self.assertNotEqual(res[0], res[0])
             self.assertRaises(ValueError, self.dumps, [val], allow_nan=False)
 
+    def test_float_subclasses_use_float_repr(self):
+        # Issue 27934.
+        class PeculiarFloat(float):
+            def __repr__(self):
+                return "I'm not valid JSON"
+            def __str__(self):
+                return "Neither am I"
+
+        val = PeculiarFloat(3.2)
+        self.assertEqual(self.loads(self.dumps(val)), val)
+
 
 class TestPyFloat(TestFloat, PyTest): pass
 class TestCFloat(TestFloat, CTest): pass

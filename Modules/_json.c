@@ -1960,8 +1960,8 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
             return PyString_FromString("NaN");
         }
     }
-    /* Use a better float format here? */
-    return PyObject_Repr(obj);
+    /* Make sure to use the base float class repr method */
+    return PyFloat_Type.tp_repr(obj);
 }
 
 static PyObject *

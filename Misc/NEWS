@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27934: Use ``float.__repr__`` instead of plain ``repr`` when JSON-
+  encoding an instance of a float subclass. Thanks Eddie James.
+
 - Issue #27861: Fixed a crash in sqlite3.Connection.cursor() when a factory
   creates not a cursor.  Patch by Xiang Zhang.
 
