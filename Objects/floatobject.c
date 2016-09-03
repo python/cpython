@@ -1975,8 +1975,120 @@ _PyFloat_DebugMallocStats(FILE *out)
 
 
 /*----------------------------------------------------------------------------
- * _PyFloat_{Pack,Unpack}{4,8}.  See floatobject.h.
+ * _PyFloat_{Pack,Unpack}{2,4,8}.  See floatobject.h.
+ * To match the NPY_HALF_ROUND_TIES_TO_EVEN behavior in:
+ * https://github.com/numpy/numpy/blob/master/numpy/core/src/npymath/halffloat.c
+ * We use:
+ *       bits = (unsigned short)f;    Note the truncation
+ *       if ((f - bits > 0.5) || (f - bits == 0.5 && bits % 2)) {
+ *           bits++;
+ *       }
  */
+
+int
+_PyFloat_Pack2(double x, unsigned char *p, int le)
+{
+    unsigned char sign;
+    int e;
+    double f;
+    unsigned short bits;
+    int incr = 1;
+
+    if (x == 0.0) {
+        sign = (copysign(1.0, x) == -1.0);
+        e = 0;
+        bits = 0;
+    }
+    else if (Py_IS_INFINITY(x)) {
+        sign = (x < 0.0);
+        e = 0x1f;
+        bits = 0;
+    }
+    else if (Py_IS_NAN(x)) {
+        /* There are 2046 distinct half-precision NaNs (1022 signaling and
+           1024 quiet), but there are only two quiet NaNs that don't arise by
+           quieting a signaling NaN; we get those by setting the topmost bit
+           of the fraction field and clearing all other fraction bits. We
+           choose the one with the appropriate sign. */
+        sign = (copysign(1.0, x) == -1.0);
+        e = 0x1f;
+        bits = 512;
+    }
+    else {
+        sign = (x < 0.0);
+        if (sign) {
+            x = -x;
+        }
+
+        f = frexp(x, &e);
+        if (f < 0.5 || f >= 1.0) {
+            PyErr_SetString(PyExc_SystemError,
+                            "frexp() result out of range");
+            return -1;
+        }
+
+        /* Normalize f to be in the range [1.0, 2.0) */
+        f *= 2.0;
+        e--;
+
+        if (e >= 16) {
+            goto Overflow;
+        }
+        else if (e < -25) {
+            /* |x| < 2**-25. Underflow to zero. */
+            f = 0.0;
+            e = 0;
+        }
+        else if (e < -14) {
+            /* |x| < 2**-14. Gradual underflow */
+            f = ldexp(f, 14 + e);
+            e = 0;
+        }
+        else /* if (!(e == 0 && f == 0.0)) */ {
+            e += 15;
+            f -= 1.0; /* Get rid of leading 1 */
+        }
+
+        f *= 1024.0; /* 2**10 */
+        /* Round to even */
+        bits = (unsigned short)f; /* Note the truncation */
+        assert(bits < 1024);
+        assert(e < 31);
+        if ((f - bits > 0.5) || ((f - bits == 0.5) && (bits % 2 == 1))) {
+            ++bits;
+            if (bits == 1024) {
+                /* The carry propagated out of a string of 10 1 bits. */
+                bits = 0;
+                ++e;
+                if (e == 31)
+                    goto Overflow;
+            }
+        }
+    }
+
+    bits |= (e << 10) | (sign << 15);
+
+    /* Write out result. */
+    if (le) {
+        p += 1;
+        incr = -1;
+    }
+
+    /* First byte */
+    *p = (unsigned char)((bits >> 8) & 0xFF);
+    p += incr;
+
+    /* Second byte */
+    *p = (unsigned char)(bits & 0xFF);
+
+    return 0;
+
+  Overflow:
+    PyErr_SetString(PyExc_OverflowError,
+                    "float too large to pack with e format");
+    return -1;
+}
+
 int
 _PyFloat_Pack4(double x, unsigned char *p, int le)
 {
@@ -2209,6 +2321,76 @@ _PyFloat_Pack8(double x, unsigned char *p, int le)
         }
         return 0;
     }
+}
+
+double
+_PyFloat_Unpack2(const unsigned char *p, int le)
+{
+    unsigned char sign;
+    int e;
+    unsigned int f;
+    double x;
+    int incr = 1;
+
+    if (le) {
+        p += 1;
+        incr = -1;
+    }
+
+    /* First byte */
+    sign = (*p >> 7) & 1;
+    e = (*p & 0x7C) >> 2;
+    f = (*p & 0x03) << 8;
+    p += incr;
+
+    /* Second byte */
+    f |= *p;
+
+    if (e == 0x1f) {
+#ifdef PY_NO_SHORT_FLOAT_REPR
+        if (f == 0) {
+            /* Infinity */
+            return sign ? -Py_HUGE_VAL : Py_HUGE_VAL;
+        }
+        else {
+            /* NaN */
+#ifdef Py_NAN
+            return sign ? -Py_NAN : Py_NAN;
+#else
+            PyErr_SetString(
+                PyExc_ValueError,
+                "can't unpack IEEE 754 NaN "
+                "on platform that does not support NaNs");
+            return -1;
+#endif  /* #ifdef Py_NAN */
+        }
+#else
+        if (f == 0) {
+            /* Infinity */
+            return _Py_dg_infinity(sign);
+        }
+        else {
+            /* NaN */
+            return _Py_dg_stdnan(sign);
+        }
+#endif  /* #ifdef PY_NO_SHORT_FLOAT_REPR */
+    }
+
+    x = (double)f / 1024.0;
+
+    if (e == 0) {
+        e = -14;
+    }
+    else {
+        x += 1.0;
+        e -= 15;
+    }
+    x = ldexp(x, e);
+
+    if (sign)
+        x = -x;
+
+    return x;
 }
 
 double
