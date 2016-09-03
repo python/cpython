@@ -1,4 +1,4 @@
-# Copyright 2001-2015 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2016 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python.
 
-Copyright (C) 2001-2015 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -129,8 +129,9 @@ def getLevelName(level):
 
     Otherwise, the string "Level %s" % level is returned.
     """
-    # See Issue #22386 for the reason for this convoluted expression
-    return _levelToName.get(level, _nameToLevel.get(level, ("Level %s" % level)))
+    # See Issues #22386 and #27937 for why it's this way
+    return (_levelToName.get(level) or _nameToLevel.get(level) or
+            "Level %s" % level)
 
 def addLevelName(level, levelName):
     """
