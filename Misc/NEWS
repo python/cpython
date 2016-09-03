@@ -46,6 +46,10 @@ Core and Builtins
   ``m_methods`` field to be used to add module level functions to instances
   of non-module types returned from ``Py_create_mod``. Patch by Xiang Zhang.
 
+- Issue #27936: The round() function accepted a second None argument
+  for some types but not for others.  Fixed the inconsistency by
+  accepting None for all numeric types.
+
 - Issue #27487: Warn if a submodule argument to "python -m" or
   runpy.run_module() is found in sys.modules after parent packages are
   imported, but before the submodule is executed.

@@ -3,6 +3,8 @@
 import ast
 import builtins
 import collections
+import decimal
+import fractions
 import io
 import locale
 import os
@@ -1243,6 +1245,15 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(round(5e15+1), 5e15+1)
         self.assertEqual(round(5e15+2), 5e15+2)
         self.assertEqual(round(5e15+3), 5e15+3)
+
+    def test_bug_27936(self):
+        # Verify that ndigits=None means the same as passing in no argument
+        for x in [1234,
+                  1234.56,
+                  decimal.Decimal('1234.56'),
+                  fractions.Fraction(123456, 100)]:
+            self.assertEqual(round(x, None), round(x))
+            self.assertEqual(type(round(x, None)), type(round(x)))
 
     def test_setattr(self):
         setattr(sys, 'spam', 1)
