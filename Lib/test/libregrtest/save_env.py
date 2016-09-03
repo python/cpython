@@ -280,6 +280,6 @@ class saved_test_environment:
                     print(f"Warning -- {name} was modified by {self.testname}",
                           file=sys.stderr, flush=True)
                     if self.verbose > 1:
-                        print(f"  Before: {original}\n  After:  {current} ",
+                        print(f"  Before: {original}""\n"f"  After:  {current} ",
                               file=sys.stderr, flush=True)
         return False

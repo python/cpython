@@ -4958,6 +4958,16 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *fmode)
             return NULL;
         }
     }
+
+    /* Temporary hack: if this is an f-string, no backslashes are allowed. */
+    /* See issue 27921. */
+    if (*fmode && strchr(s, '\\') != NULL) {
+        /* Syntax error. At a later date fix this so it only checks for
+           backslashes within the braces. */
+        ast_error(c, n, "backslashes not allowed in f-strings");
+        return NULL;
+    }
+
     /* Avoid invoking escape decoding routines if possible. */
     rawmode = rawmode || strchr(s, '\\') == NULL;
     if (*bytesmode) {
