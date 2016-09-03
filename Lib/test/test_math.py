@@ -29,6 +29,7 @@ test_dir = os.path.dirname(file) or os.curdir
 math_testcases = os.path.join(test_dir, 'math_testcases.txt')
 test_file = os.path.join(test_dir, 'cmath_testcases.txt')
 
+
 def to_ulps(x):
     """Convert a non-NaN float x to an integer, in such a way that
     adjacent floats are converted to adjacent integers.  Then
@@ -36,25 +37,39 @@ def to_ulps(x):
     floats.
 
     The results from this function will only make sense on platforms
-    where C doubles are represented in IEEE 754 binary64 format.
+    where native doubles are represented in IEEE 754 binary64 format.
 
+    Note: 0.0 and -0.0 are converted to 0 and -1, respectively.
     """
     n = struct.unpack('<q', struct.pack('<d', x))[0]
     if n < 0:
         n = ~(n+2**63)
     return n
 
-def ulps_check(expected, got, ulps=20):
-    """Given non-NaN floats `expected` and `got`,
-    check that they're equal to within the given number of ulps.
 
-    Returns None on success and an error message on failure."""
+def ulp(x):
+    """Return the value of the least significant bit of a
+    float x, such that the first float bigger than x is x+ulp(x).
+    Then, given an expected result x and a tolerance of n ulps,
+    the result y should be such that abs(y-x) <= n * ulp(x).
+    The results from this function will only make sense on platforms
+    where native doubles are represented in IEEE 754 binary64 format.
+    """
+    x = abs(float(x))
+    if math.isnan(x) or math.isinf(x):
+        return x
 
-    ulps_error = to_ulps(got) - to_ulps(expected)
-    if abs(ulps_error) <= ulps:
-        return None
-    return "error = {} ulps; permitted error = {} ulps".format(ulps_error,
-                                                               ulps)
+    # Find next float up from x.
+    n = struct.unpack('<q', struct.pack('<d', x))[0]
+    x_next = struct.unpack('<d', struct.pack('<q', n + 1))[0]
+    if math.isinf(x_next):
+        # Corner case: x was the largest finite float. Then it's
+        # not an exact power of two, so we can take the difference
+        # between x and the previous float.
+        x_prev = struct.unpack('<d', struct.pack('<q', n - 1))[0]
+        return x - x_prev
+    else:
+        return x_next - x
 
 # Here's a pure Python version of the math.factorial algorithm, for
 # documentation and comparison purposes.
@@ -106,24 +121,23 @@ def py_factorial(n):
         outer *= inner
     return outer << (n - count_set_bits(n))
 
-def acc_check(expected, got, rel_err=2e-15, abs_err = 5e-323):
-    """Determine whether non-NaN floats a and b are equal to within a
-    (small) rounding error.  The default values for rel_err and
-    abs_err are chosen to be suitable for platforms where a float is
-    represented by an IEEE 754 double.  They allow an error of between
-    9 and 19 ulps."""
+def ulp_abs_check(expected, got, ulp_tol, abs_tol):
+    """Given finite floats `expected` and `got`, check that they're
+    approximately equal to within the given number of ulps or the
+    given absolute tolerance, whichever is bigger.
 
-    # need to special case infinities, since inf - inf gives nan
-    if math.isinf(expected) and got == expected:
+    Returns None on success and an error message on failure.
+    """
+    ulp_error = abs(to_ulps(expected) - to_ulps(got))
+    abs_error = abs(expected - got)
+
+    # Succeed if either abs_error <= abs_tol or ulp_error <= ulp_tol.
+    if abs_error <= abs_tol or ulp_error <= ulp_tol:
         return None
-
-    error = got - expected
-
-    permitted_error = max(abs_err, rel_err * abs(expected))
-    if abs(error) < permitted_error:
-        return None
-    return "error = {}; permitted error = {}".format(error,
-                                                     permitted_error)
+    else:
+        fmt = ("error = {:.3g} ({:d} ulps); "
+               "permitted error = {:.3g} or {:d} ulps")
+        return fmt.format(abs_error, ulp_error, abs_tol, ulp_tol)
 
 def parse_mtestfile(fname):
     """Parse a file with test values
@@ -150,6 +164,7 @@ def parse_mtestfile(fname):
 
             yield (id, fn, float(arg), float(exp), flags)
 
+
 def parse_testfile(fname):
     """Parse a file with test values
 
@@ -171,8 +186,53 @@ def parse_testfile(fname):
             yield (id, fn,
                    float(arg_real), float(arg_imag),
                    float(exp_real), float(exp_imag),
-                   flags
-                  )
+                   flags)
+
+
+def result_check(expected, got, ulp_tol=5, abs_tol=0.0):
+    # Common logic of MathTests.(ftest, test_testcases, test_mtestcases)
+    """Compare arguments expected and got, as floats, if either
+    is a float, using a tolerance expressed in multiples of
+    ulp(expected) or absolutely (if given and greater).
+
+    As a convenience, when neither argument is a float, and for
+    non-finite floats, exact equality is demanded. Also, nan==nan
+    as far as this function is concerned.
+
+    Returns None on success and an error message on failure.
+    """
+
+    # Check exactly equal (applies also to strings representing exceptions)
+    if got == expected:
+        return None
+
+    failure = "not equal"
+
+    # Turn mixed float and int comparison (e.g. floor()) to all-float
+    if isinstance(expected, float) and isinstance(got, int):
+        got = float(got)
+    elif isinstance(got, float) and isinstance(expected, int):
+        expected = float(expected)
+
+    if isinstance(expected, float) and isinstance(got, float):
+        if math.isnan(expected) and math.isnan(got):
+            # Pass, since both nan
+            failure = None
+        elif math.isinf(expected) or math.isinf(got):
+            # We already know they're not equal, drop through to failure
+            pass
+        else:
+            # Both are finite floats (now). Are they close enough?
+            failure = ulp_abs_check(expected, got, ulp_tol, abs_tol)
+
+    # arguments are not equal, and if numeric, are too far apart
+    if failure is not None:
+        fail_fmt = "expected {!r}, got {!r}"
+        fail_msg = fail_fmt.format(expected, got)
+        fail_msg += ' ({})'.format(failure)
+        return fail_msg
+    else:
+        return None
 
 # Class providing an __index__ method.
 class MyIndexable(object):
@@ -184,18 +244,23 @@ class MyIndexable(object):
 
 class MathTests(unittest.TestCase):
 
-    def ftest(self, name, value, expected):
-        if abs(value-expected) > eps:
-            # Use %r instead of %f so the error message
-            # displays full precision. Otherwise discrepancies
-            # in the last few bits will lead to very confusing
-            # error messages
-            self.fail('%s returned %r, expected %r' %
-                      (name, value, expected))
+    def ftest(self, name, got, expected, ulp_tol=5, abs_tol=0.0):
+        """Compare arguments expected and got, as floats, if either
+        is a float, using a tolerance expressed in multiples of
+        ulp(expected) or absolutely, whichever is greater.
+
+        As a convenience, when neither argument is a float, and for
+        non-finite floats, exact equality is demanded. Also, nan==nan
+        in this function.
+        """
+        failure = result_check(expected, got, ulp_tol, abs_tol)
+        if failure is not None:
+            self.fail("{}: {}".format(name, failure))
 
     def testConstants(self):
-        self.ftest('pi', math.pi, 3.1415926)
-        self.ftest('e', math.e, 2.7182818)
+        # Ref: Abramowitz & Stegun (Dover, 1965)
+        self.ftest('pi', math.pi, 3.141592653589793238462643)
+        self.ftest('e', math.e, 2.718281828459045235360287)
         self.assertEqual(math.tau, 2*math.pi)
 
     def testAcos(self):
@@ -378,9 +443,9 @@ class MathTests(unittest.TestCase):
 
     def testCos(self):
         self.assertRaises(TypeError, math.cos)
-        self.ftest('cos(-pi/2)', math.cos(-math.pi/2), 0)
+        self.ftest('cos(-pi/2)', math.cos(-math.pi/2), 0, abs_tol=ulp(1))
         self.ftest('cos(0)', math.cos(0), 1)
-        self.ftest('cos(pi/2)', math.cos(math.pi/2), 0)
+        self.ftest('cos(pi/2)', math.cos(math.pi/2), 0, abs_tol=ulp(1))
         self.ftest('cos(pi)', math.cos(math.pi), -1)
         try:
             self.assertTrue(math.isnan(math.cos(INF)))
@@ -970,7 +1035,8 @@ class MathTests(unittest.TestCase):
     def testTanh(self):
         self.assertRaises(TypeError, math.tanh)
         self.ftest('tanh(0)', math.tanh(0), 0)
-        self.ftest('tanh(1)+tanh(-1)', math.tanh(1)+math.tanh(-1), 0)
+        self.ftest('tanh(1)+tanh(-1)', math.tanh(1)+math.tanh(-1), 0,
+                   abs_tol=ulp(1))
         self.ftest('tanh(inf)', math.tanh(INF), 1)
         self.ftest('tanh(-inf)', math.tanh(NINF), -1)
         self.assertTrue(math.isnan(math.tanh(NAN)))
@@ -1084,30 +1150,48 @@ class MathTests(unittest.TestCase):
 
     @requires_IEEE_754
     def test_testfile(self):
+        fail_fmt = "{}: {}({!r}): {}"
+
+        failures = []
         for id, fn, ar, ai, er, ei, flags in parse_testfile(test_file):
-            # Skip if either the input or result is complex, or if
-            # flags is nonempty
-            if ai != 0. or ei != 0. or flags:
+            # Skip if either the input or result is complex
+            if ai != 0.0 or ei != 0.0:
                 continue
             if fn in ['rect', 'polar']:
                 # no real versions of rect, polar
                 continue
+
             func = getattr(math, fn)
+
+            if 'invalid' in flags or 'divide-by-zero' in flags:
+                er = 'ValueError'
+            elif 'overflow' in flags:
+                er = 'OverflowError'
+
             try:
                 result = func(ar)
-            except ValueError as exc:
-                message = (("Unexpected ValueError: %s\n        " +
-                           "in test %s:%s(%r)\n") % (exc.args[0], id, fn, ar))
-                self.fail(message)
+            except ValueError:
+                result = 'ValueError'
             except OverflowError:
-                message = ("Unexpected OverflowError in " +
-                           "test %s:%s(%r)\n" % (id, fn, ar))
-                self.fail(message)
-            self.ftest("%s:%s(%r)" % (id, fn, ar), result, er)
+                result = 'OverflowError'
+
+            # Default tolerances
+            ulp_tol, abs_tol = 5, 0.0
+
+            failure = result_check(er, result, ulp_tol, abs_tol)
+            if failure is None:
+                continue
+
+            msg = fail_fmt.format(id, fn, ar, failure)
+            failures.append(msg)
+
+        if failures:
+            self.fail('Failures in test_testfile:\n  ' +
+                      '\n  '.join(failures))
 
     @requires_IEEE_754
     def test_mtestfile(self):
-        fail_fmt = "{}:{}({!r}): expected {!r}, got {!r}"
+        fail_fmt = "{}: {}({!r}): {}"
 
         failures = []
         for id, fn, arg, expected, flags in parse_mtestfile(math_testcases):
@@ -1125,41 +1209,48 @@ class MathTests(unittest.TestCase):
             except OverflowError:
                 got = 'OverflowError'
 
-            accuracy_failure = None
-            if isinstance(got, float) and isinstance(expected, float):
-                if math.isnan(expected) and math.isnan(got):
-                    continue
-                if not math.isnan(expected) and not math.isnan(got):
-                    if fn == 'lgamma':
-                        # we use a weaker accuracy test for lgamma;
-                        # lgamma only achieves an absolute error of
-                        # a few multiples of the machine accuracy, in
-                        # general.
-                        accuracy_failure = acc_check(expected, got,
-                                                  rel_err = 5e-15,
-                                                  abs_err = 5e-15)
-                    elif fn == 'erfc':
-                        # erfc has less-than-ideal accuracy for large
-                        # arguments (x ~ 25 or so), mainly due to the
-                        # error involved in computing exp(-x*x).
-                        #
-                        # XXX Would be better to weaken this test only
-                        # for large x, instead of for all x.
-                        accuracy_failure = ulps_check(expected, got, 2000)
+            # Default tolerances
+            ulp_tol, abs_tol = 5, 0.0
 
-                    else:
-                        accuracy_failure = ulps_check(expected, got, 20)
-                    if accuracy_failure is None:
-                        continue
+            # Exceptions to the defaults
+            if fn == 'gamma':
+                # Experimental results on one platform gave
+                # an accuracy of <= 10 ulps across the entire float
+                # domain. We weaken that to require 20 ulp accuracy.
+                ulp_tol = 20
 
-            if isinstance(got, str) and isinstance(expected, str):
-                if got == expected:
-                    continue
+            elif fn == 'lgamma':
+                # we use a weaker accuracy test for lgamma;
+                # lgamma only achieves an absolute error of
+                # a few multiples of the machine accuracy, in
+                # general.
+                abs_tol = 1e-15
 
-            fail_msg = fail_fmt.format(id, fn, arg, expected, got)
-            if accuracy_failure is not None:
-                fail_msg += ' ({})'.format(accuracy_failure)
-            failures.append(fail_msg)
+            elif fn == 'erfc' and arg >= 0.0:
+                # erfc has less-than-ideal accuracy for large
+                # arguments (x ~ 25 or so), mainly due to the
+                # error involved in computing exp(-x*x).
+                #
+                # Observed between CPython and mpmath at 25 dp:
+                #       x <  0 : err <= 2 ulp
+                #  0 <= x <  1 : err <= 10 ulp
+                #  1 <= x < 10 : err <= 100 ulp
+                # 10 <= x < 20 : err <= 300 ulp
+                # 20 <= x      : < 600 ulp
+                #
+                if arg < 1.0:
+                    ulp_tol = 10
+                elif arg < 10.0:
+                    ulp_tol = 100
+                else:
+                    ulp_tol = 1000
+
+            failure = result_check(expected, got, ulp_tol, abs_tol)
+            if failure is None:
+                continue
+
+            msg = fail_fmt.format(id, fn, arg, failure)
+            failures.append(msg)
 
         if failures:
             self.fail('Failures in test_mtestfile:\n  ' +
