@@ -135,6 +135,9 @@ Library
 Tests
 -----
 
+- Issue #27953: Skip math and cmath tests that fail on OS X 10.4 due to a
+  poor libm implementation of tan.
+
 - Issue #26040: Improve test_math and test_cmath coverage and rigour. Patch by
   Jeff Allen.
 

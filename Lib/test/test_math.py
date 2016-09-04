@@ -6,8 +6,9 @@ from test import support
 import unittest
 import math
 import os
-import sys
+import platform
 import struct
+import sys
 import sysconfig
 
 eps = 1E-05
@@ -1150,6 +1151,18 @@ class MathTests(unittest.TestCase):
 
     @requires_IEEE_754
     def test_testfile(self):
+        # Some tests need to be skipped on ancient OS X versions.
+        # See issue #27953.
+        SKIP_ON_TIGER = {'tan0064'}
+
+        osx_version = None
+        if sys.platform == 'darwin':
+            version_txt = platform.mac_ver()[0]
+            try:
+                osx_version = tuple(map(int, version_txt.split('.')))
+            except ValueError:
+                pass
+
         fail_fmt = "{}: {}({!r}): {}"
 
         failures = []
@@ -1160,6 +1173,10 @@ class MathTests(unittest.TestCase):
             if fn in ['rect', 'polar']:
                 # no real versions of rect, polar
                 continue
+            # Skip certain tests on OS X 10.4.
+            if osx_version is not None and osx_version < (10, 5):
+                if id in SKIP_ON_TIGER:
+                    continue
 
             func = getattr(math, fn)
 
