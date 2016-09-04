@@ -96,10 +96,12 @@ class Random(_random.Random):
         None or no argument seeds from current time or from an operating
         system specific randomness source if available.
 
-        For version 2 (the default), all of the bits are used if *a* is a str,
-        bytes, or bytearray.  For version 1, the hash() of *a* is used instead.
-
         If *a* is an int, all bits are used.
+
+        For version 2 (the default), all of the bits are used if *a* is a str,
+        bytes, or bytearray.  For version 1 (provided for reproducing random
+        sequences from older versions of Python), the algorithm for str and
+        bytes generates a narrower range of seeds.
 
         """
 
