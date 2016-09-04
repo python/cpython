@@ -692,14 +692,11 @@ class Flag(Enum):
         if self._name_ is not None:
             return '<%s.%s: %r>' % (cls.__name__, self._name_, self._value_)
         members = self._decompose_()
-        if len(members) == 1 and members[0]._name_ is None:
-            return '<%s: %r>' % (cls.__name__, members[0]._value_)
-        else:
-            return '<%s.%s: %r>' % (
-                    cls.__name__,
-                    '|'.join([str(m._name_ or m._value_) for m in members]),
-                    self._value_,
-                    )
+        return '<%s.%s: %r>' % (
+                cls.__name__,
+                '|'.join([str(m._name_ or m._value_) for m in members]),
+                self._value_,
+                )
 
     def __str__(self):
         cls = self.__class__
