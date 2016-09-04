@@ -574,7 +574,7 @@ It is also possible to name the combinations::
     >>> Perm.RWX
     <Perm.RWX: 7>
     >>> ~Perm.RWX
-    <Perm.0: 0>
+    <Perm.-8: -8>
 
 Another important difference between :class:`IntFlag` and :class:`Enum` is that
 if no flags are set (the value is 0), its boolean evaluation is :data:`False`::
@@ -614,6 +614,17 @@ flags being set, the boolean evaluation is :data:`False`::
     <Color.0: 0>
     >>> bool(Color.red & Color.green)
     False
+
+Individual flags should have values that are powers of two (1, 2, 4, 8, ...),
+while combinations of flags won't::
+
+    >>> class Color(Flag):
+    ...     red = 1
+    ...     blue = 2
+    ...     green = 4
+    ...     white = 7
+    ...     # or
+    ...     # white = red | blue | green
 
 Giving a name to the "no flags set" condition does not change its boolean
 value::
