@@ -63,8 +63,11 @@ Bookkeeping functions:
    If *a* is an int, it is used directly.
 
    With version 2 (the default), a :class:`str`, :class:`bytes`, or :class:`bytearray`
-   object gets converted to an :class:`int` and all of its bits are used.  With version 1,
-   the :func:`hash` of *a* is used instead.
+   object gets converted to an :class:`int` and all of its bits are used.
+
+   With version 1 (provided for reproducing random sequences from older versions
+   of Python), the algorithm for :class:`str` and :class:`bytes` generates a
+   narrower range of seeds.
 
    .. versionchanged:: 3.2
       Moved to the version 2 scheme which uses all of the bits in a string seed.
