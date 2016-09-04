@@ -15,6 +15,7 @@ eps = 1E-05
 NAN = float('nan')
 INF = float('inf')
 NINF = float('-inf')
+FLOAT_MAX = sys.float_info.max
 
 # detect evidence of double-rounding: fsum is not always correctly
 # rounded on machines that suffer from double rounding.
@@ -271,6 +272,8 @@ class MathTests(unittest.TestCase):
         self.ftest('acos(1)', math.acos(1), 0)
         self.assertRaises(ValueError, math.acos, INF)
         self.assertRaises(ValueError, math.acos, NINF)
+        self.assertRaises(ValueError, math.acos, 1 + eps)
+        self.assertRaises(ValueError, math.acos, -1 - eps)
         self.assertTrue(math.isnan(math.acos(NAN)))
 
     def testAcosh(self):
@@ -290,6 +293,8 @@ class MathTests(unittest.TestCase):
         self.ftest('asin(1)', math.asin(1), math.pi/2)
         self.assertRaises(ValueError, math.asin, INF)
         self.assertRaises(ValueError, math.asin, NINF)
+        self.assertRaises(ValueError, math.asin, 1 + eps)
+        self.assertRaises(ValueError, math.asin, -1 - eps)
         self.assertTrue(math.isnan(math.asin(NAN)))
 
     def testAsinh(self):
@@ -469,6 +474,7 @@ class MathTests(unittest.TestCase):
         self.ftest('degrees(pi)', math.degrees(math.pi), 180.0)
         self.ftest('degrees(pi/2)', math.degrees(math.pi/2), 90.0)
         self.ftest('degrees(-pi/4)', math.degrees(-math.pi/4), -45.0)
+        self.ftest('degrees(0)', math.degrees(0), 0)
 
     def testExp(self):
         self.assertRaises(TypeError, math.exp)
@@ -478,6 +484,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.exp(INF), INF)
         self.assertEqual(math.exp(NINF), 0.)
         self.assertTrue(math.isnan(math.exp(NAN)))
+        self.assertRaises(OverflowError, math.exp, 1000000)
 
     def testFabs(self):
         self.assertRaises(TypeError, math.fabs)
@@ -720,6 +727,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.hypot(INF, NAN), INF)
         self.assertEqual(math.hypot(NAN, NINF), INF)
         self.assertEqual(math.hypot(NINF, NAN), INF)
+        self.assertRaises(OverflowError, math.hypot, FLOAT_MAX, FLOAT_MAX)
         self.assertTrue(math.isnan(math.hypot(1.0, NAN)))
         self.assertTrue(math.isnan(math.hypot(NAN, -2.0)))
 
@@ -773,8 +781,10 @@ class MathTests(unittest.TestCase):
 
     def testLog1p(self):
         self.assertRaises(TypeError, math.log1p)
-        n= 2**90
-        self.assertAlmostEqual(math.log1p(n), math.log1p(float(n)))
+        for n in [2, 2**90, 2**300]:
+            self.assertAlmostEqual(math.log1p(n), math.log1p(float(n)))
+        self.assertRaises(ValueError, math.log1p, -1)
+        self.assertEqual(math.log1p(INF), INF)
 
     @requires_IEEE_754
     def testLog2(self):
@@ -988,6 +998,7 @@ class MathTests(unittest.TestCase):
         self.ftest('radians(180)', math.radians(180), math.pi)
         self.ftest('radians(90)', math.radians(90), math.pi/2)
         self.ftest('radians(-45)', math.radians(-45), -math.pi/4)
+        self.ftest('radians(0)', math.radians(0), 0)
 
     def testSin(self):
         self.assertRaises(TypeError, math.sin)
@@ -1017,6 +1028,7 @@ class MathTests(unittest.TestCase):
         self.ftest('sqrt(1)', math.sqrt(1), 1)
         self.ftest('sqrt(4)', math.sqrt(4), 2)
         self.assertEqual(math.sqrt(INF), INF)
+        self.assertRaises(ValueError, math.sqrt, -1)
         self.assertRaises(ValueError, math.sqrt, NINF)
         self.assertTrue(math.isnan(math.sqrt(NAN)))
 
@@ -1087,7 +1099,8 @@ class MathTests(unittest.TestCase):
 
     def testIsnan(self):
         self.assertTrue(math.isnan(float("nan")))
-        self.assertTrue(math.isnan(float("inf")* 0.))
+        self.assertTrue(math.isnan(float("-nan")))
+        self.assertTrue(math.isnan(float("inf") * 0.))
         self.assertFalse(math.isnan(float("inf")))
         self.assertFalse(math.isnan(0.))
         self.assertFalse(math.isnan(1.))
@@ -1380,7 +1393,8 @@ class IsCloseTests(unittest.TestCase):
 
         decimal_examples = [(Decimal('1.00000001'), Decimal('1.0')),
                             (Decimal('1.00000001e-20'), Decimal('1.0e-20')),
-                            (Decimal('1.00000001e-100'), Decimal('1.0e-100'))]
+                            (Decimal('1.00000001e-100'), Decimal('1.0e-100')),
+                            (Decimal('1.00000001e20'), Decimal('1.0e20'))]
         self.assertAllClose(decimal_examples, rel_tol=1e-8)
         self.assertAllNotClose(decimal_examples, rel_tol=1e-9)
 
@@ -1388,8 +1402,10 @@ class IsCloseTests(unittest.TestCase):
         # test with Fraction values
         from fractions import Fraction
 
-        # could use some more examples here!
-        fraction_examples = [(Fraction(1, 100000000) + 1, Fraction(1))]
+        fraction_examples = [
+            (Fraction(1, 100000000) + 1, Fraction(1)),
+            (Fraction(100000001), Fraction(100000000)),
+            (Fraction(10**8 + 1, 10**28), Fraction(1, 10**20))]
         self.assertAllClose(fraction_examples, rel_tol=1e-8)
         self.assertAllNotClose(fraction_examples, rel_tol=1e-9)
 
