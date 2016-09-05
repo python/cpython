@@ -1519,6 +1519,76 @@ cipher_to_tuple(const SSL_CIPHER *cipher)
     return NULL;
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10002000UL
+static PyObject *
+cipher_to_dict(const SSL_CIPHER *cipher)
+{
+    const char *cipher_name, *cipher_protocol;
+
+    unsigned long cipher_id;
+    int alg_bits, strength_bits, len;
+    char buf[512] = {0};
+#if OPENSSL_VERSION_1_1
+    int aead, nid;
+    const char *skcipher = NULL, *digest = NULL, *kx = NULL, *auth = NULL;
+#endif
+    PyObject *retval;
+
+    retval = PyDict_New();
+    if (retval == NULL) {
+        goto error;
+    }
+
+    /* can be NULL */
+    cipher_name = SSL_CIPHER_get_name(cipher);
+    cipher_protocol = SSL_CIPHER_get_version(cipher);
+    cipher_id = SSL_CIPHER_get_id(cipher);
+    SSL_CIPHER_description(cipher, buf, sizeof(buf) - 1);
+    len = strlen(buf);
+    if (len > 1 && buf[len-1] == '\n')
+        buf[len-1] = '\0';
+    strength_bits = SSL_CIPHER_get_bits(cipher, &alg_bits);
+
+#if OPENSSL_VERSION_1_1
+    aead = SSL_CIPHER_is_aead(cipher);
+    nid = SSL_CIPHER_get_cipher_nid(cipher);
+    skcipher = nid != NID_undef ? OBJ_nid2ln(nid) : NULL;
+    nid = SSL_CIPHER_get_digest_nid(cipher);
+    digest = nid != NID_undef ? OBJ_nid2ln(nid) : NULL;
+    nid = SSL_CIPHER_get_kx_nid(cipher);
+    kx = nid != NID_undef ? OBJ_nid2ln(nid) : NULL;
+    nid = SSL_CIPHER_get_auth_nid(cipher);
+    auth = nid != NID_undef ? OBJ_nid2ln(nid) : NULL;
+#endif
+
+    retval = Py_BuildValue(
+        "{sksssssssisi"
+#if OPENSSL_VERSION_1_1
+        "sOssssssss"
+#endif
+        "}",
+        "id", cipher_id,
+        "name", cipher_name,
+        "protocol", cipher_protocol,
+        "description", buf,
+        "strength_bits", strength_bits,
+        "alg_bits", alg_bits
+#if OPENSSL_VERSION_1_1
+        ,"aead", aead ? Py_True : Py_False,
+        "symmetric", skcipher,
+        "digest", digest,
+        "kea", kx,
+        "auth", auth
+#endif
+       );
+    return retval;
+
+  error:
+    Py_XDECREF(retval);
+    return NULL;
+}
+#endif
+
 /*[clinic input]
 _ssl._SSLSocket.shared_ciphers
 [clinic start generated code]*/
@@ -2477,6 +2547,52 @@ _ssl__SSLContext_set_ciphers_impl(PySSLContext *self, const char *cipherlist)
     }
     Py_RETURN_NONE;
 }
+
+#if OPENSSL_VERSION_NUMBER >= 0x10002000UL
+/*[clinic input]
+_ssl._SSLContext.get_ciphers
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_get_ciphers_impl(PySSLContext *self)
+/*[clinic end generated code: output=a56e4d68a406dfc4 input=a2aadc9af89b79c5]*/
+{
+    SSL *ssl = NULL;
+    STACK_OF(SSL_CIPHER) *sk = NULL;
+    SSL_CIPHER *cipher;
+    int i=0;
+    PyObject *result = NULL, *dct;
+
+    ssl = SSL_new(self->ctx);
+    if (ssl == NULL) {
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        goto exit;
+    }
+    sk = SSL_get_ciphers(ssl);
+
+    result = PyList_New(sk_SSL_CIPHER_num(sk));
+    if (result == NULL) {
+        goto exit;
+    }
+
+    for (i = 0; i < sk_SSL_CIPHER_num(sk); i++) {
+        cipher = sk_SSL_CIPHER_value(sk, i);
+        dct = cipher_to_dict(cipher);
+        if (dct == NULL) {
+            Py_CLEAR(result);
+            goto exit;
+        }
+        PyList_SET_ITEM(result, i, dct);
+    }
+
+  exit:
+    if (ssl != NULL)
+        SSL_free(ssl);
+    return result;
+
+}
+#endif
+
 
 #ifdef OPENSSL_NPN_NEGOTIATED
 static int
@@ -3645,6 +3761,7 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT_SET_SERVERNAME_CALLBACK_METHODDEF
     _SSL__SSLCONTEXT_CERT_STORE_STATS_METHODDEF
     _SSL__SSLCONTEXT_GET_CA_CERTS_METHODDEF
+    _SSL__SSLCONTEXT_GET_CIPHERS_METHODDEF
     {NULL, NULL}        /* sentinel */
 };
 
