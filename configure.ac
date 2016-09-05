@@ -3862,6 +3862,19 @@ if test $ac_cv_struct_sockaddr_storage = yes; then
 	AC_DEFINE(HAVE_SOCKADDR_STORAGE, 1, [struct sockaddr_storage (sys/socket.h)])
 fi
 
+AC_MSG_CHECKING(for sockaddr_alg)
+AC_CACHE_VAL(ac_cv_struct_sockaddr_alg,
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#		include <sys/types.h>
+#		include <sys/socket.h>
+#		include <linux/if_alg.h>]], [[struct sockaddr_alg s]])],
+  [ac_cv_struct_sockaddr_alg=yes],
+  [ac_cv_struct_sockaddr_alg=no]))
+AC_MSG_RESULT($ac_cv_struct_sockaddr_alg)
+if test $ac_cv_struct_sockaddr_alg = yes; then
+	AC_DEFINE(HAVE_SOCKADDR_ALG, 1, [struct sockaddr_alg (linux/if_alg.h)])
+fi
+
 # checks for compiler characteristics
 
 AC_C_CHAR_UNSIGNED

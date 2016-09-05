@@ -131,6 +131,22 @@ created.  Socket addresses are represented as follows:
     string format. (ex. ``b'12:23:34:45:56:67'``) This protocol is not
     supported under FreeBSD.
 
+- :const:`AF_ALG` is a Linux-only socket based interface to Kernel
+  cryptography. An algorithm socket is configured with a tuple of two to four
+  elements ``(type, name [, feat [, mask]])``, where:
+
+  - *type* is the algorithm type as string, e.g. ``aead``, ``hash``,
+   ``skcipher`` or ``rng``.
+
+  - *name* is the algorithm name and operation mode as string, e.g.
+    ``sha256``, ``hmac(sha256)``, ``cbc(aes)`` or ``drbg_nopr_ctr_aes256``.
+
+  - *feat* and *mask* are unsigned 32bit integers.
+
+  Availability Linux 2.6.38, some algorithm types require more recent Kernels.
+
+  .. versionadded:: 3.6
+
 - Certain other address families (:const:`AF_PACKET`, :const:`AF_CAN`)
   support specific representations.
 
@@ -349,6 +365,16 @@ Constants
 
    TIPC related constants, matching the ones exported by the C socket API. See
    the TIPC documentation for more information.
+
+.. data:: AF_ALG
+          SOL_ALG
+          ALG_*
+
+   Constants for Linux Kernel cryptography.
+
+   Availability: Linux >= 2.6.38.
+
+   .. versionadded:: 3.6
 
 .. data:: AF_LINK
 
@@ -1294,6 +1320,15 @@ to sockets.
       an exception, the method now retries the system call instead of raising
       an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
+.. method:: socket.sendmsg_afalg([msg], *, op[, iv[, assoclen[, flags]]])
+
+   Specialized version of :meth:`~socket.sendmsg` for :const:`AF_ALG` socket.
+   Set mode, IV, AEAD associated data length and flags for :const:`AF_ALG` socket.
+
+   Availability: Linux >= 2.6.38
+
+   .. versionadded:: 3.6
+
 .. method:: socket.sendfile(file, offset=0, count=None)
 
    Send a file until EOF is reached by using high-performance
@@ -1342,20 +1377,28 @@ to sockets.
    For further information, please consult the :ref:`notes on socket timeouts <socket-timeouts>`.
 
 
-.. method:: socket.setsockopt(level, optname, value)
+.. method:: socket.setsockopt(level, optname, value: int)
+.. method:: socket.setsockopt(level, optname, value: buffer)
+.. method:: socket.setsockopt(level, optname, None, optlen: int)
 
    .. index:: module: struct
 
    Set the value of the given socket option (see the Unix manual page
    :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the
-   :mod:`socket` module (:const:`SO_\*` etc.).  The value can be an integer or
-   a :term:`bytes-like object` representing a buffer.  In the latter case it is
-   up to the caller to
-   ensure that the bytestring contains the proper bits (see the optional built-in
-   module :mod:`struct` for a way to encode C structures as bytestrings).
+   :mod:`socket` module (:const:`SO_\*` etc.).  The value can be an integer,
+   None or a :term:`bytes-like object` representing a buffer. In the later
+   case it is up to the caller to ensure that the bytestring contains the
+   proper bits (see the optional built-in module :mod:`struct` for a way to
+   encode C structures as bytestrings). When value is set to None,
+   optlen argument is required. It's equivalent to call setsockopt C
+   function with optval=NULL and optlen=optlen.
+
 
    .. versionchanged:: 3.5
       Writable :term:`bytes-like object` is now accepted.
+
+   .. versionchanged:: 3.6
+      setsockopt(level, optname, None, optlen: int) form added.
 
 
 .. method:: socket.shutdown(how)
