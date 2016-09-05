@@ -118,7 +118,7 @@ Functions
    :exc:`ValueError` is raised). Otherwise a search using :attr:`sys.meta_path`
    is done. ``None`` is returned if no loader is found.
 
-   A dotted name does not have its parent's implicitly imported as that requires
+   A dotted name does not have its parents implicitly imported as that requires
    loading them and that may not be desired. To properly import a submodule you
    will need to import all parent packages of the submodule and use the correct
    argument to *path*.
