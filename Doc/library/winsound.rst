@@ -40,7 +40,8 @@ provided by Windows platforms.  It includes functions and several constants.
    sound to play; possible values are ``-1``, ``MB_ICONASTERISK``,
    ``MB_ICONEXCLAMATION``, ``MB_ICONHAND``, ``MB_ICONQUESTION``, and ``MB_OK``, all
    described below.  The value ``-1`` produces a "simple beep"; this is the final
-   fallback if a sound cannot be played otherwise.
+   fallback if a sound cannot be played otherwise.  If the system indicates an
+   error, :exc:`RuntimeError` is raised.
 
 
 .. data:: SND_FILENAME
