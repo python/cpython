@@ -1565,6 +1565,14 @@ class CoroutineTest(unittest.TestCase):
         finally:
             aw.close()
 
+    def test_fatal_coro_warning(self):
+        # Issue 27811
+        async def func(): pass
+        with warnings.catch_warnings():
+            warnings.filterwarnings("error")
+            func()
+            support.gc_collect()
+
 
 class CoroAsyncIOCompatTest(unittest.TestCase):
 
