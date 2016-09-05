@@ -7,7 +7,7 @@
 #include <winuser.h>
 1 RT_MANIFEST "python.manifest"
 
-1 ICON DISCARDABLE "pycon.ico" 
+1 ICON DISCARDABLE "icons\python.ico" 
 
 
 /////////////////////////////////////////////////////////////////////////////

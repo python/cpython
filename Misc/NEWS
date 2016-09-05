@@ -162,6 +162,11 @@ Build
 - Issue #25825: Update references to the $(LIBPL) installation path on AIX.
   This path was changed in 3.2a4.
 
+Windows
+-------
+
+- Issue #27756: Adds new icons for Python files and processes on Windows.
+  Designs by Cherry Wang.
 
 What's New in Python 3.6.0 alpha 4
 ==================================

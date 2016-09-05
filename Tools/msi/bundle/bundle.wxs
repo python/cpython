@@ -4,7 +4,7 @@
   <Bundle Name="!(loc.FullProductName)"
           UpgradeCode="$(var.CoreUpgradeCode)"
           Version="$(var.Version)"
-          IconSourceFile="bundle.ico"
+          IconSourceFile="..\..\..\PC\icons\setup.ico"
           Manufacturer="!(loc.Manufacturer)"
           AboutUrl="http://www.python.org/"
           DisableModify="button"
