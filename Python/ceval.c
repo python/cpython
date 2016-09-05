@@ -797,6 +797,13 @@ PyEval_EvalFrame(PyFrameObject *f) {
 PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
+    PyThreadState *tstate = PyThreadState_GET();
+    return tstate->interp->eval_frame(f, throwflag);
+}
+
+PyObject *
+_PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
+{
 #ifdef DXPAIRS
     int lastopcode = 0;
 #endif

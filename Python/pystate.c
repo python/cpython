@@ -91,6 +91,7 @@ PyInterpreterState_New(void)
         interp->fscodec_initialized = 0;
         interp->importlib = NULL;
         interp->import_func = NULL;
+        interp->eval_frame = _PyEval_EvalFrameDefault;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
         interp->dlopenflags = RTLD_NOW;
