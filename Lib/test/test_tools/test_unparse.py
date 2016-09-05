@@ -288,8 +288,7 @@ class DirectoryTestCase(ASTTestCase):
             # it's very much a hack that I'm skipping these files, but
             #  I can't figure out why they fail. I'll fix it when I
             #  address issue #27948.
-            if (filename.endswith('/test_fstring.py') or
-                filename.endswith('/test_traceback.py')):
+            if os.path.basename(filename) in ('test_fstring.py', 'test_traceback.py'):
                 if test.support.verbose:
                     print(f'Skipping {filename}: see issue 27921')
                 continue
