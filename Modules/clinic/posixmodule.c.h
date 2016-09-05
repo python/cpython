@@ -100,7 +100,7 @@ PyDoc_STRVAR(os_access__doc__,
 "Use the real uid/gid to test for access to a path.\n"
 "\n"
 "  path\n"
-"    Path to be tested; can be string, bytes, or open-file-descriptor int.\n"
+"    Path to be tested; can be string or bytes\n"
 "  mode\n"
 "    Operating-system mode bitfield.  Can be F_OK to test existence,\n"
 "    or the inclusive-OR of R_OK, W_OK, and X_OK.\n"
@@ -137,7 +137,7 @@ os_access(PyObject *module, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "mode", "dir_fd", "effective_ids", "follow_symlinks", NULL};
     static _PyArg_Parser _parser = {"O&i|$O&pp:access", _keywords, 0};
-    path_t path = PATH_T_INITIALIZE("access", "path", 0, 1);
+    path_t path = PATH_T_INITIALIZE("access", "path", 0, 0);
     int mode;
     int dir_fd = DEFAULT_DIR_FD;
     int effective_ids = 0;
@@ -6042,4 +6042,4 @@ exit:
 #ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
-/*[clinic end generated code: output=97180b6734421a7d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2b85bb3703a6488a input=a9049054013a1b77]*/
