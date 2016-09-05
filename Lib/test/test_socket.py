@@ -5372,6 +5372,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                 op.sendall(b"what do ya want for nothing?")
                 self.assertEqual(op.recv(512), expected)
 
+    @support.requires_linux_version(3, 19)
     def test_aes_cbc(self):
         key = bytes.fromhex('06a9214036b8a15b512e03d534120006')
         iv = bytes.fromhex('3dafba429d9eb430b422da802c9fac41')
@@ -5476,6 +5477,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                 res = op.recv(len(msg))
                 self.assertEqual(plain, res[assoclen:-taglen])
 
+    @support.requires_linux_version(3, 19)
     def test_drbg_pr_sha256(self):
         # deterministic random bit generator, prediction resistance, sha256
         with self.create_alg('rng', 'drbg_pr_sha256') as algo:
