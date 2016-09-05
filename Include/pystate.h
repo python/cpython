@@ -12,10 +12,13 @@ extern "C" {
 
 struct _ts; /* Forward */
 struct _is; /* Forward */
+struct _frame; /* Forward declaration for PyFrameObject. */
 
 #ifdef Py_LIMITED_API
 typedef struct _is PyInterpreterState;
 #else
+typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
+
 typedef struct _is {
 
     struct _is *next;
@@ -42,13 +45,13 @@ typedef struct _is {
 
     PyObject *builtins_copy;
     PyObject *import_func;
+    /* Initialized to PyEval_EvalFrameDefault(). */
+    _PyFrameEvalFunction eval_frame;
 } PyInterpreterState;
 #endif
 
 
 /* State unique per thread */
-
-struct _frame; /* Avoid including frameobject.h */
 
 #ifndef Py_LIMITED_API
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
