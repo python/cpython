@@ -177,8 +177,6 @@ Tests
 Build
 -----
 
-- Issue #27883: Update sqlite to 3.14.1.0 on Windows.
-
 - Issue #27917: Set platform triplets for Android builds.
 
 - Issue #25825: Update references to the $(LIBPL) installation path on AIX.
@@ -189,6 +187,9 @@ Windows
 
 - Issue #27756: Adds new icons for Python files and processes on Windows.
   Designs by Cherry Wang.
+
+- Issue #27883: Update sqlite to 3.14.1.0 on Windows.
+
 
 What's New in Python 3.6.0 alpha 4
 ==================================
