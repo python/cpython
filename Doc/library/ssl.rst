@@ -1259,6 +1259,62 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.4
 
+.. method:: SSLContext.get_ciphers()
+
+   Get a list of enabled ciphers. The list is in order of cipher priority.
+   See :meth:`SSLContext.set_ciphers`.
+
+   Example::
+
+       >>> ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+       >>> ctx.set_ciphers('ECDHE+AESGCM:!ECDSA')
+       >>> ctx.get_ciphers()  # OpenSSL 1.0.x
+       [{'alg_bits': 256,
+         'description': 'ECDHE-RSA-AES256-GCM-SHA384 TLSv1.2 Kx=ECDH     Au=RSA  '
+                        'Enc=AESGCM(256) Mac=AEAD',
+         'id': 50380848,
+         'name': 'ECDHE-RSA-AES256-GCM-SHA384',
+         'protocol': 'TLSv1/SSLv3',
+         'strength_bits': 256},
+        {'alg_bits': 128,
+         'description': 'ECDHE-RSA-AES128-GCM-SHA256 TLSv1.2 Kx=ECDH     Au=RSA  '
+                        'Enc=AESGCM(128) Mac=AEAD',
+         'id': 50380847,
+         'name': 'ECDHE-RSA-AES128-GCM-SHA256',
+         'protocol': 'TLSv1/SSLv3',
+         'strength_bits': 128}]
+
+   On OpenSSL 1.1 and newer the cipher dict contains additional fields::
+       >>> ctx.get_ciphers()  # OpenSSL 1.1+
+       [{'aead': True,
+         'alg_bits': 256,
+         'auth': 'auth-rsa',
+         'description': 'ECDHE-RSA-AES256-GCM-SHA384 TLSv1.2 Kx=ECDH     Au=RSA  '
+                        'Enc=AESGCM(256) Mac=AEAD',
+         'digest': None,
+         'id': 50380848,
+         'kea': 'kx-ecdhe',
+         'name': 'ECDHE-RSA-AES256-GCM-SHA384',
+         'protocol': 'TLSv1.2',
+         'strength_bits': 256,
+         'symmetric': 'aes-256-gcm'},
+        {'aead': True,
+         'alg_bits': 128,
+         'auth': 'auth-rsa',
+         'description': 'ECDHE-RSA-AES128-GCM-SHA256 TLSv1.2 Kx=ECDH     Au=RSA  '
+                        'Enc=AESGCM(128) Mac=AEAD',
+         'digest': None,
+         'id': 50380847,
+         'kea': 'kx-ecdhe',
+         'name': 'ECDHE-RSA-AES128-GCM-SHA256',
+         'protocol': 'TLSv1.2',
+         'strength_bits': 128,
+         'symmetric': 'aes-128-gcm'}]
+
+   Availability: OpenSSL 1.0.2+
+
+   .. versionadded:: 3.6
+
 .. method:: SSLContext.set_default_verify_paths()
 
    Load a set of default "certification authority" (CA) certificates from

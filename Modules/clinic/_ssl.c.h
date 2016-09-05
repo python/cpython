@@ -378,6 +378,27 @@ exit:
     return return_value;
 }
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10002000UL)
+
+PyDoc_STRVAR(_ssl__SSLContext_get_ciphers__doc__,
+"get_ciphers($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_GET_CIPHERS_METHODDEF    \
+    {"get_ciphers", (PyCFunction)_ssl__SSLContext_get_ciphers, METH_NOARGS, _ssl__SSLContext_get_ciphers__doc__},
+
+static PyObject *
+_ssl__SSLContext_get_ciphers_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_get_ciphers(PySSLContext *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl__SSLContext_get_ciphers_impl(self);
+}
+
+#endif /* (OPENSSL_VERSION_NUMBER >= 0x10002000UL) */
+
 PyDoc_STRVAR(_ssl__SSLContext__set_npn_protocols__doc__,
 "_set_npn_protocols($self, protos, /)\n"
 "--\n"
@@ -1128,6 +1149,10 @@ exit:
     #define _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF
 #endif /* !defined(_SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF) */
 
+#ifndef _SSL__SSLCONTEXT_GET_CIPHERS_METHODDEF
+    #define _SSL__SSLCONTEXT_GET_CIPHERS_METHODDEF
+#endif /* !defined(_SSL__SSLCONTEXT_GET_CIPHERS_METHODDEF) */
+
 #ifndef _SSL__SSLCONTEXT_SET_ECDH_CURVE_METHODDEF
     #define _SSL__SSLCONTEXT_SET_ECDH_CURVE_METHODDEF
 #endif /* !defined(_SSL__SSLCONTEXT_SET_ECDH_CURVE_METHODDEF) */
@@ -1143,4 +1168,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=6057f95343369849 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2e7907a7d8f97ccf input=a9049054013a1b77]*/
