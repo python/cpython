@@ -62,6 +62,9 @@ Library
 
 - Issue #26470: Port ssl and hashlib module to OpenSSL 1.1.0.
 
+- Remove support for passing a file descriptor to os.access. It never worked but
+  previously didn't raise.
+
 - Issue #12885: Fix error when distutils encounters symlink.
 
 - Issue #27881: Fixed possible bugs when setting sqlite3.Connection.isolation_level.
