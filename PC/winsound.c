@@ -175,7 +175,17 @@ static PyObject *
 winsound_MessageBeep_impl(PyObject *module, int x)
 /*[clinic end generated code: output=1ad89e4d8d30a957 input=a776c8a85c9853f6]*/
 {
-    MessageBeep(x);
+    BOOL ok;
+
+    Py_BEGIN_ALLOW_THREADS
+    ok = MessageBeep(x);
+    Py_END_ALLOW_THREADS
+
+    if (!ok) {
+        PyErr_SetExcFromWindowsErr(PyExc_RuntimeError, 0);
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
