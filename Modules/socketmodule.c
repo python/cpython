@@ -2556,7 +2556,7 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
     }
 
     PyErr_Clear();
-    /* setsockopt(level, opt, (None, flag)) */
+    /* setsockopt(level, opt, None, flag) */
     if (PyArg_ParseTuple(args, "iiO!I:setsockopt",
                          &level, &optname, Py_TYPE(Py_None), &none, &optlen)) {
         assert(sizeof(socklen_t) >= sizeof(unsigned int));
