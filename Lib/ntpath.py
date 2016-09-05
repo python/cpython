@@ -28,8 +28,6 @@ sep = '\\'
 pathsep = ';'
 altsep = '/'
 defpath = '.;C:\\bin'
-if 'ce' in sys.builtin_module_names:
-    defpath = '\\Windows'
 devnull = 'nul'
 
 def _get_bothseps(path):

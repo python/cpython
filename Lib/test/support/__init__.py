@@ -811,7 +811,7 @@ TESTFN_ENCODING = sys.getfilesystemencoding()
 # encoded by the filesystem encoding (in strict mode). It can be None if we
 # cannot generate such filename.
 TESTFN_UNENCODABLE = None
-if os.name in ('nt', 'ce'):
+if os.name == 'nt':
     # skip win32s (0) or Windows 9x/ME (1)
     if sys.getwindowsversion().platform >= 2:
         # Different kinds of characters from various languages to minimize the

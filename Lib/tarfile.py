@@ -144,7 +144,7 @@ PAX_NUMBER_FIELDS = {
 #---------------------------------------------------------
 # initialization
 #---------------------------------------------------------
-if os.name in ("nt", "ce"):
+if os.name == "nt":
     ENCODING = "utf-8"
 else:
     ENCODING = sys.getfilesystemencoding()
