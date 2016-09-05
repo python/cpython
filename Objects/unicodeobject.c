@@ -3100,9 +3100,9 @@ PyUnicode_FromEncodedObject(PyObject *obj,
     return v;
 }
 
-/* Convert encoding to lower case and replace '_' with '-' in order to
-   catch e.g. UTF_8. Return 0 on error (encoding is longer than lower_len-1),
-   1 on success. */
+/* Normalize an encoding name: C implementation of
+   encodings.normalize_encoding(). Return 1 on success, or 0 on error (encoding
+   is longer than lower_len-1). */
 int
 _Py_normalize_encoding(const char *encoding,
                        char *lower,
@@ -3111,30 +3111,39 @@ _Py_normalize_encoding(const char *encoding,
     const char *e;
     char *l;
     char *l_end;
+    int punct;
 
-    if (encoding == NULL) {
-        /* 6 == strlen("utf-8") + 1 */
-        if (lower_len < 6)
-            return 0;
-        strcpy(lower, "utf-8");
-        return 1;
-    }
+    assert(encoding != NULL);
+
     e = encoding;
     l = lower;
     l_end = &lower[lower_len - 1];
-    while (*e) {
-        if (l == l_end)
-            return 0;
-        if (Py_ISUPPER(*e)) {
-            *l++ = Py_TOLOWER(*e++);
+    punct = 0;
+    while (1) {
+        char c = *e;
+        if (c == 0) {
+            break;
         }
-        else if (*e == '_') {
-            *l++ = '-';
-            e++;
+
+        if (Py_ISALNUM(c) || c == '.') {
+            if (punct && l != lower) {
+                if (l == l_end) {
+                    return 0;
+                }
+                *l++ = '_';
+            }
+            punct = 0;
+
+            if (l == l_end) {
+                return 0;
+            }
+            *l++ = Py_TOLOWER(c);
         }
         else {
-            *l++ = *e++;
+            punct = 1;
         }
+
+        e++;
     }
     *l = '\0';
     return 1;
@@ -3148,28 +3157,51 @@ PyUnicode_Decode(const char *s,
 {
     PyObject *buffer = NULL, *unicode;
     Py_buffer info;
-    char lower[11];  /* Enough for any encoding shortcut */
+    char buflower[11];   /* strlen("iso-8859-1\0") == 11, longest shortcut */
+
+    if (encoding == NULL) {
+        return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
+    }
 
     /* Shortcuts for common default encodings */
-    if (_Py_normalize_encoding(encoding, lower, sizeof(lower))) {
-        if ((strcmp(lower, "utf-8") == 0) ||
-            (strcmp(lower, "utf8") == 0))
-            return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
-        else if ((strcmp(lower, "latin-1") == 0) ||
-                 (strcmp(lower, "latin1") == 0) ||
-                 (strcmp(lower, "iso-8859-1") == 0) ||
-                 (strcmp(lower, "iso8859-1") == 0))
-            return PyUnicode_DecodeLatin1(s, size, errors);
-#ifdef HAVE_MBCS
-        else if (strcmp(lower, "mbcs") == 0)
-            return PyUnicode_DecodeMBCS(s, size, errors);
-#endif
-        else if (strcmp(lower, "ascii") == 0)
-            return PyUnicode_DecodeASCII(s, size, errors);
-        else if (strcmp(lower, "utf-16") == 0)
-            return PyUnicode_DecodeUTF16(s, size, errors, 0);
-        else if (strcmp(lower, "utf-32") == 0)
-            return PyUnicode_DecodeUTF32(s, size, errors, 0);
+    if (_Py_normalize_encoding(encoding, buflower, sizeof(buflower))) {
+        char *lower = buflower;
+
+        /* Fast paths */
+        if (lower[0] == 'u' && lower[1] == 't' && lower[2] == 'f') {
+            lower += 3;
+            if (*lower == '_') {
+                /* Match "utf8" and "utf_8" */
+                lower++;
+            }
+
+            if (lower[0] == '8' && lower[1] == 0) {
+                return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
+            }
+            else if (lower[0] == '1' && lower[1] == '6' && lower[2] == 0) {
+                return PyUnicode_DecodeUTF16(s, size, errors, 0);
+            }
+            else if (lower[0] == '3' && lower[1] == '2' && lower[2] == 0) {
+                return PyUnicode_DecodeUTF32(s, size, errors, 0);
+            }
+        }
+        else {
+            if (strcmp(lower, "ascii") == 0
+                || strcmp(lower, "us_ascii") == 0) {
+                return PyUnicode_DecodeASCII(s, size, errors);
+            }
+    #ifdef HAVE_MBCS
+            else if (strcmp(lower, "mbcs") == 0) {
+                return PyUnicode_DecodeMBCS(s, size, errors);
+            }
+    #endif
+            else if (strcmp(lower, "latin1") == 0
+                     || strcmp(lower, "latin_1") == 0
+                     || strcmp(lower, "iso_8859_1") == 0
+                     || strcmp(lower, "iso8859_1") == 0) {
+                return PyUnicode_DecodeLatin1(s, size, errors);
+            }
+        }
     }
 
     /* Decode via the codec registry */
@@ -3512,34 +3544,56 @@ PyUnicode_AsEncodedString(PyObject *unicode,
                           const char *errors)
 {
     PyObject *v;
-    char lower[11];  /* Enough for any encoding shortcut */
+    char buflower[11];   /* strlen("iso_8859_1\0") == 11, longest shortcut */
 
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
     }
 
+    if (encoding == NULL) {
+        return _PyUnicode_AsUTF8String(unicode, errors);
+    }
+
     /* Shortcuts for common default encodings */
-    if (_Py_normalize_encoding(encoding, lower, sizeof(lower))) {
-        if ((strcmp(lower, "utf-8") == 0) ||
-            (strcmp(lower, "utf8") == 0))
-        {
-            if (errors == NULL || strcmp(errors, "strict") == 0)
-                return _PyUnicode_AsUTF8String(unicode, NULL);
-            else
+    if (_Py_normalize_encoding(encoding, buflower, sizeof(buflower))) {
+        char *lower = buflower;
+
+        /* Fast paths */
+        if (lower[0] == 'u' && lower[1] == 't' && lower[2] == 'f') {
+            lower += 3;
+            if (*lower == '_') {
+                /* Match "utf8" and "utf_8" */
+                lower++;
+            }
+
+            if (lower[0] == '8' && lower[1] == 0) {
                 return _PyUnicode_AsUTF8String(unicode, errors);
+            }
+            else if (lower[0] == '1' && lower[1] == '6' && lower[2] == 0) {
+                return _PyUnicode_EncodeUTF16(unicode, errors, 0);
+            }
+            else if (lower[0] == '3' && lower[1] == '2' && lower[2] == 0) {
+                return _PyUnicode_EncodeUTF32(unicode, errors, 0);
+            }
         }
-        else if ((strcmp(lower, "latin-1") == 0) ||
-                 (strcmp(lower, "latin1") == 0) ||
-                 (strcmp(lower, "iso-8859-1") == 0) ||
-                 (strcmp(lower, "iso8859-1") == 0))
-            return _PyUnicode_AsLatin1String(unicode, errors);
+        else {
+            if (strcmp(lower, "ascii") == 0
+                || strcmp(lower, "us_ascii") == 0) {
+                return _PyUnicode_AsASCIIString(unicode, errors);
+            }
 #ifdef HAVE_MBCS
-        else if (strcmp(lower, "mbcs") == 0)
-            return PyUnicode_EncodeCodePage(CP_ACP, unicode, errors);
+            else if (strcmp(lower, "mbcs") == 0) {
+                return PyUnicode_EncodeCodePage(CP_ACP, unicode, errors);
+            }
 #endif
-        else if (strcmp(lower, "ascii") == 0)
-            return _PyUnicode_AsASCIIString(unicode, errors);
+            else if (strcmp(lower, "latin1") == 0 ||
+                     strcmp(lower, "latin_1") == 0 ||
+                     strcmp(lower, "iso_8859_1") == 0 ||
+                     strcmp(lower, "iso8859_1") == 0) {
+                return _PyUnicode_AsLatin1String(unicode, errors);
+            }
+        }
     }
 
     /* Encode via the codec registry */
