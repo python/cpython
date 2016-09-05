@@ -2826,7 +2826,7 @@ class PathTConverterTests(unittest.TestCase):
     functions = [
         ('stat', True, (), None),
         ('lstat', False, (), None),
-        ('access', True, (os.F_OK,), None),
+        ('access', False, (os.F_OK,), None),
         ('chflags', False, (0,), None),
         ('lchflags', False, (0,), None),
         ('open', False, (0,), getattr(os, 'close', None)),
