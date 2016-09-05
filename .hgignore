@@ -94,7 +94,10 @@ htmlcov/
 *.gcda
 *.gcno
 *.gcov
+ipch/
 coverage.info
 Tools/msi/obj
 Tools/ssl/amd64
 Tools/ssl/win32
+.vs/
+.vscode/
