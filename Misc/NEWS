@@ -77,6 +77,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27866: Add SSLContext.get_ciphers() method to get a list of all
+  enabled ciphers.
+
 - Issue #27744: Add AF_ALG (Linux Kernel crypto) to socket module.
 
 - Issue #26470: Port ssl and hashlib module to OpenSSL 1.1.0.

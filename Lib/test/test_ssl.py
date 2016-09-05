@@ -834,6 +834,15 @@ class ContextTests(unittest.TestCase):
         with self.assertRaisesRegex(ssl.SSLError, "No cipher can be selected"):
             ctx.set_ciphers("^$:,;?*'dorothyx")
 
+    @unittest.skipIf(ssl.OPENSSL_VERSION_INFO < (1, 0, 2, 0, 0), 'OpenSSL too old')
+    def test_get_ciphers(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx.set_ciphers('ECDHE+AESGCM:!ECDSA')
+        names = set(d['name'] for d in ctx.get_ciphers())
+        self.assertEqual(names,
+                        {'ECDHE-RSA-AES256-GCM-SHA384',
+                         'ECDHE-RSA-AES128-GCM-SHA256'})
+
     @skip_if_broken_ubuntu_ssl
     def test_options(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
