@@ -97,6 +97,34 @@ Windows improvements:
 New Features
 ============
 
+.. _pep-523:
+
+PEP 523: Adding a frame evaluation API to CPython
+=================================================
+
+While Python provides extensive support to customize how code
+executes, one place it has not done so is in the evaluation of frame
+objects. If you wanted some way to intercept frame evaluation in
+Python there really wasn't any way without directly manipulating
+function pointers for defined functions.
+
+:pep:`523` changes this by providing an API to make frame
+evaluation pluggable at the C level. This will allow for tools such
+as debuggers and JITs to intercept frame evaluation before the
+execution of Python code begins. This enables the use of alternative
+evaluation implementations for Python code, tracking frame
+evaluation, etc.
+
+This API is not part of the limited C API and is marked as private to
+signal that usage of this API is expected to be limited and only
+applicable to very select, low-level use-cases.
+
+.. seealso::
+
+    :pep:`523` - Adding a frame evaluation API to CPython
+       PEP written by Brett Cannon and Dino Viehland.
+
+
 .. _pep-519:
 
 PEP 519: Adding a file system path protocol
