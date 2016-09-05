@@ -71,7 +71,10 @@ gen_dealloc(PyGenObject *gen)
         return;                     /* resurrected.  :( */
 
     _PyObject_GC_UNTRACK(self);
-    Py_CLEAR(gen->gi_frame);
+    if (gen->gi_frame != NULL) {
+        gen->gi_frame->f_gen = NULL;
+        Py_CLEAR(gen->gi_frame);
+    }
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
