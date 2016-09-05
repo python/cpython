@@ -17,16 +17,16 @@ PyDoc_STRVAR(winsound_PlaySound__doc__,
     {"PlaySound", (PyCFunction)winsound_PlaySound, METH_VARARGS, winsound_PlaySound__doc__},
 
 static PyObject *
-winsound_PlaySound_impl(PyObject *module, Py_UNICODE *sound, int flags);
+winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags);
 
 static PyObject *
 winsound_PlaySound(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_UNICODE *sound;
+    PyObject *sound;
     int flags;
 
-    if (!PyArg_ParseTuple(args, "Zi:PlaySound",
+    if (!PyArg_ParseTuple(args, "Oi:PlaySound",
         &sound, &flags)) {
         goto exit;
     }
@@ -100,4 +100,4 @@ winsound_MessageBeep(PyObject *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1044b2adf3c67014 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b999334e2e444ad2 input=a9049054013a1b77]*/

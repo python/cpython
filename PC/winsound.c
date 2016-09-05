@@ -64,7 +64,7 @@ module winsound
 /*[clinic input]
 winsound.PlaySound
 
-    sound: Py_UNICODE(accept={str, NoneType})
+    sound: object
         The sound to play; a filename, data, or None.
     flags: int
         Flag values, ored together.  See module documentation.
@@ -74,22 +74,49 @@ A wrapper around the Windows PlaySound API.
 [clinic start generated code]*/
 
 static PyObject *
-winsound_PlaySound_impl(PyObject *module, Py_UNICODE *sound, int flags)
-/*[clinic end generated code: output=ec24b3a2b4368378 input=3411b1b7c1f36d93]*/
+winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags)
+/*[clinic end generated code: output=49a0fd16a372ebeb input=7bdf637f10201d37]*/
 {
     int ok;
+    wchar_t *wsound;
+    Py_buffer view = {NULL, NULL};
 
-    if (flags & SND_ASYNC && flags & SND_MEMORY) {
-        /* Sidestep reference counting headache; unfortunately this also
-            prevent SND_LOOP from memory. */
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Cannot play asynchronously from memory");
-        return NULL;
+    if (sound == Py_None) {
+        wsound = NULL;
+    } else if (flags & SND_MEMORY) {
+        if (flags & SND_ASYNC) {
+            /* Sidestep reference counting headache; unfortunately this also
+                prevent SND_LOOP from memory. */
+            PyErr_SetString(PyExc_RuntimeError,
+                            "Cannot play asynchronously from memory");
+            return NULL;
+        }
+        if (PyObject_GetBuffer(sound, &view, PyBUF_SIMPLE) < 0) {
+            return NULL;
+        }
+        wsound = (wchar_t *)view.buf;
+    } else {
+        if (!PyUnicode_Check(sound)) {
+            PyErr_Format(PyExc_TypeError,
+                         "'sound' must be str or None, not '%s'",
+                         Py_TYPE(sound)->tp_name);
+            return NULL;
+        }
+        wsound = PyUnicode_AsWideCharString(sound, NULL);
+        if (wsound == NULL) {
+            return NULL;
+        }
     }
 
+
     Py_BEGIN_ALLOW_THREADS
-    ok = PlaySoundW(sound, NULL, flags);
+    ok = PlaySoundW(wsound, NULL, flags);
     Py_END_ALLOW_THREADS
+    if (view.obj) {
+        PyBuffer_Release(&view);
+    } else if (sound != Py_None) {
+        PyMem_Free(wsound);
+    }
     if (!ok) {
         PyErr_SetString(PyExc_RuntimeError, "Failed to play sound");
         return NULL;
