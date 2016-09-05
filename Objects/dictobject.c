@@ -2519,24 +2519,26 @@ dict_popitem(PyDictObject *mp)
 static int
 dict_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    Py_ssize_t i, n;
     PyDictObject *mp = (PyDictObject *)op;
-    if (mp->ma_keys->dk_lookup == lookdict) {
-        for (i = 0; i < DK_SIZE(mp->ma_keys); i++) {
-            if (mp->ma_keys->dk_entries[i].me_value != NULL) {
-                Py_VISIT(mp->ma_keys->dk_entries[i].me_value);
-                Py_VISIT(mp->ma_keys->dk_entries[i].me_key);
+    PyDictKeysObject *keys = mp->ma_keys;
+    PyDictKeyEntry *entries = &keys->dk_entries[0];
+    Py_ssize_t i, n = DK_SIZE(mp->ma_keys);
+    if (keys->dk_lookup == lookdict) {
+        for (i = 0; i < n; i++) {
+            if (entries[i].me_value != NULL) {
+                Py_VISIT(entries[i].me_value);
+                Py_VISIT(entries[i].me_key);
             }
         }
     } else {
         if (mp->ma_values != NULL) {
-            for (i = 0, n = DK_SIZE(mp->ma_keys); i < n; i++) {
+            for (i = 0; i < n; i++) {
                 Py_VISIT(mp->ma_values[i]);
             }
         }
         else {
-            for (i = 0, n = DK_SIZE(mp->ma_keys); i < n; i++) {
-                Py_VISIT(mp->ma_keys->dk_entries[i].me_value);
+            for (i = 0; i < n; i++) {
+                Py_VISIT(entries[i].me_value);
             }
         }
     }
