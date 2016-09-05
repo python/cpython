@@ -65,9 +65,21 @@ def _have_socket_rds():
         s.close()
     return True
 
+def _have_socket_alg():
+    """Check whether AF_ALG sockets are supported on this host."""
+    try:
+        s = socket.socket(socket.AF_ALG, socket.SOCK_SEQPACKET, 0)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
 HAVE_SOCKET_CAN = _have_socket_can()
 
 HAVE_SOCKET_RDS = _have_socket_rds()
+
+HAVE_SOCKET_ALG = _have_socket_alg()
 
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
@@ -5325,7 +5337,8 @@ class SendfileUsingSendfileTest(SendfileUsingSendTest):
     def meth_from_sock(self, sock):
         return getattr(sock, "_sendfile_use_sendfile")
 
-@unittest.skipUnless(hasattr(socket, "AF_ALG"), 'AF_ALG required')
+
+@unittest.skipUnless(HAVE_SOCKET_ALG, 'AF_ALG required')
 class LinuxKernelCryptoAPI(unittest.TestCase):
     # tests for AF_ALG
     def create_alg(self, typ, name):
