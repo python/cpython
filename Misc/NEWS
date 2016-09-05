@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27944: Fix some memory-corruption bugs in the log reading code of the
+  _hotshot module.
+
 - Issue #27934: Use ``float.__repr__`` instead of plain ``repr`` when JSON-
   encoding an instance of a float subclass. Thanks Eddie James.
 

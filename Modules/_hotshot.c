@@ -338,34 +338,33 @@ unpack_string(LogReaderObject *self, PyObject **pvalue)
 static int
 unpack_add_info(LogReaderObject *self)
 {
-    PyObject *key;
+    PyObject *key = NULL;
     PyObject *value = NULL;
     int err;
 
     err = unpack_string(self, &key);
-    if (!err) {
-        err = unpack_string(self, &value);
-        if (err)
-            Py_DECREF(key);
-        else {
-            PyObject *list = PyDict_GetItem(self->info, key);
-            if (list == NULL) {
-                list = PyList_New(0);
-                if (list == NULL) {
-                    err = ERR_EXCEPTION;
-                    goto finally;
-                }
-                if (PyDict_SetItem(self->info, key, list)) {
-                    Py_DECREF(list);
-                    err = ERR_EXCEPTION;
-                    goto finally;
-                }
-                Py_DECREF(list);
-            }
-            if (PyList_Append(list, value))
-                err = ERR_EXCEPTION;
+    if (err)
+        goto finally;
+    err = unpack_string(self, &value);
+    if (err)
+        goto finally;
+    PyObject *list = PyDict_GetItem(self->info, key);
+    if (list == NULL) {
+        list = PyList_New(0);
+        if (list == NULL) {
+            err = ERR_EXCEPTION;
+            goto finally;
         }
+        if (PyDict_SetItem(self->info, key, list)) {
+            Py_DECREF(list);
+            err = ERR_EXCEPTION;
+            goto finally;
+        }
+        Py_DECREF(list);
     }
+    if (PyList_Append(list, value))
+        err = ERR_EXCEPTION;
+
  finally:
     Py_XDECREF(key);
     Py_XDECREF(value);
