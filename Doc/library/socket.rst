@@ -136,7 +136,7 @@ created.  Socket addresses are represented as follows:
   elements ``(type, name [, feat [, mask]])``, where:
 
   - *type* is the algorithm type as string, e.g. ``aead``, ``hash``,
-   ``skcipher`` or ``rng``.
+    ``skcipher`` or ``rng``.
 
   - *name* is the algorithm name and operation mode as string, e.g.
     ``sha256``, ``hmac(sha256)``, ``cbc(aes)`` or ``drbg_nopr_ctr_aes256``.
