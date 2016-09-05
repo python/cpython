@@ -53,7 +53,19 @@ Dynamic Type Creation
    in *kwds* argument with any ``'metaclass'`` entry removed. If no *kwds*
    argument is passed in, this will be an empty dict.
 
+   .. impl-detail::
+
+      CPython uses :class:`collections.OrderedDict` for the default
+      namespace.
+
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.6
+
+      The default value for the ``namespace`` element of the returned
+      tuple has changed from :func:`dict`.  Now an insertion-order-
+      preserving mapping is used when the metaclass does not have a
+      ``__prepare__`` method,
 
 .. seealso::
 

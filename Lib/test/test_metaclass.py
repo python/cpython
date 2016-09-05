@@ -180,7 +180,7 @@ Use a metaclass that doesn't derive from type.
     meta: C ()
     ns: [('__module__', 'test.test_metaclass'), ('__qualname__', 'C'), ('a', 42), ('b', 24)]
     kw: []
-    >>> type(C) is dict
+    >>> type(C) is types._DefaultClassNamespaceType
     True
     >>> print(sorted(C.items()))
     [('__module__', 'test.test_metaclass'), ('__qualname__', 'C'), ('a', 42), ('b', 24)]
@@ -211,8 +211,11 @@ And again, with a __prepare__ attribute.
 
 The default metaclass must define a __prepare__() method.
 
-    >>> type.__prepare__()
-    {}
+    >>> ns = type.__prepare__()
+    >>> type(ns) is types._DefaultClassNamespaceType
+    True
+    >>> list(ns) == []
+    True
     >>>
 
 Make sure it works with subclassing.
@@ -248,7 +251,9 @@ Test failures in looking up the __prepare__ method work.
 
 """
 
+from collections import OrderedDict
 import sys
+import types
 
 # Trace function introduces __locals__ which causes various tests to fail.
 if hasattr(sys, 'gettrace') and sys.gettrace():

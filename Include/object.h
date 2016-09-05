@@ -421,6 +421,8 @@ typedef struct _typeobject {
 
     destructor tp_finalize;
 
+    PyObject *tp_deforder;
+
 #ifdef COUNT_ALLOCS
     /* these must be last and never explicitly initialized */
     Py_ssize_t tp_allocs;

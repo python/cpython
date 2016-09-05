@@ -92,6 +92,7 @@ Windows improvements:
     :pep:`4XX` - Python Virtual Environments
        PEP written by Carl Meyer
 
+.. XXX PEP 520: :ref:`Preserving Class Attribute Definition Order<whatsnew-deforder>`
 
 New Features
 ============
@@ -269,6 +270,31 @@ Example of fatal error on buffer overflow using
       ...
 
 (Contributed by Victor Stinner in :issue:`26516` and :issue:`26564`.)
+
+
+.. _whatsnew-deforder:
+
+PEP 520: Preserving Class Attribute Definition Order
+----------------------------------------------------
+
+Attributes in a class definition body have a natural ordering: the same
+order in which the names appear in the source.  This order is now
+preserved in the new class's ``__definition_order__`` attribute.  It is
+a tuple of the attribute names, in the order in which they appear in
+the class definition body.
+
+For types that don't have a definition (e.g. builtins), or the attribute
+order could not be determined, ``__definition_order__`` is ``None``.
+
+Also, the effective default class *execution* namespace (returned from
+``type.__prepare__()``) is now an insertion-order-preserving mapping.
+For CPython, it is now ``collections.OrderedDict``.  Note that the
+class namespace, ``cls.__dict__``, is unchanged.
+
+.. seealso::
+
+   :pep:`520` - Preserving Class Attribute Definition Order
+      PEP written and implemented by Eric Snow.
 
 
 Other Language Changes
