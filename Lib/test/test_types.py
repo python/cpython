@@ -825,6 +825,28 @@ class ClassCreationTests(unittest.TestCase):
         self.assertEqual(C.y, 1)
         self.assertEqual(C.z, 2)
 
+    def test_new_class_deforder(self):
+        C = types.new_class("C")
+        self.assertEqual(C.__definition_order__, tuple())
+
+        Meta = self.Meta
+        def func(ns):
+            ns["x"] = 0
+        D = types.new_class("D", (), {"metaclass": Meta, "z": 2}, func)
+        self.assertEqual(D.__definition_order__, ('y', 'z', 'x'))
+
+        def func(ns):
+            ns["__definition_order__"] = None
+            ns["x"] = 0
+        D = types.new_class("D", (), {"metaclass": Meta, "z": 2}, func)
+        self.assertEqual(D.__definition_order__, None)
+
+        def func(ns):
+            ns["__definition_order__"] = ('a', 'b', 'c')
+            ns["x"] = 0
+        D = types.new_class("D", (), {"metaclass": Meta, "z": 2}, func)
+        self.assertEqual(D.__definition_order__, ('a', 'b', 'c'))
+
     # Many of the following tests are derived from test_descr.py
     def test_prepare_class(self):
         # Basic test of metaclass derivation
