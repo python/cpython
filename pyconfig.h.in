@@ -892,6 +892,9 @@
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF
 
+/* struct sockaddr_alg (linux/if_alg.h) */
+#undef HAVE_SOCKADDR_ALG
+
 /* Define if sockaddr has sa_len member */
 #undef HAVE_SOCKADDR_SA_LEN
 

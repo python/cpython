@@ -77,6 +77,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #27744: Add AF_ALG (Linux Kernel crypto) to socket module.
+
 - Issue #26470: Port ssl and hashlib module to OpenSSL 1.1.0.
 
 - Issue #11620: Fix support for SND_MEMORY in winsound.PlaySound.  Based on a
