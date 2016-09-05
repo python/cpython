@@ -5,7 +5,10 @@
         <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
         
         <Property Id="Suppress_TARGETDIR_Check" Value="1" />
-        <PropertyRef Id="ARPPRODUCTICON" />
+        <Icon Id="ARPIcon" SourceFile="!(bindpath.src)PC\icons\launcher.ico" />
+        <Property Id="ARPPRODUCTICON" Value="ARPIcon" />
+        <Property Id="ARPNOMODIFY" Value="1" />
+        <Property Id="DISABLEADVTSHORTCUTS" Value="1" />
 
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="launcher_exe" Primary="yes" />

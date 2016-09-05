@@ -44,7 +44,7 @@
     
     <Fragment>
         <!-- Include an icon for the Programs and Features dialog -->
-        <Icon Id="ARPIcon" SourceFile="!(bindpath.src)PC\icons\setup.ico" />
+        <Icon Id="ARPIcon" SourceFile="!(bindpath.src)PC\icons\python.ico" />
         <Property Id="ARPPRODUCTICON" Value="ARPIcon" />
         <Property Id="ARPNOMODIFY" Value="1" />
         <Property Id="DISABLEADVTSHORTCUTS" Value="1" />
