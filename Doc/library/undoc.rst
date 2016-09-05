@@ -20,7 +20,7 @@ These modules are used to implement the :mod:`os.path` module, and are not
 documented beyond this mention.  There's little need to document these.
 
 :mod:`ntpath`
-   --- Implementation of :mod:`os.path` on Win32, Win64, and WinCE platforms.
+   --- Implementation of :mod:`os.path` on Win32 and Win64 platforms.
 
 :mod:`posixpath`
    --- Implementation of :mod:`os.path` on POSIX.

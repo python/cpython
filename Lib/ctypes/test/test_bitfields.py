@@ -196,7 +196,7 @@ class BitFieldTest(unittest.TestCase):
         class X(Structure):
             _fields_ = [("a", c_byte, 4),
                         ("b", c_int, 4)]
-        if os.name in ("nt", "ce"):
+        if os.name == "nt":
             self.assertEqual(sizeof(X), sizeof(c_int)*2)
         else:
             self.assertEqual(sizeof(X), sizeof(c_int))
@@ -224,7 +224,7 @@ class BitFieldTest(unittest.TestCase):
         # MSVC does NOT combine c_short and c_int into one field, GCC
         # does (unless GCC is run with '-mms-bitfields' which
         # produces code compatible with MSVC).
-        if os.name in ("nt", "ce"):
+        if os.name == "nt":
             self.assertEqual(sizeof(X), sizeof(c_int) * 4)
         else:
             self.assertEqual(sizeof(X), sizeof(c_int) * 2)

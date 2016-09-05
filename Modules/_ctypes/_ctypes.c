@@ -111,12 +111,6 @@ bytes(cdata)
 #ifndef IS_INTRESOURCE
 #define IS_INTRESOURCE(x) (((size_t)(x) >> 16) == 0)
 #endif
-# ifdef _WIN32_WCE
-/* Unlike desktop Windows, WinCE has both W and A variants of
-   GetProcAddress, but the default W version is not what we want */
-#  undef GetProcAddress
-#  define GetProcAddress GetProcAddressA
-# endif
 #else
 #include "ctypes_dlfcn.h"
 #endif
