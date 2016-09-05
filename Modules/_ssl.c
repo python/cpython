@@ -148,11 +148,6 @@ static int COMP_get_type(const COMP_METHOD *meth)
 {
     return meth->type;
 }
-
-static const char *COMP_get_name(const COMP_METHOD *meth)
-{
-    return meth->name;
-}
 #endif
 
 static pem_password_cb *SSL_CTX_get_default_passwd_cb(SSL_CTX *ctx)
@@ -1519,7 +1514,7 @@ static PyObject *PySSL_compression(PySSLSocket *self) {
     comp_method = SSL_get_current_compression(self->ssl);
     if (comp_method == NULL || COMP_get_type(comp_method) == NID_undef)
         Py_RETURN_NONE;
-    short_name = COMP_get_name(comp_method);
+    short_name = OBJ_nid2sn(COMP_get_type(comp_method));
     if (short_name == NULL)
         Py_RETURN_NONE;
     return PyBytes_FromString(short_name);
