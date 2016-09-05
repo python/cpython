@@ -322,6 +322,16 @@ purposes.
 Random generation
 ^^^^^^^^^^^^^^^^^
 
+   .. deprecated::
+
+       2.7.13 OpenSSL has deprecated :func:`ssl.RAND_pseudo_bytes`, use
+       :func:`ssl.RAND_bytes` instead.
+
+   .. deprecated::
+
+       2.7.13 OpenSSL has deprecated :func:`ssl.RAND_pseudo_bytes`, use
+       :func:`ssl.RAND_bytes` instead.
+
 .. function:: RAND_status()
 
    Return ``True`` if the SSL pseudo-random number generator has been seeded
@@ -340,7 +350,7 @@ Random generation
    See http://egd.sourceforge.net/ or http://prngd.sourceforge.net/ for sources
    of entropy-gathering daemons.
 
-   Availability: not available with LibreSSL.
+   Availability: not available with LibreSSL and OpenSSL > 1.1.0
 
 .. function:: RAND_add(bytes, entropy)
 
@@ -443,6 +453,9 @@ Certificate handling
    * :attr:`openssl_cafile` - hard coded path to a cafile,
    * :attr:`openssl_capath_env` - OpenSSL's environment key that points to a capath,
    * :attr:`openssl_capath` - hard coded path to a capath directory
+
+   Availability: LibreSSL ignores the environment vars
+   :attr:`openssl_cafile_env` and :attr:`openssl_capath_env`
 
    .. versionadded:: 2.7.9
 
@@ -561,10 +574,18 @@ Constants
 
    .. versionadded:: 2.7.10
 
-.. data:: PROTOCOL_SSLv23
+.. data:: PROTOCOL_TLS
 
    Selects the highest protocol version that both the client and server support.
    Despite the name, this option can select "TLS" protocols as well as "SSL".
+
+   .. versionadded:: 2.7.13
+
+.. data:: PROTOCOL_SSLv23
+
+   Alias for ``PROTOCOL_TLS``.
+
+   .. deprecated:: 2.7.13 Use ``PROTOCOL_TLS`` instead.
 
 .. data:: PROTOCOL_SSLv2
 
@@ -577,6 +598,8 @@ Constants
 
       SSL version 2 is insecure.  Its use is highly discouraged.
 
+   .. deprecated:: 2.7.13 OpenSSL has removed support for SSLv2.
+
 .. data:: PROTOCOL_SSLv3
 
    Selects SSL version 3 as the channel encryption protocol.
@@ -588,9 +611,19 @@ Constants
 
       SSL version 3 is insecure.  Its use is highly discouraged.
 
+   .. deprecated:: 2.7.13
+
+      OpenSSL has deprecated all version specific protocols. Use the default
+      protocol with flags like ``OP_NO_SSLv3`` instead.
+
 .. data:: PROTOCOL_TLSv1
 
    Selects TLS version 1.0 as the channel encryption protocol.
+
+   .. deprecated:: 2.7.13
+
+      OpenSSL has deprecated all version specific protocols. Use the default
+      protocol with flags like ``OP_NO_SSLv3`` instead.
 
 .. data:: PROTOCOL_TLSv1_1
 
@@ -599,6 +632,11 @@ Constants
 
    .. versionadded:: 2.7.9
 
+   .. deprecated:: 2.7.13
+
+      OpenSSL has deprecated all version specific protocols. Use the default
+      protocol with flags like ``OP_NO_SSLv3`` instead.
+
 .. data:: PROTOCOL_TLSv1_2
 
    Selects TLS version 1.2 as the channel encryption protocol. This is the
@@ -606,6 +644,12 @@ Constants
    if both sides can speak it.  Available only with openssl version 1.0.1+.
 
    .. versionadded:: 2.7.9
+
+   .. deprecated:: 2.7.13
+
+      OpenSSL has deprecated all version specific protocols. Use the default
+      protocol with flags like ``OP_NO_SSLv3`` instead.
+
 
 .. data:: OP_ALL
 
@@ -1111,6 +1155,9 @@ to speed up repeated connections from the same clients.
 
    This method will raise :exc:`NotImplementedError` if :data:`HAS_ALPN` is
    False.
+
+   OpenSSL 1.1.0+ will abort the handshake and raise :exc:`SSLError` when
+   both sides support ALPN but cannot agree on a protocol.
 
    .. versionadded:: 2.7.10
 
