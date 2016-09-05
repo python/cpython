@@ -1,9 +1,9 @@
 r"""OS routines for NT or Posix depending on what system we're on.
 
 This exports:
-  - all functions from posix, nt or ce, e.g. unlink, stat, etc.
+  - all functions from posix or nt, e.g. unlink, stat, etc.
   - os.path is either posixpath or ntpath
-  - os.name is either 'posix', 'nt' or 'ce'.
+  - os.name is either 'posix' or 'nt'
   - os.curdir is a string representing the current directory ('.' or ':')
   - os.pardir is a string representing the parent directory ('..' or '::')
   - os.sep is the (or a most common) pathname separator ('/' or ':' or '\\')
@@ -82,27 +82,6 @@ elif 'nt' in _names:
 
     try:
         from nt import _have_functions
-    except ImportError:
-        pass
-
-elif 'ce' in _names:
-    name = 'ce'
-    linesep = '\r\n'
-    from ce import *
-    try:
-        from ce import _exit
-        __all__.append('_exit')
-    except ImportError:
-        pass
-    # We can use the standard Windows path.
-    import ntpath as path
-
-    import ce
-    __all__.extend(_get_exports_list(ce))
-    del ce
-
-    try:
-        from ce import _have_functions
     except ImportError:
         pass
 
