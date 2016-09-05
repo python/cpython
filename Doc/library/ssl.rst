@@ -178,7 +178,7 @@ instead.
    use.  Typically, the server chooses a particular protocol version, and the
    client must adapt to the server's choice.  Most of the versions are not
    interoperable with the other versions.  If not specified, the default is
-   :data:`PROTOCOL_SSLv23`; it provides the most compatibility with other
+   :data:`PROTOCOL_TLS`; it provides the most compatibility with other
    versions.
 
    Here's a table showing which versions in a client (down the side) can connect
@@ -187,11 +187,11 @@ instead.
      .. table::
 
        ========================  =========  =========  ==========  =========  ===========  ===========
-        *client* / **server**    **SSLv2**  **SSLv3**  **SSLv23**  **TLSv1**  **TLSv1.1**  **TLSv1.2**
+        *client* / **server**    **SSLv2**  **SSLv3**  **TLS**     **TLSv1**  **TLSv1.1**  **TLSv1.2**
        ------------------------  ---------  ---------  ----------  ---------  -----------  -----------
         *SSLv2*                    yes        no         yes         no         no         no
         *SSLv3*                    no         yes        yes         no         no         no
-        *SSLv23*                   no         yes        yes         yes        yes        yes
+        *TLS* (*SSLv23*)           no         yes        yes         yes        yes        yes
         *TLSv1*                    no         no         yes         yes        no         no
         *TLSv1.1*                  no         no         yes         no         yes        no
         *TLSv1.2*                  no         no         yes         no         no         yes
@@ -244,7 +244,7 @@ purposes.
    :const:`None`, this function can choose to trust the system's default
    CA certificates instead.
 
-   The settings are: :data:`PROTOCOL_SSLv23`, :data:`OP_NO_SSLv2`, and
+   The settings are: :data:`PROTOCOL_TLS`, :data:`OP_NO_SSLv2`, and
    :data:`OP_NO_SSLv3` with high encryption cipher suites without RC4 and
    without unauthenticated cipher suites. Passing :data:`~Purpose.SERVER_AUTH`
    as *purpose* sets :data:`~SSLContext.verify_mode` to :data:`CERT_REQUIRED`
@@ -316,6 +316,11 @@ Random generation
 
    .. versionadded:: 3.3
 
+   .. deprecated:: 3.5.3
+
+      OpenSSL has deprecated :func:`ssl.RAND_pseudo_bytes`, use
+      :func:`ssl.RAND_bytes` instead.
+
 .. function:: RAND_status()
 
    Return ``True`` if the SSL pseudo-random number generator has been seeded
@@ -334,7 +339,7 @@ Random generation
    See http://egd.sourceforge.net/ or http://prngd.sourceforge.net/ for sources
    of entropy-gathering daemons.
 
-   Availability: not available with LibreSSL.
+   Availability: not available with LibreSSL and OpenSSL > 1.1.0
 
 .. function:: RAND_add(bytes, entropy)
 
@@ -409,7 +414,7 @@ Certificate handling
       previously. Return an integer (no fractions of a second in the
       input format)
 
-.. function:: get_server_certificate(addr, ssl_version=PROTOCOL_SSLv23, ca_certs=None)
+.. function:: get_server_certificate(addr, ssl_version=PROTOCOL_TLS, ca_certs=None)
 
    Given the address ``addr`` of an SSL-protected server, as a (*hostname*,
    *port-number*) pair, fetches the server's certificate, and returns it as a
@@ -425,7 +430,7 @@ Certificate handling
 
    .. versionchanged:: 3.5
       The default *ssl_version* is changed from :data:`PROTOCOL_SSLv3` to
-      :data:`PROTOCOL_SSLv23` for maximum compatibility with modern servers.
+      :data:`PROTOCOL_TLS` for maximum compatibility with modern servers.
 
 .. function:: DER_cert_to_PEM_cert(DER_cert_bytes)
 
@@ -450,6 +455,9 @@ Certificate handling
    * :attr:`openssl_cafile` - hard coded path to a cafile,
    * :attr:`openssl_capath_env` - OpenSSL's environment key that points to a capath,
    * :attr:`openssl_capath` - hard coded path to a capath directory
+
+   Availability: LibreSSL ignores the environment vars
+   :attr:`openssl_cafile_env` and :attr:`openssl_capath_env`
 
    .. versionadded:: 3.4
 
@@ -568,10 +576,20 @@ Constants
 
    .. versionadded:: 3.4.4
 
-.. data:: PROTOCOL_SSLv23
+.. data:: PROTOCOL_TLS
 
    Selects the highest protocol version that both the client and server support.
    Despite the name, this option can select "TLS" protocols as well as "SSL".
+
+   .. versionadded:: 3.5.3
+
+.. data:: PROTOCOL_SSLv23
+
+   Alias for data:`PROTOCOL_TLS`.
+
+   .. deprecated:: 3.5.3
+
+      Use data:`PROTOCOL_TLS` instead.
 
 .. data:: PROTOCOL_SSLv2
 
@@ -584,6 +602,10 @@ Constants
 
       SSL version 2 is insecure.  Its use is highly discouraged.
 
+   .. deprecated:: 3.5.3
+
+      OpenSSL has removed support for SSLv2.
+
 .. data:: PROTOCOL_SSLv3
 
    Selects SSL version 3 as the channel encryption protocol.
@@ -595,9 +617,19 @@ Constants
 
       SSL version 3 is insecure.  Its use is highly discouraged.
 
+   .. deprecated:: 3.5.3
+
+      OpenSSL has deprecated all version specific protocols. Use the default
+      protocol data:`PROTOCOL_TLS` with flags like data:`OP_NO_SSLv3` instead.
+
 .. data:: PROTOCOL_TLSv1
 
    Selects TLS version 1.0 as the channel encryption protocol.
+
+   .. deprecated:: 3.5.3
+
+      OpenSSL has deprecated all version specific protocols. Use the default
+      protocol data:`PROTOCOL_TLS` with flags like data:`OP_NO_SSLv3` instead.
 
 .. data:: PROTOCOL_TLSv1_1
 
@@ -606,6 +638,11 @@ Constants
 
    .. versionadded:: 3.4
 
+   .. deprecated:: 3.5.3
+
+      OpenSSL has deprecated all version specific protocols. Use the default
+      protocol data:`PROTOCOL_TLS` with flags like data:`OP_NO_SSLv3` instead.
+
 .. data:: PROTOCOL_TLSv1_2
 
    Selects TLS version 1.2 as the channel encryption protocol. This is the
@@ -613,6 +650,11 @@ Constants
    if both sides can speak it.  Available only with openssl version 1.0.1+.
 
    .. versionadded:: 3.4
+
+   .. deprecated:: 3.5.3
+
+      OpenSSL has deprecated all version specific protocols. Use the default
+      protocol data:`PROTOCOL_TLS` with flags like data:`OP_NO_SSLv3` instead.
 
 .. data:: OP_ALL
 
@@ -625,23 +667,32 @@ Constants
 .. data:: OP_NO_SSLv2
 
    Prevents an SSLv2 connection.  This option is only applicable in
-   conjunction with :const:`PROTOCOL_SSLv23`.  It prevents the peers from
+   conjunction with :const:`PROTOCOL_TLS`.  It prevents the peers from
    choosing SSLv2 as the protocol version.
 
    .. versionadded:: 3.2
 
+   .. deprecated:: 3.5.3
+
+      SSLv2 is deprecated
+
+
 .. data:: OP_NO_SSLv3
 
    Prevents an SSLv3 connection.  This option is only applicable in
-   conjunction with :const:`PROTOCOL_SSLv23`.  It prevents the peers from
+   conjunction with :const:`PROTOCOL_TLS`.  It prevents the peers from
    choosing SSLv3 as the protocol version.
 
    .. versionadded:: 3.2
 
+   .. deprecated:: 3.5.3
+
+      SSLv3 is deprecated
+
 .. data:: OP_NO_TLSv1
 
    Prevents a TLSv1 connection.  This option is only applicable in
-   conjunction with :const:`PROTOCOL_SSLv23`.  It prevents the peers from
+   conjunction with :const:`PROTOCOL_TLS`.  It prevents the peers from
    choosing TLSv1 as the protocol version.
 
    .. versionadded:: 3.2
@@ -649,7 +700,7 @@ Constants
 .. data:: OP_NO_TLSv1_1
 
    Prevents a TLSv1.1 connection. This option is only applicable in conjunction
-   with :const:`PROTOCOL_SSLv23`. It prevents the peers from choosing TLSv1.1 as
+   with :const:`PROTOCOL_TLS`. It prevents the peers from choosing TLSv1.1 as
    the protocol version. Available only with openssl version 1.0.1+.
 
    .. versionadded:: 3.4
@@ -657,7 +708,7 @@ Constants
 .. data:: OP_NO_TLSv1_2
 
    Prevents a TLSv1.2 connection. This option is only applicable in conjunction
-   with :const:`PROTOCOL_SSLv23`. It prevents the peers from choosing TLSv1.2 as
+   with :const:`PROTOCOL_TLS`. It prevents the peers from choosing TLSv1.2 as
    the protocol version. Available only with openssl version 1.0.1+.
 
    .. versionadded:: 3.4
@@ -1081,16 +1132,20 @@ such as SSL configuration options, certificate(s) and private key(s).
 It also manages a cache of SSL sessions for server-side sockets, in order
 to speed up repeated connections from the same clients.
 
-.. class:: SSLContext(protocol)
+.. class:: SSLContext(protocol=PROTOCOL_TLS)
 
-   Create a new SSL context.  You must pass *protocol* which must be one
+   Create a new SSL context.  You may pass *protocol* which must be one
    of the ``PROTOCOL_*`` constants defined in this module.
-   :data:`PROTOCOL_SSLv23` is currently recommended for maximum
-   interoperability.
+   :data:`PROTOCOL_TLS` is currently recommended for maximum
+   interoperability and default value.
 
    .. seealso::
       :func:`create_default_context` lets the :mod:`ssl` module choose
       security settings for a given purpose.
+
+   .. versionchanged:: 3.5.3
+
+      :data:`PROTOCOL_TLS` is the default value.
 
 
 :class:`SSLContext` objects have the following methods and attributes:
@@ -1231,6 +1286,9 @@ to speed up repeated connections from the same clients.
 
    This method will raise :exc:`NotImplementedError` if :data:`HAS_ALPN` is
    False.
+
+   OpenSSL 1.1.0+ will abort the handshake and raise :exc:`SSLError` when
+   both sides support ALPN but cannot agree on a protocol.
 
    .. versionadded:: 3.5
 
@@ -1598,7 +1656,7 @@ If you prefer to tune security settings yourself, you might create
 a context from scratch (but beware that you might not get the settings
 right)::
 
-   >>> context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+   >>> context = ssl.SSLContext(ssl.PROTOCOL_TLS)
    >>> context.verify_mode = ssl.CERT_REQUIRED
    >>> context.check_hostname = True
    >>> context.load_verify_locations("/etc/ssl/certs/ca-bundle.crt")
@@ -1999,15 +2057,17 @@ Protocol versions
 
 SSL versions 2 and 3 are considered insecure and are therefore dangerous to
 use.  If you want maximum compatibility between clients and servers, it is
-recommended to use :const:`PROTOCOL_SSLv23` as the protocol version and then
+recommended to use :const:`PROTOCOL_TLS` as the protocol version and then
 disable SSLv2 and SSLv3 explicitly using the :data:`SSLContext.options`
 attribute::
 
-   context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+   context = ssl.SSLContext(ssl.PROTOCOL_TLS)
    context.options |= ssl.OP_NO_SSLv2
    context.options |= ssl.OP_NO_SSLv3
+   context.options |= ssl.OP_NO_TLSv1
+   context.options |= ssl.OP_NO_TLSv1_1
 
-The SSL context created above will only allow TLSv1 and later (if
+The SSL context created above will only allow TLSv1.2 and later (if
 supported by your system) connections.
 
 Cipher selection
