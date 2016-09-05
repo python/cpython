@@ -69,10 +69,13 @@
     <Fragment>
         <ComponentGroup Id="exe_icons">
             <Component Id="py.ico" Directory="DLLs" Guid="*">
-                <File Name="py.ico" Source="!(bindpath.src)PC\py.ico" KeyPath="yes" />
+                <File Name="py.ico" Source="!(bindpath.src)PC\icons\py.ico" KeyPath="yes" />
             </Component>
             <Component Id="pyc.ico" Directory="DLLs" Guid="*">
-                <File Name="pyc.ico" Source="!(bindpath.src)PC\pyc.ico" KeyPath="yes" />
+                <File Name="pyc.ico" Source="!(bindpath.src)PC\icons\pyc.ico" KeyPath="yes" />
+            </Component>
+            <Component Id="pyd.ico" Directory="DLLs" Guid="*">
+                <File Name="pyd.ico" Source="!(bindpath.src)PC\icons\pyd.ico" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>

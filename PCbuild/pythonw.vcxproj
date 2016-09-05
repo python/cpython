@@ -62,7 +62,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\PC\python_exe.rc" />
+    <ResourceCompile Include="..\PC\pythonw_exe.rc" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\PC\WinMain.c" />

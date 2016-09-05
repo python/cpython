@@ -11,6 +11,7 @@
     <String Id="PythonFileDescription">Python File</String>
     <String Id="PythonNoConFileDescription">Python File (no console)</String>
     <String Id="PythonCompiledFileDescription">Compiled Python File</String>
+    <String Id="PythonExtensionDescription">Python Extension Module</String>
     <String Id="PythonArchiveFileDescription">Python Zip Application File</String>
     <String Id="PythonNoConArchiveFileDescription">Python Zip Application File (no console)</String>
 </WixLocalization>

@@ -27,14 +27,18 @@
                 </ProgId>
                 <RegistryValue Root="HKCR" Key="Python.CompiledFile\shellex\DropHandler" Value="{BEA218D2-6950-497B-9434-61683EC065FE}" Type="string" />
 
-                <ProgId Id="Python.ArchiveFile" Description="!(loc.PythonArchiveFileDescription)" Advertise="no" Icon="py.exe" IconIndex="1">
+                <ProgId Id="Python.Extension" Description="!(loc.PythonExtensionDescription)" Advertise="no" Icon="py.exe" IconIndex="3">
+                    <Extension Id="pyd" />
+                </ProgId>
+
+                <ProgId Id="Python.ArchiveFile" Description="!(loc.PythonArchiveFileDescription)" Advertise="no" Icon="py.exe" IconIndex="5">
                     <Extension Id="pyz" ContentType="application/x-zip-compressed">
                         <Verb Id="open" TargetFile="py.exe" Argument="&quot;%L&quot; %*" />
                     </Extension>
                 </ProgId>
                 <RegistryValue Root="HKCR" Key="Python.ArchiveFile\shellex\DropHandler" Value="{BEA218D2-6950-497B-9434-61683EC065FE}" Type="string" />
                 
-                <ProgId Id="Python.NoConArchiveFile" Description="!(loc.PythonNoConArchiveFileDescription)" Advertise="no" Icon="py.exe" IconIndex="1">
+                <ProgId Id="Python.NoConArchiveFile" Description="!(loc.PythonNoConArchiveFileDescription)" Advertise="no" Icon="py.exe" IconIndex="5">
                     <Extension Id="pyzw" ContentType="application/x-zip-compressed">
                         <Verb Id="open" TargetFile="pyw.exe" Argument="&quot;%L&quot; %*" />
                     </Extension>
