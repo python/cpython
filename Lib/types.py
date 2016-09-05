@@ -25,8 +25,11 @@ CoroutineType = type(_c)
 _c.close()  # Prevent ResourceWarning
 
 class _C:
+    _nsType = type(locals())
     def _m(self): pass
 MethodType = type(_C()._m)
+# In CPython, this should end up as OrderedDict.
+_DefaultClassNamespaceType = _C._nsType
 
 BuiltinFunctionType = type(len)
 BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
@@ -85,7 +88,7 @@ def prepare_class(name, bases=(), kwds=None):
     if hasattr(meta, '__prepare__'):
         ns = meta.__prepare__(name, bases, **kwds)
     else:
-        ns = {}
+        ns = _DefaultClassNamespaceType()
     return meta, ns, kwds
 
 def _calculate_meta(meta, bases):

@@ -1762,6 +1762,21 @@ PyODict_DelItem(PyObject *od, PyObject *key)
     return _PyDict_DelItem_KnownHash(od, key, hash);
 }
 
+PyObject *
+_PyODict_KeysAsTuple(PyObject *od) {
+    Py_ssize_t i = 0;
+    _ODictNode *node;
+    PyObject *keys = PyTuple_New(PyODict_Size(od));
+    if (keys == NULL)
+        return NULL;
+    _odict_FOREACH((PyODictObject *)od, node) {
+        Py_INCREF(_odictnode_KEY(node));
+        PyTuple_SET_ITEM(keys, i, _odictnode_KEY(node));
+        i++;
+    }
+    return keys;
+}
+
 
 /* -------------------------------------------
  * The OrderedDict views (keys/values/items)

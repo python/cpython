@@ -1301,6 +1301,7 @@ class _ProtocolMeta(GenericMeta):
                     if (not attr.startswith('_abc_') and
                             attr != '__abstractmethods__' and
                             attr != '_is_protocol' and
+                            attr != '__definition_order__' and
                             attr != '__dict__' and
                             attr != '__args__' and
                             attr != '__slots__' and
