@@ -2309,40 +2309,6 @@ exit:
     return result;
 }
 
-static PyObject *
-_PyStack_AsDict(PyObject **stack, Py_ssize_t nkwargs, PyObject *func)
-{
-    PyObject *kwdict;
-
-    kwdict = PyDict_New();
-    if (kwdict == NULL) {
-        return NULL;
-    }
-
-    while (--nkwargs >= 0) {
-        int err;
-        PyObject *key = *stack++;
-        PyObject *value = *stack++;
-        if (PyDict_GetItem(kwdict, key) != NULL) {
-            PyErr_Format(PyExc_TypeError,
-                         "%.200s%s got multiple values "
-                         "for keyword argument '%U'",
-                         PyEval_GetFuncName(func),
-                         PyEval_GetFuncDesc(func),
-                         key);
-            Py_DECREF(kwdict);
-            return NULL;
-        }
-
-        err = PyDict_SetItem(kwdict, key, value);
-        if (err) {
-            Py_DECREF(kwdict);
-            return NULL;
-        }
-    }
-    return kwdict;
-}
-
 /* Positional arguments are obj followed args. */
 PyObject *
 _PyObject_Call_Prepend(PyObject *func,
