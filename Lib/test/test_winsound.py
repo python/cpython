@@ -103,7 +103,10 @@ class PlaySoundTest(unittest.TestCase):
         safe_PlaySound('!"$%&/(#+*', winsound.SND_ALIAS)
 
     def test_alias_nofallback(self):
-        safe_PlaySound('!"$%&/(#+*', winsound.SND_ALIAS | winsound.SND_NODEFAULT)
+        self.assertRaises(RuntimeError,
+                          winsound.PlaySound,
+                          '!"$%&/(#+*',
+                          winsound.SND_ALIAS | winsound.SND_NODEFAULT)
 
     def test_stopasync(self):
         safe_PlaySound(
