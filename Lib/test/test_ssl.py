@@ -23,6 +23,9 @@ ssl = support.import_module("ssl")
 
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = support.HOST
+IS_LIBRESSL = ssl.OPENSSL_VERSION.startswith('LibreSSL')
+IS_OPENSSL_1_1 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 0)
+
 
 def data_file(*name):
     return os.path.join(os.path.dirname(__file__), *name)
@@ -318,9 +321,9 @@ class BasicSocketTests(unittest.TestCase):
         self.assertGreaterEqual(status, 0)
         self.assertLessEqual(status, 15)
         # Version string as returned by {Open,Libre}SSL, the format might change
-        if "LibreSSL" in s:
-            self.assertTrue(s.startswith("LibreSSL {:d}.{:d}".format(major, minor)),
-                            (s, t))
+        if IS_LIBRESSL:
+            self.assertTrue(s.startswith("LibreSSL {:d}".format(major)),
+                            (s, t, hex(n)))
         else:
             self.assertTrue(s.startswith("OpenSSL {:d}.{:d}.{:d}".format(major, minor, fix)),
                             (s, t))
@@ -698,15 +701,15 @@ class ContextTests(unittest.TestCase):
     def test_options(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         # OP_ALL | OP_NO_SSLv2 | OP_NO_SSLv3 is the default value
-        self.assertEqual(ssl.OP_ALL | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3,
-                         ctx.options)
+        default = (ssl.OP_ALL | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3)
+        if not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 0):
+            default |= ssl.OP_NO_COMPRESSION
+        self.assertEqual(default, ctx.options)
         ctx.options |= ssl.OP_NO_TLSv1
-        self.assertEqual(ssl.OP_ALL | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1,
-                         ctx.options)
+        self.assertEqual(default | ssl.OP_NO_TLSv1, ctx.options)
         if can_clear_options():
-            ctx.options = (ctx.options & ~ssl.OP_NO_SSLv2) | ssl.OP_NO_TLSv1
-            self.assertEqual(ssl.OP_ALL | ssl.OP_NO_TLSv1 | ssl.OP_NO_SSLv3,
-                             ctx.options)
+            ctx.options = (ctx.options & ~ssl.OP_NO_TLSv1)
+            self.assertEqual(default, ctx.options)
             ctx.options = 0
             # Ubuntu has OP_NO_SSLv3 forced on by default
             self.assertEqual(0, ctx.options & ~ssl.OP_NO_SSLv3)
@@ -1042,6 +1045,7 @@ class ContextTests(unittest.TestCase):
         self.assertRaises(TypeError, ctx.load_default_certs, 'SERVER_AUTH')
 
     @unittest.skipIf(sys.platform == "win32", "not-Windows specific")
+    @unittest.skipIf(IS_LIBRESSL, "LibreSSL doesn't support env vars")
     def test_load_default_certs_env(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         with support.EnvironmentVarGuard() as env:
