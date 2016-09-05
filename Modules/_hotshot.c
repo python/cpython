@@ -340,6 +340,7 @@ unpack_add_info(LogReaderObject *self)
 {
     PyObject *key = NULL;
     PyObject *value = NULL;
+    PyObject *list;
     int err;
 
     err = unpack_string(self, &key);
@@ -348,7 +349,7 @@ unpack_add_info(LogReaderObject *self)
     err = unpack_string(self, &value);
     if (err)
         goto finally;
-    PyObject *list = PyDict_GetItem(self->info, key);
+    list = PyDict_GetItem(self->info, key);
     if (list == NULL) {
         list = PyList_New(0);
         if (list == NULL) {
