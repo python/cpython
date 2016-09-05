@@ -18,6 +18,8 @@
 # it should configure OpenSSL such that it is ready to be built by
 # ssl.vcxproj on 32 or 64 bit platforms.
 
+from __future__ import print_function
+
 import os
 import re
 import sys
@@ -89,7 +91,10 @@ def create_asms(makefile, tmp_d):
 
 def copy_includes(makefile, suffix):
     dir = 'include'+suffix+'\\openssl'
-    os.makedirs(dir, exist_ok=True)
+    try:
+        os.makedirs(dir)
+    except OSError:
+        pass
     copy_if_different = r'$(PERL) $(SRC_D)\util\copy-if-different.pl'
     with open(makefile) as fin:
         for line in fin:
