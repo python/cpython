@@ -87,6 +87,22 @@ class PlaySoundTest(unittest.TestCase):
             winsound.PlaySound,
             "none", winsound.SND_ASYNC | winsound.SND_MEMORY
         )
+        self.assertRaises(TypeError, winsound.PlaySound, b"bad", 0)
+        self.assertRaises(TypeError, winsound.PlaySound, "bad",
+                          winsound.SND_MEMORY)
+        self.assertRaises(TypeError, winsound.PlaySound, 1, 0)
+
+    def test_snd_memory(self):
+        with open(support.findfile('pluck-pcm8.wav',
+                                   subdir='audiodata'), 'rb') as f:
+            audio_data = f.read()
+        safe_PlaySound(audio_data, winsound.SND_MEMORY)
+        audio_data = bytearray(audio_data)
+        safe_PlaySound(audio_data, winsound.SND_MEMORY)
+
+    def test_snd_filename(self):
+        fn = support.findfile('pluck-pcm8.wav', subdir='audiodata')
+        safe_PlaySound(fn, winsound.SND_FILENAME | winsound.SND_NODEFAULT)
 
     def test_aliases(self):
         aliases = [

@@ -25,7 +25,8 @@ provided by Windows platforms.  It includes functions and several constants.
 .. function:: PlaySound(sound, flags)
 
    Call the underlying :c:func:`PlaySound` function from the Platform API.  The
-   *sound* parameter may be a filename, audio data as a string, or ``None``.  Its
+   *sound* parameter may be a filename, a system sound alias, audio data as a
+   :term:`bytes-like object`, or ``None``.  Its
    interpretation depends on the value of *flags*, which can be a bitwise ORed
    combination of the constants described below. If the *sound* parameter is
    ``None``, any currently playing waveform sound is stopped. If the system
@@ -92,7 +93,7 @@ provided by Windows platforms.  It includes functions and several constants.
 .. data:: SND_MEMORY
 
    The *sound* parameter to :func:`PlaySound` is a memory image of a WAV file, as a
-   string.
+   :term:`bytes-like object`.
 
    .. note::
 
