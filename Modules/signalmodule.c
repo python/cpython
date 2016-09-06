@@ -198,7 +198,7 @@ static int
 report_wakeup_write_error(void *data)
 {
     int save_errno = errno;
-    errno = (int) (Py_intptr_t) data;
+    errno = (int) (intptr_t) data;
     PyErr_SetFromErrno(PyExc_OSError);
     PySys_WriteStderr("Exception ignored when trying to write to the "
                       "signal wakeup fd:\n");
@@ -277,7 +277,7 @@ trip_signal(int sig_num)
 
             if (rc < 0) {
                 Py_AddPendingCall(report_wakeup_write_error,
-                                  (void *)(Py_intptr_t)errno);
+                                  (void *)(intptr_t)errno);
             }
         }
     }

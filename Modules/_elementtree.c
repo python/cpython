@@ -57,9 +57,9 @@ do { memory -= size; printf("%8d - %s\n", memory, comment); } while (0)
    that all use of text and tail as object pointers must be wrapped in
    JOIN_OBJ.  see comments in the ElementObject definition for more
    info. */
-#define JOIN_GET(p) ((Py_uintptr_t) (p) & 1)
-#define JOIN_SET(p, flag) ((void*) ((Py_uintptr_t) (JOIN_OBJ(p)) | (flag)))
-#define JOIN_OBJ(p) ((PyObject*) ((Py_uintptr_t) (p) & ~(Py_uintptr_t)1))
+#define JOIN_GET(p) ((uintptr_t) (p) & 1)
+#define JOIN_SET(p, flag) ((void*) ((uintptr_t) (JOIN_OBJ(p)) | (flag)))
+#define JOIN_OBJ(p) ((PyObject*) ((uintptr_t) (p) & ~(uintptr_t)1))
 
 /* Py_CLEAR for a PyObject* that uses a join flag. Pass the pointer by
  * reference since this function sets it to NULL.
@@ -797,7 +797,7 @@ _elementtree_Element___deepcopy__(ElementObject *self, PyObject *memo)
     }
 
     /* add object to memo dictionary (so deepcopy won't visit it again) */
-    id = PyLong_FromSsize_t((Py_uintptr_t) self);
+    id = PyLong_FromSsize_t((uintptr_t) self);
     if (!id)
         goto error;
 

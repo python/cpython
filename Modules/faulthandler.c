@@ -1072,12 +1072,12 @@ faulthandler_fatal_error_py(PyObject *self, PyObject *args)
 #  pragma intel optimization_level 0
 #endif
 static
-Py_uintptr_t
-stack_overflow(Py_uintptr_t min_sp, Py_uintptr_t max_sp, size_t *depth)
+uintptr_t
+stack_overflow(uintptr_t min_sp, uintptr_t max_sp, size_t *depth)
 {
     /* allocate 4096 bytes on the stack at each call */
     unsigned char buffer[4096];
-    Py_uintptr_t sp = (Py_uintptr_t)&buffer;
+    uintptr_t sp = (uintptr_t)&buffer;
     *depth += 1;
     if (sp < min_sp || max_sp < sp)
         return sp;
@@ -1090,8 +1090,8 @@ static PyObject *
 faulthandler_stack_overflow(PyObject *self)
 {
     size_t depth, size;
-    Py_uintptr_t sp = (Py_uintptr_t)&depth;
-    Py_uintptr_t stop;
+    uintptr_t sp = (uintptr_t)&depth;
+    uintptr_t stop;
 
     faulthandler_suppress_crash_report();
     depth = 0;

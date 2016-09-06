@@ -33,12 +33,12 @@
 #endif
 
 /*[python input]
-class Py_intptr_t_converter(CConverter):
-    type = 'Py_intptr_t'
+class intptr_t_converter(CConverter):
+    type = 'intptr_t'
     format_unit = '"_Py_PARSE_INTPTR"'
 
 class handle_return_converter(long_return_converter):
-    type = 'Py_intptr_t'
+    type = 'intptr_t'
     cast = '(void *)'
     conversion_fn = 'PyLong_FromVoidPtr'
 
@@ -148,7 +148,7 @@ msvcrt_setmode_impl(PyObject *module, int fd, int flags)
 /*[clinic input]
 msvcrt.open_osfhandle -> long
 
-    handle: Py_intptr_t
+    handle: intptr_t
     flags: int
     /
 
@@ -160,7 +160,7 @@ to os.fdopen() to create a file object.
 [clinic start generated code]*/
 
 static long
-msvcrt_open_osfhandle_impl(PyObject *module, Py_intptr_t handle, int flags)
+msvcrt_open_osfhandle_impl(PyObject *module, intptr_t handle, int flags)
 /*[clinic end generated code: output=bf65e422243a39f9 input=4d8516ed32db8f65]*/
 {
     int fd;
@@ -183,11 +183,11 @@ Return the file handle for the file descriptor fd.
 Raises IOError if fd is not recognized.
 [clinic start generated code]*/
 
-static Py_intptr_t
+static intptr_t
 msvcrt_get_osfhandle_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=eac47643338c0baa input=c7d18d02c8017ec1]*/
 {
-    Py_intptr_t handle = -1;
+    intptr_t handle = -1;
 
     if (!_PyVerify_fd(fd)) {
         PyErr_SetFromErrno(PyExc_IOError);

@@ -2492,8 +2492,8 @@ class id_t_converter(CConverter):
     type = 'id_t'
     format_unit = '" _Py_PARSE_PID "'
 
-class Py_intptr_t_converter(CConverter):
-    type = 'Py_intptr_t'
+class intptr_t_converter(CConverter):
+    type = 'intptr_t'
     format_unit = '" _Py_PARSE_INTPTR "'
 
 class Py_off_t_converter(CConverter):
@@ -5244,7 +5244,7 @@ os_spawnv_impl(PyObject *module, int mode, PyObject *path, PyObject *argv)
     char **argvlist;
     int i;
     Py_ssize_t argc;
-    Py_intptr_t spawnval;
+    intptr_t spawnval;
     PyObject *(*getitem)(PyObject *, Py_ssize_t);
 
     /* spawnv has three arguments: (mode, path, argv), where
@@ -5323,7 +5323,7 @@ os_spawnve_impl(PyObject *module, int mode, PyObject *path, PyObject *argv,
     char **envlist;
     PyObject *res = NULL;
     Py_ssize_t argc, i, envc;
-    Py_intptr_t spawnval;
+    intptr_t spawnval;
     PyObject *(*getitem)(PyObject *, Py_ssize_t);
     Py_ssize_t lastarg = 0;
 
@@ -7078,7 +7078,7 @@ os_waitpid_impl(PyObject *module, pid_t pid, int options)
 /* MS C has a variant of waitpid() that's usable for most purposes. */
 /*[clinic input]
 os.waitpid
-    pid: Py_intptr_t
+    pid: intptr_t
     options: int
     /
 
@@ -7091,11 +7091,11 @@ The options argument is ignored on Windows.
 [clinic start generated code]*/
 
 static PyObject *
-os_waitpid_impl(PyObject *module, Py_intptr_t pid, int options)
+os_waitpid_impl(PyObject *module, intptr_t pid, int options)
 /*[clinic end generated code: output=15f1ce005a346b09 input=444c8f51cca5b862]*/
 {
     int status;
-    Py_intptr_t res;
+    intptr_t res;
     int async_err = 0;
 
     do {
@@ -8559,8 +8559,8 @@ os_pipe_impl(PyObject *module)
     Py_BEGIN_ALLOW_THREADS
     ok = CreatePipe(&read, &write, &attr, 0);
     if (ok) {
-        fds[0] = _open_osfhandle((Py_intptr_t)read, _O_RDONLY);
-        fds[1] = _open_osfhandle((Py_intptr_t)write, _O_WRONLY);
+        fds[0] = _open_osfhandle((intptr_t)read, _O_RDONLY);
+        fds[1] = _open_osfhandle((intptr_t)write, _O_WRONLY);
         if (fds[0] == -1 || fds[1] == -1) {
             CloseHandle(read);
             CloseHandle(write);
@@ -11375,14 +11375,14 @@ os_set_inheritable_impl(PyObject *module, int fd, int inheritable)
 #ifdef MS_WINDOWS
 /*[clinic input]
 os.get_handle_inheritable -> bool
-    handle: Py_intptr_t
+    handle: intptr_t
     /
 
 Get the close-on-exe flag of the specified file descriptor.
 [clinic start generated code]*/
 
 static int
-os_get_handle_inheritable_impl(PyObject *module, Py_intptr_t handle)
+os_get_handle_inheritable_impl(PyObject *module, intptr_t handle)
 /*[clinic end generated code: output=9e5389b0aa0916ce input=5f7759443aae3dc5]*/
 {
     DWORD flags;
@@ -11398,7 +11398,7 @@ os_get_handle_inheritable_impl(PyObject *module, Py_intptr_t handle)
 
 /*[clinic input]
 os.set_handle_inheritable
-    handle: Py_intptr_t
+    handle: intptr_t
     inheritable: bool
     /
 
@@ -11406,7 +11406,7 @@ Set the inheritable flag of the specified handle.
 [clinic start generated code]*/
 
 static PyObject *
-os_set_handle_inheritable_impl(PyObject *module, Py_intptr_t handle,
+os_set_handle_inheritable_impl(PyObject *module, intptr_t handle,
                                int inheritable)
 /*[clinic end generated code: output=b1e67bfa3213d745 input=e64b2b2730469def]*/
 {

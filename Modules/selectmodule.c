@@ -1797,7 +1797,7 @@ static PyTypeObject kqueue_queue_Type;
  */
 #if !defined(__OpenBSD__)
 #   define IDENT_TYPE  T_UINTPTRT
-#   define IDENT_CAST  Py_intptr_t
+#   define IDENT_CAST  intptr_t
 #   define DATA_TYPE   T_INTPTRT
 #   define DATA_FMT_UNIT INTPTRT_FMT_UNIT
 #   define IDENT_AsType PyLong_AsUintptr_t
@@ -1876,7 +1876,7 @@ static PyObject *
 kqueue_event_richcompare(kqueue_event_Object *s, kqueue_event_Object *o,
                          int op)
 {
-    Py_intptr_t result = 0;
+    intptr_t result = 0;
 
     if (!kqueue_event_Check(o)) {
         if (op == Py_EQ || op == Py_NE) {

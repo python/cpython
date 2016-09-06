@@ -476,9 +476,9 @@ compiler_unit_check(struct compiler_unit *u)
 {
     basicblock *block;
     for (block = u->u_blocks; block != NULL; block = block->b_list) {
-        assert((Py_uintptr_t)block != 0xcbcbcbcbU);
-        assert((Py_uintptr_t)block != 0xfbfbfbfbU);
-        assert((Py_uintptr_t)block != 0xdbdbdbdbU);
+        assert((uintptr_t)block != 0xcbcbcbcbU);
+        assert((uintptr_t)block != 0xfbfbfbfbU);
+        assert((uintptr_t)block != 0xdbdbdbdbU);
         if (block->b_instr != NULL) {
             assert(block->b_ialloc > 0);
             assert(block->b_iused > 0);
