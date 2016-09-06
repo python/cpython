@@ -2092,6 +2092,7 @@ AC_CHECK_TYPE(__uint128_t,
 # ANSI C requires sizeof(char) == 1, so no need to check it
 AC_CHECK_SIZEOF(int, 4)
 AC_CHECK_SIZEOF(long, 4)
+AC_CHECK_SIZEOF(long long, 8)
 AC_CHECK_SIZEOF(void *, 4)
 AC_CHECK_SIZEOF(short, 2)
 AC_CHECK_SIZEOF(float, 4)
@@ -2099,17 +2100,6 @@ AC_CHECK_SIZEOF(double, 8)
 AC_CHECK_SIZEOF(fpos_t, 4)
 AC_CHECK_SIZEOF(size_t, 4)
 AC_CHECK_SIZEOF(pid_t, 4)
-
-AC_MSG_CHECKING(for long long support)
-have_long_long=no
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[long long x; x = (long long)0;]])],[
-  AC_DEFINE(HAVE_LONG_LONG, 1, [Define this if you have the type long long.])
-  have_long_long=yes
-],[])
-AC_MSG_RESULT($have_long_long)
-if test "$have_long_long" = yes ; then
-AC_CHECK_SIZEOF(long long, 8)
-fi
 
 AC_MSG_CHECKING(for long double support)
 have_long_double=no
@@ -2150,8 +2140,6 @@ AC_CHECK_SIZEOF(off_t, [], [
 ])
 
 AC_MSG_CHECKING(whether to enable large file support)
-if test "$have_long_long" = yes
-then
 if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
   AC_DEFINE(HAVE_LARGEFILE_SUPPORT, 1,
@@ -2160,9 +2148,6 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
    to add some flags for configuration and compilation to enable this mode.
    (For Solaris and Linux, the necessary defines are already defined.)])
   AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-fi
 else
   AC_MSG_RESULT(no)
 fi
@@ -4925,63 +4910,60 @@ if test "x$ac_cv_file__dev_ptc" = xyes; then
   [Define to 1 if you have the /dev/ptc device file.])
 fi
 
-if test "$have_long_long" = yes
-then
-  AC_MSG_CHECKING(for %lld and %llu printf() format support)
-  AC_CACHE_VAL(ac_cv_have_long_long_format,
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[[
-  #include <stdio.h>
-  #include <stddef.h>
-  #include <string.h>
+AC_MSG_CHECKING(for %lld and %llu printf() format support)
+AC_CACHE_VAL(ac_cv_have_long_long_format,
+AC_RUN_IFELSE([AC_LANG_SOURCE([[[
+#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
 
-  #ifdef HAVE_SYS_TYPES_H
-  #include <sys/types.h>
-  #endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
 
-  int main()
-  {
-      char buffer[256];
+int main()
+{
+char buffer[256];
 
-      if (sprintf(buffer, "%lld", (long long)123) < 0)
-          return 1;
-      if (strcmp(buffer, "123"))
-          return 1;
+if (sprintf(buffer, "%lld", (long long)123) < 0)
+return 1;
+if (strcmp(buffer, "123"))
+return 1;
 
-      if (sprintf(buffer, "%lld", (long long)-123) < 0)
-          return 1;
-      if (strcmp(buffer, "-123"))
-          return 1;
+if (sprintf(buffer, "%lld", (long long)-123) < 0)
+return 1;
+if (strcmp(buffer, "-123"))
+return 1;
 
-      if (sprintf(buffer, "%llu", (unsigned long long)123) < 0)
-          return 1;
-      if (strcmp(buffer, "123"))
-          return 1;
+if (sprintf(buffer, "%llu", (unsigned long long)123) < 0)
+return 1;
+if (strcmp(buffer, "123"))
+return 1;
 
-      return 0;
-  }
-  ]]])],
-  [ac_cv_have_long_long_format=yes],
-  [ac_cv_have_long_long_format=no],
-  [ac_cv_have_long_long_format="cross -- assuming no"
-   if test x$GCC = xyes; then
-    save_CFLAGS=$CFLAGS
-    CFLAGS="$CFLAGS -Werror -Wformat"
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-        #include <stdio.h>
-        #include <stddef.h>
-      ]], [[
-      char *buffer;
-      sprintf(buffer, "%lld", (long long)123);
-      sprintf(buffer, "%lld", (long long)-123);
-      sprintf(buffer, "%llu", (unsigned long long)123);
-      ]])],
-      ac_cv_have_long_long_format=yes
-    )
-    CFLAGS=$save_CFLAGS
-   fi])
-  )
-  AC_MSG_RESULT($ac_cv_have_long_long_format)
-fi
+return 0;
+}
+]]])],
+[ac_cv_have_long_long_format=yes],
+[ac_cv_have_long_long_format=no],
+[ac_cv_have_long_long_format="cross -- assuming no"
+if test x$GCC = xyes; then
+save_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS -Werror -Wformat"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <stdio.h>
+#include <stddef.h>
+]], [[
+char *buffer;
+sprintf(buffer, "%lld", (long long)123);
+sprintf(buffer, "%lld", (long long)-123);
+sprintf(buffer, "%llu", (unsigned long long)123);
+]])],
+ac_cv_have_long_long_format=yes
+)
+CFLAGS=$save_CFLAGS
+fi])
+)
+AC_MSG_RESULT($ac_cv_have_long_long_format)
 
 if test "$ac_cv_have_long_long_format" = yes
 then

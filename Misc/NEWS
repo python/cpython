@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27961?: Require platforms to support ``long long``. Python hasn't
+  compiled without ``long long`` for years, so this is basically a formality.
+
 - Issue #27355: Removed support for Windows CE.  It was never finished,
   and Windows CE is no longer a relevant platform for Python.
 

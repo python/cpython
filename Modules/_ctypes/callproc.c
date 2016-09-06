@@ -474,7 +474,6 @@ PyCArg_repr(PyCArgObject *self)
             self->tag, self->value.l);
         break;
 
-#ifdef HAVE_LONG_LONG
     case 'q':
     case 'Q':
         sprintf(buffer,
@@ -485,7 +484,6 @@ PyCArg_repr(PyCArgObject *self)
 #endif
             self->tag, self->value.q);
         break;
-#endif
     case 'd':
         sprintf(buffer, "<cparam '%c' (%f)>",
             self->tag, self->value.d);
@@ -593,9 +591,7 @@ union result {
     short h;
     int i;
     long l;
-#ifdef HAVE_LONG_LONG
     PY_LONG_LONG q;
-#endif
     long double D;
     double d;
     float f;

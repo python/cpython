@@ -640,22 +640,14 @@ fail:
 #endif /* MS_WINDOWS */
 
 
-#ifdef HAVE_LONG_LONG
-#  define _PyLong_FromDev PyLong_FromLongLong
-#else
-#  define _PyLong_FromDev PyLong_FromLong
-#endif
+#define _PyLong_FromDev PyLong_FromLongLong
 
 
 #if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
-#ifdef HAVE_LONG_LONG
     *((dev_t *)p) = PyLong_AsUnsignedLongLong(obj);
-#else
-    *((dev_t *)p) = PyLong_AsUnsignedLong(obj);
-#endif
     if (PyErr_Occurred())
         return 0;
     return 1;

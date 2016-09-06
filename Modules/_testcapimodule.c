@@ -60,9 +60,7 @@ test_config(PyObject *self)
     CHECK_SIZEOF(SIZEOF_LONG, long);
     CHECK_SIZEOF(SIZEOF_VOID_P, void*);
     CHECK_SIZEOF(SIZEOF_TIME_T, time_t);
-#ifdef HAVE_LONG_LONG
     CHECK_SIZEOF(SIZEOF_LONG_LONG, PY_LONG_LONG);
-#endif
 
 #undef CHECK_SIZEOF
 
@@ -357,7 +355,7 @@ test_lazy_hash_inheritance(PyObject* self)
 }
 
 
-/* Tests of PyLong_{As, From}{Unsigned,}Long(), and (#ifdef HAVE_LONG_LONG)
+/* Tests of PyLong_{As, From}{Unsigned,}Long(), and
    PyLong_{As, From}{Unsigned,}LongLong().
 
    Note that the meat of the test is contained in testcapi_long.h.
@@ -401,8 +399,6 @@ test_long_api(PyObject* self)
 #undef F_PY_TO_S
 #undef F_U_TO_PY
 #undef F_PY_TO_U
-
-#ifdef HAVE_LONG_LONG
 
 static PyObject *
 raise_test_longlong_error(const char* msg)
@@ -870,8 +866,6 @@ test_L_code(PyObject *self)
     return Py_None;
 }
 
-#endif  /* ifdef HAVE_LONG_LONG */
-
 static PyObject *
 return_none(void *unused)
 {
@@ -1136,7 +1130,6 @@ getargs_p(PyObject *self, PyObject *args)
     return PyLong_FromLong(value);
 }
 
-#ifdef HAVE_LONG_LONG
 static PyObject *
 getargs_L(PyObject *self, PyObject *args)
 {
@@ -1154,7 +1147,6 @@ getargs_K(PyObject *self, PyObject *args)
         return NULL;
     return PyLong_FromUnsignedLongLong(value);
 }
-#endif
 
 /* This function not only tests the 'k' getargs code, but also the
    PyLong_AsUnsignedLongMask() and PyLong_AsUnsignedLongMask() functions. */
@@ -2279,10 +2271,8 @@ test_string_from_format(PyObject *self, PyObject *args)
     CHECK_1_FORMAT("%zu", size_t);
 
     /* "%lld" and "%llu" support added in Python 2.7. */
-#ifdef HAVE_LONG_LONG
     CHECK_1_FORMAT("%llu", unsigned PY_LONG_LONG);
     CHECK_1_FORMAT("%lld", PY_LONG_LONG);
-#endif
 
     Py_RETURN_NONE;
 
@@ -3991,14 +3981,12 @@ static PyMethodDef TestMethods[] = {
     {"getargs_l",               getargs_l,                       METH_VARARGS},
     {"getargs_n",               getargs_n,                       METH_VARARGS},
     {"getargs_p",               getargs_p,                       METH_VARARGS},
-#ifdef HAVE_LONG_LONG
     {"getargs_L",               getargs_L,                       METH_VARARGS},
     {"getargs_K",               getargs_K,                       METH_VARARGS},
     {"test_longlong_api",       test_longlong_api,               METH_NOARGS},
     {"test_long_long_and_overflow",
         (PyCFunction)test_long_long_and_overflow, METH_NOARGS},
     {"test_L_code",             (PyCFunction)test_L_code,        METH_NOARGS},
-#endif
     {"getargs_f",               getargs_f,                       METH_VARARGS},
     {"getargs_d",               getargs_d,                       METH_VARARGS},
     {"getargs_D",               getargs_D,                       METH_VARARGS},
@@ -4153,10 +4141,8 @@ typedef struct {
     float float_member;
     double double_member;
     char inplace_member[6];
-#ifdef HAVE_LONG_LONG
     PY_LONG_LONG longlong_member;
     unsigned PY_LONG_LONG ulonglong_member;
-#endif
 } all_structmembers;
 
 typedef struct {
@@ -4178,10 +4164,8 @@ static struct PyMemberDef test_members[] = {
     {"T_FLOAT", T_FLOAT, offsetof(test_structmembers, structmembers.float_member), 0, NULL},
     {"T_DOUBLE", T_DOUBLE, offsetof(test_structmembers, structmembers.double_member), 0, NULL},
     {"T_STRING_INPLACE", T_STRING_INPLACE, offsetof(test_structmembers, structmembers.inplace_member), 0, NULL},
-#ifdef HAVE_LONG_LONG
     {"T_LONGLONG", T_LONGLONG, offsetof(test_structmembers, structmembers.longlong_member), 0, NULL},
     {"T_ULONGLONG", T_ULONGLONG, offsetof(test_structmembers, structmembers.ulonglong_member), 0, NULL},
-#endif
     {NULL}
 };
 
@@ -4193,15 +4177,9 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         "T_BOOL", "T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT",
         "T_INT", "T_UINT", "T_LONG", "T_ULONG", "T_PYSSIZET",
         "T_FLOAT", "T_DOUBLE", "T_STRING_INPLACE",
-#ifdef HAVE_LONG_LONG
         "T_LONGLONG", "T_ULONGLONG",
-#endif
         NULL};
-    static const char fmt[] = "|bbBhHiIlknfds#"
-#ifdef HAVE_LONG_LONG
-        "LK"
-#endif
-        ;
+    static const char fmt[] = "|bbBhHiIlknfds#LK";
     test_structmembers *ob;
     const char *s = NULL;
     Py_ssize_t string_len = 0;
@@ -4223,10 +4201,8 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
                                      &ob->structmembers.float_member,
                                      &ob->structmembers.double_member,
                                      &s, &string_len
-#ifdef HAVE_LONG_LONG
                                      , &ob->structmembers.longlong_member,
                                      &ob->structmembers.ulonglong_member
-#endif
         )) {
         Py_DECREF(ob);
         return NULL;

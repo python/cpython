@@ -141,11 +141,7 @@ struct addrinfo {
  * RFC 2553: protocol-independent placeholder for socket addresses
  */
 #define _SS_MAXSIZE     128
-#ifdef HAVE_LONG_LONG
 #define _SS_ALIGNSIZE   (sizeof(PY_LONG_LONG))
-#else
-#define _SS_ALIGNSIZE   (sizeof(double))
-#endif /* HAVE_LONG_LONG */
 #define _SS_PAD1SIZE    (_SS_ALIGNSIZE - sizeof(u_char) * 2)
 #define _SS_PAD2SIZE    (_SS_MAXSIZE - sizeof(u_char) * 2 - \
                 _SS_PAD1SIZE - _SS_ALIGNSIZE)
@@ -158,11 +154,7 @@ struct sockaddr_storage {
     unsigned short ss_family;           /* address family */
 #endif /* HAVE_SOCKADDR_SA_LEN */
     char        __ss_pad1[_SS_PAD1SIZE];
-#ifdef HAVE_LONG_LONG
     PY_LONG_LONG __ss_align;            /* force desired structure storage alignment */
-#else
-    double __ss_align;          /* force desired structure storage alignment */
-#endif /* HAVE_LONG_LONG */
     char        __ss_pad2[_SS_PAD2SIZE];
 };
 #endif /* !HAVE_SOCKADDR_STORAGE */

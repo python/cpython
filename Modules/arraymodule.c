@@ -418,8 +418,6 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     return 0;
 }
 
-#ifdef HAVE_LONG_LONG
-
 static PyObject *
 q_getitem(arrayobject *ap, Py_ssize_t i)
 {
@@ -469,7 +467,6 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         ((unsigned PY_LONG_LONG *)ap->ob_item)[i] = x;
     return 0;
 }
-#endif
 
 static PyObject *
 f_getitem(arrayobject *ap, Py_ssize_t i)
@@ -521,10 +518,8 @@ static const struct arraydescr descriptors[] = {
     {'I', sizeof(int), II_getitem, II_setitem, "I", 1, 0},
     {'l', sizeof(long), l_getitem, l_setitem, "l", 1, 1},
     {'L', sizeof(long), LL_getitem, LL_setitem, "L", 1, 0},
-#ifdef HAVE_LONG_LONG
     {'q', sizeof(PY_LONG_LONG), q_getitem, q_setitem, "q", 1, 1},
     {'Q', sizeof(PY_LONG_LONG), QQ_getitem, QQ_setitem, "Q", 1, 0},
-#endif
     {'f', sizeof(float), f_getitem, f_setitem, "f", 0, 0},
     {'d', sizeof(double), d_getitem, d_setitem, "d", 0, 0},
     {'\0', 0, 0, 0, 0, 0, 0} /* Sentinel */
@@ -1814,7 +1809,6 @@ typecode_to_mformat_code(char typecode)
         intsize = sizeof(long);
         is_signed = 0;
         break;
-#if HAVE_LONG_LONG
     case 'q':
         intsize = sizeof(PY_LONG_LONG);
         is_signed = 1;
@@ -1823,7 +1817,6 @@ typecode_to_mformat_code(char typecode)
         intsize = sizeof(PY_LONG_LONG);
         is_signed = 0;
         break;
-#endif
     default:
         return UNKNOWN_FORMAT;
     }
@@ -2685,11 +2678,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
     PyErr_SetString(PyExc_ValueError,
-#ifdef HAVE_LONG_LONG
         "bad typecode (must be b, B, u, h, H, i, I, l, L, q, Q, f or d)");
-#else
-        "bad typecode (must be b, B, u, h, H, i, I, l, L, f or d)");
-#endif
     return NULL;
 }
 

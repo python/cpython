@@ -38,7 +38,7 @@ error_time_t_overflow(void)
 time_t
 _PyLong_AsTime_t(PyObject *obj)
 {
-#if defined(HAVE_LONG_LONG) && SIZEOF_TIME_T == SIZEOF_LONG_LONG
+#if SIZEOF_TIME_T == SIZEOF_LONG_LONG
     PY_LONG_LONG val;
     val = PyLong_AsLongLong(obj);
 #else
@@ -57,7 +57,7 @@ _PyLong_AsTime_t(PyObject *obj)
 PyObject *
 _PyLong_FromTime_t(time_t t)
 {
-#if defined(HAVE_LONG_LONG) && SIZEOF_TIME_T == SIZEOF_LONG_LONG
+#if SIZEOF_TIME_T == SIZEOF_LONG_LONG
     return PyLong_FromLongLong((PY_LONG_LONG)t);
 #else
     Py_BUILD_ASSERT(sizeof(time_t) <= sizeof(long));
@@ -304,17 +304,10 @@ _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
         return _PyTime_FromFloatObject(t, d, round, unit_to_ns);
     }
     else {
-#ifdef HAVE_LONG_LONG
         PY_LONG_LONG sec;
         Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
 
         sec = PyLong_AsLongLong(obj);
-#else
-        long sec;
-        Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
-
-        sec = PyLong_AsLong(obj);
-#endif
         if (sec == -1 && PyErr_Occurred()) {
             if (PyErr_ExceptionMatches(PyExc_OverflowError))
                 _PyTime_overflow();
@@ -365,13 +358,8 @@ _PyTime_AsSecondsDouble(_PyTime_t t)
 PyObject *
 _PyTime_AsNanosecondsObject(_PyTime_t t)
 {
-#ifdef HAVE_LONG_LONG
     Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) >= sizeof(_PyTime_t));
     return PyLong_FromLongLong((PY_LONG_LONG)t);
-#else
-    Py_BUILD_ASSERT(sizeof(long) >= sizeof(_PyTime_t));
-    return PyLong_FromLong((long)t);
-#endif
 }
 
 static _PyTime_t
