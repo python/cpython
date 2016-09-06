@@ -161,9 +161,10 @@ BLAKE2_LOCAL_INLINE(int) blake2s_param_set_personal( blake2s_param *P, const uin
 
 BLAKE2_LOCAL_INLINE(int) blake2s_init0( blake2s_state *S )
 {
+  int i;
   memset( S, 0, sizeof( blake2s_state ) );
 
-  for( int i = 0; i < 8; ++i ) S->h[i] = blake2s_IV[i];
+  for( i = 0; i < 8; ++i ) S->h[i] = blake2s_IV[i];
 
   return 0;
 }
@@ -175,10 +176,11 @@ int blake2s_init_param( blake2s_state *S, const blake2s_param *P )
   const uint8_t * v = ( const uint8_t * )( blake2s_IV );
   const uint8_t * p = ( const uint8_t * )( P );
   uint8_t * h = ( uint8_t * )( S->h );
+  int i;
   /* IV XOR ParamBlock */
   memset( S, 0, sizeof( blake2s_state ) );
 
-  for( int i = 0; i < BLAKE2S_OUTBYTES; ++i ) h[i] = v[i] ^ p[i];
+  for( i = 0; i < BLAKE2S_OUTBYTES; ++i ) h[i] = v[i] ^ p[i];
 
   return 0;
 }
@@ -333,6 +335,7 @@ int blake2s_update( blake2s_state *S, const uint8_t *in, uint64_t inlen )
 int blake2s_final( blake2s_state *S, uint8_t *out, uint8_t outlen )
 {
   uint8_t buffer[BLAKE2S_OUTBYTES] = {0};
+  int i;
 
   if( outlen > BLAKE2S_OUTBYTES )
     return -1;
@@ -353,7 +356,7 @@ int blake2s_final( blake2s_state *S, uint8_t *out, uint8_t outlen )
   memset( S->buf + S->buflen, 0, 2 * BLAKE2S_BLOCKBYTES - S->buflen ); /* Padding */
   blake2s_compress( S, S->buf );
 
-  for( int i = 0; i < 8; ++i ) /* Output full hash to temp buffer */
+  for( i = 0; i < 8; ++i ) /* Output full hash to temp buffer */
     store32( buffer + sizeof( S->h[i] ) * i, S->h[i] );
 
   memcpy( out, buffer, outlen );
