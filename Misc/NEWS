@@ -188,6 +188,11 @@ Library
 
 - Issue #27573: exit message for code.interact is now configurable.
 
+C API
+-----
+
+- Issue #26027: Add support for path-like objects in PyUnicode_FSConverter().
+
 Tests
 -----
 
