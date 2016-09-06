@@ -810,13 +810,16 @@ used, passing :c:func:`PyUnicode_FSConverter` as the conversion function:
 
 .. c:function:: int PyUnicode_FSConverter(PyObject* obj, void* result)
 
-   ParseTuple converter: encode :class:`str` objects to :class:`bytes` using
+   ParseTuple converter: encode :class:`str` objects -- obtained directly or
+   through the :class:`os.PathLike` interface -- to :class:`bytes` using
    :c:func:`PyUnicode_EncodeFSDefault`; :class:`bytes` objects are output as-is.
    *result* must be a :c:type:`PyBytesObject*` which must be released when it is
    no longer used.
 
    .. versionadded:: 3.1
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 To decode file names during argument parsing, the ``"O&"`` converter should be
 used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
