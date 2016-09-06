@@ -1918,7 +1918,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS(asm/types.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
-sched.h shadow.h signal.h stdint.h stropts.h termios.h \
+sched.h shadow.h signal.h stropts.h termios.h \
 unistd.h utime.h \
 poll.h sys/devpoll.h sys/epoll.h sys/poll.h \
 sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
@@ -2060,29 +2060,6 @@ AC_DEFINE_UNQUOTED([RETSIGTYPE],[void],[assume C89 semantics that RETSIGTYPE is 
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
-# There are two separate checks for each of the exact-width integer types we
-# need.  First we check whether the type is available using the usual
-# AC_CHECK_TYPE macro with the default includes (which includes <inttypes.h>
-# and <stdint.h> where available).  We then also use the special type checks of
-# the form AC_TYPE_UINT32_T, which in the case that uint32_t is not available
-# directly, #define's uint32_t to be a suitable type.
-
-AC_CHECK_TYPE(uint32_t,
-  AC_DEFINE(HAVE_UINT32_T, 1, [Define if your compiler provides uint32_t.]),,)
-AC_TYPE_UINT32_T
-
-AC_CHECK_TYPE(uint64_t,
-  AC_DEFINE(HAVE_UINT64_T, 1, [Define if your compiler provides uint64_t.]),,)
-AC_TYPE_UINT64_T
-
-AC_CHECK_TYPE(int32_t,
-  AC_DEFINE(HAVE_INT32_T, 1, [Define if your compiler provides int32_t.]),,)
-AC_TYPE_INT32_T
-
-AC_CHECK_TYPE(int64_t,
-  AC_DEFINE(HAVE_INT64_T, 1, [Define if your compiler provides int64_t.]),,)
-AC_TYPE_INT64_T
-
 AC_CHECK_TYPE(ssize_t,
   AC_DEFINE(HAVE_SSIZE_T, 1, [Define if your compiler provides ssize_t]),,)
 AC_CHECK_TYPE(__uint128_t,
@@ -2126,12 +2103,8 @@ fi
 
 AC_CHECK_TYPES(uintptr_t,
    [AC_CHECK_SIZEOF(uintptr_t, 4)],
-   [], [#ifdef HAVE_STDINT_H
-        #include <stdint.h>
-        #endif
-        #ifdef HAVE_INTTYPES_H
-        #include <inttypes.h>
-        #endif])
+   [], [#include <stdint.h>
+        #include <inttypes.h>])
 
 AC_CHECK_SIZEOF(off_t, [], [
 #ifdef HAVE_SYS_TYPES_H

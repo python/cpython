@@ -98,22 +98,14 @@ test_sizeof_c_types(PyObject *self)
     CHECK_SIGNNESS(Py_UCS1, 0);
     CHECK_SIGNNESS(Py_UCS2, 0);
     CHECK_SIGNNESS(Py_UCS4, 0);
-#ifdef HAVE_INT32_T
     CHECK_SIZEOF(PY_INT32_T, 4);
     CHECK_SIGNNESS(PY_INT32_T, 1);
-#endif
-#ifdef HAVE_UINT32_T
     CHECK_SIZEOF(PY_UINT32_T, 4);
     CHECK_SIGNNESS(PY_UINT32_T, 0);
-#endif
-#ifdef HAVE_INT64_T
     CHECK_SIZEOF(PY_INT64_T, 8);
     CHECK_SIGNNESS(PY_INT64_T, 1);
-#endif
-#ifdef HAVE_UINT64_T
     CHECK_SIZEOF(PY_UINT64_T, 8);
     CHECK_SIGNNESS(PY_UINT64_T, 0);
-#endif
 
     /* pointer/size types */
     CHECK_SIZEOF(size_t, sizeof(void *));
