@@ -541,7 +541,7 @@ coverage-report:
 # Run "Argument Clinic" over all source files
 # (depends on python having already been built)
 .PHONY=clinic
-clinic: $(BUILDPYTHON)
+clinic: $(BUILDPYTHON) Modules/_blake2/blake2s_impl.c
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) ./Tools/clinic/clinic.py --make
 
 # Build the interpreter
@@ -571,6 +571,11 @@ pybuilddir.txt: $(BUILDPYTHON)
 Modules/_math.o: Modules/_math.c Modules/_math.h
 	$(CC) -c $(CCSHARED) $(PY_CORE_CFLAGS) -o $@ $<
 
+# blake2s is auto-generated from blake2b
+Modules/_blake2/blake2s_impl.c: $(BUILDPYTHON) Modules/_blake2/blake2b_impl.c Modules/_blake2/blake2b2s.py
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) Modules/_blake2/blake2b2s.py
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) Tools/clinic/clinic.py -f $@
+
 # Build the shared modules
 # Under GNU make, MAKEFLAGS are sorted and normalized; the 's' for
 # -s, --silent or --quiet is always the first char.
@@ -583,6 +588,7 @@ sharedmods: $(BUILDPYTHON) pybuilddir.txt Modules/_math.o
 	$(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' \
 		_TCLTK_INCLUDES='$(TCLTK_INCLUDES)' _TCLTK_LIBS='$(TCLTK_LIBS)' \
 		$(PYTHON_FOR_BUILD) $(srcdir)/setup.py $$quiet build
+
 
 # Build static library
 # avoid long command lines, same as LIBRARY_OBJS

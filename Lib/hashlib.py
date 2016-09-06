@@ -4,14 +4,14 @@
 
 __doc__ = """hashlib module - A common interface to many hash functions.
 
-new(name, data=b'') - returns a new hash object implementing the
-                      given hash function; initializing the hash
-                      using the given binary data.
+new(name, data=b'', **kwargs) - returns a new hash object implementing the
+                                given hash function; initializing the hash
+                                using the given binary data.
 
 Named constructor functions are also available, these are faster
 than using new(name):
 
-md5(), sha1(), sha224(), sha256(), sha384(), and sha512()
+md5(), sha1(), sha224(), sha256(), sha384(), sha512(), blake2b(), and blake2s()
 
 More algorithms may be available on your platform but the above are guaranteed
 to exist.  See the algorithms_guaranteed and algorithms_available attributes
@@ -54,7 +54,8 @@ More condensed:
 
 # This tuple and __get_builtin_constructor() must be modified if a new
 # always available algorithm is added.
-__always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
+__always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512',
+                      'blake2b', 'blake2s')
 
 algorithms_guaranteed = set(__always_supported)
 algorithms_available = set(__always_supported)
@@ -85,6 +86,10 @@ def __get_builtin_constructor(name):
             import _sha512
             cache['SHA384'] = cache['sha384'] = _sha512.sha384
             cache['SHA512'] = cache['sha512'] = _sha512.sha512
+        elif name in ('blake2b', 'blake2s'):
+            import _blake2
+            cache['blake2b'] = _blake2.blake2b
+            cache['blake2s'] = _blake2.blake2s
     except ImportError:
         pass  # no extension module, this hash is unsupported.
 
@@ -107,17 +112,23 @@ def __get_openssl_constructor(name):
         return __get_builtin_constructor(name)
 
 
-def __py_new(name, data=b''):
+def __py_new(name, data=b'', **kwargs):
+    """new(name, data=b'', **kwargs) - Return a new hashing object using the
+    named algorithm; optionally initialized with data (which must be bytes).
+    """
+    return __get_builtin_constructor(name)(data, **kwargs)
+
+
+def __hash_new(name, data=b'', **kwargs):
     """new(name, data=b'') - Return a new hashing object using the named algorithm;
     optionally initialized with data (which must be bytes).
     """
-    return __get_builtin_constructor(name)(data)
-
-
-def __hash_new(name, data=b''):
-    """new(name, data=b'') - Return a new hashing object using the named algorithm;
-    optionally initialized with data (which must be bytes).
-    """
+    if name in {'blake2b', 'blake2s'}:
+        # Prefer our blake2 implementation.
+        # OpenSSL 1.1.0 comes with a limited implementation of blake2b/s.
+        # It does neither support keyed blake2 nor advanced features like
+        # salt, personal, tree hashing or SSE.
+        return __get_builtin_constructor(name)(data, **kwargs)
     try:
         return _hashlib.new(name, data)
     except ValueError:
@@ -217,6 +228,7 @@ for __func_name in __always_supported:
     except ValueError:
         import logging
         logging.exception('code for hash %s was not found.', __func_name)
+
 
 # Cleanup locals()
 del __always_supported, __func_name, __get_hash

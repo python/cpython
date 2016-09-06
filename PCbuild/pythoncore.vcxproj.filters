@@ -449,6 +449,15 @@
     <ClCompile Include="..\Modules\_bisectmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_blake2\blake2module.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_blake2\blake2b_impl.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_blake2\blake2s_impl.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_codecsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
