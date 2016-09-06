@@ -4650,7 +4650,7 @@ simple:
     /* a fits into a long, so b must too */
     x = PyLong_AsLong((PyObject *)a);
     y = PyLong_AsLong((PyObject *)b);
-#elif defined(long long) && PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
+#elif PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     x = PyLong_AsLongLong((PyObject *)a);
     y = PyLong_AsLongLong((PyObject *)b);
 #else
@@ -4669,7 +4669,7 @@ simple:
     }
 #if LONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     return PyLong_FromLong(x);
-#elif defined(long long) && PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
+#elif PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     return PyLong_FromLongLong(x);
 #else
 # error "_PyLong_GCD"
