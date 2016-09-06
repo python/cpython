@@ -1134,9 +1134,6 @@
 /* Define this if you have tcl and TCL_UTF_MAX==6 */
 #undef HAVE_UCS4_TCL
 
-/* Define to 1 if the system has the type `uintptr_t'. */
-#undef HAVE_UINTPTR_T
-
 /* Define to 1 if you have the `uname' function. */
 #undef HAVE_UNAME
 
@@ -1310,9 +1307,6 @@
 
 /* The size of `time_t', as computed by sizeof. */
 #undef SIZEOF_TIME_T
-
-/* The size of `uintptr_t', as computed by sizeof. */
-#undef SIZEOF_UINTPTR_T
 
 /* The size of `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P

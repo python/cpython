@@ -2101,11 +2101,6 @@ if test "$have_c99_bool" = yes ; then
 AC_CHECK_SIZEOF(_Bool, 1)
 fi
 
-AC_CHECK_TYPES(uintptr_t,
-   [AC_CHECK_SIZEOF(uintptr_t, 4)],
-   [], [#include <stdint.h>
-        #include <inttypes.h>])
-
 AC_CHECK_SIZEOF(off_t, [], [
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
