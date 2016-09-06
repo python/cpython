@@ -36,23 +36,6 @@ def _new_module(name):
     return type(sys)(name)
 
 
-class _ManageReload:
-
-    """Manages the possible clean-up of sys.modules for load_module()."""
-
-    def __init__(self, name):
-        self._name = name
-
-    def __enter__(self):
-        self._is_reload = self._name in sys.modules
-
-    def __exit__(self, *args):
-        if any(arg is not None for arg in args) and not self._is_reload:
-            try:
-                del sys.modules[self._name]
-            except KeyError:
-                pass
-
 # Module-level locking ########################################################
 
 # A dict mapping module names to weakrefs of _ModuleLock instances
