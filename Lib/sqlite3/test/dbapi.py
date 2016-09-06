@@ -820,6 +820,100 @@ class ClosedCurTests(unittest.TestCase):
                 method = getattr(cur, method_name)
                 method(*params)
 
+
+class SqliteOnConflictTests(unittest.TestCase):
+    """
+    Tests for SQLite's "insert on conflict" feature.
+
+    See https://www.sqlite.org/lang_conflict.html for details.
+    """
+
+    def setUp(self):
+        self.cx = sqlite.connect(":memory:")
+        self.cu = self.cx.cursor()
+        self.cu.execute("""
+          CREATE TABLE test(
+            id INTEGER PRIMARY KEY, name TEXT, unique_name TEXT UNIQUE
+          );
+        """)
+
+    def tearDown(self):
+        self.cu.close()
+        self.cx.close()
+
+    def CheckOnConflictRollbackWithExplicitTransaction(self):
+        self.cx.isolation_level = None  # autocommit mode
+        self.cu = self.cx.cursor()
+        # Start an explicit transaction.
+        self.cu.execute("BEGIN")
+        self.cu.execute("INSERT INTO test(name) VALUES ('abort_test')")
+        self.cu.execute("INSERT OR ROLLBACK INTO test(unique_name) VALUES ('foo')")
+        with self.assertRaises(sqlite.IntegrityError):
+            self.cu.execute("INSERT OR ROLLBACK INTO test(unique_name) VALUES ('foo')")
+        # Use connection to commit.
+        self.cx.commit()
+        self.cu.execute("SELECT name, unique_name from test")
+        # Transaction should have rolled back and nothing should be in table.
+        self.assertEqual(self.cu.fetchall(), [])
+
+    def CheckOnConflictAbortRaisesWithExplicitTransactions(self):
+        # Abort cancels the current sql statement but doesn't change anything
+        # about the current transaction.
+        self.cx.isolation_level = None  # autocommit mode
+        self.cu = self.cx.cursor()
+        # Start an explicit transaction.
+        self.cu.execute("BEGIN")
+        self.cu.execute("INSERT INTO test(name) VALUES ('abort_test')")
+        self.cu.execute("INSERT OR ABORT INTO test(unique_name) VALUES ('foo')")
+        with self.assertRaises(sqlite.IntegrityError):
+            self.cu.execute("INSERT OR ABORT INTO test(unique_name) VALUES ('foo')")
+        self.cx.commit()
+        self.cu.execute("SELECT name, unique_name FROM test")
+        # Expect the first two inserts to work, third to do nothing.
+        self.assertEqual(self.cu.fetchall(), [('abort_test', None), (None, 'foo',)])
+
+    def CheckOnConflictRollbackWithoutTransaction(self):
+        # Start of implicit transaction
+        self.cu.execute("INSERT INTO test(name) VALUES ('abort_test')")
+        self.cu.execute("INSERT OR ROLLBACK INTO test(unique_name) VALUES ('foo')")
+        with self.assertRaises(sqlite.IntegrityError):
+            self.cu.execute("INSERT OR ROLLBACK INTO test(unique_name) VALUES ('foo')")
+        self.cu.execute("SELECT name, unique_name FROM test")
+        # Implicit transaction is rolled back on error.
+        self.assertEqual(self.cu.fetchall(), [])
+
+    def CheckOnConflictAbortRaisesWithoutTransactions(self):
+        # Abort cancels the current sql statement but doesn't change anything
+        # about the current transaction.
+        self.cu.execute("INSERT INTO test(name) VALUES ('abort_test')")
+        self.cu.execute("INSERT OR ABORT INTO test(unique_name) VALUES ('foo')")
+        with self.assertRaises(sqlite.IntegrityError):
+            self.cu.execute("INSERT OR ABORT INTO test(unique_name) VALUES ('foo')")
+        # Make sure all other values were inserted.
+        self.cu.execute("SELECT name, unique_name FROM test")
+        self.assertEqual(self.cu.fetchall(), [('abort_test', None), (None, 'foo',)])
+
+    def CheckOnConflictFail(self):
+        self.cu.execute("INSERT OR FAIL INTO test(unique_name) VALUES ('foo')")
+        with self.assertRaises(sqlite.IntegrityError):
+            self.cu.execute("INSERT OR FAIL INTO test(unique_name) VALUES ('foo')")
+        self.assertEqual(self.cu.fetchall(), [])
+
+    def CheckOnConflictIgnore(self):
+        self.cu.execute("INSERT OR IGNORE INTO test(unique_name) VALUES ('foo')")
+        # Nothing should happen.
+        self.cu.execute("INSERT OR IGNORE INTO test(unique_name) VALUES ('foo')")
+        self.cu.execute("SELECT unique_name FROM test")
+        self.assertEqual(self.cu.fetchall(), [('foo',)])
+
+    def CheckOnConflictReplace(self):
+        self.cu.execute("INSERT OR REPLACE INTO test(name, unique_name) VALUES ('Data!', 'foo')")
+        # There shouldn't be an IntegrityError exception.
+        self.cu.execute("INSERT OR REPLACE INTO test(name, unique_name) VALUES ('Very different data!', 'foo')")
+        self.cu.execute("SELECT name, unique_name FROM test")
+        self.assertEqual(self.cu.fetchall(), [('Very different data!', 'foo')])
+
+
 def suite():
     module_suite = unittest.makeSuite(ModuleTests, "Check")
     connection_suite = unittest.makeSuite(ConnectionTests, "Check")
@@ -829,7 +923,12 @@ def suite():
     ext_suite = unittest.makeSuite(ExtensionTests, "Check")
     closed_con_suite = unittest.makeSuite(ClosedConTests, "Check")
     closed_cur_suite = unittest.makeSuite(ClosedCurTests, "Check")
-    return unittest.TestSuite((module_suite, connection_suite, cursor_suite, thread_suite, constructor_suite, ext_suite, closed_con_suite, closed_cur_suite))
+    on_conflict_suite = unittest.makeSuite(SqliteOnConflictTests, "Check")
+    return unittest.TestSuite((
+        module_suite, connection_suite, cursor_suite, thread_suite,
+        constructor_suite, ext_suite, closed_con_suite, closed_cur_suite,
+        on_conflict_suite,
+    ))
 
 def test():
     runner = unittest.TextTestRunner()
