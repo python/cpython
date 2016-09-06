@@ -299,9 +299,9 @@ def library_recipes():
     if PYTHON_3:
         result.extend([
           dict(
-              name="XZ 5.0.5",
-              url="http://tukaani.org/xz/xz-5.0.5.tar.gz",
-              checksum='19d924e066b6fff0bc9d1981b4e53196',
+              name="XZ 5.2.2",
+              url="http://tukaani.org/xz/xz-5.2.2.tar.gz",
+              checksum='7cf6a8544a7dae8e8106fdf7addfa28c',
               configure_pre=[
                     '--disable-dependency-tracking',
               ]
@@ -344,10 +344,11 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.8.11",
-              url="https://www.sqlite.org/2015/sqlite-autoconf-3081100.tar.gz",
-              checksum='77b451925121028befbddbf45ea2bc49',
+              name="SQLite 3.14.1",
+              url="https://www.sqlite.org/2016/sqlite-autoconf-3140100.tar.gz",
+              checksum='3634a90a3f49541462bcaed3474b2684',
               extra_cflags=('-Os '
+                            '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
                             '-DSQLITE_ENABLE_RTREE '
