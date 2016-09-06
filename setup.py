@@ -889,6 +889,22 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_sha1', ['sha1module.c'],
                                depends=['hashlib.h']) )
 
+        blake2_deps = [os.path.join('_blake2', 'impl', name)
+                       for name in os.listdir('Modules/_blake2/impl')]
+        blake2_deps.append('hashlib.h')
+
+        blake2_macros = []
+        if os.uname().machine == "x86_64":
+            # Every x86_64 machine has at least SSE2.
+            blake2_macros.append(('BLAKE2_USE_SSE', '1'))
+
+        exts.append( Extension('_blake2',
+                               ['_blake2/blake2module.c',
+                                '_blake2/blake2b_impl.c',
+                                '_blake2/blake2s_impl.c'],
+                               define_macros=blake2_macros,
+                               depends=blake2_deps) )
+
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on
         # your machine, though none are defined by default because of library

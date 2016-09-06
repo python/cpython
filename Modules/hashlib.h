@@ -2,30 +2,33 @@
 
 /*
  * Given a PyObject* obj, fill in the Py_buffer* viewp with the result
- * of PyObject_GetBuffer.  Sets an exception and issues a return NULL
- * on any errors.
+ * of PyObject_GetBuffer.  Sets an exception and issues the erraction
+ * on any errors, e.g. 'return NULL' or 'goto error'.
  */
-#define GET_BUFFER_VIEW_OR_ERROUT(obj, viewp) do { \
+#define GET_BUFFER_VIEW_OR_ERROR(obj, viewp, erraction) do { \
         if (PyUnicode_Check((obj))) { \
             PyErr_SetString(PyExc_TypeError, \
                             "Unicode-objects must be encoded before hashing");\
-            return NULL; \
+            erraction; \
         } \
         if (!PyObject_CheckBuffer((obj))) { \
             PyErr_SetString(PyExc_TypeError, \
                             "object supporting the buffer API required"); \
-            return NULL; \
+            erraction; \
         } \
         if (PyObject_GetBuffer((obj), (viewp), PyBUF_SIMPLE) == -1) { \
-            return NULL; \
+            erraction; \
         } \
         if ((viewp)->ndim > 1) { \
             PyErr_SetString(PyExc_BufferError, \
                             "Buffer must be single dimension"); \
             PyBuffer_Release((viewp)); \
-            return NULL; \
+            erraction; \
         } \
-    } while(0);
+    } while(0)
+
+#define GET_BUFFER_VIEW_OR_ERROUT(obj, viewp) \
+    GET_BUFFER_VIEW_OR_ERROR(obj, viewp, return NULL)
 
 /*
  * Helper code to synchronize access to the hash object when the GIL is

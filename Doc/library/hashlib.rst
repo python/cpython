@@ -65,10 +65,14 @@ concatenation of the data fed to it so far using the :meth:`digest` or
 
 Constructors for hash algorithms that are always present in this module are
 :func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`,
-and :func:`sha512`.  :func:`md5` is normally available as well, though it
+:func:`sha512`, :func:`blake2b`, and :func:`blake2s`.
+:func:`md5` is normally available as well, though it
 may be missing if you are using a rare "FIPS compliant" build of Python.
 Additional algorithms may also be available depending upon the OpenSSL
 library that Python uses on your platform.
+
+.. versionadded:: 3.6
+   :func:`blake2b` and :func:`blake2s` were added.
 
 For example, to obtain the digest of the byte string ``b'Nobody inspects the
 spammish repetition'``::
@@ -243,6 +247,12 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    .. versionadded:: 3.6
 
 
+BLAKE2
+------
+
+BLAKE2 takes additional arguments, see :ref:`hashlib-blake2`.
+
+
 .. seealso::
 
    Module :mod:`hmac`
@@ -250,6 +260,8 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 
    Module :mod:`base64`
       Another way to encode binary hashes for non-binary environments.
+
+   See :ref:`hashlib-blake2`.
 
    http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
       The FIPS 180-2 publication on Secure Hash Algorithms.
