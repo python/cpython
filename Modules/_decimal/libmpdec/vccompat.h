@@ -32,7 +32,6 @@
 
 /* Visual C fixes: no stdint.h, no snprintf ... */
 #ifdef _MSC_VER
-  #include "vcstdint.h"
   #undef inline
   #define inline __inline
   #undef random
