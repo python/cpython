@@ -2306,7 +2306,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
         goto error;
     }
 
-    data = _PyObject_CallMethodId(stream, &PyId_read, "");
+    data = _PyObject_CallMethodId(stream, &PyId_read, NULL);
     if (data == NULL)
         goto error;
     if (!PyBytes_Check(data)) {

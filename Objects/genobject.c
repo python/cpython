@@ -261,7 +261,7 @@ gen_close_iter(PyObject *yf)
                 PyErr_WriteUnraisable(yf);
             PyErr_Clear();
         } else {
-            retval = PyObject_CallFunction(meth, "");
+            retval = _PyObject_CallNoArg(meth);
             Py_DECREF(meth);
             if (retval == NULL)
                 return -1;

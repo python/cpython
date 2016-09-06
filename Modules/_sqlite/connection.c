@@ -672,7 +672,7 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
 
     if (*aggregate_instance == 0) {
-        *aggregate_instance = PyObject_CallFunction(aggregate_class, "");
+        *aggregate_instance = PyObject_CallFunction(aggregate_class, NULL);
 
         if (PyErr_Occurred()) {
             *aggregate_instance = 0;
@@ -744,7 +744,7 @@ void _pysqlite_final_callback(sqlite3_context* context)
     PyErr_Fetch(&exception, &value, &tb);
     restore = 1;
 
-    function_result = _PyObject_CallMethodId(*aggregate_instance, &PyId_finalize, "");
+    function_result = _PyObject_CallMethodId(*aggregate_instance, &PyId_finalize, NULL);
 
     Py_DECREF(*aggregate_instance);
 
@@ -960,7 +960,7 @@ static int _progress_handler(void* user_arg)
 
     gilstate = PyGILState_Ensure();
 #endif
-    ret = PyObject_CallFunction((PyObject*)user_arg, "");
+    ret = PyObject_CallFunction((PyObject*)user_arg, NULL);
 
     if (!ret) {
         if (_enable_callback_tracebacks) {
@@ -1291,7 +1291,7 @@ PyObject* pysqlite_connection_execute(pysqlite_Connection* self, PyObject* args)
     PyObject* result = 0;
     PyObject* method = 0;
 
-    cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, "");
+    cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, NULL);
     if (!cursor) {
         goto error;
     }
@@ -1320,7 +1320,7 @@ PyObject* pysqlite_connection_executemany(pysqlite_Connection* self, PyObject* a
     PyObject* result = 0;
     PyObject* method = 0;
 
-    cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, "");
+    cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, NULL);
     if (!cursor) {
         goto error;
     }
@@ -1349,7 +1349,7 @@ PyObject* pysqlite_connection_executescript(pysqlite_Connection* self, PyObject*
     PyObject* result = 0;
     PyObject* method = 0;
 
-    cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, "");
+    cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, NULL);
     if (!cursor) {
         goto error;
     }
@@ -1519,7 +1519,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    uppercase_name = _PyObject_CallMethodId(name, &PyId_upper, "");
+    uppercase_name = _PyObject_CallMethodId(name, &PyId_upper, NULL);
     if (!uppercase_name) {
         goto finally;
     }
@@ -1611,7 +1611,7 @@ pysqlite_connection_exit(pysqlite_Connection* self, PyObject* args)
         method_name = "rollback";
     }
 
-    result = PyObject_CallMethod((PyObject*)self, method_name, "");
+    result = PyObject_CallMethod((PyObject*)self, method_name, NULL);
     if (!result) {
         return NULL;
     }

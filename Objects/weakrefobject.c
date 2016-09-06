@@ -453,7 +453,7 @@ proxy_checkref(PyWeakReference *proxy)
     method(PyObject *proxy) { \
             _Py_IDENTIFIER(special); \
             UNWRAP(proxy); \
-                return _PyObject_CallMethodId(proxy, &PyId_##special, ""); \
+                return _PyObject_CallMethodId(proxy, &PyId_##special, NULL); \
         }
 
 
