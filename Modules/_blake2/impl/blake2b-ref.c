@@ -157,11 +157,12 @@ BLAKE2_LOCAL_INLINE(int) blake2b_init0( blake2b_state *S )
 int blake2b_init_param( blake2b_state *S, const blake2b_param *P )
 {
   const uint8_t *p = ( const uint8_t * )( P );
+  size_t i;
 
   blake2b_init0( S );
 
   /* IV XOR ParamBlock */
-  for( size_t i = 0; i < 8; ++i )
+  for( i = 0; i < 8; ++i )
     S->h[i] ^= load64( p + sizeof( S->h[i] ) * i );
 
   return 0;
@@ -392,14 +393,15 @@ int main( int argc, char **argv )
 {
   uint8_t key[BLAKE2B_KEYBYTES];
   uint8_t buf[KAT_LENGTH];
+  size_t i;
 
-  for( size_t i = 0; i < BLAKE2B_KEYBYTES; ++i )
+  for( i = 0; i < BLAKE2B_KEYBYTES; ++i )
     key[i] = ( uint8_t )i;
 
-  for( size_t i = 0; i < KAT_LENGTH; ++i )
+  for( i = 0; i < KAT_LENGTH; ++i )
     buf[i] = ( uint8_t )i;
 
-  for( size_t i = 0; i < KAT_LENGTH; ++i )
+  for( i = 0; i < KAT_LENGTH; ++i )
   {
     uint8_t hash[BLAKE2B_OUTBYTES];
     blake2b( hash, buf, key, BLAKE2B_OUTBYTES, i, BLAKE2B_KEYBYTES );
