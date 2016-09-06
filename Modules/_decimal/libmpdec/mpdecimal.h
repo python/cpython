@@ -48,6 +48,8 @@ extern "C" {
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 #ifdef _MSC_VER
   #include "vccompat.h"
@@ -59,12 +61,6 @@ extern "C" {
   #define MPD_HIDE_SYMBOLS_END
   #define EXTINLINE extern inline
 #else
-  #ifdef HAVE_STDINT_H
-    #include <stdint.h>
-  #endif
-  #ifdef HAVE_INTTYPES_H
-    #include <inttypes.h>
-  #endif
   #ifndef __GNUC_STDC_INLINE__
     #define __GNUC_STDC_INLINE__ 1
   #endif
