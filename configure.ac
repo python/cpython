@@ -2077,6 +2077,7 @@ AC_CHECK_SIZEOF(double, 8)
 AC_CHECK_SIZEOF(fpos_t, 4)
 AC_CHECK_SIZEOF(size_t, 4)
 AC_CHECK_SIZEOF(pid_t, 4)
+AC_CHECK_SIZEOF(uintptr_t)
 
 AC_MSG_CHECKING(for long double support)
 have_long_double=no

@@ -1308,6 +1308,9 @@
 /* The size of `time_t', as computed by sizeof. */
 #undef SIZEOF_TIME_T
 
+/* The size of `uintptr_t', as computed by sizeof. */
+#undef SIZEOF_UINTPTR_T
+
 /* The size of `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P
 
