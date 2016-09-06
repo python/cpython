@@ -217,7 +217,7 @@ BLAKE2 can be securely used in prefix-MAC mode thanks to the
 indifferentiability property inherited from BLAKE.
 
 This example shows how to get a (hex-encoded) 128-bit authentication code for
-message ``b'message data'`` with key ``b'pseudorandom key'``:
+message ``b'message data'`` with key ``b'pseudorandom key'``::
 
     >>> from hashlib import blake2b
     >>> h = blake2b(key=b'pseudorandom key', digest_size=16)
@@ -227,7 +227,7 @@ message ``b'message data'`` with key ``b'pseudorandom key'``:
 
 
 As a practical example, a web application can symmetrically sign cookies sent
-to users and later verify them to make sure they weren't tampered with:
+to users and later verify them to make sure they weren't tampered with::
 
     >>> from hashlib import blake2b
     >>> from hmac import compare_digest
@@ -251,7 +251,7 @@ to users and later verify them to make sure they weren't tampered with:
     False
 
 Even though there's a native keyed hashing mode, BLAKE2 can, of course, be used
-in HMAC construction with :mod:`hmac` module:
+in HMAC construction with :mod:`hmac` module::
 
     >>> import hmac, hashlib
     >>> m = hmac.new(b'secret key', digestmod=hashlib.blake2s)
@@ -334,7 +334,7 @@ function:
     <http://www.skein-hash.info/sites/default/files/skein1.3.pdf>`_,
     p. 21)
 
-BLAKE2 can be personalized by passing bytes to the *person* argument:
+BLAKE2 can be personalized by passing bytes to the *person* argument::
 
     >>> from hashlib import blake2b
     >>> FILES_HASH_PERSON = b'MyApp Files Hash'
