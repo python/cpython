@@ -133,6 +133,13 @@ corresponding Unix manual entries for more information on calls.");
 #include <sys/sysctl.h>
 #endif
 
+#ifdef HAVE_LINUX_RANDOM_H
+#  include <linux/random.h>
+#endif
+#ifdef HAVE_GETRANDOM_SYSCALL
+#  include <sys/syscall.h>
+#endif
+
 #if defined(MS_WINDOWS)
 #  define TERMSIZE_USE_CONIO
 #elif defined(HAVE_SYS_IOCTL_H)
@@ -12421,6 +12428,59 @@ os_fspath_impl(PyObject *module, PyObject *path)
     return PyOS_FSPath(path);
 }
 
+#ifdef HAVE_GETRANDOM_SYSCALL
+/*[clinic input]
+os.getrandom
+
+    size: Py_ssize_t
+    flags: int=0
+
+Obtain a series of random bytes.
+[clinic start generated code]*/
+
+static PyObject *
+os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
+/*[clinic end generated code: output=b3a618196a61409c input=59bafac39c594947]*/
+{
+    char *buffer;
+    Py_ssize_t n;
+    PyObject *bytes;
+
+    if (size < 0) {
+        errno = EINVAL;
+        return posix_error();
+    }
+
+    buffer = PyMem_Malloc(size);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    while (1) {
+        n = syscall(SYS_getrandom, buffer, size, flags);
+        if (n < 0 && errno == EINTR) {
+            if (PyErr_CheckSignals() < 0) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
+
+    if (n < 0) {
+        PyMem_Free(buffer);
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    bytes = PyBytes_FromStringAndSize(buffer, n);
+    PyMem_Free(buffer);
+
+    return bytes;
+}
+#endif   /* HAVE_GETRANDOM_SYSCALL */
+
 #include "clinic/posixmodule.c.h"
 
 /*[clinic input]
@@ -12621,6 +12681,7 @@ static PyMethodDef posix_methods[] = {
                         METH_VARARGS | METH_KEYWORDS,
                         posix_scandir__doc__},
     OS_FSPATH_METHODDEF
+    OS_GETRANDOM_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
@@ -13064,6 +13125,11 @@ all_ins(PyObject *m)
 #endif
 #if HAVE_DECL_RTLD_DEEPBIND
     if (PyModule_AddIntMacro(m, RTLD_DEEPBIND)) return -1;
+#endif
+
+#ifdef HAVE_GETRANDOM_SYSCALL
+    if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
+    if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
 #endif
 
     return 0;

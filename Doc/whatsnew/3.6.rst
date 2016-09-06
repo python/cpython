@@ -484,6 +484,10 @@ iterator is neither exhausted nor explicitly closed a :exc:`ResourceWarning`
 will be emitted in its destructor.
 (Contributed by Serhiy Storchaka in :issue:`25994`.)
 
+The Linux ``getrandom()`` syscall (get random bytes) is now exposed as the new
+:func:`os.getrandom` function.
+(Contributed by Victor Stinner, part of the :pep:`524`)
+
 
 pickle
 ------

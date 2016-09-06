@@ -1248,6 +1248,7 @@ class URandomTests(unittest.TestCase):
 
     def test_urandom_value(self):
         data1 = os.urandom(16)
+        self.assertIsInstance(data1, bytes)
         data2 = os.urandom(16)
         self.assertNotEqual(data1, data2)
 
@@ -1265,6 +1266,37 @@ class URandomTests(unittest.TestCase):
     def test_urandom_subprocess(self):
         data1 = self.get_urandom_subprocess(16)
         data2 = self.get_urandom_subprocess(16)
+        self.assertNotEqual(data1, data2)
+
+
+@unittest.skipUnless(hasattr(os, 'getrandom'), 'need os.getrandom()')
+class GetRandomTests(unittest.TestCase):
+    def test_getrandom_type(self):
+        data = os.getrandom(16)
+        self.assertIsInstance(data, bytes)
+        self.assertEqual(len(data), 16)
+
+    def test_getrandom0(self):
+        empty = os.getrandom(0)
+        self.assertEqual(empty, b'')
+
+    def test_getrandom_random(self):
+        self.assertTrue(hasattr(os, 'GRND_RANDOM'))
+
+        # Don't test os.getrandom(1, os.GRND_RANDOM) to not consume the rare
+        # resource /dev/random
+
+    def test_getrandom_nonblock(self):
+        # The call must not fail. Check also that the flag exists
+        try:
+            os.getrandom(1, os.GRND_NONBLOCK)
+        except BlockingIOError:
+            # System urandom is not initialized yet
+            pass
+
+    def test_getrandom_value(self):
+        data1 = os.getrandom(16)
+        data2 = os.getrandom(16)
         self.assertNotEqual(data1, data2)
 
 
