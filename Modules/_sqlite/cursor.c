@@ -118,11 +118,9 @@ static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject*
 
 static void pysqlite_cursor_dealloc(pysqlite_Cursor* self)
 {
-    int rc;
-
     /* Reset the statement if the user has not closed the cursor */
     if (self->statement) {
-        rc = pysqlite_statement_reset(self->statement);
+        pysqlite_statement_reset(self->statement);
         Py_DECREF(self->statement);
     }
 
