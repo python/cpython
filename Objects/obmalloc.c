@@ -18,7 +18,7 @@ extern void _PyMem_DumpTraceback(int fd, const void *ptr);
 #define uint    unsigned int    /* assuming >= 16 bits */
 
 #undef uptr
-#define uptr    Py_uintptr_t
+#define uptr    uintptr_t
 
 /* Forward declaration */
 static void* _PyMem_DebugRawMalloc(void *ctx, size_t size);

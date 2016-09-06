@@ -61,7 +61,7 @@ typedef enum _Py_memory_order {
 } _Py_memory_order;
 
 typedef struct _Py_atomic_address {
-    Py_uintptr_t _value;
+    uintptr_t _value;
 } _Py_atomic_address;
 
 typedef struct _Py_atomic_int {
@@ -98,7 +98,7 @@ typedef enum _Py_memory_order {
 } _Py_memory_order;
 
 typedef struct _Py_atomic_address {
-    Py_uintptr_t _value;
+    uintptr_t _value;
 } _Py_atomic_address;
 
 typedef struct _Py_atomic_int {
