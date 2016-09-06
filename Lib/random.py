@@ -105,15 +105,6 @@ class Random(_random.Random):
 
         """
 
-        if a is None:
-            try:
-                # Seed with enough bytes to span the 19937 bit
-                # state space for the Mersenne Twister
-                a = int.from_bytes(_urandom(2500), 'big')
-            except NotImplementedError:
-                import time
-                a = int(time.time() * 256) # use fractional seconds
-
         if version == 1 and isinstance(a, (str, bytes)):
             x = ord(a[0]) << 7 if a else 0
             for c in a:

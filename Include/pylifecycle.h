@@ -117,7 +117,8 @@ PyAPI_FUNC(PyOS_sighandler_t) PyOS_getsig(int);
 PyAPI_FUNC(PyOS_sighandler_t) PyOS_setsig(int, PyOS_sighandler_t);
 
 /* Random */
-PyAPI_FUNC(int) _PyOS_URandom (void *buffer, Py_ssize_t size);
+PyAPI_FUNC(int) _PyOS_URandom(void *buffer, Py_ssize_t size);
+PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
 
 #ifdef __cplusplus
 }

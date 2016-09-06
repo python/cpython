@@ -77,7 +77,7 @@ win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
 }
 
 /* Issue #25003: Don't use getentropy() on Solaris (available since
-   Solaris 11.3), it is blocking whereas os.urandom() should not block. */
+ * Solaris 11.3), it is blocking whereas os.urandom() should not block. */
 #elif defined(HAVE_GETENTROPY) && !defined(sun)
 #define PY_GETENTROPY 1
 
@@ -121,24 +121,20 @@ py_getentropy(char *buffer, Py_ssize_t size, int raise)
 
 /* Call getrandom()
    - Return 1 on success
-   - Return 0 if getrandom() syscall is not available (fails with ENOSYS).
+   - Return 0 if getrandom() syscall is not available (fails with ENOSYS)
+     or if getrandom(GRND_NONBLOCK) fails with EAGAIN (blocking=0 and system
+     urandom not initialized yet) and raise=0.
    - Raise an exception (if raise is non-zero) and return -1 on error:
      getrandom() failed with EINTR and the Python signal handler raised an
      exception, or getrandom() failed with a different error. */
 static int
-py_getrandom(void *buffer, Py_ssize_t size, int raise)
+py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 {
-    /* Is getrandom() supported by the running kernel?
-       Need Linux kernel 3.17 or newer, or Solaris 11.3 or newer */
+    /* Is getrandom() supported by the running kernel? Set to 0 if getrandom()
+       fails with ENOSYS. Need Linux kernel 3.17 or newer, or Solaris 11.3
+       or newer */
     static int getrandom_works = 1;
-
-    /* getrandom() on Linux will block if called before the kernel has
-       initialized the urandom entropy pool. This will cause Python
-       to hang on startup if called very early in the boot process -
-       see https://bugs.python.org/issue26839. To avoid this, use the
-       GRND_NONBLOCK flag. */
-    const int flags = GRND_NONBLOCK;
-
+    int flags;
     char *dest;
     long n;
 
@@ -146,6 +142,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
         return 0;
     }
 
+    flags = blocking ? 0 : GRND_NONBLOCK;
     dest = buffer;
     while (0 < size) {
 #ifdef sun
@@ -185,15 +182,12 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
                 getrandom_works = 0;
                 return 0;
             }
-            if (errno == EAGAIN) {
-                /* If we failed with EAGAIN, the entropy pool was
-                   uninitialized. In this case, we return failure to fall
-                   back to reading from /dev/urandom.
 
-                   Note: In this case the data read will not be random so
-                   should not be used for cryptographic purposes. Retaining
-                   the existing semantics for practical purposes. */
-                getrandom_works = 0;
+            /* getrandom(GRND_NONBLOCK) fails with EAGAIN if the system urandom
+               is not initialiazed yet. For _PyRandom_Init(), we ignore their
+               error and fall back on reading /dev/urandom which never blocks,
+               even if the system urandom is not initialized yet. */
+            if (errno == EAGAIN && !raise && !blocking) {
                 return 0;
             }
 
@@ -228,13 +222,13 @@ static struct {
 } urandom_cache = { -1 };
 
 
-/* Read 'size' random bytes from getrandom(). Fall back on reading from
+/* Read 'size' random bytes from py_getrandom(). Fall back on reading from
    /dev/urandom if getrandom() is not available.
 
    Return 0 on success. Raise an exception (if raise is non-zero) and return -1
    on error. */
 static int
-dev_urandom(char *buffer, Py_ssize_t size, int raise)
+dev_urandom(char *buffer, Py_ssize_t size, int blocking, int raise)
 {
     int fd;
     Py_ssize_t n;
@@ -245,7 +239,7 @@ dev_urandom(char *buffer, Py_ssize_t size, int raise)
     assert(size > 0);
 
 #ifdef PY_GETRANDOM
-    res = py_getrandom(buffer, size, raise);
+    res = py_getrandom(buffer, size, blocking, raise);
     if (res < 0) {
         return -1;
     }
@@ -381,7 +375,7 @@ lcg_urandom(unsigned int x0, unsigned char *buffer, size_t size)
      syscall)
    - Don't release the GIL to call syscalls. */
 static int
-pyurandom(void *buffer, Py_ssize_t size, int raise)
+pyurandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 {
     if (size < 0) {
         if (raise) {
@@ -400,7 +394,7 @@ pyurandom(void *buffer, Py_ssize_t size, int raise)
 #elif defined(PY_GETENTROPY)
     return py_getentropy(buffer, size, raise);
 #else
-    return dev_urandom(buffer, size, raise);
+    return dev_urandom(buffer, size, blocking, raise);
 #endif
 }
 
@@ -408,11 +402,29 @@ pyurandom(void *buffer, Py_ssize_t size, int raise)
    number generator (RNG). It is suitable for most cryptographic purposes
    except long living private keys for asymmetric encryption.
 
-   Return 0 on success, raise an exception and return -1 on error. */
+   On Linux 3.17 and newer, the getrandom() syscall is used in blocking mode:
+   block until the system urandom entropy pool is initialized (128 bits are
+   collected by the kernel).
+
+   Return 0 on success. Raise an exception and return -1 on error. */
 int
 _PyOS_URandom(void *buffer, Py_ssize_t size)
 {
-    return pyurandom(buffer, size, 1);
+    return pyurandom(buffer, size, 1, 1);
+}
+
+/* Fill buffer with size pseudo-random bytes from the operating system random
+   number generator (RNG). It is not suitable for cryptographic purpose.
+
+   On Linux 3.17 and newer (when getrandom() syscall is used), if the system
+   urandom is not initialized yet, the function returns "weak" entropy read
+   from /dev/urandom.
+
+   Return 0 on success. Raise an exception and return -1 on error. */
+int
+_PyOS_URandomNonblock(void *buffer, Py_ssize_t size)
+{
+    return pyurandom(buffer, size, 0, 1);
 }
 
 void
@@ -456,8 +468,11 @@ _PyRandom_Init(void)
         int res;
 
         /* _PyRandom_Init() is called very early in the Python initialization
-           and so exceptions cannot be used (use raise=0). */
-        res = pyurandom(secret, secret_size, 0);
+           and so exceptions cannot be used (use raise=0).
+
+           _PyRandom_Init() must not block Python initialization: call
+           pyurandom() is non-blocking mode (blocking=0): see the PEP 524. */
+        res = pyurandom(secret, secret_size, 0, 0);
         if (res < 0) {
             Py_FatalError("failed to get random numbers to initialize Python");
         }
