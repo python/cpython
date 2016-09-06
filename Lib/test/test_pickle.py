@@ -139,8 +139,7 @@ if has_c_implementation:
     class CUnpicklerTests(PyUnpicklerTests):
         unpickler = _pickle.Unpickler
         bad_stack_errors = (pickle.UnpicklingError,)
-        truncated_errors = (pickle.UnpicklingError, EOFError,
-                            AttributeError, ValueError)
+        truncated_errors = (pickle.UnpicklingError,)
 
     class CPicklerTests(PyPicklerTests):
         pickler = _pickle.Pickler

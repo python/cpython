@@ -1092,6 +1092,14 @@ _Unpickler_SetStringInput(UnpicklerObject *self, PyObject *input)
 }
 
 static int
+bad_readline(void)
+{
+    PickleState *st = _Pickle_GetGlobalState();
+    PyErr_SetString(st->UnpicklingError, "pickle data was truncated");
+    return -1;
+}
+
+static int
 _Unpickler_SkipConsumed(UnpicklerObject *self)
 {
     Py_ssize_t consumed;
@@ -1195,17 +1203,14 @@ _Unpickler_ReadImpl(UnpicklerObject *self, char **s, Py_ssize_t n)
     /* This case is handled by the _Unpickler_Read() macro for efficiency */
     assert(self->next_read_idx + n > self->input_len);
 
-    if (!self->read) {
-        PyErr_Format(PyExc_EOFError, "Ran out of input");
-        return -1;
-    }
+    if (!self->read)
+        return bad_readline();
+
     num_read = _Unpickler_ReadFromFile(self, n);
     if (num_read < 0)
         return -1;
-    if (num_read < n) {
-        PyErr_Format(PyExc_EOFError, "Ran out of input");
-        return -1;
-    }
+    if (num_read < n)
+        return bad_readline();
     *s = self->input_buffer;
     self->next_read_idx = n;
     return n;
@@ -1249,7 +1254,7 @@ _Unpickler_CopyLine(UnpicklerObject *self, char *line, Py_ssize_t len,
 }
 
 /* Read a line from the input stream/buffer. If we run off the end of the input
-   before hitting \n, return the data we found.
+   before hitting \n, raise an error.
 
    Returns the number of chars read, or -1 on failure. */
 static Py_ssize_t
@@ -1265,20 +1270,16 @@ _Unpickler_Readline(UnpicklerObject *self, char **result)
             return _Unpickler_CopyLine(self, line_start, num_read, result);
         }
     }
-    if (self->read) {
-        num_read = _Unpickler_ReadFromFile(self, READ_WHOLE_LINE);
-        if (num_read < 0)
-            return -1;
-        self->next_read_idx = num_read;
-        return _Unpickler_CopyLine(self, self->input_buffer, num_read, result);
-    }
+    if (!self->read)
+        return bad_readline();
 
-    /* If we get here, we've run off the end of the input string. Return the
-       remaining string and let the caller figure it out. */
-    *result = self->input_buffer + self->next_read_idx;
-    num_read = i - self->next_read_idx;
-    self->next_read_idx = i;
-    return num_read;
+    num_read = _Unpickler_ReadFromFile(self, READ_WHOLE_LINE);
+    if (num_read < 0)
+        return -1;
+    if (num_read == 0 || self->input_buffer[num_read - 1] != '\n')
+        return bad_readline();
+    self->next_read_idx = num_read;
+    return _Unpickler_CopyLine(self, self->input_buffer, num_read, result);
 }
 
 /* Returns -1 (with an exception set) on failure, 0 on success. The memo array
@@ -4600,14 +4601,6 @@ load_none(UnpicklerObject *self)
 }
 
 static int
-bad_readline(void)
-{
-    PickleState *st = _Pickle_GetGlobalState();
-    PyErr_SetString(st->UnpicklingError, "pickle data was truncated");
-    return -1;
-}
-
-static int
 load_int(UnpicklerObject *self)
 {
     PyObject *value;
@@ -6245,8 +6238,13 @@ load(UnpicklerObject *self)
     case opcode: if (load_func(self, (arg)) < 0) break; continue;
 
     while (1) {
-        if (_Unpickler_Read(self, &s, 1) < 0)
-            break;
+        if (_Unpickler_Read(self, &s, 1) < 0) {
+            PickleState *st = _Pickle_GetGlobalState();
+            if (PyErr_ExceptionMatches(st->UnpicklingError)) {
+                PyErr_Format(PyExc_EOFError, "Ran out of input");
+            }
+            return NULL;
+        }
 
         switch ((enum opcode)s[0]) {
         OP(NONE, load_none)
@@ -6318,15 +6316,19 @@ load(UnpicklerObject *self)
             break;
 
         default:
-            if (s[0] == '\0') {
-                PyErr_SetNone(PyExc_EOFError);
-            }
-            else {
+            {
                 PickleState *st = _Pickle_GetGlobalState();
-                PyErr_Format(st->UnpicklingError,
-                             "invalid load key, '%c'.", s[0]);
+                unsigned char c = (unsigned char) *s;
+                if (0x20 <= c && c <= 0x7e && c != '\'' && c != '\\') {
+                    PyErr_Format(st->UnpicklingError,
+                                 "invalid load key, '%c'.", c);
+                }
+                else {
+                    PyErr_Format(st->UnpicklingError,
+                                 "invalid load key, '\\x%02x'.", c);
+                }
+                return NULL;
             }
-            return NULL;
         }
 
         break;                  /* and we are done! */
