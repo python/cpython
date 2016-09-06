@@ -484,12 +484,6 @@
 /* Define to 1 if you have the `initgroups' function. */
 #undef HAVE_INITGROUPS
 
-/* Define if your compiler provides int32_t. */
-#undef HAVE_INT32_T
-
-/* Define if your compiler provides int64_t. */
-#undef HAVE_INT64_T
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -1140,12 +1134,6 @@
 /* Define this if you have tcl and TCL_UTF_MAX==6 */
 #undef HAVE_UCS4_TCL
 
-/* Define if your compiler provides uint32_t. */
-#undef HAVE_UINT32_T
-
-/* Define if your compiler provides uint64_t. */
-#undef HAVE_UINT64_T
-
 /* Define to 1 if the system has the type `uintptr_t'. */
 #undef HAVE_UINTPTR_T
 
@@ -1479,16 +1467,6 @@
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 
-/* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
-   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
-   #define below would cause a syntax error. */
-#undef _UINT32_T
-
-/* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
-   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
-   #define below would cause a syntax error. */
-#undef _UINT64_T
-
 /* Define to the level of X/Open that your system supports */
 #undef _XOPEN_SOURCE
 
@@ -1518,14 +1496,6 @@
 #undef inline
 #endif
 
-/* Define to the type of a signed integer type of width exactly 32 bits if
-   such a type exists and the standard includes do not define it. */
-#undef int32_t
-
-/* Define to the type of a signed integer type of width exactly 64 bits if
-   such a type exists and the standard includes do not define it. */
-#undef int64_t
-
 /* Define to `int' if <sys/types.h> does not define. */
 #undef mode_t
 
@@ -1546,14 +1516,6 @@
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
-
-/* Define to the type of an unsigned integer type of width exactly 32 bits if
-   such a type exists and the standard includes do not define it. */
-#undef uint32_t
-
-/* Define to the type of an unsigned integer type of width exactly 64 bits if
-   such a type exists and the standard includes do not define it. */
-#undef uint64_t
 
 /* Define to empty if the keyword does not work. */
 #undef volatile

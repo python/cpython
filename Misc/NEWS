@@ -10,6 +10,8 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #17884: Python now requires systems with inttypes.h and stdint.h
+
 - Issue #27961?: Require platforms to support ``long long``. Python hasn't
   compiled without ``long long`` for years, so this is basically a formality.
 
