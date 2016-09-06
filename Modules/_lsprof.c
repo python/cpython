@@ -8,7 +8,7 @@
 
 #include <windows.h>
 
-static PY_LONG_LONG
+static long long
 hpTimer(void)
 {
     LARGE_INTEGER li;
@@ -35,11 +35,11 @@ hpTimerUnit(void)
 #include <sys/resource.h>
 #include <sys/times.h>
 
-static PY_LONG_LONG
+static long long
 hpTimer(void)
 {
     struct timeval tv;
-    PY_LONG_LONG ret;
+    long long ret;
 #ifdef GETTIMEOFDAY_NO_TZ
     gettimeofday(&tv);
 #else
@@ -66,8 +66,8 @@ struct _ProfilerEntry;
 /* represents a function called from another function */
 typedef struct _ProfilerSubEntry {
     rotating_node_t header;
-    PY_LONG_LONG tt;
-    PY_LONG_LONG it;
+    long long tt;
+    long long it;
     long callcount;
     long recursivecallcount;
     long recursionLevel;
@@ -77,8 +77,8 @@ typedef struct _ProfilerSubEntry {
 typedef struct _ProfilerEntry {
     rotating_node_t header;
     PyObject *userObj; /* PyCodeObject, or a descriptive str for builtins */
-    PY_LONG_LONG tt; /* total time in this entry */
-    PY_LONG_LONG it; /* inline time in this entry (not in subcalls) */
+    long long tt; /* total time in this entry */
+    long long it; /* inline time in this entry (not in subcalls) */
     long callcount; /* how many times this was called */
     long recursivecallcount; /* how many times called recursively */
     long recursionLevel;
@@ -86,8 +86,8 @@ typedef struct _ProfilerEntry {
 } ProfilerEntry;
 
 typedef struct _ProfilerContext {
-    PY_LONG_LONG t0;
-    PY_LONG_LONG subt;
+    long long t0;
+    long long subt;
     struct _ProfilerContext *previous;
     ProfilerEntry *ctxEntry;
 } ProfilerContext;
@@ -117,9 +117,9 @@ static PyTypeObject PyProfiler_Type;
 #define DOUBLE_TIMER_PRECISION   4294967296.0
 static PyObject *empty_tuple;
 
-static PY_LONG_LONG CallExternalTimer(ProfilerObject *pObj)
+static long long CallExternalTimer(ProfilerObject *pObj)
 {
-    PY_LONG_LONG result;
+    long long result;
     PyObject *o = PyObject_Call(pObj->externalTimer, empty_tuple, NULL);
     if (o == NULL) {
         PyErr_WriteUnraisable(pObj->externalTimer);
@@ -132,11 +132,11 @@ static PY_LONG_LONG CallExternalTimer(ProfilerObject *pObj)
     }
     else {
         /* interpret the result as a double measured in seconds.
-           As the profiler works with PY_LONG_LONG internally
+           As the profiler works with long long internally
            we convert it to a large integer */
         double val = PyFloat_AsDouble(o);
         /* error handling delayed to the code below */
-        result = (PY_LONG_LONG) (val * DOUBLE_TIMER_PRECISION);
+        result = (long long) (val * DOUBLE_TIMER_PRECISION);
     }
     Py_DECREF(o);
     if (PyErr_Occurred()) {
@@ -338,8 +338,8 @@ initContext(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 static void
 Stop(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 {
-    PY_LONG_LONG tt = CALL_TIMER(pObj) - self->t0;
-    PY_LONG_LONG it = tt - self->subt;
+    long long tt = CALL_TIMER(pObj) - self->t0;
+    long long it = tt - self->subt;
     if (self->previous)
         self->previous->subt += tt;
     pObj->currentProfilerContext = self->previous;

@@ -27,15 +27,13 @@ class SHA512Type "SHAobject *" "&PyType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81a3ccde92bcfe8d]*/
 
-#ifdef PY_LONG_LONG /* If no PY_LONG_LONG, don't compile anything! */
-
 /* Some useful types */
 
 typedef unsigned char SHA_BYTE;
 
 #if SIZEOF_INT == 4
 typedef unsigned int SHA_INT32; /* 32-bit integer */
-typedef unsigned PY_LONG_LONG SHA_INT64;        /* 64-bit integer */
+typedef unsigned long long SHA_INT64;        /* 64-bit integer */
 #else
 /* not defined. compilation will die. */
 #endif
@@ -121,12 +119,12 @@ static void SHAcopy(SHAobject *src, SHAobject *dest)
 
 /* Various logical functions */
 #define ROR64(x, y) \
-    ( ((((x) & Py_ULL(0xFFFFFFFFFFFFFFFF))>>((unsigned PY_LONG_LONG)(y) & 63)) | \
-      ((x)<<((unsigned PY_LONG_LONG)(64-((y) & 63))))) & Py_ULL(0xFFFFFFFFFFFFFFFF))
+    ( ((((x) & Py_ULL(0xFFFFFFFFFFFFFFFF))>>((unsigned long long)(y) & 63)) | \
+      ((x)<<((unsigned long long)(64-((y) & 63))))) & Py_ULL(0xFFFFFFFFFFFFFFFF))
 #define Ch(x,y,z)       (z ^ (x & (y ^ z)))
 #define Maj(x,y,z)      (((x | y) & z) | (x & y))
 #define S(x, n)         ROR64((x),(n))
-#define R(x, n)         (((x) & Py_ULL(0xFFFFFFFFFFFFFFFF)) >> ((unsigned PY_LONG_LONG)n))
+#define R(x, n)         (((x) & Py_ULL(0xFFFFFFFFFFFFFFFF)) >> ((unsigned long long)n))
 #define Sigma0(x)       (S(x, 28) ^ S(x, 34) ^ S(x, 39))
 #define Sigma1(x)       (S(x, 14) ^ S(x, 18) ^ S(x, 41))
 #define Gamma0(x)       (S(x, 1) ^ S(x, 8) ^ R(x, 7))
@@ -803,5 +801,3 @@ PyInit__sha512(void)
     PyModule_AddObject(m, "SHA512Type", (PyObject *)&SHA512type);
     return m;
 }
-
-#endif

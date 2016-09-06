@@ -769,13 +769,13 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         break;
     }
 
-    case 'L': {/* PY_LONG_LONG */
-        PY_LONG_LONG *p = va_arg( *p_va, PY_LONG_LONG * );
-        PY_LONG_LONG ival;
+    case 'L': {/* long long */
+        long long *p = va_arg( *p_va, long long * );
+        long long ival;
         if (float_argument_error(arg))
             RETURN_ERR_OCCURRED;
         ival = PyLong_AsLongLong(arg);
-        if (ival == (PY_LONG_LONG)-1 && PyErr_Occurred())
+        if (ival == (long long)-1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else
             *p = ival;
@@ -783,8 +783,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     }
 
     case 'K': { /* long long sized bitfield */
-        unsigned PY_LONG_LONG *p = va_arg(*p_va, unsigned PY_LONG_LONG *);
-        unsigned PY_LONG_LONG ival;
+        unsigned long long *p = va_arg(*p_va, unsigned long long *);
+        unsigned long long ival;
         if (PyLong_Check(arg))
             ival = PyLong_AsUnsignedLongLongMask(arg);
         else
@@ -2086,8 +2086,8 @@ skipitem(const char **p_format, va_list *p_va, int flags)
     case 'I': /* int sized bitfield */
     case 'l': /* long int */
     case 'k': /* long int sized bitfield */
-    case 'L': /* PY_LONG_LONG */
-    case 'K': /* PY_LONG_LONG sized bitfield */
+    case 'L': /* long long */
+    case 'K': /* long long sized bitfield */
     case 'n': /* Py_ssize_t */
     case 'f': /* float */
     case 'd': /* double */

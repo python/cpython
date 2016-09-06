@@ -30,7 +30,7 @@ class MD5Type "MD5object *" "&PyType_Type"
 
 #if SIZEOF_INT == 4
 typedef unsigned int MD5_INT32; /* 32-bit integer */
-typedef PY_LONG_LONG MD5_INT64; /* 64-bit integer */
+typedef long long MD5_INT64; /* 64-bit integer */
 #else
 /* not defined. compilation will die. */
 #endif

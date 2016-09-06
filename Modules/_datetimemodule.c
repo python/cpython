@@ -4198,20 +4198,20 @@ typedef struct tm *(*TM_FUNC)(const time_t *timer);
 
 /* As of version 2015f max fold in IANA database is
  * 23 hours at 1969-09-30 13:00:00 in Kwajalein. */
-static PY_LONG_LONG max_fold_seconds = 24 * 3600;
+static long long max_fold_seconds = 24 * 3600;
 /* NB: date(1970,1,1).toordinal() == 719163 */
-static PY_LONG_LONG epoch = Py_LL(719163) * 24 * 60 * 60;
+static long long epoch = Py_LL(719163) * 24 * 60 * 60;
 
-static PY_LONG_LONG
+static long long
 utc_to_seconds(int year, int month, int day,
                int hour, int minute, int second)
 {
-    PY_LONG_LONG ordinal = ymd_to_ord(year, month, day);
+    long long ordinal = ymd_to_ord(year, month, day);
     return ((ordinal * 24 + hour) * 60 + minute) * 60 + second;
 }
 
-static PY_LONG_LONG
-local(PY_LONG_LONG u)
+static long long
+local(long long u)
 {
     struct tm local_time;
     time_t t;
@@ -4269,7 +4269,7 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
     second = Py_MIN(59, tm->tm_sec);
 
     if (tzinfo == Py_None && f == localtime) {
-        PY_LONG_LONG probe_seconds, result_seconds, transition;
+        long long probe_seconds, result_seconds, transition;
 
         result_seconds = utc_to_seconds(year, month, day,
                                         hour, minute, second);
@@ -5115,14 +5115,14 @@ local_timezone(PyDateTime_DateTime *utc_time)
     return local_timezone_from_timestamp(timestamp);
 }
 
-static PY_LONG_LONG
+static long long
 local_to_seconds(int year, int month, int day,
                  int hour, int minute, int second, int fold);
 
 static PyObject *
 local_timezone_from_local(PyDateTime_DateTime *local_dt)
 {
-    PY_LONG_LONG seconds;
+    long long seconds;
     time_t timestamp;
     seconds = local_to_seconds(GET_YEAR(local_dt),
                                GET_MONTH(local_dt),
@@ -5256,11 +5256,11 @@ datetime_timetuple(PyDateTime_DateTime *self)
                              dstflag);
 }
 
-static PY_LONG_LONG
+static long long
 local_to_seconds(int year, int month, int day,
                  int hour, int minute, int second, int fold)
 {
-    PY_LONG_LONG t, a, b, u1, u2, t1, t2, lt;
+    long long t, a, b, u1, u2, t1, t2, lt;
     t = utc_to_seconds(year, month, day, hour, minute, second);
     /* Our goal is to solve t = local(u) for u. */
     lt = local(t);
@@ -5320,7 +5320,7 @@ datetime_timestamp(PyDateTime_DateTime *self)
         Py_DECREF(delta);
     }
     else {
-        PY_LONG_LONG seconds;
+        long long seconds;
         seconds = local_to_seconds(GET_YEAR(self),
                                    GET_MONTH(self),
                                    GET_DAY(self),

@@ -993,9 +993,9 @@ PyLong_FromVoidPtr(void *p)
 #else
 
 #if SIZEOF_LONG_LONG < SIZEOF_VOID_P
-#   error "PyLong_FromVoidPtr: sizeof(PY_LONG_LONG) < sizeof(void*)"
+#   error "PyLong_FromVoidPtr: sizeof(long long) < sizeof(void*)"
 #endif
-    return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG)(Py_uintptr_t)p);
+    return PyLong_FromUnsignedLongLong((unsigned long long)(Py_uintptr_t)p);
 #endif /* SIZEOF_VOID_P <= SIZEOF_LONG */
 
 }
@@ -1015,9 +1015,9 @@ PyLong_AsVoidPtr(PyObject *vv)
 #else
 
 #if SIZEOF_LONG_LONG < SIZEOF_VOID_P
-#   error "PyLong_AsVoidPtr: sizeof(PY_LONG_LONG) < sizeof(void*)"
+#   error "PyLong_AsVoidPtr: sizeof(long long) < sizeof(void*)"
 #endif
-    PY_LONG_LONG x;
+    long long x;
 
     if (PyLong_Check(vv) && _PyLong_Sign(vv) < 0)
         x = PyLong_AsLongLong(vv);
@@ -1031,20 +1031,20 @@ PyLong_AsVoidPtr(PyObject *vv)
     return (void *)x;
 }
 
-/* Initial PY_LONG_LONG support by Chris Herborth (chrish@qnx.com), later
+/* Initial long long support by Chris Herborth (chrish@qnx.com), later
  * rewritten to use the newer PyLong_{As,From}ByteArray API.
  */
 
-#define PY_ABS_LLONG_MIN (0-(unsigned PY_LONG_LONG)PY_LLONG_MIN)
+#define PY_ABS_LLONG_MIN (0-(unsigned long long)PY_LLONG_MIN)
 
-/* Create a new int object from a C PY_LONG_LONG int. */
+/* Create a new int object from a C long long int. */
 
 PyObject *
-PyLong_FromLongLong(PY_LONG_LONG ival)
+PyLong_FromLongLong(long long ival)
 {
     PyLongObject *v;
-    unsigned PY_LONG_LONG abs_ival;
-    unsigned PY_LONG_LONG t;  /* unsigned so >> doesn't propagate sign bit */
+    unsigned long long abs_ival;
+    unsigned long long t;  /* unsigned so >> doesn't propagate sign bit */
     int ndigits = 0;
     int negative = 0;
 
@@ -1052,11 +1052,11 @@ PyLong_FromLongLong(PY_LONG_LONG ival)
     if (ival < 0) {
         /* avoid signed overflow on negation;  see comments
            in PyLong_FromLong above. */
-        abs_ival = (unsigned PY_LONG_LONG)(-1-ival) + 1;
+        abs_ival = (unsigned long long)(-1-ival) + 1;
         negative = 1;
     }
     else {
-        abs_ival = (unsigned PY_LONG_LONG)ival;
+        abs_ival = (unsigned long long)ival;
     }
 
     /* Count the number of Python digits.
@@ -1081,19 +1081,19 @@ PyLong_FromLongLong(PY_LONG_LONG ival)
     return (PyObject *)v;
 }
 
-/* Create a new int object from a C unsigned PY_LONG_LONG int. */
+/* Create a new int object from a C unsigned long long int. */
 
 PyObject *
-PyLong_FromUnsignedLongLong(unsigned PY_LONG_LONG ival)
+PyLong_FromUnsignedLongLong(unsigned long long ival)
 {
     PyLongObject *v;
-    unsigned PY_LONG_LONG t;
+    unsigned long long t;
     int ndigits = 0;
 
     if (ival < PyLong_BASE)
         return PyLong_FromLong((long)ival);
     /* Count the number of Python digits. */
-    t = (unsigned PY_LONG_LONG)ival;
+    t = (unsigned long long)ival;
     while (t) {
         ++ndigits;
         t >>= PyLong_SHIFT;
@@ -1182,11 +1182,11 @@ PyLong_FromSize_t(size_t ival)
 /* Get a C long long int from an int object or any object that has an
    __int__ method.  Return -1 and set an error if overflow occurs. */
 
-PY_LONG_LONG
+long long
 PyLong_AsLongLong(PyObject *vv)
 {
     PyLongObject *v;
-    PY_LONG_LONG bytes;
+    long long bytes;
     int res;
     int do_decref = 0; /* if nb_int was called */
 
@@ -1224,30 +1224,30 @@ PyLong_AsLongLong(PyObject *vv)
         Py_DECREF(v);
     }
 
-    /* Plan 9 can't handle PY_LONG_LONG in ? : expressions */
+    /* Plan 9 can't handle long long in ? : expressions */
     if (res < 0)
-        return (PY_LONG_LONG)-1;
+        return (long long)-1;
     else
         return bytes;
 }
 
-/* Get a C unsigned PY_LONG_LONG int from an int object.
+/* Get a C unsigned long long int from an int object.
    Return -1 and set an error if overflow occurs. */
 
-unsigned PY_LONG_LONG
+unsigned long long
 PyLong_AsUnsignedLongLong(PyObject *vv)
 {
     PyLongObject *v;
-    unsigned PY_LONG_LONG bytes;
+    unsigned long long bytes;
     int res;
 
     if (vv == NULL) {
         PyErr_BadInternalCall();
-        return (unsigned PY_LONG_LONG)-1;
+        return (unsigned long long)-1;
     }
     if (!PyLong_Check(vv)) {
         PyErr_SetString(PyExc_TypeError, "an integer is required");
-        return (unsigned PY_LONG_LONG)-1;
+        return (unsigned long long)-1;
     }
 
     v = (PyLongObject*)vv;
@@ -1259,9 +1259,9 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
     res = _PyLong_AsByteArray((PyLongObject *)vv, (unsigned char *)&bytes,
                               SIZEOF_LONG_LONG, PY_LITTLE_ENDIAN, 0);
 
-    /* Plan 9 can't handle PY_LONG_LONG in ? : expressions */
+    /* Plan 9 can't handle long long in ? : expressions */
     if (res < 0)
-        return (unsigned PY_LONG_LONG)res;
+        return (unsigned long long)res;
     else
         return bytes;
 }
@@ -1269,11 +1269,11 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
 /* Get a C unsigned long int from an int object, ignoring the high bits.
    Returns -1 and sets an error condition if an error occurs. */
 
-static unsigned PY_LONG_LONG
+static unsigned long long
 _PyLong_AsUnsignedLongLongMask(PyObject *vv)
 {
     PyLongObject *v;
-    unsigned PY_LONG_LONG x;
+    unsigned long long x;
     Py_ssize_t i;
     int sign;
 
@@ -1299,11 +1299,11 @@ _PyLong_AsUnsignedLongLongMask(PyObject *vv)
     return x * sign;
 }
 
-unsigned PY_LONG_LONG
+unsigned long long
 PyLong_AsUnsignedLongLongMask(PyObject *op)
 {
     PyLongObject *lo;
-    unsigned PY_LONG_LONG val;
+    unsigned long long val;
 
     if (op == NULL) {
         PyErr_BadInternalCall();
@@ -1316,7 +1316,7 @@ PyLong_AsUnsignedLongLongMask(PyObject *op)
 
     lo = _PyLong_FromNbInt(op);
     if (lo == NULL)
-        return (unsigned PY_LONG_LONG)-1;
+        return (unsigned long long)-1;
 
     val = _PyLong_AsUnsignedLongLongMask((PyObject *)lo);
     Py_DECREF(lo);
@@ -1333,13 +1333,13 @@ PyLong_AsUnsignedLongLongMask(PyObject *op)
    In this case *overflow will be 0.
 */
 
-PY_LONG_LONG
+long long
 PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
 {
     /* This version by Tim Peters */
     PyLongObject *v;
-    unsigned PY_LONG_LONG x, prev;
-    PY_LONG_LONG res;
+    unsigned long long x, prev;
+    long long res;
     Py_ssize_t i;
     int sign;
     int do_decref = 0; /* if nb_int was called */
@@ -1391,8 +1391,8 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         /* Haven't lost any bits, but casting to long requires extra
          * care (see comment above).
          */
-        if (x <= (unsigned PY_LONG_LONG)PY_LLONG_MAX) {
-            res = (PY_LONG_LONG)x * sign;
+        if (x <= (unsigned long long)PY_LLONG_MAX) {
+            res = (long long)x * sign;
         }
         else if (sign < 0 && x == PY_ABS_LLONG_MIN) {
             res = PY_LLONG_MIN;
@@ -3481,7 +3481,7 @@ long_mul(PyLongObject *a, PyLongObject *b)
     /* fast path for single-digit multiplication */
     if (Py_ABS(Py_SIZE(a)) <= 1 && Py_ABS(Py_SIZE(b)) <= 1) {
         stwodigits v = (stwodigits)(MEDIUM_VALUE(a)) * MEDIUM_VALUE(b);
-        return PyLong_FromLongLong((PY_LONG_LONG)v);
+        return PyLong_FromLongLong((long long)v);
     }
 
     z = k_mul(a, b);
@@ -4650,7 +4650,7 @@ simple:
     /* a fits into a long, so b must too */
     x = PyLong_AsLong((PyObject *)a);
     y = PyLong_AsLong((PyObject *)b);
-#elif defined(PY_LONG_LONG) && PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
+#elif defined(long long) && PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     x = PyLong_AsLongLong((PyObject *)a);
     y = PyLong_AsLongLong((PyObject *)b);
 #else
@@ -4669,7 +4669,7 @@ simple:
     }
 #if LONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     return PyLong_FromLong(x);
-#elif defined(PY_LONG_LONG) && PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
+#elif defined(long long) && PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     return PyLong_FromLongLong(x);
 #else
 # error "_PyLong_GCD"

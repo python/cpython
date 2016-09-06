@@ -265,7 +265,6 @@ typedef int pid_t;
 #endif
 
 /* 64 bit ints are usually spelt __int64 unless compiler has overridden */
-#define HAVE_LONG_LONG 1
 #ifndef PY_LONG_LONG
 #	define PY_LONG_LONG __int64
 #	define PY_LLONG_MAX _I64_MAX
@@ -379,7 +378,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #ifndef PY_UINT64_T
 #if SIZEOF_LONG_LONG == 8
 #define HAVE_UINT64_T 1
-#define PY_UINT64_T unsigned PY_LONG_LONG
+#define PY_UINT64_T unsigned long long
 #endif
 #endif
 
@@ -396,7 +395,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #ifndef PY_INT64_T
 #if SIZEOF_LONG_LONG == 8
 #define HAVE_INT64_T 1
-#define PY_INT64_T PY_LONG_LONG
+#define PY_INT64_T long long
 #endif
 #endif
 
