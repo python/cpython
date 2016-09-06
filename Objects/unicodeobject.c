@@ -2680,7 +2680,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
                         va_arg(*vargs, unsigned long));
             else if (longlongflag)
                 len = sprintf(buffer, "%" PY_FORMAT_LONG_LONG "u",
-                        va_arg(*vargs, unsigned PY_LONG_LONG));
+                        va_arg(*vargs, unsigned long long));
             else if (size_tflag)
                 len = sprintf(buffer, "%" PY_FORMAT_SIZE_T "u",
                         va_arg(*vargs, size_t));
@@ -2697,7 +2697,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
                         va_arg(*vargs, long));
             else if (longlongflag)
                 len = sprintf(buffer, "%" PY_FORMAT_LONG_LONG "i",
-                        va_arg(*vargs, PY_LONG_LONG));
+                        va_arg(*vargs, long long));
             else if (size_tflag)
                 len = sprintf(buffer, "%" PY_FORMAT_SIZE_T "i",
                         va_arg(*vargs, Py_ssize_t));

@@ -93,7 +93,7 @@ typedef struct {
     size_t      size;
     size_t      pos;    /* relative to offset */
 #ifdef MS_WINDOWS
-    PY_LONG_LONG offset;
+    long long offset;
 #else
     off_t       offset;
 #endif
@@ -446,7 +446,7 @@ mmap_size_method(mmap_object *self,
 #ifdef MS_WINDOWS
     if (self->file_handle != INVALID_HANDLE_VALUE) {
         DWORD low,high;
-        PY_LONG_LONG size;
+        long long size;
         low = GetFileSize(self->file_handle, &high);
         if (low == INVALID_FILE_SIZE) {
             /* It might be that the function appears to have failed,
@@ -457,7 +457,7 @@ mmap_size_method(mmap_object *self,
         }
         if (!high && low < LONG_MAX)
             return PyLong_FromLong((long)low);
-        size = (((PY_LONG_LONG)high)<<32) + low;
+        size = (((long long)high)<<32) + low;
         return PyLong_FromLongLong(size);
     } else {
         return PyLong_FromSsize_t(self->size);
@@ -1258,7 +1258,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 
 /* A note on sizes and offsets: while the actual map size must hold in a
    Py_ssize_t, both the total file size and the start offset can be longer
-   than a Py_ssize_t, so we use PY_LONG_LONG which is always 64-bit.
+   than a Py_ssize_t, so we use long long which is always 64-bit.
 */
 
 static PyObject *
@@ -1267,7 +1267,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     mmap_object *m_obj;
     PyObject *map_size_obj = NULL;
     Py_ssize_t map_size;
-    PY_LONG_LONG offset = 0, size;
+    long long offset = 0, size;
     DWORD off_hi;       /* upper 32 bits of offset */
     DWORD off_lo;       /* lower 32 bits of offset */
     DWORD size_hi;      /* upper 32 bits of size */
@@ -1379,7 +1379,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                 return PyErr_SetFromWindowsErr(dwErr);
             }
 
-            size = (((PY_LONG_LONG) high) << 32) + low;
+            size = (((long long) high) << 32) + low;
             if (size == 0) {
                 PyErr_SetString(PyExc_ValueError,
                                 "cannot mmap an empty file");

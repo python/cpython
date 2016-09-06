@@ -30,7 +30,7 @@ class SHA1Type "SHA1object *" "&PyType_Type"
 
 #if SIZEOF_INT == 4
 typedef unsigned int SHA1_INT32;        /* 32-bit integer */
-typedef PY_LONG_LONG SHA1_INT64;        /* 64-bit integer */
+typedef long long SHA1_INT64;        /* 64-bit integer */
 #else
 /* not defined. compilation will die. */
 #endif

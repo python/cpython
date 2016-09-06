@@ -39,7 +39,7 @@ time_t
 _PyLong_AsTime_t(PyObject *obj)
 {
 #if SIZEOF_TIME_T == SIZEOF_LONG_LONG
-    PY_LONG_LONG val;
+    long long val;
     val = PyLong_AsLongLong(obj);
 #else
     long val;
@@ -58,7 +58,7 @@ PyObject *
 _PyLong_FromTime_t(time_t t)
 {
 #if SIZEOF_TIME_T == SIZEOF_LONG_LONG
-    return PyLong_FromLongLong((PY_LONG_LONG)t);
+    return PyLong_FromLongLong((long long)t);
 #else
     Py_BUILD_ASSERT(sizeof(time_t) <= sizeof(long));
     return PyLong_FromLong((long)t);
@@ -218,11 +218,11 @@ _PyTime_FromSeconds(int seconds)
 }
 
 _PyTime_t
-_PyTime_FromNanoseconds(PY_LONG_LONG ns)
+_PyTime_FromNanoseconds(long long ns)
 {
     _PyTime_t t;
-    Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
-    t = Py_SAFE_DOWNCAST(ns, PY_LONG_LONG, _PyTime_t);
+    Py_BUILD_ASSERT(sizeof(long long) <= sizeof(_PyTime_t));
+    t = Py_SAFE_DOWNCAST(ns, long long, _PyTime_t);
     return t;
 }
 
@@ -304,8 +304,8 @@ _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
         return _PyTime_FromFloatObject(t, d, round, unit_to_ns);
     }
     else {
-        PY_LONG_LONG sec;
-        Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
+        long long sec;
+        Py_BUILD_ASSERT(sizeof(long long) <= sizeof(_PyTime_t));
 
         sec = PyLong_AsLongLong(obj);
         if (sec == -1 && PyErr_Occurred()) {
@@ -358,8 +358,8 @@ _PyTime_AsSecondsDouble(_PyTime_t t)
 PyObject *
 _PyTime_AsNanosecondsObject(_PyTime_t t)
 {
-    Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) >= sizeof(_PyTime_t));
-    return PyLong_FromLongLong((PY_LONG_LONG)t);
+    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(_PyTime_t));
+    return PyLong_FromLongLong((long long)t);
 }
 
 static _PyTime_t

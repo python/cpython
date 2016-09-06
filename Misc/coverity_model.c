@@ -22,7 +22,6 @@
 #define assert(op) /* empty */
 typedef int sdigit;
 typedef long Py_ssize_t;
-typedef long long PY_LONG_LONG;
 typedef unsigned short wchar_t;
 typedef struct {} PyObject;
 typedef struct {} grammar;
@@ -63,7 +62,7 @@ PyObject *PyLong_FromLong(long ival)
         return NULL;
 }
 
-PyObject *PyLong_FromLongLong(PY_LONG_LONG ival)
+PyObject *PyLong_FromLongLong(long long ival)
 {
     return PyLong_FromLong((long)ival);
 }

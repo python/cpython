@@ -1108,7 +1108,7 @@ dir_fd_and_follow_symlinks_invalid(const char *function_name, int dir_fd,
 }
 
 #ifdef MS_WINDOWS
-    typedef PY_LONG_LONG Py_off_t;
+    typedef long long Py_off_t;
 #else
     typedef off_t Py_off_t;
 #endif
@@ -2073,7 +2073,7 @@ _pystat_fromstructstat(STRUCT_STAT *st)
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
 #ifdef HAVE_LARGEFILE_SUPPORT
     PyStructSequence_SET_ITEM(v, 1,
-                              PyLong_FromLongLong((PY_LONG_LONG)st->st_ino));
+                              PyLong_FromLongLong((long long)st->st_ino));
 #else
     PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long)st->st_ino));
 #endif
@@ -2092,7 +2092,7 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #endif
 #ifdef HAVE_LARGEFILE_SUPPORT
     PyStructSequence_SET_ITEM(v, 6,
-                              PyLong_FromLongLong((PY_LONG_LONG)st->st_size));
+                              PyLong_FromLongLong((long long)st->st_size));
 #else
     PyStructSequence_SET_ITEM(v, 6, PyLong_FromLong(st->st_size));
 #endif
@@ -9420,17 +9420,17 @@ _pystatvfs_fromstructstatvfs(struct statvfs st) {
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_bsize));
     PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_frsize));
     PyStructSequence_SET_ITEM(v, 2,
-                              PyLong_FromLongLong((PY_LONG_LONG) st.f_blocks));
+                              PyLong_FromLongLong((long long) st.f_blocks));
     PyStructSequence_SET_ITEM(v, 3,
-                              PyLong_FromLongLong((PY_LONG_LONG) st.f_bfree));
+                              PyLong_FromLongLong((long long) st.f_bfree));
     PyStructSequence_SET_ITEM(v, 4,
-                              PyLong_FromLongLong((PY_LONG_LONG) st.f_bavail));
+                              PyLong_FromLongLong((long long) st.f_bavail));
     PyStructSequence_SET_ITEM(v, 5,
-                              PyLong_FromLongLong((PY_LONG_LONG) st.f_files));
+                              PyLong_FromLongLong((long long) st.f_files));
     PyStructSequence_SET_ITEM(v, 6,
-                              PyLong_FromLongLong((PY_LONG_LONG) st.f_ffree));
+                              PyLong_FromLongLong((long long) st.f_ffree));
     PyStructSequence_SET_ITEM(v, 7,
-                              PyLong_FromLongLong((PY_LONG_LONG) st.f_favail));
+                              PyLong_FromLongLong((long long) st.f_favail));
     PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
     PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
 #endif
@@ -11763,10 +11763,10 @@ DirEntry_inode(DirEntry *self)
         self->win32_file_index = stat.st_ino;
         self->got_file_index = 1;
     }
-    return PyLong_FromLongLong((PY_LONG_LONG)self->win32_file_index);
+    return PyLong_FromLongLong((long long)self->win32_file_index);
 #else /* POSIX */
 #ifdef HAVE_LARGEFILE_SUPPORT
-    return PyLong_FromLongLong((PY_LONG_LONG)self->d_ino);
+    return PyLong_FromLongLong((long long)self->d_ino);
 #else
     return PyLong_FromLong((long)self->d_ino);
 #endif

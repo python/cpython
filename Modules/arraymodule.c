@@ -421,17 +421,17 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 static PyObject *
 q_getitem(arrayobject *ap, Py_ssize_t i)
 {
-    return PyLong_FromLongLong(((PY_LONG_LONG *)ap->ob_item)[i]);
+    return PyLong_FromLongLong(((long long *)ap->ob_item)[i]);
 }
 
 static int
 q_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    PY_LONG_LONG x;
+    long long x;
     if (!PyArg_Parse(v, "L;array item must be integer", &x))
         return -1;
     if (i >= 0)
-        ((PY_LONG_LONG *)ap->ob_item)[i] = x;
+        ((long long *)ap->ob_item)[i] = x;
     return 0;
 }
 
@@ -439,20 +439,20 @@ static PyObject *
 QQ_getitem(arrayobject *ap, Py_ssize_t i)
 {
     return PyLong_FromUnsignedLongLong(
-        ((unsigned PY_LONG_LONG *)ap->ob_item)[i]);
+        ((unsigned long long *)ap->ob_item)[i]);
 }
 
 static int
 QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    unsigned PY_LONG_LONG x;
+    unsigned long long x;
     if (PyLong_Check(v)) {
         x = PyLong_AsUnsignedLongLong(v);
-        if (x == (unsigned PY_LONG_LONG) -1 && PyErr_Occurred())
+        if (x == (unsigned long long) -1 && PyErr_Occurred())
             return -1;
     }
     else {
-        PY_LONG_LONG y;
+        long long y;
         if (!PyArg_Parse(v, "L;array item must be integer", &y))
             return -1;
         if (y < 0) {
@@ -460,11 +460,11 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
                 "unsigned long long is less than minimum");
             return -1;
         }
-        x = (unsigned PY_LONG_LONG)y;
+        x = (unsigned long long)y;
     }
 
     if (i >= 0)
-        ((unsigned PY_LONG_LONG *)ap->ob_item)[i] = x;
+        ((unsigned long long *)ap->ob_item)[i] = x;
     return 0;
 }
 
@@ -518,8 +518,8 @@ static const struct arraydescr descriptors[] = {
     {'I', sizeof(int), II_getitem, II_setitem, "I", 1, 0},
     {'l', sizeof(long), l_getitem, l_setitem, "l", 1, 1},
     {'L', sizeof(long), LL_getitem, LL_setitem, "L", 1, 0},
-    {'q', sizeof(PY_LONG_LONG), q_getitem, q_setitem, "q", 1, 1},
-    {'Q', sizeof(PY_LONG_LONG), QQ_getitem, QQ_setitem, "Q", 1, 0},
+    {'q', sizeof(long long), q_getitem, q_setitem, "q", 1, 1},
+    {'Q', sizeof(long long), QQ_getitem, QQ_setitem, "Q", 1, 0},
     {'f', sizeof(float), f_getitem, f_setitem, "f", 0, 0},
     {'d', sizeof(double), d_getitem, d_setitem, "d", 0, 0},
     {'\0', 0, 0, 0, 0, 0, 0} /* Sentinel */
@@ -1810,11 +1810,11 @@ typecode_to_mformat_code(char typecode)
         is_signed = 0;
         break;
     case 'q':
-        intsize = sizeof(PY_LONG_LONG);
+        intsize = sizeof(long long);
         is_signed = 1;
         break;
     case 'Q':
-        intsize = sizeof(PY_LONG_LONG);
+        intsize = sizeof(long long);
         is_signed = 0;
         break;
     default:

@@ -137,8 +137,8 @@ rlimit2py(struct rlimit rl)
 {
     if (sizeof(rl.rlim_cur) > sizeof(long)) {
         return Py_BuildValue("LL",
-                             (PY_LONG_LONG) rl.rlim_cur,
-                             (PY_LONG_LONG) rl.rlim_max);
+                             (long long) rl.rlim_cur,
+                             (long long) rl.rlim_max);
     }
     return Py_BuildValue("ll", (long) rl.rlim_cur, (long) rl.rlim_max);
 }
@@ -437,7 +437,7 @@ PyInit_resource(void)
 #endif
 
     if (sizeof(RLIM_INFINITY) > sizeof(long)) {
-        v = PyLong_FromLongLong((PY_LONG_LONG) RLIM_INFINITY);
+        v = PyLong_FromLongLong((long long) RLIM_INFINITY);
     } else
     {
         v = PyLong_FromLong((long) RLIM_INFINITY);
