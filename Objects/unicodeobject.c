@@ -2636,13 +2636,11 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
             longflag = 1;
             ++f;
         }
-#ifdef HAVE_LONG_LONG
         else if (f[1] == 'l' &&
                  (f[2] == 'd' || f[2] == 'u' || f[2] == 'i')) {
             longlongflag = 1;
             f += 2;
         }
-#endif
     }
     /* handle the size_t flag. */
     else if (*f == 'z' && (f[1] == 'd' || f[1] == 'u' || f[1] == 'i')) {
@@ -2680,11 +2678,9 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
             if (longflag)
                 len = sprintf(buffer, "%lu",
                         va_arg(*vargs, unsigned long));
-#ifdef HAVE_LONG_LONG
             else if (longlongflag)
                 len = sprintf(buffer, "%" PY_FORMAT_LONG_LONG "u",
                         va_arg(*vargs, unsigned PY_LONG_LONG));
-#endif
             else if (size_tflag)
                 len = sprintf(buffer, "%" PY_FORMAT_SIZE_T "u",
                         va_arg(*vargs, size_t));
@@ -2699,11 +2695,9 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
             if (longflag)
                 len = sprintf(buffer, "%li",
                         va_arg(*vargs, long));
-#ifdef HAVE_LONG_LONG
             else if (longlongflag)
                 len = sprintf(buffer, "%" PY_FORMAT_LONG_LONG "i",
                         va_arg(*vargs, PY_LONG_LONG));
-#endif
             else if (size_tflag)
                 len = sprintf(buffer, "%" PY_FORMAT_SIZE_T "i",
                         va_arg(*vargs, Py_ssize_t));

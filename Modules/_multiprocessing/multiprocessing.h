@@ -60,7 +60,7 @@
 #if SIZEOF_VOID_P == SIZEOF_LONG
 #  define F_POINTER "k"
 #  define T_POINTER T_ULONG
-#elif defined(HAVE_LONG_LONG) && (SIZEOF_VOID_P == SIZEOF_LONG_LONG)
+#elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
 #  define F_POINTER "K"
 #  define T_POINTER T_ULONGLONG
 #else

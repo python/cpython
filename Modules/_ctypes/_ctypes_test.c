@@ -233,7 +233,6 @@ EXPORT(int) _testfunc_callback_with_pointer(int (*func)(int *))
     return (*func)(table);
 }
 
-#ifdef HAVE_LONG_LONG
 EXPORT(PY_LONG_LONG) _testfunc_q_bhilfdq(signed char b, short h, int i, long l, float f,
                                      double d, PY_LONG_LONG q)
 {
@@ -266,8 +265,6 @@ EXPORT(PY_LONG_LONG) _testfunc_callback_q_qf(PY_LONG_LONG value,
     }
     return sum;
 }
-
-#endif
 
 typedef struct {
     char *name;

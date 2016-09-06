@@ -1111,9 +1111,7 @@ get_native_fmtchar(char *result, const char *fmt)
     case 'h': case 'H': size = sizeof(short); break;
     case 'i': case 'I': size = sizeof(int); break;
     case 'l': case 'L': size = sizeof(long); break;
-    #ifdef HAVE_LONG_LONG
     case 'q': case 'Q': size = sizeof(PY_LONG_LONG); break;
-    #endif
     case 'n': case 'N': size = sizeof(Py_ssize_t); break;
     case 'f': size = sizeof(float); break;
     case 'd': size = sizeof(double); break;
@@ -1158,10 +1156,8 @@ get_native_fmtstr(const char *fmt)
     case 'I': RETURN("I");
     case 'l': RETURN("l");
     case 'L': RETURN("L");
-    #ifdef HAVE_LONG_LONG
     case 'q': RETURN("q");
     case 'Q': RETURN("Q");
-    #endif
     case 'n': RETURN("n");
     case 'N': RETURN("N");
     case 'f': RETURN("f");
@@ -1581,7 +1577,6 @@ pylong_as_lu(PyObject *item)
     return lu;
 }
 
-#ifdef HAVE_LONG_LONG
 static PY_LONG_LONG
 pylong_as_lld(PyObject *item)
 {
@@ -1611,7 +1606,6 @@ pylong_as_llu(PyObject *item)
     Py_DECREF(tmp);
     return llu;
 }
-#endif
 
 static Py_ssize_t
 pylong_as_zd(PyObject *item)
@@ -1691,10 +1685,8 @@ unpack_single(const char *ptr, const char *fmt)
     case 'L': UNPACK_SINGLE(lu, ptr, unsigned long); goto convert_lu;
 
     /* native 64-bit */
-    #ifdef HAVE_LONG_LONG
     case 'q': UNPACK_SINGLE(lld, ptr, PY_LONG_LONG); goto convert_lld;
     case 'Q': UNPACK_SINGLE(llu, ptr, unsigned PY_LONG_LONG); goto convert_llu;
-    #endif
 
     /* ssize_t and size_t */
     case 'n': UNPACK_SINGLE(zd, ptr, Py_ssize_t); goto convert_zd;
@@ -1806,7 +1798,6 @@ pack_single(char *ptr, PyObject *item, const char *fmt)
         break;
 
     /* native 64-bit */
-    #ifdef HAVE_LONG_LONG
     case 'q':
         lld = pylong_as_lld(item);
         if (lld == -1 && PyErr_Occurred())
@@ -1819,7 +1810,6 @@ pack_single(char *ptr, PyObject *item, const char *fmt)
             goto err_occurred;
         PACK_SINGLE(ptr, llu, unsigned PY_LONG_LONG);
         break;
-    #endif
 
     /* ssize_t and size_t */
     case 'n':
@@ -2656,10 +2646,8 @@ unpack_cmp(const char *p, const char *q, char fmt,
     case 'L': CMP_SINGLE(p, q, unsigned long); return equal;
 
     /* native 64-bit */
-    #ifdef HAVE_LONG_LONG
     case 'q': CMP_SINGLE(p, q, PY_LONG_LONG); return equal;
     case 'Q': CMP_SINGLE(p, q, unsigned PY_LONG_LONG); return equal;
-    #endif
 
     /* ssize_t and size_t */
     case 'n': CMP_SINGLE(p, q, Py_ssize_t); return equal;

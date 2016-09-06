@@ -525,11 +525,6 @@ APIs:
    copied as-is to the result string, and any extra arguments discarded.
 
    .. note::
-
-      The `"%lld"` and `"%llu"` format specifiers are only available
-      when :const:`HAVE_LONG_LONG` is defined.
-
-   .. note::
       The width formatter unit is number of characters rather than bytes.
       The precision formatter unit is number of bytes for ``"%s"`` and
       ``"%V"`` (if the ``PyObject*`` argument is NULL), and a number of

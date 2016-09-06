@@ -769,7 +769,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         break;
     }
 
-#ifdef HAVE_LONG_LONG
     case 'L': {/* PY_LONG_LONG */
         PY_LONG_LONG *p = va_arg( *p_va, PY_LONG_LONG * );
         PY_LONG_LONG ival;
@@ -793,7 +792,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         *p = ival;
         break;
     }
-#endif
 
     case 'f': {/* float */
         float *p = va_arg(*p_va, float *);
@@ -2088,10 +2086,8 @@ skipitem(const char **p_format, va_list *p_va, int flags)
     case 'I': /* int sized bitfield */
     case 'l': /* long int */
     case 'k': /* long int sized bitfield */
-#ifdef HAVE_LONG_LONG
     case 'L': /* PY_LONG_LONG */
     case 'K': /* PY_LONG_LONG sized bitfield */
-#endif
     case 'n': /* Py_ssize_t */
     case 'f': /* float */
     case 'd': /* double */

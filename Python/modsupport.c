@@ -260,13 +260,12 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
             return PyLong_FromUnsignedLong(n);
         }
 
-#ifdef HAVE_LONG_LONG
         case 'L':
             return PyLong_FromLongLong((PY_LONG_LONG)va_arg(*p_va, PY_LONG_LONG));
 
         case 'K':
             return PyLong_FromUnsignedLongLong((PY_LONG_LONG)va_arg(*p_va, unsigned PY_LONG_LONG));
-#endif
+
         case 'u':
         {
             PyObject *v;

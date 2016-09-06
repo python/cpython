@@ -775,6 +775,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -885,6 +886,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1137,6 +1139,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1274,7 +1285,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1427,6 +1438,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -8294,6 +8306,39 @@ _ACEOF
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
 # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
 # This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of long long" >&5
+$as_echo_n "checking size of long long... " >&6; }
+if ${ac_cv_sizeof_long_long+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (long long))" "ac_cv_sizeof_long_long"        "$ac_includes_default"; then :
+
+else
+  if test "$ac_cv_type_long_long" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute sizeof (long long)
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_sizeof_long_long=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_long_long" >&5
+$as_echo "$ac_cv_sizeof_long_long" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_LONG_LONG $ac_cv_sizeof_long_long
+_ACEOF
+
+
+# The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking size of void *" >&5
 $as_echo_n "checking size of void *... " >&6; }
 if ${ac_cv_sizeof_void_p+:} false; then :
@@ -8522,67 +8567,6 @@ _ACEOF
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for long long support" >&5
-$as_echo_n "checking for long long support... " >&6; }
-have_long_long=no
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-long long x; x = (long long)0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-
-$as_echo "#define HAVE_LONG_LONG 1" >>confdefs.h
-
-  have_long_long=yes
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_long_long" >&5
-$as_echo "$have_long_long" >&6; }
-if test "$have_long_long" = yes ; then
-# The cast to long int works around a bug in the HP C Compiler
-# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
-# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
-# This bug is HP SR number 8606223364.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of long long" >&5
-$as_echo_n "checking size of long long... " >&6; }
-if ${ac_cv_sizeof_long_long+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (long long))" "ac_cv_sizeof_long_long"        "$ac_includes_default"; then :
-
-else
-  if test "$ac_cv_type_long_long" = yes; then
-     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error 77 "cannot compute sizeof (long long)
-See \`config.log' for more details" "$LINENO" 5; }
-   else
-     ac_cv_sizeof_long_long=0
-   fi
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_long_long" >&5
-$as_echo "$ac_cv_sizeof_long_long" >&6; }
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define SIZEOF_LONG_LONG $ac_cv_sizeof_long_long
-_ACEOF
-
-
-fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for long double support" >&5
 $as_echo_n "checking for long double support... " >&6; }
 have_long_double=no
@@ -8796,8 +8780,6 @@ _ACEOF
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable large file support" >&5
 $as_echo_n "checking whether to enable large file support... " >&6; }
-if test "$have_long_long" = yes
-then
 if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
 
@@ -8805,10 +8787,6 @@ $as_echo "#define HAVE_LARGEFILE_SUPPORT 1" >>confdefs.h
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -15853,32 +15831,30 @@ $as_echo "#define HAVE_DEV_PTC 1" >>confdefs.h
 
 fi
 
-if test "$have_long_long" = yes
-then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for %lld and %llu printf() format support" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for %lld and %llu printf() format support" >&5
 $as_echo_n "checking for %lld and %llu printf() format support... " >&6; }
-  if ${ac_cv_have_long_long_format+:} false; then :
+if ${ac_cv_have_long_long_format+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   if test "$cross_compiling" = yes; then :
   ac_cv_have_long_long_format="cross -- assuming no"
-   if test x$GCC = xyes; then
-    save_CFLAGS=$CFLAGS
-    CFLAGS="$CFLAGS -Werror -Wformat"
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if test x$GCC = xyes; then
+save_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS -Werror -Wformat"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #include <stdio.h>
-        #include <stddef.h>
+#include <stdio.h>
+#include <stddef.h>
 
 int
 main ()
 {
 
-      char *buffer;
-      sprintf(buffer, "%lld", (long long)123);
-      sprintf(buffer, "%lld", (long long)-123);
-      sprintf(buffer, "%llu", (unsigned long long)123);
+char *buffer;
+sprintf(buffer, "%lld", (long long)123);
+sprintf(buffer, "%lld", (long long)-123);
+sprintf(buffer, "%llu", (unsigned long long)123);
 
   ;
   return 0;
@@ -15889,41 +15865,41 @@ if ac_fn_c_try_compile "$LINENO"; then :
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-    CFLAGS=$save_CFLAGS
-   fi
+CFLAGS=$save_CFLAGS
+fi
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-  #include <stdio.h>
-  #include <stddef.h>
-  #include <string.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
 
-  #ifdef HAVE_SYS_TYPES_H
-  #include <sys/types.h>
-  #endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
 
-  int main()
-  {
-      char buffer[256];
+int main()
+{
+char buffer[256];
 
-      if (sprintf(buffer, "%lld", (long long)123) < 0)
-          return 1;
-      if (strcmp(buffer, "123"))
-          return 1;
+if (sprintf(buffer, "%lld", (long long)123) < 0)
+return 1;
+if (strcmp(buffer, "123"))
+return 1;
 
-      if (sprintf(buffer, "%lld", (long long)-123) < 0)
-          return 1;
-      if (strcmp(buffer, "-123"))
-          return 1;
+if (sprintf(buffer, "%lld", (long long)-123) < 0)
+return 1;
+if (strcmp(buffer, "-123"))
+return 1;
 
-      if (sprintf(buffer, "%llu", (unsigned long long)123) < 0)
-          return 1;
-      if (strcmp(buffer, "123"))
-          return 1;
+if (sprintf(buffer, "%llu", (unsigned long long)123) < 0)
+return 1;
+if (strcmp(buffer, "123"))
+return 1;
 
-      return 0;
-  }
+return 0;
+}
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
@@ -15938,9 +15914,8 @@ fi
 
 fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_long_long_format" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_long_long_format" >&5
 $as_echo "$ac_cv_have_long_long_format" >&6; }
-fi
 
 if test "$ac_cv_have_long_long_format" = yes
 then
