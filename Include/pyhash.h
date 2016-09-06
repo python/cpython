@@ -36,14 +36,14 @@ PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
  * memory layout on 64 bit systems
  *   cccccccc cccccccc cccccccc  uc -- unsigned char[24]
  *   pppppppp ssssssss ........  fnv -- two Py_hash_t
- *   k0k0k0k0 k1k1k1k1 ........  siphash -- two PY_UINT64_T
+ *   k0k0k0k0 k1k1k1k1 ........  siphash -- two uint64_t
  *   ........ ........ ssssssss  djbx33a -- 16 bytes padding + one Py_hash_t
  *   ........ ........ eeeeeeee  pyexpat XML hash salt
  *
  * memory layout on 32 bit systems
  *   cccccccc cccccccc cccccccc  uc
  *   ppppssss ........ ........  fnv -- two Py_hash_t
- *   k0k0k0k0 k1k1k1k1 ........  siphash -- two PY_UINT64_T (*)
+ *   k0k0k0k0 k1k1k1k1 ........  siphash -- two uint64_t (*)
  *   ........ ........ ssss....  djbx33a -- 16 bytes padding + one Py_hash_t
  *   ........ ........ eeee....  pyexpat XML hash salt
  *
@@ -59,13 +59,11 @@ typedef union {
         Py_hash_t prefix;
         Py_hash_t suffix;
     } fnv;
-#ifdef PY_UINT64_T
     /* two uint64 for SipHash24 */
     struct {
-        PY_UINT64_T k0;
-        PY_UINT64_T k1;
+        uint64_t k0;
+        uint64_t k1;
     } siphash;
-#endif
     /* a different (!) Py_hash_t for small string optimization */
     struct {
         unsigned char padding[16];
@@ -121,8 +119,7 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
  * configure script.
  *
  * - FNV is available on all platforms and architectures.
- * - SIPHASH24 only works on plaforms that provide PY_UINT64_T and doesn't
- *   require aligned memory for integers.
+ * - SIPHASH24 only works on plaforms that don't require aligned memory for integers.
  * - With EXTERNAL embedders can provide an alternative implementation with::
  *
  *     PyHash_FuncDef PyHash_Func = {...};
@@ -134,8 +131,7 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
 #define Py_HASH_FNV 2
 
 #ifndef Py_HASH_ALGORITHM
-#  if (defined(PY_UINT64_T) && defined(PY_UINT32_T) \
-       && !defined(HAVE_ALIGNED_REQUIRED))
+#  ifndef HAVE_ALIGNED_REQUIRED
 #    define Py_HASH_ALGORITHM Py_HASH_SIPHASH24
 #  else
 #    define Py_HASH_ALGORITHM Py_HASH_FNV
