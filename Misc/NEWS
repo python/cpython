@@ -215,6 +215,9 @@ Build
 Windows
 -------
 
+- Issue #27982: The functions of the winsound module now accept keyword
+  arguments.
+
 - Issue #20366: Build full text search support into SQLite on Windows.
 
 - Issue #27756: Adds new icons for Python files and processes on Windows.

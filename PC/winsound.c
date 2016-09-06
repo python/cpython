@@ -52,7 +52,7 @@ PyDoc_STRVAR(sound_module_doc,
 "SND_NOWAIT - Return immediately if the sound driver is busy\n" // Without any errors
 "\n"
 "Beep(frequency, duration) - Make a beep through the PC speaker.\n"
-"MessageBeep(x) - Call Windows MessageBeep.");
+"MessageBeep(type) - Call Windows MessageBeep.");
 
 /*[clinic input]
 module winsound
@@ -68,14 +68,13 @@ winsound.PlaySound
         The sound to play; a filename, data, or None.
     flags: int
         Flag values, ored together.  See module documentation.
-    /
 
 A wrapper around the Windows PlaySound API.
 [clinic start generated code]*/
 
 static PyObject *
 winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags)
-/*[clinic end generated code: output=49a0fd16a372ebeb input=7bdf637f10201d37]*/
+/*[clinic end generated code: output=49a0fd16a372ebeb input=c63e1f2d848da2f2]*/
 {
     int ok;
     wchar_t *wsound;
@@ -132,14 +131,13 @@ winsound.Beep
         Must be in the range 37 through 32,767.
     duration: int
         How long the sound should play, in milliseconds.
-    /
 
 A wrapper around the Windows Beep API.
 [clinic start generated code]*/
 
 static PyObject *
 winsound_Beep_impl(PyObject *module, int frequency, int duration)
-/*[clinic end generated code: output=f32382e52ee9b2fb input=628a99d2ddf73798]*/
+/*[clinic end generated code: output=f32382e52ee9b2fb input=40e360cfa00a5cf0]*/
 {
     BOOL ok;
 
@@ -163,8 +161,7 @@ winsound_Beep_impl(PyObject *module, int frequency, int duration)
 /*[clinic input]
 winsound.MessageBeep
 
-    x: int(c_default="MB_OK") = MB_OK
-    /
+    type: int(c_default="MB_OK") = MB_OK
 
 Call Windows MessageBeep(x).
 
@@ -172,13 +169,13 @@ x defaults to MB_OK.
 [clinic start generated code]*/
 
 static PyObject *
-winsound_MessageBeep_impl(PyObject *module, int x)
-/*[clinic end generated code: output=1ad89e4d8d30a957 input=a776c8a85c9853f6]*/
+winsound_MessageBeep_impl(PyObject *module, int type)
+/*[clinic end generated code: output=120875455121121f input=db185f741ae21401]*/
 {
     BOOL ok;
 
     Py_BEGIN_ALLOW_THREADS
-    ok = MessageBeep(x);
+    ok = MessageBeep(type);
     Py_END_ALLOW_THREADS
 
     if (!ok) {

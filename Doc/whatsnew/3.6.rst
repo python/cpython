@@ -692,6 +692,14 @@ Added the 64-bit integer type :data:`REG_QWORD <winreg.REG_QWORD>`.
 (Contributed by Clement Rouault in :issue:`23026`.)
 
 
+winsound
+--------
+
+Allowed keyword arguments to be passed to :func:`Beep <winsound.Beep>`,
+:func:`MessageBeep <winsound.MessageBeep>`, and :func:`PlaySound
+<winsound.PlaySound>` (:issue:`27982`).
+
+
 zipfile
 -------
 
