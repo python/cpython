@@ -5343,7 +5343,11 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
     # tests for AF_ALG
     def create_alg(self, typ, name):
         sock = socket.socket(socket.AF_ALG, socket.SOCK_SEQPACKET, 0)
-        sock.bind((typ, name))
+        try:
+            sock.bind((typ, name))
+        except FileNotFoundError as e:
+            # type / algorithm is not available
+            raise unittest.SkipTest(str(e), typ, name)
         return sock
 
     def test_sha256(self):
