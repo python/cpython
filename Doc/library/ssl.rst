@@ -280,6 +280,12 @@ purposes.
 
      RC4 was dropped from the default cipher string.
 
+   .. versionchanged:: 2.7.13
+
+     ChaCha20/Poly1305 was added to the default cipher string.
+
+     3DES was dropped from the default cipher string.
+
 .. function:: _https_verify_certificates(enable=True)
 
    Specifies whether or not server certificates are verified when creating

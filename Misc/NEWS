@@ -36,6 +36,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #27850: Remove 3DES from ssl module's default cipher list to counter
+  measure sweet32 attack (CVE-2016-2183).
+
+- Issue #27766: Add ChaCha20 Poly1305 to ssl module's default ciper list.
+  (Required OpenSSL 1.1.0 or LibreSSL).
+
 - Issue #26470: Port ssl and hashlib module to OpenSSL 1.1.0.
 
 - Issue #27944: Fix some memory-corruption bugs in the log reading code of the

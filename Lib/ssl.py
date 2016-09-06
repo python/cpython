@@ -152,36 +152,42 @@ if _ssl.HAS_TLS_UNIQUE:
 else:
     CHANNEL_BINDING_TYPES = []
 
+
 # Disable weak or insecure ciphers by default
 # (OpenSSL's default setting is 'DEFAULT:!aNULL:!eNULL')
 # Enable a better set of ciphers by default
 # This list has been explicitly chosen to:
 #   * Prefer cipher suites that offer perfect forward secrecy (DHE/ECDHE)
 #   * Prefer ECDHE over DHE for better performance
-#   * Prefer any AES-GCM over any AES-CBC for better performance and security
+#   * Prefer AEAD over CBC for better performance and security
+#   * Prefer AES-GCM over ChaCha20 because most platforms have AES-NI
+#     (ChaCha20 needs OpenSSL 1.1.0 or patched 1.0.2)
+#   * Prefer any AES-GCM and ChaCha20 over any AES-CBC for better
+#     performance and security
 #   * Then Use HIGH cipher suites as a fallback
-#   * Then Use 3DES as fallback which is secure but slow
-#   * Disable NULL authentication, NULL encryption, and MD5 MACs for security
-#     reasons
+#   * Disable NULL authentication, NULL encryption, 3DES and MD5 MACs
+#     for security reasons
 _DEFAULT_CIPHERS = (
-    'ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+HIGH:'
-    'DH+HIGH:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+HIGH:RSA+3DES:!aNULL:'
-    '!eNULL:!MD5'
-)
+    'ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:DH+CHACHA20:ECDH+AES256:DH+AES256:'
+    'ECDH+AES128:DH+AES:ECDH+HIGH:DH+HIGH:RSA+AESGCM:RSA+AES:RSA+HIGH:'
+    '!aNULL:!eNULL:!MD5:!3DES'
+    )
 
 # Restricted and more secure ciphers for the server side
 # This list has been explicitly chosen to:
 #   * Prefer cipher suites that offer perfect forward secrecy (DHE/ECDHE)
 #   * Prefer ECDHE over DHE for better performance
-#   * Prefer any AES-GCM over any AES-CBC for better performance and security
+#   * Prefer AEAD over CBC for better performance and security
+#   * Prefer AES-GCM over ChaCha20 because most platforms have AES-NI
+#   * Prefer any AES-GCM and ChaCha20 over any AES-CBC for better
+#     performance and security
 #   * Then Use HIGH cipher suites as a fallback
-#   * Then Use 3DES as fallback which is secure but slow
-#   * Disable NULL authentication, NULL encryption, MD5 MACs, DSS, and RC4 for
-#     security reasons
+#   * Disable NULL authentication, NULL encryption, MD5 MACs, DSS, RC4, and
+#     3DES for security reasons
 _RESTRICTED_SERVER_CIPHERS = (
-    'ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+HIGH:'
-    'DH+HIGH:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+HIGH:RSA+3DES:!aNULL:'
-    '!eNULL:!MD5:!DSS:!RC4'
+    'ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:DH+CHACHA20:ECDH+AES256:DH+AES256:'
+    'ECDH+AES128:DH+AES:ECDH+HIGH:DH+HIGH:RSA+AESGCM:RSA+AES:RSA+HIGH:'
+    '!aNULL:!eNULL:!MD5:!DSS:!RC4:!3DES'
 )
 
 
