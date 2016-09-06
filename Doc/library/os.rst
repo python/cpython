@@ -930,6 +930,9 @@ as internal buffering of data.
       exception, the function now retries the system call instead of raising an
       :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 The following constants are options for the *flags* parameter to the
 :func:`~os.open` function.  They can be combined using the bitwise OR operator
 ``|``.  Some of them are not available on all platforms.  For descriptions of
@@ -1426,6 +1429,9 @@ features:
    .. versionchanged:: 3.3
       Added the *dir_fd*, *effective_ids*, and *follow_symlinks* parameters.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. data:: F_OK
           R_OK
@@ -1449,6 +1455,9 @@ features:
    .. versionadded:: 3.3
       Added support for specifying *path* as a file descriptor
       on some platforms.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: chflags(path, flags, *, follow_symlinks=True)
@@ -1475,6 +1484,9 @@ features:
 
    .. versionadded:: 3.3
       The *follow_symlinks* argument.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: chmod(path, mode, *, dir_fd=None, follow_symlinks=True)
@@ -1517,6 +1529,9 @@ features:
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: chown(path, uid, gid, *, dir_fd=None, follow_symlinks=True)
 
@@ -1536,12 +1551,18 @@ features:
       Added support for specifying an open file descriptor for *path*,
       and the *dir_fd* and *follow_symlinks* arguments.
 
+   .. versionchanged:: 3.6
+      Supports a :term:`path-like object`.
+
 
 .. function:: chroot(path)
 
    Change the root directory of the current process to *path*.
 
    Availability: Unix.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: fchdir(fd)
@@ -1571,6 +1592,9 @@ features:
 
    Availability: Unix.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: lchmod(path, mode)
 
@@ -1581,6 +1605,8 @@ features:
 
    Availability: Unix.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 .. function:: lchown(path, uid, gid)
 
@@ -1589,6 +1615,9 @@ features:
    to ``os.chown(path, uid, gid, follow_symlinks=False)``.
 
    Availability: Unix.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: link(src, dst, *, src_dir_fd=None, dst_dir_fd=None, follow_symlinks=True)
@@ -1607,6 +1636,9 @@ features:
    .. versionadded:: 3.3
       Added the *src_dir_fd*, *dst_dir_fd*, and *follow_symlinks* arguments.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object` for *src* and *dst*.
+
 
 .. function:: listdir(path='.')
 
@@ -1614,8 +1646,9 @@ features:
    *path*.  The list is in arbitrary order, and does not include the special
    entries ``'.'`` and ``'..'`` even if they are present in the directory.
 
-   *path* may be either of type ``str`` or of type ``bytes``.  If *path*
-   is of type ``bytes``, the filenames returned will also be of type ``bytes``;
+   *path* may be a :term:`path-like object`.  If *path* is of type ``bytes``
+   (directly or indirectly through the :class:`PathLike` interface),
+   the filenames returned will also be of type ``bytes``;
    in all other circumstances, they will be of type ``str``.
 
    This function can also support :ref:`specifying a file descriptor
@@ -1635,6 +1668,9 @@ features:
 
    .. versionadded:: 3.3
       Added support for specifying an open file descriptor for *path*.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: lstat(path, \*, dir_fd=None)
@@ -1662,6 +1698,9 @@ features:
    .. versionchanged:: 3.3
       Added the *dir_fd* parameter.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object` for *src* and *dst*.
+
 
 .. function:: mkdir(path, mode=0o777, *, dir_fd=None)
 
@@ -1685,6 +1724,9 @@ features:
 
    .. versionadded:: 3.3
       The *dir_fd* argument.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: makedirs(name, mode=0o777, exist_ok=False)
@@ -1719,6 +1761,9 @@ features:
       mode of the existing directory. Since this behavior was impossible to
       implement safely, it was removed in Python 3.4.1. See :issue:`21082`.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
 
@@ -1739,6 +1784,9 @@ features:
    .. versionadded:: 3.3
       The *dir_fd* argument.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: mknod(path, mode=0o600, device=0, *, dir_fd=None)
 
@@ -1755,6 +1803,9 @@ features:
 
    .. versionadded:: 3.3
       The *dir_fd* argument.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: major(device)
@@ -1794,6 +1845,9 @@ features:
 
    Availability: Unix.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. data:: pathconf_names
 
@@ -1811,9 +1865,10 @@ features:
    may be converted to an absolute pathname using
    ``os.path.join(os.path.dirname(path), result)``.
 
-   If the *path* is a string object, the result will also be a string object,
+   If the *path* is a string object (directly or indirectly through a
+   :class:`PathLike` interface), the result will also be a string object,
    and the call may raise a UnicodeDecodeError. If the *path* is a bytes
-   object, the result will be a bytes object.
+   object (direct or indirectly), the result will be a bytes object.
 
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -1825,6 +1880,9 @@ features:
 
    .. versionadded:: 3.3
       The *dir_fd* argument.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: remove(path, *, dir_fd=None)
@@ -1844,6 +1902,9 @@ features:
    .. versionadded:: 3.3
       The *dir_fd* argument.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: removedirs(name)
 
@@ -1857,6 +1918,9 @@ features:
    the directory ``'foo/bar/baz'``, and then remove ``'foo/bar'`` and ``'foo'`` if
    they are empty. Raises :exc:`OSError` if the leaf directory could not be
    successfully removed.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: rename(src, dst, *, src_dir_fd=None, dst_dir_fd=None)
@@ -1877,6 +1941,9 @@ features:
    .. versionadded:: 3.3
       The *src_dir_fd* and *dst_dir_fd* arguments.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object` for *src* and *dst*.
+
 
 .. function:: renames(old, new)
 
@@ -1889,6 +1956,9 @@ features:
 
       This function can fail with the new directory structure made if you lack
       permissions needed to remove the leaf directory or file.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object` for *old* and *new*.
 
 
 .. function:: replace(src, dst, *, src_dir_fd=None, dst_dir_fd=None)
@@ -1904,6 +1974,9 @@ features:
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object` for *src* and *dst*.
+
 
 .. function:: rmdir(path, *, dir_fd=None)
 
@@ -1916,6 +1989,9 @@ features:
 
    .. versionadded:: 3.3
       The *dir_fd* parameter.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: scandir(path='.')
@@ -1935,7 +2011,8 @@ features:
    always requires a system call on Unix but only requires one for
    symbolic links on Windows.
 
-   On Unix, *path* can be of type :class:`str` or :class:`bytes` (use
+   On Unix, *path* can be of type :class:`str` or :class:`bytes` (either
+   directly or indirectly through the :class:`PathLike` interface; use
    :func:`~os.fsencode` and :func:`~os.fsdecode` to encode and decode
    :class:`bytes` paths). On Windows, *path* must be of type :class:`str`.
    On both systems, the type of the :attr:`~os.DirEntry.name` and
@@ -1986,6 +2063,8 @@ features:
       exhausted nor explicitly closed a :exc:`ResourceWarning` will be emitted
       in its destructor.
 
+      The function accepts a :term:`path-like object`.
+
 
 .. class:: DirEntry
 
@@ -2007,7 +2086,7 @@ features:
    ``os.DirEntry`` methods and handle as appropriate.
 
    To be directly usable as a :term:`path-like object`, ``os.DirEntry``
-   implements the :class:`os.PathLike` interface.
+   implements the :class:`PathLike` interface.
 
    Attributes and methods on a ``os.DirEntry`` instance are as follows:
 
@@ -2123,14 +2202,15 @@ features:
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.6
-      Added support for the :class:`os.PathLike` interface.
+      Added support for the :class:`~os.PathLike` interface.
 
 
 .. function:: stat(path, \*, dir_fd=None, follow_symlinks=True)
 
    Get the status of a file or a file descriptor. Perform the equivalent of a
    :c:func:`stat` system call on the given path. *path* may be specified as
-   either a string or as an open file descriptor. Return a :class:`stat_result`
+   either a string -- directly or indirectly through the :class:`PathLike`
+   interface -- or as an open file descriptor. Return a :class:`stat_result`
    object.
 
    This function normally follows symlinks; to stat a symlink add the argument
@@ -2159,6 +2239,9 @@ features:
    .. versionadded:: 3.3
       Added the *dir_fd* and *follow_symlinks* arguments, specifying a file
       descriptor instead of a path.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. class:: stat_result
@@ -2381,8 +2464,13 @@ features:
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
+   Availability: Unix.
+
    .. versionchanged:: 3.2
       The :const:`ST_RDONLY` and :const:`ST_NOSUID` constants were added.
+
+   .. versionadded:: 3.3
+      Added support for specifying an open file descriptor for *path*.
 
    .. versionchanged:: 3.4
       The :const:`ST_NODEV`, :const:`ST_NOEXEC`, :const:`ST_SYNCHRONOUS`,
@@ -2390,10 +2478,8 @@ features:
       :const:`ST_IMMUTABLE`, :const:`ST_NOATIME`, :const:`ST_NODIRATIME`,
       and :const:`ST_RELATIME` constants were added.
 
-   Availability: Unix.
-
-   .. versionadded:: 3.3
-      Added support for specifying an open file descriptor for *path*.
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. data:: supports_dir_fd
@@ -2514,6 +2600,9 @@ features:
       Added the *dir_fd* argument, and now allow *target_is_directory*
       on non-Windows platforms.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object` for *src* and *dst*.
+
 
 .. function:: sync()
 
@@ -2538,6 +2627,10 @@ features:
    .. versionchanged:: 3.5
       Added support for Windows
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
+
 .. function:: unlink(path, *, dir_fd=None)
 
    Remove (delete) the file *path*.  This function is semantically
@@ -2547,6 +2640,9 @@ features:
 
    .. versionadded:: 3.3
       The *dir_fd* parameter.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: utime(path, times=None, *[, ns], dir_fd=None, follow_symlinks=True)
@@ -2584,6 +2680,9 @@ features:
    .. versionadded:: 3.3
       Added support for specifying an open file descriptor for *path*,
       and the *dir_fd*, *follow_symlinks*, and *ns* parameters.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: walk(top, topdown=True, onerror=None, followlinks=False)
@@ -2675,6 +2774,9 @@ features:
       This function now calls :func:`os.scandir` instead of :func:`os.listdir`,
       making it faster by reducing the number of calls to :func:`os.stat`.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: fwalk(top='.', topdown=True, onerror=None, *, follow_symlinks=False, dir_fd=None)
 
@@ -2731,6 +2833,9 @@ features:
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 Linux extended attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2742,11 +2847,15 @@ These functions are all available on Linux only.
 .. function:: getxattr(path, attribute, *, follow_symlinks=True)
 
    Return the value of the extended filesystem attribute *attribute* for
-   *path*. *attribute* can be bytes or str. If it is str, it is encoded
-   with the filesystem encoding.
+   *path*. *attribute* can be bytes or str (directly or indirectly through the
+   :class:`PathLike` interface). If it is str, it is encoded with the filesystem
+   encoding.
 
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object` fpr *path* and *attribute*.
 
 
 .. function:: listxattr(path=None, *, follow_symlinks=True)
@@ -2759,21 +2868,29 @@ These functions are all available on Linux only.
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: removexattr(path, attribute, *, follow_symlinks=True)
 
    Removes the extended filesystem attribute *attribute* from *path*.
-   *attribute* should be bytes or str. If it is a string, it is encoded
+   *attribute* should be bytes or str (directly or indirectly through the
+   :class:`PathLike` interface). If it is a string, it is encoded
    with the filesystem encoding.
 
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object` for *path* and *attribute*.
+
 
 .. function:: setxattr(path, attribute, value, flags=0, *, follow_symlinks=True)
 
    Set the extended filesystem attribute *attribute* on *path* to *value*.
-   *attribute* must be a bytes or str with no embedded NULs. If it is a str,
+   *attribute* must be a bytes or str with no embedded NULs (directly or
+   indirectly through the :class:`PathLike` interface). If it is a str,
    it is encoded with the filesystem encoding.  *flags* may be
    :data:`XATTR_REPLACE` or :data:`XATTR_CREATE`. If :data:`XATTR_REPLACE` is
    given and the attribute does not exist, ``EEXISTS`` will be raised.
@@ -2787,6 +2904,9 @@ These functions are all available on Linux only.
 
       A bug in Linux kernel versions less than 2.6.39 caused the flags argument
       to be ignored on some filesystems.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object` for *path* and *attribute*.
 
 
 .. data:: XATTR_SIZE_MAX
@@ -2888,6 +3008,9 @@ to be ignored.
    .. versionadded:: 3.3
       Added support for specifying an open file descriptor for *path*
       for :func:`execve`.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 .. function:: _exit(n)
 
@@ -3198,6 +3321,9 @@ written in Python, such as a mail server's external command delivery program.
    and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
    :func:`spawnve` are not thread-safe on Windows; we advise you to use the
    :mod:`subprocess` module instead.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. data:: P_NOWAIT
