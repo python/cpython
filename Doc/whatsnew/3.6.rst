@@ -767,6 +767,10 @@ Optimizations
   Argument Clinic this overhead is significantly decreased.
   (Contributed by Serhiy Storchaka in :issue:`27574`).
 
+* Optimized :func:`~glob.glob` and :func:`~glob.iglob` functions in the
+  :mod:`glob` module; they are now about 3--6 times faster.
+  (Contributed by Serhiy Storchaka in :issue:`25596`).
+
 
 Build and C API Changes
 =======================
