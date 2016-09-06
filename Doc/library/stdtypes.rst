@@ -1363,6 +1363,11 @@ objects that compare equal might have different :attr:`~range.start`,
    The :attr:`~range.start`, :attr:`~range.stop` and :attr:`~range.step`
    attributes.
 
+.. seealso::
+
+   * The `linspace recipe <http://code.activestate.com/recipes/579000/>`_
+     shows how to implement a lazy version of range that suitable for floating
+     point applications.
 
 .. index::
    single: string; text sequence type
