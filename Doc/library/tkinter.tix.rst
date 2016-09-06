@@ -10,6 +10,10 @@
 
 .. index:: single: Tix
 
+.. deprecated:: 3.6
+   This Tk extension is unmaintained and should not be used in new code.  Use
+   :mod:`tkinter.ttk` instead.
+
 --------------
 
 The :mod:`tkinter.tix` (Tk Interface Extension) module provides an additional
