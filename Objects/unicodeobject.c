@@ -5330,7 +5330,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
     const void *data;
     Py_ssize_t len;
     PyObject *v;
-    PY_UINT32_T *out;
+    uint32_t *out;
 #if PY_LITTLE_ENDIAN
     int native_ordering = byteorder <= 0;
 #else
@@ -5361,7 +5361,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
 
     /* output buffer is 4-bytes aligned */
     assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(v), 4));
-    out = (PY_UINT32_T *)PyBytes_AS_STRING(v);
+    out = (uint32_t *)PyBytes_AS_STRING(v);
     if (byteorder == 0)
         *out++ = 0xFEFF;
     if (len == 0)
@@ -5427,7 +5427,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
 
         /* four bytes are reserved for each surrogate */
         if (moreunits > 1) {
-            Py_ssize_t outpos = out - (PY_UINT32_T*) PyBytes_AS_STRING(v);
+            Py_ssize_t outpos = out - (uint32_t*) PyBytes_AS_STRING(v);
             Py_ssize_t morebytes = 4 * (moreunits - 1);
             if (PyBytes_GET_SIZE(v) > PY_SSIZE_T_MAX - morebytes) {
                 /* integer overflow */
@@ -5436,7 +5436,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
             }
             if (_PyBytes_Resize(&v, PyBytes_GET_SIZE(v) + morebytes) < 0)
                 goto error;
-            out = (PY_UINT32_T*) PyBytes_AS_STRING(v) + outpos;
+            out = (uint32_t*) PyBytes_AS_STRING(v) + outpos;
         }
 
         if (PyBytes_Check(rep)) {

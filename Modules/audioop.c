@@ -297,7 +297,7 @@ static const int stepsizeTable[89] = {
 
 #define GETINT8(cp, i)          GETINTX(signed char, (cp), (i))
 #define GETINT16(cp, i)         GETINTX(short, (cp), (i))
-#define GETINT32(cp, i)         GETINTX(PY_INT32_T, (cp), (i))
+#define GETINT32(cp, i)         GETINTX(int32_t, (cp), (i))
 
 #if WORDS_BIGENDIAN
 #define GETINT24(cp, i)  (                              \
@@ -314,7 +314,7 @@ static const int stepsizeTable[89] = {
 
 #define SETINT8(cp, i, val)     SETINTX(signed char, (cp), (i), (val))
 #define SETINT16(cp, i, val)    SETINTX(short, (cp), (i), (val))
-#define SETINT32(cp, i, val)    SETINTX(PY_INT32_T, (cp), (i), (val))
+#define SETINT32(cp, i, val)    SETINTX(int32_t, (cp), (i), (val))
 
 #if WORDS_BIGENDIAN
 #define SETINT24(cp, i, val)  do {                              \
@@ -1129,7 +1129,7 @@ audioop_bias_impl(PyObject *module, Py_buffer *fragment, int width, int bias)
             val = ((unsigned int)GETINT24(fragment->buf, i)) & 0xffffffu;
         else {
             assert(width == 4);
-            val = GETINTX(PY_UINT32_T, fragment->buf, i);
+            val = GETINTX(uint32_t, fragment->buf, i);
         }
 
         val += (unsigned int)bias;
@@ -1144,7 +1144,7 @@ audioop_bias_impl(PyObject *module, Py_buffer *fragment, int width, int bias)
             SETINT24(ncp, i, (int)val);
         else {
             assert(width == 4);
-            SETINTX(PY_UINT32_T, ncp, i, val);
+            SETINTX(uint32_t, ncp, i, val);
         }
     }
     return rv;

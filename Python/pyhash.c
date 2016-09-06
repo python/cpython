@@ -318,12 +318,9 @@ static PyHash_FuncDef PyHash_Func = {fnv, "fnv", 8 * SIZEOF_PY_HASH_T,
 
  Modified for Python by Christian Heimes:
     - C89 / MSVC compatibility
-    - PY_UINT64_T, PY_UINT32_T and PY_UINT8_T
     - _rotl64() on Windows
     - letoh64() fallback
 */
-
-typedef unsigned char PY_UINT8_T;
 
 /* byte swap little endian to host endian
  * Endian conversion not only ensures that the hash function returns the same
@@ -331,27 +328,27 @@ typedef unsigned char PY_UINT8_T;
  * the hash values' least significant bits.
  */
 #if PY_LITTLE_ENDIAN
-#  define _le64toh(x) ((PY_UINT64_T)(x))
+#  define _le64toh(x) ((uint64_t)(x))
 #elif defined(__APPLE__)
 #  define _le64toh(x) OSSwapLittleToHostInt64(x)
 #elif defined(HAVE_LETOH64)
 #  define _le64toh(x) le64toh(x)
 #else
-#  define _le64toh(x) (((PY_UINT64_T)(x) << 56) | \
-                      (((PY_UINT64_T)(x) << 40) & 0xff000000000000ULL) | \
-                      (((PY_UINT64_T)(x) << 24) & 0xff0000000000ULL) | \
-                      (((PY_UINT64_T)(x) << 8)  & 0xff00000000ULL) | \
-                      (((PY_UINT64_T)(x) >> 8)  & 0xff000000ULL) | \
-                      (((PY_UINT64_T)(x) >> 24) & 0xff0000ULL) | \
-                      (((PY_UINT64_T)(x) >> 40) & 0xff00ULL) | \
-                      ((PY_UINT64_T)(x)  >> 56))
+#  define _le64toh(x) (((uint64_t)(x) << 56) | \
+                      (((uint64_t)(x) << 40) & 0xff000000000000ULL) | \
+                      (((uint64_t)(x) << 24) & 0xff0000000000ULL) | \
+                      (((uint64_t)(x) << 8)  & 0xff00000000ULL) | \
+                      (((uint64_t)(x) >> 8)  & 0xff000000ULL) | \
+                      (((uint64_t)(x) >> 24) & 0xff0000ULL) | \
+                      (((uint64_t)(x) >> 40) & 0xff00ULL) | \
+                      ((uint64_t)(x)  >> 56))
 #endif
 
 
 #ifdef _MSC_VER
 #  define ROTATE(x, b)  _rotl64(x, b)
 #else
-#  define ROTATE(x, b) (PY_UINT64_T)( ((x) << (b)) | ( (x) >> (64 - (b))) )
+#  define ROTATE(x, b) (uint64_t)( ((x) << (b)) | ( (x) >> (64 - (b))) )
 #endif
 
 #define HALF_ROUND(a,b,c,d,s,t)         \
@@ -369,22 +366,22 @@ typedef unsigned char PY_UINT8_T;
 
 static Py_hash_t
 siphash24(const void *src, Py_ssize_t src_sz) {
-    PY_UINT64_T k0 = _le64toh(_Py_HashSecret.siphash.k0);
-    PY_UINT64_T k1 = _le64toh(_Py_HashSecret.siphash.k1);
-    PY_UINT64_T b = (PY_UINT64_T)src_sz << 56;
-    const PY_UINT64_T *in = (PY_UINT64_T*)src;
+    uint64_t k0 = _le64toh(_Py_HashSecret.siphash.k0);
+    uint64_t k1 = _le64toh(_Py_HashSecret.siphash.k1);
+    uint64_t b = (uint64_t)src_sz << 56;
+    const uint64_t *in = (uint64_t*)src;
 
-    PY_UINT64_T v0 = k0 ^ 0x736f6d6570736575ULL;
-    PY_UINT64_T v1 = k1 ^ 0x646f72616e646f6dULL;
-    PY_UINT64_T v2 = k0 ^ 0x6c7967656e657261ULL;
-    PY_UINT64_T v3 = k1 ^ 0x7465646279746573ULL;
+    uint64_t v0 = k0 ^ 0x736f6d6570736575ULL;
+    uint64_t v1 = k1 ^ 0x646f72616e646f6dULL;
+    uint64_t v2 = k0 ^ 0x6c7967656e657261ULL;
+    uint64_t v3 = k1 ^ 0x7465646279746573ULL;
 
-    PY_UINT64_T t;
-    PY_UINT8_T *pt;
-    PY_UINT8_T *m;
+    uint64_t t;
+    uint8_t *pt;
+    uint8_t *m;
 
     while (src_sz >= 8) {
-        PY_UINT64_T mi = _le64toh(*in);
+        uint64_t mi = _le64toh(*in);
         in += 1;
         src_sz -= 8;
         v3 ^= mi;
@@ -393,13 +390,13 @@ siphash24(const void *src, Py_ssize_t src_sz) {
     }
 
     t = 0;
-    pt = (PY_UINT8_T *)&t;
-    m = (PY_UINT8_T *)in;
+    pt = (uint8_t *)&t;
+    m = (uint8_t *)in;
     switch (src_sz) {
         case 7: pt[6] = m[6];
         case 6: pt[5] = m[5];
         case 5: pt[4] = m[4];
-        case 4: Py_MEMCPY(pt, m, sizeof(PY_UINT32_T)); break;
+        case 4: Py_MEMCPY(pt, m, sizeof(uint32_t)); break;
         case 3: pt[2] = m[2];
         case 2: pt[1] = m[1];
         case 1: pt[0] = m[0];
