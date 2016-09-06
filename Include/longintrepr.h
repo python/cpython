@@ -42,10 +42,6 @@ extern "C" {
 */
 
 #if PYLONG_BITS_IN_DIGIT == 30
-#if !(defined HAVE_UINT64_T && defined HAVE_UINT32_T &&          \
-      defined HAVE_INT64_T && defined HAVE_INT32_T)
-#error "30-bit long digits requested, but the necessary types are not available on this platform"
-#endif
 typedef PY_UINT32_T digit;
 typedef PY_INT32_T sdigit; /* signed variant of digit */
 typedef PY_UINT64_T twodigits;

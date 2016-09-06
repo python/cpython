@@ -151,18 +151,9 @@
 #endif
 
 
-#if defined(HAVE_UINT32_T) && defined(HAVE_INT32_T)
-typedef PY_UINT32_T ULong;
-typedef PY_INT32_T Long;
-#else
-#error "Failed to find an exact-width 32-bit integer type"
-#endif
-
-#if defined(HAVE_UINT64_T)
-#define ULLong PY_UINT64_T
-#else
-#undef ULLong
-#endif
+typedef uint32_t ULong;
+typedef int32_t Long;
+typedef uint64_t ULLong;
 
 #undef DEBUG
 #ifdef Py_DEBUG
