@@ -3931,21 +3931,44 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
 
    .. versionadded:: 3.3
 
-.. _os-miscfunc:
 
-Miscellaneous Functions
------------------------
+Random numbers
+--------------
 
 
-.. function:: urandom(n)
+.. function:: getrandom(size, flags=0)
 
-   Return a string of *n* random bytes suitable for cryptographic use.
+   Get up to *size* random bytes. The function can return less bytes than
+   requested.
+
+   These bytes can be used to seed user-space random number generators or for
+   cryptographic purposes.
+
+   ``getrandom()`` relies on entropy gathered from device drivers and other
+   sources of environmental noise. Unnecessarily reading large quantities of
+   data will have a negative impact on  other users  of the ``/dev/random`` and
+   ``/dev/urandom`` devices.
+
+   The flags argument is a bit mask that can contain zero or more of the
+   following values ORed together: :py:data:`os.GRND_RANDOM` and
+   :py:data:`GRND_NONBLOCK`.
+
+   See also the `Linux getrandom() manual page
+   <http://man7.org/linux/man-pages/man2/getrandom.2.html>`_.
+
+   Availability: Linux 3.17 and newer.
+
+   .. versionadded:: 3.6
+
+.. function:: urandom(size)
+
+   Return a string of *size* random bytes suitable for cryptographic use.
 
    This function returns random bytes from an OS-specific randomness source.  The
    returned data should be unpredictable enough for cryptographic applications,
    though its exact quality depends on the OS implementation.
 
-   On Linux, ``getrandom()`` syscall is used if available and the urandom
+   On Linux, the ``getrandom()`` syscall is used if available and the urandom
    entropy pool is initialized (``getrandom()`` does not block).
    On a Unix-like system this will query ``/dev/urandom``. On Windows, it
    will use ``CryptGenRandom()``.  If a randomness source is not found,
@@ -3955,11 +3978,29 @@ Miscellaneous Functions
    provided by your platform, please see :class:`random.SystemRandom`.
 
    .. versionchanged:: 3.5.2
-      On Linux, if ``getrandom()`` blocks (the urandom entropy pool is not
-      initialized yet), fall back on reading ``/dev/urandom``.
+      On Linux, if the ``getrandom()`` syscall blocks (the urandom entropy pool
+      is not initialized yet), fall back on reading ``/dev/urandom``.
 
    .. versionchanged:: 3.5
       On Linux 3.17 and newer, the ``getrandom()`` syscall is now used
       when available.  On OpenBSD 5.6 and newer, the C ``getentropy()``
       function is now used. These functions avoid the usage of an internal file
       descriptor.
+
+.. data:: GRND_NONBLOCK
+
+   By  default, when reading from ``/dev/random``, :func:`getrandom` blocks if
+   no random bytes are available, and when reading from ``/dev/urandom``, it blocks
+   if the entropy pool has not yet been initialized.
+
+   If the :py:data:`GRND_NONBLOCK` flag is set, then :func:`getrandom` does not
+   block in these cases, but instead immediately raises :exc:`BlockingIOError`.
+
+   .. versionadded:: 3.6
+
+.. data:: GRND_RANDOM
+
+   If  this  bit  is  set,  then  random bytes are drawn from the
+   ``/dev/random`` pool instead of the ``/dev/urandom`` pool.
+
+   .. versionadded:: 3.6
