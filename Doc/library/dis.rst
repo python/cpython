@@ -777,6 +777,14 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.6
 
 
+.. opcode:: BUILD_STRING (count)
+
+   Concatenates *count* strings from the stack and pushes the resulting string
+   onto the stack.
+
+   .. versionadded:: 3.6
+
+
 .. opcode:: LOAD_ATTR (namei)
 
    Replaces TOS with ``getattr(TOS, co_names[namei])``.
