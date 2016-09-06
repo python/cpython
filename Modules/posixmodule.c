@@ -2520,7 +2520,7 @@ class sched_param_converter(CConverter):
     impl_by_reference = True;
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=affe68316f160401]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=418fce0e01144461]*/
 
 /*[clinic input]
 
@@ -7092,7 +7092,7 @@ The options argument is ignored on Windows.
 
 static PyObject *
 os_waitpid_impl(PyObject *module, intptr_t pid, int options)
-/*[clinic end generated code: output=15f1ce005a346b09 input=444c8f51cca5b862]*/
+/*[clinic end generated code: output=be836b221271d538 input=40f2440c515410f8]*/
 {
     int status;
     intptr_t res;
@@ -11383,7 +11383,7 @@ Get the close-on-exe flag of the specified file descriptor.
 
 static int
 os_get_handle_inheritable_impl(PyObject *module, intptr_t handle)
-/*[clinic end generated code: output=9e5389b0aa0916ce input=5f7759443aae3dc5]*/
+/*[clinic end generated code: output=36be5afca6ea84d8 input=cfe99f9c05c70ad1]*/
 {
     DWORD flags;
 
@@ -11408,7 +11408,7 @@ Set the inheritable flag of the specified handle.
 static PyObject *
 os_set_handle_inheritable_impl(PyObject *module, intptr_t handle,
                                int inheritable)
-/*[clinic end generated code: output=b1e67bfa3213d745 input=e64b2b2730469def]*/
+/*[clinic end generated code: output=021d74fe6c96baa3 input=7a7641390d8364fc]*/
 {
     DWORD flags = inheritable ? HANDLE_FLAG_INHERIT : 0;
     if (!SetHandleInformation((HANDLE)handle, HANDLE_FLAG_INHERIT, flags)) {
