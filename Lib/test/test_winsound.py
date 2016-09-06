@@ -51,6 +51,10 @@ class BeepTest(unittest.TestCase):
         for i in range(100, 2000, 100):
             safe_Beep(i, 75)
 
+    def test_keyword_args(self):
+        safe_Beep(duration=75, frequency=2000)
+
+
 class MessageBeepTest(unittest.TestCase):
 
     def tearDown(self):
@@ -76,6 +80,9 @@ class MessageBeepTest(unittest.TestCase):
     def test_question(self):
         safe_MessageBeep(winsound.MB_ICONQUESTION)
 
+    def test_keyword_args(self):
+        safe_MessageBeep(type=winsound.MB_OK)
+
 
 class PlaySoundTest(unittest.TestCase):
 
@@ -91,6 +98,9 @@ class PlaySoundTest(unittest.TestCase):
         self.assertRaises(TypeError, winsound.PlaySound, "bad",
                           winsound.SND_MEMORY)
         self.assertRaises(TypeError, winsound.PlaySound, 1, 0)
+
+    def test_keyword_args(self):
+        safe_PlaySound(flags=winsound.SND_ALIAS, sound="SystemExit")
 
     def test_snd_memory(self):
         with open(support.findfile('pluck-pcm8.wav',
