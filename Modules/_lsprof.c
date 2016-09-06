@@ -2,10 +2,6 @@
 #include "frameobject.h"
 #include "rotatingtree.h"
 
-#if !defined(HAVE_LONG_LONG)
-#error "This module requires long longs!"
-#endif
-
 /*** Selection of a high-precision timer ***/
 
 #ifdef MS_WINDOWS

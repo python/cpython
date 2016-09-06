@@ -379,8 +379,6 @@ get_ulong(PyObject *v, unsigned long *p)
     return 0;
 }
 
-#ifdef HAVE_LONG_LONG
-
 /* Same, but handling native long long. */
 
 static int
@@ -416,8 +414,6 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
     *p = x;
     return 0;
 }
-
-#endif
 
 /*****************************************************************
  * Integer fields, with bitfield support
@@ -888,7 +884,6 @@ L_get_sw(void *ptr, Py_ssize_t size)
     return PyLong_FromUnsignedLong(val);
 }
 
-#ifdef HAVE_LONG_LONG
 static PyObject *
 q_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
@@ -982,7 +977,6 @@ Q_get_sw(void *ptr, Py_ssize_t size)
     GET_BITFIELD(val, size);
     return PyLong_FromUnsignedLongLong(val);
 }
-#endif
 
 /*****************************************************************
  * non-integer accessor methods, not supporting bit fields
@@ -1490,9 +1484,7 @@ P_set(void *ptr, PyObject *value, Py_ssize_t size)
 #if SIZEOF_VOID_P <= SIZEOF_LONG
     v = (void *)PyLong_AsUnsignedLongMask(value);
 #else
-#ifndef HAVE_LONG_LONG
-#   error "PyLong_AsVoidPtr: sizeof(void*) > sizeof(long), but no long long"
-#elif SIZEOF_LONG_LONG < SIZEOF_VOID_P
+#if SIZEOF_LONG_LONG < SIZEOF_VOID_P
 #   error "PyLong_AsVoidPtr: sizeof(PY_LONG_LONG) < sizeof(void*)"
 #endif
     v = (void *)PyLong_AsUnsignedLongLongMask(value);
@@ -1538,13 +1530,11 @@ static struct fielddesc formattable[] = {
 #else
 # error
 #endif
-#ifdef HAVE_LONG_LONG
 #if SIZEOF_LONG_LONG == 8
     { 'q', q_set, q_get, &ffi_type_sint64, q_set_sw, q_get_sw},
     { 'Q', Q_set, Q_get, &ffi_type_uint64, Q_set_sw, Q_get_sw},
 #else
 # error
-#endif
 #endif
     { 'P', P_set, P_get, &ffi_type_pointer},
     { 'z', z_set, z_get, &ffi_type_pointer},
@@ -1635,10 +1625,8 @@ typedef struct { char c; wchar_t *x; } s_wchar_p;
 #endif
 */
 
-#ifdef HAVE_LONG_LONG
 typedef struct { char c; PY_LONG_LONG x; } s_long_long;
 #define LONG_LONG_ALIGN (sizeof(s_long_long) - sizeof(PY_LONG_LONG))
-#endif
 
 /* from ffi.h:
 typedef struct _ffi_type

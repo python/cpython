@@ -992,9 +992,6 @@ PyLong_FromVoidPtr(void *p)
     return PyLong_FromUnsignedLong((unsigned long)(Py_uintptr_t)p);
 #else
 
-#ifndef HAVE_LONG_LONG
-#   error "PyLong_FromVoidPtr: sizeof(void*) > sizeof(long), but no long long"
-#endif
 #if SIZEOF_LONG_LONG < SIZEOF_VOID_P
 #   error "PyLong_FromVoidPtr: sizeof(PY_LONG_LONG) < sizeof(void*)"
 #endif
@@ -1017,9 +1014,6 @@ PyLong_AsVoidPtr(PyObject *vv)
         x = PyLong_AsUnsignedLong(vv);
 #else
 
-#ifndef HAVE_LONG_LONG
-#   error "PyLong_AsVoidPtr: sizeof(void*) > sizeof(long), but no long long"
-#endif
 #if SIZEOF_LONG_LONG < SIZEOF_VOID_P
 #   error "PyLong_AsVoidPtr: sizeof(PY_LONG_LONG) < sizeof(void*)"
 #endif
@@ -1036,8 +1030,6 @@ PyLong_AsVoidPtr(PyObject *vv)
         return NULL;
     return (void *)x;
 }
-
-#ifdef HAVE_LONG_LONG
 
 /* Initial PY_LONG_LONG support by Chris Herborth (chrish@qnx.com), later
  * rewritten to use the newer PyLong_{As,From}ByteArray API.
@@ -1416,8 +1408,6 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
     }
     return res;
 }
-
-#endif /* HAVE_LONG_LONG */
 
 #define CHECK_BINOP(v,w)                                \
     do {                                                \
@@ -3491,17 +3481,7 @@ long_mul(PyLongObject *a, PyLongObject *b)
     /* fast path for single-digit multiplication */
     if (Py_ABS(Py_SIZE(a)) <= 1 && Py_ABS(Py_SIZE(b)) <= 1) {
         stwodigits v = (stwodigits)(MEDIUM_VALUE(a)) * MEDIUM_VALUE(b);
-#ifdef HAVE_LONG_LONG
         return PyLong_FromLongLong((PY_LONG_LONG)v);
-#else
-        /* if we don't have long long then we're almost certainly
-           using 15-bit digits, so v will fit in a long.  In the
-           unlikely event that we're using 30-bit digits on a platform
-           without long long, a large v will just cause us to fall
-           through to the general multiplication code below. */
-        if (v >= LONG_MIN && v <= LONG_MAX)
-            return PyLong_FromLong((long)v);
-#endif
     }
 
     z = k_mul(a, b);

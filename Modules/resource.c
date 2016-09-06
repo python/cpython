@@ -135,13 +135,11 @@ py2rlimit(PyObject *curobj, PyObject *maxobj, struct rlimit *rl_out)
 static PyObject*
 rlimit2py(struct rlimit rl)
 {
-#if defined(HAVE_LONG_LONG)
     if (sizeof(rl.rlim_cur) > sizeof(long)) {
         return Py_BuildValue("LL",
                              (PY_LONG_LONG) rl.rlim_cur,
                              (PY_LONG_LONG) rl.rlim_max);
     }
-#endif
     return Py_BuildValue("ll", (long) rl.rlim_cur, (long) rl.rlim_max);
 }
 
@@ -438,11 +436,9 @@ PyInit_resource(void)
     PyModule_AddIntMacro(m, RLIMIT_NPTS);
 #endif
 
-#if defined(HAVE_LONG_LONG)
     if (sizeof(RLIM_INFINITY) > sizeof(long)) {
         v = PyLong_FromLongLong((PY_LONG_LONG) RLIM_INFINITY);
     } else
-#endif
     {
         v = PyLong_FromLong((long) RLIM_INFINITY);
     }

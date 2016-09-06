@@ -16,21 +16,9 @@ byteorders = '', '@', '=', '<', '>', '!'
 def iter_integer_formats(byteorders=byteorders):
     for code in integer_codes:
         for byteorder in byteorders:
-            if (byteorder in ('', '@') and code in ('q', 'Q') and
-                not HAVE_LONG_LONG):
-                continue
             if (byteorder not in ('', '@') and code in ('n', 'N')):
                 continue
             yield code, byteorder
-
-# Native 'q' packing isn't available on systems that don't have the C
-# long long type.
-try:
-    struct.pack('q', 5)
-except struct.error:
-    HAVE_LONG_LONG = False
-else:
-    HAVE_LONG_LONG = True
 
 def string_reverse(s):
     return s[::-1]
@@ -159,9 +147,7 @@ class StructTest(unittest.TestCase):
             self.assertEqual(size, expected_size[code])
 
         # native integer sizes
-        native_pairs = 'bB', 'hH', 'iI', 'lL', 'nN'
-        if HAVE_LONG_LONG:
-            native_pairs += 'qQ',
+        native_pairs = 'bB', 'hH', 'iI', 'lL', 'nN', 'qQ'
         for format_pair in native_pairs:
             for byteorder in '', '@':
                 signed_size = struct.calcsize(byteorder + format_pair[0])
@@ -174,9 +160,8 @@ class StructTest(unittest.TestCase):
         self.assertLessEqual(4, struct.calcsize('l'))
         self.assertLessEqual(struct.calcsize('h'), struct.calcsize('i'))
         self.assertLessEqual(struct.calcsize('i'), struct.calcsize('l'))
-        if HAVE_LONG_LONG:
-            self.assertLessEqual(8, struct.calcsize('q'))
-            self.assertLessEqual(struct.calcsize('l'), struct.calcsize('q'))
+        self.assertLessEqual(8, struct.calcsize('q'))
+        self.assertLessEqual(struct.calcsize('l'), struct.calcsize('q'))
         self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('i'))
         self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('P'))
 

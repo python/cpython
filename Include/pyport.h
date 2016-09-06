@@ -35,10 +35,6 @@ HAVE_UINTPTR_T
 Meaning:  The C9X type uintptr_t is supported by the compiler
 Used in:  Py_uintptr_t
 
-HAVE_LONG_LONG
-Meaning:  The compiler supports the C type "long long"
-Used in:  PY_LONG_LONG
-
 **************************************************************************/
 
 /* typedefs for some C9X-defined synonyms for integral types.
@@ -53,7 +49,6 @@ Used in:  PY_LONG_LONG
  * integral synonyms.  Only define the ones we actually need.
  */
 
-#ifdef HAVE_LONG_LONG
 #ifndef PY_LONG_LONG
 #define PY_LONG_LONG long long
 #if defined(LLONG_MAX)
@@ -78,7 +73,6 @@ Used in:  PY_LONG_LONG
 #define PY_ULLONG_MAX (PY_LLONG_MAX * Py_ULL(2) + 1)
 #endif /* LLONG_MAX */
 #endif
-#endif /* HAVE_LONG_LONG */
 
 /* a build with 30-bit digits for Python integers needs an exact-width
  * 32-bit unsigned integer type to store those digits.  (We could just use
@@ -161,7 +155,7 @@ typedef int             Py_intptr_t;
 typedef unsigned long   Py_uintptr_t;
 typedef long            Py_intptr_t;
 
-#elif defined(HAVE_LONG_LONG) && (SIZEOF_VOID_P <= SIZEOF_LONG_LONG)
+#elif SIZEOF_VOID_P <= SIZEOF_LONG_LONG
 typedef unsigned PY_LONG_LONG   Py_uintptr_t;
 typedef PY_LONG_LONG            Py_intptr_t;
 
@@ -248,19 +242,16 @@ typedef int Py_ssize_clean_t;
 #endif
 
 /* PY_FORMAT_LONG_LONG is analogous to PY_FORMAT_SIZE_T above, but for
- * the long long type instead of the size_t type.  It's only available
- * when HAVE_LONG_LONG is defined. The "high level" Python format
+ * the long long type instead of the size_t type. The "high level" Python format
  * functions listed above will interpret "lld" or "llu" correctly on
  * all platforms.
  */
-#ifdef HAVE_LONG_LONG
-#   ifndef PY_FORMAT_LONG_LONG
-#       ifdef MS_WINDOWS
-#           define PY_FORMAT_LONG_LONG "I64"
-#       else
-#           error "This platform's pyconfig.h needs to define PY_FORMAT_LONG_LONG"
-#       endif
-#   endif
+#ifndef PY_FORMAT_LONG_LONG
+#    ifdef MS_WINDOWS
+#       define PY_FORMAT_LONG_LONG "I64"
+#    else
+#       error "This platform's pyconfig.h needs to define PY_FORMAT_LONG_LONG"
+#    endif
 #endif
 
 /* Py_LOCAL can be used instead of static to get the fastest possible calling

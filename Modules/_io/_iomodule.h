@@ -104,7 +104,7 @@ typedef off_t Py_off_t;
 # define PY_OFF_T_MIN       PY_SSIZE_T_MIN
 # define PY_OFF_T_COMPAT    Py_ssize_t
 # define PY_PRIdOFF         "zd"
-#elif (HAVE_LONG_LONG && SIZEOF_OFF_T == SIZEOF_LONG_LONG)
+#elif (SIZEOF_OFF_T == SIZEOF_LONG_LONG)
 # define PyLong_AsOff_t     PyLong_AsLongLong
 # define PyLong_FromOff_t   PyLong_FromLongLong
 # define PY_OFF_T_MAX       PY_LLONG_MAX

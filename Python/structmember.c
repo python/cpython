@@ -74,14 +74,12 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
             PyErr_SetString(PyExc_AttributeError, l->name);
         Py_XINCREF(v);
         break;
-#ifdef HAVE_LONG_LONG
     case T_LONGLONG:
         v = PyLong_FromLongLong(*(PY_LONG_LONG *)addr);
         break;
     case T_ULONGLONG:
         v = PyLong_FromUnsignedLongLong(*(unsigned PY_LONG_LONG *)addr);
         break;
-#endif /* HAVE_LONG_LONG */
     case T_NONE:
         v = Py_None;
         Py_INCREF(v);
@@ -266,7 +264,6 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
     case T_STRING_INPLACE:
         PyErr_SetString(PyExc_TypeError, "readonly attribute");
         return -1;
-#ifdef HAVE_LONG_LONG
     case T_LONGLONG:{
         PY_LONG_LONG value;
         *(PY_LONG_LONG*)addr = value = PyLong_AsLongLong(v);
@@ -286,7 +283,6 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             return -1;
         break;
         }
-#endif /* HAVE_LONG_LONG */
     default:
         PyErr_Format(PyExc_SystemError,
                      "bad memberdescr type for %s", l->name);
