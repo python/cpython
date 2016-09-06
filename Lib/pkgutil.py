@@ -395,7 +395,7 @@ except ImportError:
 
 
 def get_importer(path_item):
-    """Retrieve a PEP 302 finder for the given path item
+    """Retrieve a finder for the given path item
 
     The returned finder is cached in sys.path_importer_cache
     if it was newly created by a path hook.
@@ -419,7 +419,7 @@ def get_importer(path_item):
 
 
 def iter_importers(fullname=""):
-    """Yield PEP 302 finders for the given module name
+    """Yield finders for the given module name
 
     If fullname contains a '.', the finders will be for the package
     containing fullname, otherwise they will be all registered top level
@@ -448,7 +448,7 @@ def iter_importers(fullname=""):
 
 
 def get_loader(module_or_name):
-    """Get a PEP 302 "loader" object for module_or_name
+    """Get a "loader" object for module_or_name
 
     Returns None if the module cannot be found or imported.
     If the named module is not already imported, its containing package
@@ -472,7 +472,7 @@ def get_loader(module_or_name):
 
 
 def find_loader(fullname):
-    """Find a PEP 302 "loader" object for fullname
+    """Find a "loader" object for fullname
 
     This is a backwards compatibility wrapper around
     importlib.util.find_spec that converts most failures to ImportError
