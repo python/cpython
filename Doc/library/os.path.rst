@@ -61,6 +61,9 @@ the :mod:`glob` module.)
    platforms, this is equivalent to calling the function :func:`normpath` as
    follows: ``normpath(join(os.getcwd(), path))``.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: basename(path)
 
@@ -70,6 +73,9 @@ the :mod:`glob` module.)
    from the Unix :program:`basename` program; where :program:`basename` for
    ``'/foo/bar/'`` returns ``'bar'``, the :func:`basename` function returns an
    empty string (``''``).
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: commonpath(paths)
@@ -82,6 +88,9 @@ the :mod:`glob` module.)
    Availability: Unix, Windows
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.6
+      Accepts a sequence of :term:`path-like objects <path-like object>`.
 
 
 .. function:: commonprefix(list)
@@ -104,11 +113,17 @@ the :mod:`glob` module.)
         >>> os.path.commonpath(['/usr/lib', '/usr/local/lib'])
         '/usr'
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: dirname(path)
 
    Return the directory name of pathname *path*.  This is the first element of
    the pair returned by passing *path* to the function :func:`split`.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: exists(path)
@@ -123,12 +138,18 @@ the :mod:`glob` module.)
       *path* can now be an integer: ``True`` is returned if it is an
        open file descriptor, ``False`` otherwise.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: lexists(path)
 
    Return ``True`` if *path* refers to an existing path. Returns ``True`` for
    broken symbolic links.   Equivalent to :func:`exists` on platforms lacking
    :func:`os.lstat`.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: expanduser(path)
@@ -151,6 +172,9 @@ the :mod:`glob` module.)
    If the expansion fails or if the path does not begin with a tilde, the path is
    returned unchanged.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: expandvars(path)
 
@@ -161,6 +185,9 @@ the :mod:`glob` module.)
 
    On Windows, ``%name%`` expansions are supported in addition to ``$name`` and
    ``${name}``.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: getatime(path)
@@ -182,6 +209,9 @@ the :mod:`glob` module.)
    If :func:`os.stat_float_times` returns ``True``, the result is a floating point
    number.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: getctime(path)
 
@@ -191,11 +221,17 @@ the :mod:`glob` module.)
    the  :mod:`time` module).  Raise :exc:`OSError` if the file does not exist or
    is inaccessible.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: getsize(path)
 
    Return the size, in bytes, of *path*.  Raise :exc:`OSError` if the file does
    not exist or is inaccessible.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: isabs(path)
@@ -204,11 +240,17 @@ the :mod:`glob` module.)
    begins with a slash, on Windows that it begins with a (back)slash after chopping
    off a potential drive letter.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: isfile(path)
 
    Return ``True`` if *path* is an existing regular file.  This follows symbolic
    links, so both :func:`islink` and :func:`isfile` can be true for the same path.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: isdir(path)
@@ -216,11 +258,17 @@ the :mod:`glob` module.)
    Return ``True`` if *path* is an existing directory.  This follows symbolic
    links, so both :func:`islink` and :func:`isdir` can be true for the same path.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: islink(path)
 
    Return ``True`` if *path* refers to a directory entry that is a symbolic link.
    Always ``False`` if symbolic links are not supported by the Python runtime.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: ismount(path)
@@ -236,6 +284,9 @@ the :mod:`glob` module.)
 
    .. versionadded:: 3.4
       Support for detecting non-root mount points on Windows.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: join(path, *paths)
@@ -255,13 +306,20 @@ the :mod:`glob` module.)
    ``os.path.join("c:", "foo")`` represents a path relative to the current
    directory on drive :file:`C:` (:file:`c:foo`), not :file:`c:\\foo`.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object` for *path* and *paths*.
+
 
 .. function:: normcase(path)
 
    Normalize the case of a pathname.  On Unix and Mac OS X, this returns the
    path unchanged; on case-insensitive filesystems, it converts the path to
    lowercase.  On Windows, it also converts forward slashes to backward slashes.
-   Raise a TypeError if the type of *path* is not ``str`` or ``bytes``.
+   Raise a TypeError if the type of *path* is not ``str`` or ``bytes`` (directly
+   or indirectly through the :class:`os.PathLike` interface).
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: normpath(path)
@@ -272,11 +330,17 @@ the :mod:`glob` module.)
    that contains symbolic links.  On Windows, it converts forward slashes to
    backward slashes. To normalize case, use :func:`normcase`.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: realpath(path)
 
    Return the canonical path of the specified filename, eliminating any symbolic
    links encountered in the path (if they are supported by the operating system).
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: relpath(path, start=os.curdir)
@@ -289,6 +353,9 @@ the :mod:`glob` module.)
    *start* defaults to :attr:`os.curdir`.
 
    Availability: Unix, Windows.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: samefile(path1, path2)
@@ -305,6 +372,9 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.4
       Windows now uses the same implementation as all other platforms.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: sameopenfile(fp1, fp2)
 
@@ -314,6 +384,9 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.2
       Added Windows support.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: samestat(stat1, stat2)
@@ -328,6 +401,9 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.4
       Added Windows support.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: split(path)
 
@@ -340,6 +416,9 @@ the :mod:`glob` module.)
    all cases, ``join(head, tail)`` returns a path to the same location as *path*
    (but the strings may differ).  Also see the functions :func:`dirname` and
    :func:`basename`.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: splitdrive(path)
@@ -359,6 +438,9 @@ the :mod:`glob` module.)
    and share, up to but not including the fourth separator.
    e.g. ``splitdrive("//host/computer/dir")`` returns ``("//host/computer", "/dir")``
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: splitext(path)
 
@@ -366,6 +448,9 @@ the :mod:`glob` module.)
    path``, and *ext* is empty or begins with a period and contains at most one
    period. Leading periods on the basename are  ignored; ``splitext('.cshrc')``
    returns  ``('.cshrc', '')``.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: splitunc(path)
