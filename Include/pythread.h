@@ -37,7 +37,7 @@ PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
    module exposes a higher-level API, with timeouts expressed in seconds
    and floating-point numbers allowed.
 */
-#define PY_TIMEOUT_T PY_LONG_LONG
+#define PY_TIMEOUT_T long long
 #define PY_TIMEOUT_MAX PY_LLONG_MAX
 
 /* In the NT API, the timeout is a DWORD and is expressed in milliseconds */

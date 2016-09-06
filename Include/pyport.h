@@ -156,8 +156,8 @@ typedef unsigned long   Py_uintptr_t;
 typedef long            Py_intptr_t;
 
 #elif SIZEOF_VOID_P <= SIZEOF_LONG_LONG
-typedef unsigned PY_LONG_LONG   Py_uintptr_t;
-typedef PY_LONG_LONG            Py_intptr_t;
+typedef unsigned long long   Py_uintptr_t;
+typedef long long            Py_intptr_t;
 
 #else
 #   error "Python needs a typedef for Py_uintptr_t in pyport.h."

@@ -78,7 +78,7 @@ PyAPI_FUNC(_PyTime_t) _PyTime_FromSeconds(int seconds);
             ((_PyTime_t)(seconds) * (1000 * 1000 * 1000))
 
 /* Create a timestamp from a number of nanoseconds. */
-PyAPI_FUNC(_PyTime_t) _PyTime_FromNanoseconds(PY_LONG_LONG ns);
+PyAPI_FUNC(_PyTime_t) _PyTime_FromNanoseconds(long long ns);
 
 /* Convert a number of seconds (Python float or int) to a timetamp.
    Raise an exception and return -1 on error, return 0 on success. */

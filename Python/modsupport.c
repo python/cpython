@@ -261,10 +261,10 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
         }
 
         case 'L':
-            return PyLong_FromLongLong((PY_LONG_LONG)va_arg(*p_va, PY_LONG_LONG));
+            return PyLong_FromLongLong((long long)va_arg(*p_va, long long));
 
         case 'K':
-            return PyLong_FromUnsignedLongLong((PY_LONG_LONG)va_arg(*p_va, unsigned PY_LONG_LONG));
+            return PyLong_FromUnsignedLongLong((long long)va_arg(*p_va, unsigned long long));
 
         case 'u':
         {

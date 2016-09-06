@@ -75,10 +75,10 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
         Py_XINCREF(v);
         break;
     case T_LONGLONG:
-        v = PyLong_FromLongLong(*(PY_LONG_LONG *)addr);
+        v = PyLong_FromLongLong(*(long long *)addr);
         break;
     case T_ULONGLONG:
-        v = PyLong_FromUnsignedLongLong(*(unsigned PY_LONG_LONG *)addr);
+        v = PyLong_FromUnsignedLongLong(*(unsigned long long *)addr);
         break;
     case T_NONE:
         v = Py_None;
@@ -265,21 +265,21 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         PyErr_SetString(PyExc_TypeError, "readonly attribute");
         return -1;
     case T_LONGLONG:{
-        PY_LONG_LONG value;
-        *(PY_LONG_LONG*)addr = value = PyLong_AsLongLong(v);
+        long long value;
+        *(long long*)addr = value = PyLong_AsLongLong(v);
         if ((value == -1) && PyErr_Occurred())
             return -1;
         break;
         }
     case T_ULONGLONG:{
-        unsigned PY_LONG_LONG value;
+        unsigned long long value;
         /* ??? PyLong_AsLongLong accepts an int, but PyLong_AsUnsignedLongLong
             doesn't ??? */
         if (PyLong_Check(v))
-            *(unsigned PY_LONG_LONG*)addr = value = PyLong_AsUnsignedLongLong(v);
+            *(unsigned long long*)addr = value = PyLong_AsUnsignedLongLong(v);
         else
-            *(unsigned PY_LONG_LONG*)addr = value = PyLong_AsLong(v);
-        if ((value == (unsigned PY_LONG_LONG)-1) && PyErr_Occurred())
+            *(unsigned long long*)addr = value = PyLong_AsLong(v);
+        if ((value == (unsigned long long)-1) && PyErr_Occurred())
             return -1;
         break;
         }

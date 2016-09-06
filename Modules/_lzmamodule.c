@@ -18,12 +18,6 @@
 
 #include <lzma.h>
 
-
-#ifndef PY_LONG_LONG
-#error "This module requires PY_LONG_LONG to be defined"
-#endif
-
-
 #ifdef WITH_THREAD
 #define ACQUIRE_LOCK(obj) do { \
     if (!PyThread_acquire_lock((obj)->lock, 0)) { \
@@ -163,7 +157,7 @@ grow_buffer(PyObject **buf, Py_ssize_t max_length)
       uint32_t - the "I" (unsigned int) specifier is the right size, but
       silently ignores overflows on conversion.
 
-      lzma_vli - the "K" (unsigned PY_LONG_LONG) specifier is the right
+      lzma_vli - the "K" (unsigned long long) specifier is the right
       size, but like "I" it silently ignores overflows on conversion.
 
       lzma_mode and lzma_match_finder - these are enumeration types, and
@@ -176,12 +170,12 @@ grow_buffer(PyObject **buf, Py_ssize_t max_length)
     static int \
     FUNCNAME(PyObject *obj, void *ptr) \
     { \
-        unsigned PY_LONG_LONG val; \
+        unsigned long long val; \
         \
         val = PyLong_AsUnsignedLongLong(obj); \
         if (PyErr_Occurred()) \
             return 0; \
-        if ((unsigned PY_LONG_LONG)(TYPE)val != val) { \
+        if ((unsigned long long)(TYPE)val != val) { \
             PyErr_SetString(PyExc_OverflowError, \
                             "Value too large for " #TYPE " type"); \
             return 0; \
@@ -398,7 +392,7 @@ parse_filter_chain_spec(lzma_filter filters[], PyObject *filterspecs)
    Python-level filter specifiers (represented as dicts). */
 
 static int
-spec_add_field(PyObject *spec, _Py_Identifier *key, unsigned PY_LONG_LONG value)
+spec_add_field(PyObject *spec, _Py_Identifier *key, unsigned long long value)
 {
     int status;
     PyObject *value_object;
@@ -1441,7 +1435,7 @@ static PyModuleDef _lzmamodule = {
 /* Some of our constants are more than 32 bits wide, so PyModule_AddIntConstant
    would not work correctly on platforms with 32-bit longs. */
 static int
-module_add_int_constant(PyObject *m, const char *name, PY_LONG_LONG value)
+module_add_int_constant(PyObject *m, const char *name, long long value)
 {
     PyObject *o = PyLong_FromLongLong(value);
     if (o == NULL)

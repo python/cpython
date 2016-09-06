@@ -89,7 +89,7 @@ do { /* TODO: add overflow and truncation checks */ \
 
 /* return 0 for success, 1 on timeout, -1 on error */
 Py_LOCAL_INLINE(int)
-PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, PY_LONG_LONG us)
+PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
 {
     int r;
     struct timespec ts;
@@ -270,7 +270,7 @@ PyCOND_WAIT(PyCOND_T *cv, PyMUTEX_T *cs)
 }
 
 Py_LOCAL_INLINE(int)
-PyCOND_TIMEDWAIT(PyCOND_T *cv, PyMUTEX_T *cs, PY_LONG_LONG us)
+PyCOND_TIMEDWAIT(PyCOND_T *cv, PyMUTEX_T *cs, long long us)
 {
     return _PyCOND_WAIT_MS(cv, cs, (DWORD)(us/1000));
 }
@@ -363,7 +363,7 @@ PyCOND_WAIT(PyCOND_T *cv, PyMUTEX_T *cs)
  * 2 to indicate that we don't know.
  */
 Py_LOCAL_INLINE(int)
-PyCOND_TIMEDWAIT(PyCOND_T *cv, PyMUTEX_T *cs, PY_LONG_LONG us)
+PyCOND_TIMEDWAIT(PyCOND_T *cv, PyMUTEX_T *cs, long long us)
 {
     return SleepConditionVariableSRW(cv, cs, (DWORD)(us/1000), 0) ? 2 : -1;
 }
