@@ -182,6 +182,8 @@ Build
 - Issue #25825: Update references to the $(LIBPL) installation path on AIX.
   This path was changed in 3.2a4.
 
+- Update OS X installer to use SQLite 3.14.1 and XZ 5.2.2.
+
 Windows
 -------
 
