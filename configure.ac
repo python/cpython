@@ -1299,13 +1299,20 @@ fi],
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
-      # Any changes made here should be reflected in the GCC+Darwin case below
-      LTOFLAGS="-flto"
+      case $ac_sys_system in
+        Darwin*)
+          # Any changes made here should be reflected in the GCC+Darwin case below
+          LTOFLAGS="-flto -Wl,-export_dynamic"
+          ;;
+        *)
+          LTOFLAGS="-flto"
+          ;;
+      esac
       ;;
     *gcc*)
       case $ac_sys_system in
         Darwin*)
-          LTOFLAGS="-flto"
+          LTOFLAGS="-flto -Wl,-export_dynamic"
           ;;
         *)
           LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects -flto-partition=none"
