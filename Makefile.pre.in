@@ -1593,7 +1593,7 @@ clean: pycremoval
 	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
 	-rm -f Programs/_testembed Programs/_freeze_importlib
-	-rm -rf build
+	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 
 profile-removal:
 	find . -name '*.gc??' -exec rm -f {} ';'

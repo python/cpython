@@ -10,6 +10,8 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #26307: The profile-opt build now applys PGO to the built-in modules.
+
 - Issue #27078: Added BUILD_STRING opcode.  Optimized f-strings evaluation.
 
 - Issue #17884: Python now requires systems with inttypes.h and stdint.h
