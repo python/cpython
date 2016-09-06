@@ -100,6 +100,21 @@ def bytes_filename_warn(expected):
         yield
 
 
+class _PathLike(os.PathLike):
+
+    def __init__(self, path=""):
+        self.path = path
+
+    def __str__(self):
+        return str(self.path)
+
+    def __fspath__(self):
+        if isinstance(self.path, BaseException):
+            raise self.path
+        else:
+            return self.path
+
+
 def create_file(filename, content=b'content'):
     with open(filename, "xb", 0) as fp:
         fp.write(content)
@@ -894,15 +909,7 @@ class WalkTests(unittest.TestCase):
         self.assertEqual(all[1], self.sub2_tree)
 
     def test_file_like_path(self):
-        class FileLike:
-            def __init__(self, path):
-                self._path = path
-            def __str__(self):
-                return str(self._path)
-            def __fspath__(self):
-                return self._path
-
-        self.test_walk_prune(FileLike(self.walk_path))
+        self.test_walk_prune(_PathLike(self.walk_path))
 
     def test_walk_bottom_up(self):
         # Walk bottom-up.
@@ -2124,7 +2131,8 @@ class PidTests(unittest.TestCase):
 
     def test_waitpid(self):
         args = [sys.executable, '-c', 'pass']
-        pid = os.spawnv(os.P_NOWAIT, args[0], args)
+        # Add an implicit test for PyUnicode_FSConverter().
+        pid = os.spawnv(os.P_NOWAIT, _PathLike(args[0]), args)
         status = os.waitpid(pid, 0)
         self.assertEqual(status, (pid, 0))
 
@@ -2833,25 +2841,18 @@ class PathTConverterTests(unittest.TestCase):
     ]
 
     def test_path_t_converter(self):
-        class PathLike:
-            def __init__(self, path):
-                self.path = path
-
-            def __fspath__(self):
-                return self.path
-
         str_filename = support.TESTFN
         if os.name == 'nt':
             bytes_fspath = bytes_filename = None
         else:
             bytes_filename = support.TESTFN.encode('ascii')
-            bytes_fspath = PathLike(bytes_filename)
-        fd = os.open(PathLike(str_filename), os.O_WRONLY|os.O_CREAT)
+            bytes_fspath = _PathLike(bytes_filename)
+        fd = os.open(_PathLike(str_filename), os.O_WRONLY|os.O_CREAT)
         self.addCleanup(support.unlink, support.TESTFN)
         self.addCleanup(os.close, fd)
 
-        int_fspath = PathLike(fd)
-        str_fspath = PathLike(str_filename)
+        int_fspath = _PathLike(fd)
+        str_fspath = _PathLike(str_filename)
 
         for name, allow_fd, extra_args, cleanup_fn in self.functions:
             with self.subTest(name=name):
@@ -3205,15 +3206,6 @@ class TestPEP519(unittest.TestCase):
     # if a C version is provided.
     fspath = staticmethod(os.fspath)
 
-    class PathLike:
-        def __init__(self, path=''):
-            self.path = path
-        def __fspath__(self):
-            if isinstance(self.path, BaseException):
-                raise self.path
-            else:
-                return self.path
-
     def test_return_bytes(self):
         for b in b'hello', b'goodbye', b'some/path/and/file':
             self.assertEqual(b, self.fspath(b))
@@ -3224,16 +3216,16 @@ class TestPEP519(unittest.TestCase):
 
     def test_fsencode_fsdecode(self):
         for p in "path/like/object", b"path/like/object":
-            pathlike = self.PathLike(p)
+            pathlike = _PathLike(p)
 
             self.assertEqual(p, self.fspath(pathlike))
             self.assertEqual(b"path/like/object", os.fsencode(pathlike))
             self.assertEqual("path/like/object", os.fsdecode(pathlike))
 
     def test_pathlike(self):
-        self.assertEqual('#feelthegil', self.fspath(self.PathLike('#feelthegil')))
-        self.assertTrue(issubclass(self.PathLike, os.PathLike))
-        self.assertTrue(isinstance(self.PathLike(), os.PathLike))
+        self.assertEqual('#feelthegil', self.fspath(_PathLike('#feelthegil')))
+        self.assertTrue(issubclass(_PathLike, os.PathLike))
+        self.assertTrue(isinstance(_PathLike(), os.PathLike))
 
     def test_garbage_in_exception_out(self):
         vapor = type('blah', (), {})
@@ -3245,14 +3237,14 @@ class TestPEP519(unittest.TestCase):
 
     def test_bad_pathlike(self):
         # __fspath__ returns a value other than str or bytes.
-        self.assertRaises(TypeError, self.fspath, self.PathLike(42))
+        self.assertRaises(TypeError, self.fspath, _PathLike(42))
         # __fspath__ attribute that is not callable.
         c = type('foo', (), {})
         c.__fspath__ = 1
         self.assertRaises(TypeError, self.fspath, c())
         # __fspath__ raises an exception.
         self.assertRaises(ZeroDivisionError, self.fspath,
-                          self.PathLike(ZeroDivisionError()))
+                          _PathLike(ZeroDivisionError()))
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested
 # the pure Python implementation.

@@ -3842,6 +3842,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 int
 PyUnicode_FSConverter(PyObject* arg, void* addr)
 {
+    PyObject *path = NULL;
     PyObject *output = NULL;
     Py_ssize_t size;
     void *data;
@@ -3850,22 +3851,22 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
         *(PyObject**)addr = NULL;
         return 1;
     }
-    if (PyBytes_Check(arg)) {
-        output = arg;
-        Py_INCREF(output);
-    }
-    else if (PyUnicode_Check(arg)) {
-        output = PyUnicode_EncodeFSDefault(arg);
-        if (!output)
-            return 0;
-        assert(PyBytes_Check(output));
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "must be str or bytes, not %.100s",
-                     Py_TYPE(arg)->tp_name);
+    path = PyOS_FSPath(arg);
+    if (path == NULL) {
         return 0;
     }
+    if (PyBytes_Check(path)) {
+        output = path;
+    }
+    else {  // PyOS_FSPath() guarantees its returned value is bytes or str.
+        output = PyUnicode_EncodeFSDefault(path);
+        Py_DECREF(path);
+        if (!output) {
+            return 0;
+        }
+        assert(PyBytes_Check(output));
+    }
+
     size = PyBytes_GET_SIZE(output);
     data = PyBytes_AS_STRING(output);
     if ((size_t)size != strlen(data)) {
