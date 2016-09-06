@@ -150,6 +150,7 @@ BLAKE2_LOCAL_INLINE(int) blake2s_init0( blake2s_state *S )
 int blake2s_init_param( blake2s_state *S, const blake2s_param *P )
 {
   const uint32_t *p = ( const uint32_t * )( P );
+  size_t i;
 
   blake2s_init0( S );
 
