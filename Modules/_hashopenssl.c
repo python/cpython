@@ -25,6 +25,12 @@
 #include <openssl/objects.h>
 #include "openssl/err.h"
 
+#include "clinic/_hashopenssl.c.h"
+/*[clinic input]
+module _hashlib
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c2b4ff081bac4be1]*/
+
 #define MUNCH_SIZE INT_MAX
 
 #ifndef HASH_OBJ_CONSTRUCTOR
@@ -713,6 +719,128 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
 
 #endif
 
+#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER)
+#define PY_SCRYPT 1
+
+/*[clinic input]
+_hashlib.scrypt
+
+    password: Py_buffer
+    *
+    salt: Py_buffer = None
+    n as n_obj: object(subclass_of='&PyLong_Type') = None
+    r as r_obj: object(subclass_of='&PyLong_Type') = None
+    p as p_obj: object(subclass_of='&PyLong_Type') = None
+    maxmem: long = 0
+    dklen: long = 64
+
+
+scrypt password-based key derivation function.
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
+                     PyObject *n_obj, PyObject *r_obj, PyObject *p_obj,
+                     long maxmem, long dklen)
+/*[clinic end generated code: output=14849e2aa2b7b46c input=48a7d63bf3f75c42]*/
+{
+    PyObject *key_obj = NULL;
+    char *key;
+    int retval;
+    unsigned long n, r, p;
+
+    if (password->len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "password is too long.");
+        return NULL;
+    }
+
+    if (salt->buf == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "salt is required");
+        return NULL;
+    }
+    if (salt->len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "salt is too long.");
+        return NULL;
+    }
+
+    n = PyLong_AsUnsignedLong(n_obj);
+    if (n == (unsigned long) -1 && PyErr_Occurred()) {
+        PyErr_SetString(PyExc_TypeError,
+                        "n is required and must be an unsigned int");
+        return NULL;
+    }
+    if (n < 2 || n & (n - 1)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "n must be a power of 2.");
+        return NULL;
+    }
+
+    r = PyLong_AsUnsignedLong(r_obj);
+    if (r == (unsigned long) -1 && PyErr_Occurred()) {
+        PyErr_SetString(PyExc_TypeError,
+                         "r is required and must be an unsigned int");
+        return NULL;
+    }
+
+    p = PyLong_AsUnsignedLong(p_obj);
+    if (p == (unsigned long) -1 && PyErr_Occurred()) {
+        PyErr_SetString(PyExc_TypeError,
+                         "p is required and must be an unsigned int");
+        return NULL;
+    }
+
+    if (maxmem < 0 || maxmem > INT_MAX) {
+        /* OpenSSL 1.1.0 restricts maxmem to 32MB. It may change in the
+           future. The maxmem constant is private to OpenSSL. */
+        PyErr_Format(PyExc_ValueError,
+                     "maxmem must be positive and smaller than %d",
+                      INT_MAX);
+        return NULL;
+    }
+
+    if (dklen < 1 || dklen > INT_MAX) {
+        PyErr_Format(PyExc_ValueError,
+                    "dklen must be greater than 0 and smaller than %d",
+                    INT_MAX);
+        return NULL;
+    }
+
+    /* let OpenSSL validate the rest */
+    retval = EVP_PBE_scrypt(NULL, 0, NULL, 0, n, r, p, maxmem, NULL, 0);
+    if (!retval) {
+        /* sorry, can't do much better */
+        PyErr_SetString(PyExc_ValueError,
+                        "Invalid paramemter combination for n, r, p, maxmem.");
+        return NULL;
+   }
+
+    key_obj = PyBytes_FromStringAndSize(NULL, dklen);
+    if (key_obj == NULL) {
+        return NULL;
+    }
+    key = PyBytes_AS_STRING(key_obj);
+
+    Py_BEGIN_ALLOW_THREADS
+    retval = EVP_PBE_scrypt(
+        (const char*)password->buf, (size_t)password->len,
+        (const unsigned char *)salt->buf, (size_t)salt->len,
+        n, r, p, maxmem,
+        (unsigned char *)key, (size_t)dklen
+    );
+    Py_END_ALLOW_THREADS
+
+    if (!retval) {
+        Py_CLEAR(key_obj);
+        _setException(PyExc_ValueError);
+        return NULL;
+    }
+    return key_obj;
+}
+#endif
+
 /* State for our callback function so that it can accumulate a result. */
 typedef struct _internal_name_mapper_state {
     PyObject *set;
@@ -836,6 +964,7 @@ static struct PyMethodDef EVP_functions[] = {
     {"pbkdf2_hmac", (PyCFunction)pbkdf2_hmac, METH_VARARGS|METH_KEYWORDS,
      pbkdf2_hmac__doc__},
 #endif
+    _HASHLIB_SCRYPT_METHODDEF
     CONSTRUCTOR_METH_DEF(md5),
     CONSTRUCTOR_METH_DEF(sha1),
     CONSTRUCTOR_METH_DEF(sha224),

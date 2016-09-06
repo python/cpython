@@ -202,6 +202,12 @@ except ImportError:
 
         return dkey[:dklen]
 
+try:
+    # OpenSSL's scrypt requires OpenSSL 1.1+
+    from _hashlib import scrypt
+except ImportError:
+    pass
+
 
 for __func_name in __always_supported:
     # try them all, some may not work due to the OpenSSL
