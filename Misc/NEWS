@@ -12,7 +12,7 @@ Core and Builtins
 
 - Issue #17884: Python now requires systems with inttypes.h and stdint.h
 
-- Issue #27961?: Require platforms to support ``long long``. Python hasn't
+- Issue #27961: Require platforms to support ``long long``. Python hasn't
   compiled without ``long long`` for years, so this is basically a formality.
 
 - Issue #27355: Removed support for Windows CE.  It was never finished,
