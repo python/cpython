@@ -44,7 +44,7 @@ def hexstr(s):
     return r
 
 
-URL = "https://raw.githubusercontent.com/tiran/python_vectors/master/{}.txt"
+URL = "http://www.pythontest.net/hashlib/{}.txt"
 
 def read_vectors(hash_name):
     with support.open_urlresource(URL.format(hash_name)) as f:
