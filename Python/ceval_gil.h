@@ -178,7 +178,7 @@ static void drop_gil(PyThreadState *tstate)
         /* Sub-interpreter support: threads might have been switched
            under our feet using PyThreadState_Swap(). Fix the GIL last
            holder variable so that our heuristics work. */
-        _Py_atomic_store_relaxed(&gil_last_holder, (Py_uintptr_t)tstate);
+        _Py_atomic_store_relaxed(&gil_last_holder, (uintptr_t)tstate);
     }
 
     MUTEX_LOCK(gil_mutex);
@@ -240,7 +240,7 @@ _ready:
     _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil_locked, /*is_write=*/1);
 
     if (tstate != (PyThreadState*)_Py_atomic_load_relaxed(&gil_last_holder)) {
-        _Py_atomic_store_relaxed(&gil_last_holder, (Py_uintptr_t)tstate);
+        _Py_atomic_store_relaxed(&gil_last_holder, (uintptr_t)tstate);
         ++gil_switch_number;
     }
 

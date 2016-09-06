@@ -989,13 +989,13 @@ PyObject *
 PyLong_FromVoidPtr(void *p)
 {
 #if SIZEOF_VOID_P <= SIZEOF_LONG
-    return PyLong_FromUnsignedLong((unsigned long)(Py_uintptr_t)p);
+    return PyLong_FromUnsignedLong((unsigned long)(uintptr_t)p);
 #else
 
 #if SIZEOF_LONG_LONG < SIZEOF_VOID_P
 #   error "PyLong_FromVoidPtr: sizeof(long long) < sizeof(void*)"
 #endif
-    return PyLong_FromUnsignedLongLong((unsigned long long)(Py_uintptr_t)p);
+    return PyLong_FromUnsignedLongLong((unsigned long long)(uintptr_t)p);
 #endif /* SIZEOF_VOID_P <= SIZEOF_LONG */
 
 }

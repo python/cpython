@@ -1582,7 +1582,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
         skip = *code;                                   \
         VTRACE(("%lu (skip to %p)\n",                   \
                (unsigned long)skip, code+skip));        \
-        if (skip-adj > (Py_uintptr_t)(end - code))      \
+        if (skip-adj > (uintptr_t)(end - code))      \
             FAIL;                                       \
         code++;                                         \
     } while (0)
@@ -1616,7 +1616,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
 
         case SRE_OP_CHARSET:
             offset = 256/SRE_CODE_BITS; /* 256-bit bitmap */
-            if (offset > (Py_uintptr_t)(end - code))
+            if (offset > (uintptr_t)(end - code))
                 FAIL;
             code += offset;
             break;
@@ -1624,7 +1624,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
         case SRE_OP_BIGCHARSET:
             GET_ARG; /* Number of blocks */
             offset = 256/sizeof(SRE_CODE); /* 256-byte table */
-            if (offset > (Py_uintptr_t)(end - code))
+            if (offset > (uintptr_t)(end - code))
                 FAIL;
             /* Make sure that each byte points to a valid block */
             for (i = 0; i < 256; i++) {
@@ -1633,7 +1633,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
             }
             code += offset;
             offset = arg * (256/SRE_CODE_BITS); /* 256-bit bitmap times arg */
-            if (offset > (Py_uintptr_t)(end - code))
+            if (offset > (uintptr_t)(end - code))
                 FAIL;
             code += offset;
             break;
@@ -1784,11 +1784,11 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     GET_ARG; prefix_len = arg;
                     GET_ARG;
                     /* Here comes the prefix string */
-                    if (prefix_len > (Py_uintptr_t)(newcode - code))
+                    if (prefix_len > (uintptr_t)(newcode - code))
                         FAIL;
                     code += prefix_len;
                     /* And here comes the overlap table */
-                    if (prefix_len > (Py_uintptr_t)(newcode - code))
+                    if (prefix_len > (uintptr_t)(newcode - code))
                         FAIL;
                     /* Each overlap value should be < prefix_len */
                     for (i = 0; i < prefix_len; i++) {
@@ -1917,7 +1917,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                to allow arbitrary jumps anywhere in the code; so we just look
                for a JUMP opcode preceding our skip target.
             */
-            if (skip >= 3 && skip-3 < (Py_uintptr_t)(end - code) &&
+            if (skip >= 3 && skip-3 < (uintptr_t)(end - code) &&
                 code[skip-3] == SRE_OP_JUMP)
             {
                 VTRACE(("both then and else parts present\n"));

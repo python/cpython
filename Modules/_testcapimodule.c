@@ -113,10 +113,10 @@ test_sizeof_c_types(PyObject *self)
     CHECK_SIZEOF(Py_ssize_t, sizeof(void *));
     CHECK_SIGNNESS(Py_ssize_t, 1);
 
-    CHECK_SIZEOF(Py_uintptr_t, sizeof(void *));
-    CHECK_SIGNNESS(Py_uintptr_t, 0);
-    CHECK_SIZEOF(Py_intptr_t, sizeof(void *));
-    CHECK_SIGNNESS(Py_intptr_t, 1);
+    CHECK_SIZEOF(uintptr_t, sizeof(void *));
+    CHECK_SIGNNESS(uintptr_t, 0);
+    CHECK_SIZEOF(intptr_t, sizeof(void *));
+    CHECK_SIGNNESS(intptr_t, 1);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -3861,11 +3861,11 @@ tracemalloc_track(PyObject *self, PyObject *args)
 
     if (release_gil) {
         Py_BEGIN_ALLOW_THREADS
-        res = _PyTraceMalloc_Track(domain, (Py_uintptr_t)ptr, size);
+        res = _PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
         Py_END_ALLOW_THREADS
     }
     else {
-        res = _PyTraceMalloc_Track(domain, (Py_uintptr_t)ptr, size);
+        res = _PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
     }
 
     if (res < 0) {
@@ -3890,7 +3890,7 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
     if (PyErr_Occurred())
         return NULL;
 
-    res = _PyTraceMalloc_Untrack(domain, (Py_uintptr_t)ptr);
+    res = _PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
     if (res < 0) {
         PyErr_SetString(PyExc_RuntimeError, "_PyTraceMalloc_Track error");
         return NULL;
@@ -3912,7 +3912,7 @@ tracemalloc_get_traceback(PyObject *self, PyObject *args)
     if (PyErr_Occurred())
         return NULL;
 
-    return _PyTraceMalloc_GetTraceback(domain, (Py_uintptr_t)ptr);
+    return _PyTraceMalloc_GetTraceback(domain, (uintptr_t)ptr);
 }
 
 
