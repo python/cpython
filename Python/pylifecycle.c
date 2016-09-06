@@ -493,7 +493,7 @@ flush_std_files(void)
     int status = 0;
 
     if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
-        tmp = _PyObject_CallMethodId(fout, &PyId_flush, "");
+        tmp = _PyObject_CallMethodId(fout, &PyId_flush, NULL);
         if (tmp == NULL) {
             PyErr_WriteUnraisable(fout);
             status = -1;
@@ -503,7 +503,7 @@ flush_std_files(void)
     }
 
     if (ferr != NULL && ferr != Py_None && !file_is_closed(ferr)) {
-        tmp = _PyObject_CallMethodId(ferr, &PyId_flush, "");
+        tmp = _PyObject_CallMethodId(ferr, &PyId_flush, NULL);
         if (tmp == NULL) {
             PyErr_Clear();
             status = -1;
@@ -1072,7 +1072,7 @@ create_stdio(PyObject* io,
     text = PyUnicode_FromString(name);
     if (text == NULL || _PyObject_SetAttrId(raw, &PyId_name, text) < 0)
         goto error;
-    res = _PyObject_CallMethodId(raw, &PyId_isatty, "");
+    res = _PyObject_CallMethodId(raw, &PyId_isatty, NULL);
     if (res == NULL)
         goto error;
     isatty = PyObject_IsTrue(res);
@@ -1343,7 +1343,7 @@ _Py_FatalError_PrintExc(int fd)
     Py_XDECREF(tb);
 
     /* sys.stderr may be buffered: call sys.stderr.flush() */
-    res = _PyObject_CallMethodId(ferr, &PyId_flush, "");
+    res = _PyObject_CallMethodId(ferr, &PyId_flush, NULL);
     if (res == NULL)
         PyErr_Clear();
     else
@@ -1453,7 +1453,7 @@ wait_for_thread_shutdown(void)
         PyErr_Clear();
         return;
     }
-    result = _PyObject_CallMethodId(threading, &PyId__shutdown, "");
+    result = _PyObject_CallMethodId(threading, &PyId__shutdown, NULL);
     if (result == NULL) {
         PyErr_WriteUnraisable(threading);
     }
