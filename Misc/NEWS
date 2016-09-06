@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #26307: The profile-opt build now applys PGO to the built-in modules.
+
 - Issue #27812: Properly clear out a generator's frame's backreference to the
   generator to prevent crashes in frame.clear().
 
