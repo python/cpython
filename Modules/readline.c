@@ -1063,7 +1063,7 @@ done:
     Py_XDECREF(readlinestate_global->endidx);
     readlinestate_global->begidx = PyLong_FromLong((long) start);
     readlinestate_global->endidx = PyLong_FromLong((long) end);
-    result = completion_matches(text, *on_completion);
+    result = completion_matches((char *)text, *on_completion);
 #ifdef WITH_THREAD
     PyGILState_Release(gilstate);
 #endif
