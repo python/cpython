@@ -46,10 +46,10 @@ support.
 
 .. class:: ImpImporter(dirname=None)
 
-   :pep:`302` Importer that wraps Python's "classic" import algorithm.
+   :pep:`302` Finder that wraps Python's "classic" import algorithm.
 
-   If *dirname* is a string, a :pep:`302` importer is created that searches that
-   directory.  If *dirname* is ``None``, a :pep:`302` importer is created that
+   If *dirname* is a string, a :pep:`302` finder is created that searches that
+   directory.  If *dirname* is ``None``, a :pep:`302` finder is created that
    searches the current :data:`sys.path`, plus any modules that are frozen or
    built-in.
 
@@ -63,7 +63,7 @@ support.
 
 .. class:: ImpLoader(fullname, file, filename, etc)
 
-   :pep:`302` Loader that wraps Python's "classic" import algorithm.
+   :term:`Loader` that wraps Python's "classic" import algorithm.
 
    .. deprecated:: 3.3
       This emulation is no longer needed, as the standard import mechanism
@@ -72,7 +72,7 @@ support.
 
 .. function:: find_loader(fullname)
 
-   Retrieve a :pep:`302` module loader for the given *fullname*.
+   Retrieve a module :term:`loader` for the given *fullname*.
 
    This is a backwards compatibility wrapper around
    :func:`importlib.util.find_spec` that converts most failures to
@@ -88,9 +88,9 @@ support.
 
 .. function:: get_importer(path_item)
 
-   Retrieve a :pep:`302` importer for the given *path_item*.
+   Retrieve a :term:`finder` for the given *path_item*.
 
-   The returned importer is cached in :data:`sys.path_importer_cache` if it was
+   The returned finder is cached in :data:`sys.path_importer_cache` if it was
    newly created by a path hook.
 
    The cache (or part of it) can be cleared manually if a rescan of
@@ -103,7 +103,7 @@ support.
 
 .. function:: get_loader(module_or_name)
 
-   Get a :pep:`302` "loader" object for *module_or_name*.
+   Get a :term:`loader` object for *module_or_name*.
 
    If the module or package is accessible via the normal import mechanism, a
    wrapper around the relevant part of that machinery is returned.  Returns
@@ -121,16 +121,16 @@ support.
 
 .. function:: iter_importers(fullname='')
 
-   Yield :pep:`302` importers for the given module name.
+   Yield :term:`finder` objects for the given module name.
 
-   If fullname contains a '.', the importers will be for the package
+   If fullname contains a '.', the finders will be for the package
    containing fullname, otherwise they will be all registered top level
-   importers (i.e. those on both sys.meta_path and sys.path_hooks).
+   finders (i.e. those on both sys.meta_path and sys.path_hooks).
 
    If the named module is in a package, that package is imported as a side
    effect of invoking this function.
 
-   If no module name is specified, all top level importers are produced.
+   If no module name is specified, all top level finders are produced.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
@@ -201,7 +201,7 @@ support.
 
    Get a resource from a package.
 
-   This is a wrapper for the :pep:`302` loader :func:`get_data` API.  The
+   This is a wrapper for the :term:`loader` :func:`get_data` API.  The
    *package* argument should be the name of a package, in standard module format
    (``foo.bar``).  The *resource* argument should be in the form of a relative
    filename, using ``/`` as the path separator.  The parent directory name
@@ -216,5 +216,5 @@ support.
       d = os.path.dirname(sys.modules[package].__file__)
       data = open(os.path.join(d, resource), 'rb').read()
 
-   If the package cannot be located or loaded, or it uses a :pep:`302` loader
+   If the package cannot be located or loaded, or it uses a :term:`loader`
    which does not support :func:`get_data`, then ``None`` is returned.
