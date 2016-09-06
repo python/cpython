@@ -5571,6 +5571,41 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_GETRANDOM_SYSCALL)
+
+PyDoc_STRVAR(os_getrandom__doc__,
+"getrandom($module, /, size, flags=0)\n"
+"--\n"
+"\n"
+"Obtain a series of random bytes.");
+
+#define OS_GETRANDOM_METHODDEF    \
+    {"getrandom", (PyCFunction)os_getrandom, METH_VARARGS|METH_KEYWORDS, os_getrandom__doc__},
+
+static PyObject *
+os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags);
+
+static PyObject *
+os_getrandom(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"size", "flags", NULL};
+    static _PyArg_Parser _parser = {"n|i:getrandom", _keywords, 0};
+    Py_ssize_t size;
+    int flags = 0;
+
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &size, &flags)) {
+        goto exit;
+    }
+    return_value = os_getrandom_impl(module, size, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_GETRANDOM_SYSCALL) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -6042,4 +6077,8 @@ exit:
 #ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
-/*[clinic end generated code: output=677ce794fb126161 input=a9049054013a1b77]*/
+
+#ifndef OS_GETRANDOM_METHODDEF
+    #define OS_GETRANDOM_METHODDEF
+#endif /* !defined(OS_GETRANDOM_METHODDEF) */
+/*[clinic end generated code: output=fce51c7d432662c2 input=a9049054013a1b77]*/
