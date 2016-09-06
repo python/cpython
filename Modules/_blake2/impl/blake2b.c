@@ -174,9 +174,10 @@ BLAKE2_LOCAL_INLINE(int) blake2b_param_set_personal( blake2b_param *P, const uin
 
 BLAKE2_LOCAL_INLINE(int) blake2b_init0( blake2b_state *S )
 {
+  int i;
   memset( S, 0, sizeof( blake2b_state ) );
 
-  for( int i = 0; i < 8; ++i ) S->h[i] = blake2b_IV[i];
+  for( i = 0; i < 8; ++i ) S->h[i] = blake2b_IV[i];
 
   return 0;
 }
@@ -188,10 +189,11 @@ int blake2b_init_param( blake2b_state *S, const blake2b_param *P )
   const uint8_t * v = ( const uint8_t * )( blake2b_IV );
   const uint8_t * p = ( const uint8_t * )( P );
   uint8_t * h = ( uint8_t * )( S->h );
+  int i;
   /* IV XOR ParamBlock */
   memset( S, 0, sizeof( blake2b_state ) );
 
-  for( int i = 0; i < BLAKE2B_OUTBYTES; ++i ) h[i] = v[i] ^ p[i];
+  for( i = 0; i < BLAKE2B_OUTBYTES; ++i ) h[i] = v[i] ^ p[i];
 
   return 0;
 }
