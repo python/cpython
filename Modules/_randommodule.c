@@ -165,7 +165,7 @@ init_genrand(RandomObject *self, uint32_t s)
 /* initialize by an array with array-length */
 /* init_key is the array for initializing keys */
 /* key_length is its length */
-static PyObject *
+static void
 init_by_array(RandomObject *self, uint32_t init_key[], size_t key_length)
 {
     size_t i, j, k;       /* was signed in the original code. RDH 12/16/2002 */
@@ -190,14 +190,43 @@ init_by_array(RandomObject *self, uint32_t init_key[], size_t key_length)
     }
 
     mt[0] = 0x80000000U; /* MSB is 1; assuring non-zero initial array */
-    Py_INCREF(Py_None);
-    return Py_None;
 }
 
 /*
  * The rest is Python-specific code, neither part of, nor derived from, the
  * Twister download.
  */
+
+static int
+random_seed_urandom(RandomObject *self)
+{
+    PY_UINT32_T key[N];
+
+    if (_PyOS_URandomNonblock(key, sizeof(key)) < 0) {
+        return -1;
+    }
+    init_by_array(self, key, Py_ARRAY_LENGTH(key));
+    return 0;
+}
+
+static void
+random_seed_time_pid(RandomObject *self)
+{
+    _PyTime_t now;
+    uint32_t key[5];
+
+    now = _PyTime_GetSystemClock();
+    key[0] = (PY_UINT32_T)(now & 0xffffffffU);
+    key[1] = (PY_UINT32_T)(now >> 32);
+
+    key[2] = (PY_UINT32_T)getpid();
+
+    now = _PyTime_GetMonotonicClock();
+    key[3] = (PY_UINT32_T)(now & 0xffffffffU);
+    key[4] = (PY_UINT32_T)(now >> 32);
+
+    init_by_array(self, key, Py_ARRAY_LENGTH(key));
+}
 
 static PyObject *
 random_seed(RandomObject *self, PyObject *args)
@@ -212,14 +241,17 @@ random_seed(RandomObject *self, PyObject *args)
     if (!PyArg_UnpackTuple(args, "seed", 0, 1, &arg))
         return NULL;
 
-    if (arg == NULL || arg == Py_None) {
-        time_t now;
+     if (arg == NULL || arg == Py_None) {
+        if (random_seed_urandom(self) >= 0) {
+            PyErr_Clear();
 
-        time(&now);
-        init_genrand(self, (uint32_t)now);
-        Py_INCREF(Py_None);
-        return Py_None;
+            /* Reading system entropy failed, fall back on the worst entropy:
+               use the current time and process identifier. */
+            random_seed_time_pid(self);
+        }
+        Py_RETURN_NONE;
     }
+
     /* This algorithm relies on the number being unsigned.
      * So: if the arg is a PyLong, use its absolute value.
      * Otherwise use its hash value, cast to unsigned.
@@ -269,7 +301,11 @@ random_seed(RandomObject *self, PyObject *args)
         }
     }
 #endif
-    result = init_by_array(self, key, keyused);
+    init_by_array(self, key, keyused);
+
+    Py_INCREF(Py_None);
+    result = Py_None;
+
 Done:
     Py_XDECREF(n);
     PyMem_Free(key);

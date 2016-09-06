@@ -3968,14 +3968,27 @@ Random numbers
    returned data should be unpredictable enough for cryptographic applications,
    though its exact quality depends on the OS implementation.
 
-   On Linux, the ``getrandom()`` syscall is used if available and the urandom
-   entropy pool is initialized (``getrandom()`` does not block).
-   On a Unix-like system this will query ``/dev/urandom``. On Windows, it
-   will use ``CryptGenRandom()``.  If a randomness source is not found,
-   :exc:`NotImplementedError` will be raised.
+   On Linux, if the ``getrandom()`` syscall is available, it is used in
+   blocking mode: block until the system urandom entropy pool is initialized
+   (128 bits of entropy are collected by the kernel). See the :pep:`524` for
+   the rationale. On Linux, the :func:`getrandom` function can be used to get
+   random bytes in non-blocking mode (using the :data:`GRND_NONBLOCK` flag) or
+   to poll until the system urandom entropy pool is initialized.
 
-   For an easy-to-use interface to the random number generator
-   provided by your platform, please see :class:`random.SystemRandom`.
+   On a Unix-like system, random bytes are read from the ``/dev/urandom``
+   device. If the ``/dev/urandom`` device is not available or not readable, the
+   :exc:`NotImplementedError` exception is raised.
+
+   On Windows, it will use ``CryptGenRandom()``.
+
+   .. seealso::
+      The :mod:`secrets` module provides higher level functions. For an
+      easy-to-use interface to the random number generator provided by your
+      platform, please see :class:`random.SystemRandom`.
+
+   .. versionchanged:: 3.6.0
+      On Linux, ``getrandom()`` is now used in blocking mode to increase the
+      security.
 
    .. versionchanged:: 3.5.2
       On Linux, if the ``getrandom()`` syscall blocks (the urandom entropy pool
