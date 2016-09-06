@@ -370,8 +370,8 @@ Here's an example of hashing a minimal tree with two leaf nodes::
       /  \
      00  01
 
-The example uses 64-byte internal digests, and returns the 32-byte final
-digest.
+This example uses 64-byte internal digests, and returns the 32-byte final
+digest::
 
     >>> from hashlib import blake2b
     >>>
