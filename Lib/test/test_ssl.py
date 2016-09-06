@@ -839,8 +839,8 @@ class ContextTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         ctx.set_ciphers('AESGCM')
         names = set(d['name'] for d in ctx.get_ciphers())
-        self.assertIn('ECDHE-RSA-AES256-GCM-SHA384', names)
-        self.assertIn('ECDHE-RSA-AES128-GCM-SHA256', names)
+        self.assertIn('AES256-GCM-SHA384', names)
+        self.assertIn('AES128-GCM-SHA256', names)
 
     @skip_if_broken_ubuntu_ssl
     def test_options(self):
