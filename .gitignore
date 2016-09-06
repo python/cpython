@@ -73,6 +73,7 @@ db_home
 ipch/
 libpython*.a
 libpython*.so*
+libpython*.dylib
 platform
 pybuilddir.txt
 pyconfig.h
