@@ -448,13 +448,8 @@ static Bigint *
 multadd(Bigint *b, int m, int a)       /* multiply by m and add a */
 {
     int i, wds;
-#ifdef ULLong
     ULong *x;
     ULLong carry, y;
-#else
-    ULong carry, *x, y;
-    ULong xi, z;
-#endif
     Bigint *b1;
 
     wds = b->wds;
@@ -462,17 +457,9 @@ multadd(Bigint *b, int m, int a)       /* multiply by m and add a */
     i = 0;
     carry = a;
     do {
-#ifdef ULLong
         y = *x * (ULLong)m + carry;
         carry = y >> 32;
         *x++ = (ULong)(y & FFFFFFFF);
-#else
-        xi = *x;
-        y = (xi & 0xffff) * m + carry;
-        z = (xi >> 16) * m + (y >> 16);
-        carry = z >> 16;
-        *x++ = (z << 16) + (y & 0xffff);
-#endif
     }
     while(++i < wds);
     if (carry) {
@@ -633,12 +620,7 @@ mult(Bigint *a, Bigint *b)
     int k, wa, wb, wc;
     ULong *x, *xa, *xae, *xb, *xbe, *xc, *xc0;
     ULong y;
-#ifdef ULLong
     ULLong carry, z;
-#else
-    ULong carry, z;
-    ULong z2;
-#endif
 
     if ((!a->x[0] && a->wds == 1) || (!b->x[0] && b->wds == 1)) {
         c = Balloc(0);
@@ -670,7 +652,6 @@ mult(Bigint *a, Bigint *b)
     xb = b->x;
     xbe = xb + wb;
     xc0 = c->x;
-#ifdef ULLong
     for(; xb < xbe; xc0++) {
         if ((y = *xb++)) {
             x = xa;
@@ -685,39 +666,6 @@ mult(Bigint *a, Bigint *b)
             *xc = (ULong)carry;
         }
     }
-#else
-    for(; xb < xbe; xb++, xc0++) {
-        if (y = *xb & 0xffff) {
-            x = xa;
-            xc = xc0;
-            carry = 0;
-            do {
-                z = (*x & 0xffff) * y + (*xc & 0xffff) + carry;
-                carry = z >> 16;
-                z2 = (*x++ >> 16) * y + (*xc >> 16) + carry;
-                carry = z2 >> 16;
-                Storeinc(xc, z2, z);
-            }
-            while(x < xae);
-            *xc = carry;
-        }
-        if (y = *xb >> 16) {
-            x = xa;
-            xc = xc0;
-            carry = 0;
-            z2 = *xc;
-            do {
-                z = (*x & 0xffff) * y + (*xc >> 16) + carry;
-                carry = z >> 16;
-                Storeinc(xc, z, z2);
-                z2 = (*x++ >> 16) * y + (*xc & 0xffff) + carry;
-                carry = z2 >> 16;
-            }
-            while(x < xae);
-            *xc = z2;
-        }
-    }
-#endif
     for(xc0 = c->x, xc = xc0 + wc; wc > 0 && !*--xc; --wc) ;
     c->wds = wc;
     return c;
@@ -926,12 +874,7 @@ diff(Bigint *a, Bigint *b)
     Bigint *c;
     int i, wa, wb;
     ULong *xa, *xae, *xb, *xbe, *xc;
-#ifdef ULLong
     ULLong borrow, y;
-#else
-    ULong borrow, y;
-    ULong z;
-#endif
 
     i = cmp(a,b);
     if (!i) {
@@ -962,7 +905,6 @@ diff(Bigint *a, Bigint *b)
     xbe = xb + wb;
     xc = c->x;
     borrow = 0;
-#ifdef ULLong
     do {
         y = (ULLong)*xa++ - *xb++ - borrow;
         borrow = y >> 32 & (ULong)1;
@@ -974,23 +916,6 @@ diff(Bigint *a, Bigint *b)
         borrow = y >> 32 & (ULong)1;
         *xc++ = (ULong)(y & FFFFFFFF);
     }
-#else
-    do {
-        y = (*xa & 0xffff) - (*xb & 0xffff) - borrow;
-        borrow = (y & 0x10000) >> 16;
-        z = (*xa++ >> 16) - (*xb++ >> 16) - borrow;
-        borrow = (z & 0x10000) >> 16;
-        Storeinc(xc, z, y);
-    }
-    while(xb < xbe);
-    while(xa < xae) {
-        y = (*xa & 0xffff) - borrow;
-        borrow = (y & 0x10000) >> 16;
-        z = (*xa++ >> 16) - borrow;
-        borrow = (z & 0x10000) >> 16;
-        Storeinc(xc, z, y);
-    }
-#endif
     while(!*--xc)
         wa--;
     c->wds = wa;
@@ -1235,12 +1160,7 @@ quorem(Bigint *b, Bigint *S)
 {
     int n;
     ULong *bx, *bxe, q, *sx, *sxe;
-#ifdef ULLong
     ULLong borrow, carry, y, ys;
-#else
-    ULong borrow, carry, y, ys;
-    ULong si, z, zs;
-#endif
 
     n = S->wds;
 #ifdef DEBUG
@@ -1262,23 +1182,11 @@ quorem(Bigint *b, Bigint *S)
         borrow = 0;
         carry = 0;
         do {
-#ifdef ULLong
             ys = *sx++ * (ULLong)q + carry;
             carry = ys >> 32;
             y = *bx - (ys & FFFFFFFF) - borrow;
             borrow = y >> 32 & (ULong)1;
             *bx++ = (ULong)(y & FFFFFFFF);
-#else
-            si = *sx++;
-            ys = (si & 0xffff) * q + carry;
-            zs = (si >> 16) * q + (ys >> 16);
-            carry = zs >> 16;
-            y = (*bx & 0xffff) - (ys & 0xffff) - borrow;
-            borrow = (y & 0x10000) >> 16;
-            z = (*bx >> 16) - (zs & 0xffff) - borrow;
-            borrow = (z & 0x10000) >> 16;
-            Storeinc(bx, z, y);
-#endif
         }
         while(sx <= sxe);
         if (!*bxe) {
@@ -1295,23 +1203,11 @@ quorem(Bigint *b, Bigint *S)
         bx = b->x;
         sx = S->x;
         do {
-#ifdef ULLong
             ys = *sx++ + carry;
             carry = ys >> 32;
             y = *bx - (ys & FFFFFFFF) - borrow;
             borrow = y >> 32 & (ULong)1;
             *bx++ = (ULong)(y & FFFFFFFF);
-#else
-            si = *sx++;
-            ys = (si & 0xffff) + carry;
-            zs = (si >> 16) + (ys >> 16);
-            carry = zs >> 16;
-            y = (*bx & 0xffff) - (ys & 0xffff) - borrow;
-            borrow = (y & 0x10000) >> 16;
-            z = (*bx >> 16) - (zs & 0xffff) - borrow;
-            borrow = (z & 0x10000) >> 16;
-            Storeinc(bx, z, y);
-#endif
         }
         while(sx <= sxe);
         bx = b->x;
