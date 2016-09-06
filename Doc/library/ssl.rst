@@ -285,6 +285,12 @@ purposes.
 
      RC4 was dropped from the default cipher string.
 
+   .. versionchanged:: 3.6
+
+     ChaCha20/Poly1305 was added to the default cipher string.
+
+     3DES was dropped from the default cipher string.
+
 
 Random generation
 ^^^^^^^^^^^^^^^^^
