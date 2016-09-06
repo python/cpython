@@ -314,7 +314,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     if (fob == NULL) {
         PyErr_Clear();
 
-        res = _PyObject_CallMethodId(binary, &PyId_close, "");
+        res = _PyObject_CallMethodId(binary, &PyId_close, NULL);
         Py_DECREF(binary);
         if (res)
             Py_DECREF(res);
@@ -334,7 +334,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
             break;
         }
     }
-    res = _PyObject_CallMethodId(fob, &PyId_close, "");
+    res = _PyObject_CallMethodId(fob, &PyId_close, NULL);
     if (res)
         Py_DECREF(res);
     else
