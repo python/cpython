@@ -837,11 +837,10 @@ class ContextTests(unittest.TestCase):
     @unittest.skipIf(ssl.OPENSSL_VERSION_INFO < (1, 0, 2, 0, 0), 'OpenSSL too old')
     def test_get_ciphers(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-        ctx.set_ciphers('ECDHE+AESGCM:!ECDSA')
+        ctx.set_ciphers('AESGCM')
         names = set(d['name'] for d in ctx.get_ciphers())
-        self.assertEqual(names,
-                        {'ECDHE-RSA-AES256-GCM-SHA384',
-                         'ECDHE-RSA-AES128-GCM-SHA256'})
+        self.assertIn('ECDHE-RSA-AES256-GCM-SHA384', names)
+        self.assertIn('ECDHE-RSA-AES128-GCM-SHA256', names)
 
     @skip_if_broken_ubuntu_ssl
     def test_options(self):
