@@ -60,6 +60,8 @@ CRLFILE = data_file("revocation.crl")
 SIGNED_CERTFILE = data_file("keycert3.pem")
 SIGNED_CERTFILE2 = data_file("keycert4.pem")
 SIGNING_CA = data_file("pycacert.pem")
+# cert with all kinds of subject alt names
+ALLSANFILE = data_file("allsans.pem")
 
 REMOTE_HOST = "self-signed.pythontest.net"
 REMOTE_ROOT_CERT = data_file("selfsigned_pythontestdotnet.pem")
@@ -246,6 +248,27 @@ class BasicSocketTests(unittest.TestCase):
                    ('IP Address', '<invalid>'))
 
         self.assertEqual(p['subjectAltName'], san)
+
+    def test_parse_all_sans(self):
+        p = ssl._ssl._test_decode_cert(ALLSANFILE)
+        self.assertEqual(p['subjectAltName'],
+            (
+                ('DNS', 'allsans'),
+                ('othername', '<unsupported>'),
+                ('othername', '<unsupported>'),
+                ('email', 'user@example.org'),
+                ('DNS', 'www.example.org'),
+                ('DirName',
+                    ((('countryName', 'XY'),),
+                    (('localityName', 'Castle Anthrax'),),
+                    (('organizationName', 'Python Software Foundation'),),
+                    (('commonName', 'dirname example'),))),
+                ('URI', 'https://www.python.org/'),
+                ('IP Address', '127.0.0.1'),
+                ('IP Address', '0:0:0:0:0:0:0:1\n'),
+                ('Registered ID', '1.2.3.4.5')
+            )
+        )
 
     def test_DER_to_PEM(self):
         with open(CAFILE_CACERT, 'r') as f:

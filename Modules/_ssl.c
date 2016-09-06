@@ -953,6 +953,35 @@ _get_peer_alt_names (X509 *certificate) {
                 PyTuple_SET_ITEM(t, 1, v);
                 break;
 
+            case GEN_RID:
+                t = PyTuple_New(2);
+                if (t == NULL)
+                    goto fail;
+
+                v = PyUnicode_FromString("Registered ID");
+                if (v == NULL) {
+                    Py_DECREF(t);
+                    goto fail;
+                }
+                PyTuple_SET_ITEM(t, 0, v);
+
+                len = i2t_ASN1_OBJECT(buf, sizeof(buf)-1, name->d.rid);
+                if (len < 0) {
+                    Py_DECREF(t);
+                    _setSSLError(NULL, 0, __FILE__, __LINE__);
+                    goto fail;
+                } else if (len >= (int)sizeof(buf)) {
+                    v = PyUnicode_FromString("<INVALID>");
+                } else {
+                    v = PyUnicode_FromStringAndSize(buf, len);
+                }
+                if (v == NULL) {
+                    Py_DECREF(t);
+                    goto fail;
+                }
+                PyTuple_SET_ITEM(t, 1, v);
+                break;
+
             default:
                 /* for everything else, we use the OpenSSL print form */
                 switch (gntype) {
@@ -978,8 +1007,12 @@ _get_peer_alt_names (X509 *certificate) {
                     goto fail;
                 }
                 vptr = strchr(buf, ':');
-                if (vptr == NULL)
+                if (vptr == NULL) {
+                    PyErr_Format(PyExc_ValueError,
+                                 "Invalid value %.200s",
+                                 buf);
                     goto fail;
+                }
                 t = PyTuple_New(2);
                 if (t == NULL)
                     goto fail;
