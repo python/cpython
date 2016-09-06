@@ -225,6 +225,23 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
       Python implementation uses an inline version of :mod:`hmac`. It is about
       three times slower and doesn't release the GIL.
 
+.. function:: scrypt(password, *, salt, n, r, p, maxmem=0, dklen=64)
+
+   The function provides scrypt password-based key derivation function as
+   defined in :rfc:`7914`.
+
+   *password* and *salt* must be bytes-like objects. Applications and
+   libraries should limit *password* to a sensible length (e.g. 1024). *salt*
+   should be about 16 or more bytes from a proper source, e.g. :func:`os.urandom`.
+
+   *n* is the CPU/Memory cost factor, *r* the block size, *p* parallelization
+   factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MB).
+   *dklen* is the length of the derived key.
+
+   Availability: OpenSSL 1.1+
+
+   .. versionadded:: 3.6
+
 
 .. seealso::
 
