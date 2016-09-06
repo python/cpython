@@ -24,6 +24,7 @@ def get_gdb_version():
     try:
         proc = subprocess.Popen(["gdb", "-nx", "--version"],
                                 stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
                                 universal_newlines=True)
         version = proc.communicate()[0]
     except OSError:
