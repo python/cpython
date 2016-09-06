@@ -13348,6 +13348,8 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
     Py_ssize_t newlen;
     PyObject *newbuffer;
 
+    assert(maxchar <= MAX_UNICODE);
+
     /* ensure that the _PyUnicodeWriter_Prepare macro was used */
     assert((maxchar > writer->maxchar && length >= 0)
            || length > 0);
@@ -13441,6 +13443,7 @@ _PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
 Py_LOCAL_INLINE(int)
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
 {
+    assert(ch <= MAX_UNICODE);
     if (_PyUnicodeWriter_Prepare(writer, 1, ch) < 0)
         return -1;
     PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
