@@ -1378,7 +1378,7 @@ time_time(void)
     if (time != NULL) {
         _Py_IDENTIFIER(time);
 
-        result = _PyObject_CallMethodId(time, &PyId_time, "()");
+        result = _PyObject_CallMethodId(time, &PyId_time, NULL);
         Py_DECREF(time);
     }
     return result;
@@ -2703,7 +2703,7 @@ date_isoformat(PyDateTime_Date *self)
 static PyObject *
 date_str(PyDateTime_Date *self)
 {
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, "()");
+    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, NULL);
 }
 
 
@@ -2729,7 +2729,7 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
                                       &format))
         return NULL;
 
-    tuple = _PyObject_CallMethodId((PyObject *)self, &PyId_timetuple, "()");
+    tuple = _PyObject_CallMethodId((PyObject *)self, &PyId_timetuple, NULL);
     if (tuple == NULL)
         return NULL;
     result = wrap_strftime((PyObject *)self, format, tuple,
@@ -3675,7 +3675,7 @@ time_repr(PyDateTime_Time *self)
 static PyObject *
 time_str(PyDateTime_Time *self)
 {
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, "()");
+    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, NULL);
 }
 
 static PyObject *

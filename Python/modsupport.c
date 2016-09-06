@@ -468,7 +468,7 @@ va_build_value(const char *format, va_list va, int flags)
     int n = countformat(f, '\0');
     va_list lva;
 
-        Py_VA_COPY(lva, va);
+    Py_VA_COPY(lva, va);
 
     if (n < 0)
         return NULL;
