@@ -889,8 +889,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_sha1', ['sha1module.c'],
                                depends=['hashlib.h']) )
 
-        blake2_deps = [os.path.join('_blake2', 'impl', name)
-                       for name in os.listdir('Modules/_blake2/impl')]
+        blake2_deps = glob(os.path.join(os.getcwd(), srcdir,
+                                        'Modules/_blake2/impl/*'))
         blake2_deps.append('hashlib.h')
 
         blake2_macros = []
