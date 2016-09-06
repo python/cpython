@@ -89,6 +89,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25596: Optimized glob() and iglob() functions in the
+  glob module; they are now about 3--6 times faster.
+
 - Issue #27928: Add scrypt (password-based key derivation function) to
   hashlib module (requires OpenSSL 1.1.0).
 
