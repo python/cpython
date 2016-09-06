@@ -970,6 +970,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case BUILD_TUPLE:
         case BUILD_LIST:
         case BUILD_SET:
+        case BUILD_STRING:
             return 1-oparg;
         case BUILD_LIST_UNPACK:
         case BUILD_TUPLE_UNPACK:
@@ -3315,31 +3316,8 @@ compiler_call(struct compiler *c, expr_ty e)
 static int
 compiler_joined_str(struct compiler *c, expr_ty e)
 {
-    /* Concatenate parts of a string using ''.join(parts). There are
-       probably better ways of doing this.
-
-       This is used for constructs like "'x=' f'{42}'", which have to
-       be evaluated at compile time. */
-
-    static PyObject *empty_string;
-    static PyObject *join_string;
-
-    if (!empty_string) {
-        empty_string = PyUnicode_FromString("");
-        if (!empty_string)
-            return 0;
-    }
-    if (!join_string) {
-        join_string = PyUnicode_FromString("join");
-        if (!join_string)
-            return 0;
-    }
-
-    ADDOP_O(c, LOAD_CONST, empty_string, consts);
-    ADDOP_NAME(c, LOAD_ATTR, join_string, names);
     VISIT_SEQ(c, expr, e->v.JoinedStr.values);
-    ADDOP_I(c, BUILD_LIST, asdl_seq_LEN(e->v.JoinedStr.values));
-    ADDOP_I(c, CALL_FUNCTION, 1);
+    ADDOP_I(c, BUILD_STRING, asdl_seq_LEN(e->v.JoinedStr.values));
     return 1;
 }
 

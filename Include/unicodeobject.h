@@ -1955,6 +1955,14 @@ PyAPI_FUNC(PyObject*) PyUnicode_Join(
     PyObject *seq               /* Sequence object */
     );
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject *) _PyUnicode_JoinArray(
+    PyObject *separator,
+    PyObject **items,
+    Py_ssize_t seqlen
+    );
+#endif /* Py_LIMITED_API */
+
 /* Return 1 if substr matches str[start:end] at the given tail end, 0
    otherwise. */
 

@@ -2538,6 +2538,24 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
+        TARGET(BUILD_STRING) {
+            PyObject *str;
+            PyObject *empty = PyUnicode_New(0, 0);
+            if (empty == NULL) {
+                goto error;
+            }
+            str = _PyUnicode_JoinArray(empty, stack_pointer - oparg, oparg);
+            Py_DECREF(empty);
+            if (str == NULL)
+                goto error;
+            while (--oparg >= 0) {
+                PyObject *item = POP();
+                Py_DECREF(item);
+            }
+            PUSH(str);
+            DISPATCH();
+        }
+
         TARGET(BUILD_TUPLE) {
             PyObject *tup = PyTuple_New(oparg);
             if (tup == NULL)

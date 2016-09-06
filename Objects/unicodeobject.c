@@ -9892,20 +9892,10 @@ case_operation(PyObject *self,
 PyObject *
 PyUnicode_Join(PyObject *separator, PyObject *seq)
 {
-    PyObject *sep = NULL;
-    Py_ssize_t seplen;
-    PyObject *res = NULL; /* the result */
-    PyObject *fseq;          /* PySequence_Fast(seq) */
-    Py_ssize_t seqlen;       /* len(fseq) -- number of items in sequence */
+    PyObject *res;
+    PyObject *fseq;
+    Py_ssize_t seqlen;
     PyObject **items;
-    PyObject *item;
-    Py_ssize_t sz, i, res_offset;
-    Py_UCS4 maxchar;
-    Py_UCS4 item_maxchar;
-    int use_memcpy;
-    unsigned char *res_data = NULL, *sep_data = NULL;
-    PyObject *last_obj;
-    unsigned int kind = 0;
 
     fseq = PySequence_Fast(seq, "can only join an iterable");
     if (fseq == NULL) {
@@ -9916,21 +9906,39 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
      * so we are sure that fseq won't be mutated.
      */
 
+    items = PySequence_Fast_ITEMS(fseq);
     seqlen = PySequence_Fast_GET_SIZE(fseq);
+    res = _PyUnicode_JoinArray(separator, items, seqlen);
+    Py_DECREF(fseq);
+    return res;
+}
+
+PyObject *
+_PyUnicode_JoinArray(PyObject *separator, PyObject **items, Py_ssize_t seqlen)
+{
+    PyObject *res = NULL; /* the result */
+    PyObject *sep = NULL;
+    Py_ssize_t seplen;
+    PyObject *item;
+    Py_ssize_t sz, i, res_offset;
+    Py_UCS4 maxchar;
+    Py_UCS4 item_maxchar;
+    int use_memcpy;
+    unsigned char *res_data = NULL, *sep_data = NULL;
+    PyObject *last_obj;
+    unsigned int kind = 0;
+
     /* If empty sequence, return u"". */
     if (seqlen == 0) {
-        Py_DECREF(fseq);
         _Py_RETURN_UNICODE_EMPTY();
     }
 
     /* If singleton sequence with an exact Unicode, return that. */
     last_obj = NULL;
-    items = PySequence_Fast_ITEMS(fseq);
     if (seqlen == 1) {
         if (PyUnicode_CheckExact(items[0])) {
             res = items[0];
             Py_INCREF(res);
-            Py_DECREF(fseq);
             return res;
         }
         seplen = 0;
@@ -10065,13 +10073,11 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         assert(res_offset == PyUnicode_GET_LENGTH(res));
     }
 
-    Py_DECREF(fseq);
     Py_XDECREF(sep);
     assert(_PyUnicode_CheckConsistency(res, 1));
     return res;
 
   onError:
-    Py_DECREF(fseq);
     Py_XDECREF(sep);
     Py_XDECREF(res);
     return NULL;
