@@ -3,10 +3,7 @@
 
 #include "pyconfig.h" /* include for defines */
 
-/* Some versions of HP-UX & Solaris need inttypes.h for int32_t,
-   INT32_MAX, etc. */
 #include <inttypes.h>
-#include <stdint.h>
 
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
