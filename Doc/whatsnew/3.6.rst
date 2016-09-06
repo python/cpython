@@ -70,6 +70,12 @@ Standard library improvements:
 
 * PEP 519: :ref:`Adding a file system path protocol <pep-519>`
 
+Security improvements:
+
+* On Linux, :func:`os.urandom` now blocks until the system urandom entropy pool
+  is initialized to increase the security. See the :pep:`524` for the
+  rationale.
+
 Windows improvements:
 
 * The ``py.exe`` launcher, when used interactively, no longer prefers
@@ -344,6 +350,9 @@ New Modules
 
 Improved Modules
 ================
+
+On Linux, :func:`os.urandom` now blocks until the system urandom entropy pool
+is initialized to increase the security. See the :pep:`524` for the rationale.
 
 
 asyncio
@@ -912,6 +921,9 @@ Changes in 'python' Command Behavior
 
 Changes in the Python API
 -------------------------
+
+* On Linux, :func:`os.urandom` now blocks until the system urandom entropy pool
+  is initialized to increase the security.
 
 * When :meth:`importlib.abc.Loader.exec_module` is defined,
   :meth:`importlib.abc.Loader.create_module` must also be defined.

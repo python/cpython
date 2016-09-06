@@ -11168,8 +11168,7 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
     if (bytes == NULL)
         return NULL;
 
-    result = _PyOS_URandom(PyBytes_AS_STRING(bytes),
-                        PyBytes_GET_SIZE(bytes));
+    result = _PyOS_URandom(PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes));
     if (result == -1) {
         Py_DECREF(bytes);
         return NULL;
