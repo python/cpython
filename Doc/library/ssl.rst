@@ -328,15 +328,11 @@ purposes.
 Random generation
 ^^^^^^^^^^^^^^^^^
 
-   .. deprecated::
+   .. deprecated:: 2.7.13
 
-       2.7.13 OpenSSL has deprecated :func:`ssl.RAND_pseudo_bytes`, use
+       OpenSSL has deprecated :func:`ssl.RAND_pseudo_bytes`, use
        :func:`ssl.RAND_bytes` instead.
 
-   .. deprecated::
-
-       2.7.13 OpenSSL has deprecated :func:`ssl.RAND_pseudo_bytes`, use
-       :func:`ssl.RAND_bytes` instead.
 
 .. function:: RAND_status()
 
