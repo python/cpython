@@ -732,6 +732,16 @@ class TestEmailMessageBase:
         m.set_param('filename', 'abc.png', 'Content-Disposition')
         self.assertTrue(m.is_attachment())
 
+    def test_iter_attachments_mutation(self):
+        # We had a bug where iter_attachments was mutating the list.
+        m = self._make_message()
+        m.set_content('arbitrary text as main part')
+        m.add_related('more text as a related part')
+        m.add_related('yet more text as a second "attachment"')
+        orig = m.get_payload().copy()
+        self.assertEqual(len(list(m.iter_attachments())), 2)
+        self.assertEqual(m.get_payload(), orig)
+
 
 class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
     message = EmailMessage
