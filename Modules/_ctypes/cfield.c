@@ -711,14 +711,6 @@ vBOOL_get(void *ptr, Py_ssize_t size)
 }
 #endif
 
-#ifdef HAVE_C99_BOOL
-#define BOOL_TYPE _Bool
-#else
-#define BOOL_TYPE char
-#undef SIZEOF__BOOL
-#define SIZEOF__BOOL 1
-#endif
-
 static PyObject *
 bool_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
@@ -726,10 +718,10 @@ bool_set(void *ptr, PyObject *value, Py_ssize_t size)
     case -1:
         return NULL;
     case 0:
-        *(BOOL_TYPE *)ptr = 0;
+        *(_Bool *)ptr = 0;
         _RET(value);
     default:
-        *(BOOL_TYPE *)ptr = 1;
+        *(_Bool *)ptr = 1;
         _RET(value);
     }
 }
@@ -737,7 +729,7 @@ bool_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 bool_get(void *ptr, Py_ssize_t size)
 {
-    return PyBool_FromLong((long)*(BOOL_TYPE *)ptr);
+    return PyBool_FromLong((long)*(_Bool *)ptr);
 }
 
 static PyObject *

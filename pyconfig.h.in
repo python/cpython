@@ -107,9 +107,6 @@
 /* Has builtin atomics */
 #undef HAVE_BUILTIN_ATOMIC
 
-/* Define this if you have the type _Bool. */
-#undef HAVE_C99_BOOL
-
 /* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
 
