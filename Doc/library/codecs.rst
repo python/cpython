@@ -1254,9 +1254,15 @@ encodings.
 |                    |         | Only ``errors='strict'``  |
 |                    |         | is supported.             |
 +--------------------+---------+---------------------------+
-| mbcs               | dbcs    | Windows only: Encode      |
-|                    |         | operand according to the  |
+| mbcs               | ansi,   | Windows only: Encode      |
+|                    | dbcs    | operand according to the  |
 |                    |         | ANSI codepage (CP_ACP)    |
++--------------------+---------+---------------------------+
+| oem                |         | Windows only: Encode      |
+|                    |         | operand according to the  |
+|                    |         | OEM codepage (CP_OEMCP)   |
+|                    |         |                           |
+|                    |         | .. versionadded:: 3.6     |
 +--------------------+---------+---------------------------+
 | palmos             |         | Encoding of PalmOS 3.5    |
 +--------------------+---------+---------------------------+
