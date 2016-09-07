@@ -30,7 +30,8 @@ class Popen(args, bufsize=-1, executable=None,
             preexec_fn=None, close_fds=True, shell=False,
             cwd=None, env=None, universal_newlines=False,
             startupinfo=None, creationflags=0,
-            restore_signals=True, start_new_session=False, pass_fds=()):
+            restore_signals=True, start_new_session=False, pass_fds=(),
+            *, encoding=None, errors=None):
 
 
 Arguments are:
@@ -104,20 +105,13 @@ in the child process prior to executing the command.
 If env is not None, it defines the environment variables for the new
 process.
 
-If universal_newlines is False, the file objects stdin, stdout and stderr
-are opened as binary files, and no line ending conversion is done.
+If encoding or errors are specified or universal_newlines is True, the file
+objects stdout and stderr are opened in text mode. See io.TextIOWrapper for
+the interpretation of these parameters are used.
 
-If universal_newlines is True, the file objects stdout and stderr are
-opened as a text file, but lines may be terminated by any of '\n',
-the Unix end-of-line convention, '\r', the old Macintosh convention or
-'\r\n', the Windows convention.  All of these external representations
-are seen as '\n' by the Python program.  Also, the newlines attribute
-of the file objects stdout, stdin and stderr are not updated by the
-communicate() method.
-
-In either case, the process being communicated with should start up
-expecting to receive bytes on its standard input and decode them with
-the same encoding they are sent in.
+If no encoding is specified and universal_newlines is False, the file
+objects stdin, stdout and stderr are opened as binary files, and no
+line ending conversion is done.
 
 The startupinfo and creationflags, if given, will be passed to the
 underlying CreateProcess() function.  They can specify things such as
@@ -234,11 +228,8 @@ communicate(input=None)
     and stderr, until end-of-file is reached.  Wait for process to
     terminate.  The optional input argument should be data to be
     sent to the child process, or None, if no data should be sent to
-    the child. If the Popen instance was constructed with universal_newlines
-    set to True, the input argument should be a string and will be encoded
-    using the preferred system encoding (see locale.getpreferredencoding);
-    if universal_newlines is False, the input argument should be a
-    byte string.
+    the child. If the Popen instance was constructed in text mode, the
+    input argument should be a string. Otherwise, it should be bytes.
 
     communicate() returns a tuple (stdout, stderr).
 
@@ -808,8 +799,8 @@ def getstatusoutput(cmd):
     """    Return (status, output) of executing cmd in a shell.
 
     Execute the string 'cmd' in a shell with 'check_output' and
-    return a 2-tuple (status, output). Universal newlines mode is used,
-    meaning that the result with be decoded to a string.
+    return a 2-tuple (status, output). The locale encoding is used
+    to decode the output and process newlines.
 
     A trailing newline is stripped from the output.
     The exit status for the command can be interpreted
@@ -859,7 +850,7 @@ class Popen(object):
                  shell=False, cwd=None, env=None, universal_newlines=False,
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
-                 pass_fds=()):
+                 pass_fds=(), *, encoding=None, errors=None):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -912,6 +903,8 @@ class Popen(object):
         self.pid = None
         self.returncode = None
         self.universal_newlines = universal_newlines
+        self.encoding = encoding
+        self.errors = errors
 
         # Input and output objects. The general principle is like
         # this:
@@ -944,22 +937,28 @@ class Popen(object):
             if errread != -1:
                 errread = msvcrt.open_osfhandle(errread.Detach(), 0)
 
-        if p2cwrite != -1:
-            self.stdin = io.open(p2cwrite, 'wb', bufsize)
-            if universal_newlines:
-                self.stdin = io.TextIOWrapper(self.stdin, write_through=True,
-                                              line_buffering=(bufsize == 1))
-        if c2pread != -1:
-            self.stdout = io.open(c2pread, 'rb', bufsize)
-            if universal_newlines:
-                self.stdout = io.TextIOWrapper(self.stdout)
-        if errread != -1:
-            self.stderr = io.open(errread, 'rb', bufsize)
-            if universal_newlines:
-                self.stderr = io.TextIOWrapper(self.stderr)
+        text_mode = encoding or errors or universal_newlines
 
         self._closed_child_pipe_fds = False
+
         try:
+            if p2cwrite != -1:
+                self.stdin = io.open(p2cwrite, 'wb', bufsize)
+                if text_mode:
+                    self.stdin = io.TextIOWrapper(self.stdin, write_through=True,
+                            line_buffering=(bufsize == 1),
+                            encoding=encoding, errors=errors)
+            if c2pread != -1:
+                self.stdout = io.open(c2pread, 'rb', bufsize)
+                if text_mode:
+                    self.stdout = io.TextIOWrapper(self.stdout,
+                            encoding=encoding, errors=errors)
+            if errread != -1:
+                self.stderr = io.open(errread, 'rb', bufsize)
+                if text_mode:
+                    self.stderr = io.TextIOWrapper(self.stderr,
+                            encoding=encoding, errors=errors)
+
             self._execute_child(args, executable, preexec_fn, close_fds,
                                 pass_fds, cwd, env,
                                 startupinfo, creationflags, shell,
@@ -993,8 +992,8 @@ class Popen(object):
 
             raise
 
-    def _translate_newlines(self, data, encoding):
-        data = data.decode(encoding)
+    def _translate_newlines(self, data, encoding, errors):
+        data = data.decode(encoding, errors)
         return data.replace("\r\n", "\n").replace("\r", "\n")
 
     def __enter__(self):
@@ -1779,13 +1778,15 @@ class Popen(object):
 
             # Translate newlines, if requested.
             # This also turns bytes into strings.
-            if self.universal_newlines:
+            if self.encoding or self.errors or self.universal_newlines:
                 if stdout is not None:
                     stdout = self._translate_newlines(stdout,
-                                                      self.stdout.encoding)
+                                                      self.stdout.encoding,
+                                                      self.stdout.errors)
                 if stderr is not None:
                     stderr = self._translate_newlines(stderr,
-                                                      self.stderr.encoding)
+                                                      self.stderr.encoding,
+                                                      self.stderr.errors)
 
             return (stdout, stderr)
 
@@ -1797,8 +1798,10 @@ class Popen(object):
             if self.stdin and self._input is None:
                 self._input_offset = 0
                 self._input = input
-                if self.universal_newlines and input is not None:
-                    self._input = self._input.encode(self.stdin.encoding)
+                if input is not None and (
+                    self.encoding or self.errors or self.universal_newlines):
+                    self._input = self._input.encode(self.stdin.encoding,
+                                                     self.stdin.errors)
 
 
         def send_signal(self, sig):

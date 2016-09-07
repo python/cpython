@@ -38,7 +38,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
-                  shell=False, timeout=None, check=False)
+                  shell=False, timeout=None, check=False, \
+                  encoding=None, errors=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -60,14 +61,19 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
    The *input* argument is passed to :meth:`Popen.communicate` and thus to the
    subprocess's stdin.  If used it must be a byte sequence, or a string if
-   ``universal_newlines=True``.  When used, the internal :class:`Popen` object
-   is automatically created with ``stdin=PIPE``, and the *stdin* argument may
-   not be used as well.
+   *encoding* or *errors* is specified or *universal_newlines* is True.  When
+   used, the internal :class:`Popen` object is automatically created with
+   ``stdin=PIPE``, and the *stdin* argument may not be used as well.
 
    If *check* is True, and the process exits with a non-zero exit code, a
    :exc:`CalledProcessError` exception will be raised. Attributes of that
    exception hold the arguments, the exit code, and stdout and stderr if they
    were captured.
+
+   If *encoding* or *errors* are specified, or *universal_newlines* is True,
+   file objects for stdin, stdout and stderr are opened in text mode using the
+   specified *encoding* and *errors* or the :class:`io.TextIOWrapper` default.
+   Otherwise, file objects are opened in binary mode.
 
    Examples::
 
@@ -84,6 +90,10 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
       stdout=b'crw-rw-rw- 1 root root 1, 3 Jan 23 16:23 /dev/null\n')
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.6
+
+      Added *encoding* and *errors* parameters
 
 .. class:: CompletedProcess
 
@@ -104,8 +114,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    .. attribute:: stdout
 
       Captured stdout from the child process. A bytes sequence, or a string if
-      :func:`run` was called with ``universal_newlines=True``. None if stdout
-      was not captured.
+      :func:`run` was called with an encoding or errors. None if stdout was not
+      captured.
 
       If you ran the process with ``stderr=subprocess.STDOUT``, stdout and
       stderr will be combined in this attribute, and :attr:`stderr` will be
@@ -114,8 +124,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    .. attribute:: stderr
 
       Captured stderr from the child process. A bytes sequence, or a string if
-      :func:`run` was called with ``universal_newlines=True``. None if stderr
-      was not captured.
+      :func:`run` was called with an encoding or errors. None if stderr was not
+      captured.
 
    .. method:: check_returncode()
 
@@ -249,19 +259,22 @@ default values. The arguments that are most commonly needed are:
    .. index::
       single: universal newlines; subprocess module
 
-   If *universal_newlines* is ``False`` the file objects *stdin*, *stdout* and
-   *stderr* will be opened as binary streams, and no line ending conversion is
-   done.
+   If *encoding* or *errors* are specified, or *universal_newlines* is True,
+   the file objects *stdin*, *stdout* and *stderr* will be opened in text
+   mode using the *encoding* and *errors* specified in the call or the
+   defaults for :class:`io.TextIOWrapper`.
 
-   If *universal_newlines* is ``True``, these file objects
-   will be opened as text streams in :term:`universal newlines` mode
-   using the encoding returned by :func:`locale.getpreferredencoding(False)
-   <locale.getpreferredencoding>`.  For *stdin*, line ending characters
-   ``'\n'`` in the input will be converted to the default line separator
-   :data:`os.linesep`.  For *stdout* and *stderr*, all line endings in the
-   output will be converted to ``'\n'``.  For more information see the
-   documentation of the :class:`io.TextIOWrapper` class when the *newline*
-   argument to its constructor is ``None``.
+   For *stdin*, line ending characters ``'\n'`` in the input will be converted
+   to the default line separator :data:`os.linesep`. For *stdout* and *stderr*,
+   all line endings in the output will be converted to ``'\n'``.  For more
+   information see the documentation of the :class:`io.TextIOWrapper` class
+   when the *newline* argument to its constructor is ``None``.
+
+   If text mode is not used, *stdin*, *stdout* and *stderr* will be opened as
+   binary streams. No encoding or line ending conversion is performed.
+
+   .. versionadded:: 3.6
+      Added *encoding* and *errors* parameters.
 
    .. note::
 
@@ -306,7 +319,8 @@ functions.
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
                  cwd=None, env=None, universal_newlines=False, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
-                 start_new_session=False, pass_fds=())
+                 start_new_session=False, pass_fds=(), *, \
+                 encoding=None, errors=None)
 
    Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
@@ -482,10 +496,14 @@ functions.
 
    .. _side-by-side assembly: https://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
-   If *universal_newlines* is ``True``, the file objects *stdin*, *stdout*
-   and *stderr* are opened as text streams in universal newlines mode, as
-   described above in :ref:`frequently-used-arguments`, otherwise they are
-   opened as binary streams.
+   If *encoding* or *errors* are specified, the file objects *stdin*, *stdout*
+   and *stderr* are opened in text mode with the specified encoding and
+   *errors*, as described above in :ref:`frequently-used-arguments`. If
+   *universal_newlines* is ``True``, they are opened in text mode with default
+   encoding. Otherwise, they are opened as binary streams.
+
+   .. versionadded:: 3.6
+      *encoding* and *errors* were added.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
@@ -601,11 +619,12 @@ Instances of the :class:`Popen` class have the following methods:
    Interact with process: Send data to stdin.  Read data from stdout and stderr,
    until end-of-file is reached.  Wait for process to terminate.  The optional
    *input* argument should be data to be sent to the child process, or
-   ``None``, if no data should be sent to the child.  The type of *input*
-   must be bytes or, if *universal_newlines* was ``True``, a string.
+   ``None``, if no data should be sent to the child.  If streams were opened in
+   text mode, *input* must be a string.  Otherwise, it must be bytes.
 
    :meth:`communicate` returns a tuple ``(stdout_data, stderr_data)``.
-   The data will be bytes or, if *universal_newlines* was ``True``, strings.
+   The data will be strings if streams were opened in text mode; otherwise,
+   bytes.
 
    Note that if you want to send data to the process's stdin, you need to create
    the Popen object with ``stdin=PIPE``.  Similarly, to get anything other than
@@ -672,28 +691,30 @@ The following attributes are also available:
 .. attribute:: Popen.stdin
 
    If the *stdin* argument was :data:`PIPE`, this attribute is a writeable
-   stream object as returned by :func:`open`. If the *universal_newlines*
-   argument was ``True``, the stream is a text stream, otherwise it is a byte
-   stream. If the *stdin* argument was not :data:`PIPE`, this attribute is
-   ``None``.
+   stream object as returned by :func:`open`. If the *encoding* or *errors*
+   arguments were specified or the *universal_newlines* argument was ``True``,
+   the stream is a text stream, otherwise it is a byte stream. If the *stdin*
+   argument was not :data:`PIPE`, this attribute is ``None``.
 
 
 .. attribute:: Popen.stdout
 
    If the *stdout* argument was :data:`PIPE`, this attribute is a readable
    stream object as returned by :func:`open`. Reading from the stream provides
-   output from the child process. If the *universal_newlines* argument was
-   ``True``, the stream is a text stream, otherwise it is a byte stream. If the
-   *stdout* argument was not :data:`PIPE`, this attribute is ``None``.
+   output from the child process. If the *encoding* or *errors* arguments were
+   specified or the *universal_newlines* argument was ``True``, the stream is a
+   text stream, otherwise it is a byte stream. If the *stdout* argument was not
+   :data:`PIPE`, this attribute is ``None``.
 
 
 .. attribute:: Popen.stderr
 
    If the *stderr* argument was :data:`PIPE`, this attribute is a readable
    stream object as returned by :func:`open`. Reading from the stream provides
-   error output from the child process. If the *universal_newlines* argument was
-   ``True``, the stream is a text stream, otherwise it is a byte stream. If the
-   *stderr* argument was not :data:`PIPE`, this attribute is ``None``.
+   error output from the child process. If the *encoding* or *errors* arguments
+   were specified or the *universal_newlines* argument was ``True``, the stream
+   is a text stream, otherwise it is a byte stream. If the *stderr* argument was
+   not :data:`PIPE`, this attribute is ``None``.
 
 .. warning::
 
@@ -886,7 +907,9 @@ calls these functions.
       *timeout* was added.
 
 
-.. function:: check_output(args, *, stdin=None, stderr=None, shell=False, universal_newlines=False, timeout=None)
+.. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
+                           encoding=None, errors=None, \
+                           universal_newlines=False, timeout=None)
 
    Run command with arguments and return its output.
 
@@ -1142,7 +1165,7 @@ handling consistency are valid for these functions.
    Return ``(status, output)`` of executing *cmd* in a shell.
 
    Execute the string *cmd* in a shell with :meth:`Popen.check_output` and
-   return a 2-tuple ``(status, output)``. Universal newlines mode is used;
+   return a 2-tuple ``(status, output)``. The locale encoding is used;
    see the notes on :ref:`frequently-used-arguments` for more details.
 
    A trailing newline is stripped from the output.
