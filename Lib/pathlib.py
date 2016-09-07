@@ -385,6 +385,8 @@ class _NormalAccessor(_Accessor):
 
     listdir = _wrap_strfunc(os.listdir)
 
+    scandir = _wrap_strfunc(os.scandir)
+
     chmod = _wrap_strfunc(os.chmod)
 
     if hasattr(os, "lchmod"):
@@ -429,25 +431,6 @@ _normal_accessor = _NormalAccessor()
 # Globbing helpers
 #
 
-@contextmanager
-def _cached(func):
-    try:
-        func.__cached__
-        yield func
-    except AttributeError:
-        cache = {}
-        def wrapper(*args):
-            try:
-                return cache[args]
-            except KeyError:
-                value = cache[args] = func(*args)
-                return value
-        wrapper.__cached__ = True
-        try:
-            yield wrapper
-        finally:
-            cache.clear()
-
 def _make_selector(pattern_parts):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
@@ -473,8 +456,10 @@ class _Selector:
         self.child_parts = child_parts
         if child_parts:
             self.successor = _make_selector(child_parts)
+            self.dironly = True
         else:
             self.successor = _TerminatingSelector()
+            self.dironly = False
 
     def select_from(self, parent_path):
         """Iterate over all child paths of `parent_path` matched by this
@@ -482,13 +467,15 @@ class _Selector:
         path_cls = type(parent_path)
         is_dir = path_cls.is_dir
         exists = path_cls.exists
-        listdir = parent_path._accessor.listdir
-        return self._select_from(parent_path, is_dir, exists, listdir)
+        scandir = parent_path._accessor.scandir
+        if not is_dir(parent_path):
+            return iter([])
+        return self._select_from(parent_path, is_dir, exists, scandir)
 
 
 class _TerminatingSelector:
 
-    def _select_from(self, parent_path, is_dir, exists, listdir):
+    def _select_from(self, parent_path, is_dir, exists, scandir):
         yield parent_path
 
 
@@ -498,13 +485,11 @@ class _PreciseSelector(_Selector):
         self.name = name
         _Selector.__init__(self, child_parts)
 
-    def _select_from(self, parent_path, is_dir, exists, listdir):
+    def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
-            if not is_dir(parent_path):
-                return
             path = parent_path._make_child_relpath(self.name)
-            if exists(path):
-                for p in self.successor._select_from(path, is_dir, exists, listdir):
+            if (is_dir if self.dironly else exists)(path):
+                for p in self.successor._select_from(path, is_dir, exists, scandir):
                     yield p
         except PermissionError:
             return
@@ -516,17 +501,18 @@ class _WildcardSelector(_Selector):
         self.pat = re.compile(fnmatch.translate(pat))
         _Selector.__init__(self, child_parts)
 
-    def _select_from(self, parent_path, is_dir, exists, listdir):
+    def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
-            if not is_dir(parent_path):
-                return
             cf = parent_path._flavour.casefold
-            for name in listdir(parent_path):
-                casefolded = cf(name)
-                if self.pat.match(casefolded):
-                    path = parent_path._make_child_relpath(name)
-                    for p in self.successor._select_from(path, is_dir, exists, listdir):
-                        yield p
+            entries = list(scandir(parent_path))
+            for entry in entries:
+                if not self.dironly or entry.is_dir():
+                    name = entry.name
+                    casefolded = cf(name)
+                    if self.pat.match(casefolded):
+                        path = parent_path._make_child_relpath(name)
+                        for p in self.successor._select_from(path, is_dir, exists, scandir):
+                            yield p
         except PermissionError:
             return
 
@@ -537,32 +523,30 @@ class _RecursiveWildcardSelector(_Selector):
     def __init__(self, pat, child_parts):
         _Selector.__init__(self, child_parts)
 
-    def _iterate_directories(self, parent_path, is_dir, listdir):
+    def _iterate_directories(self, parent_path, is_dir, scandir):
         yield parent_path
         try:
-            for name in listdir(parent_path):
-                path = parent_path._make_child_relpath(name)
-                if is_dir(path) and not path.is_symlink():
-                    for p in self._iterate_directories(path, is_dir, listdir):
+            entries = list(scandir(parent_path))
+            for entry in entries:
+                if entry.is_dir() and not entry.is_symlink():
+                    path = parent_path._make_child_relpath(entry.name)
+                    for p in self._iterate_directories(path, is_dir, scandir):
                         yield p
         except PermissionError:
             return
 
-    def _select_from(self, parent_path, is_dir, exists, listdir):
+    def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
-            if not is_dir(parent_path):
-                return
-            with _cached(listdir) as listdir:
-                yielded = set()
-                try:
-                    successor_select = self.successor._select_from
-                    for starting_point in self._iterate_directories(parent_path, is_dir, listdir):
-                        for p in successor_select(starting_point, is_dir, exists, listdir):
-                            if p not in yielded:
-                                yield p
-                                yielded.add(p)
-                finally:
-                    yielded.clear()
+            yielded = set()
+            try:
+                successor_select = self.successor._select_from
+                for starting_point in self._iterate_directories(parent_path, is_dir, scandir):
+                    for p in successor_select(starting_point, is_dir, exists, scandir):
+                        if p not in yielded:
+                            yield p
+                            yielded.add(p)
+            finally:
+                yielded.clear()
         except PermissionError:
             return
 
