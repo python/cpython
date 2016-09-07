@@ -10,6 +10,8 @@ What's New in Python 2.7.13?
 Core and Builtins
 -----------------
 
+- Issue #26307: The profile-opt build now applys PGO to the built-in modules.
+
 - Issue #27870: A left shift of zero by a large integer no longer attempts
   to allocate large amounts of memory.
 
