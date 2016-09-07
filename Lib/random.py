@@ -51,7 +51,7 @@ __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
            "expovariate","vonmisesvariate","gammavariate","triangular",
            "gauss","betavariate","paretovariate","weibullvariate",
-           "getstate","setstate", "getrandbits", "weighted_choices",
+           "getstate","setstate", "getrandbits", "choices",
            "SystemRandom"]
 
 NV_MAGICCONST = 4 * _exp(-0.5)/_sqrt(2.0)
@@ -337,7 +337,7 @@ class Random(_random.Random):
                 result[i] = population[j]
         return result
 
-    def weighted_choices(self, k, population, weights=None, *, cum_weights=None):
+    def choices(self, k, population, weights=None, *, cum_weights=None):
         """Return a k sized list of population elements chosen with replacement.
 
         If the relative weights or cumulative weights are not specified,
@@ -749,7 +749,7 @@ choice = _inst.choice
 randrange = _inst.randrange
 sample = _inst.sample
 shuffle = _inst.shuffle
-weighted_choices = _inst.weighted_choices
+choices = _inst.choices
 normalvariate = _inst.normalvariate
 lognormvariate = _inst.lognormvariate
 expovariate = _inst.expovariate
