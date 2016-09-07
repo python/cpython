@@ -11,6 +11,9 @@ import struct
 from test import support
 from io import BytesIO
 
+if support.PGO:
+    raise unittest.SkipTest("test is not helpful for PGO")
+
 try:
     import threading
 except ImportError:

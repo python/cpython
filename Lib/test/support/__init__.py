@@ -105,7 +105,7 @@ __all__ = [
     "check_warnings", "check_no_resource_warning", "EnvironmentVarGuard",
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
-    "run_with_tz",
+    "run_with_tz", "PGO",
     ]
 
 class Error(Exception):
@@ -877,6 +877,10 @@ else:
 
 # Save the initial cwd
 SAVEDCWD = os.getcwd()
+
+# Set by libregrtest/main.py so we can skip tests that are not
+# useful for PGO
+PGO = False
 
 @contextlib.contextmanager
 def temp_dir(path=None, quiet=False):

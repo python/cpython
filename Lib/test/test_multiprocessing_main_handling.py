@@ -16,6 +16,9 @@ from test.support.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script,
     assert_python_ok)
 
+if support.PGO:
+    raise unittest.SkipTest("test is not helpful for PGO")
+
 # Look up which start methods are available to test
 import multiprocessing
 AVAILABLE_START_METHODS = set(multiprocessing.get_all_start_methods())

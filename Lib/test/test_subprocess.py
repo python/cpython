@@ -21,6 +21,9 @@ try:
 except ImportError:
     threading = None
 
+if support.PGO:
+    raise unittest.SkipTest("test is not helpful for PGO")
+
 mswindows = (sys.platform == "win32")
 
 #
