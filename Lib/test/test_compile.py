@@ -664,6 +664,16 @@ if 1:
         self.assertTrue(f1(0))
         self.assertTrue(f2(0.0))
 
+    def test_path_like_objects(self):
+        # An implicit test for PyUnicode_FSDecoder().
+        class PathLike:
+            def __init__(self, path):
+                self._path = path
+            def __fspath__(self):
+                return self._path
+
+        compile("42", PathLike("test_compile_pathlike"), "single")
+
 
 class TestStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
