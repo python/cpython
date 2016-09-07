@@ -62,6 +62,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22233: Break email header lines *only* on the RFC specified CR and LF
+  characters, not on arbitrary unicode line breaks.  This also fixes a bug in
+  HTTP header parsing.
+
 - Issue 27988: Fix email iter_attachments incorrect mutation of payload list.
 
 - Issue #27691: Fix ssl module's parsing of GEN_RID subject alternative name
