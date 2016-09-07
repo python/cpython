@@ -101,6 +101,9 @@ def __get_builtin_constructor(name):
 
 
 def __get_openssl_constructor(name):
+    if name in {'blake2b', 'blake2s'}:
+        # Prefer our blake2 implementation.
+        return __get_builtin_constructor(name)
     try:
         f = getattr(_hashlib, 'openssl_' + name)
         # Allow the C module to raise ValueError.  The function will be
