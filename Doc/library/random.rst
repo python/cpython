@@ -124,7 +124,7 @@ Functions for sequences:
    Return a random element from the non-empty sequence *seq*. If *seq* is empty,
    raises :exc:`IndexError`.
 
-.. function:: weighted_choices(k, population, weights=None, *, cum_weights=None)
+.. function:: choices(k, population, weights=None, *, cum_weights=None)
 
    Return a *k* sized list of elements chosen from the *population* with replacement.
    If the *population* is empty, raises :exc:`IndexError`.
