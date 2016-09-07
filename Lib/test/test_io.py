@@ -3230,7 +3230,8 @@ def _to_memoryview(buf):
 
 class CTextIOWrapperTest(TextIOWrapperTest):
     io = io
-    shutdown_error = "RuntimeError: could not find io module state"
+    shutdown_error = ("ImportError: sys.meta_path is None"
+        if os.name == "nt" else "RuntimeError: could not find io module state")
 
     def test_initialization(self):
         r = self.BytesIO(b"\xc3\xa9\n\n")
