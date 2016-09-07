@@ -237,6 +237,8 @@ Build
 Windows
 -------
 
+- Issue #27731: Opt-out of MAX_PATH on Windows 10
+
 - Issue #6135: Adds encoding and errors parameters to subprocess.
 
 - Issue #27959: Adds oem encoding, alias ansi to mbcs, move aliasmbcs to
