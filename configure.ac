@@ -2128,17 +2128,7 @@ if test "$have_long_double" = yes ; then
 AC_CHECK_SIZEOF(long double, 16)
 fi
 
-
-AC_MSG_CHECKING(for _Bool support)
-have_c99_bool=no
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[_Bool x; x = (_Bool)0;]])],[
-  AC_DEFINE(HAVE_C99_BOOL, 1, [Define this if you have the type _Bool.])
-  have_c99_bool=yes
-],[])
-AC_MSG_RESULT($have_c99_bool)
-if test "$have_c99_bool" = yes ; then
 AC_CHECK_SIZEOF(_Bool, 1)
-fi
 
 AC_CHECK_SIZEOF(off_t, [], [
 #ifdef HAVE_SYS_TYPES_H

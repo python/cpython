@@ -60,6 +60,7 @@ typedef struct { char c; float x; } st_float;
 typedef struct { char c; double x; } st_double;
 typedef struct { char c; void *x; } st_void_p;
 typedef struct { char c; size_t x; } st_size_t;
+typedef struct { char c; _Bool x; } st_bool;
 
 #define SHORT_ALIGN (sizeof(st_short) - sizeof(short))
 #define INT_ALIGN (sizeof(st_int) - sizeof(int))
@@ -68,20 +69,12 @@ typedef struct { char c; size_t x; } st_size_t;
 #define DOUBLE_ALIGN (sizeof(st_double) - sizeof(double))
 #define VOID_P_ALIGN (sizeof(st_void_p) - sizeof(void *))
 #define SIZE_T_ALIGN (sizeof(st_size_t) - sizeof(size_t))
+#define BOOL_ALIGN (sizeof(st_bool) - sizeof(_Bool))
 
 /* We can't support q and Q in native mode unless the compiler does;
    in std mode, they're 8 bytes on all platforms. */
 typedef struct { char c; long long x; } s_long_long;
 #define LONG_LONG_ALIGN (sizeof(s_long_long) - sizeof(long long))
-
-#ifdef HAVE_C99_BOOL
-#define BOOL_TYPE _Bool
-typedef struct { char c; _Bool x; } s_bool;
-#define BOOL_ALIGN (sizeof(s_bool) - sizeof(BOOL_TYPE))
-#else
-#define BOOL_TYPE char
-#define BOOL_ALIGN 0
-#endif
 
 #ifdef __powerc
 #pragma options align=reset
@@ -480,7 +473,7 @@ nu_ulonglong(const char *p, const formatdef *f)
 static PyObject *
 nu_bool(const char *p, const formatdef *f)
 {
-    BOOL_TYPE x;
+    _Bool x;
     memcpy((char *)&x, p, sizeof x);
     return PyBool_FromLong(x != 0);
 }
@@ -695,7 +688,7 @@ static int
 np_bool(char *p, PyObject *v, const formatdef *f)
 {
     int y;
-    BOOL_TYPE x;
+    _Bool x;
     y = PyObject_IsTrue(v);
     if (y < 0)
         return -1;
@@ -774,7 +767,7 @@ static const formatdef native_table[] = {
     {'N',       sizeof(size_t), SIZE_T_ALIGN,   nu_size_t,      np_size_t},
     {'q',       sizeof(long long), LONG_LONG_ALIGN, nu_longlong, np_longlong},
     {'Q',       sizeof(long long), LONG_LONG_ALIGN, nu_ulonglong,np_ulonglong},
-    {'?',       sizeof(BOOL_TYPE),      BOOL_ALIGN,     nu_bool,        np_bool},
+    {'?',       sizeof(_Bool),      BOOL_ALIGN,     nu_bool,        np_bool},
     {'e',       sizeof(short),  SHORT_ALIGN,    nu_halffloat,   np_halffloat},
     {'f',       sizeof(float),  FLOAT_ALIGN,    nu_float,       np_float},
     {'d',       sizeof(double), DOUBLE_ALIGN,   nu_double,      np_double},
