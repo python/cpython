@@ -58,7 +58,7 @@ main(int argc, char *argv[])
         fprintf(stderr, "cannot fstat '%s'\n", inpath);
         goto error;
     }
-    text_size = status.st_size;
+    text_size = (size_t)status.st_size;
     text = (char *) malloc(text_size + 1);
     if (text == NULL) {
         fprintf(stderr, "could not allocate %ld bytes\n", (long) text_size);

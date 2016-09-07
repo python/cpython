@@ -48,10 +48,6 @@
   #undef strtoll
   #define strtoll _strtoi64
   #define strdup _strdup
-  #define PRIi64 "I64i"
-  #define PRIu64 "I64u"
-  #define PRIi32 "I32i"
-  #define PRIu32 "I32u"
 #endif
 
 
