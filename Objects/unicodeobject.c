@@ -2308,7 +2308,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
        stream as-is (giving a ZWNBSP character). */
     if (bo == 0) {
         if (size >= 4) {
-            const Py_UCS4 bom = (q[iorder[3]] << 24) | (q[iorder[2]] << 16) |
+            const Py_UCS4 bom = ((unsigned int)q[iorder[3]] << 24) | (q[iorder[2]] << 16) |
                 (q[iorder[1]] << 8) | q[iorder[0]];
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN
             if (bom == 0x0000FEFF) {
@@ -2378,7 +2378,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
             /* The remaining input chars are ignored if the callback
                chooses to skip the input */
         }
-        ch = (q[iorder[3]] << 24) | (q[iorder[2]] << 16) |
+        ch = ((unsigned int)q[iorder[3]] << 24) | (q[iorder[2]] << 16) |
             (q[iorder[1]] << 8) | q[iorder[0]];
 
         if (ch >= 0x110000)
