@@ -91,6 +91,8 @@ Core and Builtins
 Library
 -------
 
+- Issue 27988: Fix email iter_attachments incorrect mutation of payload list.
+
 - Issue #16113: Add SHA-3 and SHAKE support to hashlib module.
 
 - Issue #27776: The :func:`os.urandom` function does now block on Linux 3.17

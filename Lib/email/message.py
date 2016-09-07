@@ -1022,7 +1022,7 @@ class MIMEPart(Message):
         maintype, subtype = self.get_content_type().split('/')
         if maintype != 'multipart' or subtype == 'alternative':
             return
-        parts = self.get_payload()
+        parts = self.get_payload().copy()
         if maintype == 'multipart' and subtype == 'related':
             # For related, we treat everything but the root as an attachment.
             # The root may be indicated by 'start'; if there's no start or we
