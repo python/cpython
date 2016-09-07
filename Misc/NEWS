@@ -27,7 +27,7 @@ Core and Builtins
   the braces (where the expressions are). This is a breaking change
   from the 3.6 alpha releases.
 
-- Implement the frame evaluation part of PEP 523.
+- Implement PEP 523.
 
 - Issue #27870: A left shift of zero by a large integer no longer attempts
   to allocate large amounts of memory.
