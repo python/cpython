@@ -25,7 +25,7 @@ Here are the classes:
 
 .. currentmodule:: email.mime.base
 
-.. class:: MIMEBase(_maintype, _subtype, **_params)
+.. class:: MIMEBase(_maintype, _subtype, *, policy=compat32, **_params)
 
    Module: :mod:`email.mime.base`
 
@@ -41,9 +41,16 @@ Here are the classes:
    key/value dictionary and is passed directly to :meth:`Message.add_header
    <email.message.Message.add_header>`.
 
+   If *policy* is specified, (defaults to the
+   :class:`compat32 <email.policy.Compat32>` policy) it will be passed to
+   :class:`~email.message.Message`.
+
    The :class:`MIMEBase` class always adds a :mailheader:`Content-Type` header
    (based on *_maintype*, *_subtype*, and *_params*), and a
    :mailheader:`MIME-Version` header (always set to ``1.0``).
+
+   .. versionchanged:: 3.6
+      Added *policy* keyword-only parameter.
 
 
 .. currentmodule:: email.mime.nonmultipart
@@ -62,7 +69,8 @@ Here are the classes:
 
 .. currentmodule:: email.mime.multipart
 
-.. class:: MIMEMultipart(_subtype='mixed', boundary=None, _subparts=None, **_params)
+.. class:: MIMEMultipart(_subtype='mixed', boundary=None, _subparts=None, \
+                         *, policy=compat32, **_params)
 
    Module: :mod:`email.mime.multipart`
 
@@ -82,14 +90,20 @@ Here are the classes:
    to the message by using the :meth:`Message.attach
    <email.message.Message.attach>` method.
 
+   Optional *policy* argument defaults to :class:`compat32 <email.policy.Compat32>`.
+
    Additional parameters for the :mailheader:`Content-Type` header are taken from
    the keyword arguments, or passed into the *_params* argument, which is a keyword
    dictionary.
 
+   .. versionchanged:: 3.6
+      Added *policy* keyword-only parameter.
 
 .. currentmodule:: email.mime.application
 
-.. class:: MIMEApplication(_data, _subtype='octet-stream', _encoder=email.encoders.encode_base64, **_params)
+.. class:: MIMEApplication(_data, _subtype='octet-stream', \
+                           _encoder=email.encoders.encode_base64, \
+                           *, policy=compat32, **_params)
 
    Module: :mod:`email.mime.application`
 
@@ -109,12 +123,18 @@ Here are the classes:
    object as necessary.  The default encoding is base64.  See the
    :mod:`email.encoders` module for a list of the built-in encoders.
 
+   Optional *policy* argument defaults to :class:`compat32 <email.policy.Compat32>`.
+
    *_params* are passed straight through to the base class constructor.
 
+   .. versionchanged:: 3.6
+      Added *policy* keyword-only parameter.
 
 .. currentmodule:: email.mime.audio
 
-.. class:: MIMEAudio(_audiodata, _subtype=None, _encoder=email.encoders.encode_base64, **_params)
+.. class:: MIMEAudio(_audiodata, _subtype=None, \
+                     _encoder=email.encoders.encode_base64, \
+                     *, policy=compat32, **_params)
 
    Module: :mod:`email.mime.audio`
 
@@ -137,12 +157,18 @@ Here are the classes:
    object as necessary.  The default encoding is base64.  See the
    :mod:`email.encoders` module for a list of the built-in encoders.
 
+   Optional *policy* argument defaults to :class:`compat32 <email.policy.Compat32>`.
+
    *_params* are passed straight through to the base class constructor.
 
+   .. versionchanged:: 3.6
+      Added *policy* keyword-only parameter.
 
 .. currentmodule:: email.mime.image
 
-.. class:: MIMEImage(_imagedata, _subtype=None, _encoder=email.encoders.encode_base64, **_params)
+.. class:: MIMEImage(_imagedata, _subtype=None, \
+                     _encoder=email.encoders.encode_base64, \
+                    *, policy=compat32, **_params)
 
    Module: :mod:`email.mime.image`
 
@@ -165,13 +191,17 @@ Here are the classes:
    object as necessary.  The default encoding is base64.  See the
    :mod:`email.encoders` module for a list of the built-in encoders.
 
+   Optional *policy* argument defaults to :class:`compat32 <email.policy.Compat32>`.
+
    *_params* are passed straight through to the :class:`~email.mime.base.MIMEBase`
    constructor.
 
+   .. versionchanged:: 3.6
+      Added *policy* keyword-only parameter.
 
 .. currentmodule:: email.mime.message
 
-.. class:: MIMEMessage(_msg, _subtype='rfc822')
+.. class:: MIMEMessage(_msg, _subtype='rfc822', *, policy=compat32)
 
    Module: :mod:`email.mime.message`
 
@@ -184,10 +214,14 @@ Here are the classes:
    Optional *_subtype* sets the subtype of the message; it defaults to
    :mimetype:`rfc822`.
 
+   Optional *policy* argument defaults to :class:`compat32 <email.policy.Compat32>`.
+
+   .. versionchanged:: 3.6
+      Added *policy* keyword-only parameter.
 
 .. currentmodule:: email.mime.text
 
-.. class:: MIMEText(_text, _subtype='plain', _charset=None)
+.. class:: MIMEText(_text, _subtype='plain', _charset=None, *, policy=compat32)
 
    Module: :mod:`email.mime.text`
 
@@ -211,5 +245,10 @@ Here are the classes:
    will automatically encode the new payload (and add a new
    :mailheader:`Content-Transfer-Encoding` header).
 
+   Optional *policy* argument defaults to :class:`compat32 <email.policy.Compat32>`.
+
    .. versionchanged:: 3.5
       *_charset* also accepts :class:`~email.charset.Charset` instances.
+
+   .. versionchanged:: 3.6
+      Added *policy* keyword-only parameter.

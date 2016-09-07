@@ -455,6 +455,13 @@ Any code relying on the presence of ``default_format`` may
 need to be adapted. See :issue:`27819` for more details.
 
 
+email
+-----
+
+The :mod:`email.mime` classes now all accept an optional *policy* keyword.
+(Contributed by Berker Peksag in :issue:`27331`.)
+
+
 encodings
 ---------
 

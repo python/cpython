@@ -31,6 +31,7 @@ from email.mime.image import MIMEImage
 from email.mime.base import MIMEBase
 from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
+from email.mime.nonmultipart import MIMENonMultipart
 from email import utils
 from email import errors
 from email import encoders
@@ -2062,7 +2063,13 @@ YXNkZg==
 --===============0012394164==--""")
         self.assertEqual(m.get_payload(0).get_payload(), 'YXNkZg==')
 
+    def test_mimebase_default_policy(self):
+        m = MIMEBase('multipart', 'mixed')
+        self.assertIs(m.policy, email.policy.compat32)
 
+    def test_mimebase_custom_policy(self):
+        m = MIMEBase('multipart', 'mixed', policy=email.policy.default)
+        self.assertIs(m.policy, email.policy.default)
 
 # Test some badly formatted messages
 class TestNonConformant(TestEmailBase):
@@ -2664,6 +2671,19 @@ message 2
         msg = MIMEMultipart()
         self.assertTrue(msg.is_multipart())
 
+    def test_multipart_default_policy(self):
+        msg = MIMEMultipart()
+        msg['To'] = 'a@b.com'
+        msg['To'] = 'c@d.com'
+        self.assertEqual(msg.get_all('to'), ['a@b.com', 'c@d.com'])
+
+    def test_multipart_custom_policy(self):
+        msg = MIMEMultipart(policy=email.policy.default)
+        msg['To'] = 'a@b.com'
+        with self.assertRaises(ValueError) as cm:
+            msg['To'] = 'c@d.com'
+        self.assertEqual(str(cm.exception),
+                         'There may be at most 1 To headers in a message')
 
 # A general test of parser->model->generator idempotency.  IOW, read a message
 # in, parse it into a message object tree, then without touching the tree,
@@ -3312,6 +3332,27 @@ multipart/report
         g = email.generator.BytesGenerator(s)
         g.flatten(msg, linesep='\r\n')
         self.assertEqual(s.getvalue(), msgtxt)
+
+    def test_mime_classes_policy_argument(self):
+        with openfile('audiotest.au', 'rb') as fp:
+            audiodata = fp.read()
+        with openfile('PyBanner048.gif', 'rb') as fp:
+            bindata = fp.read()
+        classes = [
+            (MIMEApplication, ('',)),
+            (MIMEAudio, (audiodata,)),
+            (MIMEImage, (bindata,)),
+            (MIMEMessage, (Message(),)),
+            (MIMENonMultipart, ('multipart', 'mixed')),
+            (MIMEText, ('',)),
+        ]
+        for cls, constructor in classes:
+            with self.subTest(cls=cls.__name__, policy='compat32'):
+                m = cls(*constructor)
+                self.assertIs(m.policy, email.policy.compat32)
+            with self.subTest(cls=cls.__name__, policy='default'):
+                m = cls(*constructor, policy=email.policy.default)
+                self.assertIs(m.policy, email.policy.default)
 
 
 # Test the iterator/generators
