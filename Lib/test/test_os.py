@@ -1271,6 +1271,18 @@ class URandomTests(unittest.TestCase):
 
 @unittest.skipUnless(hasattr(os, 'getrandom'), 'need os.getrandom()')
 class GetRandomTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        try:
+            os.getrandom(1)
+        except OSError as exc:
+            if exc.errno == errno.ENOSYS:
+                # Python compiled on a more recent Linux version
+                # than the current Linux kernel
+                raise unittest.SkipTest("getrandom() syscall fails with ENOSYS")
+            else:
+                raise
+
     def test_getrandom_type(self):
         data = os.getrandom(16)
         self.assertIsInstance(data, bytes)
