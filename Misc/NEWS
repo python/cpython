@@ -62,6 +62,8 @@ Core and Builtins
 Library
 -------
 
+- Issue 27988: Fix email iter_attachments incorrect mutation of payload list.
+
 - Issue #27691: Fix ssl module's parsing of GEN_RID subject alternative name
   fields in X.509 certs.
 
