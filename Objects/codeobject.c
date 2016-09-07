@@ -780,7 +780,7 @@ _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 
     if (!PyCode_Check(code)) {
         PyErr_BadInternalCall();
-        return 1;
+        return -1;
     }
 
     o = (PyCodeObject*) code;
@@ -803,7 +803,7 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
     if (!PyCode_Check(code) || index < 0 ||
             index >= tstate->co_extra_user_count) {
         PyErr_BadInternalCall();
-        return 1;
+        return -1;
     }
 
     o = (PyCodeObject*) code;
@@ -812,13 +812,13 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
         o->co_extra = (_PyCodeObjectExtra*) PyMem_Malloc(
             sizeof(_PyCodeObjectExtra));
         if (o->co_extra == NULL) {
-            return 1;
+            return -1;
         }
 
         o->co_extra->ce_extras = PyMem_Malloc(
             tstate->co_extra_user_count * sizeof(void*));
         if (o->co_extra->ce_extras == NULL) {
-            return 1;
+            return -1;
         }
 
         o->co_extra->ce_size = tstate->co_extra_user_count;
@@ -832,7 +832,7 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
             o->co_extra->ce_extras, tstate->co_extra_user_count * sizeof(void*));
 
         if (o->co_extra->ce_extras == NULL) {
-            return 1;
+            return -1;
         }
 
         o->co_extra->ce_size = tstate->co_extra_user_count;
