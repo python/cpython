@@ -960,12 +960,13 @@ is_builtin(PyObject *name)
 }
 
 
-/* Return an importer object for a sys.path/pkg.__path__ item 'p',
+/* Return a finder object for a sys.path/pkg.__path__ item 'p',
    possibly by fetching it from the path_importer_cache dict. If it
    wasn't yet cached, traverse path_hooks until a hook is found
    that can handle the path item. Return None if no hook could;
-   this tells our caller it should fall back to the builtin
-   import mechanism. Cache the result in path_importer_cache.
+   this tells our caller that the path based finder could not find
+   a finder for this path item. Cache the result in
+   path_importer_cache.
    Returns a borrowed reference. */
 
 static PyObject *

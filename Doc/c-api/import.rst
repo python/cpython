@@ -207,13 +207,13 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_GetImporter(PyObject *path)
 
-   Return an importer object for a :data:`sys.path`/:attr:`pkg.__path__` item
+   Return a finder object for a :data:`sys.path`/:attr:`pkg.__path__` item
    *path*, possibly by fetching it from the :data:`sys.path_importer_cache`
    dict.  If it wasn't yet cached, traverse :data:`sys.path_hooks` until a hook
    is found that can handle the path item.  Return ``None`` if no hook could;
-   this tells our caller it should fall back to the built-in import mechanism.
-   Cache the result in :data:`sys.path_importer_cache`.  Return a new reference
-   to the importer object.
+   this tells our caller that the :term:`path based finder` could not find a
+   finder for this path item. Cache the result in :data:`sys.path_importer_cache`.
+   Return a new reference to the finder object.
 
 
 .. c:function:: void _PyImport_Init()
