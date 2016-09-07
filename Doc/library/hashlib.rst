@@ -69,7 +69,13 @@ Constructors for hash algorithms that are always present in this module are
 :func:`md5` is normally available as well, though it
 may be missing if you are using a rare "FIPS compliant" build of Python.
 Additional algorithms may also be available depending upon the OpenSSL
-library that Python uses on your platform.
+library that Python uses on your platform. On most platforms the
+:func:`sha3_224`, :func:`sha3_256`, :func:`sha3_384`, :func:`sha3_512`,
+:func:`shake_128`, :func:`shake_256` are also available.
+
+.. versionadded:: 3.6
+   SHA3 (Keccak) and SHAKE constructors :func:`sha3_224`, :func:`sha3_256`,
+   :func:`sha3_384`, :func:`sha3_512`, :func:`shake_128`, :func:`shake_256`.
 
 .. versionadded:: 3.6
    :func:`blake2b` and :func:`blake2s` were added.
@@ -187,6 +193,28 @@ A hash object has the following methods:
 
    Return a copy ("clone") of the hash object.  This can be used to efficiently
    compute the digests of data sharing a common initial substring.
+
+
+SHAKE variable length digests
+-----------------------------
+
+The :func:`shake_128` and :func:`shake_256` algorithms provide variable
+length digests with length_in_bits//2 up to 128 or 256 bits of security.
+As such, their digest methods require a length. Maximum length is not limited
+by the SHAKE algorithm.
+
+.. method:: shake.digest(length)
+
+   Return the digest of the data passed to the :meth:`update` method so far.
+   This is a bytes object of size ``length`` which may contain bytes in
+   the whole range from 0 to 255.
+
+
+.. method:: shake.hexdigest(length)
+
+   Like :meth:`digest` except the digest is returned as a string object of
+   double length, containing only hexadecimal digits.  This may be used to
+   exchange the value safely in email or other non-binary environments.
 
 
 Key derivation
