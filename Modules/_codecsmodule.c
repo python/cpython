@@ -626,6 +626,25 @@ _codecs_mbcs_decode_impl(PyObject *module, Py_buffer *data,
 }
 
 /*[clinic input]
+_codecs.oem_decode
+    data: Py_buffer
+    errors: str(accept={str, NoneType}) = NULL
+    final: int(c_default="0") = False
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_codecs_oem_decode_impl(PyObject *module, Py_buffer *data,
+                        const char *errors, int final)
+/*[clinic end generated code: output=da1617612f3fcad8 input=95b8a92c446b03cd]*/
+{
+    Py_ssize_t consumed = data->len;
+    PyObject *decoded = PyUnicode_DecodeCodePageStateful(CP_OEMCP,
+        data->buf, data->len, errors, final ? NULL : &consumed);
+    return codec_tuple(decoded, consumed);
+}
+
+/*[clinic input]
 _codecs.code_page_decode
     codepage: int
     data: Py_buffer
@@ -971,6 +990,21 @@ _codecs_mbcs_encode_impl(PyObject *module, PyObject *str, const char *errors)
 }
 
 /*[clinic input]
+_codecs.oem_encode
+    str: unicode
+    errors: str(accept={str, NoneType}) = NULL
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_codecs_oem_encode_impl(PyObject *module, PyObject *str, const char *errors)
+/*[clinic end generated code: output=65d5982c737de649 input=3fc5f0028aad3cda]*/
+{
+    return codec_tuple(PyUnicode_EncodeCodePage(CP_OEMCP, str, errors),
+        PyUnicode_GET_LENGTH(str));
+}
+
+/*[clinic input]
 _codecs.code_page_encode
     code_page: int
     str: unicode
@@ -1075,6 +1109,8 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_READBUFFER_ENCODE_METHODDEF
     _CODECS_MBCS_ENCODE_METHODDEF
     _CODECS_MBCS_DECODE_METHODDEF
+    _CODECS_OEM_ENCODE_METHODDEF
+    _CODECS_OEM_DECODE_METHODDEF
     _CODECS_CODE_PAGE_ENCODE_METHODDEF
     _CODECS_CODE_PAGE_DECODE_METHODDEF
     _CODECS_REGISTER_ERROR_METHODDEF

@@ -29,6 +29,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 """#"
 
 import codecs
+import sys
 from . import aliases
 
 _cache = {}
@@ -151,3 +152,12 @@ def search_function(encoding):
 
 # Register the search_function in the Python codec registry
 codecs.register(search_function)
+
+if sys.platform == 'win32':
+    def _alias_mbcs(encoding):
+        import _bootlocale
+        if encoding == _bootlocale.getpreferredencoding(False):
+            import encodings.mbcs
+            return encodings.mbcs.getregentry()
+
+    codecs.register(_alias_mbcs)

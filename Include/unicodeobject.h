@@ -1663,7 +1663,7 @@ PyAPI_FUNC(PyObject *) PyUnicode_TranslateCharmap(
 
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeMBCS(
     const char *string,         /* MBCS encoded string */
-    Py_ssize_t length,              /* size of string */
+    Py_ssize_t length,          /* size of string */
     const char *errors          /* error handling */
     );
 
