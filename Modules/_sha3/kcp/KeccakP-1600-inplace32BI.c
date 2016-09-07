@@ -188,17 +188,18 @@ void KeccakP1600_AddLanes(void *state, const unsigned char *data, unsigned int l
     unsigned int lanePosition;
     for(lanePosition=0; lanePosition<laneCount; lanePosition++) {
         UINT8 laneAsBytes[8];
+        UINT32 low, high, temp, temp0, temp1;
+        UINT32 *stateAsHalfLanes;
         memcpy(laneAsBytes, data+lanePosition*8, 8);
-        UINT32 low = laneAsBytes[0]
+        low = laneAsBytes[0]
             | ((UINT32)(laneAsBytes[1]) << 8)
             | ((UINT32)(laneAsBytes[2]) << 16)
             | ((UINT32)(laneAsBytes[3]) << 24);
-        UINT32 high = laneAsBytes[4]
+        high = laneAsBytes[4]
             | ((UINT32)(laneAsBytes[5]) << 8)
             | ((UINT32)(laneAsBytes[6]) << 16)
             | ((UINT32)(laneAsBytes[7]) << 24);
-        UINT32 even, odd, temp, temp0, temp1;
-        UINT32 *stateAsHalfLanes = (UINT32*)state;
+        stateAsHalfLanes = (UINT32*)state;
         toBitInterleavingAndXOR(low, high, stateAsHalfLanes[lanePosition*2+0], stateAsHalfLanes[lanePosition*2+1], temp, temp0, temp1);
     }
 #endif
@@ -243,17 +244,18 @@ void KeccakP1600_OverwriteLanes(void *state, const unsigned char *data, unsigned
     unsigned int lanePosition;
     for(lanePosition=0; lanePosition<laneCount; lanePosition++) {
         UINT8 laneAsBytes[8];
+        UINT32 low, high, temp, temp0, temp1;
+        UINT32 *stateAsHalfLanes;
         memcpy(laneAsBytes, data+lanePosition*8, 8);
-        UINT32 low = laneAsBytes[0]
+        low = laneAsBytes[0]
             | ((UINT32)(laneAsBytes[1]) << 8)
             | ((UINT32)(laneAsBytes[2]) << 16)
             | ((UINT32)(laneAsBytes[3]) << 24);
-        UINT32 high = laneAsBytes[4]
+        high = laneAsBytes[4]
             | ((UINT32)(laneAsBytes[5]) << 8)
             | ((UINT32)(laneAsBytes[6]) << 16)
             | ((UINT32)(laneAsBytes[7]) << 24);
-        UINT32 even, odd, temp, temp0, temp1;
-        UINT32 *stateAsHalfLanes = (UINT32*)state;
+        stateAsHalfLanes = (UINT32*)state;
         toBitInterleavingAndSet(low, high, stateAsHalfLanes[lanePosition*2+0], stateAsHalfLanes[lanePosition*2+1], temp, temp0, temp1);
     }
 #endif
@@ -406,8 +408,8 @@ void KeccakP1600_ExtractAndAddLanes(const void *state, const unsigned char *inpu
     for(lanePosition=0; lanePosition<laneCount; lanePosition++) {
         UINT32 *stateAsHalfLanes = (UINT32*)state;
         UINT32 low, high, temp, temp0, temp1;
-        fromBitInterleaving(stateAsHalfLanes[lanePosition*2], stateAsHalfLanes[lanePosition*2+1], low, high, temp, temp0, temp1);
         UINT8 laneAsBytes[8];
+        fromBitInterleaving(stateAsHalfLanes[lanePosition*2], stateAsHalfLanes[lanePosition*2+1], low, high, temp, temp0, temp1);
         laneAsBytes[0] = low & 0xFF;
         laneAsBytes[1] = (low >> 8) & 0xFF;
         laneAsBytes[2] = (low >> 16) & 0xFF;
