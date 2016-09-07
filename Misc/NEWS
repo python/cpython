@@ -109,6 +109,9 @@ Library
 
 - Issue #26798: Add BLAKE2 (blake2b and blake2s) to hashlib.
 
+- Issue #26032: Optimized globbing in pathlib by using os.scandir(); it is now
+  about 1.5--4 times faster.
+
 - Issue #25596: Optimized glob() and iglob() functions in the
   glob module; they are now about 3--6 times faster.
 

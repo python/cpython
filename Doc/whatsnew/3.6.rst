@@ -808,6 +808,9 @@ Optimizations
   :mod:`glob` module; they are now about 3--6 times faster.
   (Contributed by Serhiy Storchaka in :issue:`25596`).
 
+* Optimized globbing in :mod:`pathlib` by using :func:`os.scandir`;
+  it is now about 1.5--4 times faster.
+  (Contributed by Serhiy Storchaka in :issue:`26032`).
 
 Build and C API Changes
 =======================
