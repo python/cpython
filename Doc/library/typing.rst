@@ -502,6 +502,45 @@ The module defines the following classes, functions and decorators:
           except KeyError:
               return default
 
+.. class:: Type
+
+   A variable annotated with ``C`` may accept a value of type ``C``. In
+   contrast, a variable annotated with ``Type[C]`` may accept values that are
+   classes themselves -- specifically, it will accept the *class object* of
+   ``C``. For example::
+
+      a = 3         # Has type 'int'
+      b = int       # Has type 'Type[int]'
+      c = type(a)   # Also has type 'Type[int]'
+
+   Note that ``Type[C]`` is covariant::
+
+      class User: ...
+      class BasicUser(User): ...
+      class ProUser(User): ...
+      class TeamUser(User): ...
+
+      # Accepts User, BasicUser, ProUser, TeamUser, ...
+      def make_new_user(user_class: Type[User]) -> User:
+          # ...
+          return user_class()
+
+   The fact that ``Type[C]`` is covariant implies that all subclasses of
+   ``C`` should implement the same constructor signature and class method
+   signatures as ``C``. The type checker should flag violations of this,
+   but should also allow constructor calls in subclasses that match the
+   constructor calls in the indicated base class. How the type checker is
+   required to handle this particular case may change in future revisions of
+   PEP 484.
+
+   The only legal parameters for ``Type`` are classes, unions of classes, and
+   ``Any``. For example::
+
+      def new_non_team_user(user_class: Type[Union[BaseUser, ProUser]]): ...
+
+   ``Type[Any]`` is equivalent to ``Type`` which in turn is equivalent
+   to ``type``, which is the root of Python's metaclass hierarchy.
+
 .. class:: Iterable(Generic[T_co])
 
     A generic version of :class:`collections.abc.Iterable`.
