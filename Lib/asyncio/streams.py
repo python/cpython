@@ -590,7 +590,7 @@ class StreamReader:
         bytes. If the EOF was received and the internal buffer is empty, return
         an empty bytes object.
 
-        If n is zero, return empty bytes object immediatelly.
+        If n is zero, return empty bytes object immediately.
 
         If n is positive, this function try to read `n` bytes, and may return
         less or equal bytes than requested, but at least one byte. If EOF was

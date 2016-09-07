@@ -1,5 +1,5 @@
 """
-Test suite to check compilance with PEP 247, the standard API
+Test suite to check compliance with PEP 247, the standard API
 for hashing algorithms
 """
 

@@ -1262,7 +1262,7 @@ class IpaddrUnitTest(unittest.TestCase):
         ip4 = ipaddress.IPv4Address('1.1.1.3')
         ip5 = ipaddress.IPv4Address('1.1.1.4')
         ip6 = ipaddress.IPv4Address('1.1.1.0')
-        # check that addreses are subsumed properly.
+        # check that addresses are subsumed properly.
         collapsed = ipaddress.collapse_addresses(
             [ip1, ip2, ip3, ip4, ip5, ip6])
         self.assertEqual(list(collapsed),
@@ -1276,7 +1276,7 @@ class IpaddrUnitTest(unittest.TestCase):
         ip4 = ipaddress.IPv4Address('1.1.1.3')
         #ip5 = ipaddress.IPv4Interface('1.1.1.4/30')
         #ip6 = ipaddress.IPv4Interface('1.1.1.4/30')
-        # check that addreses are subsumed properly.
+        # check that addresses are subsumed properly.
         collapsed = ipaddress.collapse_addresses([ip1, ip2, ip3, ip4])
         self.assertEqual(list(collapsed),
                          [ipaddress.IPv4Network('1.1.1.0/30')])
@@ -1290,7 +1290,7 @@ class IpaddrUnitTest(unittest.TestCase):
         # stored in no particular order b/c we want CollapseAddr to call
         # [].sort
         ip6 = ipaddress.IPv4Network('1.1.0.0/22')
-        # check that addreses are subsumed properly.
+        # check that addresses are subsumed properly.
         collapsed = ipaddress.collapse_addresses([ip1, ip2, ip3, ip4, ip5,
                                                      ip6])
         self.assertEqual(list(collapsed),

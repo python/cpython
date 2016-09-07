@@ -1043,7 +1043,7 @@ class MIMEPart(Message):
             yield from parts
             return
         # Otherwise we more or less invert the remaining logic in get_body.
-        # This only really works in edge cases (ex: non-text relateds or
+        # This only really works in edge cases (ex: non-text related or
         # alternatives) if the sending agent sets content-disposition.
         seen = []   # Only skip the first example of each candidate type.
         for part in parts:

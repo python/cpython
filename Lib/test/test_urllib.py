@@ -1,4 +1,4 @@
-"""Regresssion tests for what was in Python 2's "urllib" module"""
+"""Regression tests for what was in Python 2's "urllib" module"""
 
 import urllib.parse
 import urllib.request
