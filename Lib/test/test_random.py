@@ -7,6 +7,7 @@ import warnings
 from functools import partial
 from math import log, exp, pi, fsum, sin
 from test import support
+from fractions import Fraction
 
 class TestBasicOps:
     # Superclass with tests common to all generators.
@@ -140,6 +141,73 @@ class TestBasicOps:
 
     def test_sample_on_dicts(self):
         self.assertRaises(TypeError, self.gen.sample, dict.fromkeys('abcdef'), 2)
+
+    def test_weighted_choices(self):
+        weighted_choices = self.gen.weighted_choices
+        data = ['red', 'green', 'blue', 'yellow']
+        str_data = 'abcd'
+        range_data = range(4)
+        set_data = set(range(4))
+
+        # basic functionality
+        for sample in [
+            weighted_choices(5, data),
+            weighted_choices(5, data, range(4)),
+            weighted_choices(k=5, population=data, weights=range(4)),
+            weighted_choices(k=5, population=data, cum_weights=range(4)),
+        ]:
+            self.assertEqual(len(sample), 5)
+            self.assertEqual(type(sample), list)
+            self.assertTrue(set(sample) <= set(data))
+
+        # test argument handling
+        with self.assertRaises(TypeError):                                        # missing arguments
+            weighted_choices(2)
+
+        self.assertEqual(weighted_choices(0, data), [])                           # k == 0
+        self.assertEqual(weighted_choices(-1, data), [])                          # negative k behaves like ``[0] * -1``
+        with self.assertRaises(TypeError):
+            weighted_choices(2.5, data)                                           # k is a float
+
+        self.assertTrue(set(weighted_choices(5, str_data)) <= set(str_data))      # population is a string sequence
+        self.assertTrue(set(weighted_choices(5, range_data)) <= set(range_data))  # population is a range
+        with self.assertRaises(TypeError):
+            weighted_choices(2.5, set_data)                                       # population is not a sequence
+
+        self.assertTrue(set(weighted_choices(5, data, None)) <= set(data))        # weights is None
+        self.assertTrue(set(weighted_choices(5, data, weights=None)) <= set(data))
+        with self.assertRaises(ValueError):
+            weighted_choices(5, data, [1,2])                                      # len(weights) != len(population)
+        with self.assertRaises(IndexError):
+            weighted_choices(5, data, [0]*4)                                      # weights sum to zero
+        with self.assertRaises(TypeError):
+            weighted_choices(5, data, 10)                                         # non-iterable weights
+        with self.assertRaises(TypeError):
+            weighted_choices(5, data, [None]*4)                                   # non-numeric weights
+        for weights in [
+                [15, 10, 25, 30],                                                 # integer weights
+                [15.1, 10.2, 25.2, 30.3],                                         # float weights
+                [Fraction(1, 3), Fraction(2, 6), Fraction(3, 6), Fraction(4, 6)], # fractional weights
+                [True, False, True, False]                                        # booleans (include / exclude)
+        ]:
+            self.assertTrue(set(weighted_choices(5, data, weights)) <= set(data))
+
+        with self.assertRaises(ValueError):
+            weighted_choices(5, data, cum_weights=[1,2])                          # len(weights) != len(population)
+        with self.assertRaises(IndexError):
+            weighted_choices(5, data, cum_weights=[0]*4)                          # cum_weights sum to zero
+        with self.assertRaises(TypeError):
+            weighted_choices(5, data, cum_weights=10)                             # non-iterable cum_weights
+        with self.assertRaises(TypeError):
+            weighted_choices(5, data, cum_weights=[None]*4)                       # non-numeric cum_weights
+        with self.assertRaises(TypeError):
+            weighted_choices(5, data, range(4), cum_weights=range(4))             # both weights and cum_weights
+        for weights in [
+                [15, 10, 25, 30],                                                 # integer cum_weights
+                [15.1, 10.2, 25.2, 30.3],                                         # float cum_weights
+                [Fraction(1, 3), Fraction(2, 6), Fraction(3, 6), Fraction(4, 6)], # fractional cum_weights
+        ]:
+            self.assertTrue(set(weighted_choices(5, data, cum_weights=weights)) <= set(data))
 
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
