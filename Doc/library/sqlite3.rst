@@ -183,7 +183,7 @@ Module functions and constants
    parameter is 5.0 (five seconds).
 
    For the *isolation_level* parameter, please see the
-   :attr:`Connection.isolation_level` property of :class:`Connection` objects.
+   :attr:`~Connection.isolation_level` property of :class:`Connection` objects.
 
    SQLite natively supports only the types TEXT, INTEGER, REAL, BLOB and NULL. If
    you want to use other types you must add support for them yourself. The
