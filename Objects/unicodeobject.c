@@ -204,7 +204,7 @@ static PyObject *unicode_empty = NULL;
     } while (0)
 
 /* Forward declaration */
-Py_LOCAL_INLINE(int)
+static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
 
 /* List of static strings. */
@@ -720,7 +720,7 @@ static BLOOM_MASK bloom_linebreak = ~(BLOOM_MASK)0;
     ((ch) < 128U ? ascii_linebreak[(ch)] :                              \
      (BLOOM(bloom_linebreak, (ch)) && Py_UNICODE_ISLINEBREAK(ch)))
 
-Py_LOCAL_INLINE(BLOOM_MASK)
+static inline BLOOM_MASK
 make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
 {
 #define BLOOM_UPDATE(TYPE, MASK, PTR, LEN)             \
@@ -826,9 +826,10 @@ ensure_unicode(PyObject *obj)
 static PyObject *
 fixup(PyObject *self, Py_UCS4 (*fixfct)(PyObject *s));
 
-Py_LOCAL_INLINE(Py_ssize_t) findchar(const void *s, int kind,
-                                     Py_ssize_t size, Py_UCS4 ch,
-                                     int direction)
+static inline Py_ssize_t
+findchar(const void *s, int kind,
+         Py_ssize_t size, Py_UCS4 ch,
+         int direction)
 {
     switch (kind) {
     case PyUnicode_1BYTE_KIND:
@@ -2138,7 +2139,7 @@ kind_maxchar_limit(unsigned int kind)
     }
 }
 
-Py_LOCAL_INLINE(Py_UCS4)
+static inline Py_UCS4
 align_maxchar(Py_UCS4 maxchar)
 {
     if (maxchar <= 127)
@@ -11290,7 +11291,7 @@ Wraps stringlib_parse_args_finds() and additionally ensures that the
 first argument is a unicode object.
 */
 
-Py_LOCAL_INLINE(int)
+static inline int
 parse_args_finds_unicode(const char * function_name, PyObject *args,
                          PyObject **substring,
                          Py_ssize_t *start, Py_ssize_t *end)
@@ -13267,7 +13268,7 @@ unicode_endswith(PyObject *self,
     return PyBool_FromLong(result);
 }
 
-Py_LOCAL_INLINE(void)
+static inline void
 _PyUnicodeWriter_Update(_PyUnicodeWriter *writer)
 {
     writer->maxchar = PyUnicode_MAX_CHAR_VALUE(writer->buffer);
@@ -13403,7 +13404,7 @@ _PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
     return _PyUnicodeWriter_PrepareInternal(writer, 0, maxchar);
 }
 
-Py_LOCAL_INLINE(int)
+static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
 {
     assert(ch <= MAX_UNICODE);
