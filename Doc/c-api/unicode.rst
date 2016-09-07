@@ -826,12 +826,16 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
 
 .. c:function:: int PyUnicode_FSDecoder(PyObject* obj, void* result)
 
-   ParseTuple converter: decode :class:`bytes` objects to :class:`str` using
-   :c:func:`PyUnicode_DecodeFSDefaultAndSize`; :class:`str` objects are output
-   as-is. *result* must be a :c:type:`PyUnicodeObject*` which must be released
-   when it is no longer used.
+   ParseTuple converter: decode :class:`bytes` objects -- obtained either
+   directly or indirectly through the :class:`os.PathLike` interface -- to
+   :class:`str` using :c:func:`PyUnicode_DecodeFSDefaultAndSize`; :class:`str`
+   objects are output as-is. *result* must be a :c:type:`PyUnicodeObject*` which
+   must be released when it is no longer used.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. c:function:: PyObject* PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
