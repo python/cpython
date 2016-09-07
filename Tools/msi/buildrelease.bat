@@ -35,7 +35,7 @@ set BUILDX86=
 set BUILDX64=
 set TARGET=Rebuild
 set TESTTARGETDIR=
-set PGO=
+set PGO=default
 
 
 :CheckOpts
@@ -55,6 +55,7 @@ if "%1" EQU "--build" (set TARGET=Build) && shift && goto CheckOpts
 if "%1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
 if "%1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
 if "%1" EQU "--pgo" (set PGO=%~2) && shift && shift && goto CheckOpts
+if "%1" EQU "--skip-pgo" (set PGO=) && shift && goto CheckOpts
 
 if "%1" NEQ "" echo Invalid option: "%1" && exit /B 1
 
@@ -195,7 +196,7 @@ exit /B 0
 
 :Help
 echo buildrelease.bat [--out DIR] [-x86] [-x64] [--certificate CERTNAME] [--build] [--skip-build]
-echo                  [--pgo COMMAND] [--skip-doc] [--download DOWNLOAD URL] [--test TARGETDIR]
+echo                  [--pgo COMMAND] [--skip-pgo] [--skip-doc] [--download DOWNLOAD URL] [--test TARGETDIR]
 echo                  [-h]
 echo.
 echo    --out (-o)          Specify an additional output directory for installers
@@ -204,7 +205,8 @@ echo    -x64                Build x64 installers
 echo    --build (-b)        Incrementally build Python rather than rebuilding
 echo    --skip-build (-B)   Do not build Python (just do the installers)
 echo    --skip-doc (-D)     Do not build documentation
-echo    --pgo               Build x64 installers using PGO
+echo    --pgo               Specify PGO command for x64 installers
+echo    --skip-pgo          Build x64 installers using PGO
 echo    --download          Specify the full download URL for MSIs
 echo    --test              Specify the test directory to run the installer tests
 echo    -h                  Display this help information
