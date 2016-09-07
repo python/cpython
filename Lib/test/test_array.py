@@ -22,9 +22,9 @@ typecodes = "cbBhHiIlLfd"
 if test_support.have_unicode:
     typecodes += "u"
 
-class BadConstructorTest(unittest.TestCase):
+class MiscTest(unittest.TestCase):
 
-    def test_constructor(self):
+    def test_bad_constructor(self):
         self.assertRaises(TypeError, array.array)
         self.assertRaises(TypeError, array.array, spam=42)
         self.assertRaises(TypeError, array.array, 'xx')
@@ -40,7 +40,17 @@ class BadConstructorTest(unittest.TestCase):
         self.assertRaises(ValueError, array.array, u'x')
         self.assertRaises(ValueError, array.array, u'\x80')
 
-tests.append(BadConstructorTest)
+    def test_empty(self):
+        # Exercise code for handling zero-length arrays
+        a = array.array('B')
+        a[:] = a
+        self.assertEqual(len(a), 0)
+        self.assertEqual(len(a + a), 0)
+        self.assertEqual(len(a * 3), 0)
+        a += a
+        self.assertEqual(len(a), 0)
+
+tests.append(MiscTest)
 
 class BaseTest(unittest.TestCase):
     # Required class attributes (provided by subclasses
