@@ -63,6 +63,8 @@ created.  Socket addresses are represented as follows:
    .. versionchanged:: 3.5
       Writable :term:`bytes-like object` is now accepted.
 
+.. _host_port:
+
 - A pair ``(host, port)`` is used for the :const:`AF_INET` address family,
   where *host* is a string representing either a hostname in Internet domain
   notation like ``'daring.cwi.nl'`` or an IPv4 address like ``'100.50.200.5'``,

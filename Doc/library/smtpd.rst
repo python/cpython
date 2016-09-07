@@ -32,9 +32,10 @@ SMTPServer Objects
                       map=None, enable_SMTPUTF8=False, decode_data=True)
 
    Create a new :class:`SMTPServer` object, which binds to local address
-   *localaddr*.  It will treat *remoteaddr* as an upstream SMTP relayer.  It
-   inherits from :class:`asyncore.dispatcher`, and so will insert itself into
-   :mod:`asyncore`'s event loop on instantiation.
+   *localaddr*.  It will treat *remoteaddr* as an upstream SMTP relayer.  Both
+   *localaddr* and *remoteaddr* should be a :ref:`(host, port) <host_port>`
+   tuple.  The object inherits from :class:`asyncore.dispatcher`, and so will
+   insert itself into :mod:`asyncore`'s event loop on instantiation.
 
    *data_size_limit* specifies the maximum number of bytes that will be
    accepted in a ``DATA`` command.  A value of ``None`` or ``0`` means no
