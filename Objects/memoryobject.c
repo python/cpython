@@ -1115,11 +1115,7 @@ get_native_fmtchar(char *result, const char *fmt)
     case 'n': case 'N': size = sizeof(Py_ssize_t); break;
     case 'f': size = sizeof(float); break;
     case 'd': size = sizeof(double); break;
-    #ifdef HAVE_C99_BOOL
     case '?': size = sizeof(_Bool); break;
-    #else
-    case '?': size = sizeof(char); break;
-    #endif
     case 'P': size = sizeof(void *); break;
     }
 
@@ -1162,11 +1158,7 @@ get_native_fmtstr(const char *fmt)
     case 'N': RETURN("N");
     case 'f': RETURN("f");
     case 'd': RETURN("d");
-    #ifdef HAVE_C99_BOOL
     case '?': RETURN("?");
-    #else
-    case '?': RETURN("?");
-    #endif
     case 'P': RETURN("P");
     }
 
@@ -1673,11 +1665,7 @@ unpack_single(const char *ptr, const char *fmt)
     case 'l': UNPACK_SINGLE(ld, ptr, long); goto convert_ld;
 
     /* boolean */
-    #ifdef HAVE_C99_BOOL
     case '?': UNPACK_SINGLE(ld, ptr, _Bool); goto convert_bool;
-    #else
-    case '?': UNPACK_SINGLE(ld, ptr, char); goto convert_bool;
-    #endif
 
     /* unsigned integers */
     case 'H': UNPACK_SINGLE(lu, ptr, unsigned short); goto convert_lu;
@@ -1843,11 +1831,7 @@ pack_single(char *ptr, PyObject *item, const char *fmt)
         ld = PyObject_IsTrue(item);
         if (ld < 0)
             return -1; /* preserve original error */
-    #ifdef HAVE_C99_BOOL
         PACK_SINGLE(ptr, ld, _Bool);
-    #else
-        PACK_SINGLE(ptr, ld, char);
-    #endif
          break;
 
     /* bytes object */
@@ -2634,11 +2618,7 @@ unpack_cmp(const char *p, const char *q, char fmt,
     case 'l': CMP_SINGLE(p, q, long); return equal;
 
     /* boolean */
-    #ifdef HAVE_C99_BOOL
     case '?': CMP_SINGLE(p, q, _Bool); return equal;
-    #else
-    case '?': CMP_SINGLE(p, q, char); return equal;
-    #endif
 
     /* unsigned integers */
     case 'H': CMP_SINGLE(p, q, unsigned short); return equal;
