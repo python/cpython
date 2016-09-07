@@ -976,7 +976,7 @@ static PyType_Spec PyTclObject_Type_spec = {
 };
 
 
-#if PY_SIZE_MAX > INT_MAX
+#if SIZE_MAX > INT_MAX
 #define CHECK_STRING_LENGTH(s) do {                                     \
         if (s != NULL && strlen(s) >= INT_MAX) {                        \
             PyErr_SetString(PyExc_OverflowError, "string is too long"); \

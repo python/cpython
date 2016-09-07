@@ -3985,7 +3985,7 @@ decode_unicode_with_escapes(struct compiling *c, const char *s, size_t len)
     const char *end;
 
     /* check for integer overflow */
-    if (len > PY_SIZE_MAX / 6)
+    if (len > SIZE_MAX / 6)
         return NULL;
     /* "ä" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5
        "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6 */

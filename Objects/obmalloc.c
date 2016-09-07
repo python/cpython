@@ -1057,7 +1057,7 @@ new_arena(void)
         if (numarenas <= maxarenas)
             return NULL;                /* overflow */
 #if SIZEOF_SIZE_T <= SIZEOF_INT
-        if (numarenas > PY_SIZE_MAX / sizeof(*arenas))
+        if (numarenas > SIZE_MAX / sizeof(*arenas))
             return NULL;                /* overflow */
 #endif
         nbytes = numarenas * sizeof(*arenas);
