@@ -327,7 +327,8 @@ _Py_hashtable_set(_Py_hashtable_t *ht, const void *key,
     entry->key_hash = key_hash;
 
     assert(data_size == ht->data_size);
-    memcpy(_Py_HASHTABLE_ENTRY_DATA(entry), data, data_size);
+    if (data)
+        memcpy(_Py_HASHTABLE_ENTRY_DATA(entry), data, data_size);
 
     _Py_slist_prepend(&ht->buckets[index], (_Py_slist_item_t*)entry);
     ht->entries++;
