@@ -3067,7 +3067,7 @@ static PyGetSetDef PyCFuncPtr_getsets[] = {
 };
 
 #ifdef MS_WIN32
-static PPROC FindAddress(void *handle, char *name, PyObject *type)
+static PPROC FindAddress(void *handle, const char *name, PyObject *type)
 {
 #ifdef MS_WIN64
     /* win64 has no stdcall calling conv, so it should
