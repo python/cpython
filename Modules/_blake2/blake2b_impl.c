@@ -208,7 +208,7 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
                 BLAKE2B_KEYBYTES);
             goto error;
         }
-        self->param.key_length = key->len;
+        self->param.key_length = (uint8_t)key->len;
     }
 
     /* Initialize hash state. */
