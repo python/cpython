@@ -911,7 +911,7 @@ class SubclassableWeakrefTestCase(TestBase):
         self.assertFalse(hasattr(r, "__dict__"))
 
     def test_subclass_refs_with_cycle(self):
-        # Bug #3110
+        """Confirm https://bugs.python.org/issue3100 is fixed."""
         # An instance of a weakref subclass can have attributes.
         # If such a weakref holds the only strong reference to the object,
         # deleting the weakref will delete the object. In this case,
