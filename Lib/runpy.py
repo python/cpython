@@ -98,7 +98,7 @@ def _run_module_code(code, init_globals=None,
     # may be cleared when the temporary module goes away
     return mod_globals.copy()
 
-# Helper to get the loader, code and filename for a module
+# Helper to get the full name, spec and code for a module
 def _get_module_details(mod_name, error=ImportError):
     if mod_name.startswith("."):
         raise error("Relative module names not supported")
@@ -262,7 +262,7 @@ def run_path(path_name, init_globals=None, run_name=None):
         return _run_module_code(code, init_globals, run_name,
                                 pkg_name=pkg_name, script_name=fname)
     else:
-        # Importer is defined for path, so add it to
+        # Finder is defined for path, so add it to
         # the start of sys.path
         sys.path.insert(0, path_name)
         try:
