@@ -338,7 +338,8 @@ _Py_hashtable_set(_Py_hashtable_t *ht, size_t key_size, const void *pkey,
 
     entry->key_hash = key_hash;
     Py_MEMCPY((void *)_Py_HASHTABLE_ENTRY_PKEY(entry), pkey, ht->key_size);
-    ENTRY_WRITE_PDATA(ht, entry, data_size, data);
+    if (data)
+        ENTRY_WRITE_PDATA(ht, entry, data_size, data);
 
     _Py_slist_prepend(&ht->buckets[index], (_Py_slist_item_t*)entry);
     ht->entries++;
