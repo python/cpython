@@ -674,6 +674,8 @@ LLVM_PROF_MERGER
 PGO_PROF_USE_FLAG
 PGO_PROF_GEN_FLAG
 LTOFLAGS
+DEF_MAKE_RULE
+DEF_MAKE_ALL_RULE
 ABIFLAGS
 LN
 MKDIR_P
@@ -775,7 +777,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -809,6 +810,7 @@ with_suffix
 enable_shared
 enable_profiling
 with_pydebug
+with_optimizations
 with_lto
 with_hash_algorithm
 with_address_sanitizer
@@ -886,7 +888,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1139,15 +1140,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1285,7 +1277,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1438,7 +1430,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1501,6 +1492,8 @@ Optional Packages:
                           compiler
   --with-suffix=.exe      set executable suffix
   --with-pydebug          build with Py_DEBUG defined
+  --with-optimizations    Enable all optimizations when available (LTO, PGO,
+                          etc). Disabled by default.
   --with-lto              Enable Link Time Optimization in PGO builds.
                           Disabled by default.
   --with-hash-algorithm=[fnv|siphash24]
@@ -6457,6 +6450,46 @@ else
 $as_echo "no" >&6; }
 fi
 
+
+# Enable optimization flags
+
+
+Py_OPT='false'
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-optimizations" >&5
+$as_echo_n "checking for --with-optimizations... " >&6; }
+
+# Check whether --with-optimizations was given.
+if test "${with_optimizations+set}" = set; then :
+  withval=$with_optimizations;
+if test "$withval" != no
+then
+  Py_OPT='true'
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+else
+  Py_OPT='false'
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; };
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+if test "$Py_OPT" = 'true' ; then
+  Py_LTO='true'
+  case $ac_sys_system in
+    Darwin*)
+      # At least on macOS El Capitan, LTO does not work with PGO.
+      Py_LTO='false'
+      ;;
+    esac
+  DEF_MAKE_ALL_RULE="profile-opt"
+  DEF_MAKE_RULE="build_all"
+else
+  DEF_MAKE_ALL_RULE="build_all"
+  DEF_MAKE_RULE="all"
+fi
 
 # Enable LTO flags
 
@@ -17581,3 +17614,13 @@ $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules Modules/Setup.config \
 			Modules/Setup.local Modules/Setup
 mv config.c Modules
+
+if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
+    echo "" >&6
+    echo "" >&6
+    echo "If you want a release build with all optimizations active (LTO, PGO, etc),"
+    echo "please run ./configure --with-optimizations" >&6
+    echo "" >&6
+    echo "" >&6
+fi
+

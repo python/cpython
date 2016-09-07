@@ -219,6 +219,9 @@ Tests
 Build
 -----
 
+- Issue #26539: Add the --with-optimizations flag to turn on LTO and PGO build
+  support when available.
+
 - Issue #27917: Set platform triplets for Android builds.
 
 - Issue #25825: Update references to the $(LIBPL) installation path on AIX.
