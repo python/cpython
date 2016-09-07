@@ -5229,7 +5229,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
        mark is skipped, in all other modes, it is copied to the output
        stream as-is (giving a ZWNBSP character). */
     if (bo == 0 && size >= 4) {
-        Py_UCS4 bom = (q[3] << 24) | (q[2] << 16) | (q[1] << 8) | q[0];
+        Py_UCS4 bom = ((unsigned int)q[3] << 24) | (q[2] << 16) | (q[1] << 8) | q[0];
         if (bom == 0x0000FEFF) {
             bo = -1;
             q += 4;
@@ -5271,7 +5271,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
             Py_ssize_t pos = writer.pos;
             if (le) {
                 do {
-                    ch = (q[3] << 24) | (q[2] << 16) | (q[1] << 8) | q[0];
+                    ch = ((unsigned int)q[3] << 24) | (q[2] << 16) | (q[1] << 8) | q[0];
                     if (ch > maxch)
                         break;
                     if (kind != PyUnicode_1BYTE_KIND &&
@@ -5283,7 +5283,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
             }
             else {
                 do {
-                    ch = (q[0] << 24) | (q[1] << 16) | (q[2] << 8) | q[3];
+                    ch = ((unsigned int)q[0] << 24) | (q[1] << 16) | (q[2] << 8) | q[3];
                     if (ch > maxch)
                         break;
                     if (kind != PyUnicode_1BYTE_KIND &&
