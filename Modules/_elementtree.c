@@ -1787,7 +1787,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
                 step = -step;
             }
 
-            assert((size_t)slicelen <= PY_SIZE_MAX / sizeof(PyObject *));
+            assert((size_t)slicelen <= SIZE_MAX / sizeof(PyObject *));
 
             /* recycle is a list that will contain all the children
              * scheduled for removal.

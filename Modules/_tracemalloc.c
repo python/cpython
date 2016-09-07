@@ -655,7 +655,7 @@ tracemalloc_add_trace(_PyTraceMalloc_domain_t domain, uintptr_t ptr,
         }
     }
 
-    assert(tracemalloc_traced_memory <= PY_SIZE_MAX - size);
+    assert(tracemalloc_traced_memory <= SIZE_MAX - size);
     tracemalloc_traced_memory += size;
     if (tracemalloc_traced_memory > tracemalloc_peak_traced_memory)
         tracemalloc_peak_traced_memory = tracemalloc_traced_memory;
@@ -672,7 +672,7 @@ tracemalloc_alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
     PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
     void *ptr;
 
-    assert(elsize == 0 || nelem <= PY_SIZE_MAX / elsize);
+    assert(elsize == 0 || nelem <= SIZE_MAX / elsize);
 
     if (use_calloc)
         ptr = alloc->calloc(alloc->ctx, nelem, elsize);

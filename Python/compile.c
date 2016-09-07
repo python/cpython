@@ -804,7 +804,7 @@ compiler_next_instr(struct compiler *c, basicblock *b)
         oldsize = b->b_ialloc * sizeof(struct instr);
         newsize = oldsize << 1;
 
-        if (oldsize > (PY_SIZE_MAX >> 1)) {
+        if (oldsize > (SIZE_MAX >> 1)) {
             PyErr_NoMemory();
             return -1;
         }
@@ -4520,7 +4520,7 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
     a->a_lnotab = PyBytes_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
     if (!a->a_lnotab)
         return 0;
-    if ((size_t)nblocks > PY_SIZE_MAX / sizeof(basicblock *)) {
+    if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
         PyErr_NoMemory();
         return 0;
     }
