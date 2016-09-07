@@ -83,6 +83,10 @@ Windows improvements:
   command line arguments or a config file).  Handling of shebang lines
   remains unchanged - "python" refers to Python 2 in that case.
 
+* ``python.exe`` and ``pythonw.exe`` have been marked as long-path aware,
+  which means that when the 260 character path limit may no longer apply.
+  See :ref:`removing the MAX_PATH limitation <max-path>` for details.
+
 .. PEP-sized items next.
 
 .. _pep-4XX:
@@ -506,7 +510,6 @@ will be emitted in its destructor.
 The Linux ``getrandom()`` syscall (get random bytes) is now exposed as the new
 :func:`os.getrandom` function.
 (Contributed by Victor Stinner, part of the :pep:`524`)
-
 
 pickle
 ------
