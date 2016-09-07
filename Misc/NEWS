@@ -237,6 +237,9 @@ Build
 Windows
 -------
 
+- Issue #27959: Adds oem encoding, alias ansi to mbcs, move aliasmbcs to
+  codec lookup.
+
 - Issue #27982: The functions of the winsound module now accept keyword
   arguments.
 
