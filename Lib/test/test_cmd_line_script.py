@@ -428,7 +428,7 @@ class CmdLineTest(unittest.TestCase):
             ('builtins.x', br'Error while finding module specification.*'
                 br'AttributeError'),
             ('builtins.x.y', br'Error while finding module specification.*'
-                br'ImportError.*No module named.*not a package'),
+                br'ModuleNotFoundError.*No module named.*not a package'),
             ('os.path', br'loader.*cannot handle'),
             ('importlib', br'No module named.*'
                 br'is a package and cannot be directly executed'),

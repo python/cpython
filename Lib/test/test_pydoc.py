@@ -263,7 +263,7 @@ Use help() to get the interactive help utility.
 Use help(str) for help on the str class.'''.replace('\n', os.linesep)
 
 # output pattern for module with bad imports
-badimport_pattern = "problem in %s - ImportError: No module named %r"
+badimport_pattern = "problem in %s - ModuleNotFoundError: No module named %r"
 
 expected_dynamicattribute_pattern = """
 Help on class DA in module %s:
