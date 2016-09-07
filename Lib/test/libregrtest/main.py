@@ -473,6 +473,8 @@ class Regrtest:
         if self.ns.wait:
             input("Press any key to continue...")
 
+        support.PGO = self.ns.pgo
+
         setup_tests(self.ns)
 
         self.find_tests(tests)
