@@ -110,7 +110,7 @@ HAS_PYUP_PYDOWN = gdb_has_frame_select()
 
 BREAKPOINT_FN='builtin_id'
 
-@support.skipIf(support.PGO, "not useful for PGO")
+@unittest.skipIf(support.PGO, "not useful for PGO")
 class DebuggerTests(unittest.TestCase):
 
     """Test that the debugger can debug Python."""
