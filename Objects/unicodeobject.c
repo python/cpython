@@ -5846,61 +5846,6 @@ PyUnicode_AsUTF16String(PyObject *unicode)
 
 /* --- Unicode Escape Codec ----------------------------------------------- */
 
-/* Helper function for PyUnicode_DecodeUnicodeEscape, determines
-   if all the escapes in the string make it still a valid ASCII string.
-   Returns -1 if any escapes were found which cause the string to
-   pop out of ASCII range.  Otherwise returns the length of the
-   required buffer to hold the string.
-   */
-static Py_ssize_t
-length_of_escaped_ascii_string(const char *s, Py_ssize_t size)
-{
-    const unsigned char *p = (const unsigned char *)s;
-    const unsigned char *end = p + size;
-    Py_ssize_t length = 0;
-
-    if (size < 0)
-        return -1;
-
-    for (; p < end; ++p) {
-        if (*p > 127) {
-            /* Non-ASCII */
-            return -1;
-        }
-        else if (*p != '\\') {
-            /* Normal character */
-            ++length;
-        }
-        else {
-            /* Backslash-escape, check next char */
-            ++p;
-            /* Escape sequence reaches till end of string or
-               non-ASCII follow-up. */
-            if (p >= end || *p > 127)
-                return -1;
-            switch (*p) {
-            case '\n':
-                /* backslash + \n result in zero characters */
-                break;
-            case '\\': case '\'': case '\"':
-            case 'b': case 'f': case 't':
-            case 'n': case 'r': case 'v': case 'a':
-                ++length;
-                break;
-            case '0': case '1': case '2': case '3':
-            case '4': case '5': case '6': case '7':
-            case 'x': case 'u': case 'U': case 'N':
-                /* these do not guarantee ASCII characters */
-                return -1;
-            default:
-                /* count the backslash + the other character */
-                length += 2;
-            }
-        }
-    }
-    return length;
-}
-
 static _PyUnicode_Name_CAPI *ucnhash_CAPI = NULL;
 
 PyObject *
@@ -5909,217 +5854,211 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
                               const char *errors)
 {
     const char *starts = s;
-    Py_ssize_t startinpos;
-    Py_ssize_t endinpos;
     _PyUnicodeWriter writer;
     const char *end;
-    char* message;
-    Py_UCS4 chr = 0xffffffff; /* in case 'getcode' messes up */
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
-    Py_ssize_t len;
 
-    len = length_of_escaped_ascii_string(s, size);
-    if (len == 0)
+    if (size == 0) {
         _Py_RETURN_UNICODE_EMPTY();
-
-    /* After length_of_escaped_ascii_string() there are two alternatives,
-       either the string is pure ASCII with named escapes like \n, etc.
-       and we determined it's exact size (common case)
-       or it contains \x, \u, ... escape sequences.  then we create a
-       legacy wchar string and resize it at the end of this function. */
+    }
+    /* Escaped strings will always be longer than the resulting
+       Unicode string, so we start with size here and then reduce the
+       length after conversion to the true value.
+       (but if the error callback returns a long replacement string
+       we'll have to allocate more space) */
     _PyUnicodeWriter_Init(&writer);
-    if (len > 0) {
-        writer.min_length = len;
-    }
-    else {
-        /* Escaped strings will always be longer than the resulting
-           Unicode string, so we start with size here and then reduce the
-           length after conversion to the true value.
-           (but if the error callback returns a long replacement string
-           we'll have to allocate more space) */
-        writer.min_length = size;
+    writer.min_length = size;
+    if (_PyUnicodeWriter_Prepare(&writer, size, 127) < 0) {
+        goto onError;
     }
 
-    if (size == 0)
-        return _PyUnicodeWriter_Finish(&writer);
     end = s + size;
-
     while (s < end) {
-        unsigned char c;
-        Py_UCS4 x;
-        int digits;
+        unsigned char c = (unsigned char) *s++;
+        Py_UCS4 ch;
+        int count;
+        Py_ssize_t startinpos;
+        Py_ssize_t endinpos;
+        const char *message;
+
+#define WRITE_ASCII_CHAR(ch)                                                  \
+            do {                                                              \
+                assert(ch <= 127);                                            \
+                assert(writer.pos < writer.size);                             \
+                PyUnicode_WRITE(writer.kind, writer.data, writer.pos++, ch);  \
+            } while(0)
+
+#define WRITE_CHAR(ch)                                                        \
+            do {                                                              \
+                if (ch <= writer.maxchar) {                                   \
+                    assert(writer.pos < writer.size);                         \
+                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos++, ch); \
+                }                                                             \
+                else if (_PyUnicodeWriter_WriteCharInline(&writer, ch) < 0) { \
+                    goto onError;                                             \
+                }                                                             \
+            } while(0)
 
         /* Non-escape characters are interpreted as Unicode ordinals */
-        if (*s != '\\') {
-            x = (unsigned char)*s;
-            s++;
-            if (_PyUnicodeWriter_WriteCharInline(&writer, x) < 0)
-                goto onError;
+        if (c != '\\') {
+            WRITE_CHAR(c);
             continue;
         }
 
-        startinpos = s-starts;
+        startinpos = s - starts - 1;
         /* \ - Escapes */
-        s++;
-        c = *s++;
-        if (s > end)
-            c = '\0'; /* Invalid after \ */
+        if (s >= end) {
+            message = "\\ at end of string";
+            goto error;
+        }
+        c = (unsigned char) *s++;
 
+        assert(writer.pos < writer.size);
         switch (c) {
 
             /* \x escapes */
-#define WRITECHAR(ch)                                                      \
-            do {                                                           \
-                if (_PyUnicodeWriter_WriteCharInline(&writer, (ch)) < 0)    \
-                    goto onError;                                          \
-            } while(0)
-
-        case '\n': break;
-        case '\\': WRITECHAR('\\'); break;
-        case '\'': WRITECHAR('\''); break;
-        case '\"': WRITECHAR('\"'); break;
-        case 'b': WRITECHAR('\b'); break;
+        case '\n': continue;
+        case '\\': WRITE_ASCII_CHAR('\\'); continue;
+        case '\'': WRITE_ASCII_CHAR('\''); continue;
+        case '\"': WRITE_ASCII_CHAR('\"'); continue;
+        case 'b': WRITE_ASCII_CHAR('\b'); continue;
         /* FF */
-        case 'f': WRITECHAR('\014'); break;
-        case 't': WRITECHAR('\t'); break;
-        case 'n': WRITECHAR('\n'); break;
-        case 'r': WRITECHAR('\r'); break;
+        case 'f': WRITE_ASCII_CHAR('\014'); continue;
+        case 't': WRITE_ASCII_CHAR('\t'); continue;
+        case 'n': WRITE_ASCII_CHAR('\n'); continue;
+        case 'r': WRITE_ASCII_CHAR('\r'); continue;
         /* VT */
-        case 'v': WRITECHAR('\013'); break;
+        case 'v': WRITE_ASCII_CHAR('\013'); continue;
         /* BEL, not classic C */
-        case 'a': WRITECHAR('\007'); break;
+        case 'a': WRITE_ASCII_CHAR('\007'); continue;
 
             /* \OOO (octal) escapes */
         case '0': case '1': case '2': case '3':
         case '4': case '5': case '6': case '7':
-            x = s[-1] - '0';
+            ch = c - '0';
             if (s < end && '0' <= *s && *s <= '7') {
-                x = (x<<3) + *s++ - '0';
-                if (s < end && '0' <= *s && *s <= '7')
-                    x = (x<<3) + *s++ - '0';
+                ch = (ch<<3) + *s++ - '0';
+                if (s < end && '0' <= *s && *s <= '7') {
+                    ch = (ch<<3) + *s++ - '0';
+                }
             }
-            WRITECHAR(x);
-            break;
+            WRITE_CHAR(ch);
+            continue;
 
             /* hex escapes */
             /* \xXX */
         case 'x':
-            digits = 2;
+            count = 2;
             message = "truncated \\xXX escape";
             goto hexescape;
 
             /* \uXXXX */
         case 'u':
-            digits = 4;
+            count = 4;
             message = "truncated \\uXXXX escape";
             goto hexescape;
 
             /* \UXXXXXXXX */
         case 'U':
-            digits = 8;
+            count = 8;
             message = "truncated \\UXXXXXXXX escape";
         hexescape:
-            chr = 0;
-            if (end - s < digits) {
-                /* count only hex digits */
-                for (; s < end; ++s) {
-                    c = (unsigned char)*s;
-                    if (!Py_ISXDIGIT(c))
-                        goto error;
-                }
-                goto error;
-            }
-            for (; digits--; ++s) {
+            for (ch = 0; count && s < end; ++s, --count) {
                 c = (unsigned char)*s;
-                if (!Py_ISXDIGIT(c))
-                    goto error;
-                chr = (chr<<4) & ~0xF;
-                if (c >= '0' && c <= '9')
-                    chr += c - '0';
-                else if (c >= 'a' && c <= 'f')
-                    chr += 10 + c - 'a';
-                else
-                    chr += 10 + c - 'A';
+                ch <<= 4;
+                if (c >= '0' && c <= '9') {
+                    ch += c - '0';
+                }
+                else if (c >= 'a' && c <= 'f') {
+                    ch += c - ('a' - 10);
+                }
+                else if (c >= 'A' && c <= 'F') {
+                    ch += c - ('A' - 10);
+                }
+                else {
+                    break;
+                }
             }
-            if (chr == 0xffffffff && PyErr_Occurred())
-                /* _decoding_error will have already written into the
-                   target buffer. */
-                break;
-        store:
-            /* when we get here, chr is a 32-bit unicode character */
-            message = "illegal Unicode character";
-            if (chr > MAX_UNICODE)
+            if (count) {
                 goto error;
-            WRITECHAR(chr);
-            break;
+            }
+
+            /* when we get here, ch is a 32-bit unicode character */
+            if (ch > MAX_UNICODE) {
+                message = "illegal Unicode character";
+                goto error;
+            }
+
+            WRITE_CHAR(ch);
+            continue;
 
             /* \N{name} */
         case 'N':
-            message = "malformed \\N character escape";
             if (ucnhash_CAPI == NULL) {
                 /* load the unicode data module */
                 ucnhash_CAPI = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
                                                 PyUnicodeData_CAPSULE_NAME, 1);
-                if (ucnhash_CAPI == NULL)
-                    goto ucnhashError;
+                if (ucnhash_CAPI == NULL) {
+                    PyErr_SetString(
+                        PyExc_UnicodeError,
+                        "\\N escapes not supported (can't load unicodedata module)"
+                        );
+                    goto onError;
+                }
             }
+
+            message = "malformed \\N character escape";
             if (*s == '{') {
-                const char *start = s+1;
+                const char *start = ++s;
+                size_t namelen;
                 /* look for the closing brace */
-                while (*s != '}' && s < end)
+                while (s < end && *s != '}')
                     s++;
-                if (s > start && s < end && *s == '}') {
+                namelen = s - start;
+                if (namelen && s < end) {
                     /* found a name.  look it up in the unicode database */
-                    message = "unknown Unicode character name";
                     s++;
-                    if (s - start - 1 <= INT_MAX &&
-                        ucnhash_CAPI->getcode(NULL, start, (int)(s-start-1),
-                                              &chr, 0))
-                        goto store;
+                    ch = 0xffffffff; /* in case 'getcode' messes up */
+                    if (namelen <= INT_MAX &&
+                        ucnhash_CAPI->getcode(NULL, start, (int)namelen,
+                                              &ch, 0)) {
+                        assert(ch <= MAX_UNICODE);
+                        WRITE_CHAR(ch);
+                        continue;
+                    }
+                    message = "unknown Unicode character name";
                 }
             }
             goto error;
 
         default:
-            if (s > end) {
-                message = "\\ at end of string";
-                s--;
-                goto error;
-            }
-            else {
-                WRITECHAR('\\');
-                WRITECHAR((unsigned char)s[-1]);
-            }
-            break;
+            WRITE_ASCII_CHAR('\\');
+            WRITE_CHAR(c);
+            continue;
         }
-        continue;
 
       error:
         endinpos = s-starts;
+        writer.min_length = end - s + writer.pos;
         if (unicode_decode_call_errorhandler_writer(
                 errors, &errorHandler,
                 "unicodeescape", message,
                 &starts, &end, &startinpos, &endinpos, &exc, &s,
-                &writer))
+                &writer)) {
             goto onError;
-        continue;
+        }
+        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
+            goto onError;
+        }
+
+#undef WRITE_ASCII_CHAR
+#undef WRITE_CHAR
     }
-#undef WRITECHAR
 
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
     return _PyUnicodeWriter_Finish(&writer);
-
-  ucnhashError:
-    PyErr_SetString(
-        PyExc_UnicodeError,
-        "\\N escapes not supported (can't load unicodedata module)"
-        );
-    _PyUnicodeWriter_Dealloc(&writer);
-    Py_XDECREF(errorHandler);
-    Py_XDECREF(exc);
-    return NULL;
 
   onError:
     _PyUnicodeWriter_Dealloc(&writer);
@@ -6139,10 +6078,11 @@ PyObject *
 PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 {
     Py_ssize_t i, len;
+    PyObject *repr;
     char *p;
-    int kind;
+    enum PyUnicode_Kind kind;
     void *data;
-    _PyBytesWriter writer;
+    Py_ssize_t expandsize;
 
     /* Initial allocation is based on the longest-possible character
        escape.
@@ -6156,62 +6096,71 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
         PyErr_BadArgument();
         return NULL;
     }
-    if (PyUnicode_READY(unicode) == -1)
+    if (PyUnicode_READY(unicode) == -1) {
         return NULL;
-
-    _PyBytesWriter_Init(&writer);
+    }
 
     len = PyUnicode_GET_LENGTH(unicode);
+    if (len == 0) {
+        return PyBytes_FromStringAndSize(NULL, 0);
+    }
+
     kind = PyUnicode_KIND(unicode);
     data = PyUnicode_DATA(unicode);
+    /* 4 byte characters can take up 10 bytes, 2 byte characters can take up 6
+       bytes, and 1 byte characters 4. */
+    expandsize = kind * 2 + 2;
+    if (len > (PY_SSIZE_T_MAX - 2 - 1) / expandsize) {
+        return PyErr_NoMemory();
+    }
+    repr = PyBytes_FromStringAndSize(NULL, 2 + expandsize * len + 1);
+    if (repr == NULL) {
+        return NULL;
+    }
 
-    p = _PyBytesWriter_Alloc(&writer, len);
-    if (p == NULL)
-        goto error;
-    writer.overallocate = 1;
-
+    p = PyBytes_AS_STRING(repr);
     for (i = 0; i < len; i++) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
 
-        /* Escape backslashes */
-        if (ch == '\\') {
-            /* -1: subtract 1 preallocated byte */
-            p = _PyBytesWriter_Prepare(&writer, p, 2-1);
-            if (p == NULL)
-                goto error;
+        /* U+0000-U+00ff range */
+        if (ch < 0x100) {
+            if (ch >= ' ' && ch < 127) {
+                if (ch != '\\') {
+                    /* Copy printable US ASCII as-is */
+                    *p++ = (char) ch;
+                }
+                /* Escape backslashes */
+                else {
+                    *p++ = '\\';
+                    *p++ = '\\';
+                }
+            }
 
-            *p++ = '\\';
-            *p++ = (char) ch;
-            continue;
+            /* Map special whitespace to '\t', \n', '\r' */
+            else if (ch == '\t') {
+                *p++ = '\\';
+                *p++ = 't';
+            }
+            else if (ch == '\n') {
+                *p++ = '\\';
+                *p++ = 'n';
+            }
+            else if (ch == '\r') {
+                *p++ = '\\';
+                *p++ = 'r';
+            }
+
+            /* Map non-printable US ASCII and 8-bit characters to '\xHH' */
+            else {
+                *p++ = '\\';
+                *p++ = 'x';
+                *p++ = Py_hexdigits[(ch >> 4) & 0x000F];
+                *p++ = Py_hexdigits[ch & 0x000F];
+            }
         }
-
-        /* Map 21-bit characters to '\U00xxxxxx' */
-        else if (ch >= 0x10000) {
-            assert(ch <= MAX_UNICODE);
-
-            p = _PyBytesWriter_Prepare(&writer, p, 10-1);
-            if (p == NULL)
-                goto error;
-
-            *p++ = '\\';
-            *p++ = 'U';
-            *p++ = Py_hexdigits[(ch >> 28) & 0x0000000F];
-            *p++ = Py_hexdigits[(ch >> 24) & 0x0000000F];
-            *p++ = Py_hexdigits[(ch >> 20) & 0x0000000F];
-            *p++ = Py_hexdigits[(ch >> 16) & 0x0000000F];
-            *p++ = Py_hexdigits[(ch >> 12) & 0x0000000F];
-            *p++ = Py_hexdigits[(ch >> 8) & 0x0000000F];
-            *p++ = Py_hexdigits[(ch >> 4) & 0x0000000F];
-            *p++ = Py_hexdigits[ch & 0x0000000F];
-            continue;
-        }
-
-        /* Map 16-bit characters to '\uxxxx' */
-        if (ch >= 256) {
-            p = _PyBytesWriter_Prepare(&writer, p, 6-1);
-            if (p == NULL)
-                goto error;
-
+        /* U+0000-U+00ff range: Map 16-bit characters to '\uHHHH' */
+        else if (ch < 0x10000) {
+            /* U+0100-U+ffff */
             *p++ = '\\';
             *p++ = 'u';
             *p++ = Py_hexdigits[(ch >> 12) & 0x000F];
@@ -6219,56 +6168,29 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
             *p++ = Py_hexdigits[(ch >> 4) & 0x000F];
             *p++ = Py_hexdigits[ch & 0x000F];
         }
+        /* U+010000-U+10ffff range: Map 21-bit characters to '\U00HHHHHH' */
+        else {
 
-        /* Map special whitespace to '\t', \n', '\r' */
-        else if (ch == '\t') {
-            p = _PyBytesWriter_Prepare(&writer, p, 2-1);
-            if (p == NULL)
-                goto error;
-
+            /* Make sure that the first two digits are zero */
+            assert(ch <= MAX_UNICODE && MAX_UNICODE <= 0x10ffff);
             *p++ = '\\';
-            *p++ = 't';
+            *p++ = 'U';
+            *p++ = '0';
+            *p++ = '0';
+            *p++ = Py_hexdigits[(ch >> 20) & 0x0000000F];
+            *p++ = Py_hexdigits[(ch >> 16) & 0x0000000F];
+            *p++ = Py_hexdigits[(ch >> 12) & 0x0000000F];
+            *p++ = Py_hexdigits[(ch >> 8) & 0x0000000F];
+            *p++ = Py_hexdigits[(ch >> 4) & 0x0000000F];
+            *p++ = Py_hexdigits[ch & 0x0000000F];
         }
-        else if (ch == '\n') {
-            p = _PyBytesWriter_Prepare(&writer, p, 2-1);
-            if (p == NULL)
-                goto error;
-
-            *p++ = '\\';
-            *p++ = 'n';
-        }
-        else if (ch == '\r') {
-            p = _PyBytesWriter_Prepare(&writer, p, 2-1);
-            if (p == NULL)
-                goto error;
-
-            *p++ = '\\';
-            *p++ = 'r';
-        }
-
-        /* Map non-printable US ASCII to '\xhh' */
-        else if (ch < ' ' || ch >= 0x7F) {
-            /* -1: subtract 1 preallocated byte */
-            p = _PyBytesWriter_Prepare(&writer, p, 4-1);
-            if (p == NULL)
-                goto error;
-
-            *p++ = '\\';
-            *p++ = 'x';
-            *p++ = Py_hexdigits[(ch >> 4) & 0x000F];
-            *p++ = Py_hexdigits[ch & 0x000F];
-        }
-
-        /* Copy everything else as-is */
-        else
-            *p++ = (char) ch;
     }
 
-    return _PyBytesWriter_Finish(&writer, p);
-
-error:
-    _PyBytesWriter_Dealloc(&writer);
-    return NULL;
+    assert(p - PyBytes_AS_STRING(repr) > 0);
+    if (_PyBytes_Resize(&repr, p - PyBytes_AS_STRING(repr)) < 0) {
+        return NULL;
+    }
+    return repr;
 }
 
 PyObject *
@@ -6277,8 +6199,10 @@ PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
 {
     PyObject *result;
     PyObject *tmp = PyUnicode_FromUnicode(s, size);
-    if (tmp == NULL)
+    if (tmp == NULL) {
         return NULL;
+    }
+
     result = PyUnicode_AsUnicodeEscapeString(tmp);
     Py_DECREF(tmp);
     return result;
@@ -6292,95 +6216,107 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
                                  const char *errors)
 {
     const char *starts = s;
-    Py_ssize_t startinpos;
-    Py_ssize_t endinpos;
     _PyUnicodeWriter writer;
     const char *end;
-    const char *bs;
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
 
-    if (size == 0)
+    if (size == 0) {
         _Py_RETURN_UNICODE_EMPTY();
+    }
 
     /* Escaped strings will always be longer than the resulting
        Unicode string, so we start with size here and then reduce the
        length after conversion to the true value. (But decoding error
        handler might have to resize the string) */
     _PyUnicodeWriter_Init(&writer);
-    writer.min_length = size;
+     writer.min_length = size;
+    if (_PyUnicodeWriter_Prepare(&writer, size, 127) < 0) {
+        goto onError;
+    }
 
     end = s + size;
     while (s < end) {
-        unsigned char c;
-        Py_UCS4 x;
-        int i;
+        unsigned char c = (unsigned char) *s++;
+        Py_UCS4 ch;
         int count;
+        Py_ssize_t startinpos;
+        Py_ssize_t endinpos;
+        const char *message;
+
+#define WRITE_CHAR(ch)                                                        \
+            do {                                                              \
+                if (ch <= writer.maxchar) {                                   \
+                    assert(writer.pos < writer.size);                         \
+                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos++, ch); \
+                }                                                             \
+                else if (_PyUnicodeWriter_WriteCharInline(&writer, ch) < 0) { \
+                    goto onError;                                             \
+                }                                                             \
+            } while(0)
 
         /* Non-escape characters are interpreted as Unicode ordinals */
-        if (*s != '\\') {
-            x = (unsigned char)*s++;
-            if (_PyUnicodeWriter_WriteCharInline(&writer, x) < 0)
-                goto onError;
+        if (c != '\\' || s >= end) {
+            WRITE_CHAR(c);
             continue;
         }
-        startinpos = s-starts;
 
-        /* \u-escapes are only interpreted iff the number of leading
-           backslashes if odd */
-        bs = s;
-        for (;s < end;) {
-            if (*s != '\\')
-                break;
-            x = (unsigned char)*s++;
-            if (_PyUnicodeWriter_WriteCharInline(&writer, x) < 0)
-                goto onError;
+        c = (unsigned char) *s++;
+        if (c == 'u') {
+            count = 4;
+            message = "truncated \\uXXXX escape";
         }
-        if (((s - bs) & 1) == 0 ||
-            s >= end ||
-            (*s != 'u' && *s != 'U')) {
-            continue;
-        }
-        writer.pos--;
-        count = *s=='u' ? 4 : 8;
-        s++;
-
-        /* \uXXXX with 4 hex digits, \Uxxxxxxxx with 8 */
-        for (x = 0, i = 0; i < count; ++i, ++s) {
-            c = (unsigned char)*s;
-            if (!Py_ISXDIGIT(c)) {
-                endinpos = s-starts;
-                if (unicode_decode_call_errorhandler_writer(
-                        errors, &errorHandler,
-                        "rawunicodeescape", "truncated \\uXXXX",
-                        &starts, &end, &startinpos, &endinpos, &exc, &s,
-                        &writer))
-                    goto onError;
-                goto nextByte;
-            }
-            x = (x<<4) & ~0xF;
-            if (c >= '0' && c <= '9')
-                x += c - '0';
-            else if (c >= 'a' && c <= 'f')
-                x += 10 + c - 'a';
-            else
-                x += 10 + c - 'A';
-        }
-        if (x <= MAX_UNICODE) {
-            if (_PyUnicodeWriter_WriteCharInline(&writer, x) < 0)
-                goto onError;
+        else if (c == 'U') {
+            count = 8;
+            message = "truncated \\UXXXXXXXX escape";
         }
         else {
-            endinpos = s-starts;
-            if (unicode_decode_call_errorhandler_writer(
-                    errors, &errorHandler,
-                    "rawunicodeescape", "\\Uxxxxxxxx out of range",
-                    &starts, &end, &startinpos, &endinpos, &exc, &s,
-                    &writer))
-                goto onError;
+            assert(writer.pos < writer.size);
+            PyUnicode_WRITE(writer.kind, writer.data, writer.pos++, '\\');
+            WRITE_CHAR(c);
+            continue;
         }
-      nextByte:
-        ;
+        startinpos = s - starts - 2;
+
+        /* \uHHHH with 4 hex digits, \U00HHHHHH with 8 */
+        for (ch = 0; count && s < end; ++s, --count) {
+            c = (unsigned char)*s;
+            ch <<= 4;
+            if (c >= '0' && c <= '9') {
+                ch += c - '0';
+            }
+            else if (c >= 'a' && c <= 'f') {
+                ch += c - ('a' - 10);
+            }
+            else if (c >= 'A' && c <= 'F') {
+                ch += c - ('A' - 10);
+            }
+            else {
+                break;
+            }
+        }
+        if (!count) {
+            if (ch <= MAX_UNICODE) {
+                WRITE_CHAR(ch);
+                continue;
+            }
+            message = "\\Uxxxxxxxx out of range";
+        }
+
+        endinpos = s-starts;
+        writer.min_length = end - s + writer.pos;
+        if (unicode_decode_call_errorhandler_writer(
+                errors, &errorHandler,
+                "rawunicodeescape", message,
+                &starts, &end, &startinpos, &endinpos, &exc, &s,
+                &writer)) {
+            goto onError;
+        }
+        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
+            goto onError;
+        }
+
+#undef WRITE_CHAR
     }
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
@@ -6391,66 +6327,59 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
     return NULL;
+
 }
 
 
 PyObject *
 PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
 {
+    PyObject *repr;
     char *p;
-    Py_ssize_t pos;
+    Py_ssize_t expandsize, pos;
     int kind;
     void *data;
     Py_ssize_t len;
-    _PyBytesWriter writer;
 
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
     }
-    if (PyUnicode_READY(unicode) == -1)
+    if (PyUnicode_READY(unicode) == -1) {
         return NULL;
-
-    _PyBytesWriter_Init(&writer);
-
+    }
     kind = PyUnicode_KIND(unicode);
     data = PyUnicode_DATA(unicode);
     len = PyUnicode_GET_LENGTH(unicode);
+    if (kind == PyUnicode_1BYTE_KIND) {
+        return PyBytes_FromStringAndSize(data, len);
+    }
 
-    p = _PyBytesWriter_Alloc(&writer, len);
-    if (p == NULL)
-        goto error;
-    writer.overallocate = 1;
+    /* 4 byte characters can take up 10 bytes, 2 byte characters can take up 6
+       bytes, and 1 byte characters 4. */
+    expandsize = kind * 2 + 2;
 
+    if (len > PY_SSIZE_T_MAX / expandsize) {
+        return PyErr_NoMemory();
+    }
+    repr = PyBytes_FromStringAndSize(NULL, expandsize * len);
+    if (repr == NULL) {
+        return NULL;
+    }
+    if (len == 0) {
+        return repr;
+    }
+
+    p = PyBytes_AS_STRING(repr);
     for (pos = 0; pos < len; pos++) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, pos);
-        /* Map 32-bit characters to '\Uxxxxxxxx' */
-        if (ch >= 0x10000) {
-            assert(ch <= MAX_UNICODE);
 
-            /* -1: subtract 1 preallocated byte */
-            p = _PyBytesWriter_Prepare(&writer, p, 10-1);
-            if (p == NULL)
-                goto error;
-
-            *p++ = '\\';
-            *p++ = 'U';
-            *p++ = Py_hexdigits[(ch >> 28) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 24) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 20) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 16) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 12) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 8) & 0xf];
-            *p++ = Py_hexdigits[(ch >> 4) & 0xf];
-            *p++ = Py_hexdigits[ch & 15];
+        /* U+0000-U+00ff range: Copy 8-bit characters as-is */
+        if (ch < 0x100) {
+            *p++ = (char) ch;
         }
-        /* Map 16-bit characters to '\uxxxx' */
-        else if (ch >= 256) {
-            /* -1: subtract 1 preallocated byte */
-            p = _PyBytesWriter_Prepare(&writer, p, 6-1);
-            if (p == NULL)
-                goto error;
-
+        /* U+0000-U+00ff range: Map 16-bit characters to '\uHHHH' */
+        else if (ch < 0x10000) {
             *p++ = '\\';
             *p++ = 'u';
             *p++ = Py_hexdigits[(ch >> 12) & 0xf];
@@ -6458,16 +6387,27 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
             *p++ = Py_hexdigits[(ch >> 4) & 0xf];
             *p++ = Py_hexdigits[ch & 15];
         }
-        /* Copy everything else as-is */
-        else
-            *p++ = (char) ch;
+        /* U+010000-U+10ffff range: Map 32-bit characters to '\U00HHHHHH' */
+        else {
+            assert(ch <= MAX_UNICODE && MAX_UNICODE <= 0x10ffff);
+            *p++ = '\\';
+            *p++ = 'U';
+            *p++ = '0';
+            *p++ = '0';
+            *p++ = Py_hexdigits[(ch >> 20) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 16) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 12) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 8) & 0xf];
+            *p++ = Py_hexdigits[(ch >> 4) & 0xf];
+            *p++ = Py_hexdigits[ch & 15];
+        }
     }
 
-    return _PyBytesWriter_Finish(&writer, p);
-
-error:
-    _PyBytesWriter_Dealloc(&writer);
-    return NULL;
+    assert(p > PyBytes_AS_STRING(repr));
+    if (_PyBytes_Resize(&repr, p - PyBytes_AS_STRING(repr)) < 0) {
+        return NULL;
+    }
+    return repr;
 }
 
 PyObject *
