@@ -74,6 +74,31 @@ installation". In this case:
 * If selected, the install directory will be added to the system :envvar:`PATH`
 * Shortcuts are available for all users
 
+.. _max-path:
+
+Removing the MAX_PATH Limitation
+--------------------------------
+
+Windows historically has limited path lengths to 260 characters. This meant that
+paths longer than this would not resolve and errors would result.
+
+In the latest versions of Windows, this limitation can be expanded to
+approximately 32,000 characters. Your administrator will need to activate the
+"Enable Win32 long paths" group policy, or set the registry value
+``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem@LongPathsEnabled``
+to ``1``.
+
+This allows the :func:`open` function, the :mod:`os` module and most other
+path functionality to accept and return paths longer than 260 characters when
+using strings. (Use of bytes as paths is deprecated on Windows, and this feature
+is not available when using bytes.)
+
+After changing the above option, no further configuration is required.
+
+.. versionchanged:: 3.6
+
+   Support for long paths was enabled in Python.
+
 .. _install-quiet-option:
 
 Installing Without UI
