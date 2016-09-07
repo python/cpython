@@ -450,6 +450,12 @@ Any code relying on the presence of ``default_format`` may
 need to be adapted. See :issue:`27819` for more details.
 
 
+encodings
+---------
+
+On Windows, added the ``'oem'`` encoding to use ``CP_OEMCP`` and the ``'ansi'``
+alias for the existing ``'mbcs'`` encoding, which uses the ``CP_ACP`` code page.
+
 faulthandler
 ------------
 
