@@ -168,7 +168,7 @@ class BaseWinregTests(unittest.TestCase):
         DeleteKey(key, subkeystr)
 
         try:
-            # Shouldnt be able to delete it twice!
+            # Shouldn't be able to delete it twice!
             DeleteKey(key, subkeystr)
             self.fail("Deleting the key twice succeeded")
         except OSError:

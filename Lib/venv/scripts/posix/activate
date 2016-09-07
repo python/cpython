@@ -34,7 +34,7 @@ deactivate () {
     fi
 }
 
-# unset irrelavent variables
+# unset irrelevant variables
 deactivate nondestructive
 
 VIRTUAL_ENV="__VENV_DIR__"

@@ -45,7 +45,7 @@ lock_dealloc(lockobject *self)
 /* Helper to acquire an interruptible lock with a timeout.  If the lock acquire
  * is interrupted, signal handlers are run, and if they raise an exception,
  * PY_LOCK_INTR is returned.  Otherwise, PY_LOCK_ACQUIRED or PY_LOCK_FAILURE
- * are returned, depending on whether the lock can be acquired withing the
+ * are returned, depending on whether the lock can be acquired within the
  * timeout.
  */
 static PyLockStatus

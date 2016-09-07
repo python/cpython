@@ -34,7 +34,7 @@
 - (BOOL)shouldShowUI
 {
     // if this call comes before applicationDidFinishLaunching: we
-    // should terminate immedeately after starting the script.
+    // should terminate immediately after starting the script.
     if (!initial_action_done)
         should_terminate = YES;
     initial_action_done = YES;

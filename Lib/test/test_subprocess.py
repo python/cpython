@@ -686,7 +686,7 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(stdout, "banana")
         self.assertStderrEqual(stderr.encode(), b"pineapple\npear\n")
 
-    def test_communicate_timeout_large_ouput(self):
+    def test_communicate_timeout_large_output(self):
         # Test an expiring timeout while the child is outputting lots of data.
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys,os,time;'
