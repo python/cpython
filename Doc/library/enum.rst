@@ -694,12 +694,66 @@ are recipes for some different types of enumerations that can be used directly,
 or as examples for creating one's own.
 
 
-AutoNumber
-^^^^^^^^^^
+Omitting values
+^^^^^^^^^^^^^^^
 
-Avoids having to specify the value for each enumeration member::
+In many use-cases one doesn't care what the actual value of an enumeration
+is. There are several ways to define this type of simple enumeration:
 
-    >>> class AutoNumber(Enum):
+- use instances of :class:`object` as the value
+- use a descriptive string as the value
+- use a tuple as the value and a custom :meth:`__new__` to replace the
+  tuple with an :class:`int` value
+
+Using any of these methods signifies to the user that these values are not
+important, and also enables one to add, remove, or reorder members without
+having to renumber the remaining members.
+
+Whichever method you choose, you should provide a :meth:`repr` that also hides
+the (unimportant) value::
+
+    >>> class NoValue(Enum):
+    ...     def __repr__(self):
+    ...         return '<%s.%s>' % (self.__class__.__name__, self.name)
+    ...
+
+
+Using :class:`object`
+"""""""""""""""""""""
+
+Using :class:`object` would look like::
+
+    >>> class Color(NoValue):
+    ...     red = object()
+    ...     green = object()
+    ...     blue = object()
+    ...
+    >>> Color.green
+    <Color.green>
+
+
+Using a descriptive string
+""""""""""""""""""""""""""
+
+Using a string as the value would look like::
+
+    >>> class Color(NoValue):
+    ...     red = 'stop'
+    ...     green = 'go'
+    ...     blue = 'too fast!'
+    ...
+    >>> Color.green
+    <Color.green>
+    >>> Color.green.value
+    'go'
+
+
+Using a custom :meth:`__new__`
+""""""""""""""""""""""""""""""
+
+Using an auto-numbering :meth:`__new__` would look like::
+
+    >>> class AutoNumber(NoValue):
     ...     def __new__(cls):
     ...         value = len(cls.__members__) + 1
     ...         obj = object.__new__(cls)
@@ -711,8 +765,11 @@ Avoids having to specify the value for each enumeration member::
     ...     green = ()
     ...     blue = ()
     ...
-    >>> Color.green.value == 2
-    True
+    >>> Color.green
+    <Color.green>
+    >>> Color.green.value
+    2
+
 
 .. note::
 
@@ -853,7 +910,7 @@ Finer Points
 ^^^^^^^^^^^^
 
 Supported ``__dunder__`` names
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+""""""""""""""""""""""""""""""
 
 :attr:`__members__` is an :class:`OrderedDict` of ``member_name``:``member``
 items.  It is only available on the class.
@@ -864,7 +921,7 @@ all the members are created it is no longer used.
 
 
 Supported ``_sunder_`` names
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+""""""""""""""""""""""""""""
 
 - ``_name_`` -- name of the member
 - ``_value_`` -- value of the member; can be set / modified in ``__new__``
@@ -896,7 +953,7 @@ and raise an error if the two do not match::
     order is lost before it can be recorded.
 
 ``Enum`` member type
-~~~~~~~~~~~~~~~~~~~~
+""""""""""""""""""""
 
 :class:`Enum` members are instances of an :class:`Enum` class, and even
 though they are accessible as `EnumClass.member`, they should not be accessed
@@ -917,7 +974,7 @@ besides the ``Enum`` member you looking for::
 
 
 Boolean value of ``Enum`` classes and members
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""""""""""""""""""""""""""""""""""""""""""""
 
 ``Enum`` members that are mixed with non-Enum types (such as
 :class:`int`, :class:`str`, etc.) are evaluated according to the mixed-in
@@ -932,7 +989,7 @@ your class::
 
 
 ``Enum`` classes with methods
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""""""""""""""""""""""""""""
 
 If you give your :class:`Enum` subclass extra methods, like the `Planet`_
 class above, those methods will show up in a :func:`dir` of the member,
