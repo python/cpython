@@ -67,6 +67,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27570: Avoid zero-length memcpy() etc calls with null source
+  pointers in the "ctypes" and "array" modules.
+
 - Issue #22233: Break email header lines *only* on the RFC specified CR and LF
   characters, not on arbitrary unicode line breaks.  This also fixes a bug in
   HTTP header parsing.

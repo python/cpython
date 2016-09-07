@@ -38,13 +38,23 @@ typecodes = "ubBhHiIlLfd"
 if have_long_long:
     typecodes += 'qQ'
 
-class BadConstructorTest(unittest.TestCase):
+class MiscTest(unittest.TestCase):
 
-    def test_constructor(self):
+    def test_bad_constructor(self):
         self.assertRaises(TypeError, array.array)
         self.assertRaises(TypeError, array.array, spam=42)
         self.assertRaises(TypeError, array.array, 'xx')
         self.assertRaises(ValueError, array.array, 'x')
+
+    def test_empty(self):
+        # Exercise code for handling zero-length arrays
+        a = array.array('B')
+        a[:] = a
+        self.assertEqual(len(a), 0)
+        self.assertEqual(len(a + a), 0)
+        self.assertEqual(len(a * 3), 0)
+        a += a
+        self.assertEqual(len(a), 0)
 
 
 # Machine format codes.
