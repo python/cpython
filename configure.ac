@@ -1458,6 +1458,8 @@ then
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
 	    ;;
         esac
+
+        OPT="$OPT -std=c99"
 	;;
 
     *)
