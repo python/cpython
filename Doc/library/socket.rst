@@ -34,6 +34,8 @@ in the C interface: as with :meth:`read` and :meth:`write` operations on Python
 files, buffer allocation on receive operations is automatic, and buffer length
 is implicit on send operations.
 
+.. _host_port:
+
 Socket addresses are represented as follows: A single string is used for the
 :const:`AF_UNIX` address family. A pair ``(host, port)`` is used for the
 :const:`AF_INET` address family, where *host* is a string representing either a

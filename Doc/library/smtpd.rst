@@ -23,9 +23,10 @@ SMTPServer Objects
 .. class:: SMTPServer(localaddr, remoteaddr)
 
    Create a new :class:`SMTPServer` object, which binds to local address
-   *localaddr*.  It will treat *remoteaddr* as an upstream SMTP relayer.  It
-   inherits from :class:`asyncore.dispatcher`, and so will insert itself into
-   :mod:`asyncore`'s event loop on instantiation.
+   *localaddr*.  It will treat *remoteaddr* as an upstream SMTP relayer.  Both
+   *localaddr* and *remoteaddr* should be a :ref:`(host, port) <host_port>`
+   tuple.  The object inherits from :class:`asyncore.dispatcher`, and so will
+   insert itself into :mod:`asyncore`'s event loop on instantiation.
 
 
    .. method:: process_message(peer, mailfrom, rcpttos, data)
