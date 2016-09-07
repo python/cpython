@@ -37,8 +37,11 @@
   /* opt64 uses un-aligned memory access that causes a BUS error with msg
    * 'invalid address alignment' on SPARC. */
   #define KeccakOpt 32
+#elif PY_BIG_ENDIAN
+  /* opt64 is not yet supported on big endian platforms */
+  #define KeccakOpt 32
 #elif SIZEOF_VOID_P == 8 && defined(PY_UINT64_T)
-  /* opt64 works only for 64bit platforms with unsigned int64 */
+  /* opt64 works only on little-endian 64bit platforms with unsigned int64 */
   #define KeccakOpt 64
 #else
   /* opt32 is used for the remaining 32 and 64bit platforms */
