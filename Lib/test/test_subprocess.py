@@ -894,30 +894,41 @@ class ProcessTestCase(BaseTestCase):
         #
         # UTF-16 and UTF-32-BE are sufficient to check both with BOM and
         # without, and UTF-16 and UTF-32.
-        import _bootlocale
         for encoding in ['utf-16', 'utf-32-be']:
-            old_getpreferredencoding = _bootlocale.getpreferredencoding
-            # Indirectly via io.TextIOWrapper, Popen() defaults to
-            # locale.getpreferredencoding(False) and earlier in Python 3.2 to
-            # locale.getpreferredencoding().
-            def getpreferredencoding(do_setlocale=True):
-                return encoding
             code = ("import sys; "
                     r"sys.stdout.buffer.write('1\r\n2\r3\n4'.encode('%s'))" %
                     encoding)
             args = [sys.executable, '-c', code]
-            try:
-                _bootlocale.getpreferredencoding = getpreferredencoding
-                # We set stdin to be non-None because, as of this writing,
-                # a different code path is used when the number of pipes is
-                # zero or one.
-                popen = subprocess.Popen(args, universal_newlines=True,
-                                         stdin=subprocess.PIPE,
-                                         stdout=subprocess.PIPE)
-                stdout, stderr = popen.communicate(input='')
-            finally:
-                _bootlocale.getpreferredencoding = old_getpreferredencoding
+            # We set stdin to be non-None because, as of this writing,
+            # a different code path is used when the number of pipes is
+            # zero or one.
+            popen = subprocess.Popen(args,
+                                     stdin=subprocess.PIPE,
+                                     stdout=subprocess.PIPE,
+                                     encoding=encoding)
+            stdout, stderr = popen.communicate(input='')
             self.assertEqual(stdout, '1\n2\n3\n4')
+
+    def test_communicate_errors(self):
+        for errors, expected in [
+            ('ignore', ''),
+            ('replace', '\ufffd\ufffd'),
+            ('surrogateescape', '\udc80\udc80'),
+            ('backslashreplace', '\\x80\\x80'),
+        ]:
+            code = ("import sys; "
+                    r"sys.stdout.buffer.write(b'[\x80\x80]')")
+            args = [sys.executable, '-c', code]
+            # We set stdin to be non-None because, as of this writing,
+            # a different code path is used when the number of pipes is
+            # zero or one.
+            popen = subprocess.Popen(args,
+                                     stdin=subprocess.PIPE,
+                                     stdout=subprocess.PIPE,
+                                     encoding='utf-8',
+                                     errors=errors)
+            stdout, stderr = popen.communicate(input='')
+            self.assertEqual(stdout, '[{}]'.format(expected))
 
     def test_no_leaking(self):
         # Make sure we leak no resources
@@ -2538,6 +2549,18 @@ class Win32ProcessTestCase(BaseTestCase):
                              env=newenv)
         with p:
             self.assertIn(b"physalis", p.stdout.read())
+
+    def test_shell_encodings(self):
+        # Run command through the shell (string)
+        for enc in ['ansi', 'oem']:
+            newenv = os.environ.copy()
+            newenv["FRUIT"] = "physalis"
+            p = subprocess.Popen("set", shell=1,
+                                 stdout=subprocess.PIPE,
+                                 env=newenv,
+                                 encoding=enc)
+            with p:
+                self.assertIn("physalis", p.stdout.read(), enc)
 
     def test_call_string(self):
         # call() function with string argument on Windows

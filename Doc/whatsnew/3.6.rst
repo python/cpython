@@ -589,6 +589,9 @@ proc: ...``) or call explicitly the :meth:`~subprocess.Popen.wait` method to
 read the exit status of the child process (Contributed by Victor Stinner in
 :issue:`26741`).
 
+The :class:`subprocess.Popen` constructor and all functions that pass arguments
+through to it now accept *encoding* and *errors* arguments. Specifying either
+of these will enable text mode for the *stdin*, *stdout* and *stderr* streams.
 
 telnetlib
 ---------
