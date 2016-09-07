@@ -3444,10 +3444,12 @@ class TestFeedParsers(TestEmailBase):
         self.assertEqual(m.keys(), ['a', 'b'])
         m = self.parse(['a:\r', '\nb:\n'])
         self.assertEqual(m.keys(), ['a', 'b'])
+
+        # Only CR and LF should break header fields
         m = self.parse(['a:\x85b:\u2028c:\n'])
-        self.assertEqual(m.items(), [('a', '\x85'), ('b', '\u2028'), ('c', '')])
+        self.assertEqual(m.items(), [('a', '\x85b:\u2028c:')])
         m = self.parse(['a:\r', 'b:\x85', 'c:\n'])
-        self.assertEqual(m.items(), [('a', ''), ('b', '\x85'), ('c', '')])
+        self.assertEqual(m.items(), [('a', ''), ('b', '\x85c:')])
 
     def test_long_lines(self):
         # Expected peak memory use on 32-bit platform: 6*N*M bytes.
