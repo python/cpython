@@ -4,6 +4,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include <inttypes.h>
 
 typedef short PyInt16;
 
@@ -448,7 +449,7 @@ audioop_max_impl(PyObject *module, Py_buffer *fragment, int width)
         int val = GETRAWSAMPLE(width, fragment->buf, i);
         /* Cast to unsigned before negating. Unsigned overflow is well-
         defined, but signed overflow is not. */
-        if (val < 0) absval = -(unsigned int)val;
+        if (val < 0) absval = (unsigned int)-(int64_t)val;
         else absval = val;
         if (absval > max) max = absval;
     }
