@@ -335,6 +335,9 @@ class CompatPickleTests(unittest.TestCase):
                 if (module2, name2) == ('exceptions', 'OSError'):
                     attr = getattribute(module3, name3)
                     self.assertTrue(issubclass(attr, OSError))
+                elif (module2, name2) == ('exceptions', 'ImportError'):
+                    attr = getattribute(module3, name3)
+                    self.assertTrue(issubclass(attr, ImportError))
                 else:
                     module, name = mapping(module2, name2)
                     if module3[:1] != '_':
@@ -401,6 +404,11 @@ class CompatPickleTests(unittest.TestCase):
                 if exc is not OSError and issubclass(exc, OSError):
                     self.assertEqual(reverse_mapping('builtins', name),
                                      ('exceptions', 'OSError'))
+                elif exc is not ImportError and issubclass(exc, ImportError):
+                    self.assertEqual(reverse_mapping('builtins', name),
+                                     ('exceptions', 'ImportError'))
+                    self.assertEqual(mapping('exceptions', name),
+                                     ('exceptions', name))
                 else:
                     self.assertEqual(reverse_mapping('builtins', name),
                                      ('exceptions', name))
