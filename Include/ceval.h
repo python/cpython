@@ -187,6 +187,10 @@ PyAPI_FUNC(void) _PyEval_SetSwitchInterval(unsigned long microseconds);
 PyAPI_FUNC(unsigned long) _PyEval_GetSwitchInterval(void);
 #endif
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(Py_ssize_t) _PyEval_RequestCodeExtraIndex(freefunc);
+#endif
+
 #define Py_BEGIN_ALLOW_THREADS { \
                         PyThreadState *_save; \
                         _save = PyEval_SaveThread();

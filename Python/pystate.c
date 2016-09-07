@@ -227,6 +227,7 @@ new_threadstate(PyInterpreterState *interp, int init)
 
         tstate->coroutine_wrapper = NULL;
         tstate->in_coroutine_wrapper = 0;
+        tstate->co_extra_user_count = 0;
 
         if (init)
             _PyThreadState_Init(tstate);

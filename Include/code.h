@@ -7,6 +7,14 @@
 extern "C" {
 #endif
 
+
+/* Holder for co_extra information */
+typedef struct {
+    Py_ssize_t ce_size;
+    void **ce_extras;
+} _PyCodeObjectExtra;
+
+
 /* Bytecode object */
 typedef struct {
     PyObject_HEAD
@@ -15,6 +23,7 @@ typedef struct {
     int co_nlocals;		/* #local variables */
     int co_stacksize;		/* #entries needed for evaluation stack */
     int co_flags;		/* CO_..., see below */
+    int co_firstlineno;   /* first source line number */
     PyObject *co_code;		/* instruction opcodes */
     PyObject *co_consts;	/* list (constants used) */
     PyObject *co_names;		/* list of strings (names used) */
@@ -30,11 +39,12 @@ typedef struct {
     unsigned char *co_cell2arg; /* Maps cell vars which are arguments. */
     PyObject *co_filename;	/* unicode (where it was loaded from) */
     PyObject *co_name;		/* unicode (name, for reference) */
-    int co_firstlineno;		/* first source line number */
     PyObject *co_lnotab;	/* string (encoding addr<->lineno mapping) See
 				   Objects/lnotab_notes.txt for details. */
     void *co_zombieframe;     /* for optimization only (see frameobject.c) */
     PyObject *co_weakreflist;   /* to support weakrefs to code objects */
+    /* Scratch space for extra data relating to the code object */
+    _PyCodeObjectExtra *co_extra;
 } PyCodeObject;
 
 /* Masks for co_flags above */
@@ -127,6 +137,14 @@ PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject *obj);
 
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lnotab);
+
+
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
+                                 void **extra);
+PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
+                                 void *extra);
+#endif
 
 #ifdef __cplusplus
 }
