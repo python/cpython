@@ -27,6 +27,7 @@ from email import errors
 from email import message
 from email._policybase import compat32
 from collections import deque
+from io import StringIO
 
 NLCRE = re.compile('\r\n|\r|\n')
 NLCRE_bol = re.compile('(\r\n|\r|\n)')
@@ -51,8 +52,9 @@ class BufferedSubFile(object):
     simple abstraction -- it parses until EOF closes the current message.
     """
     def __init__(self):
-        # Chunks of the last partial line pushed into this object.
-        self._partial = []
+        # Text stream of the last partial line pushed into this object.
+        # See issue 22233 for why this is a text stream and not a list.
+        self._partial = StringIO(newline='')
         # A deque of full, pushed lines
         self._lines = deque()
         # The stack of false-EOF checking predicates.
@@ -68,8 +70,10 @@ class BufferedSubFile(object):
 
     def close(self):
         # Don't forget any trailing partial line.
-        self.pushlines(''.join(self._partial).splitlines(True))
-        self._partial = []
+        self._partial.seek(0)
+        self.pushlines(self._partial.readlines())
+        self._partial.seek(0)
+        self._partial.truncate()
         self._closed = True
 
     def readline(self):
@@ -97,26 +101,23 @@ class BufferedSubFile(object):
 
     def push(self, data):
         """Push some new data into this object."""
-        # Crack into lines, but preserve the linesep characters on the end of each
-        parts = data.splitlines(True)
-
-        if not parts or not parts[0].endswith(('\n', '\r')):
-            # No new complete lines, so just accumulate partials
-            self._partial += parts
+        self._partial.write(data)
+        if '\n' not in data and '\r' not in data:
+            # No new complete lines, wait for more.
             return
 
-        if self._partial:
-            # If there are previous leftovers, complete them now
-            self._partial.append(parts[0])
-            parts[0:1] = ''.join(self._partial).splitlines(True)
-            del self._partial[:]
+        # Crack into lines, preserving the linesep characters.
+        self._partial.seek(0)
+        parts = self._partial.readlines()
+        self._partial.seek(0)
+        self._partial.truncate()
 
         # If the last element of the list does not end in a newline, then treat
         # it as a partial line.  We only check for '\n' here because a line
         # ending with '\r' might be a line that was split in the middle of a
         # '\r\n' sequence (see bugs 1555570 and 1721862).
         if not parts[-1].endswith('\n'):
-            self._partial = [parts.pop()]
+            self._partial.write(parts.pop())
         self.pushlines(parts)
 
     def pushlines(self, lines):
