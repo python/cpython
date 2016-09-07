@@ -127,7 +127,8 @@ evaluation, etc.
 
 This API is not part of the limited C API and is marked as private to
 signal that usage of this API is expected to be limited and only
-applicable to very select, low-level use-cases.
+applicable to very select, low-level use-cases. Semantics of the
+API will change with Python as necessary.
 
 .. seealso::
 
