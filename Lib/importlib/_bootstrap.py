@@ -943,10 +943,10 @@ def _find_and_load_unlocked(name, import_):
             path = parent_module.__path__
         except AttributeError:
             msg = (_ERR_MSG + '; {!r} is not a package').format(name, parent)
-            raise ImportError(msg, name=name) from None
+            raise ModuleNotFoundError(msg, name=name) from None
     spec = _find_spec(name, path)
     if spec is None:
-        raise ImportError(_ERR_MSG.format(name), name=name)
+        raise ModuleNotFoundError(_ERR_MSG.format(name), name=name)
     else:
         module = _load_unlocked(spec)
     if parent:
@@ -982,9 +982,10 @@ def _gcd_import(name, package=None, level=0):
         _imp.release_lock()
         message = ('import of {} halted; '
                    'None in sys.modules'.format(name))
-        raise ImportError(message, name=name)
+        raise ModuleNotFoundError(message, name=name)
     _lock_unlock_module(name)
     return module
+
 
 def _handle_fromlist(module, fromlist, import_):
     """Figure out what __import__ should return.
@@ -1007,13 +1008,12 @@ def _handle_fromlist(module, fromlist, import_):
                 from_name = '{}.{}'.format(module.__name__, x)
                 try:
                     _call_with_frames_removed(import_, from_name)
-                except ImportError as exc:
+                except ModuleNotFoundError as exc:
                     # Backwards-compatibility dictates we ignore failed
                     # imports triggered by fromlist for modules that don't
                     # exist.
-                    if str(exc).startswith(_ERR_MSG_PREFIX):
-                        if exc.name == from_name:
-                            continue
+                    if exc.name == from_name:
+                        continue
                     raise
     return module
 

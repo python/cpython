@@ -350,6 +350,10 @@ Some smaller changes made to the core Python language are:
   :ref:`py36-traceback` for an example).
   (Contributed by Emanuel Barry in :issue:`26823`.)
 
+* Import now raises the new exception :exc:`ModuleNotFoundError`
+  (subclass of :exc:`ImportError`) when it cannot find a module.  Code
+  that current checks for ImportError (in try-except) will still work.
+
 
 New Modules
 ===========
@@ -958,6 +962,9 @@ Changes in the Python API
 
 * When :meth:`importlib.abc.Loader.exec_module` is defined,
   :meth:`importlib.abc.Loader.create_module` must also be defined.
+
+* :c:func:`PyErr_SetImportError` now sets :exc:`TypeError` when its **msg**
+  argument is not set. Previously only ``NULL`` was returned.
 
 * The format of the ``co_lnotab`` attribute of code objects changed to support
   negative line number delta. By default, Python does not emit bytecode with
