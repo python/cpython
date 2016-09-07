@@ -37,7 +37,7 @@
 #include <sys/soundcard.h>
 #endif
 
-#if defined(linux)
+#ifdef __linux__
 
 #ifndef HAVE_STDINT_H
 typedef unsigned long uint32_t;
