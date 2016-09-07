@@ -3882,37 +3882,60 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
 int
 PyUnicode_FSDecoder(PyObject* arg, void* addr)
 {
+    int is_buffer = 0;
+    PyObject *path = NULL;
     PyObject *output = NULL;
     if (arg == NULL) {
         Py_DECREF(*(PyObject**)addr);
         return 1;
     }
-    if (PyUnicode_Check(arg)) {
-        if (PyUnicode_READY(arg) == -1)
-            return 0;
-        output = arg;
-        Py_INCREF(output);
-    }
-    else if (PyBytes_Check(arg) || PyObject_CheckBuffer(arg)) {
-        if (!PyBytes_Check(arg) &&
-            PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-            "path should be string or bytes, not %.200s",
-            Py_TYPE(arg)->tp_name)) {
+
+    is_buffer = PyObject_CheckBuffer(arg);
+    if (!is_buffer) {
+        path = PyOS_FSPath(arg);
+        if (path == NULL) {
             return 0;
         }
-        arg = PyBytes_FromObject(arg);
-        if (!arg)
+    }
+    else {
+        path = arg;
+        Py_INCREF(arg);
+    }
+
+    if (PyUnicode_Check(path)) {
+        if (PyUnicode_READY(path) == -1) {
+            Py_DECREF(path);
             return 0;
-        output = PyUnicode_DecodeFSDefaultAndSize(PyBytes_AS_STRING(arg),
-                                                  PyBytes_GET_SIZE(arg));
-        Py_DECREF(arg);
-        if (!output)
+        }
+        output = path;
+    }
+    else if (PyBytes_Check(path) || is_buffer) {
+        PyObject *path_bytes = NULL;
+
+        if (!PyBytes_Check(path) &&
+            PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            "path should be string, bytes, or os.PathLike, not %.200s",
+            Py_TYPE(arg)->tp_name)) {
+                Py_DECREF(path);
             return 0;
+        }
+        path_bytes = PyBytes_FromObject(path);
+        Py_DECREF(path);
+        if (!path_bytes) {
+            return 0;
+        }
+        output = PyUnicode_DecodeFSDefaultAndSize(PyBytes_AS_STRING(path_bytes),
+                                                  PyBytes_GET_SIZE(path_bytes));
+        Py_DECREF(path_bytes);
+        if (!output) {
+            return 0;
+        }
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "path should be string or bytes, not %.200s",
+                     "path should be string, bytes, or os.PathLike, not %.200s",
                      Py_TYPE(arg)->tp_name);
+        Py_DECREF(path);
         return 0;
     }
     if (PyUnicode_READY(output) == -1) {

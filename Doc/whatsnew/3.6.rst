@@ -160,14 +160,18 @@ object.
 
 The built-in :func:`open` function has been updated to accept
 :class:`os.PathLike` objects as have all relevant functions in the
-:mod:`os` and :mod:`os.path` modules. The :class:`os.DirEntry` class
+:mod:`os` and :mod:`os.path` modules. :c:func:`PyUnicode_FSConverter`
+and :c:func:`PyUnicode_FSConverter` have been changed to accept
+path-like objects. The :class:`os.DirEntry` class
 and relevant classes in :mod:`pathlib` have also been updated to
-implement :class:`os.PathLike`. The hope is that updating the
-fundamental functions for operating on file system paths will lead
-to third-party code to implicitly support all
-:term:`path-like objects <path-like object>` without any code changes
-or at least very minimal ones (e.g. calling :func:`os.fspath` at the
-beginning of code before operating on a path-like object).
+implement :class:`os.PathLike`.
+
+The hope in is that updating the fundamental functions for operating
+on file system paths will lead to third-party code to implicitly
+support all :term:`path-like objects <path-like object>` without any
+code changes or at least very minimal ones (e.g. calling
+:func:`os.fspath` at the beginning of code before operating on a
+path-like object).
 
 Here are some examples of how the new interface allows for
 :class:`pathlib.Path` to be used more easily and transparently with
