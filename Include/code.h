@@ -7,14 +7,6 @@
 extern "C" {
 #endif
 
-
-/* Holder for co_extra information */
-typedef struct {
-    Py_ssize_t ce_size;
-    void **ce_extras;
-} _PyCodeObjectExtra;
-
-
 /* Bytecode object */
 typedef struct {
     PyObject_HEAD
@@ -43,8 +35,10 @@ typedef struct {
 				   Objects/lnotab_notes.txt for details. */
     void *co_zombieframe;     /* for optimization only (see frameobject.c) */
     PyObject *co_weakreflist;   /* to support weakrefs to code objects */
-    /* Scratch space for extra data relating to the code object */
-    _PyCodeObjectExtra *co_extra;
+    /* Scratch space for extra data relating to the code object.__icc_nan
+       Type is a void* to keep the format private in codeobject.c to force
+       people to go through the proper APIs. */
+    void *co_extra;
 } PyCodeObject;
 
 /* Masks for co_flags above */
