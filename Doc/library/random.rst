@@ -124,6 +124,27 @@ Functions for sequences:
    Return a random element from the non-empty sequence *seq*. If *seq* is empty,
    raises :exc:`IndexError`.
 
+.. function:: weighted_choices(k, population, weights=None, *, cum_weights=None)
+
+   Return a *k* sized list of elements chosen from the *population* with replacement.
+   If the *population* is empty, raises :exc:`IndexError`.
+
+   If a *weights* sequence is specified, selections are made according to the
+   relative weights.  Alternatively, if a *cum_weights* sequence is given, the
+   selections are made according to the cumulative weights.  For example, the
+   relative weights ``[10, 5, 30, 5]`` are equivalent to the cumulative
+   weights ``[10, 15, 45, 50]``.  Internally, the relative weights are
+   converted to cumulative weights before making selections, so supplying the
+   cumulative weights saves work.
+
+   If neither *weights* nor *cum_weights* are specified, selections are made
+   with equal probability.  If a weights sequence is supplied, it must be
+   the same length as the *population* sequence.  It is a :exc:`TypeError`
+   to specify both *weights* and *cum_weights*.
+
+   The *weights* or *cum_weights* can use any numeric type that interoperates
+   with the :class:`float` values returned by :func:`random` (that includes
+   integers, floats, and fractions but excludes decimals).
 
 .. function:: shuffle(x[, random])
 
