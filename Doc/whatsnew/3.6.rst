@@ -796,6 +796,10 @@ Optimizations
 Build and C API Changes
 =======================
 
+* The ``--with-optimizations`` configure flag has been added. Turning it on
+  will activate LTO and PGO build support (when available).
+  (Original patch by Alecsandru Patrascu of Intel in :issue:`26539`.)
+
 * New :c:func:`Py_FinalizeEx` API which indicates if flushing buffered data
   failed (:issue:`5319`).
 
