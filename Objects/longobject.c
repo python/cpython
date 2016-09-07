@@ -211,7 +211,7 @@ PyLong_FromDouble(double dval)
 /* Checking for overflow in PyLong_AsLong is a PITA since C doesn't define
  * anything about what happens when a signed integer operation overflows,
  * and some compilers think they're doing you a favor by being "clever"
- * then.  The bit pattern for the largest postive signed long is
+ * then.  The bit pattern for the largest positive signed long is
  * (unsigned long)LONG_MAX, and for the smallest negative signed long
  * it is abs(LONG_MIN), which we could write -(unsigned long)LONG_MIN.
  * However, some other compilers warn about applying unary minus to an

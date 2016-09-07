@@ -276,7 +276,7 @@ typedef struct {
  StgDictObject function to a generic one.
 
  Currently, PyCFuncPtr types have 'converters' and 'checker' entries in their
- type dict.  They are only used to cache attributes from other entries, whihc
+ type dict.  They are only used to cache attributes from other entries, which
  is wrong.
 
  One use case is the .value attribute that all simple types have.  But some

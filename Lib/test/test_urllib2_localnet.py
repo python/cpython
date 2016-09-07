@@ -93,7 +93,7 @@ class BasicAuthHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
     def log_message(self, format, *args):
-        # Supress the HTTP Console log output
+        # Suppress the HTTP Console log output
         pass
 
     def do_HEAD(self):

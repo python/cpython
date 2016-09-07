@@ -1096,7 +1096,7 @@ unmarshal_code(const char *pathname, PyObject *data, time_t mtime)
     return code;
 }
 
-/* Replace any occurances of "\r\n?" in the input string with "\n".
+/* Replace any occurrences of "\r\n?" in the input string with "\n".
    This converts DOS and Mac line endings to Unix line endings.
    Also append a trailing "\n" to be compatible with
    PyParser_SimpleParseFile(). Returns a new reference. */

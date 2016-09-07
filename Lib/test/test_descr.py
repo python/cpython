@@ -684,7 +684,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             self.fail("inheriting from ModuleType and str at the same time "
                       "should fail")
 
-    def test_multiple_inheritence(self):
+    def test_multiple_inheritance(self):
         # Testing multiple inheritance...
         class C(object):
             def __init__(self):
@@ -815,7 +815,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         else:
             self.fail("new class with only classic bases - shouldn't be")
 
-    def test_diamond_inheritence(self):
+    def test_diamond_inheritance(self):
         # Testing multiple inheritance special cases...
         class A(object):
             def spam(self): return "A"

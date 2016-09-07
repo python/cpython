@@ -270,7 +270,7 @@ class TestPy3KWarnings(unittest.TestCase):
             class NoWarningOnlyHash(object):
                 def __hash__(self): pass
             self.assertEqual(len(w.warnings), 0)
-            # With an intermediate class in the heirarchy
+            # With an intermediate class in the hierarchy
             class DefinesAllThree(object):
                 def __cmp__(self, other): pass
                 def __eq__(self, other): pass

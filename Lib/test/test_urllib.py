@@ -1,4 +1,4 @@
-"""Regresssion tests for urllib"""
+"""Regression tests for urllib"""
 
 import collections
 import urllib

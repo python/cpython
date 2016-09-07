@@ -43,7 +43,7 @@ extern int finite(double);
 extern double copysign(double, double);
 #endif
 
-/* High precision defintion of pi and e (Euler)
+/* High precision definition of pi and e (Euler)
  * The values are taken from libc6's math.h.
  */
 #ifndef Py_MATH_PIl

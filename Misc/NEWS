@@ -2516,7 +2516,7 @@ Library
 
 - Issue #18709: Fix CVE-2013-4238. The SSL module now handles NULL bytes
   inside subjectAltName correctly. Formerly the module has used OpenSSL's
-  GENERAL_NAME_print() function to get the string represention of ASN.1
+  GENERAL_NAME_print() function to get the string representation of ASN.1
   strings for ``rfc822Name`` (email), ``dNSName`` (DNS) and
   ``uniformResourceIdentifier`` (URI).
 
@@ -3147,7 +3147,7 @@ Library
   using the same sys.flags as the current process.  Initial patch by
   Sergey Mezentsev.
 
-- Issue #8862: Fixed curses cleanup when getkey is interrputed by a signal.
+- Issue #8862: Fixed curses cleanup when getkey is interrupted by a signal.
 
 - Issue #9090: When a socket with a timeout fails with EWOULDBLOCK or EAGAIN,
   retry the select() loop instead of bailing out.  This is because select()
@@ -3571,7 +3571,7 @@ Library
 - Issue #14829: Fix bisect issues under 64-bit Windows.
 
 - Issue #14777: tkinter may return undecoded UTF-8 bytes as a string when
-  accessing the Tk clipboard.  Modify clipboad_get() to first request type
+  accessing the Tk clipboard.  Modify clipboard_get() to first request type
   UTF8_STRING when no specific type is requested in an X11 windowing
   environment, falling back to the current default type STRING if that fails.
   Original patch by Thomas Kluyver.

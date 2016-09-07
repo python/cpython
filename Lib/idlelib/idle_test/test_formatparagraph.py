@@ -159,7 +159,7 @@ class FindTest(unittest.TestCase):
 class ReformatFunctionTest(unittest.TestCase):
     """Test the reformat_paragraph function without the editor window."""
 
-    def test_reformat_paragrah(self):
+    def test_reformat_paragraph(self):
         Equal = self.assertEqual
         reform = fp.reformat_paragraph
         hw = "O hello world"

@@ -71,7 +71,7 @@ iobase_unsupported(const char *message)
     return NULL;
 }
 
-/* Positionning */
+/* Positioning */
 
 PyDoc_STRVAR(iobase_seek_doc,
     "Change stream position.\n"

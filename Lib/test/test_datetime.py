@@ -3343,7 +3343,7 @@ class Oddballs(unittest.TestCase):
         self.assertRaises(TypeError, lambda: as_date >= as_datetime)
         self.assertRaises(TypeError, lambda: as_datetime >= as_date)
 
-        # Neverthelss, comparison should work with the base-class (date)
+        # Nevertheless, comparison should work with the base-class (date)
         # projection if use of a date method is forced.
         self.assertTrue(as_date.__eq__(as_datetime))
         different_day = (as_date.day + 1) % 20 + 1

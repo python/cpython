@@ -1995,7 +1995,7 @@ Library
 - Bug #947906: An object oriented interface has been added to the calendar
   module. It's possible to generate HTML calendar now and the module can be
   called as a script (e.g. via ``python -mcalendar``). Localized month and
-  weekday names can be ouput (even if an exotic encoding is used) using
+  weekday names can be output (even if an exotic encoding is used) using
   special classes that use unicode.
 
 Build
@@ -2378,7 +2378,7 @@ Library
   ``True`` for ``!=``, and raises ``TypeError`` for other comparison
   operators.  Because datetime is a subclass of date, comparing only the
   base class (date) members can still be done, if that's desired, by
-  forcing using of the approprate date method; e.g.,
+  forcing using of the appropriate date method; e.g.,
   ``a_date.__eq__(a_datetime)`` is true if and only if the year, month
   and day members of ``a_date`` and ``a_datetime`` are equal.
 
@@ -12858,7 +12858,7 @@ Netscape on Windows/Mac).
 
 - copy.py: Make sure the objects returned by __getinitargs__() are
 kept alive (in the memo) to avoid a certain kind of nasty crash.  (Not
-easily reproducable because it requires a later call to
+easily reproducible because it requires a later call to
 __getinitargs__() to return a tuple that happens to be allocated at
 the same address.)
 
@@ -16490,7 +16490,7 @@ bullet-proof, after reports of (minor) trouble on certain platforms.
 There is now a script to patch Makefile and config.c to add a new
 optional built-in module: Addmodule.sh.  Read the script before using!
 
-Useing Addmodule.sh, all optional modules can now be configured at
+Using Addmodule.sh, all optional modules can now be configured at
 compile time using Configure.py, so there are no modules left that
 require dynamic loading.
 
@@ -16921,9 +16921,9 @@ SOCKET: symbolic constant definitions for socket options
 
 SUNAUDIODEV: symbolic constant definitions for sunaudiodef (sun only)
 
-SV: symbolic constat definitions for sv (sgi only)
+SV: symbolic constant definitions for sv (sgi only)
 
-CD: symbolic constat definitions for cd (sgi only)
+CD: symbolic constant definitions for cd (sgi only)
 
 
 New demos

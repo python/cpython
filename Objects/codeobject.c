@@ -690,7 +690,7 @@ _PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
     /* possible optimization: if f->f_lasti == instr_ub
        (likely to be a common case) then we already know
        instr_lb -- if we stored the matching value of p
-       somwhere we could skip the first while loop. */
+       somewhere we could skip the first while loop. */
 
     /* See lnotab_notes.txt for the description of
        co_lnotab.  A point to remember: increments to p

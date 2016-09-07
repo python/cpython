@@ -561,12 +561,12 @@ class TestMessageAPI(TestEmailBase):
 
     # Issue 5871: reject an attempt to embed a header inside a header value
     # (header injection attack).
-    def test_embeded_header_via_Header_rejected(self):
+    def test_embedded_header_via_Header_rejected(self):
         msg = Message()
         msg['Dummy'] = Header('dummy\nX-Injected-Header: test')
         self.assertRaises(Errors.HeaderParseError, msg.as_string)
 
-    def test_embeded_header_via_string_rejected(self):
+    def test_embedded_header_via_string_rejected(self):
         msg = Message()
         msg['Dummy'] = 'dummy\nX-Injected-Header: test'
         self.assertRaises(Errors.HeaderParseError, msg.as_string)

@@ -242,7 +242,7 @@ _MAXHEADERS = 100
 #
 # VCHAR defined in http://tools.ietf.org/html/rfc5234#appendix-B.1
 
-# the patterns for both name and value are more leniant than RFC
+# the patterns for both name and value are more lenient than RFC
 # definitions to allow for backwards compatibility
 _is_legal_header_name = re.compile(r'\A[^:\s][^:\r\n]*\Z').match
 _is_illegal_header_value = re.compile(r'\n(?![ \t])|\r(?![ \t\n])').search
