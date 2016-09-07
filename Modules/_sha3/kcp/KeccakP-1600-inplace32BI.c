@@ -333,8 +333,8 @@ void KeccakP1600_ExtractLanes(const void *state, unsigned char *data, unsigned i
     for(lanePosition=0; lanePosition<laneCount; lanePosition++) {
         UINT32 *stateAsHalfLanes = (UINT32*)state;
         UINT32 low, high, temp, temp0, temp1;
-        fromBitInterleaving(stateAsHalfLanes[lanePosition*2], stateAsHalfLanes[lanePosition*2+1], low, high, temp, temp0, temp1);
         UINT8 laneAsBytes[8];
+        fromBitInterleaving(stateAsHalfLanes[lanePosition*2], stateAsHalfLanes[lanePosition*2+1], low, high, temp, temp0, temp1);
         laneAsBytes[0] = low & 0xFF;
         laneAsBytes[1] = (low >> 8) & 0xFF;
         laneAsBytes[2] = (low >> 16) & 0xFF;
