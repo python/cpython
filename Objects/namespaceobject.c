@@ -1,4 +1,4 @@
-/* namespace object implementation */
+// namespace object implementation
 
 #include "Python.h"
 #include "structmember.h"
@@ -16,7 +16,7 @@ static PyMemberDef namespace_members[] = {
 };
 
 
-/* Methods */
+// Methods
 
 static PyObject *
 namespace_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -40,7 +40,7 @@ namespace_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
 {
-    /* ignore args if it's NULL or empty */
+    // ignore args if it's NULL or empty
     if (args != NULL) {
         Py_ssize_t argcount = PyObject_Size(args);
         if (argcount < 0)
@@ -191,7 +191,7 @@ namespace_reduce(_PyNamespaceObject *ns)
 static PyMethodDef namespace_methods[] = {
     {"__reduce__", (PyCFunction)namespace_reduce, METH_NOARGS,
      namespace_reduce__doc__},
-    {NULL,         NULL}  /* sentinel */
+    {NULL,         NULL}  // sentinel
 };
 
 
