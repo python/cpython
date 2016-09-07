@@ -17,7 +17,7 @@ class MIMEImage(MIMENonMultipart):
     """Class for generating image/* type MIME documents."""
 
     def __init__(self, _imagedata, _subtype=None,
-                 _encoder=encoders.encode_base64, **_params):
+                 _encoder=encoders.encode_base64, *, policy=None, **_params):
         """Create an image/* type MIME document.
 
         _imagedata is a string containing the raw image data.  If this data
@@ -41,6 +41,7 @@ class MIMEImage(MIMENonMultipart):
             _subtype = imghdr.what(None, _imagedata)
         if _subtype is None:
             raise TypeError('Could not guess image MIME subtype')
-        MIMENonMultipart.__init__(self, 'image', _subtype, **_params)
+        MIMENonMultipart.__init__(self, 'image', _subtype, policy=policy,
+                                  **_params)
         self.set_payload(_imagedata)
         _encoder(self)

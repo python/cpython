@@ -14,6 +14,7 @@ class MIMEMultipart(MIMEBase):
     """Base class for MIME multipart/* type messages."""
 
     def __init__(self, _subtype='mixed', boundary=None, _subparts=None,
+                 *, policy=None,
                  **_params):
         """Creates a multipart/* type message.
 
@@ -33,7 +34,7 @@ class MIMEMultipart(MIMEBase):
         Additional parameters for the Content-Type header are taken from the
         keyword arguments (or passed into the _params argument).
         """
-        MIMEBase.__init__(self, 'multipart', _subtype, **_params)
+        MIMEBase.__init__(self, 'multipart', _subtype, policy=policy, **_params)
 
         # Initialise _payload to an empty list as the Message superclass's
         # implementation of is_multipart assumes that _payload is a list for

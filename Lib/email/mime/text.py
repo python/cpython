@@ -14,7 +14,7 @@ from email.mime.nonmultipart import MIMENonMultipart
 class MIMEText(MIMENonMultipart):
     """Class for generating text/* type MIME documents."""
 
-    def __init__(self, _text, _subtype='plain', _charset=None):
+    def __init__(self, _text, _subtype='plain', _charset=None, *, policy=None):
         """Create a text/* type MIME document.
 
         _text is the string for this message object.
@@ -38,7 +38,7 @@ class MIMEText(MIMENonMultipart):
         if isinstance(_charset, Charset):
             _charset = str(_charset)
 
-        MIMENonMultipart.__init__(self, 'text', _subtype,
+        MIMENonMultipart.__init__(self, 'text', _subtype, policy=policy,
                                   **{'charset': _charset})
 
         self.set_payload(_text, _charset)
