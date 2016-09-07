@@ -4771,7 +4771,7 @@ Core and Builtins
 
 - Issue #20588: Make Python-ast.c C89 compliant.
 
-- Issue #20437: Fixed 22 potential bugs when deleting objects references.
+- Issue #20437: Fixed 22 potential bugs when deleting object references.
 
 - Issue #20500: Displaying an exception at interpreter shutdown no longer
   risks triggering an assertion failure in PyObject_Str.
@@ -5676,7 +5676,7 @@ Core and Builtins
   when the creation of the replacement exception won't lose any information.
 
 - Issue #19466: Clear the frames of daemon threads earlier during the
-  Python shutdown to call objects destructors. So "unclosed file" resource
+  Python shutdown to call object destructors. So "unclosed file" resource
   warnings are now correctly emitted for daemon threads.
 
 - Issue #19514: Deduplicate some _Py_IDENTIFIER declarations.
