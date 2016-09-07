@@ -458,6 +458,7 @@ aliases = {
     'macturkish'         : 'mac_turkish',
 
     # mbcs codec
+    'ansi'               : 'mbcs',
     'dbcs'               : 'mbcs',
 
     # ptcp154 codec

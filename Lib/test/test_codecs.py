@@ -8,11 +8,6 @@ import encodings
 
 from test import support
 
-if sys.platform == 'win32':
-    VISTA_OR_LATER = (sys.getwindowsversion().major >= 6)
-else:
-    VISTA_OR_LATER = False
-
 try:
     import ctypes
 except ImportError:
@@ -841,18 +836,13 @@ class CP65001Test(ReadTest, unittest.TestCase):
             ('abc', 'strict', b'abc'),
             ('\xe9\u20ac', 'strict',  b'\xc3\xa9\xe2\x82\xac'),
             ('\U0010ffff', 'strict', b'\xf4\x8f\xbf\xbf'),
+            ('\udc80', 'strict', None),
+            ('\udc80', 'ignore', b''),
+            ('\udc80', 'replace', b'?'),
+            ('\udc80', 'backslashreplace', b'\\udc80'),
+            ('\udc80', 'namereplace', b'\\udc80'),
+            ('\udc80', 'surrogatepass', b'\xed\xb2\x80'),
         ]
-        if VISTA_OR_LATER:
-            tests.extend((
-                ('\udc80', 'strict', None),
-                ('\udc80', 'ignore', b''),
-                ('\udc80', 'replace', b'?'),
-                ('\udc80', 'backslashreplace', b'\\udc80'),
-                ('\udc80', 'namereplace', b'\\udc80'),
-                ('\udc80', 'surrogatepass', b'\xed\xb2\x80'),
-            ))
-        else:
-            tests.append(('\udc80', 'strict', b'\xed\xb2\x80'))
         for text, errors, expected in tests:
             if expected is not None:
                 try:
@@ -879,17 +869,10 @@ class CP65001Test(ReadTest, unittest.TestCase):
             (b'[\xff]', 'ignore', '[]'),
             (b'[\xff]', 'replace', '[\ufffd]'),
             (b'[\xff]', 'surrogateescape', '[\udcff]'),
+            (b'[\xed\xb2\x80]', 'strict', None),
+            (b'[\xed\xb2\x80]', 'ignore', '[]'),
+            (b'[\xed\xb2\x80]', 'replace', '[\ufffd\ufffd\ufffd]'),
         ]
-        if VISTA_OR_LATER:
-            tests.extend((
-                (b'[\xed\xb2\x80]', 'strict', None),
-                (b'[\xed\xb2\x80]', 'ignore', '[]'),
-                (b'[\xed\xb2\x80]', 'replace', '[\ufffd\ufffd\ufffd]'),
-            ))
-        else:
-            tests.extend((
-                (b'[\xed\xb2\x80]', 'strict', '[\udc80]'),
-            ))
         for raw, errors, expected in tests:
             if expected is not None:
                 try:
@@ -904,7 +887,6 @@ class CP65001Test(ReadTest, unittest.TestCase):
                 self.assertRaises(UnicodeDecodeError,
                     raw.decode, 'cp65001', errors)
 
-    @unittest.skipUnless(VISTA_OR_LATER, 'require Windows Vista or later')
     def test_lone_surrogates(self):
         self.assertRaises(UnicodeEncodeError, "\ud800".encode, "cp65001")
         self.assertRaises(UnicodeDecodeError, b"\xed\xa0\x80".decode, "cp65001")
@@ -921,7 +903,6 @@ class CP65001Test(ReadTest, unittest.TestCase):
         self.assertEqual("[\uDC80]".encode("cp65001", "replace"),
                          b'[?]')
 
-    @unittest.skipUnless(VISTA_OR_LATER, 'require Windows Vista or later')
     def test_surrogatepass_handler(self):
         self.assertEqual("abc\ud800def".encode("cp65001", "surrogatepass"),
                          b"abc\xed\xa0\x80def")
@@ -1951,6 +1932,8 @@ all_unicode_encodings = [
 
 if hasattr(codecs, "mbcs_encode"):
     all_unicode_encodings.append("mbcs")
+if hasattr(codecs, "oem_encode"):
+    all_unicode_encodings.append("oem")
 
 # The following encoding is not tested, because it's not supposed
 # to work:
@@ -3119,11 +3102,10 @@ class CodePageTest(unittest.TestCase):
             (b'\xff\xf4\x8f\xbf\xbf', 'ignore', '\U0010ffff'),
             (b'\xff\xf4\x8f\xbf\xbf', 'replace', '\ufffd\U0010ffff'),
         ))
-        if VISTA_OR_LATER:
-            self.check_encode(self.CP_UTF8, (
-                ('[\U0010ffff\uDC80]', 'ignore', b'[\xf4\x8f\xbf\xbf]'),
-                ('[\U0010ffff\uDC80]', 'replace', b'[\xf4\x8f\xbf\xbf?]'),
-            ))
+        self.check_encode(self.CP_UTF8, (
+            ('[\U0010ffff\uDC80]', 'ignore', b'[\xf4\x8f\xbf\xbf]'),
+            ('[\U0010ffff\uDC80]', 'replace', b'[\xf4\x8f\xbf\xbf?]'),
+        ))
 
     def test_incremental(self):
         decoded = codecs.code_page_decode(932, b'\x82', 'strict', False)
@@ -3143,6 +3125,20 @@ class CodePageTest(unittest.TestCase):
                                           b'abc', 'strict',
                                           False)
         self.assertEqual(decoded, ('abc', 3))
+
+    def test_mbcs_alias(self):
+        # Check that looking up our 'default' codepage will return
+        # mbcs when we don't have a more specific one available
+        import _bootlocale
+        def _get_fake_codepage(*a):
+            return 'cp123'
+        old_getpreferredencoding = _bootlocale.getpreferredencoding
+        _bootlocale.getpreferredencoding = _get_fake_codepage
+        try:
+            codec = codecs.lookup('cp123')
+            self.assertEqual(codec.name, 'mbcs')
+        finally:
+            _bootlocale.getpreferredencoding = old_getpreferredencoding
 
 
 class ASCIITest(unittest.TestCase):

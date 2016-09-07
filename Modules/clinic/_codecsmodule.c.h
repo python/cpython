@@ -805,6 +805,45 @@ exit:
 
 #if defined(HAVE_MBCS)
 
+PyDoc_STRVAR(_codecs_oem_decode__doc__,
+"oem_decode($module, data, errors=None, final=False, /)\n"
+"--\n"
+"\n");
+
+#define _CODECS_OEM_DECODE_METHODDEF    \
+    {"oem_decode", (PyCFunction)_codecs_oem_decode, METH_VARARGS, _codecs_oem_decode__doc__},
+
+static PyObject *
+_codecs_oem_decode_impl(PyObject *module, Py_buffer *data,
+                        const char *errors, int final);
+
+static PyObject *
+_codecs_oem_decode(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    Py_buffer data = {NULL, NULL};
+    const char *errors = NULL;
+    int final = 0;
+
+    if (!PyArg_ParseTuple(args, "y*|zi:oem_decode",
+        &data, &errors, &final)) {
+        goto exit;
+    }
+    return_value = _codecs_oem_decode_impl(module, &data, errors, final);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj) {
+       PyBuffer_Release(&data);
+    }
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_MBCS) */
+
+#if defined(HAVE_MBCS)
+
 PyDoc_STRVAR(_codecs_code_page_decode__doc__,
 "code_page_decode($module, codepage, data, errors=None, final=False, /)\n"
 "--\n"
@@ -1346,6 +1385,38 @@ exit:
 
 #if defined(HAVE_MBCS)
 
+PyDoc_STRVAR(_codecs_oem_encode__doc__,
+"oem_encode($module, str, errors=None, /)\n"
+"--\n"
+"\n");
+
+#define _CODECS_OEM_ENCODE_METHODDEF    \
+    {"oem_encode", (PyCFunction)_codecs_oem_encode, METH_VARARGS, _codecs_oem_encode__doc__},
+
+static PyObject *
+_codecs_oem_encode_impl(PyObject *module, PyObject *str, const char *errors);
+
+static PyObject *
+_codecs_oem_encode(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    PyObject *str;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "U|z:oem_encode",
+        &str, &errors)) {
+        goto exit;
+    }
+    return_value = _codecs_oem_encode_impl(module, str, errors);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_MBCS) */
+
+#if defined(HAVE_MBCS)
+
 PyDoc_STRVAR(_codecs_code_page_encode__doc__,
 "code_page_encode($module, code_page, str, errors=None, /)\n"
 "--\n"
@@ -1446,6 +1517,10 @@ exit:
     #define _CODECS_MBCS_DECODE_METHODDEF
 #endif /* !defined(_CODECS_MBCS_DECODE_METHODDEF) */
 
+#ifndef _CODECS_OEM_DECODE_METHODDEF
+    #define _CODECS_OEM_DECODE_METHODDEF
+#endif /* !defined(_CODECS_OEM_DECODE_METHODDEF) */
+
 #ifndef _CODECS_CODE_PAGE_DECODE_METHODDEF
     #define _CODECS_CODE_PAGE_DECODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_DECODE_METHODDEF) */
@@ -1454,7 +1529,11 @@ exit:
     #define _CODECS_MBCS_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_MBCS_ENCODE_METHODDEF) */
 
+#ifndef _CODECS_OEM_ENCODE_METHODDEF
+    #define _CODECS_OEM_ENCODE_METHODDEF
+#endif /* !defined(_CODECS_OEM_ENCODE_METHODDEF) */
+
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=0221e4eece62c905 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7874e2d559d49368 input=a9049054013a1b77]*/
