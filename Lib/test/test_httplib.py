@@ -283,6 +283,36 @@ class HeaderTests(TestCase):
         self.assertEqual(resp.getheader('First'), 'val')
         self.assertEqual(resp.getheader('Second'), 'val')
 
+    def test_parse_all_octets(self):
+        # Ensure no valid header field octet breaks the parser
+        body = (
+            b'HTTP/1.1 200 OK\r\n'
+            b"!#$%&'*+-.^_`|~: value\r\n"  # Special token characters
+            b'VCHAR: ' + bytes(range(0x21, 0x7E + 1)) + b'\r\n'
+            b'obs-text: ' + bytes(range(0x80, 0xFF + 1)) + b'\r\n'
+            b'obs-fold: text\r\n'
+            b' folded with space\r\n'
+            b'\tfolded with tab\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        sock = FakeSocket(body)
+        resp = client.HTTPResponse(sock)
+        resp.begin()
+        self.assertEqual(resp.getheader('Content-Length'), '0')
+        self.assertEqual(resp.msg['Content-Length'], '0')
+        self.assertEqual(resp.getheader("!#$%&'*+-.^_`|~"), 'value')
+        self.assertEqual(resp.msg["!#$%&'*+-.^_`|~"], 'value')
+        vchar = ''.join(map(chr, range(0x21, 0x7E + 1)))
+        self.assertEqual(resp.getheader('VCHAR'), vchar)
+        self.assertEqual(resp.msg['VCHAR'], vchar)
+        self.assertIsNotNone(resp.getheader('obs-text'))
+        self.assertIn('obs-text', resp.msg)
+        for folded in (resp.getheader('obs-fold'), resp.msg['obs-fold']):
+            self.assertTrue(folded.startswith('text'))
+            self.assertIn(' folded with space', folded)
+            self.assertTrue(folded.endswith('folded with tab'))
+
     def test_invalid_headers(self):
         conn = client.HTTPConnection('example.com')
         conn.sock = FakeSocket('')

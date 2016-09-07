@@ -2,6 +2,7 @@
 code that adds all the email6 features.
 """
 
+import re
 from email._policybase import Policy, Compat32, compat32, _extend_docstrings
 from email.utils import _has_surrogates
 from email.headerregistry import HeaderRegistry as HeaderRegistry
@@ -17,6 +18,8 @@ __all__ = [
     'SMTP',
     'HTTP',
     ]
+
+linesep_splitter = re.compile(r'\n|\r')
 
 @_extend_docstrings
 class EmailPolicy(Policy):
@@ -135,6 +138,8 @@ class EmailPolicy(Policy):
         if hasattr(value, 'name') and value.name.lower() == name.lower():
             return (name, value)
         if isinstance(value, str) and len(value.splitlines())>1:
+            # XXX this error message isn't quite right when we use splitlines
+            # (see issue 22233), but I'm not sure what should happen here.
             raise ValueError("Header values may not contain linefeed "
                              "or carriage return characters")
         return (name, self.header_factory(name, value))
@@ -150,7 +155,9 @@ class EmailPolicy(Policy):
         """
         if hasattr(value, 'name'):
             return value
-        return self.header_factory(name, ''.join(value.splitlines()))
+        # We can't use splitlines here because it splits on more than \r and \n.
+        value = ''.join(linesep_splitter.split(value))
+        return self.header_factory(name, value)
 
     def fold(self, name, value):
         """+
