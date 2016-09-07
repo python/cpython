@@ -1131,7 +1131,7 @@ Library
   and http.client. Patch by EungJun Yi.
 
 - Issue #14777: tkinter may return undecoded UTF-8 bytes as a string when
-  accessing the Tk clipboard.  Modify clipboad_get() to first request type
+  accessing the Tk clipboard.  Modify clipboard_get() to first request type
   UTF8_STRING when no specific type is requested in an X11 windowing
   environment, falling back to the current default type STRING if that fails.
   Original patch by Thomas Kluyver.
@@ -5693,7 +5693,7 @@ Library
   for reading).
 
 - hashlib has two new constant attributes: algorithms_guaranteed and
-  algorithms_avaiable that respectively list the names of hash algorithms
+  algorithms_available that respectively list the names of hash algorithms
   guaranteed to exist in all Python implementations and the names of hash
   algorithms available in the current process.
 
@@ -7344,7 +7344,7 @@ Library
 - Issue #2846: Add support for gzip.GzipFile reading zero-padded files.  Patch
   by Brian Curtin.
 
-- Issue #7681: Use floor division in appropiate places in the wave module.
+- Issue #7681: Use floor division in appropriate places in the wave module.
 
 - Issue #5372: Drop the reuse of .o files in Distutils' ccompiler (since
   Extension extra options may change the output without changing the .c
@@ -10921,7 +10921,7 @@ Platforms
 
 - Support for BeOS and AtheOS was removed (according to PEP 11).
 
-- Support for RiscOS, Irix, Tru64 was removed (alledgedly).
+- Support for RiscOS, Irix, Tru64 was removed (allegedly).
 
 Tools/Demos
 -----------
@@ -12912,7 +12912,7 @@ Library
 - Bug #947906: An object oriented interface has been added to the calendar
   module. It's possible to generate HTML calendar now and the module can be
   called as a script (e.g. via ``python -mcalendar``). Localized month and
-  weekday names can be ouput (even if an exotic encoding is used) using
+  weekday names can be output (even if an exotic encoding is used) using
   special classes that use unicode.
 
 Build
@@ -13295,7 +13295,7 @@ Library
   ``True`` for ``!=``, and raises ``TypeError`` for other comparison
   operators.  Because datetime is a subclass of date, comparing only the
   base class (date) members can still be done, if that's desired, by
-  forcing using of the approprate date method; e.g.,
+  forcing using of the appropriate date method; e.g.,
   ``a_date.__eq__(a_datetime)`` is true if and only if the year, month
   and day members of ``a_date`` and ``a_datetime`` are equal.
 
@@ -23770,7 +23770,7 @@ Netscape on Windows/Mac).
 
 - copy.py: Make sure the objects returned by __getinitargs__() are
 kept alive (in the memo) to avoid a certain kind of nasty crash.  (Not
-easily reproducable because it requires a later call to
+easily reproducible because it requires a later call to
 __getinitargs__() to return a tuple that happens to be allocated at
 the same address.)
 
@@ -27402,7 +27402,7 @@ bullet-proof, after reports of (minor) trouble on certain platforms.
 There is now a script to patch Makefile and config.c to add a new
 optional built-in module: Addmodule.sh.  Read the script before using!
 
-Useing Addmodule.sh, all optional modules can now be configured at
+Using Addmodule.sh, all optional modules can now be configured at
 compile time using Configure.py, so there are no modules left that
 require dynamic loading.
 
@@ -27833,9 +27833,9 @@ SOCKET: symbolic constant definitions for socket options
 
 SUNAUDIODEV: symbolic constant definitions for sunaudiodef (sun only)
 
-SV: symbolic constat definitions for sv (sgi only)
+SV: symbolic constant definitions for sv (sgi only)
 
-CD: symbolic constat definitions for cd (sgi only)
+CD: symbolic constant definitions for cd (sgi only)
 
 
 New demos

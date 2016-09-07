@@ -516,7 +516,7 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
 
         if (tracemalloc_add_trace(ptr2, new_size) < 0) {
             /* Memory allocation failed. The error cannot be reported to
-               the caller, because realloc() may already have shrinked the
+               the caller, because realloc() may already have shrunk the
                memory block and so removed bytes.
 
                This case is very unlikely: a hash entry has just been

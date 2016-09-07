@@ -349,7 +349,7 @@ class TestDiscovery(unittest.TestCase):
         suite = list(loader._find_tests(abspath('/foo'), 'test*.py'))
 
         # We should have loaded tests from both my_package and
-        # my_pacakge.test_module, and also run the load_tests hook in both.
+        # my_package.test_module, and also run the load_tests hook in both.
         # (normally this would be nested TestSuites.)
         self.assertEqual(suite,
                          [['my_package load_tests', [],

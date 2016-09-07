@@ -1689,7 +1689,7 @@ yes)
         # Calculate an appropriate deployment target for this build:
         # The deployment target value is used explicitly to enable certain
         # features are enabled (such as builtin libedit support for readline)
-        # through the use of Apple's Availabiliy Macros and is used as a
+        # through the use of Apple's Availability Macros and is used as a
         # component of the string returned by distutils.get_platform().
         #
         # Use the value from:
