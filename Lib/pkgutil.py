@@ -45,7 +45,7 @@ def read_code(stream):
 
 
 def walk_packages(path=None, prefix='', onerror=None):
-    """Yields (module_loader, name, ispkg) for all modules recursively
+    """Yields (module_finder, name, ispkg) for all modules recursively
     on path, or, if path is None, all accessible modules.
 
     'path' should be either None or a list of paths to look for
@@ -102,7 +102,7 @@ def walk_packages(path=None, prefix='', onerror=None):
 
 
 def iter_modules(path=None, prefix=''):
-    """Yields (module_loader, name, ispkg) for all submodules on path,
+    """Yields (module_finder, name, ispkg) for all submodules on path,
     or, if path is None, all top-level modules on sys.path.
 
     'path' should be either None or a list of paths to look for
@@ -184,10 +184,10 @@ def _import_imp():
         imp = importlib.import_module('imp')
 
 class ImpImporter:
-    """PEP 302 Importer that wraps Python's "classic" import algorithm
+    """PEP 302 Finder that wraps Python's "classic" import algorithm
 
-    ImpImporter(dirname) produces a PEP 302 importer that searches that
-    directory.  ImpImporter(None) produces a PEP 302 importer that searches
+    ImpImporter(dirname) produces a PEP 302 finder that searches that
+    directory.  ImpImporter(None) produces a PEP 302 finder that searches
     the current sys.path, plus any modules that are frozen or built-in.
 
     Note that ImpImporter does not currently support being used by placement
@@ -397,7 +397,7 @@ except ImportError:
 def get_importer(path_item):
     """Retrieve a finder for the given path item
 
-    The returned importer is cached in sys.path_importer_cache
+    The returned finder is cached in sys.path_importer_cache
     if it was newly created by a path hook.
 
     The cache (or part of it) can be cleared manually if a
@@ -421,14 +421,14 @@ def get_importer(path_item):
 def iter_importers(fullname=""):
     """Yield finders for the given module name
 
-    If fullname contains a '.', the importers will be for the package
+    If fullname contains a '.', the finders will be for the package
     containing fullname, otherwise they will be all registered top level
-    importers (i.e. those on both sys.meta_path and sys.path_hooks).
+    finders (i.e. those on both sys.meta_path and sys.path_hooks).
 
     If the named module is in a package, that package is imported as a side
     effect of invoking this function.
 
-    If no module name is specified, all top level importers are produced.
+    If no module name is specified, all top level finders are produced.
     """
     if fullname.startswith('.'):
         msg = "Relative module name {!r} not supported".format(fullname)
