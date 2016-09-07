@@ -697,27 +697,37 @@ PyObject *PyErr_SetFromWindowsErrWithUnicodeFilename(
 #endif /* MS_WINDOWS */
 
 PyObject *
-PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
+PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
+    PyObject *name, PyObject *path)
 {
+    int issubclass;
     PyObject *kwargs, *error;
 
-    if (msg == NULL) {
+    issubclass = PyObject_IsSubclass(exception, PyExc_ImportError);
+    if (issubclass < 0) {
+        return NULL;
+    }
+    else if (!issubclass) {
+        PyErr_SetString(PyExc_TypeError, "expected a subclass of ImportError");
         return NULL;
     }
 
-    kwargs = PyDict_New();
-    if (kwargs == NULL) {
+    if (msg == NULL) {
+        PyErr_SetString(PyExc_TypeError, "expected a message argument");
         return NULL;
     }
 
     if (name == NULL) {
         name = Py_None;
     }
-
     if (path == NULL) {
         path = Py_None;
     }
 
+    kwargs = PyDict_New();
+    if (kwargs == NULL) {
+        return NULL;
+    }
     if (PyDict_SetItemString(kwargs, "name", name) < 0) {
         goto done;
     }
@@ -725,7 +735,7 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
         goto done;
     }
 
-    error = _PyObject_FastCallDict(PyExc_ImportError, &msg, 1, kwargs);
+    error = _PyObject_FastCallDict(exception, &msg, 1, kwargs);
     if (error != NULL) {
         PyErr_SetObject((PyObject *)Py_TYPE(error), error);
         Py_DECREF(error);
@@ -734,6 +744,12 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
 done:
     Py_DECREF(kwargs);
     return NULL;
+}
+
+PyObject *
+PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
+{
+    return PyErr_SetImportErrorSubclass(PyExc_ImportError, msg, name, path);
 }
 
 void

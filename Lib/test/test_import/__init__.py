@@ -69,6 +69,18 @@ class ImportTests(unittest.TestCase):
     def tearDown(self):
         unload(TESTFN)
 
+    def test_import_raises_ModuleNotFoundError(self):
+        with self.assertRaises(ModuleNotFoundError):
+            import something_that_should_not_exist_anywhere
+
+    def test_from_import_missing_module_raises_ModuleNotFoundError(self):
+        with self.assertRaises(ModuleNotFoundError):
+            from something_that_should_not_exist_anywhere import blah
+
+    def test_from_import_missing_attr_raises_ImportError(self):
+        with self.assertRaises(ImportError):
+            from importlib import something_that_should_not_exist_anywhere
+
     def test_case_sensitivity(self):
         # Brief digression to test that import is case-sensitive:  if we got
         # this far, we know for sure that "random" exists.

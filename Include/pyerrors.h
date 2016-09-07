@@ -284,6 +284,9 @@ PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErr(PyObject *, int);
 
 PyAPI_FUNC(PyObject *) PyErr_SetExcWithArgsKwargs(PyObject *, PyObject *,
     PyObject *);
+
+PyAPI_FUNC(PyObject *) PyErr_SetImportErrorSubclass(PyObject *, PyObject *,
+    PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyErr_SetImportError(PyObject *, PyObject *,
     PyObject *);
 
