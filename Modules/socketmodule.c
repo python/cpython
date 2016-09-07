@@ -153,7 +153,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
    On the other hand, not all Linux versions agree, so there the settings
    computed by the configure script are needed! */
 
-#ifndef linux
+#ifndef __linux__
 # undef HAVE_GETHOSTBYNAME_R_3_ARG
 # undef HAVE_GETHOSTBYNAME_R_5_ARG
 # undef HAVE_GETHOSTBYNAME_R_6_ARG
@@ -176,7 +176,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 #  define HAVE_GETHOSTBYNAME_R_3_ARG
 # elif defined(__sun) || defined(__sgi)
 #  define HAVE_GETHOSTBYNAME_R_5_ARG
-# elif defined(linux)
+# elif defined(__linux__)
 /* Rely on the configure script */
 # else
 #  undef HAVE_GETHOSTBYNAME_R
@@ -1214,7 +1214,7 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
     case AF_UNIX:
     {
         struct sockaddr_un *a = (struct sockaddr_un *) addr;
-#ifdef linux
+#ifdef __linux__
         if (a->sun_path[0] == 0) {  /* Linux abstract namespace */
             addrlen -= offsetof(struct sockaddr_un, sun_path);
             return PyBytes_FromStringAndSize(a->sun_path, addrlen);
@@ -1529,7 +1529,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         assert(path.len >= 0);
 
         addr = (struct sockaddr_un*)addr_ret;
-#ifdef linux
+#ifdef __linux__
         if (path.len > 0 && *(const char *)path.buf == 0) {
             /* Linux abstract namespace extension */
             if ((size_t)path.len > sizeof addr->sun_path) {
