@@ -740,8 +740,10 @@ array_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     np = (arrayobject *) newarrayobject(&Arraytype, ihigh - ilow, a->ob_descr);
     if (np == NULL)
         return NULL;
-    memcpy(np->ob_item, a->ob_item + ilow * a->ob_descr->itemsize,
-           (ihigh-ilow) * a->ob_descr->itemsize);
+    if (ihigh > ilow) {
+        memcpy(np->ob_item, a->ob_item + ilow * a->ob_descr->itemsize,
+               (ihigh-ilow) * a->ob_descr->itemsize);
+    }
     return (PyObject *)np;
 }
 
@@ -799,9 +801,13 @@ array_concat(arrayobject *a, PyObject *bb)
     if (np == NULL) {
         return NULL;
     }
-    memcpy(np->ob_item, a->ob_item, Py_SIZE(a)*a->ob_descr->itemsize);
-    memcpy(np->ob_item + Py_SIZE(a)*a->ob_descr->itemsize,
-           b->ob_item, Py_SIZE(b)*b->ob_descr->itemsize);
+    if (Py_SIZE(a) > 0) {
+        memcpy(np->ob_item, a->ob_item, Py_SIZE(a)*a->ob_descr->itemsize);
+    }
+    if (Py_SIZE(b) > 0) {
+        memcpy(np->ob_item + Py_SIZE(a)*a->ob_descr->itemsize,
+               b->ob_item, Py_SIZE(b)*b->ob_descr->itemsize);
+    }
     return (PyObject *)np;
 #undef b
 }
@@ -821,7 +827,7 @@ array_repeat(arrayobject *a, Py_ssize_t n)
     np = (arrayobject *) newarrayobject(&Arraytype, size, a->ob_descr);
     if (np == NULL)
         return NULL;
-    if (n == 0)
+    if (size == 0)
         return (PyObject *)np;
     oldbytes = Py_SIZE(a) * a->ob_descr->itemsize;
     newbytes = oldbytes * n;
@@ -942,8 +948,10 @@ array_do_extend(arrayobject *self, PyObject *bb)
     size = oldsize + Py_SIZE(b);
     if (array_resize(self, size) == -1)
         return -1;
-    memcpy(self->ob_item + oldsize * self->ob_descr->itemsize,
-        b->ob_item, bbsize * b->ob_descr->itemsize);
+    if (bbsize > 0) {
+        memcpy(self->ob_item + oldsize * self->ob_descr->itemsize,
+            b->ob_item, bbsize * b->ob_descr->itemsize);
+    }
 
     return 0;
 #undef b
