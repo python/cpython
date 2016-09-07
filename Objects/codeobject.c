@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include "Python.h"
 #include "code.h"
 #include "structmember.h"
@@ -96,7 +98,7 @@ PyCode_New(int argcount, int kwonlyargcount,
         Py_ssize_t total_args = argcount + kwonlyargcount +
             ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
         Py_ssize_t alloc_size = sizeof(unsigned char) * n_cellvars;
-        int used_cell2arg = 0;
+        bool used_cell2arg = false;
         cell2arg = PyMem_MALLOC(alloc_size);
         if (cell2arg == NULL)
             return NULL;
@@ -109,7 +111,7 @@ PyCode_New(int argcount, int kwonlyargcount,
                 PyObject *arg = PyTuple_GET_ITEM(varnames, j);
                 if (!PyUnicode_Compare(cell, arg)) {
                     cell2arg[i] = j;
-                    used_cell2arg = 1;
+                    used_cell2arg = true;
                     break;
                 }
             }
