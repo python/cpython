@@ -905,6 +905,13 @@ class PyBuildExt(build_ext):
                                define_macros=blake2_macros,
                                depends=blake2_deps) )
 
+        sha3_deps = glob(os.path.join(os.getcwd(), srcdir,
+                                      'Modules/_sha3/kcp/*'))
+        sha3_deps.append('hashlib.h')
+        exts.append( Extension('_sha3',
+                               ['_sha3/sha3module.c'],
+                               depends=sha3_deps))
+
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on
         # your machine, though none are defined by default because of library

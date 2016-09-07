@@ -34,6 +34,13 @@ except ImportError:
 
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
 
+try:
+    import _sha3
+except ImportError:
+    _sha3 = None
+
+requires_sha3 = unittest.skipUnless(_sha3, 'requires _sha3')
+
 
 def hexstr(s):
     assert isinstance(s, bytes), repr(s)
@@ -61,7 +68,11 @@ class HashLibTestCase(unittest.TestCase):
     supported_hash_names = ( 'md5', 'MD5', 'sha1', 'SHA1',
                              'sha224', 'SHA224', 'sha256', 'SHA256',
                              'sha384', 'SHA384', 'sha512', 'SHA512',
-                             'blake2b', 'blake2s')
+                             'blake2b', 'blake2s',
+                             'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
+                             'shake_128', 'shake_256')
+
+    shakes = {'shake_128', 'shake_256'}
 
     # Issue #14693: fallback modules are always compiled under POSIX
     _warn_on_extension_import = os.name == 'posix' or COMPILED_WITH_PYDEBUG
@@ -131,6 +142,15 @@ class HashLibTestCase(unittest.TestCase):
             add_builtin_constructor('blake2s')
             add_builtin_constructor('blake2b')
 
+        _sha3 = self._conditional_import_module('_sha3')
+        if _sha3:
+            add_builtin_constructor('sha3_224')
+            add_builtin_constructor('sha3_256')
+            add_builtin_constructor('sha3_384')
+            add_builtin_constructor('sha3_512')
+            add_builtin_constructor('shake_128')
+            add_builtin_constructor('shake_256')
+
         super(HashLibTestCase, self).__init__(*args, **kwargs)
 
     @property
@@ -142,7 +162,10 @@ class HashLibTestCase(unittest.TestCase):
         a = array.array("b", range(10))
         for cons in self.hash_constructors:
             c = cons(a)
-            c.hexdigest()
+            if c.name in self.shakes:
+                c.hexdigest(16)
+            else:
+                c.hexdigest()
 
     def test_algorithms_guaranteed(self):
         self.assertEqual(hashlib.algorithms_guaranteed,
@@ -186,14 +209,21 @@ class HashLibTestCase(unittest.TestCase):
     def test_hexdigest(self):
         for cons in self.hash_constructors:
             h = cons()
-            self.assertIsInstance(h.digest(), bytes)
-            self.assertEqual(hexstr(h.digest()), h.hexdigest())
+            if h.name in self.shakes:
+                self.assertIsInstance(h.digest(16), bytes)
+                self.assertEqual(hexstr(h.digest(16)), h.hexdigest(16))
+            else:
+                self.assertIsInstance(h.digest(), bytes)
+                self.assertEqual(hexstr(h.digest()), h.hexdigest())
 
     def test_name_attribute(self):
         for cons in self.hash_constructors:
             h = cons()
             self.assertIsInstance(h.name, str)
-            self.assertIn(h.name, self.supported_hash_names)
+            if h.name in self.supported_hash_names:
+                self.assertIn(h.name, self.supported_hash_names)
+            else:
+                self.assertNotIn(h.name, self.supported_hash_names)
             self.assertEqual(h.name, hashlib.new(h.name).name)
 
     def test_large_update(self):
@@ -208,40 +238,46 @@ class HashLibTestCase(unittest.TestCase):
             m1.update(bees)
             m1.update(cees)
             m1.update(dees)
+            if m1.name in self.shakes:
+                args = (16,)
+            else:
+                args = ()
 
             m2 = cons()
             m2.update(aas + bees + cees + dees)
-            self.assertEqual(m1.digest(), m2.digest())
+            self.assertEqual(m1.digest(*args), m2.digest(*args))
 
             m3 = cons(aas + bees + cees + dees)
-            self.assertEqual(m1.digest(), m3.digest())
+            self.assertEqual(m1.digest(*args), m3.digest(*args))
 
             # verify copy() doesn't touch original
             m4 = cons(aas + bees + cees)
-            m4_digest = m4.digest()
+            m4_digest = m4.digest(*args)
             m4_copy = m4.copy()
             m4_copy.update(dees)
-            self.assertEqual(m1.digest(), m4_copy.digest())
-            self.assertEqual(m4.digest(), m4_digest)
+            self.assertEqual(m1.digest(*args), m4_copy.digest(*args))
+            self.assertEqual(m4.digest(*args), m4_digest)
 
-    def check(self, name, data, hexdigest, **kwargs):
+    def check(self, name, data, hexdigest, shake=False, **kwargs):
+        length = len(hexdigest)//2
         hexdigest = hexdigest.lower()
         constructors = self.constructors_to_test[name]
         # 2 is for hashlib.name(...) and hashlib.new(name, ...)
         self.assertGreaterEqual(len(constructors), 2)
         for hash_object_constructor in constructors:
             m = hash_object_constructor(data, **kwargs)
-            computed = m.hexdigest()
+            computed = m.hexdigest() if not shake else m.hexdigest(length)
             self.assertEqual(
                     computed, hexdigest,
                     "Hash algorithm %s constructed using %s returned hexdigest"
                     " %r for %d byte input data that should have hashed to %r."
                     % (name, hash_object_constructor,
                        computed, len(data), hexdigest))
-            computed = m.digest()
+            computed = m.digest() if not shake else m.digest(length)
             digest = bytes.fromhex(hexdigest)
             self.assertEqual(computed, digest)
-            self.assertEqual(len(digest), m.digest_size)
+            if not shake:
+                self.assertEqual(len(digest), m.digest_size)
 
     def check_no_unicode(self, algorithm_name):
         # Unicode objects are not allowed as input.
@@ -262,13 +298,30 @@ class HashLibTestCase(unittest.TestCase):
         self.check_no_unicode('blake2b')
         self.check_no_unicode('blake2s')
 
-    def check_blocksize_name(self, name, block_size=0, digest_size=0):
+    @requires_sha3
+    def test_no_unicode_sha3(self):
+        self.check_no_unicode('sha3_224')
+        self.check_no_unicode('sha3_256')
+        self.check_no_unicode('sha3_384')
+        self.check_no_unicode('sha3_512')
+        self.check_no_unicode('shake_128')
+        self.check_no_unicode('shake_256')
+
+    def check_blocksize_name(self, name, block_size=0, digest_size=0,
+                             digest_length=None):
         constructors = self.constructors_to_test[name]
         for hash_object_constructor in constructors:
             m = hash_object_constructor()
             self.assertEqual(m.block_size, block_size)
             self.assertEqual(m.digest_size, digest_size)
-            self.assertEqual(len(m.digest()), digest_size)
+            if digest_length:
+                self.assertEqual(len(m.digest(digest_length)),
+                                 digest_length)
+                self.assertEqual(len(m.hexdigest(digest_length)),
+                                 2*digest_length)
+            else:
+                self.assertEqual(len(m.digest()), digest_size)
+                self.assertEqual(len(m.hexdigest()), 2*digest_size)
             self.assertEqual(m.name, name)
             # split for sha3_512 / _sha3.sha3 object
             self.assertIn(name.split("_")[0], repr(m))
@@ -280,6 +333,12 @@ class HashLibTestCase(unittest.TestCase):
         self.check_blocksize_name('sha256', 64, 32)
         self.check_blocksize_name('sha384', 128, 48)
         self.check_blocksize_name('sha512', 128, 64)
+        self.check_blocksize_name('sha3_224', 144, 28)
+        self.check_blocksize_name('sha3_256', 136, 32)
+        self.check_blocksize_name('sha3_384', 104, 48)
+        self.check_blocksize_name('sha3_512', 72, 64)
+        self.check_blocksize_name('shake_128', 168, 0, 32)
+        self.check_blocksize_name('shake_256', 136, 0, 64)
 
     @requires_blake2
     def test_blocksize_name_blake2(self):
@@ -562,6 +621,72 @@ class HashLibTestCase(unittest.TestCase):
         for msg, key, md in read_vectors('blake2s'):
             key = bytes.fromhex(key)
             self.check('blake2s', msg, md, key=key)
+
+    @requires_sha3
+    def test_case_sha3_224_0(self):
+        self.check('sha3_224', b"",
+          "6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7")
+
+    @requires_sha3
+    def test_case_sha3_224_vector(self):
+        for msg, md in read_vectors('sha3_224'):
+            self.check('sha3_224', msg, md)
+
+    @requires_sha3
+    def test_case_sha3_256_0(self):
+        self.check('sha3_256', b"",
+          "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a")
+
+    @requires_sha3
+    def test_case_sha3_256_vector(self):
+        for msg, md in read_vectors('sha3_256'):
+            self.check('sha3_256', msg, md)
+
+    @requires_sha3
+    def test_case_sha3_384_0(self):
+        self.check('sha3_384', b"",
+          "0c63a75b845e4f7d01107d852e4c2485c51a50aaaa94fc61995e71bbee983a2a"+
+          "c3713831264adb47fb6bd1e058d5f004")
+
+    @requires_sha3
+    def test_case_sha3_384_vector(self):
+        for msg, md in read_vectors('sha3_384'):
+            self.check('sha3_384', msg, md)
+
+    @requires_sha3
+    def test_case_sha3_512_0(self):
+        self.check('sha3_512', b"",
+          "a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a6"+
+          "15b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26")
+
+    @requires_sha3
+    def test_case_sha3_512_vector(self):
+        for msg, md in read_vectors('sha3_512'):
+            self.check('sha3_512', msg, md)
+
+    @requires_sha3
+    def test_case_shake_128_0(self):
+        self.check('shake_128', b"",
+          "7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef26",
+          True)
+        self.check('shake_128', b"", "7f9c", True)
+
+    @requires_sha3
+    def test_case_shake128_vector(self):
+        for msg, md in read_vectors('shake_128'):
+            self.check('shake_128', msg, md, True)
+
+    @requires_sha3
+    def test_case_shake_256_0(self):
+        self.check('shake_256', b"",
+          "46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b50c27646ed5762f",
+          True)
+        self.check('shake_256', b"", "46b9", True)
+
+    @requires_sha3
+    def test_case_shake256_vector(self):
+        for msg, md in read_vectors('shake_256'):
+            self.check('shake_256', msg, md, True)
 
     def test_gil(self):
         # Check things work fine with an input larger than the size required
