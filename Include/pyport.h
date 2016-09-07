@@ -115,16 +115,8 @@ typedef Py_ssize_t Py_ssize_clean_t;
 typedef int Py_ssize_clean_t;
 #endif
 
-/* Largest possible value of size_t.
-   SIZE_MAX is part of C99, so it might be defined on some
-   platforms. If it is not defined, (size_t)-1 is a portable
-   definition for C89, due to the way signed->unsigned
-   conversion is defined. */
-#ifdef SIZE_MAX
+/* Largest possible value of size_t. */
 #define PY_SIZE_MAX SIZE_MAX
-#else
-#define PY_SIZE_MAX ((size_t)-1)
-#endif
 
 /* Largest positive value of type Py_ssize_t. */
 #define PY_SSIZE_T_MAX ((Py_ssize_t)(((size_t)-1)>>1))

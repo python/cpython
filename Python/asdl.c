@@ -9,14 +9,14 @@ _Py_asdl_seq_new(Py_ssize_t size, PyArena *arena)
 
     /* check size is sane */
     if (size < 0 ||
-        (size && (((size_t)size - 1) > (PY_SIZE_MAX / sizeof(void *))))) {
+        (size && (((size_t)size - 1) > (SIZE_MAX / sizeof(void *))))) {
         PyErr_NoMemory();
         return NULL;
     }
     n = (size ? (sizeof(void *) * (size - 1)) : 0);
 
     /* check if size can be added safely */
-    if (n > PY_SIZE_MAX - sizeof(asdl_seq)) {
+    if (n > SIZE_MAX - sizeof(asdl_seq)) {
         PyErr_NoMemory();
         return NULL;
     }
@@ -40,14 +40,14 @@ _Py_asdl_int_seq_new(Py_ssize_t size, PyArena *arena)
 
     /* check size is sane */
     if (size < 0 ||
-        (size && (((size_t)size - 1) > (PY_SIZE_MAX / sizeof(void *))))) {
+        (size && (((size_t)size - 1) > (SIZE_MAX / sizeof(void *))))) {
             PyErr_NoMemory();
             return NULL;
     }
     n = (size ? (sizeof(void *) * (size - 1)) : 0);
 
     /* check if size can be added safely */
-    if (n > PY_SIZE_MAX - sizeof(asdl_seq)) {
+    if (n > SIZE_MAX - sizeof(asdl_seq)) {
         PyErr_NoMemory();
         return NULL;
     }

@@ -1337,7 +1337,7 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
     weightA /= d;
     weightB /= d;
 
-    if ((size_t)nchannels > PY_SIZE_MAX/sizeof(int)) {
+    if ((size_t)nchannels > SIZE_MAX/sizeof(int)) {
         PyErr_SetString(PyExc_MemoryError,
                         "not enough memory for output buffer");
         return NULL;

@@ -49,7 +49,7 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     new_allocated = (newsize >> 3) + (newsize < 9 ? 3 : 6);
 
     /* check for integer overflow */
-    if (new_allocated > PY_SIZE_MAX - newsize) {
+    if (new_allocated > SIZE_MAX - newsize) {
         PyErr_NoMemory();
         return -1;
     } else {
@@ -59,7 +59,7 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     if (newsize == 0)
         new_allocated = 0;
     items = self->ob_item;
-    if (new_allocated <= (PY_SIZE_MAX / sizeof(PyObject *)))
+    if (new_allocated <= (SIZE_MAX / sizeof(PyObject *)))
         PyMem_RESIZE(items, PyObject *, new_allocated);
     else
         items = NULL;
