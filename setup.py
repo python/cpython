@@ -894,7 +894,7 @@ class PyBuildExt(build_ext):
         blake2_deps.append('hashlib.h')
 
         blake2_macros = []
-        if os.uname().machine == "x86_64":
+        if not cross_compiling and os.uname().machine == "x86_64":
             # Every x86_64 machine has at least SSE2.
             blake2_macros.append(('BLAKE2_USE_SSE', '1'))
 
