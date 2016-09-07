@@ -144,7 +144,7 @@ typedef struct _Py_Identifier {
     PyObject *object;
 } _Py_Identifier;
 
-#define _Py_static_string_init(value) { 0, value, 0 }
+#define _Py_static_string_init(value) { .next = NULL, .string = value, .object = NULL }
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
