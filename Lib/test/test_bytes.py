@@ -216,7 +216,7 @@ class BaseBytesTest:
         self.assertEqual(b, self.type2test(sample[:-3], "utf-8"))
 
     def test_decode(self):
-        sample = "Hello world\n\u1234\u5678\u9abc\def0\def0"
+        sample = "Hello world\n\u1234\u5678\u9abc"
         for enc in ("utf-8", "utf-16"):
             b = self.type2test(sample, enc)
             self.assertEqual(b.decode(enc), sample)
