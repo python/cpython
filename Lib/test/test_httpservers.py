@@ -370,6 +370,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         return body
 
     @support.requires_mac_ver(10, 5)
+    @unittest.skipIf(sys.platform == 'win32',
+                     'undecodable name cannot be decoded on win32')
     @unittest.skipUnless(support.TESTFN_UNDECODABLE,
                          'need support.TESTFN_UNDECODABLE')
     def test_undecodable_filename(self):
