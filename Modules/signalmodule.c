@@ -579,7 +579,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
             }
 
             fd = (int)sockfd;
-            if ((SOCKET_T)fd != sockfd || !_PyVerify_fd(fd)) {
+            if ((SOCKET_T)fd != sockfd) {
                 PyErr_SetString(PyExc_ValueError, "invalid fd");
                 return NULL;
             }
@@ -608,11 +608,6 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
 #else
     if (fd != -1) {
         int blocking;
-
-        if (!_PyVerify_fd(fd)) {
-            PyErr_SetString(PyExc_ValueError, "invalid fd");
-            return NULL;
-        }
 
         if (_Py_fstat(fd, &status) != 0)
             return NULL;

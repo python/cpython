@@ -1178,34 +1178,6 @@ PyLong_FromPy_off_t(Py_off_t offset)
 #endif
 }
 
-
-#if defined _MSC_VER && _MSC_VER >= 1400 && _MSC_VER < 1900
-/* Legacy implementation of _PyVerify_fd_dup2 while transitioning to
- * MSVC 14.0. This should eventually be removed. (issue23524)
- */
-#define IOINFO_L2E 5
-#define IOINFO_ARRAYS 64
-#define IOINFO_ARRAY_ELTS   (1 << IOINFO_L2E)
-#define _NHANDLE_           (IOINFO_ARRAYS * IOINFO_ARRAY_ELTS)
-#define _NO_CONSOLE_FILENO (intptr_t)-2
-
-/* the special case of checking dup2.  The target fd must be in a sensible range */
-static int
-_PyVerify_fd_dup2(int fd1, int fd2)
-{
-    if (!_PyVerify_fd(fd1))
-        return 0;
-    if (fd2 == _NO_CONSOLE_FILENO)
-        return 0;
-    if ((unsigned)fd2 < _NHANDLE_)
-        return 1;
-    else
-        return 0;
-}
-#else
-#define _PyVerify_fd_dup2(fd1, fd2) (_PyVerify_fd(fd1) && (fd2) >= 0)
-#endif
-
 #ifdef MS_WINDOWS
 
 static int
@@ -1408,9 +1380,6 @@ posix_fildes_fd(int fd, int (*func)(int))
 {
     int res;
     int async_err = 0;
-
-    if (!_PyVerify_fd(fd))
-        return posix_error();
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -7549,8 +7518,6 @@ os_close_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=2fe4e93602822c14 input=2bc42451ca5c3223]*/
 {
     int res;
-    if (!_PyVerify_fd(fd))
-        return posix_error();
     /* We do not want to retry upon EINTR: see http://lwn.net/Articles/576478/
      * and http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
      * for more details.
@@ -7583,9 +7550,8 @@ os_closerange_impl(PyObject *module, int fd_low, int fd_high)
     int i;
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
-    for (i = fd_low; i < fd_high; i++)
-        if (_PyVerify_fd(i))
-            close(i);
+    for (i = max(fd_low, 0); i < fd_high; i++)
+        close(i);
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     Py_RETURN_NONE;
@@ -7629,7 +7595,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
     int dup3_works = -1;
 #endif
 
-    if (!_PyVerify_fd_dup2(fd, fd2))
+    if (fd < 0 || fd2 < 0)
         return posix_error();
 
     /* dup2() can fail with EINTR if the target FD is already open, because it
@@ -7753,10 +7719,6 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
 {
     Py_off_t result;
 
-    if (!_PyVerify_fd(fd)) {
-        posix_error();
-        return -1;
-    }
 #ifdef SEEK_SET
     /* Turn 0, 1, 2 into SEEK_{SET,CUR,END} */
     switch (how) {
@@ -7769,10 +7731,6 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
     if (PyErr_Occurred())
         return -1;
 
-    if (!_PyVerify_fd(fd)) {
-        posix_error();
-        return -1;
-    }
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
@@ -7980,10 +7938,6 @@ os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset)
     buffer = PyBytes_FromStringAndSize((char *)NULL, length);
     if (buffer == NULL)
         return NULL;
-    if (!_PyVerify_fd(fd)) {
-        Py_DECREF(buffer);
-        return posix_error();
-    }
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -8226,8 +8180,6 @@ os_isatty_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=6a48c8b4e644ca00 input=08ce94aa1eaf7b5e]*/
 {
     int return_value;
-    if (!_PyVerify_fd(fd))
-        return 0;
     _Py_BEGIN_SUPPRESS_IPH
     return_value = isatty(fd);
     _Py_END_SUPPRESS_IPH
@@ -8419,11 +8371,6 @@ os_pwrite_impl(PyObject *module, int fd, Py_buffer *buffer, Py_off_t offset)
     Py_ssize_t size;
     int async_err = 0;
 
-    if (!_PyVerify_fd(fd)) {
-        posix_error();
-        return -1;
-    }
-
     do {
         Py_BEGIN_ALLOW_THREADS
         _Py_BEGIN_SUPPRESS_IPH
@@ -8605,9 +8552,6 @@ os_ftruncate_impl(PyObject *module, int fd, Py_off_t length)
 {
     int result;
     int async_err = 0;
-
-    if (!_PyVerify_fd(fd))
-        return posix_error();
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -10979,11 +10923,6 @@ os_get_inheritable_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=0445e20e149aa5b8 input=89ac008dc9ab6b95]*/
 {
     int return_value;
-    if (!_PyVerify_fd(fd)) {
-        posix_error();
-        return -1;
-    }
-
     _Py_BEGIN_SUPPRESS_IPH
     return_value = _Py_get_inheritable(fd);
     _Py_END_SUPPRESS_IPH
@@ -11005,8 +10944,6 @@ os_set_inheritable_impl(PyObject *module, int fd, int inheritable)
 /*[clinic end generated code: output=f1b1918a2f3c38c2 input=9ceaead87a1e2402]*/
 {
     int result;
-    if (!_PyVerify_fd(fd))
-        return posix_error();
 
     _Py_BEGIN_SUPPRESS_IPH
     result = _Py_set_inheritable(fd, inheritable, NULL);
@@ -11080,9 +11017,6 @@ posix_get_blocking(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:get_blocking", &fd))
         return NULL;
 
-    if (!_PyVerify_fd(fd))
-        return posix_error();
-
     _Py_BEGIN_SUPPRESS_IPH
     blocking = _Py_get_blocking(fd);
     _Py_END_SUPPRESS_IPH
@@ -11105,9 +11039,6 @@ posix_set_blocking(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "ii:set_blocking", &fd, &blocking))
         return NULL;
-
-    if (!_PyVerify_fd(fd))
-        return posix_error();
 
     _Py_BEGIN_SUPPRESS_IPH
     result = _Py_set_blocking(fd, blocking);

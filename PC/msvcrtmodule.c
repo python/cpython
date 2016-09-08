@@ -189,16 +189,11 @@ msvcrt_get_osfhandle_impl(PyObject *module, int fd)
 {
     intptr_t handle = -1;
 
-    if (!_PyVerify_fd(fd)) {
-        PyErr_SetFromErrno(PyExc_IOError);
-    }
-    else {
     _Py_BEGIN_SUPPRESS_IPH
-        handle = _get_osfhandle(fd);
+    handle = _get_osfhandle(fd);
     _Py_END_SUPPRESS_IPH
-        if (handle == -1)
-            PyErr_SetFromErrno(PyExc_IOError);
-    }
+    if (handle == -1)
+        PyErr_SetFromErrno(PyExc_IOError);
 
     return handle;
 }
