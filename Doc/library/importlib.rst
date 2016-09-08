@@ -1149,6 +1149,9 @@ an :term:`importer`.
       The *optimization* parameter was added and the *debug_override* parameter
       was deprecated.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. function:: source_from_cache(path)
 
@@ -1161,6 +1164,9 @@ an :term:`importer`.
    :exc:`NotImplementedError` is raised.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 .. function:: decode_source(source_bytes)
 
@@ -1297,6 +1303,9 @@ an :term:`importer`.
    module will be file-based.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 .. class:: LazyLoader(loader)
 
