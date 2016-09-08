@@ -593,7 +593,7 @@ contributions by Reimer Behrends, Jyrki Alakuijala, Vladimir Marangozov and
 Christian Tismer.
 
 lookdict() is general-purpose, and may return DKIX_ERROR if (and only if) a
-comparison raises an exception (this was new in Python 2.5).
+comparison raises an exception.
 lookdict_unicode() below is specialized to string keys, comparison of which can
 never raise an exception; that function can never return DKIX_ERROR.
 lookdict_unicode_nodummy is further specialized for string keys that cannot be
