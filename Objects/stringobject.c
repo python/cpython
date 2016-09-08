@@ -2775,7 +2775,7 @@ replace(PyStringObject *self,
     }
 
     if (to_len == 0) {
-        /* delete all occurances of 'from' string */
+        /* delete all occurrences of 'from' string */
         if (from_len == 1) {
             return replace_delete_single_character(
                 self, from_s[0], maxcount);
