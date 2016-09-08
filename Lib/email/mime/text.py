@@ -35,10 +35,8 @@ class MIMEText(MIMENonMultipart):
                 _charset = 'us-ascii'
             except UnicodeEncodeError:
                 _charset = 'utf-8'
-        if isinstance(_charset, Charset):
-            _charset = str(_charset)
 
         MIMENonMultipart.__init__(self, 'text', _subtype,
-                                  **{'charset': _charset})
+                                  **{'charset': str(_charset)})
 
         self.set_payload(_text, _charset)
