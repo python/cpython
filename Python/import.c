@@ -1942,19 +1942,15 @@ exec_builtin_or_dynamic(PyObject *mod) {
 
     def = PyModule_GetDef(mod);
     if (def == NULL) {
-        if (PyErr_Occurred()) {
-            return -1;
-        }
         return 0;
     }
+
     state = PyModule_GetState(mod);
-    if (PyErr_Occurred()) {
-        return -1;
-    }
     if (state) {
         /* Already initialized; skip reload */
         return 0;
     }
+
     return PyModule_ExecDef(mod, def);
 }
 
