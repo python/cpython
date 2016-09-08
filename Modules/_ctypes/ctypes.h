@@ -31,7 +31,7 @@ union value {
                 long l;
                 float f;
                 double d;
-                PY_LONG_LONG ll;
+                long long ll;
                 long double D;
 };
 
