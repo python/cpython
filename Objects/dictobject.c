@@ -237,7 +237,7 @@ static Py_ssize_t lookdict_split(PyDictObject *mp, PyObject *key,
 
 static int dictresize(PyDictObject *mp, Py_ssize_t minused);
 
-/* Global counter used to set ma_version_tag field of dictionary.
+/*Global counter used to set ma_version_tag field of dictionary.
  * It is incremented each time that a dictionary is created and each
  * time that a dictionary is modified. */
 static uint64_t pydict_global_version = 0;
@@ -292,12 +292,12 @@ PyDict_Fini(void)
     (DK_SIZE(dk) <= 0xff ?                     \
         1 : DK_SIZE(dk) <= 0xffff ?            \
             2 : DK_SIZE(dk) <= 0xffffffff ?    \
-                4 : sizeof(Py_ssize_t))
+                4 : sizeof(int64_t))
 #else
 #define DK_IXSIZE(dk)                          \
     (DK_SIZE(dk) <= 0xff ?                     \
         1 : DK_SIZE(dk) <= 0xffff ?            \
-            2 : sizeof(Py_ssize_t))
+            2 : sizeof(int32_t))
 #endif
 #define DK_ENTRIES(dk) \
     ((PyDictKeyEntry*)(&(dk)->dk_indices.as_1[DK_SIZE(dk) * DK_IXSIZE(dk)]))
@@ -330,10 +330,12 @@ dk_get_index(PyDictKeysObject *keys, Py_ssize_t i)
         int32_t *indices = keys->dk_indices.as_4;
         ix = indices[i];
     }
+#if SIZEOF_VOID_P > 4
     else {
         int64_t *indices = keys->dk_indices.as_8;
         ix = indices[i];
     }
+#endif
     assert(ix >= DKIX_DUMMY);
     return ix;
 }
@@ -361,10 +363,12 @@ dk_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
         assert(ix <= 0x7fffffff);
         indices[i] = (int32_t)ix;
     }
+#if SIZEOF_VOID_P > 4
     else {
         int64_t *indices = keys->dk_indices.as_8;
         indices[i] = ix;
     }
+#endif
 }
 
 

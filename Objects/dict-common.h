@@ -59,14 +59,16 @@ struct _dictkeysobject {
        - 1 byte if dk_size <= 0xff (char*)
        - 2 bytes if dk_size <= 0xffff (int16_t*)
        - 4 bytes if dk_size <= 0xffffffff (int32_t*)
-       - 8 bytes otherwise (Py_ssize_t*)
+       - 8 bytes otherwise (int64_t*)
 
        Dynamically sized, 8 is minimum. */
     union {
         int8_t as_1[8];
         int16_t as_2[4];
         int32_t as_4[2];
+#if SIZEOF_VOID_P > 4
         int64_t as_8[1];
+#endif
     } dk_indices;
 
     /* "PyDictKeyEntry dk_entries[dk_usable];" array follows:
