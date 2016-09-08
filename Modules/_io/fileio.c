@@ -117,18 +117,13 @@ internal_close(fileio *self)
         int fd = self->fd;
         self->fd = -1;
         /* fd is accessible and someone else may have closed it */
-        if (_PyVerify_fd(fd)) {
-            Py_BEGIN_ALLOW_THREADS
-            _Py_BEGIN_SUPPRESS_IPH
-            err = close(fd);
-            if (err < 0)
-                save_errno = errno;
-            _Py_END_SUPPRESS_IPH
-            Py_END_ALLOW_THREADS
-        } else {
+        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
+        err = close(fd);
+        if (err < 0)
             save_errno = errno;
-            err = -1;
-        }
+        _Py_END_SUPPRESS_IPH
+        Py_END_ALLOW_THREADS
     }
     if (err < 0) {
         errno = save_errno;
@@ -700,8 +695,6 @@ _io_FileIO_readall_impl(fileio *self)
 
     if (self->fd < 0)
         return err_closed();
-    if (!_PyVerify_fd(self->fd))
-        return PyErr_SetFromErrno(PyExc_IOError);
 
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
@@ -914,18 +907,15 @@ portable_lseek(int fd, PyObject *posobj, int whence)
             return NULL;
     }
 
-    if (_PyVerify_fd(fd)) {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
-        res = _lseeki64(fd, pos, whence);
+    res = _lseeki64(fd, pos, whence);
 #else
-        res = lseek(fd, pos, whence);
+    res = lseek(fd, pos, whence);
 #endif
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
-    } else
-        res = -1;
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
     if (res < 0)
         return PyErr_SetFromErrno(PyExc_IOError);
 
@@ -1116,10 +1106,7 @@ _io_FileIO_isatty_impl(fileio *self)
         return err_closed();
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
-    if (_PyVerify_fd(self->fd))
-        res = isatty(self->fd);
-    else
-        res = 0;
+    res = isatty(self->fd);
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     return PyBool_FromLong(res);

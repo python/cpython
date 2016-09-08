@@ -1026,7 +1026,7 @@ static int
 is_valid_fd(int fd)
 {
     int fd2;
-    if (fd < 0 || !_PyVerify_fd(fd))
+    if (fd < 0)
         return 0;
     _Py_BEGIN_SUPPRESS_IPH
     /* Prefer dup() over fstat(). fstat() can require input/output whereas
