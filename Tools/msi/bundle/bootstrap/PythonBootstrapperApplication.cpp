@@ -11,10 +11,6 @@
 #include "pch.h"
 
 static const LPCWSTR PYBA_WINDOW_CLASS = L"PythonBA";
-static const LPCWSTR PYBA_VARIABLE_LAUNCH_TARGET_PATH = L"LaunchTarget";
-static const LPCWSTR PYBA_VARIABLE_LAUNCH_TARGET_ELEVATED_ID = L"LaunchTargetElevatedId";
-static const LPCWSTR PYBA_VARIABLE_LAUNCH_ARGUMENTS = L"LaunchArguments";
-static const LPCWSTR PYBA_VARIABLE_LAUNCH_HIDDEN = L"LaunchHidden";
 static const DWORD PYBA_ACQUIRE_PERCENTAGE = 30;
 static const LPCWSTR PYBA_VARIABLE_BUNDLE_FILE_VERSION = L"WixBundleFileVersion";
 
@@ -129,11 +125,11 @@ enum CONTROL_ID {
     ID_PROGRESS_CANCEL_BUTTON,
 
     // Success page
-    ID_LAUNCH_BUTTON,
     ID_SUCCESS_TEXT,
     ID_SUCCESS_RESTART_TEXT,
     ID_SUCCESS_RESTART_BUTTON,
     ID_SUCCESS_CANCEL_BUTTON,
+    ID_SUCCESS_MAX_PATH_BUTTON,
 
     // Failure page
     ID_FAILURE_LOGFILE_LINK,
@@ -188,11 +184,11 @@ static THEME_ASSIGN_CONTROL_ID CONTROL_ID_NAMES[] = {
     { ID_OVERALL_PROGRESS_TEXT, L"OverallProgressText" },
     { ID_PROGRESS_CANCEL_BUTTON, L"ProgressCancelButton" },
 
-    { ID_LAUNCH_BUTTON, L"LaunchButton" },
     { ID_SUCCESS_TEXT, L"SuccessText" },
     { ID_SUCCESS_RESTART_TEXT, L"SuccessRestartText" },
     { ID_SUCCESS_RESTART_BUTTON, L"SuccessRestartButton" },
     { ID_SUCCESS_CANCEL_BUTTON, L"SuccessCancelButton" },
+    { ID_SUCCESS_MAX_PATH_BUTTON, L"SuccessMaxPathButton" },
 
     { ID_FAILURE_LOGFILE_LINK, L"FailureLogFileLink" },
     { ID_FAILURE_MESSAGE_TEXT, L"FailureMessageText" },
@@ -433,6 +429,11 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         case ID_UNINSTALL_BUTTON:
             OnPlan(BOOTSTRAPPER_ACTION_UNINSTALL);
             break;
+
+        case ID_SUCCESS_MAX_PATH_BUTTON:
+            EnableMaxPathSupport();
+            ThemeControlEnable(_theme, ID_SUCCESS_MAX_PATH_BUTTON, FALSE);
+            break;
         }
 
     LExit:
@@ -530,9 +531,8 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
     }
 
     void SuccessPage_Show() {
-        // on the "Success" page, check if the restart or launch button should be enabled.
+        // on the "Success" page, check if the restart button should be enabled.
         BOOL showRestartButton = FALSE;
-        BOOL launchTargetExists = FALSE;
         LOC_STRING *successText = nullptr;
         HRESULT hr = S_OK;
         
@@ -540,8 +540,6 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             if (BOOTSTRAPPER_RESTART_PROMPT == _command.restart) {
                 showRestartButton = TRUE;
             }
-        } else if (ThemeControlExists(_theme, ID_LAUNCH_BUTTON)) {
-            launchTargetExists = BalStringVariableExists(PYBA_VARIABLE_LAUNCH_TARGET_PATH);
         }
 
         switch (_plannedAction) {
@@ -568,9 +566,41 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             }
         }
 
-        ThemeControlEnable(_theme, ID_LAUNCH_BUTTON, launchTargetExists && BOOTSTRAPPER_ACTION_UNINSTALL < _plannedAction);
         ThemeControlEnable(_theme, ID_SUCCESS_RESTART_TEXT, showRestartButton);
         ThemeControlEnable(_theme, ID_SUCCESS_RESTART_BUTTON, showRestartButton);
+
+        if (_command.action != BOOTSTRAPPER_ACTION_INSTALL ||
+            !IsWindowsVersionOrGreater(10, 0, 0)) {
+            ThemeControlEnable(_theme, ID_SUCCESS_MAX_PATH_BUTTON, FALSE);
+        } else {
+            DWORD dataType = 0, buffer = 0, bufferLen = sizeof(buffer);
+            HKEY hKey;
+            LRESULT res = RegOpenKeyExW(
+                HKEY_LOCAL_MACHINE,
+                L"SYSTEM\\CurrentControlSet\\Control\\FileSystem",
+                0,
+                KEY_READ,
+                &hKey
+            );
+            if (res == ERROR_SUCCESS) {
+                res = RegQueryValueExW(hKey, L"LongPathsEnabled", nullptr, &dataType,
+                    (LPBYTE)&buffer, &bufferLen);
+                RegCloseKey(hKey);
+            }
+            else {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Failed to open SYSTEM\\CurrentControlSet\\Control\\FileSystem: error code %d", res);
+            }
+            if (res == ERROR_SUCCESS && dataType == REG_DWORD && buffer == 0) {
+                ThemeControlElevates(_theme, ID_SUCCESS_MAX_PATH_BUTTON, TRUE);
+            }
+            else {
+                if (res == ERROR_SUCCESS)
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Failed to read LongPathsEnabled value: error code %d", res);
+                else
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Hiding MAX_PATH button because it is already enabled");
+                ThemeControlEnable(_theme, ID_SUCCESS_MAX_PATH_BUTTON, FALSE);
+            }
+        }
     }
 
     void FailurePage_Show() {
@@ -623,6 +653,34 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         ThemeControlEnable(_theme, ID_FAILURE_RESTART_BUTTON, showRestartButton);
     }
 
+    static void EnableMaxPathSupport() {
+        LPWSTR targetDir = nullptr, defaultDir = nullptr;
+        HRESULT hr = BalGetStringVariable(L"TargetDir", &targetDir);
+        if (FAILED(hr) || !targetDir || !targetDir[0]) {
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to get TargetDir");
+            return;
+        }
+
+        LPWSTR pythonw = nullptr;
+        StrAllocFormatted(&pythonw, L"%ls\\pythonw.exe", targetDir);
+        if (!pythonw || !pythonw[0]) {
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to construct pythonw.exe path");
+            return;
+        }
+
+        LPCWSTR arguments = L"-c \"import winreg; "
+            "winreg.SetValueEx("
+                "winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, "
+                    "r'SYSTEM\\CurrentControlSet\\Control\\FileSystem'), "
+                "'LongPathsEnabled', "
+                "None, "
+                "winreg.REG_DWORD, "
+                "1"
+            ")\"";
+        BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Executing %ls %ls", pythonw, arguments);
+        HINSTANCE res = ShellExecuteW(0, L"runas", pythonw, arguments, NULL, SW_HIDE);
+        BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "return code 0x%08x", res);
+    }
 
 public: // IBootstrapperApplication
     virtual STDMETHODIMP OnStartup() {
@@ -1213,12 +1271,6 @@ public: // IBootstrapperApplication
     }
 
     virtual STDMETHODIMP_(void) OnLaunchApprovedExeComplete(__in HRESULT hrStatus, __in DWORD /*processId*/) {
-        if (HRESULT_FROM_WIN32(ERROR_ACCESS_DENIED) == hrStatus) {
-            //try with ShelExec next time
-            OnClickLaunchButton();
-        } else {
-            ::PostMessageW(_hWnd, WM_CLOSE, 0, 0);
-        }
     }
 
 
@@ -1864,10 +1916,6 @@ private:
             switch (LOWORD(wParam)) {
             // Customize commands
             // Success/failure commands
-            case ID_LAUNCH_BUTTON:
-                pBA->OnClickLaunchButton();
-                return 0;
-
             case ID_SUCCESS_RESTART_BUTTON: __fallthrough;
             case ID_FAILURE_RESTART_BUTTON:
                 pBA->OnClickRestartButton();
@@ -2368,69 +2416,6 @@ private:
         ::SendMessageW(_hWnd, WM_CLOSE, 0, 0);
     }
 
-
-    //
-    // OnClickLaunchButton - launch the app from the success page.
-    //
-    void OnClickLaunchButton() {
-        HRESULT hr = S_OK;
-        LPWSTR sczUnformattedLaunchTarget = nullptr;
-        LPWSTR sczLaunchTarget = nullptr;
-        LPWSTR sczLaunchTargetElevatedId = nullptr;
-        LPWSTR sczUnformattedArguments = nullptr;
-        LPWSTR sczArguments = nullptr;
-        int nCmdShow = SW_SHOWNORMAL;
-
-        hr = BalGetStringVariable(PYBA_VARIABLE_LAUNCH_TARGET_PATH, &sczUnformattedLaunchTarget);
-        BalExitOnFailure1(hr, "Failed to get launch target variable '%ls'.", PYBA_VARIABLE_LAUNCH_TARGET_PATH);
-
-        hr = BalFormatString(sczUnformattedLaunchTarget, &sczLaunchTarget);
-        BalExitOnFailure1(hr, "Failed to format launch target variable: %ls", sczUnformattedLaunchTarget);
-
-        if (BalStringVariableExists(PYBA_VARIABLE_LAUNCH_TARGET_ELEVATED_ID)) {
-            hr = BalGetStringVariable(PYBA_VARIABLE_LAUNCH_TARGET_ELEVATED_ID, &sczLaunchTargetElevatedId);
-            BalExitOnFailure1(hr, "Failed to get launch target elevated id '%ls'.", PYBA_VARIABLE_LAUNCH_TARGET_ELEVATED_ID);
-        }
-
-        if (BalStringVariableExists(PYBA_VARIABLE_LAUNCH_ARGUMENTS)) {
-            hr = BalGetStringVariable(PYBA_VARIABLE_LAUNCH_ARGUMENTS, &sczUnformattedArguments);
-            BalExitOnFailure1(hr, "Failed to get launch arguments '%ls'.", PYBA_VARIABLE_LAUNCH_ARGUMENTS);
-        }
-
-        if (BalStringVariableExists(PYBA_VARIABLE_LAUNCH_HIDDEN)) {
-            nCmdShow = SW_HIDE;
-        }
-
-        if (sczLaunchTargetElevatedId && !_triedToLaunchElevated) {
-            _triedToLaunchElevated = TRUE;
-            hr = _engine->LaunchApprovedExe(_hWnd, sczLaunchTargetElevatedId, sczUnformattedArguments, 0);
-            if (FAILED(hr)) {
-                BalLogError(hr, "Failed to launch elevated target: %ls", sczLaunchTargetElevatedId);
-
-                //try with ShelExec next time
-                OnClickLaunchButton();
-            }
-        } else {
-            if (sczUnformattedArguments) {
-                hr = BalFormatString(sczUnformattedArguments, &sczArguments);
-                BalExitOnFailure1(hr, "Failed to format launch arguments variable: %ls", sczUnformattedArguments);
-            }
-
-            hr = ShelExec(sczLaunchTarget, sczArguments, L"open", nullptr, nCmdShow, _hWnd, nullptr);
-            BalExitOnFailure1(hr, "Failed to launch target: %ls", sczLaunchTarget);
-
-            ::PostMessageW(_hWnd, WM_CLOSE, 0, 0);
-        }
-
-    LExit:
-        StrSecureZeroFreeString(sczArguments);
-        ReleaseStr(sczUnformattedArguments);
-        ReleaseStr(sczLaunchTargetElevatedId);
-        StrSecureZeroFreeString(sczLaunchTarget);
-        ReleaseStr(sczUnformattedLaunchTarget);
-
-        return;
-    }
 
 
     //
@@ -3132,7 +3117,6 @@ public:
         _taskbarButtonCreatedMessage = UINT_MAX;
         _taskbarButtonOK = FALSE;
         _showingInternalUIThisPackage = FALSE;
-        _triedToLaunchElevated = FALSE;
 
         _suppressPaint = FALSE;
 
@@ -3217,7 +3201,6 @@ private:
     UINT _taskbarButtonCreatedMessage;
     BOOL _taskbarButtonOK;
     BOOL _showingInternalUIThisPackage;
-    BOOL _triedToLaunchElevated;
 
     BOOL _suppressPaint;
 

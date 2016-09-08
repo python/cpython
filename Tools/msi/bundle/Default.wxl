@@ -132,4 +132,7 @@ Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%20
   <String Id="FailureXPOrEarlier">Windows Vista or later is required to install and use [WixBundleName].
 
 Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download Python 3.4.</String>
+
+  <String Id="SuccessMaxPathButton">Disable path length limit</String>
+  <String Id="SuccessMaxPathButtonNote">Changes your machine configuration to allow programs, including Python, to bypass the 260 character "MAX_PATH" limitation.</String>
 </WixLocalization>
