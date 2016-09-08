@@ -7550,7 +7550,7 @@ os_closerange_impl(PyObject *module, int fd_low, int fd_high)
     int i;
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
-    for (i = max(fd_low, 0); i < fd_high; i++)
+    for (i = Py_MAX(fd_low, 0); i < fd_high; i++)
         close(i);
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
