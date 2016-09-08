@@ -2012,6 +2012,7 @@ dict_values(PyDictObject *mp)
 {
     PyObject *v;
     Py_ssize_t i, j;
+    PyDictKeyEntry *ep;
     Py_ssize_t size, n, offset;
     PyObject **value_ptr;
 
@@ -2027,13 +2028,14 @@ dict_values(PyDictObject *mp)
         Py_DECREF(v);
         goto again;
     }
+    ep = DK_ENTRIES(mp->ma_keys);
     size = mp->ma_keys->dk_nentries;
     if (mp->ma_values) {
         value_ptr = mp->ma_values;
         offset = sizeof(PyObject *);
     }
     else {
-        value_ptr = &(DK_ENTRIES(mp->ma_keys)[0].me_value);
+        value_ptr = &ep[0].me_value;
         offset = sizeof(PyDictKeyEntry);
     }
     for (i = 0, j = 0; i < size; i++) {
