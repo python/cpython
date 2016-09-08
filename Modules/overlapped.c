@@ -973,28 +973,28 @@ Overlapped_AcceptEx(OverlappedObject *self, PyObject *args)
 static int
 parse_address(PyObject *obj, SOCKADDR *Address, int Length)
 {
-    char *Host;
+    Py_UNICODE *Host;
     unsigned short Port;
     unsigned long FlowInfo;
     unsigned long ScopeId;
 
     memset(Address, 0, Length);
 
-    if (PyArg_ParseTuple(obj, "sH", &Host, &Port))
+    if (PyArg_ParseTuple(obj, "uH", &Host, &Port))
     {
         Address->sa_family = AF_INET;
-        if (WSAStringToAddressA(Host, AF_INET, NULL, Address, &Length) < 0) {
+        if (WSAStringToAddressW(Host, AF_INET, NULL, Address, &Length) < 0) {
             SetFromWindowsErr(WSAGetLastError());
             return -1;
         }
         ((SOCKADDR_IN*)Address)->sin_port = htons(Port);
         return Length;
     }
-    else if (PyArg_ParseTuple(obj, "sHkk", &Host, &Port, &FlowInfo, &ScopeId))
+    else if (PyArg_ParseTuple(obj, "uHkk", &Host, &Port, &FlowInfo, &ScopeId))
     {
         PyErr_Clear();
         Address->sa_family = AF_INET6;
-        if (WSAStringToAddressA(Host, AF_INET6, NULL, Address, &Length) < 0) {
+        if (WSAStringToAddressW(Host, AF_INET6, NULL, Address, &Length) < 0) {
             SetFromWindowsErr(WSAGetLastError());
             return -1;
         }

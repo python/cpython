@@ -764,7 +764,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_MBCS)
+#if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_codecs_mbcs_decode__doc__,
 "mbcs_decode($module, data, errors=None, final=False, /)\n"
@@ -801,9 +801,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MBCS) */
+#endif /* defined(MS_WINDOWS) */
 
-#if defined(HAVE_MBCS)
+#if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_codecs_oem_decode__doc__,
 "oem_decode($module, data, errors=None, final=False, /)\n"
@@ -840,9 +840,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MBCS) */
+#endif /* defined(MS_WINDOWS) */
 
-#if defined(HAVE_MBCS)
+#if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_codecs_code_page_decode__doc__,
 "code_page_decode($module, codepage, data, errors=None, final=False, /)\n"
@@ -880,7 +880,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MBCS) */
+#endif /* defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(_codecs_readbuffer_encode__doc__,
 "readbuffer_encode($module, data, errors=None, /)\n"
@@ -1351,7 +1351,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_MBCS)
+#if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_codecs_mbcs_encode__doc__,
 "mbcs_encode($module, str, errors=None, /)\n"
@@ -1381,9 +1381,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MBCS) */
+#endif /* defined(MS_WINDOWS) */
 
-#if defined(HAVE_MBCS)
+#if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_codecs_oem_encode__doc__,
 "oem_encode($module, str, errors=None, /)\n"
@@ -1413,9 +1413,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MBCS) */
+#endif /* defined(MS_WINDOWS) */
 
-#if defined(HAVE_MBCS)
+#if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_codecs_code_page_encode__doc__,
 "code_page_encode($module, code_page, str, errors=None, /)\n"
@@ -1447,7 +1447,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MBCS) */
+#endif /* defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(_codecs_register_error__doc__,
 "register_error($module, errors, handler, /)\n"
@@ -1536,4 +1536,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=7874e2d559d49368 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ebe313ab417b17bb input=a9049054013a1b77]*/

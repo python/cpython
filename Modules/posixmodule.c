@@ -164,6 +164,8 @@ corresponding Unix manual entries for more information on calls.");
 #define HAVE_GETLOGIN   1
 #define HAVE_SPAWNV     1
 #define HAVE_EXECV      1
+#define HAVE_WSPAWNV    1
+#define HAVE_WEXECV     1
 #define HAVE_PIPE       1
 #define HAVE_SYSTEM     1
 #define HAVE_CWAIT      1
@@ -735,7 +737,7 @@ dir_fd_converter(PyObject *o, void *p)
  *
  *   * On Windows, if we get a (Unicode) string we
  *     extract the wchar_t * and return it; if we get
- *     bytes we extract the char * and return that.
+ *     bytes we decode to wchar_t * and return that.
  *
  *   * On all other platforms, strings are encoded
  *     to bytes using PyUnicode_FSConverter, then we
@@ -767,7 +769,9 @@ dir_fd_converter(PyObject *o, void *p)
  *     and was not encoded.  (Only used on Windows.)
  *   path.narrow
  *     Points to the path if it was expressed as bytes,
- *     or it was Unicode and was encoded to bytes.
+ *     or it was Unicode and was encoded to bytes. (On Windows,
+ *     is an non-zero integer if the path was expressed as bytes.
+ *     The type is deliberately incompatible to prevent misuse.)
  *   path.fd
  *     Contains a file descriptor if path.accept_fd was true
  *     and the caller provided a signed integer instead of any
@@ -812,15 +816,24 @@ typedef struct {
     int nullable;
     int allow_fd;
     const wchar_t *wide;
+#ifdef MS_WINDOWS
+    BOOL narrow;
+#else
     const char *narrow;
+#endif
     int fd;
     Py_ssize_t length;
     PyObject *object;
     PyObject *cleanup;
 } path_t;
 
+#ifdef MS_WINDOWS
+#define PATH_T_INITIALIZE(function_name, argument_name, nullable, allow_fd) \
+    {function_name, argument_name, nullable, allow_fd, NULL, FALSE, -1, 0, NULL, NULL}
+#else
 #define PATH_T_INITIALIZE(function_name, argument_name, nullable, allow_fd) \
     {function_name, argument_name, nullable, allow_fd, NULL, NULL, -1, 0, NULL, NULL}
+#endif
 
 static void
 path_cleanup(path_t *path) {
@@ -839,6 +852,10 @@ path_converter(PyObject *o, void *p)
     /* Default to failure, forcing explicit signaling of succcess. */
     int ret = 0;
     const char *narrow;
+#ifdef MS_WINDOWS
+    PyObject *wo;
+    const wchar_t *wide;
+#endif
 
 #define FORMAT_EXCEPTION(exc, fmt) \
     PyErr_Format(exc, "%s%s" fmt, \
@@ -857,7 +874,11 @@ path_converter(PyObject *o, void *p)
 
     if ((o == Py_None) && path->nullable) {
         path->wide = NULL;
+#ifdef MS_WINDOWS
+        path->narrow = FALSE;
+#else
         path->narrow = NULL;
+#endif
         path->length = 0;
         path->object = o;
         path->fd = -1;
@@ -899,9 +920,7 @@ path_converter(PyObject *o, void *p)
 
     if (is_unicode) {
 #ifdef MS_WINDOWS
-        const wchar_t *wide;
-
-        wide = PyUnicode_AsUnicodeAndSize(o, &length);
+        wide = PyUnicode_AsWideCharString(o, &length);
         if (!wide) {
             goto exit;
         }
@@ -915,7 +934,6 @@ path_converter(PyObject *o, void *p)
         }
 
         path->wide = wide;
-        path->narrow = NULL;
         path->length = length;
         path->object = o;
         path->fd = -1;
@@ -928,11 +946,6 @@ path_converter(PyObject *o, void *p)
 #endif
     }
     else if (is_bytes) {
-#ifdef MS_WINDOWS
-        if (win32_warn_bytes_api()) {
-            goto exit;
-        }
-#endif
         bytes = o;
         Py_INCREF(bytes);
     }
@@ -950,22 +963,21 @@ path_converter(PyObject *o, void *p)
             Py_TYPE(o)->tp_name)) {
             goto exit;
         }
-#ifdef MS_WINDOWS
-        if (win32_warn_bytes_api()) {
-            goto exit;
-        }
-#endif
         bytes = PyBytes_FromObject(o);
         if (!bytes) {
             goto exit;
         }
     }
-    else if (path->allow_fd && PyIndex_Check(o)) {
+    else if (is_index) {
         if (!_fd_converter(o, &path->fd)) {
             goto exit;
         }
         path->wide = NULL;
+#ifdef MS_WINDOWS
+        path->narrow = FALSE;
+#else
         path->narrow = NULL;
+#endif
         path->length = 0;
         path->object = o;
         ret = 1;
@@ -987,14 +999,6 @@ path_converter(PyObject *o, void *p)
     }
 
     length = PyBytes_GET_SIZE(bytes);
-#ifdef MS_WINDOWS
-    if (length > MAX_PATH-1) {
-        FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
-        Py_DECREF(bytes);
-        goto exit;
-    }
-#endif
-
     narrow = PyBytes_AS_STRING(bytes);
     if ((size_t)length != strlen(narrow)) {
         FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
@@ -1002,8 +1006,35 @@ path_converter(PyObject *o, void *p)
         goto exit;
     }
 
+#ifdef MS_WINDOWS
+    wo = PyUnicode_DecodeFSDefaultAndSize(
+        narrow,
+        length
+    );
+    if (!wo) {
+        goto exit;
+    }
+
+    wide = PyUnicode_AsWideCharString(wo, &length);
+    Py_DECREF(wo);
+
+    if (!wide) {
+        goto exit;
+    }
+    if (length > 32767) {
+        FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
+        goto exit;
+    }
+    if (wcslen(wide) != length) {
+        FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
+        goto exit;
+    }
+    path->wide = wide;
+    path->narrow = TRUE;
+#else
     path->wide = NULL;
     path->narrow = narrow;
+#endif
     path->length = length;
     path->object = o;
     path->fd = -1;
@@ -1067,7 +1098,11 @@ follow_symlinks_specified(const char *function_name, int follow_symlinks)
 static int
 path_and_dir_fd_invalid(const char *function_name, path_t *path, int dir_fd)
 {
-    if (!path->narrow && !path->wide && (dir_fd != DEFAULT_DIR_FD)) {
+    if (!path->wide && (dir_fd != DEFAULT_DIR_FD)
+#ifndef MS_WINDOWS
+        && !path->narrow
+#endif
+    ) {
         PyErr_Format(PyExc_ValueError,
                      "%s: can't specify dir_fd without matching path",
                      function_name);
@@ -1397,31 +1432,6 @@ posix_fildes_fd(int fd, int (*func)(int))
    it also needs to set "magic" environment variables indicating
    the per-drive current directory, which are of the form =<drive>: */
 static BOOL __stdcall
-win32_chdir(LPCSTR path)
-{
-    char new_path[MAX_PATH];
-    int result;
-    char env[4] = "=x:";
-
-    if(!SetCurrentDirectoryA(path))
-        return FALSE;
-    result = GetCurrentDirectoryA(Py_ARRAY_LENGTH(new_path), new_path);
-    if (!result)
-        return FALSE;
-    /* In the ANSI API, there should not be any paths longer
-       than MAX_PATH-1 (not including the final null character). */
-    assert(result < Py_ARRAY_LENGTH(new_path));
-    if (strncmp(new_path, "\\\\", 2) == 0 ||
-        strncmp(new_path, "//", 2) == 0)
-        /* UNC path, nothing to do. */
-        return TRUE;
-    env[1] = new_path[0];
-    return SetEnvironmentVariableA(env, new_path);
-}
-
-/* The Unicode version differs from the ANSI version
-   since the current directory might exceed MAX_PATH characters */
-static BOOL __stdcall
 win32_wchdir(LPCWSTR path)
 {
     wchar_t path_buf[MAX_PATH], *new_path = path_buf;
@@ -1467,33 +1477,10 @@ win32_wchdir(LPCWSTR path)
 #define HAVE_STAT_NSEC 1
 #define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
 
-static BOOL
-attributes_from_dir(LPCSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *reparse_tag)
-{
-    HANDLE hFindFile;
-    WIN32_FIND_DATAA FileData;
-    hFindFile = FindFirstFileA(pszFile, &FileData);
-    if (hFindFile == INVALID_HANDLE_VALUE)
-        return FALSE;
-    FindClose(hFindFile);
-    memset(info, 0, sizeof(*info));
-    *reparse_tag = 0;
-    info->dwFileAttributes = FileData.dwFileAttributes;
-    info->ftCreationTime   = FileData.ftCreationTime;
-    info->ftLastAccessTime = FileData.ftLastAccessTime;
-    info->ftLastWriteTime  = FileData.ftLastWriteTime;
-    info->nFileSizeHigh    = FileData.nFileSizeHigh;
-    info->nFileSizeLow     = FileData.nFileSizeLow;
-/*  info->nNumberOfLinks   = 1; */
-    if (FileData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-        *reparse_tag = FileData.dwReserved0;
-    return TRUE;
-}
-
 static void
-find_data_to_file_info_w(WIN32_FIND_DATAW *pFileData,
-                         BY_HANDLE_FILE_INFORMATION *info,
-                         ULONG *reparse_tag)
+find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
+                       BY_HANDLE_FILE_INFORMATION *info,
+                       ULONG *reparse_tag)
 {
     memset(info, 0, sizeof(*info));
     info->dwFileAttributes = pFileData->dwFileAttributes;
@@ -1510,7 +1497,7 @@ find_data_to_file_info_w(WIN32_FIND_DATAW *pFileData,
 }
 
 static BOOL
-attributes_from_dir_w(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *reparse_tag)
+attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *reparse_tag)
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAW FileData;
@@ -1518,7 +1505,7 @@ attributes_from_dir_w(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *
     if (hFindFile == INVALID_HANDLE_VALUE)
         return FALSE;
     FindClose(hFindFile);
-    find_data_to_file_info_w(&FileData, info, reparse_tag);
+    find_data_to_file_info(&FileData, info, reparse_tag);
     return TRUE;
 }
 
@@ -1561,10 +1548,7 @@ get_target_path(HANDLE hdl, wchar_t **target_path)
 }
 
 static int
-win32_xstat_impl_w(const wchar_t *path, struct _Py_stat_struct *result,
-                   BOOL traverse);
-static int
-win32_xstat_impl(const char *path, struct _Py_stat_struct *result,
+win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                  BOOL traverse)
 {
     int code;
@@ -1572,9 +1556,9 @@ win32_xstat_impl(const char *path, struct _Py_stat_struct *result,
     BY_HANDLE_FILE_INFORMATION info;
     ULONG reparse_tag = 0;
     wchar_t *target_path;
-    const char *dot;
+    const wchar_t *dot;
 
-    hFile = CreateFileA(
+    hFile = CreateFileW(
         path,
         FILE_READ_ATTRIBUTES, /* desired access */
         0, /* share mode */
@@ -1623,96 +1607,6 @@ win32_xstat_impl(const char *path, struct _Py_stat_struct *result,
             if (traverse) {
                 /* In order to call GetFinalPathNameByHandle we need to open
                    the file without the reparse handling flag set. */
-                hFile2 = CreateFileA(
-                           path, FILE_READ_ATTRIBUTES, FILE_SHARE_READ,
-                           NULL, OPEN_EXISTING,
-                           FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
-                           NULL);
-                if (hFile2 == INVALID_HANDLE_VALUE)
-                    return -1;
-
-                if (!get_target_path(hFile2, &target_path))
-                    return -1;
-
-                code = win32_xstat_impl_w(target_path, result, FALSE);
-                PyMem_RawFree(target_path);
-                return code;
-            }
-        } else
-            CloseHandle(hFile);
-    }
-    _Py_attribute_data_to_stat(&info, reparse_tag, result);
-
-    /* Set S_IEXEC if it is an .exe, .bat, ... */
-    dot = strrchr(path, '.');
-    if (dot) {
-        if (stricmp(dot, ".bat") == 0 || stricmp(dot, ".cmd") == 0 ||
-            stricmp(dot, ".exe") == 0 || stricmp(dot, ".com") == 0)
-            result->st_mode |= 0111;
-    }
-    return 0;
-}
-
-static int
-win32_xstat_impl_w(const wchar_t *path, struct _Py_stat_struct *result,
-                   BOOL traverse)
-{
-    int code;
-    HANDLE hFile, hFile2;
-    BY_HANDLE_FILE_INFORMATION info;
-    ULONG reparse_tag = 0;
-    wchar_t *target_path;
-    const wchar_t *dot;
-
-    hFile = CreateFileW(
-        path,
-        FILE_READ_ATTRIBUTES, /* desired access */
-        0, /* share mode */
-        NULL, /* security attributes */
-        OPEN_EXISTING,
-        /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-        /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
-           Because of this, calls like GetFinalPathNameByHandle will return
-           the symlink path again and not the actual final path. */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|
-            FILE_FLAG_OPEN_REPARSE_POINT,
-        NULL);
-
-    if (hFile == INVALID_HANDLE_VALUE) {
-        /* Either the target doesn't exist, or we don't have access to
-           get a handle to it. If the former, we need to return an error.
-           If the latter, we can use attributes_from_dir. */
-        if (GetLastError() != ERROR_SHARING_VIOLATION)
-            return -1;
-        /* Could not get attributes on open file. Fall back to
-           reading the directory. */
-        if (!attributes_from_dir_w(path, &info, &reparse_tag))
-            /* Very strange. This should not fail now */
-            return -1;
-        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (traverse) {
-                /* Should traverse, but could not open reparse point handle */
-                SetLastError(ERROR_SHARING_VIOLATION);
-                return -1;
-            }
-        }
-    } else {
-        if (!GetFileInformationByHandle(hFile, &info)) {
-            CloseHandle(hFile);
-            return -1;
-        }
-        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (!win32_get_reparse_tag(hFile, &reparse_tag))
-                return -1;
-
-            /* Close the outer open file handle now that we're about to
-               reopen it with different flags. */
-            if (!CloseHandle(hFile))
-                return -1;
-
-            if (traverse) {
-                /* In order to call GetFinalPathNameByHandle we need to open
-                   the file without the reparse handling flag set. */
                 hFile2 = CreateFileW(
                            path, FILE_READ_ATTRIBUTES, FILE_SHARE_READ,
                            NULL, OPEN_EXISTING,
@@ -1724,7 +1618,7 @@ win32_xstat_impl_w(const wchar_t *path, struct _Py_stat_struct *result,
                 if (!get_target_path(hFile2, &target_path))
                     return -1;
 
-                code = win32_xstat_impl_w(target_path, result, FALSE);
+                code = win32_xstat_impl(target_path, result, FALSE);
                 PyMem_RawFree(target_path);
                 return code;
             }
@@ -1744,21 +1638,11 @@ win32_xstat_impl_w(const wchar_t *path, struct _Py_stat_struct *result,
 }
 
 static int
-win32_xstat(const char *path, struct _Py_stat_struct *result, BOOL traverse)
+win32_xstat(const wchar_t *path, struct _Py_stat_struct *result, BOOL traverse)
 {
     /* Protocol violation: we explicitly clear errno, instead of
        setting it to a POSIX error. Callers should use GetLastError. */
     int code = win32_xstat_impl(path, result, traverse);
-    errno = 0;
-    return code;
-}
-
-static int
-win32_xstat_w(const wchar_t *path, struct _Py_stat_struct *result, BOOL traverse)
-{
-    /* Protocol violation: we explicitly clear errno, instead of
-       setting it to a POSIX error. Callers should use GetLastError. */
-    int code = win32_xstat_impl_w(path, result, traverse);
     errno = 0;
     return code;
 }
@@ -1771,32 +1655,18 @@ win32_xstat_w(const wchar_t *path, struct _Py_stat_struct *result, BOOL traverse
 
    Therefore, win32_lstat will get the attributes traditionally, and
    win32_stat will first explicitly resolve the symlink target and then will
-   call win32_lstat on that result.
-
-   The _w represent Unicode equivalents of the aforementioned ANSI functions. */
+   call win32_lstat on that result. */
 
 static int
-win32_lstat(const char* path, struct _Py_stat_struct *result)
+win32_lstat(const wchar_t* path, struct _Py_stat_struct *result)
 {
     return win32_xstat(path, result, FALSE);
 }
 
 static int
-win32_lstat_w(const wchar_t* path, struct _Py_stat_struct *result)
-{
-    return win32_xstat_w(path, result, FALSE);
-}
-
-static int
-win32_stat(const char* path, struct _Py_stat_struct *result)
+win32_stat(const wchar_t* path, struct _Py_stat_struct *result)
 {
     return win32_xstat(path, result, TRUE);
-}
-
-static int
-win32_stat_w(const wchar_t* path, struct _Py_stat_struct *result)
-{
-    return win32_xstat_w(path, result, TRUE);
 }
 
 #endif /* MS_WINDOWS */
@@ -2200,26 +2070,25 @@ posix_do_stat(const char *function_name, path_t *path,
         result = FSTAT(path->fd, &st);
     else
 #ifdef MS_WINDOWS
-    if (path->wide) {
-        if (follow_symlinks)
-            result = win32_stat_w(path->wide, &st);
-        else
-            result = win32_lstat_w(path->wide, &st);
-    }
+    if (follow_symlinks)
+        result = win32_stat(path->wide, &st);
     else
-#endif
-#if defined(HAVE_LSTAT) || defined(MS_WINDOWS)
+        result = win32_lstat(path->wide, &st);
+#else
+    else
+#if defined(HAVE_LSTAT)
     if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD))
         result = LSTAT(path->narrow, &st);
     else
-#endif
+#endif /* HAVE_LSTAT */
 #ifdef HAVE_FSTATAT
     if ((dir_fd != DEFAULT_DIR_FD) || !follow_symlinks)
         result = fstatat(dir_fd, path->narrow, &st,
                          follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
     else
-#endif
+#endif /* HAVE_FSTATAT */
         result = STAT(path->narrow, &st);
+#endif /* MS_WINDOWS */
     Py_END_ALLOW_THREADS
 
     if (result != 0) {
@@ -2655,10 +2524,7 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    if (path->wide != NULL)
-        attr = GetFileAttributesW(path->wide);
-    else
-        attr = GetFileAttributesA(path->narrow);
+    attr = GetFileAttributesW(path->wide);
     Py_END_ALLOW_THREADS
 
     /*
@@ -2782,11 +2648,8 @@ os_chdir_impl(PyObject *module, path_t *path)
 
     Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
-    if (path->wide)
-        result = win32_wchdir(path->wide);
-    else
-        result = win32_chdir(path->narrow);
-    result = !result; /* on unix, success = 0, on windows, success = !0 */
+    /* on unix, success = 0, on windows, success = !0 */
+    result = !win32_wchdir(path->wide);
 #else
 #ifdef HAVE_FCHDIR
     if (path->fd != -1)
@@ -2881,10 +2744,7 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    if (path->wide)
-        attr = GetFileAttributesW(path->wide);
-    else
-        attr = GetFileAttributesA(path->narrow);
+    attr = GetFileAttributesW(path->wide);
     if (attr == INVALID_FILE_ATTRIBUTES)
         result = 0;
     else {
@@ -2892,10 +2752,7 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
             attr &= ~FILE_ATTRIBUTE_READONLY;
         else
             attr |= FILE_ATTRIBUTE_READONLY;
-        if (path->wide)
-            result = SetFileAttributesW(path->wide, attr);
-        else
-            result = SetFileAttributesA(path->narrow, attr);
+        result = SetFileAttributesW(path->wide, attr);
     }
     Py_END_ALLOW_THREADS
 
@@ -3488,7 +3345,7 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 /*[clinic end generated code: output=7f00f6007fd5269a input=b0095ebbcbaa7e04]*/
 {
 #ifdef MS_WINDOWS
-    BOOL result;
+    BOOL result = FALSE;
 #else
     int result;
 #endif
@@ -3500,18 +3357,18 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
     }
 #endif
 
+#ifndef MS_WINDOWS
     if ((src->narrow && dst->wide) || (src->wide && dst->narrow)) {
         PyErr_SetString(PyExc_NotImplementedError,
                         "link: src and dst must be the same type");
         return NULL;
     }
+#endif
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
     if (src->wide)
         result = CreateHardLinkW(dst->wide, src->wide, NULL);
-    else
-        result = CreateHardLinkA(dst->narrow, src->narrow, NULL);
     Py_END_ALLOW_THREADS
 
     if (!result)
@@ -3526,13 +3383,13 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
             dst_dir_fd, dst->narrow,
             follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
     else
-#endif
+#endif /* HAVE_LINKAT */
         result = link(src->narrow, dst->narrow);
     Py_END_ALLOW_THREADS
 
     if (result)
         return path_error2(src, dst);
-#endif
+#endif /* MS_WINDOWS */
 
     Py_RETURN_NONE;
 }
@@ -3546,97 +3403,39 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
     PyObject *v;
     HANDLE hFindFile = INVALID_HANDLE_VALUE;
     BOOL result;
-    WIN32_FIND_DATA FileData;
-    char namebuf[MAX_PATH+4]; /* Overallocate for "\*.*" */
+    wchar_t namebuf[MAX_PATH+4]; /* Overallocate for "\*.*" */
     /* only claim to have space for MAX_PATH */
     Py_ssize_t len = Py_ARRAY_LENGTH(namebuf)-4;
     wchar_t *wnamebuf = NULL;
 
-    if (!path->narrow) {
-        WIN32_FIND_DATAW wFileData;
-        const wchar_t *po_wchars;
+    WIN32_FIND_DATAW wFileData;
+    const wchar_t *po_wchars;
 
-        if (!path->wide) { /* Default arg: "." */
-            po_wchars = L".";
-            len = 1;
-        } else {
-            po_wchars = path->wide;
-            len = wcslen(path->wide);
-        }
-        /* The +5 is so we can append "\\*.*\0" */
-        wnamebuf = PyMem_New(wchar_t, len + 5);
-        if (!wnamebuf) {
-            PyErr_NoMemory();
-            goto exit;
-        }
-        wcscpy(wnamebuf, po_wchars);
-        if (len > 0) {
-            wchar_t wch = wnamebuf[len-1];
-            if (wch != SEP && wch != ALTSEP && wch != L':')
-                wnamebuf[len++] = SEP;
-            wcscpy(wnamebuf + len, L"*.*");
-        }
-        if ((list = PyList_New(0)) == NULL) {
-            goto exit;
-        }
-        Py_BEGIN_ALLOW_THREADS
-        hFindFile = FindFirstFileW(wnamebuf, &wFileData);
-        Py_END_ALLOW_THREADS
-        if (hFindFile == INVALID_HANDLE_VALUE) {
-            int error = GetLastError();
-            if (error == ERROR_FILE_NOT_FOUND)
-                goto exit;
-            Py_DECREF(list);
-            list = path_error(path);
-            goto exit;
-        }
-        do {
-            /* Skip over . and .. */
-            if (wcscmp(wFileData.cFileName, L".") != 0 &&
-                wcscmp(wFileData.cFileName, L"..") != 0) {
-                v = PyUnicode_FromWideChar(wFileData.cFileName,
-                                           wcslen(wFileData.cFileName));
-                if (v == NULL) {
-                    Py_DECREF(list);
-                    list = NULL;
-                    break;
-                }
-                if (PyList_Append(list, v) != 0) {
-                    Py_DECREF(v);
-                    Py_DECREF(list);
-                    list = NULL;
-                    break;
-                }
-                Py_DECREF(v);
-            }
-            Py_BEGIN_ALLOW_THREADS
-            result = FindNextFileW(hFindFile, &wFileData);
-            Py_END_ALLOW_THREADS
-            /* FindNextFile sets error to ERROR_NO_MORE_FILES if
-               it got to the end of the directory. */
-            if (!result && GetLastError() != ERROR_NO_MORE_FILES) {
-                Py_DECREF(list);
-                list = path_error(path);
-                goto exit;
-            }
-        } while (result == TRUE);
-
+    if (!path->wide) { /* Default arg: "." */
+        po_wchars = L".";
+        len = 1;
+    } else {
+        po_wchars = path->wide;
+        len = wcslen(path->wide);
+    }
+    /* The +5 is so we can append "\\*.*\0" */
+    wnamebuf = PyMem_New(wchar_t, len + 5);
+    if (!wnamebuf) {
+        PyErr_NoMemory();
         goto exit;
     }
-    strcpy(namebuf, path->narrow);
-    len = path->length;
+    wcscpy(wnamebuf, po_wchars);
     if (len > 0) {
-        char ch = namebuf[len-1];
-        if (ch != '\\' && ch != '/' && ch != ':')
-            namebuf[len++] = '\\';
-        strcpy(namebuf + len, "*.*");
+        wchar_t wch = wnamebuf[len-1];
+        if (wch != SEP && wch != ALTSEP && wch != L':')
+            wnamebuf[len++] = SEP;
+        wcscpy(wnamebuf + len, L"*.*");
     }
-
-    if ((list = PyList_New(0)) == NULL)
-        return NULL;
-
+    if ((list = PyList_New(0)) == NULL) {
+        goto exit;
+    }
     Py_BEGIN_ALLOW_THREADS
-    hFindFile = FindFirstFile(namebuf, &FileData);
+    hFindFile = FindFirstFileW(wnamebuf, &wFileData);
     Py_END_ALLOW_THREADS
     if (hFindFile == INVALID_HANDLE_VALUE) {
         int error = GetLastError();
@@ -3648,9 +3447,13 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
     }
     do {
         /* Skip over . and .. */
-        if (strcmp(FileData.cFileName, ".") != 0 &&
-            strcmp(FileData.cFileName, "..") != 0) {
-            v = PyBytes_FromString(FileData.cFileName);
+        if (wcscmp(wFileData.cFileName, L".") != 0 &&
+            wcscmp(wFileData.cFileName, L"..") != 0) {
+            v = PyUnicode_FromWideChar(wFileData.cFileName,
+                                       wcslen(wFileData.cFileName));
+            if (path->narrow && v) {
+                Py_SETREF(v, PyUnicode_EncodeFSDefault(v));
+            }
             if (v == NULL) {
                 Py_DECREF(list);
                 list = NULL;
@@ -3665,7 +3468,7 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
             Py_DECREF(v);
         }
         Py_BEGIN_ALLOW_THREADS
-        result = FindNextFile(hFindFile, &FileData);
+        result = FindNextFileW(hFindFile, &wFileData);
         Py_END_ALLOW_THREADS
         /* FindNextFile sets error to ERROR_NO_MORE_FILES if
            it got to the end of the directory. */
@@ -3846,41 +3649,29 @@ static PyObject *
 os__getfullpathname_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=bb8679d56845bc9b input=332ed537c29d0a3e]*/
 {
-    if (!path->narrow)
-    {
-        wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
-        wchar_t *wtemp;
-        DWORD result;
-        PyObject *v;
+    wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
+    wchar_t *wtemp;
+    DWORD result;
+    PyObject *v;
 
-        result = GetFullPathNameW(path->wide,
-                                  Py_ARRAY_LENGTH(woutbuf),
-                                  woutbuf, &wtemp);
-        if (result > Py_ARRAY_LENGTH(woutbuf)) {
-            woutbufp = PyMem_New(wchar_t, result);
-            if (!woutbufp)
-                return PyErr_NoMemory();
-            result = GetFullPathNameW(path->wide, result, woutbufp, &wtemp);
-        }
-        if (result)
-            v = PyUnicode_FromWideChar(woutbufp, wcslen(woutbufp));
-        else
-            v = win32_error_object("GetFullPathNameW", path->object);
-        if (woutbufp != woutbuf)
-            PyMem_Free(woutbufp);
-        return v;
+    result = GetFullPathNameW(path->wide,
+                              Py_ARRAY_LENGTH(woutbuf),
+                              woutbuf, &wtemp);
+    if (result > Py_ARRAY_LENGTH(woutbuf)) {
+        woutbufp = PyMem_New(wchar_t, result);
+        if (!woutbufp)
+            return PyErr_NoMemory();
+        result = GetFullPathNameW(path->wide, result, woutbufp, &wtemp);
     }
-    else {
-        char outbuf[MAX_PATH];
-        char *temp;
-
-        if (!GetFullPathName(path->narrow, Py_ARRAY_LENGTH(outbuf),
-                             outbuf, &temp)) {
-            win32_error_object("GetFullPathName", path->object);
-            return NULL;
-        }
-        return PyBytes_FromString(outbuf);
-    }
+    if (result) {
+        v = PyUnicode_FromWideChar(woutbufp, wcslen(woutbufp));
+        if (path->narrow)
+            Py_SETREF(v, PyUnicode_EncodeFSDefault(v));
+    } else
+        v = win32_error_object("GetFullPathNameW", path->object);
+    if (woutbufp != woutbuf)
+        PyMem_Free(woutbufp);
+    return v;
 }
 
 
@@ -3964,10 +3755,7 @@ os__isdir_impl(PyObject *module, path_t *path)
     DWORD attributes;
 
     Py_BEGIN_ALLOW_THREADS
-    if (!path->narrow)
-        attributes = GetFileAttributesW(path->wide);
-    else
-        attributes = GetFileAttributesA(path->narrow);
+    attributes = GetFileAttributesW(path->wide);
     Py_END_ALLOW_THREADS
 
     if (attributes == INVALID_FILE_ATTRIBUTES)
@@ -4065,10 +3853,7 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    if (path->wide)
-        result = CreateDirectoryW(path->wide, NULL);
-    else
-        result = CreateDirectoryA(path->narrow, NULL);
+    result = CreateDirectoryW(path->wide, NULL);
     Py_END_ALLOW_THREADS
 
     if (!result)
@@ -4088,7 +3873,7 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
     Py_END_ALLOW_THREADS
     if (result < 0)
         return path_error(path);
-#endif
+#endif /* MS_WINDOWS */
     Py_RETURN_NONE;
 }
 
@@ -4211,31 +3996,28 @@ internal_rename(path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int is
     }
 #endif
 
-    if ((src->narrow && dst->wide) || (src->wide && dst->narrow)) {
-        PyErr_Format(PyExc_ValueError,
-                     "%s: src and dst must be the same type", function_name);
-        return NULL;
-    }
-
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    if (src->wide)
-        result = MoveFileExW(src->wide, dst->wide, flags);
-    else
-        result = MoveFileExA(src->narrow, dst->narrow, flags);
+    result = MoveFileExW(src->wide, dst->wide, flags);
     Py_END_ALLOW_THREADS
 
     if (!result)
         return path_error2(src, dst);
 
 #else
+    if ((src->narrow && dst->wide) || (src->wide && dst->narrow)) {
+        PyErr_Format(PyExc_ValueError,
+                     "%s: src and dst must be the same type", function_name);
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_RENAMEAT
     if (dir_fd_specified)
         result = renameat(src_dir_fd, src->narrow, dst_dir_fd, dst->narrow);
     else
 #endif
-        result = rename(src->narrow, dst->narrow);
+    result = rename(src->narrow, dst->narrow);
     Py_END_ALLOW_THREADS
 
     if (result)
@@ -4316,11 +4098,8 @@ os_rmdir_impl(PyObject *module, path_t *path, int dir_fd)
 
     Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
-    if (path->wide)
-        result = RemoveDirectoryW(path->wide);
-    else
-        result = RemoveDirectoryA(path->narrow);
-    result = !result; /* Windows, success=1, UNIX, success=0 */
+    /* Windows, success=1, UNIX, success=0 */
+    result = !RemoveDirectoryW(path->wide);
 #else
 #ifdef HAVE_UNLINKAT
     if (dir_fd != DEFAULT_DIR_FD)
@@ -4466,11 +4245,8 @@ os_unlink_impl(PyObject *module, path_t *path, int dir_fd)
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
-    if (path->wide)
-        result = Py_DeleteFileW(path->wide);
-    else
-        result = DeleteFileA(path->narrow);
-    result = !result; /* Windows, success=1, UNIX, success=0 */
+    /* Windows, success=1, UNIX, success=0 */
+    result = !Py_DeleteFileW(path->wide);
 #else
 #ifdef HAVE_UNLINKAT
     if (dir_fd != DEFAULT_DIR_FD)
@@ -4881,14 +4657,9 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    if (path->wide)
-        hFile = CreateFileW(path->wide, FILE_WRITE_ATTRIBUTES, 0,
-                            NULL, OPEN_EXISTING,
-                            FILE_FLAG_BACKUP_SEMANTICS, NULL);
-    else
-        hFile = CreateFileA(path->narrow, FILE_WRITE_ATTRIBUTES, 0,
-                            NULL, OPEN_EXISTING,
-                            FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    hFile = CreateFileW(path->wide, FILE_WRITE_ATTRIBUTES, 0,
+                        NULL, OPEN_EXISTING,
+                        FILE_FLAG_BACKUP_SEMANTICS, NULL);
     Py_END_ALLOW_THREADS
     if (hFile == INVALID_HANDLE_VALUE) {
         path_error(path);
@@ -4974,9 +4745,15 @@ os__exit_impl(PyObject *module, int status)
     return NULL; /* Make gcc -Wall happy */
 }
 
+#if defined(HAVE_WEXECV) || defined(HAVE_WSPAWNV)
+#define EXECV_CHAR wchar_t
+#else
+#define EXECV_CHAR char
+#endif
+
 #if defined(HAVE_EXECV) || defined(HAVE_SPAWNV)
 static void
-free_string_array(char **array, Py_ssize_t count)
+free_string_array(EXECV_CHAR **array, Py_ssize_t count)
 {
     Py_ssize_t i;
     for (i = 0; i < count; i++)
@@ -4985,10 +4762,15 @@ free_string_array(char **array, Py_ssize_t count)
 }
 
 static
-int fsconvert_strdup(PyObject *o, char**out)
+int fsconvert_strdup(PyObject *o, EXECV_CHAR**out)
 {
-    PyObject *bytes;
     Py_ssize_t size;
+#if defined(HAVE_WEXECV) || defined(HAVE_WSPAWNV)
+    *out = PyUnicode_AsWideCharString(o, &size);
+    if (!*out)
+        return 0;
+#else
+    PyObject *bytes;
     if (!PyUnicode_FSConverter(o, &bytes))
         return 0;
     size = PyBytes_GET_SIZE(bytes);
@@ -4999,26 +4781,24 @@ int fsconvert_strdup(PyObject *o, char**out)
     }
     memcpy(*out, PyBytes_AsString(bytes), size+1);
     Py_DECREF(bytes);
+#endif
     return 1;
 }
 #endif
 
 #if defined(HAVE_EXECV) || defined (HAVE_FEXECVE)
-static char**
+static EXECV_CHAR**
 parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 {
-    char **envlist;
     Py_ssize_t i, pos, envc;
     PyObject *keys=NULL, *vals=NULL;
-    PyObject *key, *val, *key2, *val2;
-    char *p;
-    const char *k, *v;
-    size_t len;
+    PyObject *key, *val, *keyval;
+    EXECV_CHAR **envlist;
 
     i = PyMapping_Size(env);
     if (i < 0)
         return NULL;
-    envlist = PyMem_NEW(char *, i + 1);
+    envlist = PyMem_NEW(EXECV_CHAR *, i + 1);
     if (envlist == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -5042,28 +4822,16 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
         if (!key || !val)
             goto error;
 
-        if (PyUnicode_FSConverter(key, &key2) == 0)
+        keyval = PyUnicode_FromFormat("%U=%U", key, val);
+        if (!keyval)
             goto error;
-        if (PyUnicode_FSConverter(val, &val2) == 0) {
-            Py_DECREF(key2);
+
+        if (!fsconvert_strdup(keyval, &envlist[envc++])) {
+            Py_DECREF(keyval);
             goto error;
         }
-
-        k = PyBytes_AsString(key2);
-        v = PyBytes_AsString(val2);
-        len = PyBytes_GET_SIZE(key2) + PyBytes_GET_SIZE(val2) + 2;
-
-        p = PyMem_NEW(char, len);
-        if (p == NULL) {
-            PyErr_NoMemory();
-            Py_DECREF(key2);
-            Py_DECREF(val2);
-            goto error;
-        }
-        PyOS_snprintf(p, len, "%s=%s", k, v);
-        envlist[envc++] = p;
-        Py_DECREF(key2);
-        Py_DECREF(val2);
+        
+        Py_DECREF(keyval);
     }
     Py_DECREF(vals);
     Py_DECREF(keys);
@@ -5075,17 +4843,15 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 error:
     Py_XDECREF(keys);
     Py_XDECREF(vals);
-    while (--envc >= 0)
-        PyMem_DEL(envlist[envc]);
-    PyMem_DEL(envlist);
+    free_string_array(envlist, envc);
     return NULL;
 }
 
-static char**
+static EXECV_CHAR**
 parse_arglist(PyObject* argv, Py_ssize_t *argc)
 {
     int i;
-    char **argvlist = PyMem_NEW(char *, *argc+1);
+    EXECV_CHAR **argvlist = PyMem_NEW(EXECV_CHAR *, *argc+1);
     if (argvlist == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -5107,6 +4873,7 @@ fail:
     free_string_array(argvlist, *argc);
     return NULL;
 }
+
 #endif
 
 
@@ -5114,7 +4881,7 @@ fail:
 /*[clinic input]
 os.execv
 
-    path: FSConverter
+    path: path_t
         Path of executable file.
     argv: object
         Tuple or list of strings.
@@ -5124,17 +4891,15 @@ Execute an executable path with arguments, replacing current process.
 [clinic start generated code]*/
 
 static PyObject *
-os_execv_impl(PyObject *module, PyObject *path, PyObject *argv)
-/*[clinic end generated code: output=b21dc34deeb5b004 input=96041559925e5229]*/
+os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
+/*[clinic end generated code: output=3b52fec34cd0dafd input=9bac31efae07dac7]*/
 {
-    const char *path_char;
-    char **argvlist;
+    EXECV_CHAR **argvlist;
     Py_ssize_t argc;
 
     /* execv has two arguments: (path, argv), where
        argv is a list or tuple of strings. */
 
-    path_char = PyBytes_AsString(path);
     if (!PyList_Check(argv) && !PyTuple_Check(argv)) {
         PyErr_SetString(PyExc_TypeError,
                         "execv() arg 2 must be a tuple or list");
@@ -5151,7 +4916,11 @@ os_execv_impl(PyObject *module, PyObject *path, PyObject *argv)
         return NULL;
     }
 
-    execv(path_char, argvlist);
+#ifdef HAVE_WEXECV
+    _wexecv(path->wide, argvlist);
+#else
+    execv(path->narrow, argvlist);
+#endif
 
     /* If we get here it's definitely an error */
 
@@ -5177,8 +4946,8 @@ static PyObject *
 os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
 /*[clinic end generated code: output=ff9fa8e4da8bde58 input=626804fa092606d9]*/
 {
-    char **argvlist = NULL;
-    char **envlist;
+    EXECV_CHAR **argvlist = NULL;
+    EXECV_CHAR **envlist;
     Py_ssize_t argc, envc;
 
     /* execve has three arguments: (path, argv, env), where
@@ -5211,30 +4980,33 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
         fexecve(path->fd, argvlist, envlist);
     else
 #endif
+#ifdef HAVE_WEXECV
+        _wexecve(path->wide, argvlist, envlist);
+#else
         execve(path->narrow, argvlist, envlist);
+#endif
 
     /* If we get here it's definitely an error */
 
     path_error(path);
 
-    while (--envc >= 0)
-        PyMem_DEL(envlist[envc]);
-    PyMem_DEL(envlist);
+    free_string_array(envlist, envc);
   fail:
     if (argvlist)
         free_string_array(argvlist, argc);
     return NULL;
 }
+
 #endif /* HAVE_EXECV */
 
 
-#ifdef HAVE_SPAWNV
+#if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)
 /*[clinic input]
 os.spawnv
 
     mode: int
         Mode of process creation.
-    path: FSConverter
+    path: path_t
         Path of executable file.
     argv: object
         Tuple or list of strings.
@@ -5244,11 +5016,10 @@ Execute the program specified by path in a new process.
 [clinic start generated code]*/
 
 static PyObject *
-os_spawnv_impl(PyObject *module, int mode, PyObject *path, PyObject *argv)
-/*[clinic end generated code: output=c427c0ce40f10638 input=042c91dfc1e6debc]*/
+os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
+/*[clinic end generated code: output=71cd037a9d96b816 input=43224242303291be]*/
 {
-    const char *path_char;
-    char **argvlist;
+    EXECV_CHAR **argvlist;
     int i;
     Py_ssize_t argc;
     intptr_t spawnval;
@@ -5257,7 +5028,6 @@ os_spawnv_impl(PyObject *module, int mode, PyObject *path, PyObject *argv)
     /* spawnv has three arguments: (mode, path, argv), where
        argv is a list or tuple of strings. */
 
-    path_char = PyBytes_AsString(path);
     if (PyList_Check(argv)) {
         argc = PyList_Size(argv);
         getitem = PyList_GetItem;
@@ -5272,7 +5042,7 @@ os_spawnv_impl(PyObject *module, int mode, PyObject *path, PyObject *argv)
         return NULL;
     }
 
-    argvlist = PyMem_NEW(char *, argc+1);
+    argvlist = PyMem_NEW(EXECV_CHAR *, argc+1);
     if (argvlist == NULL) {
         return PyErr_NoMemory();
     }
@@ -5292,7 +5062,11 @@ os_spawnv_impl(PyObject *module, int mode, PyObject *path, PyObject *argv)
         mode = _P_OVERLAY;
 
     Py_BEGIN_ALLOW_THREADS
-    spawnval = _spawnv(mode, path_char, argvlist);
+#ifdef HAVE_WSPAWNV
+    spawnval = _wspawnv(mode, path->wide, argvlist);
+#else
+    spawnval = _spawnv(mode, path->narrow, argvlist);
+#endif
     Py_END_ALLOW_THREADS
 
     free_string_array(argvlist, argc);
@@ -5309,7 +5083,7 @@ os.spawnve
 
     mode: int
         Mode of process creation.
-    path: FSConverter
+    path: path_t
         Path of executable file.
     argv: object
         Tuple or list of strings.
@@ -5321,13 +5095,12 @@ Execute the program specified by path in a new process.
 [clinic start generated code]*/
 
 static PyObject *
-os_spawnve_impl(PyObject *module, int mode, PyObject *path, PyObject *argv,
+os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
                 PyObject *env)
-/*[clinic end generated code: output=ebcfa5f7ba2f4219 input=02362fd937963f8f]*/
+/*[clinic end generated code: output=30fe85be56fe37ad input=3e40803ee7c4c586]*/
 {
-    const char *path_char;
-    char **argvlist;
-    char **envlist;
+    EXECV_CHAR **argvlist;
+    EXECV_CHAR **envlist;
     PyObject *res = NULL;
     Py_ssize_t argc, i, envc;
     intptr_t spawnval;
@@ -5338,7 +5111,6 @@ os_spawnve_impl(PyObject *module, int mode, PyObject *path, PyObject *argv,
        argv is a list or tuple of strings and env is a dictionary
        like posix.environ. */
 
-    path_char = PyBytes_AsString(path);
     if (PyList_Check(argv)) {
         argc = PyList_Size(argv);
         getitem = PyList_GetItem;
@@ -5358,7 +5130,7 @@ os_spawnve_impl(PyObject *module, int mode, PyObject *path, PyObject *argv,
         goto fail_0;
     }
 
-    argvlist = PyMem_NEW(char *, argc+1);
+    argvlist = PyMem_NEW(EXECV_CHAR *, argc+1);
     if (argvlist == NULL) {
         PyErr_NoMemory();
         goto fail_0;
@@ -5382,7 +5154,11 @@ os_spawnve_impl(PyObject *module, int mode, PyObject *path, PyObject *argv,
         mode = _P_OVERLAY;
 
     Py_BEGIN_ALLOW_THREADS
-    spawnval = _spawnve(mode, path_char, argvlist, envlist);
+#ifdef HAVE_WSPAWNV
+    spawnval = _wspawnve(mode, path->wide, argvlist, envlist);
+#else
+    spawnval = _spawnve(mode, path->narrow, argvlist, envlist);
+#endif
     Py_END_ALLOW_THREADS
 
     if (spawnval == -1)
@@ -7290,21 +7066,18 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 
 /* Grab CreateSymbolicLinkW dynamically from kernel32 */
 static DWORD (CALLBACK *Py_CreateSymbolicLinkW)(LPCWSTR, LPCWSTR, DWORD) = NULL;
-static DWORD (CALLBACK *Py_CreateSymbolicLinkA)(LPCSTR, LPCSTR, DWORD) = NULL;
 
 static int
 check_CreateSymbolicLink(void)
 {
     HINSTANCE hKernel32;
     /* only recheck */
-    if (Py_CreateSymbolicLinkW && Py_CreateSymbolicLinkA)
+    if (Py_CreateSymbolicLinkW)
         return 1;
     hKernel32 = GetModuleHandleW(L"KERNEL32");
     *(FARPROC*)&Py_CreateSymbolicLinkW = GetProcAddress(hKernel32,
                                                         "CreateSymbolicLinkW");
-    *(FARPROC*)&Py_CreateSymbolicLinkA = GetProcAddress(hKernel32,
-                                                        "CreateSymbolicLinkA");
-    return (Py_CreateSymbolicLinkW && Py_CreateSymbolicLinkA);
+    return Py_CreateSymbolicLinkW != NULL;
 }
 
 /* Remove the last portion of the path */
@@ -7321,33 +7094,11 @@ _dirnameW(WCHAR *path)
     *ptr = 0;
 }
 
-/* Remove the last portion of the path */
-static void
-_dirnameA(char *path)
-{
-    char *ptr;
-
-    /* walk the path from the end until a backslash is encountered */
-    for(ptr = path + strlen(path); ptr != path; ptr--) {
-        if (*ptr == '\\' || *ptr == '/')
-            break;
-    }
-    *ptr = 0;
-}
-
 /* Is this path absolute? */
 static int
 _is_absW(const WCHAR *path)
 {
     return path[0] == L'\\' || path[0] == L'/' || path[1] == L':';
-
-}
-
-/* Is this path absolute? */
-static int
-_is_absA(const char *path)
-{
-    return path[0] == '\\' || path[0] == '/' || path[1] == ':';
 
 }
 
@@ -7372,27 +7123,6 @@ _joinW(WCHAR *dest_path, const WCHAR *root, const WCHAR *rest)
     wcscpy(dest_path+root_len, rest);
 }
 
-/* join root and rest with a backslash */
-static void
-_joinA(char *dest_path, const char *root, const char *rest)
-{
-    size_t root_len;
-
-    if (_is_absA(rest)) {
-        strcpy(dest_path, rest);
-        return;
-    }
-
-    root_len = strlen(root);
-
-    strcpy(dest_path, root);
-    if(root_len) {
-        dest_path[root_len] = '\\';
-        root_len++;
-    }
-    strcpy(dest_path+root_len, rest);
-}
-
 /* Return True if the path at src relative to dest is a directory */
 static int
 _check_dirW(LPCWSTR src, LPCWSTR dest)
@@ -7408,25 +7138,6 @@ _check_dirW(LPCWSTR src, LPCWSTR dest)
     _joinW(src_resolved, dest_parent, src);
     return (
         GetFileAttributesExW(src_resolved, GetFileExInfoStandard, &src_info)
-        && src_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
-    );
-}
-
-/* Return True if the path at src relative to dest is a directory */
-static int
-_check_dirA(LPCSTR src, LPCSTR dest)
-{
-    WIN32_FILE_ATTRIBUTE_DATA src_info;
-    char dest_parent[MAX_PATH];
-    char src_resolved[MAX_PATH] = "";
-
-    /* dest_parent = os.path.dirname(dest) */
-    strcpy(dest_parent, dest);
-    _dirnameA(dest_parent);
-    /* src_resolved = os.path.join(dest_parent, src) */
-    _joinA(src_resolved, dest_parent, src);
-    return (
-        GetFileAttributesExA(src_resolved, GetFileExInfoStandard, &src_info)
         && src_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
     );
 }
@@ -7489,18 +7200,10 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
 #ifdef MS_WINDOWS
 
     Py_BEGIN_ALLOW_THREADS
-    if (dst->wide) {
-        /* if src is a directory, ensure target_is_directory==1 */
-        target_is_directory |= _check_dirW(src->wide, dst->wide);
-        result = Py_CreateSymbolicLinkW(dst->wide, src->wide,
-                                        target_is_directory);
-    }
-    else {
-        /* if src is a directory, ensure target_is_directory==1 */
-        target_is_directory |= _check_dirA(src->narrow, dst->narrow);
-        result = Py_CreateSymbolicLinkA(dst->narrow, src->narrow,
-                                        target_is_directory);
-    }
+    /* if src is a directory, ensure target_is_directory==1 */
+    target_is_directory |= _check_dirW(src->wide, dst->wide);
+    result = Py_CreateSymbolicLinkW(dst->wide, src->wide,
+                                    target_is_directory);
     Py_END_ALLOW_THREADS
 
     if (!result)
@@ -7805,16 +7508,14 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
     do {
         Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
-        if (path->wide)
-            fd = _wopen(path->wide, flags, mode);
-        else
+        fd = _wopen(path->wide, flags, mode);
 #endif
 #ifdef HAVE_OPENAT
         if (dir_fd != DEFAULT_DIR_FD)
             fd = openat(dir_fd, path->narrow, flags, mode);
         else
-#endif
             fd = open(path->narrow, flags, mode);
+#endif
         Py_END_ALLOW_THREADS
     } while (fd < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     _Py_END_SUPPRESS_IPH
@@ -8955,10 +8656,7 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
-    if (path->wide)
-        fd = _wopen(path->wide, _O_WRONLY | _O_BINARY | _O_NOINHERIT);
-    else
-        fd = _open(path->narrow, _O_WRONLY | _O_BINARY | _O_NOINHERIT);
+    fd = _wopen(path->wide, _O_WRONLY | _O_BINARY | _O_NOINHERIT);
     if (fd < 0)
         result = -1;
     else {
@@ -10612,31 +10310,8 @@ os_abort_impl(PyObject *module)
 }
 
 #ifdef MS_WINDOWS
-/* AC 3.5: change to path_t? but that might change exceptions */
-PyDoc_STRVAR(win32_startfile__doc__,
-"startfile(filepath [, operation])\n\
-\n\
-Start a file with its associated application.\n\
-\n\
-When \"operation\" is not specified or \"open\", this acts like\n\
-double-clicking the file in Explorer, or giving the file name as an\n\
-argument to the DOS \"start\" command: the file is opened with whatever\n\
-application (if any) its extension is associated.\n\
-When another \"operation\" is given, it specifies what should be done with\n\
-the file.  A typical operation is \"print\".\n\
-\n\
-startfile returns as soon as the associated application is launched.\n\
-There is no option to wait for the application to close, and no way\n\
-to retrieve the application's exit status.\n\
-\n\
-The filepath is relative to the current directory.  If you want to use\n\
-an absolute path, make sure the first character is not a slash (\"/\");\n\
-the underlying Win32 ShellExecute function doesn't work if it is.");
-
 /* Grab ShellExecute dynamically from shell32 */
 static int has_ShellExecute = -1;
-static HINSTANCE (CALLBACK *Py_ShellExecuteA)(HWND, LPCSTR, LPCSTR, LPCSTR,
-                                              LPCSTR, INT);
 static HINSTANCE (CALLBACK *Py_ShellExecuteW)(HWND, LPCWSTR, LPCWSTR, LPCWSTR,
                                               LPCWSTR, INT);
 static int
@@ -10650,12 +10325,9 @@ check_ShellExecute()
         hShell32 = LoadLibraryW(L"SHELL32");
         Py_END_ALLOW_THREADS
         if (hShell32) {
-            *(FARPROC*)&Py_ShellExecuteA = GetProcAddress(hShell32,
-                                            "ShellExecuteA");
             *(FARPROC*)&Py_ShellExecuteW = GetProcAddress(hShell32,
                                             "ShellExecuteW");
-            has_ShellExecute = Py_ShellExecuteA &&
-                               Py_ShellExecuteW;
+            has_ShellExecute = Py_ShellExecuteW != NULL;
         } else {
             has_ShellExecute = 0;
         }
@@ -10664,16 +10336,36 @@ check_ShellExecute()
 }
 
 
-static PyObject *
-win32_startfile(PyObject *self, PyObject *args)
-{
-    PyObject *ofilepath;
-    const char *filepath;
-    const char *operation = NULL;
-    const wchar_t *wpath, *woperation;
-    HINSTANCE rc;
+/*[clinic input]
+os.startfile
+    filepath: path_t
+    operation: Py_UNICODE = NULL
 
-    PyObject *unipath, *uoperation = NULL;
+startfile(filepath [, operation])
+
+Start a file with its associated application.
+
+When "operation" is not specified or "open", this acts like
+double-clicking the file in Explorer, or giving the file name as an
+argument to the DOS "start" command: the file is opened with whatever
+application (if any) its extension is associated.
+When another "operation" is given, it specifies what should be done with
+the file.  A typical operation is "print".
+
+startfile returns as soon as the associated application is launched.
+There is no option to wait for the application to close, and no way
+to retrieve the application's exit status.
+
+The filepath is relative to the current directory.  If you want to use
+an absolute path, make sure the first character is not a slash ("/");
+the underlying Win32 ShellExecute function doesn't work if it is.
+[clinic start generated code]*/
+
+static PyObject *
+os_startfile_impl(PyObject *module, path_t *filepath, Py_UNICODE *operation)
+/*[clinic end generated code: output=912ceba79acfa1c9 input=63950bf2986380d0]*/
+{
+    HINSTANCE rc;
 
     if(!check_ShellExecute()) {
         /* If the OS doesn't have ShellExecute, return a
@@ -10682,68 +10374,16 @@ win32_startfile(PyObject *self, PyObject *args)
             "startfile not available on this platform");
     }
 
-    if (!PyArg_ParseTuple(args, "U|s:startfile",
-                          &unipath, &operation)) {
-        PyErr_Clear();
-        goto normal;
-    }
-
-    if (operation) {
-        uoperation = PyUnicode_DecodeASCII(operation,
-                                           strlen(operation), NULL);
-        if (!uoperation) {
-            PyErr_Clear();
-            operation = NULL;
-            goto normal;
-        }
-    }
-
-    wpath = PyUnicode_AsUnicode(unipath);
-    if (wpath == NULL)
-        goto normal;
-    if (uoperation) {
-        woperation = PyUnicode_AsUnicode(uoperation);
-        if (woperation == NULL)
-            goto normal;
-    }
-    else
-        woperation = NULL;
-
     Py_BEGIN_ALLOW_THREADS
-    rc = Py_ShellExecuteW((HWND)0, woperation, wpath,
+    rc = Py_ShellExecuteW((HWND)0, operation, filepath->wide,
                           NULL, NULL, SW_SHOWNORMAL);
     Py_END_ALLOW_THREADS
 
-    Py_XDECREF(uoperation);
     if (rc <= (HINSTANCE)32) {
-        win32_error_object("startfile", unipath);
+        win32_error_object("startfile", filepath->object);
         return NULL;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
-
-normal:
-    if (!PyArg_ParseTuple(args, "O&|s:startfile",
-                          PyUnicode_FSConverter, &ofilepath,
-                          &operation))
-        return NULL;
-    if (win32_warn_bytes_api()) {
-        Py_DECREF(ofilepath);
-        return NULL;
-    }
-    filepath = PyBytes_AsString(ofilepath);
-    Py_BEGIN_ALLOW_THREADS
-    rc = Py_ShellExecuteA((HWND)0, operation, filepath,
-                          NULL, NULL, SW_SHOWNORMAL);
-    Py_END_ALLOW_THREADS
-    if (rc <= (HINSTANCE)32) {
-        PyObject *errval = win32_error("startfile", filepath);
-        Py_DECREF(ofilepath);
-        return errval;
-    }
-    Py_DECREF(ofilepath);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 #endif /* MS_WINDOWS */
 
@@ -11560,9 +11200,9 @@ DirEntry_fetch_stat(DirEntry *self, int follow_symlinks)
         return NULL;
 
     if (follow_symlinks)
-        result = win32_stat_w(path, &st);
+        result = win32_stat(path, &st);
     else
-        result = win32_lstat_w(path, &st);
+        result = win32_lstat(path, &st);
 
     if (result != 0) {
         return PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError,
@@ -11761,7 +11401,7 @@ DirEntry_inode(DirEntry *self)
         if (!path)
             return NULL;
 
-        if (win32_lstat_w(path, &stat) != 0) {
+        if (win32_lstat(path, &stat) != 0) {
             return PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError,
                                                                 0, self->path);
         }
@@ -11910,6 +11550,11 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
     entry->name = PyUnicode_FromWideChar(dataW->cFileName, -1);
     if (!entry->name)
         goto error;
+    if (path->narrow) {
+        Py_SETREF(entry->name, PyUnicode_EncodeFSDefault(entry->name));
+        if (!entry->name)
+            goto error;
+    }
 
     joined_path = join_path_filenameW(path->wide, dataW->cFileName);
     if (!joined_path)
@@ -11919,8 +11564,13 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
     PyMem_Free(joined_path);
     if (!entry->path)
         goto error;
+    if (path->narrow) {
+        Py_SETREF(entry->path, PyUnicode_EncodeFSDefault(entry->path));
+        if (!entry->path)
+            goto error;
+    }
 
-    find_data_to_file_info_w(dataW, &file_info, &reparse_tag);
+    find_data_to_file_info(dataW, &file_info, &reparse_tag);
     _Py_attribute_data_to_stat(&file_info, reparse_tag, &entry->win32_lstat);
 
     return (PyObject *)entry;
@@ -12316,11 +11966,6 @@ posix_scandir(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_XINCREF(iterator->path.object);
 
 #ifdef MS_WINDOWS
-    if (iterator->path.narrow) {
-        PyErr_SetString(PyExc_TypeError,
-                        "os.scandir() doesn't support bytes path on Windows, use Unicode instead");
-        goto error;
-    }
     iterator->first_time = 1;
 
     path_strW = join_path_filenameW(iterator->path.wide, L"*.*");
@@ -12570,7 +12215,7 @@ static PyMethodDef posix_methods[] = {
     OS_KILLPG_METHODDEF
     OS_PLOCK_METHODDEF
 #ifdef MS_WINDOWS
-    {"startfile",       win32_startfile, METH_VARARGS, win32_startfile__doc__},
+    OS_STARTFILE_METHODDEF
 #endif
     OS_SETUID_METHODDEF
     OS_SETEUID_METHODDEF

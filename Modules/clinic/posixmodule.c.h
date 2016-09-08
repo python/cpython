@@ -1649,24 +1649,24 @@ PyDoc_STRVAR(os_execv__doc__,
     {"execv", (PyCFunction)os_execv, METH_VARARGS, os_execv__doc__},
 
 static PyObject *
-os_execv_impl(PyObject *module, PyObject *path, PyObject *argv);
+os_execv_impl(PyObject *module, path_t *path, PyObject *argv);
 
 static PyObject *
 os_execv(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    PyObject *path = NULL;
+    path_t path = PATH_T_INITIALIZE("execv", "path", 0, 0);
     PyObject *argv;
 
     if (!PyArg_ParseTuple(args, "O&O:execv",
-        PyUnicode_FSConverter, &path, &argv)) {
+        path_converter, &path, &argv)) {
         goto exit;
     }
-    return_value = os_execv_impl(module, path, argv);
+    return_value = os_execv_impl(module, &path, argv);
 
 exit:
     /* Cleanup for path */
-    Py_XDECREF(path);
+    path_cleanup(&path);
 
     return return_value;
 }
@@ -1719,7 +1719,7 @@ exit:
 
 #endif /* defined(HAVE_EXECV) */
 
-#if defined(HAVE_SPAWNV)
+#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
 
 PyDoc_STRVAR(os_spawnv__doc__,
 "spawnv($module, mode, path, argv, /)\n"
@@ -1738,32 +1738,32 @@ PyDoc_STRVAR(os_spawnv__doc__,
     {"spawnv", (PyCFunction)os_spawnv, METH_VARARGS, os_spawnv__doc__},
 
 static PyObject *
-os_spawnv_impl(PyObject *module, int mode, PyObject *path, PyObject *argv);
+os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv);
 
 static PyObject *
 os_spawnv(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int mode;
-    PyObject *path = NULL;
+    path_t path = PATH_T_INITIALIZE("spawnv", "path", 0, 0);
     PyObject *argv;
 
     if (!PyArg_ParseTuple(args, "iO&O:spawnv",
-        &mode, PyUnicode_FSConverter, &path, &argv)) {
+        &mode, path_converter, &path, &argv)) {
         goto exit;
     }
-    return_value = os_spawnv_impl(module, mode, path, argv);
+    return_value = os_spawnv_impl(module, mode, &path, argv);
 
 exit:
     /* Cleanup for path */
-    Py_XDECREF(path);
+    path_cleanup(&path);
 
     return return_value;
 }
 
-#endif /* defined(HAVE_SPAWNV) */
+#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
 
-#if defined(HAVE_SPAWNV)
+#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
 
 PyDoc_STRVAR(os_spawnve__doc__,
 "spawnve($module, mode, path, argv, env, /)\n"
@@ -1784,7 +1784,7 @@ PyDoc_STRVAR(os_spawnve__doc__,
     {"spawnve", (PyCFunction)os_spawnve, METH_VARARGS, os_spawnve__doc__},
 
 static PyObject *
-os_spawnve_impl(PyObject *module, int mode, PyObject *path, PyObject *argv,
+os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
                 PyObject *env);
 
 static PyObject *
@@ -1792,24 +1792,24 @@ os_spawnve(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int mode;
-    PyObject *path = NULL;
+    path_t path = PATH_T_INITIALIZE("spawnve", "path", 0, 0);
     PyObject *argv;
     PyObject *env;
 
     if (!PyArg_ParseTuple(args, "iO&OO:spawnve",
-        &mode, PyUnicode_FSConverter, &path, &argv, &env)) {
+        &mode, path_converter, &path, &argv, &env)) {
         goto exit;
     }
-    return_value = os_spawnve_impl(module, mode, path, argv, env);
+    return_value = os_spawnve_impl(module, mode, &path, argv, env);
 
 exit:
     /* Cleanup for path */
-    Py_XDECREF(path);
+    path_cleanup(&path);
 
     return return_value;
 }
 
-#endif /* defined(HAVE_SPAWNV) */
+#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
 
 #if defined(HAVE_FORK1)
 
@@ -4994,6 +4994,60 @@ os_abort(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_abort_impl(module);
 }
 
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_startfile__doc__,
+"startfile($module, /, filepath, operation=None)\n"
+"--\n"
+"\n"
+"startfile(filepath [, operation])\n"
+"\n"
+"Start a file with its associated application.\n"
+"\n"
+"When \"operation\" is not specified or \"open\", this acts like\n"
+"double-clicking the file in Explorer, or giving the file name as an\n"
+"argument to the DOS \"start\" command: the file is opened with whatever\n"
+"application (if any) its extension is associated.\n"
+"When another \"operation\" is given, it specifies what should be done with\n"
+"the file.  A typical operation is \"print\".\n"
+"\n"
+"startfile returns as soon as the associated application is launched.\n"
+"There is no option to wait for the application to close, and no way\n"
+"to retrieve the application\'s exit status.\n"
+"\n"
+"The filepath is relative to the current directory.  If you want to use\n"
+"an absolute path, make sure the first character is not a slash (\"/\");\n"
+"the underlying Win32 ShellExecute function doesn\'t work if it is.");
+
+#define OS_STARTFILE_METHODDEF    \
+    {"startfile", (PyCFunction)os_startfile, METH_VARARGS|METH_KEYWORDS, os_startfile__doc__},
+
+static PyObject *
+os_startfile_impl(PyObject *module, path_t *filepath, Py_UNICODE *operation);
+
+static PyObject *
+os_startfile(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"filepath", "operation", NULL};
+    path_t filepath = PATH_T_INITIALIZE("startfile", "filepath", 0, 0);
+    Py_UNICODE *operation = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|u:startfile", _keywords,
+        path_converter, &filepath, &operation)) {
+        goto exit;
+    }
+    return_value = os_startfile_impl(module, &filepath, operation);
+
+exit:
+    /* Cleanup for filepath */
+    path_cleanup(&filepath);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
 #if defined(HAVE_GETLOADAVG)
 
 PyDoc_STRVAR(os_getloadavg__doc__,
@@ -6033,6 +6087,10 @@ exit:
 #ifndef OS_SYSCONF_METHODDEF
     #define OS_SYSCONF_METHODDEF
 #endif /* !defined(OS_SYSCONF_METHODDEF) */
+
+#ifndef OS_STARTFILE_METHODDEF
+    #define OS_STARTFILE_METHODDEF
+#endif /* !defined(OS_STARTFILE_METHODDEF) */
 
 #ifndef OS_GETLOADAVG_METHODDEF
     #define OS_GETLOADAVG_METHODDEF

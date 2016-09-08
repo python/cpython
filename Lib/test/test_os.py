@@ -90,16 +90,6 @@ def ignore_deprecation_warnings(msg_regex, quiet=False):
         yield
 
 
-@contextlib.contextmanager
-def bytes_filename_warn(expected):
-    msg = 'The Windows bytes API has been deprecated'
-    if os.name == 'nt':
-        with ignore_deprecation_warnings(msg, quiet=not expected):
-            yield
-    else:
-        yield
-
-
 class _PathLike(os.PathLike):
 
     def __init__(self, path=""):
@@ -342,8 +332,7 @@ class StatAttributeTests(unittest.TestCase):
             fname = self.fname.encode(sys.getfilesystemencoding())
         except UnicodeEncodeError:
             self.skipTest("cannot encode %a for the filesystem" % self.fname)
-        with bytes_filename_warn(True):
-            self.check_stat_attributes(fname)
+        self.check_stat_attributes(fname)
 
     def test_stat_result_pickle(self):
         result = os.stat(self.fname)
@@ -1032,8 +1021,6 @@ class BytesWalkTests(WalkTests):
     def setUp(self):
         super().setUp()
         self.stack = contextlib.ExitStack()
-        if os.name == 'nt':
-            self.stack.enter_context(bytes_filename_warn(False))
 
     def tearDown(self):
         self.stack.close()
@@ -1640,8 +1627,7 @@ class LinkTests(unittest.TestCase):
     def _test_link(self, file1, file2):
         create_file(file1)
 
-        with bytes_filename_warn(False):
-            os.link(file1, file2)
+        os.link(file1, file2)
         with open(file1, "r") as f1, open(file2, "r") as f2:
             self.assertTrue(os.path.sameopenfile(f1.fileno(), f2.fileno()))
 
@@ -1934,10 +1920,9 @@ class Win32ListdirTests(unittest.TestCase):
                 self.created_paths)
 
         # bytes
-        with bytes_filename_warn(False):
-            self.assertEqual(
-                    sorted(os.listdir(os.fsencode(support.TESTFN))),
-                    [os.fsencode(path) for path in self.created_paths])
+        self.assertEqual(
+                sorted(os.listdir(os.fsencode(support.TESTFN))),
+                [os.fsencode(path) for path in self.created_paths])
 
     def test_listdir_extended_path(self):
         """Test when the path starts with '\\\\?\\'."""
@@ -1949,11 +1934,10 @@ class Win32ListdirTests(unittest.TestCase):
                 self.created_paths)
 
         # bytes
-        with bytes_filename_warn(False):
-            path = b'\\\\?\\' + os.fsencode(os.path.abspath(support.TESTFN))
-            self.assertEqual(
-                    sorted(os.listdir(path)),
-                    [os.fsencode(path) for path in self.created_paths])
+        path = b'\\\\?\\' + os.fsencode(os.path.abspath(support.TESTFN))
+        self.assertEqual(
+                sorted(os.listdir(path)),
+                [os.fsencode(path) for path in self.created_paths])
 
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
@@ -2028,10 +2012,8 @@ class Win32SymlinkTests(unittest.TestCase):
         self.assertNotEqual(os.lstat(link), os.stat(link))
 
         bytes_link = os.fsencode(link)
-        with bytes_filename_warn(True):
-            self.assertEqual(os.stat(bytes_link), os.stat(target))
-        with bytes_filename_warn(True):
-            self.assertNotEqual(os.lstat(bytes_link), os.stat(bytes_link))
+        self.assertEqual(os.stat(bytes_link), os.stat(target))
+        self.assertNotEqual(os.lstat(bytes_link), os.stat(bytes_link))
 
     def test_12084(self):
         level1 = os.path.abspath(support.TESTFN)
@@ -2589,46 +2571,6 @@ class ExtendedAttributeTests(unittest.TestCase):
         self._check_xattrs(getxattr, setxattr, removexattr, listxattr)
 
 
-@unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
-class Win32DeprecatedBytesAPI(unittest.TestCase):
-    def test_deprecated(self):
-        import nt
-        filename = os.fsencode(support.TESTFN)
-        for func, *args in (
-            (nt._getfullpathname, filename),
-            (nt._isdir, filename),
-            (os.access, filename, os.R_OK),
-            (os.chdir, filename),
-            (os.chmod, filename, 0o777),
-            (os.getcwdb,),
-            (os.link, filename, filename),
-            (os.listdir, filename),
-            (os.lstat, filename),
-            (os.mkdir, filename),
-            (os.open, filename, os.O_RDONLY),
-            (os.rename, filename, filename),
-            (os.rmdir, filename),
-            (os.startfile, filename),
-            (os.stat, filename),
-            (os.unlink, filename),
-            (os.utime, filename),
-        ):
-            with bytes_filename_warn(True):
-                try:
-                    func(*args)
-                except OSError:
-                    # ignore OSError, we only care about DeprecationWarning
-                    pass
-
-    @support.skip_unless_symlink
-    def test_symlink(self):
-        self.addCleanup(support.unlink, support.TESTFN)
-
-        filename = os.fsencode(support.TESTFN)
-        with bytes_filename_warn(True):
-            os.symlink(filename, filename)
-
-
 @unittest.skipUnless(hasattr(os, 'get_terminal_size'), "requires os.get_terminal_size")
 class TermsizeTests(unittest.TestCase):
     def test_does_not_crash(self):
@@ -2712,16 +2654,7 @@ class OSErrorTests(unittest.TestCase):
                 (self.bytes_filenames, os.replace, b"dst"),
                 (self.unicode_filenames, os.rename, "dst"),
                 (self.unicode_filenames, os.replace, "dst"),
-                # Issue #16414: Don't test undecodable names with listdir()
-                # because of a Windows bug.
-                #
-                # With the ANSI code page 932, os.listdir(b'\xe7') return an
-                # empty list (instead of failing), whereas os.listdir(b'\xff')
-                # raises a FileNotFoundError. It looks like a Windows bug:
-                # b'\xe7' directory does not exist, FindFirstFileA(b'\xe7')
-                # fails with ERROR_FILE_NOT_FOUND (2), instead of
-                # ERROR_PATH_NOT_FOUND (3).
-                (self.unicode_filenames, os.listdir,),
+                (self.unicode_filenames, os.listdir, ),
             ))
         else:
             funcs.extend((
@@ -2762,19 +2695,24 @@ class OSErrorTests(unittest.TestCase):
             else:
                 funcs.append((self.filenames, os.readlink,))
 
+
         for filenames, func, *func_args in funcs:
             for name in filenames:
                 try:
-                    if isinstance(name, str):
+                    if isinstance(name, (str, bytes)):
                         func(name, *func_args)
-                    elif isinstance(name, bytes):
-                        with bytes_filename_warn(False):
-                            func(name, *func_args)
                     else:
                         with self.assertWarnsRegex(DeprecationWarning, 'should be'):
                             func(name, *func_args)
                 except OSError as err:
-                    self.assertIs(err.filename, name)
+                    self.assertIs(err.filename, name, str(func))
+                except RuntimeError as err:
+                    if sys.platform != 'win32':
+                        raise
+
+                    # issue27781: undecodable bytes currently raise RuntimeError
+                    # by 3.6.0b4 this will become UnicodeDecodeError or nothing
+                    self.assertIsInstance(err.__context__, UnicodeDecodeError)
                 else:
                     self.fail("No exception thrown by {}".format(func))
 
@@ -3086,7 +3024,6 @@ class TestScandir(unittest.TestCase):
         entry = self.create_file_entry()
         self.assertEqual(os.fspath(entry), os.path.join(self.path, 'file.txt'))
 
-    @unittest.skipIf(os.name == "nt", "test requires bytes path support")
     def test_fspath_protocol_bytes(self):
         bytes_filename = os.fsencode('bytesfile.txt')
         bytes_entry = self.create_file_entry(name=bytes_filename)
@@ -3158,12 +3095,6 @@ class TestScandir(unittest.TestCase):
         entry.stat(follow_symlinks=False)
 
     def test_bytes(self):
-        if os.name == "nt":
-            # On Windows, os.scandir(bytes) must raise an exception
-            with bytes_filename_warn(True):
-                self.assertRaises(TypeError, os.scandir, b'.')
-            return
-
         self.create_file("file.txt")
 
         path_bytes = os.fsencode(self.path)

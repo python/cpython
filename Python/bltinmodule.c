@@ -21,16 +21,18 @@
    Don't forget to modify PyUnicode_DecodeFSDefault() if you touch any of the
    values for Py_FileSystemDefaultEncoding!
 */
-#ifdef HAVE_MBCS
-const char *Py_FileSystemDefaultEncoding = "mbcs";
+#if defined(__APPLE__)
+const char *Py_FileSystemDefaultEncoding = "utf-8";
 int Py_HasFileSystemDefaultEncoding = 1;
-#elif defined(__APPLE__)
+#elif defined(MS_WINDOWS)
+/* may be changed by initfsencoding(), but should never be free()d */
 const char *Py_FileSystemDefaultEncoding = "utf-8";
 int Py_HasFileSystemDefaultEncoding = 1;
 #else
 const char *Py_FileSystemDefaultEncoding = NULL; /* set by initfsencoding() */
 int Py_HasFileSystemDefaultEncoding = 0;
 #endif
+const char *Py_FileSystemDefaultEncodeErrors = "surrogateescape";
 
 _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);

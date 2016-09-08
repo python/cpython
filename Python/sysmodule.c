@@ -311,6 +311,23 @@ operating system filenames."
 );
 
 static PyObject *
+sys_getfilesystemencodeerrors(PyObject *self)
+{
+    if (Py_FileSystemDefaultEncodeErrors)
+        return PyUnicode_FromString(Py_FileSystemDefaultEncodeErrors);
+    PyErr_SetString(PyExc_RuntimeError,
+        "filesystem encoding is not initialized");
+    return NULL;
+}
+
+PyDoc_STRVAR(getfilesystemencodeerrors_doc,
+    "getfilesystemencodeerrors() -> string\n\
+\n\
+Return the error mode used to convert Unicode filenames in\n\
+operating system filenames."
+);
+
+static PyObject *
 sys_intern(PyObject *self, PyObject *args)
 {
     PyObject *s;
@@ -866,6 +883,24 @@ sys_getwindowsversion(PyObject *self)
 
 #pragma warning(pop)
 
+PyDoc_STRVAR(enablelegacywindowsfsencoding_doc,
+"_enablelegacywindowsfsencoding()\n\
+\n\
+Changes the default filesystem encoding to mbcs:replace for consistency\n\
+with earlier versions of Python. See PEP 529 for more information.\n\
+\n\
+This is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING \n\
+environment variable before launching Python."
+);
+
+static PyObject *
+sys_enablelegacywindowsfsencoding(PyObject *self)
+{
+    Py_FileSystemDefaultEncoding = "mbcs";
+    Py_FileSystemDefaultEncodeErrors = "replace";
+    Py_RETURN_NONE;
+}
+
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_DLOPEN
@@ -1225,6 +1260,8 @@ static PyMethodDef sys_methods[] = {
 #endif
     {"getfilesystemencoding", (PyCFunction)sys_getfilesystemencoding,
      METH_NOARGS, getfilesystemencoding_doc},
+    { "getfilesystemencodeerrors", (PyCFunction)sys_getfilesystemencodeerrors,
+     METH_NOARGS, getfilesystemencodeerrors_doc },
 #ifdef Py_TRACE_REFS
     {"getobjects",      _Py_GetObjects, METH_VARARGS},
 #endif
@@ -1240,6 +1277,8 @@ static PyMethodDef sys_methods[] = {
 #ifdef MS_WINDOWS
     {"getwindowsversion", (PyCFunction)sys_getwindowsversion, METH_NOARGS,
      getwindowsversion_doc},
+    {"_enablelegacywindowsfsencoding", (PyCFunction)sys_enablelegacywindowsfsencoding,
+     METH_NOARGS, enablelegacywindowsfsencoding_doc },
 #endif /* MS_WINDOWS */
     {"intern",          sys_intern,     METH_VARARGS, intern_doc},
     {"is_finalizing",   sys_is_finalizing, METH_NOARGS, is_finalizing_doc},
@@ -1456,14 +1495,21 @@ version -- the version of this interpreter as a string\n\
 version_info -- version information as a named tuple\n\
 "
 )
-#ifdef MS_WINDOWS
+#ifdef MS_COREDLL
 /* concatenating string here */
 PyDoc_STR(
 "dllhandle -- [Windows only] integer handle of the Python DLL\n\
 winver -- [Windows only] version number of the Python DLL\n\
 "
 )
-#endif /* MS_WINDOWS */
+#endif /* MS_COREDLL */
+#ifdef MS_WINDOWS
+/* concatenating string here */
+PyDoc_STR(
+"_enablelegacywindowsfsencoding -- [Windows only] \n\
+"
+)
+#endif
 PyDoc_STR(
 "__stdin__ -- the original stdin; don't touch!\n\
 __stdout__ -- the original stdout; don't touch!\n\

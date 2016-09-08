@@ -672,6 +672,20 @@ conflict.
       It now has no effect if set to an empty string.
 
 
+.. envvar:: PYTHONLEGACYWINDOWSFSENCODING
+
+   If set to a non-empty string, the default filesystem encoding and errors mode
+   will revert to their pre-3.6 values of 'mbcs' and 'replace', respectively.
+   Otherwise, the new defaults 'utf-8' and 'surrogatepass' are used.
+
+   This may also be enabled at runtime with
+   :func:`sys._enablelegacywindowsfsencoding()`.
+
+   Availability: Windows
+
+   .. versionadded:: 3.6
+      See :pep:`529` for more details.
+
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 

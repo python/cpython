@@ -3185,7 +3185,7 @@ PyUnicode_Decode(const char *s,
                 || strcmp(lower, "us_ascii") == 0) {
                 return PyUnicode_DecodeASCII(s, size, errors);
             }
-    #ifdef HAVE_MBCS
+    #ifdef MS_WINDOWS
             else if (strcmp(lower, "mbcs") == 0) {
                 return PyUnicode_DecodeMBCS(s, size, errors);
             }
@@ -3507,10 +3507,8 @@ encode_error:
 PyObject *
 PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
-#ifdef HAVE_MBCS
-    return PyUnicode_EncodeCodePage(CP_ACP, unicode, NULL);
-#elif defined(__APPLE__)
-    return _PyUnicode_AsUTF8String(unicode, "surrogateescape");
+#if defined(__APPLE__)
+    return _PyUnicode_AsUTF8String(unicode, Py_FileSystemDefaultEncodeErrors);
 #else
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
@@ -3525,10 +3523,10 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
     if (Py_FileSystemDefaultEncoding && interp->fscodec_initialized) {
         return PyUnicode_AsEncodedString(unicode,
                                          Py_FileSystemDefaultEncoding,
-                                         "surrogateescape");
+                                         Py_FileSystemDefaultEncodeErrors);
     }
     else {
-        return PyUnicode_EncodeLocale(unicode, "surrogateescape");
+        return PyUnicode_EncodeLocale(unicode, Py_FileSystemDefaultEncodeErrors);
     }
 #endif
 }
@@ -3577,7 +3575,7 @@ PyUnicode_AsEncodedString(PyObject *unicode,
                 || strcmp(lower, "us_ascii") == 0) {
                 return _PyUnicode_AsASCIIString(unicode, errors);
             }
-#ifdef HAVE_MBCS
+#ifdef MS_WINDOWS
             else if (strcmp(lower, "mbcs") == 0) {
                 return PyUnicode_EncodeCodePage(CP_ACP, unicode, errors);
             }
@@ -3813,10 +3811,8 @@ PyUnicode_DecodeFSDefault(const char *s) {
 PyObject*
 PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 {
-#ifdef HAVE_MBCS
-    return PyUnicode_DecodeMBCS(s, size, NULL);
-#elif defined(__APPLE__)
-    return PyUnicode_DecodeUTF8Stateful(s, size, "surrogateescape", NULL);
+#if defined(__APPLE__)
+    return PyUnicode_DecodeUTF8Stateful(s, size, Py_FileSystemDefaultEncodeErrors, NULL);
 #else
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
@@ -3829,12 +3825,24 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
        cannot only rely on it: check also interp->fscodec_initialized for
        subinterpreters. */
     if (Py_FileSystemDefaultEncoding && interp->fscodec_initialized) {
-        return PyUnicode_Decode(s, size,
+        PyObject *res = PyUnicode_Decode(s, size,
                                 Py_FileSystemDefaultEncoding,
-                                "surrogateescape");
+                                Py_FileSystemDefaultEncodeErrors);
+#ifdef MS_WINDOWS
+        if (!res && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
+            PyObject *exc, *val, *tb;
+            PyErr_Fetch(&exc, &val, &tb);
+            PyErr_Format(PyExc_RuntimeError,
+                "filesystem path bytes were not correctly encoded with '%s'. " \
+                "Please report this at http://bugs.python.org/issue27781",
+                Py_FileSystemDefaultEncoding);
+            _PyErr_ChainExceptions(exc, val, tb);
+        }
+#endif
+        return res;
     }
     else {
-        return PyUnicode_DecodeLocaleAndSize(s, size, "surrogateescape");
+        return PyUnicode_DecodeLocaleAndSize(s, size, Py_FileSystemDefaultEncodeErrors);
     }
 #endif
 }
@@ -4218,7 +4226,7 @@ onError:
     Py_CLEAR(*exceptionObject);
 }
 
-#ifdef HAVE_MBCS
+#ifdef MS_WINDOWS
 /* error handling callback helper:
    build arguments, call the callback and check the arguments,
    if no exception occurred, copy the replacement to the output
@@ -4332,7 +4340,7 @@ unicode_decode_call_errorhandler_wchar(
     Py_XDECREF(restuple);
     return -1;
 }
-#endif   /* HAVE_MBCS */
+#endif   /* MS_WINDOWS */
 
 static int
 unicode_decode_call_errorhandler_writer(
@@ -7022,7 +7030,7 @@ PyUnicode_AsASCIIString(PyObject *unicode)
     return _PyUnicode_AsASCIIString(unicode, NULL);
 }
 
-#ifdef HAVE_MBCS
+#ifdef MS_WINDOWS
 
 /* --- MBCS codecs for Windows -------------------------------------------- */
 
@@ -7741,7 +7749,7 @@ PyUnicode_AsMBCSString(PyObject *unicode)
 
 #undef NEED_RETRY
 
-#endif /* HAVE_MBCS */
+#endif /* MS_WINDOWS */
 
 /* --- Character Mapping Codec -------------------------------------------- */
 

@@ -428,25 +428,42 @@ always available.
 
 .. function:: getfilesystemencoding()
 
-   Return the name of the encoding used to convert Unicode filenames into
-   system file names. The result value depends on the operating system:
+   Return the name of the encoding used to convert between Unicode
+   filenames and bytes filenames. For best compatibility, str should be
+   used for filenames in all cases, although representing filenames as bytes
+   is also supported. Functions accepting or returning filenames should support
+   either str or bytes and internally convert to the system's preferred
+   representation.
+
+   This encoding is always ASCII-compatible.
+
+   :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
+   the correct encoding and errors mode are used.
 
    * On Mac OS X, the encoding is ``'utf-8'``.
 
-   * On Unix, the encoding is the user's preference according to the result of
-     nl_langinfo(CODESET).
+   * On Unix, the encoding is the locale encoding.
 
-   * On Windows NT+, file names are Unicode natively, so no conversion is
-     performed. :func:`getfilesystemencoding` still returns ``'mbcs'``, as
-     this is the encoding that applications should use when they explicitly
-     want to convert Unicode strings to byte strings that are equivalent when
-     used as file names.
-
-   * On Windows 9x, the encoding is ``'mbcs'``.
+   * On Windows, the encoding may be ``'utf-8'`` or ``'mbcs'``, depending
+     on user configuration.
 
    .. versionchanged:: 3.2
       :func:`getfilesystemencoding` result cannot be ``None`` anymore.
 
+   .. versionchanged:: 3.6
+      Windows is no longer guaranteed to return ``'mbcs'``. See :pep:`529`
+      and :func:`_enablelegacywindowsfsencoding` for more information.
+
+.. function:: getfilesystemencodeerrors()
+
+   Return the name of the error mode used to convert between Unicode filenames
+   and bytes filenames. The encoding name is returned from
+   :func:`getfilesystemencoding`.
+
+   :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
+   the correct encoding and errors mode are used.
+
+   .. versionadded:: 3.6
 
 .. function:: getrefcount(object)
 
@@ -1138,6 +1155,18 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
 
+.. function:: _enablelegacywindowsfsencoding()
+
+   Changes the default filesystem encoding and errors mode to 'mbcs' and
+   'replace' respectively, for consistency with versions of Python prior to 3.6.
+
+   This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
+   environment variable before launching Python.
+
+   Availability: Windows
+
+   .. versionadded:: 3.6
+      See :pep:`529` for more details.
 
 .. data:: stdin
           stdout
