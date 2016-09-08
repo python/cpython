@@ -1175,7 +1175,7 @@ class EscapeDecodeTest(unittest.TestCase):
         check(b"[\\\n]", b"[]")
         check(br'[\"]', b'["]')
         check(br"[\']", b"[']")
-        check(br"[\\]", br"[\]")
+        check(br"[\\]", b"[\\]")
         check(br"[\a]", b"[\x07]")
         check(br"[\b]", b"[\x08]")
         check(br"[\t]", b"[\x09]")
@@ -1184,7 +1184,6 @@ class EscapeDecodeTest(unittest.TestCase):
         check(br"[\f]", b"[\x0c]")
         check(br"[\r]", b"[\x0d]")
         check(br"[\7]", b"[\x07]")
-        check(br"[\8]", br"[\8]")
         check(br"[\78]", b"[\x078]")
         check(br"[\41]", b"[!]")
         check(br"[\418]", b"[!8]")
@@ -1192,12 +1191,18 @@ class EscapeDecodeTest(unittest.TestCase):
         check(br"[\1010]", b"[A0]")
         check(br"[\501]", b"[A]")
         check(br"[\x41]", b"[A]")
-        check(br"[\X41]", br"[\X41]")
         check(br"[\x410]", b"[A0]")
-        for b in range(256):
-            if b not in b'\n"\'\\abtnvfr01234567x':
-                b = bytes([b])
-                check(b'\\' + b, b'\\' + b)
+        for i in range(97, 123):
+            b = bytes([i])
+            if b not in b'abfnrtvx':
+                with self.assertWarns(DeprecationWarning):
+                    check(b"\\" + b, b"\\" + b)
+            with self.assertWarns(DeprecationWarning):
+                check(b"\\" + b.upper(), b"\\" + b.upper())
+        with self.assertWarns(DeprecationWarning):
+            check(br"\8", b"\\8")
+        with self.assertWarns(DeprecationWarning):
+            check(br"\9", b"\\9")
 
     def test_errors(self):
         decode = codecs.escape_decode
@@ -2448,7 +2453,6 @@ class UnicodeEscapeTest(unittest.TestCase):
         check(br"[\f]", "[\x0c]")
         check(br"[\r]", "[\x0d]")
         check(br"[\7]", "[\x07]")
-        check(br"[\8]", r"[\8]")
         check(br"[\78]", "[\x078]")
         check(br"[\41]", "[!]")
         check(br"[\418]", "[!8]")
@@ -2458,9 +2462,18 @@ class UnicodeEscapeTest(unittest.TestCase):
         check(br"[\x410]", "[A0]")
         check(br"\u20ac", "\u20ac")
         check(br"\U0001d120", "\U0001d120")
-        for b in range(256):
-            if b not in b'\n"\'\\abtnvfr01234567xuUN':
-                check(b'\\' + bytes([b]), '\\' + chr(b))
+        for i in range(97, 123):
+            b = bytes([i])
+            if b not in b'abfnrtuvx':
+                with self.assertWarns(DeprecationWarning):
+                    check(b"\\" + b, "\\" + chr(i))
+            if b.upper() not in b'UN':
+                with self.assertWarns(DeprecationWarning):
+                    check(b"\\" + b.upper(), "\\" + chr(i-32))
+        with self.assertWarns(DeprecationWarning):
+            check(br"\8", "\\8")
+        with self.assertWarns(DeprecationWarning):
+            check(br"\9", "\\9")
 
     def test_decode_errors(self):
         decode = codecs.unicode_escape_decode

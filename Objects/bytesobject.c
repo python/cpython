@@ -1207,8 +1207,9 @@ PyObject *PyBytes_DecodeEscape(const char *s,
             break;
 
         default:
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1, "invalid escape sequence '\\%c'", *(--s)) < 0)
+                goto failed;
             *p++ = '\\';
-            s--;
             goto non_esc; /* an arbitrary number of unescaped
                              UTF-8 bytes may follow. */
         }
