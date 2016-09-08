@@ -57,7 +57,7 @@
     }
 
 
-Py_LOCAL_INLINE(_PyManagedBufferObject *)
+static inline _PyManagedBufferObject *
 mbuf_alloc(void)
 {
     _PyManagedBufferObject *mbuf;
@@ -243,7 +243,7 @@ Create a new memoryview object which references the given object.");
 #define HAVE_SUBOFFSETS_IN_LAST_DIM(view) \
     (view->suboffsets && view->suboffsets[dest->ndim-1] >= 0)
 
-Py_LOCAL_INLINE(int)
+static inline int
 last_dim_is_contiguous(const Py_buffer *dest, const Py_buffer *src)
 {
     assert(dest->ndim > 0 && src->ndim > 0);
@@ -259,7 +259,7 @@ last_dim_is_contiguous(const Py_buffer *dest, const Py_buffer *src)
    assignments, where the lvalue is already known to have a single character
    format. This is a performance hack that could be rewritten (if properly
    benchmarked). */
-Py_LOCAL_INLINE(int)
+static inline int
 equiv_format(const Py_buffer *dest, const Py_buffer *src)
 {
     const char *dfmt, *sfmt;
@@ -279,7 +279,7 @@ equiv_format(const Py_buffer *dest, const Py_buffer *src)
 /* Two shapes are equivalent if they are either equal or identical up
    to a zero element at the same position. For example, in NumPy arrays
    the shapes [1, 0, 5] and [1, 0, 7] are equivalent. */
-Py_LOCAL_INLINE(int)
+static inline int
 equiv_shape(const Py_buffer *dest, const Py_buffer *src)
 {
     int i;
@@ -438,7 +438,7 @@ copy_buffer(Py_buffer *dest, Py_buffer *src)
 }
 
 /* Initialize strides for a C-contiguous array. */
-Py_LOCAL_INLINE(void)
+static inline void
 init_strides_from_shape(Py_buffer *view)
 {
     Py_ssize_t i;
@@ -451,7 +451,7 @@ init_strides_from_shape(Py_buffer *view)
 }
 
 /* Initialize strides for a Fortran-contiguous array. */
-Py_LOCAL_INLINE(void)
+static inline void
 init_fortran_strides_from_shape(Py_buffer *view)
 {
     Py_ssize_t i;
@@ -513,7 +513,7 @@ buffer_to_contiguous(char *mem, Py_buffer *src, char order)
 /****************************************************************************/
 
 /* Initialize values that are shared with the managed buffer. */
-Py_LOCAL_INLINE(void)
+static inline void
 init_shared_values(Py_buffer *dest, const Py_buffer *src)
 {
     dest->obj = src->obj;
@@ -553,7 +553,7 @@ init_shape_strides(Py_buffer *dest, const Py_buffer *src)
     }
 }
 
-Py_LOCAL_INLINE(void)
+static inline void
 init_suboffsets(Py_buffer *dest, const Py_buffer *src)
 {
     Py_ssize_t i;
@@ -567,7 +567,7 @@ init_suboffsets(Py_buffer *dest, const Py_buffer *src)
 }
 
 /* len = product(shape) * itemsize */
-Py_LOCAL_INLINE(void)
+static inline void
 init_len(Py_buffer *view)
 {
     Py_ssize_t i, len;
@@ -614,7 +614,7 @@ init_flags(PyMemoryViewObject *mv)
 
 /* Allocate a new memoryview and perform basic initialization. New memoryviews
    are exclusively created through the mbuf_add functions. */
-Py_LOCAL_INLINE(PyMemoryViewObject *)
+static inline PyMemoryViewObject *
 memory_alloc(int ndim)
 {
     PyMemoryViewObject *mv;
@@ -1099,7 +1099,7 @@ memory_exit(PyObject *self, PyObject *args)
 
 #define IS_BYTE_FORMAT(f) (f == 'b' || f == 'B' || f == 'c')
 
-Py_LOCAL_INLINE(Py_ssize_t)
+static inline Py_ssize_t
 get_native_fmtchar(char *result, const char *fmt)
 {
     Py_ssize_t size = -1;
@@ -1127,7 +1127,7 @@ get_native_fmtchar(char *result, const char *fmt)
     return -1;
 }
 
-Py_LOCAL_INLINE(const char *)
+static inline const char *
 get_native_fmtstr(const char *fmt)
 {
     int at = 0;
@@ -1642,7 +1642,7 @@ pylong_as_zu(PyObject *item)
 /* Unpack a single item. 'fmt' can be any native format character in struct
    module syntax. This function is very sensitive to small changes. With this
    layout gcc automatically generates a fast jump table. */
-Py_LOCAL_INLINE(PyObject *)
+static inline PyObject *
 unpack_single(const char *ptr, const char *fmt)
 {
     unsigned long long llu;
@@ -1998,7 +1998,7 @@ struct_unpack_single(const char *ptr, struct unpacker *x)
 /****************************************************************************/
 
 /* allow explicit form of native format */
-Py_LOCAL_INLINE(const char *)
+static inline const char *
 adjust_fmt(const Py_buffer *view)
 {
     const char *fmt;
@@ -2280,7 +2280,7 @@ memory_item_multi(PyMemoryViewObject *self, PyObject *tup)
     return unpack_single(ptr, fmt);
 }
 
-Py_LOCAL_INLINE(int)
+static inline int
 init_slice(Py_buffer *base, PyObject *key, int dim)
 {
     Py_ssize_t start, stop, step, slicelength;
@@ -2602,7 +2602,7 @@ struct_unpack_cmp(const char *p, const char *q,
         equal = (x == y);                \
     } while (0)
 
-Py_LOCAL_INLINE(int)
+static inline int
 unpack_cmp(const char *p, const char *q, char fmt,
            struct unpacker *unpack_p, struct unpacker *unpack_q)
 {
