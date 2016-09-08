@@ -846,7 +846,8 @@ Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
 
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 
-Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
+Objects/odictobject.o: $(srcdir)/Objects/dict-common.h
+Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h $(srcdir)/Objects/dict-common.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
 
 $(OPCODETARGETS_H): $(OPCODETARGETGEN_FILES)
