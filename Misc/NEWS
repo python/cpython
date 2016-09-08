@@ -14,6 +14,8 @@ Core and Builtins
 
 - Issue #26307: The profile-opt build now applys PGO to the built-in modules.
 
+- Issue #26020: set literal evaluation order did not match documented behaviour.
+
 - Issue #27870: A left shift of zero by a large integer no longer attempts
   to allocate large amounts of memory.
 
