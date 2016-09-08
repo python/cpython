@@ -225,6 +225,9 @@ Library
 
 - Issue #27573: exit message for code.interact is now configurable.
 
+- Issue #27930: Improved behaviour of logging.handlers.QueueListener.
+  Thanks to Paulo Andrade and Petr Viktorin for the analysis and patch.
+
 C API
 -----
 

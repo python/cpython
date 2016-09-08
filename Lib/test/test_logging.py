@@ -1,4 +1,4 @@
-# Copyright 2001-2014 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2016 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2014 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -26,7 +26,6 @@ import logging.config
 import codecs
 import configparser
 import datetime
-import pathlib
 import pickle
 import io
 import gc
@@ -309,10 +308,6 @@ class BuiltinLevelsTest(BaseTest):
         self.assertEqual(logging.getLevelName('INFO'), logging.INFO)
         self.assertEqual(logging.getLevelName(logging.INFO), 'INFO')
 
-    def test_issue27935(self):
-        fatal = logging.getLevelName('FATAL')
-        self.assertEqual(fatal, logging.FATAL)
-
 class BasicFilterTest(BaseTest):
 
     """Test the bundled Filter class."""
@@ -579,29 +574,6 @@ class HandlerTest(BaseTest):
         h = logging.handlers.BufferingHandler(1)
         self.assertFalse(h.shouldFlush(r))
         h.close()
-
-    def test_path_objects(self):
-        """
-        Test that Path objects are accepted as filename arguments to handlers.
-
-        See Issue #27493.
-        """
-        fd, fn = tempfile.mkstemp()
-        os.close(fd)
-        os.unlink(fn)
-        pfn = pathlib.Path(fn)
-        cases = (
-                    (logging.FileHandler, (pfn, 'w')),
-                    (logging.handlers.RotatingFileHandler, (pfn, 'a')),
-                    (logging.handlers.TimedRotatingFileHandler, (pfn, 'h')),
-                )
-        if sys.platform in ('linux', 'darwin'):
-            cases += ((logging.handlers.WatchedFileHandler, (pfn, 'w')),)
-        for cls, args in cases:
-            h = cls(*args)
-            self.assertTrue(os.path.exists(fn))
-            h.close()
-            os.unlink(fn)
 
     @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
     @unittest.skipUnless(threading, 'Threading required for this test.')
@@ -986,7 +958,7 @@ class MemoryHandlerTest(BaseTest):
     def setUp(self):
         BaseTest.setUp(self)
         self.mem_hdlr = logging.handlers.MemoryHandler(10, logging.WARNING,
-                                                       self.root_hdlr)
+                                                        self.root_hdlr)
         self.mem_logger = logging.getLogger('mem')
         self.mem_logger.propagate = 0
         self.mem_logger.addHandler(self.mem_hdlr)
@@ -1022,36 +994,6 @@ class MemoryHandlerTest(BaseTest):
 
         self.mem_logger.debug(self.next_message())
         self.assert_log_lines(lines)
-
-    def test_flush_on_close(self):
-        """
-        Test that the flush-on-close configuration works as expected.
-        """
-        self.mem_logger.debug(self.next_message())
-        self.assert_log_lines([])
-        self.mem_logger.info(self.next_message())
-        self.assert_log_lines([])
-        self.mem_logger.removeHandler(self.mem_hdlr)
-        # Default behaviour is to flush on close. Check that it happens.
-        self.mem_hdlr.close()
-        lines = [
-            ('DEBUG', '1'),
-            ('INFO', '2'),
-        ]
-        self.assert_log_lines(lines)
-        # Now configure for flushing not to be done on close.
-        self.mem_hdlr = logging.handlers.MemoryHandler(10, logging.WARNING,
-                                                       self.root_hdlr,
-                                                       False)
-        self.mem_logger.addHandler(self.mem_hdlr)
-        self.mem_logger.debug(self.next_message())
-        self.assert_log_lines(lines)  # no change
-        self.mem_logger.info(self.next_message())
-        self.assert_log_lines(lines)  # no change
-        self.mem_logger.removeHandler(self.mem_hdlr)
-        self.mem_hdlr.close()
-        # assert that no new lines have been added
-        self.assert_log_lines(lines)  # no change
 
 
 class ExceptionFormatter(logging.Formatter):
@@ -3080,6 +3022,84 @@ class QueueHandlerTest(BaseTest):
         self.assertFalse(handler.matches(levelno=logging.ERROR, message='5'))
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='6'))
 
+if hasattr(logging.handlers, 'QueueListener'):
+    import multiprocessing
+    from unittest.mock import patch
+
+    class QueueListenerTest(BaseTest):
+        """
+        Tests based on patch submitted for issue #27930. Ensure that
+        QueueListener handles all log messages.
+        """
+
+        repeat = 20
+
+        @staticmethod
+        def setup_and_log(log_queue, ident):
+            """
+            Creates a logger with a QueueHandler that logs to a queue read by a
+            QueueListener. Starts the listener, logs five messages, and stops
+            the listener.
+            """
+            logger = logging.getLogger('test_logger_with_id_%s' % ident)
+            logger.setLevel(logging.DEBUG)
+            handler = logging.handlers.QueueHandler(log_queue)
+            logger.addHandler(handler)
+            listener = logging.handlers.QueueListener(log_queue)
+            listener.start()
+
+            logger.info('one')
+            logger.info('two')
+            logger.info('three')
+            logger.info('four')
+            logger.info('five')
+
+            listener.stop()
+            logger.removeHandler(handler)
+            handler.close()
+
+        @patch.object(logging.handlers.QueueListener, 'handle')
+        def test_handle_called_with_queue_queue(self, mock_handle):
+            for i in range(self.repeat):
+                log_queue = queue.Queue()
+                self.setup_and_log(log_queue, '%s_%s' % (self.id(), i))
+            self.assertEqual(mock_handle.call_count, 5 * self.repeat,
+                             'correct number of handled log messages')
+
+        @patch.object(logging.handlers.QueueListener, 'handle')
+        def test_handle_called_with_mp_queue(self, mock_handle):
+            for i in range(self.repeat):
+                log_queue = multiprocessing.Queue()
+                self.setup_and_log(log_queue, '%s_%s' % (self.id(), i))
+            self.assertEqual(mock_handle.call_count, 5 * self.repeat,
+                             'correct number of handled log messages')
+
+        @staticmethod
+        def get_all_from_queue(log_queue):
+            try:
+                while True:
+                    yield log_queue.get_nowait()
+            except queue.Empty:
+                return []
+
+        def test_no_messages_in_queue_after_stop(self):
+            """
+            Five messages are logged then the QueueListener is stopped. This
+            test then gets everything off the queue. Failure of this test
+            indicates that messages were not registered on the queue until
+            _after_ the QueueListener stopped.
+            """
+            for i in range(self.repeat):
+                queue = multiprocessing.Queue()
+                self.setup_and_log(queue, '%s_%s' %(self.id(), i))
+                # time.sleep(1)
+                items = list(self.get_all_from_queue(queue))
+                expected = [[], [logging.handlers.QueueListener._sentinel]]
+                self.assertIn(items, expected,
+                              'Found unexpected messages in queue: %s' % (
+                                    [m.msg if isinstance(m, logging.LogRecord)
+                                     else m for m in items]))
+
 
 ZERO = datetime.timedelta(0)
 
@@ -4219,23 +4239,12 @@ class NTEventLogHandlerTest(BaseTest):
         msg = 'Record not found in event log, went back %d records' % GO_BACK
         self.assertTrue(found, msg=msg)
 
-
-class MiscTestCase(unittest.TestCase):
-    def test__all__(self):
-        blacklist = {'logThreads', 'logMultiprocessing',
-                     'logProcesses', 'currentframe',
-                     'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
-                     'Filterer', 'PlaceHolder', 'Manager', 'RootLogger',
-                     'root'}
-        support.check__all__(self, logging, blacklist=blacklist)
-
-
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
 @support.run_with_locale('LC_ALL', '')
 def test_main():
-    support.run_unittest(
+    tests = [
         BuiltinLevelsTest, BasicFilterTest, CustomLevelsAndFiltersTest,
         HandlerTest, MemoryHandlerTest, ConfigFileTest, SocketHandlerTest,
         DatagramHandlerTest, MemoryTest, EncodingTest, WarningsTest,
@@ -4247,7 +4256,10 @@ def test_main():
         ExceptionTest, SysLogHandlerTest, HTTPHandlerTest,
         NTEventLogHandlerTest, TimedRotatingFileHandlerTest,
         UnixSocketHandlerTest, UnixDatagramHandlerTest, UnixSysLogHandlerTest,
-        MiscTestCase)
+    ]
+    if hasattr(logging.handlers, 'QueueListener'):
+        tests.append(QueueListenerTest)
+    support.run_unittest(*tests)
 
 if __name__ == "__main__":
     test_main()
