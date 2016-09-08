@@ -95,7 +95,8 @@ Core and Builtins
 Library
 -------
 
-- Issue #28027: Remove undocumented modules from ``Lib/plat-*``.
+- Issue #28027: Remove undocumented modules from ``Lib/plat-*``: IN, CDROM,
+  DLFCN, TYPES, CDIO, and STROPTS.
 
 - Issue #27445: Don't pass str(_charset) to MIMEText.set_payload().
   Patch by Claude Paroz.
