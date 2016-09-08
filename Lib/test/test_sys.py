@@ -10,6 +10,7 @@ import codecs
 import gc
 import sysconfig
 import platform
+import locale
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
@@ -627,6 +628,8 @@ class SysModuleTest(unittest.TestCase):
 
     @unittest.skipUnless(test.support.FS_NONASCII,
                          'requires OS support of non-ASCII encodings')
+    @unittest.skipUnless(sys.getfilesystemencoding() == locale.getpreferredencoding(False),
+                         'requires FS encoding to match locale')
     def test_ioencoding_nonascii(self):
         env = dict(os.environ)
 
@@ -669,8 +672,6 @@ class SysModuleTest(unittest.TestCase):
         fs_encoding = sys.getfilesystemencoding()
         if sys.platform == 'darwin':
             expected = 'utf-8'
-        elif sys.platform == 'win32':
-            expected = 'mbcs'
         else:
             expected = None
         self.check_fsencoding(fs_encoding, expected)
