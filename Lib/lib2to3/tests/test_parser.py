@@ -6,8 +6,6 @@ parts of the grammar we've changed, we also make sure we can parse the
 test_grammar.py files from both Python 2 and Python 3.
 """
 
-from __future__ import with_statement
-
 # Testing imports
 from . import support
 from .support import driver

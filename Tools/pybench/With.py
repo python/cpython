@@ -1,4 +1,3 @@
-from __future__ import with_statement
 from pybench import Test
 
 class WithFinally(Test):
