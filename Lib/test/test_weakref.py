@@ -1325,13 +1325,16 @@ class MappingTestCase(TestBase):
         o = Object(123456)
         with testcontext():
             n = len(dict)
-            dict.popitem()
+            # Since underlaying dict is ordered, first item is popped
+            dict.pop(next(dict.keys()))
             self.assertEqual(len(dict), n - 1)
             dict[o] = o
             self.assertEqual(len(dict), n)
+        # last item in objects is removed from dict in context shutdown
         with testcontext():
             self.assertEqual(len(dict), n - 1)
-            dict.pop(next(dict.keys()))
+            # Then, (o, o) is popped
+            dict.popitem()
             self.assertEqual(len(dict), n - 2)
         with testcontext():
             self.assertEqual(len(dict), n - 3)

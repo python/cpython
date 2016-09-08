@@ -936,9 +936,9 @@ class SizeofTest(unittest.TestCase):
         # method-wrapper (descriptor object)
         check({}.__iter__, size('2P'))
         # dict
-        check({}, size('n2P') + calcsize('2nPn') + 8*calcsize('n2P'))
+        check({}, size('n2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        check(longdict, size('n2P') + calcsize('2nPn') + 16*calcsize('n2P'))
+        check(longdict, size('n2P') + calcsize('2nP2n') + 16 + (16*2//3)*calcsize('n2P'))
         # dictionary-keyview
         check({}.keys(), size('P'))
         # dictionary-valueview
@@ -1096,13 +1096,13 @@ class SizeofTest(unittest.TestCase):
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
                   '4P')
-        # Separate block for PyDictKeysObject with 4 entries
-        s += calcsize("2nPn") + 4*calcsize("n2P")
+        # Separate block for PyDictKeysObject with 8 keys and 5 entries
+        s += calcsize("2nP2n") + 8 + 5*calcsize("n2P")
         # class
         class newstyleclass(object): pass
         check(newstyleclass, s)
         # dict with shared keys
-        check(newstyleclass().__dict__, size('n2P' + '2nPn'))
+        check(newstyleclass().__dict__, size('n2P' + '2nP2n'))
         # unicode
         # each tuple contains a string and its expected character size
         # don't put any static strings here, as they may contain
