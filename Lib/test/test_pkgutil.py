@@ -81,8 +81,9 @@ class PkgutilTests(unittest.TestCase):
         self.assertEqual(res2, RESOURCE_DATA)
 
         names = []
-        for loader, name, ispkg in pkgutil.iter_modules([zip_file]):
-            names.append(name)
+        for moduleinfo in pkgutil.iter_modules([zip_file]):
+            self.assertIsInstance(moduleinfo, pkgutil.ModuleInfo)
+            names.append(moduleinfo.name)
         self.assertEqual(names, ['test_getdata_zipfile'])
 
         del sys.path[0]

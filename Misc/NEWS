@@ -7845,6 +7845,9 @@ Library
 - Issue #16809: Tkinter's splitlist() and split() methods now accept Tcl_Obj
   argument.
 
+- Issue #17211: Yield a namedtuple in pkgutil.
+  Patch by Ramchandra Apte.
+
 - Issue #18324: set_payload now correctly handles binary input.  This also
   supersedes the previous fixes for #14360, #1717, and #16564.
 
