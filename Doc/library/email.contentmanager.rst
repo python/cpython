@@ -11,9 +11,7 @@
 
 ------------
 
-.. versionadded:: 3.4 as a :term:`provisional module <provisional package>`.
-
-.. versionchanged:: 3.6 provisional status removed.
+.. versionadded:: 3.6 [1]_
 
 
 .. class:: ContentManager()
@@ -201,3 +199,9 @@ Currently the email package provides only one concrete content manager,
        ``headername: headervalue`` or a list of ``header`` objects
        (distinguished from strings by having a ``name`` attribute), add the
        headers to *msg*.
+
+
+.. rubric:: Footnotes
+
+.. [1] Oringally added in 3.4 as a :term:`provisional module <provisional
+       package>`
