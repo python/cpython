@@ -59,7 +59,7 @@ class wchar_t_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = PyUnicode_FromOrdinal(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=6a54fc4e73d0b367]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=b59f1663dba11997]*/
 
 /*[clinic input]
 module msvcrt
@@ -161,7 +161,7 @@ to os.fdopen() to create a file object.
 
 static long
 msvcrt_open_osfhandle_impl(PyObject *module, intptr_t handle, int flags)
-/*[clinic end generated code: output=bf65e422243a39f9 input=4d8516ed32db8f65]*/
+/*[clinic end generated code: output=cede871bf939d6e3 input=cb2108bbea84514e]*/
 {
     int fd;
 
@@ -185,7 +185,7 @@ Raises IOError if fd is not recognized.
 
 static intptr_t
 msvcrt_get_osfhandle_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=eac47643338c0baa input=c7d18d02c8017ec1]*/
+/*[clinic end generated code: output=7ce761dd0de2b503 input=c7d18d02c8017ec1]*/
 {
     intptr_t handle = -1;
 

@@ -15,12 +15,14 @@ static PyObject *
 py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"string", NULL};
+    static const char * const _keywords[] = {"string", NULL};
+    static _PyArg_Parser _parser = {"|O:sha3_224", _keywords, 0};
     PyObject *data = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:sha3_224", _keywords,
-        &data))
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &data)) {
         goto exit;
+    }
     return_value = py_sha3_new_impl(type, data);
 
 exit:
@@ -106,12 +108,14 @@ static PyObject *
 _sha3_shake_128_digest(SHA3object *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"length", NULL};
+    static const char * const _keywords[] = {"length", NULL};
+    static _PyArg_Parser _parser = {"k:digest", _keywords, 0};
     unsigned long length;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "k:digest", _keywords,
-        &length))
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &length)) {
         goto exit;
+    }
     return_value = _sha3_shake_128_digest_impl(self, length);
 
 exit:
@@ -134,15 +138,17 @@ static PyObject *
 _sha3_shake_128_hexdigest(SHA3object *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"length", NULL};
+    static const char * const _keywords[] = {"length", NULL};
+    static _PyArg_Parser _parser = {"k:hexdigest", _keywords, 0};
     unsigned long length;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "k:hexdigest", _keywords,
-        &length))
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+        &length)) {
         goto exit;
+    }
     return_value = _sha3_shake_128_hexdigest_impl(self, length);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2eb6db41778eeb50 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=50cff05f2c74d41e input=a9049054013a1b77]*/
