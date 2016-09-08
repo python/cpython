@@ -462,6 +462,11 @@ need to be adapted. See :issue:`27819` for more details.
 email
 -----
 
+The new email API, enabled via the *policy* keyword to various constructors, is
+no longer provisional.  The :mod:`email` documentation has been reorganized and
+rewritten to focus on the new API, while retaining the old documentation for
+the legacy API.  (Contributed by R. David Murray in :issue:`24277`.)
+
 The :mod:`email.mime` classes now all accept an optional *policy* keyword.
 (Contributed by Berker Peksag in :issue:`27331`.)
 
