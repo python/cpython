@@ -621,53 +621,34 @@ static struct PyModuleDef _localemodule = {
 PyMODINIT_FUNC
 PyInit__locale(void)
 {
-    PyObject *m, *d, *x;
+    PyObject *m;
 #ifdef HAVE_LANGINFO_H
     int i;
 #endif
 
     m = PyModule_Create(&_localemodule);
     if (m == NULL)
-    return NULL;
+        return NULL;
 
-    d = PyModule_GetDict(m);
-
-    x = PyLong_FromLong(LC_CTYPE);
-    PyDict_SetItemString(d, "LC_CTYPE", x);
-    Py_XDECREF(x);
-
-    x = PyLong_FromLong(LC_TIME);
-    PyDict_SetItemString(d, "LC_TIME", x);
-    Py_XDECREF(x);
-
-    x = PyLong_FromLong(LC_COLLATE);
-    PyDict_SetItemString(d, "LC_COLLATE", x);
-    Py_XDECREF(x);
-
-    x = PyLong_FromLong(LC_MONETARY);
-    PyDict_SetItemString(d, "LC_MONETARY", x);
-    Py_XDECREF(x);
+    PyModule_AddIntMacro(m, LC_CTYPE);
+    PyModule_AddIntMacro(m, LC_TIME);
+    PyModule_AddIntMacro(m, LC_COLLATE);
+    PyModule_AddIntMacro(m, LC_MONETARY);
 
 #ifdef LC_MESSAGES
-    x = PyLong_FromLong(LC_MESSAGES);
-    PyDict_SetItemString(d, "LC_MESSAGES", x);
-    Py_XDECREF(x);
+    PyModule_AddIntMacro(m, LC_MESSAGES);
 #endif /* LC_MESSAGES */
 
-    x = PyLong_FromLong(LC_NUMERIC);
-    PyDict_SetItemString(d, "LC_NUMERIC", x);
-    Py_XDECREF(x);
-
-    x = PyLong_FromLong(LC_ALL);
-    PyDict_SetItemString(d, "LC_ALL", x);
-    Py_XDECREF(x);
-
-    x = PyLong_FromLong(CHAR_MAX);
-    PyDict_SetItemString(d, "CHAR_MAX", x);
-    Py_XDECREF(x);
+    PyModule_AddIntMacro(m, LC_NUMERIC);
+    PyModule_AddIntMacro(m, LC_ALL);
+    PyModule_AddIntMacro(m, CHAR_MAX);
 
     Error = PyErr_NewException("locale.Error", NULL, NULL);
-    PyDict_SetItemString(d, "Error", Error);
+    if (Error == NULL) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    PyModule_AddObject(m, "Error", Error);
 
 #ifdef HAVE_LANGINFO_H
     for (i = 0; langinfo_constants[i].name; i++) {
@@ -675,6 +656,11 @@ PyInit__locale(void)
                                 langinfo_constants[i].value);
     }
 #endif
+
+    if (PyErr_Occurred()) {
+        Py_DECREF(m);
+        return NULL;
+    }
     return m;
 }
 
