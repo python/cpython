@@ -223,7 +223,7 @@ See :pep:`498` and the main documentation at :ref:`f-strings`.
 .. _pep-529:
 
 PEP 529: Change Windows filesystem encoding to UTF-8
-----------------------------------------------------
+====================================================
 
 Representing filesystem paths is best performed with str (Unicode) rather than
 bytes. However, there are some situations where using bytes is sufficient and
@@ -249,7 +249,7 @@ may be required.
    encoding may change before the final release.
 
 PEP 487: Simpler customization of class creation
-------------------------------------------------
+================================================
 
 Upon subclassing a class, the ``__init_subclass__`` classmethod (if defined) is
 called on the base class. This makes it straightforward to write classes that
@@ -269,7 +269,7 @@ Also see :pep:`487` and the updated class customization documentation at
 
 
 PYTHONMALLOC environment variable
----------------------------------
+=================================
 
 The new :envvar:`PYTHONMALLOC` environment variable allows setting the Python
 memory allocators and/or install debug hooks.
@@ -345,7 +345,7 @@ Example of fatal error on buffer overflow using
 .. _whatsnew-deforder:
 
 PEP 520: Preserving Class Attribute Definition Order
-----------------------------------------------------
+====================================================
 
 Attributes in a class definition body have a natural ordering: the same
 order in which the names appear in the source.  This order is now
