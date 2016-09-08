@@ -92,6 +92,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27445: Don't pass str(_charset) to MIMEText.set_payload().
+  Patch by Claude Paroz.
+
 - Issue #24277: The new email API is no longer provisional, and the docs
   have been reorganized and rewritten to emphasize the new API.
 
