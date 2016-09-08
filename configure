@@ -6858,7 +6858,9 @@ UNIVERSAL_ARCH_FLAGS=
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
+    # GNU dialect of C99, enables GNU extensions like __attribute__. GNU99
+    # is required by bluetooth.h on big endian machines.
+    CFLAGS_NODIST="$CFLAGS_NODIST -std=gnu99"
 
     # Python doesn't violate C99 aliasing rules, but older versions of
     # GCC produce warnings for legal Python code.  Enable
