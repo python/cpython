@@ -39,27 +39,10 @@ Used in:  Py_SAFE_DOWNCAST
 
 #ifndef PY_LONG_LONG
 #define PY_LONG_LONG long long
-#if defined(LLONG_MAX)
 /* If LLONG_MAX is defined in limits.h, use that. */
 #define PY_LLONG_MIN LLONG_MIN
 #define PY_LLONG_MAX LLONG_MAX
 #define PY_ULLONG_MAX ULLONG_MAX
-#elif defined(__LONG_LONG_MAX__)
-/* Otherwise, if GCC has a builtin define, use that.  (Definition of
- * PY_LLONG_MIN assumes two's complement with no trap representation.) */
-#define PY_LLONG_MAX __LONG_LONG_MAX__
-#define PY_LLONG_MIN (-PY_LLONG_MAX - 1)
-#define PY_ULLONG_MAX (PY_LLONG_MAX * Py_ULL(2) + 1)
-#elif defined(SIZEOF_LONG_LONG)
-/* Otherwise compute from SIZEOF_LONG_LONG, assuming two's complement, no
-   padding bits, and no trap representation.  Note: PY_ULLONG_MAX was
-   previously #defined as (~0ULL) here; but that'll give the wrong value in a
-   preprocessor expression on systems where long long != intmax_t. */
-#define PY_LLONG_MAX                                                    \
-    (1 + 2 * ((Py_LL(1) << (CHAR_BIT * SIZEOF_LONG_LONG - 2)) - 1))
-#define PY_LLONG_MIN (-PY_LLONG_MAX - 1)
-#define PY_ULLONG_MAX (PY_LLONG_MAX * Py_ULL(2) + 1)
-#endif /* LLONG_MAX */
 #endif
 
 #define PY_UINT32_T uint32_t
@@ -157,19 +140,6 @@ typedef int Py_ssize_clean_t;
 #   else
 #       error "This platform's pyconfig.h needs to define PY_FORMAT_SIZE_T"
 #   endif
-#endif
-
-/* PY_FORMAT_LONG_LONG is analogous to PY_FORMAT_SIZE_T above, but for
- * the long long type instead of the size_t type. The "high level" Python format
- * functions listed above will interpret "lld" or "llu" correctly on
- * all platforms.
- */
-#ifndef PY_FORMAT_LONG_LONG
-#    ifdef MS_WINDOWS
-#       define PY_FORMAT_LONG_LONG "I64"
-#    else
-#       error "This platform's pyconfig.h needs to define PY_FORMAT_LONG_LONG"
-#    endif
 #endif
 
 /* Py_LOCAL can be used instead of static to get the fastest possible calling

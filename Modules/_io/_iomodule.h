@@ -85,12 +85,12 @@ extern int _PyIO_trap_eintr(void);
 #ifdef MS_WINDOWS
 
 /* Windows uses long long for offsets */
-typedef PY_LONG_LONG Py_off_t;
+typedef long long Py_off_t;
 # define PyLong_AsOff_t     PyLong_AsLongLong
 # define PyLong_FromOff_t   PyLong_FromLongLong
-# define PY_OFF_T_MAX       PY_LLONG_MAX
-# define PY_OFF_T_MIN       PY_LLONG_MIN
-# define PY_OFF_T_COMPAT    PY_LONG_LONG /* type compatible with off_t */
+# define PY_OFF_T_MAX       LLONG_MAX
+# define PY_OFF_T_MIN       LLONG_MIN
+# define PY_OFF_T_COMPAT    long long    /* type compatible with off_t */
 # define PY_PRIdOFF         "lld"        /* format to use for that type */
 
 #else
@@ -107,9 +107,9 @@ typedef off_t Py_off_t;
 #elif (SIZEOF_OFF_T == SIZEOF_LONG_LONG)
 # define PyLong_AsOff_t     PyLong_AsLongLong
 # define PyLong_FromOff_t   PyLong_FromLongLong
-# define PY_OFF_T_MAX       PY_LLONG_MAX
-# define PY_OFF_T_MIN       PY_LLONG_MIN
-# define PY_OFF_T_COMPAT    PY_LONG_LONG
+# define PY_OFF_T_MAX       LLONG_MAX
+# define PY_OFF_T_MIN       LLONG_MIN
+# define PY_OFF_T_COMPAT    long long
 # define PY_PRIdOFF         "lld"
 #elif (SIZEOF_OFF_T == SIZEOF_LONG)
 # define PyLong_AsOff_t     PyLong_AsLong

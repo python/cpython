@@ -4938,67 +4938,6 @@ if test "x$ac_cv_file__dev_ptc" = xyes; then
   [Define to 1 if you have the /dev/ptc device file.])
 fi
 
-AC_MSG_CHECKING(for %lld and %llu printf() format support)
-AC_CACHE_VAL(ac_cv_have_long_long_format,
-AC_RUN_IFELSE([AC_LANG_SOURCE([[[
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-int main()
-{
-char buffer[256];
-
-if (sprintf(buffer, "%lld", (long long)123) < 0)
-return 1;
-if (strcmp(buffer, "123"))
-return 1;
-
-if (sprintf(buffer, "%lld", (long long)-123) < 0)
-return 1;
-if (strcmp(buffer, "-123"))
-return 1;
-
-if (sprintf(buffer, "%llu", (unsigned long long)123) < 0)
-return 1;
-if (strcmp(buffer, "123"))
-return 1;
-
-return 0;
-}
-]]])],
-[ac_cv_have_long_long_format=yes],
-[ac_cv_have_long_long_format=no],
-[ac_cv_have_long_long_format="cross -- assuming no"
-if test x$GCC = xyes; then
-save_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -Werror -Wformat"
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <stdio.h>
-#include <stddef.h>
-]], [[
-char *buffer;
-sprintf(buffer, "%lld", (long long)123);
-sprintf(buffer, "%lld", (long long)-123);
-sprintf(buffer, "%llu", (unsigned long long)123);
-]])],
-ac_cv_have_long_long_format=yes
-)
-CFLAGS=$save_CFLAGS
-fi])
-)
-AC_MSG_RESULT($ac_cv_have_long_long_format)
-
-if test "$ac_cv_have_long_long_format" = yes
-then
-  AC_DEFINE(PY_FORMAT_LONG_LONG, "ll",
-  [Define to printf format modifier for long long type])
-fi
-
 if test $ac_sys_system = Darwin
 then
 	LIBS="$LIBS -framework CoreFoundation"
