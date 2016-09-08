@@ -2,13 +2,13 @@
 import smtplib
 
 # Import the email modules we'll need
-from email.mime.text import MIMEText
+from email.message import EmailMessage
 
-# Open a plain text file for reading.  For this example, assume that
-# the text file contains only ASCII characters.
+# Open the plain text file whose name is in textfile for reading.
 with open(textfile) as fp:
     # Create a text/plain message
-    msg = MIMEText(fp.read())
+    msg = EmailMessage()
+    msg.set_content(fp.read())
 
 # me == the sender's email address
 # you == the recipient's email address

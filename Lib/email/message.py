@@ -951,6 +951,26 @@ class MIMEPart(Message):
             policy = default
         Message.__init__(self, policy)
 
+
+    def as_string(self, unixfrom=False, maxheaderlen=None, policy=None):
+        """Return the entire formatted message as a string.
+
+        Optional 'unixfrom', when true, means include the Unix From_ envelope
+        header.  maxheaderlen is retained for backward compatibility with the
+        base Message class, but defaults to None, meaning that the policy value
+        for max_line_length controls the header maximum length.  'policy' is
+        passed to the Generator instance used to serialize the mesasge; if it
+        is not specified the policy associated with the message instance is
+        used.
+        """
+        policy = self.policy if policy is None else policy
+        if maxheaderlen is None:
+            maxheaderlen = policy.max_line_length
+        return super().as_string(maxheaderlen=maxheaderlen, policy=policy)
+
+    def __str__(self):
+        return self.as_string(policy=self.policy.clone(utf8=True))
+
     def is_attachment(self):
         c_d = self.get('content-disposition')
         return False if c_d is None else c_d.content_disposition == 'attachment'
