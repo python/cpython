@@ -2068,9 +2068,8 @@ posix_do_stat(const char *function_name, path_t *path,
     Py_BEGIN_ALLOW_THREADS
     if (path->fd != -1)
         result = FSTAT(path->fd, &st);
-    else
 #ifdef MS_WINDOWS
-    if (follow_symlinks)
+    else if (follow_symlinks)
         result = win32_stat(path->wide, &st);
     else
         result = win32_lstat(path->wide, &st);
