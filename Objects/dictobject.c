@@ -281,14 +281,19 @@ PyDict_Fini(void)
 
 #define DK_SIZE(dk) ((dk)->dk_size)
 #if SIZEOF_VOID_P > 4
-#define DK_IXSIZE(dk) (DK_SIZE(dk) <= 0xff ? 1 : DK_SIZE(dk) <= 0xffff ? 2 : \
-                       DK_SIZE(dk) <= 0xffffffff ? 4 : sizeof(Py_ssize_t))
+#define DK_IXSIZE(dk)                          \
+    (DK_SIZE(dk) <= 0xff ?                     \
+        1 : DK_SIZE(dk) <= 0xffff ?            \
+            2 : DK_SIZE(dk) <= 0xffffffff ?    \
+                4 : sizeof(Py_ssize_t))
 #else
-#define DK_IXSIZE(dk) (DK_SIZE(dk) <= 0xff ? 1 : DK_SIZE(dk) <= 0xffff ? 2 : \
-                       sizeof(Py_ssize_t))
+#define DK_IXSIZE(dk)                          \
+    (DK_SIZE(dk) <= 0xff ?                     \
+        1 : DK_SIZE(dk) <= 0xffff ?            \
+            2 : sizeof(Py_ssize_t))
 #endif
-#define DK_ENTRIES(dk) ((PyDictKeyEntry*)(&(dk)->dk_indices[DK_SIZE(dk) * \
-                        DK_IXSIZE(dk)]))
+#define DK_ENTRIES(dk) \
+    ((PyDictKeyEntry*)(&(dk)->dk_indices[DK_SIZE(dk) * DK_IXSIZE(dk)]))
 
 #define DK_DEBUG_INCREF _Py_INC_REFTOTAL _Py_REF_DEBUG_COMMA
 #define DK_DEBUG_DECREF _Py_DEC_REFTOTAL _Py_REF_DEBUG_COMMA
