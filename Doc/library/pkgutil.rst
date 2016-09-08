@@ -11,6 +11,10 @@
 This module provides utilities for the import system, in particular package
 support.
 
+.. class:: ModuleInfo(module_finder, name, ispkg)
+
+    A namedtuple that holds a brief summary of a module's info.
+
 
 .. function:: extend_path(path, name)
 
@@ -139,7 +143,7 @@ support.
 
 .. function:: iter_modules(path=None, prefix='')
 
-   Yields ``(module_finder, name, ispkg)`` for all submodules on *path*, or, if
+   Yields :class:`ModuleInfo` for all submodules on *path*, or, if
    *path* is ``None``, all top-level modules on ``sys.path``.
 
    *path* should be either ``None`` or a list of paths to look for modules in.
@@ -160,7 +164,7 @@ support.
 
 .. function:: walk_packages(path=None, prefix='', onerror=None)
 
-   Yields ``(module_finder, name, ispkg)`` for all modules recursively on
+   Yields :class:`ModuleInfo` for all modules recursively on
    *path*, or, if *path* is ``None``, all accessible modules.
 
    *path* should be either ``None`` or a list of paths to look for modules in.
