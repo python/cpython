@@ -234,7 +234,8 @@ except that non-\ :mimetype:`text` parts are not serialized, but are instead
 represented in the output stream by a string derived from a template filled
 in with information about the part.
 
-.. class:: DecodedGenerator(outfp, mangle_from_=None, maxheaderlen=78, fmt=None)
+.. class:: DecodedGenerator(outfp, mangle_from_=None, maxheaderlen=None, \
+                            fmt=None, *, policy=None)
 
    Act like :class:`Generator`, except that for any subpart of the message
    passed to :meth:`Generator.flatten`, if the subpart is of main type
@@ -263,8 +264,7 @@ in with information about the part.
       "[Non-text (%(type)s) part of message omitted, filename %(filename)s]"
 
    Optional *_mangle_from_* and *maxheaderlen* are as with the
-   :class:`Generator` base class, except that the default value for
-   *maxheaderlen* is ``78`` (the RFC standard default header length).
+   :class:`Generator` base class.
 
 
 .. rubric:: Footnotes
