@@ -88,7 +88,7 @@ del i
 # no more expressions are searched for.  So, order is important.
 emparse_list_reason = [
     r'^5\d{2} <>\.\.\. (?P<reason>.*)',
-    '<>\.\.\. (?P<reason>.*)',
+    r'<>\.\.\. (?P<reason>.*)',
     re.compile(r'^<<< 5\d{2} (?P<reason>.*)', re.MULTILINE),
     re.compile('===== stderr was =====\nrmail: (?P<reason>.*)'),
     re.compile('^Diagnostic-Code: (?P<reason>.*)', re.MULTILINE),

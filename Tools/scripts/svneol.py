@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-"""
+r"""
 SVN helper script.
 
 Try to set the svn:eol-style property to "native" on every .py, .txt, .c and

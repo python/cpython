@@ -2703,8 +2703,8 @@ class TransformCodecTest(unittest.TestCase):
         bad_input = "bad input type"
         for encoding in bytes_transform_encodings:
             with self.subTest(encoding=encoding):
-                fmt = ( "{!r} is not a text encoding; "
-                        "use codecs.encode\(\) to handle arbitrary codecs")
+                fmt = (r"{!r} is not a text encoding; "
+                       r"use codecs.encode\(\) to handle arbitrary codecs")
                 msg = fmt.format(encoding)
                 with self.assertRaisesRegex(LookupError, msg) as failure:
                     bad_input.encode(encoding)
@@ -2713,7 +2713,7 @@ class TransformCodecTest(unittest.TestCase):
     def test_text_to_binary_blacklists_text_transforms(self):
         # Check str.encode gives a good error message for str -> str codecs
         msg = (r"^'rot_13' is not a text encoding; "
-                "use codecs.encode\(\) to handle arbitrary codecs")
+               r"use codecs.encode\(\) to handle arbitrary codecs")
         with self.assertRaisesRegex(LookupError, msg):
             "just an example message".encode("rot_13")
 
@@ -2725,7 +2725,7 @@ class TransformCodecTest(unittest.TestCase):
             with self.subTest(encoding=encoding):
                 encoded_data = codecs.encode(data, encoding)
                 fmt = (r"{!r} is not a text encoding; "
-                        "use codecs.decode\(\) to handle arbitrary codecs")
+                       r"use codecs.decode\(\) to handle arbitrary codecs")
                 msg = fmt.format(encoding)
                 with self.assertRaisesRegex(LookupError, msg):
                     encoded_data.decode(encoding)
@@ -2737,7 +2737,7 @@ class TransformCodecTest(unittest.TestCase):
         for bad_input in (b"immutable", bytearray(b"mutable")):
             with self.subTest(bad_input=bad_input):
                 msg = (r"^'rot_13' is not a text encoding; "
-                        "use codecs.decode\(\) to handle arbitrary codecs")
+                       r"use codecs.decode\(\) to handle arbitrary codecs")
                 with self.assertRaisesRegex(LookupError, msg) as failure:
                     bad_input.decode("rot_13")
                 self.assertIsNone(failure.exception.__cause__)
@@ -2956,12 +2956,12 @@ class ExceptionChainingTest(unittest.TestCase):
         self.assertEqual(decoded, b"not str!")
         # Text model methods should complain
         fmt = (r"^{!r} encoder returned 'str' instead of 'bytes'; "
-                "use codecs.encode\(\) to encode to arbitrary types$")
+               r"use codecs.encode\(\) to encode to arbitrary types$")
         msg = fmt.format(self.codec_name)
         with self.assertRaisesRegex(TypeError, msg):
             "str_input".encode(self.codec_name)
         fmt = (r"^{!r} decoder returned 'bytes' instead of 'str'; "
-                "use codecs.decode\(\) to decode to arbitrary types$")
+               r"use codecs.decode\(\) to decode to arbitrary types$")
         msg = fmt.format(self.codec_name)
         with self.assertRaisesRegex(TypeError, msg):
             b"bytes input".decode(self.codec_name)

@@ -1222,7 +1222,7 @@ def OverrideStdioWith(stdout):
 
 def create_regex(before, after, word=True, whole_line=True):
     """Create an re object for matching marker lines."""
-    group_re = "\w+" if word else ".+"
+    group_re = r"\w+" if word else ".+"
     pattern = r'{}({}){}'
     if whole_line:
         pattern = '^' + pattern + '$'

@@ -147,14 +147,14 @@ def build_html_page(classified_text, title='python',
 #### LaTeX Output ##########################################
 
 default_latex_commands = {
-    'comment': '{\color{red}#1}',
-    'string': '{\color{ForestGreen}#1}',
-    'docstring': '{\emph{\color{ForestGreen}#1}}',
-    'keyword': '{\color{orange}#1}',
-    'builtin': '{\color{purple}#1}',
-    'definition': '{\color{orange}#1}',
-    'defname': '{\color{blue}#1}',
-    'operator': '{\color{brown}#1}',
+    'comment': r'{\color{red}#1}',
+    'string': r'{\color{ForestGreen}#1}',
+    'docstring': r'{\emph{\color{ForestGreen}#1}}',
+    'keyword': r'{\color{orange}#1}',
+    'builtin': r'{\color{purple}#1}',
+    'definition': r'{\color{orange}#1}',
+    'defname': r'{\color{blue}#1}',
+    'operator': r'{\color{brown}#1}',
 }
 
 default_latex_document = r'''

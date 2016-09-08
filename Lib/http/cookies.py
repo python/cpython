@@ -456,7 +456,7 @@ class Morsel(dict):
 #
 
 _LegalKeyChars  = r"\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\="
-_LegalValueChars = _LegalKeyChars + '\[\]'
+_LegalValueChars = _LegalKeyChars + r'\[\]'
 _CookiePattern = re.compile(r"""
     (?x)                           # This is a verbose pattern
     \s*                            # Optional whitespace at start of cookie

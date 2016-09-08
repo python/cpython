@@ -1218,7 +1218,7 @@ class CGIHandlerTestCase(unittest.TestCase):
         content = handle[handle.find("<?xml"):]
 
         self.assertEqual(
-            int(re.search('Content-Length: (\d+)', handle).group(1)),
+            int(re.search(r'Content-Length: (\d+)', handle).group(1)),
             len(content))
 
 

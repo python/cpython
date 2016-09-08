@@ -132,7 +132,7 @@ _Untagged_status = br'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?'
 
 class IMAP4:
 
-    """IMAP4 client class.
+    r"""IMAP4 client class.
 
     Instantiate with: IMAP4([host[, port]])
 
@@ -1535,7 +1535,7 @@ if __name__ == '__main__':
     ('select', ('/tmp/yyz 2',)),
     ('search', (None, 'SUBJECT', 'test')),
     ('fetch', ('1', '(FLAGS INTERNALDATE RFC822)')),
-    ('store', ('1', 'FLAGS', '(\Deleted)')),
+    ('store', ('1', 'FLAGS', r'(\Deleted)')),
     ('namespace', ()),
     ('expunge', ()),
     ('recent', ()),

@@ -93,7 +93,7 @@ class FaultHandlerTests(unittest.TestCase):
                 header = 'Thread 0x[0-9a-f]+'
         else:
             header = 'Stack'
-        regex = """
+        regex = r"""
             ^{fatal_error}
 
             {header} \(most recent call first\):
@@ -490,7 +490,7 @@ class FaultHandlerTests(unittest.TestCase):
             lineno = 8
         else:
             lineno = 10
-        regex = """
+        regex = r"""
             ^Thread 0x[0-9a-f]+ \(most recent call first\):
             (?:  File ".*threading.py", line [0-9]+ in [_a-z]+
             ){{1,3}}  File "<string>", line 23 in run
@@ -669,9 +669,9 @@ class FaultHandlerTests(unittest.TestCase):
         trace = '\n'.join(trace)
         if not unregister:
             if all_threads:
-                regex = 'Current thread 0x[0-9a-f]+ \(most recent call first\):\n'
+                regex = r'Current thread 0x[0-9a-f]+ \(most recent call first\):\n'
             else:
-                regex = 'Stack \(most recent call first\):\n'
+                regex = r'Stack \(most recent call first\):\n'
             regex = expected_traceback(14, 32, regex)
             self.assertRegex(trace, regex)
         else:

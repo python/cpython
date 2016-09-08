@@ -821,7 +821,7 @@ def parse150(resp):
     if _150_re is None:
         import re
         _150_re = re.compile(
-            "150 .* \((\d+) bytes\)", re.IGNORECASE | re.ASCII)
+            r"150 .* \((\d+) bytes\)", re.IGNORECASE | re.ASCII)
     m = _150_re.match(resp)
     if not m:
         return None

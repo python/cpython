@@ -3857,7 +3857,7 @@ class TestSemaphoreTracker(unittest.TestCase):
         p.stderr.close()
         expected = 'semaphore_tracker: There appear to be 2 leaked semaphores'
         self.assertRegex(err, expected)
-        self.assertRegex(err, 'semaphore_tracker: %r: \[Errno' % name1)
+        self.assertRegex(err, r'semaphore_tracker: %r: \[Errno' % name1)
 
 #
 # Mixins

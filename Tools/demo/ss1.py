@@ -413,7 +413,7 @@ class FormulaCell(BaseCell):
 
     def renumber(self, x1, y1, x2, y2, dx, dy):
         out = []
-        for part in re.split('(\w+)', self.formula):
+        for part in re.split(r'(\w+)', self.formula):
             m = re.match('^([A-Z]+)([1-9][0-9]*)$', part)
             if m is not None:
                 sx, sy = m.groups()

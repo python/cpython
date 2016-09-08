@@ -95,7 +95,7 @@ def realwork(vars, moddefns, target):
     print()
 
     print('$(temp_dir):')
-    print('  if not exist $(temp_dir)\. mkdir $(temp_dir)')
+    print(r'  if not exist $(temp_dir)\. mkdir $(temp_dir)')
     print()
 
     objects = []
@@ -106,7 +106,7 @@ def realwork(vars, moddefns, target):
             base = os.path.basename(file)
             base, ext = os.path.splitext(base)
             objects.append(base + ".obj")
-            print('$(temp_dir)\%s.obj: "%s"' % (base, file))
+            print(r'$(temp_dir)\%s.obj: "%s"' % (base, file))
             print("\t@$(CC) -c -nologo /Fo$* $(cdl) $(c_debug) /D BUILD_FREEZE", end=' ')
             print('"-I$(pythonhome)/Include"  "-I$(pythonhome)/PC" \\')
             print("\t\t$(cflags) $(cdebug) $(cinclude) \\")
@@ -126,7 +126,7 @@ def realwork(vars, moddefns, target):
     print() ; print()
 
     print("OBJS=", end=' ')
-    for obj in objects: print('"$(temp_dir)\%s"' % (obj), end=' ')
+    for obj in objects: print(r'"$(temp_dir)\%s"' % (obj), end=' ')
     print() ; print()
 
     print("LIBS=", end=' ')

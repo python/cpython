@@ -139,10 +139,10 @@ class SearchEngineTest(unittest.TestCase):
 
     def test_setcookedpat(self):
         engine = self.engine
-        engine.setcookedpat('\s')
-        self.assertEqual(engine.getpat(), '\s')
+        engine.setcookedpat(r'\s')
+        self.assertEqual(engine.getpat(), r'\s')
         engine.revar.set(1)
-        engine.setcookedpat('\s')
+        engine.setcookedpat(r'\s')
         self.assertEqual(engine.getpat(), r'\\s')
 
     def test_getcookedpat(self):
@@ -156,10 +156,10 @@ class SearchEngineTest(unittest.TestCase):
         Equal(engine.getcookedpat(), r'\bhello\b')
         engine.wordvar.set(False)
 
-        engine.setpat('\s')
+        engine.setpat(r'\s')
         Equal(engine.getcookedpat(), r'\\s')
         engine.revar.set(True)
-        Equal(engine.getcookedpat(), '\s')
+        Equal(engine.getcookedpat(), r'\s')
 
     def test_getprog(self):
         engine = self.engine
@@ -282,7 +282,7 @@ class ForwardBackwardTest(unittest.TestCase):
         cls.pat = re.compile('target')
         cls.res = (2, (10, 16))  # line, slice indexes of 'target'
         cls.failpat = re.compile('xyz')  # not in text
-        cls.emptypat = re.compile('\w*')  # empty match possible
+        cls.emptypat = re.compile(r'\w*')  # empty match possible
 
     def make_search(self, func):
         def search(pat, line, col, wrap, ok=0):

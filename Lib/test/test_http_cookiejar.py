@@ -1051,7 +1051,7 @@ class CookieTests(unittest.TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, "spam=eggs; Version=1; Port")
         h = interact_2965(c, url)
-        self.assertRegex(h, "\$Port([^=]|$)",
+        self.assertRegex(h, r"\$Port([^=]|$)",
                          "port with no value not returned with no value")
 
         c = CookieJar(pol)
@@ -1396,9 +1396,9 @@ class LWPCookieTests(unittest.TestCase):
 
         self.assertRegex(cookie, r'^\$Version="?1"?;')
         self.assertRegex(cookie, r'Part_Number="?Rocket_Launcher_0001"?;'
-                                  '\s*\$Path="\/acme"')
+                                 r'\s*\$Path="\/acme"')
         self.assertRegex(cookie, r'Customer="?WILE_E_COYOTE"?;'
-                                  '\s*\$Path="\/acme"')
+                                 r'\s*\$Path="\/acme"')
 
         #
         #   7.  User Agent -> Server

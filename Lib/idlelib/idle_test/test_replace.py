@@ -91,7 +91,7 @@ class ReplaceDialogTest(unittest.TestCase):
         text.mark_set('insert', 'end')
         text.insert('insert', '\nline42:')
         before_text = text.get('1.0', 'end')
-        pv.set('[a-z][\d]+')
+        pv.set(r'[a-z][\d]+')
         replace()
         after_text = text.get('1.0', 'end')
         equal(before_text, after_text)
@@ -192,7 +192,7 @@ class ReplaceDialogTest(unittest.TestCase):
         self.engine.revar.set(True)
 
         before_text = text.get('1.0', 'end')
-        pv.set('[a-z][\d]+')
+        pv.set(r'[a-z][\d]+')
         rv.set('hello')
         replace()
         after_text = text.get('1.0', 'end')
@@ -207,7 +207,7 @@ class ReplaceDialogTest(unittest.TestCase):
         self.assertIn('error', showerror.title)
         self.assertIn('Empty', showerror.message)
 
-        pv.set('[\d')
+        pv.set(r'[\d')
         replace()
         self.assertIn('error', showerror.title)
         self.assertIn('Pattern', showerror.message)

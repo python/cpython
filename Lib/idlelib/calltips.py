@@ -120,7 +120,7 @@ def get_entity(expression):
 _MAX_COLS = 85
 _MAX_LINES = 5  # enough for bytes
 _INDENT = ' '*4  # for wrapped signatures
-_first_param = re.compile('(?<=\()\w*\,?\s*')
+_first_param = re.compile(r'(?<=\()\w*\,?\s*')
 _default_callable_argspec = "See source or doc"
 
 
