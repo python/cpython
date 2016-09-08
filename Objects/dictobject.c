@@ -307,18 +307,22 @@ dk_get_index(PyDictKeysObject *keys, Py_ssize_t i)
     Py_ssize_t ix;
 
     if (s <= 0xff) {
-        ix = ((char*) &keys->dk_indices[0])[i];
+        char *indices = (char*)keys->dk_indices;
+        ix = indices[i];
     }
     else if (s <= 0xffff) {
-        ix = ((int16_t*)&keys->dk_indices[0])[i];
+        int16_t *indices = (int16_t*)keys->dk_indices;
+        ix = indices[i];
     }
 #if SIZEOF_VOID_P > 4
     else if (s <= 0xffffffff) {
-        ix = ((int32_t*)&keys->dk_indices[0])[i];
+        int32_t *indices = (int32_t*)keys->dk_indices;
+        ix = indices[i];
     }
 #endif
     else {
-        ix = ((Py_ssize_t*)&keys->dk_indices[0])[i];
+        Py_ssize_t *indices = (Py_ssize_t*)keys->dk_indices;
+        ix = indices[i];
     }
     assert(ix >= DKIX_DUMMY);
     return ix;
@@ -333,21 +337,25 @@ dk_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
     assert(ix >= DKIX_DUMMY);
 
     if (s <= 0xff) {
+        char *indices = (char*)keys->dk_indices;
         assert(ix <= 0x7f);
-        ((char*) &keys->dk_indices[0])[i] = (char)ix;
+        indices[i] = (char)ix;
     }
     else if (s <= 0xffff) {
+        int16_t *indices = (int16_t*)keys->dk_indices;
         assert(ix <= 0x7fff);
-        ((int16_t*) &keys->dk_indices[0])[i] = (int16_t)ix;
+        indices[i] = (int16_t)ix;
     }
 #if SIZEOF_VOID_P > 4
     else if (s <= 0xffffffff) {
+        int32_t *indices = (int32_t*)keys->dk_indices;
         assert(ix <= 0x7fffffff);
-        ((int32_t*) &keys->dk_indices[0])[i] = (int32_t)ix;
+        indices[i] = (int32_t)ix;
     }
 #endif
     else {
-        ((Py_ssize_t*) &keys->dk_indices[0])[i] = ix;
+        Py_ssize_t *indices = (Py_ssize_t*)keys->dk_indices;
+        indices[i] = ix;
     }
 }
 
