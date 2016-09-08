@@ -2580,14 +2580,16 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         TARGET(BUILD_SET) {
             PyObject *set = PySet_New(NULL);
             int err = 0;
+            int i;
             if (set == NULL)
                 goto error;
-            while (--oparg >= 0) {
-                PyObject *item = POP();
+            for (i = oparg; i > 0; i--) {
+                PyObject *item = PEEK(i);
                 if (err == 0)
                     err = PySet_Add(set, item);
                 Py_DECREF(item);
             }
+            STACKADJ(-oparg);
             if (err != 0) {
                 Py_DECREF(set);
                 goto error;
