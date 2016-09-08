@@ -159,7 +159,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
         fd = _PyLong_AsInt(file);
         if (fd == -1 && PyErr_Occurred())
             return -1;
-        if (fd < 0 || !_PyVerify_fd(fd)) {
+        if (fd < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "file is not a valid file descripter");
             return -1;
