@@ -559,9 +559,8 @@ def module_from_spec(spec):
         # module creation should be used.
         module = spec.loader.create_module(spec)
     elif hasattr(spec.loader, 'exec_module'):
-        _warnings.warn('starting in Python 3.6, loaders defining exec_module() '
-                       'must also define create_module()',
-                       DeprecationWarning, stacklevel=2)
+        raise ImportError('loaders that define exec_module() '
+                          'must also define create_module()')
     if module is None:
         module = _new_module(spec.name)
     _init_module_attrs(spec, module)
