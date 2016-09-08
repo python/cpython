@@ -20,33 +20,27 @@ The following exception classes are defined in the :mod:`email.errors` module:
 
 .. exception:: MessageParseError()
 
-   This is the base class for exceptions raised by the :class:`~email.parser.Parser`
-   class.  It is derived from :exc:`MessageError`.
+   This is the base class for exceptions raised by the
+   :class:`~email.parser.Parser` class.  It is derived from
+   :exc:`MessageError`.  This class is also used internally by the parser used
+   by :mod:`~email.headerregistry`.
 
 
 .. exception:: HeaderParseError()
 
-   Raised under some error conditions when parsing the :rfc:`2822` headers of a
-   message, this class is derived from :exc:`MessageParseError`. It can be raised
-   from the :meth:`Parser.parse <email.parser.Parser.parse>` or
-   :meth:`Parser.parsestr <email.parser.Parser.parsestr>` methods.
-
-   Situations where it can be raised include finding an envelope header after the
-   first :rfc:`2822` header of the message, finding a continuation line before the
-   first :rfc:`2822` header is found, or finding a line in the headers which is
-   neither a header or a continuation line.
+   Raised under some error conditions when parsing the :rfc:`5322` headers of a
+   message, this class is derived from :exc:`MessageParseError`.  The
+   :meth:`~email.message.EmailMessage.set_boundary` method will raise this
+   error if the content type is unknown when the method is called.
+   :class:`~email.header.Header` may raise this error for certain base64
+   decoding errors, and when an attempt is made to create a header that appears
+   to contain an embedded header (that is, there is what is supposed to be a
+   continuation line that has no leading whitespace and looks like a header).
 
 
 .. exception:: BoundaryError()
 
-   Raised under some error conditions when parsing the :rfc:`2822` headers of a
-   message, this class is derived from :exc:`MessageParseError`. It can be raised
-   from the :meth:`Parser.parse <email.parser.Parser.parse>` or
-   :meth:`Parser.parsestr <email.parser.Parser.parsestr>` methods.
-
-   Situations where it can be raised include not being able to find the starting or
-   terminating boundary in a :mimetype:`multipart/\*` message when strict parsing
-   is used.
+   Deprecated and no longer used.
 
 
 .. exception:: MultipartConversionError()
@@ -64,14 +58,14 @@ The following exception classes are defined in the :mod:`email.errors` module:
    :class:`~email.mime.nonmultipart.MIMENonMultipart` (e.g.
    :class:`~email.mime.image.MIMEImage`).
 
-Here's the list of the defects that the :class:`~email.parser.FeedParser`
+
+Here is the list of the defects that the :class:`~email.parser.FeedParser`
 can find while parsing messages.  Note that the defects are added to the message
 where the problem was found, so for example, if a message nested inside a
 :mimetype:`multipart/alternative` had a malformed header, that nested message
 object would have a defect, but the containing messages would not.
 
-All defect classes are subclassed from :class:`email.errors.MessageDefect`, but
-this class is *not* an exception!
+All defect classes are subclassed from :class:`email.errors.MessageDefect`.
 
 * :class:`NoBoundaryInMultipartDefect` -- A message claimed to be a multipart,
   but had no :mimetype:`boundary` parameter.

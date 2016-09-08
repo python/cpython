@@ -3,22 +3,14 @@
 """Send the contents of a directory as a MIME message."""
 
 import os
-import sys
 import smtplib
 # For guessing MIME type based on file name extension
 import mimetypes
 
 from argparse import ArgumentParser
 
-from email import encoders
-from email.message import Message
-from email.mime.audio import MIMEAudio
-from email.mime.base import MIMEBase
-from email.mime.image import MIMEImage
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-
-COMMASPACE = ', '
+from email.message import EmailMessage
+from email.policy import SMTP
 
 
 def main():
@@ -47,12 +39,12 @@ must be running an SMTP server.
     directory = args.directory
     if not directory:
         directory = '.'
-    # Create the enclosing (outer) message
-    outer = MIMEMultipart()
-    outer['Subject'] = 'Contents of directory %s' % os.path.abspath(directory)
-    outer['To'] = COMMASPACE.join(args.recipients)
-    outer['From'] = args.sender
-    outer.preamble = 'You will not see this in a MIME-aware mail reader.\n'
+    # Create the message
+    msg = EmailMessage()
+    msg['Subject'] = 'Contents of directory %s' % os.path.abspath(directory)
+    msg['To'] = ', '.join(args.recipients)
+    msg['From'] = args.sender
+    msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
 
     for filename in os.listdir(directory):
         path = os.path.join(directory, filename)
@@ -67,33 +59,18 @@ must be running an SMTP server.
             # use a generic bag-of-bits type.
             ctype = 'application/octet-stream'
         maintype, subtype = ctype.split('/', 1)
-        if maintype == 'text':
-            with open(path) as fp:
-                # Note: we should handle calculating the charset
-                msg = MIMEText(fp.read(), _subtype=subtype)
-        elif maintype == 'image':
-            with open(path, 'rb') as fp:
-                msg = MIMEImage(fp.read(), _subtype=subtype)
-        elif maintype == 'audio':
-            with open(path, 'rb') as fp:
-                msg = MIMEAudio(fp.read(), _subtype=subtype)
-        else:
-            with open(path, 'rb') as fp:
-                msg = MIMEBase(maintype, subtype)
-                msg.set_payload(fp.read())
-            # Encode the payload using Base64
-            encoders.encode_base64(msg)
-        # Set the filename parameter
-        msg.add_header('Content-Disposition', 'attachment', filename=filename)
-        outer.attach(msg)
+        with open(path, 'rb') as fp:
+            msg.add_attachment(fp.read(),
+                               maintype=maintype,
+                               subtype=subtype,
+                               filename=filename)
     # Now send or store the message
-    composed = outer.as_string()
     if args.output:
-        with open(args.output, 'w') as fp:
-            fp.write(composed)
+        with open(args.output, 'wb') as fp:
+            fp.write(msg.as_bytes(policy=SMTP))
     else:
         with smtplib.SMTP('localhost') as s:
-            s.sendmail(args.sender, args.recipients, composed)
+            s.send_message(msg)
 
 
 if __name__ == '__main__':

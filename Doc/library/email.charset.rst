@@ -8,6 +8,11 @@
 
 --------------
 
+This module is part of the legacy (``Compat32``) email API.  In the new
+API only the aliases table is used.
+
+The remaining text in this section is the original documentation of the module.
+
 This module provides a class :class:`Charset` for representing character sets
 and character set conversions in email messages, as well as a character set
 registry and several convenience methods for manipulating this registry.

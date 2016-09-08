@@ -8,6 +8,11 @@
 
 --------------
 
+This module is part of the legacy (``Compat32``) email API.  Its functionality
+is partially replaced by the :mod:`~email.contentmanager` in the new API, but
+in certain applications these classes may still be useful, even in non-legacy
+code.
+
 Ordinarily, you get a message object structure by passing a file or some text to
 a parser, which parses the text and returns the root message object.  However
 you can also build a complete message structure from scratch, or even individual
