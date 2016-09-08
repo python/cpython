@@ -113,13 +113,13 @@ PyDoc_STRVAR(msvcrt_open_osfhandle__doc__,
     {"open_osfhandle", (PyCFunction)msvcrt_open_osfhandle, METH_VARARGS, msvcrt_open_osfhandle__doc__},
 
 static long
-msvcrt_open_osfhandle_impl(PyObject *module, Py_intptr_t handle, int flags);
+msvcrt_open_osfhandle_impl(PyObject *module, intptr_t handle, int flags);
 
 static PyObject *
 msvcrt_open_osfhandle(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    Py_intptr_t handle;
+    intptr_t handle;
     int flags;
     long _return_value;
 
@@ -148,7 +148,7 @@ PyDoc_STRVAR(msvcrt_get_osfhandle__doc__,
 #define MSVCRT_GET_OSFHANDLE_METHODDEF    \
     {"get_osfhandle", (PyCFunction)msvcrt_get_osfhandle, METH_O, msvcrt_get_osfhandle__doc__},
 
-static Py_intptr_t
+static intptr_t
 msvcrt_get_osfhandle_impl(PyObject *module, int fd);
 
 static PyObject *
@@ -156,7 +156,7 @@ msvcrt_get_osfhandle(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
-    Py_intptr_t _return_value;
+    intptr_t _return_value;
 
     if (!PyArg_Parse(arg, "i:get_osfhandle", &fd)) {
         goto exit;
@@ -569,4 +569,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=ece8106c0592ff1f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae04e2b50eef8b63 input=a9049054013a1b77]*/

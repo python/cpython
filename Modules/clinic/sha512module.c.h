@@ -2,8 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(PY_LONG_LONG)
-
 PyDoc_STRVAR(SHA512Type_copy__doc__,
 "copy($self, /)\n"
 "--\n"
@@ -21,10 +19,6 @@ SHA512Type_copy(SHAobject *self, PyObject *Py_UNUSED(ignored))
 {
     return SHA512Type_copy_impl(self);
 }
-
-#endif /* defined(PY_LONG_LONG) */
-
-#if defined(PY_LONG_LONG)
 
 PyDoc_STRVAR(SHA512Type_digest__doc__,
 "digest($self, /)\n"
@@ -44,10 +38,6 @@ SHA512Type_digest(SHAobject *self, PyObject *Py_UNUSED(ignored))
     return SHA512Type_digest_impl(self);
 }
 
-#endif /* defined(PY_LONG_LONG) */
-
-#if defined(PY_LONG_LONG)
-
 PyDoc_STRVAR(SHA512Type_hexdigest__doc__,
 "hexdigest($self, /)\n"
 "--\n"
@@ -66,10 +56,6 @@ SHA512Type_hexdigest(SHAobject *self, PyObject *Py_UNUSED(ignored))
     return SHA512Type_hexdigest_impl(self);
 }
 
-#endif /* defined(PY_LONG_LONG) */
-
-#if defined(PY_LONG_LONG)
-
 PyDoc_STRVAR(SHA512Type_update__doc__,
 "update($self, obj, /)\n"
 "--\n"
@@ -78,10 +64,6 @@ PyDoc_STRVAR(SHA512Type_update__doc__,
 
 #define SHA512TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)SHA512Type_update, METH_O, SHA512Type_update__doc__},
-
-#endif /* defined(PY_LONG_LONG) */
-
-#if defined(PY_LONG_LONG)
 
 PyDoc_STRVAR(_sha512_sha512__doc__,
 "sha512($module, /, string=b\'\')\n"
@@ -113,10 +95,6 @@ exit:
     return return_value;
 }
 
-#endif /* defined(PY_LONG_LONG) */
-
-#if defined(PY_LONG_LONG)
-
 PyDoc_STRVAR(_sha512_sha384__doc__,
 "sha384($module, /, string=b\'\')\n"
 "--\n"
@@ -146,30 +124,4 @@ _sha512_sha384(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-
-#endif /* defined(PY_LONG_LONG) */
-
-#ifndef SHA512TYPE_COPY_METHODDEF
-    #define SHA512TYPE_COPY_METHODDEF
-#endif /* !defined(SHA512TYPE_COPY_METHODDEF) */
-
-#ifndef SHA512TYPE_DIGEST_METHODDEF
-    #define SHA512TYPE_DIGEST_METHODDEF
-#endif /* !defined(SHA512TYPE_DIGEST_METHODDEF) */
-
-#ifndef SHA512TYPE_HEXDIGEST_METHODDEF
-    #define SHA512TYPE_HEXDIGEST_METHODDEF
-#endif /* !defined(SHA512TYPE_HEXDIGEST_METHODDEF) */
-
-#ifndef SHA512TYPE_UPDATE_METHODDEF
-    #define SHA512TYPE_UPDATE_METHODDEF
-#endif /* !defined(SHA512TYPE_UPDATE_METHODDEF) */
-
-#ifndef _SHA512_SHA512_METHODDEF
-    #define _SHA512_SHA512_METHODDEF
-#endif /* !defined(_SHA512_SHA512_METHODDEF) */
-
-#ifndef _SHA512_SHA384_METHODDEF
-    #define _SHA512_SHA384_METHODDEF
-#endif /* !defined(_SHA512_SHA384_METHODDEF) */
-/*[clinic end generated code: output=cf0da76cb603d1bf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f7f6603a9c4e910 input=a9049054013a1b77]*/
