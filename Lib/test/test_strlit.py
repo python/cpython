@@ -121,9 +121,9 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(eval(""" b'\x01' """), byte(1))
         self.assertEqual(eval(r""" b'\x81' """), byte(0x81))
         self.assertRaises(SyntaxError, eval, """ b'\x81' """)
-        self.assertEqual(eval(r""" b'\u1881' """), b'\\' + b'u1881')
+        self.assertEqual(eval(r""" br'\u1881' """), b'\\' + b'u1881')
         self.assertRaises(SyntaxError, eval, """ b'\u1881' """)
-        self.assertEqual(eval(r""" b'\U0001d120' """), b'\\' + b'U0001d120')
+        self.assertEqual(eval(r""" br'\U0001d120' """), b'\\' + b'U0001d120')
         self.assertRaises(SyntaxError, eval, """ b'\U0001d120' """)
 
     def test_eval_bytes_incomplete(self):

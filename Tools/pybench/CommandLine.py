@@ -99,8 +99,8 @@ def option_dict(options):
 # Alias
 getpasswd = invisible_input
 
-_integerRE = re.compile('\s*(-?\d+)\s*$')
-_integerRangeRE = re.compile('\s*(-?\d+)\s*-\s*(-?\d+)\s*$')
+_integerRE = re.compile(r'\s*(-?\d+)\s*$')
+_integerRangeRE = re.compile(r'\s*(-?\d+)\s*-\s*(-?\d+)\s*$')
 
 def srange(s,
 

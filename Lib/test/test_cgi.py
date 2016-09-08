@@ -148,7 +148,7 @@ class CgiTests(unittest.TestCase):
     def test_escape(self):
         # cgi.escape() is deprecated.
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', 'cgi\.escape',
+            warnings.filterwarnings('ignore', r'cgi\.escape',
                                      DeprecationWarning)
             self.assertEqual("test &amp; string", cgi.escape("test & string"))
             self.assertEqual("&lt;test string&gt;", cgi.escape("<test string>"))

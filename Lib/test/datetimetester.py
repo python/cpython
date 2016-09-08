@@ -4001,12 +4001,12 @@ class Oddballs(unittest.TestCase):
                              datetime(xx, xx, xx, xx, xx, xx, xx))
 
         with self.assertRaisesRegex(TypeError, '^an integer is required '
-                                               '\(got type str\)$'):
+                                              r'\(got type str\)$'):
             datetime(10, 10, '10')
 
         f10 = Number(10.9)
         with self.assertRaisesRegex(TypeError, '^__int__ returned non-int '
-                                               '\(type float\)$'):
+                                              r'\(type float\)$'):
             datetime(10, 10, f10)
 
         class Float(float):

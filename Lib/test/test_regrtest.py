@@ -704,8 +704,8 @@ class ArgsTestCase(BaseTestCase):
         test = self.create_test('coverage')
         output = self.run_tests("--coverage", test)
         self.check_executed_tests(output, [test])
-        regex = ('lines +cov% +module +\(path\)\n'
-                 '(?: *[0-9]+ *[0-9]{1,2}% *[^ ]+ +\([^)]+\)+)+')
+        regex = (r'lines +cov% +module +\(path\)\n'
+                 r'(?: *[0-9]+ *[0-9]{1,2}% *[^ ]+ +\([^)]+\)+)+')
         self.check_line(output, regex)
 
     def test_wait(self):

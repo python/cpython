@@ -251,13 +251,13 @@ def _dist_try_harder(distname, version, id):
 
 _release_filename = re.compile(r'(\w+)[-_](release|version)', re.ASCII)
 _lsb_release_version = re.compile(r'(.+)'
-                                   ' release '
-                                   '([\d.]+)'
-                                   '[^(]*(?:\((.+)\))?', re.ASCII)
+                                  r' release '
+                                  r'([\d.]+)'
+                                  r'[^(]*(?:\((.+)\))?', re.ASCII)
 _release_version = re.compile(r'([^0-9]+)'
-                               '(?: release )?'
-                               '([\d.]+)'
-                               '[^(]*(?:\((.+)\))?', re.ASCII)
+                              r'(?: release )?'
+                              r'([\d.]+)'
+                              r'[^(]*(?:\((.+)\))?', re.ASCII)
 
 # See also http://www.novell.com/coolsolutions/feature/11251.html
 # and http://linuxmafia.com/faq/Admin/release-files.html
@@ -407,8 +407,8 @@ def _norm_version(version, build=''):
     return version
 
 _ver_output = re.compile(r'(?:([\w ]+) ([\w.]+) '
-                         '.*'
-                         '\[.* ([\d.]+)\])')
+                         r'.*'
+                         r'\[.* ([\d.]+)\])')
 
 # Examples of VER command output:
 #
@@ -1153,22 +1153,22 @@ _sys_version_parser = re.compile(
 
 _ironpython_sys_version_parser = re.compile(
     r'IronPython\s*'
-    '([\d\.]+)'
-    '(?: \(([\d\.]+)\))?'
-    ' on (.NET [\d\.]+)', re.ASCII)
+    r'([\d\.]+)'
+    r'(?: \(([\d\.]+)\))?'
+    r' on (.NET [\d\.]+)', re.ASCII)
 
 # IronPython covering 2.6 and 2.7
 _ironpython26_sys_version_parser = re.compile(
     r'([\d.]+)\s*'
-    '\(IronPython\s*'
-    '[\d.]+\s*'
-    '\(([\d.]+)\) on ([\w.]+ [\d.]+(?: \(\d+-bit\))?)\)'
+    r'\(IronPython\s*'
+    r'[\d.]+\s*'
+    r'\(([\d.]+)\) on ([\w.]+ [\d.]+(?: \(\d+-bit\))?)\)'
 )
 
 _pypy_sys_version_parser = re.compile(
     r'([\w.+]+)\s*'
-    '\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
-    '\[PyPy [^\]]+\]?')
+    r'\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
+    r'\[PyPy [^\]]+\]?')
 
 _sys_version_cache = {}
 
@@ -1403,7 +1403,7 @@ def platform(aliased=0, terse=0):
             # see issue #1322 for more information
             warnings.filterwarnings(
                 'ignore',
-                'dist\(\) and linux_distribution\(\) '
+                r'dist\(\) and linux_distribution\(\) '
                 'functions are deprecated .*',
                 PendingDeprecationWarning,
             )

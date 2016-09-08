@@ -4,7 +4,7 @@ import unittest
 from test import support
 import re
 
-rx = re.compile('\((\S+).py, line (\d+)')
+rx = re.compile(r'\((\S+).py, line (\d+)')
 
 def get_error_location(msg):
     mo = rx.search(str(msg))

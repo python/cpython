@@ -64,7 +64,7 @@ def doit(L):
     flush()
 
 def tabulate(r):
-    """Tabulate sort speed for lists of various sizes.
+    r"""Tabulate sort speed for lists of various sizes.
 
     The sizes are 2**i for i in r (the argument, a list).
 

@@ -158,7 +158,7 @@ tests = [
     ('(abc', '-', SYNTAX_ERROR),
     ('a]', 'a]', SUCCEED, 'found', 'a]'),
     ('a[]]b', 'a]b', SUCCEED, 'found', 'a]b'),
-    ('a[\]]b', 'a]b', SUCCEED, 'found', 'a]b'),
+    ('a[\\]]b', 'a]b', SUCCEED, 'found', 'a]b'),
     ('a[^bc]d', 'aed', SUCCEED, 'found', 'aed'),
     ('a[^bc]d', 'abd', FAIL),
     ('a[^-b]c', 'adc', SUCCEED, 'found', 'adc'),
@@ -551,7 +551,7 @@ tests = [
     # lookbehind: split by : but not if it is escaped by -.
     ('(?<!-):(.*?)(?<!-):', 'a:bc-:de:f', SUCCEED, 'g1', 'bc-:de' ),
     # escaping with \ as we know it
-    ('(?<!\\\):(.*?)(?<!\\\):', 'a:bc\\:de:f', SUCCEED, 'g1', 'bc\\:de' ),
+    ('(?<!\\\\):(.*?)(?<!\\\\):', 'a:bc\\:de:f', SUCCEED, 'g1', 'bc\\:de' ),
     # terminating with ' and escaping with ? as in edifact
     ("(?<!\\?)'(.*?)(?<!\\?)'", "a'bc?'de'f", SUCCEED, 'g1', "bc?'de" ),
 

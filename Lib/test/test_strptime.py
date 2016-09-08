@@ -129,7 +129,7 @@ class TimeRETests(unittest.TestCase):
     def test_pattern_escaping(self):
         # Make sure any characters in the format string that might be taken as
         # regex syntax is escaped.
-        pattern_string = self.time_re.pattern("\d+")
+        pattern_string = self.time_re.pattern(r"\d+")
         self.assertIn(r"\\d\+", pattern_string,
                       "%s does not have re characters escaped properly" %
                       pattern_string)
@@ -170,9 +170,9 @@ class TimeRETests(unittest.TestCase):
 
     def test_matching_with_escapes(self):
         # Make sure a format that requires escaping of characters works
-        compiled_re = self.time_re.compile("\w+ %m")
-        found = compiled_re.match("\w+ 10")
-        self.assertTrue(found, "Escaping failed of format '\w+ 10'")
+        compiled_re = self.time_re.compile(r"\w+ %m")
+        found = compiled_re.match(r"\w+ 10")
+        self.assertTrue(found, r"Escaping failed of format '\w+ 10'")
 
     def test_locale_data_w_regex_metacharacters(self):
         # Check that if locale data contains regex metacharacters they are
@@ -403,7 +403,7 @@ class StrptimeTests(unittest.TestCase):
         # unbalanced parentheses when the regex is compiled if they are not
         # escaped.
         # Test instigated by bug #796149 .
-        need_escaping = ".^$*+?{}\[]|)("
+        need_escaping = r".^$*+?{}\[]|)("
         self.assertTrue(_strptime._strptime_time(need_escaping, need_escaping))
 
     def test_feb29_on_leap_year_without_year(self):

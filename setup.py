@@ -838,7 +838,7 @@ class PyBuildExt(build_ext):
         # find out which version of OpenSSL we have
         openssl_ver = 0
         openssl_ver_re = re.compile(
-            '^\s*#\s*define\s+OPENSSL_VERSION_NUMBER\s+(0x[0-9a-fA-F]+)' )
+            r'^\s*#\s*define\s+OPENSSL_VERSION_NUMBER\s+(0x[0-9a-fA-F]+)' )
 
         # look for the openssl version header on the compiler search path.
         opensslv_h = find_file('openssl/opensslv.h', [],
@@ -1724,7 +1724,7 @@ class PyBuildExt(build_ext):
         # All existing framework builds of Tcl/Tk don't support 64-bit
         # architectures.
         cflags = sysconfig.get_config_vars('CFLAGS')[0]
-        archs = re.findall('-arch\s+(\w+)', cflags)
+        archs = re.findall(r'-arch\s+(\w+)', cflags)
 
         tmpfile = os.path.join(self.build_temp, 'tk.arch')
         if not os.path.exists(self.build_temp):

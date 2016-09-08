@@ -701,7 +701,7 @@ class AttributesTestCase(TestCaseBase):
 
     def test_attr_funky_names2(self):
         self._run_check(
-            "<a $><b $=%><c \=/>",
+            r"<a $><b $=%><c \=/>",
             [("starttag", "a", [("$", None)]),
              ("starttag", "b", [("$", "%")]),
              ("starttag", "c", [("\\", "/")])])

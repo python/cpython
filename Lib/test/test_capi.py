@@ -533,21 +533,21 @@ class SkipitemTest(unittest.TestCase):
         parse((1, 2, 3), {}, b'OOO', ['', '', 'a'])
         parse((1, 2), {'a': 3}, b'OOO', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
-                'Function takes at least 2 positional arguments \(1 given\)'):
+               r'Function takes at least 2 positional arguments \(1 given\)'):
             parse((1,), {'a': 3}, b'OOO', ['', '', 'a'])
         parse((1,), {}, b'O|OO', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
-                'Function takes at least 1 positional arguments \(0 given\)'):
+               r'Function takes at least 1 positional arguments \(0 given\)'):
             parse((), {}, b'O|OO', ['', '', 'a'])
         parse((1, 2), {'a': 3}, b'OO$O', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
-                'Function takes exactly 2 positional arguments \(1 given\)'):
+               r'Function takes exactly 2 positional arguments \(1 given\)'):
             parse((1,), {'a': 3}, b'OO$O', ['', '', 'a'])
         parse((1,), {}, b'O|O$O', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
-                'Function takes at least 1 positional arguments \(0 given\)'):
+               r'Function takes at least 1 positional arguments \(0 given\)'):
             parse((), {}, b'O|O$O', ['', '', 'a'])
-        with self.assertRaisesRegex(SystemError, 'Empty parameter name after \$'):
+        with self.assertRaisesRegex(SystemError, r'Empty parameter name after \$'):
             parse((1,), {}, b'O|$OO', ['', '', 'a'])
         with self.assertRaisesRegex(SystemError, 'Empty keyword'):
             parse((1,), {}, b'O|OO', ['', 'a', ''])

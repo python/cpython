@@ -210,7 +210,7 @@ def _remove_universal_flags(_config_vars):
         # Do not alter a config var explicitly overridden by env var
         if cv in _config_vars and cv not in os.environ:
             flags = _config_vars[cv]
-            flags = re.sub('-arch\s+\w+\s', ' ', flags, re.ASCII)
+            flags = re.sub(r'-arch\s+\w+\s', ' ', flags, re.ASCII)
             flags = re.sub('-isysroot [^ \t]*', ' ', flags)
             _save_modified_value(_config_vars, cv, flags)
 
@@ -232,7 +232,7 @@ def _remove_unsupported_archs(_config_vars):
     if 'CC' in os.environ:
         return _config_vars
 
-    if re.search('-arch\s+ppc', _config_vars['CFLAGS']) is not None:
+    if re.search(r'-arch\s+ppc', _config_vars['CFLAGS']) is not None:
         # NOTE: Cannot use subprocess here because of bootstrap
         # issues when building Python itself
         status = os.system(
@@ -251,7 +251,7 @@ def _remove_unsupported_archs(_config_vars):
             for cv in _UNIVERSAL_CONFIG_VARS:
                 if cv in _config_vars and cv not in os.environ:
                     flags = _config_vars[cv]
-                    flags = re.sub('-arch\s+ppc\w*\s', ' ', flags)
+                    flags = re.sub(r'-arch\s+ppc\w*\s', ' ', flags)
                     _save_modified_value(_config_vars, cv, flags)
 
     return _config_vars
@@ -267,7 +267,7 @@ def _override_all_archs(_config_vars):
         for cv in _UNIVERSAL_CONFIG_VARS:
             if cv in _config_vars and '-arch' in _config_vars[cv]:
                 flags = _config_vars[cv]
-                flags = re.sub('-arch\s+\w+\s', ' ', flags)
+                flags = re.sub(r'-arch\s+\w+\s', ' ', flags)
                 flags = flags + ' ' + arch
                 _save_modified_value(_config_vars, cv, flags)
 
@@ -465,7 +465,7 @@ def get_platform_osx(_config_vars, osname, release, machine):
 
             machine = 'fat'
 
-            archs = re.findall('-arch\s+(\S+)', cflags)
+            archs = re.findall(r'-arch\s+(\S+)', cflags)
             archs = tuple(sorted(set(archs)))
 
             if len(archs) == 1:

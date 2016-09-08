@@ -729,7 +729,7 @@ FF
 
 
 class QuotingTests(unittest.TestCase):
-    """Tests for urllib.quote() and urllib.quote_plus()
+    r"""Tests for urllib.quote() and urllib.quote_plus()
 
     According to RFC 2396 (Uniform Resource Identifiers), to escape a
     character you write it as '%' + <2 character US-ASCII hex value>.
@@ -804,7 +804,7 @@ class QuotingTests(unittest.TestCase):
         # Make sure all characters that should be quoted are by default sans
         # space (separate test for that).
         should_quote = [chr(num) for num in range(32)] # For 0x00 - 0x1F
-        should_quote.append('<>#%"{}|\^[]`')
+        should_quote.append(r'<>#%"{}|\^[]`')
         should_quote.append(chr(127)) # For 0x7F
         should_quote = ''.join(should_quote)
         for char in should_quote:

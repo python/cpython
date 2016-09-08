@@ -1415,7 +1415,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
     import re
 
     # regular expression for finding intraline change indices
-    change_re = re.compile('(\++|\-+|\^+)')
+    change_re = re.compile(r'(\++|\-+|\^+)')
 
     # create the difference iterator to generate the differences
     diff_lines_iterator = ndiff(fromlines,tolines,linejunk,charjunk)
