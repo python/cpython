@@ -7,7 +7,6 @@ syntax of make rules.
 
 In addition to the dependency syntax, #-comments are supported.
 """
-from __future__ import with_statement
 import errno
 import os
 import time

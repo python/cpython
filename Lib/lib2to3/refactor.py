@@ -8,8 +8,6 @@ recursively descend down directories.  Imported as a module, this
 provides infrastructure to write your own refactoring tool.
 """
 
-from __future__ import with_statement
-
 __author__ = "Guido van Rossum <guido@python.org>"
 
 

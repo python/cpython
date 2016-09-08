@@ -9,8 +9,6 @@ more helpful than printing of (the first line of) the docstring,
 especially when debugging a test.
 """
 
-from __future__ import with_statement
-
 # Testing imports
 from . import support
 
