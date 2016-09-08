@@ -11,7 +11,7 @@
 This implements the dictionary's hashtable.
 
 As of Python 3.6, this is compact and orderd. Basic idea is described here.
-https://morepypy.blogspot.jp/2015/01/faster-more-memory-efficient-and-more.html
+https://morepypy.blogspot.com/2015/01/faster-more-memory-efficient-and-more.html
 
 layout:
 
