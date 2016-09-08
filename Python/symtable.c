@@ -652,7 +652,7 @@ update_symbols(PyObject *symbols, PyObject *scopes,
             continue;
         }
         /* Handle global symbol */
-        if (!PySet_Contains(bound, name)) {
+        if (bound && !PySet_Contains(bound, name)) {
             Py_DECREF(name);
             continue;       /* it's a global */
         }
