@@ -13,13 +13,6 @@ Core and Builtins
 - Issue #27911: Remove unnecessary error checks in
   ``exec_builtin_or_dynamic()``.
 
-- Issue #27983: Cause lack of llvm-profdata tool when using clang as
-  required for PGO linking to be a configure time error rather than
-  make time when --with-optimizations is enabled.  Also improve our
-  ability to find the llvm-profdata tool on MacOS and some Linuxes.
-
-- Issue #26307: The profile-opt build now applys PGO to the built-in modules.
-
 - Issue #27078: Added BUILD_STRING opcode.  Optimized f-strings evaluation.
 
 - Issue #17884: Python now requires systems with inttypes.h and stdint.h
@@ -264,6 +257,13 @@ Tests
 
 Build
 -----
+
+- Issue #27983: Cause lack of llvm-profdata tool when using clang as
+  required for PGO linking to be a configure time error rather than
+  make time when --with-optimizations is enabled.  Also improve our
+  ability to find the llvm-profdata tool on MacOS and some Linuxes.
+
+- Issue #26307: The profile-opt build now applys PGO to the built-in modules.
 
 - Issue #26539: Add the --with-optimizations flag to turn on LTO and PGO build
   support when available.
