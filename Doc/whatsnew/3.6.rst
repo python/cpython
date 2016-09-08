@@ -952,6 +952,11 @@ Deprecated features
   parameter will be dropped in a future Python release and likely earlier
   through third party tools. See :issue:`27919` for details.
 
+* A backslash-character pair that is not a valid escape sequence now generates
+  a DeprecationWarning.  Although this will eventually become a SyntaxError,
+  that will not be for several Python releases.  (Contributed by Emanuel Barry
+  in :issue:`27364`.)
+
 
 Deprecated Python behavior
 --------------------------
