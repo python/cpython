@@ -18,6 +18,9 @@
    by "__LINE__". */
 #define Py_STRINGIFY(x) _Py_XSTRINGIFY(x)
 
+/* Get the size of a structure member in bytes */
+#define Py_MEMBER_SIZE(type, member) sizeof(((type *)0)->member)
+
 /* Argument must be a char or an int in [-128, 127] or [0, 255]. */
 #define Py_CHARMASK(c) ((unsigned char)((c) & 0xff))
 
