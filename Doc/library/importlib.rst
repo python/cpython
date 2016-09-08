@@ -1353,12 +1353,19 @@ an :term:`importer`.
 Examples
 --------
 
+Importing programmatically
+''''''''''''''''''''''''''
+
 To programmatically import a module, use :func:`importlib.import_module`.
 ::
 
   import importlib
 
   itertools = importlib.import_module('itertools')
+
+
+Checking if a module can be imported
+''''''''''''''''''''''''''''''''''''
 
 If you need to find out if a module can be imported without actually doing the
 import, then you should use :func:`importlib.util.find_spec`.
@@ -1380,6 +1387,10 @@ import, then you should use :func:`importlib.util.find_spec`.
       # Adding the module to sys.modules is optional.
       sys.modules[name] = module
 
+
+Importing a source file directly
+''''''''''''''''''''''''''''''''
+
 To import a Python source file directly, use the following recipe
 (Python 3.4 and newer only)::
 
@@ -1397,6 +1408,10 @@ To import a Python source file directly, use the following recipe
   # Optional; only necessary if you want to be able to import the module
   # by name later.
   sys.modules[module_name] = module
+
+
+Setting up an importer
+''''''''''''''''''''''
 
 For deep customizations of import, you typically want to implement an
 :term:`importer`. This means managing both the :term:`finder` and :term:`loader`
@@ -1427,6 +1442,10 @@ classes defined within this package)::
   # Make sure to put the path hook in the proper location in the list in terms
   # of priority.
   sys.path_hooks.append(SpamPathEntryFinder.path_hook(loader_details))
+
+
+Approximating :func:`importlib.import_module`
+'''''''''''''''''''''''''''''''''''''''''''''
 
 Import itself is implemented in Python code, making it possible to
 expose most of the import machinery through importlib. The following
