@@ -546,11 +546,12 @@ Function call semantics are described in more detail in section :ref:`calls`. A
 function call always assigns values to all parameters mentioned in the parameter
 list, either from position arguments, from keyword arguments, or from default
 values.  If the form "``*identifier``" is present, it is initialized to a tuple
-receiving any excess positional parameters, defaulting to the empty tuple.  If
-the form "``**identifier``" is present, it is initialized to a new dictionary
-receiving any excess keyword arguments, defaulting to a new empty dictionary.
-Parameters after "``*``" or "``*identifier``" are keyword-only parameters and
-may only be passed used keyword arguments.
+receiving any excess positional parameters, defaulting to the empty tuple.
+If the form "``**identifier``" is present, it is initialized to a new
+ordered mapping receiving any excess keyword arguments, defaulting to a
+new empty mapping of the same type.  Parameters after "``*``" or
+"``*identifier``" are keyword-only parameters and may only be passed
+used keyword arguments.
 
 .. index:: pair: function; annotations
 
