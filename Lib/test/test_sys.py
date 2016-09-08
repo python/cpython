@@ -1085,7 +1085,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2n15Pl4Pn9Pn11PIPP'
+        fmt = 'P2n15Pl4Pn9Pn11PIP'
         if hasattr(sys, 'getcounts'):
             fmt += '3n2P'
         s = vsize(fmt)
