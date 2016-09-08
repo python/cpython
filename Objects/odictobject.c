@@ -39,7 +39,7 @@ we've considered:
    __getitem__(), get(), etc. accordingly.
 
 The approach with the least performance impact (time and space) is #2,
-mirroring the key order of dict's dk_enties with an array of node pointers.
+mirroring the key order of dict's dk_entries with an array of node pointers.
 While lookdict() and friends (dk_lookup) don't give us the index into the
 array, we make use of pointer arithmetic to get that index.  An alternative
 would be to refactor lookdict() to provide the index, explicitly exposing
