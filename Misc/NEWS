@@ -248,6 +248,9 @@ Library
 - Issue #6766: Distributed reference counting added to multiprocessing
   to support nesting of shared values / proxy objects.
 
+- Issue #21201: Improves readability of multiprocessing error message.  Thanks
+  to Wojciech Walczak for patch.
+
 C API
 -----
 
