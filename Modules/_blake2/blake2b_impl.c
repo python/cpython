@@ -100,7 +100,7 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
     Py_buffer buf;
 
     unsigned long leaf_size = 0;
-    unsigned PY_LONG_LONG node_offset = 0;
+    unsigned long long node_offset = 0;
 
     self = new_BLAKE2bObject(type);
     if (self == NULL) {
@@ -170,7 +170,7 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
 
     if (node_offset_obj != NULL) {
         node_offset = PyLong_AsUnsignedLongLong(node_offset_obj);
-        if (node_offset == (unsigned PY_LONG_LONG) -1 && PyErr_Occurred()) {
+        if (node_offset == (unsigned long long) -1 && PyErr_Occurred()) {
             goto error;
         }
     }

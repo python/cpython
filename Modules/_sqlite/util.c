@@ -130,7 +130,7 @@ sqlite_int64
 _pysqlite_long_as_int64(PyObject * py_val)
 {
     int overflow;
-    PY_LONG_LONG value = PyLong_AsLongLongAndOverflow(py_val, &overflow);
+    long long value = PyLong_AsLongLongAndOverflow(py_val, &overflow);
     if (value == -1 && PyErr_Occurred())
         return -1;
     if (!overflow) {

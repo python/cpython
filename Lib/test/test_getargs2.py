@@ -5,10 +5,6 @@ from test import support
 # Skip this test if the _testcapi module isn't available.
 support.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
-try:
-    from _testcapi import getargs_L, getargs_K
-except ImportError:
-    getargs_L = None # PY_LONG_LONG not available
 
 # > How about the following counterproposal. This also changes some of
 # > the other format codes to be a little more regular.
@@ -309,7 +305,6 @@ class Signed_TestCase(unittest.TestCase):
         self.assertRaises(OverflowError, getargs_n, VERY_LARGE)
 
 
-@unittest.skipIf(getargs_L is None, 'PY_LONG_LONG is not available')
 class LongLong_TestCase(unittest.TestCase):
     def test_L(self):
         from _testcapi import getargs_L

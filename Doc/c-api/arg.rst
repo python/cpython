@@ -265,15 +265,12 @@ Numbers
    Convert a Python integer to a C :c:type:`unsigned long` without
    overflow checking.
 
-``L`` (:class:`int`) [PY_LONG_LONG]
-   Convert a Python integer to a C :c:type:`long long`.  This format is only
-   available on platforms that support :c:type:`long long` (or :c:type:`_int64` on
-   Windows).
+``L`` (:class:`int`) [long long]
+   Convert a Python integer to a C :c:type:`long long`.
 
-``K`` (:class:`int`) [unsigned PY_LONG_LONG]
+``K`` (:class:`int`) [unsigned long long]
    Convert a Python integer to a C :c:type:`unsigned long long`
-   without overflow checking.  This format is only available on platforms that
-   support :c:type:`unsigned long long` (or :c:type:`unsigned _int64` on Windows).
+   without overflow checking.
 
 ``n`` (:class:`int`) [Py_ssize_t]
    Convert a Python integer to a C :c:type:`Py_ssize_t`.
@@ -594,15 +591,11 @@ Building values
    ``k`` (:class:`int`) [unsigned long]
       Convert a C :c:type:`unsigned long` to a Python integer object.
 
-   ``L`` (:class:`int`) [PY_LONG_LONG]
-      Convert a C :c:type:`long long` to a Python integer object. Only available
-      on platforms that support :c:type:`long long` (or :c:type:`_int64` on
-      Windows).
+   ``L`` (:class:`int`) [long long]
+      Convert a C :c:type:`long long` to a Python integer object.
 
-   ``K`` (:class:`int`) [unsigned PY_LONG_LONG]
-      Convert a C :c:type:`unsigned long long` to a Python integer object. Only
-      available on platforms that support :c:type:`unsigned long long` (or
-      :c:type:`unsigned _int64` on Windows).
+   ``K`` (:class:`int`) [unsigned long long]
+      Convert a C :c:type:`unsigned long long` to a Python integer object.
 
    ``n`` (:class:`int`) [Py_ssize_t]
       Convert a C :c:type:`Py_ssize_t` to a Python integer.
