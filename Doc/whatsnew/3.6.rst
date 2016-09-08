@@ -367,6 +367,16 @@ class namespace, ``cls.__dict__``, is unchanged.
       PEP written and implemented by Eric Snow.
 
 
+PEP 509: Add a private version to dict
+--------------------------------------
+
+Add a new private version to the builtin ``dict`` type, incremented at
+each dictionary creation and at each dictionary change, to implement
+fast guards on namespaces.
+
+(Contributed by Victor Stinner in :issue:`26058`.)
+
+
 Other Language Changes
 ======================
 
