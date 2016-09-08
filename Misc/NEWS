@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27911: Remove unnecessary error checks in
+  import.c:exec_builtin_or_dynamic().
+
 - Issue #27983: Cause lack of llvm-profdata tool when using clang as
   required for PGO linking to be a configure time error rather than
   make time when --with-optimizations is enabled.  Also improve our
