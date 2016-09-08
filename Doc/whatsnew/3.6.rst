@@ -845,6 +845,9 @@ Optimizations
 Build and C API Changes
 =======================
 
+* Python now requires some C99 support in the toolchain to build. For more
+  information, see :pep:`7`.
+
 * The ``--with-optimizations`` configure flag has been added. Turning it on
   will activate LTO and PGO build support (when available).
   (Original patch by Alecsandru Patrascu of Intel in :issue:`26539`.)
