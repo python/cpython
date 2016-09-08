@@ -221,7 +221,7 @@ class Command:
         self._ensure_stringlike(option, "string", default)
 
     def ensure_string_list(self, option):
-        """Ensure that 'option' is a list of strings.  If 'option' is
+        r"""Ensure that 'option' is a list of strings.  If 'option' is
         currently a string, we split it either on /,\s*/ or /\s+/, so
         "foo bar baz", "foo,bar,baz", and "foo,   bar baz" all become
         ["foo", "bar", "baz"].

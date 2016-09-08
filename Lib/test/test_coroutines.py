@@ -891,7 +891,7 @@ class CoroutineTest(unittest.TestCase):
             return await Awaitable()
 
         with self.assertRaisesRegex(
-            TypeError, "__await__\(\) returned a coroutine"):
+            TypeError, r"__await__\(\) returned a coroutine"):
 
             run_async(foo())
 
@@ -1333,7 +1333,7 @@ class CoroutineTest(unittest.TestCase):
 
         with self.assertRaisesRegex(
                 TypeError,
-                "async for' received an invalid object.*__aiter.*\: I"):
+                r"async for' received an invalid object.*__aiter.*\: I"):
 
             run_async(foo())
 
@@ -1667,8 +1667,8 @@ class SysSetCoroWrapperTest(unittest.TestCase):
         try:
             with silence_coro_gc(), self.assertRaisesRegex(
                 RuntimeError,
-                "coroutine wrapper.*\.wrapper at 0x.*attempted to "
-                "recursively wrap .* wrap .*"):
+                r"coroutine wrapper.*\.wrapper at 0x.*attempted to "
+                r"recursively wrap .* wrap .*"):
 
                 foo()
         finally:

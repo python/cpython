@@ -2086,7 +2086,7 @@ class Win32JunctionTests(unittest.TestCase):
 class NonLocalSymlinkTests(unittest.TestCase):
 
     def setUp(self):
-        """
+        r"""
         Create this structure:
 
         base

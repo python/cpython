@@ -14,7 +14,7 @@
 """
 import re,sys
 
-entityRE = re.compile('<!ENTITY +(\w+) +CDATA +"([^"]+)" +-- +((?:.|\n)+?) *-->')
+entityRE = re.compile(r'<!ENTITY +(\w+) +CDATA +"([^"]+)" +-- +((?:.|\n)+?) *-->')
 
 def parse(text,pos=0,endpos=None):
 
@@ -39,7 +39,7 @@ def writefile(f,defs):
         if charcode[:2] == '&#':
             code = int(charcode[2:-1])
             if code < 256:
-                charcode = "'\%o'" % code
+                charcode = r"'\%o'" % code
             else:
                 charcode = repr(charcode)
         else:

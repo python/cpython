@@ -23,13 +23,13 @@
 
 import sys, re, getopt, os
 
-p_define = re.compile('^[\t ]*#[\t ]*define[\t ]+([a-zA-Z0-9_]+)[\t ]+')
+p_define = re.compile(r'^[\t ]*#[\t ]*define[\t ]+([a-zA-Z0-9_]+)[\t ]+')
 
 p_macro = re.compile(
-  '^[\t ]*#[\t ]*define[\t ]+'
-  '([a-zA-Z0-9_]+)\(([_a-zA-Z][_a-zA-Z0-9]*)\)[\t ]+')
+  r'^[\t ]*#[\t ]*define[\t ]+'
+  r'([a-zA-Z0-9_]+)\(([_a-zA-Z][_a-zA-Z0-9]*)\)[\t ]+')
 
-p_include = re.compile('^[\t ]*#[\t ]*include[\t ]+<([^>\n]+)>')
+p_include = re.compile(r'^[\t ]*#[\t ]*include[\t ]+<([^>\n]+)>')
 
 p_comment = re.compile(r'/\*([^*]+|\*+[^/])*(\*+/)?')
 p_cpp_comment = re.compile('//.*')

@@ -390,7 +390,7 @@ class Test_TestLoader(unittest.TestCase):
         suite = loader.loadTestsFromName('abc () //')
         error, test = self.check_deferred_error(loader, suite)
         expected = "Failed to import test module: abc () //"
-        expected_regex = "Failed to import test module: abc \(\) //"
+        expected_regex = r"Failed to import test module: abc \(\) //"
         self.assertIn(
             expected, error,
             'missing error string in %r' % error)
@@ -502,7 +502,7 @@ class Test_TestLoader(unittest.TestCase):
         suite = loader.loadTestsFromName('abc () //', unittest)
         error, test = self.check_deferred_error(loader, suite)
         expected = "module 'unittest' has no attribute 'abc () //'"
-        expected_regex = "module 'unittest' has no attribute 'abc \(\) //'"
+        expected_regex = r"module 'unittest' has no attribute 'abc \(\) //'"
         self.assertIn(
             expected, error,
             'missing error string in %r' % error)
@@ -809,7 +809,7 @@ class Test_TestLoader(unittest.TestCase):
         suite = loader.loadTestsFromNames(['abc () //'])
         error, test = self.check_deferred_error(loader, list(suite)[0])
         expected = "Failed to import test module: abc () //"
-        expected_regex = "Failed to import test module: abc \(\) //"
+        expected_regex = r"Failed to import test module: abc \(\) //"
         self.assertIn(
             expected,  error,
             'missing error string in %r' % error)
@@ -928,7 +928,7 @@ class Test_TestLoader(unittest.TestCase):
         suite = loader.loadTestsFromNames(['abc () //'], unittest)
         error, test = self.check_deferred_error(loader, list(suite)[0])
         expected = "module 'unittest' has no attribute 'abc () //'"
-        expected_regex = "module 'unittest' has no attribute 'abc \(\) //'"
+        expected_regex = r"module 'unittest' has no attribute 'abc \(\) //'"
         self.assertIn(
             expected, error,
             'missing error string in %r' % error)

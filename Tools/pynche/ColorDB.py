@@ -134,17 +134,17 @@ class ColorDB:
 
 class RGBColorDB(ColorDB):
     _re = re.compile(
-        '\s*(?P<red>\d+)\s+(?P<green>\d+)\s+(?P<blue>\d+)\s+(?P<name>.*)')
+        r'\s*(?P<red>\d+)\s+(?P<green>\d+)\s+(?P<blue>\d+)\s+(?P<name>.*)')
 
 
 class HTML40DB(ColorDB):
-    _re = re.compile('(?P<name>\S+)\s+(?P<hexrgb>#[0-9a-fA-F]{6})')
+    _re = re.compile(r'(?P<name>\S+)\s+(?P<hexrgb>#[0-9a-fA-F]{6})')
 
     def _extractrgb(self, mo):
         return rrggbb_to_triplet(mo.group('hexrgb'))
 
 class LightlinkDB(HTML40DB):
-    _re = re.compile('(?P<name>(.+))\s+(?P<hexrgb>#[0-9a-fA-F]{6})')
+    _re = re.compile(r'(?P<name>(.+))\s+(?P<hexrgb>#[0-9a-fA-F]{6})')
 
     def _extractname(self, mo):
         return mo.group('name').strip()

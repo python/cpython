@@ -37,11 +37,11 @@ UNI_UNDEFINED = chr(0xFFFE)
 # Placeholder for a missing code point
 MISSING_CODE = -1
 
-mapRE = re.compile('((?:0x[0-9a-fA-F]+\+?)+)'
-                   '\s+'
-                   '((?:(?:0x[0-9a-fA-Z]+|<[A-Za-z]+>)\+?)*)'
-                   '\s*'
-                   '(#.+)?')
+mapRE = re.compile(r'((?:0x[0-9a-fA-F]+\+?)+)'
+                   r'\s+'
+                   r'((?:(?:0x[0-9a-fA-Z]+|<[A-Za-z]+>)\+?)*)'
+                   r'\s*'
+                   r'(#.+)?')
 
 def parsecodes(codes, len=len, range=range):
 

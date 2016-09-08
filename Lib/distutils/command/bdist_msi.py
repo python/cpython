@@ -623,7 +623,7 @@ class bdist_msi(Command):
         cost = PyDialog(db, "DiskCostDlg", x, y, w, h, modal, title,
                         "OK", "OK", "OK", bitmap=False)
         cost.text("Title", 15, 6, 200, 15, 0x30003,
-                  "{\DlgFontBold8}Disk Space Requirements")
+                 r"{\DlgFontBold8}Disk Space Requirements")
         cost.text("Description", 20, 20, 280, 20, 0x30003,
                   "The disk space required for the installation of the selected features.")
         cost.text("Text", 20, 53, 330, 60, 3,
@@ -670,7 +670,7 @@ class bdist_msi(Command):
         progress = PyDialog(db, "ProgressDlg", x, y, w, h, modeless, title,
                             "Cancel", "Cancel", "Cancel", bitmap=False)
         progress.text("Title", 20, 15, 200, 15, 0x30003,
-                      "{\DlgFontBold8}[Progress1] [ProductName]")
+                     r"{\DlgFontBold8}[Progress1] [ProductName]")
         progress.text("Text", 35, 65, 300, 30, 3,
                       "Please wait while the Installer [Progress2] [ProductName]. "
                       "This may take several minutes.")

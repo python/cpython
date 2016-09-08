@@ -23,9 +23,9 @@ def escapestr(text, ampm):
     """
     new_text = re.escape(text)
     new_text = new_text.replace(re.escape(ampm), ampm)
-    new_text = new_text.replace('\%', '%')
-    new_text = new_text.replace('\:', ':')
-    new_text = new_text.replace('\?', '?')
+    new_text = new_text.replace(r'\%', '%')
+    new_text = new_text.replace(r'\:', ':')
+    new_text = new_text.replace(r'\?', '?')
     return new_text
 
 

@@ -289,7 +289,7 @@ class Directory:
     def make_short(self, file):
         oldfile = file
         file = file.replace('+', '_')
-        file = ''.join(c for c in file if not c in ' "/\[]:;=,')
+        file = ''.join(c for c in file if not c in r' "/\[]:;=,')
         parts = file.split(".")
         if len(parts) > 1:
             prefix = "".join(parts[:-1]).upper()

@@ -255,7 +255,7 @@ class PlatformTest(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 'ignore',
-                'dist\(\) and linux_distribution\(\) '
+                r'dist\(\) and linux_distribution\(\) '
                 'functions are deprecated .*',
                 PendingDeprecationWarning,
             )
@@ -331,7 +331,7 @@ class PlatformTest(unittest.TestCase):
                 with warnings.catch_warnings():
                     warnings.filterwarnings(
                         'ignore',
-                        'dist\(\) and linux_distribution\(\) '
+                        r'dist\(\) and linux_distribution\(\) '
                         'functions are deprecated .*',
                         PendingDeprecationWarning,
                     )

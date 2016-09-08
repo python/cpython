@@ -3040,7 +3040,7 @@ class TestMiscellaneous(TestEmailBase):
 
     def test_escape_backslashes(self):
         self.assertEqual(
-            utils.formataddr(('Arthur \Backslash\ Foobar', 'person@dom.ain')),
+            utils.formataddr((r'Arthur \Backslash\ Foobar', 'person@dom.ain')),
             r'"Arthur \\Backslash\\ Foobar" <person@dom.ain>')
         a = r'Arthur \Backslash\ Foobar'
         b = 'person@dom.ain'

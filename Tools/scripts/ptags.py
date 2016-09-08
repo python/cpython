@@ -24,7 +24,7 @@ def main():
         for s in tags: fp.write(s)
 
 
-expr = '^[ \t]*(def|class)[ \t]+([a-zA-Z0-9_]+)[ \t]*[:\(]'
+expr = r'^[ \t]*(def|class)[ \t]+([a-zA-Z0-9_]+)[ \t]*[:\(]'
 matcher = re.compile(expr)
 
 def treat_file(filename):
