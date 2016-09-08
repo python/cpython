@@ -116,10 +116,11 @@
         <Text X="185" Y="11" Width="-11" Height="36" FontId="1" DisablePrefix="yes">#(loc.SuccessHeader)</Text>
         <Image X="0" Y="0" Width="178" Height="382" ImageFile="SideBar.png"/>
 
-        <Hypertext Name="SuccessText" X="205" Y="71" Width="-31" Height="100" FontId="3" DisablePrefix="yes"></Hypertext>
+        <Hypertext Name="SuccessText" X="205" Y="71" Width="-71" Height="150" FontId="3" DisablePrefix="yes"></Hypertext>
 
-        <Text Name="SuccessRestartText" X="205" Y="-100" Width="-11" Height="34" FontId="3" HideWhenDisabled="yes" DisablePrefix="yes">#(loc.SuccessRestartText)</Text>
-        <Button Name="LaunchButton" X="185" Y="-50" Width="-11" Height="59" TabStop="yes" FontId="3" HexStyle="0xF" HideWhenDisabled="yes">#(loc.SuccessLaunchButton)</Button>
+        <Button Name="SuccessMaxPathButton" X="185" Y="-70" Width="-11" Height="81" TabStop="yes" FontId="3" HexStyle="0xE" HideWhenDisabled="yes">#(loc.SuccessMaxPathButton)</Button>
+
+        <Text Name="SuccessRestartText" X="205" Y="-40" Width="-11" Height="34" FontId="3" HideWhenDisabled="yes" DisablePrefix="yes">#(loc.SuccessRestartText)</Text>
         <Button Name="SuccessRestartButton" X="-101" Y="-11" Width="85" Height="27" TabStop="yes" FontId="0" HideWhenDisabled="yes">#(loc.SuccessRestartButton)</Button>
         <Button Name="SuccessCancelButton" X="-11" Y="-11" Width="85" Height="27" TabStop="yes" FontId="0">#(loc.CloseButton)</Button>
     </Page>
