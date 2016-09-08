@@ -237,6 +237,13 @@ static Py_ssize_t lookdict_split(PyDictObject *mp, PyObject *key,
 
 static int dictresize(PyDictObject *mp, Py_ssize_t minused);
 
+/* Global counter used to set ma_version_tag field of dictionary.
+ * It is incremented each time that a dictionary is created and each
+ * time that a dictionary is modified. */
+static uint64_t pydict_global_version = 0;
+
+#define DICT_NEXT_VERSION() (++pydict_global_version)
+
 /* Dictionary reuse scheme to save calls to malloc and free */
 #ifndef PyDict_MAXFREELIST
 #define PyDict_MAXFREELIST 80
@@ -511,6 +518,7 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
     mp->ma_keys = keys;
     mp->ma_values = values;
     mp->ma_used = 0;
+    mp->ma_version_tag = DICT_NEXT_VERSION();
     return (PyObject *)mp;
 }
 
@@ -1074,6 +1082,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
             ep->me_value = value;
         }
         mp->ma_used++;
+        mp->ma_version_tag = DICT_NEXT_VERSION();
         mp->ma_keys->dk_usable--;
         mp->ma_keys->dk_nentries++;
         assert(mp->ma_keys->dk_usable >= 0);
@@ -1085,6 +1094,8 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
     old_value = *value_addr;
     if (old_value != NULL) {
         *value_addr = value;
+        mp->ma_version_tag = DICT_NEXT_VERSION();
+
         Py_DECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
         return 0;
     }
@@ -1094,6 +1105,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
     assert(ix == mp->ma_used);
     *value_addr = value;
     mp->ma_used++;
+    mp->ma_version_tag = DICT_NEXT_VERSION();
     return 0;
 }
 
@@ -1533,6 +1545,7 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
     old_value = *value_addr;
     *value_addr = NULL;
     mp->ma_used--;
+    mp->ma_version_tag = DICT_NEXT_VERSION();
     if (_PyDict_HasSplitTable(mp)) {
         mp->ma_keys->dk_usable = 0;
     }
@@ -1568,6 +1581,7 @@ PyDict_Clear(PyObject *op)
     mp->ma_keys = Py_EMPTY_KEYS;
     mp->ma_values = empty_values;
     mp->ma_used = 0;
+    mp->ma_version_tag = DICT_NEXT_VERSION();
     /* ...then clear the keys and values */
     if (oldvalues != NULL) {
         n = oldkeys->dk_nentries;
@@ -1706,9 +1720,11 @@ _PyDict_Pop(PyDictObject *mp, PyObject *key, PyObject *deflt)
         _PyErr_SetKeyError(key);
         return NULL;
     }
+
     old_value = *value_addr;
     *value_addr = NULL;
     mp->ma_used--;
+    mp->ma_version_tag = DICT_NEXT_VERSION();
     if (!_PyDict_HasSplitTable(mp)) {
         dk_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
         ep = &DK_ENTRIES(mp->ma_keys)[ix];
@@ -2659,6 +2675,7 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         mp->ma_keys->dk_usable--;
         mp->ma_keys->dk_nentries++;
         mp->ma_used++;
+        mp->ma_version_tag = DICT_NEXT_VERSION();
     }
     else
         val = *value_addr;
@@ -2752,6 +2769,7 @@ dict_popitem(PyDictObject *mp)
     /* We can't dk_usable++ since there is DKIX_DUMMY in indices */
     mp->ma_keys->dk_nentries = i;
     mp->ma_used--;
+    mp->ma_version_tag = DICT_NEXT_VERSION();
     return res;
 }
 
@@ -2970,6 +2988,7 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         _PyObject_GC_UNTRACK(d);
 
     d->ma_used = 0;
+    d->ma_version_tag = DICT_NEXT_VERSION();
     d->ma_keys = new_keys_object(PyDict_MINSIZE);
     if (d->ma_keys == NULL) {
         Py_DECREF(self);

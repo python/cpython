@@ -3915,6 +3915,21 @@ tracemalloc_get_traceback(PyObject *self, PyObject *args)
     return _PyTraceMalloc_GetTraceback(domain, (uintptr_t)ptr);
 }
 
+static PyObject *
+dict_get_version(PyObject *self, PyObject *args)
+{
+    PyDictObject *dict;
+    uint64_t version;
+
+    if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
+        return NULL;
+
+    version = dict->ma_version_tag;
+
+    Py_BUILD_ASSERT(sizeof(unsigned PY_LONG_LONG) >= sizeof(version));
+    return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG)version);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -4114,6 +4129,7 @@ static PyMethodDef TestMethods[] = {
     {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
     {"tracemalloc_get_traceback", tracemalloc_get_traceback, METH_VARARGS},
+    {"dict_get_version", dict_get_version, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

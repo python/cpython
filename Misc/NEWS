@@ -10,6 +10,10 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #26058: Add a new private version to the builtin dict type, incremented
+  at each dictionary creation and at each dictionary change. Implementation of
+  the PEP 509.
+
 - Issue #27364: A backslash-character pair that is not a valid escape sequence
   now generates a DeprecationWarning.
 

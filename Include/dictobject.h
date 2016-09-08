@@ -26,6 +26,10 @@ typedef struct {
     /* Number of items in the dictionary */
     Py_ssize_t ma_used;
 
+    /* Dictionary version: globally unique, value change each time
+       the dictionary is modified */
+    uint64_t ma_version_tag;
+
     PyDictKeysObject *ma_keys;
 
     /* If ma_values is NULL, the table is "combined": keys and values
