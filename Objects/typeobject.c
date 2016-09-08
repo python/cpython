@@ -4263,7 +4263,7 @@ reduce_newobj(PyObject *obj)
         }
         Py_XDECREF(args);
     }
-    else {
+    else if (args != NULL) {
         _Py_IDENTIFIER(__newobj_ex__);
 
         newobj = _PyObject_GetAttrId(copyreg, &PyId___newobj_ex__);
@@ -4280,6 +4280,12 @@ reduce_newobj(PyObject *obj)
             Py_DECREF(newobj);
             return NULL;
         }
+    }
+    else {
+        /* args == NULL */
+        Py_DECREF(kwargs);
+        PyErr_BadInternalCall();
+        return NULL;
     }
 
     state = _PyObject_GetState(obj,
