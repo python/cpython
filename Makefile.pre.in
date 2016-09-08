@@ -1310,29 +1310,8 @@ libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -m lib2to3.pgen2.driver $(DESTDIR)$(LIBDEST)/lib2to3/PatternGrammar.txt
 
-# Create the PLATDIR source directory, if one wasn't distributed..
-# For multiarch targets, use the plat-linux/regen script.
 $(srcdir)/Lib/$(PLATDIR):
 	mkdir $(srcdir)/Lib/$(PLATDIR)
-	if [ -n "$(MULTIARCH)" ]; then \
-	  cp $(srcdir)/Lib/plat-linux/regen $(srcdir)/Lib/$(PLATDIR)/regen; \
-	else \
-	  cp $(srcdir)/Lib/plat-generic/regen $(srcdir)/Lib/$(PLATDIR)/regen; \
-	fi; \
-	export PATH; PATH="`pwd`:$$PATH"; \
-	export PYTHONPATH; PYTHONPATH="`pwd`/Lib"; \
-	export DYLD_FRAMEWORK_PATH; DYLD_FRAMEWORK_PATH="`pwd`"; \
-	export EXE; EXE="$(BUILDEXE)"; \
-	export CC; CC="$(CC)"; \
-	if [ -n "$(MULTIARCH)" ]; then export MULTIARCH; MULTIARCH=$(MULTIARCH); fi; \
-	export PYTHON_FOR_BUILD; \
-	if [ "$(BUILD_GNU_TYPE)" = "$(HOST_GNU_TYPE)" ]; then \
-	  PYTHON_FOR_BUILD="$(BUILDPYTHON)"; \
-	else \
-	  PYTHON_FOR_BUILD="$(PYTHON_FOR_BUILD)"; \
-	fi; \
-	export H2PY; H2PY="$$PYTHON_FOR_BUILD $(abs_srcdir)/Tools/scripts/h2py.py"; \
-	cd $(srcdir)/Lib/$(PLATDIR); $(RUNSHARED) ./regen
 
 python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 	# Substitution happens here, as the completely-expanded BINDIR
@@ -1657,7 +1636,6 @@ funny:
 		-o -name '*.tmSnippet' \
 		-o -name 'Setup' \
 		-o -name 'Setup.*' \
-		-o -name regen \
 		-o -name README \
 		-o -name NEWS \
 		-o -name HISTORY \
