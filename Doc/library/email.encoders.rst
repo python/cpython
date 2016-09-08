@@ -8,6 +8,12 @@
 
 --------------
 
+This module is part of the legacy (``Compat32``) email API.  In the
+new API the functionality is provided by the *cte* parameter of
+the :meth:`~email.message.EmailMessage.set_content` method.
+
+The remaining text in this section is the original documentation of the module.
+
 When creating :class:`~email.message.Message` objects from scratch, you often
 need to encode the payloads for transport through compliant mail servers. This
 is especially true for :mimetype:`image/\*` and :mimetype:`text/\*` type messages

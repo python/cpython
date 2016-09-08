@@ -8,7 +8,43 @@
 
 --------------
 
-There are several useful utilities provided in the :mod:`email.utils` module:
+There are a couple of useful utilities provided in the :mod:`email.utils`
+module:
+
+.. function:: localtime(dt=None)
+
+    Return local time as an aware datetime object.  If called without
+    arguments, return current time.  Otherwise *dt* argument should be a
+    :class:`~datetime.datetime` instance, and it is converted to the local time
+    zone according to the system time zone database.  If *dt* is naive (that
+    is, ``dt.tzinfo`` is ``None``), it is assumed to be in local time.  In this
+    case, a positive or zero value for *isdst* causes ``localtime`` to presume
+    initially that summer time (for example, Daylight Saving Time) is or is not
+    (respectively) in effect for the specified time.  A negative value for
+    *isdst* causes the ``localtime`` to attempt to divine whether summer time
+    is in effect for the specified time.
+
+    .. versionadded:: 3.3
+
+
+.. function:: make_msgid(idstring=None, domain=None)
+
+   Returns a string suitable for an :rfc:`2822`\ -compliant
+   :mailheader:`Message-ID` header.  Optional *idstring* if given, is a string
+   used to strengthen the uniqueness of the message id.  Optional *domain* if
+   given provides the portion of the msgid after the '@'.  The default is the
+   local hostname.  It is not normally necessary to override this default, but
+   may be useful certain cases, such as a constructing distributed system that
+   uses a consistent domain name across multiple hosts.
+
+   .. versionchanged:: 3.2
+      Added the *domain* keyword.
+
+
+The remaining functions are part of the legacy (``Compat32``) email API.  There
+is no need to directly use these with the new API, since the parsing and
+formatting they provide is done automatically by the header parsing machinery
+of the new API.
 
 
 .. function:: quote(str)
@@ -139,36 +175,6 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    date headers.
 
    .. versionadded:: 3.3
-
-
-.. function:: localtime(dt=None)
-
-    Return local time as an aware datetime object.  If called without
-    arguments, return current time.  Otherwise *dt* argument should be a
-    :class:`~datetime.datetime` instance, and it is converted to the local time
-    zone according to the system time zone database.  If *dt* is naive (that
-    is, ``dt.tzinfo`` is ``None``), it is assumed to be in local time.  In this
-    case, a positive or zero value for *isdst* causes ``localtime`` to presume
-    initially that summer time (for example, Daylight Saving Time) is or is not
-    (respectively) in effect for the specified time.  A negative value for
-    *isdst* causes the ``localtime`` to attempt to divine whether summer time
-    is in effect for the specified time.
-
-    .. versionadded:: 3.3
-
-
-.. function:: make_msgid(idstring=None, domain=None)
-
-   Returns a string suitable for an :rfc:`2822`\ -compliant
-   :mailheader:`Message-ID` header.  Optional *idstring* if given, is a string
-   used to strengthen the uniqueness of the message id.  Optional *domain* if
-   given provides the portion of the msgid after the '@'.  The default is the
-   local hostname.  It is not normally necessary to override this default, but
-   may be useful certain cases, such as a constructing distributed system that
-   uses a consistent domain name across multiple hosts.
-
-   .. versionchanged:: 3.2
-      Added the *domain* keyword.
 
 
 .. function:: decode_rfc2231(s)
