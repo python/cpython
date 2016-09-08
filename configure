@@ -1500,7 +1500,7 @@ Optional Packages:
                           compiler
   --with-suffix=.exe      set executable suffix
   --with-pydebug          build with Py_DEBUG defined
-  --with-optimizations    Enable all optimizations when available (LTO, PGO,
+  --with-optimizations    Enable expensive optimizations (PGO, maybe LTO,
                           etc). Disabled by default.
   --with-lto              Enable Link Time Optimization in PGO builds.
                           Disabled by default.
@@ -6423,12 +6423,10 @@ $as_echo "no" >&6; }
 fi
 
 if test "$Py_OPT" = 'true' ; then
-  case $ac_sys_system in
-    Darwin*)
-      # At least on macOS El Capitan, LTO does not work with PGO.
-      Py_LTO='false'
-      ;;
-  esac
+  # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
+  # compile working code using it and both test_distutils and test_gdb are
+  # broken when you do managed to get a toolchain that works with it.  People
+  # who want LTO need to use --with-lto themselves.
   Py_LTO='true'
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"

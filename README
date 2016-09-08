@@ -175,8 +175,8 @@ top level directory.
 
 To get an optimized build of Python, "configure --with-optimizations" before
 you run make.  This sets the default make targets up to enable Profile Guided
-Optimization (PGO) and Link Time Optimization (LTO) on most platforms.
-For more details, see the sections bellow.
+Optimization (PGO) and may be used to auto-enable Link Time Optimization (LTO)
+on some platforms.  For more details, see the sections bellow.
 
 Once you have built a Python interpreter, see the subsections below on
 testing and installation.  If you run into trouble, see the next
@@ -217,9 +217,10 @@ that is optimized and suitable for distribution or production installation.
 Link Time Optimization
 ----------------------
 
-LTO takes advantages of recent compiler toolchains ability to optimize across
-the otherwise arbitrary .o file boundary when building final executables or
-shared libraries for additional performance gains.
+Enabled via configure's --with-lto flag.  LTO takes advantages of recent
+compiler toolchains ability to optimize across the otherwise arbitrary .o file
+boundary when building final executables or shared libraries for additional
+performance gains.
 
 
 Troubleshooting
