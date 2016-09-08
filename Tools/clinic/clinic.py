@@ -2581,21 +2581,21 @@ class unsigned_long_converter(CConverter):
         if not bitwise:
             fail("Unsigned longs must be bitwise (for now).")
 
-class PY_LONG_LONG_converter(CConverter):
-    type = 'PY_LONG_LONG'
+class long_long_converter(CConverter):
+    type = 'long long'
     default_type = int
     format_unit = 'L'
     c_ignored_default = "0"
 
-class unsigned_PY_LONG_LONG_converter(CConverter):
-    type = 'unsigned PY_LONG_LONG'
+class unsigned_long_long_converter(CConverter):
+    type = 'unsigned long long'
     default_type = int
     format_unit = 'K'
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
         if not bitwise:
-            fail("Unsigned PY_LONG_LONGs must be bitwise (for now).")
+            fail("Unsigned long long must be bitwise (for now).")
 
 class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
