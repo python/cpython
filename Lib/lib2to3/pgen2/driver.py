@@ -106,16 +106,19 @@ class Driver(object):
         return self.parse_tokens(tokens, debug)
 
 
+def _generate_pickle_name(gt):
+    head, tail = os.path.splitext(gt)
+    if tail == ".txt":
+        tail = ""
+    return head + tail + ".".join(map(str, sys.version_info)) + ".pickle"
+
+
 def load_grammar(gt="Grammar.txt", gp=None,
                  save=True, force=False, logger=None):
     """Load the grammar (maybe from a pickle)."""
     if logger is None:
         logger = logging.getLogger()
-    if gp is None:
-        head, tail = os.path.splitext(gt)
-        if tail == ".txt":
-            tail = ""
-        gp = head + tail + ".".join(map(str, sys.version_info)) + ".pickle"
+    gp = _generate_pickle_name(gt) if gp is None else gp
     if force or not _newer(gp, gt):
         logger.info("Generating grammar tables from %s", gt)
         g = pgen.generate_grammar(gt)
@@ -123,8 +126,8 @@ def load_grammar(gt="Grammar.txt", gp=None,
             logger.info("Writing grammar tables to %s", gp)
             try:
                 g.dump(gp)
-            except IOError, e:
-                logger.info("Writing failed:"+str(e))
+            except IOError as e:
+                logger.info("Writing failed: %s", e)
     else:
         g = grammar.Grammar()
         g.load(gp)

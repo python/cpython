@@ -6,17 +6,20 @@ parts of the grammar we've changed, we also make sure we can parse the
 test_grammar.py files from both Python 2 and Python 3.
 """
 
-from __future__ import with_statement
-
 # Testing imports
 from . import support
 from .support import driver, test_dir
 
 # Python imports
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
+import unittest
 
 # Local imports
+from lib2to3.pgen2 import driver as pgen2_driver
 from lib2to3.pgen2 import tokenize
 from ..pgen2.parse import ParseError
 from lib2to3.pygram import python_symbols as syms
@@ -29,6 +32,71 @@ class TestDriver(support.TestCase):
         t = driver.parse_string(s)
         self.assertEqual(t.children[0].children[0].type, syms.print_stmt)
         self.assertEqual(t.children[1].children[0].type, syms.print_stmt)
+
+
+class TestPgen2Caching(support.TestCase):
+    def test_load_grammar_from_txt_file(self):
+        pgen2_driver.load_grammar(support.grammar_path, save=False, force=True)
+
+    def test_load_grammar_from_pickle(self):
+        # Make a copy of the grammar file in a temp directory we are
+        # guaranteed to be able to write to.
+        tmpdir = tempfile.mkdtemp()
+        try:
+            grammar_copy = os.path.join(
+                    tmpdir, os.path.basename(support.grammar_path))
+            shutil.copy(support.grammar_path, grammar_copy)
+            pickle_name = pgen2_driver._generate_pickle_name(grammar_copy)
+
+            pgen2_driver.load_grammar(grammar_copy, save=True, force=True)
+            self.assertTrue(os.path.exists(pickle_name))
+
+            os.unlink(grammar_copy)  # Only the pickle remains...
+            pgen2_driver.load_grammar(grammar_copy, save=False, force=False)
+        finally:
+            shutil.rmtree(tmpdir)
+
+    @unittest.skipIf(sys.executable is None, 'sys.executable required')
+    def test_load_grammar_from_subprocess(self):
+        tmpdir = tempfile.mkdtemp()
+        tmpsubdir = os.path.join(tmpdir, 'subdir')
+        try:
+            os.mkdir(tmpsubdir)
+            grammar_base = os.path.basename(support.grammar_path)
+            grammar_copy = os.path.join(tmpdir, grammar_base)
+            grammar_sub_copy = os.path.join(tmpsubdir, grammar_base)
+            shutil.copy(support.grammar_path, grammar_copy)
+            shutil.copy(support.grammar_path, grammar_sub_copy)
+            pickle_name = pgen2_driver._generate_pickle_name(grammar_copy)
+            pickle_sub_name = pgen2_driver._generate_pickle_name(
+                     grammar_sub_copy)
+            self.assertNotEqual(pickle_name, pickle_sub_name)
+
+            # Generate a pickle file from this process.
+            pgen2_driver.load_grammar(grammar_copy, save=True, force=True)
+            self.assertTrue(os.path.exists(pickle_name))
+
+            # Generate a new pickle file in a subprocess with a most likely
+            # different hash randomization seed.
+            sub_env = dict(os.environ)
+            sub_env['PYTHONHASHSEED'] = 'random'
+            subprocess.check_call(
+                    [sys.executable, '-c', """
+from lib2to3.pgen2 import driver as pgen2_driver
+pgen2_driver.load_grammar(%r, save=True, force=True)
+                    """ % (grammar_sub_copy,)],
+                    env=sub_env)
+            self.assertTrue(os.path.exists(pickle_sub_name))
+
+            with open(pickle_name, 'rb') as pickle_f_1, \
+                    open(pickle_sub_name, 'rb') as pickle_f_2:
+                self.assertEqual(
+                    pickle_f_1.read(), pickle_f_2.read(),
+                    msg='Grammar caches generated using different hash seeds'
+                    ' were not identical.')
+        finally:
+            shutil.rmtree(tmpdir)
+
 
 
 class GrammarTest(support.TestCase):

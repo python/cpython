@@ -38,6 +38,10 @@ Core and Builtins
 Library
 -------
 
+- lib2to3.pgen3.driver.load_grammar() now creates a stable cache file
+  between runs given the same Grammar.txt input regardless of the hash
+  randomization setting.
+
 - Issue #27691: Fix ssl module's parsing of GEN_RID subject alternative name
   fields in X.509 certs.
 
