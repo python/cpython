@@ -662,6 +662,11 @@ SO
 LIBTOOL_CRUFT
 OTHER_LIBTOOL_OPT
 LLVM_PROF_FOUND
+target_os
+target_vendor
+target_cpu
+target
+LLVM_PROFDATA
 LLVM_PROF_ERR
 LLVM_PROF_FILE
 LLVM_PROF_MERGER
@@ -1451,6 +1456,7 @@ _ACEOF
 System types:
   --build=BUILD     configure for building on BUILD [guessed]
   --host=HOST       cross-compile to build programs to run on HOST [BUILD]
+  --target=TARGET   configure for building compilers for TARGET [HOST]
 _ACEOF
 fi
 
@@ -6425,9 +6431,11 @@ if test "$Py_OPT" = 'true' ; then
   esac
   Py_LTO='true'
   DEF_MAKE_ALL_RULE="profile-opt"
+  REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
 else
   DEF_MAKE_ALL_RULE="build_all"
+  REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
 fi
 
@@ -6481,25 +6489,84 @@ fi
 
 
 
+# Make this work on systems where llvm tools are not installed with their
+# normal names in the default $PATH (ie: Ubuntu).  They exist under the
+# non-suffixed name in their versioned llvm directory.
+llvm_bin_dir=''
+llvm_path="${PATH}"
+if test "${CC}" = "clang"
+then
+  clang_bin=`which clang`
+  # Some systems install clang elsewhere as a symlink to the real path
+  # which is where the related llvm tools are located.
+  if test -L "${clang_bin}"
+  then
+    clang_dir=`dirname "${clang_bin}"`
+    clang_bin=`readlink "${clang_bin}"`
+    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
+    llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
+  fi
+fi
 
-# Extract the first word of "llvm-profdata", so it can be a program name with args.
-set dummy llvm-profdata; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_LLVM_PROF_FOUND+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking target system type" >&5
+$as_echo_n "checking target system type... " >&6; }
+if ${ac_cv_target+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test -n "$LLVM_PROF_FOUND"; then
-  ac_cv_prog_LLVM_PROF_FOUND="$LLVM_PROF_FOUND" # Let the user override the test.
+  if test "x$target_alias" = x; then
+  ac_cv_target=$ac_cv_host
 else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
+  ac_cv_target=`$SHELL "$ac_aux_dir/config.sub" $target_alias` ||
+    as_fn_error $? "$SHELL $ac_aux_dir/config.sub $target_alias failed" "$LINENO" 5
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_target" >&5
+$as_echo "$ac_cv_target" >&6; }
+case $ac_cv_target in
+*-*-*) ;;
+*) as_fn_error $? "invalid value of canonical target" "$LINENO" 5;;
+esac
+target=$ac_cv_target
+ac_save_IFS=$IFS; IFS='-'
+set x $ac_cv_target
+shift
+target_cpu=$1
+target_vendor=$2
+shift; shift
+# Remember, the first character of IFS is used to create $*,
+# except with old shells:
+target_os=$*
+IFS=$ac_save_IFS
+case $target_os in *\ *) target_os=`echo "$target_os" | sed 's/ /-/g'`;; esac
+
+
+# The aliases save the names the user supplied, while $host etc.
+# will get canonicalized.
+test -n "$target_alias" &&
+  test "$program_prefix$program_suffix$program_transform_name" = \
+    NONENONEs,x,x, &&
+  program_prefix=${target_alias}-
+# Extract the first word of "$target_alias-llvm-profdata", so it can be a program name with args.
+set dummy $target_alias-llvm-profdata; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LLVM_PROFDATA+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LLVM_PROFDATA in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LLVM_PROFDATA="$LLVM_PROFDATA" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in ${llvm_path}
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_LLVM_PROF_FOUND="found"
+    ac_cv_path_LLVM_PROFDATA="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -6507,30 +6574,105 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_prog_LLVM_PROF_FOUND" && ac_cv_prog_LLVM_PROF_FOUND="not-found"
+  ;;
+esac
 fi
-fi
-LLVM_PROF_FOUND=$ac_cv_prog_LLVM_PROF_FOUND
-if test -n "$LLVM_PROF_FOUND"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LLVM_PROF_FOUND" >&5
-$as_echo "$LLVM_PROF_FOUND" >&6; }
+LLVM_PROFDATA=$ac_cv_path_LLVM_PROFDATA
+if test -n "$LLVM_PROFDATA"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LLVM_PROFDATA" >&5
+$as_echo "$LLVM_PROFDATA" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
+if test -z "$ac_cv_path_LLVM_PROFDATA"; then
+  if test "$build" = "$target"; then
+    ac_pt_LLVM_PROFDATA=$LLVM_PROFDATA
+    # Extract the first word of "llvm-profdata", so it can be a program name with args.
+set dummy llvm-profdata; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_LLVM_PROFDATA+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_LLVM_PROFDATA in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_LLVM_PROFDATA="$ac_pt_LLVM_PROFDATA" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in ${llvm_path}
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_LLVM_PROFDATA="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_ac_pt_LLVM_PROFDATA" && ac_cv_path_ac_pt_LLVM_PROFDATA="''"
+  ;;
+esac
+fi
+ac_pt_LLVM_PROFDATA=$ac_cv_path_ac_pt_LLVM_PROFDATA
+if test -n "$ac_pt_LLVM_PROFDATA"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_LLVM_PROFDATA" >&5
+$as_echo "$ac_pt_LLVM_PROFDATA" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+    LLVM_PROFDATA=$ac_pt_LLVM_PROFDATA
+  else
+    LLVM_PROFDATA="''"
+  fi
+else
+  LLVM_PROFDATA="$ac_cv_path_LLVM_PROFDATA"
+fi
+
+
+if test -n "${LLVM_PROFDATA}" -a -x "${LLVM_PROFDATA}"
+then
+  LLVM_PROF_FOUND="found"
+else
+  LLVM_PROF_FOUND="not-found"
+fi
+if test "$ac_sys_system" = "Darwin" -a "${LLVM_PROF_FOUND}" = "not-found"
+then
+  found_llvm_profdata=`/usr/bin/xcrun -find llvm-profdata 2>/dev/null`
+  if test -n "${found_llvm_profdata}"
+  then
+    # llvm-profdata isn't directly in $PATH in some cases.
+    # https://apple.stackexchange.com/questions/197053/
+    LLVM_PROFDATA='/usr/bin/xcrun llvm-profdata'
+    LLVM_PROF_FOUND=found
+    { $as_echo "$as_me:${as_lineno-$LINENO}: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&5
+$as_echo "$as_me: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&6;}
+  fi
+fi
 LLVM_PROF_ERR=no
 case $CC in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
     PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-    LLVM_PROF_MERGER="llvm-profdata merge -output=code.profclangd *.profclangr"
+    LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
     LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
+      if test "${REQUIRE_PGO}" = "yes"
+      then
+        as_fn_error $? "llvm-profdata is required for a --with-optimizations build but could not be found." "$LINENO" 5
+      fi
     fi
     ;;
   *gcc*)
@@ -6538,11 +6680,15 @@ case $CC in
       Darwin*)
         PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
         PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-        LLVM_PROF_MERGER="llvm-profdata merge -output=code.profclangd *.profclangr"
+        LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
         LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
-        if test $LLVM_PROF_FOUND = not-found
+        if test "${LLVM_PROF_FOUND}" = "not-found"
         then
           LLVM_PROF_ERR=yes
+          if test "${REQUIRE_PGO}" = "yes"
+	  then
+	    as_fn_error $? "llvm-profdata is required for a --with-optimizations build but could not be found." "$LINENO" 5
+	  fi
         fi
         ;;
       *)

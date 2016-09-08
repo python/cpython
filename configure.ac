@@ -1405,9 +1405,11 @@ if test "$Py_OPT" = 'true' ; then
   esac
   Py_LTO='true'
   DEF_MAKE_ALL_RULE="profile-opt"
+  REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
 else
   DEF_MAKE_ALL_RULE="build_all"
+  REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
 fi
 
@@ -1452,19 +1454,60 @@ AC_SUBST(PGO_PROF_USE_FLAG)
 AC_SUBST(LLVM_PROF_MERGER)
 AC_SUBST(LLVM_PROF_FILE)
 AC_SUBST(LLVM_PROF_ERR)
+# Make this work on systems where llvm tools are not installed with their
+# normal names in the default $PATH (ie: Ubuntu).  They exist under the
+# non-suffixed name in their versioned llvm directory.
+llvm_bin_dir=''
+llvm_path="${PATH}"
+if test "${CC}" = "clang"
+then
+  clang_bin=`which clang`
+  # Some systems install clang elsewhere as a symlink to the real path
+  # which is where the related llvm tools are located.
+  if test -L "${clang_bin}"
+  then
+    clang_dir=`dirname "${clang_bin}"`
+    clang_bin=`readlink "${clang_bin}"`
+    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
+    llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
+  fi
+fi
+AC_SUBST(LLVM_PROFDATA)
+AC_PATH_TARGET_TOOL(LLVM_PROFDATA, llvm-profdata, '', ${llvm_path})
 AC_SUBST(LLVM_PROF_FOUND)
-AC_CHECK_PROG(LLVM_PROF_FOUND, llvm-profdata, found, not-found)
+if test -n "${LLVM_PROFDATA}" -a -x "${LLVM_PROFDATA}"
+then
+  LLVM_PROF_FOUND="found"
+else
+  LLVM_PROF_FOUND="not-found"
+fi
+if test "$ac_sys_system" = "Darwin" -a "${LLVM_PROF_FOUND}" = "not-found"
+then
+  found_llvm_profdata=`/usr/bin/xcrun -find llvm-profdata 2>/dev/null`
+  if test -n "${found_llvm_profdata}"
+  then
+    # llvm-profdata isn't directly in $PATH in some cases.
+    # https://apple.stackexchange.com/questions/197053/
+    LLVM_PROFDATA='/usr/bin/xcrun llvm-profdata'
+    LLVM_PROF_FOUND=found
+    AC_MSG_NOTICE([llvm-profdata found via xcrun: ${LLVM_PROFDATA}])
+  fi
+fi
 LLVM_PROF_ERR=no
 case $CC in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
     PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-    LLVM_PROF_MERGER="llvm-profdata merge -output=code.profclangd *.profclangr"
+    LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
     LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
+      if test "${REQUIRE_PGO}" = "yes"
+      then
+        AC_MSG_ERROR([llvm-profdata is required for a --with-optimizations build but could not be found.])
+      fi
     fi
     ;;
   *gcc*)
@@ -1472,11 +1515,15 @@ case $CC in
       Darwin*)
         PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
         PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-        LLVM_PROF_MERGER="llvm-profdata merge -output=code.profclangd *.profclangr"
+        LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
         LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
-        if test $LLVM_PROF_FOUND = not-found
+        if test "${LLVM_PROF_FOUND}" = "not-found"
         then
           LLVM_PROF_ERR=yes
+          if test "${REQUIRE_PGO}" = "yes"
+	  then
+	    AC_MSG_ERROR([llvm-profdata is required for a --with-optimizations build but could not be found.])
+	  fi
         fi
         ;;
       *)
