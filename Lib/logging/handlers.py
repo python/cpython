@@ -1,4 +1,4 @@
-# Copyright 2001-2015 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2016 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Additional handlers for the logging package for Python. The core package is
 based on PEP 282 and comments thereto in comp.lang.python.
 
-Copyright (C) 2001-2015 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging.handlers' and log away!
 """
@@ -1366,7 +1366,6 @@ if threading:
             """
             self.queue = queue
             self.handlers = handlers
-            self._stop = threading.Event()
             self._thread = None
             self.respect_handler_level = respect_handler_level
 
@@ -1387,7 +1386,7 @@ if threading:
             LogRecords to process.
             """
             self._thread = t = threading.Thread(target=self._monitor)
-            t.setDaemon(True)
+            t.daemon = True
             t.start()
 
         def prepare(self , record):
@@ -1426,20 +1425,9 @@ if threading:
             """
             q = self.queue
             has_task_done = hasattr(q, 'task_done')
-            while not self._stop.isSet():
-                try:
-                    record = self.dequeue(True)
-                    if record is self._sentinel:
-                        break
-                    self.handle(record)
-                    if has_task_done:
-                        q.task_done()
-                except queue.Empty:
-                    pass
-            # There might still be records in the queue.
             while True:
                 try:
-                    record = self.dequeue(False)
+                    record = self.dequeue(True)
                     if record is self._sentinel:
                         break
                     self.handle(record)
@@ -1466,7 +1454,6 @@ if threading:
             Note that if you don't call this before your application exits, there
             may be some records still left on the queue, which won't be processed.
             """
-            self._stop.set()
             self.enqueue_sentinel()
             self._thread.join()
             self._thread = None
