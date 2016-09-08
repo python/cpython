@@ -25,24 +25,36 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertFalse(issubclass(ConIO, io.TextIOBase))
 
     def test_open_fd(self):
-        if sys.stdin.fileno() == 0:
+        try:
             f = ConIO(0)
+        except ValueError:
+            # cannot open console because it's not a real console
+            pass
+        else:
             self.assertTrue(f.readable())
             self.assertFalse(f.writable())
             self.assertEqual(0, f.fileno())
             f.close()   # multiple close should not crash
             f.close()
 
-        if sys.stdout.fileno() == 1:
+        try:
             f = ConIO(1, 'w')
+        except ValueError:
+            # cannot open console because it's not a real console
+            pass
+        else:
             self.assertFalse(f.readable())
             self.assertTrue(f.writable())
             self.assertEqual(1, f.fileno())
             f.close()
             f.close()
 
-        if sys.stderr.fileno() == 2:
+        try:
             f = ConIO(2, 'w')
+        except ValueError:
+            # cannot open console because it's not a real console
+            pass
+        else:
             self.assertFalse(f.readable())
             self.assertTrue(f.writable())
             self.assertEqual(2, f.fileno())
