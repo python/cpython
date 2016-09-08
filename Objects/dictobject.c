@@ -802,7 +802,8 @@ lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
         return DKIX_EMPTY;
     }
     ep = &ep0[ix];
-    assert(ep->me_key != NULL && PyUnicode_CheckExact(ep->me_key));
+    assert(ep->me_key != NULL);
+    assert(PyUnicode_CheckExact(ep->me_key));
     if (ep->me_key == key ||
         (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
         if (hashpos != NULL)
