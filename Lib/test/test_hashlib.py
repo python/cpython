@@ -20,6 +20,7 @@ import unittest
 import warnings
 from test import support
 from test.support import _4G, bigmemtest, import_fresh_module
+from http.client import HTTPException
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
@@ -54,8 +55,13 @@ def hexstr(s):
 URL = "http://www.pythontest.net/hashlib/{}.txt"
 
 def read_vectors(hash_name):
-    with support.open_urlresource(URL.format(hash_name)) as f:
-        for line in f:
+    url = URL.format(hash_name)
+    try:
+        testdata = support.open_urlresource(url)
+    except (OSError, HTTPException):
+        raise unittest.SkipTest("Could not retrieve {}".format(url))
+    with testdata:
+        for line in testdata:
             line = line.strip()
             if line.startswith('#') or not line:
                 continue
