@@ -108,6 +108,8 @@ Library
 
 - Issue #28005: Allow ImportErrors in encoding implementation to propagate.
 
+- Issue #26667: Support path-like objects in importlib.util.
+
 - Issue #27570: Avoid zero-length memcpy() etc calls with null source
   pointers in the "ctypes" and "array" modules.
 
@@ -237,7 +239,7 @@ Library
 - Issue #27930: Improved behaviour of logging.handlers.QueueListener.
   Thanks to Paulo Andrade and Petr Viktorin for the analysis and patch.
 
-- Issue #6766: Distributed reference counting added to multiprocessing 
+- Issue #6766: Distributed reference counting added to multiprocessing
   to support nesting of shared values / proxy objects.
 
 C API

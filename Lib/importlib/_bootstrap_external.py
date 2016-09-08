@@ -279,6 +279,7 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
             message = 'debug_override or optimization must be set to None'
             raise TypeError(message)
         optimization = '' if debug_override else 1
+    path = _os.fspath(path)
     head, tail = _path_split(path)
     base, sep, rest = tail.rpartition('.')
     tag = sys.implementation.cache_tag
@@ -309,6 +310,7 @@ def source_from_cache(path):
     """
     if sys.implementation.cache_tag is None:
         raise NotImplementedError('sys.implementation.cache_tag is None')
+    path = _os.fspath(path)
     head, pycache_filename = _path_split(path)
     head, pycache = _path_split(head)
     if pycache != _PYCACHE:
@@ -536,6 +538,8 @@ def spec_from_file_location(name, location=None, *, loader=None,
                 location = loader.get_filename(name)
             except ImportError:
                 pass
+    else:
+        location = _os.fspath(location)
 
     # If the location is on the filesystem, but doesn't actually exist,
     # we could return None here, indicating that the location is not

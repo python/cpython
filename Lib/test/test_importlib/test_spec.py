@@ -5,6 +5,7 @@ machinery = test_util.import_importlib('importlib.machinery')
 util = test_util.import_importlib('importlib.util')
 
 import os.path
+import pathlib
 from test.support import CleanImport
 import unittest
 import sys
@@ -658,6 +659,11 @@ class FactoryTests:
         self.assertIs(spec.submodule_search_locations, None)
         self.assertEqual(spec.cached, self.cached)
         self.assertTrue(spec.has_location)
+
+    def test_spec_from_file_location_path_like_arg(self):
+        spec = self.util.spec_from_file_location(self.name,
+                                                 pathlib.PurePath(self.path))
+        self.assertEqual(spec.origin, self.path)
 
     def test_spec_from_file_location_default_without_location(self):
         spec = self.util.spec_from_file_location(self.name)
