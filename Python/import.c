@@ -2243,8 +2243,10 @@ import_module_level(char *name, PyObject *globals, PyObject *locals,
     if (parent == NULL)
         goto error_exit;
 
+    Py_INCREF(parent);
     head = load_next(parent, level < 0 ? Py_None : parent, &name, buf,
                         &buflen);
+    Py_DECREF(parent);
     if (head == NULL)
         goto error_exit;
 

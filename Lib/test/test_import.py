@@ -397,6 +397,24 @@ class ImportTests(unittest.TestCase):
         finally:
             sys.path.pop(0)
 
+    def test_replace_parent_in_sys_modules(self):
+        dir_name = os.path.abspath(TESTFN)
+        os.mkdir(dir_name)
+        try:
+            pkg_dir = os.path.join(dir_name, 'sa')
+            os.mkdir(pkg_dir)
+            with open(os.path.join(pkg_dir, '__init__.py'), 'w') as init_file:
+                init_file.write("import v1")
+            with open(os.path.join(pkg_dir, 'v1.py'), 'w') as v1_file:
+                v1_file.write("import sys;"
+                              "sys.modules['sa'] = sys.modules[__name__];"
+                              "import sa")
+            sys.path.insert(0, dir_name)
+            # a segfault means the test failed!
+            import sa
+        finally:
+            rmtree(dir_name)
+
 
 class PycRewritingTests(unittest.TestCase):
     # Test that the `co_filename` attribute on code objects always points

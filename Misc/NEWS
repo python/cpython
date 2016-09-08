@@ -7082,6 +7082,8 @@ Core and Builtins
 
 - Add Py3k warnings for parameter names in parentheses.
 
+- Issue #15578: Correctly incref the parent module while importing.
+
 - Issue #7362: Give a proper error message for ``def f((x)=3): pass``.
 
 - Issue #7085: Fix crash when importing some extensions in a thread on MacOSX
