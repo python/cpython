@@ -531,12 +531,16 @@ the legacy API.  (Contributed by R. David Murray in :issue:`24277`.)
 The :mod:`email.mime` classes now all accept an optional *policy* keyword.
 (Contributed by Berker Peksag in :issue:`27331`.)
 
+The :class:`~email.generator.DecodedGenerator` now supports the *policy*
+keyword.
+
 
 encodings
 ---------
 
 On Windows, added the ``'oem'`` encoding to use ``CP_OEMCP`` and the ``'ansi'``
 alias for the existing ``'mbcs'`` encoding, which uses the ``CP_ACP`` code page.
+
 
 faulthandler
 ------------

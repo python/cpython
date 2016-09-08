@@ -452,7 +452,8 @@ class DecodedGenerator(Generator):
     Like the Generator base class, except that non-text parts are substituted
     with a format string representing the part.
     """
-    def __init__(self, outfp, mangle_from_=None, maxheaderlen=78, fmt=None):
+    def __init__(self, outfp, mangle_from_=None, maxheaderlen=None, fmt=None, *,
+                 policy=None):
         """Like Generator.__init__() except that an additional optional
         argument is allowed.
 
@@ -474,7 +475,8 @@ class DecodedGenerator(Generator):
 
         [Non-text (%(type)s) part of message omitted, filename %(filename)s]
         """
-        Generator.__init__(self, outfp, mangle_from_, maxheaderlen)
+        Generator.__init__(self, outfp, mangle_from_, maxheaderlen,
+                           policy=policy)
         if fmt is None:
             self._fmt = _FMT
         else:
