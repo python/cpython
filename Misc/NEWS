@@ -218,6 +218,9 @@ Library
 - Issue #27392: Add loop.connect_accepted_socket().
   Patch by Jim Fulton.
 
+- Issue #27930: Improved behaviour of logging.handlers.QueueListener.
+  Thanks to Paulo Andrade and Petr Viktorin for the analysis and patch.
+
 IDLE
 ----
 
