@@ -371,9 +371,7 @@ added matters.  To illustrate::
    In addition to the settable attributes listed above that apply to all
    policies, this policy adds the following additional attributes:
 
-   .. versionadded:: 3.3 as a :term:`provisional feature <provisional package>`.
-
-   .. versionchanged:: 3.6 provisional status removed.
+   .. versionadded:: 3.6 [1]_
 
 
    .. attribute:: utf8
@@ -634,3 +632,9 @@ The header objects and their attributes are described in
 
    An instance of :class:`Compat32`, providing  backward compatibility with the
    behavior of the email package in Python 3.2.
+
+
+.. rubric:: Footnotes
+
+.. [1] Oringally added in 3.3 as a :term:`provisional feature <provisional
+       package>`.

@@ -97,6 +97,11 @@ can be useful tools.  This documentation is also relevant for applications that
 are still using the :mod:`~email.policy.compat32` API for backward
 compatibility reasons.
 
+.. versionchanged:: 3.6
+   Docs reorganized and rewritten to promote the new
+   :class:`~email.message.EmailMessage`/:class:`~email.policy.EmailPolicy`
+   API.
+
 Contents of the :mod:`email` package documentation:
 
 .. toctree::
@@ -111,6 +116,10 @@ Contents of the :mod:`email` package documentation:
    email.contentmanager.rst
 
    email.examples.rst
+
+Legacy API:
+
+.. toctree::
 
    email.compat32-message.rst
    email.mime.rst

@@ -11,9 +11,7 @@
 
 --------------
 
-.. versionadded:: 3.3 as a :term:`provisional module <provisional package>`.
-
-.. versionchanged:: 3.6 provisonal status removed.
+.. versionadded:: 3.6 [1]_
 
 Headers are represented by customized subclasses of :class:`str`.  The
 particular class used to represent a given header is determined by the
@@ -449,3 +447,9 @@ construct structured values to assign to specific headers.
       ``display_name`` is none and there is a single ``Address`` in the
       ``addresses`` list, the ``str`` value will be the same as the ``str`` of
       that single ``Address``.
+
+
+.. rubric:: Footnotes
+
+.. [1] Oringally added in 3.3 as a :term:`provisional module <provisional
+       package>`
