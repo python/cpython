@@ -48,7 +48,6 @@ static size_t method_cache_collisions = 0;
 _Py_IDENTIFIER(__abstractmethods__);
 _Py_IDENTIFIER(__class__);
 _Py_IDENTIFIER(__delitem__);
-_Py_IDENTIFIER(__definition_order__);
 _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__doc__);
 _Py_IDENTIFIER(__getattribute__);
@@ -490,23 +489,6 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
 }
 
 static PyObject *
-type_deforder(PyTypeObject *type, void *context)
-{
-    if (type->tp_deforder == NULL)
-        Py_RETURN_NONE;
-    Py_INCREF(type->tp_deforder);
-    return type->tp_deforder;
-}
-
-static int
-type_set_deforder(PyTypeObject *type, PyObject *value, void *context)
-{
-    Py_XINCREF(value);
-    Py_XSETREF(type->tp_deforder, value);
-    return 0;
-}
-
-static PyObject *
 type_abstractmethods(PyTypeObject *type, void *context)
 {
     PyObject *mod = NULL;
@@ -852,8 +834,6 @@ static PyGetSetDef type_getsets[] = {
     {"__qualname__", (getter)type_qualname, (setter)type_set_qualname, NULL},
     {"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
     {"__module__", (getter)type_module, (setter)type_set_module, NULL},
-    {"__definition_order__", (getter)type_deforder,
-     (setter)type_set_deforder, NULL},
     {"__abstractmethods__", (getter)type_abstractmethods,
      (setter)type_set_abstractmethods, NULL},
     {"__dict__",  (getter)type_dict,  NULL, NULL},
@@ -2371,7 +2351,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    /* Copy the definition namespace into a new dict. */
     dict = PyDict_Copy(orig_dict);
     if (dict == NULL)
         goto error;
@@ -2579,48 +2558,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     Py_INCREF(et->ht_qualname);
     if (qualname != NULL && PyDict_DelItem(dict, PyId___qualname__.object) < 0)
         goto error;
-
-    /* Set tp_deforder to the extracted definition order, if any. */
-    type->tp_deforder = _PyDict_GetItemId(dict, &PyId___definition_order__);
-    if (type->tp_deforder != NULL) {
-        Py_INCREF(type->tp_deforder);
-
-        // Due to subclass lookup, __definition_order__ can't be in __dict__.
-        if (_PyDict_DelItemId(dict, &PyId___definition_order__) != 0) {
-            goto error;
-        }
-
-        if (type->tp_deforder != Py_None) {
-            Py_ssize_t numnames;
-
-            if (!PyTuple_Check(type->tp_deforder)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "__definition_order__ must be a tuple or None");
-                goto error;
-            }
-
-            // Make sure they are identifers.
-            numnames = PyTuple_Size(type->tp_deforder);
-            for (i = 0; i < numnames; i++) {
-                PyObject *name = PyTuple_GET_ITEM(type->tp_deforder, i);
-                if (name == NULL) {
-                    goto error;
-                }
-                if (!PyUnicode_Check(name) || !PyUnicode_IsIdentifier(name)) {
-                    PyErr_Format(PyExc_TypeError,
-                                 "__definition_order__ must "
-                                 "contain only identifiers, got '%s'",
-                                 name);
-                    goto error;
-                }
-            }
-        }
-    }
-    else if (PyODict_Check(orig_dict)) {
-        type->tp_deforder = _PyODict_KeysAsTuple(orig_dict);
-        if (type->tp_deforder == NULL)
-            goto error;
-    }
 
     /* Set tp_doc to a copy of dict['__doc__'], if the latter is there
        and is a string.  The __doc__ accessor will first look for tp_doc;
@@ -3136,7 +3073,6 @@ type_dealloc(PyTypeObject *type)
     Py_XDECREF(type->tp_mro);
     Py_XDECREF(type->tp_cache);
     Py_XDECREF(type->tp_subclasses);
-    Py_XDECREF(type->tp_deforder);
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
      * of most other objects.  It's okay to cast it to char *.
      */
@@ -3179,7 +3115,7 @@ type_subclasses(PyTypeObject *type, PyObject *args_ignored)
 static PyObject *
 type_prepare(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    return PyODict_New();
+    return PyDict_New();
 }
 
 /*

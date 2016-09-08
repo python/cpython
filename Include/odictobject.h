@@ -28,10 +28,6 @@ PyAPI_FUNC(PyObject *) PyODict_New(void);
 PyAPI_FUNC(int) PyODict_SetItem(PyObject *od, PyObject *key, PyObject *item);
 PyAPI_FUNC(int) PyODict_DelItem(PyObject *od, PyObject *key);
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyODict_KeysAsTuple(PyObject *od);
-#endif
-
 /* wrappers around PyDict* functions */
 #define PyODict_GetItem(od, key) PyDict_GetItem((PyObject *)od, key)
 #define PyODict_GetItemWithError(od, key) \

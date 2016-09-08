@@ -1752,13 +1752,6 @@ additional keyword arguments, if any, come from the class definition).
 If the metaclass has no ``__prepare__`` attribute, then the class namespace
 is initialised as an empty ordered mapping.
 
-.. impl-detail::
-
-   In CPython the default is :class:`collections.OrderedDict`.
-
-.. versionchanged:: 3.6
-   Defaults to :class:`collections.OrderedDict` instead of :func:`dict`.
-
 .. seealso::
 
    :pep:`3115` - Metaclasses in Python 3000

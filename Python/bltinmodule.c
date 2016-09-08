@@ -147,7 +147,7 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
     if (prep == NULL) {
         if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
             PyErr_Clear();
-            ns = PyODict_New();
+            ns = PyDict_New();
         }
         else {
             Py_DECREF(meta);

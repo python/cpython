@@ -634,15 +634,9 @@ dictionary.  The class name is bound to this class object in the original local
 namespace.
 
 The order in which attributes are defined in the class body is preserved
-in the ``__definition_order__`` attribute on the new class.  If that order
-is not known then the attribute is set to :const:`None`.  The class body
-may include a ``__definition_order__`` attribute.  In that case it is used
-directly.  The value must be a tuple of identifiers or ``None``, otherwise
-:exc:`TypeError` will be raised when the class statement is executed.
-
-.. versionchanged:: 3.6
-
-   Add ``__definition_order__`` to classes.
+in the new class's ``__dict__``.  Note that this is reliable only right
+after the class is created and only for classes that were defined using
+the definition syntax.
 
 Class creation can be customized heavily using :ref:`metaclasses <metaclasses>`.
 
