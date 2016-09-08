@@ -987,6 +987,13 @@ API and Feature Removals
   Use :class:`io.TextIOWrapper` for reading compressed text files in
   :term:`universal newlines` mode.
 
+* The undocumented ``IN``, ``CDROM``, ``DLFCN``, ``TYPES``, ``CDIO``, and
+  ``STROPTS`` modules have been removed.  They had been available in the
+  platform specific ``Lib/plat-*/`` directories, but were chronically out of
+  date, inconsistently available across platforms, and unmaintained.  The
+  script that created these modules is still available in the source
+  distribution at :source:`Tools/scripts/h2py.py`.
+
 
 Porting to Python 3.6
 =====================
