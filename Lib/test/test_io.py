@@ -3276,7 +3276,7 @@ class CTextIOWrapperTest(TextIOWrapperTest):
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio
-    shutdown_error = "LookupError: unknown encoding: ascii"
+    shutdown_error = "ImportError: sys.meta_path is None, Python is likely shutting down"
 
 
 class IncrementalNewlineDecoderTest(unittest.TestCase):
