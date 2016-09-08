@@ -328,7 +328,7 @@ the referent is accessed::
 Example
 -------
 
-This simple example shows how an application can use objects IDs to retrieve
+This simple example shows how an application can use object IDs to retrieve
 objects that it has seen before.  The IDs of the objects can then be used in
 other data structures without forcing the objects to remain alive, but the
 objects can still be retrieved by ID if they do.

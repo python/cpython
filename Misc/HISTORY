@@ -15145,7 +15145,7 @@ machinery is moved to the new file importdl.c.
 module implementing deepcopy and normal (shallow) copy operations.
 See the library reference manual.
 
-- Documentation strings for many objects types are accessible through
+- Documentation strings for many object types are accessible through
 the __doc__ attribute.  Modules, classes and functions support special
 syntax to initialize the __doc__ attribute: if the first statement
 consists of just a string literal, that string literal becomes the

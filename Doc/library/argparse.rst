@@ -181,7 +181,7 @@ The following sections describe how each of these are used.
 prog
 ^^^^
 
-By default, :class:`ArgumentParser` objects uses ``sys.argv[0]`` to determine
+By default, :class:`ArgumentParser` objects use ``sys.argv[0]`` to determine
 how to display the name of the program in help messages.  This default is almost
 always desirable because it will make the help messages match how the program was
 invoked on the command line.  For example, consider a file named
@@ -512,7 +512,7 @@ conflict_handler
 ^^^^^^^^^^^^^^^^
 
 :class:`ArgumentParser` objects do not allow two actions with the same option
-string.  By default, :class:`ArgumentParser` objects raises an exception if an
+string.  By default, :class:`ArgumentParser` objects raise an exception if an
 attempt is made to create an argument with an option string that is already in
 use::
 

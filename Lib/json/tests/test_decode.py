@@ -43,7 +43,7 @@ class TestDecode(object):
         self.assertEqual(self.loads(s, object_pairs_hook=OrderedDict,
                                     object_hook=lambda x: None),
                          OrderedDict(p))
-        # check that empty objects literals work (see #17368)
+        # check that empty object literals work (see #17368)
         self.assertEqual(self.loads('{}', object_pairs_hook=OrderedDict),
                          OrderedDict())
         self.assertEqual(self.loads('{"empty": {}}',

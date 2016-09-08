@@ -1865,7 +1865,7 @@ Core and Builtins
 - Issue #21350: Fix file.writelines() to accept arbitrary buffer objects,
   as advertised.  Patch by Brian Kearns.
 
-- Issue #20437: Fixed 43 potential bugs when deleting objects references.
+- Issue #20437: Fixed 43 potential bugs when deleting object references.
 
 - Issue #21134: Fix segfault when str is called on an uninitialized
   UnicodeEncodeError, UnicodeDecodeError, or UnicodeTranslateError object.

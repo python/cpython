@@ -155,9 +155,8 @@ def isfunction(object):
 def isgeneratorfunction(object):
     """Return true if the object is a user-defined generator function.
 
-    Generator function objects provides same attributes as functions.
-
-    See help(isfunction) for attributes listing."""
+    Generator function objects provide the same attributes as functions.
+    See help(isfunction) for a list of attributes."""
     return bool((isfunction(object) or ismethod(object)) and
                 object.func_code.co_flags & CO_GENERATOR)
 
