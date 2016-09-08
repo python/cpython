@@ -46,16 +46,17 @@ For example:
 (This will fail if you *also* built at the top-level directory.
 You should do a "make clean" at the toplevel first.)
 
-If you need an optimized version of Python, you type "make profile-opt" in the
-top level directory. This will rebuild the interpreter executable using Profile
-Guided Optimization (PGO). For more details, see the section bellow.
+To get an optimized build of Python, "configure --with-optimizations" before
+you run make.  This sets the default make targets up to enable Profile Guided
+Optimization (PGO) and Link Time Optimization (LTO) on most platforms.
+For more details, see the sections bellow.
 
 
 Profile Guided Optimization
 ---------------------------
 
 PGO takes advantage of recent versions of the GCC or Clang compilers.
-If ran, the "profile-opt" rule will do several steps.
+If ran, "make profile-opt" will do several steps.
 
 First, the entire Python directory is cleaned of temporary files that
 may have resulted in a previous compilation.
@@ -73,6 +74,14 @@ and stderr, that may appear at this step is suppressed.
 Finally, the last step is to rebuild the interpreter, using the information
 collected in the previous one. The end result will be a Python binary
 that is optimized and suitable for distribution or production installation.
+
+
+Link Time Optimization
+----------------------
+
+LTO takes advantages of recent compiler toolchains ability to optimize across
+the otherwise arbitrary .o file boundary when building final executables or
+shared libraries for additional performance gains.
 
 
 What's New
