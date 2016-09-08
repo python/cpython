@@ -482,7 +482,8 @@ Py_Main(int argc, wchar_t **argv)
             warning_option = PyUnicode_FromWideChar(_PyOS_optarg, -1);
             if (warning_option == NULL)
                 Py_FatalError("failure in handling of -W argument");
-            PyList_Append(warning_options, warning_option);
+            if (PyList_Append(warning_options, warning_option) == -1)
+                Py_FatalError("failure in handling of -W argument");
             Py_DECREF(warning_option);
             break;
 
