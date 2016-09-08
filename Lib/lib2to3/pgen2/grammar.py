@@ -139,12 +139,12 @@ class Grammar(object):
 
 def _make_deterministic(top):
     if isinstance(top, dict):
-      return collections.OrderedDict(
-          sorted(((k, _make_deterministic(v)) for k, v in top.items())))
+        return collections.OrderedDict(
+            sorted(((k, _make_deterministic(v)) for k, v in top.items())))
     if isinstance(top, list):
-      return [_make_deterministic(e) for e in top]
+        return [_make_deterministic(e) for e in top]
     if isinstance(top, tuple):
-      return tuple(_make_deterministic(e) for e in top)
+        return tuple(_make_deterministic(e) for e in top)
     return top
 
 
