@@ -221,6 +221,9 @@ Library
 - Issue #27930: Improved behaviour of logging.handlers.QueueListener.
   Thanks to Paulo Andrade and Petr Viktorin for the analysis and patch.
 
+- Issue #21201: Improves readability of multiprocessing error message.  Thanks
+  to Wojciech Walczak for patch.
+
 IDLE
 ----
 
