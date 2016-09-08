@@ -1,9 +1,0 @@
-#! /bin/sh
-case `uname -sr` in
-UnixWare*)	;;
-*)	echo Probably not on a UnixWare system 1>&2
-	exit 1;;
-esac
-set -v
-h2py -i '(u_long)' /usr/include/netinet/in.h
-h2py /usr/include/sys/stropts.h
