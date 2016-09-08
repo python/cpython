@@ -389,6 +389,21 @@ class TestSet(TestJointOps, unittest.TestCase):
         t = {1,2,3}
         self.assertEqual(s, t)
 
+    def test_set_literal_insertion_order(self):
+        # SF Issue #26020 -- Expect left to right insertion
+        s = {1, 1.0, True}
+        self.assertEqual(len(s), 1)
+        stored_value = s.pop()
+        self.assertEqual(type(stored_value), int)
+
+    def test_set_literal_evaluation_order(self):
+        # Expect left to right expression evaluation
+        events = []
+        def record(obj):
+            events.append(obj)
+        s = {record(1), record(2), record(3)}
+        self.assertEqual(events, [1, 2, 3])
+
     def test_hash(self):
         self.assertRaises(TypeError, hash, self.s)
 
