@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27350: `dict` implementation is changed like PyPy. It is more compact
+  and preserves insertion order.
+
 - Issue #27911: Remove unnecessary error checks in
   ``exec_builtin_or_dynamic()``.
 

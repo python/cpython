@@ -1,3 +1,4 @@
+import builtins
 import contextlib
 import copy
 import gc
@@ -621,6 +622,25 @@ class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
     OrderedDict = py_coll.OrderedDict
 
 
+class CPythonBuiltinDictTests(unittest.TestCase):
+    """Builtin dict preserves insertion order.
+
+    Reuse some of tests in OrderedDict selectively.
+    """
+
+    module = builtins
+    OrderedDict = dict
+
+for method in (
+    "test_init test_update test_abc test_clear test_delitem " +
+    "test_setitem test_detect_deletion_during_iteration " +
+    "test_popitem test_reinsert test_override_update " +
+    "test_highly_nested test_highly_nested_subclass " +
+    "test_delitem_hash_collision ").split():
+    setattr(CPythonBuiltinDictTests, method, getattr(OrderedDictTests, method))
+del method
+
+
 @unittest.skipUnless(c_coll, 'requires the C version of the collections module')
 class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
@@ -635,18 +655,19 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         size = support.calcobjsize
         check = self.check_sizeof
 
-        basicsize = size('n2P' + '3PnPn2P') + calcsize('2nPn')
-        entrysize = calcsize('n2P') + calcsize('P')
+        basicsize = size('n2P' + '3PnPn2P') + calcsize('2nP2n')
+        entrysize = calcsize('n2P')
+        p = calcsize('P')
         nodesize = calcsize('Pn2P')
 
         od = OrderedDict()
-        check(od, basicsize + 8*entrysize)
+        check(od, basicsize + 8*p + 8 + 5*entrysize)  # 8byte indicies + 8*2//3 * entry table
         od.x = 1
-        check(od, basicsize + 8*entrysize)
+        check(od, basicsize + 8*p + 8 + 5*entrysize)
         od.update([(i, i) for i in range(3)])
-        check(od, basicsize + 8*entrysize + 3*nodesize)
+        check(od, basicsize + 8*p + 8 + 5*entrysize + 3*nodesize)
         od.update([(i, i) for i in range(3, 10)])
-        check(od, basicsize + 16*entrysize + 10*nodesize)
+        check(od, basicsize + 16*p + 16 + 10*entrysize + 10*nodesize)
 
         check(od.keys(), size('P'))
         check(od.items(), size('P'))
