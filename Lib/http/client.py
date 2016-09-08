@@ -935,7 +935,8 @@ class HTTPConnection:
         if message_body is not None:
             self.send(message_body)
 
-    def putrequest(self, method, url, skip_host=0, skip_accept_encoding=0):
+    def putrequest(self, method, url, skip_host=False,
+                   skip_accept_encoding=False):
         """Send a request to the server.
 
         `method' specifies an HTTP request method, e.g. 'GET'.
