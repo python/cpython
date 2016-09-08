@@ -30,13 +30,13 @@ msg.add_alternative("""\
 <html>
   <head></head>
   <body>
-    <p>Salut!<\p>
+    <p>Salut!</p>
     <p>Cela ressemble à un excellent
         <a href="http://www.yummly.com/recipe/Roasted-Asparagus-Epicurious-203718>
             recipie
         </a> déjeuner.
     </p>
-    <img src="cid:{asparagus_cid}" \>
+    <img src="cid:{asparagus_cid}" />
   </body>
 </html>
 """.format(asparagus_cid=asparagus_cid[1:-1]), subtype='html')
