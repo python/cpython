@@ -427,7 +427,6 @@ class PydocDocTest(unittest.TestCase):
         expected_html = expected_html_pattern % (
                         (mod_url, mod_file, doc_loc) +
                         expected_html_data_docstrings)
-        self.maxDiff = None
         self.assertEqual(result, expected_html)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
@@ -474,18 +473,13 @@ class PydocDocTest(unittest.TestCase):
     def test_non_str_name(self):
         # issue14638
         # Treat illegal (non-str) name like no name
-        # Definition order is set to None so it looks the same in both
-        # cases.
         class A:
-            __definition_order__ = None
             __name__ = 42
         class B:
             pass
         adoc = pydoc.render_doc(A())
         bdoc = pydoc.render_doc(B())
-        self.maxDiff = None
-        expected = adoc.replace("A", "B")
-        self.assertEqual(bdoc, expected)
+        self.assertEqual(adoc.replace("A", "B"), bdoc)
 
     def test_not_here(self):
         missing_module = "test.i_am_not_here"
