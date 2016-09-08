@@ -531,7 +531,7 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
 /*[clinic end generated code: output=f0d2c9c136f4e0d0 input=f8ff101825e32e7f]*/
 {
     PyObject *buffer;
-    unsigned PY_LONG_LONG flag;
+    unsigned long long flag;
 
     if (self->decoder != Py_None) {
         PyObject *state = PyObject_CallMethodObjArgs(self->decoder,
@@ -567,7 +567,7 @@ _io_IncrementalNewlineDecoder_setstate(nldecoder_object *self,
 /*[clinic end generated code: output=c10c622508b576cb input=c53fb505a76dbbe2]*/
 {
     PyObject *buffer;
-    unsigned PY_LONG_LONG flag;
+    unsigned long long flag;
 
     if (!PyArg_ParseTuple(state, "OK", &buffer, &flag))
         return NULL;

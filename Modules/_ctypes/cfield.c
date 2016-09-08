@@ -382,9 +382,9 @@ get_ulong(PyObject *v, unsigned long *p)
 /* Same, but handling native long long. */
 
 static int
-get_longlong(PyObject *v, PY_LONG_LONG *p)
+get_longlong(PyObject *v, long long *p)
 {
-    PY_LONG_LONG x;
+    long long x;
     if (PyFloat_Check(v)) {
         PyErr_SetString(PyExc_TypeError,
                         "int expected instead of float");
@@ -400,16 +400,16 @@ get_longlong(PyObject *v, PY_LONG_LONG *p)
 /* Same, but handling native unsigned long long. */
 
 static int
-get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
+get_ulonglong(PyObject *v, unsigned long long *p)
 {
-    unsigned PY_LONG_LONG x;
+    unsigned long long x;
     if (PyFloat_Check(v)) {
         PyErr_SetString(PyExc_TypeError,
                         "int expected instead of float");
         return -1;
     }
     x = PyLong_AsUnsignedLongLongMask(v);
-    if (x == (unsigned PY_LONG_LONG)-1 && PyErr_Occurred())
+    if (x == (unsigned long long)-1 && PyErr_Occurred())
         return -1;
     *p = x;
     return 0;
@@ -879,12 +879,12 @@ L_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 q_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    PY_LONG_LONG val;
-    PY_LONG_LONG x;
+    long long val;
+    long long x;
     if (get_longlong(value, &val) < 0)
         return NULL;
     memcpy(&x, ptr, sizeof(x));
-    x = SET(PY_LONG_LONG, x, val, size);
+    x = SET(long long, x, val, size);
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -892,13 +892,13 @@ q_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    PY_LONG_LONG val;
-    PY_LONG_LONG field;
+    long long val;
+    long long field;
     if (get_longlong(value, &val) < 0)
         return NULL;
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_8(field);
-    field = SET(PY_LONG_LONG, field, val, size);
+    field = SET(long long, field, val, size);
     field = SWAP_8(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
@@ -907,7 +907,7 @@ q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 q_get(void *ptr, Py_ssize_t size)
 {
-    PY_LONG_LONG val;
+    long long val;
     memcpy(&val, ptr, sizeof(val));
     GET_BITFIELD(val, size);
     return PyLong_FromLongLong(val);
@@ -916,7 +916,7 @@ q_get(void *ptr, Py_ssize_t size)
 static PyObject *
 q_get_sw(void *ptr, Py_ssize_t size)
 {
-    PY_LONG_LONG val;
+    long long val;
     memcpy(&val, ptr, sizeof(val));
     val = SWAP_8(val);
     GET_BITFIELD(val, size);
@@ -926,12 +926,12 @@ q_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 Q_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    unsigned PY_LONG_LONG val;
-    unsigned PY_LONG_LONG x;
+    unsigned long long val;
+    unsigned long long x;
     if (get_ulonglong(value, &val) < 0)
         return NULL;
     memcpy(&x, ptr, sizeof(x));
-    x = SET(PY_LONG_LONG, x, val, size);
+    x = SET(long long, x, val, size);
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -939,13 +939,13 @@ Q_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 Q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    unsigned PY_LONG_LONG val;
-    unsigned PY_LONG_LONG field;
+    unsigned long long val;
+    unsigned long long field;
     if (get_ulonglong(value, &val) < 0)
         return NULL;
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_8(field);
-    field = SET(unsigned PY_LONG_LONG, field, val, size);
+    field = SET(unsigned long long, field, val, size);
     field = SWAP_8(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
@@ -954,7 +954,7 @@ Q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 Q_get(void *ptr, Py_ssize_t size)
 {
-    unsigned PY_LONG_LONG val;
+    unsigned long long val;
     memcpy(&val, ptr, sizeof(val));
     GET_BITFIELD(val, size);
     return PyLong_FromUnsignedLongLong(val);
@@ -963,7 +963,7 @@ Q_get(void *ptr, Py_ssize_t size)
 static PyObject *
 Q_get_sw(void *ptr, Py_ssize_t size)
 {
-    unsigned PY_LONG_LONG val;
+    unsigned long long val;
     memcpy(&val, ptr, sizeof(val));
     val = SWAP_8(val);
     GET_BITFIELD(val, size);
@@ -1477,7 +1477,7 @@ P_set(void *ptr, PyObject *value, Py_ssize_t size)
     v = (void *)PyLong_AsUnsignedLongMask(value);
 #else
 #if SIZEOF_LONG_LONG < SIZEOF_VOID_P
-#   error "PyLong_AsVoidPtr: sizeof(PY_LONG_LONG) < sizeof(void*)"
+#   error "PyLong_AsVoidPtr: sizeof(long long) < sizeof(void*)"
 #endif
     v = (void *)PyLong_AsUnsignedLongLongMask(value);
 #endif
@@ -1617,8 +1617,8 @@ typedef struct { char c; wchar_t *x; } s_wchar_p;
 #endif
 */
 
-typedef struct { char c; PY_LONG_LONG x; } s_long_long;
-#define LONG_LONG_ALIGN (sizeof(s_long_long) - sizeof(PY_LONG_LONG))
+typedef struct { char c; long long x; } s_long_long;
+#define LONG_LONG_ALIGN (sizeof(s_long_long) - sizeof(long long))
 
 /* from ffi.h:
 typedef struct _ffi_type

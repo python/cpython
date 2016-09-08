@@ -440,7 +440,6 @@ APIs:
    .. % because not all compilers support the %z width modifier -- we fake it
    .. % when necessary via interpolating PY_FORMAT_SIZE_T.
    .. % Similar comments apply to the %ll width modifier and
-   .. % PY_FORMAT_LONG_LONG.
 
    .. tabularcolumns:: |l|l|L|
 

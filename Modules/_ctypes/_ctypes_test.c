@@ -233,15 +233,15 @@ EXPORT(int) _testfunc_callback_with_pointer(int (*func)(int *))
     return (*func)(table);
 }
 
-EXPORT(PY_LONG_LONG) _testfunc_q_bhilfdq(signed char b, short h, int i, long l, float f,
-                                     double d, PY_LONG_LONG q)
+EXPORT(long long) _testfunc_q_bhilfdq(signed char b, short h, int i, long l, float f,
+                                      double d, long long q)
 {
-    return (PY_LONG_LONG)(b + h + i + l + f + d + q);
+    return (long long)(b + h + i + l + f + d + q);
 }
 
-EXPORT(PY_LONG_LONG) _testfunc_q_bhilfd(signed char b, short h, int i, long l, float f, double d)
+EXPORT(long long) _testfunc_q_bhilfd(signed char b, short h, int i, long l, float f, double d)
 {
-    return (PY_LONG_LONG)(b + h + i + l + f + d);
+    return (long long)(b + h + i + l + f + d);
 }
 
 EXPORT(int) _testfunc_callback_i_if(int value, int (*func)(int))
@@ -254,10 +254,10 @@ EXPORT(int) _testfunc_callback_i_if(int value, int (*func)(int))
     return sum;
 }
 
-EXPORT(PY_LONG_LONG) _testfunc_callback_q_qf(PY_LONG_LONG value,
-                                             PY_LONG_LONG (*func)(PY_LONG_LONG))
+EXPORT(long long) _testfunc_callback_q_qf(long long value,
+                                          long long (*func)(long long))
 {
-    PY_LONG_LONG sum = 0;
+    long long sum = 0;
 
     while (value != 0) {
         sum += func(value);
@@ -381,8 +381,8 @@ EXPORT(void) _py_func(void)
 {
 }
 
-EXPORT(PY_LONG_LONG) last_tf_arg_s;
-EXPORT(unsigned PY_LONG_LONG) last_tf_arg_u;
+EXPORT(long long) last_tf_arg_s;
+EXPORT(unsigned long long) last_tf_arg_u;
 
 struct BITS {
     int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
@@ -445,8 +445,8 @@ static PyMethodDef module_methods[] = {
     { NULL, NULL, 0, NULL},
 };
 
-#define S last_tf_arg_s = (PY_LONG_LONG)c
-#define U last_tf_arg_u = (unsigned PY_LONG_LONG)c
+#define S last_tf_arg_s = (long long)c
+#define U last_tf_arg_u = (unsigned long long)c
 
 EXPORT(signed char) tf_b(signed char c) { S; return c/3; }
 EXPORT(unsigned char) tf_B(unsigned char c) { U; return c/3; }
@@ -456,8 +456,8 @@ EXPORT(int) tf_i(int c) { S; return c/3; }
 EXPORT(unsigned int) tf_I(unsigned int c) { U; return c/3; }
 EXPORT(long) tf_l(long c) { S; return c/3; }
 EXPORT(unsigned long) tf_L(unsigned long c) { U; return c/3; }
-EXPORT(PY_LONG_LONG) tf_q(PY_LONG_LONG c) { S; return c/3; }
-EXPORT(unsigned PY_LONG_LONG) tf_Q(unsigned PY_LONG_LONG c) { U; return c/3; }
+EXPORT(long long) tf_q(long long c) { S; return c/3; }
+EXPORT(unsigned long long) tf_Q(unsigned long long c) { U; return c/3; }
 EXPORT(float) tf_f(float c) { S; return c/3; }
 EXPORT(double) tf_d(double c) { S; return c/3; }
 EXPORT(long double) tf_D(long double c) { S; return c/3; }
@@ -471,8 +471,8 @@ EXPORT(int) __stdcall s_tf_i(int c) { S; return c/3; }
 EXPORT(unsigned int) __stdcall s_tf_I(unsigned int c) { U; return c/3; }
 EXPORT(long) __stdcall s_tf_l(long c) { S; return c/3; }
 EXPORT(unsigned long) __stdcall s_tf_L(unsigned long c) { U; return c/3; }
-EXPORT(PY_LONG_LONG) __stdcall s_tf_q(PY_LONG_LONG c) { S; return c/3; }
-EXPORT(unsigned PY_LONG_LONG) __stdcall s_tf_Q(unsigned PY_LONG_LONG c) { U; return c/3; }
+EXPORT(long long) __stdcall s_tf_q(long long c) { S; return c/3; }
+EXPORT(unsigned long long) __stdcall s_tf_Q(unsigned long long c) { U; return c/3; }
 EXPORT(float) __stdcall s_tf_f(float c) { S; return c/3; }
 EXPORT(double) __stdcall s_tf_d(double c) { S; return c/3; }
 EXPORT(long double) __stdcall s_tf_D(long double c) { S; return c/3; }
@@ -487,8 +487,8 @@ EXPORT(int) tf_bi(signed char x, int c) { S; return c/3; }
 EXPORT(unsigned int) tf_bI(signed char x, unsigned int c) { U; return c/3; }
 EXPORT(long) tf_bl(signed char x, long c) { S; return c/3; }
 EXPORT(unsigned long) tf_bL(signed char x, unsigned long c) { U; return c/3; }
-EXPORT(PY_LONG_LONG) tf_bq(signed char x, PY_LONG_LONG c) { S; return c/3; }
-EXPORT(unsigned PY_LONG_LONG) tf_bQ(signed char x, unsigned PY_LONG_LONG c) { U; return c/3; }
+EXPORT(long long) tf_bq(signed char x, long long c) { S; return c/3; }
+EXPORT(unsigned long long) tf_bQ(signed char x, unsigned long long c) { U; return c/3; }
 EXPORT(float) tf_bf(signed char x, float c) { S; return c/3; }
 EXPORT(double) tf_bd(signed char x, double c) { S; return c/3; }
 EXPORT(long double) tf_bD(signed char x, long double c) { S; return c/3; }
@@ -503,8 +503,8 @@ EXPORT(int) __stdcall s_tf_bi(signed char x, int c) { S; return c/3; }
 EXPORT(unsigned int) __stdcall s_tf_bI(signed char x, unsigned int c) { U; return c/3; }
 EXPORT(long) __stdcall s_tf_bl(signed char x, long c) { S; return c/3; }
 EXPORT(unsigned long) __stdcall s_tf_bL(signed char x, unsigned long c) { U; return c/3; }
-EXPORT(PY_LONG_LONG) __stdcall s_tf_bq(signed char x, PY_LONG_LONG c) { S; return c/3; }
-EXPORT(unsigned PY_LONG_LONG) __stdcall s_tf_bQ(signed char x, unsigned PY_LONG_LONG c) { U; return c/3; }
+EXPORT(long long) __stdcall s_tf_bq(signed char x, long long c) { S; return c/3; }
+EXPORT(unsigned long long) __stdcall s_tf_bQ(signed char x, unsigned long long c) { U; return c/3; }
 EXPORT(float) __stdcall s_tf_bf(signed char x, float c) { S; return c/3; }
 EXPORT(double) __stdcall s_tf_bd(signed char x, double c) { S; return c/3; }
 EXPORT(long double) __stdcall s_tf_bD(signed char x, long double c) { S; return c/3; }
