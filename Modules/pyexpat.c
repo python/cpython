@@ -1701,7 +1701,15 @@ MODULE_INITFUNC(void)
     PyModule_AddStringConstant(m, "native_encoding", "UTF-8");
 
     sys_modules = PySys_GetObject("modules");
+    if (sys_modules == NULL) {
+        Py_DECREF(m);
+        return NULL;
+    }
     d = PyModule_GetDict(m);
+    if (d == NULL) {
+        Py_DECREF(m);
+        return NULL;
+    }
     errors_module = PyDict_GetItem(d, errmod_name);
     if (errors_module == NULL) {
         errors_module = PyModule_New(MODULE_NAME ".errors");
@@ -1722,9 +1730,11 @@ MODULE_INITFUNC(void)
         }
     }
     Py_DECREF(modelmod_name);
-    if (errors_module == NULL || model_module == NULL)
+    if (errors_module == NULL || model_module == NULL) {
         /* Don't core dump later! */
+        Py_DECREF(m);
         return NULL;
+    }
 
 #if XML_COMBINED_VERSION > 19505
     {
