@@ -4,9 +4,6 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include <inttypes.h>
-
-typedef short PyInt16;
 
 #if defined(__CHAR_UNSIGNED__)
 #if defined(signed)
@@ -52,15 +49,15 @@ fbound(double val, double minval, double maxval)
 #define SEG_SHIFT       (4)             /* Left shift for segment number. */
 #define SEG_MASK        (0x70)          /* Segment field mask. */
 
-static const PyInt16 seg_aend[8] = {
+static const int16_t seg_aend[8] = {
     0x1F, 0x3F, 0x7F, 0xFF, 0x1FF, 0x3FF, 0x7FF, 0xFFF
 };
-static const PyInt16 seg_uend[8] = {
+static const int16_t seg_uend[8] = {
     0x3F, 0x7F, 0xFF, 0x1FF, 0x3FF, 0x7FF, 0xFFF, 0x1FFF
 };
 
-static PyInt16
-search(PyInt16 val, const PyInt16 *table, int size)
+static int16_t
+search(int16_t val, const int16_t *table, int size)
 {
     int i;
 
@@ -73,7 +70,7 @@ search(PyInt16 val, const PyInt16 *table, int size)
 #define st_ulaw2linear16(uc) (_st_ulaw2linear16[uc])
 #define st_alaw2linear16(uc) (_st_alaw2linear16[uc])
 
-static const PyInt16 _st_ulaw2linear16[256] = {
+static const int16_t _st_ulaw2linear16[256] = {
     -32124,  -31100,  -30076,  -29052,  -28028,  -27004,  -25980,
     -24956,  -23932,  -22908,  -21884,  -20860,  -19836,  -18812,
     -17788,  -16764,  -15996,  -15484,  -14972,  -14460,  -13948,
@@ -146,10 +143,10 @@ static const PyInt16 _st_ulaw2linear16[256] = {
  * John Wiley & Sons, pps 98-111 and 472-476.
  */
 static unsigned char
-st_14linear2ulaw(PyInt16 pcm_val)       /* 2's complement (14-bit range) */
+st_14linear2ulaw(int16_t pcm_val)       /* 2's complement (14-bit range) */
 {
-    PyInt16         mask;
-    PyInt16         seg;
+    int16_t         mask;
+    int16_t         seg;
     unsigned char   uval;
 
     /* u-law inverts all bits */
@@ -179,7 +176,7 @@ st_14linear2ulaw(PyInt16 pcm_val)       /* 2's complement (14-bit range) */
 
 }
 
-static const PyInt16 _st_alaw2linear16[256] = {
+static const int16_t _st_alaw2linear16[256] = {
      -5504,   -5248,   -6016,   -5760,   -4480,   -4224,   -4992,
      -4736,   -7552,   -7296,   -8064,   -7808,   -6528,   -6272,
      -7040,   -6784,   -2752,   -2624,   -3008,   -2880,   -2240,
@@ -240,9 +237,9 @@ static const PyInt16 _st_alaw2linear16[256] = {
  * John Wiley & Sons, pps 98-111 and 472-476.
  */
 static unsigned char
-st_linear2alaw(PyInt16 pcm_val) /* 2's complement (13-bit range) */
+st_linear2alaw(int16_t pcm_val) /* 2's complement (13-bit range) */
 {
-    PyInt16         mask;
+    int16_t         mask;
     short           seg;
     unsigned char   aval;
 
