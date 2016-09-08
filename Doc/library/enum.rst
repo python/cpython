@@ -542,9 +542,9 @@ The next variation of :class:`Enum` provided, :class:`IntFlag`, is also based
 on :class:`int`.  The difference being :class:`IntFlag` members can be combined
 using the bitwise operators (&, \|, ^, ~) and the result is still an
 :class:`IntFlag` member.  However, as the name implies, :class:`IntFlag`
-members also subclass :class:`int` and can be used wherever an :class:`int` is.
-Any operation on an :class:`IntFlag` member besides the bit-wise operations
-will lose the :class:`IntFlag` membership.
+members also subclass :class:`int` and can be used wherever an :class:`int` is
+used.  Any operation on an :class:`IntFlag` member besides the bit-wise
+operations will lose the :class:`IntFlag` membership.
 
 .. versionadded:: 3.6
 
@@ -955,10 +955,11 @@ and raise an error if the two do not match::
 ``Enum`` member type
 """"""""""""""""""""
 
-:class:`Enum` members are instances of an :class:`Enum` class, and even
-though they are accessible as `EnumClass.member`, they should not be accessed
-directly from the member as that lookup may fail or, worse, return something
-besides the ``Enum`` member you looking for::
+:class:`Enum` members are instances of their :class:`Enum` class, and are
+normally accessed as ``EnumClass.member``.  Under certain circumstances they
+can also be accessed as ``EnumClass.member.member``, but you should never do
+this as that lookup may fail or, worse, return something besides the
+:class:`Enum` member you are looking for::
 
     >>> class FieldTypes(Enum):
     ...     name = 0
@@ -976,16 +977,16 @@ besides the ``Enum`` member you looking for::
 Boolean value of ``Enum`` classes and members
 """""""""""""""""""""""""""""""""""""""""""""
 
-``Enum`` members that are mixed with non-Enum types (such as
+:class:`Enum` members that are mixed with non-:class:`Enum` types (such as
 :class:`int`, :class:`str`, etc.) are evaluated according to the mixed-in
-type's rules; otherwise, all members evaluate as :data:`True`.  To make your own
-Enum's boolean evaluation depend on the member's value add the following to
+type's rules; otherwise, all members evaluate as :data:`True`.  To make your
+own Enum's boolean evaluation depend on the member's value add the following to
 your class::
 
     def __bool__(self):
         return bool(self.value)
 
-``Enum`` classes always evaluate as :data:`True`.
+:class:`Enum` classes always evaluate as :data:`True`.
 
 
 ``Enum`` classes with methods
