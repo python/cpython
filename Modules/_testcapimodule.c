@@ -2309,7 +2309,7 @@ test_string_to_double(PyObject *self) {
     result = PyOS_string_to_double(STR, NULL, NULL);            \
     if (result == -1.0 && PyErr_Occurred())                     \
         return NULL;                                            \
-    if (result != expected) {                                   \
+    if (result != (double)expected) {                           \
         msg = "conversion of " STR " to float failed";          \
         goto fail;                                              \
     }
