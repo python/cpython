@@ -536,14 +536,17 @@ static Py_ssize_t
 _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
 {
     PyObject **value_addr = NULL;
-    PyDictKeyEntry *ep;
     PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
+    Py_ssize_t ix;
 
-    ep = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value_addr);
-    if (ep == NULL)
+    ix = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value_addr, NULL);
+    if (ix == DKIX_EMPTY) {
+        return keys->dk_nentries;  /* index of new entry */
+    }
+    if (ix < 0)
         return -1;
     /* We use pointer arithmetic to get the entry's index into the table. */
-    return ep - keys->dk_entries;
+    return ix;
 }
 
 /* Replace od->od_fast_nodes with a new table matching the size of dict's. */
@@ -565,7 +568,7 @@ _odict_resize(PyODictObject *od) {
     /* Copy the current nodes into the table. */
     _odict_FOREACH(od, node) {
         i = _odict_get_index_raw(od, _odictnode_KEY(node),
-                                  _odictnode_HASH(node));
+                                 _odictnode_HASH(node));
         if (i < 0) {
             PyMem_FREE(fast_nodes);
             return -1;

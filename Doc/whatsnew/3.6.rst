@@ -343,6 +343,11 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
+* `dict` implementation is changed like PyPy. It is more compact and preserves
+  insertion order. :pep:`PEP 468` (Preserving the order of `**kwargs` in a
+  function.) is implemented by this.
+  (Contributed by INADA Naoki in :issue:`27350`.)
+
 * Long sequences of repeated traceback lines are now abbreviated as
   ``"[Previous line repeated {count} more times]"`` (see
   :ref:`py36-traceback` for an example).
