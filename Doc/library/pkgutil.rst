@@ -15,6 +15,7 @@ support.
 
     A namedtuple that holds a brief summary of a module's info.
 
+    .. versionadded:: 3.6
 
 .. function:: extend_path(path, name)
 
