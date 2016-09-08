@@ -5,6 +5,7 @@ machinery = util.import_importlib('importlib.machinery')
 importlib_util = util.import_importlib('importlib.util')
 
 import os
+import pathlib
 import string
 import sys
 from test import support
@@ -677,6 +678,15 @@ class PEP3147Tests:
             '\\foo\\bar\\baz\\__pycache__\\qux.{}.pyc'.format(self.tag))
 
     @unittest.skipUnless(sys.implementation.cache_tag is not None,
+                         'requires sys.implementation.cache_tag not be None')
+    def test_source_from_cache_path_like_arg(self):
+        path = pathlib.PurePath('foo', 'bar', 'baz', 'qux.py')
+        expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
+                              'qux.{}.pyc'.format(self.tag))
+        self.assertEqual(self.util.cache_from_source(path, optimization=''),
+                         expect)
+
+    @unittest.skipUnless(sys.implementation.cache_tag is not None,
                          'requires sys.implementation.cache_tag to not be '
                          'None')
     def test_source_from_cache(self):
@@ -737,6 +747,15 @@ class PEP3147Tests:
         path = os.path.join('__pycache__', 'foo.{}.opt-.pyc'.format(self.tag))
         with self.assertRaises(ValueError):
             self.util.source_from_cache(path)
+
+    @unittest.skipUnless(sys.implementation.cache_tag is not None,
+                         'requires sys.implementation.cache_tag to not be '
+                         'None')
+    def test_source_from_cache_path_like_arg(self):
+        path = pathlib.PurePath('foo', 'bar', 'baz', '__pycache__',
+                                'qux.{}.pyc'.format(self.tag))
+        expect = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        self.assertEqual(self.util.source_from_cache(path), expect)
 
 
 (Frozen_PEP3147Tests,

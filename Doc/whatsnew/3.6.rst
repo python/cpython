@@ -68,8 +68,6 @@ New syntax features:
 
 Standard library improvements:
 
-* PEP 519: :ref:`Adding a file system path protocol <pep-519>`
-
 Security improvements:
 
 * On Linux, :func:`os.urandom` now blocks until the system urandom entropy pool
@@ -513,6 +511,11 @@ restriction that :class:`importlib.machinery.BuiltinImporter` and
 :class:`importlib.machinery.ExtensionFileLoader` couldn't be used with
 :class:`importlib.util.LazyLoader`.
 
+:func:`importlib.util.cache_from_source`,
+:func:`importlib.util.source_from_cache`, and
+:func:`importlib.util.spec_from_file_location` now accept a
+:term:`path-like object`.
+
 
 os
 --
@@ -527,6 +530,11 @@ will be emitted in its destructor.
 The Linux ``getrandom()`` syscall (get random bytes) is now exposed as the new
 :func:`os.getrandom` function.
 (Contributed by Victor Stinner, part of the :pep:`524`)
+
+See the summary for :ref:`PEP 519 <pep-519>` for details on how the
+:mod:`os` and :mod:`os.path` modules now support
+:term:`path-like objects <path-like object>`.
+
 
 pickle
 ------
