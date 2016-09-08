@@ -20,6 +20,8 @@ Core and Builtins
   after use of 'def' in _PyState_AddModule().
   Initial patch by Christian Heimes.
 
+- Issue #26020: set literal evaluation order did not match documented behaviour.
+
 - Issue #27782: Multi-phase extension module import now correctly allows the
   ``m_methods`` field to be used to add module level functions to instances
   of non-module types returned from ``Py_create_mod``. Patch by Xiang Zhang.
