@@ -31,8 +31,7 @@ HTTPS protocols.  It is normally not used directly --- the module
 The module provides the following classes:
 
 
-.. class:: HTTPConnection(host, port=None[, timeout], \
-                          source_address=None)
+.. class:: HTTPConnection(host, port=None[, timeout], source_address=None)
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
    server.  It should be instantiated passing it a host and optional port
@@ -196,7 +195,6 @@ The constants defined in this module are:
 
    The default port for the HTTP protocol (always ``80``).
 
-
 .. data:: HTTPS_PORT
 
    The default port for the HTTPS protocol (always ``443``).
@@ -340,14 +338,15 @@ As an alternative to using the :meth:`request` method described above, you can
 also send your request step by step, by using the four functions below.
 
 
-.. method:: HTTPConnection.putrequest(request, selector, skip_host=False, skip_accept_encoding=False)
+.. method:: HTTPConnection.putrequest(method, url, skip_host=False, \
+                                      skip_accept_encoding=False)
 
-   This should be the first call after the connection to the server has been made.
-   It sends a line to the server consisting of the *request* string, the *selector*
-   string, and the HTTP version (``HTTP/1.1``).  To disable automatic sending of
-   ``Host:`` or ``Accept-Encoding:`` headers (for example to accept additional
-   content encodings), specify *skip_host* or *skip_accept_encoding* with non-False
-   values.
+   This should be the first call after the connection to the server has been
+   made. It sends a line to the server consisting of the *method* string,
+   the *url* string, and the HTTP version (``HTTP/1.1``).  To disable automatic
+   sending of ``Host:`` or ``Accept-Encoding:`` headers (for example to accept
+   additional content encodings), specify *skip_host* or *skip_accept_encoding*
+   with non-False values.
 
 
 .. method:: HTTPConnection.putheader(header, argument[, ...])
@@ -425,7 +424,6 @@ statement.
    return all of the values joined by ', '.  If 'default' is any iterable other
    than a single string, its elements are similarly returned joined by commas.
 
-
 .. method:: HTTPResponse.getheaders()
 
    Return a list of (header, value) tuples.
@@ -440,21 +438,17 @@ statement.
    headers.  :class:`http.client.HTTPMessage` is a subclass of
    :class:`email.message.Message`.
 
-
 .. attribute:: HTTPResponse.version
 
    HTTP protocol version used by server.  10 for HTTP/1.0, 11 for HTTP/1.1.
-
 
 .. attribute:: HTTPResponse.status
 
    Status code returned by server.
 
-
 .. attribute:: HTTPResponse.reason
 
    Reason phrase returned by server.
-
 
 .. attribute:: HTTPResponse.debuglevel
 
