@@ -10,8 +10,8 @@
 .. index::
    single: blake2b, blake2s
 
-BLAKE2_ is a cryptographic hash function, which offers highest security while
-being as fast as MD5 or SHA-1, and comes in two flavors:
+BLAKE2_ is a cryptographic hash function defined in RFC-7693_ that comes in two
+flavors:
 
 * **BLAKE2b**, optimized for 64-bit platforms and produces digests of any size
   between 1 and 64 bytes,
@@ -434,10 +434,11 @@ Domain Dedication 1.0 Universal:
 
 .. seealso:: Official BLAKE2 website: https://blake2.net
 
+.. _RFC-7693: https://tools.ietf.org/html/rfc7693
 .. _BLAKE2: https://blake2.net
-.. _HMAC: http://en.wikipedia.org/wiki/Hash-based_message_authentication_code
+.. _HMAC: https://en.wikipedia.org/wiki/Hash-based_message_authentication_code
 .. _BLAKE: https://131002.net/blake/
-.. _SHA-3: http://en.wikipedia.org/wiki/NIST_hash_function_competition
-.. _ChaCha: http://cr.yp.to/chacha.html
+.. _SHA-3: https://en.wikipedia.org/wiki/NIST_hash_function_competition
+.. _ChaCha: https://cr.yp.to/chacha.html
 .. _pyblake2: https://pythonhosted.org/pyblake2/
 
