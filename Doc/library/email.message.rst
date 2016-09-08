@@ -11,13 +11,7 @@
 
 --------------
 
-.. versionadded:: 3.4
-   the classes documented here were added :term:`provisionaly <provisional
-   package>`.
-
-.. versionchanged:: 3.6
-   provisional status removed, docs for legacy message class moved
-   to :ref:`compat32_message`.
+.. versionadded:: 3.6 [1]_
 
 The central class in the :mod:`email` package is the :class:`EmailMessage`
 class, imported from the :mod:`email.message` module.  It is the base class for
@@ -748,3 +742,10 @@ message objects.
     :class:`EmailMessage`, except that no :mailheader:`MIME-Version` headers are
     added when :meth:`~EmailMessage.set_content` is called, since sub-parts do
     not need their own :mailheader:`MIME-Version` headers.
+
+
+.. rubric:: Footnotes
+
+.. [1] Oringally added in 3.4 as a :term:`provisional module <provisional
+       package>`.  Docs for legacy message class moved to
+       :ref:`compat32_message`.
