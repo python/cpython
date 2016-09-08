@@ -6065,6 +6065,9 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
             goto error;
 
         default:
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                                 "invalid escape sequence '\\%c'", c) < 0)
+                goto onError;
             WRITE_ASCII_CHAR('\\');
             WRITE_CHAR(c);
             continue;

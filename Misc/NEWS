@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27364: A backslash-character pair that is not a valid escape sequence
+  now generates a DeprecationWarning.
+
 - Issue #27350: `dict` implementation is changed like PyPy. It is more compact
   and preserves insertion order.
   (Concept developed by Raymond Hettinger and patch by Inada Naoki.)
