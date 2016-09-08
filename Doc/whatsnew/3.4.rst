@@ -824,7 +824,7 @@ currently in the new module, which is being added as part of email's new
 :term:`provisional API`.  These classes provide a number of new methods that
 make extracting content from and inserting content into email messages much
 easier.  For details, see the :mod:`~email.contentmanager` documentation and
-the :ref:`email-contentmanager-api-examples`.  These API additions complete the
+the :ref:`email-examples`.  These API additions complete the
 bulk of the work that was planned as part of the email6 project.  The currently
 provisional API is scheduled to become final in Python 3.5 (possibly with a few
 minor additions in the area of error handling).  (Contributed by R. David
