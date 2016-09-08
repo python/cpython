@@ -287,7 +287,7 @@ class Server(object):
                 try:
                     send(msg)
                 except Exception, e:
-                    send(('#UNSERIALIZABLE', repr(msg)))
+                    send(('#UNSERIALIZABLE', format_exc()))
             except Exception, e:
                 util.info('exception in thread serving %r',
                         threading.current_thread().name)

@@ -125,6 +125,9 @@ Library
 
 - Issue #25455: Fixed a crash in repr of cElementTree.Element with recursive tag.
 
+- Issue #21201: Improves readability of multiprocessing error message.  Thanks
+  to Wojciech Walczak for patch.
+
 IDLE
 ----
 
