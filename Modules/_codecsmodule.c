@@ -604,7 +604,7 @@ _codecs_charmap_decode_impl(PyObject *module, Py_buffer *data,
     return codec_tuple(decoded, data->len);
 }
 
-#ifdef HAVE_MBCS
+#ifdef MS_WINDOWS
 
 /*[clinic input]
 _codecs.mbcs_decode
@@ -666,7 +666,7 @@ _codecs_code_page_decode_impl(PyObject *module, int codepage,
     return codec_tuple(decoded, consumed);
 }
 
-#endif /* HAVE_MBCS */
+#endif /* MS_WINDOWS */
 
 /* --- Encoder ------------------------------------------------------------ */
 
@@ -972,7 +972,7 @@ _codecs_charmap_build_impl(PyObject *module, PyObject *map)
     return PyUnicode_BuildEncodingMap(map);
 }
 
-#ifdef HAVE_MBCS
+#ifdef MS_WINDOWS
 
 /*[clinic input]
 _codecs.mbcs_encode
@@ -1021,7 +1021,7 @@ _codecs_code_page_encode_impl(PyObject *module, int code_page, PyObject *str,
                        PyUnicode_GET_LENGTH(str));
 }
 
-#endif /* HAVE_MBCS */
+#endif /* MS_WINDOWS */
 
 /* --- Error handler registry --------------------------------------------- */
 

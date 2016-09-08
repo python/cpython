@@ -76,6 +76,8 @@ Security improvements:
 
 Windows improvements:
 
+* PEP 529: :ref:`Change Windows filesystem encoding to UTF-8 <pep-529>`
+
 * The ``py.exe`` launcher, when used interactively, no longer prefers
   Python 2 over Python 3 when the user doesn't specify a version (via
   command line arguments or a config file).  Handling of shebang lines
@@ -218,6 +220,33 @@ evaluated at run time, and then formatted using the :func:`format` protocol.
 
 See :pep:`498` and the main documentation at :ref:`f-strings`.
 
+.. _pep-529:
+
+PEP 529: Change Windows filesystem encoding to UTF-8
+----------------------------------------------------
+
+Representing filesystem paths is best performed with str (Unicode) rather than
+bytes. However, there are some situations where using bytes is sufficient and
+correct.
+
+Prior to Python 3.6, data loss could result when using bytes paths on Windows.
+With this change, using bytes to represent paths is now supported on Windows,
+provided those bytes are encoded with the encoding returned by
+:func:`sys.getfilesystemencoding()`, which now defaults to ``'utf-8'``.
+
+Applications that do not use str to represent paths should use
+:func:`os.fsencode()` and :func:`os.fsdecode()` to ensure their bytes are
+correctly encoded. To revert to the previous behaviour, set
+:envvar:`PYTHONLEGACYWINDOWSFSENCODING` or call
+:func:`sys._enablelegacywindowsfsencoding`.
+
+See :pep:`529` for more information and discussion of code modifications that
+may be required.
+
+.. note::
+
+   This change is considered experimental for 3.6.0 beta releases. The default
+   encoding may change before the final release.
 
 PEP 487: Simpler customization of class creation
 ------------------------------------------------
