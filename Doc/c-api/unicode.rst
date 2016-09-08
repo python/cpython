@@ -802,10 +802,11 @@ File System Encoding
 """"""""""""""""""""
 
 To encode and decode file names and other environment strings,
-:c:data:`Py_FileSystemEncoding` should be used as the encoding, and
-``"surrogateescape"`` should be used as the error handler (:pep:`383`). To
-encode file names during argument parsing, the ``"O&"`` converter should be
-used, passing :c:func:`PyUnicode_FSConverter` as the conversion function:
+:c:data:`Py_FileSystemDefaultEncoding` should be used as the encoding, and
+:c:data:`Py_FileSystemDefaultEncodeErrors` should be used as the error handler
+(:pep:`383` and :pep:`529`). To encode file names to :class:`bytes` during
+argument parsing, the ``"O&"`` converter should be used, passing
+:c:func:`PyUnicode_FSConverter` as the conversion function:
 
 .. c:function:: int PyUnicode_FSConverter(PyObject* obj, void* result)
 
@@ -820,8 +821,9 @@ used, passing :c:func:`PyUnicode_FSConverter` as the conversion function:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-To decode file names during argument parsing, the ``"O&"`` converter should be
-used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
+To decode file names to :class:`str` during argument parsing, the ``"O&"``
+converter should be used, passing :c:func:`PyUnicode_FSDecoder` as the
+conversion function:
 
 .. c:function:: int PyUnicode_FSDecoder(PyObject* obj, void* result)
 
@@ -840,7 +842,7 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
 .. c:function:: PyObject* PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
    Decode a string using :c:data:`Py_FileSystemDefaultEncoding` and the
-   ``"surrogateescape"`` error handler, or ``"strict"`` on Windows.
+   :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
@@ -854,28 +856,28 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
 
       The :c:func:`Py_DecodeLocale` function.
 
-   .. versionchanged:: 3.2
-      Use ``"strict"`` error handler on Windows.
+   .. versionchanged:: 3.6
+      Use :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
 
 
 .. c:function:: PyObject* PyUnicode_DecodeFSDefault(const char *s)
 
    Decode a null-terminated string using :c:data:`Py_FileSystemDefaultEncoding`
-   and the ``"surrogateescape"`` error handler, or ``"strict"`` on Windows.
+   and the :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
 
    Use :c:func:`PyUnicode_DecodeFSDefaultAndSize` if you know the string length.
 
-   .. versionchanged:: 3.2
-      Use ``"strict"`` error handler on Windows.
+   .. versionchanged:: 3.6
+      Use :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
 
 
 .. c:function:: PyObject* PyUnicode_EncodeFSDefault(PyObject *unicode)
 
    Encode a Unicode object to :c:data:`Py_FileSystemDefaultEncoding` with the
-   ``"surrogateescape"`` error handler, or ``"strict"`` on Windows, and return
+   :c:data:`Py_FileSystemDefaultEncodeErrors` error handler, and return
    :class:`bytes`. Note that the resulting :class:`bytes` object may contain
    null bytes.
 
@@ -892,6 +894,8 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.6
+      Use :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
 
 wchar_t Support
 """""""""""""""

@@ -851,10 +851,7 @@ if supports_bytes_environ:
 
 def _fscodec():
     encoding = sys.getfilesystemencoding()
-    if encoding == 'mbcs':
-        errors = 'strict'
-    else:
-        errors = 'surrogateescape'
+    errors = sys.getfilesystemencodeerrors()
 
     def fsencode(filename):
         """Encode filename (an os.PathLike, bytes, or str) to the filesystem

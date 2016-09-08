@@ -103,10 +103,6 @@ typedef wchar_t Py_UNICODE;
 # endif
 #endif
 
-#if defined(MS_WINDOWS)
-#  define HAVE_MBCS
-#endif
-
 #ifdef HAVE_WCHAR_H
 /* Work around a cosmetic bug in BSDI 4.x wchar.h; thanks to Thomas Wouters */
 # ifdef _HAVE_BSDI
@@ -1657,7 +1653,7 @@ PyAPI_FUNC(PyObject *) PyUnicode_TranslateCharmap(
     );
 #endif
 
-#ifdef HAVE_MBCS
+#ifdef MS_WINDOWS
 
 /* --- MBCS codecs for Windows -------------------------------------------- */
 
@@ -1700,7 +1696,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeCodePage(
     const char *errors          /* error handling */
     );
 
-#endif /* HAVE_MBCS */
+#endif /* MS_WINDOWS */
 
 /* --- Decimal Encoder ---------------------------------------------------- */
 

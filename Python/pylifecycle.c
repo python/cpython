@@ -90,6 +90,9 @@ int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
 int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
 int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
+#ifdef MS_WINDOWS
+int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
+#endif
 
 PyThreadState *_Py_Finalizing = NULL;
 
@@ -321,6 +324,10 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
        check its value further. */
     if ((p = Py_GETENV("PYTHONHASHSEED")) && *p != '\0')
         Py_HashRandomizationFlag = add_flag(Py_HashRandomizationFlag, p);
+#ifdef MS_WINDOWS
+    if ((p = Py_GETENV("PYTHONLEGACYWINDOWSFSENCODING")) && *p != '\0')
+        Py_LegacyWindowsFSEncodingFlag = add_flag(Py_LegacyWindowsFSEncodingFlag, p);
+#endif
 
     _PyRandom_Init();
 
@@ -958,6 +965,18 @@ initfsencoding(PyInterpreterState *interp)
 {
     PyObject *codec;
 
+#ifdef MS_WINDOWS
+    if (Py_LegacyWindowsFSEncodingFlag)
+    {
+        Py_FileSystemDefaultEncoding = "mbcs";
+        Py_FileSystemDefaultEncodeErrors = "replace";
+    }
+    else
+    {
+        Py_FileSystemDefaultEncoding = "utf-8";
+        Py_FileSystemDefaultEncodeErrors = "surrogatepass";
+    }
+#else
     if (Py_FileSystemDefaultEncoding == NULL)
     {
         Py_FileSystemDefaultEncoding = get_locale_encoding();
@@ -968,6 +987,7 @@ initfsencoding(PyInterpreterState *interp)
         interp->fscodec_initialized = 1;
         return 0;
     }
+#endif
 
     /* the encoding is mbcs, utf-8 or ascii */
     codec = _PyCodec_Lookup(Py_FileSystemDefaultEncoding);

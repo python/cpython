@@ -286,6 +286,8 @@ Build
 Windows
 -------
 
+- Issue #27781: Change file system encoding on Windows to UTF-8 (PEP 529)
+
 - Issue #27731: Opt-out of MAX_PATH on Windows 10
 
 - Issue #6135: Adds encoding and errors parameters to subprocess.
@@ -2632,7 +2634,7 @@ Library
 - Issue #24774: Fix docstring in http.server.test. Patch from Chiu-Hsiang Hsu.
 
 - Issue #21159: Improve message in configparser.InterpolationMissingOptionError.
-  Patch from ≈Åukasz Langa.
+  Patch from ≈?ukasz Langa.
 
 - Issue #20362: Honour TestCase.longMessage correctly in assertRegex.
   Patch from Ilia Kurenkov.
@@ -4560,7 +4562,7 @@ Library
   Based on patch by Martin Panter.
 
 - Issue #17293: uuid.getnode() now determines MAC address on AIX using netstat.
-  Based on patch by Aivars KalvƒÅns.
+  Based on patch by Aivars Kalvƒ?ns.
 
 - Issue #22769: Fixed ttk.Treeview.tag_has() when called without arguments.
 
