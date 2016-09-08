@@ -1077,6 +1077,10 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
             } else {
                 /* Remember pointer to module init function. */
                 def = PyModule_GetDef(mod);
+                if (def == NULL) {
+                    Py_DECREF(name);
+                    return NULL;
+                }
                 def->m_base.m_init = p->initfunc;
                 if (_PyImport_FixupExtensionObject(mod, name, name) < 0) {
                     Py_DECREF(name);
