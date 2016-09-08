@@ -1068,7 +1068,8 @@ class HTTPConnection:
                 # end chunked transfer
                 self.send(b'0\r\n\r\n')
 
-    def putrequest(self, method, url, skip_host=0, skip_accept_encoding=0):
+    def putrequest(self, method, url, skip_host=False,
+                   skip_accept_encoding=False):
         """Send a request to the server.
 
         `method' specifies an HTTP request method, e.g. 'GET'.
