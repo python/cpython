@@ -234,6 +234,9 @@ Library
 - Issue #27930: Improved behaviour of logging.handlers.QueueListener.
   Thanks to Paulo Andrade and Petr Viktorin for the analysis and patch.
 
+- Issue #6766: Distributed reference counting added to multiprocessing 
+  to support nesting of shared values / proxy objects.
+
 C API
 -----
 
