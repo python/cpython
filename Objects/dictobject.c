@@ -431,9 +431,10 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
         dk = keys_free_list[--numfreekeys];
     }
     else {
-        dk = PyObject_MALLOC(sizeof(PyDictKeysObject) - 8 +
-                             es * size +
-                             sizeof(PyDictKeyEntry) * usable);
+        dk = PyObject_MALLOC(sizeof(PyDictKeysObject)
+                             - Py_MEMBER_SIZE(PyDictKeysObject, dk_indices)
+                             + es * size
+                             + sizeof(PyDictKeyEntry) * usable);
         if (dk == NULL) {
             PyErr_NoMemory();
             return NULL;
@@ -2786,17 +2787,20 @@ _PyDict_SizeOf(PyDictObject *mp)
     /* If the dictionary is split, the keys portion is accounted-for
        in the type object. */
     if (mp->ma_keys->dk_refcnt == 1)
-        res += sizeof(PyDictKeysObject) - 8 + DK_IXSIZE(mp->ma_keys) * size +
-            sizeof(PyDictKeyEntry) * usable;
+        res += (sizeof(PyDictKeysObject)
+                - Py_MEMBER_SIZE(PyDictKeysObject, dk_indices)
+                + DK_IXSIZE(mp->ma_keys) * size
+                + sizeof(PyDictKeyEntry) * usable);
     return res;
 }
 
 Py_ssize_t
 _PyDict_KeysSize(PyDictKeysObject *keys)
 {
-    return sizeof(PyDictKeysObject) - 8
-        + DK_IXSIZE(keys) * DK_SIZE(keys)
-        + USABLE_FRACTION(DK_SIZE(keys)) * sizeof(PyDictKeyEntry);
+    return (sizeof(PyDictKeysObject)
+            - Py_MEMBER_SIZE(PyDictKeysObject, dk_indices)
+            + DK_IXSIZE(keys) * DK_SIZE(keys)
+            + USABLE_FRACTION(DK_SIZE(keys)) * sizeof(PyDictKeyEntry));
 }
 
 static PyObject *
