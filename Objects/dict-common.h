@@ -22,11 +22,50 @@ typedef Py_ssize_t (*dict_lookup_func)
 /* See dictobject.c for actual layout of DictKeysObject */
 struct _dictkeysobject {
     Py_ssize_t dk_refcnt;
+
+    /* Size of the hash table (dk_indices). It must be a power of 2. */
     Py_ssize_t dk_size;
+
+    /* Function to lookup in the hash table (dk_indices):
+
+       - lookdict(): general-purpose, and may return DKIX_ERROR if (and
+         only if) a comparison raises an exception.
+
+       - lookdict_unicode(): specialized to Unicode string keys, comparison of
+         which can never raise an exception; that function can never return
+         DKIX_ERROR.
+
+       - lookdict_unicode_nodummy(): similar to lookdict_unicode() but further
+         specialized for Unicode string keys that cannot be the <dummy> value.
+
+       - lookdict_split(): Version of lookdict() for split tables. */
     dict_lookup_func dk_lookup;
+
+    /* Number of usable entries in dk_entries.
+       0 <= dk_usable <= USABLE_FRACTION(dk_size) */
     Py_ssize_t dk_usable;
-    Py_ssize_t dk_nentries;  /* How many entries are used. */
-    char dk_indices[8];      /* dynamically sized. 8 is minimum. */
+
+    /* Number of used entries in dk_entries.
+       0 <= dk_nentries < dk_size */
+    Py_ssize_t dk_nentries;
+
+    /* Actual hash table of dk_size entries. It holds indices in dk_entries,
+       or DKIX_EMPTY(-1) or DKIX_DUMMY(-2).
+
+       Indices must be: 0 <= indice < USABLE_FRACTION(dk_size).
+
+       The size in bytes of an indice depends on dk_size:
+
+       - 1 byte if dk_size <= 0xff (char*)
+       - 2 bytes if dk_size <= 0xffff (int16_t*)
+       - 4 bytes if dk_size <= 0xffffffff (int32_t*)
+       - 8 bytes otherwise (Py_ssize_t*)
+
+       Dynamically sized, 8 is minimum. */
+    char dk_indices[8];
+
+    /* "PyDictKeyEntry dk_entries[dk_usable];" array follows:
+       see the DK_ENTRIES() macro */
 };
 
 #endif
