@@ -388,10 +388,13 @@ class CommonTest(GenericTest):
             warnings.simplefilter("ignore", DeprecationWarning)
             self.assertIn(b"foo", self.pathmodule.abspath(b"foo"))
 
+        # avoid UnicodeDecodeError on Windows
+        undecodable_path = b'' if sys.platform == 'win32' else b'f\xf2\xf2'
+
         # Abspath returns bytes when the arg is bytes
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            for path in (b'', b'foo', b'f\xf2\xf2', b'/foo', b'C:\\'):
+            for path in (b'', b'foo', undecodable_path, b'/foo', b'C:\\'):
                 self.assertIsInstance(self.pathmodule.abspath(path), bytes)
 
     def test_realpath(self):

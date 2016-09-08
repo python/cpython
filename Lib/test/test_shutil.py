@@ -132,9 +132,7 @@ class TestShutil(unittest.TestCase):
         write_file(os.path.join(victim, 'somefile'), 'foo')
         victim = os.fsencode(victim)
         self.assertIsInstance(victim, bytes)
-        win = (os.name == 'nt')
-        with self.assertWarns(DeprecationWarning) if win else ExitStack():
-            shutil.rmtree(victim)
+        shutil.rmtree(victim)
 
     @support.skip_unless_symlink
     def test_rmtree_fails_on_symlink(self):
