@@ -300,7 +300,7 @@ PyDict_Fini(void)
 
 
 /* lookup indices.  returns DKIX_EMPTY, DKIX_DUMMY, or ix >=0 */
-Py_LOCAL_INLINE(Py_ssize_t)
+static inline Py_ssize_t
 dk_get_index(PyDictKeysObject *keys, Py_ssize_t i)
 {
     Py_ssize_t s = DK_SIZE(keys);
@@ -321,7 +321,7 @@ dk_get_index(PyDictKeysObject *keys, Py_ssize_t i)
 }
 
 /* write to indices. */
-Py_LOCAL_INLINE(void)
+static inline void
 dk_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
 {
     Py_ssize_t s = DK_SIZE(keys);
@@ -1565,7 +1565,7 @@ PyDict_Clear(PyObject *op)
 /* Returns -1 if no more items (or op is not a dict),
  * index of item otherwise. Stores value in pvalue
  */
-Py_LOCAL_INLINE(Py_ssize_t)
+static inline Py_ssize_t
 dict_next(PyObject *op, Py_ssize_t i, PyObject **pvalue)
 {
     Py_ssize_t n;
