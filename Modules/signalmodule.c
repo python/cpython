@@ -1266,210 +1266,169 @@ PyInit__signal(void)
     }
 
 #ifdef SIGHUP
-    x = PyLong_FromLong(SIGHUP);
-    PyDict_SetItemString(d, "SIGHUP", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGHUP))
+         goto finally;
 #endif
 #ifdef SIGINT
-    x = PyLong_FromLong(SIGINT);
-    PyDict_SetItemString(d, "SIGINT", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGINT))
+         goto finally;
 #endif
 #ifdef SIGBREAK
-    x = PyLong_FromLong(SIGBREAK);
-    PyDict_SetItemString(d, "SIGBREAK", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGBREAK))
+         goto finally;
 #endif
 #ifdef SIGQUIT
-    x = PyLong_FromLong(SIGQUIT);
-    PyDict_SetItemString(d, "SIGQUIT", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGQUIT))
+         goto finally;
 #endif
 #ifdef SIGILL
-    x = PyLong_FromLong(SIGILL);
-    PyDict_SetItemString(d, "SIGILL", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGILL))
+         goto finally;
 #endif
 #ifdef SIGTRAP
-    x = PyLong_FromLong(SIGTRAP);
-    PyDict_SetItemString(d, "SIGTRAP", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGTRAP))
+         goto finally;
 #endif
 #ifdef SIGIOT
-    x = PyLong_FromLong(SIGIOT);
-    PyDict_SetItemString(d, "SIGIOT", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGIOT))
+         goto finally;
 #endif
 #ifdef SIGABRT
-    x = PyLong_FromLong(SIGABRT);
-    PyDict_SetItemString(d, "SIGABRT", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGABRT))
+         goto finally;
 #endif
 #ifdef SIGEMT
-    x = PyLong_FromLong(SIGEMT);
-    PyDict_SetItemString(d, "SIGEMT", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGEMT))
+         goto finally;
 #endif
 #ifdef SIGFPE
-    x = PyLong_FromLong(SIGFPE);
-    PyDict_SetItemString(d, "SIGFPE", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGFPE))
+         goto finally;
 #endif
 #ifdef SIGKILL
-    x = PyLong_FromLong(SIGKILL);
-    PyDict_SetItemString(d, "SIGKILL", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGKILL))
+         goto finally;
 #endif
 #ifdef SIGBUS
-    x = PyLong_FromLong(SIGBUS);
-    PyDict_SetItemString(d, "SIGBUS", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGBUS))
+         goto finally;
 #endif
 #ifdef SIGSEGV
-    x = PyLong_FromLong(SIGSEGV);
-    PyDict_SetItemString(d, "SIGSEGV", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGSEGV))
+         goto finally;
 #endif
 #ifdef SIGSYS
-    x = PyLong_FromLong(SIGSYS);
-    PyDict_SetItemString(d, "SIGSYS", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGSYS))
+         goto finally;
 #endif
 #ifdef SIGPIPE
-    x = PyLong_FromLong(SIGPIPE);
-    PyDict_SetItemString(d, "SIGPIPE", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGPIPE))
+         goto finally;
 #endif
 #ifdef SIGALRM
-    x = PyLong_FromLong(SIGALRM);
-    PyDict_SetItemString(d, "SIGALRM", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGALRM))
+         goto finally;
 #endif
 #ifdef SIGTERM
-    x = PyLong_FromLong(SIGTERM);
-    PyDict_SetItemString(d, "SIGTERM", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGTERM))
+         goto finally;
 #endif
 #ifdef SIGUSR1
-    x = PyLong_FromLong(SIGUSR1);
-    PyDict_SetItemString(d, "SIGUSR1", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGUSR1))
+         goto finally;
 #endif
 #ifdef SIGUSR2
-    x = PyLong_FromLong(SIGUSR2);
-    PyDict_SetItemString(d, "SIGUSR2", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGUSR2))
+         goto finally;
 #endif
 #ifdef SIGCLD
-    x = PyLong_FromLong(SIGCLD);
-    PyDict_SetItemString(d, "SIGCLD", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGCLD))
+         goto finally;
 #endif
 #ifdef SIGCHLD
-    x = PyLong_FromLong(SIGCHLD);
-    PyDict_SetItemString(d, "SIGCHLD", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGCHLD))
+         goto finally;
 #endif
 #ifdef SIGPWR
-    x = PyLong_FromLong(SIGPWR);
-    PyDict_SetItemString(d, "SIGPWR", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGPWR))
+         goto finally;
 #endif
 #ifdef SIGIO
-    x = PyLong_FromLong(SIGIO);
-    PyDict_SetItemString(d, "SIGIO", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGIO))
+         goto finally;
 #endif
 #ifdef SIGURG
-    x = PyLong_FromLong(SIGURG);
-    PyDict_SetItemString(d, "SIGURG", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGURG))
+         goto finally;
 #endif
 #ifdef SIGWINCH
-    x = PyLong_FromLong(SIGWINCH);
-    PyDict_SetItemString(d, "SIGWINCH", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGWINCH))
+         goto finally;
 #endif
 #ifdef SIGPOLL
-    x = PyLong_FromLong(SIGPOLL);
-    PyDict_SetItemString(d, "SIGPOLL", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGPOLL))
+         goto finally;
 #endif
 #ifdef SIGSTOP
-    x = PyLong_FromLong(SIGSTOP);
-    PyDict_SetItemString(d, "SIGSTOP", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGSTOP))
+         goto finally;
 #endif
 #ifdef SIGTSTP
-    x = PyLong_FromLong(SIGTSTP);
-    PyDict_SetItemString(d, "SIGTSTP", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGTSTP))
+         goto finally;
 #endif
 #ifdef SIGCONT
-    x = PyLong_FromLong(SIGCONT);
-    PyDict_SetItemString(d, "SIGCONT", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGCONT))
+         goto finally;
 #endif
 #ifdef SIGTTIN
-    x = PyLong_FromLong(SIGTTIN);
-    PyDict_SetItemString(d, "SIGTTIN", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGTTIN))
+         goto finally;
 #endif
 #ifdef SIGTTOU
-    x = PyLong_FromLong(SIGTTOU);
-    PyDict_SetItemString(d, "SIGTTOU", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGTTOU))
+         goto finally;
 #endif
 #ifdef SIGVTALRM
-    x = PyLong_FromLong(SIGVTALRM);
-    PyDict_SetItemString(d, "SIGVTALRM", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGVTALRM))
+         goto finally;
 #endif
 #ifdef SIGPROF
-    x = PyLong_FromLong(SIGPROF);
-    PyDict_SetItemString(d, "SIGPROF", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGPROF))
+         goto finally;
 #endif
 #ifdef SIGXCPU
-    x = PyLong_FromLong(SIGXCPU);
-    PyDict_SetItemString(d, "SIGXCPU", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGXCPU))
+         goto finally;
 #endif
 #ifdef SIGXFSZ
-    x = PyLong_FromLong(SIGXFSZ);
-    PyDict_SetItemString(d, "SIGXFSZ", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGXFSZ))
+         goto finally;
 #endif
 #ifdef SIGRTMIN
-    x = PyLong_FromLong(SIGRTMIN);
-    PyDict_SetItemString(d, "SIGRTMIN", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGRTMIN))
+         goto finally;
 #endif
 #ifdef SIGRTMAX
-    x = PyLong_FromLong(SIGRTMAX);
-    PyDict_SetItemString(d, "SIGRTMAX", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGRTMAX))
+         goto finally;
 #endif
 #ifdef SIGINFO
-    x = PyLong_FromLong(SIGINFO);
-    PyDict_SetItemString(d, "SIGINFO", x);
-    Py_XDECREF(x);
+    if (PyModule_AddIntMacro(m, SIGINFO))
+         goto finally;
 #endif
 
 #ifdef ITIMER_REAL
-    x = PyLong_FromLong(ITIMER_REAL);
-    PyDict_SetItemString(d, "ITIMER_REAL", x);
-    Py_DECREF(x);
+    if (PyModule_AddIntMacro(m, ITIMER_REAL))
+         goto finally;
 #endif
 #ifdef ITIMER_VIRTUAL
-    x = PyLong_FromLong(ITIMER_VIRTUAL);
-    PyDict_SetItemString(d, "ITIMER_VIRTUAL", x);
-    Py_DECREF(x);
+    if (PyModule_AddIntMacro(m, ITIMER_VIRTUAL))
+         goto finally;
 #endif
 #ifdef ITIMER_PROF
-    x = PyLong_FromLong(ITIMER_PROF);
-    PyDict_SetItemString(d, "ITIMER_PROF", x);
-    Py_DECREF(x);
+    if (PyModule_AddIntMacro(m, ITIMER_PROF))
+         goto finally;
 #endif
 
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
@@ -1480,15 +1439,13 @@ PyInit__signal(void)
 #endif
 
 #ifdef CTRL_C_EVENT
-    x = PyLong_FromLong(CTRL_C_EVENT);
-    PyDict_SetItemString(d, "CTRL_C_EVENT", x);
-    Py_DECREF(x);
+    if (PyModule_AddIntMacro(m, CTRL_C_EVENT))
+         goto finally;
 #endif
 
 #ifdef CTRL_BREAK_EVENT
-    x = PyLong_FromLong(CTRL_BREAK_EVENT);
-    PyDict_SetItemString(d, "CTRL_BREAK_EVENT", x);
-    Py_DECREF(x);
+    if (PyModule_AddIntMacro(m, CTRL_BREAK_EVENT))
+         goto finally;
 #endif
 
 #ifdef MS_WINDOWS
