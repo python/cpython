@@ -668,6 +668,8 @@ LLVM_PROF_MERGER
 PGO_PROF_USE_FLAG
 PGO_PROF_GEN_FLAG
 LTOFLAGS
+DEF_MAKE_RULE
+DEF_MAKE_ALL_RULE
 UNIVERSAL_ARCH_FLAGS
 BASECFLAGS
 OPT
@@ -798,6 +800,7 @@ with_suffix
 enable_shared
 enable_profiling
 with_pydebug
+with_optimizations
 with_lto
 enable_toolbox_glue
 with_libs
@@ -1491,6 +1494,8 @@ Optional Packages:
                           compiler
   --with-suffix=.exe      set executable suffix
   --with-pydebug          build with Py_DEBUG defined
+  --with-optimizations    Enable all optimizations when available (LTO, PGO,
+                          etc). Disabled by default.
   --with-lto              Enable Link Time Optimization in PGO builds.
                           Disabled by default.
   --with-libs='lib1 ...'  link against additional libs
@@ -6383,6 +6388,47 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
   CFLAGS=$save_CFLAGS
+fi
+
+
+# Enable optimization flags
+
+
+Py_OPT='false'
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-optimizations" >&5
+$as_echo_n "checking for --with-optimizations... " >&6; }
+
+# Check whether --with-optimizations was given.
+if test "${with_optimizations+set}" = set; then :
+  withval=$with_optimizations;
+if test "$withval" != no
+then
+  Py_OPT='true'
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+else
+  Py_OPT='false'
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; };
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+if test "$Py_OPT" = 'true' ; then
+  case $ac_sys_system in
+    Darwin*)
+      # At least on macOS El Capitan, LTO does not work with PGO.
+      Py_LTO='false'
+      ;;
+  esac
+  Py_LTO='true'
+  DEF_MAKE_ALL_RULE="profile-opt"
+  DEF_MAKE_RULE="build_all"
+else
+  DEF_MAKE_ALL_RULE="build_all"
+  DEF_MAKE_RULE="all"
 fi
 
 
@@ -16320,3 +16366,12 @@ $as_echo "$as_me: WARNING:
 esac
 
 mv config.c Modules
+
+if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
+    echo "" >&6
+    echo "" >&6
+    echo "If you want a release build with all optimizations active (LTO, PGO, etc),"
+    echo "please run ./configure --with-optimizations" >&6
+    echo "" >&6
+    echo "" >&6
+fi

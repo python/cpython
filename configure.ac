@@ -1380,6 +1380,38 @@ then
 fi
 
 
+# Enable optimization flags
+AC_SUBST(DEF_MAKE_ALL_RULE)
+AC_SUBST(DEF_MAKE_RULE)
+Py_OPT='false'
+AC_MSG_CHECKING(for --with-optimizations)
+AC_ARG_WITH(optimizations, AS_HELP_STRING([--with-optimizations], [Enable all optimizations when available (LTO, PGO, etc). Disabled by default.]),
+[
+if test "$withval" != no
+then
+  Py_OPT='true'
+  AC_MSG_RESULT(yes);
+else
+  Py_OPT='false'
+  AC_MSG_RESULT(no);
+fi],
+[AC_MSG_RESULT(no)])
+if test "$Py_OPT" = 'true' ; then
+  case $ac_sys_system in
+    Darwin*)
+      # At least on macOS El Capitan, LTO does not work with PGO.
+      Py_LTO='false'
+      ;;
+  esac
+  Py_LTO='true'
+  DEF_MAKE_ALL_RULE="profile-opt"
+  DEF_MAKE_RULE="build_all"
+else
+  DEF_MAKE_ALL_RULE="build_all"
+  DEF_MAKE_RULE="all"
+fi
+
+
 # Enable LTO flags
 AC_SUBST(LTOFLAGS)
 AC_MSG_CHECKING(for --with-lto)
@@ -4775,3 +4807,12 @@ BeOS)
 esac
 
 mv config.c Modules
+
+if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
+    echo "" >&AS_MESSAGE_FD
+    echo "" >&AS_MESSAGE_FD
+    echo "If you want a release build with all optimizations active (LTO, PGO, etc),"
+    echo "please run ./configure --with-optimizations" >&AS_MESSAGE_FD
+    echo "" >&AS_MESSAGE_FD
+    echo "" >&AS_MESSAGE_FD
+fi
