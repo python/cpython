@@ -114,7 +114,7 @@
 #endif
 
 #define SHA3_MAX_DIGESTSIZE 64 /* 64 Bytes (512 Bits) for 224 to 512 */
-#define SHA3_LANESIZE 96 /* ExtractLane needs an extra 96 bytes */
+#define SHA3_LANESIZE (20 * 8) /* ExtractLane needs max uint64_t[20] extra. */
 #define SHA3_state Keccak_HashInstance
 #define SHA3_init Keccak_HashInitialize
 #define SHA3_process Keccak_HashUpdate
@@ -605,8 +605,7 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
     /* ExtractLane needs at least SHA3_MAX_DIGESTSIZE + SHA3_LANESIZE and
      * SHA3_LANESIZE extra space.
      */
-    digest = (unsigned char*)PyMem_Malloc(SHA3_LANESIZE +
-        ((digestlen > SHA3_MAX_DIGESTSIZE) ? digestlen : SHA3_MAX_DIGESTSIZE));
+    digest = (unsigned char*)PyMem_Malloc(digestlen + SHA3_LANESIZE);
     if (digest == NULL) {
         return PyErr_NoMemory();
     }
