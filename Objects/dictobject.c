@@ -293,7 +293,7 @@ PyDict_Fini(void)
             2 : sizeof(Py_ssize_t))
 #endif
 #define DK_ENTRIES(dk) \
-    ((PyDictKeyEntry*)(&(dk)->dk_indices[DK_SIZE(dk) * DK_IXSIZE(dk)]))
+    ((PyDictKeyEntry*)(&(dk)->dk_indices.as_1[DK_SIZE(dk) * DK_IXSIZE(dk)]))
 
 #define DK_DEBUG_INCREF _Py_INC_REFTOTAL _Py_REF_DEBUG_COMMA
 #define DK_DEBUG_DECREF _Py_DEC_REFTOTAL _Py_REF_DEBUG_COMMA
@@ -312,21 +312,19 @@ dk_get_index(PyDictKeysObject *keys, Py_ssize_t i)
     Py_ssize_t ix;
 
     if (s <= 0xff) {
-        char *indices = (char*)keys->dk_indices;
+        int8_t *indices = keys->dk_indices.as_1;
         ix = indices[i];
     }
     else if (s <= 0xffff) {
-        int16_t *indices = (int16_t*)keys->dk_indices;
+        int16_t *indices = keys->dk_indices.as_2;
         ix = indices[i];
     }
-#if SIZEOF_VOID_P > 4
     else if (s <= 0xffffffff) {
-        int32_t *indices = (int32_t*)keys->dk_indices;
+        int32_t *indices = keys->dk_indices.as_4;
         ix = indices[i];
     }
-#endif
     else {
-        Py_ssize_t *indices = (Py_ssize_t*)keys->dk_indices;
+        int64_t *indices = keys->dk_indices.as_8;
         ix = indices[i];
     }
     assert(ix >= DKIX_DUMMY);
@@ -342,24 +340,22 @@ dk_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
     assert(ix >= DKIX_DUMMY);
 
     if (s <= 0xff) {
-        char *indices = (char*)keys->dk_indices;
+        int8_t *indices = keys->dk_indices.as_1;
         assert(ix <= 0x7f);
         indices[i] = (char)ix;
     }
     else if (s <= 0xffff) {
-        int16_t *indices = (int16_t*)keys->dk_indices;
+        int16_t *indices = keys->dk_indices.as_2;
         assert(ix <= 0x7fff);
         indices[i] = (int16_t)ix;
     }
-#if SIZEOF_VOID_P > 4
     else if (s <= 0xffffffff) {
-        int32_t *indices = (int32_t*)keys->dk_indices;
+        int32_t *indices = keys->dk_indices.as_4;
         assert(ix <= 0x7fffffff);
         indices[i] = (int32_t)ix;
     }
-#endif
     else {
-        Py_ssize_t *indices = (Py_ssize_t*)keys->dk_indices;
+        int64_t *indices = keys->dk_indices.as_8;
         indices[i] = ix;
     }
 }
@@ -418,8 +414,8 @@ static PyDictKeysObject empty_keys_struct = {
         lookdict_split, /* dk_lookup */
         0, /* dk_usable (immutable) */
         0, /* dk_nentries */
-        {DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY,
-         DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY}, /* dk_indices */
+        .dk_indices = { .as_1 = {DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY,
+                                 DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY}},
 };
 
 static PyObject *empty_values[1] = { NULL };
@@ -468,7 +464,7 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
     dk->dk_usable = usable;
     dk->dk_lookup = lookdict_unicode_nodummy;
     dk->dk_nentries = 0;
-    memset(&dk->dk_indices[0], 0xff, es * size);
+    memset(&dk->dk_indices.as_1[0], 0xff, es * size);
     memset(DK_ENTRIES(dk), 0, sizeof(PyDictKeyEntry) * usable);
     return dk;
 }
