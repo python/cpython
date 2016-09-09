@@ -793,7 +793,7 @@ class EventLoopTestsMixin:
             loop.connect_accepted_socket(
                 (lambda : proto), conn, ssl=server_ssl))
         loop.run_forever()
-        conn.close()
+        proto.transport.close()
         lsock.close()
 
         thread.join(1)

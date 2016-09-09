@@ -204,8 +204,8 @@ def coroutine(func):
         @functools.wraps(func)
         def coro(*args, **kw):
             res = func(*args, **kw)
-            if isinstance(res, futures.Future) or inspect.isgenerator(res) or \
-                    isinstance(res, CoroWrapper):
+            if (futures.isfuture(res) or inspect.isgenerator(res) or
+                isinstance(res, CoroWrapper)):
                 res = yield from res
             elif _AwaitableABC is not None:
                 # If 'func' returns an Awaitable (new in 3.5) we
