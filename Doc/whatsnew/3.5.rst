@@ -804,11 +804,12 @@ Notable changes in the :mod:`asyncio` module since Python 3.4.0:
   :func:`~asyncio.ensure_future`.
   (Contributed by Yury Selivanov.)
 
-* New :meth:`loop.set_task_factory() <asyncio.BaseEventLoop.set_task_factory>`
-  and :meth:`loop.set_task_factory() <asyncio.BaseEventLoop.get_task_factory>`
-  methods to customize the task factory that
-  :meth:`loop.create_task() <asyncio.BaseEventLoop.create_task>` method uses.
-  (Contributed by Yury Selivanov.)
+* New :meth:`loop.set_task_factory()
+  <asyncio.AbstractEventLoop.set_task_factory>` and
+  :meth:`loop.get_task_factory() <asyncio.AbstractEventLoop.get_task_factory>`
+  methods to customize the task factory that :meth:`loop.create_task()
+  <asyncio.BaseEventLoop.create_task>` method uses.  (Contributed by Yury
+  Selivanov.)
 
 * New :meth:`Queue.join() <asyncio.Queue.join>` and
   :meth:`Queue.task_done() <asyncio.Queue.task_done>` queue methods.
