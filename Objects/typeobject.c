@@ -549,7 +549,7 @@ type_get_bases(PyTypeObject *type, void *context)
 
 static PyTypeObject *best_base(PyObject *);
 static int mro_internal(PyTypeObject *, PyObject **);
-Py_LOCAL_INLINE(int) type_is_subtype_base_chain(PyTypeObject *, PyTypeObject *);
+static int type_is_subtype_base_chain(PyTypeObject *, PyTypeObject *);
 static int compatible_for_assignment(PyTypeObject *, PyTypeObject *, const char *);
 static int add_subclass(PyTypeObject*, PyTypeObject*);
 static int add_all_subclasses(PyTypeObject *type, PyObject *bases);
@@ -1333,7 +1333,7 @@ static PyTypeObject *solid_base(PyTypeObject *type);
 
 /* type test with subclassing support */
 
-Py_LOCAL_INLINE(int)
+static int
 type_is_subtype_base_chain(PyTypeObject *a, PyTypeObject *b)
 {
     do {
@@ -3805,7 +3805,7 @@ import_copyreg(void)
     return PyImport_Import(copyreg_str);
 }
 
-Py_LOCAL(PyObject *)
+static PyObject *
 _PyType_GetSlotNames(PyTypeObject *cls)
 {
     PyObject *copyreg;
@@ -3858,7 +3858,7 @@ _PyType_GetSlotNames(PyTypeObject *cls)
     return slotnames;
 }
 
-Py_LOCAL(PyObject *)
+static PyObject *
 _PyObject_GetState(PyObject *obj, int required)
 {
     PyObject *state;
@@ -4004,7 +4004,7 @@ _PyObject_GetState(PyObject *obj, int required)
     return state;
 }
 
-Py_LOCAL(int)
+static int
 _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
 {
     PyObject *getnewargs, *getnewargs_ex;
@@ -4100,7 +4100,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
     return 0;
 }
 
-Py_LOCAL(int)
+static int
 _PyObject_GetItemsIter(PyObject *obj, PyObject **listitems,
                        PyObject **dictitems)
 {
