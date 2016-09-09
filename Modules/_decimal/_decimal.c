@@ -1889,12 +1889,13 @@ is_space(enum PyUnicode_Kind kind, void *data, Py_ssize_t pos)
 /* Return the ASCII representation of a numeric Unicode string. The numeric
    string may contain ascii characters in the range [1, 127], any Unicode
    space and any unicode digit. If strip_ws is true, leading and trailing
-   whitespace is stripped.
+   whitespace is stripped. If ignore_underscores is true, underscores are
+   ignored.
 
    Return NULL if malloc fails and an empty string if invalid characters
    are found. */
 static char *
-numeric_as_ascii(const PyObject *u, int strip_ws)
+numeric_as_ascii(const PyObject *u, int strip_ws, int ignore_underscores)
 {
     enum PyUnicode_Kind kind;
     void *data;
@@ -1929,6 +1930,9 @@ numeric_as_ascii(const PyObject *u, int strip_ws)
 
     for (; j < len; j++) {
         ch = PyUnicode_READ(kind, data, j);
+        if (ignore_underscores && ch == '_') {
+            continue;
+        }
         if (0 < ch && ch <= 127) {
             *cp++ = ch;
             continue;
@@ -2011,7 +2015,7 @@ PyDecType_FromUnicode(PyTypeObject *type, const PyObject *u,
     PyObject *dec;
     char *s;
 
-    s = numeric_as_ascii(u, 0);
+    s = numeric_as_ascii(u, 0, 0);
     if (s == NULL) {
         return NULL;
     }
@@ -2031,7 +2035,7 @@ PyDecType_FromUnicodeExactWS(PyTypeObject *type, const PyObject *u,
     PyObject *dec;
     char *s;
 
-    s = numeric_as_ascii(u, 1);
+    s = numeric_as_ascii(u, 1, 1);
     if (s == NULL) {
         return NULL;
     }

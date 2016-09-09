@@ -17,6 +17,8 @@ Core and Builtins
   efficient bytecode. Patch by Demur Rumed, design by Serhiy Storchaka,
   reviewed by Serhiy Storchaka and Victor Stinner.
 
+- Issue #26331: Implement tokenizing support for PEP 515. Patch by Georg Brandl.
+
 - Issue #27999: Make "global after use" a SyntaxError, and ditto for nonlocal.
   Patch by Ivan Levkivskyi.
 
@@ -2678,7 +2680,7 @@ Library
 - Issue #24774: Fix docstring in http.server.test. Patch from Chiu-Hsiang Hsu.
 
 - Issue #21159: Improve message in configparser.InterpolationMissingOptionError.
-  Patch from Å?ukasz Langa.
+  Patch from ï¿½?ukasz Langa.
 
 - Issue #20362: Honour TestCase.longMessage correctly in assertRegex.
   Patch from Ilia Kurenkov.
@@ -4606,7 +4608,7 @@ Library
   Based on patch by Martin Panter.
 
 - Issue #17293: uuid.getnode() now determines MAC address on AIX using netstat.
-  Based on patch by Aivars KalvÄ?ns.
+  Based on patch by Aivars Kalvï¿½?ns.
 
 - Issue #22769: Fixed ttk.Treeview.tag_has() when called without arguments.
 

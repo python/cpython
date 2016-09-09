@@ -345,7 +345,7 @@ Decimal objects
    *value* can be an integer, string, tuple, :class:`float`, or another :class:`Decimal`
    object. If no *value* is given, returns ``Decimal('0')``.  If *value* is a
    string, it should conform to the decimal numeric string syntax after leading
-   and trailing whitespace characters are removed::
+   and trailing whitespace characters, as well as underscores throughout, are removed::
 
       sign           ::=  '+' | '-'
       digit          ::=  '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
@@ -393,6 +393,10 @@ Decimal objects
    .. versionchanged:: 3.3
       :class:`float` arguments raise an exception if the :exc:`FloatOperation`
       trap is set. By default the trap is off.
+
+   .. versionchanged:: 3.6
+      Underscores are allowed for grouping, as with integral and floating-point
+      literals in code.
 
    Decimal floating point objects share many properties with the other built-in
    numeric types such as :class:`float` and :class:`int`.  All of the usual math
@@ -1075,8 +1079,8 @@ In addition to the three supplied contexts, new contexts can be created with the
          Decimal('4.44')
 
       This method implements the to-number operation of the IBM specification.
-      If the argument is a string, no leading or trailing whitespace is
-      permitted.
+      If the argument is a string, no leading or trailing whitespace or
+      underscores are permitted.
 
    .. method:: create_decimal_from_float(f)
 

@@ -1333,6 +1333,28 @@ verify_identifier(struct tok_state *tok)
 }
 #endif
 
+static int
+tok_decimal_tail(struct tok_state *tok)
+{
+    int c;
+
+    while (1) {
+        do {
+            c = tok_nextc(tok);
+        } while (isdigit(c));
+        if (c != '_') {
+            break;
+        }
+        c = tok_nextc(tok);
+        if (!isdigit(c)) {
+            tok->done = E_TOKEN;
+            tok_backup(tok, c);
+            return 0;
+        }
+    }
+    return c;
+}
+
 /* Get next token, after space stripping etc. */
 
 static int
@@ -1353,17 +1375,20 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         tok->atbol = 0;
         for (;;) {
             c = tok_nextc(tok);
-            if (c == ' ')
+            if (c == ' ') {
                 col++, altcol++;
+            }
             else if (c == '\t') {
                 col = (col/tok->tabsize + 1) * tok->tabsize;
                 altcol = (altcol/tok->alttabsize + 1)
                     * tok->alttabsize;
             }
-            else if (c == '\014') /* Control-L (formfeed) */
+            else if (c == '\014')  {/* Control-L (formfeed) */
                 col = altcol = 0; /* For Emacs users */
-            else
+            }
+            else {
                 break;
+            }
         }
         tok_backup(tok, c);
         if (c == '#' || c == '\n') {
@@ -1372,10 +1397,12 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                not passed to the parser as NEWLINE tokens,
                except *totally* empty lines in interactive
                mode, which signal the end of a command group. */
-            if (col == 0 && c == '\n' && tok->prompt != NULL)
+            if (col == 0 && c == '\n' && tok->prompt != NULL) {
                 blankline = 0; /* Let it through */
-            else
+            }
+            else {
                 blankline = 1; /* Ignore completely */
+            }
             /* We can't jump back right here since we still
                may need to skip to the end of a comment */
         }
@@ -1383,8 +1410,9 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             if (col == tok->indstack[tok->indent]) {
                 /* No change */
                 if (altcol != tok->altindstack[tok->indent]) {
-                    if (indenterror(tok))
+                    if (indenterror(tok)) {
                         return ERRORTOKEN;
+                    }
                 }
             }
             else if (col > tok->indstack[tok->indent]) {
@@ -1395,8 +1423,9 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     return ERRORTOKEN;
                 }
                 if (altcol <= tok->altindstack[tok->indent]) {
-                    if (indenterror(tok))
+                    if (indenterror(tok)) {
                         return ERRORTOKEN;
+                    }
                 }
                 tok->pendin++;
                 tok->indstack[++tok->indent] = col;
@@ -1415,8 +1444,9 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     return ERRORTOKEN;
                 }
                 if (altcol != tok->altindstack[tok->indent]) {
-                    if (indenterror(tok))
+                    if (indenterror(tok)) {
                         return ERRORTOKEN;
+                    }
                 }
             }
         }
@@ -1462,9 +1492,11 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     tok->start = tok->cur - 1;
 
     /* Skip comment */
-    if (c == '#')
-        while (c != EOF && c != '\n')
+    if (c == '#') {
+        while (c != EOF && c != '\n') {
             c = tok_nextc(tok);
+        }
+    }
 
     /* Check for EOF and errors now */
     if (c == EOF) {
@@ -1481,27 +1513,35 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 saw_b = 1;
             /* Since this is a backwards compatibility support literal we don't
                want to support it in arbitrary order like byte literals. */
-            else if (!(saw_b || saw_u || saw_r || saw_f) && (c == 'u' || c == 'U'))
+            else if (!(saw_b || saw_u || saw_r || saw_f)
+                     && (c == 'u'|| c == 'U')) {
                 saw_u = 1;
+            }
             /* ur"" and ru"" are not supported */
-            else if (!(saw_r || saw_u) && (c == 'r' || c == 'R'))
+            else if (!(saw_r || saw_u) && (c == 'r' || c == 'R')) {
                 saw_r = 1;
-            else if (!(saw_f || saw_b || saw_u) && (c == 'f' || c == 'F'))
+            }
+            else if (!(saw_f || saw_b || saw_u) && (c == 'f' || c == 'F')) {
                 saw_f = 1;
-            else
+            }
+            else {
                 break;
+            }
             c = tok_nextc(tok);
-            if (c == '"' || c == '\'')
+            if (c == '"' || c == '\'') {
                 goto letter_quote;
+            }
         }
         while (is_potential_identifier_char(c)) {
-            if (c >= 128)
+            if (c >= 128) {
                 nonascii = 1;
+            }
             c = tok_nextc(tok);
         }
         tok_backup(tok, c);
-        if (nonascii && !verify_identifier(tok))
+        if (nonascii && !verify_identifier(tok)) {
             return ERRORTOKEN;
+        }
         *p_start = tok->start;
         *p_end = tok->cur;
 
@@ -1510,10 +1550,12 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             /* Current token length is 5. */
             if (tok->async_def) {
                 /* We're inside an 'async def' function. */
-                if (memcmp(tok->start, "async", 5) == 0)
+                if (memcmp(tok->start, "async", 5) == 0) {
                     return ASYNC;
-                if (memcmp(tok->start, "await", 5) == 0)
+                }
+                if (memcmp(tok->start, "await", 5) == 0) {
                     return AWAIT;
+                }
             }
             else if (memcmp(tok->start, "async", 5) == 0) {
                 /* The current token is 'async'.
@@ -1546,8 +1588,9 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     /* Newline */
     if (c == '\n') {
         tok->atbol = 1;
-        if (blankline || tok->level > 0)
+        if (blankline || tok->level > 0) {
             goto nextline;
+        }
         *p_start = tok->start;
         *p_end = tok->cur - 1; /* Leave '\n' out of the string */
         tok->cont_line = 0;
@@ -1570,11 +1613,13 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 *p_start = tok->start;
                 *p_end = tok->cur;
                 return ELLIPSIS;
-            } else {
+            }
+            else {
                 tok_backup(tok, c);
             }
             tok_backup(tok, '.');
-        } else {
+        }
+        else {
             tok_backup(tok, c);
         }
         *p_start = tok->start;
@@ -1588,59 +1633,93 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             /* Hex, octal or binary -- maybe. */
             c = tok_nextc(tok);
             if (c == 'x' || c == 'X') {
-
                 /* Hex */
                 c = tok_nextc(tok);
-                if (!isxdigit(c)) {
-                    tok->done = E_TOKEN;
-                    tok_backup(tok, c);
-                    return ERRORTOKEN;
-                }
                 do {
-                    c = tok_nextc(tok);
-                } while (isxdigit(c));
+                    if (c == '_') {
+                        c = tok_nextc(tok);
+                    }
+                    if (!isxdigit(c)) {
+                        tok->done = E_TOKEN;
+                        tok_backup(tok, c);
+                        return ERRORTOKEN;
+                    }
+                    do {
+                        c = tok_nextc(tok);
+                    } while (isxdigit(c));
+                } while (c == '_');
             }
             else if (c == 'o' || c == 'O') {
                 /* Octal */
                 c = tok_nextc(tok);
-                if (c < '0' || c >= '8') {
-                    tok->done = E_TOKEN;
-                    tok_backup(tok, c);
-                    return ERRORTOKEN;
-                }
                 do {
-                    c = tok_nextc(tok);
-                } while ('0' <= c && c < '8');
+                    if (c == '_') {
+                        c = tok_nextc(tok);
+                    }
+                    if (c < '0' || c >= '8') {
+                        tok->done = E_TOKEN;
+                        tok_backup(tok, c);
+                        return ERRORTOKEN;
+                    }
+                    do {
+                        c = tok_nextc(tok);
+                    } while ('0' <= c && c < '8');
+                } while (c == '_');
             }
             else if (c == 'b' || c == 'B') {
                 /* Binary */
                 c = tok_nextc(tok);
-                if (c != '0' && c != '1') {
-                    tok->done = E_TOKEN;
-                    tok_backup(tok, c);
-                    return ERRORTOKEN;
-                }
                 do {
-                    c = tok_nextc(tok);
-                } while (c == '0' || c == '1');
+                    if (c == '_') {
+                        c = tok_nextc(tok);
+                    }
+                    if (c != '0' && c != '1') {
+                        tok->done = E_TOKEN;
+                        tok_backup(tok, c);
+                        return ERRORTOKEN;
+                    }
+                    do {
+                        c = tok_nextc(tok);
+                    } while (c == '0' || c == '1');
+                } while (c == '_');
             }
             else {
                 int nonzero = 0;
                 /* maybe old-style octal; c is first char of it */
                 /* in any case, allow '0' as a literal */
-                while (c == '0')
-                    c = tok_nextc(tok);
-                while (isdigit(c)) {
-                    nonzero = 1;
+                while (1) {
+                    if (c == '_') {
+                        c = tok_nextc(tok);
+                        if (!isdigit(c)) {
+                            tok->done = E_TOKEN;
+                            tok_backup(tok, c);
+                            return ERRORTOKEN;
+                        }
+                    }
+                    if (c != '0') {
+                        break;
+                    }
                     c = tok_nextc(tok);
                 }
-                if (c == '.')
+                if (isdigit(c)) {
+                    nonzero = 1;
+                    c = tok_decimal_tail(tok);
+                    if (c == 0) {
+                        return ERRORTOKEN;
+                    }
+                }
+                if (c == '.') {
+                    c = tok_nextc(tok);
                     goto fraction;
-                else if (c == 'e' || c == 'E')
+                }
+                else if (c == 'e' || c == 'E') {
                     goto exponent;
-                else if (c == 'j' || c == 'J')
+                }
+                else if (c == 'j' || c == 'J') {
                     goto imaginary;
+                }
                 else if (nonzero) {
+                    /* Old-style octal: now disallowed. */
                     tok->done = E_TOKEN;
                     tok_backup(tok, c);
                     return ERRORTOKEN;
@@ -1649,17 +1728,22 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         }
         else {
             /* Decimal */
-            do {
-                c = tok_nextc(tok);
-            } while (isdigit(c));
+            c = tok_decimal_tail(tok);
+            if (c == 0) {
+                return ERRORTOKEN;
+            }
             {
                 /* Accept floating point numbers. */
                 if (c == '.') {
+                    c = tok_nextc(tok);
         fraction:
                     /* Fraction */
-                    do {
-                        c = tok_nextc(tok);
-                    } while (isdigit(c));
+                    if (isdigit(c)) {
+                        c = tok_decimal_tail(tok);
+                        if (c == 0) {
+                            return ERRORTOKEN;
+                        }
+                    }
                 }
                 if (c == 'e' || c == 'E') {
                     int e;
@@ -1681,14 +1765,16 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                         *p_end = tok->cur;
                         return NUMBER;
                     }
-                    do {
-                        c = tok_nextc(tok);
-                    } while (isdigit(c));
+                    c = tok_decimal_tail(tok);
+                    if (c == 0) {
+                        return ERRORTOKEN;
+                    }
                 }
-                if (c == 'j' || c == 'J')
+                if (c == 'j' || c == 'J') {
                     /* Imaginary part */
         imaginary:
                     c = tok_nextc(tok);
+                }
             }
         }
         tok_backup(tok, c);
@@ -1708,22 +1794,27 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         c = tok_nextc(tok);
         if (c == quote) {
             c = tok_nextc(tok);
-            if (c == quote)
+            if (c == quote) {
                 quote_size = 3;
-            else
+            }
+            else {
                 end_quote_size = 1;     /* empty string found */
+            }
         }
-        if (c != quote)
+        if (c != quote) {
             tok_backup(tok, c);
+        }
 
         /* Get rest of string */
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
             if (c == EOF) {
-                if (quote_size == 3)
+                if (quote_size == 3) {
                     tok->done = E_EOFS;
-                else
+                }
+                else {
                     tok->done = E_EOLS;
+                }
                 tok->cur = tok->inp;
                 return ERRORTOKEN;
             }
@@ -1732,12 +1823,14 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 tok->cur = tok->inp;
                 return ERRORTOKEN;
             }
-            if (c == quote)
+            if (c == quote) {
                 end_quote_size += 1;
+            }
             else {
                 end_quote_size = 0;
-                if (c == '\\')
+                if (c == '\\') {
                     tok_nextc(tok);  /* skip escaped char */
+                }
             }
         }
 
@@ -1767,7 +1860,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             int token3 = PyToken_ThreeChars(c, c2, c3);
             if (token3 != OP) {
                 token = token3;
-            } else {
+            }
+            else {
                 tok_backup(tok, c3);
             }
             *p_start = tok->start;
