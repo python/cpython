@@ -245,7 +245,7 @@ The special characters are:
    (dot matches all), and :const:`re.X` (verbose), for the part of the
    expression.  (The flags are described in :ref:`contents-of-module-re`.)
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.6
 
 ``(?P<name>...)``
    Similar to regular parentheses, but the substring matched by the group is
