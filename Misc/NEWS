@@ -275,6 +275,9 @@ Tools/Demos
 Windows
 -------
 
+- Issue #25144: Ensures TargetDir is set before continuing with custom
+  install.
+
 - Issue #27469: Adds a shell extension to the launcher so that drag and drop
   works correctly.
 
