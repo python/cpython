@@ -1,5 +1,6 @@
 import datetime
 import faulthandler
+import locale
 import os
 import platform
 import random
@@ -392,7 +393,10 @@ class Regrtest:
                           "%s-endian" % sys.byteorder)
             print("==  ", "hash algorithm:", sys.hash_info.algorithm,
                   "64bit" if sys.maxsize > 2**32 else "32bit")
-            print("==  ", os.getcwd())
+            print("==  cwd:", os.getcwd())
+            print("==  encodings: locale=%s, FS=%s"
+                  % (locale.getpreferredencoding(False),
+                     sys.getfilesystemencoding()))
             print("Testing with flags:", sys.flags)
 
         if self.ns.randomize:
