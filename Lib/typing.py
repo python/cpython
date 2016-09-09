@@ -6,6 +6,7 @@ import functools
 import re as stdlib_re  # Avoid confusion with the re we export.
 import sys
 import types
+
 try:
     import collections.abc as collections_abc
 except ImportError:
@@ -17,6 +18,7 @@ __all__ = [
     # Super-special typing primitives.
     'Any',
     'Callable',
+    'ClassVar',
     'Generic',
     'Optional',
     'Tuple',
@@ -270,7 +272,7 @@ class _TypeAlias:
 
 def _get_type_vars(types, tvars):
     for t in types:
-        if isinstance(t, TypingMeta):
+        if isinstance(t, TypingMeta) or isinstance(t, _ClassVar):
             t._get_type_vars(tvars)
 
 
@@ -281,7 +283,7 @@ def _type_vars(types):
 
 
 def _eval_type(t, globalns, localns):
-    if isinstance(t, TypingMeta):
+    if isinstance(t, TypingMeta) or isinstance(t, _ClassVar):
         return t._eval_type(globalns, localns)
     else:
         return t
@@ -1114,6 +1116,67 @@ class Generic(metaclass=GenericMeta):
             return obj
 
 
+class _ClassVar(metaclass=TypingMeta, _root=True):
+    """Special type construct to mark class variables.
+
+    An annotation wrapped in ClassVar indicates that a given
+    attribute is intended to be used as a class variable and
+    should not be set on instances of that class. Usage::
+
+      class Starship:
+          stats: ClassVar[Dict[str, int]] = {} # class variable
+          damage: int = 10                     # instance variable
+
+    ClassVar accepts only types and cannot be further subscribed.
+
+    Note that ClassVar is not a class itself, and should not
+    be used with isinstance() or issubclass().
+    """
+
+    def __init__(self, tp=None, _root=False):
+        cls = type(self)
+        if _root:
+            self.__type__ = tp
+        else:
+            raise TypeError('Cannot initialize {}'.format(cls.__name__[1:]))
+
+    def __getitem__(self, item):
+        cls = type(self)
+        if self.__type__ is None:
+            return cls(_type_check(item,
+                       '{} accepts only types.'.format(cls.__name__[1:])),
+                       _root=True)
+        raise TypeError('{} cannot be further subscripted'
+                        .format(cls.__name__[1:]))
+
+    def _eval_type(self, globalns, localns):
+        return type(self)(_eval_type(self.__type__, globalns, localns),
+                          _root=True)
+
+    def _get_type_vars(self, tvars):
+        if self.__type__:
+            _get_type_vars(self.__type__, tvars)
+
+    def __repr__(self):
+        cls = type(self)
+        if not self.__type__:
+            return '{}.{}'.format(cls.__module__, cls.__name__[1:])
+        return '{}.{}[{}]'.format(cls.__module__, cls.__name__[1:],
+                                  _type_repr(self.__type__))
+
+    def __hash__(self):
+        return hash((type(self).__name__, self.__type__))
+
+    def __eq__(self, other):
+        if not isinstance(other, _ClassVar):
+            return NotImplemented
+        if self.__type__ is not None:
+            return self.__type__ == other.__type__
+        return self is other
+
+ClassVar = _ClassVar(_root=True)
+
+
 def cast(typ, val):
     """Cast a value to a type.
 
@@ -1142,11 +1205,19 @@ def _get_defaults(func):
 
 
 def get_type_hints(obj, globalns=None, localns=None):
-    """Return type hints for a function or method object.
+    """Return type hints for an object.
 
     This is often the same as obj.__annotations__, but it handles
     forward references encoded as string literals, and if necessary
     adds Optional[t] if a default value equal to None is set.
+
+    The argument may be a module, class, method, or function. The annotations
+    are returned as a dictionary, or in the case of a class, a ChainMap of
+    dictionaries.
+
+    TypeError is raised if the argument is not of a type that can contain
+    annotations, and an empty dictionary is returned if no annotations are
+    present.
 
     BEWARE -- the behavior of globalns and localns is counterintuitive
     (unless you are familiar with how eval() and exec() work).  The
@@ -1162,6 +1233,7 @@ def get_type_hints(obj, globalns=None, localns=None):
     - If two dict arguments are passed, they specify globals and
       locals, respectively.
     """
+
     if getattr(obj, '__no_type_check__', None):
         return {}
     if globalns is None:
@@ -1170,16 +1242,62 @@ def get_type_hints(obj, globalns=None, localns=None):
             localns = globalns
     elif localns is None:
         localns = globalns
-    defaults = _get_defaults(obj)
-    hints = dict(obj.__annotations__)
-    for name, value in hints.items():
-        if isinstance(value, str):
-            value = _ForwardRef(value)
-        value = _eval_type(value, globalns, localns)
-        if name in defaults and defaults[name] is None:
-            value = Optional[value]
-        hints[name] = value
-    return hints
+
+    if (isinstance(obj, types.FunctionType) or
+        isinstance(obj, types.BuiltinFunctionType) or
+        isinstance(obj, types.MethodType)):
+        defaults = _get_defaults(obj)
+        hints = obj.__annotations__
+        for name, value in hints.items():
+            if value is None:
+                value = type(None)
+            if isinstance(value, str):
+                value = _ForwardRef(value)
+            value = _eval_type(value, globalns, localns)
+            if name in defaults and defaults[name] is None:
+                value = Optional[value]
+            hints[name] = value
+        return hints
+
+    if isinstance(obj, types.ModuleType):
+        try:
+            hints = obj.__annotations__
+        except AttributeError:
+            return {}
+        # we keep only those annotations that can be accessed on module
+        members = obj.__dict__
+        hints = {name: value for name, value in hints.items()
+                                          if name in members}
+        for name, value in hints.items():
+            if value is None:
+                value = type(None)
+            if isinstance(value, str):
+                value = _ForwardRef(value)
+            value = _eval_type(value, globalns, localns)
+            hints[name] = value
+        return hints
+
+    if isinstance(object, type):
+        cmap = None
+        for base in reversed(obj.__mro__):
+            new_map = collections.ChainMap if cmap is None else cmap.new_child
+            try:
+                hints = base.__dict__['__annotations__']
+            except KeyError:
+                cmap = new_map()
+            else:
+                for name, value in hints.items():
+                    if value is None:
+                        value = type(None)
+                    if isinstance(value, str):
+                        value = _ForwardRef(value)
+                    value = _eval_type(value, globalns, localns)
+                    hints[name] = value
+                cmap = new_map(hints)
+        return cmap
+
+    raise TypeError('{!r} is not a module, class, method, '
+                    'or function.'.format(obj))
 
 
 def no_type_check(arg):
@@ -1300,6 +1418,8 @@ class _ProtocolMeta(GenericMeta):
                 else:
                     if (not attr.startswith('_abc_') and
                             attr != '__abstractmethods__' and
+                            attr != '__annotations__' and
+                            attr != '__weakref__' and
                             attr != '_is_protocol' and
                             attr != '__dict__' and
                             attr != '__args__' and

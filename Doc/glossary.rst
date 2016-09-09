@@ -964,6 +964,18 @@ Glossary
       ``'\r'``.  See :pep:`278` and :pep:`3116`, as well as
       :func:`bytes.splitlines` for an additional use.
 
+   variable annotation
+      A type metadata value associated with a module global variable or
+      a class attribute. Its syntax is explained in section :ref:`annassign`.
+      Annotations are stored in the :attr:`__annotations__` special
+      attribute of a class or module object and can be accessed using
+      :func:`typing.get_type_hints`.
+
+      Python itself does not assign any particular meaning to variable
+      annotations. They are intended to be interpreted by third-party libraries
+      or type checking tools. See :pep:`526`, :pep:`484` which describe
+      some of their potential uses.
+
    virtual environment
       A cooperatively isolated runtime environment that allows Python users
       and applications to install and upgrade Python distribution packages

@@ -937,11 +937,17 @@ Py_GetPythonHome(void)
 static void
 initmain(PyInterpreterState *interp)
 {
-    PyObject *m, *d, *loader;
+    PyObject *m, *d, *loader, *ann_dict;
     m = PyImport_AddModule("__main__");
     if (m == NULL)
         Py_FatalError("can't create __main__ module");
     d = PyModule_GetDict(m);
+    ann_dict = PyDict_New();
+    if ((ann_dict == NULL) ||
+        (PyDict_SetItemString(d, "__annotations__", ann_dict) < 0)) {
+        Py_FatalError("Failed to initialize __main__.__annotations__");
+    }
+    Py_DECREF(ann_dict);
     if (PyDict_GetItemString(d, "__builtins__") == NULL) {
         PyObject *bimod = PyImport_ImportModule("builtins");
         if (bimod == NULL) {

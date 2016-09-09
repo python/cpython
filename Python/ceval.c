@@ -1873,6 +1873,62 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
+        TARGET(STORE_ANNOTATION) {
+            _Py_IDENTIFIER(__annotations__);
+            PyObject *ann_dict;
+            PyObject *ann = POP();
+            PyObject *name = GETITEM(names, oparg);
+            int err;
+            if (f->f_locals == NULL) {
+                PyErr_Format(PyExc_SystemError,
+                             "no locals found when storing annotation");
+                Py_DECREF(ann);
+                goto error;
+            }
+            /* first try to get __annotations__ from locals... */
+            if (PyDict_CheckExact(f->f_locals)) {
+                ann_dict = _PyDict_GetItemId(f->f_locals,
+                                             &PyId___annotations__);
+                if (ann_dict == NULL) {
+                    PyErr_SetString(PyExc_NameError,
+                                    "__annotations__ not found");
+                    Py_DECREF(ann);
+                    goto error;
+                }
+                Py_INCREF(ann_dict);
+            }
+            else {
+                PyObject *ann_str = _PyUnicode_FromId(&PyId___annotations__);
+                if (ann_str == NULL) {
+                    Py_DECREF(ann);
+                    goto error;
+                }
+                ann_dict = PyObject_GetItem(f->f_locals, ann_str);
+                if (ann_dict == NULL) {
+                    if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+                        PyErr_SetString(PyExc_NameError,
+                                        "__annotations__ not found");
+                    }
+                    Py_DECREF(ann);
+                    goto error;
+                }
+            }
+            /* ...if succeeded, __annotations__[name] = ann */
+            if (PyDict_CheckExact(ann_dict)) {
+                err = PyDict_SetItem(ann_dict, name, ann);
+            }
+            else {
+                err = PyObject_SetItem(ann_dict, name, ann);
+            }
+            Py_DECREF(ann_dict);
+            if (err != 0) {
+                Py_DECREF(ann);
+                goto error;
+            }
+            Py_DECREF(ann);
+            DISPATCH();
+        }
+
         TARGET(DELETE_SUBSCR) {
             PyObject *sub = TOP();
             PyObject *container = SECOND();
@@ -2677,6 +2733,62 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 Py_DECREF(POP());
             }
             PUSH(map);
+            DISPATCH();
+        }
+
+        TARGET(SETUP_ANNOTATIONS) {
+            _Py_IDENTIFIER(__annotations__);
+            int err;
+            PyObject *ann_dict;
+            if (f->f_locals == NULL) {
+                PyErr_Format(PyExc_SystemError,
+                             "no locals found when setting up annotations");
+                goto error;
+            }
+            /* check if __annotations__ in locals()... */
+            if (PyDict_CheckExact(f->f_locals)) {
+                ann_dict = _PyDict_GetItemId(f->f_locals,
+                                             &PyId___annotations__);
+                if (ann_dict == NULL) {
+                    /* ...if not, create a new one */
+                    ann_dict = PyDict_New();
+                    if (ann_dict == NULL) {
+                        goto error;
+                    }
+                    err = _PyDict_SetItemId(f->f_locals,
+                                            &PyId___annotations__, ann_dict);
+                    Py_DECREF(ann_dict);
+                    if (err != 0) {
+                        goto error;
+                    }
+                }
+            }
+            else {
+                /* do the same if locals() is not a dict */
+                PyObject *ann_str = _PyUnicode_FromId(&PyId___annotations__);
+                if (ann_str == NULL) {
+                    break;
+                }
+                ann_dict = PyObject_GetItem(f->f_locals, ann_str);
+                if (ann_dict == NULL) {
+                    if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+                        goto error;
+                    }
+                    PyErr_Clear();
+                    ann_dict = PyDict_New();
+                    if (ann_dict == NULL) {
+                        goto error;
+                    }
+                    err = PyObject_SetItem(f->f_locals, ann_str, ann_dict);
+                    Py_DECREF(ann_dict);
+                    if (err != 0) {
+                        goto error;
+                    }
+                }
+                else {
+                    Py_DECREF(ann_dict);
+                }
+            }
             DISPATCH();
         }
 

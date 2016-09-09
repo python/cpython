@@ -207,6 +207,38 @@ dis_simple_stmt_str = """\
              10 RETURN_VALUE
 """
 
+annot_stmt_str = """\
+
+x: int = 1
+y: fun(1)
+lst[fun(0)]: int = 1
+"""
+# leading newline is for a reason (tests lineno)
+
+dis_annot_stmt_str = """\
+  2           0 SETUP_ANNOTATIONS
+              2 LOAD_CONST               0 (1)
+              4 STORE_NAME               0 (x)
+              6 LOAD_NAME                1 (int)
+              8 STORE_ANNOTATION         0 (x)
+
+  3          10 LOAD_NAME                2 (fun)
+             12 LOAD_CONST               0 (1)
+             14 CALL_FUNCTION            1 (1 positional, 0 keyword pair)
+             16 STORE_ANNOTATION         3 (y)
+
+  4          18 LOAD_CONST               0 (1)
+             20 LOAD_NAME                4 (lst)
+             22 LOAD_NAME                2 (fun)
+             24 LOAD_CONST               1 (0)
+             26 CALL_FUNCTION            1 (1 positional, 0 keyword pair)
+             28 STORE_SUBSCR
+             30 LOAD_NAME                1 (int)
+             32 POP_TOP
+             34 LOAD_CONST               2 (None)
+             36 RETURN_VALUE
+"""
+
 compound_stmt_str = """\
 x = 0
 while 1:
@@ -345,6 +377,7 @@ class DisTests(unittest.TestCase):
     def test_disassemble_str(self):
         self.do_disassembly_test(expr_str, dis_expr_str)
         self.do_disassembly_test(simple_stmt_str, dis_simple_stmt_str)
+        self.do_disassembly_test(annot_stmt_str, dis_annot_stmt_str)
         self.do_disassembly_test(compound_stmt_str, dis_compound_stmt_str)
 
     def test_disassemble_bytes(self):

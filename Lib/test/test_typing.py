@@ -4,14 +4,16 @@ import pickle
 import re
 import sys
 from unittest import TestCase, main, skipUnless, SkipTest
+from collections import ChainMap
+from test import ann_module, ann_module2, ann_module3
 
 from typing import Any
 from typing import TypeVar, AnyStr
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional
-from typing import Tuple
+from typing import Tuple, List
 from typing import Callable
-from typing import Generic
+from typing import Generic, ClassVar
 from typing import cast
 from typing import get_type_hints
 from typing import no_type_check, no_type_check_decorator
@@ -827,6 +829,43 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(Exception):
             D[T]
 
+class ClassVarTests(BaseTestCase):
+
+    def test_basics(self):
+        with self.assertRaises(TypeError):
+            ClassVar[1]
+        with self.assertRaises(TypeError):
+            ClassVar[int, str]
+        with self.assertRaises(TypeError):
+            ClassVar[int][str]
+
+    def test_repr(self):
+        self.assertEqual(repr(ClassVar), 'typing.ClassVar')
+        cv = ClassVar[int]
+        self.assertEqual(repr(cv), 'typing.ClassVar[int]')
+        cv = ClassVar[Employee]
+        self.assertEqual(repr(cv), 'typing.ClassVar[%s.Employee]' % __name__)
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class C(type(ClassVar)):
+                pass
+        with self.assertRaises(TypeError):
+            class C(type(ClassVar[int])):
+                pass
+
+    def test_cannot_init(self):
+        with self.assertRaises(TypeError):
+            type(ClassVar)()
+        with self.assertRaises(TypeError):
+            type(ClassVar[Optional[int]])()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, ClassVar[int])
+        with self.assertRaises(TypeError):
+            issubclass(int, ClassVar)
+
 
 class VarianceTests(BaseTestCase):
 
@@ -929,6 +968,46 @@ class ForwardRefTests(BaseTestCase):
 
         right_hints = get_type_hints(t.add_right, globals(), locals())
         self.assertEqual(right_hints['node'], Optional[Node[T]])
+
+    def test_get_type_hints(self):
+        gth = get_type_hints
+        self.assertEqual(gth(ann_module), {'x': int, 'y': str})
+        self.assertEqual(gth(ann_module.C, ann_module.__dict__),
+                         ChainMap({'y': Optional[ann_module.C]}, {}))
+        self.assertEqual(gth(ann_module2), {})
+        self.assertEqual(gth(ann_module3), {})
+        self.assertEqual(repr(gth(ann_module.j_class)), 'ChainMap({}, {})')
+        self.assertEqual(gth(ann_module.M), ChainMap({'123': 123, 'o': type},
+                                                     {}, {}))
+        self.assertEqual(gth(ann_module.D),
+                         ChainMap({'j': str, 'k': str,
+                                   'y': Optional[ann_module.C]}, {}))
+        self.assertEqual(gth(ann_module.Y), ChainMap({'z': int}, {}))
+        self.assertEqual(gth(ann_module.h_class),
+                         ChainMap({}, {'y': Optional[ann_module.C]}, {}))
+        self.assertEqual(gth(ann_module.S), ChainMap({'x': str, 'y': str},
+                                                    {}))
+        self.assertEqual(gth(ann_module.foo), {'x': int})
+
+        def testf(x, y): ...
+        testf.__annotations__['x'] = 'int'
+        self.assertEqual(gth(testf), {'x': int})
+        self.assertEqual(gth(ann_module2.NTC.meth), {})
+
+        # interactions with ClassVar
+        class B:
+            x: ClassVar[Optional['B']] = None
+            y: int
+        class C(B):
+            z: ClassVar['C'] = B()
+        class G(Generic[T]):
+            lst: ClassVar[List[T]] = []
+        self.assertEqual(gth(B, locals()),
+                         ChainMap({'y': int, 'x': ClassVar[Optional[B]]}, {}))
+        self.assertEqual(gth(C, locals()),
+                        ChainMap({'z': ClassVar[C]},
+                                 {'y': int, 'x': ClassVar[Optional[B]]}, {}))
+        self.assertEqual(gth(G), ChainMap({'lst': ClassVar[List[T]]},{},{}))
 
     def test_forwardref_instance_type_error(self):
         fr = typing._ForwardRef('int')
