@@ -98,9 +98,10 @@ def search_function(encoding):
             # module with side-effects that is not in the 'encodings' package.
             mod = __import__('encodings.' + modname, fromlist=_import_tail,
                              level=0)
-        except ModuleNotFoundError as ex:
-            if ex.name != 'encodings.' + modname:
-                raise
+        except ImportError:
+            # ImportError may occur because 'encodings.(modname)' does not exist,
+            # or because it imports a name that does not exist (see mbcs and oem)
+            pass
         else:
             break
     else:
