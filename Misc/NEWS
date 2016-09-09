@@ -62,6 +62,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #24594: Validates persist parameter when opening MSI database
+
 - Issue #28047: Fixed calculation of line length used for the base64 CTE
   in the new email policies.
 
