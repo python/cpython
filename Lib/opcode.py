@@ -31,7 +31,7 @@ hasjabs = []
 haslocal = []
 hascompare = []
 hasfree = []
-hasnargs = []
+hasnargs = [] # unused
 
 opmap = {}
 opname = ['<%r>' % (op,) for op in range(256)]
@@ -172,8 +172,7 @@ haslocal.append(126)
 name_op('STORE_ANNOTATION', 127) # Index in name list
 
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
-def_op('CALL_FUNCTION', 131)    # #args + (#kwargs << 8)
-hasnargs.append(131)
+def_op('CALL_FUNCTION', 131)    # #args
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
 def_op('LOAD_CLOSURE', 135)
@@ -185,12 +184,8 @@ hasfree.append(137)
 def_op('DELETE_DEREF', 138)
 hasfree.append(138)
 
-def_op('CALL_FUNCTION_VAR', 140)     # #args + (#kwargs << 8)
-hasnargs.append(140)
-def_op('CALL_FUNCTION_KW', 141)      # #args + (#kwargs << 8)
-hasnargs.append(141)
-def_op('CALL_FUNCTION_VAR_KW', 142)  # #args + (#kwargs << 8)
-hasnargs.append(142)
+def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
+def_op('CALL_FUNCTION_EX', 142)  # Flags
 
 jrel_op('SETUP_WITH', 143)
 

@@ -118,7 +118,7 @@ Verify clearing of SF bug #733667
     >>> g(*Nothing())
     Traceback (most recent call last):
       ...
-    TypeError: g() argument after * must be an iterable, not Nothing
+    TypeError: 'Nothing' object is not iterable
 
     >>> class Nothing:
     ...     def __len__(self): return 5
@@ -127,7 +127,7 @@ Verify clearing of SF bug #733667
     >>> g(*Nothing())
     Traceback (most recent call last):
       ...
-    TypeError: g() argument after * must be an iterable, not Nothing
+    TypeError: 'Nothing' object is not iterable
 
     >>> class Nothing():
     ...     def __len__(self): return 5
@@ -231,34 +231,32 @@ What about willful misconduct?
     >>> h(*h)
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after * must be an iterable, not function
+    TypeError: 'function' object is not iterable
 
     >>> dir(*h)
     Traceback (most recent call last):
       ...
-    TypeError: dir() argument after * must be an iterable, not function
+    TypeError: 'function' object is not iterable
 
     >>> None(*h)
     Traceback (most recent call last):
       ...
-    TypeError: NoneType object argument after * must be an iterable, \
-not function
+    TypeError: 'function' object is not iterable
 
     >>> h(**h)
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after ** must be a mapping, not function
+    TypeError: 'function' object is not a mapping
 
     >>> dir(**h)
     Traceback (most recent call last):
       ...
-    TypeError: dir() argument after ** must be a mapping, not function
+    TypeError: 'function' object is not a mapping
 
     >>> None(**h)
     Traceback (most recent call last):
       ...
-    TypeError: NoneType object argument after ** must be a mapping, \
-not function
+    TypeError: 'function' object is not a mapping
 
     >>> dir(b=1, **{'b': 1})
     Traceback (most recent call last):

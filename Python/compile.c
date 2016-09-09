@@ -991,7 +991,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case BUILD_MAP_UNPACK:
             return 1 - oparg;
         case BUILD_MAP_UNPACK_WITH_CALL:
-            return 1 - (oparg & 0xFF);
+            return 1 - oparg;
         case BUILD_MAP:
             return 1 - 2*oparg;
         case BUILD_CONST_KEY_MAP:
@@ -1038,15 +1038,12 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 
         case RAISE_VARARGS:
             return -oparg;
-#define NARGS(o) (((o) % 256) + 2*(((o) / 256) % 256))
         case CALL_FUNCTION:
-            return -NARGS(oparg);
-        case CALL_FUNCTION_VAR:
+            return -oparg;
         case CALL_FUNCTION_KW:
-            return -NARGS(oparg)-1;
-        case CALL_FUNCTION_VAR_KW:
-            return -NARGS(oparg)-2;
-#undef NARGS
+            return -oparg-1;
+        case CALL_FUNCTION_EX:
+            return - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0);
         case MAKE_FUNCTION:
             return -1 - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
                 ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0);
@@ -3500,22 +3497,29 @@ compiler_call_helper(struct compiler *c,
                      asdl_seq *args,
                      asdl_seq *keywords)
 {
-    int code = 0;
-    Py_ssize_t nelts, i, nseen;
-    int nkw;
+    Py_ssize_t i, nseen, nelts, nkwelts;
+    int musttupleunpack = 0, mustdictunpack = 0;
 
     /* the number of tuples and dictionaries on the stack */
     Py_ssize_t nsubargs = 0, nsubkwargs = 0;
 
-    nkw = 0;
-    nseen = 0;  /* the number of positional arguments on the stack */
     nelts = asdl_seq_LEN(args);
+    nkwelts = asdl_seq_LEN(keywords);
+
+    for (i = 0; i < nkwelts; i++) {
+        keyword_ty kw = asdl_seq_GET(keywords, i);
+        if (kw->arg == NULL) {
+            mustdictunpack = 1;
+            break;
+        }
+    }
+
+    nseen = n;  /* the number of positional arguments on the stack */
     for (i = 0; i < nelts; i++) {
         expr_ty elt = asdl_seq_GET(args, i);
         if (elt->kind == Starred_kind) {
             /* A star-arg. If we've seen positional arguments,
-               pack the positional arguments into a
-               tuple. */
+               pack the positional arguments into a tuple. */
             if (nseen) {
                 ADDOP_I(c, BUILD_TUPLE, nseen);
                 nseen = 0;
@@ -3523,102 +3527,80 @@ compiler_call_helper(struct compiler *c,
             }
             VISIT(c, expr, elt->v.Starred.value);
             nsubargs++;
-        }
-        else if (nsubargs) {
-            /* We've seen star-args already, so we
-               count towards items-to-pack-into-tuple. */
-            VISIT(c, expr, elt);
-            nseen++;
+            musttupleunpack = 1;
         }
         else {
-            /* Positional arguments before star-arguments
-               are left on the stack. */
             VISIT(c, expr, elt);
-            n++;
-        }
-    }
-    if (nseen) {
-        /* Pack up any trailing positional arguments. */
-        ADDOP_I(c, BUILD_TUPLE, nseen);
-        nsubargs++;
-    }
-    if (nsubargs) {
-        code |= 1;
-        if (nsubargs > 1) {
-            /* If we ended up with more than one stararg, we need
-               to concatenate them into a single sequence. */
-            ADDOP_I(c, BUILD_LIST_UNPACK, nsubargs);
+            nseen++;
         }
     }
 
     /* Same dance again for keyword arguments */
-    nseen = 0;  /* the number of keyword arguments on the stack following */
-    nelts = asdl_seq_LEN(keywords);
-    for (i = 0; i < nelts; i++) {
-        keyword_ty kw = asdl_seq_GET(keywords, i);
-        if (kw->arg == NULL) {
-            /* A keyword argument unpacking. */
-            if (nseen) {
-                if (nsubkwargs) {
+    if (musttupleunpack || mustdictunpack) {
+        if (nseen) {
+            /* Pack up any trailing positional arguments. */
+            ADDOP_I(c, BUILD_TUPLE, nseen);
+            nsubargs++;
+        }
+        if (musttupleunpack || nsubargs > 1) {
+            /* If we ended up with more than one stararg, we need
+               to concatenate them into a single sequence. */
+            ADDOP_I(c, BUILD_TUPLE_UNPACK, nsubargs);
+        }
+        else if (nsubargs == 0) {
+            ADDOP_I(c, BUILD_TUPLE, 0);
+        }
+        nseen = 0;  /* the number of keyword arguments on the stack following */
+        for (i = 0; i < nkwelts; i++) {
+            keyword_ty kw = asdl_seq_GET(keywords, i);
+            if (kw->arg == NULL) {
+                /* A keyword argument unpacking. */
+                if (nseen) {
                     if (!compiler_subkwargs(c, keywords, i - nseen, i))
                         return 0;
                     nsubkwargs++;
+                    nseen = 0;
                 }
-                else {
-                    Py_ssize_t j;
-                    for (j = 0; j < nseen; j++) {
-                        VISIT(c, keyword, asdl_seq_GET(keywords, j));
-                    }
-                    nkw = nseen;
-                }
-                nseen = 0;
+                VISIT(c, expr, kw->value);
+                nsubkwargs++;
             }
-            VISIT(c, expr, kw->value);
-            nsubkwargs++;
+            else {
+                nseen++;
+            }
         }
-        else {
-            nseen++;
-        }
-    }
-    if (nseen) {
-        if (nsubkwargs) {
+        if (nseen) {
             /* Pack up any trailing keyword arguments. */
-            if (!compiler_subkwargs(c, keywords, nelts - nseen, nelts))
+            if (!compiler_subkwargs(c, keywords, nkwelts - nseen, nkwelts))
                 return 0;
             nsubkwargs++;
         }
-        else {
-            VISIT_SEQ(c, keyword, keywords);
-            nkw = nseen;
-        }
-    }
-    if (nsubkwargs) {
-        code |= 2;
-        if (nsubkwargs > 1) {
+        if (mustdictunpack || nsubkwargs > 1) {
             /* Pack it all up */
-            int function_pos = n + (code & 1) + 2 * nkw + 1;
-            ADDOP_I(c, BUILD_MAP_UNPACK_WITH_CALL, nsubkwargs | (function_pos << 8));
+            ADDOP_I(c, BUILD_MAP_UNPACK_WITH_CALL, nsubkwargs);
         }
+        ADDOP_I(c, CALL_FUNCTION_EX, nsubkwargs > 0);
+        return 1;
     }
-    assert(n < 1<<8);
-    assert(nkw < 1<<24);
-    n |= nkw << 8;
-
-    switch (code) {
-    case 0:
-        ADDOP_I(c, CALL_FUNCTION, n);
-        break;
-    case 1:
-        ADDOP_I(c, CALL_FUNCTION_VAR, n);
-        break;
-    case 2:
-        ADDOP_I(c, CALL_FUNCTION_KW, n);
-        break;
-    case 3:
-        ADDOP_I(c, CALL_FUNCTION_VAR_KW, n);
-        break;
+    else if (nkwelts) {
+        PyObject *names;
+        VISIT_SEQ(c, keyword, keywords);
+        names = PyTuple_New(nkwelts);
+        if (names == NULL) {
+            return 0;
+        }
+        for (i = 0; i < nkwelts; i++) {
+            keyword_ty kw = asdl_seq_GET(keywords, i);
+            Py_INCREF(kw->arg);
+            PyTuple_SET_ITEM(names, i, kw->arg);
+        }
+        ADDOP_N(c, LOAD_CONST, names, consts);
+        ADDOP_I(c, CALL_FUNCTION_KW, n + nelts + nkwelts);
+        return 1;
     }
-    return 1;
+    else {
+        ADDOP_I(c, CALL_FUNCTION, n + nelts);
+        return 1;
+    }
 }
 
 
@@ -4040,7 +4022,6 @@ compiler_dictcomp(struct compiler *c, expr_ty e)
 static int
 compiler_visit_keyword(struct compiler *c, keyword_ty k)
 {
-    ADDOP_O(c, LOAD_CONST, k->arg, consts);
     VISIT(c, expr, k->value);
     return 1;
 }
