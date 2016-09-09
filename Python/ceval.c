@@ -2823,11 +2823,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             PyObject *fromlist = POP();
             PyObject *level = TOP();
             PyObject *res;
-            READ_TIMESTAMP(intr0);
             res = import_name(f, name, fromlist, level);
             Py_DECREF(level);
             Py_DECREF(fromlist);
-            READ_TIMESTAMP(intr1);
             SET_TOP(res);
             if (res == NULL)
                 goto error;
@@ -2846,9 +2844,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                     "no locals found during 'import *'");
                 goto error;
             }
-            READ_TIMESTAMP(intr0);
             err = import_all_from(locals, from);
-            READ_TIMESTAMP(intr1);
             PyFrame_LocalsToFast(f, 0);
             Py_DECREF(from);
             if (err != 0)
@@ -2860,9 +2856,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             PyObject *name = GETITEM(names, oparg);
             PyObject *from = TOP();
             PyObject *res;
-            READ_TIMESTAMP(intr0);
             res = import_from(from, name);
-            READ_TIMESTAMP(intr1);
             PUSH(res);
             if (res == NULL)
                 goto error;
@@ -3298,9 +3292,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             assert(PyTuple_CheckExact(callargs));
             func = TOP();
 
-            READ_TIMESTAMP(intr0);
             result = do_call_core(func, callargs, kwargs);
-            READ_TIMESTAMP(intr1);
             Py_DECREF(func);
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
@@ -3451,7 +3443,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         assert(0);
 
 error:
-        READ_TIMESTAMP(inst1);
 
         assert(why == WHY_NOT);
         why = WHY_EXCEPTION;
@@ -3555,7 +3546,6 @@ fast_block_end:
 
         if (why != WHY_NOT)
             break;
-        READ_TIMESTAMP(loop1);
 
         assert(!PyErr_Occurred());
 
@@ -4809,14 +4799,12 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
 
         stack = (*pp_stack) - nargs - nkwargs;
 
-        READ_TIMESTAMP(*pintr0);
         if (PyFunction_Check(func)) {
             x = fast_function(func, stack, nargs, kwnames);
         }
         else {
             x = _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
         }
-        READ_TIMESTAMP(*pintr1);
 
         Py_DECREF(func);
     }
