@@ -7477,13 +7477,14 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
         Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
         fd = _wopen(path->wide, flags, mode);
-#endif
+#else
 #ifdef HAVE_OPENAT
         if (dir_fd != DEFAULT_DIR_FD)
             fd = openat(dir_fd, path->narrow, flags, mode);
         else
+#endif /* HAVE_OPENAT */
             fd = open(path->narrow, flags, mode);
-#endif
+#endif /* !MS_WINDOWS */
         Py_END_ALLOW_THREADS
     } while (fd < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     _Py_END_SUPPRESS_IPH
