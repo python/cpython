@@ -293,8 +293,9 @@ class DirectoryTestCase(ASTTestCase):
                     print(f'Skipping {filename}: see issue 27921')
                 continue
 
-            source = read_pyfile(filename)
-            self.check_roundtrip(source)
+            with self.subTest(filename=filename):
+                source = read_pyfile(filename)
+                self.check_roundtrip(source)
 
 
 if __name__ == '__main__':
