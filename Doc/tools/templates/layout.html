@@ -12,8 +12,28 @@
           {%- endif %}
         </li>
 {% endblock %}
+{%- macro searchbox() %}
+{# modified from sphinx/themes/basic/searchbox.html #}
+    <div class="inline-search" style="display: none" role="search">
+        <form class="inline-search" action="{{ pathto('search') }}" method="get">
+          <input placeholder="{{ _('Quick search') }}" type="text" name="q" />
+          <input type="submit" value="{{ _('Go') }}" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+    </div>
+    <script type="text/javascript">$('.inline-search').show(0);</script>
+{%- endmacro %}
 {% block relbar1 %} {% if builder != 'qthelp' %} {{ relbar() }} {% endif %} {% endblock %}
 {% block relbar2 %} {% if builder != 'qthelp' %} {{ relbar() }} {% endif %} {% endblock %}
+{% block relbaritems %}
+    {%- if pagename != "search" and builder != "singlehtml" %}
+    <li class="right">
+        {{ searchbox() }}
+        {{ reldelim2 }}
+    </li>
+    {%- endif %}
+{% endblock %}
 {% block extrahead %}
     <link rel="shortcut icon" type="image/png" href="{{ pathto('_static/py.png', 1) }}" />
     {% if not embedded %}<script type="text/javascript" src="{{ pathto('_static/copybutton.js', 1) }}"></script>{% endif %}
@@ -89,14 +109,4 @@
     <br />
     {% trans sphinx_version=sphinx_version|e %}Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> {{ sphinx_version }}.{% endtrans %}
     </div>
-{% endblock %}
-{% block sidebarsourcelink %}
-{%- if show_source and has_source and sourcename %}
-<h3>{{ _('This Page') }}</h3>
-<ul class="this-page-menu">
-  <li><a href="{{ pathto('bugs') }}">{% trans %}Report a Bug{% endtrans %}</a></li>
-  <li><a href="{{ pathto('_sources/' + sourcename, true)|e }}"
-         rel="nofollow">{% trans %}Show Source{% endtrans %}</a></li>
-</ul>
-{%- endif %}
 {% endblock %}
