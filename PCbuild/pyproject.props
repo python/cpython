@@ -8,12 +8,9 @@
     <IntDir Condition="'$(Configuration)' == 'PGInstrument' or '$(Configuration)' == 'PGUpdate'">$(SolutionDir)obj\$(ArchName)\$(ProjectName)\</IntDir>
     <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
     <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
-    <GenerateManifest Condition="'$(GenerateManifest)' == ''">false</GenerateManifest>
-    <EmbedManifest Condition="'$(EmbedManifest)' == ''">false</EmbedManifest>
-    <!-- For VS2008, we have to embed the manifest to be able to run -->
+    <GenerateManifest>false</GenerateManifest>
+    <EmbedManifest>false</EmbedManifest>
     <!-- BasePlatformToolset is for ICC support -->
-    <GenerateManifest Condition="'$(PlatformToolset)' == 'v90' or '$(BasePlatformToolset)' == 'v90'">true</GenerateManifest>
-    <EmbedManifest Condition="'$(PlatformToolset)' == 'v90' or '$(BasePlatformToolset)' == 'v90'">true</EmbedManifest>
     <SupportPGO Condition="'$(SupportPGO)' == ''">true</SupportPGO>
     <SupportSigning Condition="'$(SupportSigning)' == ''">true</SupportSigning>
     <SupportSigning Condition="'$(Configuration)' == 'Debug'">false</SupportSigning>
