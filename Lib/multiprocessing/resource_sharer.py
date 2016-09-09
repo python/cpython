@@ -15,7 +15,7 @@ import sys
 import threading
 
 from . import process
-from . import reduction
+from .context import reduction
 from . import util
 
 __all__ = ['stop']
