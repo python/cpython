@@ -646,6 +646,18 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.abc.ValuesView`.
 
+.. class:: Awaitable(Generic[T_co])
+
+   A generic version of :class:`collections.abc.Awaitable`.
+
+.. class:: AsyncIterable(Generic[T_co])
+
+   A generic version of :class:`collections.abc.AsyncIterable`.
+
+.. class:: AsyncIterator(AsyncIterable[T_co])
+
+  A generic version of :class:`collections.abc.AsyncIterator`.
+
 .. class:: ContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractContextManager`.
@@ -684,7 +696,7 @@ The module defines the following classes, functions and decorators:
               start += 1
 
    Alternatively, annotate your generator as having a return type of
-   ``Iterator[YieldType]``::
+   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
 
       def infinite_stream(start: int) -> Iterator[int]:
           while True:
