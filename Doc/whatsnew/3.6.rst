@@ -64,7 +64,19 @@ Summary -- Release highlights
 
 New syntax features:
 
+* A ``global`` or ``nonlocal`` statement must now textually appear
+  before the first use of the affected name in the same scope.
+  Previously this was a SyntaxWarning.
+
 * PEP 498: :ref:`Formatted string literals <whatsnew-fstrings>`
+
+* PEP 515: Underscores in Numeric Literals
+
+* PEP 526: Syntax for Variable Annotations
+
+* PEP 525: Asynchronous Generators
+
+* PEP 530: Asynchronous Comprehensions
 
 Standard library improvements:
 
