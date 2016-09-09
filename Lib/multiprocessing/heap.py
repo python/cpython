@@ -14,8 +14,7 @@ import sys
 import tempfile
 import threading
 
-from . import context
-from . import reduction
+from .context import reduction, assert_spawning
 from . import util
 
 __all__ = ['BufferWrapper']
@@ -48,7 +47,7 @@ if sys.platform == 'win32':
             self._state = (self.size, self.name)
 
         def __getstate__(self):
-            context.assert_spawning(self)
+            assert_spawning(self)
             return self._state
 
         def __setstate__(self, state):

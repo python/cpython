@@ -9,13 +9,13 @@
 #
 
 import os
-import pickle
 import sys
 import runpy
 import types
 
 from . import get_start_method, set_start_method
 from . import process
+from .context import reduction
 from . import util
 
 __all__ = ['_main', 'freeze_support', 'set_executable', 'get_executable',
@@ -96,8 +96,7 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
     assert is_forking(sys.argv)
     if sys.platform == 'win32':
         import msvcrt
-        from .reduction import steal_handle
-        new_handle = steal_handle(parent_pid, pipe_handle)
+        new_handle = reduction.steal_handle(parent_pid, pipe_handle)
         fd = msvcrt.open_osfhandle(new_handle, os.O_RDONLY)
     else:
         from . import semaphore_tracker
@@ -111,9 +110,9 @@ def _main(fd):
     with os.fdopen(fd, 'rb', closefd=True) as from_parent:
         process.current_process()._inheriting = True
         try:
-            preparation_data = pickle.load(from_parent)
+            preparation_data = reduction.pickle.load(from_parent)
             prepare(preparation_data)
-            self = pickle.load(from_parent)
+            self = reduction.pickle.load(from_parent)
         finally:
             del process.current_process()._inheriting
     return self._bootstrap()
