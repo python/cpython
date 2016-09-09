@@ -10936,7 +10936,7 @@ unicode_compare(PyObject *str1, PyObject *str2)
 #undef COMPARE
 }
 
-Py_LOCAL(int)
+static int
 unicode_compare_eq(PyObject *str1, PyObject *str2)
 {
     int kind;

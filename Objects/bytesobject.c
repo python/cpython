@@ -1500,7 +1500,7 @@ bytes_item(PyBytesObject *a, Py_ssize_t i)
     return PyLong_FromLong((unsigned char)a->ob_sval[i]);
 }
 
-Py_LOCAL(int)
+static int
 bytes_compare_eq(PyBytesObject *a, PyBytesObject *b)
 {
     int cmp;

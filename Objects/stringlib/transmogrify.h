@@ -5,7 +5,7 @@
 /* the more complicated methods.  parts of these should be pulled out into the
    shared code in bytes_methods.c to cut down on duplicate code bloat.  */
 
-Py_LOCAL_INLINE(PyObject *)
+static inline PyObject *
 return_self(PyObject *self)
 {
 #if !STRINGLIB_MUTABLE
@@ -90,7 +90,7 @@ stringlib_expandtabs(PyObject *self, PyObject *args, PyObject *kwds)
     return NULL;
 }
 
-Py_LOCAL_INLINE(PyObject *)
+static inline PyObject *
 pad(PyObject *self, Py_ssize_t left, Py_ssize_t right, char fill)
 {
     PyObject *u;
@@ -212,7 +212,7 @@ stringlib_zfill(PyObject *self, PyObject *args)
   ((char *)memchr((const void *)(target), c, target_len))
 
 
-Py_LOCAL_INLINE(Py_ssize_t)
+static Py_ssize_t
 countchar(const char *target, Py_ssize_t target_len, char c,
           Py_ssize_t maxcount)
 {
@@ -233,7 +233,7 @@ countchar(const char *target, Py_ssize_t target_len, char c,
 /* Algorithms for different cases of string replacement */
 
 /* len(self)>=1, from="", len(to)>=1, maxcount>=1 */
-Py_LOCAL(PyObject *)
+static PyObject *
 stringlib_replace_interleave(PyObject *self,
                              const char *to_s, Py_ssize_t to_len,
                              Py_ssize_t maxcount)
@@ -304,7 +304,7 @@ stringlib_replace_interleave(PyObject *self,
 
 /* Special case for deleting a single character */
 /* len(self)>=1, len(from)==1, to="", maxcount>=1 */
-Py_LOCAL(PyObject *)
+static PyObject *
 stringlib_replace_delete_single_character(PyObject *self,
                                           char from_c, Py_ssize_t maxcount)
 {
@@ -348,7 +348,7 @@ stringlib_replace_delete_single_character(PyObject *self,
 
 /* len(self)>=1, len(from)>=2, to="", maxcount>=1 */
 
-Py_LOCAL(PyObject *)
+static PyObject *
 stringlib_replace_delete_substring(PyObject *self,
                                    const char *from_s, Py_ssize_t from_len,
                                    Py_ssize_t maxcount)
@@ -400,7 +400,7 @@ stringlib_replace_delete_substring(PyObject *self,
 }
 
 /* len(self)>=1, len(from)==len(to)==1, maxcount>=1 */
-Py_LOCAL(PyObject *)
+static PyObject *
 stringlib_replace_single_character_in_place(PyObject *self,
                                             char from_c, char to_c,
                                             Py_ssize_t maxcount)
@@ -447,7 +447,7 @@ stringlib_replace_single_character_in_place(PyObject *self,
 }
 
 /* len(self)>=1, len(from)==len(to)>=2, maxcount>=1 */
-Py_LOCAL(PyObject *)
+static PyObject *
 stringlib_replace_substring_in_place(PyObject *self,
                                      const char *from_s, Py_ssize_t from_len,
                                      const char *to_s, Py_ssize_t to_len,
@@ -499,7 +499,7 @@ stringlib_replace_substring_in_place(PyObject *self,
 }
 
 /* len(self)>=1, len(from)==1, len(to)>=2, maxcount>=1 */
-Py_LOCAL(PyObject *)
+static PyObject *
 stringlib_replace_single_character(PyObject *self,
                                    char from_c,
                                    const char *to_s, Py_ssize_t to_len,
@@ -563,7 +563,7 @@ stringlib_replace_single_character(PyObject *self,
 }
 
 /* len(self)>=1, len(from)>=2, len(to)>=2, maxcount>=1 */
-Py_LOCAL(PyObject *)
+static PyObject *
 stringlib_replace_substring(PyObject *self,
                             const char *from_s, Py_ssize_t from_len,
                             const char *to_s, Py_ssize_t to_len,
@@ -632,7 +632,7 @@ stringlib_replace_substring(PyObject *self,
 }
 
 
-Py_LOCAL(PyObject *)
+static PyObject *
 stringlib_replace(PyObject *self,
                   const char *from_s, Py_ssize_t from_len,
                   const char *to_s, Py_ssize_t to_len,
