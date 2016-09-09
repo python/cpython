@@ -3,7 +3,9 @@ from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer)
 from io import BytesIO
-from unittest import TestCase, mock, main
+from unittest import TestCase, mock
+from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
+                               INVALID_UNDERSCORE_LITERALS)
 import os
 import token
 
@@ -184,6 +186,21 @@ def k(x):
     OP         '='           (1, 2) (1, 3)
     NUMBER     '3.14e159'    (1, 4) (1, 12)
     """)
+
+    def test_underscore_literals(self):
+        def number_token(s):
+            f = BytesIO(s.encode('utf-8'))
+            for toktype, token, start, end, line in tokenize(f.readline):
+                if toktype == NUMBER:
+                    return token
+            return 'invalid token'
+        for lit in VALID_UNDERSCORE_LITERALS:
+            if '(' in lit:
+                # this won't work with compound complex inputs
+                continue
+            self.assertEqual(number_token(lit), lit)
+        for lit in INVALID_UNDERSCORE_LITERALS:
+            self.assertNotEqual(number_token(lit), lit)
 
     def test_string(self):
         # String literals
@@ -1529,11 +1546,10 @@ class TestRoundtrip(TestCase):
         tempdir = os.path.dirname(fn) or os.curdir
         testfiles = glob.glob(os.path.join(tempdir, "test*.py"))
 
-        # Tokenize is broken on test_unicode_identifiers.py because regular
-        # expressions are broken on the obscure unicode identifiers in it.
-        # *sigh* With roundtrip extended to test the 5-tuple mode of
-        # untokenize, 7 more testfiles fail.  Remove them also until the
-        # failure is diagnosed.
+        # Tokenize is broken on test_pep3131.py because regular expressions are
+        # broken on the obscure unicode identifiers in it. *sigh*
+        # With roundtrip extended to test the 5-tuple mode of untokenize,
+        # 7 more testfiles fail.  Remove them also until the failure is diagnosed.
 
         testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
         for f in ('buffer', 'builtin', 'fileio', 'inspect', 'os', 'platform', 'sys'):
@@ -1565,4 +1581,4 @@ class TestRoundtrip(TestCase):
 
 
 if __name__ == "__main__":
-    main()
+    unittest.main()

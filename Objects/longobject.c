@@ -2004,12 +2004,18 @@ unsigned char _PyLong_DigitValue[256] = {
  * non-digit (which may be *str!).  A normalized int is returned.
  * The point to this routine is that it takes time linear in the number of
  * string characters.
+ *
+ * Return values:
+ *   -1 on syntax error (exception needs to be set, *res is untouched)
+ *   0 else (exception may be set, in that case *res is set to NULL)
  */
-static PyLongObject *
-long_from_binary_base(const char **str, int base)
+static int
+long_from_binary_base(const char **str, int base, PyLongObject **res)
 {
     const char *p = *str;
     const char *start = p;
+    char prev = 0;
+    int digits = 0;
     int bits_per_char;
     Py_ssize_t n;
     PyLongObject *z;
@@ -2019,23 +2025,43 @@ long_from_binary_base(const char **str, int base)
 
     assert(base >= 2 && base <= 32 && (base & (base - 1)) == 0);
     n = base;
-    for (bits_per_char = -1; n; ++bits_per_char)
+    for (bits_per_char = -1; n; ++bits_per_char) {
         n >>= 1;
-    /* n <- total # of bits needed, while setting p to end-of-string */
-    while (_PyLong_DigitValue[Py_CHARMASK(*p)] < base)
+    }
+    /* count digits and set p to end-of-string */
+    while (_PyLong_DigitValue[Py_CHARMASK(*p)] < base || *p == '_') {
+        if (*p == '_') {
+            if (prev == '_') {
+                *str = p - 1;
+                return -1;
+            }
+        } else {
+            ++digits;
+        }
+        prev = *p;
         ++p;
+    }
+    if (prev == '_') {
+        /* Trailing underscore not allowed. */
+        *str = p - 1;
+        return -1;
+    }
+
     *str = p;
     /* n <- # of Python digits needed, = ceiling(n/PyLong_SHIFT). */
-    n = (p - start) * bits_per_char + PyLong_SHIFT - 1;
+    n = digits * bits_per_char + PyLong_SHIFT - 1;
     if (n / bits_per_char < p - start) {
         PyErr_SetString(PyExc_ValueError,
                         "int string too large to convert");
-        return NULL;
+        *res = NULL;
+        return 0;
     }
     n = n / PyLong_SHIFT;
     z = _PyLong_New(n);
-    if (z == NULL)
-        return NULL;
+    if (z == NULL) {
+        *res = NULL;
+        return 0;
+    }
     /* Read string from right, and fill in int from left; i.e.,
      * from least to most significant in both.
      */
@@ -2043,7 +2069,11 @@ long_from_binary_base(const char **str, int base)
     bits_in_accum = 0;
     pdigit = z->ob_digit;
     while (--p >= start) {
-        int k = (int)_PyLong_DigitValue[Py_CHARMASK(*p)];
+        int k;
+        if (*p == '_') {
+            continue;
+        }
+        k = (int)_PyLong_DigitValue[Py_CHARMASK(*p)];
         assert(k >= 0 && k < base);
         accum |= (twodigits)k << bits_in_accum;
         bits_in_accum += bits_per_char;
@@ -2062,7 +2092,8 @@ long_from_binary_base(const char **str, int base)
     }
     while (pdigit - z->ob_digit < n)
         *pdigit++ = 0;
-    return long_normalize(z);
+    *res = long_normalize(z);
+    return 0;
 }
 
 /* Parses an int from a bytestring. Leading and trailing whitespace will be
@@ -2087,23 +2118,29 @@ PyLong_FromString(const char *str, char **pend, int base)
                         "int() arg 2 must be >= 2 and <= 36");
         return NULL;
     }
-    while (*str != '\0' && Py_ISSPACE(Py_CHARMASK(*str)))
+    while (*str != '\0' && Py_ISSPACE(Py_CHARMASK(*str))) {
         str++;
-    if (*str == '+')
+    }
+    if (*str == '+') {
         ++str;
+    }
     else if (*str == '-') {
         ++str;
         sign = -1;
     }
     if (base == 0) {
-        if (str[0] != '0')
+        if (str[0] != '0') {
             base = 10;
-        else if (str[1] == 'x' || str[1] == 'X')
+        }
+        else if (str[1] == 'x' || str[1] == 'X') {
             base = 16;
-        else if (str[1] == 'o' || str[1] == 'O')
+        }
+        else if (str[1] == 'o' || str[1] == 'O') {
             base = 8;
-        else if (str[1] == 'b' || str[1] == 'B')
+        }
+        else if (str[1] == 'b' || str[1] == 'B') {
             base = 2;
+        }
         else {
             /* "old" (C-style) octal literal, now invalid.
                it might still be zero though */
@@ -2114,12 +2151,26 @@ PyLong_FromString(const char *str, char **pend, int base)
     if (str[0] == '0' &&
         ((base == 16 && (str[1] == 'x' || str[1] == 'X')) ||
          (base == 8  && (str[1] == 'o' || str[1] == 'O')) ||
-         (base == 2  && (str[1] == 'b' || str[1] == 'B'))))
+         (base == 2  && (str[1] == 'b' || str[1] == 'B')))) {
         str += 2;
+        /* One underscore allowed here. */
+        if (*str == '_') {
+            ++str;
+        }
+    }
+    if (str[0] == '_') {
+	    /* May not start with underscores. */
+	    goto onError;
+    }
 
     start = str;
-    if ((base & (base - 1)) == 0)
-        z = long_from_binary_base(&str, base);
+    if ((base & (base - 1)) == 0) {
+        int res = long_from_binary_base(&str, base, &z);
+        if (res < 0) {
+            /* Syntax error. */
+            goto onError;
+        }
+    }
     else {
 /***
 Binary bases can be converted in time linear in the number of digits, because
@@ -2208,11 +2259,13 @@ digit beyond the first.
 ***/
         twodigits c;           /* current input character */
         Py_ssize_t size_z;
+        int digits = 0;
         int i;
         int convwidth;
         twodigits convmultmax, convmult;
         digit *pz, *pzstop;
-        const char* scan;
+        const char *scan, *lastdigit;
+        char prev = 0;
 
         static double log_base_BASE[37] = {0.0e0,};
         static int convwidth_base[37] = {0,};
@@ -2226,8 +2279,9 @@ digit beyond the first.
                                    log((double)PyLong_BASE));
             for (;;) {
                 twodigits next = convmax * base;
-                if (next > PyLong_BASE)
+                if (next > PyLong_BASE) {
                     break;
+                }
                 convmax = next;
                 ++i;
             }
@@ -2238,21 +2292,43 @@ digit beyond the first.
 
         /* Find length of the string of numeric characters. */
         scan = str;
-        while (_PyLong_DigitValue[Py_CHARMASK(*scan)] < base)
+        lastdigit = str;
+
+        while (_PyLong_DigitValue[Py_CHARMASK(*scan)] < base || *scan == '_') {
+            if (*scan == '_') {
+                if (prev == '_') {
+                    /* Only one underscore allowed. */
+                    str = lastdigit + 1;
+                    goto onError;
+                }
+            }
+            else {
+                ++digits;
+                lastdigit = scan;
+            }
+            prev = *scan;
             ++scan;
+        }
+        if (prev == '_') {
+            /* Trailing underscore not allowed. */
+            /* Set error pointer to first underscore. */
+            str = lastdigit + 1;
+            goto onError;
+        }
 
         /* Create an int object that can contain the largest possible
          * integer with this base and length.  Note that there's no
          * need to initialize z->ob_digit -- no slot is read up before
          * being stored into.
          */
-        size_z = (Py_ssize_t)((scan - str) * log_base_BASE[base]) + 1;
+        size_z = (Py_ssize_t)(digits * log_base_BASE[base]) + 1;
         /* Uncomment next line to test exceedingly rare copy code */
         /* size_z = 1; */
         assert(size_z > 0);
         z = _PyLong_New(size_z);
-        if (z == NULL)
+        if (z == NULL) {
             return NULL;
+        }
         Py_SIZE(z) = 0;
 
         /* `convwidth` consecutive input digits are treated as a single
@@ -2263,9 +2339,17 @@ digit beyond the first.
 
         /* Work ;-) */
         while (str < scan) {
+            if (*str == '_') {
+                str++;
+                continue;
+            }
             /* grab up to convwidth digits from the input string */
             c = (digit)_PyLong_DigitValue[Py_CHARMASK(*str++)];
-            for (i = 1; i < convwidth && str != scan; ++i, ++str) {
+            for (i = 1; i < convwidth && str != scan; ++str) {
+                if (*str == '_') {
+                    continue;
+                }
+                i++;
                 c = (twodigits)(c *  base +
                                 (int)_PyLong_DigitValue[Py_CHARMASK(*str)]);
                 assert(c < PyLong_BASE);
@@ -2277,8 +2361,9 @@ digit beyond the first.
              */
             if (i != convwidth) {
                 convmult = base;
-                for ( ; i > 1; --i)
+                for ( ; i > 1; --i) {
                     convmult *= base;
+                }
             }
 
             /* Multiply z by convmult, and add c. */
@@ -2316,41 +2401,51 @@ digit beyond the first.
             }
         }
     }
-    if (z == NULL)
+    if (z == NULL) {
         return NULL;
+    }
     if (error_if_nonzero) {
         /* reset the base to 0, else the exception message
            doesn't make too much sense */
         base = 0;
-        if (Py_SIZE(z) != 0)
+        if (Py_SIZE(z) != 0) {
             goto onError;
+        }
         /* there might still be other problems, therefore base
            remains zero here for the same reason */
     }
-    if (str == start)
+    if (str == start) {
         goto onError;
-    if (sign < 0)
+    }
+    if (sign < 0) {
         Py_SIZE(z) = -(Py_SIZE(z));
-    while (*str && Py_ISSPACE(Py_CHARMASK(*str)))
+    }
+    while (*str && Py_ISSPACE(Py_CHARMASK(*str))) {
         str++;
-    if (*str != '\0')
+    }
+    if (*str != '\0') {
         goto onError;
+    }
     long_normalize(z);
     z = maybe_small_long(z);
-    if (z == NULL)
+    if (z == NULL) {
         return NULL;
-    if (pend != NULL)
+    }
+    if (pend != NULL) {
         *pend = (char *)str;
+    }
     return (PyObject *) z;
 
   onError:
-    if (pend != NULL)
+    if (pend != NULL) {
         *pend = (char *)str;
+    }
     Py_XDECREF(z);
     slen = strlen(orig_str) < 200 ? strlen(orig_str) : 200;
     strobj = PyUnicode_FromStringAndSize(orig_str, slen);
-    if (strobj == NULL)
+    if (strobj == NULL) {
         return NULL;
+    }
     PyErr_Format(PyExc_ValueError,
                  "invalid literal for int() with base %d: %.200R",
                  base, strobj);

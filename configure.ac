@@ -3198,19 +3198,6 @@ then
 fi
 AC_MSG_RESULT($with_doc_strings)
 
-# Check if eval loop should use timestamp counter profiling
-AC_MSG_CHECKING(for --with-tsc)
-AC_ARG_WITH(tsc,
-	    AS_HELP_STRING([--with(out)-tsc],[enable/disable timestamp counter profile]),[
-if test "$withval" != no
-then
-  AC_DEFINE(WITH_TSC, 1,
-    [Define to profile with the Pentium timestamp counter])
-    AC_MSG_RESULT(yes)
-else AC_MSG_RESULT(no)
-fi],
-[AC_MSG_RESULT(no)])
-
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-pymalloc)
 AC_ARG_WITH(pymalloc,

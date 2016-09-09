@@ -1104,18 +1104,6 @@ always available.
       thus may not be available in all Python implementations.
 
 
-.. function:: settscdump(on_flag)
-
-   Activate dumping of VM measurements using the Pentium timestamp counter, if
-   *on_flag* is true. Deactivate these dumps if *on_flag* is off. The function is
-   available only if Python was compiled with ``--with-tsc``. To understand
-   the output of this dump, read :file:`Python/ceval.c` in the Python sources.
-
-   .. impl-detail::
-      This function is intimately bound to CPython implementation details and
-      thus not likely to be implemented elsewhere.
-
-
 .. function:: set_coroutine_wrapper(wrapper)
 
    Allows intercepting creation of :term:`coroutine` objects (only ones that

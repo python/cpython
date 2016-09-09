@@ -120,16 +120,17 @@ Comment = r'#[^\r\n]*'
 Ignore = Whitespace + any(r'\\\r?\n' + Whitespace) + maybe(Comment)
 Name = r'\w+'
 
-Hexnumber = r'0[xX][0-9a-fA-F]+'
-Binnumber = r'0[bB][01]+'
-Octnumber = r'0[oO][0-7]+'
-Decnumber = r'(?:0+|[1-9][0-9]*)'
+Hexnumber = r'0[xX](?:_?[0-9a-fA-F])+'
+Binnumber = r'0[bB](?:_?[01])+'
+Octnumber = r'0[oO](?:_?[0-7])+'
+Decnumber = r'(?:0(?:_?0)*|[1-9](?:_?[0-9])*)'
 Intnumber = group(Hexnumber, Binnumber, Octnumber, Decnumber)
-Exponent = r'[eE][-+]?[0-9]+'
-Pointfloat = group(r'[0-9]+\.[0-9]*', r'\.[0-9]+') + maybe(Exponent)
-Expfloat = r'[0-9]+' + Exponent
+Exponent = r'[eE][-+]?[0-9](?:_?[0-9])*'
+Pointfloat = group(r'[0-9](?:_?[0-9])*\.(?:[0-9](?:_?[0-9])*)?',
+                   r'\.[0-9](?:_?[0-9])*') + maybe(Exponent)
+Expfloat = r'[0-9](?:_?[0-9])*' + Exponent
 Floatnumber = group(Pointfloat, Expfloat)
-Imagnumber = group(r'[0-9]+[jJ]', Floatnumber + r'[jJ]')
+Imagnumber = group(r'[0-9](?:_?[0-9])*[jJ]', Floatnumber + r'[jJ]')
 Number = group(Imagnumber, Floatnumber, Intnumber)
 
 # Return the empty string, plus all of the valid string prefixes.

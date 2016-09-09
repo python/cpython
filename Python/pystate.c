@@ -99,9 +99,6 @@ PyInterpreterState_New(void)
         interp->dlopenflags = RTLD_LAZY;
 #endif
 #endif
-#ifdef WITH_TSC
-        interp->tscdump = 0;
-#endif
 
         HEAD_LOCK();
         interp->next = interp_head;

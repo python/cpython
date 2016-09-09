@@ -20,82 +20,6 @@
 
 #include <ctype.h>
 
-#ifndef WITH_TSC
-
-#define READ_TIMESTAMP(var)
-
-#else
-
-typedef unsigned long long uint64;
-
-/* PowerPC support.
-   "__ppc__" appears to be the preprocessor definition to detect on OS X, whereas
-   "__powerpc__" appears to be the correct one for Linux with GCC
-*/
-#if defined(__ppc__) || defined (__powerpc__)
-
-#define READ_TIMESTAMP(var) ppc_getcounter(&var)
-
-static void
-ppc_getcounter(uint64 *v)
-{
-    unsigned long tbu, tb, tbu2;
-
-  loop:
-    asm volatile ("mftbu %0" : "=r" (tbu) );
-    asm volatile ("mftb  %0" : "=r" (tb)  );
-    asm volatile ("mftbu %0" : "=r" (tbu2));
-    if (__builtin_expect(tbu != tbu2, 0)) goto loop;
-
-    /* The slightly peculiar way of writing the next lines is
-       compiled better by GCC than any other way I tried. */
-    ((long*)(v))[0] = tbu;
-    ((long*)(v))[1] = tb;
-}
-
-#elif defined(__i386__)
-
-/* this is for linux/x86 (and probably any other GCC/x86 combo) */
-
-#define READ_TIMESTAMP(val) \
-     __asm__ __volatile__("rdtsc" : "=A" (val))
-
-#elif defined(__x86_64__)
-
-/* for gcc/x86_64, the "A" constraint in DI mode means *either* rax *or* rdx;
-   not edx:eax as it does for i386.  Since rdtsc puts its result in edx:eax
-   even in 64-bit mode, we need to use "a" and "d" for the lower and upper
-   32-bit pieces of the result. */
-
-#define READ_TIMESTAMP(val) do {                        \
-    unsigned int h, l;                                  \
-    __asm__ __volatile__("rdtsc" : "=a" (l), "=d" (h)); \
-    (val) = ((uint64)l) | (((uint64)h) << 32);          \
-    } while(0)
-
-
-#else
-
-#error "Don't know how to implement timestamp counter for this architecture"
-
-#endif
-
-void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1,
-              uint64 loop0, uint64 loop1, uint64 intr0, uint64 intr1)
-{
-    uint64 intr, inst, loop;
-    PyThreadState *tstate = PyThreadState_Get();
-    if (!tstate->interp->tscdump)
-        return;
-    intr = intr1 - intr0;
-    inst = inst1 - inst0 - intr;
-    loop = loop1 - loop0 - intr;
-    fprintf(stderr, "opcode=%03d t=%d inst=%06lld loop=%06lld\n",
-            opcode, ticked, inst, loop);
-}
-
-#endif
-
 /* Turn this on if your compiler chokes on the big switch: */
 /* #define CASE_TOO_BIG 1 */
 
@@ -108,11 +32,7 @@ void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1,
 typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
-#ifdef WITH_TSC
-static PyObject * call_function(PyObject ***, Py_ssize_t, PyObject *, uint64*, uint64*);
-#else
 static PyObject * call_function(PyObject ***, Py_ssize_t, PyObject *);
-#endif
 static PyObject * fast_function(PyObject *, PyObject **, Py_ssize_t, PyObject *);
 static PyObject * do_call_core(PyObject *, PyObject *, PyObject *);
 
@@ -938,46 +858,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 #define GETITEM(v, i) PyTuple_GetItem((v), (i))
 #endif
 
-#ifdef WITH_TSC
-/* Use Pentium timestamp counter to mark certain events:
-   inst0 -- beginning of switch statement for opcode dispatch
-   inst1 -- end of switch statement (may be skipped)
-   loop0 -- the top of the mainloop
-   loop1 -- place where control returns again to top of mainloop
-            (may be skipped)
-   intr1 -- beginning of long interruption
-   intr2 -- end of long interruption
-
-   Many opcodes call out to helper C functions.  In some cases, the
-   time in those functions should be counted towards the time for the
-   opcode, but not in all cases.  For example, a CALL_FUNCTION opcode
-   calls another Python function; there's no point in charge all the
-   bytecode executed by the called function to the caller.
-
-   It's hard to make a useful judgement statically.  In the presence
-   of operator overloading, it's impossible to tell if a call will
-   execute new Python code or not.
-
-   It's a case-by-case judgement.  I'll use intr1 for the following
-   cases:
-
-   IMPORT_STAR
-   IMPORT_FROM
-   CALL_FUNCTION (and friends)
-
- */
-    uint64 inst0, inst1, loop0, loop1, intr0 = 0, intr1 = 0;
-    int ticked = 0;
-
-    READ_TIMESTAMP(inst0);
-    READ_TIMESTAMP(inst1);
-    READ_TIMESTAMP(loop0);
-    READ_TIMESTAMP(loop1);
-
-    /* shut up the compiler */
-    opcode = 0;
-#endif
-
 /* Code access macros */
 
 #ifdef WORDS_BIGENDIAN
@@ -1225,23 +1105,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 #endif
 
     for (;;) {
-#ifdef WITH_TSC
-        if (inst1 == 0) {
-            /* Almost surely, the opcode executed a break
-               or a continue, preventing inst1 from being set
-               on the way out of the loop.
-            */
-            READ_TIMESTAMP(inst1);
-            loop1 = inst1;
-        }
-        dump_tsc(opcode, ticked, inst0, inst1, loop0, loop1,
-                 intr0, intr1);
-        ticked = 0;
-        inst1 = 0;
-        intr0 = 0;
-        intr1 = 0;
-        READ_TIMESTAMP(loop0);
-#endif
         assert(stack_pointer >= f->f_valuestack); /* else underflow */
         assert(STACK_LEVEL() <= co->co_stacksize);  /* else overflow */
         assert(!PyErr_Occurred());
@@ -1260,9 +1123,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                    a try: finally: block uninterruptible. */
                 goto fast_next_opcode;
             }
-#ifdef WITH_TSC
-            ticked = 1;
-#endif
             if (_Py_atomic_load_relaxed(&pendingcalls_to_do)) {
                 if (Py_MakePendingCalls() < 0)
                     goto error;
@@ -1352,9 +1212,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             }
         }
 #endif
-
-        /* Main switch on opcode */
-        READ_TIMESTAMP(inst0);
 
         switch (opcode) {
 
@@ -2966,11 +2823,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             PyObject *fromlist = POP();
             PyObject *level = TOP();
             PyObject *res;
-            READ_TIMESTAMP(intr0);
             res = import_name(f, name, fromlist, level);
             Py_DECREF(level);
             Py_DECREF(fromlist);
-            READ_TIMESTAMP(intr1);
             SET_TOP(res);
             if (res == NULL)
                 goto error;
@@ -2989,9 +2844,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                     "no locals found during 'import *'");
                 goto error;
             }
-            READ_TIMESTAMP(intr0);
             err = import_all_from(locals, from);
-            READ_TIMESTAMP(intr1);
             PyFrame_LocalsToFast(f, 0);
             Py_DECREF(from);
             if (err != 0)
@@ -3003,9 +2856,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             PyObject *name = GETITEM(names, oparg);
             PyObject *from = TOP();
             PyObject *res;
-            READ_TIMESTAMP(intr0);
             res = import_from(from, name);
-            READ_TIMESTAMP(intr1);
             PUSH(res);
             if (res == NULL)
                 goto error;
@@ -3403,11 +3254,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             PyObject **sp, *res;
             PCALL(PCALL_ALL);
             sp = stack_pointer;
-#ifdef WITH_TSC
-            res = call_function(&sp, oparg, NULL, &intr0, &intr1);
-#else
             res = call_function(&sp, oparg, NULL);
-#endif
             stack_pointer = sp;
             PUSH(res);
             if (res == NULL) {
@@ -3423,11 +3270,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             assert(PyTuple_CheckExact(names) && PyTuple_GET_SIZE(names) <= oparg);
             PCALL(PCALL_ALL);
             sp = stack_pointer;
-#ifdef WITH_TSC
-            res = call_function(&sp, oparg, names, &intr0, &intr1);
-#else
             res = call_function(&sp, oparg, names);
-#endif
             stack_pointer = sp;
             PUSH(res);
             Py_DECREF(names);
@@ -3449,9 +3292,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             assert(PyTuple_CheckExact(callargs));
             func = TOP();
 
-            READ_TIMESTAMP(intr0);
             result = do_call_core(func, callargs, kwargs);
-            READ_TIMESTAMP(intr1);
             Py_DECREF(func);
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
@@ -3602,7 +3443,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         assert(0);
 
 error:
-        READ_TIMESTAMP(inst1);
 
         assert(why == WHY_NOT);
         why = WHY_EXCEPTION;
@@ -3706,7 +3546,6 @@ fast_block_end:
 
         if (why != WHY_NOT)
             break;
-        READ_TIMESTAMP(loop1);
 
         assert(!PyErr_Occurred());
 
@@ -4922,11 +4761,7 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
     }
 
 static PyObject *
-call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames
-#ifdef WITH_TSC
-                , uint64* pintr0, uint64* pintr1
-#endif
-                )
+call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
 {
     PyObject **pfunc = (*pp_stack) - oparg - 1;
     PyObject *func = *pfunc;
@@ -4964,14 +4799,12 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames
 
         stack = (*pp_stack) - nargs - nkwargs;
 
-        READ_TIMESTAMP(*pintr0);
         if (PyFunction_Check(func)) {
             x = fast_function(func, stack, nargs, kwnames);
         }
         else {
             x = _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
         }
-        READ_TIMESTAMP(*pintr1);
 
         Py_DECREF(func);
     }
