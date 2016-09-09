@@ -19,7 +19,7 @@ echo on
 rem Start temporary diagnostic code
 set
 echo All zip files
-dir /s/b "%here%..\..\PCbuild\*.zip"
+dir /s/b "%here%..\..\PCbuild\*"
 echo.
 rem End temporary diagnostic code
 
