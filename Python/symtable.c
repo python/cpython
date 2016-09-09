@@ -6,16 +6,22 @@
 
 /* error strings used for warnings */
 #define GLOBAL_AFTER_ASSIGN \
-"name '%.400s' is assigned to before global declaration"
+"name '%U' is assigned to before global declaration"
 
 #define NONLOCAL_AFTER_ASSIGN \
-"name '%.400s' is assigned to before nonlocal declaration"
+"name '%U' is assigned to before nonlocal declaration"
 
 #define GLOBAL_AFTER_USE \
-"name '%.400s' is used prior to global declaration"
+"name '%U' is used prior to global declaration"
 
 #define NONLOCAL_AFTER_USE \
-"name '%.400s' is used prior to nonlocal declaration"
+"name '%U' is used prior to nonlocal declaration"
+
+#define GLOBAL_ANNOT \
+"annotated name '%U' can't be global"
+
+#define NONLOCAL_ANNOT \
+"annotated name '%U' can't be nonlocal"
 
 #define IMPORT_STAR_WARNING "import * only allowed at module level"
 
@@ -161,7 +167,6 @@ PyTypeObject PySTEntry_Type = {
 };
 
 static int symtable_analyze(struct symtable *st);
-static int symtable_warn(struct symtable *st, const char *msg, int lineno);
 static int symtable_enter_block(struct symtable *st, identifier name,
                                 _Py_block_ty block, void *ast, int lineno,
                                 int col_offset);
@@ -907,27 +912,6 @@ symtable_analyze(struct symtable *st)
     return r;
 }
 
-
-static int
-symtable_warn(struct symtable *st, const char *msg, int lineno)
-{
-    PyObject *message = PyUnicode_FromString(msg);
-    if (message == NULL)
-        return 0;
-    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, message, st->st_filename,
-                                 lineno, NULL, NULL) < 0)     {
-        Py_DECREF(message);
-        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
-            PyErr_SetString(PyExc_SyntaxError, msg);
-            PyErr_SyntaxLocationObject(st->st_filename, st->st_cur->ste_lineno,
-                                       st->st_cur->ste_col_offset);
-        }
-        return 0;
-    }
-    Py_DECREF(message);
-    return 1;
-}
-
 /* symtable_enter_block() gets a reference via ste_new.
    This reference is released when the block is exited, via the DECREF
    in symtable_exit_block().
@@ -1212,9 +1196,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             if ((cur & (DEF_GLOBAL | DEF_NONLOCAL))
                 && s->v.AnnAssign.simple) {
                 PyErr_Format(PyExc_SyntaxError,
-                             "annotated name '%U' can't be %s",
-                             e_name->v.Name.id,
-                             cur & DEF_GLOBAL ? "global" : "nonlocal");
+                             cur & DEF_GLOBAL ? GLOBAL_ANNOT : NONLOCAL_ANNOT,
+                             e_name->v.Name.id);
                 PyErr_SyntaxLocationObject(st->st_filename,
                                            s->lineno,
                                            s->col_offset);
@@ -1297,30 +1280,23 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             long cur = symtable_lookup(st, name);
             if (cur < 0)
                 VISIT_QUIT(st, 0);
-            if (cur & DEF_ANNOT) {
+            if (cur & (DEF_LOCAL | USE | DEF_ANNOT)) {
+                char* msg;
+                if (cur & DEF_ANNOT) {
+                    msg = GLOBAL_ANNOT;
+                }
+                if (cur & DEF_LOCAL) {
+                    msg = GLOBAL_AFTER_ASSIGN;
+                }
+                else {
+                    msg = GLOBAL_AFTER_USE;
+                }
                 PyErr_Format(PyExc_SyntaxError,
-                             "annotated name '%U' can't be global",
-                             name);
+                             msg, name);
                 PyErr_SyntaxLocationObject(st->st_filename,
                                            s->lineno,
                                            s->col_offset);
                 VISIT_QUIT(st, 0);
-            }
-            if (cur & (DEF_LOCAL | USE)) {
-                char buf[256];
-                char *c_name = _PyUnicode_AsString(name);
-                if (!c_name)
-                    return 0;
-                if (cur & DEF_LOCAL)
-                    PyOS_snprintf(buf, sizeof(buf),
-                                  GLOBAL_AFTER_ASSIGN,
-                                  c_name);
-                else
-                    PyOS_snprintf(buf, sizeof(buf),
-                                  GLOBAL_AFTER_USE,
-                                  c_name);
-                if (!symtable_warn(st, buf, s->lineno))
-                    VISIT_QUIT(st, 0);
             }
             if (!symtable_add_def(st, name, DEF_GLOBAL))
                 VISIT_QUIT(st, 0);
@@ -1337,30 +1313,22 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             long cur = symtable_lookup(st, name);
             if (cur < 0)
                 VISIT_QUIT(st, 0);
-            if (cur & DEF_ANNOT) {
-                PyErr_Format(PyExc_SyntaxError,
-                             "annotated name '%U' can't be nonlocal",
-                             name);
+            if (cur & (DEF_LOCAL | USE | DEF_ANNOT)) {
+                char* msg;
+                if (cur & DEF_ANNOT) {
+                    msg = NONLOCAL_ANNOT;
+                }
+                if (cur & DEF_LOCAL) {
+                    msg = NONLOCAL_AFTER_ASSIGN;
+                }
+                else {
+                    msg = NONLOCAL_AFTER_USE;
+                }
+                PyErr_Format(PyExc_SyntaxError, msg, name);
                 PyErr_SyntaxLocationObject(st->st_filename,
                                            s->lineno,
                                            s->col_offset);
                 VISIT_QUIT(st, 0);
-            }
-            if (cur & (DEF_LOCAL | USE)) {
-                char buf[256];
-                char *c_name = _PyUnicode_AsString(name);
-                if (!c_name)
-                    return 0;
-                if (cur & DEF_LOCAL)
-                    PyOS_snprintf(buf, sizeof(buf),
-                                  NONLOCAL_AFTER_ASSIGN,
-                                  c_name);
-                else
-                    PyOS_snprintf(buf, sizeof(buf),
-                                  NONLOCAL_AFTER_USE,
-                                  c_name);
-                if (!symtable_warn(st, buf, s->lineno))
-                    VISIT_QUIT(st, 0);
             }
             if (!symtable_add_def(st, name, DEF_NONLOCAL))
                 VISIT_QUIT(st, 0);
