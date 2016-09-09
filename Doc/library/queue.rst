@@ -189,6 +189,11 @@ Example of how to wait for enqueued tasks to be completed::
         t.join()
 
 
+.. note::
+
+   The :mod:`queue` module is not safe for use from :mod:`signal` handlers as
+   it uses :mod:`threading` locks.
+
 .. seealso::
 
    Class :class:`multiprocessing.Queue`
