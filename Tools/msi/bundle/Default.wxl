@@ -133,6 +133,16 @@ Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%20
 
 Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download Python 3.4.</String>
 
+  <String Id="FailureWS2K8R2MissingSP1">Windows Server 2008 R2 Service Pack 1 and all applicable updates are required to install [WixBundleName].
+
+Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%20server%202008%20r2%20service%20pack%201"&gt;update your machine&lt;/a&gt; and then restart the installation.</String>
+  <String Id="FailureWS2K8MissingSP2">Windows Server 2008 Service Pack 2 and all applicable updates are required to install [WixBundleName].
+
+Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%20server%202008%20service%20pack%202"&gt;update your machine&lt;/a&gt; and then restart the installation.</String>
+  <String Id="FailureWS2K3OrEarlier">Windows Server 2008 SP2 or later is required to install and use [WixBundleName].
+
+Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download Python 3.4.</String>
+
   <String Id="SuccessMaxPathButton">Disable path length limit</String>
   <String Id="SuccessMaxPathButtonNote">Changes your machine configuration to allow programs, including Python, to bypass the 260 character "MAX_PATH" limitation.</String>
 </WixLocalization>
