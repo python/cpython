@@ -103,6 +103,9 @@ Core and Builtins
 - Issue #27985: Implement PEP 526 -- Syntax for Variable Annotations.
   Patch by Ivan Levkivskyi.
 
+- Issue #28003: Implement PEP 525 -- Asynchronous Generators.
+
+
 Library
 -------
 

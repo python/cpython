@@ -229,6 +229,9 @@ new_threadstate(PyInterpreterState *interp, int init)
         tstate->in_coroutine_wrapper = 0;
         tstate->co_extra_user_count = 0;
 
+        tstate->async_gen_firstiter = NULL;
+        tstate->async_gen_finalizer = NULL;
+
         if (init)
             _PyThreadState_Init(tstate);
 
@@ -408,6 +411,8 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->c_traceobj);
 
     Py_CLEAR(tstate->coroutine_wrapper);
+    Py_CLEAR(tstate->async_gen_firstiter);
+    Py_CLEAR(tstate->async_gen_finalizer);
 }
 
 

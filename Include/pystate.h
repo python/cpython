@@ -148,6 +148,9 @@ typedef struct _ts {
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 
+    PyObject *async_gen_firstiter;
+    PyObject *async_gen_finalizer;
+
     /* XXX signal handlers should also be here */
 
 } PyThreadState;

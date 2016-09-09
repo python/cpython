@@ -1192,6 +1192,32 @@ class SizeofTest(unittest.TestCase):
         # sys.flags
         check(sys.flags, vsize('') + self.P * len(sys.flags))
 
+    def test_asyncgen_hooks(self):
+        old = sys.get_asyncgen_hooks()
+        self.assertIsNone(old.firstiter)
+        self.assertIsNone(old.finalizer)
+
+        firstiter = lambda *a: None
+        sys.set_asyncgen_hooks(firstiter=firstiter)
+        hooks = sys.get_asyncgen_hooks()
+        self.assertIs(hooks.firstiter, firstiter)
+        self.assertIs(hooks[0], firstiter)
+        self.assertIs(hooks.finalizer, None)
+        self.assertIs(hooks[1], None)
+
+        finalizer = lambda *a: None
+        sys.set_asyncgen_hooks(finalizer=finalizer)
+        hooks = sys.get_asyncgen_hooks()
+        self.assertIs(hooks.firstiter, firstiter)
+        self.assertIs(hooks[0], firstiter)
+        self.assertIs(hooks.finalizer, finalizer)
+        self.assertIs(hooks[1], finalizer)
+
+        sys.set_asyncgen_hooks(*old)
+        cur = sys.get_asyncgen_hooks()
+        self.assertIsNone(cur.firstiter)
+        self.assertIsNone(cur.finalizer)
+
 
 def test_main():
     test.support.run_unittest(SysModuleTest, SizeofTest)

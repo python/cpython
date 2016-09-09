@@ -65,7 +65,8 @@ class IsTestBase(unittest.TestCase):
                       inspect.isframe, inspect.isfunction, inspect.ismethod,
                       inspect.ismodule, inspect.istraceback,
                       inspect.isgenerator, inspect.isgeneratorfunction,
-                      inspect.iscoroutine, inspect.iscoroutinefunction])
+                      inspect.iscoroutine, inspect.iscoroutinefunction,
+                      inspect.isasyncgen, inspect.isasyncgenfunction])
 
     def istest(self, predicate, exp):
         obj = eval(exp)
@@ -73,6 +74,7 @@ class IsTestBase(unittest.TestCase):
 
         for other in self.predicates - set([predicate]):
             if (predicate == inspect.isgeneratorfunction or \
+               predicate == inspect.isasyncgenfunction or \
                predicate == inspect.iscoroutinefunction) and \
                other == inspect.isfunction:
                 continue
@@ -80,6 +82,10 @@ class IsTestBase(unittest.TestCase):
 
 def generator_function_example(self):
     for i in range(2):
+        yield i
+
+async def async_generator_function_example(self):
+    async for i in range(2):
         yield i
 
 async def coroutine_function_example(self):
@@ -122,6 +128,10 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.isdatadescriptor, 'collections.defaultdict.default_factory')
         self.istest(inspect.isgenerator, '(x for x in range(2))')
         self.istest(inspect.isgeneratorfunction, 'generator_function_example')
+        self.istest(inspect.isasyncgen,
+                    'async_generator_function_example(1)')
+        self.istest(inspect.isasyncgenfunction,
+                    'async_generator_function_example')
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")

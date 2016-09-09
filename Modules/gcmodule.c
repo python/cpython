@@ -892,6 +892,7 @@ clear_freelists(void)
     (void)PyList_ClearFreeList();
     (void)PyDict_ClearFreeList();
     (void)PySet_ClearFreeList();
+    (void)PyAsyncGen_ClearFreeLists();
 }
 
 /* This is the main function.  Read this to understand how the

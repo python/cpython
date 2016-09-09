@@ -717,6 +717,113 @@ Return the wrapper for coroutine objects set by sys.set_coroutine_wrapper."
 );
 
 
+static PyTypeObject AsyncGenHooksType;
+
+PyDoc_STRVAR(asyncgen_hooks_doc,
+"asyncgen_hooks\n\
+\n\
+A struct sequence providing information about asynhronous\n\
+generators hooks.  The attributes are read only.");
+
+static PyStructSequence_Field asyncgen_hooks_fields[] = {
+    {"firstiter", "Hook to intercept first iteration"},
+    {"finalizer", "Hook to intercept finalization"},
+    {0}
+};
+
+static PyStructSequence_Desc asyncgen_hooks_desc = {
+    "asyncgen_hooks",          /* name */
+    asyncgen_hooks_doc,        /* doc */
+    asyncgen_hooks_fields ,    /* fields */
+    2
+};
+
+
+static PyObject *
+sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
+{
+    static char *keywords[] = {"firstiter", "finalizer", NULL};
+    PyObject *firstiter = NULL;
+    PyObject *finalizer = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kw, "|OO", keywords,
+            &firstiter, &finalizer)) {
+        return NULL;
+    }
+
+    if (finalizer && finalizer != Py_None) {
+        if (!PyCallable_Check(finalizer)) {
+            PyErr_Format(PyExc_TypeError,
+                         "callable finalizer expected, got %.50s",
+                         Py_TYPE(finalizer)->tp_name);
+            return NULL;
+        }
+        _PyEval_SetAsyncGenFinalizer(finalizer);
+    }
+    else if (finalizer == Py_None) {
+        _PyEval_SetAsyncGenFinalizer(NULL);
+    }
+
+    if (firstiter && firstiter != Py_None) {
+        if (!PyCallable_Check(firstiter)) {
+            PyErr_Format(PyExc_TypeError,
+                         "callable firstiter expected, got %.50s",
+                         Py_TYPE(firstiter)->tp_name);
+            return NULL;
+        }
+        _PyEval_SetAsyncGenFirstiter(firstiter);
+    }
+    else if (firstiter == Py_None) {
+        _PyEval_SetAsyncGenFirstiter(NULL);
+    }
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(set_asyncgen_hooks_doc,
+"set_asyncgen_hooks(*, firstiter=None, finalizer=None)\n\
+\n\
+Set a finalizer for async generators objects."
+);
+
+static PyObject *
+sys_get_asyncgen_hooks(PyObject *self, PyObject *args)
+{
+    PyObject *res;
+    PyObject *firstiter = _PyEval_GetAsyncGenFirstiter();
+    PyObject *finalizer = _PyEval_GetAsyncGenFinalizer();
+
+    res = PyStructSequence_New(&AsyncGenHooksType);
+    if (res == NULL) {
+        return NULL;
+    }
+
+    if (firstiter == NULL) {
+        firstiter = Py_None;
+    }
+
+    if (finalizer == NULL) {
+        finalizer = Py_None;
+    }
+
+    Py_INCREF(firstiter);
+    PyStructSequence_SET_ITEM(res, 0, firstiter);
+
+    Py_INCREF(finalizer);
+    PyStructSequence_SET_ITEM(res, 1, finalizer);
+
+    return res;
+}
+
+PyDoc_STRVAR(get_asyncgen_hooks_doc,
+"get_asyncgen_hooks()\n\
+\n\
+Return a namedtuple of installed asynchronous generators hooks \
+(firstiter, finalizer)."
+);
+
+
 static PyTypeObject Hash_InfoType;
 
 PyDoc_STRVAR(hash_info_doc,
@@ -1315,6 +1422,10 @@ static PyMethodDef sys_methods[] = {
      set_coroutine_wrapper_doc},
     {"get_coroutine_wrapper", sys_get_coroutine_wrapper, METH_NOARGS,
      get_coroutine_wrapper_doc},
+    {"set_asyncgen_hooks", sys_set_asyncgen_hooks,
+     METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
+    {"get_asyncgen_hooks", sys_get_asyncgen_hooks, METH_NOARGS,
+     get_asyncgen_hooks_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1949,6 +2060,14 @@ _PySys_Init(void)
 #ifdef WITH_THREAD
     SET_SYS_FROM_STRING("thread_info", PyThread_GetInfo());
 #endif
+
+    /* initialize asyncgen_hooks */
+    if (AsyncGenHooksType.tp_name == NULL) {
+        if (PyStructSequence_InitType2(
+                &AsyncGenHooksType, &asyncgen_hooks_desc) < 0) {
+            return NULL;
+        }
+    }
 
 #undef SET_SYS_FROM_STRING
 #undef SET_SYS_FROM_STRING_BORROW

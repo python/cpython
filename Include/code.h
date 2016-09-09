@@ -59,6 +59,7 @@ typedef struct {
    ``async def`` keywords) */
 #define CO_COROUTINE            0x0080
 #define CO_ITERABLE_COROUTINE   0x0100
+#define CO_ASYNC_GENERATOR      0x0200
 
 /* These are no longer used. */
 #if 0
