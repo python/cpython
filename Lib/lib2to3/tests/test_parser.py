@@ -256,7 +256,7 @@ class TestFunctionAnnotations(GrammarTest):
 
 
 # Adapted from Python 3's Lib/test/test_grammar.py:GrammarTests.test_var_annot
-class TestFunctionAnnotations(GrammarTest):
+class TestVarAnnotations(GrammarTest):
     def test_1(self):
         self.validate("var1: int = 5")
 
