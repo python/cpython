@@ -101,6 +101,11 @@ Windows improvements:
   which means that when the 260 character path limit may no longer apply.
   See :ref:`removing the MAX_PATH limitation <max-path>` for details.
 
+* A ``sys.path`` file can be added to force isolated mode and fully specify
+  all search paths to avoid registry and environment lookup.
+
+* A ``python36.zip`` file now works as a landmark to infer :envvar:`PYTHONHOME`
+
 .. PEP-sized items next.
 
 .. _pep-4XX:
