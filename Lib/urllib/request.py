@@ -1625,7 +1625,7 @@ class URLopener:
         self.proxies = proxies
         self.key_file = x509.get('key_file')
         self.cert_file = x509.get('cert_file')
-        self.addheaders = [('User-Agent', self.version)]
+        self.addheaders = [('User-Agent', self.version), ('Accept', '*/*')]
         self.__tempfiles = []
         self.__unlink = os.unlink # See cleanup()
         self.tempcache = None
