@@ -1376,6 +1376,38 @@ class ReTests(unittest.TestCase):
         self.assertRaises(ValueError, re.compile, b'(?a)', re.LOCALE)
         self.assertRaises(ValueError, re.compile, b'(?aL)')
 
+    def test_scoped_flags(self):
+        self.assertTrue(re.match(r'(?i:a)b', 'Ab'))
+        self.assertIsNone(re.match(r'(?i:a)b', 'aB'))
+        self.assertIsNone(re.match(r'(?-i:a)b', 'Ab', re.IGNORECASE))
+        self.assertTrue(re.match(r'(?-i:a)b', 'aB', re.IGNORECASE))
+        self.assertIsNone(re.match(r'(?i:(?-i:a)b)', 'Ab'))
+        self.assertTrue(re.match(r'(?i:(?-i:a)b)', 'aB'))
+
+        self.assertTrue(re.match(r'(?x: a) b', 'a b'))
+        self.assertIsNone(re.match(r'(?x: a) b', ' a b'))
+        self.assertTrue(re.match(r'(?-x: a) b', ' ab', re.VERBOSE))
+        self.assertIsNone(re.match(r'(?-x: a) b', 'ab', re.VERBOSE))
+
+        self.checkPatternError(r'(?a:\w)',
+                               'bad inline flags: cannot turn on global flag', 3)
+        self.checkPatternError(r'(?a)(?-a:\w)',
+                               'bad inline flags: cannot turn off global flag', 8)
+        self.checkPatternError(r'(?i-i:a)',
+                               'bad inline flags: flag turned on and off', 5)
+
+        self.checkPatternError(r'(?-', 'missing flag', 3)
+        self.checkPatternError(r'(?-+', 'missing flag', 3)
+        self.checkPatternError(r'(?-z', 'unknown flag', 3)
+        self.checkPatternError(r'(?-i', 'missing :', 4)
+        self.checkPatternError(r'(?-i)', 'missing :', 4)
+        self.checkPatternError(r'(?-i+', 'missing :', 4)
+        self.checkPatternError(r'(?-iz', 'unknown flag', 4)
+        self.checkPatternError(r'(?i:', 'missing ), unterminated subpattern', 0)
+        self.checkPatternError(r'(?i', 'missing -, : or )', 3)
+        self.checkPatternError(r'(?i+', 'missing -, : or )', 3)
+        self.checkPatternError(r'(?iz', 'unknown flag', 3)
+
     def test_bug_6509(self):
         # Replacement strings of both types must parse properly.
         # all strings
@@ -1538,9 +1570,9 @@ class ReTests(unittest.TestCase):
         with captured_stdout() as out:
             re.compile(pat, re.DEBUG)
         dump = '''\
-SUBPATTERN 1
+SUBPATTERN 1 0 0
   LITERAL 46
-SUBPATTERN None
+SUBPATTERN None 0 0
   BRANCH
     IN
       LITERAL 99
@@ -1548,7 +1580,7 @@ SUBPATTERN None
   OR
     LITERAL 112
     LITERAL 121
-SUBPATTERN None
+SUBPATTERN None 0 0
   GROUPREF_EXISTS 1
     AT AT_END
   ELSE
@@ -1664,7 +1696,7 @@ SUBPATTERN None
         self.checkPatternError(r'(?P', 'unexpected end of pattern', 3)
         self.checkPatternError(r'(?z)', 'unknown extension ?z', 1)
         self.checkPatternError(r'(?iz)', 'unknown flag', 3)
-        self.checkPatternError(r'(?i', 'missing )', 3)
+        self.checkPatternError(r'(?i', 'missing -, : or )', 3)
         self.checkPatternError(r'(?#abc', 'missing ), unterminated comment', 0)
         self.checkPatternError(r'(?<', 'unexpected end of pattern', 3)
         self.checkPatternError(r'(?<>)', 'unknown extension ?<>', 1)

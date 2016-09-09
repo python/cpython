@@ -352,7 +352,7 @@ class Scanner:
         for phrase, action in lexicon:
             gid = s.opengroup()
             p.append(sre_parse.SubPattern(s, [
-                (SUBPATTERN, (gid, sre_parse.parse(phrase, flags))),
+                (SUBPATTERN, (gid, 0, 0, sre_parse.parse(phrase, flags))),
                 ]))
             s.closegroup(gid, p[-1])
         p = sre_parse.SubPattern(s, [(BRANCH, (None, p))])

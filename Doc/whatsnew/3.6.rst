@@ -645,6 +645,15 @@ Protocol version 4 already supports this case.  (Contributed by Serhiy
 Storchaka in :issue:`24164`.)
 
 
+re
+--
+
+Added support of modifier spans in regular expressions.  Examples:
+``'(?i:p)ython'`` matches ``'python'`` and ``'Python'``, but not ``'PYTHON'``;
+``'(?i)g(?-i:v)r'`` matches ``'GvR'`` and ``'gvr'``, but not ``'GVR'``.
+(Contributed by Serhiy Storchaka in :issue:`433028`.)
+
+
 readline
 --------
 
