@@ -37,6 +37,10 @@ Initializing and finalizing the interpreter
    (without calling :c:func:`Py_FinalizeEx` first).  There is no return value; it is a
    fatal error if the initialization fails.
 
+   .. note::
+      On Windows, changes the console mode from ``O_TEXT`` to ``O_BINARY``, which will
+      also affect non-Python uses of the console using the C Runtime.
+
 
 .. c:function:: void Py_InitializeEx(int initsigs)
 
