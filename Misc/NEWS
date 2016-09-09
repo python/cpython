@@ -113,6 +113,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #27576: Fix call order in OrderedDict.__init__().
+
 - email.generator.DecodedGenerator now supports the policy keyword.
 
 - Issue #28027: Remove undocumented modules from ``Lib/plat-*``: IN, CDROM,

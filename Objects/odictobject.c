@@ -2356,8 +2356,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
         PyObject *other = PyTuple_GET_ITEM(args, 0);  /* borrowed reference */
         assert(other != NULL);
         Py_INCREF(other);
-        if (PyDict_CheckExact(other) ||
-            _PyObject_HasAttrId(other, &PyId_items)) {  /* never fails */
+        if PyDict_CheckExact(other) {
             PyObject *items;
             if (PyDict_CheckExact(other))
                 items = PyDict_Items(other);
@@ -2398,6 +2397,20 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
             Py_DECREF(other);
             Py_DECREF(iterator);
             if (res != 0 || PyErr_Occurred())
+                return NULL;
+        }
+        else if (_PyObject_HasAttrId(other, &PyId_items)) {  /* never fails */
+            PyObject *items;
+            if (PyDict_CheckExact(other))
+                items = PyDict_Items(other);
+            else
+                items = _PyObject_CallMethodId(other, &PyId_items, NULL);
+            Py_DECREF(other);
+            if (items == NULL)
+                return NULL;
+            res = mutablemapping_add_pairs(self, items);
+            Py_DECREF(items);
+            if (res == -1)
                 return NULL;
         }
         else {

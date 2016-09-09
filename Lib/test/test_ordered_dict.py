@@ -98,6 +98,19 @@ class OrderedDictTests:
         self.assertRaises(TypeError, OrderedDict().update, (), ())
         self.assertRaises(TypeError, OrderedDict.update)
 
+    def test_init_calls(self):
+        calls = []
+        class Spam:
+            def keys(self):
+                calls.append('keys')
+                return ()
+            def items(self):
+                calls.append('items')
+                return ()
+
+        self.OrderedDict(Spam())
+        self.assertEqual(calls, ['keys'])
+
     def test_fromkeys(self):
         OrderedDict = self.OrderedDict
         od = OrderedDict.fromkeys('abc')
