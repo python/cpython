@@ -747,10 +747,11 @@ populated on Windows:
 
 * If the environment variable :envvar:`PYTHONHOME` is set, it is assumed as
   "Python Home".  Otherwise, the path of the main Python executable is used to
-  locate a "landmark file" (``Lib\os.py``) to deduce the "Python Home".  If a
-  Python home is found, the relevant sub-directories added to :data:`sys.path`
-  (``Lib``, ``plat-win``, etc) are based on that folder.  Otherwise, the core
-  Python path is constructed from the PythonPath stored in the registry.
+  locate a "landmark file" (either ``Lib\os.py`` or ``pythonXY.zip``) to deduce
+  the "Python Home".  If a Python home is found, the relevant sub-directories
+  added to :data:`sys.path` (``Lib``, ``plat-win``, etc) are based on that
+  folder.  Otherwise, the core Python path is constructed from the PythonPath
+  stored in the registry.
 
 * If the Python Home cannot be located, no :envvar:`PYTHONPATH` is specified in
   the environment, and no registry entries can be found, a default path with
@@ -795,7 +796,8 @@ following advice will prevent conflicts with other installations:
 * If you cannot use the previous suggestions (for example, you are a
   distribution that allows people to run :file:`python.exe` directly), ensure
   that the landmark file (:file:`Lib\\os.py`) exists in your install directory.
-  (Note that it will not be detected inside a ZIP file.)
+  (Note that it will not be detected inside a ZIP file, but a correctly named
+  ZIP file will be detected instead.)
 
 These will ensure that the files in a system-wide installation will not take
 precedence over the copy of the standard library bundled with your application.
@@ -803,10 +805,13 @@ Otherwise, your users may experience problems using your application. Note that
 the first suggestion is the best, as the other may still be susceptible to
 non-standard paths in the registry and user site-packages.
 
-.. versionchanged:: 3.6
+.. versionchanged::
+   3.6
 
-   Adds ``sys.path`` file support and removes ``applocal`` option from
-   ``pyvenv.cfg``.
+   * Adds ``sys.path`` file support and removes ``applocal`` option from
+     ``pyvenv.cfg``.
+   * Adds ``pythonXX.zip`` as a potential landmark when directly adjacent
+     to the executable.
 
 Additional modules
 ==================
