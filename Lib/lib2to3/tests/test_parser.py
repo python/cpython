@@ -134,6 +134,24 @@ class TestAsyncAwait(GrammarTest):
                       """)
 
         self.validate("""async def foo():
+                             [i async for i in b]
+                      """)
+
+        self.validate("""async def foo():
+                             {i for i in b
+                                async for i in a if await i
+                                  for b in i}
+                      """)
+
+        self.validate("""async def foo():
+                             [await i for i in b if await c]
+                      """)
+
+        self.validate("""async def foo():
+                             [ i for i in b if c]
+                      """)
+
+        self.validate("""async def foo():
 
             def foo(): pass
 

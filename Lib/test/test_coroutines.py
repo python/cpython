@@ -69,49 +69,130 @@ def silence_coro_gc():
 class AsyncBadSyntaxTest(unittest.TestCase):
 
     def test_badsyntax_1(self):
-        with self.assertRaisesRegex(SyntaxError, "'await' outside"):
-            import test.badsyntax_async1
-
-    def test_badsyntax_2(self):
-        with self.assertRaisesRegex(SyntaxError, "'await' outside"):
-            import test.badsyntax_async2
-
-    def test_badsyntax_3(self):
-        with self.assertRaisesRegex(SyntaxError, 'invalid syntax'):
-            import test.badsyntax_async3
-
-    def test_badsyntax_4(self):
-        with self.assertRaisesRegex(SyntaxError, 'invalid syntax'):
-            import test.badsyntax_async4
-
-    def test_badsyntax_5(self):
-        with self.assertRaisesRegex(SyntaxError, 'invalid syntax'):
-            import test.badsyntax_async5
-
-    def test_badsyntax_7(self):
-        with self.assertRaisesRegex(
-            SyntaxError, "'yield from' inside async function"):
-
-            import test.badsyntax_async7
-
-    def test_badsyntax_8(self):
-        with self.assertRaisesRegex(SyntaxError, 'invalid syntax'):
-            import test.badsyntax_async8
-
-    def test_badsyntax_9(self):
-        ns = {}
-        for comp in {'(await a for a in b)',
-                     '[await a for a in b]',
-                     '{await a for a in b}',
-                     '{await a: c for a in b}'}:
-
-            with self.assertRaisesRegex(SyntaxError, 'await.*in comprehen'):
-                exec('async def f():\n\t{}'.format(comp), ns, ns)
-
-    def test_badsyntax_10(self):
-        # Tests for issue 24619
-
         samples = [
+            """def foo():
+                await something()
+            """,
+
+            """await something()""",
+
+            """async def foo():
+                yield from []
+            """,
+
+            """async def foo():
+                await await fut
+            """,
+
+            """async def foo(a=await something()):
+                pass
+            """,
+
+            """async def foo(a:await something()):
+                pass
+            """,
+
+            """async def foo():
+                def bar():
+                 [i async for i in els]
+            """,
+
+            """async def foo():
+                def bar():
+                 [await i for i in els]
+            """,
+
+            """async def foo():
+                def bar():
+                 [i for i in els
+                    async for b in els]
+            """,
+
+            """async def foo():
+                def bar():
+                 [i for i in els
+                    for c in b
+                    async for b in els]
+            """,
+
+            """async def foo():
+                def bar():
+                 [i for i in els
+                    async for b in els
+                    for c in b]
+            """,
+
+            """async def foo():
+                def bar():
+                 [i for i in els
+                    for b in await els]
+            """,
+
+            """async def foo():
+                def bar():
+                 [i for i in els
+                    for b in els
+                        if await b]
+            """,
+
+            """async def foo():
+                def bar():
+                 [i for i in await els]
+            """,
+
+            """async def foo():
+                def bar():
+                 [i for i in els if await i]
+            """,
+
+            """def bar():
+                 [i async for i in els]
+            """,
+
+            """def bar():
+                 [await i for i in els]
+            """,
+
+            """def bar():
+                 [i for i in els
+                    async for b in els]
+            """,
+
+            """def bar():
+                 [i for i in els
+                    for c in b
+                    async for b in els]
+            """,
+
+            """def bar():
+                 [i for i in els
+                    async for b in els
+                    for c in b]
+            """,
+
+            """def bar():
+                 [i for i in els
+                    for b in await els]
+            """,
+
+            """def bar():
+                 [i for i in els
+                    for b in els
+                        if await b]
+            """,
+
+            """def bar():
+                 [i for i in await els]
+            """,
+
+            """def bar():
+                 [i for i in els if await i]
+            """,
+
+            """async def foo():
+                await
+            """,
+
             """async def foo():
                    def bar(): pass
                    await = 1
@@ -1530,6 +1611,185 @@ class CoroutineTest(unittest.TestCase):
             with warnings.catch_warnings():
                 warnings.simplefilter("error")
                 run_async(foo())
+
+    def test_comp_1(self):
+        async def f(i):
+            return i
+
+        async def run_list():
+            return [await c for c in [f(1), f(41)]]
+
+        async def run_set():
+            return {await c for c in [f(1), f(41)]}
+
+        async def run_dict1():
+            return {await c: 'a' for c in [f(1), f(41)]}
+
+        async def run_dict2():
+            return {i: await c for i, c in enumerate([f(1), f(41)])}
+
+        self.assertEqual(run_async(run_list()), ([], [1, 41]))
+        self.assertEqual(run_async(run_set()), ([], {1, 41}))
+        self.assertEqual(run_async(run_dict1()), ([], {1: 'a', 41: 'a'}))
+        self.assertEqual(run_async(run_dict2()), ([], {0: 1, 1: 41}))
+
+    def test_comp_2(self):
+        async def f(i):
+            return i
+
+        async def run_list():
+            return [s for c in [f(''), f('abc'), f(''), f(['de', 'fg'])]
+                    for s in await c]
+
+        self.assertEqual(
+            run_async(run_list()),
+            ([], ['a', 'b', 'c', 'de', 'fg']))
+
+        async def run_set():
+            return {d
+                    for c in [f([f([10, 30]),
+                                 f([20])])]
+                    for s in await c
+                    for d in await s}
+
+        self.assertEqual(
+            run_async(run_set()),
+            ([], {10, 20, 30}))
+
+        async def run_set2():
+            return {await s
+                    for c in [f([f(10), f(20)])]
+                    for s in await c}
+
+        self.assertEqual(
+            run_async(run_set2()),
+            ([], {10, 20}))
+
+    def test_comp_3(self):
+        async def f(it):
+            for i in it:
+                yield i
+
+        async def run_list():
+            return [i + 1 async for i in f([10, 20])]
+        self.assertEqual(
+            run_async(run_list()),
+            ([], [11, 21]))
+
+        async def run_set():
+            return {i + 1 async for i in f([10, 20])}
+        self.assertEqual(
+            run_async(run_set()),
+            ([], {11, 21}))
+
+        async def run_dict():
+            return {i + 1: i + 2 async for i in f([10, 20])}
+        self.assertEqual(
+            run_async(run_dict()),
+            ([], {11: 12, 21: 22}))
+
+        async def run_gen():
+            gen = (i + 1 async for i in f([10, 20]))
+            return [g + 100 async for g in gen]
+        self.assertEqual(
+            run_async(run_gen()),
+            ([], [111, 121]))
+
+    def test_comp_4(self):
+        async def f(it):
+            for i in it:
+                yield i
+
+        async def run_list():
+            return [i + 1 async for i in f([10, 20]) if i > 10]
+        self.assertEqual(
+            run_async(run_list()),
+            ([], [21]))
+
+        async def run_set():
+            return {i + 1 async for i in f([10, 20]) if i > 10}
+        self.assertEqual(
+            run_async(run_set()),
+            ([], {21}))
+
+        async def run_dict():
+            return {i + 1: i + 2 async for i in f([10, 20]) if i > 10}
+        self.assertEqual(
+            run_async(run_dict()),
+            ([], {21: 22}))
+
+        async def run_gen():
+            gen = (i + 1 async for i in f([10, 20]) if i > 10)
+            return [g + 100 async for g in gen]
+        self.assertEqual(
+            run_async(run_gen()),
+            ([], [121]))
+
+    def test_comp_5(self):
+        async def f(it):
+            for i in it:
+                yield i
+
+        async def run_list():
+            return [i + 1 for pair in ([10, 20], [30, 40]) if pair[0] > 10
+                    async for i in f(pair) if i > 30]
+        self.assertEqual(
+            run_async(run_list()),
+            ([], [41]))
+
+    def test_comp_6(self):
+        async def f(it):
+            for i in it:
+                yield i
+
+        async def run_list():
+            return [i + 1 async for seq in f([(10, 20), (30,)])
+                    for i in seq]
+
+        self.assertEqual(
+            run_async(run_list()),
+            ([], [11, 21, 31]))
+
+    def test_comp_7(self):
+        async def f():
+            yield 1
+            yield 2
+            raise Exception('aaa')
+
+        async def run_list():
+            return [i async for i in f()]
+
+        with self.assertRaisesRegex(Exception, 'aaa'):
+            run_async(run_list())
+
+    def test_comp_8(self):
+        async def f():
+            return [i for i in [1, 2, 3]]
+
+        self.assertEqual(
+            run_async(f()),
+            ([], [1, 2, 3]))
+
+    def test_comp_9(self):
+        async def gen():
+            yield 1
+            yield 2
+        async def f():
+            l = [i async for i in gen()]
+            return [i for i in l]
+
+        self.assertEqual(
+            run_async(f()),
+            ([], [1, 2]))
+
+    def test_comp_10(self):
+        async def f():
+            xx = {i for i in [1, 2, 3]}
+            return {x: x for x in xx}
+
+        self.assertEqual(
+            run_async(f()),
+            ([], {1: 1, 2: 2, 3: 3}))
 
     def test_copy(self):
         async def func(): pass

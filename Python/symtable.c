@@ -1682,6 +1682,9 @@ symtable_visit_comprehension(struct symtable *st, comprehension_ty lc)
     VISIT(st, expr, lc->target);
     VISIT(st, expr, lc->iter);
     VISIT_SEQ(st, expr, lc->ifs);
+    if (lc->is_async) {
+        st->st_cur->ste_coroutine = 1;
+    }
     return 1;
 }
 
@@ -1734,6 +1737,9 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         return 0;
     }
     st->st_cur->ste_generator = is_generator;
+    if (outermost->is_async) {
+        st->st_cur->ste_coroutine = 1;
+    }
     /* Outermost iter is received as an argument */
     if (!symtable_implicit_arg(st, 0)) {
         symtable_exit_block(st, (void *)e);

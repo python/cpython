@@ -110,7 +110,7 @@ module Python
 
     cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn
 
-    comprehension = (expr target, expr iter, expr* ifs)
+    comprehension = (expr target, expr iter, expr* ifs, int is_async)
 
     excepthandler = ExceptHandler(expr? type, identifier? name, stmt* body)
                     attributes (int lineno, int col_offset)

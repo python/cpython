@@ -108,7 +108,7 @@ Core and Builtins
   In a brand new thread, raise a RuntimeError since there is no active
   exception to reraise. Patch written by Xiang Zhang.
 
-
+- Issue #28008: Implement PEP 530 -- asynchronous comprehensions.
 
 Library
 -------

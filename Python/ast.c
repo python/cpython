@@ -1747,14 +1747,21 @@ static int
 count_comp_fors(struct compiling *c, const node *n)
 {
     int n_fors = 0;
+    int is_async;
 
   count_comp_for:
+    is_async = 0;
     n_fors++;
     REQ(n, comp_for);
-    if (NCH(n) == 5)
-        n = CHILD(n, 4);
-    else
+    if (TYPE(CHILD(n, 0)) == ASYNC) {
+        is_async = 1;
+    }
+    if (NCH(n) == (5 + is_async)) {
+        n = CHILD(n, 4 + is_async);
+    }
+    else {
         return n_fors;
+    }
   count_comp_iter:
     REQ(n, comp_iter);
     n = CHILD(n, 0);
@@ -1817,14 +1824,19 @@ ast_for_comprehension(struct compiling *c, const node *n)
         asdl_seq *t;
         expr_ty expression, first;
         node *for_ch;
+        int is_async = 0;
 
         REQ(n, comp_for);
 
-        for_ch = CHILD(n, 1);
+        if (TYPE(CHILD(n, 0)) == ASYNC) {
+            is_async = 1;
+        }
+
+        for_ch = CHILD(n, 1 + is_async);
         t = ast_for_exprlist(c, for_ch, Store);
         if (!t)
             return NULL;
-        expression = ast_for_expr(c, CHILD(n, 3));
+        expression = ast_for_expr(c, CHILD(n, 3 + is_async));
         if (!expression)
             return NULL;
 
@@ -1832,19 +1844,20 @@ ast_for_comprehension(struct compiling *c, const node *n)
            (x for x, in ...) has 1 element in t, but still requires a Tuple. */
         first = (expr_ty)asdl_seq_GET(t, 0);
         if (NCH(for_ch) == 1)
-            comp = comprehension(first, expression, NULL, c->c_arena);
+            comp = comprehension(first, expression, NULL,
+                                 is_async, c->c_arena);
         else
-            comp = comprehension(Tuple(t, Store, first->lineno, first->col_offset,
-                                     c->c_arena),
-                               expression, NULL, c->c_arena);
+            comp = comprehension(Tuple(t, Store, first->lineno,
+                                       first->col_offset, c->c_arena),
+                                 expression, NULL, is_async, c->c_arena);
         if (!comp)
             return NULL;
 
-        if (NCH(n) == 5) {
+        if (NCH(n) == (5 + is_async)) {
             int j, n_ifs;
             asdl_seq *ifs;
 
-            n = CHILD(n, 4);
+            n = CHILD(n, 4 + is_async);
             n_ifs = count_comp_ifs(c, n);
             if (n_ifs == -1)
                 return NULL;
