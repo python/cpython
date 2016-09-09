@@ -15,7 +15,7 @@ Core and Builtins
   the PEP 509.
 
 - Issue #27364: A backslash-character pair that is not a valid escape sequence
-  now generates a DeprecationWarning.
+  now generates a DeprecationWarning.  Patch by Emanuel Barry.
 
 - Issue #27350: `dict` implementation is changed like PyPy. It is more compact
   and preserves insertion order.
