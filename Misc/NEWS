@@ -100,6 +100,9 @@ Core and Builtins
   In a brand new thread, raise a RuntimeError since there is no active
   exception to reraise. Patch written by Xiang Zhang.
 
+- Issue #27985: Implement PEP 526 -- Syntax for Variable Annotations.
+  Patch by Ivan Levkivskyi.
+
 Library
 -------
 

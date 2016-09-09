@@ -686,10 +686,28 @@ Modules
    Attribute assignment updates the module's namespace dictionary, e.g.,
    ``m.x = 1`` is equivalent to ``m.__dict__["x"] = 1``.
 
+   .. index::
+      single: __name__ (module attribute)
+      single: __doc__ (module attribute)
+      single: __file__ (module attribute)
+      single: __annotations__ (module attribute)
+      pair: module; namespace
+
+   Predefined (writable) attributes: :attr:`__name__` is the module's name;
+   :attr:`__doc__` is the module's documentation string, or ``None`` if
+   unavailable; :attr:`__annotations__` (optional) is a dictionary containing
+   :term:`variable annotations <variable annotation>` collected during module
+   body execution; :attr:`__file__` is the pathname of the file from which the
+   module was loaded, if it was loaded from a file. The :attr:`__file__`
+   attribute may be missing for certain types of modules, such as C modules
+   that are statically linked into the interpreter; for extension modules
+   loaded dynamically from a shared library, it is the pathname of the shared
+   library file.
+
    .. index:: single: __dict__ (module attribute)
 
-   Special read-only attribute: :attr:`~object.__dict__` is the module's namespace as a
-   dictionary object.
+   Special read-only attribute: :attr:`~object.__dict__` is the module's
+   namespace as a dictionary object.
 
    .. impl-detail::
 
@@ -697,21 +715,6 @@ Modules
       dictionary will be cleared when the module falls out of scope even if the
       dictionary still has live references.  To avoid this, copy the dictionary
       or keep the module around while using its dictionary directly.
-
-   .. index::
-      single: __name__ (module attribute)
-      single: __doc__ (module attribute)
-      single: __file__ (module attribute)
-      pair: module; namespace
-
-   Predefined (writable) attributes: :attr:`__name__` is the module's name;
-   :attr:`__doc__` is the module's documentation string, or ``None`` if
-   unavailable; :attr:`__file__` is the pathname of the file from which the
-   module was loaded, if it was loaded from a file. The :attr:`__file__`
-   attribute may be missing for certain types of modules, such as C modules
-   that are statically linked into the interpreter; for extension modules
-   loaded dynamically from a shared library, it is the pathname of the shared
-   library file.
 
 Custom classes
    Custom class types are typically created by class definitions (see section
@@ -761,13 +764,17 @@ Custom classes
       single: __dict__ (class attribute)
       single: __bases__ (class attribute)
       single: __doc__ (class attribute)
+      single: __annotations__ (class attribute)
 
    Special attributes: :attr:`~definition.__name__` is the class name; :attr:`__module__` is
    the module name in which the class was defined; :attr:`~object.__dict__` is the
    dictionary containing the class's namespace; :attr:`~class.__bases__` is a
    tuple (possibly empty or a singleton) containing the base classes, in the
    order of their occurrence in the base class list; :attr:`__doc__` is the
-   class's documentation string, or None if undefined.
+   class's documentation string, or None if undefined;
+   :attr:`__annotations__` (optional) is a dictionary containing
+   :term:`variable annotations <variable annotation>` collected during
+   class body execution.
 
 Class instances
    .. index::

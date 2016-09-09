@@ -607,6 +607,12 @@ iterations of the loop.
 
    .. versionadded:: 3.3
 
+.. opcode:: SETUP_ANNOTATIONS
+
+   Checks whether ``__annotations__`` is defined in ``locals()``, if not it is
+   set up to an empty ``dict``. This opcode is only emmitted if a class
+   or module body contains :term:`variable annotations <variable annotation>`
+   statically.
 
 .. opcode:: IMPORT_STAR
 
@@ -888,6 +894,11 @@ All of the following opcodes use their arguments.
 .. opcode:: DELETE_FAST (var_num)
 
    Deletes local ``co_varnames[var_num]``.
+
+
+.. opcode:: STORE_ANNOTATION (namei)
+
+   Stores TOS as ``locals()['__annotations__'][co_names[namei]] = TOS``.
 
 
 .. opcode:: LOAD_CLOSURE (i)

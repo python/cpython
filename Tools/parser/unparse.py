@@ -104,6 +104,19 @@ class Unparser:
         self.write(" "+self.binop[t.op.__class__.__name__]+"= ")
         self.dispatch(t.value)
 
+    def _AnnAssign(self, t):
+        self.fill()
+        if not t.simple and isinstance(t.target, ast.Name):
+            self.write('(')
+        self.dispatch(t.target)
+        if not t.simple and isinstance(t.target, ast.Name):
+            self.write(')')
+        self.write(": ")
+        self.dispatch(t.annotation)
+        if t.value:
+            self.write(" = ")
+            self.dispatch(t.value)
+
     def _Return(self, t):
         self.fill("return")
         if t.value:

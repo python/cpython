@@ -16,6 +16,7 @@ simple statements is:
               : | `assert_stmt`
               : | `assignment_stmt`
               : | `augmented_assignment_stmt`
+              : | `annotated_assignment_stmt`
               : | `pass_stmt`
               : | `del_stmt`
               : | `return_stmt`
@@ -310,6 +311,49 @@ the same as the normal binary operations.
 
 For targets which are attribute references, the same :ref:`caveat about class
 and instance attributes <attr-target-note>` applies as for regular assignments.
+
+
+.. _annassign:
+
+Annotated assignment statements
+-------------------------------
+
+.. index::
+   pair: annotated; assignment
+   single: statement; assignment, annotated
+
+Annotation assignment is the combination, in a single statement,
+of a variable or attribute annotation and an optional assignment statement:
+
+.. productionlist::
+   annotated_assignment_stmt: `augtarget` ":" `expression` ["=" `expression`]
+
+The difference from normal :ref:`assignment` is that only single target and
+only single right hand side value is allowed.
+
+For simple names as assignment targets, if in class or module scope,
+the annotations are evaluated and stored in a special class or module
+attribute :attr:`__annotations__`
+that is a dictionary mapping from variable names to evaluated annotations.
+This attribute is writable and is automatically created at the start
+of class or module body execution, if annotations are found statically.
+
+For expressions as assignment targets, the annotations are evaluated if
+in class or module scope, but not stored.
+
+If a name is annotated in a function scope, then this name is local for
+that scope. Annotations are never evaluated and stored in function scopes.
+
+If the right hand side is present, an annotated
+assignment performs the actual assignment before evaluating annotations
+(where applicable). If the right hand side is not present for an expression
+target, then the interpreter evaluates the target except for the last
+:meth:`__setitem__` or :meth:`__setattr__` call.
+
+.. seealso::
+
+   :pep:`526` - Variable and attribute annotation syntax
+   :pep:`484` - Type hints
 
 
 .. _assert:

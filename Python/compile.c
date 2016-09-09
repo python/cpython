@@ -179,6 +179,7 @@ static int compiler_visit_stmt(struct compiler *, stmt_ty);
 static int compiler_visit_keyword(struct compiler *, keyword_ty);
 static int compiler_visit_expr(struct compiler *, expr_ty);
 static int compiler_augassign(struct compiler *, stmt_ty);
+static int compiler_annassign(struct compiler *, stmt_ty);
 static int compiler_visit_slice(struct compiler *, slice_ty,
                                 expr_context_ty);
 
@@ -933,6 +934,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return -1;
         case IMPORT_STAR:
             return -1;
+        case SETUP_ANNOTATIONS:
+            return 0;
         case YIELD_VALUE:
             return 0;
         case YIELD_FROM:
@@ -1020,6 +1023,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return -1;
         case DELETE_FAST:
             return 0;
+        case STORE_ANNOTATION:
+            return -1;
 
         case RAISE_VARARGS:
             return -oparg;
@@ -1358,7 +1363,65 @@ get_const_value(expr_ty e)
     }
 }
 
-/* Compile a sequence of statements, checking for a docstring. */
+/* Search if variable annotations are present statically in a block. */
+
+static int
+find_ann(asdl_seq *stmts)
+{
+    int i, j, res = 0;
+    stmt_ty st;
+
+    for (i = 0; i < asdl_seq_LEN(stmts); i++) {
+        st = (stmt_ty)asdl_seq_GET(stmts, i);
+        switch (st->kind) {
+        case AnnAssign_kind:
+            return 1;
+        case For_kind:
+            res = find_ann(st->v.For.body) ||
+                  find_ann(st->v.For.orelse);
+            break;
+        case AsyncFor_kind:
+            res = find_ann(st->v.AsyncFor.body) ||
+                  find_ann(st->v.AsyncFor.orelse);
+            break;
+        case While_kind:
+            res = find_ann(st->v.While.body) ||
+                  find_ann(st->v.While.orelse);
+            break;
+        case If_kind:
+            res = find_ann(st->v.If.body) ||
+                  find_ann(st->v.If.orelse);
+            break;
+        case With_kind:
+            res = find_ann(st->v.With.body);
+            break;
+        case AsyncWith_kind:
+            res = find_ann(st->v.AsyncWith.body);
+            break;
+        case Try_kind:
+            for (j = 0; j < asdl_seq_LEN(st->v.Try.handlers); j++) {
+                excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
+                    st->v.Try.handlers, j);
+                if (find_ann(handler->v.ExceptHandler.body)) {
+                    return 1;
+                }
+            }
+            res = find_ann(st->v.Try.body) ||
+                  find_ann(st->v.Try.finalbody) ||
+                  find_ann(st->v.Try.orelse);
+            break;
+        default:
+            res = 0;
+        }
+        if (res) {
+            break;
+        }
+    }
+    return res;
+}
+
+/* Compile a sequence of statements, checking for a docstring
+   and for annotations. */
 
 static int
 compiler_body(struct compiler *c, asdl_seq *stmts)
@@ -1366,6 +1429,19 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
     int i = 0;
     stmt_ty st;
 
+    /* Set current line number to the line number of first statement.
+       This way line number for SETUP_ANNOTATIONS will always
+       coincide with the line number of first "real" statement in module.
+       If body is empy, then lineno will be set later in assemble. */
+    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE &&
+        !c->u->u_lineno && asdl_seq_LEN(stmts)) {
+        st = (stmt_ty)asdl_seq_GET(stmts, 0);
+        c->u->u_lineno = st->lineno;
+    }
+    /* Every annotated class and module should have __annotations__. */
+    if (find_ann(stmts)) {
+        ADDOP(c, SETUP_ANNOTATIONS);
+    }
     if (!asdl_seq_LEN(stmts))
         return 1;
     st = (stmt_ty)asdl_seq_GET(stmts, 0);
@@ -1403,6 +1479,9 @@ compiler_mod(struct compiler *c, mod_ty mod)
         }
         break;
     case Interactive_kind:
+        if (find_ann(mod->v.Interactive.body)) {
+            ADDOP(c, SETUP_ANNOTATIONS);
+        }
         c->c_interactive = 1;
         VISIT_SEQ_IN_SCOPE(c, stmt,
                                 mod->v.Interactive.body);
@@ -2743,6 +2822,8 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         break;
     case AugAssign_kind:
         return compiler_augassign(c, s);
+    case AnnAssign_kind:
+        return compiler_annassign(c, s);
     case For_kind:
         return compiler_for(c, s);
     case While_kind:
@@ -4217,6 +4298,138 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         PyErr_Format(PyExc_SystemError,
             "invalid node type (%d) for augmented assignment",
             e->kind);
+        return 0;
+    }
+    return 1;
+}
+
+static int
+check_ann_expr(struct compiler *c, expr_ty e)
+{
+    VISIT(c, expr, e);
+    ADDOP(c, POP_TOP);
+    return 1;
+}
+
+static int
+check_annotation(struct compiler *c, stmt_ty s)
+{
+    /* Annotations are only evaluated in a module or class. */
+    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
+        c->u->u_scope_type == COMPILER_SCOPE_CLASS) {
+        return check_ann_expr(c, s->v.AnnAssign.annotation);
+    }
+    return 1;
+}
+
+static int
+check_ann_slice(struct compiler *c, slice_ty sl)
+{
+    switch(sl->kind) {
+    case Index_kind:
+        return check_ann_expr(c, sl->v.Index.value);
+    case Slice_kind:
+        if (sl->v.Slice.lower && !check_ann_expr(c, sl->v.Slice.lower)) {
+            return 0;
+        }
+        if (sl->v.Slice.upper && !check_ann_expr(c, sl->v.Slice.upper)) {
+            return 0;
+        }
+        if (sl->v.Slice.step && !check_ann_expr(c, sl->v.Slice.step)) {
+            return 0;
+        }
+        break;
+    default:
+        PyErr_SetString(PyExc_SystemError,
+                        "unexpected slice kind");
+        return 0;
+    }
+    return 1;
+}
+
+static int
+check_ann_subscr(struct compiler *c, slice_ty sl)
+{
+    /* We check that everything in a subscript is defined at runtime. */
+    Py_ssize_t i, n;
+
+    switch (sl->kind) {
+    case Index_kind:
+    case Slice_kind:
+        if (!check_ann_slice(c, sl)) {
+            return 0;
+        }
+        break;
+    case ExtSlice_kind:
+        n = asdl_seq_LEN(sl->v.ExtSlice.dims);
+        for (i = 0; i < n; i++) {
+            slice_ty subsl = (slice_ty)asdl_seq_GET(sl->v.ExtSlice.dims, i);
+            switch (subsl->kind) {
+            case Index_kind:
+            case Slice_kind:
+                if (!check_ann_slice(c, subsl)) {
+                    return 0;
+                }
+                break;
+            case ExtSlice_kind:
+            default:
+                PyErr_SetString(PyExc_SystemError,
+                                "extended slice invalid in nested slice");
+                return 0;
+            }
+        }
+        break;
+    default:
+        PyErr_Format(PyExc_SystemError,
+                     "invalid subscript kind %d", sl->kind);
+        return 0;
+    }
+    return 1;
+}
+
+static int
+compiler_annassign(struct compiler *c, stmt_ty s)
+{
+    expr_ty targ = s->v.AnnAssign.target;
+
+    assert(s->kind == AnnAssign_kind);
+
+    /* We perform the actual assignment first. */
+    if (s->v.AnnAssign.value) {
+        VISIT(c, expr, s->v.AnnAssign.value);
+        VISIT(c, expr, targ);
+    }
+    switch (targ->kind) {
+    case Name_kind:
+        /* If we have a simple name in a module or class, store annotation. */
+        if (s->v.AnnAssign.simple &&
+            (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
+             c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
+            VISIT(c, expr, s->v.AnnAssign.annotation);
+            ADDOP_O(c, STORE_ANNOTATION, targ->v.Name.id, names)
+        }
+        break;
+    case Attribute_kind:
+        if (!s->v.AnnAssign.value &&
+            !check_ann_expr(c, targ->v.Attribute.value)) {
+            return 0;
+        }
+        break;
+    case Subscript_kind:
+        if (!s->v.AnnAssign.value &&
+            (!check_ann_expr(c, targ->v.Subscript.value) ||
+             !check_ann_subscr(c, targ->v.Subscript.slice))) {
+                return 0;
+        }
+        break;
+    default:
+        PyErr_Format(PyExc_SystemError,
+                     "invalid node type (%d) for annotated assignment",
+                     targ->kind);
+            return 0;
+    }
+    /* Annotation is evaluated last. */
+    if (!s->v.AnnAssign.simple && !check_annotation(c, s)) {
         return 0;
     }
     return 1;

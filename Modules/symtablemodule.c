@@ -79,6 +79,7 @@ PyInit__symtable(void)
     PyModule_AddIntMacro(m, DEF_FREE_CLASS);
     PyModule_AddIntMacro(m, DEF_IMPORT);
     PyModule_AddIntMacro(m, DEF_BOUND);
+    PyModule_AddIntMacro(m, DEF_ANNOT);
 
     PyModule_AddIntConstant(m, "TYPE_FUNCTION", FunctionBlock);
     PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock);

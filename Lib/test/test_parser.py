@@ -138,6 +138,45 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("a = b")
         self.check_suite("a = b = c = d = e")
 
+    def test_var_annot(self):
+        self.check_suite("x: int = 5")
+        self.check_suite("y: List[T] = []; z: [list] = fun()")
+        self.check_suite("x: tuple = (1, 2)")
+        self.check_suite("d[f()]: int = 42")
+        self.check_suite("f(d[x]): str = 'abc'")
+        self.check_suite("x.y.z.w: complex = 42j")
+        self.check_suite("x: int")
+        self.check_suite("def f():\n"
+                         "    x: str\n"
+                         "    y: int = 5\n")
+        self.check_suite("class C:\n"
+                         "    x: str\n"
+                         "    y: int = 5\n")
+        self.check_suite("class C:\n"
+                         "    def __init__(self, x: int) -> None:\n"
+                         "        self.x: int = x\n")
+        # double check for nonsense
+        with self.assertRaises(SyntaxError):
+            exec("2+2: int", {}, {})
+        with self.assertRaises(SyntaxError):
+            exec("[]: int = 5", {}, {})
+        with self.assertRaises(SyntaxError):
+            exec("x, *y, z: int = range(5)", {}, {})
+        with self.assertRaises(SyntaxError):
+            exec("t: tuple = 1, 2", {}, {})
+        with self.assertRaises(SyntaxError):
+            exec("u = v: int", {}, {})
+        with self.assertRaises(SyntaxError):
+            exec("False: int", {}, {})
+        with self.assertRaises(SyntaxError):
+            exec("x.False: int", {}, {})
+        with self.assertRaises(SyntaxError):
+            exec("x.y,: int", {}, {})
+        with self.assertRaises(SyntaxError):
+            exec("[0]: int", {}, {})
+        with self.assertRaises(SyntaxError):
+            exec("f(): int", {}, {})
+
     def test_simple_augmented_assignments(self):
         self.check_suite("a += b")
         self.check_suite("a -= b")
