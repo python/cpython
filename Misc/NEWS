@@ -333,6 +333,9 @@ Build
 Windows
 -------
 
+- Issue #25144: Ensures TargetDir is set before continuing with custom
+  install.
+
 - Issue #1602: Windows console doesn't input or print Unicode (PEP 528)
 
 - Issue #27781: Change file system encoding on Windows to UTF-8 (PEP 529)
