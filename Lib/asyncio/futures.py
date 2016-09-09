@@ -110,6 +110,16 @@ class _TracebackLogger:
             self.loop.call_exception_handler({'message': msg})
 
 
+def isfuture(obj):
+    """Check for a Future.
+
+    This returns True when obj is a Future instance or is advertising
+    itself as duck-type compatible by setting _asyncio_future_blocking.
+    See comment in Future for more details.
+    """
+    return getattr(obj, '_asyncio_future_blocking', None) is not None
+
+
 class Future:
     """This class is *almost* compatible with concurrent.futures.Future.
 
@@ -423,15 +433,17 @@ def _chain_future(source, destination):
     If destination is cancelled, source gets cancelled too.
     Compatible with both asyncio.Future and concurrent.futures.Future.
     """
-    if not isinstance(source, (Future, concurrent.futures.Future)):
+    if not isfuture(source) and not isinstance(source,
+                                               concurrent.futures.Future):
         raise TypeError('A future is required for source argument')
-    if not isinstance(destination, (Future, concurrent.futures.Future)):
+    if not isfuture(destination) and not isinstance(destination,
+                                                    concurrent.futures.Future):
         raise TypeError('A future is required for destination argument')
-    source_loop = source._loop if isinstance(source, Future) else None
-    dest_loop = destination._loop if isinstance(destination, Future) else None
+    source_loop = source._loop if isfuture(source) else None
+    dest_loop = destination._loop if isfuture(destination) else None
 
     def _set_state(future, other):
-        if isinstance(future, Future):
+        if isfuture(future):
             _copy_future_state(other, future)
         else:
             _set_concurrent_future_state(future, other)
@@ -455,7 +467,7 @@ def _chain_future(source, destination):
 
 def wrap_future(future, *, loop=None):
     """Wrap concurrent.futures.Future object."""
-    if isinstance(future, Future):
+    if isfuture(future):
         return future
     assert isinstance(future, concurrent.futures.Future), \
         'concurrent.futures.Future is expected, got {!r}'.format(future)
