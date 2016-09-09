@@ -155,6 +155,7 @@ _PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
     PyObject *result;
     int flags;
 
+    assert(PyCFunction_Check(func));
     assert(func != NULL);
     assert(nargs >= 0);
     assert(nargs == 0 || args != NULL);
@@ -240,6 +241,31 @@ _PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
 
     result = _Py_CheckFunctionResult(func_obj, result, NULL);
 
+    return result;
+}
+
+PyObject *
+_PyCFunction_FastCallKeywords(PyObject *func, PyObject **stack,
+                              Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *kwdict, *result;
+    Py_ssize_t nkwargs;
+
+    assert(PyCFunction_Check(func));
+
+    nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+    if (nkwargs > 0) {
+        kwdict = _PyStack_AsDict(stack + nargs, nkwargs, kwnames, func);
+        if (kwdict == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        kwdict = NULL;
+    }
+
+    result = _PyCFunction_FastCallDict(func, stack, nargs, kwdict);
+    Py_XDECREF(kwdict);
     return result;
 }
 

@@ -115,8 +115,6 @@ static PyObject * call_function(PyObject ***, Py_ssize_t, PyObject *);
 #endif
 static PyObject * fast_function(PyObject *, PyObject **, Py_ssize_t, PyObject *);
 static PyObject * do_call_core(PyObject *, PyObject *, PyObject *);
-static PyObject * create_keyword_args(PyObject *, PyObject ***, PyObject *);
-static PyObject * load_args(PyObject ***, Py_ssize_t);
 
 #ifdef LLTRACE
 static int lltrace;
@@ -4892,21 +4890,6 @@ PyEval_GetFuncDesc(PyObject *func)
         return " object";
 }
 
-static void
-err_args(PyObject *func, int flags, Py_ssize_t nargs)
-{
-    if (flags & METH_NOARGS)
-        PyErr_Format(PyExc_TypeError,
-                     "%.200s() takes no arguments (%zd given)",
-                     ((PyCFunctionObject *)func)->m_ml->ml_name,
-                     nargs);
-    else
-        PyErr_Format(PyExc_TypeError,
-                     "%.200s() takes exactly one argument (%zd given)",
-                     ((PyCFunctionObject *)func)->m_ml->ml_name,
-                     nargs);
-}
-
 #define C_TRACE(x, call) \
 if (tstate->use_tracing && tstate->c_profilefunc) { \
     if (call_trace(tstate->c_profilefunc, tstate->c_profileobj, \
@@ -4950,91 +4933,49 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames
     PyObject *x, *w;
     Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
     Py_ssize_t nargs = oparg - nkwargs;
+    PyObject **stack;
 
     /* Always dispatch PyCFunction first, because these are
        presumed to be the most frequent callable object.
     */
     if (PyCFunction_Check(func)) {
-        int flags = PyCFunction_GET_FLAGS(func);
         PyThreadState *tstate = PyThreadState_GET();
 
         PCALL(PCALL_CFUNCTION);
-        if (kwnames == NULL && flags & (METH_NOARGS | METH_O)) {
-            PyCFunction meth = PyCFunction_GET_FUNCTION(func);
-            PyObject *self = PyCFunction_GET_SELF(func);
-            if (flags & METH_NOARGS && nargs == 0) {
-                C_TRACE(x, (*meth)(self,NULL));
 
-                x = _Py_CheckFunctionResult(func, x, NULL);
-            }
-            else if (flags & METH_O && nargs == 1) {
-                PyObject *arg = EXT_POP(*pp_stack);
-                C_TRACE(x, (*meth)(self,arg));
-                Py_DECREF(arg);
-
-                x = _Py_CheckFunctionResult(func, x, NULL);
-            }
-            else {
-                err_args(func, flags, nargs);
-                x = NULL;
-            }
-        }
-        else {
-            PyObject *callargs, *kwdict = NULL;
-            if (kwnames != NULL) {
-                kwdict = create_keyword_args(kwnames, pp_stack, func);
-                if (kwdict == NULL) {
-                    x = NULL;
-                    goto cfuncerror;
-                }
-            }
-            callargs = load_args(pp_stack, nargs);
-            if (callargs != NULL) {
-                READ_TIMESTAMP(*pintr0);
-                C_TRACE(x, PyCFunction_Call(func, callargs, kwdict));
-                READ_TIMESTAMP(*pintr1);
-                Py_DECREF(callargs);
-            }
-            else {
-                x = NULL;
-            }
-            Py_XDECREF(kwdict);
-        }
+        stack = (*pp_stack) - nargs - nkwargs;
+        C_TRACE(x, _PyCFunction_FastCallKeywords(func, stack, nargs, kwnames));
     }
     else {
-      Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-      PyObject **stack;
+        if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
+            /* optimize access to bound methods */
+            PyObject *self = PyMethod_GET_SELF(func);
+            PCALL(PCALL_METHOD);
+            PCALL(PCALL_BOUND_METHOD);
+            Py_INCREF(self);
+            func = PyMethod_GET_FUNCTION(func);
+            Py_INCREF(func);
+            Py_SETREF(*pfunc, self);
+            nargs++;
+        }
+        else {
+            Py_INCREF(func);
+        }
 
-      if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
-          /* optimize access to bound methods */
-          PyObject *self = PyMethod_GET_SELF(func);
-          PCALL(PCALL_METHOD);
-          PCALL(PCALL_BOUND_METHOD);
-          Py_INCREF(self);
-          func = PyMethod_GET_FUNCTION(func);
-          Py_INCREF(func);
-          Py_SETREF(*pfunc, self);
-          nargs++;
-      }
-      else {
-          Py_INCREF(func);
-      }
+        stack = (*pp_stack) - nargs - nkwargs;
 
-      stack = (*pp_stack) - nargs - nkwargs;
+        READ_TIMESTAMP(*pintr0);
+        if (PyFunction_Check(func)) {
+            x = fast_function(func, stack, nargs, kwnames);
+        }
+        else {
+            x = _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
+        }
+        READ_TIMESTAMP(*pintr1);
 
-      READ_TIMESTAMP(*pintr0);
-      if (PyFunction_Check(func)) {
-          x = fast_function(func, stack, nargs, kwnames);
-      }
-      else {
-          x = _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
-      }
-      READ_TIMESTAMP(*pintr1);
-
-      Py_DECREF(func);
+        Py_DECREF(func);
     }
 
-cfuncerror:
     assert((x != NULL) ^ (PyErr_Occurred() != NULL));
 
     /* Clear the stack of the function object.  Also removes
@@ -5240,55 +5181,6 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
                                       closure, name, qualname);
     Py_XDECREF(kwtuple);
     return result;
-}
-
-static PyObject *
-create_keyword_args(PyObject *names, PyObject ***pp_stack,
-                    PyObject *func)
-{
-    Py_ssize_t nk = PyTuple_GET_SIZE(names);
-    PyObject *kwdict = _PyDict_NewPresized(nk);
-    if (kwdict == NULL)
-        return NULL;
-    while (--nk >= 0) {
-        int err;
-        PyObject *key = PyTuple_GET_ITEM(names, nk);
-        PyObject *value = EXT_POP(*pp_stack);
-        if (PyDict_GetItem(kwdict, key) != NULL) {
-            PyErr_Format(PyExc_TypeError,
-                         "%.200s%s got multiple values "
-                         "for keyword argument '%U'",
-                         PyEval_GetFuncName(func),
-                         PyEval_GetFuncDesc(func),
-                         key);
-            Py_DECREF(value);
-            Py_DECREF(kwdict);
-            return NULL;
-        }
-        err = PyDict_SetItem(kwdict, key, value);
-        Py_DECREF(value);
-        if (err) {
-            Py_DECREF(kwdict);
-            return NULL;
-        }
-    }
-    return kwdict;
-}
-
-static PyObject *
-load_args(PyObject ***pp_stack, Py_ssize_t nargs)
-{
-    PyObject *args = PyTuple_New(nargs);
-
-    if (args == NULL) {
-        return NULL;
-    }
-
-    while (--nargs >= 0) {
-        PyObject *arg= EXT_POP(*pp_stack);
-        PyTuple_SET_ITEM(args, nargs, arg);
-    }
-    return args;
 }
 
 static PyObject *
