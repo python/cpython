@@ -271,6 +271,9 @@ are always available.  They are listed here in alphabetical order.
 
    The complex type is described in :ref:`typesnumeric`.
 
+   .. versionchanged:: 3.6
+      Grouping digits with underscores as in code literals is allowed.
+
 
 .. function:: delattr(object, name)
 
@@ -531,10 +534,13 @@ are always available.  They are listed here in alphabetical order.
 
    The float type is described in :ref:`typesnumeric`.
 
-   .. index::
-      single: __format__
-      single: string; format() (built-in function)
+   .. versionchanged:: 3.6
+      Grouping digits with underscores as in code literals is allowed.
 
+
+.. index::
+   single: __format__
+   single: string; format() (built-in function)
 
 .. function:: format(value[, format_spec])
 
@@ -701,6 +707,10 @@ are always available.  They are listed here in alphabetical order.
       to obtain an integer for the base.  Previous versions used
       :meth:`base.__int__ <object.__int__>` instead of :meth:`base.__index__
       <object.__index__>`.
+
+   .. versionchanged:: 3.6
+      Grouping digits with underscores as in code literals is allowed.
+
 
 .. function:: isinstance(object, classinfo)
 

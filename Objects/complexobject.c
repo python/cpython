@@ -759,29 +759,12 @@ static PyMemberDef complex_members[] = {
 };
 
 static PyObject *
-complex_subtype_from_string(PyTypeObject *type, PyObject *v)
+complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
 {
-    const char *s, *start;
-    char *end;
     double x=0.0, y=0.0, z;
     int got_bracket=0;
-    PyObject *s_buffer = NULL;
-    Py_ssize_t len;
-
-    if (PyUnicode_Check(v)) {
-        s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
-        if (s_buffer == NULL)
-            return NULL;
-        s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
-        if (s == NULL)
-            goto error;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-            "complex() argument must be a string or a number, not '%.200s'",
-            Py_TYPE(v)->tp_name);
-        return NULL;
-    }
+    const char *start;
+    char *end;
 
     /* position on first nonblank */
     start = s;
@@ -822,7 +805,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
         if (PyErr_ExceptionMatches(PyExc_ValueError))
             PyErr_Clear();
         else
-            goto error;
+            return NULL;
     }
     if (end != s) {
         /* all 4 forms starting with <float> land here */
@@ -835,7 +818,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
                 if (PyErr_ExceptionMatches(PyExc_ValueError))
                     PyErr_Clear();
                 else
-                    goto error;
+                    return NULL;
             }
             if (end != s)
                 /* <float><signed-float>j */
@@ -890,15 +873,43 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     if (s-start != len)
         goto parse_error;
 
-    Py_XDECREF(s_buffer);
-    return complex_subtype_from_doubles(type, x, y);
+    return complex_subtype_from_doubles((PyTypeObject *)type, x, y);
 
   parse_error:
     PyErr_SetString(PyExc_ValueError,
                     "complex() arg is a malformed string");
-  error:
-    Py_XDECREF(s_buffer);
     return NULL;
+}
+
+static PyObject *
+complex_subtype_from_string(PyTypeObject *type, PyObject *v)
+{
+    const char *s;
+    PyObject *s_buffer = NULL, *result = NULL;
+    Py_ssize_t len;
+
+    if (PyUnicode_Check(v)) {
+        s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
+        if (s_buffer == NULL) {
+            return NULL;
+        }
+        s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
+        if (s == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+            "complex() argument must be a string or a number, not '%.200s'",
+            Py_TYPE(v)->tp_name);
+        return NULL;
+    }
+
+    result = _Py_string_to_number_with_underscores(s, len, "complex", v, type,
+                                                   complex_from_string_inner);
+  exit:
+    Py_DECREF(s_buffer);
+    return result;
 }
 
 static PyObject *
