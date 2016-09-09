@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27999: Make "global after use" a SyntaxError, and ditto for nonlocal.
+  Patch by Ivan Levkivskyi.
+
 - Issue #28003: Implement PEP 525 -- Asynchronous Generators.
 
 - Issue #27985: Implement PEP 526 -- Syntax for Variable Annotations.

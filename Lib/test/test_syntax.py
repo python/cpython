@@ -366,7 +366,23 @@ build.  The number of blocks must be greater than CO_MAXBLOCKS.  SF #1565514
      ...
    SyntaxError: too many statically nested blocks
 
-Misuse of the nonlocal statement can lead to a few unique syntax errors.
+Misuse of the nonlocal and global statement can lead to a few unique syntax errors.
+
+   >>> def f():
+   ...     x = 1
+   ...     global x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: name 'x' is assigned to before global declaration
+
+   >>> def f():
+   ...     x = 1
+   ...     def g():
+   ...         print(x)
+   ...         nonlocal x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: name 'x' is used prior to nonlocal declaration
 
    >>> def f(x):
    ...     nonlocal x
