@@ -108,9 +108,8 @@ extern "C" {
 #define LOAD_DEREF              136
 #define STORE_DEREF             137
 #define DELETE_DEREF            138
-#define CALL_FUNCTION_VAR       140
 #define CALL_FUNCTION_KW        141
-#define CALL_FUNCTION_VAR_KW    142
+#define CALL_FUNCTION_EX        142
 #define SETUP_WITH              143
 #define EXTENDED_ARG            144
 #define LIST_APPEND             145
