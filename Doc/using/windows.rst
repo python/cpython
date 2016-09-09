@@ -709,7 +709,7 @@ target Python.
 
 
 
-.. finding_modules:
+.. _finding_modules:
 
 Finding modules
 ===============
