@@ -271,8 +271,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
         Py_ssize_t nargs);
 
      /* Call the callable object func with the "fast call" calling convention:
-        args is a C array for positional parameters (nargs is the number of
-        positional paramater), kwargs is a dictionary for keyword parameters.
+        args is a C array for positional arguments (nargs is the number of
+        positional arguments), kwargs is a dictionary for keyword arguments.
 
         If nargs is equal to zero, args can be NULL. kwargs can be NULL.
         nargs must be greater or equal to zero.
@@ -282,6 +282,24 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(PyObject *func,
                                                    PyObject **args, Py_ssize_t nargs,
                                                    PyObject *kwargs);
+
+     /* Call the callable object func with the "fast call" calling convention:
+        args is a C array for positional arguments followed by values of
+        keyword arguments. Keys of keyword arguments are stored as a tuple
+        of strings in kwnames. nargs is the number of positional parameters at
+        the beginning of stack. The size of kwnames gives the number of keyword
+        values in the stack after positional arguments.
+
+        If nargs is equal to zero and there is no keyword argument (kwnames is
+        NULL or its size is zero), args can be NULL.
+
+        Return the result on success. Raise an exception and return NULL on
+        error. */
+     PyAPI_FUNC(PyObject *) _PyObject_FastCallKeywords
+        (PyObject *func,
+         PyObject **args,
+         Py_ssize_t nargs,
+         PyObject *kwnames);
 
 #define _PyObject_FastCall(func, args, nargs) \
     _PyObject_FastCallDict((func), (args), (nargs), NULL)
