@@ -106,6 +106,7 @@ exit /B 0
 
 if "%1" EQU "x86" (
     call "%PCBUILD%env.bat" x86
+    set PGO=
     set BUILD=%PCBUILD%win32\
     set BUILD_PLAT=Win32
     set OUTDIR_PLAT=win32
