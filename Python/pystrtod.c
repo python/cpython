@@ -370,6 +370,72 @@ PyOS_string_to_double(const char *s,
     return result;
 }
 
+/* Remove underscores that follow the underscore placement rule from
+   the string and then call the `innerfunc` function on the result.
+   It should return a new object or NULL on exception.
+
+   `what` is used for the error message emitted when underscores are detected
+   that don't follow the rule. `arg` is an opaque pointer passed to the inner
+   function.
+
+   This is used to implement underscore-agnostic conversion for floats
+   and complex numbers.
+*/
+PyObject *
+_Py_string_to_number_with_underscores(
+    const char *s, Py_ssize_t orig_len, const char *what, PyObject *obj, void *arg,
+    PyObject *(*innerfunc)(const char *, Py_ssize_t, void *))
+{
+    char prev;
+    const char *p, *last;
+    char *dup, *end;
+    PyObject *result;
+
+    if (strchr(s, '_') == NULL) {
+        return innerfunc(s, orig_len, arg);
+    }
+
+    dup = PyMem_Malloc(orig_len + 1);
+    end = dup;
+    prev = '\0';
+    last = s + orig_len;
+    for (p = s; *p; p++) {
+        if (*p == '_') {
+            /* Underscores are only allowed after digits. */
+            if (!(prev >= '0' && prev <= '9')) {
+                goto error;
+            }
+        }
+        else {
+            *end++ = *p;
+            /* Underscores are only allowed before digits. */
+            if (prev == '_' && !(*p >= '0' && *p <= '9')) {
+                goto error;
+            }
+        }
+        prev = *p;
+    }
+    /* Underscores are not allowed at the end. */
+    if (prev == '_') {
+        goto error;
+    }
+    /* No embedded NULs allowed. */
+    if (p != last) {
+        goto error;
+    }
+    *end = '\0';
+    result = innerfunc(dup, end - dup, arg);
+    PyMem_Free(dup);
+    return result;
+
+  error:
+    PyMem_Free(dup);
+    PyErr_Format(PyExc_ValueError,
+		 "could not convert string to %s: "
+		 "%R", what, obj);
+    return NULL;
+}
+
 #ifdef PY_NO_SHORT_FLOAT_REPR
 
 /* Given a string that may have a decimal point in the current

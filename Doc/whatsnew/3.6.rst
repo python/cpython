@@ -124,6 +124,29 @@ Windows improvements:
 New Features
 ============
 
+.. _pep-515:
+
+PEP 515: Underscores in Numeric Literals
+========================================
+
+Prior to PEP 515, there was no support for writing long numeric
+literals with some form of separator to improve readability. For
+instance, how big is ``1000000000000000```? With :pep:`515`, though,
+you can use underscores to separate digits as desired to make numeric
+literals easier to read: ``1_000_000_000_000_000``. Underscores can be
+used with other numeric literals beyond integers, e.g.
+``0x_FF_FF_FF_FF``.
+
+Single underscores are allowed between digits and after any base
+specifier. More than a single underscore in a row, leading, or
+trailing underscores are not allowed.
+
+.. seealso::
+
+   :pep:`523` - Underscores in Numeric Literals
+   PEP written by Georg Brandl & Serhiy Storchaka.
+
+
 .. _pep-523:
 
 PEP 523: Adding a frame evaluation API to CPython

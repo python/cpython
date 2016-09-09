@@ -48,6 +48,7 @@ class TypesTests(unittest.TestCase):
     def test_float_constructor(self):
         self.assertRaises(ValueError, float, '')
         self.assertRaises(ValueError, float, '5\0')
+        self.assertRaises(ValueError, float, '5_5\0')
 
     def test_zero_division(self):
         try: 5.0 / 0.0

@@ -721,19 +721,23 @@ Integer literals
 Integer literals are described by the following lexical definitions:
 
 .. productionlist::
-   integer: `decimalinteger` | `octinteger` | `hexinteger` | `bininteger`
-   decimalinteger: `nonzerodigit` `digit`* | "0"+
+   integer: `decinteger` | `bininteger` | `octinteger` | `hexinteger`
+   decinteger: `nonzerodigit` (["_"] `digit`)* | "0"+ (["_"] "0")*
+   bininteger: "0" ("b" | "B") (["_"] `bindigit`)+
+   octinteger: "0" ("o" | "O") (["_"] `octdigit`)+
+   hexinteger: "0" ("x" | "X") (["_"] `hexdigit`)+
    nonzerodigit: "1"..."9"
    digit: "0"..."9"
-   octinteger: "0" ("o" | "O") `octdigit`+
-   hexinteger: "0" ("x" | "X") `hexdigit`+
-   bininteger: "0" ("b" | "B") `bindigit`+
+   bindigit: "0" | "1"
    octdigit: "0"..."7"
    hexdigit: `digit` | "a"..."f" | "A"..."F"
-   bindigit: "0" | "1"
 
 There is no limit for the length of integer literals apart from what can be
 stored in available memory.
+
+Underscores are ignored for determining the numeric value of the literal.  They
+can be used to group digits for enhanced readability.  One underscore can occur
+between digits, and after base specifiers like ``0x``.
 
 Note that leading zeros in a non-zero decimal number are not allowed. This is
 for disambiguation with C-style octal literals, which Python used before version
@@ -743,6 +747,10 @@ Some examples of integer literals::
 
    7     2147483647                        0o177    0b100110111
    3     79228162514264337593543950336     0o377    0xdeadbeef
+         100_000_000_000                   0b_1110_0101
+
+.. versionchanged:: 3.6
+   Underscores are now allowed for grouping purposes in literals.
 
 
 .. _floating:
@@ -754,22 +762,27 @@ Floating point literals are described by the following lexical definitions:
 
 .. productionlist::
    floatnumber: `pointfloat` | `exponentfloat`
-   pointfloat: [`intpart`] `fraction` | `intpart` "."
-   exponentfloat: (`intpart` | `pointfloat`) `exponent`
-   intpart: `digit`+
-   fraction: "." `digit`+
-   exponent: ("e" | "E") ["+" | "-"] `digit`+
+   pointfloat: [`digitpart`] `fraction` | `digitpart` "."
+   exponentfloat: (`digitpart` | `pointfloat`) `exponent`
+   digitpart: `digit` (["_"] `digit`)*
+   fraction: "." `digitpart`
+   exponent: ("e" | "E") ["+" | "-"] `digitpart`
 
 Note that the integer and exponent parts are always interpreted using radix 10.
 For example, ``077e010`` is legal, and denotes the same number as ``77e10``. The
-allowed range of floating point literals is implementation-dependent. Some
-examples of floating point literals::
+allowed range of floating point literals is implementation-dependent.  As in
+integer literals, underscores are supported for digit grouping.
 
-   3.14    10.    .001    1e100    3.14e-10    0e0
+Some examples of floating point literals::
+
+   3.14    10.    .001    1e100    3.14e-10    0e0    3.14_15_93
 
 Note that numeric literals do not include a sign; a phrase like ``-1`` is
 actually an expression composed of the unary operator ``-`` and the literal
 ``1``.
+
+.. versionchanged:: 3.6
+   Underscores are now allowed for grouping purposes in literals.
 
 
 .. _imaginary:
@@ -780,7 +793,7 @@ Imaginary literals
 Imaginary literals are described by the following lexical definitions:
 
 .. productionlist::
-   imagnumber: (`floatnumber` | `intpart`) ("j" | "J")
+   imagnumber: (`floatnumber` | `digitpart`) ("j" | "J")
 
 An imaginary literal yields a complex number with a real part of 0.0.  Complex
 numbers are represented as a pair of floating point numbers and have the same
@@ -788,7 +801,7 @@ restrictions on their range.  To create a complex number with a nonzero real
 part, add a floating point number to it, e.g., ``(3+4j)``.  Some examples of
 imaginary literals::
 
-   3.14j   10.j    10j     .001j   1e100j  3.14e-10j
+   3.14j   10.j    10j     .001j   1e100j   3.14e-10j   3.14_15_93j
 
 
 .. _operators:
