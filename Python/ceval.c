@@ -109,19 +109,15 @@ typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
 #ifdef WITH_TSC
-static PyObject * call_function(PyObject ***, int, uint64*, uint64*);
+static PyObject * call_function(PyObject ***, Py_ssize_t, PyObject *, uint64*, uint64*);
 #else
-static PyObject * call_function(PyObject ***, int);
+static PyObject * call_function(PyObject ***, Py_ssize_t, PyObject *);
 #endif
-static PyObject * fast_function(PyObject *, PyObject **, Py_ssize_t, Py_ssize_t);
-static PyObject * do_call(PyObject *, PyObject ***, Py_ssize_t, Py_ssize_t);
-static PyObject * ext_do_call(PyObject *, PyObject ***, int, Py_ssize_t, Py_ssize_t);
-static PyObject * update_keyword_args(PyObject *, Py_ssize_t, PyObject ***,
-                                      PyObject *);
-static PyObject * update_star_args(Py_ssize_t, Py_ssize_t, PyObject *, PyObject ***);
+static PyObject * fast_function(PyObject *, PyObject ***, Py_ssize_t, PyObject *);
+static PyObject * do_call(PyObject *, PyObject ***, Py_ssize_t, PyObject *);
+static PyObject * do_call_core(PyObject *, PyObject *, PyObject *);
+static PyObject * create_keyword_args(PyObject *, PyObject ***, PyObject *);
 static PyObject * load_args(PyObject ***, Py_ssize_t);
-#define CALL_FLAG_VAR 1
-#define CALL_FLAG_KW 2
 
 #ifdef LLTRACE
 static int lltrace;
@@ -2659,8 +2655,14 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(BUILD_LIST_UNPACK) {
             int convert_to_tuple = opcode == BUILD_TUPLE_UNPACK;
             Py_ssize_t i;
-            PyObject *sum = PyList_New(0);
+            PyObject *sum;
             PyObject *return_value;
+
+            if (convert_to_tuple && oparg == 1 && PyTuple_CheckExact(TOP())) {
+                DISPATCH();
+            }
+
+            sum = PyList_New(0);
             if (sum == NULL)
                 goto error;
 
@@ -2847,29 +2849,25 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(BUILD_MAP_UNPACK_WITH_CALL)
         TARGET(BUILD_MAP_UNPACK) {
             int with_call = opcode == BUILD_MAP_UNPACK_WITH_CALL;
-            int num_maps;
-            int function_location;
             Py_ssize_t i;
-            PyObject *sum = PyDict_New();
-            if (sum == NULL)
-                goto error;
-            if (with_call) {
-                num_maps = oparg & 0xff;
-                function_location = (oparg>>8) & 0xff;
-            }
-            else {
-                num_maps = oparg;
+            PyObject *sum;
+
+            if (with_call && oparg == 1 && PyDict_CheckExact(TOP())) {
+                DISPATCH();
             }
 
-            for (i = num_maps; i > 0; i--) {
+            sum = PyDict_New();
+            if (sum == NULL)
+                goto error;
+
+            for (i = oparg; i > 0; i--) {
                 PyObject *arg = PEEK(i);
-                if (with_call) {
+                if (with_call && PyDict_Size(sum)) {
                     PyObject *intersection = _PyDictView_Intersect(sum, arg);
 
                     if (intersection == NULL) {
                         if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                            PyObject *func = (
-                                    PEEK(function_location + num_maps));
+                            PyObject *func = PEEK(2 + oparg);
                             PyErr_Format(PyExc_TypeError,
                                     "%.200s%.200s argument after ** "
                                     "must be a mapping, not %.200s",
@@ -2884,7 +2882,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                     if (PySet_GET_SIZE(intersection)) {
                         Py_ssize_t idx = 0;
                         PyObject *key;
-                        PyObject *func = PEEK(function_location + num_maps);
+                        PyObject *func = PEEK(2 + oparg);
                         Py_hash_t hash;
                         _PySet_NextEntry(intersection, &idx, &key, &hash);
                         if (!PyUnicode_Check(key)) {
@@ -2918,7 +2916,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 }
             }
 
-            while (num_maps--)
+            while (oparg--)
                 Py_DECREF(POP());
             PUSH(sum);
             DISPATCH();
@@ -3409,63 +3407,62 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             PCALL(PCALL_ALL);
             sp = stack_pointer;
 #ifdef WITH_TSC
-            res = call_function(&sp, oparg, &intr0, &intr1);
+            res = call_function(&sp, oparg, NULL, &intr0, &intr1);
 #else
-            res = call_function(&sp, oparg);
+            res = call_function(&sp, oparg, NULL);
 #endif
             stack_pointer = sp;
             PUSH(res);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
+            }
             DISPATCH();
         }
 
-        TARGET(CALL_FUNCTION_VAR)
-        TARGET(CALL_FUNCTION_KW)
-        TARGET(CALL_FUNCTION_VAR_KW) {
-            Py_ssize_t nargs = oparg & 0xff;
-            Py_ssize_t nkwargs = (oparg>>8) & 0xff;
-            int flags = (opcode - CALL_FUNCTION) & 3;
-            Py_ssize_t n;
-            PyObject **pfunc, *func, **sp, *res;
+        TARGET(CALL_FUNCTION_KW) {
+            PyObject **sp, *res, *names;
+
+            names = POP();
+            assert(PyTuple_CheckExact(names) && PyTuple_GET_SIZE(names) <= oparg);
             PCALL(PCALL_ALL);
-
-            n = nargs + 2 * nkwargs;
-            if (flags & CALL_FLAG_VAR) {
-                n++;
-            }
-            if (flags & CALL_FLAG_KW) {
-                n++;
-            }
-            pfunc = stack_pointer - n - 1;
-            func = *pfunc;
-
-            if (PyMethod_Check(func)
-                && PyMethod_GET_SELF(func) != NULL) {
-                PyObject *self = PyMethod_GET_SELF(func);
-                Py_INCREF(self);
-                func = PyMethod_GET_FUNCTION(func);
-                Py_INCREF(func);
-                Py_SETREF(*pfunc, self);
-                nargs++;
-            }
-            else {
-                Py_INCREF(func);
-            }
             sp = stack_pointer;
-            READ_TIMESTAMP(intr0);
-            res = ext_do_call(func, &sp, flags, nargs, nkwargs);
-            READ_TIMESTAMP(intr1);
+#ifdef WITH_TSC
+            res = call_function(&sp, oparg, names, &intr0, &intr1);
+#else
+            res = call_function(&sp, oparg, names);
+#endif
             stack_pointer = sp;
-            Py_DECREF(func);
-
-            while (stack_pointer > pfunc) {
-                PyObject *o = POP();
-                Py_DECREF(o);
-            }
             PUSH(res);
-            if (res == NULL)
+            Py_DECREF(names);
+
+            if (res == NULL) {
                 goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(CALL_FUNCTION_EX) {
+            PyObject *func, *callargs, *kwargs = NULL, *result;
+            PCALL(PCALL_ALL);
+            if (oparg & 0x01) {
+                kwargs = POP();
+                assert(PyDict_CheckExact(kwargs));
+            }
+            callargs = POP();
+            assert(PyTuple_CheckExact(callargs));
+            func = TOP();
+
+            READ_TIMESTAMP(intr0);
+            result = do_call_core(func, callargs, kwargs);
+            READ_TIMESTAMP(intr1);
+            Py_DECREF(func);
+            Py_DECREF(callargs);
+            Py_XDECREF(kwargs);
+
+            SET_TOP(result);
+            if (result == NULL) {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -3950,7 +3947,6 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
     Py_DECREF(kwonly_sig);
 }
 
-
 /* This is gonna seem *real weird*, but if you put some other code between
    PyEval_EvalFrame() and PyEval_EvalCodeEx() you will need to adjust
    the test in the if statements in Misc/gdbinit (pystack and pystackv). */
@@ -3959,6 +3955,7 @@ static PyObject *
 _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
            PyObject **args, Py_ssize_t argcount,
            PyObject **kws, Py_ssize_t kwcount,
+           PyObject *kwnames, PyObject **kwstack,
            PyObject **defs, Py_ssize_t defcount,
            PyObject *kwdefs, PyObject *closure,
            PyObject *name, PyObject *qualname)
@@ -3972,6 +3969,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
     Py_ssize_t i, n;
     PyObject *kwdict;
+    Py_ssize_t kwcount2 = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
 
     assert((kwcount == 0) || (kws != NULL));
 
@@ -4033,7 +4031,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         }
     }
 
-    /* Handle keyword arguments (passed as an array of (key, value)) */
+    /* Handle keyword arguments passed as an array of (key, value) pairs */
     for (i = 0; i < kwcount; i++) {
         PyObject **co_varnames;
         PyObject *keyword = kws[2*i];
@@ -4086,6 +4084,61 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
             PyErr_Format(PyExc_TypeError,
                          "%U() got multiple values for argument '%S'",
                          co->co_name, keyword);
+            goto fail;
+        }
+        Py_INCREF(value);
+        SETLOCAL(j, value);
+    }
+
+    /* Handle keyword arguments passed as keys tuple + values array */
+    for (i = 0; i < kwcount2; i++) {
+        PyObject **co_varnames;
+        PyObject *keyword = PyTuple_GET_ITEM(kwnames, i);
+        PyObject *value = kwstack[i];
+        int j;
+        if (keyword == NULL || !PyUnicode_Check(keyword)) {
+            PyErr_Format(PyExc_TypeError,
+                         "%U() keywords must be strings",
+                         co->co_name);
+            goto fail;
+        }
+        /* Speed hack: do raw pointer compares. As names are
+           normally interned this should almost always hit. */
+        co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
+        for (j = 0; j < total_args; j++) {
+            PyObject *nm = co_varnames[j];
+            if (nm == keyword)
+                goto kw_found2;
+        }
+        /* Slow fallback, just in case */
+        for (j = 0; j < total_args; j++) {
+            PyObject *nm = co_varnames[j];
+            int cmp = PyObject_RichCompareBool(
+                keyword, nm, Py_EQ);
+            if (cmp > 0)
+                goto kw_found2;
+            else if (cmp < 0)
+                goto fail;
+        }
+        if (j >= total_args && kwdict == NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "%U() got an unexpected "
+                         "keyword argument '%S'",
+                         co->co_name,
+                         keyword);
+            goto fail;
+        }
+        if (PyDict_SetItem(kwdict, keyword, value) == -1) {
+            goto fail;
+        }
+        continue;
+      kw_found2:
+        if (GETLOCAL(j) != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "%U() got multiple "
+                         "values for argument '%S'",
+                         co->co_name,
+                         keyword);
             goto fail;
         }
         Py_INCREF(value);
@@ -4244,6 +4297,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     return _PyEval_EvalCodeWithName(_co, globals, locals,
                                     args, argcount,
                                     kws, kwcount,
+                                    NULL, NULL,
                                     defs, defcount,
                                     kwdefs, closure,
                                     NULL, NULL);
@@ -4886,28 +4940,27 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
     }
 
 static PyObject *
-call_function(PyObject ***pp_stack, int oparg
+call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *names
 #ifdef WITH_TSC
                 , uint64* pintr0, uint64* pintr1
 #endif
                 )
 {
-    Py_ssize_t nargs = oparg & 0xff;
-    Py_ssize_t nkwargs = (oparg>>8) & 0xff;
-    int n = nargs + 2 * nkwargs;
-    PyObject **pfunc = (*pp_stack) - n - 1;
+    PyObject **pfunc = (*pp_stack) - oparg - 1;
     PyObject *func = *pfunc;
     PyObject *x, *w;
+    Py_ssize_t nk = names == NULL ? 0 : PyTuple_GET_SIZE(names);
+    Py_ssize_t nargs = oparg - nk;
 
     /* Always dispatch PyCFunction first, because these are
        presumed to be the most frequent callable object.
     */
-    if (PyCFunction_Check(func) && nkwargs == 0) {
+    if (PyCFunction_Check(func)) {
         int flags = PyCFunction_GET_FLAGS(func);
         PyThreadState *tstate = PyThreadState_GET();
 
         PCALL(PCALL_CFUNCTION);
-        if (flags & (METH_NOARGS | METH_O)) {
+        if (names == NULL && flags & (METH_NOARGS | METH_O)) {
             PyCFunction meth = PyCFunction_GET_FUNCTION(func);
             PyObject *self = PyCFunction_GET_SELF(func);
             if (flags & METH_NOARGS && nargs == 0) {
@@ -4928,47 +4981,56 @@ call_function(PyObject ***pp_stack, int oparg
             }
         }
         else {
-            PyObject *callargs;
+            PyObject *callargs, *kwdict = NULL;
+            if (names != NULL) {
+                kwdict = create_keyword_args(names, pp_stack, func);
+                if (kwdict == NULL) {
+                    x = NULL;
+                    goto cfuncerror;
+                }
+            }
             callargs = load_args(pp_stack, nargs);
             if (callargs != NULL) {
                 READ_TIMESTAMP(*pintr0);
-                C_TRACE(x, PyCFunction_Call(func,callargs,NULL));
+                C_TRACE(x, PyCFunction_Call(func, callargs, kwdict));
                 READ_TIMESTAMP(*pintr1);
-                Py_XDECREF(callargs);
+                Py_DECREF(callargs);
             }
             else {
                 x = NULL;
             }
+            Py_XDECREF(kwdict);
         }
     }
     else {
-        if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
-            /* optimize access to bound methods */
-            PyObject *self = PyMethod_GET_SELF(func);
-            PCALL(PCALL_METHOD);
-            PCALL(PCALL_BOUND_METHOD);
-            Py_INCREF(self);
-            func = PyMethod_GET_FUNCTION(func);
-            Py_INCREF(func);
-            Py_SETREF(*pfunc, self);
-            nargs++;
-            n++;
-        }
-        else {
-            Py_INCREF(func);
-        }
-        READ_TIMESTAMP(*pintr0);
-        if (PyFunction_Check(func)) {
-            x = fast_function(func, (*pp_stack) - n, nargs, nkwargs);
-        }
-        else {
-            x = do_call(func, pp_stack, nargs, nkwargs);
-        }
-        READ_TIMESTAMP(*pintr1);
-        Py_DECREF(func);
+      if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
+          /* optimize access to bound methods */
+          PyObject *self = PyMethod_GET_SELF(func);
+          PCALL(PCALL_METHOD);
+          PCALL(PCALL_BOUND_METHOD);
+          Py_INCREF(self);
+          func = PyMethod_GET_FUNCTION(func);
+          Py_INCREF(func);
+          Py_SETREF(*pfunc, self);
+          nargs++;
+      }
+      else {
+          Py_INCREF(func);
+      }
 
-        assert((x != NULL) ^ (PyErr_Occurred() != NULL));
+      READ_TIMESTAMP(*pintr0);
+      if (PyFunction_Check(func)) {
+          x = fast_function(func, pp_stack, nargs, names);
+      } else {
+          x = do_call(func, pp_stack, nargs, names);
+      }
+      READ_TIMESTAMP(*pintr1);
+
+      Py_DECREF(func);
     }
+
+cfuncerror:
+    assert((x != NULL) ^ (PyErr_Occurred() != NULL));
 
     /* Clear the stack of the function object.  Also removes
        the arguments in case they weren't consumed already
@@ -4980,7 +5042,6 @@ call_function(PyObject ***pp_stack, int oparg
         PCALL(PCALL_POP);
     }
 
-    assert((x != NULL) ^ (PyErr_Occurred() != NULL));
     return x;
 }
 
@@ -5033,19 +5094,16 @@ _PyFunction_FastCallNoKw(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
 /* Similar to _PyFunction_FastCall() but keywords are passed a (key, value)
    pairs in stack */
 static PyObject *
-fast_function(PyObject *func, PyObject **stack, Py_ssize_t nargs, Py_ssize_t nkwargs)
+fast_function(PyObject *func, PyObject ***pp_stack, Py_ssize_t nargs, PyObject *names)
 {
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
     PyObject *globals = PyFunction_GET_GLOBALS(func);
     PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
     PyObject *kwdefs, *closure, *name, *qualname;
     PyObject **d;
-    int nd;
-
-    assert(func != NULL);
-    assert(nargs >= 0);
-    assert(nkwargs >= 0);
-    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
+    Py_ssize_t nkwargs = names == NULL ? 0 : PyTuple_GET_SIZE(names);
+    Py_ssize_t nd;
+    PyObject **stack = (*pp_stack)-nargs-nkwargs;
 
     PCALL(PCALL_FUNCTION);
     PCALL(PCALL_FAST_FUNCTION);
@@ -5081,8 +5139,9 @@ fast_function(PyObject *func, PyObject **stack, Py_ssize_t nargs, Py_ssize_t nkw
     }
     return _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
                                     stack, nargs,
-                                    stack + nargs, nkwargs,
-                                    d, nd, kwdefs,
+                                    NULL, 0,
+                                    names, stack + nargs,
+                                    d, (int)nd, kwdefs,
                                     closure, name, qualname);
 }
 
@@ -5166,6 +5225,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
     result = _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
                                       args, nargs,
                                       k, nk,
+                                      NULL, NULL,
                                       d, nd, kwdefs,
                                       closure, name, qualname);
     Py_XDECREF(kwtuple);
@@ -5173,22 +5233,17 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 }
 
 static PyObject *
-update_keyword_args(PyObject *orig_kwdict, Py_ssize_t nk, PyObject ***pp_stack,
+create_keyword_args(PyObject *names, PyObject ***pp_stack,
                     PyObject *func)
 {
-    PyObject *kwdict = NULL;
-    if (orig_kwdict == NULL)
-        kwdict = PyDict_New();
-    else {
-        kwdict = PyDict_Copy(orig_kwdict);
-        Py_DECREF(orig_kwdict);
-    }
+    Py_ssize_t nk = PyTuple_GET_SIZE(names);
+    PyObject *kwdict = _PyDict_NewPresized(nk);
     if (kwdict == NULL)
         return NULL;
     while (--nk >= 0) {
         int err;
         PyObject *value = EXT_POP(*pp_stack);
-        PyObject *key = EXT_POP(*pp_stack);
+        PyObject *key = PyTuple_GET_ITEM(names, nk);
         if (PyDict_GetItem(kwdict, key) != NULL) {
             PyErr_Format(PyExc_TypeError,
                          "%.200s%s got multiple values "
@@ -5196,13 +5251,11 @@ update_keyword_args(PyObject *orig_kwdict, Py_ssize_t nk, PyObject ***pp_stack,
                          PyEval_GetFuncName(func),
                          PyEval_GetFuncDesc(func),
                          key);
-            Py_DECREF(key);
             Py_DECREF(value);
             Py_DECREF(kwdict);
             return NULL;
         }
         err = PyDict_SetItem(kwdict, key, value);
-        Py_DECREF(key);
         Py_DECREF(value);
         if (err) {
             Py_DECREF(kwdict);
@@ -5213,183 +5266,51 @@ update_keyword_args(PyObject *orig_kwdict, Py_ssize_t nk, PyObject ***pp_stack,
 }
 
 static PyObject *
-update_star_args(Py_ssize_t nstack, Py_ssize_t nstar, PyObject *stararg,
-                 PyObject ***pp_stack)
+load_args(PyObject ***pp_stack, Py_ssize_t nargs)
 {
-    PyObject *callargs, *w;
+    PyObject *args = PyTuple_New(nargs);
 
-    if (!nstack) {
-        if (!stararg) {
-            /* There are no positional arguments on the stack and there is no
-               sequence to be unpacked. */
-            return PyTuple_New(0);
-        }
-        if (PyTuple_CheckExact(stararg)) {
-            /* No arguments are passed on the stack and the sequence is not a
-               tuple subclass so we can just pass the stararg tuple directly
-               to the function. */
-            Py_INCREF(stararg);
-            return stararg;
-        }
-    }
-
-    callargs = PyTuple_New(nstack + nstar);
-    if (callargs == NULL) {
+    if (args == NULL) {
         return NULL;
     }
 
-    if (nstar) {
-        Py_ssize_t i;
-        for (i = 0; i < nstar; i++) {
-            PyObject *arg = PyTuple_GET_ITEM(stararg, i);
-            Py_INCREF(arg);
-            PyTuple_SET_ITEM(callargs, nstack + i, arg);
-        }
-    }
-
-    while (--nstack >= 0) {
-        w = EXT_POP(*pp_stack);
-        PyTuple_SET_ITEM(callargs, nstack, w);
-    }
-    return callargs;
-}
-
-static PyObject *
-load_args(PyObject ***pp_stack, Py_ssize_t na)
-{
-    PyObject *args = PyTuple_New(na);
-    PyObject *w;
-
-    if (args == NULL)
-        return NULL;
-    while (--na >= 0) {
-        w = EXT_POP(*pp_stack);
-        PyTuple_SET_ITEM(args, na, w);
+    while (--nargs >= 0) {
+        PyObject *arg= EXT_POP(*pp_stack);
+        PyTuple_SET_ITEM(args, nargs, arg);
     }
     return args;
 }
 
 static PyObject *
-do_call(PyObject *func, PyObject ***pp_stack, Py_ssize_t nargs, Py_ssize_t nkwargs)
+do_call(PyObject *func, PyObject ***pp_stack, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *callargs = NULL;
-    PyObject *kwdict = NULL;
-    PyObject *result = NULL;
+    PyObject *callargs, *kwdict, *result;
 
-    if (nkwargs > 0) {
-        kwdict = update_keyword_args(NULL, nkwargs, pp_stack, func);
-        if (kwdict == NULL)
-            goto call_fail;
+    if (kwnames != NULL) {
+        kwdict = create_keyword_args(kwnames, pp_stack, func);
+        if (kwdict == NULL) {
+            return NULL;
+        }
     }
+    else {
+        kwdict = NULL;
+    }
+
     callargs = load_args(pp_stack, nargs);
-    if (callargs == NULL)
-        goto call_fail;
-#ifdef CALL_PROFILE
-    /* At this point, we have to look at the type of func to
-       update the call stats properly.  Do it here so as to avoid
-       exposing the call stats machinery outside ceval.c
-    */
-    if (PyFunction_Check(func))
-        PCALL(PCALL_FUNCTION);
-    else if (PyMethod_Check(func))
-        PCALL(PCALL_METHOD);
-    else if (PyType_Check(func))
-        PCALL(PCALL_TYPE);
-    else if (PyCFunction_Check(func))
-        PCALL(PCALL_CFUNCTION);
-    else
-        PCALL(PCALL_OTHER);
-#endif
-    if (PyCFunction_Check(func)) {
-        PyThreadState *tstate = PyThreadState_GET();
-        C_TRACE(result, PyCFunction_Call(func, callargs, kwdict));
+    if (callargs == NULL) {
+        Py_XDECREF(kwdict);
+        return NULL;
     }
-    else
-        result = PyObject_Call(func, callargs, kwdict);
-call_fail:
+
+    result = do_call_core(func, callargs, kwdict);
     Py_XDECREF(callargs);
     Py_XDECREF(kwdict);
     return result;
 }
 
 static PyObject *
-ext_do_call(PyObject *func, PyObject ***pp_stack, int flags,
-            Py_ssize_t nargs, Py_ssize_t nkwargs)
+do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
 {
-    Py_ssize_t nstar;
-    PyObject *callargs = NULL;
-    PyObject *stararg = NULL;
-    PyObject *kwdict = NULL;
-    PyObject *result = NULL;
-
-    if (flags & CALL_FLAG_KW) {
-        kwdict = EXT_POP(*pp_stack);
-        if (!PyDict_CheckExact(kwdict)) {
-            PyObject *d;
-            d = PyDict_New();
-            if (d == NULL)
-                goto ext_call_fail;
-            if (PyDict_Update(d, kwdict) != 0) {
-                Py_DECREF(d);
-                /* PyDict_Update raises attribute
-                 * error (percolated from an attempt
-                 * to get 'keys' attribute) instead of
-                 * a type error if its second argument
-                 * is not a mapping.
-                 */
-                if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                    PyErr_Format(PyExc_TypeError,
-                                 "%.200s%.200s argument after ** "
-                                 "must be a mapping, not %.200s",
-                                 PyEval_GetFuncName(func),
-                                 PyEval_GetFuncDesc(func),
-                                 kwdict->ob_type->tp_name);
-                }
-                goto ext_call_fail;
-            }
-            Py_DECREF(kwdict);
-            kwdict = d;
-        }
-    }
-
-    if (nkwargs > 0) {
-        kwdict = update_keyword_args(kwdict, nkwargs, pp_stack, func);
-        if (kwdict == NULL)
-            goto ext_call_fail;
-    }
-
-    if (flags & CALL_FLAG_VAR) {
-        stararg = EXT_POP(*pp_stack);
-        if (!PyTuple_Check(stararg)) {
-            PyObject *t = NULL;
-            if (Py_TYPE(stararg)->tp_iter == NULL &&
-                    !PySequence_Check(stararg)) {
-                PyErr_Format(PyExc_TypeError,
-                             "%.200s%.200s argument after * "
-                             "must be an iterable, not %.200s",
-                             PyEval_GetFuncName(func),
-                             PyEval_GetFuncDesc(func),
-                             stararg->ob_type->tp_name);
-                goto ext_call_fail;
-            }
-            t = PySequence_Tuple(stararg);
-            if (t == NULL) {
-                goto ext_call_fail;
-            }
-            Py_DECREF(stararg);
-            stararg = t;
-        }
-        nstar = PyTuple_GET_SIZE(stararg);
-    }
-    else {
-        nstar = 0;
-    }
-
-    callargs = update_star_args(nargs, nstar, stararg, pp_stack);
-    if (callargs == NULL) {
-        goto ext_call_fail;
-    }
-
 #ifdef CALL_PROFILE
     /* At this point, we have to look at the type of func to
        update the call stats properly.  Do it here so as to avoid
@@ -5406,19 +5327,16 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags,
     else
         PCALL(PCALL_OTHER);
 #endif
+
     if (PyCFunction_Check(func)) {
+        PyObject *result;
         PyThreadState *tstate = PyThreadState_GET();
         C_TRACE(result, PyCFunction_Call(func, callargs, kwdict));
+        return result;
     }
     else {
-        result = PyObject_Call(func, callargs, kwdict);
+        return PyObject_Call(func, callargs, kwdict);
     }
-
-ext_call_fail:
-    Py_XDECREF(callargs);
-    Py_XDECREF(kwdict);
-    Py_XDECREF(stararg);
-    return result;
 }
 
 /* Extract a slice index from a PyLong or an object with the
