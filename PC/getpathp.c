@@ -197,7 +197,7 @@ join(wchar_t *buffer, const wchar_t *stuff)
         if (FAILED(_PathCchCombineEx(buffer, MAXPATHLEN+1, buffer, stuff, 0)))
             Py_FatalError("buffer overflow in getpathp.c's join()");
     } else {
-        if (!PathCombineW(buffer, NULL, stuff))
+        if (!PathCombineW(buffer, buffer, stuff))
             Py_FatalError("buffer overflow in getpathp.c's join()");
     }
 }
