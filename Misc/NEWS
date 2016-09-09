@@ -10,6 +10,10 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27213: Rework CALL_FUNCTION* opcodes to produce shorter and more
+  efficient bytecode. Patch by Demur Rumed, design by Serhiy Storchaka,
+  reviewed by Serhiy Storchaka and Victor Stinner.
+
 - Issue #27999: Make "global after use" a SyntaxError, and ditto for nonlocal.
   Patch by Ivan Levkivskyi.
 
