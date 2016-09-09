@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #25856: The __module__ attribute of extension classes and functions
+  now is interned. This leads to more compact pickle data with protocol 4.
+
 - Issue #27213: Rework CALL_FUNCTION* opcodes to produce shorter and more
   efficient bytecode. Patch by Demur Rumed, design by Serhiy Storchaka,
   reviewed by Serhiy Storchaka and Victor Stinner.
