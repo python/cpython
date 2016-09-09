@@ -2814,26 +2814,6 @@ else
 fi])
 AC_MSG_RESULT($with_dbmliborder)
 
-# Determine if signalmodule should be used.
-AC_SUBST(USE_SIGNAL_MODULE)
-AC_SUBST(SIGNAL_OBJS)
-AC_MSG_CHECKING(for --with-signal-module)
-AC_ARG_WITH(signal-module,
-            AS_HELP_STRING([--with-signal-module], [disable/enable signal module]))
-
-if test -z "$with_signal_module"
-then with_signal_module="yes"
-fi
-AC_MSG_RESULT($with_signal_module)
-
-if test "${with_signal_module}" = "yes"; then
-	USE_SIGNAL_MODULE=""
-	SIGNAL_OBJS=""
-else
-	USE_SIGNAL_MODULE="#"
-	SIGNAL_OBJS="Parser/intrcheck.o Python/sigcheck.o"
-fi
-
 # This is used to generate Setup.config
 AC_SUBST(USE_THREAD_MODULE)
 USE_THREAD_MODULE=""

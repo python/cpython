@@ -254,9 +254,6 @@ MODULE_OBJS=	\
 		Modules/main.o \
 		Modules/gcmodule.o
 
-# Used of signalmodule.o is not available
-SIGNAL_OBJS=	@SIGNAL_OBJS@
-
 IO_H=		Modules/_io/_iomodule.h
 
 IO_OBJS=	\
@@ -448,7 +445,6 @@ LIBRARY_OBJS_OMIT_FROZEN=	\
 		$(OBJECT_OBJS) \
 		$(PYTHON_OBJS) \
 		$(MODULE_OBJS) \
-		$(SIGNAL_OBJS) \
 		$(MODOBJS)
 
 LIBRARY_OBJS=	\
@@ -598,7 +594,7 @@ $(LIBRARY): $(LIBRARY_OBJS)
 	$(AR) $(ARFLAGS) $@ $(PARSER_OBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJECT_OBJS)
 	$(AR) $(ARFLAGS) $@ $(PYTHON_OBJS) Python/frozen.o
-	$(AR) $(ARFLAGS) $@ $(MODULE_OBJS) $(SIGNAL_OBJS)
+	$(AR) $(ARFLAGS) $@ $(MODULE_OBJS)
 	$(AR) $(ARFLAGS) $@ $(MODOBJS)
 	$(RANLIB) $@
 
@@ -718,7 +714,6 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 		$(OBJECT_OBJS) \
 		$(PYTHON_OBJS) \
 		$(MODULE_OBJS) \
-		$(SIGNAL_OBJS) \
 		$(MODOBJS) \
 		$(srcdir)/Modules/getbuildinfo.c
 	$(CC) -c $(PY_CORE_CFLAGS) \
