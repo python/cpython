@@ -1801,9 +1801,9 @@ included in the class definition (if any) and the resulting object is bound
 in the local namespace as the defined class.
 
 When a new class is created by ``type.__new__``, the object provided as the
-namespace parameter is copied to a standard Python dictionary and the original
-object is discarded. The new copy becomes the :attr:`~object.__dict__` attribute
-of the class object.
+namespace parameter is copied to a new ordered mapping and the original
+object is discarded. The new copy is wrapped in a read-only proxy, which
+becomes the :attr:`~object.__dict__` attribute of the class object.
 
 .. seealso::
 
