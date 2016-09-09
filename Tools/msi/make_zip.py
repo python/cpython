@@ -46,6 +46,10 @@ EXCLUDE_FILE_FROM_LIBS = {
     'python3stub',
 }
 
+EXCLUDED_FILES = {
+    'pyshellext',
+}
+
 def is_not_debug(p):
     if DEBUG_RE.search(p.name):
         return False
@@ -53,7 +57,7 @@ def is_not_debug(p):
     if TKTCL_RE.search(p.name):
         return False
 
-    return p.stem.lower() not in DEBUG_FILES
+    return p.stem.lower() not in DEBUG_FILES and p.stem.lower() not in EXCLUDED_FILES
 
 def is_not_debug_or_python(p):
     return is_not_debug(p) and not PYTHON_DLL_RE.search(p.name)
@@ -209,8 +213,9 @@ def main():
             copied = copy_to_layout(temp / t.rstrip('/'), rglob(s, p, c))
             print('Copied {} files'.format(copied))
 
-        with open(str(temp / 'pyvenv.cfg'), 'w') as f:
-            print('applocal = true', file=f)
+        with open(str(temp / 'sys.path'), 'w') as f:
+            print('python{0.major}{0.minor}.zip'.format(sys.version_info), file=f)
+            print('.', file=f)
 
         if out:
             total = copy_to_layout(out, rglob(temp, '**/*', None))

@@ -6,7 +6,8 @@
    PATH RULES FOR WINDOWS:
    This describes how sys.path is formed on Windows.  It describes the
    functionality, not the implementation (ie, the order in which these
-   are actually fetched is different)
+   are actually fetched is different). The presence of a sys.path file
+   alongside the program overrides these rules - see below.
 
    * Python always adds an empty entry at the start, which corresponds
      to the current directory.
@@ -36,6 +37,12 @@
      used (eg. .\Lib;.\plat-win, etc)
 
 
+   If a sys.path file exists adjacent to python.exe, it must contain a
+   list of paths to add to sys.path, one per line (like a .pth file but without
+   the ability to execute arbitrary code). Each path is relative to the
+   directory containing the file. No other paths are added to the search path,
+   and the registry finder is not enabled.
+
   The end result of all this is:
   * When running python.exe, or any other .exe in the main Python directory
     (either an installed version, or directly from the PCbuild directory),
@@ -52,7 +59,10 @@
     some default, but relative, paths.
 
   * An embedding application can use Py_SetPath() to override all of
-    these authomatic path computations.
+    these automatic path computations.
+
+  * An isolation install of Python can disable all implicit paths by
+    providing a sys.path file.
 
    ---------------------------------------------------------------- */
 
@@ -61,9 +71,12 @@
 #include "osdefs.h"
 #include <wchar.h>
 
-#ifdef MS_WINDOWS
-#include <windows.h>
+#ifndef MS_WINDOWS
+#error getpathp.c should only be built on Windows
 #endif
+
+#include <windows.h>
+#include <Shlwapi.h>
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -163,24 +176,30 @@ ismodule(wchar_t *filename, int update_filename) /* Is module -- check for .pyc/
    than MAXPATHLEN characters at exit.  If stuff is too long, only as much of
    stuff as fits will be appended.
 */
+
+static int _PathCchCombineEx_Initialized = 0;
+typedef HRESULT(__stdcall *PPathCchCombineEx)(PWSTR pszPathOut, size_t cchPathOut, PCWSTR pszPathIn, PCWSTR pszMore, unsigned long dwFlags);
+static PPathCchCombineEx _PathCchCombineEx;
+
 static void
 join(wchar_t *buffer, const wchar_t *stuff)
 {
-    size_t n;
-    if (is_sep(stuff[0]) ||
-        (wcsnlen_s(stuff, 4) >= 3 && stuff[1] == ':' && is_sep(stuff[2]))) {
-        if (wcscpy_s(buffer, MAXPATHLEN+1, stuff) != 0)
-            Py_FatalError("buffer overflow in getpathp.c's join()");
-        return;
+    if (_PathCchCombineEx_Initialized == 0) {
+        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
+        if (pathapi)
+            _PathCchCombineEx = (PPathCchCombineEx)GetProcAddress(pathapi, "PathCchCombineEx");
+        else
+            _PathCchCombineEx = NULL;
+        _PathCchCombineEx_Initialized = 1;
     }
 
-    n = wcsnlen_s(buffer, MAXPATHLEN+1);
-    if (n > 0 && !is_sep(buffer[n - 1]) && n < MAXPATHLEN) {
-        buffer[n] = SEP;
-        buffer[n + 1] = '\0';
+    if (_PathCchCombineEx) {
+        if (FAILED(_PathCchCombineEx(buffer, MAXPATHLEN+1, buffer, stuff, 0)))
+            Py_FatalError("buffer overflow in getpathp.c's join()");
+    } else {
+        if (!PathCombineW(buffer, NULL, stuff))
+            Py_FatalError("buffer overflow in getpathp.c's join()");
     }
-    if (wcscat_s(buffer, MAXPATHLEN+1, stuff) != 0)
-        Py_FatalError("buffer overflow in getpathp.c's join()");
 }
 
 /* gotlandmark only called by search_for_prefix, which ensures
@@ -214,7 +233,6 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *landmark)
     return 0;
 }
 
-#ifdef MS_WINDOWS
 #ifdef Py_ENABLE_SHARED
 
 /* a string loaded from the DLL at startup.*/
@@ -369,7 +387,6 @@ done:
     return retval;
 }
 #endif /* Py_ENABLE_SHARED */
-#endif /* MS_WINDOWS */
 
 static void
 get_progpath(void)
@@ -378,7 +395,6 @@ get_progpath(void)
     wchar_t *path = _wgetenv(L"PATH");
     wchar_t *prog = Py_GetProgramName();
 
-#ifdef MS_WINDOWS
 #ifdef Py_ENABLE_SHARED
     extern HANDLE PyWin_DLLhModule;
     /* static init of progpath ensures final char remains \0 */
@@ -390,7 +406,6 @@ get_progpath(void)
 #endif
     if (GetModuleFileNameW(NULL, progpath, MAXPATHLEN))
         return;
-#endif
     if (prog == NULL || *prog == '\0')
         prog = L"python";
 
@@ -483,6 +498,67 @@ find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
     return result;
 }
 
+static int
+read_sys_path_file(const wchar_t *path, const wchar_t *prefix)
+{
+    FILE *sp_file = _Py_wfopen(path, L"r");
+    if (sp_file == NULL)
+        return -1;
+
+    size_t bufsiz = MAXPATHLEN;
+    size_t prefixlen = wcslen(prefix);
+
+    wchar_t *buf = (wchar_t*)PyMem_RawMalloc(bufsiz * sizeof(wchar_t));
+    buf[0] = '\0';
+
+    while (!feof(sp_file)) {
+        char line[MAXPATHLEN + 1];
+        char *p = fgets(line, MAXPATHLEN + 1, sp_file);
+        if (!p)
+            break;
+
+        DWORD n = strlen(line);
+        if (n == 0 || p[n - 1] != '\n')
+            break;
+        if (n > 2 && p[n - 1] == '\r')
+            --n;
+
+        DWORD wn = MultiByteToWideChar(CP_UTF8, 0, line, n - 1, NULL, 0);
+        wchar_t *wline = (wchar_t*)PyMem_RawMalloc((wn + 1) * sizeof(wchar_t));
+        wn = MultiByteToWideChar(CP_UTF8, 0, line, n - 1, wline, wn);
+        wline[wn] = '\0';
+
+        while (wn + prefixlen + 4 > bufsiz) {
+            bufsiz += MAXPATHLEN;
+            buf = (wchar_t*)PyMem_RawRealloc(buf, (bufsiz + 1) * sizeof(wchar_t));
+            if (!buf) {
+                PyMem_RawFree(wline);
+                goto error;
+            }
+        }
+
+        if (buf[0])
+            wcscat_s(buf, bufsiz, L";");
+        wchar_t *b = &buf[wcslen(buf)];
+        
+        wcscat_s(buf, bufsiz, prefix);
+        join(b, wline);
+
+        PyMem_RawFree(wline);
+    }
+
+    module_search_path = buf;
+
+    fclose(sp_file);
+    return 0;
+
+error:
+    PyMem_RawFree(buf);
+    fclose(sp_file);
+    return -1;
+}
+
+
 static void
 calculate_path(void)
 {
@@ -492,31 +568,33 @@ calculate_path(void)
     wchar_t *pythonhome = Py_GetPythonHome();
     wchar_t *envpath = NULL;
 
-#ifdef MS_WINDOWS
     int skiphome, skipdefault;
     wchar_t *machinepath = NULL;
     wchar_t *userpath = NULL;
     wchar_t zip_path[MAXPATHLEN+1];
-    int applocal = 0;
 
     if (!Py_IgnoreEnvironmentFlag) {
         envpath = _wgetenv(L"PYTHONPATH");
     }
-#else
-    char *_envpath = Py_GETENV("PYTHONPATH");
-    wchar_t wenvpath[MAXPATHLEN+1];
-    if (_envpath) {
-        size_t r = mbstowcs(wenvpath, _envpath, MAXPATHLEN+1);
-        envpath = wenvpath;
-        if (r == (size_t)-1 || r >= MAXPATHLEN)
-            envpath = NULL;
-    }
-#endif
 
     get_progpath();
     /* progpath guaranteed \0 terminated in MAXPATH+1 bytes. */
     wcscpy_s(argv0_path, MAXPATHLEN+1, progpath);
     reduce(argv0_path);
+
+    /* Search for a sys.path file */
+    {
+        wchar_t spbuffer[MAXPATHLEN+1];
+
+        wcscpy_s(spbuffer, MAXPATHLEN+1, argv0_path);
+        join(spbuffer, L"sys.path");
+        if (exists(spbuffer) && read_sys_path_file(spbuffer, argv0_path) == 0) {
+            wcscpy_s(prefix, MAXPATHLEN + 1, argv0_path);
+            Py_IsolatedFlag = 1;
+            Py_NoSiteFlag = 1;
+            return;
+        }
+    }
 
     /* Search for an environment configuration file, first in the
        executable's directory and then in the parent directory.
@@ -543,17 +621,6 @@ calculate_path(void)
             }
         }
         if (env_file != NULL) {
-            /* Look for an 'applocal' variable and, if true, ignore all registry
-             * keys and environment variables, but retain the default paths
-             * (DLLs, Lib) and the zip file. Setting pythonhome here suppresses
-             * the search for LANDMARK below and overrides %PYTHONHOME%.
-             */
-            if (find_env_config_value(env_file, L"applocal", tmpbuffer) &&
-                (applocal = (wcsicmp(tmpbuffer, L"true") == 0))) {
-                envpath = NULL;
-                pythonhome = argv0_path;
-            }
-
             /* Look for a 'home' variable and set argv0_path to it, if found */
             if (find_env_config_value(env_file, L"home", tmpbuffer)) {
                 wcscpy_s(argv0_path, MAXPATHLEN+1, tmpbuffer);
@@ -576,7 +643,6 @@ calculate_path(void)
         envpath = NULL;
 
 
-#ifdef MS_WINDOWS
     /* Calculate zip archive path from DLL or exe path */
     if (wcscpy_s(zip_path, MAXPATHLEN+1, dllpath[0] ? dllpath : progpath))
         /* exceeded buffer length - ignore zip_path */
@@ -590,16 +656,13 @@ calculate_path(void)
 
     skiphome = pythonhome==NULL ? 0 : 1;
 #ifdef Py_ENABLE_SHARED
-    if (!applocal) {
-        machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
-        userpath = getpythonregpath(HKEY_CURRENT_USER, skiphome);
-    }
+    machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
+    userpath = getpythonregpath(HKEY_CURRENT_USER, skiphome);
 #endif
     /* We only use the default relative PYTHONPATH if we havent
        anything better to use! */
     skipdefault = envpath!=NULL || pythonhome!=NULL || \
                   machinepath!=NULL || userpath!=NULL;
-#endif
 
     /* We need to construct a path from the following parts.
        (1) the PYTHONPATH environment variable, if set;
@@ -612,7 +675,6 @@ calculate_path(void)
        Extra rules:
        - If PYTHONHOME is set (in any way) item (3) is ignored.
        - If registry values are used, (4) and (5) are ignored.
-       - If applocal is set, (1), (3), and registry values are ignored
     */
 
     /* Calculate size of return buffer */
@@ -629,13 +691,11 @@ calculate_path(void)
         bufsz = 0;
     bufsz += wcslen(PYTHONPATH) + 1;
     bufsz += wcslen(argv0_path) + 1;
-#ifdef MS_WINDOWS
-    if (!applocal && userpath)
+    if (userpath)
         bufsz += wcslen(userpath) + 1;
-    if (!applocal && machinepath)
+    if (machinepath)
         bufsz += wcslen(machinepath) + 1;
     bufsz += wcslen(zip_path) + 1;
-#endif
     if (envpath != NULL)
         bufsz += wcslen(envpath) + 1;
 
@@ -651,10 +711,8 @@ calculate_path(void)
             fprintf(stderr, "Using default static path.\n");
             module_search_path = PYTHONPATH;
         }
-#ifdef MS_WINDOWS
         PyMem_RawFree(machinepath);
         PyMem_RawFree(userpath);
-#endif /* MS_WINDOWS */
         return;
     }
 
@@ -664,7 +722,6 @@ calculate_path(void)
         buf = wcschr(buf, L'\0');
         *buf++ = DELIM;
     }
-#ifdef MS_WINDOWS
     if (zip_path[0]) {
         if (wcscpy_s(buf, bufsz - (buf - module_search_path), zip_path))
             Py_FatalError("buffer overflow in getpathp.c's calculate_path()");
@@ -692,15 +749,7 @@ calculate_path(void)
             buf = wcschr(buf, L'\0');
             *buf++ = DELIM;
         }
-    }
-#else
-    if (pythonhome == NULL) {
-        wcscpy(buf, PYTHONPATH);
-        buf = wcschr(buf, L'\0');
-        *buf++ = DELIM;
-    }
-#endif /* MS_WINDOWS */
-    else {
+    } else {
         wchar_t *p = PYTHONPATH;
         wchar_t *q;
         size_t n;
