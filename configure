@@ -645,8 +645,6 @@ DLINCLDIR
 THREADOBJ
 LDLAST
 USE_THREAD_MODULE
-SIGNAL_OBJS
-USE_SIGNAL_MODULE
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
@@ -828,7 +826,6 @@ enable_loadable_sqlite_extensions
 with_tcltk_includes
 with_tcltk_libs
 with_dbmliborder
-with_signal_module
 with_threads
 with_thread
 enable_ipv6
@@ -1532,7 +1529,6 @@ Optional Packages:
                           order to check db backends for dbm. Valid value is a
                           colon separated string with the backend names
                           `ndbm', `gdbm' and `bdb'.
-  --with-signal-module    disable/enable signal module
   --with(out)-threads[=DIRECTORY]
                           disable/enable thread support
   --with(out)-thread[=DIRECTORY]
@@ -9963,32 +9959,6 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder" >&5
 $as_echo "$with_dbmliborder" >&6; }
-
-# Determine if signalmodule should be used.
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-signal-module" >&5
-$as_echo_n "checking for --with-signal-module... " >&6; }
-
-# Check whether --with-signal-module was given.
-if test "${with_signal_module+set}" = set; then :
-  withval=$with_signal_module;
-fi
-
-
-if test -z "$with_signal_module"
-then with_signal_module="yes"
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_signal_module" >&5
-$as_echo "$with_signal_module" >&6; }
-
-if test "${with_signal_module}" = "yes"; then
-	USE_SIGNAL_MODULE=""
-	SIGNAL_OBJS=""
-else
-	USE_SIGNAL_MODULE="#"
-	SIGNAL_OBJS="Parser/intrcheck.o Python/sigcheck.o"
-fi
 
 # This is used to generate Setup.config
 
