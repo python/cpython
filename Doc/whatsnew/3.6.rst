@@ -981,6 +981,9 @@ Deprecated Python modules, functions and methods
   been deprecated in previous versions of Python in favour of
   :meth:`importlib.abc.Loader.exec_module`.
 
+* The :mod:`tkinter.tix` module is now deprecated.  :mod:`tkinter` users should
+  use :mod:`tkinter.ttk` instead.
+
 
 Deprecated functions and types of the C API
 -------------------------------------------
