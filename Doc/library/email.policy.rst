@@ -221,6 +221,14 @@ added matters.  To illustrate::
          The *mangle_from_* parameter.
 
 
+   .. attribute:: message_factory
+
+      A factory function for constructing a new empty message object.  Used
+      by the parser when building messages.  Defaults to
+      :class:`~email.message.Message`.
+
+      .. versionadded:: 3.6
+
    The following :class:`Policy` method is intended to be called by code using
    the email library to create policy instances with custom settings:
 
@@ -367,6 +375,9 @@ added matters.  To illustrate::
    simple strings, headers are ``str`` subclasses with attributes that depend
    on the type of the field.  The parsing and folding algorithm fully implement
    :rfc:`2047` and :rfc:`5322`.
+
+   The default value for the :attr:`~email.policy.Policy.message_factory`
+   attribute is :class:`~email.message.EmailMessage`.
 
    In addition to the settable attributes listed above that apply to all
    policies, this policy adds the following additional attributes:

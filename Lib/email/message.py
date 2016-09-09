@@ -4,18 +4,17 @@
 
 """Basic message object for the email package object model."""
 
-__all__ = ['Message']
+__all__ = ['Message', 'EmailMessage']
 
 import re
 import uu
 import quopri
-import warnings
 from io import BytesIO, StringIO
 
 # Intrapackage imports
 from email import utils
 from email import errors
-from email._policybase import compat32
+from email._policybase import Policy, compat32
 from email import charset as _charset
 from email._encoded_words import decode_b
 Charset = _charset.Charset
@@ -1163,3 +1162,6 @@ class EmailMessage(MIMEPart):
         super().set_content(*args, **kw)
         if 'MIME-Version' not in self:
             self['MIME-Version'] = '1.0'
+
+# Set message_factory on Policy here to avoid a circular import.
+Policy.message_factory = Message

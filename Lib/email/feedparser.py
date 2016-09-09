@@ -24,7 +24,6 @@ __all__ = ['FeedParser', 'BytesFeedParser']
 import re
 
 from email import errors
-from email import message
 from email._policybase import compat32
 from collections import deque
 from io import StringIO
@@ -148,13 +147,7 @@ class FeedParser:
         self.policy = policy
         self._old_style_factory = False
         if _factory is None:
-            # What this should be:
-            #self._factory = policy.default_message_factory
-            # but, because we are post 3.4 feature freeze, fix with temp hack:
-            if self.policy is compat32:
-                self._factory = message.Message
-            else:
-                self._factory = message.EmailMessage
+            self._factory = policy.message_factory
         else:
             self._factory = _factory
             try:

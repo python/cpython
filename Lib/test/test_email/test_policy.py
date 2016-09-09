@@ -5,6 +5,7 @@ import unittest
 import email.policy
 import email.parser
 import email.generator
+import email.message
 from email import headerregistry
 
 def make_defaults(base_defaults, differences):
@@ -23,6 +24,7 @@ class PolicyAPITests(unittest.TestCase):
         'cte_type':                 '8bit',
         'raise_on_defect':          False,
         'mangle_from_':             True,
+        'message_factory':          email.message.Message,
         }
     # These default values are the ones set on email.policy.default.
     # If any of these defaults change, the docs must be updated.
@@ -34,6 +36,7 @@ class PolicyAPITests(unittest.TestCase):
         'refold_source':            'long',
         'content_manager':          email.policy.EmailPolicy.content_manager,
         'mangle_from_':             False,
+        'message_factory':          email.message.EmailMessage,
         })
 
     # For each policy under test, we give here what we expect the defaults to
@@ -62,20 +65,22 @@ class PolicyAPITests(unittest.TestCase):
     def test_defaults(self):
         for policy, expected in self.policies.items():
             for attr, value in expected.items():
-                self.assertEqual(getattr(policy, attr), value,
-                                ("change {} docs/docstrings if defaults have "
-                                "changed").format(policy))
+                with self.subTest(policy=policy, attr=attr):
+                    self.assertEqual(getattr(policy, attr), value,
+                                    ("change {} docs/docstrings if defaults have "
+                                    "changed").format(policy))
 
     def test_all_attributes_covered(self):
         for policy, expected in self.policies.items():
             for attr in dir(policy):
-                if (attr.startswith('_') or
-                        isinstance(getattr(email.policy.EmailPolicy, attr),
-                              types.FunctionType)):
-                    continue
-                else:
-                    self.assertIn(attr, expected,
-                                  "{} is not fully tested".format(attr))
+                with self.subTest(policy=policy, attr=attr):
+                    if (attr.startswith('_') or
+                            isinstance(getattr(email.policy.EmailPolicy, attr),
+                                  types.FunctionType)):
+                        continue
+                    else:
+                        self.assertIn(attr, expected,
+                                      "{} is not fully tested".format(attr))
 
     def test_abc(self):
         with self.assertRaises(TypeError) as cm:
@@ -237,6 +242,9 @@ class PolicyAPITests(unittest.TestCase):
     # wins), but that the order still works (right overrides left).
 
 
+class TestException(Exception):
+    pass
+
 class TestPolicyPropagation(unittest.TestCase):
 
     # The abstract methods are used by the parser but not by the wrapper
@@ -244,40 +252,40 @@ class TestPolicyPropagation(unittest.TestCase):
     # policy was actually propagated all the way to feedparser.
     class MyPolicy(email.policy.Policy):
         def badmethod(self, *args, **kw):
-            raise Exception("test")
+            raise TestException("test")
         fold = fold_binary = header_fetch_parser = badmethod
         header_source_parse = header_store_parse = badmethod
 
     def test_message_from_string(self):
-        with self.assertRaisesRegex(Exception, "^test$"):
+        with self.assertRaisesRegex(TestException, "^test$"):
             email.message_from_string("Subject: test\n\n",
                                       policy=self.MyPolicy)
 
     def test_message_from_bytes(self):
-        with self.assertRaisesRegex(Exception, "^test$"):
+        with self.assertRaisesRegex(TestException, "^test$"):
             email.message_from_bytes(b"Subject: test\n\n",
                                      policy=self.MyPolicy)
 
     def test_message_from_file(self):
         f = io.StringIO('Subject: test\n\n')
-        with self.assertRaisesRegex(Exception, "^test$"):
+        with self.assertRaisesRegex(TestException, "^test$"):
             email.message_from_file(f, policy=self.MyPolicy)
 
     def test_message_from_binary_file(self):
         f = io.BytesIO(b'Subject: test\n\n')
-        with self.assertRaisesRegex(Exception, "^test$"):
+        with self.assertRaisesRegex(TestException, "^test$"):
             email.message_from_binary_file(f, policy=self.MyPolicy)
 
     # These are redundant, but we need them for black-box completeness.
 
     def test_parser(self):
         p = email.parser.Parser(policy=self.MyPolicy)
-        with self.assertRaisesRegex(Exception, "^test$"):
+        with self.assertRaisesRegex(TestException, "^test$"):
             p.parsestr('Subject: test\n\n')
 
     def test_bytes_parser(self):
         p = email.parser.BytesParser(policy=self.MyPolicy)
-        with self.assertRaisesRegex(Exception, "^test$"):
+        with self.assertRaisesRegex(TestException, "^test$"):
             p.parsebytes(b'Subject: test\n\n')
 
     # Now that we've established that all the parse methods get the
