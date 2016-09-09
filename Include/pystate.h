@@ -43,9 +43,6 @@ typedef struct _is {
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
-#ifdef WITH_TSC
-    int tscdump;
-#endif
 
     PyObject *builtins_copy;
     PyObject *import_func;

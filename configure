@@ -830,7 +830,6 @@ with_threads
 with_thread
 enable_ipv6
 with_doc_strings
-with_tsc
 with_pymalloc
 with_valgrind
 with_fpectl
@@ -1534,7 +1533,6 @@ Optional Packages:
   --with(out)-thread[=DIRECTORY]
                           deprecated; use --with(out)-threads
   --with(out)-doc-strings disable/enable documentation strings
-  --with(out)-tsc         enable/disable timestamp counter profile
   --with(out)-pymalloc    disable/enable specialized mallocs
   --with-valgrind         Enable Valgrind support
   --with-fpectl           enable SIGFPE catching
@@ -10797,29 +10795,6 @@ $as_echo "#define WITH_DOC_STRINGS 1" >>confdefs.h
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_doc_strings" >&5
 $as_echo "$with_doc_strings" >&6; }
-
-# Check if eval loop should use timestamp counter profiling
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-tsc" >&5
-$as_echo_n "checking for --with-tsc... " >&6; }
-
-# Check whether --with-tsc was given.
-if test "${with_tsc+set}" = set; then :
-  withval=$with_tsc;
-if test "$withval" != no
-then
-
-$as_echo "#define WITH_TSC 1" >>confdefs.h
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
 
 # Check for Python-specific malloc support
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-pymalloc" >&5
