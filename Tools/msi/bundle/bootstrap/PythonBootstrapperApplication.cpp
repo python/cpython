@@ -323,6 +323,9 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         case ID_CUSTOM_INSTALL_BUTTON:
             SavePageSettings();
 
+            hr = EnsureTargetDir();
+            ExitOnFailure(hr, L"Failed to set TargetDir");
+
             hr = BalGetStringVariable(L"TargetDir", &targetDir);
             if (SUCCEEDED(hr)) {
                 // TODO: Check whether directory exists and contains another installation
