@@ -404,7 +404,9 @@ Some smaller changes made to the core Python language are:
 * :func:`dict` now uses a "compact" representation `pioneered by PyPy
   <https://morepypy.blogspot.com/2015/01/faster-more-memory-efficient-and-more.html>`_.
   :pep:`468` (Preserving the order of ``**kwargs`` in a function.) is
-  implemented by this.  (Contributed by INADA Naoki in :issue:`27350`.)
+  implemented by this.  (Contributed by INADA Naoki in :issue:`27350`. Idea
+  `originally suggested by Raymond Hettinger
+  <https://mail.python.org/pipermail/python-dev/2012-December/123028.html>`_.)
 
 * Long sequences of repeated traceback lines are now abbreviated as
   ``"[Previous line repeated {count} more times]"`` (see
