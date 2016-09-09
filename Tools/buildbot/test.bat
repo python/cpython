@@ -16,4 +16,11 @@ if "%1"=="+q" (set rt_opts=%rt_opts:-q=%) & shift & goto CheckOpts
 if NOT "%1"=="" (set regrtest_args=%regrtest_args% %1) & shift & goto CheckOpts
 
 echo on
+rem Start temporary diagnostic code
+set
+echo All zip files
+dir /s/b "%here%..\..\PCbuild\*.zip"
+echo.
+rem End temporary diagnostic code
+
 call "%here%..\..\PCbuild\rt.bat" %rt_opts% -uall -rwW --slowest --timeout=900 %regrtest_args%
