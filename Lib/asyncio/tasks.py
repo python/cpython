@@ -249,7 +249,8 @@ class Task(futures.Future):
             self.set_exception(exc)
             raise
         else:
-            if isinstance(result, futures.Future):
+            blocking = getattr(result, '_asyncio_future_blocking', None)
+            if blocking is not None:
                 # Yielded Future must come from Future.__iter__().
                 if result._loop is not self._loop:
                     self._loop.call_soon(
@@ -257,8 +258,8 @@ class Task(futures.Future):
                         RuntimeError(
                             'Task {!r} got Future {!r} attached to a '
                             'different loop'.format(self, result)))
-                elif result._blocking:
-                    result._blocking = False
+                elif blocking:
+                    result._asyncio_future_blocking = False
                     result.add_done_callback(self._wakeup)
                     self._fut_waiter = result
                     if self._must_cancel:
