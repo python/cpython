@@ -435,10 +435,12 @@ static PyTypeObject *NotIn_type;
 static PyTypeObject *comprehension_type;
 static PyObject* ast2obj_comprehension(void*);
 _Py_IDENTIFIER(ifs);
+_Py_IDENTIFIER(is_async);
 static char *comprehension_fields[]={
     "target",
     "iter",
     "ifs",
+    "is_async",
 };
 static PyTypeObject *excepthandler_type;
 static char *excepthandler_attributes[] = {
@@ -1148,7 +1150,7 @@ static int init_types(void)
     NotIn_singleton = PyType_GenericNew(NotIn_type, NULL, NULL);
     if (!NotIn_singleton) return 0;
     comprehension_type = make_type("comprehension", &AST_type,
-                                   comprehension_fields, 3);
+                                   comprehension_fields, 4);
     if (!comprehension_type) return 0;
     if (!add_attributes(comprehension_type, NULL, 0)) return 0;
     excepthandler_type = make_type("excepthandler", &AST_type, NULL, 0);
@@ -2445,7 +2447,8 @@ Index(expr_ty value, PyArena *arena)
 }
 
 comprehension_ty
-comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs, PyArena *arena)
+comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs, int is_async,
+              PyArena *arena)
 {
     comprehension_ty p;
     if (!target) {
@@ -2464,6 +2467,7 @@ comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs, PyArena *arena)
     p->target = target;
     p->iter = iter;
     p->ifs = ifs;
+    p->is_async = is_async;
     return p;
 }
 
@@ -3720,6 +3724,11 @@ ast2obj_comprehension(void* _o)
     value = ast2obj_list(o->ifs, ast2obj_expr);
     if (!value) goto failed;
     if (_PyObject_SetAttrId(result, &PyId_ifs, value) == -1)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->is_async);
+    if (!value) goto failed;
+    if (_PyObject_SetAttrId(result, &PyId_is_async, value) == -1)
         goto failed;
     Py_DECREF(value);
     return result;
@@ -7146,6 +7155,7 @@ obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
     expr_ty target;
     expr_ty iter;
     asdl_seq* ifs;
+    int is_async;
 
     if (_PyObject_HasAttrId(obj, &PyId_target)) {
         int res;
@@ -7193,7 +7203,18 @@ obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
         PyErr_SetString(PyExc_TypeError, "required field \"ifs\" missing from comprehension");
         return 1;
     }
-    *out = comprehension(target, iter, ifs, arena);
+    if (_PyObject_HasAttrId(obj, &PyId_is_async)) {
+        int res;
+        tmp = _PyObject_GetAttrId(obj, &PyId_is_async);
+        if (tmp == NULL) goto failed;
+        res = obj2ast_int(tmp, &is_async, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "required field \"is_async\" missing from comprehension");
+        return 1;
+    }
+    *out = comprehension(target, iter, ifs, is_async, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);

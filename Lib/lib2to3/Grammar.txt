@@ -150,7 +150,7 @@ arglist: (argument ',')* (argument [',']
 argument: test [comp_for] | test '=' test  # Really [keyword '='] test
 
 comp_iter: comp_for | comp_if
-comp_for: 'for' exprlist 'in' testlist_safe [comp_iter]
+comp_for: [ASYNC] 'for' exprlist 'in' testlist_safe [comp_iter]
 comp_if: 'if' old_test [comp_iter]
 
 testlist1: test (',' test)*
