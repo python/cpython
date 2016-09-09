@@ -903,11 +903,12 @@ block textually preceding that :keyword:`global` statement.
 
 Names listed in a :keyword:`global` statement must not be defined as formal
 parameters or in a :keyword:`for` loop control target, :keyword:`class`
-definition, function definition, or :keyword:`import` statement.
+definition, function definition, :keyword:`import` statement, or variable
+annotation.
 
 .. impl-detail::
 
-   The current implementation does not enforce the two restrictions, but
+   The current implementation does not enforce some of these restriction, but
    programs should not abuse this freedom, as future implementations may enforce
    them or silently change the meaning of the program.
 
