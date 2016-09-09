@@ -29,15 +29,15 @@ Supported Versions
 
 As specified in :pep:`11`, a Python release only supports a Windows platform
 while Microsoft considers the platform under extended support. This means that
-Python 3.6 supports Windows Vista and newer. If you require Windows XP support
-then please install Python 3.4.
+Python |version| supports Windows Vista and newer. If you require Windows XP
+support then please install Python 3.4.
 
 Installation Steps
 ------------------
 
-Four Python 3.6 installers are available for download - two each for the 32-bit
-and 64-bit versions of the interpreter. The *web installer* is a small initial
-download, and it will automatically download the required components as
+Four Python |version| installers are available for download - two each for the
+32-bit and 64-bit versions of the interpreter. The *web installer* is a small
+initial download, and it will automatically download the required components as
 necessary. The *offline installer* includes the components necessary for a
 default installation and only requires an internet connection for optional
 features. See :ref:`install-layout-option` for other ways to avoid downloading
@@ -401,7 +401,7 @@ Finding the Python executable
 
 Besides using the automatically created start menu entry for the Python
 interpreter, you might want to start Python in the command prompt. The
-installer for Python 3.6 has an option to set that up for you.
+installer has an option to set that up for you.
 
 On the first page of the installer, an option labelled "Add Python to PATH"
 may be selected to have the installer add the install location into the
@@ -458,9 +458,9 @@ You should find that the latest version of Python you have installed is
 started - it can be exited as normal, and any additional command-line
 arguments specified will be sent directly to Python.
 
-If you have multiple versions of Python installed (e.g., 2.7 and 3.6) you
-will have noticed that Python 3.6 was started - to launch Python 2.7, try the
-command:
+If you have multiple versions of Python installed (e.g., 2.7 and |version|) you
+will have noticed that Python |version| was started - to launch Python 2.7, try
+the command:
 
 ::
 
