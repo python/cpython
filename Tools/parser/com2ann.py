@@ -10,8 +10,8 @@ from io import BytesIO
 
 __all__ = ['com2ann', 'TYPE_COM']
 
-TYPE_COM = re.compile('\s*#\s*type\s*:.*$', flags=re.DOTALL)
-TRAIL_OR_COM = re.compile('\s*$|\s*#.*$', flags=re.DOTALL)
+TYPE_COM = re.compile(r'\s*#\s*type\s*:.*$', flags=re.DOTALL)
+TRAIL_OR_COM = re.compile(r'\s*$|\s*#.*$', flags=re.DOTALL)
 
 
 class _Data:
