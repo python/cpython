@@ -3,7 +3,7 @@ from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer)
 from io import BytesIO
-from unittest import TestCase, mock
+from unittest import TestCase, mock, main
 import os
 import token
 
@@ -1564,4 +1564,4 @@ class TestRoundtrip(TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    main()
