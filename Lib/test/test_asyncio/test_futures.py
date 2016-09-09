@@ -25,6 +25,74 @@ def last_cb():
     pass
 
 
+class DuckFuture:
+    # Class that does not inherit from Future but aims to be duck-type
+    # compatible with it.
+
+    _asyncio_future_blocking = False
+    __cancelled = False
+    __result = None
+    __exception = None
+
+    def cancel(self):
+        if self.done():
+            return False
+        self.__cancelled = True
+        return True
+
+    def cancelled(self):
+        return self.__cancelled
+
+    def done(self):
+        return (self.__cancelled
+                or self.__result is not None
+                or self.__exception is not None)
+
+    def result(self):
+        assert not self.cancelled()
+        if self.__exception is not None:
+            raise self.__exception
+        return self.__result
+
+    def exception(self):
+        assert not self.cancelled()
+        return self.__exception
+
+    def set_result(self, result):
+        assert not self.done()
+        assert result is not None
+        self.__result = result
+
+    def set_exception(self, exception):
+        assert not self.done()
+        assert exception is not None
+        self.__exception = exception
+
+    def __iter__(self):
+        if not self.done():
+            self._asyncio_future_blocking = True
+            yield self
+        assert self.done()
+        return self.result()
+
+
+class DuckTests(test_utils.TestCase):
+
+    def setUp(self):
+        self.loop = self.new_test_loop()
+        self.addCleanup(self.loop.close)
+
+    def test_wrap_future(self):
+        f = DuckFuture()
+        g = asyncio.wrap_future(f)
+        assert g is f
+
+    def test_ensure_future(self):
+        f = DuckFuture()
+        g = asyncio.ensure_future(f)
+        assert g is f
+
+
 class FutureTests(test_utils.TestCase):
 
     def setUp(self):
