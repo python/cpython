@@ -1921,11 +1921,10 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 err = PyObject_SetItem(ann_dict, name, ann);
             }
             Py_DECREF(ann_dict);
+            Py_DECREF(ann);
             if (err != 0) {
-                Py_DECREF(ann);
                 goto error;
             }
-            Py_DECREF(ann);
             DISPATCH();
         }
 
