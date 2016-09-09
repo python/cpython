@@ -60,6 +60,7 @@ extern "C" {
 #define WITH_CLEANUP_FINISH      82
 #define RETURN_VALUE             83
 #define IMPORT_STAR              84
+#define SETUP_ANNOTATIONS        85
 #define YIELD_VALUE              86
 #define POP_BLOCK                87
 #define END_FINALLY              88
@@ -98,6 +99,7 @@ extern "C" {
 #define LOAD_FAST               124
 #define STORE_FAST              125
 #define DELETE_FAST             126
+#define STORE_ANNOTATION        127
 #define RAISE_VARARGS           130
 #define CALL_FUNCTION           131
 #define MAKE_FUNCTION           132

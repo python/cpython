@@ -397,6 +397,17 @@ validate_stmt(stmt_ty stmt)
     case AugAssign_kind:
         return validate_expr(stmt->v.AugAssign.target, Store) &&
             validate_expr(stmt->v.AugAssign.value, Load);
+    case AnnAssign_kind:
+        if (stmt->v.AnnAssign.target->kind != Name_kind &&
+            stmt->v.AnnAssign.simple) {
+            PyErr_SetString(PyExc_TypeError,
+                            "AnnAssign with simple non-Name target");
+            return 0;
+        }
+        return validate_expr(stmt->v.AnnAssign.target, Store) &&
+               (!stmt->v.AnnAssign.value ||
+                validate_expr(stmt->v.AnnAssign.value, Load)) &&
+               validate_expr(stmt->v.AnnAssign.annotation, Load);
     case For_kind:
         return validate_expr(stmt->v.For.target, Store) &&
             validate_expr(stmt->v.For.iter, Load) &&
@@ -2847,8 +2858,9 @@ static stmt_ty
 ast_for_expr_stmt(struct compiling *c, const node *n)
 {
     REQ(n, expr_stmt);
-    /* expr_stmt: testlist_star_expr (augassign (yield_expr|testlist)
-                | ('=' (yield_expr|testlist))*)
+    /* expr_stmt: testlist_star_expr (annassign | augassign (yield_expr|testlist) |
+                            ('=' (yield_expr|testlist_star_expr))*)
+       annassign: ':' test ['=' test]
        testlist_star_expr: (test|star_expr) (',' test|star_expr)* [',']
        augassign: '+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^='
                 | '<<=' | '>>=' | '**=' | '//='
@@ -2899,6 +2911,76 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
             return NULL;
 
         return AugAssign(expr1, newoperator, expr2, LINENO(n), n->n_col_offset, c->c_arena);
+    }
+    else if (TYPE(CHILD(n, 1)) == annassign) {
+        expr_ty expr1, expr2, expr3;
+        node *ch = CHILD(n, 0);
+        node *deep, *ann = CHILD(n, 1);
+        int simple = 1;
+
+        /* we keep track of parens to qualify (x) as expression not name */
+        deep = ch;
+        while (NCH(deep) == 1) {
+            deep = CHILD(deep, 0);
+        }
+        if (NCH(deep) > 0 && TYPE(CHILD(deep, 0)) == LPAR) {
+            simple = 0;
+        }
+        expr1 = ast_for_testlist(c, ch);
+        if (!expr1) {
+            return NULL;
+        }
+        switch (expr1->kind) {
+            case Name_kind:
+                if (forbidden_name(c, expr1->v.Name.id, n, 0)) {
+                    return NULL;
+                }
+                expr1->v.Name.ctx = Store;
+                break;
+            case Attribute_kind:
+                if (forbidden_name(c, expr1->v.Attribute.attr, n, 1)) {
+                    return NULL;
+                }
+                expr1->v.Attribute.ctx = Store;
+                break;
+            case Subscript_kind:
+                expr1->v.Subscript.ctx = Store;
+                break;
+            case List_kind:
+                ast_error(c, ch,
+                          "only single target (not list) can be annotated");
+                return NULL;
+            case Tuple_kind:
+                ast_error(c, ch,
+                          "only single target (not tuple) can be annotated");
+                return NULL;
+            default:
+                ast_error(c, ch,
+                          "illegal target for annotation");
+                return NULL;
+        }
+
+        if (expr1->kind != Name_kind) {
+            simple = 0;
+        }
+        ch = CHILD(ann, 1);
+        expr2 = ast_for_expr(c, ch);
+        if (!expr2) {
+            return NULL;
+        }
+        if (NCH(ann) == 2) {
+            return AnnAssign(expr1, expr2, NULL, simple,
+                             LINENO(n), n->n_col_offset, c->c_arena);
+        }
+        else {
+            ch = CHILD(ann, 3);
+            expr3 = ast_for_expr(c, ch);
+            if (!expr3) {
+                return NULL;
+            }
+            return AnnAssign(expr1, expr2, expr3, simple,
+                             LINENO(n), n->n_col_offset, c->c_arena);
+        }
     }
     else {
         int i;

@@ -1,6 +1,7 @@
 # Python test set -- part 2, opcodes
 
 import unittest
+from test import ann_module
 
 class OpcodeTest(unittest.TestCase):
 
@@ -19,6 +20,32 @@ class OpcodeTest(unittest.TestCase):
             n = n+i
         if n != 90:
             self.fail('try inside for')
+
+    def test_setup_annotations_line(self):
+        # check that SETUP_ANNOTATIONS does not create spurious line numbers
+        try:
+            with open(ann_module.__file__) as f:
+                txt = f.read()
+            co = compile(txt, ann_module.__file__, 'exec')
+            self.assertEqual(co.co_firstlineno, 6)
+        except OSError:
+            pass
+
+    def test_no_annotations_if_not_needed(self):
+        class C: pass
+        with self.assertRaises(AttributeError):
+            C.__annotations__
+
+    def test_use_existing_annotations(self):
+        ns = {'__annotations__': {1: 2}}
+        exec('x: int', ns)
+        self.assertEqual(ns['__annotations__'], {'x': int, 1: 2})
+
+    def test_do_not_recreate_annotations(self):
+        class C:
+            del __annotations__
+            with self.assertRaises(NameError):
+                x: int
 
     def test_raise_class_exceptions(self):
 

@@ -1201,6 +1201,44 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_SEQ(st, expr, s->v.Assign.targets);
         VISIT(st, expr, s->v.Assign.value);
         break;
+    case AnnAssign_kind:
+        if (s->v.AnnAssign.target->kind == Name_kind) {
+            expr_ty e_name = s->v.AnnAssign.target;
+            long cur = symtable_lookup(st, e_name->v.Name.id);
+            if (cur < 0) {
+                VISIT_QUIT(st, 0);
+            }
+            if ((cur & (DEF_GLOBAL | DEF_NONLOCAL))
+                && s->v.AnnAssign.simple) {
+                PyErr_Format(PyExc_SyntaxError,
+                             "annotated name '%U' can't be %s",
+                             e_name->v.Name.id,
+                             cur & DEF_GLOBAL ? "global" : "nonlocal");
+                PyErr_SyntaxLocationObject(st->st_filename,
+                                           s->lineno,
+                                           s->col_offset);
+                VISIT_QUIT(st, 0);
+            }
+            if (s->v.AnnAssign.simple &&
+                !symtable_add_def(st, e_name->v.Name.id,
+                                  DEF_ANNOT | DEF_LOCAL)) {
+                VISIT_QUIT(st, 0);
+            }
+            else {
+                if (s->v.AnnAssign.value
+                    && !symtable_add_def(st, e_name->v.Name.id, DEF_LOCAL)) {
+                    VISIT_QUIT(st, 0);
+                }
+            }
+        }
+        else {
+            VISIT(st, expr, s->v.AnnAssign.target);
+        }
+        VISIT(st, expr, s->v.AnnAssign.annotation);
+        if (s->v.AnnAssign.value) {
+            VISIT(st, expr, s->v.AnnAssign.value);
+        }
+        break;
     case AugAssign_kind:
         VISIT(st, expr, s->v.AugAssign.target);
         VISIT(st, expr, s->v.AugAssign.value);
@@ -1258,6 +1296,15 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             long cur = symtable_lookup(st, name);
             if (cur < 0)
                 VISIT_QUIT(st, 0);
+            if (cur & DEF_ANNOT) {
+                PyErr_Format(PyExc_SyntaxError,
+                             "annotated name '%U' can't be global",
+                             name);
+                PyErr_SyntaxLocationObject(st->st_filename,
+                                           s->lineno,
+                                           s->col_offset);
+                VISIT_QUIT(st, 0);
+            }
             if (cur & (DEF_LOCAL | USE)) {
                 char buf[256];
                 char *c_name = _PyUnicode_AsString(name);
@@ -1289,6 +1336,15 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             long cur = symtable_lookup(st, name);
             if (cur < 0)
                 VISIT_QUIT(st, 0);
+            if (cur & DEF_ANNOT) {
+                PyErr_Format(PyExc_SyntaxError,
+                             "annotated name '%U' can't be nonlocal",
+                             name);
+                PyErr_SyntaxLocationObject(st->st_filename,
+                                           s->lineno,
+                                           s->col_offset);
+                VISIT_QUIT(st, 0);
+            }
             if (cur & (DEF_LOCAL | USE)) {
                 char buf[256];
                 char *c_name = _PyUnicode_AsString(name);
