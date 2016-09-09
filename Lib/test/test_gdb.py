@@ -265,6 +265,9 @@ class DebuggerTests(unittest.TestCase):
     def get_sample_script(self):
         return findfile('gdb_sample.py')
 
+
+@unittest.skipIf(python_is_optimized(),
+                 "Python was compiled with optimizations")
 class PrettyPrintTests(DebuggerTests):
     def test_getting_backtrace(self):
         gdb_output = self.get_stack_trace('print 42')
