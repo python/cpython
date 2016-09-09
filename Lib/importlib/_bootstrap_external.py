@@ -1440,8 +1440,3 @@ def _install(_bootstrap_module):
     if _os.__name__ == 'nt':
         sys.meta_path.append(WindowsRegistryFinder)
     sys.meta_path.append(PathFinder)
-
-    # XXX We expose a couple of classes in _bootstrap for the sake of
-    # a setuptools bug (https://bitbucket.org/pypa/setuptools/issue/378).
-    _bootstrap_module.FileFinder = FileFinder
-    _bootstrap_module.SourceFileLoader = SourceFileLoader
