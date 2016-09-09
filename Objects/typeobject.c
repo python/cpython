@@ -454,27 +454,30 @@ type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
 static PyObject *
 type_module(PyTypeObject *type, void *context)
 {
-    char *s;
+    PyObject *mod;
 
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        PyObject *mod = _PyDict_GetItemId(type->tp_dict, &PyId___module__);
-        if (!mod) {
+        mod = _PyDict_GetItemId(type->tp_dict, &PyId___module__);
+        if (mod == NULL) {
             PyErr_Format(PyExc_AttributeError, "__module__");
-            return 0;
+            return NULL;
         }
         Py_INCREF(mod);
-        return mod;
     }
     else {
-        PyObject *name;
-        s = strrchr(type->tp_name, '.');
-        if (s != NULL)
-            return PyUnicode_FromStringAndSize(
+        const char *s = strrchr(type->tp_name, '.');
+        if (s != NULL) {
+            mod = PyUnicode_FromStringAndSize(
                 type->tp_name, (Py_ssize_t)(s - type->tp_name));
-        name = _PyUnicode_FromId(&PyId_builtins);
-        Py_XINCREF(name);
-        return name;
+            if (mod != NULL)
+                PyUnicode_InternInPlace(&mod);
+        }
+        else {
+            mod = _PyUnicode_FromId(&PyId_builtins);
+            Py_XINCREF(mod);
+        }
     }
+    return mod;
 }
 
 static int
