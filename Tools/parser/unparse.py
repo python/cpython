@@ -444,7 +444,10 @@ class Unparser:
         self.write("}")
 
     def _comprehension(self, t):
-        self.write(" for ")
+        if t.is_async:
+            self.write(" async for ")
+        else:
+            self.write(" for ")
         self.dispatch(t.target)
         self.write(" in ")
         self.dispatch(t.iter)
