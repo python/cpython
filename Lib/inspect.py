@@ -185,6 +185,13 @@ def iscoroutinefunction(object):
     return bool((isfunction(object) or ismethod(object)) and
                 object.__code__.co_flags & CO_COROUTINE)
 
+def isasyncgenfunction(object):
+    return bool((isfunction(object) or ismethod(object)) and
+                object.__code__.co_flags & CO_ASYNC_GENERATOR)
+
+def isasyncgen(object):
+    return isinstance(object, types.AsyncGeneratorType)
+
 def isgenerator(object):
     """Return true if the object is a generator.
 

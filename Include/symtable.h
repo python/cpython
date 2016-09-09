@@ -48,6 +48,7 @@ typedef struct _symtable_entry {
     unsigned ste_child_free : 1;  /* true if a child block has free vars,
                                      including free refs to globals */
     unsigned ste_generator : 1;   /* true if namespace is a generator */
+    unsigned ste_coroutine : 1;   /* true if namespace is a coroutine */
     unsigned ste_varargs : 1;     /* true if block has varargs */
     unsigned ste_varkeywords : 1; /* true if block has varkeywords */
     unsigned ste_returns_value : 1;  /* true if namespace uses return with
