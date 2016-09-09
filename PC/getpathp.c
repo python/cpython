@@ -24,7 +24,7 @@
 
    * We attempt to locate the "Python Home" - if the PYTHONHOME env var
      is set, we believe it.  Otherwise, we use the path of our host .EXE's
-     to try and locate our "landmark" (lib\\os.py) and deduce our home.
+     to try and locate on of our "landmarks" and deduce our home.
      - If we DO have a Python Home: The relevant sub-directories (Lib,
        plat-win, etc) are based on the Python Home
      - If we DO NOT have a Python Home, the core Python Path is
@@ -207,7 +207,7 @@ join(wchar_t *buffer, const wchar_t *stuff)
    'landmark' can not overflow prefix if too long.
 */
 static int
-gotlandmark(wchar_t *landmark)
+gotlandmark(const wchar_t *landmark)
 {
     int ok;
     Py_ssize_t n = wcsnlen_s(prefix, MAXPATHLEN);
@@ -221,7 +221,7 @@ gotlandmark(wchar_t *landmark)
 /* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd.
    assumption provided by only caller, calculate_path() */
 static int
-search_for_prefix(wchar_t *argv0_path, wchar_t *landmark)
+search_for_prefix(wchar_t *argv0_path, const wchar_t *landmark)
 {
     /* Search from argv0_path, until landmark is found */
     wcscpy_s(prefix, MAXPATHLEN + 1, argv0_path);
@@ -630,8 +630,24 @@ calculate_path(void)
         }
     }
 
+    /* Calculate zip archive path from DLL or exe path */
+    if (wcscpy_s(zip_path, MAXPATHLEN + 1, dllpath[0] ? dllpath : progpath)) {
+        /* exceeded buffer length - ignore zip_path */
+        zip_path[0] = '\0';
+    } else {
+        wchar_t *dot = wcsrchr(zip_path, '.');
+        if (!dot || wcscpy_s(dot, MAXPATHLEN + 1 - (dot - zip_path), L".zip")) {
+            /* exceeded buffer length - ignore zip_path */
+            zip_path[0] = L'\0';
+        }
+    }
+
     if (pythonhome == NULL || *pythonhome == '\0') {
-        if (search_for_prefix(argv0_path, LANDMARK))
+        if (zip_path[0] && exists(zip_path)) {
+            wcscpy_s(prefix, MAXPATHLEN+1, zip_path);
+            reduce(prefix);
+            pythonhome = prefix;
+        } else if (search_for_prefix(argv0_path, LANDMARK))
             pythonhome = prefix;
         else
             pythonhome = NULL;
@@ -642,17 +658,6 @@ calculate_path(void)
     if (envpath && *envpath == '\0')
         envpath = NULL;
 
-
-    /* Calculate zip archive path from DLL or exe path */
-    if (wcscpy_s(zip_path, MAXPATHLEN+1, dllpath[0] ? dllpath : progpath))
-        /* exceeded buffer length - ignore zip_path */
-        zip_path[0] = '\0';
-    else {
-        wchar_t *dot = wcsrchr(zip_path, '.');
-        if (!dot || wcscpy_s(dot, MAXPATHLEN+1 - (dot - zip_path), L".zip"))
-            /* exceeded buffer length - ignore zip_path */
-            zip_path[0] = L'\0';
-    }
 
     skiphome = pythonhome==NULL ? 0 : 1;
 #ifdef Py_ENABLE_SHARED
