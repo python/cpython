@@ -22,6 +22,16 @@ div.related:first-child {
     border-bottom: 1px solid #ccc;
 }
 
+.inline-search {
+    display: inline;
+}
+form.inline-search input {
+    display: inline;
+}
+form.inline-search input[type="submit"] {
+    width: 30px;
+}
+
 div.sphinxsidebar {
     background-color: #eeeeee;
     border-radius: 5px;
@@ -45,6 +55,7 @@ div.sphinxsidebar a:hover {
     color: #0095C4;
 }
 
+form.inline-search input,
 div.sphinxsidebar input {
     font-family: 'Lucida Grande',Arial,sans-serif;
     border: 1px solid #999999;
