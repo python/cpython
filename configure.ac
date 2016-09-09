@@ -3203,16 +3203,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ /* CAN_RAW_FD_FRAMES available check */
   AC_MSG_RESULT(no)
 ])
 
-AC_MSG_CHECKING(for OSX 10.5 SDK or later)
-AC_COMPILE_IFELSE([
-  AC_LANG_PROGRAM([[#include <Carbon/Carbon.h>]], [[FSIORefNum fRef = 0]])
-],[
-  AC_DEFINE(HAVE_OSX105_SDK, 1, [Define if compiling using MacOS X 10.5 SDK or later.])
-  AC_MSG_RESULT(yes)
-],[
-  AC_MSG_RESULT(no)
-])
-
 # Check for --with-doc-strings
 AC_MSG_CHECKING(for --with-doc-strings)
 AC_ARG_WITH(doc-strings,
