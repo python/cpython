@@ -883,7 +883,7 @@ testuniversal:	all platform
 
 # Like testall, but with a single pass only
 # run an optional script to include some information about the build environment
-buildbottest:	all platform
+buildbottest:	build_all platform
 		-@if which pybuildbot.identify >/dev/null 2>&1; then \
 			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
 		fi
