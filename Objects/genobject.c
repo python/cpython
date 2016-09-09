@@ -5,7 +5,15 @@
 #include "structmember.h"
 #include "opcode.h"
 
-static PyObject *gen_close(PyGenObject *gen, PyObject *args);
+static PyObject *gen_close(PyGenObject *, PyObject *);
+static PyObject *async_gen_asend_new(PyAsyncGenObject *, PyObject *);
+static PyObject *async_gen_athrow_new(PyAsyncGenObject *, PyObject *);
+
+static char *NON_INIT_CORO_MSG = "can't send non-None value to a "
+                                 "just-started coroutine";
+
+static char *ASYNC_GEN_IGNORED_EXIT_MSG =
+                                 "async generator ignored GeneratorExit";
 
 static int
 gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
@@ -27,6 +35,26 @@ _PyGen_Finalize(PyObject *self)
     if (gen->gi_frame == NULL || gen->gi_frame->f_stacktop == NULL)
         /* Generator isn't paused, so no need to close */
         return;
+
+    if (PyAsyncGen_CheckExact(self)) {
+        PyAsyncGenObject *agen = (PyAsyncGenObject*)self;
+        PyObject *finalizer = agen->ag_finalizer;
+        if (finalizer && !agen->ag_closed) {
+            /* Save the current exception, if any. */
+            PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+            res = PyObject_CallFunctionObjArgs(finalizer, self, NULL);
+
+            if (res == NULL) {
+                PyErr_WriteUnraisable(self);
+            } else {
+                Py_DECREF(res);
+            }
+            /* Restore the saved exception. */
+            PyErr_Restore(error_type, error_value, error_traceback);
+            return;
+        }
+    }
 
     /* Save the current exception, if any. */
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
@@ -74,6 +102,12 @@ gen_dealloc(PyGenObject *gen)
         return;                     /* resurrected.  :( */
 
     _PyObject_GC_UNTRACK(self);
+    if (PyAsyncGen_CheckExact(gen)) {
+        /* We have to handle this case for asynchronous generators
+           right here, because this code has to be between UNTRACK
+           and GC_Del. */
+        Py_CLEAR(((PyAsyncGenObject*)gen)->ag_finalizer);
+    }
     if (gen->gi_frame != NULL) {
         gen->gi_frame->f_gen = NULL;
         Py_CLEAR(gen->gi_frame);
@@ -82,6 +116,33 @@ gen_dealloc(PyGenObject *gen)
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
     PyObject_GC_Del(gen);
+}
+
+static void
+gen_chain_runtime_error(const char *msg)
+{
+    PyObject *exc, *val, *val2, *tb;
+
+    /* TODO: This about rewriting using _PyErr_ChainExceptions. */
+
+    PyErr_Fetch(&exc, &val, &tb);
+    PyErr_NormalizeException(&exc, &val, &tb);
+    if (tb != NULL) {
+        PyException_SetTraceback(val, tb);
+    }
+
+    Py_DECREF(exc);
+    Py_XDECREF(tb);
+
+    PyErr_SetString(PyExc_RuntimeError, msg);
+    PyErr_Fetch(&exc, &val2, &tb);
+    PyErr_NormalizeException(&exc, &val2, &tb);
+
+    Py_INCREF(val);
+    PyException_SetCause(val2, val);
+    PyException_SetContext(val2, val);
+
+    PyErr_Restore(exc, val2, tb);
 }
 
 static PyObject *
@@ -93,8 +154,12 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
 
     if (gen->gi_running) {
         char *msg = "generator already executing";
-        if (PyCoro_CheckExact(gen))
+        if (PyCoro_CheckExact(gen)) {
             msg = "coroutine already executing";
+        }
+        else if (PyAsyncGen_CheckExact(gen)) {
+            msg = "async generator already executing";
+        }
         PyErr_SetString(PyExc_ValueError, msg);
         return NULL;
     }
@@ -106,10 +171,16 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
             PyErr_SetString(
                 PyExc_RuntimeError,
                 "cannot reuse already awaited coroutine");
-        } else if (arg && !exc) {
+        }
+        else if (arg && !exc) {
             /* `gen` is an exhausted generator:
                only set exception if called from send(). */
-            PyErr_SetNone(PyExc_StopIteration);
+            if (PyAsyncGen_CheckExact(gen)) {
+                PyErr_SetNone(PyExc_StopAsyncIteration);
+            }
+            else {
+                PyErr_SetNone(PyExc_StopIteration);
+            }
         }
         return NULL;
     }
@@ -118,9 +189,13 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
         if (arg && arg != Py_None) {
             char *msg = "can't send non-None value to a "
                         "just-started generator";
-            if (PyCoro_CheckExact(gen))
+            if (PyCoro_CheckExact(gen)) {
+                msg = NON_INIT_CORO_MSG;
+            }
+            else if (PyAsyncGen_CheckExact(gen)) {
                 msg = "can't send non-None value to a "
-                      "just-started coroutine";
+                      "just-started async generator";
+            }
             PyErr_SetString(PyExc_TypeError, msg);
             return NULL;
         }
@@ -152,10 +227,20 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     if (result && f->f_stacktop == NULL) {
         if (result == Py_None) {
             /* Delay exception instantiation if we can */
-            PyErr_SetNone(PyExc_StopIteration);
-        } else {
+            if (PyAsyncGen_CheckExact(gen)) {
+                PyErr_SetNone(PyExc_StopAsyncIteration);
+            }
+            else {
+                PyErr_SetNone(PyExc_StopIteration);
+            }
+        }
+        else {
             PyObject *e = PyObject_CallFunctionObjArgs(
                                PyExc_StopIteration, result, NULL);
+
+            /* Async generators cannot return anything but None */
+            assert(!PyAsyncGen_CheckExact(gen));
+
             if (e != NULL) {
                 PyErr_SetObject(PyExc_StopIteration, e);
                 Py_DECREF(e);
@@ -167,28 +252,38 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
         /* Check for __future__ generator_stop and conditionally turn
          * a leaking StopIteration into RuntimeError (with its cause
          * set appropriately). */
-        if (gen->gi_code != NULL && ((PyCodeObject *)gen->gi_code)->co_flags &
-              (CO_FUTURE_GENERATOR_STOP | CO_COROUTINE | CO_ITERABLE_COROUTINE))
+
+        const int check_stop_iter_error_flags = CO_FUTURE_GENERATOR_STOP |
+                                                CO_COROUTINE |
+                                                CO_ITERABLE_COROUTINE |
+                                                CO_ASYNC_GENERATOR;
+
+        if (gen->gi_code != NULL &&
+            ((PyCodeObject *)gen->gi_code)->co_flags &
+                check_stop_iter_error_flags)
         {
-            PyObject *exc, *val, *val2, *tb;
-            char *msg = "generator raised StopIteration";
-            if (PyCoro_CheckExact(gen))
+            /* `gen` is either:
+                  * a generator with CO_FUTURE_GENERATOR_STOP flag;
+                  * a coroutine;
+                  * a generator with CO_ITERABLE_COROUTINE flag
+                    (decorated with types.coroutine decorator);
+                  * an async generator.
+            */
+            const char *msg = "generator raised StopIteration";
+            if (PyCoro_CheckExact(gen)) {
                 msg = "coroutine raised StopIteration";
-            PyErr_Fetch(&exc, &val, &tb);
-            PyErr_NormalizeException(&exc, &val, &tb);
-            if (tb != NULL)
-                PyException_SetTraceback(val, tb);
-            Py_DECREF(exc);
-            Py_XDECREF(tb);
-            PyErr_SetString(PyExc_RuntimeError, msg);
-            PyErr_Fetch(&exc, &val2, &tb);
-            PyErr_NormalizeException(&exc, &val2, &tb);
-            Py_INCREF(val);
-            PyException_SetCause(val2, val);
-            PyException_SetContext(val2, val);
-            PyErr_Restore(exc, val2, tb);
+            }
+            else if PyAsyncGen_CheckExact(gen) {
+                msg = "async generator raised StopIteration";
+            }
+            /* Raise a RuntimeError */
+            gen_chain_runtime_error(msg);
         }
         else {
+            /* `gen` is an ordinary generator without
+               CO_FUTURE_GENERATOR_STOP flag.
+            */
+
             PyObject *exc, *val, *tb;
 
             /* Pop the exception before issuing a warning. */
@@ -206,6 +301,15 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
                 PyErr_Restore(exc, val, tb);
             }
         }
+    }
+    else if (PyAsyncGen_CheckExact(gen) && !result &&
+             PyErr_ExceptionMatches(PyExc_StopAsyncIteration))
+    {
+        /* code in `gen` raised a StopAsyncIteration error:
+           raise a RuntimeError.
+        */
+        const char *msg = "async generator raised StopAsyncIteration";
+        gen_chain_runtime_error(msg);
     }
 
     if (!result || f->f_stacktop == NULL) {
@@ -253,17 +357,19 @@ gen_close_iter(PyObject *yf)
     PyObject *retval = NULL;
     _Py_IDENTIFIER(close);
 
-    if (PyGen_CheckExact(yf)) {
+    if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
         retval = gen_close((PyGenObject *)yf, NULL);
         if (retval == NULL)
             return -1;
-    } else {
+    }
+    else {
         PyObject *meth = _PyObject_GetAttrId(yf, &PyId_close);
         if (meth == NULL) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError))
                 PyErr_WriteUnraisable(yf);
             PyErr_Clear();
-        } else {
+        }
+        else {
             retval = _PyObject_CallNoArg(meth);
             Py_DECREF(meth);
             if (retval == NULL)
@@ -311,8 +417,11 @@ gen_close(PyGenObject *gen, PyObject *args)
     retval = gen_send_ex(gen, Py_None, 1, 1);
     if (retval) {
         char *msg = "generator ignored GeneratorExit";
-        if (PyCoro_CheckExact(gen))
+        if (PyCoro_CheckExact(gen)) {
             msg = "coroutine ignored GeneratorExit";
+        } else if (PyAsyncGen_CheckExact(gen)) {
+            msg = ASYNC_GEN_IGNORED_EXIT_MSG;
+        }
         Py_DECREF(retval);
         PyErr_SetString(PyExc_RuntimeError, msg);
         return NULL;
@@ -332,21 +441,22 @@ PyDoc_STRVAR(throw_doc,
 return next yielded value or raise StopIteration.");
 
 static PyObject *
-gen_throw(PyGenObject *gen, PyObject *args)
+_gen_throw(PyGenObject *gen, int close_on_genexit,
+           PyObject *typ, PyObject *val, PyObject *tb)
 {
-    PyObject *typ;
-    PyObject *tb = NULL;
-    PyObject *val = NULL;
     PyObject *yf = _PyGen_yf(gen);
     _Py_IDENTIFIER(throw);
-
-    if (!PyArg_UnpackTuple(args, "throw", 1, 3, &typ, &val, &tb))
-        return NULL;
 
     if (yf) {
         PyObject *ret;
         int err;
-        if (PyErr_GivenExceptionMatches(typ, PyExc_GeneratorExit)) {
+        if (PyErr_GivenExceptionMatches(typ, PyExc_GeneratorExit) &&
+            close_on_genexit
+        ) {
+            /* Asynchronous generators *should not* be closed right away.
+               We have to allow some awaits to work it through, hence the
+               `close_on_genexit` parameter here.
+            */
             gen->gi_running = 1;
             err = gen_close_iter(yf);
             gen->gi_running = 0;
@@ -355,11 +465,16 @@ gen_throw(PyGenObject *gen, PyObject *args)
                 return gen_send_ex(gen, Py_None, 1, 0);
             goto throw_here;
         }
-        if (PyGen_CheckExact(yf)) {
+        if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
+            /* `yf` is a generator or a coroutine. */
             gen->gi_running = 1;
-            ret = gen_throw((PyGenObject *)yf, args);
+            /* Close the generator that we are currently iterating with
+               'yield from' or awaiting on with 'await'. */
+            ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
+                             typ, val, tb);
             gen->gi_running = 0;
         } else {
+            /* `yf` is an iterator or a coroutine-like object. */
             PyObject *meth = _PyObject_GetAttrId(yf, &PyId_throw);
             if (meth == NULL) {
                 if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
@@ -371,7 +486,7 @@ gen_throw(PyGenObject *gen, PyObject *args)
                 goto throw_here;
             }
             gen->gi_running = 1;
-            ret = PyObject_CallObject(meth, args);
+            ret = PyObject_CallFunctionObjArgs(meth, typ, val, tb, NULL);
             gen->gi_running = 0;
             Py_DECREF(meth);
         }
@@ -450,6 +565,21 @@ failed_throw:
     Py_XDECREF(val);
     Py_XDECREF(tb);
     return NULL;
+}
+
+
+static PyObject *
+gen_throw(PyGenObject *gen, PyObject *args)
+{
+    PyObject *typ;
+    PyObject *tb = NULL;
+    PyObject *val = NULL;
+
+    if (!PyArg_UnpackTuple(args, "throw", 1, 3, &typ, &val, &tb)) {
+        return NULL;
+    }
+
+    return _gen_throw(gen, 1, typ, val, tb);
 }
 
 
@@ -997,21 +1127,21 @@ PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 
 typedef struct {
     PyObject_HEAD
-    PyObject *aw_aiter;
+    PyObject *ags_aiter;
 } PyAIterWrapper;
 
 
 static PyObject *
 aiter_wrapper_iternext(PyAIterWrapper *aw)
 {
-    PyErr_SetObject(PyExc_StopIteration, aw->aw_aiter);
+    PyErr_SetObject(PyExc_StopIteration, aw->ags_aiter);
     return NULL;
 }
 
 static int
 aiter_wrapper_traverse(PyAIterWrapper *aw, visitproc visit, void *arg)
 {
-    Py_VISIT((PyObject *)aw->aw_aiter);
+    Py_VISIT((PyObject *)aw->ags_aiter);
     return 0;
 }
 
@@ -1019,7 +1149,7 @@ static void
 aiter_wrapper_dealloc(PyAIterWrapper *aw)
 {
     _PyObject_GC_UNTRACK((PyObject *)aw);
-    Py_CLEAR(aw->aw_aiter);
+    Py_CLEAR(aw->ags_aiter);
     PyObject_GC_Del(aw);
 }
 
@@ -1081,7 +1211,817 @@ _PyAIterWrapper_New(PyObject *aiter)
         return NULL;
     }
     Py_INCREF(aiter);
-    aw->aw_aiter = aiter;
+    aw->ags_aiter = aiter;
     _PyObject_GC_TRACK(aw);
     return (PyObject *)aw;
+}
+
+
+/* ========= Asynchronous Generators ========= */
+
+
+typedef enum {
+    AWAITABLE_STATE_INIT,   /* new awaitable, has not yet been iterated */
+    AWAITABLE_STATE_ITER,   /* being iterated */
+    AWAITABLE_STATE_CLOSED, /* closed */
+} AwaitableState;
+
+
+typedef struct {
+    PyObject_HEAD
+    PyAsyncGenObject *ags_gen;
+
+    /* Can be NULL, when in the __anext__() mode
+       (equivalent of "asend(None)") */
+    PyObject *ags_sendval;
+
+    AwaitableState ags_state;
+} PyAsyncGenASend;
+
+
+typedef struct {
+    PyObject_HEAD
+    PyAsyncGenObject *agt_gen;
+
+    /* Can be NULL, when in the "aclose()" mode
+       (equivalent of "athrow(GeneratorExit)") */
+    PyObject *agt_args;
+
+    AwaitableState agt_state;
+} PyAsyncGenAThrow;
+
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *agw_val;
+} _PyAsyncGenWrappedValue;
+
+
+#ifndef _PyAsyncGen_MAXFREELIST
+#define _PyAsyncGen_MAXFREELIST 80
+#endif
+
+/* Freelists boost performance 6-10%; they also reduce memory
+   fragmentation, as _PyAsyncGenWrappedValue and PyAsyncGenASend
+   are short-living objects that are instantiated for every
+   __anext__ call.
+*/
+
+static _PyAsyncGenWrappedValue *ag_value_freelist[_PyAsyncGen_MAXFREELIST];
+static int ag_value_freelist_free = 0;
+
+static PyAsyncGenASend *ag_asend_freelist[_PyAsyncGen_MAXFREELIST];
+static int ag_asend_freelist_free = 0;
+
+#define _PyAsyncGenWrappedValue_CheckExact(o) \
+                    (Py_TYPE(o) == &_PyAsyncGenWrappedValue_Type)
+
+#define PyAsyncGenASend_CheckExact(o) \
+                    (Py_TYPE(o) == &_PyAsyncGenASend_Type)
+
+
+static int
+async_gen_traverse(PyAsyncGenObject *gen, visitproc visit, void *arg)
+{
+    Py_VISIT(gen->ag_finalizer);
+    return gen_traverse((PyGenObject*)gen, visit, arg);
+}
+
+
+static PyObject *
+async_gen_repr(PyAsyncGenObject *o)
+{
+    return PyUnicode_FromFormat("<async_generator object %S at %p>",
+                                o->ag_qualname, o);
+}
+
+
+static int
+async_gen_init_hooks(PyAsyncGenObject *o)
+{
+    PyThreadState *tstate;
+    PyObject *finalizer;
+    PyObject *firstiter;
+
+    if (o->ag_hooks_inited) {
+        return 0;
+    }
+
+    o->ag_hooks_inited = 1;
+
+    tstate = PyThreadState_GET();
+
+    finalizer = tstate->async_gen_finalizer;
+    if (finalizer) {
+        Py_INCREF(finalizer);
+        o->ag_finalizer = finalizer;
+    }
+
+    firstiter = tstate->async_gen_firstiter;
+    if (firstiter) {
+        PyObject *res;
+
+        Py_INCREF(firstiter);
+        res = PyObject_CallFunction(firstiter, "O", o);
+        Py_DECREF(firstiter);
+        if (res == NULL) {
+            return 1;
+        }
+        Py_DECREF(res);
+    }
+
+    return 0;
+}
+
+
+static PyObject *
+async_gen_anext(PyAsyncGenObject *o)
+{
+    if (async_gen_init_hooks(o)) {
+        return NULL;
+    }
+    return async_gen_asend_new(o, NULL);
+}
+
+
+static PyObject *
+async_gen_asend(PyAsyncGenObject *o, PyObject *arg)
+{
+    if (async_gen_init_hooks(o)) {
+        return NULL;
+    }
+    return async_gen_asend_new(o, arg);
+}
+
+
+static PyObject *
+async_gen_aclose(PyAsyncGenObject *o, PyObject *arg)
+{
+    if (async_gen_init_hooks(o)) {
+        return NULL;
+    }
+    return async_gen_athrow_new(o, NULL);
+}
+
+static PyObject *
+async_gen_athrow(PyAsyncGenObject *o, PyObject *args)
+{
+    if (async_gen_init_hooks(o)) {
+        return NULL;
+    }
+    return async_gen_athrow_new(o, args);
+}
+
+
+static PyGetSetDef async_gen_getsetlist[] = {
+    {"__name__", (getter)gen_get_name, (setter)gen_set_name,
+     PyDoc_STR("name of the async generator")},
+    {"__qualname__", (getter)gen_get_qualname, (setter)gen_set_qualname,
+     PyDoc_STR("qualified name of the async generator")},
+    {"ag_await", (getter)coro_get_cr_await, NULL,
+     PyDoc_STR("object being awaited on, or None")},
+    {NULL} /* Sentinel */
+};
+
+static PyMemberDef async_gen_memberlist[] = {
+    {"ag_frame",   T_OBJECT, offsetof(PyAsyncGenObject, ag_frame),   READONLY},
+    {"ag_running", T_BOOL,   offsetof(PyAsyncGenObject, ag_running), READONLY},
+    {"ag_code",    T_OBJECT, offsetof(PyAsyncGenObject, ag_code),    READONLY},
+    {NULL}      /* Sentinel */
+};
+
+PyDoc_STRVAR(async_aclose_doc,
+"aclose() -> raise GeneratorExit inside generator.");
+
+PyDoc_STRVAR(async_asend_doc,
+"asend(v) -> send 'v' in generator.");
+
+PyDoc_STRVAR(async_athrow_doc,
+"athrow(typ[,val[,tb]]) -> raise exception in generator.");
+
+static PyMethodDef async_gen_methods[] = {
+    {"asend", (PyCFunction)async_gen_asend, METH_O, async_asend_doc},
+    {"athrow",(PyCFunction)async_gen_athrow, METH_VARARGS, async_athrow_doc},
+    {"aclose", (PyCFunction)async_gen_aclose, METH_NOARGS, async_aclose_doc},
+    {NULL, NULL}        /* Sentinel */
+};
+
+
+static PyAsyncMethods async_gen_as_async = {
+    0,                                          /* am_await */
+    PyObject_SelfIter,                          /* am_aiter */
+    (unaryfunc)async_gen_anext                  /* am_anext */
+};
+
+
+PyTypeObject PyAsyncGen_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "async_generator",                          /* tp_name */
+    sizeof(PyAsyncGenObject),                   /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)gen_dealloc,                    /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    &async_gen_as_async,                        /* tp_as_async */
+    (reprfunc)async_gen_repr,                   /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_HAVE_FINALIZE,               /* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)async_gen_traverse,           /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    offsetof(PyAsyncGenObject, ag_weakreflist), /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    async_gen_methods,                          /* tp_methods */
+    async_gen_memberlist,                       /* tp_members */
+    async_gen_getsetlist,                       /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    0,                                          /* tp_new */
+    0,                                          /* tp_free */
+    0,                                          /* tp_is_gc */
+    0,                                          /* tp_bases */
+    0,                                          /* tp_mro */
+    0,                                          /* tp_cache */
+    0,                                          /* tp_subclasses */
+    0,                                          /* tp_weaklist */
+    0,                                          /* tp_del */
+    0,                                          /* tp_version_tag */
+    _PyGen_Finalize,                            /* tp_finalize */
+};
+
+
+PyObject *
+PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
+{
+    PyAsyncGenObject *o;
+    o = (PyAsyncGenObject *)gen_new_with_qualname(
+        &PyAsyncGen_Type, f, name, qualname);
+    if (o == NULL) {
+        return NULL;
+    }
+    o->ag_finalizer = NULL;
+    o->ag_closed = 0;
+    o->ag_hooks_inited = 0;
+    return (PyObject*)o;
+}
+
+
+int
+PyAsyncGen_ClearFreeLists(void)
+{
+    int ret = ag_value_freelist_free + ag_asend_freelist_free;
+
+    while (ag_value_freelist_free) {
+        _PyAsyncGenWrappedValue *o;
+        o = ag_value_freelist[--ag_value_freelist_free];
+        assert(_PyAsyncGenWrappedValue_CheckExact(o));
+        PyObject_Del(o);
+    }
+
+    while (ag_asend_freelist_free) {
+        PyAsyncGenASend *o;
+        o = ag_asend_freelist[--ag_asend_freelist_free];
+        assert(Py_TYPE(o) == &_PyAsyncGenASend_Type);
+        PyObject_Del(o);
+    }
+
+    return ret;
+}
+
+void
+PyAsyncGen_Fini(void)
+{
+    PyAsyncGen_ClearFreeLists();
+}
+
+
+static PyObject *
+async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
+{
+    if (result == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetNone(PyExc_StopAsyncIteration);
+        }
+
+        if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)
+            || PyErr_ExceptionMatches(PyExc_GeneratorExit)
+        ) {
+            gen->ag_closed = 1;
+        }
+
+        return NULL;
+    }
+
+    if (_PyAsyncGenWrappedValue_CheckExact(result)) {
+        /* async yield */
+        PyObject *e = PyObject_CallFunctionObjArgs(
+            PyExc_StopIteration,
+            ((_PyAsyncGenWrappedValue*)result)->agw_val,
+            NULL);
+        Py_DECREF(result);
+        if (e == NULL) {
+            return NULL;
+        }
+        PyErr_SetObject(PyExc_StopIteration, e);
+        Py_DECREF(e);
+        return NULL;
+    }
+
+    return result;
+}
+
+
+/* ---------- Async Generator ASend Awaitable ------------ */
+
+
+static void
+async_gen_asend_dealloc(PyAsyncGenASend *o)
+{
+    Py_CLEAR(o->ags_gen);
+    Py_CLEAR(o->ags_sendval);
+    if (ag_asend_freelist_free < _PyAsyncGen_MAXFREELIST) {
+        assert(PyAsyncGenASend_CheckExact(o));
+        ag_asend_freelist[ag_asend_freelist_free++] = o;
+    } else {
+        PyObject_Del(o);
+    }
+}
+
+
+static PyObject *
+async_gen_asend_send(PyAsyncGenASend *o, PyObject *arg)
+{
+    PyObject *result;
+
+    if (o->ags_state == AWAITABLE_STATE_CLOSED) {
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+
+    if (o->ags_state == AWAITABLE_STATE_INIT) {
+        if (arg == NULL || arg == Py_None) {
+            arg = o->ags_sendval;
+        }
+        o->ags_state = AWAITABLE_STATE_ITER;
+    }
+
+    result = gen_send_ex((PyGenObject*)o->ags_gen, arg, 0, 0);
+    result = async_gen_unwrap_value(o->ags_gen, result);
+
+    if (result == NULL) {
+        o->ags_state = AWAITABLE_STATE_CLOSED;
+    }
+
+    return result;
+}
+
+
+static PyObject *
+async_gen_asend_iternext(PyAsyncGenASend *o)
+{
+    return async_gen_asend_send(o, NULL);
+}
+
+
+static PyObject *
+async_gen_asend_throw(PyAsyncGenASend *o, PyObject *args)
+{
+    PyObject *result;
+
+    if (o->ags_state == AWAITABLE_STATE_CLOSED) {
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+
+    result = gen_throw((PyGenObject*)o->ags_gen, args);
+    result = async_gen_unwrap_value(o->ags_gen, result);
+
+    if (result == NULL) {
+        o->ags_state = AWAITABLE_STATE_CLOSED;
+    }
+
+    return result;
+}
+
+
+static PyObject *
+async_gen_asend_close(PyAsyncGenASend *o, PyObject *args)
+{
+    o->ags_state = AWAITABLE_STATE_CLOSED;
+    Py_RETURN_NONE;
+}
+
+
+static PyMethodDef async_gen_asend_methods[] = {
+    {"send", (PyCFunction)async_gen_asend_send, METH_O, send_doc},
+    {"throw", (PyCFunction)async_gen_asend_throw, METH_VARARGS, throw_doc},
+    {"close", (PyCFunction)async_gen_asend_close, METH_NOARGS, close_doc},
+    {NULL, NULL}        /* Sentinel */
+};
+
+
+static PyAsyncMethods async_gen_asend_as_async = {
+    PyObject_SelfIter,                          /* am_await */
+    0,                                          /* am_aiter */
+    0                                           /* am_anext */
+};
+
+
+PyTypeObject _PyAsyncGenASend_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "async_generator_asend",                    /* tp_name */
+    sizeof(PyAsyncGenASend),                    /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)async_gen_asend_dealloc,        /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    &async_gen_asend_as_async,                  /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    0,                                          /* tp_doc */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    (iternextfunc)async_gen_asend_iternext,     /* tp_iternext */
+    async_gen_asend_methods,                    /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    0,                                          /* tp_new */
+};
+
+
+static PyObject *
+async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
+{
+    PyAsyncGenASend *o;
+    if (ag_asend_freelist_free) {
+        ag_asend_freelist_free--;
+        o = ag_asend_freelist[ag_asend_freelist_free];
+        _Py_NewReference((PyObject *)o);
+    } else {
+        o = PyObject_New(PyAsyncGenASend, &_PyAsyncGenASend_Type);
+        if (o == NULL) {
+            return NULL;
+        }
+    }
+
+    Py_INCREF(gen);
+    o->ags_gen = gen;
+
+    Py_XINCREF(sendval);
+    o->ags_sendval = sendval;
+
+    o->ags_state = AWAITABLE_STATE_INIT;
+    return (PyObject*)o;
+}
+
+
+/* ---------- Async Generator Value Wrapper ------------ */
+
+
+static void
+async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
+{
+    Py_CLEAR(o->agw_val);
+    if (ag_value_freelist_free < _PyAsyncGen_MAXFREELIST) {
+        assert(_PyAsyncGenWrappedValue_CheckExact(o));
+        ag_value_freelist[ag_value_freelist_free++] = o;
+    } else {
+        PyObject_Del(o);
+    }
+}
+
+
+PyTypeObject _PyAsyncGenWrappedValue_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "async_generator_wrapped_value",            /* tp_name */
+    sizeof(_PyAsyncGenWrappedValue),            /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)async_gen_wrapped_val_dealloc,  /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    0,                                          /* tp_doc */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    0,                                          /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    0,                                          /* tp_new */
+};
+
+
+PyObject *
+_PyAsyncGenValueWrapperNew(PyObject *val)
+{
+    _PyAsyncGenWrappedValue *o;
+    assert(val);
+
+    if (ag_value_freelist_free) {
+        ag_value_freelist_free--;
+        o = ag_value_freelist[ag_value_freelist_free];
+        assert(_PyAsyncGenWrappedValue_CheckExact(o));
+        _Py_NewReference((PyObject*)o);
+    } else {
+        o = PyObject_New(_PyAsyncGenWrappedValue, &_PyAsyncGenWrappedValue_Type);
+        if (o == NULL) {
+            return NULL;
+        }
+    }
+    o->agw_val = val;
+    Py_INCREF(val);
+    return (PyObject*)o;
+}
+
+
+/* ---------- Async Generator AThrow awaitable ------------ */
+
+
+static void
+async_gen_athrow_dealloc(PyAsyncGenAThrow *o)
+{
+    Py_CLEAR(o->agt_gen);
+    Py_CLEAR(o->agt_args);
+    PyObject_Del(o);
+}
+
+
+static PyObject *
+async_gen_athrow_send(PyAsyncGenAThrow *o, PyObject *arg)
+{
+    PyGenObject *gen = (PyGenObject*)o->agt_gen;
+    PyFrameObject *f = gen->gi_frame;
+    PyObject *retval;
+
+    if (f == NULL || f->f_stacktop == NULL ||
+            o->agt_state == AWAITABLE_STATE_CLOSED) {
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+
+    if (o->agt_state == AWAITABLE_STATE_INIT) {
+        if (o->agt_gen->ag_closed) {
+            PyErr_SetNone(PyExc_StopIteration);
+            return NULL;
+        }
+
+        if (arg != Py_None) {
+            PyErr_SetString(PyExc_RuntimeError, NON_INIT_CORO_MSG);
+            return NULL;
+        }
+
+        o->agt_state = AWAITABLE_STATE_ITER;
+
+        if (o->agt_args == NULL) {
+            /* aclose() mode */
+            o->agt_gen->ag_closed = 1;
+
+            retval = _gen_throw((PyGenObject *)gen,
+                                0,  /* Do not close generator when
+                                       PyExc_GeneratorExit is passed */
+                                PyExc_GeneratorExit, NULL, NULL);
+
+            if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
+                Py_DECREF(retval);
+                goto yield_close;
+            }
+        } else {
+            PyObject *typ;
+            PyObject *tb = NULL;
+            PyObject *val = NULL;
+
+            if (!PyArg_UnpackTuple(o->agt_args, "athrow", 1, 3,
+                                   &typ, &val, &tb)) {
+                return NULL;
+            }
+
+            retval = _gen_throw((PyGenObject *)gen,
+                                0,  /* Do not close generator when
+                                       PyExc_GeneratorExit is passed */
+                                typ, val, tb);
+            retval = async_gen_unwrap_value(o->agt_gen, retval);
+        }
+        if (retval == NULL) {
+            goto check_error;
+        }
+        return retval;
+    }
+
+    assert(o->agt_state == AWAITABLE_STATE_ITER);
+
+    retval = gen_send_ex((PyGenObject *)gen, arg, 0, 0);
+    if (o->agt_args) {
+        return async_gen_unwrap_value(o->agt_gen, retval);
+    } else {
+        /* aclose() mode */
+        if (retval) {
+            if (_PyAsyncGenWrappedValue_CheckExact(retval)) {
+                Py_DECREF(retval);
+                goto yield_close;
+            }
+            else {
+                return retval;
+            }
+        }
+        else {
+            goto check_error;
+        }
+    }
+
+yield_close:
+    PyErr_SetString(
+        PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
+    return NULL;
+
+check_error:
+    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)
+        || PyErr_ExceptionMatches(PyExc_GeneratorExit)
+    ) {
+        o->agt_state = AWAITABLE_STATE_CLOSED;
+        PyErr_Clear();          /* ignore these errors */
+        PyErr_SetNone(PyExc_StopIteration);
+    }
+    return NULL;
+}
+
+
+static PyObject *
+async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *args)
+{
+    PyObject *retval;
+
+    if (o->agt_state == AWAITABLE_STATE_INIT) {
+        PyErr_SetString(PyExc_RuntimeError, NON_INIT_CORO_MSG);
+        return NULL;
+    }
+
+    if (o->agt_state == AWAITABLE_STATE_CLOSED) {
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+
+    retval = gen_throw((PyGenObject*)o->agt_gen, args);
+    if (o->agt_args) {
+        return async_gen_unwrap_value(o->agt_gen, retval);
+    } else {
+        /* aclose() mode */
+        if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
+            Py_DECREF(retval);
+            PyErr_SetString(PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
+            return NULL;
+        }
+        return retval;
+    }
+}
+
+
+static PyObject *
+async_gen_athrow_iternext(PyAsyncGenAThrow *o)
+{
+    return async_gen_athrow_send(o, Py_None);
+}
+
+
+static PyObject *
+async_gen_athrow_close(PyAsyncGenAThrow *o, PyObject *args)
+{
+    o->agt_state = AWAITABLE_STATE_CLOSED;
+    Py_RETURN_NONE;
+}
+
+
+static PyMethodDef async_gen_athrow_methods[] = {
+    {"send", (PyCFunction)async_gen_athrow_send, METH_O, send_doc},
+    {"throw", (PyCFunction)async_gen_athrow_throw, METH_VARARGS, throw_doc},
+    {"close", (PyCFunction)async_gen_athrow_close, METH_NOARGS, close_doc},
+    {NULL, NULL}        /* Sentinel */
+};
+
+
+static PyAsyncMethods async_gen_athrow_as_async = {
+    PyObject_SelfIter,                          /* am_await */
+    0,                                          /* am_aiter */
+    0                                           /* am_anext */
+};
+
+
+PyTypeObject _PyAsyncGenAThrow_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "async_generator_athrow",                   /* tp_name */
+    sizeof(PyAsyncGenAThrow),                   /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)async_gen_athrow_dealloc,       /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    &async_gen_athrow_as_async,                 /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    0,                                          /* tp_doc */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    (iternextfunc)async_gen_athrow_iternext,    /* tp_iternext */
+    async_gen_athrow_methods,                   /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    0,                                          /* tp_new */
+};
+
+
+static PyObject *
+async_gen_athrow_new(PyAsyncGenObject *gen, PyObject *args)
+{
+    PyAsyncGenAThrow *o;
+    o = PyObject_New(PyAsyncGenAThrow, &_PyAsyncGenAThrow_Type);
+    if (o == NULL) {
+        return NULL;
+    }
+    o->agt_gen = gen;
+    o->agt_args = args;
+    o->agt_state = AWAITABLE_STATE_INIT;
+    Py_INCREF(gen);
+    Py_XINCREF(args);
+    return (PyObject*)o;
 }

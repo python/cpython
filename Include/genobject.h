@@ -61,6 +61,37 @@ PyObject *_PyAIterWrapper_New(PyObject *aiter);
 PyObject *_PyCoro_GetAwaitableIter(PyObject *o);
 PyAPI_FUNC(PyObject *) PyCoro_New(struct _frame *,
     PyObject *name, PyObject *qualname);
+
+/* Asynchronous Generators */
+
+typedef struct {
+    _PyGenObject_HEAD(ag)
+    PyObject *ag_finalizer;
+
+    /* Flag is set to 1 when hooks set up by sys.set_asyncgen_hooks
+       were called on the generator, to avoid calling them more
+       than once. */
+    int ag_hooks_inited;
+
+    /* Flag is set to 1 when aclose() is called for the first time, or
+       when a StopAsyncIteration exception is raised. */
+    int ag_closed;
+} PyAsyncGenObject;
+
+PyAPI_DATA(PyTypeObject) PyAsyncGen_Type;
+PyAPI_DATA(PyTypeObject) _PyAsyncGenASend_Type;
+PyAPI_DATA(PyTypeObject) _PyAsyncGenWrappedValue_Type;
+PyAPI_DATA(PyTypeObject) _PyAsyncGenAThrow_Type;
+
+PyAPI_FUNC(PyObject *) PyAsyncGen_New(struct _frame *,
+    PyObject *name, PyObject *qualname);
+
+#define PyAsyncGen_CheckExact(op) (Py_TYPE(op) == &PyAsyncGen_Type)
+
+PyObject *_PyAsyncGenValueWrapperNew(PyObject *);
+
+int PyAsyncGen_ClearFreeLists(void);
+
 #endif
 
 #undef _PyGenObject_HEAD

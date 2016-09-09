@@ -63,6 +63,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
         ste->ste_nested = 1;
     ste->ste_child_free = 0;
     ste->ste_generator = 0;
+    ste->ste_coroutine = 0;
     ste->ste_returns_value = 0;
     ste->ste_needs_class_closure = 0;
 
@@ -378,7 +379,7 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
                                        PyLong_AsLong(PyTuple_GET_ITEM(data, 2)));
 
             return 0;
-        }   
+        }
     }
     PyErr_SetString(PyExc_RuntimeError,
                     "BUG: internal directive bookkeeping broken");
@@ -1397,6 +1398,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                   FunctionBlock, (void *)s, s->lineno,
                                   s->col_offset))
             VISIT_QUIT(st, 0);
+        st->st_cur->ste_coroutine = 1;
         VISIT(st, arguments, s->v.AsyncFunctionDef.args);
         VISIT_SEQ(st, stmt, s->v.AsyncFunctionDef.body);
         if (!symtable_exit_block(st, s))
@@ -1492,7 +1494,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case Await_kind:
         VISIT(st, expr, e->v.Await.value);
-        st->st_cur->ste_generator = 1;
+        st->st_cur->ste_coroutine = 1;
         break;
     case Compare_kind:
         VISIT(st, expr, e->v.Compare.left);
