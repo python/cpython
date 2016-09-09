@@ -64,6 +64,12 @@ PyAPI_FUNC(PyObject *) _PyFunction_FastCallDict(
     PyObject **args,
     Py_ssize_t nargs,
     PyObject *kwargs);
+
+PyAPI_FUNC(PyObject *) _PyFunction_FastCallKeywords(
+    PyObject *func,
+    PyObject **stack,
+    Py_ssize_t nargs,
+    PyObject *kwnames);
 #endif
 
 /* Macros for direct access to these values. Type checks are *not*

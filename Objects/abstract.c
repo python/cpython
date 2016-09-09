@@ -2366,6 +2366,74 @@ _PyObject_Call_Prepend(PyObject *func,
     return result;
 }
 
+static PyObject *
+_PyStack_AsDict(PyObject **values, Py_ssize_t nkwargs, PyObject *kwnames,
+                PyObject *func)
+{
+    PyObject *kwdict;
+    Py_ssize_t i;
+
+    kwdict = PyDict_New();
+    if (kwdict == NULL) {
+        return NULL;
+    }
+
+    for (i=0; i < nkwargs; i++) {
+        int err;
+        PyObject *key = PyTuple_GET_ITEM(kwnames, i);
+        PyObject *value = *values++;
+
+        if (PyDict_GetItem(kwdict, key) != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s%s got multiple values "
+                         "for keyword argument '%U'",
+                         PyEval_GetFuncName(func),
+                         PyEval_GetFuncDesc(func),
+                         key);
+            Py_DECREF(kwdict);
+            return NULL;
+        }
+
+        err = PyDict_SetItem(kwdict, key, value);
+        if (err) {
+            Py_DECREF(kwdict);
+            return NULL;
+        }
+    }
+    return kwdict;
+}
+
+PyObject *
+_PyObject_FastCallKeywords(PyObject *func, PyObject **stack, Py_ssize_t nargs,
+                           PyObject *kwnames)
+{
+    PyObject *kwdict, *result;
+    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+
+    assert(nargs >= 0);
+    assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
+    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
+
+    if (PyFunction_Check(func)) {
+        /* Fast-path: avoid temporary tuple or dict */
+        return _PyFunction_FastCallKeywords(func, stack, nargs, kwnames);
+    }
+
+    if (nkwargs > 0) {
+        kwdict = _PyStack_AsDict(stack + nargs, nkwargs, kwnames, func);
+        if (kwdict == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        kwdict = NULL;
+    }
+
+    result = _PyObject_FastCallDict(func, stack, nargs, kwdict);
+    Py_XDECREF(kwdict);
+    return result;
+}
+
 static PyObject*
 call_function_tail(PyObject *callable, PyObject *args)
 {
