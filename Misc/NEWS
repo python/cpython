@@ -773,6 +773,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #19489: Moved the search box from the sidebar to the header and footer
+  of each page.  Patch by Ammar Askar.
+
 - Issue #27285: Update documentation to reflect the deprecation of ``pyvenv``
   and normalize on the term "virtual environment". Patch by Steve Piercy.
 
