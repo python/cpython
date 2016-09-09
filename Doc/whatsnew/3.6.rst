@@ -598,6 +598,13 @@ The :mod:`email.mime` classes now all accept an optional *policy* keyword.
 The :class:`~email.generator.DecodedGenerator` now supports the *policy*
 keyword.
 
+There is a new :mod:`~email.policy` attribute,
+:attr:`~email.policy.Policy.message_factory`, that controls what class is used
+by default when the parser creates new message objects.  For the
+:attr:`email.policy.compat32` policy this is :class:`~email.message.Message`,
+for the new policies it is :class:`~email.message.EmailMessage`.
+(Contributed by R. David Murray in :issue:`20476`.)
+
 
 encodings
 ---------

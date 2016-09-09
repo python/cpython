@@ -73,8 +73,9 @@ Here is the API for the :class:`BytesFeedParser`:
 .. class:: BytesFeedParser(_factory=None, *, policy=policy.compat32)
 
    Create a :class:`BytesFeedParser` instance.  Optional *_factory* is a
-   no-argument callable; if not specified determine the default based on the
-   *policy*.  Call *_factory* whenever a new message object is needed.
+   no-argument callable; if not specified use the
+   :attr:`~email.policy.Policy.message_factory` from the *policy*.  Call
+   *_factory* whenever a new message object is needed.
 
    If *policy* is specified use the rules it specifies to update the
    representation of the message.  If *policy* is not set, use the
@@ -91,6 +92,7 @@ Here is the API for the :class:`BytesFeedParser`:
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.3 Added the *policy* keyword.
+   .. versionchanged:: 3.6 _factory defaults to the policy ``message_factory``.
 
 
    .. method:: feed(data)
@@ -146,6 +148,7 @@ message body, instead setting the payload to the raw body.
    .. versionchanged:: 3.3
       Removed the *strict* argument that was deprecated in 2.4.  Added the
       *policy* keyword.
+   .. versionchanged:: 3.6 _class defaults to the policy ``message_factory``.
 
 
    .. method:: parse(fp, headersonly=False)
@@ -194,6 +197,7 @@ message body, instead setting the payload to the raw body.
 
    .. versionchanged:: 3.3
       Removed the *strict* argument.  Added the *policy* keyword.
+   .. versionchanged:: 3.6 _class defaults to the policy ``message_factory``.
 
 
    .. method:: parse(fp, headersonly=False)
@@ -230,8 +234,7 @@ in the top-level :mod:`email` package namespace.
 .. currentmodule:: email
 
 
-.. function:: message_from_bytes(s, _class=None, *, \
-                                 policy=policy.compat32)
+.. function:: message_from_bytes(s, _class=None, *, policy=policy.compat32)
 
    Return a message object structure from a :term:`bytes-like object`.  This is
    equivalent to ``BytesParser().parsebytes(s)``.  Optional *_class* and
@@ -243,7 +246,7 @@ in the top-level :mod:`email` package namespace.
       Removed the *strict* argument.  Added the *policy* keyword.
 
 
-.. function:: message_from_binary_file(fp, _class=None, *, \
+.. function:: message_from_binary_file(fp, _class=None, *,
                                        policy=policy.compat32)
 
    Return a message object structure tree from an open binary :term:`file
@@ -256,8 +259,7 @@ in the top-level :mod:`email` package namespace.
       Removed the *strict* argument.  Added the *policy* keyword.
 
 
-.. function:: message_from_string(s, _class=None, *, \
-                                  policy=policy.compat32)
+.. function:: message_from_string(s, _class=None, *, policy=policy.compat32)
 
    Return a message object structure from a string.  This is equivalent to
    ``Parser().parsestr(s)``.  *_class* and *policy* are interpreted as
@@ -267,8 +269,7 @@ in the top-level :mod:`email` package namespace.
       Removed the *strict* argument.  Added the *policy* keyword.
 
 
-.. function:: message_from_file(fp, _class=None, *, \
-                                policy=policy.compat32)
+.. function:: message_from_file(fp, _class=None, *, policy=policy.compat32)
 
    Return a message object structure tree from an open :term:`file object`.
    This is equivalent to ``Parser().parse(fp)``.  *_class* and *policy* are
@@ -276,6 +277,7 @@ in the top-level :mod:`email` package namespace.
 
    .. versionchanged:: 3.3
       Removed the *strict* argument.  Added the *policy* keyword.
+   .. versionchanged:: 3.6 _class defaults to the policy ``message_factory``.
 
 
 Here's an example of how you might use :func:`message_from_bytes` at an
