@@ -94,7 +94,7 @@ import re
 import sys
 import os
 from collections import namedtuple
-from enum import Enum as _Enum, IntEnum as _IntEnum
+from enum import Enum as _Enum, IntEnum as _IntEnum, IntFlag as _IntFlag
 
 import _ssl             # if we can't import it, let the error propagate
 
@@ -104,7 +104,6 @@ from _ssl import (
     SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
     SSLSyscallError, SSLEOFError,
     )
-from _ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
 from _ssl import RAND_status, RAND_add, RAND_bytes, RAND_pseudo_bytes
 try:
@@ -113,32 +112,47 @@ except ImportError:
     # LibreSSL does not provide RAND_egd
     pass
 
-def _import_symbols(prefix):
-    for n in dir(_ssl):
-        if n.startswith(prefix):
-            globals()[n] = getattr(_ssl, n)
-
-_import_symbols('OP_')
-_import_symbols('ALERT_DESCRIPTION_')
-_import_symbols('SSL_ERROR_')
-_import_symbols('VERIFY_')
 
 from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN
-
 from _ssl import _OPENSSL_API_VERSION
 
+
 _IntEnum._convert(
-        '_SSLMethod', __name__,
-        lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
-        source=_ssl)
+    '_SSLMethod', __name__,
+    lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
+    source=_ssl)
+
+_IntFlag._convert(
+    'Options', __name__,
+    lambda name: name.startswith('OP_'),
+    source=_ssl)
+
+_IntEnum._convert(
+    'AlertDescription', __name__,
+    lambda name: name.startswith('ALERT_DESCRIPTION_'),
+    source=_ssl)
+
+_IntEnum._convert(
+    'SSLErrorNumber', __name__,
+    lambda name: name.startswith('SSL_ERROR_'),
+    source=_ssl)
+
+_IntFlag._convert(
+    'VerifyFlags', __name__,
+    lambda name: name.startswith('VERIFY_'),
+    source=_ssl)
+
+_IntEnum._convert(
+    'VerifyMode', __name__,
+    lambda name: name.startswith('CERT_'),
+    source=_ssl)
+
 
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
 _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
 
-try:
-    _SSLv2_IF_EXISTS = PROTOCOL_SSLv2
-except NameError:
-    _SSLv2_IF_EXISTS = None
+_SSLv2_IF_EXISTS = getattr(_SSLMethod, 'PROTOCOL_SSLv2', None)
+
 
 if sys.platform == "win32":
     from _ssl import enum_certificates, enum_crls
@@ -433,6 +447,34 @@ class SSLContext(_SSLContext):
             for storename in self._windows_cert_stores:
                 self._load_windows_store_certs(storename, purpose)
         self.set_default_verify_paths()
+
+    @property
+    def options(self):
+        return Options(super().options)
+
+    @options.setter
+    def options(self, value):
+        super(SSLContext, SSLContext).options.__set__(self, value)
+
+    @property
+    def verify_flags(self):
+        return VerifyFlags(super().verify_flags)
+
+    @verify_flags.setter
+    def verify_flags(self, value):
+        super(SSLContext, SSLContext).verify_flags.__set__(self, value)
+
+    @property
+    def verify_mode(self):
+        value = super().verify_mode
+        try:
+            return VerifyMode(value)
+        except ValueError:
+            return value
+
+    @verify_mode.setter
+    def verify_mode(self, value):
+        super(SSLContext, SSLContext).verify_mode.__set__(self, value)
 
 
 def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
