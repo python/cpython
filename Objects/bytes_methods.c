@@ -670,7 +670,7 @@ _Py_bytes_contains(const char *str, Py_ssize_t len, PyObject *arg)
  * against substr, using the start and end arguments. Returns
  * -1 on error, 0 if not found and 1 if found.
  */
-Py_LOCAL(int)
+static int
 tailmatch(const char *str, Py_ssize_t len, PyObject *substr,
           Py_ssize_t start, Py_ssize_t end, int direction)
 {
@@ -716,7 +716,7 @@ notfound:
     return 0;
 }
 
-Py_LOCAL(PyObject *)
+static PyObject *
 _Py_bytes_tailmatch(const char *str, Py_ssize_t len,
                     const char *function_name, PyObject *args,
                     int direction)
