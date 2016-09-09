@@ -2052,5 +2052,11 @@ class BlatantOverrideConvertersTestCase(unittest.TestCase):
             self.assertEqual(cfg['two'].getlen('one'), 5)
 
 
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        blacklist = {"Error"}
+        support.check__all__(self, configparser, blacklist=blacklist)
+
+
 if __name__ == '__main__':
     unittest.main()
