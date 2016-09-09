@@ -23,10 +23,9 @@ from time import time as _time
 from traceback import format_exc
 
 from . import connection
-from . import context
+from .context import reduction, get_spawning_popen
 from . import pool
 from . import process
-from . import reduction
 from . import util
 from . import get_context
 
@@ -833,7 +832,7 @@ class BaseProxy(object):
 
     def __reduce__(self):
         kwds = {}
-        if context.get_spawning_popen() is not None:
+        if get_spawning_popen() is not None:
             kwds['authkey'] = self._authkey
 
         if getattr(self, '_isauto', False):

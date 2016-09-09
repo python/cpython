@@ -1,10 +1,9 @@
 import io
 import os
 
-from . import reduction
+from .context import reduction, set_spawning_popen
 if not reduction.HAVE_SEND_HANDLE:
     raise ImportError('No support for sending fds between processes')
-from . import context
 from . import forkserver
 from . import popen_fork
 from . import spawn
@@ -42,12 +41,12 @@ class Popen(popen_fork.Popen):
     def _launch(self, process_obj):
         prep_data = spawn.get_preparation_data(process_obj._name)
         buf = io.BytesIO()
-        context.set_spawning_popen(self)
+        set_spawning_popen(self)
         try:
             reduction.dump(prep_data, buf)
             reduction.dump(process_obj, buf)
         finally:
-            context.set_spawning_popen(None)
+            set_spawning_popen(None)
 
         self.sentinel, w = forkserver.connect_to_new_process(self._fds)
         util.Finalize(self, os.close, (self.sentinel,))
