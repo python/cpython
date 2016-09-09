@@ -10,6 +10,11 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #28003: Implement PEP 525 -- Asynchronous Generators.
+
+- Issue #27985: Implement PEP 526 -- Syntax for Variable Annotations.
+  Patch by Ivan Levkivskyi.
+
 - Issue #26058: Add a new private version to the builtin dict type, incremented
   at each dictionary creation and at each dictionary change. Implementation of
   the PEP 509.
@@ -100,10 +105,6 @@ Core and Builtins
   In a brand new thread, raise a RuntimeError since there is no active
   exception to reraise. Patch written by Xiang Zhang.
 
-- Issue #27985: Implement PEP 526 -- Syntax for Variable Annotations.
-  Patch by Ivan Levkivskyi.
-
-- Issue #28003: Implement PEP 525 -- Asynchronous Generators.
 
 
 Library
