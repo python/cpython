@@ -515,6 +515,10 @@ Certificate handling
 Constants
 ^^^^^^^^^
 
+   All constants are now :class:`enum.IntEnum` or :class:`enum.IntFlag` collections.
+
+   .. versionadded:: 3.6
+
 .. data:: CERT_NONE
 
    Possible value for :attr:`SSLContext.verify_mode`, or the ``cert_reqs``
@@ -547,6 +551,12 @@ Constants
    Use of this setting requires a valid set of CA certificates to
    be passed, either to :meth:`SSLContext.load_verify_locations` or as a
    value of the ``ca_certs`` parameter to :func:`wrap_socket`.
+
+.. class:: VerifyMode
+
+   :class:`enum.IntEnum` collection of CERT_* constants.
+
+   .. versionadded:: 3.6
 
 .. data:: VERIFY_DEFAULT
 
@@ -587,6 +597,12 @@ Constants
    certificate. This flag is enabled by default.
 
    .. versionadded:: 3.4.4
+
+.. class:: VerifyFlags
+
+   :class:`enum.IntFlag` collection of VERIFY_* constants.
+
+   .. versionadded:: 3.6
 
 .. data:: PROTOCOL_TLS
 
@@ -757,6 +773,12 @@ Constants
 
    .. versionadded:: 3.3
 
+.. class:: Options
+
+   :class:`enum.IntFlag` collection of OP_* constants.
+
+   .. versionadded:: 3.6
+
 .. data:: HAS_ALPN
 
    Whether the OpenSSL library has built-in support for the *Application-Layer
@@ -839,6 +861,12 @@ Constants
 
    .. versionadded:: 3.4
 
+.. class:: AlertDescription
+
+   :class:`enum.IntEnum` collection of ALERT_DESCRIPTION_* constants.
+
+   .. versionadded:: 3.6
+
 .. data:: Purpose.SERVER_AUTH
 
    Option for :func:`create_default_context` and
@@ -856,6 +884,12 @@ Constants
    be used to create server-side sockets).
 
    .. versionadded:: 3.4
+
+.. class:: SSLErrorNumber
+
+   :class:`enum.IntEnum` collection of SSL_ERROR_* constants.
+
+   .. versionadded:: 3.6
 
 
 SSL Sockets
@@ -1540,6 +1574,12 @@ to speed up repeated connections from the same clients.
       to set options, not to clear them.  Attempting to clear an option
       (by resetting the corresponding bits) will raise a ``ValueError``.
 
+   .. versionchanged:: 3.6
+      :attr:`SSLContext.options` returns :class:`Options` flags:
+
+         >>> ssl.create_default_context().options
+         <Options.OP_ALL|OP_NO_SSLv3|OP_NO_SSLv2|OP_NO_COMPRESSION: 2197947391>
+
 .. attribute:: SSLContext.protocol
 
    The protocol version chosen when constructing the context.  This attribute
@@ -1554,12 +1594,23 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.6
+      :attr:`SSLContext.verify_flags` returns :class:`VerifyFlags` flags:
+
+         >>> ssl.create_default_context().verify_flags
+         <VerifyFlags.VERIFY_X509_TRUSTED_FIRST: 32768>
+
 .. attribute:: SSLContext.verify_mode
 
    Whether to try to verify other peers' certificates and how to behave
    if verification fails.  This attribute must be one of
    :data:`CERT_NONE`, :data:`CERT_OPTIONAL` or :data:`CERT_REQUIRED`.
 
+   .. versionchanged:: 3.6
+      :attr:`SSLContext.verify_mode` returns :class:`VerifyMode` enum:
+
+         >>> ssl.create_default_context().verify_mode
+         <VerifyMode.CERT_REQUIRED: 2>
 
 .. index:: single: certificates
 

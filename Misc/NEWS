@@ -122,6 +122,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28025: Convert all ssl module constants to IntEnum and IntFlags.
+  SSLContext properties now return flags and enums.
+
 - Issue #433028: Added support of modifier spans in regular expressions.
 
 - Issue #24594: Validates persist parameter when opening MSI database
