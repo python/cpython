@@ -120,6 +120,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #433028: Added support of modifier spans in regular expressions.
+
 - Issue #24594: Validates persist parameter when opening MSI database
 
 - Issue #28047: Fixed calculation of line length used for the base64 CTE
