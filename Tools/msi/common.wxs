@@ -20,10 +20,12 @@
     <Fragment>
         <Property Id="UpgradeTable" Value="1" />
         
+        <?ifndef SuppressUpgradeTable ?>
         <Upgrade Id="$(var.UpgradeCode)">
             <UpgradeVersion Property="DOWNGRADE" Minimum="$(var.Version)" IncludeMinimum="no" OnlyDetect="yes" />
             <UpgradeVersion Property="UPGRADE" Minimum="$(var.UpgradeMinimumVersion)" IncludeMinimum="yes" Maximum="$(var.Version)" IncludeMaximum="no" />
         </Upgrade>
+        <?endif ?>
         
         <?ifdef CoreUpgradeCode ?>
         <?if $(var.UpgradeCode)!=$(var.CoreUpgradeCode) ?>

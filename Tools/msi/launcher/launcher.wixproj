@@ -5,7 +5,7 @@
         <SchemaVersion>2.0</SchemaVersion>
         <OutputName>launcher</OutputName>
         <OutputType>Package</OutputType>
-        <DefineConstants>UpgradeCode=1B68A0EC-4DD3-5134-840E-73854B0863F1;$(DefineConstants)</DefineConstants>
+        <DefineConstants>UpgradeCode=1B68A0EC-4DD3-5134-840E-73854B0863F1;SuppressUpgradeTable=1;$(DefineConstants)</DefineConstants>
         <IgnoreCommonWxlTemplates>true</IgnoreCommonWxlTemplates>
         <SuppressICEs>ICE80</SuppressICEs>
     </PropertyGroup>
