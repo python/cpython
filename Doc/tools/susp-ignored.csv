@@ -297,3 +297,7 @@ whatsnew/3.5,,:warning,'WARNING:root:warning\n'
 whatsnew/3.5,,::,>>> addr6 = ipaddress.IPv6Address('::1')
 whatsnew/3.5,,:root,ERROR:root:exception
 whatsnew/3.5,,:exception,ERROR:root:exception
+whatsnew/3.6,140,`,1000000000000000`
+whatsnew/changelog,998,:version,import sys; I = version[:version.index(' ')]
+whatsnew/changelog,6416,:gz,": TarFile opened with external fileobj and ""w:gz"" mode didn't"
+whatsnew/changelog,8023,::,": Use ""127.0.0.1"" or ""::1"" instead of ""localhost"" as much as"
