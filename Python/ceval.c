@@ -113,8 +113,7 @@ static PyObject * call_function(PyObject ***, Py_ssize_t, PyObject *, uint64*, u
 #else
 static PyObject * call_function(PyObject ***, Py_ssize_t, PyObject *);
 #endif
-static PyObject * fast_function(PyObject *, PyObject ***, Py_ssize_t, PyObject *);
-static PyObject * do_call(PyObject *, PyObject ***, Py_ssize_t, PyObject *);
+static PyObject * fast_function(PyObject *, PyObject **, Py_ssize_t, PyObject *);
 static PyObject * do_call_core(PyObject *, PyObject *, PyObject *);
 static PyObject * create_keyword_args(PyObject *, PyObject ***, PyObject *);
 static PyObject * load_args(PyObject ***, Py_ssize_t);
@@ -4940,7 +4939,7 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
     }
 
 static PyObject *
-call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *names
+call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames
 #ifdef WITH_TSC
                 , uint64* pintr0, uint64* pintr1
 #endif
@@ -4949,8 +4948,8 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *names
     PyObject **pfunc = (*pp_stack) - oparg - 1;
     PyObject *func = *pfunc;
     PyObject *x, *w;
-    Py_ssize_t nk = names == NULL ? 0 : PyTuple_GET_SIZE(names);
-    Py_ssize_t nargs = oparg - nk;
+    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+    Py_ssize_t nargs = oparg - nkwargs;
 
     /* Always dispatch PyCFunction first, because these are
        presumed to be the most frequent callable object.
@@ -4960,7 +4959,7 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *names
         PyThreadState *tstate = PyThreadState_GET();
 
         PCALL(PCALL_CFUNCTION);
-        if (names == NULL && flags & (METH_NOARGS | METH_O)) {
+        if (kwnames == NULL && flags & (METH_NOARGS | METH_O)) {
             PyCFunction meth = PyCFunction_GET_FUNCTION(func);
             PyObject *self = PyCFunction_GET_SELF(func);
             if (flags & METH_NOARGS && nargs == 0) {
@@ -4982,8 +4981,8 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *names
         }
         else {
             PyObject *callargs, *kwdict = NULL;
-            if (names != NULL) {
-                kwdict = create_keyword_args(names, pp_stack, func);
+            if (kwnames != NULL) {
+                kwdict = create_keyword_args(kwnames, pp_stack, func);
                 if (kwdict == NULL) {
                     x = NULL;
                     goto cfuncerror;
@@ -5003,6 +5002,9 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *names
         }
     }
     else {
+      Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+      PyObject **stack;
+
       if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
           /* optimize access to bound methods */
           PyObject *self = PyMethod_GET_SELF(func);
@@ -5018,11 +5020,14 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *names
           Py_INCREF(func);
       }
 
+      stack = (*pp_stack) - nargs - nkwargs;
+
       READ_TIMESTAMP(*pintr0);
       if (PyFunction_Check(func)) {
-          x = fast_function(func, pp_stack, nargs, names);
-      } else {
-          x = do_call(func, pp_stack, nargs, names);
+          x = fast_function(func, stack, nargs, kwnames);
+      }
+      else {
+          x = _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
       }
       READ_TIMESTAMP(*pintr1);
 
@@ -5055,8 +5060,8 @@ cfuncerror:
 */
 
 static PyObject*
-_PyFunction_FastCallNoKw(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
-                         PyObject *globals)
+_PyFunction_FastCall(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
+                     PyObject *globals)
 {
     PyFrameObject *f;
     PyThreadState *tstate = PyThreadState_GET();
@@ -5091,19 +5096,19 @@ _PyFunction_FastCallNoKw(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
     return result;
 }
 
-/* Similar to _PyFunction_FastCall() but keywords are passed a (key, value)
-   pairs in stack */
 static PyObject *
-fast_function(PyObject *func, PyObject ***pp_stack, Py_ssize_t nargs, PyObject *names)
+fast_function(PyObject *func, PyObject **stack,
+              Py_ssize_t nargs, PyObject *kwnames)
 {
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
     PyObject *globals = PyFunction_GET_GLOBALS(func);
     PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
     PyObject *kwdefs, *closure, *name, *qualname;
     PyObject **d;
-    Py_ssize_t nkwargs = names == NULL ? 0 : PyTuple_GET_SIZE(names);
+    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
     Py_ssize_t nd;
-    PyObject **stack = (*pp_stack)-nargs-nkwargs;
+
+    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
 
     PCALL(PCALL_FUNCTION);
     PCALL(PCALL_FAST_FUNCTION);
@@ -5112,15 +5117,14 @@ fast_function(PyObject *func, PyObject ***pp_stack, Py_ssize_t nargs, PyObject *
         co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         if (argdefs == NULL && co->co_argcount == nargs) {
-            return _PyFunction_FastCallNoKw(co, stack, nargs, globals);
+            return _PyFunction_FastCall(co, stack, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
                  && co->co_argcount == Py_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             stack = &PyTuple_GET_ITEM(argdefs, 0);
-            return _PyFunction_FastCallNoKw(co, stack, Py_SIZE(argdefs),
-                                            globals);
+            return _PyFunction_FastCall(co, stack, Py_SIZE(argdefs), globals);
         }
     }
 
@@ -5140,9 +5144,16 @@ fast_function(PyObject *func, PyObject ***pp_stack, Py_ssize_t nargs, PyObject *
     return _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
                                     stack, nargs,
                                     NULL, 0,
-                                    names, stack + nargs,
+                                    kwnames, stack + nargs,
                                     d, (int)nd, kwdefs,
                                     closure, name, qualname);
+}
+
+PyObject *
+_PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
+                             Py_ssize_t nargs, PyObject *kwnames)
+{
+    return fast_function(func, stack, nargs, kwnames);
 }
 
 PyObject *
@@ -5172,15 +5183,14 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
     {
         /* Fast paths */
         if (argdefs == NULL && co->co_argcount == nargs) {
-            return _PyFunction_FastCallNoKw(co, args, nargs, globals);
+            return _PyFunction_FastCall(co, args, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
                  && co->co_argcount == Py_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             args = &PyTuple_GET_ITEM(argdefs, 0);
-            return _PyFunction_FastCallNoKw(co, args, Py_SIZE(argdefs),
-                                            globals);
+            return _PyFunction_FastCall(co, args, Py_SIZE(argdefs), globals);
         }
     }
 
@@ -5242,8 +5252,8 @@ create_keyword_args(PyObject *names, PyObject ***pp_stack,
         return NULL;
     while (--nk >= 0) {
         int err;
-        PyObject *value = EXT_POP(*pp_stack);
         PyObject *key = PyTuple_GET_ITEM(names, nk);
+        PyObject *value = EXT_POP(*pp_stack);
         if (PyDict_GetItem(kwdict, key) != NULL) {
             PyErr_Format(PyExc_TypeError,
                          "%.200s%s got multiple values "
@@ -5279,33 +5289,6 @@ load_args(PyObject ***pp_stack, Py_ssize_t nargs)
         PyTuple_SET_ITEM(args, nargs, arg);
     }
     return args;
-}
-
-static PyObject *
-do_call(PyObject *func, PyObject ***pp_stack, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *callargs, *kwdict, *result;
-
-    if (kwnames != NULL) {
-        kwdict = create_keyword_args(kwnames, pp_stack, func);
-        if (kwdict == NULL) {
-            return NULL;
-        }
-    }
-    else {
-        kwdict = NULL;
-    }
-
-    callargs = load_args(pp_stack, nargs);
-    if (callargs == NULL) {
-        Py_XDECREF(kwdict);
-        return NULL;
-    }
-
-    result = do_call_core(func, callargs, kwdict);
-    Py_XDECREF(callargs);
-    Py_XDECREF(kwdict);
-    return result;
 }
 
 static PyObject *
