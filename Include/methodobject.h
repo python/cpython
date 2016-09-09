@@ -42,6 +42,11 @@ PyAPI_FUNC(PyObject *) _PyCFunction_FastCallDict(PyObject *func,
     PyObject **args,
     Py_ssize_t nargs,
     PyObject *kwargs);
+
+PyAPI_FUNC(PyObject *) _PyCFunction_FastCallKeywords(PyObject *func,
+    PyObject **stack,
+    Py_ssize_t nargs,
+    PyObject *kwnames);
 #endif
 
 struct PyMethodDef {

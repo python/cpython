@@ -2366,7 +2366,7 @@ _PyObject_Call_Prepend(PyObject *func,
     return result;
 }
 
-static PyObject *
+PyObject *
 _PyStack_AsDict(PyObject **values, Py_ssize_t nkwargs, PyObject *kwnames,
                 PyObject *func)
 {
@@ -2415,8 +2415,11 @@ _PyObject_FastCallKeywords(PyObject *func, PyObject **stack, Py_ssize_t nargs,
     assert((nargs == 0 && nkwargs == 0) || stack != NULL);
 
     if (PyFunction_Check(func)) {
-        /* Fast-path: avoid temporary tuple or dict */
         return _PyFunction_FastCallKeywords(func, stack, nargs, kwnames);
+    }
+
+    if (PyCFunction_Check(func)) {
+        return _PyCFunction_FastCallKeywords(func, stack, nargs, kwnames);
     }
 
     if (nkwargs > 0) {

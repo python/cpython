@@ -267,8 +267,15 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
                                           PyObject *args, PyObject *kwargs);
 
 #ifndef Py_LIMITED_API
-    PyAPI_FUNC(PyObject*) _PyStack_AsTuple(PyObject **stack,
+    PyAPI_FUNC(PyObject*) _PyStack_AsTuple(
+        PyObject **stack,
         Py_ssize_t nargs);
+
+    PyAPI_FUNC(PyObject *) _PyStack_AsDict(
+        PyObject **values,
+        Py_ssize_t nkwargs,
+        PyObject *kwnames,
+        PyObject *func);
 
      /* Call the callable object func with the "fast call" calling convention:
         args is a C array for positional arguments (nargs is the number of
