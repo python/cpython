@@ -121,6 +121,10 @@ def parameterize(cls):
     Note: if and only if the generated test name is a valid identifier can it
     be used to select the test individually from the unittest command line.
 
+    The values in the params dict can be a single value, a tuple, or a
+    dict.  If a single value of a tuple, it is passed to the test function
+    as positional arguments.  If a dict, it is a passed via **kw.
+
     """
     paramdicts = {}
     testers = collections.defaultdict(list)
@@ -149,8 +153,12 @@ def parameterize(cls):
             if name.startswith(paramsname):
                 testnameroot = 'test_' + name[len(paramsname):]
                 for paramname, params in paramsdict.items():
-                    test = (lambda self, name=name, params=params:
-                                    getattr(self, name)(*params))
+                    if hasattr(params, 'keys'):
+                        test = (lambda self, name=name, params=params:
+                                    getattr(self, name)(**params))
+                    else:
+                        test = (lambda self, name=name, params=params:
+                                        getattr(self, name)(*params))
                     testname = testnameroot + '_' + paramname
                     test.__name__ = testname
                     testfuncs[testname] = test

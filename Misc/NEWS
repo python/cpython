@@ -62,6 +62,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28047: Fixed calculation of line length used for the base64 CTE
+  in the new email policies.
+
 - Issue #27445: Don't pass str(_charset) to MIMEText.set_payload().
   Patch by Claude Paroz.
 
