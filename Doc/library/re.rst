@@ -237,6 +237,16 @@ The special characters are:
    *cannot* be retrieved after performing a match or referenced later in the
    pattern.
 
+``(?imsx-imsx:...)``
+   (Zero or more letters from the set ``'i'``, ``'m'``, ``'s'``, ``'x'``,
+   optionally followed by ``'-'`` followed by one or more letters from the
+   same set.)  The letters set or removes the corresponding flags:
+   :const:`re.I` (ignore case), :const:`re.M` (multi-line), :const:`re.S`
+   (dot matches all), and :const:`re.X` (verbose), for the part of the
+   expression.  (The flags are described in :ref:`contents-of-module-re`.)
+
+   .. versionadded: 3.7
+
 ``(?P<name>...)``
    Similar to regular parentheses, but the substring matched by the group is
    accessible via the symbolic group name *name*.  Group names must be valid

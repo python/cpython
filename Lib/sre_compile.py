@@ -71,7 +71,8 @@ def _compile(code, pattern, flags):
     ASSERT_CODES = _ASSERT_CODES
     if (flags & SRE_FLAG_IGNORECASE and
             not (flags & SRE_FLAG_LOCALE) and
-            flags & SRE_FLAG_UNICODE):
+            flags & SRE_FLAG_UNICODE and
+            not (flags & SRE_FLAG_ASCII)):
         fixes = _ignorecase_fixes
     else:
         fixes = None
@@ -137,14 +138,15 @@ def _compile(code, pattern, flags):
                 else:
                     emit(MIN_UNTIL)
         elif op is SUBPATTERN:
-            if av[0]:
+            group, add_flags, del_flags, p = av
+            if group:
                 emit(MARK)
-                emit((av[0]-1)*2)
-            # _compile_info(code, av[1], flags)
-            _compile(code, av[1], flags)
-            if av[0]:
+                emit((group-1)*2)
+            # _compile_info(code, p, (flags | add_flags) & ~del_flags)
+            _compile(code, p, (flags | add_flags) & ~del_flags)
+            if group:
                 emit(MARK)
-                emit((av[0]-1)*2+1)
+                emit((group-1)*2+1)
         elif op in SUCCESS_CODES:
             emit(op)
         elif op in ASSERT_CODES:
@@ -172,7 +174,7 @@ def _compile(code, pattern, flags):
                 av = AT_MULTILINE.get(av, av)
             if flags & SRE_FLAG_LOCALE:
                 av = AT_LOCALE.get(av, av)
-            elif flags & SRE_FLAG_UNICODE:
+            elif (flags & SRE_FLAG_UNICODE) and not (flags & SRE_FLAG_ASCII):
                 av = AT_UNICODE.get(av, av)
             emit(av)
         elif op is BRANCH:
@@ -193,7 +195,7 @@ def _compile(code, pattern, flags):
             emit(op)
             if flags & SRE_FLAG_LOCALE:
                 av = CH_LOCALE[av]
-            elif flags & SRE_FLAG_UNICODE:
+            elif (flags & SRE_FLAG_UNICODE) and not (flags & SRE_FLAG_ASCII):
                 av = CH_UNICODE[av]
             emit(av)
         elif op is GROUPREF:
@@ -237,7 +239,7 @@ def _compile_charset(charset, flags, code, fixup=None, fixes=None):
         elif op is CATEGORY:
             if flags & SRE_FLAG_LOCALE:
                 emit(CH_LOCALE[av])
-            elif flags & SRE_FLAG_UNICODE:
+            elif (flags & SRE_FLAG_UNICODE) and not (flags & SRE_FLAG_ASCII):
                 emit(CH_UNICODE[av])
             else:
                 emit(av)
@@ -414,14 +416,16 @@ def _get_literal_prefix(pattern):
     prefix = []
     prefixappend = prefix.append
     prefix_skip = None
-    got_all = True
     for op, av in pattern.data:
         if op is LITERAL:
             prefixappend(av)
         elif op is SUBPATTERN:
-            prefix1, prefix_skip1, got_all = _get_literal_prefix(av[1])
+            group, add_flags, del_flags, p = av
+            if add_flags & SRE_FLAG_IGNORECASE:
+                break
+            prefix1, prefix_skip1, got_all = _get_literal_prefix(p)
             if prefix_skip is None:
-                if av[0] is not None:
+                if group is not None:
                     prefix_skip = len(prefix)
                 elif prefix_skip1 is not None:
                     prefix_skip = len(prefix) + prefix_skip1
@@ -429,32 +433,35 @@ def _get_literal_prefix(pattern):
             if not got_all:
                 break
         else:
-            got_all = False
             break
-    return prefix, prefix_skip, got_all
+    else:
+        return prefix, prefix_skip, True
+    return prefix, prefix_skip, False
 
 def _get_charset_prefix(pattern):
     charset = [] # not used
     charsetappend = charset.append
     if pattern.data:
         op, av = pattern.data[0]
-        if op is SUBPATTERN and av[1]:
-            op, av = av[1][0]
-            if op is LITERAL:
-                charsetappend((op, av))
-            elif op is BRANCH:
-                c = []
-                cappend = c.append
-                for p in av[1]:
-                    if not p:
-                        break
-                    op, av = p[0]
-                    if op is LITERAL:
-                        cappend((op, av))
+        if op is SUBPATTERN:
+            group, add_flags, del_flags, p = av
+            if p and not (add_flags & SRE_FLAG_IGNORECASE):
+                op, av = p[0]
+                if op is LITERAL:
+                    charsetappend((op, av))
+                elif op is BRANCH:
+                    c = []
+                    cappend = c.append
+                    for p in av[1]:
+                        if not p:
+                            break
+                        op, av = p[0]
+                        if op is LITERAL:
+                            cappend((op, av))
+                        else:
+                            break
                     else:
-                        break
-                else:
-                    charset = c
+                        charset = c
         elif op is BRANCH:
             c = []
             cappend = c.append

@@ -65,6 +65,12 @@ FLAGS = {
     "u": SRE_FLAG_UNICODE,
 }
 
+GLOBAL_FLAGS = (SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE |
+                SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE)
+
+class Verbose(Exception):
+    pass
+
 class Pattern:
     # master pattern object.  keeps track of global attributes
     def __init__(self):
@@ -184,7 +190,7 @@ class SubPattern:
                 lo = lo + i
                 hi = hi + j
             elif op is SUBPATTERN:
-                i, j = av[1].getwidth()
+                i, j = av[-1].getwidth()
                 lo = lo + i
                 hi = hi + j
             elif op in _REPEATCODES:
@@ -395,7 +401,7 @@ def _escape(source, escape, state):
         pass
     raise source.error("bad escape %s" % escape, len(escape))
 
-def _parse_sub(source, state, nested=True):
+def _parse_sub(source, state, verbose, nested=True):
     # parse an alternation: a|b|c
 
     items = []
@@ -403,7 +409,7 @@ def _parse_sub(source, state, nested=True):
     sourcematch = source.match
     start = source.tell()
     while True:
-        itemsappend(_parse(source, state))
+        itemsappend(_parse(source, state, verbose))
         if not sourcematch("|"):
             break
 
@@ -445,10 +451,10 @@ def _parse_sub(source, state, nested=True):
     subpattern.append((BRANCH, (None, items)))
     return subpattern
 
-def _parse_sub_cond(source, state, condgroup):
-    item_yes = _parse(source, state)
+def _parse_sub_cond(source, state, condgroup, verbose):
+    item_yes = _parse(source, state, verbose)
     if source.match("|"):
-        item_no = _parse(source, state)
+        item_no = _parse(source, state, verbose)
         if source.next == "|":
             raise source.error("conditional backref with more than two branches")
     else:
@@ -457,7 +463,7 @@ def _parse_sub_cond(source, state, condgroup):
     subpattern.append((GROUPREF_EXISTS, (condgroup, item_yes, item_no)))
     return subpattern
 
-def _parse(source, state):
+def _parse(source, state, verbose):
     # parse a simple pattern
     subpattern = SubPattern(state)
 
@@ -467,7 +473,6 @@ def _parse(source, state):
     sourcematch = source.match
     _len = len
     _ord = ord
-    verbose = state.flags & SRE_FLAG_VERBOSE
 
     while True:
 
@@ -621,6 +626,8 @@ def _parse(source, state):
             group = True
             name = None
             condgroup = None
+            add_flags = 0
+            del_flags = 0
             if sourcematch("?"):
                 # options
                 char = sourceget()
@@ -682,7 +689,7 @@ def _parse(source, state):
                         lookbehindgroups = state.lookbehindgroups
                         if lookbehindgroups is None:
                             state.lookbehindgroups = state.groups
-                    p = _parse_sub(source, state)
+                    p = _parse_sub(source, state, verbose)
                     if dir < 0:
                         if lookbehindgroups is None:
                             state.lookbehindgroups = None
@@ -718,19 +725,13 @@ def _parse(source, state):
                             raise source.error("invalid group reference",
                                                len(condname) + 1)
                     state.checklookbehindgroup(condgroup, source)
-                elif char in FLAGS:
+                elif char in FLAGS or char == "-":
                     # flags
-                    while True:
-                        state.flags |= FLAGS[char]
-                        char = sourceget()
-                        if char is None:
-                            raise source.error("missing )")
-                        if char == ")":
-                            break
-                        if char not in FLAGS:
-                            raise source.error("unknown flag", len(char))
-                    verbose = state.flags & SRE_FLAG_VERBOSE
-                    continue
+                    flags = _parse_flags(source, state, char)
+                    if flags is None:  # global flags
+                        continue
+                    add_flags, del_flags = flags
+                    group = None
                 else:
                     raise source.error("unknown extension ?" + char,
                                        len(char) + 1)
@@ -742,15 +743,17 @@ def _parse(source, state):
                 except error as err:
                     raise source.error(err.msg, len(name) + 1) from None
             if condgroup:
-                p = _parse_sub_cond(source, state, condgroup)
+                p = _parse_sub_cond(source, state, condgroup, verbose)
             else:
-                p = _parse_sub(source, state)
+                sub_verbose = ((verbose or (add_flags & SRE_FLAG_VERBOSE)) and
+                               not (del_flags & SRE_FLAG_VERBOSE))
+                p = _parse_sub(source, state, sub_verbose)
             if not source.match(")"):
                 raise source.error("missing ), unterminated subpattern",
                                    source.tell() - start)
             if group is not None:
                 state.closegroup(group, p)
-            subpatternappend((SUBPATTERN, (group, p)))
+            subpatternappend((SUBPATTERN, (group, add_flags, del_flags, p)))
 
         elif this == "^":
             subpatternappend((AT, AT_BEGINNING))
@@ -762,6 +765,53 @@ def _parse(source, state):
             raise AssertionError("unsupported special character %r" % (char,))
 
     return subpattern
+
+def _parse_flags(source, state, char):
+    sourceget = source.get
+    add_flags = 0
+    del_flags = 0
+    if char != "-":
+        while True:
+            add_flags |= FLAGS[char]
+            char = sourceget()
+            if char is None:
+                raise source.error("missing -, : or )")
+            if char in ")-:":
+                break
+            if char not in FLAGS:
+                msg = "unknown flag" if char.isalpha() else "missing -, : or )"
+                raise source.error(msg, len(char))
+    if char == ")":
+        if ((add_flags & SRE_FLAG_VERBOSE) and
+            not (state.flags & SRE_FLAG_VERBOSE)):
+            raise Verbose
+        state.flags |= add_flags
+        return None
+    if add_flags & GLOBAL_FLAGS:
+        raise source.error("bad inline flags: cannot turn on global flag", 1)
+    if char == "-":
+        char = sourceget()
+        if char is None:
+            raise source.error("missing flag")
+        if char not in FLAGS:
+            msg = "unknown flag" if char.isalpha() else "missing flag"
+            raise source.error(msg, len(char))
+        while True:
+            del_flags |= FLAGS[char]
+            char = sourceget()
+            if char is None:
+                raise source.error("missing :")
+            if char == ":":
+                break
+            if char not in FLAGS:
+                msg = "unknown flag" if char.isalpha() else "missing :"
+                raise source.error(msg, len(char))
+    assert char == ":"
+    if del_flags & GLOBAL_FLAGS:
+        raise source.error("bad inline flags: cannot turn off global flag", 1)
+    if add_flags & del_flags:
+        raise source.error("bad inline flags: flag turned on and off", 1)
+    return add_flags, del_flags
 
 def fix_flags(src, flags):
     # Check and fix flags according to the type of pattern (str or bytes)
@@ -789,17 +839,21 @@ def parse(str, flags=0, pattern=None):
     pattern.flags = flags
     pattern.str = str
 
-    p = _parse_sub(source, pattern, 0)
+    try:
+        p = _parse_sub(source, pattern, flags & SRE_FLAG_VERBOSE, False)
+    except Verbose:
+        # the VERBOSE flag was switched on inside the pattern.  to be
+        # on the safe side, we'll parse the whole thing again...
+        pattern = Pattern()
+        pattern.flags = flags | SRE_FLAG_VERBOSE
+        pattern.str = str
+        p = _parse_sub(source, pattern, True, False)
+
     p.pattern.flags = fix_flags(str, p.pattern.flags)
 
     if source.next is not None:
         assert source.next == ")"
         raise source.error("unbalanced parenthesis")
-
-    if not (flags & SRE_FLAG_VERBOSE) and p.pattern.flags & SRE_FLAG_VERBOSE:
-        # the VERBOSE flag was switched on inside the pattern.  to be
-        # on the safe side, we'll parse the whole thing again...
-        return parse(str, p.pattern.flags)
 
     if flags & SRE_FLAG_DEBUG:
         p.dump()
