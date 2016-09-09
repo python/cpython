@@ -3032,24 +3032,46 @@ private:
     void ValidateOperatingSystem() {
         LOC_STRING *pLocString = nullptr;
         
-        if (IsWindows7SP1OrGreater()) {
-            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Target OS is Windows 7 SP1 or later");
-            return;
-        } else if (IsWindows7OrGreater()) {
-            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 RTM");
-            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
-            LocGetString(_wixLoc, L"#(loc.FailureWin7MissingSP1)", &pLocString);
-        } else if (IsWindowsVistaSP2OrGreater()) {
-            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Target OS is Windows Vista SP2");
-            return;
-        } else if (IsWindowsVistaOrGreater()) {
-            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Vista RTM or SP1");
-            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 2 is required to continue installation");
-            LocGetString(_wixLoc, L"#(loc.FailureVistaMissingSP2)", &pLocString);
-        } else { 
-            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows XP or earlier");
-            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Vista SP2 or later is required to continue installation");
-            LocGetString(_wixLoc, L"#(loc.FailureXPOrEarlier)", &pLocString);
+        if (IsWindowsServer()) {
+            if (IsWindowsVersionOrGreater(6, 1, 1)) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2008 R2 or later");
+                return;
+            } else if (IsWindowsVersionOrGreater(6, 1, 0)) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2");
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
+                LocGetString(_wixLoc, L"#(loc.FailureWS2K8R2MissingSP1)", &pLocString);
+            } else if (IsWindowsVersionOrGreater(6, 0, 2)) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Target OS is Windows Server 2008 SP2 or later");
+                return;
+            } else if (IsWindowsVersionOrGreater(6, 0, 0)) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008");
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 2 is required to continue installation");
+                LocGetString(_wixLoc, L"#(loc.FailureWS2K8MissingSP2)", &pLocString);
+            } else {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2003 or earlier");
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Server 2008 SP2 or later is required to continue installation");
+                LocGetString(_wixLoc, L"#(loc.FailureWS2K3OrEarlier)", &pLocString);
+            }
+        } else {
+            if (IsWindows7SP1OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 7 SP1 or later");
+                return;
+            } else if (IsWindows7OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 RTM");
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
+                LocGetString(_wixLoc, L"#(loc.FailureWin7MissingSP1)", &pLocString);
+            } else if (IsWindowsVistaSP2OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Target OS is Windows Vista SP2");
+                return;
+            } else if (IsWindowsVistaOrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Vista RTM or SP1");
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 2 is required to continue installation");
+                LocGetString(_wixLoc, L"#(loc.FailureVistaMissingSP2)", &pLocString);
+            } else { 
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows XP or earlier");
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Vista SP2 or later is required to continue installation");
+                LocGetString(_wixLoc, L"#(loc.FailureXPOrEarlier)", &pLocString);
+            }
         }
 
         if (pLocString && pLocString->wzText) {
