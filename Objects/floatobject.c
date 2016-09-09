@@ -124,11 +124,43 @@ PyFloat_FromDouble(double fval)
     return (PyObject *) op;
 }
 
+static PyObject *
+float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
+{
+    double x;
+    const char *end;
+    const char *last = s + len;
+    /* strip space */
+    while (s < last && Py_ISSPACE(*s)) {
+        s++;
+    }
+
+    while (s < last - 1 && Py_ISSPACE(last[-1])) {
+        last--;
+    }
+
+    /* We don't care about overflow or underflow.  If the platform
+     * supports them, infinities and signed zeroes (on underflow) are
+     * fine. */
+    x = PyOS_string_to_double(s, (char **)&end, NULL);
+    if (end != last) {
+        PyErr_Format(PyExc_ValueError,
+                     "could not convert string to float: "
+                     "%R", obj);
+        return NULL;
+    }
+    else if (x == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    else {
+        return PyFloat_FromDouble(x);
+    }
+}
+
 PyObject *
 PyFloat_FromString(PyObject *v)
 {
-    const char *s, *last, *end;
-    double x;
+    const char *s;
     PyObject *s_buffer = NULL;
     Py_ssize_t len;
     Py_buffer view = {NULL, NULL};
@@ -169,27 +201,8 @@ PyFloat_FromString(PyObject *v)
             Py_TYPE(v)->tp_name);
         return NULL;
     }
-    last = s + len;
-    /* strip space */
-    while (s < last && Py_ISSPACE(*s))
-        s++;
-    while (s < last - 1 && Py_ISSPACE(last[-1]))
-        last--;
-    /* We don't care about overflow or underflow.  If the platform
-     * supports them, infinities and signed zeroes (on underflow) are
-     * fine. */
-    x = PyOS_string_to_double(s, (char **)&end, NULL);
-    if (end != last) {
-        PyErr_Format(PyExc_ValueError,
-                     "could not convert string to float: "
-                     "%R", v);
-        result = NULL;
-    }
-    else if (x == -1.0 && PyErr_Occurred())
-        result = NULL;
-    else
-        result = PyFloat_FromDouble(x);
-
+    result = _Py_string_to_number_with_underscores(s, len, "float", v, v,
+                                                   float_from_string_inner);
     PyBuffer_Release(&view);
     Py_XDECREF(s_buffer);
     return result;

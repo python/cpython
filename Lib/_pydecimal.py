@@ -589,7 +589,7 @@ class Decimal(object):
         # From a string
         # REs insist on real strings, so we can too.
         if isinstance(value, str):
-            m = _parser(value.strip())
+            m = _parser(value.strip().replace("_", ""))
             if m is None:
                 if context is None:
                     context = getcontext()
@@ -4125,7 +4125,7 @@ class Context(object):
         This will make it round up for that operation.
         """
         rounding = self.rounding
-        self.rounding= type
+        self.rounding = type
         return rounding
 
     def create_decimal(self, num='0'):
@@ -4134,10 +4134,10 @@ class Context(object):
         This method implements the to-number operation of the
         IBM Decimal specification."""
 
-        if isinstance(num, str) and num != num.strip():
+        if isinstance(num, str) and (num != num.strip() or '_' in num):
             return self._raise_error(ConversionSyntax,
-                                     "no trailing or leading whitespace is "
-                                     "permitted.")
+                                     "trailing or leading whitespace and "
+                                     "underscores are not permitted.")
 
         d = Decimal(num, context=self)
         if d._isnan() and len(d._int) > self.prec - self.clamp:

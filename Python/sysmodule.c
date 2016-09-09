@@ -609,33 +609,6 @@ PyDoc_STRVAR(getswitchinterval_doc,
 
 #endif /* WITH_THREAD */
 
-#ifdef WITH_TSC
-static PyObject *
-sys_settscdump(PyObject *self, PyObject *args)
-{
-    int bool;
-    PyThreadState *tstate = PyThreadState_Get();
-
-    if (!PyArg_ParseTuple(args, "i:settscdump", &bool))
-        return NULL;
-    if (bool)
-        tstate->interp->tscdump = 1;
-    else
-        tstate->interp->tscdump = 0;
-    Py_INCREF(Py_None);
-    return Py_None;
-
-}
-
-PyDoc_STRVAR(settscdump_doc,
-"settscdump(bool)\n\
-\n\
-If true, tell the Python interpreter to dump VM measurements to\n\
-stderr.  If false, turn off dump.  The measurements are based on the\n\
-processor's time-stamp counter."
-);
-#endif /* TSC */
-
 static PyObject *
 sys_setrecursionlimit(PyObject *self, PyObject *args)
 {
@@ -1410,9 +1383,6 @@ static PyMethodDef sys_methods[] = {
     {"getprofile",      sys_getprofile, METH_NOARGS, getprofile_doc},
     {"setrecursionlimit", sys_setrecursionlimit, METH_VARARGS,
      setrecursionlimit_doc},
-#ifdef WITH_TSC
-    {"settscdump", sys_settscdump, METH_VARARGS, settscdump_doc},
-#endif
     {"settrace",        sys_settrace, METH_O, settrace_doc},
     {"gettrace",        sys_gettrace, METH_NOARGS, gettrace_doc},
     {"call_tracing", sys_call_tracing, METH_VARARGS, call_tracing_doc},
