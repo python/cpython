@@ -1213,9 +1213,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         }
 #endif
 
-        /* Main switch on opcode */
-        READ_TIMESTAMP(inst0);
-
         switch (opcode) {
 
         /* BEWARE!
