@@ -23,6 +23,8 @@ the first retrieved (operating like a stack).  With a priority queue,
 the entries are kept sorted (using the :mod:`heapq` module) and the
 lowest valued entry is retrieved first.
 
+Internally, the module uses locks to temporarily block competing threads;
+however, it is not designed to handle reentrancy within a thread.
 
 The :mod:`queue` module defines the following classes and exceptions:
 
@@ -188,11 +190,6 @@ Example of how to wait for enqueued tasks to be completed::
     for t in threads:
         t.join()
 
-
-.. note::
-
-   The :mod:`queue` module is not safe for use from :mod:`signal` handlers as
-   it uses :mod:`threading` locks.
 
 .. seealso::
 
