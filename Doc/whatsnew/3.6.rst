@@ -422,7 +422,9 @@ Some smaller changes made to the core Python language are:
   to have this new dict implementation in the language for a few
   releases before changing the language spec to mandate
   order-preserving semantics for all current and future Python
-  implementations).
+  implementations; this also helps preserve backwards-compatibility
+  with older versions of the language where random iteration order is
+  still in effect, e.g. Python 3.5).
   (Contributed by INADA Naoki in :issue:`27350`. Idea
   `originally suggested by Raymond Hettinger
   <https://mail.python.org/pipermail/python-dev/2012-December/123028.html>`_.)
