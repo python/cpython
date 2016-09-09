@@ -60,7 +60,10 @@ templates_path = ['tools/templates']
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
-    'index': 'indexsidebar.html',
+    # Defaults taken from http://www.sphinx-doc.org/en/stable/config.html#confval-html_sidebars
+    # Removes the quick search block
+    '**': ['localtoc.html', 'relations.html', 'customsourcelink.html'],
+    'index': ['indexsidebar.html'],
 }
 
 # Additional templates that should be rendered to pages.
