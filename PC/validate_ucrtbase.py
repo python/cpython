@@ -82,7 +82,8 @@ print('{} is version {}.{}.{}.{}'.format(name.value, *ver))
 
 if ver < (10, 0, 10586):
     print('WARN: ucrtbased contains known issues. '
-          'Please update Visual Studio or the Windows SDK.')
+          'Please update the Windows 10 SDK.')
     print('See:')
-    print('  http://bugs.python.org/issue26624')
+    print('  http://bugs.python.org/issue27705')
+    print('  https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk')
     sys.exit(1)
