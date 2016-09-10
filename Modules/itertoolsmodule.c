@@ -3905,7 +3905,7 @@ static PyObject *
 count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     countobject *lz;
-    int slow_mode = 0;
+    int fast_mode;
     Py_ssize_t cnt = 0;
     PyObject *long_cnt = NULL;
     PyObject *long_step = NULL;
@@ -3922,16 +3922,26 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     return NULL;
     }
 
+    fast_mode = (long_cnt == NULL || PyLong_Check(long_cnt)) &&
+                (long_step == NULL || PyLong_Check(long_step));
+
+    /* If not specified, start defaults to 0 */
     if (long_cnt != NULL) {
-        cnt = PyLong_AsSsize_t(long_cnt);
-        if ((cnt == -1 && PyErr_Occurred()) || !PyLong_Check(long_cnt)) {
-            PyErr_Clear();
-            slow_mode = 1;
+        if (fast_mode) {
+            assert(PyLong_Check(long_cnt));
+            cnt = PyLong_AsSsize_t(long_cnt);
+            if (cnt == -1 && PyErr_Occurred()) {
+                PyErr_Clear();
+                fast_mode = 0;
+            }
         }
         Py_INCREF(long_cnt);
     } else {
         cnt = 0;
         long_cnt = PyLong_FromLong(0);
+        if (long_cnt == NULL) {
+            return NULL;
+        }
     }
 
     /* If not specified, step defaults to 1 */
@@ -3947,21 +3957,24 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     assert(long_cnt != NULL && long_step != NULL);
 
     /* Fast mode only works when the step is 1 */
-    step = PyLong_AsLong(long_step);
-    if (step != 1) {
-        slow_mode = 1;
-        if (step == -1 && PyErr_Occurred())
-            PyErr_Clear();
+    if (fast_mode) {
+        assert(PyLong_Check(long_step));
+        step = PyLong_AsLong(long_step);
+        if (step != 1) {
+            fast_mode = 0;
+            if (step == -1 && PyErr_Occurred())
+                PyErr_Clear();
+        }
     }
 
-    if (slow_mode)
-        cnt = PY_SSIZE_T_MAX;
-    else
+    if (fast_mode)
         Py_CLEAR(long_cnt);
+    else
+        cnt = PY_SSIZE_T_MAX;
 
-    assert((cnt != PY_SSIZE_T_MAX && long_cnt == NULL && !slow_mode) ||
-           (cnt == PY_SSIZE_T_MAX && long_cnt != NULL && slow_mode));
-    assert(slow_mode ||
+    assert((cnt != PY_SSIZE_T_MAX && long_cnt == NULL && fast_mode) ||
+           (cnt == PY_SSIZE_T_MAX && long_cnt != NULL && !fast_mode));
+    assert(!fast_mode ||
            (PyLong_Check(long_step) && PyLong_AS_LONG(long_step) == 1));
 
     /* create countobject structure */

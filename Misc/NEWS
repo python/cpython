@@ -65,6 +65,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28019: itertools.count() no longer rounds non-integer step in range
+  between 1.0 and 2.0 to 1.
+
 - Issue #25969: Update the lib2to3 grammar to handle the unpacking
   generalizations added in 3.5.
 
