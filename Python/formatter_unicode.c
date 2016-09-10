@@ -41,7 +41,7 @@ invalid_comma_type(Py_UCS4 presentation_type)
 }
 
 static void
-invalid_comma_and_underscore()
+invalid_comma_and_underscore(void)
 {
     PyErr_Format(PyExc_ValueError, "Cannot specify both ',' and '_'.");
 }
