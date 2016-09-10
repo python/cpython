@@ -301,6 +301,8 @@ Windows
 Build
 -----
 
+- Issue #27566: Fix clean target in freeze makefile (patch by Lisa Roach)
+
 - Issue #27705: Update message in validate_ucrtbase.py
 
 - Issue #27983: Cause lack of llvm-profdata tool when using clang as
