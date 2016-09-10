@@ -147,7 +147,11 @@ class FeedParser:
         self.policy = policy
         self._old_style_factory = False
         if _factory is None:
-            self._factory = policy.message_factory
+            if policy.message_factory is None:
+                from email.message import Message
+                self._factory = Message
+            else:
+                self._factory = policy.message_factory
         else:
             self._factory = _factory
             try:

@@ -1162,6 +1162,3 @@ class EmailMessage(MIMEPart):
         super().set_content(*args, **kw)
         if 'MIME-Version' not in self:
             self['MIME-Version'] = '1.0'
-
-# Set message_factory on Policy here to avoid a circular import.
-Policy.message_factory = Message

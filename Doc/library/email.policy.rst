@@ -224,8 +224,8 @@ added matters.  To illustrate::
    .. attribute:: message_factory
 
       A factory function for constructing a new empty message object.  Used
-      by the parser when building messages.  Defaults to
-      :class:`~email.message.Message`.
+      by the parser when building messages.  Defaults to ``None``, in
+      which case :class:`~email.message.Message` is used.
 
       .. versionadded:: 3.6
 
