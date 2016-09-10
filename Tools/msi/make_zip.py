@@ -67,8 +67,6 @@ def include_in_lib(p):
     if p.is_dir():
         if name in EXCLUDE_FROM_LIBRARY:
             return False
-        if name.startswith('plat-'):
-            return False
         if name == 'test' and p.parts[-2].lower() == 'lib':
             return False
         if name in {'test', 'tests'} and p.parts[-3].lower() == 'lib':

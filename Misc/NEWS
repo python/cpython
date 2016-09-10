@@ -10,6 +10,8 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #28046: Remove platform-specific directories from sys.path.
+
 - Issue #25758: Prevents zipimport from unnecessarily encoding a filename
   (patch by Eryk Sun)
 

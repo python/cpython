@@ -1292,7 +1292,8 @@ def buildPython():
 
     import pprint
     if getVersionMajorMinor() >= (3, 6):
-        path = os.path.join(path_to_lib, 'plat-darwin', '_sysconfigdata_m.py')
+        # XXX this is extra-fragile
+        path = os.path.join(path_to_lib, '_sysconfigdata_m_darwin_darwin.py')
     else:
         path = os.path.join(path_to_lib, '_sysconfigdata.py')
     fp = open(path, 'r')
