@@ -35,11 +35,12 @@ PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
 PyAPI_FUNC(int) _PyArg_VaParse_SizeT(PyObject *, const char *, va_list);
 PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
                                               const char *, char **, va_list);
-
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject *, PyObject *,
                                             struct _PyArg_Parser *, ...);
 PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywordsFast_SizeT(PyObject *, PyObject *,
                                             struct _PyArg_Parser *, va_list);
+PyAPI_FUNC(int) _PyArg_ParseStack_SizeT(PyObject **args, Py_ssize_t nargs,
+                        PyObject *kwnames, struct _PyArg_Parser *parser, ...);
 #endif
 
 #define FLAG_COMPAT 1
