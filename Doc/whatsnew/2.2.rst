@@ -1159,7 +1159,7 @@ Some of the more notable changes are:
      The main change is the possibility to build Python as a
      framework. This installs a self-contained Python installation plus the
      OSX framework "glue" into /Library/Frameworks/Python.framework (or
-     another location of choice). For now there is little immedeate added
+     another location of choice). For now there is little immediate added
      benefit to this (actually, there is the disadvantage that you have to
      change your PATH to be able to find Python), but it is the basis for
      creating a fullblown Python application, porting the MacPython IDE,
@@ -1168,7 +1168,7 @@ Some of the more notable changes are:
      The other change is that most MacPython toolbox modules, which
      interface to all the MacOS APIs such as windowing, quicktime,
      scripting, etc. have been ported. Again, most of these are not of
-     immedeate use, as they need a full application to be really useful, so
+     immediate use, as they need a full application to be really useful, so
      they have been commented out in setup.py. People wanting to experiment
      can uncomment them. Gestalt and Internet Config modules are enabled by
      default.
