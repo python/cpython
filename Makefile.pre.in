@@ -48,6 +48,10 @@ PGO_PROF_USE_FLAG=@PGO_PROF_USE_FLAG@
 LLVM_PROF_MERGER=@LLVM_PROF_MERGER@
 LLVM_PROF_FILE=@LLVM_PROF_FILE@
 LLVM_PROF_ERR=@LLVM_PROF_ERR@
+DTRACE=         @DTRACE@
+DFLAGS=         @DFLAGS@
+DTRACE_HEADERS= @DTRACE_HEADERS@
+DTRACE_OBJS=    @DTRACE_OBJS@
 
 GNULD=		@GNULD@
 
@@ -315,7 +319,7 @@ OPCODE_H_DIR= 	$(srcdir)/Include
 OPCODE_H_SCRIPT= $(srcdir)/Tools/scripts/generate_opcode_h.py
 OPCODE_H=	$(OPCODE_H_DIR)/opcode.h
 OPCODE_H_GEN=	$(PYTHON_FOR_GEN) $(OPCODE_H_SCRIPT) $(srcdir)/Lib/opcode.py $(OPCODE_H)
-#
+
 ##########################################################################
 # AST
 AST_H_DIR=	Include
@@ -391,7 +395,8 @@ PYTHON_OBJS=	\
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
-		$(THREADOBJ)
+		$(THREADOBJ) \
+		$(DTRACE_OBJS)
 
 
 ##########################################################################
@@ -450,6 +455,15 @@ LIBRARY_OBJS_OMIT_FROZEN=	\
 LIBRARY_OBJS=	\
 		$(LIBRARY_OBJS_OMIT_FROZEN) \
 		Python/frozen.o
+
+##########################################################################
+# DTrace
+
+# On some systems, object files that reference DTrace probes need to be modified
+# in-place by dtrace(1).
+DTRACE_DEPS = \
+	Python/ceval.o
+# XXX: should gcmodule, etc. be here, too?
 
 #########################################################################
 # Rules
@@ -852,6 +866,18 @@ Python/ceval.o: $(OPCODETARGETS_H) $(srcdir)/Python/ceval_gil.h
 
 Python/frozen.o: Python/importlib.h Python/importlib_external.h
 
+# Generate DTrace probe macros, then rename them (PYTHON_ -> PyDTrace_) to
+# follow our naming conventions. dtrace(1) uses the output filename to generate
+# an include guard, so we can't use a pipeline to transform its output.
+Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
+	$(DTRACE) $(DFLAGS) -o $@ -h -s $<
+	: sed in-place edit with POSIX-only tools
+	sed 's/PYTHON_/PyDTrace_/' $@ > $@.tmp
+	mv $@.tmp $@
+
+Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
+	$(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
+
 Objects/typeobject.o: Objects/typeslots.inc
 Objects/typeslots.inc: $(srcdir)/Include/typeslots.h $(srcdir)/Objects/typeslots.py
 	$(PYTHON_FOR_GEN) $(srcdir)/Objects/typeslots.py < $(srcdir)/Include/typeslots.h Objects/typeslots.inc
@@ -918,6 +944,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pycapsule.h \
 		$(srcdir)/Include/pyctype.h \
 		$(srcdir)/Include/pydebug.h \
+		$(srcdir)/Include/pydtrace.h \
 		$(srcdir)/Include/pyerrors.h \
 		$(srcdir)/Include/pyfpe.h \
 		$(srcdir)/Include/pyhash.h \
@@ -949,7 +976,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/weakrefobject.h \
 		pyconfig.h \
 		$(PARSER_HEADERS) \
-		$(AST_H)
+		$(AST_H) \
+		$(DTRACE_HEADERS)
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 
@@ -1158,6 +1186,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/audiodata \
 		test/capath test/data \
 		test/cjkencodings test/decimaltestdata test/xmltestdata \
+		test/dtracedata \
 		test/eintrdata \
 		test/imghdrdata \
 		test/libregrtest \
@@ -1569,6 +1598,7 @@ clean: pycremoval
 	-rm -f Lib/lib2to3/*Grammar*.pickle
 	-rm -f Programs/_testembed Programs/_freeze_importlib
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
+	-rm -f Include/pydtrace_probes.h
 
 profile-removal:
 	find . -name '*.gc??' -exec rm -f {} ';'

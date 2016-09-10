@@ -28,4 +28,5 @@ Currently, the HOWTOs are:
    argparse.rst
    ipaddress.rst
    clinic.rst
+   instrumentation.rst
 
