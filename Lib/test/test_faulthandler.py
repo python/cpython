@@ -735,11 +735,11 @@ class FaultHandlerTests(unittest.TestCase):
             ('EXCEPTION_INT_DIVIDE_BY_ZERO', 'int divide by zero'),
             ('EXCEPTION_STACK_OVERFLOW', 'stack overflow'),
         ):
-            self.check_windows_exception("""
+            self.check_windows_exception(f"""
                 import faulthandler
                 faulthandler.enable()
                 faulthandler._raise_exception(faulthandler._{exc})
-                """.format(exc=exc),
+                """,
                 3,
                 name)
 

@@ -119,6 +119,14 @@ f'{a * x()}'"""
         self.assertEqual(f'a}}', 'a}')
         self.assertEqual(f'}}b', '}b')
         self.assertEqual(f'a}}b', 'a}b')
+        self.assertEqual(f'{{}}', '{}')
+        self.assertEqual(f'a{{}}', 'a{}')
+        self.assertEqual(f'{{b}}', '{b}')
+        self.assertEqual(f'{{}}c', '{}c')
+        self.assertEqual(f'a{{b}}', 'a{b}')
+        self.assertEqual(f'a{{}}c', 'a{}c')
+        self.assertEqual(f'{{b}}c', '{b}c')
+        self.assertEqual(f'a{{b}}c', 'a{b}c')
 
         self.assertEqual(f'{{{10}', '{10')
         self.assertEqual(f'}}{10}', '}10')
@@ -302,56 +310,79 @@ f'{a * x()}'"""
                             ["f'{\n}'",
                              ])
 
-    def test_no_backslashes(self):
-        # See issue 27921
+    def test_backslashes_in_string_part(self):
+        self.assertEqual(f'\t', '\t')
+        self.assertEqual(r'\t', '\\t')
+        self.assertEqual(rf'\t', '\\t')
+        self.assertEqual(f'{2}\t', '2\t')
+        self.assertEqual(f'{2}\t{3}', '2\t3')
+        self.assertEqual(f'\t{3}', '\t3')
 
-        # These should work, but currently don't
-        self.assertAllRaise(SyntaxError, 'backslashes not allowed',
-                            [r"f'\t'",
-                             r"f'{2}\t'",
-                             r"f'{2}\t{3}'",
-                             r"f'\t{3}'",
+        self.assertEqual(f'\u0394', '\u0394')
+        self.assertEqual(r'\u0394', '\\u0394')
+        self.assertEqual(rf'\u0394', '\\u0394')
+        self.assertEqual(f'{2}\u0394', '2\u0394')
+        self.assertEqual(f'{2}\u0394{3}', '2\u03943')
+        self.assertEqual(f'\u0394{3}', '\u03943')
 
-                             r"f'\N{GREEK CAPITAL LETTER DELTA}'",
-                             r"f'{2}\N{GREEK CAPITAL LETTER DELTA}'",
-                             r"f'{2}\N{GREEK CAPITAL LETTER DELTA}{3}'",
-                             r"f'\N{GREEK CAPITAL LETTER DELTA}{3}'",
+        self.assertEqual(f'\U00000394', '\u0394')
+        self.assertEqual(r'\U00000394', '\\U00000394')
+        self.assertEqual(rf'\U00000394', '\\U00000394')
+        self.assertEqual(f'{2}\U00000394', '2\u0394')
+        self.assertEqual(f'{2}\U00000394{3}', '2\u03943')
+        self.assertEqual(f'\U00000394{3}', '\u03943')
 
-                             r"f'\u0394'",
-                             r"f'{2}\u0394'",
-                             r"f'{2}\u0394{3}'",
-                             r"f'\u0394{3}'",
+        self.assertEqual(f'\N{GREEK CAPITAL LETTER DELTA}', '\u0394')
+        self.assertEqual(f'{2}\N{GREEK CAPITAL LETTER DELTA}', '2\u0394')
+        self.assertEqual(f'{2}\N{GREEK CAPITAL LETTER DELTA}{3}', '2\u03943')
+        self.assertEqual(f'\N{GREEK CAPITAL LETTER DELTA}{3}', '\u03943')
+        self.assertEqual(f'2\N{GREEK CAPITAL LETTER DELTA}', '2\u0394')
+        self.assertEqual(f'2\N{GREEK CAPITAL LETTER DELTA}3', '2\u03943')
+        self.assertEqual(f'\N{GREEK CAPITAL LETTER DELTA}3', '\u03943')
 
-                             r"f'\U00000394'",
-                             r"f'{2}\U00000394'",
-                             r"f'{2}\U00000394{3}'",
-                             r"f'\U00000394{3}'",
+        self.assertEqual(f'\x20', ' ')
+        self.assertEqual(r'\x20', '\\x20')
+        self.assertEqual(rf'\x20', '\\x20')
+        self.assertEqual(f'{2}\x20', '2 ')
+        self.assertEqual(f'{2}\x20{3}', '2 3')
+        self.assertEqual(f'\x20{3}', ' 3')
 
-                             r"f'\x20'",
-                             r"f'{2}\x20'",
-                             r"f'{2}\x20{3}'",
-                             r"f'\x20{3}'",
+        self.assertEqual(f'2\x20', '2 ')
+        self.assertEqual(f'2\x203', '2 3')
+        self.assertEqual(f'\x203', ' 3')
 
-                             r"f'2\x20'",
-                             r"f'2\x203'",
-                             r"f'2\x203'",
+    def test_misformed_unicode_character_name(self):
+        # These test are needed because unicode names are parsed
+        # differently inside f-strings.
+        self.assertAllRaise(SyntaxError, r"\(unicode error\) 'unicodeescape' codec can't decode bytes in position .*: malformed \\N character escape",
+                            [r"f'\N'",
+                             r"f'\N{'",
+                             r"f'\N{GREEK CAPITAL LETTER DELTA'",
+
+                             # Here are the non-f-string versions,
+                             #  which should give the same errors.
+                             r"'\N'",
+                             r"'\N{'",
+                             r"'\N{GREEK CAPITAL LETTER DELTA'",
                              ])
 
-        # And these don't work now, and shouldn't work in the future.
-        self.assertAllRaise(SyntaxError, 'backslashes not allowed',
+    def test_no_backslashes_in_expression_part(self):
+        self.assertAllRaise(SyntaxError, 'f-string expression part cannot include a backslash',
                             [r"f'{\'a\'}'",
                              r"f'{\t3}'",
+                             r"f'{\}'",
+                             r"rf'{\'a\'}'",
+                             r"rf'{\t3}'",
+                             r"rf'{\}'",
+                             r"""rf'{"\N{LEFT CURLY BRACKET}"}'""",
                              ])
 
-    # add this when backslashes are allowed again. see issue 27921
-    # these test will be needed because unicode names will be parsed
-    # differently once backslashes are allowed inside expressions
-    ## def test_misformed_unicode_character_name(self):
-    ##     self.assertAllRaise(SyntaxError, 'xx',
-    ##                         [r"f'\N'",
-    ##                         [r"f'\N{'",
-    ##                         [r"f'\N{GREEK CAPITAL LETTER DELTA'",
-    ##                          ])
+    def test_no_escapes_for_braces(self):
+        # \x7b is '{'.  Make sure it doesn't start an expression.
+        self.assertEqual(f'\x7b2}}', '{2}')
+        self.assertEqual(f'\x7b2', '{2')
+        self.assertEqual(f'\u007b2', '{2')
+        self.assertEqual(f'\N{LEFT CURLY BRACKET}2\N{RIGHT CURLY BRACKET}', '{2}')
 
     def test_newlines_in_expressions(self):
         self.assertEqual(f'{0}', '0')
@@ -509,6 +540,14 @@ f'{a * x()}'"""
                              "ruf''",
                              "FUR''",
                              "Fur''",
+                             "fb''",
+                             "fB''",
+                             "Fb''",
+                             "FB''",
+                             "bf''",
+                             "bF''",
+                             "Bf''",
+                             "BF''",
                              ])
 
     def test_leading_trailing_spaces(self):
@@ -551,8 +590,8 @@ f'{a * x()}'"""
         self.assertAllRaise(SyntaxError, 'f-string: invalid conversion character',
                             ["f'{3!g}'",
                              "f'{3!A}'",
-                             "f'{3!A}'",
-                             "f'{3!A}'",
+                             "f'{3!3}'",
+                             "f'{3!G}'",
                              "f'{3!!}'",
                              "f'{3!:}'",
                              "f'{3! s}'",  # no space before conversion char
@@ -601,6 +640,7 @@ f'{a * x()}'"""
                              "f'{3!s:3'",
                              "f'x{'",
                              "f'x{x'",
+                             "f'{x'",
                              "f'{3:s'",
                              "f'{{{'",
                              "f'{{}}{'",

@@ -4155,141 +4155,74 @@ decode_unicode_with_escapes(struct compiling *c, const char *s, size_t len)
     return v;
 }
 
-/* Compile this expression in to an expr_ty. We know that we can
-   temporarily modify the character before the start of this string
-   (it's '{'), and we know we can temporarily modify the character
-   after this string (it is a '}').  Leverage this to create a
-   sub-string with enough room for us to add parens around the
-   expression. This is to allow strings with embedded newlines, for
-   example. */
+/* Compile this expression in to an expr_ty.  Add parens around the
+   expression, in order to allow leading spaces in the expression. */
 static expr_ty
-fstring_compile_expr(PyObject *str, Py_ssize_t expr_start,
-                     Py_ssize_t expr_end, struct compiling *c, const node *n)
+fstring_compile_expr(const char *expr_start, const char *expr_end,
+                     struct compiling *c, const node *n)
 
 {
+    int all_whitespace = 1;
+    int kind;
+    void *data;
     PyCompilerFlags cf;
     mod_ty mod;
-    char *utf_expr;
+    char *str;
+    PyObject *o;
+    Py_ssize_t len;
     Py_ssize_t i;
-    Py_UCS4 end_ch = -1;
-    int all_whitespace;
-    PyObject *sub = NULL;
 
-    /* We only decref sub if we allocated it with a PyUnicode_Substring.
-       decref_sub records that. */
-    int decref_sub = 0;
-
-    assert(str);
-
-    assert(expr_start >= 0 && expr_start < PyUnicode_GET_LENGTH(str));
-    assert(expr_end >= 0 && expr_end < PyUnicode_GET_LENGTH(str));
     assert(expr_end >= expr_start);
+    assert(*(expr_start-1) == '{');
+    assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':');
 
-    /* There has to be at least one character on each side of the
-       expression inside this str. This will have been caught before
-       we're called. */
-    assert(expr_start >= 1);
-    assert(expr_end <= PyUnicode_GET_LENGTH(str)-1);
+    /* We know there are no escapes here, because backslashes are not allowed,
+       and we know it's utf-8 encoded (per PEP 263).  But, in order to check
+       that each char is not whitespace, we need to decode it to unicode.
+       Which is unfortunate, but such is life. */
 
-    /* If the substring is all whitespace, it's an error. We need to
-        catch this here, and not when we call PyParser_ASTFromString,
-        because turning the expression '' in to '()' would go from
-        being invalid to valid. */
-    /* Note that this code says an empty string is all
-        whitespace. That's important. There's a test for it: f'{}'. */
-    all_whitespace = 1;
-    for (i = expr_start; i < expr_end; i++) {
-        if (!Py_UNICODE_ISSPACE(PyUnicode_READ_CHAR(str, i))) {
+    /* If the substring is all whitespace, it's an error.  We need to catch
+       this here, and not when we call PyParser_ASTFromString, because turning
+       the expression '' in to '()' would go from being invalid to valid. */
+    /* Note that this code says an empty string is all whitespace.  That's
+       important.  There's a test for it: f'{}'. */
+    o = PyUnicode_DecodeUTF8(expr_start, expr_end-expr_start, NULL);
+    if (o == NULL)
+        return NULL;
+    len = PyUnicode_GET_LENGTH(o);
+    kind = PyUnicode_KIND(o);
+    data = PyUnicode_DATA(o);
+    for (i = 0; i < len; i++) {
+        if (!Py_UNICODE_ISSPACE(PyUnicode_READ(kind, data, i))) {
             all_whitespace = 0;
             break;
         }
     }
+    Py_DECREF(o);
     if (all_whitespace) {
         ast_error(c, n, "f-string: empty expression not allowed");
-        goto error;
+        return NULL;
     }
 
-    /* If the substring will be the entire source string, we can't use
-        PyUnicode_Substring, since it will return another reference to
-        our original string. Because we're modifying the string in
-        place, that's a no-no. So, detect that case and just use our
-        string directly. */
+    /* Reuse len to be the length of the utf-8 input string. */
+    len = expr_end - expr_start;
+    /* Allocate 3 extra bytes: open paren, close paren, null byte. */
+    str = PyMem_RawMalloc(len + 3);
+    if (str == NULL)
+        return NULL;
 
-    if (expr_start-1 == 0 && expr_end+1 == PyUnicode_GET_LENGTH(str)) {
-        /* If str is well formed, then the first and last chars must
-           be '{' and '}', respectively. But, if there's a syntax
-           error, for example f'{3!', then the last char won't be a
-           closing brace. So, remember the last character we read in
-           order for us to restore it. */
-        end_ch = PyUnicode_ReadChar(str, expr_end-expr_start+1);
-        assert(end_ch != (Py_UCS4)-1);
-
-        /* In all cases, however, start_ch must be '{'. */
-        assert(PyUnicode_ReadChar(str, 0) == '{');
-
-        sub = str;
-    } else {
-        /* Create a substring object. It must be a new object, with
-           refcount==1, so that we can modify it. */
-        sub = PyUnicode_Substring(str, expr_start-1, expr_end+1);
-        if (!sub)
-            goto error;
-        assert(sub != str);  /* Make sure it's a new string. */
-        decref_sub = 1;      /* Remember to deallocate it on error. */
-    }
-
-    /* Put () around the expression. */
-    if (PyUnicode_WriteChar(sub, 0, '(') < 0 ||
-        PyUnicode_WriteChar(sub, expr_end-expr_start+1, ')') < 0)
-        goto error;
-
-    /* No need to free the memory returned here: it's managed by the
-       string. */
-    utf_expr = PyUnicode_AsUTF8(sub);
-    if (!utf_expr)
-        goto error;
+    str[0] = '(';
+    memcpy(str+1, expr_start, len);
+    str[len+1] = ')';
+    str[len+2] = 0;
 
     cf.cf_flags = PyCF_ONLY_AST;
-    mod = PyParser_ASTFromString(utf_expr, "<fstring>",
+    mod = PyParser_ASTFromString(str, "<fstring>",
                                  Py_eval_input, &cf, c->c_arena);
+    PyMem_RawFree(str);
     if (!mod)
-        goto error;
-
-    if (sub != str)
-        /* Clear instead of decref in case we ever modify this code to change
-           the error handling: this is safest because the XDECREF won't try
-           and decref it when it's NULL. */
-        /* No need to restore the chars in sub, since we know it's getting
-           ready to get deleted (refcount must be 1, since we got a new string
-           in PyUnicode_Substring). */
-        Py_CLEAR(sub);
-    else {
-        assert(!decref_sub);
-        assert(end_ch != (Py_UCS4)-1);
-        /* Restore str, which we earlier modified directly. */
-        if (PyUnicode_WriteChar(str, 0, '{') < 0 ||
-            PyUnicode_WriteChar(str, expr_end-expr_start+1, end_ch) < 0)
-            goto error;
-    }
+        return NULL;
     return mod->v.Expression.body;
-
-error:
-    /* Only decref sub if it was the result of a call to SubString. */
-    if (decref_sub)
-        Py_XDECREF(sub);
-
-    if (end_ch != (Py_UCS4)-1) {
-        /* We only get here if we modified str. Make sure that's the
-           case: str will be equal to sub. */
-        if (str == sub) {
-            /* Don't check the error, because we've already set the
-               error state (that's why we're in 'error', after
-               all). */
-            PyUnicode_WriteChar(str, 0, '{');
-            PyUnicode_WriteChar(str, expr_end-expr_start+1, end_ch);
-        }
-    }
-    return NULL;
 }
 
 /* Return -1 on error.
@@ -4301,35 +4234,38 @@ error:
    doubled braces.
 */
 static int
-fstring_find_literal(PyObject *str, Py_ssize_t *ofs, PyObject **literal,
-                     int recurse_lvl, struct compiling *c, const node *n)
+fstring_find_literal(const char **str, const char *end, int raw,
+                     PyObject **literal, int recurse_lvl,
+                     struct compiling *c, const node *n)
 {
-    /* Get any literal string. It ends when we hit an un-doubled brace, or the
-       end of the string. */
+    /* Get any literal string. It ends when we hit an un-doubled left
+       brace (which isn't part of a unicode name escape such as
+       "\N{EULER CONSTANT}"), or the end of the string. */
 
-    Py_ssize_t literal_start, literal_end;
+    const char *literal_start = *str;
+    const char *literal_end;
+    int in_named_escape = 0;
     int result = 0;
 
-    enum PyUnicode_Kind kind = PyUnicode_KIND(str);
-    void *data = PyUnicode_DATA(str);
-
     assert(*literal == NULL);
-
-    literal_start = *ofs;
-    for (; *ofs < PyUnicode_GET_LENGTH(str); *ofs += 1) {
-        Py_UCS4 ch = PyUnicode_READ(kind, data, *ofs);
-        if (ch == '{' || ch == '}') {
+    for (; *str < end; (*str)++) {
+        char ch = **str;
+        if (!in_named_escape && ch == '{' && (*str)-literal_start >= 2 &&
+            *(*str-2) == '\\' && *(*str-1) == 'N') {
+            in_named_escape = 1;
+        } else if (in_named_escape && ch == '}') {
+            in_named_escape = 0;
+        } else if (ch == '{' || ch == '}') {
             /* Check for doubled braces, but only at the top level. If
                we checked at every level, then f'{0:{3}}' would fail
                with the two closing braces. */
             if (recurse_lvl == 0) {
-                if (*ofs + 1 < PyUnicode_GET_LENGTH(str) &&
-                    PyUnicode_READ(kind, data, *ofs + 1) == ch) {
+                if (*str+1 < end && *(*str+1) == ch) {
                     /* We're going to tell the caller that the literal ends
                        here, but that they should continue scanning. But also
                        skip over the second brace when we resume scanning. */
-                    literal_end = *ofs + 1;
-                    *ofs += 2;
+                    literal_end = *str+1;
+                    *str += 2;
                     result = 1;
                     goto done;
                 }
@@ -4341,34 +4277,36 @@ fstring_find_literal(PyObject *str, Py_ssize_t *ofs, PyObject **literal,
                     return -1;
                 }
             }
-
             /* We're either at a '{', which means we're starting another
                expression; or a '}', which means we're at the end of this
                f-string (for a nested format_spec). */
             break;
         }
     }
-    literal_end = *ofs;
-
-    assert(*ofs == PyUnicode_GET_LENGTH(str) ||
-           PyUnicode_READ(kind, data, *ofs) == '{' ||
-           PyUnicode_READ(kind, data, *ofs) == '}');
+    literal_end = *str;
+    assert(*str <= end);
+    assert(*str == end || **str == '{' || **str == '}');
 done:
     if (literal_start != literal_end) {
-        *literal = PyUnicode_Substring(str, literal_start, literal_end);
+        if (raw)
+            *literal = PyUnicode_DecodeUTF8Stateful(literal_start,
+                                                    literal_end-literal_start,
+                                                    NULL, NULL);
+        else
+            *literal = decode_unicode_with_escapes(c, literal_start,
+                                                   literal_end-literal_start);
         if (!*literal)
             return -1;
     }
-
     return result;
 }
 
 /* Forward declaration because parsing is recursive. */
 static expr_ty
-fstring_parse(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
+fstring_parse(const char **str, const char *end, int raw, int recurse_lvl,
               struct compiling *c, const node *n);
 
-/* Parse the f-string str, starting at ofs. We know *ofs starts an
+/* Parse the f-string at *str, ending at end.  We know *str starts an
    expression (so it must be a '{'). Returns the FormattedValue node,
    which includes the expression, conversion character, and
    format_spec expression.
@@ -4379,23 +4317,20 @@ fstring_parse(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
    find the end of all valid ones. Any errors inside the expression
    will be caught when we parse it later. */
 static int
-fstring_find_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
+fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
                   expr_ty *expression, struct compiling *c, const node *n)
 {
     /* Return -1 on error, else 0. */
 
-    Py_ssize_t expr_start;
-    Py_ssize_t expr_end;
+    const char *expr_start;
+    const char *expr_end;
     expr_ty simple_expression;
     expr_ty format_spec = NULL; /* Optional format specifier. */
-    Py_UCS4 conversion = -1; /* The conversion char. -1 if not specified. */
-
-    enum PyUnicode_Kind kind = PyUnicode_KIND(str);
-    void *data = PyUnicode_DATA(str);
+    char conversion = -1; /* The conversion char. -1 if not specified. */
 
     /* 0 if we're not in a string, else the quote char we're trying to
        match (single or double quote). */
-    Py_UCS4 quote_char = 0;
+    char quote_char = 0;
 
     /* If we're inside a string, 1=normal, 3=triple-quoted. */
     int string_type = 0;
@@ -4412,22 +4347,30 @@ fstring_find_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
 
     /* The first char must be a left brace, or we wouldn't have gotten
        here. Skip over it. */
-    assert(PyUnicode_READ(kind, data, *ofs) == '{');
-    *ofs += 1;
+    assert(**str == '{');
+    *str += 1;
 
-    expr_start = *ofs;
-    for (; *ofs < PyUnicode_GET_LENGTH(str); *ofs += 1) {
-        Py_UCS4 ch;
+    expr_start = *str;
+    for (; *str < end; (*str)++) {
+        char ch;
 
         /* Loop invariants. */
         assert(nested_depth >= 0);
-        assert(*ofs >= expr_start);
+        assert(*str >= expr_start && *str < end);
         if (quote_char)
             assert(string_type == 1 || string_type == 3);
         else
             assert(string_type == 0);
 
-        ch = PyUnicode_READ(kind, data, *ofs);
+        ch = **str;
+        /* Nowhere inside an expression is a backslash allowed. */
+        if (ch == '\\') {
+            /* Error: can't include a backslash character, inside
+               parens or strings or not. */
+            ast_error(c, n, "f-string expression part "
+                            "cannot include a backslash");
+            return -1;
+        }
         if (quote_char) {
             /* We're inside a string. See if we're at the end. */
             /* This code needs to implement the same non-error logic
@@ -4443,11 +4386,9 @@ fstring_find_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
                 /* Does this match the string_type (single or triple
                    quoted)? */
                 if (string_type == 3) {
-                    if (*ofs+2 < PyUnicode_GET_LENGTH(str) &&
-                        PyUnicode_READ(kind, data, *ofs+1) == ch &&
-                        PyUnicode_READ(kind, data, *ofs+2) == ch) {
+                    if (*str+2 < end && *(*str+1) == ch && *(*str+2) == ch) {
                         /* We're at the end of a triple quoted string. */
-                        *ofs += 2;
+                        *str += 2;
                         string_type = 0;
                         quote_char = 0;
                         continue;
@@ -4459,21 +4400,11 @@ fstring_find_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
                     continue;
                 }
             }
-            /* We're inside a string, and not finished with the
-               string. If this is a backslash, skip the next char (it
-               might be an end quote that needs skipping). Otherwise,
-               just consume this character normally. */
-            if (ch == '\\' && *ofs+1 < PyUnicode_GET_LENGTH(str)) {
-                /* Just skip the next char, whatever it is. */
-                *ofs += 1;
-            }
         } else if (ch == '\'' || ch == '"') {
             /* Is this a triple quoted string? */
-            if (*ofs+2 < PyUnicode_GET_LENGTH(str) &&
-                PyUnicode_READ(kind, data, *ofs+1) == ch &&
-                PyUnicode_READ(kind, data, *ofs+2) == ch) {
+            if (*str+2 < end && *(*str+1) == ch && *(*str+2) == ch) {
                 string_type = 3;
-                *ofs += 2;
+                *str += 2;
             } else {
                 /* Start of a normal string. */
                 string_type = 1;
@@ -4495,18 +4426,17 @@ fstring_find_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
             /* First, test for the special case of "!=". Since '=' is
                not an allowed conversion character, nothing is lost in
                this test. */
-            if (ch == '!' && *ofs+1 < PyUnicode_GET_LENGTH(str) &&
-                  PyUnicode_READ(kind, data, *ofs+1) == '=')
+            if (ch == '!' && *str+1 < end && *(*str+1) == '=') {
                 /* This isn't a conversion character, just continue. */
                 continue;
-
+            }
             /* Normal way out of this loop. */
             break;
         } else {
             /* Just consume this char and loop around. */
         }
     }
-    expr_end = *ofs;
+    expr_end = *str;
     /* If we leave this loop in a string or with mismatched parens, we
        don't care. We'll get a syntax error when compiling the
        expression. But, we can produce a better error message, so
@@ -4520,24 +4450,24 @@ fstring_find_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
         return -1;
     }
 
-    if (*ofs >= PyUnicode_GET_LENGTH(str))
+    if (*str >= end)
         goto unexpected_end_of_string;
 
     /* Compile the expression as soon as possible, so we show errors
        related to the expression before errors related to the
        conversion or format_spec. */
-    simple_expression = fstring_compile_expr(str, expr_start, expr_end, c, n);
+    simple_expression = fstring_compile_expr(expr_start, expr_end, c, n);
     if (!simple_expression)
         return -1;
 
     /* Check for a conversion char, if present. */
-    if (PyUnicode_READ(kind, data, *ofs) == '!') {
-        *ofs += 1;
-        if (*ofs >= PyUnicode_GET_LENGTH(str))
+    if (**str == '!') {
+        *str += 1;
+        if (*str >= end)
             goto unexpected_end_of_string;
 
-        conversion = PyUnicode_READ(kind, data, *ofs);
-        *ofs += 1;
+        conversion = **str;
+        *str += 1;
 
         /* Validate the conversion. */
         if (!(conversion == 's' || conversion == 'r'
@@ -4549,30 +4479,29 @@ fstring_find_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
     }
 
     /* Check for the format spec, if present. */
-    if (*ofs >= PyUnicode_GET_LENGTH(str))
+    if (*str >= end)
         goto unexpected_end_of_string;
-    if (PyUnicode_READ(kind, data, *ofs) == ':') {
-        *ofs += 1;
-        if (*ofs >= PyUnicode_GET_LENGTH(str))
+    if (**str == ':') {
+        *str += 1;
+        if (*str >= end)
             goto unexpected_end_of_string;
 
         /* Parse the format spec. */
-        format_spec = fstring_parse(str, ofs, recurse_lvl+1, c, n);
+        format_spec = fstring_parse(str, end, raw, recurse_lvl+1, c, n);
         if (!format_spec)
             return -1;
     }
 
-    if (*ofs >= PyUnicode_GET_LENGTH(str) ||
-          PyUnicode_READ(kind, data, *ofs) != '}')
+    if (*str >= end || **str != '}')
         goto unexpected_end_of_string;
 
     /* We're at a right brace. Consume it. */
-    assert(*ofs < PyUnicode_GET_LENGTH(str));
-    assert(PyUnicode_READ(kind, data, *ofs) == '}');
-    *ofs += 1;
+    assert(*str < end);
+    assert(**str == '}');
+    *str += 1;
 
-    /* And now create the FormattedValue node that represents this entire
-       expression with the conversion and format spec. */
+    /* And now create the FormattedValue node that represents this
+       entire expression with the conversion and format spec. */
     *expression = FormattedValue(simple_expression, (int)conversion,
                                  format_spec, LINENO(n), n->n_col_offset,
                                  c->c_arena);
@@ -4610,8 +4539,9 @@ unexpected_end_of_string:
       we're finished.
 */
 static int
-fstring_find_literal_and_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
-                              PyObject **literal, expr_ty *expression,
+fstring_find_literal_and_expr(const char **str, const char *end, int raw,
+                              int recurse_lvl, PyObject **literal,
+                              expr_ty *expression,
                               struct compiling *c, const node *n)
 {
     int result;
@@ -4619,7 +4549,7 @@ fstring_find_literal_and_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
     assert(*literal == NULL && *expression == NULL);
 
     /* Get any literal string. */
-    result = fstring_find_literal(str, ofs, literal, recurse_lvl, c, n);
+    result = fstring_find_literal(str, end, raw, literal, recurse_lvl, c, n);
     if (result < 0)
         goto error;
 
@@ -4629,10 +4559,7 @@ fstring_find_literal_and_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
         /* We have a literal, but don't look at the expression. */
         return 1;
 
-    assert(*ofs <= PyUnicode_GET_LENGTH(str));
-
-    if (*ofs >= PyUnicode_GET_LENGTH(str) ||
-        PyUnicode_READ_CHAR(str, *ofs) == '}')
+    if (*str >= end || **str == '}')
         /* We're at the end of the string or the end of a nested
            f-string: no expression. The top-level error case where we
            expect to be at the end of the string but we're at a '}' is
@@ -4640,10 +4567,9 @@ fstring_find_literal_and_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
         return 0;
 
     /* We must now be the start of an expression, on a '{'. */
-    assert(*ofs < PyUnicode_GET_LENGTH(str) &&
-           PyUnicode_READ_CHAR(str, *ofs) == '{');
+    assert(**str == '{');
 
-    if (fstring_find_expr(str, ofs, recurse_lvl, expression, c, n) < 0)
+    if (fstring_find_expr(str, end, raw, recurse_lvl, expression, c, n) < 0)
         goto error;
 
     return 0;
@@ -4852,13 +4778,11 @@ FstringParser_ConcatAndDel(FstringParser *state, PyObject *str)
     return 0;
 }
 
-/* Parse an f-string. The f-string is in str, starting at ofs, with no 'f'
-   or quotes. str is not decref'd, since we don't know if it's used elsewhere.
-   And if we're only looking at a part of a string, then decref'ing is
-   definitely not the right thing to do! */
+/* Parse an f-string. The f-string is in *str to end, with no
+   'f' or quotes. */
 static int
-FstringParser_ConcatFstring(FstringParser *state, PyObject *str,
-                            Py_ssize_t *ofs, int recurse_lvl,
+FstringParser_ConcatFstring(FstringParser *state, const char **str,
+                            const char *end, int raw, int recurse_lvl,
                             struct compiling *c, const node *n)
 {
     FstringParser_check_invariants(state);
@@ -4872,7 +4796,7 @@ FstringParser_ConcatFstring(FstringParser *state, PyObject *str,
            expression, literal will be NULL. If we're at the end of
            the f-string, expression will be NULL (unless result == 1,
            see below). */
-        int result = fstring_find_literal_and_expr(str, ofs, recurse_lvl,
+        int result = fstring_find_literal_and_expr(str, end, raw, recurse_lvl,
                                                    &literal, &expression,
                                                    c, n);
         if (result < 0)
@@ -4925,16 +4849,14 @@ FstringParser_ConcatFstring(FstringParser *state, PyObject *str,
             return -1;
     }
 
-    assert(*ofs <= PyUnicode_GET_LENGTH(str));
-
     /* If recurse_lvl is zero, then we must be at the end of the
        string. Otherwise, we must be at a right brace. */
 
-    if (recurse_lvl == 0 && *ofs < PyUnicode_GET_LENGTH(str)) {
+    if (recurse_lvl == 0 && *str < end-1) {
         ast_error(c, n, "f-string: unexpected end of string");
         return -1;
     }
-    if (recurse_lvl != 0 && PyUnicode_READ_CHAR(str, *ofs) != '}') {
+    if (recurse_lvl != 0 && **str != '}') {
         ast_error(c, n, "f-string: expecting '}'");
         return -1;
     }
@@ -4991,17 +4913,17 @@ error:
     return NULL;
 }
 
-/* Given an f-string (with no 'f' or quotes) that's in str starting at
-   ofs, parse it into an expr_ty. Return NULL on error. Does not
-   decref str. */
+/* Given an f-string (with no 'f' or quotes) that's in *str and ends
+   at end, parse it into an expr_ty.  Return NULL on error.  Adjust
+   str to point past the parsed portion. */
 static expr_ty
-fstring_parse(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
+fstring_parse(const char **str, const char *end, int raw, int recurse_lvl,
               struct compiling *c, const node *n)
 {
     FstringParser state;
 
     FstringParser_Init(&state);
-    if (FstringParser_ConcatFstring(&state, str, ofs, recurse_lvl,
+    if (FstringParser_ConcatFstring(&state, str, end, raw, recurse_lvl,
                                     c, n) < 0) {
         FstringParser_Dealloc(&state);
         return NULL;
@@ -5012,19 +4934,25 @@ fstring_parse(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
 
 /* n is a Python string literal, including the bracketing quote
    characters, and r, b, u, &/or f prefixes (if any), and embedded
-   escape sequences (if any). parsestr parses it, and returns the
+   escape sequences (if any). parsestr parses it, and sets *result to
    decoded Python string object.  If the string is an f-string, set
-   *fmode and return the unparsed string object.
+   *fstr and *fstrlen to the unparsed string object.  Return 0 if no
+   errors occurred.
 */
-static PyObject *
-parsestr(struct compiling *c, const node *n, int *bytesmode, int *fmode)
+static int
+parsestr(struct compiling *c, const node *n, int *bytesmode, int *rawmode,
+         PyObject **result, const char **fstr, Py_ssize_t *fstrlen)
 {
     size_t len;
     const char *s = STR(n);
     int quote = Py_CHARMASK(*s);
-    int rawmode = 0;
+    int fmode = 0;
+    *bytesmode = 0;
+    *rawmode = 0;
+    *result = NULL;
+    *fstr = NULL;
     if (Py_ISALPHA(quote)) {
-        while (!*bytesmode || !rawmode) {
+        while (!*bytesmode || !*rawmode) {
             if (quote == 'b' || quote == 'B') {
                 quote = *++s;
                 *bytesmode = 1;
@@ -5034,24 +4962,24 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *fmode)
             }
             else if (quote == 'r' || quote == 'R') {
                 quote = *++s;
-                rawmode = 1;
+                *rawmode = 1;
             }
             else if (quote == 'f' || quote == 'F') {
                 quote = *++s;
-                *fmode = 1;
+                fmode = 1;
             }
             else {
                 break;
             }
         }
     }
-    if (*fmode && *bytesmode) {
+    if (fmode && *bytesmode) {
         PyErr_BadInternalCall();
-        return NULL;
+        return -1;
     }
     if (quote != '\'' && quote != '\"') {
         PyErr_BadInternalCall();
-        return NULL;
+        return -1;
     }
     /* Skip the leading quote char. */
     s++;
@@ -5059,12 +4987,12 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *fmode)
     if (len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "string to parse is too long");
-        return NULL;
+        return -1;
     }
     if (s[--len] != quote) {
         /* Last quote char must match the first. */
         PyErr_BadInternalCall();
-        return NULL;
+        return -1;
     }
     if (len >= 4 && s[0] == quote && s[1] == quote) {
         /* A triple quoted string. We've already skipped one quote at
@@ -5075,21 +5003,21 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *fmode)
         /* And check that the last two match. */
         if (s[--len] != quote || s[--len] != quote) {
             PyErr_BadInternalCall();
-            return NULL;
+            return -1;
         }
     }
 
-    /* Temporary hack: if this is an f-string, no backslashes are allowed. */
-    /* See issue 27921. */
-    if (*fmode && strchr(s, '\\') != NULL) {
-        /* Syntax error. At a later date fix this so it only checks for
-           backslashes within the braces. */
-        ast_error(c, n, "backslashes not allowed in f-strings");
-        return NULL;
+    if (fmode) {
+        /* Just return the bytes. The caller will parse the resulting
+           string. */
+        *fstr = s;
+        *fstrlen = len;
+        return 0;
     }
 
+    /* Not an f-string. */
     /* Avoid invoking escape decoding routines if possible. */
-    rawmode = rawmode || strchr(s, '\\') == NULL;
+    *rawmode = *rawmode || strchr(s, '\\') == NULL;
     if (*bytesmode) {
         /* Disallow non-ASCII characters. */
         const char *ch;
@@ -5097,19 +5025,20 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *fmode)
             if (Py_CHARMASK(*ch) >= 0x80) {
                 ast_error(c, n, "bytes can only contain ASCII "
                           "literal characters.");
-                return NULL;
+                return -1;
             }
         }
-        if (rawmode)
-            return PyBytes_FromStringAndSize(s, len);
+        if (*rawmode)
+            *result = PyBytes_FromStringAndSize(s, len);
         else
-            return PyBytes_DecodeEscape(s, len, NULL, /* ignored */ 0, NULL);
+            *result = PyBytes_DecodeEscape(s, len, NULL, /* ignored */ 0, NULL);
     } else {
-        if (rawmode)
-            return PyUnicode_DecodeUTF8Stateful(s, len, NULL, NULL);
+        if (*rawmode)
+            *result = PyUnicode_DecodeUTF8Stateful(s, len, NULL, NULL);
         else
-            return decode_unicode_with_escapes(c, s, len);
+            *result = decode_unicode_with_escapes(c, s, len);
     }
+    return *result == NULL ? -1 : 0;
 }
 
 /* Accepts a STRING+ atom, and produces an expr_ty node. Run through
@@ -5131,13 +5060,15 @@ parsestrplus(struct compiling *c, const node *n)
     FstringParser_Init(&state);
 
     for (i = 0; i < NCH(n); i++) {
-        int this_bytesmode = 0;
-        int this_fmode = 0;
+        int this_bytesmode;
+        int this_rawmode;
         PyObject *s;
+        const char *fstr;
+        Py_ssize_t fstrlen = -1;  /* Silence a compiler warning. */
 
         REQ(CHILD(n, i), STRING);
-        s = parsestr(c, CHILD(n, i), &this_bytesmode, &this_fmode);
-        if (!s)
+        if (parsestr(c, CHILD(n, i), &this_bytesmode, &this_rawmode, &s,
+                     &fstr, &fstrlen) != 0)
             goto error;
 
         /* Check that we're not mixing bytes with unicode. */
@@ -5148,29 +5079,36 @@ parsestrplus(struct compiling *c, const node *n)
         }
         bytesmode = this_bytesmode;
 
-        assert(bytesmode ? PyBytes_CheckExact(s) : PyUnicode_CheckExact(s));
-
-        if (bytesmode) {
-            /* For bytes, concat as we go. */
-            if (i == 0) {
-                /* First time, just remember this value. */
-                bytes_str = s;
-            } else {
-                PyBytes_ConcatAndDel(&bytes_str, s);
-                if (!bytes_str)
-                    goto error;
-            }
-        } else if (this_fmode) {
-            /* This is an f-string. Concatenate and decref it. */
-            Py_ssize_t ofs = 0;
-            int result = FstringParser_ConcatFstring(&state, s, &ofs, 0, c, n);
-            Py_DECREF(s);
+        if (fstr != NULL) {
+            int result;
+            assert(s == NULL && !bytesmode);
+            /* This is an f-string. Parse and concatenate it. */
+            result = FstringParser_ConcatFstring(&state, &fstr, fstr+fstrlen,
+                                                 this_rawmode, 0, c, n);
             if (result < 0)
                 goto error;
         } else {
-            /* This is a regular string. Concatenate it. */
-            if (FstringParser_ConcatAndDel(&state, s) < 0)
-                goto error;
+            assert(bytesmode ? PyBytes_CheckExact(s) :
+                   PyUnicode_CheckExact(s));
+
+            /* A string or byte string. */
+            assert(s != NULL && fstr == NULL);
+            if (bytesmode) {
+                /* For bytes, concat as we go. */
+                if (i == 0) {
+                    /* First time, just remember this value. */
+                    bytes_str = s;
+                } else {
+                    PyBytes_ConcatAndDel(&bytes_str, s);
+                    if (!bytes_str)
+                        goto error;
+                }
+            } else {
+                assert(s != NULL && fstr == NULL);
+                /* This is a regular string. Concatenate it. */
+                if (FstringParser_ConcatAndDel(&state, s) < 0)
+                    goto error;
+            }
         }
     }
     if (bytesmode) {
