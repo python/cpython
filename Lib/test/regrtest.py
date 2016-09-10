@@ -325,7 +325,7 @@ def _create_parser():
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
                        help='enable Profile Guided Optimization training')
 
-    parser.add_argument('args', nargs=argparse.REMAINDER,
+    parser.add_argument('args', nargs='*',
                         help=argparse.SUPPRESS)
 
     return parser
