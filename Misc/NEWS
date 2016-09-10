@@ -135,6 +135,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28019: itertools.count() no longer rounds non-integer step in range
+  between 1.0 and 2.0 to 1.
+
 - Issue #18401: Pdb now supports the 'readrc' keyword argument to control
   whether .pdbrc files should be read.  Patch by Martin Matusiak and
   Sam Kimbrel.
