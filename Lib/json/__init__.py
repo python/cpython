@@ -105,6 +105,7 @@ __author__ = 'Bob Ippolito <bob@redivi.com>'
 
 from .decoder import JSONDecoder, JSONDecodeError
 from .encoder import JSONEncoder
+import codecs
 
 _default_encoder = JSONEncoder(
     skipkeys=False,
@@ -240,6 +241,35 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 _default_decoder = JSONDecoder(object_hook=None, object_pairs_hook=None)
 
 
+def detect_encoding(b):
+    bstartswith = b.startswith
+    if bstartswith((codecs.BOM_UTF32_BE, codecs.BOM_UTF32_LE)):
+        return 'utf-32'
+    if bstartswith((codecs.BOM_UTF16_BE, codecs.BOM_UTF16_LE)):
+        return 'utf-16'
+    if bstartswith(codecs.BOM_UTF8):
+        return 'utf-8-sig'
+
+    if len(b) >= 4:
+        if not b[0]:
+            # 00 00 -- -- - utf-32-be
+            # 00 XX -- -- - utf-16-be
+            return 'utf-16-be' if b[1] else 'utf-32-be'
+        if not b[1]:
+            # XX 00 00 00 - utf-32-le
+            # XX 00 XX XX - utf-16-le
+            return 'utf-16-le' if b[2] or b[3] else 'utf-32-le'
+    elif len(b) == 2:
+        if not b[0]:
+            # 00 XX - utf-16-be
+            return 'utf-16-be'
+        if not b[1]:
+            # XX 00 - utf-16-le
+            return 'utf-16-le'
+    # default
+    return 'utf-8'
+
+
 def load(fp, *, cls=None, object_hook=None, parse_float=None,
         parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
     """Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
@@ -270,8 +300,8 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
 
 def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
         parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
-    """Deserialize ``s`` (a ``str`` instance containing a JSON
-    document) to a Python object.
+    """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
+    containing a JSON document) to a Python object.
 
     ``object_hook`` is an optional function that will be called with the
     result of any object literal decode (a ``dict``). The return value of
@@ -307,12 +337,16 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
     The ``encoding`` argument is ignored and deprecated.
 
     """
-    if not isinstance(s, str):
-        raise TypeError('the JSON object must be str, not {!r}'.format(
-                            s.__class__.__name__))
-    if s.startswith(u'\ufeff'):
-        raise JSONDecodeError("Unexpected UTF-8 BOM (decode using utf-8-sig)",
-                              s, 0)
+    if isinstance(s, str):
+        if s.startswith('\ufeff'):
+            raise JSONDecodeError("Unexpected UTF-8 BOM (decode using utf-8-sig)",
+                                  s, 0)
+    else:
+        if not isinstance(s, (bytes, bytearray)):
+            raise TypeError('the JSON object must be str, bytes or bytearray, '
+                            'not {!r}'.format(s.__class__.__name__))
+        s = s.decode(detect_encoding(s), 'surrogatepass')
+
     if (cls is None and object_hook is None and
             parse_int is None and parse_float is None and
             parse_constant is None and object_pairs_hook is None and not kw):
