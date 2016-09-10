@@ -230,7 +230,6 @@ instead.
    .. versionchanged:: 3.2
       New optional argument *ciphers*.
 
-
 Context creation
 ^^^^^^^^^^^^^^^^
 
@@ -925,7 +924,7 @@ SSL Sockets
    :ref:`notes on non-blocking sockets <ssl-nonblocking>`.
 
    Usually, :class:`SSLSocket` are not created directly, but using the
-   :func:`wrap_socket` function or the :meth:`SSLContext.wrap_socket` method.
+   the :meth:`SSLContext.wrap_socket` method.
 
    .. versionchanged:: 3.5
       The :meth:`sendfile` method was added.
@@ -934,6 +933,10 @@ SSL Sockets
       The :meth:`shutdown` does not reset the socket timeout each time bytes
       are received or sent. The socket timeout is now to maximum total duration
       of the shutdown.
+
+   .. deprecated:: 3.6
+      It is deprecated to create a :class:`SSLSocket` instance directly, use
+      :meth:`SSLContext.wrap_socket` to wrap a socket.
 
 
 SSL sockets also have the following additional methods and attributes:
@@ -955,6 +958,9 @@ SSL sockets also have the following additional methods and attributes:
       The socket timeout is now to maximum total duration to read up to *len*
       bytes.
 
+   .. deprecated:: 3.6
+      Use :meth:`~SSLSocket.recv` instead of :meth:`~SSLSocket.read`.
+
 .. method:: SSLSocket.write(buf)
 
    Write *buf* to the SSL socket and return the number of bytes written. The
@@ -969,6 +975,9 @@ SSL sockets also have the following additional methods and attributes:
    .. versionchanged:: 3.5
       The socket timeout is no more reset each time bytes are received or sent.
       The socket timeout is now to maximum total duration to write *buf*.
+
+   .. deprecated:: 3.6
+      Use :meth:`~SSLSocket.send` instead of :meth:`~SSLSocket.write`.
 
 .. note::
 

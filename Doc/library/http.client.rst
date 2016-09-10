@@ -69,13 +69,6 @@ The module provides the following classes:
    must be a :class:`ssl.SSLContext` instance describing the various SSL
    options.
 
-   *key_file* and *cert_file* are deprecated, please use
-   :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-   :func:`ssl.create_default_context` select the system's trusted CA
-   certificates for you.  The *check_hostname* parameter is also deprecated; the
-   :attr:`ssl.SSLContext.check_hostname` attribute of *context* should be used
-   instead.
-
    Please read :ref:`ssl-security` for more information on best practices.
 
    .. versionchanged:: 3.2
@@ -94,6 +87,17 @@ The module provides the following classes:
       by default. To revert to the previous, unverified, behavior
       :func:`ssl._create_unverified_context` can be passed to the *context*
       parameter.
+
+   .. deprecated:: 3.6
+
+       *key_file* and *cert_file* are deprecated in favor of *context*.
+       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+       :func:`ssl.create_default_context` select the system's trusted CA
+       certificates for you.
+
+       The *check_hostname* parameter is also deprecated; the
+       :attr:`ssl.SSLContext.check_hostname` attribute of *context* should
+       be used instead.
 
 
 .. class:: HTTPResponse(sock, debuglevel=0, method=None, url=None)

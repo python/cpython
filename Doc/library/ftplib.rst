@@ -97,6 +97,13 @@ The module defines the following items:
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
       :data:`ssl.HAS_SNI`).
 
+   .. deprecated:: 3.6
+
+       *keyfile* and *certfile* are deprecated in favor of *context*.
+       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+       :func:`ssl.create_default_context` select the system's trusted CA
+       certificates for you.
+
    Here's a sample session using the :class:`FTP_TLS` class::
 
       >>> ftps = FTP_TLS('ftp.pureftpd.org')

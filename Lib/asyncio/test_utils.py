@@ -117,10 +117,10 @@ class SSLWSGIServerMixin:
                                 'test', 'test_asyncio')
         keyfile = os.path.join(here, 'ssl_key.pem')
         certfile = os.path.join(here, 'ssl_cert.pem')
-        ssock = ssl.wrap_socket(request,
-                                keyfile=keyfile,
-                                certfile=certfile,
-                                server_side=True)
+        context = ssl.SSLContext()
+        context.load_cert_chain(certfile, keyfile)
+
+        ssock = context.wrap_socket(request, server_side=True)
         try:
             self.RequestHandlerClass(ssock, client_address, self)
             ssock.close()
