@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27199: In tarfile, expose copyfileobj bufsize to improve throughput.
+  Patch by Jason Fried.
+
 - Issue #27948: In f-strings, only allow backslashes inside the braces
   (where the expressions are).  This is a breaking change from the 3.6
   alpha releases, where backslashes are allowed anywhere in an
