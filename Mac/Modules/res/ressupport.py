@@ -125,7 +125,7 @@ class ResDefinition(PEP253Mixin, GlobalObjectDefinition):
             HLock(self->ob_itself);
             memcpy((char *)*self->ob_itself, data, size);
             HUnlock(self->ob_itself);
-            /* XXXX Should I do the Changed call immedeately? */
+            /* XXXX Should I do the Changed call immediately? */
             return 0;
             """,
             'The resource data'

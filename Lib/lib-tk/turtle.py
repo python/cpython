@@ -981,7 +981,7 @@ class TurtleScreen(TurtleScreenBase):
         """Set turtle-mode ('standard', 'logo' or 'world') and perform reset.
 
         Optional argument:
-        mode -- on of the strings 'standard', 'logo' or 'world'
+        mode -- one of the strings 'standard', 'logo' or 'world'
 
         Mode 'standard' is compatible with turtle.py.
         Mode 'logo' is compatible with most Logo-Turtle-Graphics.

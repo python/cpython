@@ -634,7 +634,7 @@ class TestInvalidFD(unittest.TestCase):
     singles = ["fchdir", "fdopen", "dup", "fdatasync", "fstat",
                "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
     #singles.append("close")
-    #We omit close because it doesn'r raise an exception on some platforms
+    #We omit close because it doesn't raise an exception on some platforms
     def get_single(f):
         def helper(self):
             if  hasattr(os, f):

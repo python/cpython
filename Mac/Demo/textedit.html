@@ -24,7 +24,7 @@ the main event handling code. Normal use is to override the <code>__init__</code
 to do your own initializations and override <code>makeusermenus</code> to create your menus
 (your menu callback routines may be here too, but this is by no means necessary).
 The event handling code can be overridden at various levels, from very low-level (the
-<code>dispatch</code> method) to intermedeate level (<code>do_keyDown</code>, for instance)
+<code>dispatch</code> method) to intermediate level (<code>do_keyDown</code>, for instance)
 to high-level (<code>do_key</code>). The application class knows about the <code>Window</code>
 objects you create, and will forward events to the appropriate window (So, normally you
 would have a <code>do_key</code> method in your window object, not your application object).
