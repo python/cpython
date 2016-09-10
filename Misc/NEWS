@@ -135,6 +135,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24693: Changed some RuntimeError's in the zipfile module to more
+  appropriate types. Improved some error messages and debugging output.
+
 - Issue #17909: ``json.load`` and ``json.loads`` now support binary input
   encoded as UTF-8, UTF-16 or UTF-32. Patch by Serhiy Storchaka.
 
