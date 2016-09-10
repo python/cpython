@@ -1546,21 +1546,27 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
         return -1;
     }
     assert(dk_get_index(mp->ma_keys, hashpos) == ix);
+
+    // Split table doesn't allow deletion.  Combine it.
+    if (_PyDict_HasSplitTable(mp)) {
+        if (dictresize(mp, DK_SIZE(mp->ma_keys))) {
+            return -1;
+        }
+        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value_addr, &hashpos);
+        assert(ix >= 0);
+    }
+
     old_value = *value_addr;
+    assert(old_value != NULL);
     *value_addr = NULL;
     mp->ma_used--;
     mp->ma_version_tag = DICT_NEXT_VERSION();
-    if (_PyDict_HasSplitTable(mp)) {
-        mp->ma_keys->dk_usable = 0;
-    }
-    else {
-        ep = &DK_ENTRIES(mp->ma_keys)[ix];
-        dk_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
-        ENSURE_ALLOWS_DELETIONS(mp);
-        old_key = ep->me_key;
-        ep->me_key = NULL;
-        Py_DECREF(old_key);
-    }
+    ep = &DK_ENTRIES(mp->ma_keys)[ix];
+    dk_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
+    ENSURE_ALLOWS_DELETIONS(mp);
+    old_key = ep->me_key;
+    ep->me_key = NULL;
+    Py_DECREF(old_key);
     Py_DECREF(old_value);
     return 0;
 }
@@ -1725,18 +1731,26 @@ _PyDict_Pop(PyDictObject *mp, PyObject *key, PyObject *deflt)
         return NULL;
     }
 
+    // Split table doesn't allow deletion.  Combine it.
+    if (_PyDict_HasSplitTable(mp)) {
+        if (dictresize(mp, DK_SIZE(mp->ma_keys))) {
+            return NULL;
+        }
+        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value_addr, &hashpos);
+        assert(ix >= 0);
+    }
+
     old_value = *value_addr;
+    assert(old_value != NULL);
     *value_addr = NULL;
     mp->ma_used--;
     mp->ma_version_tag = DICT_NEXT_VERSION();
-    if (!_PyDict_HasSplitTable(mp)) {
-        dk_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
-        ep = &DK_ENTRIES(mp->ma_keys)[ix];
-        ENSURE_ALLOWS_DELETIONS(mp);
-        old_key = ep->me_key;
-        ep->me_key = NULL;
-        Py_DECREF(old_key);
-    }
+    dk_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
+    ep = &DK_ENTRIES(mp->ma_keys)[ix];
+    ENSURE_ALLOWS_DELETIONS(mp);
+    old_key = ep->me_key;
+    ep->me_key = NULL;
+    Py_DECREF(old_key);
     return old_value;
 }
 
