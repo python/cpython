@@ -24,7 +24,7 @@ class PolicyAPITests(unittest.TestCase):
         'cte_type':                 '8bit',
         'raise_on_defect':          False,
         'mangle_from_':             True,
-        'message_factory':          email.message.Message,
+        'message_factory':          None,
         }
     # These default values are the ones set on email.policy.default.
     # If any of these defaults change, the docs must be updated.

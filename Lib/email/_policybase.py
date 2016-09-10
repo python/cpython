@@ -155,6 +155,7 @@ class Policy(_PolicyBase, metaclass=abc.ABCMeta):
                            serialized by a generator. Default: True.
 
     message_factory     -- the class to use to create new message objects.
+                           If the value is None, the default is Message.
 
     """
 
@@ -163,7 +164,6 @@ class Policy(_PolicyBase, metaclass=abc.ABCMeta):
     cte_type = '8bit'
     max_line_length = 78
     mangle_from_ = False
-    # XXX To avoid circular imports, this is set in email.message.
     message_factory = None
 
     def handle_defect(self, obj, defect):
