@@ -80,6 +80,12 @@ NULLBYTECERT = data_file("nullbytecert.pem")
 DHFILE = data_file("dh1024.pem")
 BYTES_DHFILE = os.fsencode(DHFILE)
 
+# Not defined in all versions of OpenSSL
+OP_NO_COMPRESSION = getattr(ssl, "OP_NO_COMPRESSION", 0)
+OP_SINGLE_DH_USE = getattr(ssl, "OP_SINGLE_DH_USE", 0)
+OP_SINGLE_ECDH_USE = getattr(ssl, "OP_SINGLE_ECDH_USE", 0)
+OP_CIPHER_SERVER_PREFERENCE = getattr(ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
+
 
 def handle_error(prefix):
     exc_format = ' '.join(traceback.format_exception(*sys.exc_info()))
@@ -870,8 +876,9 @@ class ContextTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         # OP_ALL | OP_NO_SSLv2 | OP_NO_SSLv3 is the default value
         default = (ssl.OP_ALL | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3)
-        if not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 0):
-            default |= ssl.OP_NO_COMPRESSION
+        # SSLContext also enables these by default
+        default |= (OP_NO_COMPRESSION | OP_CIPHER_SERVER_PREFERENCE |
+                    OP_SINGLE_DH_USE | OP_SINGLE_ECDH_USE)
         self.assertEqual(default, ctx.options)
         ctx.options |= ssl.OP_NO_TLSv1
         self.assertEqual(default | ssl.OP_NO_TLSv1, ctx.options)
@@ -1236,16 +1243,29 @@ class ContextTests(unittest.TestCase):
             stats["x509"] += 1
             self.assertEqual(ctx.cert_store_stats(), stats)
 
+    def _assert_context_options(self, ctx):
+        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+        if OP_NO_COMPRESSION != 0:
+            self.assertEqual(ctx.options & OP_NO_COMPRESSION,
+                             OP_NO_COMPRESSION)
+        if OP_SINGLE_DH_USE != 0:
+            self.assertEqual(ctx.options & OP_SINGLE_DH_USE,
+                             OP_SINGLE_DH_USE)
+        if OP_SINGLE_ECDH_USE != 0:
+            self.assertEqual(ctx.options & OP_SINGLE_ECDH_USE,
+                             OP_SINGLE_ECDH_USE)
+        if OP_CIPHER_SERVER_PREFERENCE != 0:
+            self.assertEqual(ctx.options & OP_CIPHER_SERVER_PREFERENCE,
+                             OP_CIPHER_SERVER_PREFERENCE)
+
     def test_create_default_context(self):
         ctx = ssl.create_default_context()
+
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         self.assertTrue(ctx.check_hostname)
-        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
-        self.assertEqual(
-            ctx.options & getattr(ssl, "OP_NO_COMPRESSION", 0),
-            getattr(ssl, "OP_NO_COMPRESSION", 0),
-        )
+        self._assert_context_options(ctx)
+
 
         with open(SIGNING_CA) as f:
             cadata = f.read()
@@ -1253,40 +1273,24 @@ class ContextTests(unittest.TestCase):
                                          cadata=cadata)
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
-        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
-        self.assertEqual(
-            ctx.options & getattr(ssl, "OP_NO_COMPRESSION", 0),
-            getattr(ssl, "OP_NO_COMPRESSION", 0),
-        )
+        self._assert_context_options(ctx)
 
         ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
-        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
-        self.assertEqual(
-            ctx.options & getattr(ssl, "OP_NO_COMPRESSION", 0),
-            getattr(ssl, "OP_NO_COMPRESSION", 0),
-        )
-        self.assertEqual(
-            ctx.options & getattr(ssl, "OP_SINGLE_DH_USE", 0),
-            getattr(ssl, "OP_SINGLE_DH_USE", 0),
-        )
-        self.assertEqual(
-            ctx.options & getattr(ssl, "OP_SINGLE_ECDH_USE", 0),
-            getattr(ssl, "OP_SINGLE_ECDH_USE", 0),
-        )
+        self._assert_context_options(ctx)
 
     def test__create_stdlib_context(self):
         ctx = ssl._create_stdlib_context()
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
         self.assertFalse(ctx.check_hostname)
-        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+        self._assert_context_options(ctx)
 
         ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1)
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
-        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+        self._assert_context_options(ctx)
 
         ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1,
                                          cert_reqs=ssl.CERT_REQUIRED,
@@ -1294,12 +1298,12 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         self.assertTrue(ctx.check_hostname)
-        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+        self._assert_context_options(ctx)
 
         ctx = ssl._create_stdlib_context(purpose=ssl.Purpose.CLIENT_AUTH)
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
-        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+        self._assert_context_options(ctx)
 
     def test_check_hostname(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)

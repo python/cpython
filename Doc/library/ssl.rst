@@ -1191,7 +1191,14 @@ to speed up repeated connections from the same clients.
 
    .. versionchanged:: 3.6
 
-      :data:`PROTOCOL_TLS` is the default value.
+      The context is created with secure default values. The options
+      :data:`OP_NO_COMPRESSION`, :data:`OP_CIPHER_SERVER_PREFERENCE`,
+      :data:`OP_SINGLE_DH_USE`, :data:`OP_SINGLE_ECDH_USE`,
+      :data:`OP_NO_SSLv2` (except for :data:`PROTOCOL_SSLv2`),
+      and :data:`OP_NO_SSLv3` (except for :data:`PROTOCOL_SSLv3`) are
+      set by default. The initial cipher suite list contains only ``HIGH``
+      ciphers, no ``NULL`` ciphers and no ``MD5`` ciphers (except for
+      :data:`PROTOCOL_SSLv2`).
 
 
 :class:`SSLContext` objects have the following methods and attributes:
