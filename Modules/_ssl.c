@@ -2407,6 +2407,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     PySSLContext *self;
     long options;
     SSL_CTX *ctx = NULL;
+    int result;
 #if defined(SSL_MODE_RELEASE_BUFFERS)
     unsigned long libver;
 #endif
@@ -2470,7 +2471,37 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         options |= SSL_OP_NO_SSLv2;
     if (proto_version != PY_SSL_VERSION_SSL3)
         options |= SSL_OP_NO_SSLv3;
+    /* Minimal security flags for server and client side context.
+     * Client sockets ignore server-side parameters. */
+#ifdef SSL_OP_NO_COMPRESSION
+    options |= SSL_OP_NO_COMPRESSION;
+#endif
+#ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
+    options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
+#endif
+#ifdef SSL_OP_SINGLE_DH_USE
+    options |= SSL_OP_SINGLE_DH_USE;
+#endif
+#ifdef SSL_OP_SINGLE_ECDH_USE
+    options |= SSL_OP_SINGLE_ECDH_USE;
+#endif
     SSL_CTX_set_options(self->ctx, options);
+
+    /* A bare minimum cipher list without completly broken cipher suites.
+     * It's far from perfect but gives users a better head start. */
+    if (proto_version != PY_SSL_VERSION_SSL2) {
+        result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL:!MD5");
+    } else {
+        /* SSLv2 needs MD5 */
+        result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL");
+    }
+    if (result == 0) {
+        Py_DECREF(self);
+        ERR_clear_error();
+        PyErr_SetString(PySSLErrorObject,
+                        "No cipher can be selected.");
+        return NULL;
+    }
 
 #if defined(SSL_MODE_RELEASE_BUFFERS)
     /* Set SSL_MODE_RELEASE_BUFFERS. This potentially greatly reduces memory

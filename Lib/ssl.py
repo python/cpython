@@ -488,32 +488,16 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
     if not isinstance(purpose, _ASN1Object):
         raise TypeError(purpose)
 
+    # SSLContext sets OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_COMPRESSION,
+    # OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_DH_USE and OP_SINGLE_ECDH_USE
+    # by default.
     context = SSLContext(PROTOCOL_TLS)
-
-    # SSLv2 considered harmful.
-    context.options |= OP_NO_SSLv2
-
-    # SSLv3 has problematic security and is only required for really old
-    # clients such as IE6 on Windows XP
-    context.options |= OP_NO_SSLv3
-
-    # disable compression to prevent CRIME attacks (OpenSSL 1.0+)
-    context.options |= getattr(_ssl, "OP_NO_COMPRESSION", 0)
 
     if purpose == Purpose.SERVER_AUTH:
         # verify certs and host name in client mode
         context.verify_mode = CERT_REQUIRED
         context.check_hostname = True
     elif purpose == Purpose.CLIENT_AUTH:
-        # Prefer the server's ciphers by default so that we get stronger
-        # encryption
-        context.options |= getattr(_ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
-
-        # Use single use keys in order to improve forward secrecy
-        context.options |= getattr(_ssl, "OP_SINGLE_DH_USE", 0)
-        context.options |= getattr(_ssl, "OP_SINGLE_ECDH_USE", 0)
-
-        # disallow ciphers with known vulnerabilities
         context.set_ciphers(_RESTRICTED_SERVER_CIPHERS)
 
     if cafile or capath or cadata:
@@ -539,12 +523,10 @@ def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=None,
     if not isinstance(purpose, _ASN1Object):
         raise TypeError(purpose)
 
+    # SSLContext sets OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_COMPRESSION,
+    # OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_DH_USE and OP_SINGLE_ECDH_USE
+    # by default.
     context = SSLContext(protocol)
-    # SSLv2 considered harmful.
-    context.options |= OP_NO_SSLv2
-    # SSLv3 has problematic security and is only required for really old
-    # clients such as IE6 on Windows XP
-    context.options |= OP_NO_SSLv3
 
     if cert_reqs is not None:
         context.verify_mode = cert_reqs
