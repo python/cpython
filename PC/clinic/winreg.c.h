@@ -77,14 +77,14 @@ PyDoc_STRVAR(winreg_HKEYType___exit____doc__,
 "\n");
 
 #define WINREG_HKEYTYPE___EXIT___METHODDEF    \
-    {"__exit__", (PyCFunction)winreg_HKEYType___exit__, METH_VARARGS|METH_KEYWORDS, winreg_HKEYType___exit____doc__},
+    {"__exit__", (PyCFunction)winreg_HKEYType___exit__, METH_FASTCALL, winreg_HKEYType___exit____doc__},
 
 static PyObject *
 winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
                               PyObject *exc_value, PyObject *traceback);
 
 static PyObject *
-winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *args, PyObject *kwargs)
+winreg_HKEYType___exit__(PyHKEYObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"exc_type", "exc_value", "traceback", NULL};
@@ -93,7 +93,7 @@ winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *args, PyObject *kwargs)
     PyObject *exc_value;
     PyObject *traceback;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &exc_type, &exc_value, &traceback)) {
         goto exit;
     }
@@ -235,14 +235,14 @@ PyDoc_STRVAR(winreg_CreateKeyEx__doc__,
 "If the function fails, an OSError exception is raised.");
 
 #define WINREG_CREATEKEYEX_METHODDEF    \
-    {"CreateKeyEx", (PyCFunction)winreg_CreateKeyEx, METH_VARARGS|METH_KEYWORDS, winreg_CreateKeyEx__doc__},
+    {"CreateKeyEx", (PyCFunction)winreg_CreateKeyEx, METH_FASTCALL, winreg_CreateKeyEx__doc__},
 
 static HKEY
 winreg_CreateKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                         int reserved, REGSAM access);
 
 static PyObject *
-winreg_CreateKeyEx(PyObject *module, PyObject *args, PyObject *kwargs)
+winreg_CreateKeyEx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
@@ -253,7 +253,7 @@ winreg_CreateKeyEx(PyObject *module, PyObject *args, PyObject *kwargs)
     REGSAM access = KEY_WRITE;
     HKEY _return_value;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         clinic_HKEY_converter, &key, &sub_key, &reserved, &access)) {
         goto exit;
     }
@@ -334,14 +334,14 @@ PyDoc_STRVAR(winreg_DeleteKeyEx__doc__,
 "On unsupported Windows versions, NotImplementedError is raised.");
 
 #define WINREG_DELETEKEYEX_METHODDEF    \
-    {"DeleteKeyEx", (PyCFunction)winreg_DeleteKeyEx, METH_VARARGS|METH_KEYWORDS, winreg_DeleteKeyEx__doc__},
+    {"DeleteKeyEx", (PyCFunction)winreg_DeleteKeyEx, METH_FASTCALL, winreg_DeleteKeyEx__doc__},
 
 static PyObject *
 winreg_DeleteKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                         REGSAM access, int reserved);
 
 static PyObject *
-winreg_DeleteKeyEx(PyObject *module, PyObject *args, PyObject *kwargs)
+winreg_DeleteKeyEx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "sub_key", "access", "reserved", NULL};
@@ -351,7 +351,7 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *args, PyObject *kwargs)
     REGSAM access = KEY_WOW64_64KEY;
     int reserved = 0;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         clinic_HKEY_converter, &key, &sub_key, &access, &reserved)) {
         goto exit;
     }
@@ -620,14 +620,14 @@ PyDoc_STRVAR(winreg_OpenKey__doc__,
 "If the function fails, an OSError exception is raised.");
 
 #define WINREG_OPENKEY_METHODDEF    \
-    {"OpenKey", (PyCFunction)winreg_OpenKey, METH_VARARGS|METH_KEYWORDS, winreg_OpenKey__doc__},
+    {"OpenKey", (PyCFunction)winreg_OpenKey, METH_FASTCALL, winreg_OpenKey__doc__},
 
 static HKEY
 winreg_OpenKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                     int reserved, REGSAM access);
 
 static PyObject *
-winreg_OpenKey(PyObject *module, PyObject *args, PyObject *kwargs)
+winreg_OpenKey(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
@@ -638,7 +638,7 @@ winreg_OpenKey(PyObject *module, PyObject *args, PyObject *kwargs)
     REGSAM access = KEY_READ;
     HKEY _return_value;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         clinic_HKEY_converter, &key, &sub_key, &reserved, &access)) {
         goto exit;
     }
@@ -672,14 +672,14 @@ PyDoc_STRVAR(winreg_OpenKeyEx__doc__,
 "If the function fails, an OSError exception is raised.");
 
 #define WINREG_OPENKEYEX_METHODDEF    \
-    {"OpenKeyEx", (PyCFunction)winreg_OpenKeyEx, METH_VARARGS|METH_KEYWORDS, winreg_OpenKeyEx__doc__},
+    {"OpenKeyEx", (PyCFunction)winreg_OpenKeyEx, METH_FASTCALL, winreg_OpenKeyEx__doc__},
 
 static HKEY
 winreg_OpenKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                       int reserved, REGSAM access);
 
 static PyObject *
-winreg_OpenKeyEx(PyObject *module, PyObject *args, PyObject *kwargs)
+winreg_OpenKeyEx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
@@ -690,7 +690,7 @@ winreg_OpenKeyEx(PyObject *module, PyObject *args, PyObject *kwargs)
     REGSAM access = KEY_READ;
     HKEY _return_value;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         clinic_HKEY_converter, &key, &sub_key, &reserved, &access)) {
         goto exit;
     }
@@ -1091,4 +1091,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5b53d19cbe3f37cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=16dd06be6e14b86e input=a9049054013a1b77]*/

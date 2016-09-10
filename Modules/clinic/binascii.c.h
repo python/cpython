@@ -103,13 +103,13 @@ PyDoc_STRVAR(binascii_b2a_base64__doc__,
 "Base64-code line of data.");
 
 #define BINASCII_B2A_BASE64_METHODDEF    \
-    {"b2a_base64", (PyCFunction)binascii_b2a_base64, METH_VARARGS|METH_KEYWORDS, binascii_b2a_base64__doc__},
+    {"b2a_base64", (PyCFunction)binascii_b2a_base64, METH_FASTCALL, binascii_b2a_base64__doc__},
 
 static PyObject *
 binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline);
 
 static PyObject *
-binascii_b2a_base64(PyObject *module, PyObject *args, PyObject *kwargs)
+binascii_b2a_base64(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "newline", NULL};
@@ -117,7 +117,7 @@ binascii_b2a_base64(PyObject *module, PyObject *args, PyObject *kwargs)
     Py_buffer data = {NULL, NULL};
     int newline = 1;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &data, &newline)) {
         goto exit;
     }
@@ -480,13 +480,13 @@ PyDoc_STRVAR(binascii_a2b_qp__doc__,
 "Decode a string of qp-encoded data.");
 
 #define BINASCII_A2B_QP_METHODDEF    \
-    {"a2b_qp", (PyCFunction)binascii_a2b_qp, METH_VARARGS|METH_KEYWORDS, binascii_a2b_qp__doc__},
+    {"a2b_qp", (PyCFunction)binascii_a2b_qp, METH_FASTCALL, binascii_a2b_qp__doc__},
 
 static PyObject *
 binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header);
 
 static PyObject *
-binascii_a2b_qp(PyObject *module, PyObject *args, PyObject *kwargs)
+binascii_a2b_qp(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "header", NULL};
@@ -494,7 +494,7 @@ binascii_a2b_qp(PyObject *module, PyObject *args, PyObject *kwargs)
     Py_buffer data = {NULL, NULL};
     int header = 0;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         ascii_buffer_converter, &data, &header)) {
         goto exit;
     }
@@ -519,14 +519,14 @@ PyDoc_STRVAR(binascii_b2a_qp__doc__,
 "are both encoded.  When quotetabs is set, space and tabs are encoded.");
 
 #define BINASCII_B2A_QP_METHODDEF    \
-    {"b2a_qp", (PyCFunction)binascii_b2a_qp, METH_VARARGS|METH_KEYWORDS, binascii_b2a_qp__doc__},
+    {"b2a_qp", (PyCFunction)binascii_b2a_qp, METH_FASTCALL, binascii_b2a_qp__doc__},
 
 static PyObject *
 binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
                      int istext, int header);
 
 static PyObject *
-binascii_b2a_qp(PyObject *module, PyObject *args, PyObject *kwargs)
+binascii_b2a_qp(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "quotetabs", "istext", "header", NULL};
@@ -536,7 +536,7 @@ binascii_b2a_qp(PyObject *module, PyObject *args, PyObject *kwargs)
     int istext = 1;
     int header = 0;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &data, &quotetabs, &istext, &header)) {
         goto exit;
     }
@@ -550,4 +550,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=12611b05d8bf4a9c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1f8d6e48f75f6d1e input=a9049054013a1b77]*/

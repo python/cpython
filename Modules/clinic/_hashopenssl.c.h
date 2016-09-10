@@ -12,7 +12,7 @@ PyDoc_STRVAR(_hashlib_scrypt__doc__,
 "scrypt password-based key derivation function.");
 
 #define _HASHLIB_SCRYPT_METHODDEF    \
-    {"scrypt", (PyCFunction)_hashlib_scrypt, METH_VARARGS|METH_KEYWORDS, _hashlib_scrypt__doc__},
+    {"scrypt", (PyCFunction)_hashlib_scrypt, METH_FASTCALL, _hashlib_scrypt__doc__},
 
 static PyObject *
 _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
@@ -20,7 +20,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
                      long maxmem, long dklen);
 
 static PyObject *
-_hashlib_scrypt(PyObject *module, PyObject *args, PyObject *kwargs)
+_hashlib_scrypt(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"password", "salt", "n", "r", "p", "maxmem", "dklen", NULL};
@@ -33,7 +33,7 @@ _hashlib_scrypt(PyObject *module, PyObject *args, PyObject *kwargs)
     long maxmem = 0;
     long dklen = 64;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &password, &salt, &PyLong_Type, &n_obj, &PyLong_Type, &r_obj, &PyLong_Type, &p_obj, &maxmem, &dklen)) {
         goto exit;
     }
@@ -57,4 +57,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=8c5386789f77430a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=118cd7036fa0fb52 input=a9049054013a1b77]*/

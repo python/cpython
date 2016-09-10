@@ -11,20 +11,20 @@ PyDoc_STRVAR(grp_getgrgid__doc__,
 "If id is not valid, raise KeyError.");
 
 #define GRP_GETGRGID_METHODDEF    \
-    {"getgrgid", (PyCFunction)grp_getgrgid, METH_VARARGS|METH_KEYWORDS, grp_getgrgid__doc__},
+    {"getgrgid", (PyCFunction)grp_getgrgid, METH_FASTCALL, grp_getgrgid__doc__},
 
 static PyObject *
 grp_getgrgid_impl(PyObject *module, PyObject *id);
 
 static PyObject *
-grp_getgrgid(PyObject *module, PyObject *args, PyObject *kwargs)
+grp_getgrgid(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"id", NULL};
     static _PyArg_Parser _parser = {"O:getgrgid", _keywords, 0};
     PyObject *id;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &id)) {
         goto exit;
     }
@@ -43,20 +43,20 @@ PyDoc_STRVAR(grp_getgrnam__doc__,
 "If name is not valid, raise KeyError.");
 
 #define GRP_GETGRNAM_METHODDEF    \
-    {"getgrnam", (PyCFunction)grp_getgrnam, METH_VARARGS|METH_KEYWORDS, grp_getgrnam__doc__},
+    {"getgrnam", (PyCFunction)grp_getgrnam, METH_FASTCALL, grp_getgrnam__doc__},
 
 static PyObject *
 grp_getgrnam_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-grp_getgrnam(PyObject *module, PyObject *args, PyObject *kwargs)
+grp_getgrnam(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", NULL};
     static _PyArg_Parser _parser = {"U:getgrnam", _keywords, 0};
     PyObject *name;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &name)) {
         goto exit;
     }
@@ -86,4 +86,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=c06081097b7fffe7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d6417ae0a7298e0e input=a9049054013a1b77]*/
