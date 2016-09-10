@@ -355,6 +355,7 @@ PYTHON_OBJS=	\
 		Python/compile.o \
 		Python/codecs.o \
 		Python/dynamic_annotations.o \
+		Python/dtrace_stubs.o \
 		Python/errors.o \
 		Python/frozenmain.o \
 		Python/future.o \
