@@ -144,7 +144,7 @@ The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
 access further features, you have to do this yourself:
 
 .. class:: Pdb(completekey='tab', stdin=None, stdout=None, skip=None, \
-               nosigint=False)
+               nosigint=False, readrc=True)
 
    :class:`Pdb` is the debugger class.
 
@@ -160,6 +160,9 @@ access further features, you have to do this yourself:
    This allows you to break into the debugger again by pressing :kbd:`Ctrl-C`.  If you
    want Pdb not to touch the SIGINT handler, set *nosigint* to true.
 
+   The *readrc* argument defaults to True and controls whether Pdb will load
+   .pdbrc files from the filesystem.
+
    Example call to enable tracing with *skip*::
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
@@ -170,6 +173,9 @@ access further features, you have to do this yourself:
    .. versionadded:: 3.2
       The *nosigint* argument.  Previously, a SIGINT handler was never set by
       Pdb.
+
+   .. versionadded:: 3.5
+      The *readrc* argument.
 
    .. method:: run(statement, globals=None, locals=None)
                runeval(expression, globals=None, locals=None)
