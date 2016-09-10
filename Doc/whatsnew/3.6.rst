@@ -1010,6 +1010,16 @@ Build and C API Changes
 Deprecated
 ==========
 
+Deprecated Build Options
+------------------------
+
+The ``--with-system-ffi`` configure flag is now on by default on non-OSX UNIX
+platforms.  It may be disabled by using ``--without-system-ffi``, but using the
+flag is deprecated and will not be accepted in Python 3.7.  OSX is unaffected
+by this change.  Note that many OS distributors already use the
+``--with-system-ffi`` flag when building their system Python.
+
+
 New Keywords
 ------------
 
