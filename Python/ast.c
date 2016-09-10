@@ -4326,7 +4326,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     const char *expr_end;
     expr_ty simple_expression;
     expr_ty format_spec = NULL; /* Optional format specifier. */
-    char conversion = -1; /* The conversion char. -1 if not specified. */
+    int conversion = -1; /* The conversion char. -1 if not specified. */
 
     /* 0 if we're not in a string, else the quote char we're trying to
        match (single or double quote). */
@@ -4502,7 +4502,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
 
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */
-    *expression = FormattedValue(simple_expression, (int)conversion,
+    *expression = FormattedValue(simple_expression, conversion,
                                  format_spec, LINENO(n), n->n_col_offset,
                                  c->c_arena);
     if (!*expression)
