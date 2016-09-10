@@ -1,8 +1,10 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
 import doctest
+import os
 import pdb
 import sys
+import tempfile
 import types
 import unittest
 import subprocess
@@ -34,7 +36,7 @@ def test_pdb_displayhook():
     """This tests the custom displayhook for pdb.
 
     >>> def test_function(foo, bar):
-    ...     import pdb; pdb.Pdb(nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     pass
 
     >>> with PdbTestInput([
@@ -74,7 +76,7 @@ def test_pdb_basic_commands():
     ...     return foo.upper()
 
     >>> def test_function():
-    ...     import pdb; pdb.Pdb(nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     ret = test_function_2('baz')
     ...     print(ret)
 
@@ -173,7 +175,7 @@ def test_pdb_breakpoint_commands():
     """Test basic commands related to breakpoints.
 
     >>> def test_function():
-    ...     import pdb; pdb.Pdb(nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     print(1)
     ...     print(2)
     ...     print(3)
@@ -305,7 +307,7 @@ def test_list_commands():
     ...     return foo
 
     >>> def test_function():
-    ...     import pdb; pdb.Pdb(nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     ret = test_function_2('baz')
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
@@ -328,7 +330,7 @@ def test_list_commands():
     -> ret = test_function_2('baz')
     (Pdb) list
       1         def test_function():
-      2             import pdb; pdb.Pdb(nosigint=True).set_trace()
+      2             import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
       3  ->         ret = test_function_2('baz')
     [EOF]
     (Pdb) step
@@ -391,7 +393,7 @@ def test_post_mortem():
     ...         print('Exception!')
 
     >>> def test_function():
-    ...     import pdb; pdb.Pdb(nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     test_function_2()
     ...     print('Not reached.')
 
@@ -424,7 +426,7 @@ def test_post_mortem():
     -> 1/0
     (Pdb) list
       1         def test_function():
-      2             import pdb; pdb.Pdb(nosigint=True).set_trace()
+      2             import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
       3  ->         test_function_2()
       4             print('Not reached.')
     [EOF]
@@ -448,7 +450,7 @@ def test_pdb_skip_modules():
 
     >>> def skip_module():
     ...     import string
-    ...     import pdb; pdb.Pdb(skip=['stri*'], nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(skip=['stri*'], nosigint=True, readrc=False).set_trace()
     ...     string.capwords('FOO')
 
     >>> with PdbTestInput([
@@ -477,7 +479,7 @@ def test_pdb_skip_modules_with_callback():
     >>> def skip_module():
     ...     def callback():
     ...         return None
-    ...     import pdb; pdb.Pdb(skip=['module_to_skip*'], nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(skip=['module_to_skip*'], nosigint=True, readrc=False).set_trace()
     ...     mod.foo_pony(callback)
 
     >>> with PdbTestInput([
@@ -518,7 +520,7 @@ def test_pdb_continue_in_bottomframe():
     """Test that "continue" and "next" work properly in bottom frame (issue #5294).
 
     >>> def test_function():
-    ...     import pdb, sys; inst = pdb.Pdb(nosigint=True)
+    ...     import pdb, sys; inst = pdb.Pdb(nosigint=True, readrc=False)
     ...     inst.set_trace()
     ...     inst.botframe = sys._getframe()  # hackery to get the right botframe
     ...     print(1)
@@ -558,7 +560,7 @@ def test_pdb_continue_in_bottomframe():
 
 def pdb_invoke(method, arg):
     """Run pdb.method(arg)."""
-    getattr(pdb.Pdb(nosigint=True), method)(arg)
+    getattr(pdb.Pdb(nosigint=True, readrc=False), method)(arg)
 
 
 def test_pdb_run_with_incorrect_argument():
@@ -607,7 +609,7 @@ def test_next_until_return_at_return_event():
     ...     x = 2
 
     >>> def test_function():
-    ...     import pdb; pdb.Pdb(nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     test_function_2()
     ...     test_function_2()
     ...     test_function_2()
@@ -673,7 +675,7 @@ def test_pdb_next_command_for_generator():
     ...     yield 2
 
     >>> def test_function():
-    ...     import pdb; pdb.Pdb(nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     it = test_gen()
     ...     try:
     ...         if next(it) != 0:
@@ -733,7 +735,7 @@ def test_pdb_return_command_for_generator():
     ...     yield 2
 
     >>> def test_function():
-    ...     import pdb; pdb.Pdb(nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     it = test_gen()
     ...     try:
     ...         if next(it) != 0:
@@ -788,7 +790,7 @@ def test_pdb_until_command_for_generator():
     ...     yield 2
 
     >>> def test_function():
-    ...     import pdb; pdb.Pdb(nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     for i in test_gen():
     ...         print(i)
     ...     print("finished")
@@ -830,7 +832,7 @@ def test_pdb_next_command_in_generator_for_loop():
     ...     return 1
 
     >>> def test_function():
-    ...     import pdb; pdb.Pdb(nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     for i in test_gen():
     ...         print('value', i)
     ...     x = 123
@@ -875,7 +877,7 @@ def test_pdb_next_command_subiterator():
     ...     return x
 
     >>> def test_function():
-    ...     import pdb; pdb.Pdb(nosigint=True).set_trace()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     for i in test_gen():
     ...         print('value', i)
     ...     x = 123
@@ -1025,7 +1027,7 @@ class PdbTestCase(unittest.TestCase):
                 import pdb
 
                 def start_pdb():
-                    pdb.Pdb().set_trace()
+                    pdb.Pdb(readrc=False).set_trace()
                     x = 1
                     y = 1
 
@@ -1054,13 +1056,47 @@ class PdbTestCase(unittest.TestCase):
             .format(expected, stdout))
 
 
+    def test_readrc_kwarg(self):
+        save_home = os.environ['HOME']
+        save_dir = os.getcwd()
+        script = """import pdb; pdb.Pdb(readrc=False).set_trace()
+
+print('hello')
+"""
+        del os.environ['HOME']
+        try:
+            with tempfile.TemporaryDirectory() as dirname:
+                os.chdir(dirname)
+                with open('.pdbrc', 'w') as f:
+                    f.write("invalid\n")
+
+                with open('main.py', 'w') as f:
+                    f.write(script)
+
+                cmd = [sys.executable, 'main.py']
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stdin=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                self.addCleanup(proc.stdout.close)
+                self.addCleanup(proc.stderr.close)
+                stdout, stderr = proc.communicate(b'q\n')
+                self.assertNotIn("NameError: name 'invalid' is not defined",
+                              stdout.decode())
+
+        finally:
+            os.environ['HOME'] = save_home
+            os.chdir(save_dir)
+
     def tearDown(self):
         support.unlink(support.TESTFN)
 
 
 def load_tests(*args):
     from test import test_pdb
-    suites = [unittest.makeSuite(PdbTestCase), doctest.DocTestSuite(test_pdb)]
+    suites = [unittest.makeSuite(PdbTestCase)]
     return unittest.TestSuite(suites)
 
 

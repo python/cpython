@@ -52,7 +52,8 @@ If a file ".pdbrc" exists in your home directory or in the current
 directory, it is read in and executed as if it had been typed at the
 debugger prompt.  This is particularly useful for aliases.  If both
 files exist, the one in the home directory is read first and aliases
-defined there can be overridden by the local file.
+defined there can be overridden by the local file.  This behavior can be
+disabled by passing the "readrc=False" argument to the Pdb constructor.
 
 Aside from aliases, the debugger is not directly programmable; but it
 is implemented as a class from which you can derive your own debugger
@@ -135,7 +136,7 @@ line_prefix = '\n-> '   # Probably a better default
 class Pdb(bdb.Bdb, cmd.Cmd):
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False):
+                 nosigint=False, readrc=True):
         bdb.Bdb.__init__(self, skip=skip)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         if stdout:
@@ -158,18 +159,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         # Read $HOME/.pdbrc and ./.pdbrc
         self.rcLines = []
-        if 'HOME' in os.environ:
-            envHome = os.environ['HOME']
+        if readrc:
+            if 'HOME' in os.environ:
+                envHome = os.environ['HOME']
+                try:
+                    with open(os.path.join(envHome, ".pdbrc")) as rcFile:
+                        self.rcLines.extend(rcFile)
+                except OSError:
+                    pass
             try:
-                with open(os.path.join(envHome, ".pdbrc")) as rcFile:
+                with open(".pdbrc") as rcFile:
                     self.rcLines.extend(rcFile)
             except OSError:
                 pass
-        try:
-            with open(".pdbrc") as rcFile:
-                self.rcLines.extend(rcFile)
-        except OSError:
-            pass
 
         self.commands = {} # associates a command list to breakpoint numbers
         self.commands_doprompt = {} # for each bp num, tells if the prompt

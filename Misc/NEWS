@@ -135,6 +135,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18401: Pdb now supports the 'readrc' keyword argument to control
+  whether .pdbrc files should be read.  Patch by Martin Matusiak and
+  Sam Kimbrel.
+
 - Issue #25969: Update the lib2to3 grammar to handle the unpacking
   generalizations added in 3.5.
 
