@@ -22,7 +22,7 @@
 
 /* Without DTrace, compile to nothing. */
 
-#define PyDTrace_LINE(arg0, arg1, arg2, arg3) do ; while (0)
+#define PyDTrace_LINE(arg0, arg1, arg2) do ; while (0)
 #define PyDTrace_FUNCTION_ENTRY(arg0, arg1, arg2)  do ; while (0)
 #define PyDTrace_FUNCTION_RETURN(arg0, arg1, arg2) do ; while (0)
 #define PyDTrace_GC_START(arg0)               do ; while (0)
