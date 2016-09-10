@@ -170,6 +170,8 @@ Tests
 Build
 -----
 
+- Issue #27566: Fix clean target in freeze makefile (patch by Lisa Roach)
+
 - Issue #27983: Cause lack of llvm-profdata tool when using clang as
   required for PGO linking to be a configure time error rather than
   make time when --with-optimizations is enabled.  Also improve our

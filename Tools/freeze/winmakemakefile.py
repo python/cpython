@@ -143,5 +143,5 @@ def realwork(vars, moddefns, target):
     print "<<"
     print
     print "clean:"
-    print "\t-rm -f *.obj"
-    print "\t-rm -f $(target).exe"
+    print "\t-del /f *.obj"
+    print "\t-del /f $(target).exe"
