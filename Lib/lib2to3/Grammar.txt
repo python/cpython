@@ -136,15 +136,26 @@ subscript: test | [test] ':' [test] [sliceop]
 sliceop: ':' [test]
 exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
 testlist: test (',' test)* [',']
-dictsetmaker: ( (test ':' test (comp_for | (',' test ':' test)* [','])) |
-                (test (comp_for | (',' test)* [','])) )
+dictsetmaker: ( ((test ':' test | '**' expr)
+                 (comp_for | (',' (test ':' test | '**' expr))* [','])) |
+                ((test | star_expr)
+		 (comp_for | (',' (test | star_expr))* [','])) )
 
 classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
 
-arglist: (argument ',')* (argument [',']
-                         |'*' test (',' argument)* [',' '**' test] 
-                         |'**' test)
-argument: test [comp_for] | test '=' test  # Really [keyword '='] test
+arglist: argument (',' argument)* [',']
+
+# "test '=' test" is really "keyword '=' test", but we have no such token.
+# These need to be in a single rule to avoid grammar that is ambiguous
+# to our LL(1) parser. Even though 'test' includes '*expr' in star_expr,
+# we explicitly match '*' here, too, to give it proper precedence.
+# Illegal combinations and orderings are blocked in ast.c:
+# multiple (test comp_for) arguements are blocked; keyword unpackings
+# that precede iterable unpackings are blocked; etc.
+argument: ( test [comp_for] |
+            test '=' test |
+	    '**' expr |
+	    star_expr )
 
 comp_iter: comp_for | comp_if
 comp_for: 'for' exprlist 'in' testlist_safe [comp_iter]

@@ -154,6 +154,41 @@ class TestRaiseChanges(GrammarTest):
         self.invalid_syntax("raise E from")
 
 
+# Modelled after Lib/test/test_grammar.py:TokenTests.test_funcdef issue2292
+# and Lib/test/text_parser.py test_list_displays, test_set_displays,
+# test_dict_displays, test_argument_unpacking, ... changes.
+class TestUnpackingGeneralizations(GrammarTest):
+    def test_mid_positional_star(self):
+        self.validate("""func(1, *(2, 3), 4)""")
+
+    def test_double_star_dict_literal(self):
+        self.validate("""func(**{'eggs':'scrambled', 'spam':'fried'})""")
+
+    def test_double_star_dict_literal_after_keywords(self):
+        self.validate("""func(spam='fried', **{'eggs':'scrambled'})""")
+
+    def test_list_display(self):
+        self.validate("""[*{2}, 3, *[4]]""")
+
+    def test_set_display(self):
+        self.validate("""{*{2}, 3, *[4]}""")
+
+    def test_dict_display_1(self):
+        self.validate("""{**{}}""")
+
+    def test_dict_display_2(self):
+        self.validate("""{**{}, 3:4, **{5:6, 7:8}}""")
+
+    def test_argument_unpacking_1(self):
+        self.validate("""f(a, *b, *c, d)""")
+
+    def test_argument_unpacking_2(self):
+        self.validate("""f(**a, **b)""")
+
+    def test_argument_unpacking_3(self):
+        self.validate("""f(2, *a, *b, **b, **c, **d)""")
+
+
 # Adaptated from Python 3's Lib/test/test_grammar.py:GrammarTests.testFuncdef
 class TestFunctionAnnotations(GrammarTest):
     def test_1(self):
