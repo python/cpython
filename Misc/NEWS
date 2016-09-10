@@ -127,6 +127,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25969: Update the lib2to3 grammar to handle the unpacking
+  generalizations added in 3.5.
+
 - Issue #27932: Fixes memory leak in platform.win32_ver()
 
 - Issue #14977: mailcap now respects the order of the lines in the mailcap
