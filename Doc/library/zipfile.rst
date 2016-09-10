@@ -147,10 +147,10 @@ ZipFile Objects
    *compression* is the ZIP compression method to use when writing the archive,
    and should be :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`,
    :const:`ZIP_BZIP2` or :const:`ZIP_LZMA`; unrecognized
-   values will cause :exc:`RuntimeError` to be raised.  If :const:`ZIP_DEFLATED`,
+   values will cause :exc:`NotImplementedError` to be raised.  If :const:`ZIP_DEFLATED`,
    :const:`ZIP_BZIP2` or :const:`ZIP_LZMA` is specified but the corresponding module
    (:mod:`zlib`, :mod:`bz2` or :mod:`lzma`) is not available, :exc:`RuntimeError`
-   is also raised. The default is :const:`ZIP_STORED`.  If *allowZip64* is
+   is raised. The default is :const:`ZIP_STORED`.  If *allowZip64* is
    ``True`` (the default) zipfile will create ZIP files that use the ZIP64
    extensions when the zipfile is larger than 2 GiB. If it is  false :mod:`zipfile`
    will raise an exception when the ZIP file would require ZIP64 extensions.
@@ -178,6 +178,10 @@ ZipFile Objects
    .. versionchanged:: 3.5
       Added support for writing to unseekable streams.
       Added support for the ``'x'`` mode.
+
+   .. versionchanged:: 3.6
+      Previously, a plain :exc:`RuntimeError` was raised for unrecognized
+      compression values.
 
 
 .. method:: ZipFile.close()
@@ -211,7 +215,6 @@ ZipFile Objects
    can be either the name of a file within the archive or a :class:`ZipInfo`
    object.  The *mode* parameter, if included, must be ``'r'`` (the default)
    or ``'w'``.  *pwd* is the password used to decrypt encrypted ZIP files.
-   Calling :meth:`.open` on a closed ZipFile will raise a :exc:`RuntimeError`.
 
    :meth:`~ZipFile.open` is also a context manager and therefore supports the
    :keyword:`with` statement::
@@ -230,7 +233,7 @@ ZipFile Objects
    With ``mode='w'``, a writable file handle is returned, which supports the
    :meth:`~io.BufferedIOBase.write` method.  While a writable file handle is open,
    attempting to read or write other files in the ZIP file will raise a
-   :exc:`RuntimeError`.
+   :exc:`ValueError`.
 
    When writing a file, if the file size is not known in advance but may exceed
    2 GiB, pass ``force_zip64=True`` to ensure that the header format is
@@ -252,6 +255,11 @@ ZipFile Objects
       :meth:`open` can now be used to write files into the archive with the
       ``mode='w'`` option.
 
+   .. versionchanged:: 3.6
+      Calling :meth:`.open` on a closed ZipFile will raise a :exc:`ValueError`.
+      Previously, a :exc:`RuntimeError` was raised.
+
+
 .. method:: ZipFile.extract(member, path=None, pwd=None)
 
    Extract a member from the archive to the current working directory; *member*
@@ -272,6 +280,10 @@ ZipFile Objects
       characters (``:``, ``<``, ``>``, ``|``, ``"``, ``?``, and ``*``)
       replaced by underscore (``_``).
 
+   .. versionchanged:: 3.6
+      Calling :meth:`extract` on a closed ZipFile will raise a
+      :exc:`ValueError`.  Previously, a :exc:`RuntimeError` was raised.
+
 
 .. method:: ZipFile.extractall(path=None, members=None, pwd=None)
 
@@ -287,6 +299,10 @@ ZipFile Objects
       that have absolute filenames starting with ``"/"`` or filenames with two
       dots ``".."``.  This module attempts to prevent that.
       See :meth:`extract` note.
+
+   .. versionchanged:: 3.6
+      Calling :meth:`extractall` on a closed ZipFile will raise a
+      :exc:`ValueError`.  Previously, a :exc:`RuntimeError` was raised.
 
 
 .. method:: ZipFile.printdir()
@@ -305,18 +321,24 @@ ZipFile Objects
    file in the archive, or a :class:`ZipInfo` object.  The archive must be open for
    read or append. *pwd* is the password used for encrypted  files and, if specified,
    it will override the default password set with :meth:`setpassword`.  Calling
-   :meth:`read` on a closed ZipFile  will raise a :exc:`RuntimeError`. Calling
    :meth:`read` on a ZipFile that uses a compression method other than
    :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2` or
    :const:`ZIP_LZMA` will raise a :exc:`NotImplementedError`. An error will also
    be raised if the corresponding compression module is not available.
 
+   .. versionchanged:: 3.6
+      Calling :meth:`read` on a closed ZipFile will raise a :exc:`ValueError`.
+      Previously, a :exc:`RuntimeError` was raised.
+
 
 .. method:: ZipFile.testzip()
 
    Read all the files in the archive and check their CRC's and file headers.
-   Return the name of the first bad file, or else return ``None``. Calling
-   :meth:`testzip` on a closed ZipFile will raise a :exc:`RuntimeError`.
+   Return the name of the first bad file, or else return ``None``.
+
+   .. versionchanged:: 3.6
+      Calling :meth:`testfile` on a closed ZipFile will raise a
+      :exc:`ValueError`.  Previously, a :exc:`RuntimeError` was raised.
 
 
 .. method:: ZipFile.write(filename, arcname=None, compress_type=None)
@@ -326,10 +348,7 @@ ZipFile Objects
    letter and with leading path separators removed).  If given, *compress_type*
    overrides the value given for the *compression* parameter to the constructor for
    the new entry.
-   The archive must be open with mode ``'w'``, ``'x'`` or ``'a'`` -- calling
-   :meth:`write` on a ZipFile created with mode ``'r'`` will raise a
-   :exc:`RuntimeError`.  Calling  :meth:`write` on a closed ZipFile will raise a
-   :exc:`RuntimeError`.
+   The archive must be open with mode ``'w'``, ``'x'`` or ``'a'``.
 
    .. note::
 
@@ -348,16 +367,19 @@ ZipFile Objects
       If ``arcname`` (or ``filename``, if ``arcname`` is  not given) contains a null
       byte, the name of the file in the archive will be truncated at the null byte.
 
+   .. versionchanged:: 3.6
+      Calling :meth:`write` on a ZipFile created with mode ``'r'`` or
+      a closed ZipFile will raise a :exc:`ValueError`.  Previously,
+      a :exc:`RuntimeError` was raised.
+
+
 .. method:: ZipFile.writestr(zinfo_or_arcname, data[, compress_type])
 
    Write the string *data* to the archive; *zinfo_or_arcname* is either the file
    name it will be given in the archive, or a :class:`ZipInfo` instance.  If it's
    an instance, at least the filename, date, and time must be given.  If it's a
    name, the date and time is set to the current date and time.
-   The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'`` -- calling
-   :meth:`writestr` on a ZipFile created with mode ``'r'`` will raise a
-   :exc:`RuntimeError`.  Calling :meth:`writestr` on a closed ZipFile will
-   raise a :exc:`RuntimeError`.
+   The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
 
    If given, *compress_type* overrides the value given for the *compression*
    parameter to the constructor for the new entry, or in the *zinfo_or_arcname*
@@ -372,6 +394,12 @@ ZipFile Objects
 
    .. versionchanged:: 3.2
       The *compress_type* argument.
+
+   .. versionchanged:: 3.6
+      Calling :meth:`writestr` on a ZipFile created with mode ``'r'`` or
+      a closed ZipFile will raise a :exc:`ValueError`.  Previously,
+      a :exc:`RuntimeError` was raised.
+
 
 The following data attributes are also available:
 
