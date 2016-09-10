@@ -1992,8 +1992,9 @@ vgetargskeywordsfast(PyObject *args, PyObject *keywords,
                 return cleanreturn(0, &freelist);
             }
         }
-        else if (i < nargs)
+        else if (i < nargs) {
             current_arg = PyTuple_GET_ITEM(args, i);
+        }
 
         if (current_arg) {
             msg = convertitem(current_arg, &format, p_va, flags,

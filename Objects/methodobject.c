@@ -97,6 +97,11 @@ PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwds)
     if (flags == (METH_VARARGS | METH_KEYWORDS)) {
         res = (*(PyCFunctionWithKeywords)meth)(self, args, kwds);
     }
+    else if (flags == METH_FASTCALL) {
+        PyObject **stack = &PyTuple_GET_ITEM(args, 0);
+        Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+        res = _PyCFunction_FastCallDict(func, stack, nargs, kwds);
+    }
     else {
         if (kwds != NULL && PyDict_Size(kwds) != 0) {
             PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
@@ -229,6 +234,25 @@ _PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
             result = (*meth) (self, tuple);
         }
         Py_DECREF(tuple);
+        break;
+    }
+
+    case METH_FASTCALL:
+    {
+        PyObject **stack;
+        PyObject *kwnames;
+        _PyCFunctionFast fastmeth = (_PyCFunctionFast)meth;
+
+        stack = _PyStack_UnpackDict(args, nargs, kwargs, &kwnames, func_obj);
+        if (stack == NULL) {
+            return NULL;
+        }
+
+        result = (*fastmeth) (self, stack, nargs, kwnames);
+        if (stack != args) {
+            PyMem_Free(stack);
+        }
+        Py_XDECREF(kwnames);
         break;
     }
 
