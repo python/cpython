@@ -135,6 +135,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #27137: the pure Python fallback implementation of ``functools.partial``
+  now matches the behaviour of its accelerated C counterpart for subclassing,
+  pickling and text representation purposes. Patch by Emanuel Barry and
+  Serhiy Storchaka.
+
 - Issue #28019: itertools.count() no longer rounds non-integer step in range
   between 1.0 and 2.0 to 1.
 
