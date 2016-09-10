@@ -26,7 +26,6 @@ python-config$
 python-config.py$
 reflog.txt$
 tags$
-Lib/plat-mac/errors.rsrc.df.rsrc
 Misc/python.pc
 Misc/python-config.sh$
 Modules/Setup$

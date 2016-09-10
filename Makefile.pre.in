@@ -1178,8 +1178,6 @@ maninstall:	altmaninstall
 	(cd $(DESTDIR)$(MANDIR)/man1; $(LN) -s python$(VERSION).1 python3.1)
 
 # Install the library
-PLATDIR=	@PLATDIR@
-MACHDEPS=	$(PLATDIR)
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
 LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		tkinter/test/test_ttk site-packages test \
@@ -1238,8 +1236,8 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		multiprocessing multiprocessing/dummy \
 		unittest unittest/test unittest/test/testmock \
 		venv venv/scripts venv/scripts/posix \
-		curses pydoc_data $(MACHDEPS)
-libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c
+		curses pydoc_data
+libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -1294,10 +1292,10 @@ libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c
 			esac; \
 		done; \
 	done
-	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS).py \
-		$(DESTDIR)$(LIBDEST)/$(PLATDIR); \
+	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py \
+		$(DESTDIR)$(LIBDEST); \
 	echo $(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS).py \
-		$(LIBDEST)/$(PLATDIR)
+		$(LIBDEST)
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
 	if test -d $(DESTDIR)$(LIBDEST)/distutils/tests; then \
 		$(INSTALL_DATA) $(srcdir)/Modules/xxmodule.c \
@@ -1334,9 +1332,6 @@ libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c
 		$(PYTHON_FOR_BUILD) -m lib2to3.pgen2.driver $(DESTDIR)$(LIBDEST)/lib2to3/Grammar.txt
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -m lib2to3.pgen2.driver $(DESTDIR)$(LIBDEST)/lib2to3/PatternGrammar.txt
-
-$(srcdir)/Lib/$(PLATDIR):
-	mkdir $(srcdir)/Lib/$(PLATDIR)
 
 python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 	# Substitution happens here, as the completely-expanded BINDIR
@@ -1614,9 +1609,6 @@ clobber: clean profile-removal
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
 	-rm -f python-config.py python-config
-	if [ -n "$(MULTIARCH)" ]; then \
-	  rm -rf $(srcdir)/Lib/$(PLATDIR); \
-	fi
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
