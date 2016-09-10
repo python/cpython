@@ -2841,9 +2841,10 @@ static PyObject *date_getstate(PyDateTime_Date *self);
 static Py_hash_t
 date_hash(PyDateTime_Date *self)
 {
-    if (self->hashcode == -1)
+    if (self->hashcode == -1) {
         self->hashcode = generic_hash(
             (unsigned char *)self->data, _PyDateTime_DATE_DATASIZE);
+    }
 
     return self->hashcode;
 }
