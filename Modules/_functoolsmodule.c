@@ -229,7 +229,7 @@ partial_repr(partialobject *pto)
     if (status != 0) {
         if (status < 0)
             return NULL;
-        return PyUnicode_FromFormat("%s(...)", Py_TYPE(pto)->tp_name);
+        return PyUnicode_FromString("...");
     }
 
     arglist = PyUnicode_FromString("");
