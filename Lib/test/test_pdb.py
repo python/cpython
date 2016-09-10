@@ -4,7 +4,6 @@ import doctest
 import os
 import pdb
 import sys
-import tempfile
 import types
 import unittest
 import subprocess
@@ -1057,19 +1056,15 @@ class PdbTestCase(unittest.TestCase):
 
 
     def test_readrc_kwarg(self):
-        save_home = os.environ.get('HOME', None)
-        save_dir = os.getcwd()
         script = textwrap.dedent("""
             import pdb; pdb.Pdb(readrc=False).set_trace()
 
             print('hello')
         """)
-        try:
-            if save_home is not None:
-                del os.environ['HOME']
 
-            with tempfile.TemporaryDirectory() as dirname:
-                os.chdir(dirname)
+        save_home = os.environ.pop('HOME', None)
+        try:
+            with support.temp_cwd():
                 with open('.pdbrc', 'w') as f:
                     f.write("invalid\n")
 
@@ -1083,16 +1078,14 @@ class PdbTestCase(unittest.TestCase):
                     stdin=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                 )
-                self.addCleanup(proc.stdout.close)
-                self.addCleanup(proc.stderr.close)
-                stdout, stderr = proc.communicate(b'q\n')
-                self.assertNotIn("NameError: name 'invalid' is not defined",
-                              stdout.decode())
+                with proc:
+                    stdout, stderr = proc.communicate(b'q\n')
+                    self.assertNotIn("NameError: name 'invalid' is not defined",
+                                  stdout.decode())
 
         finally:
             if save_home is not None:
                 os.environ['HOME'] = save_home
-            os.chdir(save_dir)
 
     def tearDown(self):
         support.unlink(support.TESTFN)
