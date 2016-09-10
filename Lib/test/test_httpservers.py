@@ -442,7 +442,7 @@ cgi_file4 = """\
 import os
 
 print("Content-type: text/html")
-print()
+print("")
 
 print(os.environ["%s"])
 """

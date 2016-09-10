@@ -63,7 +63,7 @@ class TestCurses(unittest.TestCase):
     def setUp(self):
         if verbose:
             # just to make the test output a little more readable
-            print()
+            print('')
         self.stdscr = curses.initscr()
         curses.savetty()
 

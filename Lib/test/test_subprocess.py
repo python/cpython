@@ -426,7 +426,7 @@ class ProcessTestCase(BaseTestCase):
     def test_communicate_pipe_fd_leak(self):
         fd_directory = '/proc/%d/fd' % os.getpid()
         num_fds_before_popen = len(os.listdir(fd_directory))
-        p = subprocess.Popen([sys.executable, "-c", "print()"],
+        p = subprocess.Popen([sys.executable, "-c", "print('')"],
                              stdout=subprocess.PIPE)
         p.communicate()
         num_fds_after_communicate = len(os.listdir(fd_directory))
