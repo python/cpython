@@ -621,6 +621,8 @@ class LongTest(unittest.TestCase):
     def test__format__(self):
         self.assertEqual(format(123456789, 'd'), '123456789')
         self.assertEqual(format(123456789, 'd'), '123456789')
+        self.assertEqual(format(123456789, ','), '123,456,789')
+        self.assertEqual(format(123456789, '_'), '123_456_789')
 
         # sign and aligning are interdependent
         self.assertEqual(format(1, "-"), '1')
@@ -649,8 +651,25 @@ class LongTest(unittest.TestCase):
         self.assertEqual(format(int('be', 16), "X"), "BE")
         self.assertEqual(format(-int('be', 16), "x"), "-be")
         self.assertEqual(format(-int('be', 16), "X"), "-BE")
+        self.assertRaises(ValueError, format, 1234567890, ',x')
+        self.assertEqual(format(1234567890, '_x'), '4996_02d2')
+        self.assertEqual(format(1234567890, '_X'), '4996_02D2')
 
         # octal
+        self.assertEqual(format(3, "o"), "3")
+        self.assertEqual(format(-3, "o"), "-3")
+        self.assertEqual(format(1234, "o"), "2322")
+        self.assertEqual(format(-1234, "o"), "-2322")
+        self.assertEqual(format(1234, "-o"), "2322")
+        self.assertEqual(format(-1234, "-o"), "-2322")
+        self.assertEqual(format(1234, " o"), " 2322")
+        self.assertEqual(format(-1234, " o"), "-2322")
+        self.assertEqual(format(1234, "+o"), "+2322")
+        self.assertEqual(format(-1234, "+o"), "-2322")
+        self.assertRaises(ValueError, format, 1234567890, ',o')
+        self.assertEqual(format(1234567890, '_o'), '111_4540_1322')
+
+        # binary
         self.assertEqual(format(3, "b"), "11")
         self.assertEqual(format(-3, "b"), "-11")
         self.assertEqual(format(1234, "b"), "10011010010")
@@ -661,11 +680,20 @@ class LongTest(unittest.TestCase):
         self.assertEqual(format(-1234, " b"), "-10011010010")
         self.assertEqual(format(1234, "+b"), "+10011010010")
         self.assertEqual(format(-1234, "+b"), "-10011010010")
+        self.assertRaises(ValueError, format, 1234567890, ',b')
+        self.assertEqual(format(12345, '_b'), '11_0000_0011_1001')
 
         # make sure these are errors
         self.assertRaises(ValueError, format, 3, "1.3")  # precision disallowed
+        self.assertRaises(ValueError, format, 3, "_c")   # underscore,
+        self.assertRaises(ValueError, format, 3, ",c")   # comma, and
         self.assertRaises(ValueError, format, 3, "+c")   # sign not allowed
                                                          # with 'c'
+
+        self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, '_,')
+        self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, ',_')
+        self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, '_,d')
+        self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, ',_d')
 
         # ensure that only int and float type specifiers work
         for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +

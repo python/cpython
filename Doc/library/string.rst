@@ -300,7 +300,7 @@ non-empty format string typically modifies the result.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: sf
-   format_spec: [[`fill`]`align`][`sign`][#][0][`width`][,][.`precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`][#][0][`width`][,][_][.`precision`][`type`]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
@@ -377,6 +377,16 @@ instead.
 
 .. versionchanged:: 3.1
    Added the ``','`` option (see also :pep:`378`).
+
+The ``'_'`` option signals the use of an underscore for a thousands
+separator for floating point presentation types and for integer
+presentation type ``'d'``.  For integer presentation types ``'b'``,
+``'o'``, ``'x'``, and ``'X'``, underscores will be inserted every 4
+digits.  For other presentation types, specifying this option is an
+error.
+
+.. versionchanged:: 3.6
+   Added the ``'_'`` option (see also :pep:`515`).
 
 *width* is a decimal integer defining the minimum field width.  If not
 specified, then the field width will be determined by the content.
