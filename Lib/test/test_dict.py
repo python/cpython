@@ -4,6 +4,7 @@ import gc
 import pickle
 import random
 import string
+import sys
 import unittest
 import weakref
 from test import support
@@ -837,6 +838,74 @@ class DictTest(unittest.TestCase):
         class MyDict(dict):
             pass
         self._tracked(MyDict())
+
+    def make_shared_key_dict(self, n):
+        class C:
+            pass
+
+        dicts = []
+        for i in range(n):
+            a = C()
+            a.x, a.y, a.z = 1, 2, 3
+            dicts.append(a.__dict__)
+
+        return dicts
+
+    @support.cpython_only
+    def test_splittable_del(self):
+        """split table must be combined when del d[k]"""
+        a, b = self.make_shared_key_dict(2)
+
+        orig_size = sys.getsizeof(a)
+
+        del a['y']  # split table is combined
+        with self.assertRaises(KeyError):
+            del a['y']
+
+        self.assertGreater(sys.getsizeof(a), orig_size)
+        self.assertEqual(list(a), ['x', 'z'])
+        self.assertEqual(list(b), ['x', 'y', 'z'])
+
+        # Two dicts have different insertion order.
+        a['y'] = 42
+        self.assertEqual(list(a), ['x', 'z', 'y'])
+        self.assertEqual(list(b), ['x', 'y', 'z'])
+
+    @support.cpython_only
+    def test_splittable_pop(self):
+        """split table must be combined when d.pop(k)"""
+        a, b = self.make_shared_key_dict(2)
+
+        orig_size = sys.getsizeof(a)
+
+        a.pop('y')  # split table is combined
+        with self.assertRaises(KeyError):
+            a.pop('y')
+
+        self.assertGreater(sys.getsizeof(a), orig_size)
+        self.assertEqual(list(a), ['x', 'z'])
+        self.assertEqual(list(b), ['x', 'y', 'z'])
+
+        # Two dicts have different insertion order.
+        a['y'] = 42
+        self.assertEqual(list(a), ['x', 'z', 'y'])
+        self.assertEqual(list(b), ['x', 'y', 'z'])
+
+    @support.cpython_only
+    def test_splittable_popitem(self):
+        """split table must be combined when d.popitem()"""
+        a, b = self.make_shared_key_dict(2)
+
+        orig_size = sys.getsizeof(a)
+
+        item = a.popitem()  # split table is combined
+        self.assertEqual(item, ('z', 3))
+        with self.assertRaises(KeyError):
+            del a['z']
+
+        self.assertGreater(sys.getsizeof(a), orig_size)
+        self.assertEqual(list(a), ['x', 'y'])
+        self.assertEqual(list(b), ['x', 'y', 'z'])
 
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
