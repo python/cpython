@@ -668,7 +668,8 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         size = support.calcobjsize
         check = self.check_sizeof
 
-        basicsize = size('n2P3PnPn2P') + 8 + calcsize('2nP2n')
+        basicsize = size('nQ2P' + '3PnPn2P') + calcsize('2nP2n')
+
         entrysize = calcsize('n2P')
         p = calcsize('P')
         nodesize = calcsize('Pn2P')
