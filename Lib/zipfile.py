@@ -449,7 +449,7 @@ class ZipInfo (object):
                 elif ln == 0:
                     counts = ()
                 else:
-                    raise RuntimeError("Corrupt extra field %s"%(ln,))
+                    raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
 
                 idx = 0
 
@@ -654,7 +654,7 @@ def _check_compression(compression):
             raise RuntimeError(
                 "Compression requires the (missing) lzma module")
     else:
-        raise RuntimeError("That compression method is not supported")
+        raise NotImplementedError("That compression method is not supported")
 
 
 def _get_compressor(compress_type):
@@ -697,7 +697,7 @@ class _SharedFile:
     def read(self, n=-1):
         with self._lock:
             if self._writing():
-                raise RuntimeError("Can't read from the ZIP file while there "
+                raise ValueError("Can't read from the ZIP file while there "
                         "is an open writing handle on it. "
                         "Close the writing handle before trying to read.")
             self._file.seek(self._pos)
@@ -1055,7 +1055,7 @@ class ZipFile:
         """Open the ZIP file with mode read 'r', write 'w', exclusive create 'x',
         or append 'a'."""
         if mode not in ('r', 'w', 'x', 'a'):
-            raise RuntimeError("ZipFile requires mode 'r', 'w', 'x', or 'a'")
+            raise ValueError("ZipFile requires mode 'r', 'w', 'x', or 'a'")
 
         _check_compression(compression)
 
@@ -1129,7 +1129,7 @@ class ZipFile:
                     self._didModify = True
                     self.start_dir = self.fp.tell()
             else:
-                raise RuntimeError("Mode must be 'r', 'w', 'x', or 'a'")
+                raise ValueError("Mode must be 'r', 'w', 'x', or 'a'")
         except:
             fp = self.fp
             self.fp = None
@@ -1277,7 +1277,7 @@ class ZipFile:
     def setpassword(self, pwd):
         """Set default password for encrypted files."""
         if pwd and not isinstance(pwd, bytes):
-            raise TypeError("pwd: expected bytes, got %s" % type(pwd))
+            raise TypeError("pwd: expected bytes, got %s" % type(pwd).__name__)
         if pwd:
             self.pwd = pwd
         else:
@@ -1291,7 +1291,7 @@ class ZipFile:
     @comment.setter
     def comment(self, comment):
         if not isinstance(comment, bytes):
-            raise TypeError("comment: expected bytes, got %s" % type(comment))
+            raise TypeError("comment: expected bytes, got %s" % type(comment).__name__)
         # check for valid comment length
         if len(comment) > ZIP_MAX_COMMENT:
             import warnings
@@ -1323,13 +1323,13 @@ class ZipFile:
         instance for name, with zinfo.file_size set.
         """
         if mode not in {"r", "w"}:
-            raise RuntimeError('open() requires mode "r" or "w"')
+            raise ValueError('open() requires mode "r" or "w"')
         if pwd and not isinstance(pwd, bytes):
-            raise TypeError("pwd: expected bytes, got %s" % type(pwd))
+            raise TypeError("pwd: expected bytes, got %s" % type(pwd).__name__)
         if pwd and (mode == "w"):
             raise ValueError("pwd is only supported for reading files")
         if not self.fp:
-            raise RuntimeError(
+            raise ValueError(
                 "Attempt to use ZIP archive that was already closed")
 
         # Make sure we have an info object
@@ -1347,7 +1347,7 @@ class ZipFile:
             return self._open_to_write(zinfo, force_zip64=force_zip64)
 
         if self._writing:
-            raise RuntimeError("Can't read from the ZIP file while there "
+            raise ValueError("Can't read from the ZIP file while there "
                     "is an open writing handle on it. "
                     "Close the writing handle before trying to read.")
 
@@ -1394,7 +1394,7 @@ class ZipFile:
                 if not pwd:
                     pwd = self.pwd
                 if not pwd:
-                    raise RuntimeError("File %s is encrypted, password "
+                    raise RuntimeError("File %r is encrypted, password "
                                        "required for extraction" % name)
 
                 zd = _ZipDecrypter(pwd)
@@ -1412,7 +1412,7 @@ class ZipFile:
                     # compare against the CRC otherwise
                     check_byte = (zinfo.CRC >> 24) & 0xff
                 if h[11] != check_byte:
-                    raise RuntimeError("Bad password for file", name)
+                    raise RuntimeError("Bad password for file %r" % name)
 
             return ZipExtFile(zef_file, mode, zinfo, zd, True)
         except:
@@ -1426,9 +1426,9 @@ class ZipFile:
                 "the ZIP file."
             )
         if self._writing:
-            raise RuntimeError("Can't write to the ZIP file while there is "
-                               "another write handle open on it. "
-                               "Close the first handle before opening another.")
+            raise ValueError("Can't write to the ZIP file while there is "
+                             "another write handle open on it. "
+                             "Close the first handle before opening another.")
 
         # Sizes and CRC are overwritten with correct data after processing the file
         if not hasattr(zinfo, 'file_size'):
@@ -1548,9 +1548,9 @@ class ZipFile:
             import warnings
             warnings.warn('Duplicate name: %r' % zinfo.filename, stacklevel=3)
         if self.mode not in ('w', 'x', 'a'):
-            raise RuntimeError("write() requires mode 'w', 'x', or 'a'")
+            raise ValueError("write() requires mode 'w', 'x', or 'a'")
         if not self.fp:
-            raise RuntimeError(
+            raise ValueError(
                 "Attempt to write ZIP archive that was already closed")
         _check_compression(zinfo.compress_type)
         if not self._allowZip64:
@@ -1569,10 +1569,10 @@ class ZipFile:
         """Put the bytes from filename into the archive under the name
         arcname."""
         if not self.fp:
-            raise RuntimeError(
+            raise ValueError(
                 "Attempt to write to ZIP archive that was already closed")
         if self._writing:
-            raise RuntimeError(
+            raise ValueError(
                 "Can't write to ZIP archive while an open writing handle exists"
             )
 
@@ -1628,10 +1628,10 @@ class ZipFile:
             zinfo = zinfo_or_arcname
 
         if not self.fp:
-            raise RuntimeError(
+            raise ValueError(
                 "Attempt to write to ZIP archive that was already closed")
         if self._writing:
-            raise RuntimeError(
+            raise ValueError(
                 "Can't write to ZIP archive while an open writing handle exists."
             )
 
@@ -1654,9 +1654,9 @@ class ZipFile:
             return
 
         if self._writing:
-            raise RuntimeError("Can't close the ZIP file while there is "
-                               "an open writing handle on it. "
-                               "Close the writing handle before closing the zip.")
+            raise ValueError("Can't close the ZIP file while there is "
+                             "an open writing handle on it. "
+                             "Close the writing handle before closing the zip.")
 
         try:
             if self.mode in ('w', 'x', 'a') and self._didModify: # write ending records
@@ -1803,7 +1803,7 @@ class PyZipFile(ZipFile):
         if filterfunc and not filterfunc(pathname):
             if self.debug:
                 label = 'path' if os.path.isdir(pathname) else 'file'
-                print('%s "%s" skipped by filterfunc' % (label, pathname))
+                print('%s %r skipped by filterfunc' % (label, pathname))
             return
         dir, name = os.path.split(pathname)
         if os.path.isdir(pathname):
@@ -1834,7 +1834,7 @@ class PyZipFile(ZipFile):
                     elif ext == ".py":
                         if filterfunc and not filterfunc(path):
                             if self.debug:
-                                print('file "%s" skipped by filterfunc' % path)
+                                print('file %r skipped by filterfunc' % path)
                             continue
                         fname, arcname = self._get_codename(path[0:-3],
                                                             basename)
@@ -1851,7 +1851,7 @@ class PyZipFile(ZipFile):
                     if ext == ".py":
                         if filterfunc and not filterfunc(path):
                             if self.debug:
-                                print('file "%s" skipped by filterfunc' % path)
+                                print('file %r skipped by filterfunc' % path)
                             continue
                         fname, arcname = self._get_codename(path[0:-3],
                                                             basename)

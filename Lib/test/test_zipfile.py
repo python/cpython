@@ -449,15 +449,15 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
 
     def test_write_to_readonly(self):
         """Check that trying to call write() on a readonly ZipFile object
-        raises a RuntimeError."""
+        raises a ValueError."""
         with zipfile.ZipFile(TESTFN2, mode="w") as zipfp:
             zipfp.writestr("somefile.txt", "bogus")
 
         with zipfile.ZipFile(TESTFN2, mode="r") as zipfp:
-            self.assertRaises(RuntimeError, zipfp.write, TESTFN)
+            self.assertRaises(ValueError, zipfp.write, TESTFN)
 
         with zipfile.ZipFile(TESTFN2, mode="r") as zipfp:
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(ValueError):
                 zipfp.open(TESTFN, mode='w')
 
     def test_add_file_before_1980(self):
@@ -1210,27 +1210,27 @@ class OtherTests(unittest.TestCase):
             fp.write("short file")
         self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, TESTFN)
 
-    def test_closed_zip_raises_RuntimeError(self):
+    def test_closed_zip_raises_ValueError(self):
         """Verify that testzip() doesn't swallow inappropriate exceptions."""
         data = io.BytesIO()
         with zipfile.ZipFile(data, mode="w") as zipf:
             zipf.writestr("foo.txt", "O, for a Muse of Fire!")
 
         # This is correct; calling .read on a closed ZipFile should raise
-        # a RuntimeError, and so should calling .testzip.  An earlier
+        # a ValueError, and so should calling .testzip.  An earlier
         # version of .testzip would swallow this exception (and any other)
         # and report that the first file in the archive was corrupt.
-        self.assertRaises(RuntimeError, zipf.read, "foo.txt")
-        self.assertRaises(RuntimeError, zipf.open, "foo.txt")
-        self.assertRaises(RuntimeError, zipf.testzip)
-        self.assertRaises(RuntimeError, zipf.writestr, "bogus.txt", "bogus")
+        self.assertRaises(ValueError, zipf.read, "foo.txt")
+        self.assertRaises(ValueError, zipf.open, "foo.txt")
+        self.assertRaises(ValueError, zipf.testzip)
+        self.assertRaises(ValueError, zipf.writestr, "bogus.txt", "bogus")
         with open(TESTFN, 'w') as f:
             f.write('zipfile test data')
-        self.assertRaises(RuntimeError, zipf.write, TESTFN)
+        self.assertRaises(ValueError, zipf.write, TESTFN)
 
     def test_bad_constructor_mode(self):
         """Check that bad modes passed to ZipFile constructor are caught."""
-        self.assertRaises(RuntimeError, zipfile.ZipFile, TESTFN, "q")
+        self.assertRaises(ValueError, zipfile.ZipFile, TESTFN, "q")
 
     def test_bad_open_mode(self):
         """Check that bad modes passed to ZipFile.open are caught."""
@@ -1240,10 +1240,10 @@ class OtherTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, mode="r") as zipf:
             # read the data to make sure the file is there
             zipf.read("foo.txt")
-            self.assertRaises(RuntimeError, zipf.open, "foo.txt", "q")
+            self.assertRaises(ValueError, zipf.open, "foo.txt", "q")
             # universal newlines support is removed
-            self.assertRaises(RuntimeError, zipf.open, "foo.txt", "U")
-            self.assertRaises(RuntimeError, zipf.open, "foo.txt", "rU")
+            self.assertRaises(ValueError, zipf.open, "foo.txt", "U")
+            self.assertRaises(ValueError, zipf.open, "foo.txt", "rU")
 
     def test_read0(self):
         """Check that calling read(0) on a ZipExtFile object returns an empty
@@ -1266,7 +1266,7 @@ class OtherTests(unittest.TestCase):
     def test_bad_compression_mode(self):
         """Check that bad compression methods passed to ZipFile.open are
         caught."""
-        self.assertRaises(RuntimeError, zipfile.ZipFile, TESTFN, "w", -1)
+        self.assertRaises(NotImplementedError, zipfile.ZipFile, TESTFN, "w", -1)
 
     def test_unsupported_compression(self):
         # data is declared as shrunk, but actually deflated
@@ -1423,15 +1423,15 @@ class OtherTests(unittest.TestCase):
             with zipf.open('foo', mode='w') as w2:
                 w2.write(msg1)
             with zipf.open('bar', mode='w') as w1:
-                with self.assertRaises(RuntimeError):
+                with self.assertRaises(ValueError):
                     zipf.open('handle', mode='w')
-                with self.assertRaises(RuntimeError):
+                with self.assertRaises(ValueError):
                     zipf.open('foo', mode='r')
-                with self.assertRaises(RuntimeError):
+                with self.assertRaises(ValueError):
                     zipf.writestr('str', 'abcde')
-                with self.assertRaises(RuntimeError):
+                with self.assertRaises(ValueError):
                     zipf.write(__file__, 'file')
-                with self.assertRaises(RuntimeError):
+                with self.assertRaises(ValueError):
                     zipf.close()
                 w1.write(msg2)
             with zipf.open('baz', mode='w') as w2:
