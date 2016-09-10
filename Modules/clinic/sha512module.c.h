@@ -72,20 +72,20 @@ PyDoc_STRVAR(_sha512_sha512__doc__,
 "Return a new SHA-512 hash object; optionally initialized with a string.");
 
 #define _SHA512_SHA512_METHODDEF    \
-    {"sha512", (PyCFunction)_sha512_sha512, METH_VARARGS|METH_KEYWORDS, _sha512_sha512__doc__},
+    {"sha512", (PyCFunction)_sha512_sha512, METH_FASTCALL, _sha512_sha512__doc__},
 
 static PyObject *
 _sha512_sha512_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha512_sha512(PyObject *module, PyObject *args, PyObject *kwargs)
+_sha512_sha512(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
     static _PyArg_Parser _parser = {"|O:sha512", _keywords, 0};
     PyObject *string = NULL;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &string)) {
         goto exit;
     }
@@ -102,20 +102,20 @@ PyDoc_STRVAR(_sha512_sha384__doc__,
 "Return a new SHA-384 hash object; optionally initialized with a string.");
 
 #define _SHA512_SHA384_METHODDEF    \
-    {"sha384", (PyCFunction)_sha512_sha384, METH_VARARGS|METH_KEYWORDS, _sha512_sha384__doc__},
+    {"sha384", (PyCFunction)_sha512_sha384, METH_FASTCALL, _sha512_sha384__doc__},
 
 static PyObject *
 _sha512_sha384_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha512_sha384(PyObject *module, PyObject *args, PyObject *kwargs)
+_sha512_sha384(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
     static _PyArg_Parser _parser = {"|O:sha384", _keywords, 0};
     PyObject *string = NULL;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &string)) {
         goto exit;
     }
@@ -124,4 +124,4 @@ _sha512_sha384(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8f7f6603a9c4e910 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=18f15598c3487045 input=a9049054013a1b77]*/

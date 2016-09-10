@@ -384,14 +384,14 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "2, so that the pickle data stream is readable with Python 2.");
 
 #define _PICKLE_DUMP_METHODDEF    \
-    {"dump", (PyCFunction)_pickle_dump, METH_VARARGS|METH_KEYWORDS, _pickle_dump__doc__},
+    {"dump", (PyCFunction)_pickle_dump, METH_FASTCALL, _pickle_dump__doc__},
 
 static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports);
 
 static PyObject *
-_pickle_dump(PyObject *module, PyObject *args, PyObject *kwargs)
+_pickle_dump(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "file", "protocol", "fix_imports", NULL};
@@ -401,7 +401,7 @@ _pickle_dump(PyObject *module, PyObject *args, PyObject *kwargs)
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &obj, &file, &protocol, &fix_imports)) {
         goto exit;
     }
@@ -430,14 +430,14 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
 "Python 2, so that the pickle data stream is readable with Python 2.");
 
 #define _PICKLE_DUMPS_METHODDEF    \
-    {"dumps", (PyCFunction)_pickle_dumps, METH_VARARGS|METH_KEYWORDS, _pickle_dumps__doc__},
+    {"dumps", (PyCFunction)_pickle_dumps, METH_FASTCALL, _pickle_dumps__doc__},
 
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports);
 
 static PyObject *
-_pickle_dumps(PyObject *module, PyObject *args, PyObject *kwargs)
+_pickle_dumps(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "protocol", "fix_imports", NULL};
@@ -446,7 +446,7 @@ _pickle_dumps(PyObject *module, PyObject *args, PyObject *kwargs)
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &obj, &protocol, &fix_imports)) {
         goto exit;
     }
@@ -486,14 +486,14 @@ PyDoc_STRVAR(_pickle_load__doc__,
 "string instances as bytes objects.");
 
 #define _PICKLE_LOAD_METHODDEF    \
-    {"load", (PyCFunction)_pickle_load, METH_VARARGS|METH_KEYWORDS, _pickle_load__doc__},
+    {"load", (PyCFunction)_pickle_load, METH_FASTCALL, _pickle_load__doc__},
 
 static PyObject *
 _pickle_load_impl(PyObject *module, PyObject *file, int fix_imports,
                   const char *encoding, const char *errors);
 
 static PyObject *
-_pickle_load(PyObject *module, PyObject *args, PyObject *kwargs)
+_pickle_load(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
@@ -503,7 +503,7 @@ _pickle_load(PyObject *module, PyObject *args, PyObject *kwargs)
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &file, &fix_imports, &encoding, &errors)) {
         goto exit;
     }
@@ -534,14 +534,14 @@ PyDoc_STRVAR(_pickle_loads__doc__,
 "string instances as bytes objects.");
 
 #define _PICKLE_LOADS_METHODDEF    \
-    {"loads", (PyCFunction)_pickle_loads, METH_VARARGS|METH_KEYWORDS, _pickle_loads__doc__},
+    {"loads", (PyCFunction)_pickle_loads, METH_FASTCALL, _pickle_loads__doc__},
 
 static PyObject *
 _pickle_loads_impl(PyObject *module, PyObject *data, int fix_imports,
                    const char *encoding, const char *errors);
 
 static PyObject *
-_pickle_loads(PyObject *module, PyObject *args, PyObject *kwargs)
+_pickle_loads(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "fix_imports", "encoding", "errors", NULL};
@@ -551,7 +551,7 @@ _pickle_loads(PyObject *module, PyObject *args, PyObject *kwargs)
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &data, &fix_imports, &encoding, &errors)) {
         goto exit;
     }
@@ -560,4 +560,4 @@ _pickle_loads(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=50f9127109673c98 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=82be137b3c09cb9f input=a9049054013a1b77]*/

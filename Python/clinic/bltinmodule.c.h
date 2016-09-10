@@ -148,7 +148,7 @@ PyDoc_STRVAR(builtin_compile__doc__,
 "in addition to any features explicitly specified.");
 
 #define BUILTIN_COMPILE_METHODDEF    \
-    {"compile", (PyCFunction)builtin_compile, METH_VARARGS|METH_KEYWORDS, builtin_compile__doc__},
+    {"compile", (PyCFunction)builtin_compile, METH_FASTCALL, builtin_compile__doc__},
 
 static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
@@ -156,7 +156,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      int optimize);
 
 static PyObject *
-builtin_compile(PyObject *module, PyObject *args, PyObject *kwargs)
+builtin_compile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", NULL};
@@ -168,7 +168,7 @@ builtin_compile(PyObject *module, PyObject *args, PyObject *kwargs)
     int dont_inherit = 0;
     int optimize = -1;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &source, PyUnicode_FSDecoder, &filename, &mode, &flags, &dont_inherit, &optimize)) {
         goto exit;
     }
@@ -674,4 +674,4 @@ builtin_issubclass(PyObject *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=790cb3d26531dfda input=a9049054013a1b77]*/
+/*[clinic end generated code: output=63483deb75805f7c input=a9049054013a1b77]*/

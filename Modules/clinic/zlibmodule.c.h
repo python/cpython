@@ -14,13 +14,13 @@ PyDoc_STRVAR(zlib_compress__doc__,
 "    Compression level, in 0-9 or -1.");
 
 #define ZLIB_COMPRESS_METHODDEF    \
-    {"compress", (PyCFunction)zlib_compress, METH_VARARGS|METH_KEYWORDS, zlib_compress__doc__},
+    {"compress", (PyCFunction)zlib_compress, METH_FASTCALL, zlib_compress__doc__},
 
 static PyObject *
 zlib_compress_impl(PyObject *module, Py_buffer *data, int level);
 
 static PyObject *
-zlib_compress(PyObject *module, PyObject *args, PyObject *kwargs)
+zlib_compress(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "level", NULL};
@@ -28,7 +28,7 @@ zlib_compress(PyObject *module, PyObject *args, PyObject *kwargs)
     Py_buffer data = {NULL, NULL};
     int level = Z_DEFAULT_COMPRESSION;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &data, &level)) {
         goto exit;
     }
@@ -57,14 +57,14 @@ PyDoc_STRVAR(zlib_decompress__doc__,
 "    The initial output buffer size.");
 
 #define ZLIB_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)zlib_decompress, METH_VARARGS|METH_KEYWORDS, zlib_decompress__doc__},
+    {"decompress", (PyCFunction)zlib_decompress, METH_FASTCALL, zlib_decompress__doc__},
 
 static PyObject *
 zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      Py_ssize_t bufsize);
 
 static PyObject *
-zlib_decompress(PyObject *module, PyObject *args, PyObject *kwargs)
+zlib_decompress(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "wbits", "bufsize", NULL};
@@ -73,7 +73,7 @@ zlib_decompress(PyObject *module, PyObject *args, PyObject *kwargs)
     int wbits = MAX_WBITS;
     Py_ssize_t bufsize = DEF_BUF_SIZE;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &data, &wbits, ssize_t_converter, &bufsize)) {
         goto exit;
     }
@@ -119,14 +119,14 @@ PyDoc_STRVAR(zlib_compressobj__doc__,
 "    containing subsequences that are likely to occur in the input data.");
 
 #define ZLIB_COMPRESSOBJ_METHODDEF    \
-    {"compressobj", (PyCFunction)zlib_compressobj, METH_VARARGS|METH_KEYWORDS, zlib_compressobj__doc__},
+    {"compressobj", (PyCFunction)zlib_compressobj, METH_FASTCALL, zlib_compressobj__doc__},
 
 static PyObject *
 zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
                       int memLevel, int strategy, Py_buffer *zdict);
 
 static PyObject *
-zlib_compressobj(PyObject *module, PyObject *args, PyObject *kwargs)
+zlib_compressobj(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"level", "method", "wbits", "memLevel", "strategy", "zdict", NULL};
@@ -138,7 +138,7 @@ zlib_compressobj(PyObject *module, PyObject *args, PyObject *kwargs)
     int strategy = Z_DEFAULT_STRATEGY;
     Py_buffer zdict = {NULL, NULL};
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &level, &method, &wbits, &memLevel, &strategy, &zdict)) {
         goto exit;
     }
@@ -166,13 +166,13 @@ PyDoc_STRVAR(zlib_decompressobj__doc__,
 "    dictionary as used by the compressor that produced the input data.");
 
 #define ZLIB_DECOMPRESSOBJ_METHODDEF    \
-    {"decompressobj", (PyCFunction)zlib_decompressobj, METH_VARARGS|METH_KEYWORDS, zlib_decompressobj__doc__},
+    {"decompressobj", (PyCFunction)zlib_decompressobj, METH_FASTCALL, zlib_decompressobj__doc__},
 
 static PyObject *
 zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict);
 
 static PyObject *
-zlib_decompressobj(PyObject *module, PyObject *args, PyObject *kwargs)
+zlib_decompressobj(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"wbits", "zdict", NULL};
@@ -180,7 +180,7 @@ zlib_decompressobj(PyObject *module, PyObject *args, PyObject *kwargs)
     int wbits = MAX_WBITS;
     PyObject *zdict = NULL;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &wbits, &zdict)) {
         goto exit;
     }
@@ -247,14 +247,14 @@ PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
 "Call the flush() method to clear these buffers.");
 
 #define ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)zlib_Decompress_decompress, METH_VARARGS|METH_KEYWORDS, zlib_Decompress_decompress__doc__},
+    {"decompress", (PyCFunction)zlib_Decompress_decompress, METH_FASTCALL, zlib_Decompress_decompress__doc__},
 
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
                                 Py_ssize_t max_length);
 
 static PyObject *
-zlib_Decompress_decompress(compobject *self, PyObject *args, PyObject *kwargs)
+zlib_Decompress_decompress(compobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "max_length", NULL};
@@ -262,7 +262,7 @@ zlib_Decompress_decompress(compobject *self, PyObject *args, PyObject *kwargs)
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = 0;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &data, ssize_t_converter, &max_length)) {
         goto exit;
     }
@@ -467,4 +467,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=48911ef429b65903 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3a4e2bfe750423a3 input=a9049054013a1b77]*/

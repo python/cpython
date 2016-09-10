@@ -55,14 +55,14 @@ PyDoc_STRVAR(_codecs_encode__doc__,
 "codecs.register_error that can handle ValueErrors.");
 
 #define _CODECS_ENCODE_METHODDEF    \
-    {"encode", (PyCFunction)_codecs_encode, METH_VARARGS|METH_KEYWORDS, _codecs_encode__doc__},
+    {"encode", (PyCFunction)_codecs_encode, METH_FASTCALL, _codecs_encode__doc__},
 
 static PyObject *
 _codecs_encode_impl(PyObject *module, PyObject *obj, const char *encoding,
                     const char *errors);
 
 static PyObject *
-_codecs_encode(PyObject *module, PyObject *args, PyObject *kwargs)
+_codecs_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "encoding", "errors", NULL};
@@ -71,7 +71,7 @@ _codecs_encode(PyObject *module, PyObject *args, PyObject *kwargs)
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &obj, &encoding, &errors)) {
         goto exit;
     }
@@ -94,14 +94,14 @@ PyDoc_STRVAR(_codecs_decode__doc__,
 "codecs.register_error that can handle ValueErrors.");
 
 #define _CODECS_DECODE_METHODDEF    \
-    {"decode", (PyCFunction)_codecs_decode, METH_VARARGS|METH_KEYWORDS, _codecs_decode__doc__},
+    {"decode", (PyCFunction)_codecs_decode, METH_FASTCALL, _codecs_decode__doc__},
 
 static PyObject *
 _codecs_decode_impl(PyObject *module, PyObject *obj, const char *encoding,
                     const char *errors);
 
 static PyObject *
-_codecs_decode(PyObject *module, PyObject *args, PyObject *kwargs)
+_codecs_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "encoding", "errors", NULL};
@@ -110,7 +110,7 @@ _codecs_decode(PyObject *module, PyObject *args, PyObject *kwargs)
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &obj, &encoding, &errors)) {
         goto exit;
     }
@@ -1536,4 +1536,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=ebe313ab417b17bb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6d6afcabde10ed79 input=a9049054013a1b77]*/

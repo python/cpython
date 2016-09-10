@@ -81,14 +81,14 @@ PyDoc_STRVAR(_lzma_LZMADecompressor_decompress__doc__,
 "the unused_data attribute.");
 
 #define _LZMA_LZMADECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)_lzma_LZMADecompressor_decompress, METH_VARARGS|METH_KEYWORDS, _lzma_LZMADecompressor_decompress__doc__},
+    {"decompress", (PyCFunction)_lzma_LZMADecompressor_decompress, METH_FASTCALL, _lzma_LZMADecompressor_decompress__doc__},
 
 static PyObject *
 _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
                                        Py_ssize_t max_length);
 
 static PyObject *
-_lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *args, PyObject *kwargs)
+_lzma_LZMADecompressor_decompress(Decompressor *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "max_length", NULL};
@@ -96,7 +96,7 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *args, PyObject *
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &data, &max_length)) {
         goto exit;
     }
@@ -256,4 +256,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9434583fe111c771 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f27abae460122706 input=a9049054013a1b77]*/
