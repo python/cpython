@@ -1365,6 +1365,12 @@ else:
                      check_hostname=None):
             super(HTTPSConnection, self).__init__(host, port, timeout,
                                                   source_address)
+            if (key_file is not None or cert_file is not None or
+                        check_hostname is not None):
+                import warnings
+                warnings.warn("key_file, cert_file and check_hostname are "
+                              "deprecated, use a custom context instead.",
+                              DeprecationWarning, 2)
             self.key_file = key_file
             self.cert_file = cert_file
             if context is None:

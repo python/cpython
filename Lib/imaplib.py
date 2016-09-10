@@ -1267,7 +1267,10 @@ if HAVE_SSL:
             if ssl_context is not None and certfile is not None:
                 raise ValueError("ssl_context and certfile arguments are mutually "
                                  "exclusive")
-
+            if keyfile is not None or certfile is not None:
+                import warnings
+                warnings.warn("keyfile and certfile are deprecated, use a"
+                              "custom ssl_context instead", DeprecationWarning, 2)
             self.keyfile = keyfile
             self.certfile = certfile
             if ssl_context is None:

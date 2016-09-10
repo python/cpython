@@ -95,6 +95,14 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
       :data:`ssl.HAS_SNI`).
 
+   .. deprecated:: 3.6
+
+       *keyfile* and *certfile* are deprecated in favor of *context*.
+       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+       :func:`ssl.create_default_context` select the system's trusted CA
+       certificates for you.
+
+
 .. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, source_address=None)
 
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the

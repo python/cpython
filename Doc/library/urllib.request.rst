@@ -111,6 +111,12 @@ The :mod:`urllib.request` module defines the following functions:
    .. versionchanged:: 3.4.3
       *context* was added.
 
+   .. deprecated:: 3.6
+
+       *cafile*, *capath* and *cadefault* are deprecated in favor of *context*.
+       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+       :func:`ssl.create_default_context` select the system's trusted CA
+       certificates for you.
 
 .. function:: install_opener(opener)
 

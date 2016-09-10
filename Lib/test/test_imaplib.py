@@ -77,9 +77,9 @@ if ssl:
 
         def get_request(self):
             newsocket, fromaddr = self.socket.accept()
-            connstream = ssl.wrap_socket(newsocket,
-                                         server_side=True,
-                                         certfile=CERTFILE)
+            context = ssl.SSLContext()
+            context.load_cert_chain(CERTFILE)
+            connstream = context.wrap_socket(newsocket, server_side=True)
             return connstream, fromaddr
 
     IMAP4_SSL = imaplib.IMAP4_SSL

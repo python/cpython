@@ -548,26 +548,28 @@ class TestUrlopen(unittest.TestCase):
 
     def test_https_with_cafile(self):
         handler = self.start_https_server(certfile=CERT_localhost)
-        # Good cert
-        data = self.urlopen("https://localhost:%s/bizarre" % handler.port,
-                            cafile=CERT_localhost)
-        self.assertEqual(data, b"we care a bit")
-        # Bad cert
-        with self.assertRaises(urllib.error.URLError) as cm:
-            self.urlopen("https://localhost:%s/bizarre" % handler.port,
-                         cafile=CERT_fakehostname)
-        # Good cert, but mismatching hostname
-        handler = self.start_https_server(certfile=CERT_fakehostname)
-        with self.assertRaises(ssl.CertificateError) as cm:
-            self.urlopen("https://localhost:%s/bizarre" % handler.port,
-                         cafile=CERT_fakehostname)
+        with support.check_warnings(('', DeprecationWarning)):
+            # Good cert
+            data = self.urlopen("https://localhost:%s/bizarre" % handler.port,
+                                cafile=CERT_localhost)
+            self.assertEqual(data, b"we care a bit")
+            # Bad cert
+            with self.assertRaises(urllib.error.URLError) as cm:
+                self.urlopen("https://localhost:%s/bizarre" % handler.port,
+                             cafile=CERT_fakehostname)
+            # Good cert, but mismatching hostname
+            handler = self.start_https_server(certfile=CERT_fakehostname)
+            with self.assertRaises(ssl.CertificateError) as cm:
+                self.urlopen("https://localhost:%s/bizarre" % handler.port,
+                             cafile=CERT_fakehostname)
 
     def test_https_with_cadefault(self):
         handler = self.start_https_server(certfile=CERT_localhost)
         # Self-signed cert should fail verification with system certificate store
-        with self.assertRaises(urllib.error.URLError) as cm:
-            self.urlopen("https://localhost:%s/bizarre" % handler.port,
-                         cadefault=True)
+        with support.check_warnings(('', DeprecationWarning)):
+            with self.assertRaises(urllib.error.URLError) as cm:
+                self.urlopen("https://localhost:%s/bizarre" % handler.port,
+                             cadefault=True)
 
     def test_https_sni(self):
         if ssl is None:

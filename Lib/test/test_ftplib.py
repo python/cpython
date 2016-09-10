@@ -311,10 +311,12 @@ if ssl is not None:
         _ssl_closing = False
 
         def secure_connection(self):
-            socket = ssl.wrap_socket(self.socket, suppress_ragged_eofs=False,
-                                     certfile=CERTFILE, server_side=True,
-                                     do_handshake_on_connect=False,
-                                     ssl_version=ssl.PROTOCOL_SSLv23)
+            context = ssl.SSLContext()
+            context.load_cert_chain(CERTFILE)
+            socket = context.wrap_socket(self.socket,
+                                         suppress_ragged_eofs=False,
+                                         server_side=True,
+                                         do_handshake_on_connect=False)
             self.del_channel()
             self.set_socket(socket)
             self._ssl_accepting = True
