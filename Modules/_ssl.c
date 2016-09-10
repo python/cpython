@@ -187,6 +187,19 @@ static X509_VERIFY_PARAM *X509_STORE_get0_param(X509_STORE *store)
 {
     return store->param;
 }
+
+static int
+SSL_SESSION_has_ticket(const SSL_SESSION *s)
+{
+    return (s->tlsext_ticklen > 0) ? 1 : 0;
+}
+
+static unsigned long
+SSL_SESSION_get_ticket_lifetime_hint(const SSL_SESSION *s)
+{
+    return s->tlsext_tick_lifetime_hint;
+}
+
 #endif /* OpenSSL < 1.1.0 or LibreSSL */
 
 
@@ -293,25 +306,35 @@ typedef struct {
     int eof_written;
 } PySSLMemoryBIO;
 
+typedef struct {
+    PyObject_HEAD
+    SSL_SESSION *session;
+    PySSLContext *ctx;
+} PySSLSession;
+
 static PyTypeObject PySSLContext_Type;
 static PyTypeObject PySSLSocket_Type;
 static PyTypeObject PySSLMemoryBIO_Type;
+static PyTypeObject PySSLSession_Type;
 
 /*[clinic input]
 module _ssl
 class _ssl._SSLContext "PySSLContext *" "&PySSLContext_Type"
 class _ssl._SSLSocket "PySSLSocket *" "&PySSLSocket_Type"
 class _ssl.MemoryBIO "PySSLMemoryBIO *" "&PySSLMemoryBIO_Type"
+class _ssl.SSLSession "PySSLSession *" "&PySSLSession_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7bf7cb832638e2e1]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bdc67fafeeaa8109]*/
 
 #include "clinic/_ssl.c.h"
 
 static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout);
 
+
 #define PySSLContext_Check(v)   (Py_TYPE(v) == &PySSLContext_Type)
 #define PySSLSocket_Check(v)    (Py_TYPE(v) == &PySSLSocket_Type)
 #define PySSLMemoryBIO_Check(v)    (Py_TYPE(v) == &PySSLMemoryBIO_Type)
+#define PySSLSession_Check(v)   (Py_TYPE(v) == &PySSLSession_Type)
 
 typedef enum {
     SOCKET_IS_NONBLOCKING,
@@ -2325,6 +2348,152 @@ _ssl__SSLSocket_tls_unique_cb_impl(PySSLSocket *self)
     return retval;
 }
 
+#ifdef OPENSSL_VERSION_1_1
+
+static SSL_SESSION*
+_ssl_session_dup(SSL_SESSION *session) {
+    SSL_SESSION *newsession = NULL;
+    int slen;
+    unsigned char *senc = NULL, *p;
+    const unsigned char *const_p;
+
+    if (session == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Invalid session");
+        goto error;
+    }
+
+    /* get length */
+    slen = i2d_SSL_SESSION(session, NULL);
+    if (slen == 0 || slen > 0xFF00) {
+        PyErr_SetString(PyExc_ValueError, "i2d() failed.");
+        goto error;
+    }
+    if ((senc = PyMem_Malloc(slen)) == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
+    p = senc;
+    if (!i2d_SSL_SESSION(session, &p)) {
+        PyErr_SetString(PyExc_ValueError, "i2d() failed.");
+        goto error;
+    }
+    const_p = senc;
+    newsession = d2i_SSL_SESSION(NULL, &const_p, slen);
+    if (session == NULL) {
+        goto error;
+    }
+    PyMem_Free(senc);
+    return newsession;
+  error:
+    if (senc != NULL) {
+        PyMem_Free(senc);
+    }
+    return NULL;
+}
+#endif
+
+static PyObject *
+PySSL_get_session(PySSLSocket *self, void *closure) {
+    /* get_session can return sessions from a server-side connection,
+     * it does not check for handshake done or client socket. */
+    PySSLSession *pysess;
+    SSL_SESSION *session;
+
+#ifdef OPENSSL_VERSION_1_1
+    /* duplicate session as workaround for session bug in OpenSSL 1.1.0,
+     * https://github.com/openssl/openssl/issues/1550 */
+    session = SSL_get0_session(self->ssl);  /* borrowed reference */
+    if (session == NULL) {
+        Py_RETURN_NONE;
+    }
+    if ((session = _ssl_session_dup(session)) == NULL) {
+        return NULL;
+    }
+#else
+    session = SSL_get1_session(self->ssl);
+    if (session == NULL) {
+        Py_RETURN_NONE;
+    }
+#endif
+
+    pysess = PyObject_New(PySSLSession, &PySSLSession_Type);
+    if (pysess == NULL) {
+        SSL_SESSION_free(session);
+        return NULL;
+    }
+
+    assert(self->ctx);
+    pysess->ctx = self->ctx;
+    Py_INCREF(pysess->ctx);
+    pysess->session = session;
+    return (PyObject *)pysess;
+}
+
+static int PySSL_set_session(PySSLSocket *self, PyObject *value,
+                             void *closure)
+                              {
+    PySSLSession *pysess;
+#ifdef OPENSSL_VERSION_1_1
+    SSL_SESSION *session;
+#endif
+    int result;
+
+    if (!PySSLSession_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, "Value is not a SSLSession.");
+        return -1;
+    }
+    pysess = (PySSLSession *)value;
+
+    if (self->ctx->ctx != pysess->ctx->ctx) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Session refers to a different SSLContext.");
+        return -1;
+    }
+    if (self->socket_type != PY_SSL_CLIENT) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Cannot set session for server-side SSLSocket.");
+        return -1;
+    }
+    if (self->handshake_done) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Cannot set session after handshake.");
+        return -1;
+    }
+#ifdef OPENSSL_VERSION_1_1
+    /* duplicate session */
+    if ((session = _ssl_session_dup(pysess->session)) == NULL) {
+        return -1;
+    }
+    result = SSL_set_session(self->ssl, session);
+    /* free duplicate, SSL_set_session() bumps ref count */
+    SSL_SESSION_free(session);
+#else
+    result = SSL_set_session(self->ssl, pysess->session);
+#endif
+    if (result == 0) {
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        return -1;
+    }
+    return 0;
+}
+
+PyDoc_STRVAR(PySSL_set_session_doc,
+"_setter_session(session)\n\
+\
+Get / set SSLSession.");
+
+static PyObject *
+PySSL_get_session_reused(PySSLSocket *self, void *closure) {
+    if (SSL_session_reused(self->ssl)) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+
+PyDoc_STRVAR(PySSL_get_session_reused_doc,
+"Was the client session reused during handshake?");
+
 static PyGetSetDef ssl_getsetlist[] = {
     {"context", (getter) PySSL_get_context,
                 (setter) PySSL_set_context, PySSL_set_context_doc},
@@ -2334,6 +2503,10 @@ static PyGetSetDef ssl_getsetlist[] = {
                         PySSL_get_server_hostname_doc},
     {"owner", (getter) PySSL_get_owner, (setter) PySSL_set_owner,
               PySSL_get_owner_doc},
+    {"session", (getter) PySSL_get_session,
+                (setter) PySSL_set_session, PySSL_set_session_doc},
+    {"session_reused", (getter) PySSL_get_session_reused, NULL,
+              PySSL_get_session_reused_doc},
     {NULL},            /* sentinel */
 };
 
@@ -2618,7 +2791,7 @@ _ssl__SSLContext_get_ciphers_impl(PySSLContext *self)
 {
     SSL *ssl = NULL;
     STACK_OF(SSL_CIPHER) *sk = NULL;
-    SSL_CIPHER *cipher;
+    const SSL_CIPHER *cipher;
     int i=0;
     PyObject *result = NULL, *dct;
 
@@ -4086,6 +4259,193 @@ static PyTypeObject PySSLMemoryBIO_Type = {
 };
 
 
+/*
+ * SSL Session object
+ */
+
+static void
+PySSLSession_dealloc(PySSLSession *self)
+{
+    Py_XDECREF(self->ctx);
+    if (self->session != NULL) {
+        SSL_SESSION_free(self->session);
+    }
+    PyObject_Del(self);
+}
+
+static PyObject *
+PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
+{
+    int result;
+
+    if (left == NULL || right == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    if (!PySSLSession_Check(left) || !PySSLSession_Check(right)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (left == right) {
+        result = 0;
+    } else {
+        const unsigned char *left_id, *right_id;
+        unsigned int left_len, right_len;
+        left_id = SSL_SESSION_get_id(((PySSLSession *)left)->session,
+                                     &left_len);
+        right_id = SSL_SESSION_get_id(((PySSLSession *)right)->session,
+                                      &right_len);
+        if (left_len == right_len) {
+            result = memcmp(left_id, right_id, left_len);
+        } else {
+            result = 1;
+        }
+    }
+
+    switch (op) {
+      case Py_EQ:
+        if (result == 0) {
+            Py_RETURN_TRUE;
+        } else {
+            Py_RETURN_FALSE;
+        }
+        break;
+      case Py_NE:
+        if (result != 0) {
+            Py_RETURN_TRUE;
+        } else {
+            Py_RETURN_FALSE;
+        }
+        break;
+      case Py_LT:
+      case Py_LE:
+      case Py_GT:
+      case Py_GE:
+        Py_RETURN_NOTIMPLEMENTED;
+        break;
+      default:
+        PyErr_BadArgument();
+        return NULL;
+    }
+}
+
+static int
+PySSLSession_traverse(PySSLSession *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->ctx);
+    return 0;
+}
+
+static int
+PySSLSession_clear(PySSLSession *self)
+{
+    Py_CLEAR(self->ctx);
+    return 0;
+}
+
+
+static PyObject *
+PySSLSession_get_time(PySSLSession *self, void *closure) {
+    return PyLong_FromLong(SSL_SESSION_get_time(self->session));
+}
+
+PyDoc_STRVAR(PySSLSession_get_time_doc,
+"Session creation time (seconds since epoch).");
+
+
+static PyObject *
+PySSLSession_get_timeout(PySSLSession *self, void *closure) {
+    return PyLong_FromLong(SSL_SESSION_get_timeout(self->session));
+}
+
+PyDoc_STRVAR(PySSLSession_get_timeout_doc,
+"Session timeout (delta in seconds).");
+
+
+static PyObject *
+PySSLSession_get_ticket_lifetime_hint(PySSLSession *self, void *closure) {
+    unsigned long hint = SSL_SESSION_get_ticket_lifetime_hint(self->session);
+    return PyLong_FromUnsignedLong(hint);
+}
+
+PyDoc_STRVAR(PySSLSession_get_ticket_lifetime_hint_doc,
+"Ticket life time hint.");
+
+
+static PyObject *
+PySSLSession_get_session_id(PySSLSession *self, void *closure) {
+    const unsigned char *id;
+    unsigned int len;
+    id = SSL_SESSION_get_id(self->session, &len);
+    return PyBytes_FromStringAndSize((const char *)id, len);
+}
+
+PyDoc_STRVAR(PySSLSession_get_session_id_doc,
+"Session id");
+
+
+static PyObject *
+PySSLSession_get_has_ticket(PySSLSession *self, void *closure) {
+    if (SSL_SESSION_has_ticket(self->session)) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+
+PyDoc_STRVAR(PySSLSession_get_has_ticket_doc,
+"Does the session contain a ticket?");
+
+
+static PyGetSetDef PySSLSession_getsetlist[] = {
+    {"has_ticket", (getter) PySSLSession_get_has_ticket, NULL,
+              PySSLSession_get_has_ticket_doc},
+    {"id",   (getter) PySSLSession_get_session_id, NULL,
+              PySSLSession_get_session_id_doc},
+    {"ticket_lifetime_hint", (getter) PySSLSession_get_ticket_lifetime_hint,
+              NULL, PySSLSession_get_ticket_lifetime_hint_doc},
+    {"time", (getter) PySSLSession_get_time, NULL,
+              PySSLSession_get_time_doc},
+    {"timeout", (getter) PySSLSession_get_timeout, NULL,
+              PySSLSession_get_timeout_doc},
+    {NULL},            /* sentinel */
+};
+
+static PyTypeObject PySSLSession_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_ssl.Session",                            /*tp_name*/
+    sizeof(PySSLSession),                      /*tp_basicsize*/
+    0,                                         /*tp_itemsize*/
+    (destructor)PySSLSession_dealloc,          /*tp_dealloc*/
+    0,                                         /*tp_print*/
+    0,                                         /*tp_getattr*/
+    0,                                         /*tp_setattr*/
+    0,                                         /*tp_reserved*/
+    0,                                         /*tp_repr*/
+    0,                                         /*tp_as_number*/
+    0,                                         /*tp_as_sequence*/
+    0,                                         /*tp_as_mapping*/
+    0,                                         /*tp_hash*/
+    0,                                         /*tp_call*/
+    0,                                         /*tp_str*/
+    0,                                         /*tp_getattro*/
+    0,                                         /*tp_setattro*/
+    0,                                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,                        /*tp_flags*/
+    0,                                         /*tp_doc*/
+    (traverseproc)PySSLSession_traverse,       /*tp_traverse*/
+    (inquiry)PySSLSession_clear,               /*tp_clear*/
+    PySSLSession_richcompare,                  /*tp_richcompare*/
+    0,                                         /*tp_weaklistoffset*/
+    0,                                         /*tp_iter*/
+    0,                                         /*tp_iternext*/
+    0,                                         /*tp_methods*/
+    0,                                         /*tp_members*/
+    PySSLSession_getsetlist,                   /*tp_getset*/
+};
+
+
 /* helper routines for seeding the SSL PRNG */
 /*[clinic input]
 _ssl.RAND_add
@@ -4771,6 +5131,9 @@ PyInit__ssl(void)
         return NULL;
     if (PyType_Ready(&PySSLMemoryBIO_Type) < 0)
         return NULL;
+    if (PyType_Ready(&PySSLSession_Type) < 0)
+        return NULL;
+
 
     m = PyModule_Create(&_sslmodule);
     if (m == NULL)
@@ -4842,6 +5205,10 @@ PyInit__ssl(void)
     if (PyDict_SetItemString(d, "MemoryBIO",
                              (PyObject *)&PySSLMemoryBIO_Type) != 0)
         return NULL;
+    if (PyDict_SetItemString(d, "SSLSession",
+                             (PyObject *)&PySSLSession_Type) != 0)
+        return NULL;
+
     PyModule_AddIntConstant(m, "SSL_ERROR_ZERO_RETURN",
                             PY_SSL_ERROR_ZERO_RETURN);
     PyModule_AddIntConstant(m, "SSL_ERROR_WANT_READ",
@@ -4968,6 +5335,7 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "OP_CIPHER_SERVER_PREFERENCE",
                             SSL_OP_CIPHER_SERVER_PREFERENCE);
     PyModule_AddIntConstant(m, "OP_SINGLE_DH_USE", SSL_OP_SINGLE_DH_USE);
+    PyModule_AddIntConstant(m, "OP_NO_TICKET", SSL_OP_NO_TICKET);
 #ifdef SSL_OP_SINGLE_ECDH_USE
     PyModule_AddIntConstant(m, "OP_SINGLE_ECDH_USE", SSL_OP_SINGLE_ECDH_USE);
 #endif
