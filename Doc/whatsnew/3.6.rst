@@ -139,7 +139,7 @@ PEP 515: Underscores in Numeric Literals
 
 Prior to PEP 515, there was no support for writing long numeric
 literals with some form of separator to improve readability. For
-instance, how big is ``1000000000000000```? With :pep:`515`, though,
+instance, how big is ``1000000000000000``? With :pep:`515`, though,
 you can use underscores to separate digits as desired to make numeric
 literals easier to read: ``1_000_000_000_000_000``. Underscores can be
 used with other numeric literals beyond integers, e.g.
