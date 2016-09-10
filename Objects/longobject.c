@@ -234,7 +234,7 @@ PyLong_FromLong(long ival)
     unsigned long abs_ival;
     unsigned long t;  /* unsigned so >> doesn't propagate sign bit */
     int ndigits = 0;
-    int sign = 1;
+    int sign;
 
     CHECK_SMALL_INT(ival);
 
@@ -246,6 +246,7 @@ PyLong_FromLong(long ival)
     }
     else {
         abs_ival = (unsigned long)ival;
+        sign = ival == 0 ? 0 : 1;
     }
 
     /* Fast path for single-digit ints */
