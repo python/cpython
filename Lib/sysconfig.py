@@ -342,12 +342,19 @@ def get_makefile_filename():
     return os.path.join(get_path('stdlib'), config_dir_name, 'Makefile')
 
 
-def _get_sysconfigdata_name():
-    return '_sysconfigdata_{abi}_{platform}_{multiarch}'.format(
-        abi=sys.abiflags,
-        platform=sys.platform,
-        multiarch=getattr(sys.implementation, '_multiarch', ''),
-    )
+def _get_sysconfigdata_name(vars=None):
+    if vars is None:
+        return '_sysconfigdata_{abi}_{platform}_{multiarch}'.format(
+            abi=sys.abiflags,
+            platform=sys.platform,
+            multiarch=getattr(sys.implementation, '_multiarch', ''),
+        )
+    else:
+        return '_sysconfigdata_{abi}_{platform}_{multiarch}'.format(
+            abi=vars['ABIFLAGS'],
+            platform=vars['MACHDEP'],
+            multiarch=vars.get('MULTIARCH', ''),
+        )
 
 
 def _generate_posix_vars():
@@ -390,7 +397,7 @@ def _generate_posix_vars():
     # _sysconfigdata module manually and populate it with the build vars.
     # This is more than sufficient for ensuring the subsequent call to
     # get_platform() succeeds.
-    name = _get_sysconfigdata_name()
+    name = _get_sysconfigdata_name(vars)
     if 'darwin' in sys.platform:
         import types
         module = types.ModuleType(name)
