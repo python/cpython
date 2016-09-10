@@ -259,6 +259,10 @@ class Test_apply(FixerTestCase):
         s = """apply(f, *args)"""
         self.unchanged(s)
 
+    def test_unchanged_6b(self):
+        s = """apply(f, **kwds)"""
+        self.unchanged(s)
+
     def test_unchanged_7(self):
         s = """apply(func=f, args=args, kwds=kwds)"""
         self.unchanged(s)
