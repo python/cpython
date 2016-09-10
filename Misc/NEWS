@@ -125,6 +125,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #27932: Fixes memory leak in platform.win32_ver()
+
 - Issue #14977: mailcap now respects the order of the lines in the mailcap
   files ("first match"), as required by RFC 1542.  Patch by Michael Lazar.
 
