@@ -16,6 +16,8 @@ PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 #define PyCFunction_Check(op) (Py_TYPE(op) == &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
+typedef PyObject *(*_PyCFunctionFast) (PyObject *self, PyObject **args,
+                                       Py_ssize_t nargs, PyObject *kwnames);
 typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
                                              PyObject *);
 typedef PyObject *(*PyNoArgsFunction)(PyObject *);
@@ -82,6 +84,8 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
    slot like sq_contains. */
 
 #define METH_COEXIST   0x0040
+
+#define METH_FASTCALL  0x0080
 
 #ifndef Py_LIMITED_API
 typedef struct {

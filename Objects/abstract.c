@@ -2403,6 +2403,62 @@ _PyStack_AsDict(PyObject **values, Py_ssize_t nkwargs, PyObject *kwnames,
     return kwdict;
 }
 
+PyObject **
+_PyStack_UnpackDict(PyObject **args, Py_ssize_t nargs, PyObject *kwargs,
+                    PyObject **p_kwnames, PyObject *func)
+{
+    PyObject **stack, **kwstack;
+    Py_ssize_t nkwargs;
+    Py_ssize_t pos, i;
+    PyObject *key, *value;
+    PyObject *kwnames;
+
+    assert(nargs >= 0);
+    assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+
+    nkwargs = (kwargs != NULL) ? PyDict_Size(kwargs) : 0;
+    if (!nkwargs) {
+        *p_kwnames = NULL;
+        return args;
+    }
+
+    if ((size_t)nargs > PY_SSIZE_T_MAX / sizeof(stack[0]) - (size_t)nkwargs) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    stack = PyMem_Malloc((nargs + nkwargs) * sizeof(stack[0]));
+    if (stack == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    kwnames = PyTuple_New(nkwargs);
+    if (kwnames == NULL) {
+        PyMem_Free(stack);
+        return NULL;
+    }
+
+    /* Copy position arguments (borrowed references) */
+    Py_MEMCPY(stack, args, nargs * sizeof(stack[0]));
+
+    kwstack = stack + nargs;
+    pos = i = 0;
+    /* This loop doesn't support lookup function mutating the dictionary
+       to change its size. It's a deliberate choice for speed, this function is
+       called in the performance critical hot code. */
+    while (PyDict_Next(kwargs, &pos, &key, &value)) {
+        Py_INCREF(key);
+        PyTuple_SET_ITEM(kwnames, i, key);
+        /* The stack contains borrowed references */
+        kwstack[i] = value;
+        i++;
+    }
+
+    *p_kwnames = kwnames;
+    return stack;
+}
+
 PyObject *
 _PyObject_FastCallKeywords(PyObject *func, PyObject **stack, Py_ssize_t nargs,
                            PyObject *kwnames)
