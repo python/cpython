@@ -17,7 +17,7 @@ static struct tm *localtime_r(const time_t *timep, struct tm *result)
 }
 static struct tm *gmtime_r(const time_t *timep, struct tm *result)
 {
-    if (gmime_s(result, timep) == 0)
+    if (gmtime_s(result, timep) == 0)
         return result;
     return NULL;
 }
