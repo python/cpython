@@ -1057,14 +1057,17 @@ class PdbTestCase(unittest.TestCase):
 
 
     def test_readrc_kwarg(self):
-        save_home = os.environ['HOME']
+        save_home = os.environ.get('HOME', None)
         save_dir = os.getcwd()
-        script = """import pdb; pdb.Pdb(readrc=False).set_trace()
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb(readrc=False).set_trace()
 
-print('hello')
-"""
-        del os.environ['HOME']
+            print('hello')
+        """)
         try:
+            if save_home is not None:
+                del os.environ['HOME']
+
             with tempfile.TemporaryDirectory() as dirname:
                 os.chdir(dirname)
                 with open('.pdbrc', 'w') as f:
@@ -1087,7 +1090,8 @@ print('hello')
                               stdout.decode())
 
         finally:
-            os.environ['HOME'] = save_home
+            if save_home is not None:
+                os.environ['HOME'] = save_home
             os.chdir(save_dir)
 
     def tearDown(self):
