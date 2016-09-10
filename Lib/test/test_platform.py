@@ -18,6 +18,12 @@ class PlatformTest(unittest.TestCase):
         # On Windows, the EXE needs to know where pythonXY.dll is at so we have
         # to add the directory to the path.
         if sys.platform == "win32":
+            def restore_environ(old_env):
+                os.environ.clear()
+                os.environ.update(old_env)
+
+            self.addCleanup(restore_environ, dict(os.environ))
+
             os.environ["Path"] = "{};{}".format(
                 os.path.dirname(sys.executable), os.environ["Path"])
 
@@ -26,6 +32,7 @@ class PlatformTest(unittest.TestCase):
                 'import platform; print(platform.architecture())']
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
             return p.communicate()
+
         real = os.path.realpath(sys.executable)
         link = os.path.abspath(support.TESTFN)
         os.symlink(real, link)
