@@ -847,6 +847,7 @@ def parse(str, flags=0, pattern=None):
         pattern = Pattern()
         pattern.flags = flags | SRE_FLAG_VERBOSE
         pattern.str = str
+        source.seek(0)
         p = _parse_sub(source, pattern, True, False)
 
     p.pattern.flags = fix_flags(str, p.pattern.flags)
