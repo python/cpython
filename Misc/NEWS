@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #25758: Prevents zipimport from unnecessarily encoding a filename
+  (patch by Eryk Sun)
+
 - Issue #27812: Properly clear out a generator's frame's backreference to the
   generator to prevent crashes in frame.clear().
 
