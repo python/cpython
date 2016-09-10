@@ -35,5 +35,5 @@ message/external-body; showexternal %s %{access-type} %{name} %{site} \
 text/richtext; shownonascii iso-8859-8 -e richtext -p %s; test=test "`echo \
     %{charset} | tr '[A-Z]' '[a-z]'`"  = iso-8859-8; copiousoutput
 
-video/mpeg; mpeg_play %s
 video/*; animate %s
+video/mpeg; mpeg_play %s
