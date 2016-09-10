@@ -705,6 +705,11 @@ class CLanguage(Language):
             {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
             """)
 
+        parser_prototype_fastcall = normalize_snippet("""
+            static PyObject *
+            {c_basename}({self_type}{self_name}, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+            """)
+
         parser_prototype_varargs = normalize_snippet("""
             static PyObject *
             {c_basename}({self_type}{self_name}, PyObject *args)
@@ -845,6 +850,19 @@ class CLanguage(Language):
                 }}
                 """, indent=4))
 
+        elif not new_or_init:
+            flags = "METH_FASTCALL"
+
+            parser_prototype = parser_prototype_fastcall
+
+            body = normalize_snippet("""
+                if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+                    {parse_arguments})) {{
+                    goto exit;
+                }}
+                """, indent=4)
+            parser_definition = parser_body(parser_prototype, body)
+            parser_definition = insert_keywords(parser_definition)
         else:
             # positional-or-keyword arguments
             flags = "METH_VARARGS|METH_KEYWORDS"
