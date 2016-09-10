@@ -152,10 +152,12 @@ class DummyPOP3Handler(asynchat.async_chat):
         def cmd_stls(self, arg):
             if self.tls_active is False:
                 self.push('+OK Begin TLS negotiation')
-                tls_sock = ssl.wrap_socket(self.socket, certfile=CERTFILE,
-                                           server_side=True,
-                                           do_handshake_on_connect=False,
-                                           suppress_ragged_eofs=False)
+                context = ssl.SSLContext()
+                context.load_cert_chain(CERTFILE)
+                tls_sock = context.wrap_socket(self.socket,
+                                               server_side=True,
+                                               do_handshake_on_connect=False,
+                                               suppress_ragged_eofs=False)
                 self.del_channel()
                 self.set_socket(tls_sock)
                 self.tls_active = True

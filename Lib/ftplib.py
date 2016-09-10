@@ -728,6 +728,10 @@ else:
             if context is not None and certfile is not None:
                 raise ValueError("context and certfile arguments are mutually "
                                  "exclusive")
+            if keyfile is not None or certfile is not None:
+                import warnings
+                warnings.warn("keyfile and certfile are deprecated, use a"
+                              "custom context instead", DeprecationWarning, 2)
             self.keyfile = keyfile
             self.certfile = certfile
             if context is None:

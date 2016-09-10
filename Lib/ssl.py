@@ -1091,7 +1091,6 @@ def wrap_socket(sock, keyfile=None, certfile=None,
                 do_handshake_on_connect=True,
                 suppress_ragged_eofs=True,
                 ciphers=None):
-
     return SSLSocket(sock=sock, keyfile=keyfile, certfile=certfile,
                      server_side=server_side, cert_reqs=cert_reqs,
                      ssl_version=ssl_version, ca_certs=ca_certs,
