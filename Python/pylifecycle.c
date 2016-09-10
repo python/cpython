@@ -600,12 +600,12 @@ Py_FinalizeEx(void)
      * XXX but I'm unclear on exactly how that one happens.  In any case,
      * XXX I haven't seen a real-life report of either of these.
      */
-    PyGC_Collect();
+    _PyGC_CollectIfEnabled();
 #ifdef COUNT_ALLOCS
     /* With COUNT_ALLOCS, it helps to run GC multiple times:
        each collection might release some types from the type
        list, so they become garbage. */
-    while (PyGC_Collect() > 0)
+    while (_PyGC_CollectIfEnabled() > 0)
         /* nothing */;
 #endif
     /* Destroy all modules */
@@ -632,7 +632,7 @@ Py_FinalizeEx(void)
      * XXX Python code getting called.
      */
 #if 0
-    PyGC_Collect();
+    _PyGC_CollectIfEnabled();
 #endif
 
     /* Disable tracemalloc after all Python objects have been destroyed,
