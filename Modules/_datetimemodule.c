@@ -5067,7 +5067,7 @@ local_timezone_from_timestamp(time_t timestamp)
         if (local_time == NULL) {
             return NULL;
         }
-        if (gmtime(&timestamp, &utc_time_tm) == NULL) {
+        if (gmtime_r(&timestamp, &utc_time_tm) == NULL) {
 #ifdef EINVAL
             if (errno == 0)
                 errno = EINVAL;
