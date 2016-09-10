@@ -615,7 +615,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         z.writestr(zinfo, test_src)
         z.close()
         try:
-            zipimport.zipimporter(filename)
+            zipimport.zipimporter(filename).load_module(TESTMOD)
         finally:
             os.remove(filename)
 
