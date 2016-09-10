@@ -3,7 +3,7 @@ rem Used by the buildbot "test" step.
 setlocal
 
 set here=%~dp0
-set rt_opts=-q -d
+set rt_opts=-d
 set regrtest_args=-j1
 
 :CheckOpts
