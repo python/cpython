@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27080: Implement formatting support for PEP 515.  Initial patch
+  by Chris Angelico.
+
 - Issue #27199: In tarfile, expose copyfileobj bufsize to improve throughput.
   Patch by Jason Fried.
 
