@@ -9851,10 +9851,26 @@ $as_echo_n "checking for --with-system-ffi... " >&6; }
 # Check whether --with-system_ffi was given.
 if test "${with_system_ffi+set}" = set; then :
   withval=$with_system_ffi;
-else
-  with_system_ffi="no"
 fi
 
+
+case "$with_system_ffi" in
+    "")
+        case $ac_sys_system in
+            Darwin)
+                with_system_ffi="no"
+                ;;
+            *)
+                with_system_ffi="yes"
+                ;;
+        esac
+        ;;
+    yes|no)
+        ;;
+    *)
+        as_fn_error $? "--with-system-ffi accepts no arguments" "$LINENO" 5
+        ;;
+esac
 
 if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
     LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
