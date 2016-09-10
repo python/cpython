@@ -24,7 +24,7 @@
 
    * We attempt to locate the "Python Home" - if the PYTHONHOME env var
      is set, we believe it.  Otherwise, we use the path of our host .EXE's
-     to try and locate on of our "landmarks" and deduce our home.
+     to try and locate one of our "landmarks" and deduce our home.
      - If we DO have a Python Home: The relevant sub-directories (Lib,
        DLLs, etc) are based on the Python Home
      - If we DO NOT have a Python Home, the core Python Path is
