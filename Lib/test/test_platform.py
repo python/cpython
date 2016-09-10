@@ -15,11 +15,18 @@ class PlatformTest(unittest.TestCase):
 
     @support.skip_unless_symlink
     def test_architecture_via_symlink(self): # issue3762
-        # On Windows, the EXE needs to know where pythonXY.dll is at so we have
-        # to add the directory to the path.
+        # On Windows, the EXE needs to know where pythonXY.dll and *.pyd is at
+        # so we add the directory to the path and PYTHONPATH.
         if sys.platform == "win32":
+            def restore_environ(old_env):
+                os.environ.clear()
+                os.environ.update(old_env)
+
+            self.addCleanup(restore_environ, dict(os.environ))
+
             os.environ["Path"] = "{};{}".format(
                 os.path.dirname(sys.executable), os.environ["Path"])
+            os.environ["PYTHONPATH"] = os.path.dirname(sys.executable)
 
         def get(python):
             cmd = [python, '-c',
