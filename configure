@@ -642,6 +642,10 @@ TRUE
 MACHDEP_OBJS
 DYNLOADFILE
 DLINCLDIR
+DTRACE_OBJS
+DTRACE_HEADERS
+DFLAGS
+DTRACE
 THREADOBJ
 LDLAST
 USE_THREAD_MODULE
@@ -713,6 +717,7 @@ MULTIARCH
 ac_ct_CXX
 MAINCC
 CXX
+SED
 GREP
 CPP
 OBJEXT
@@ -780,7 +785,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -832,6 +836,7 @@ enable_ipv6
 with_doc_strings
 with_pymalloc
 with_valgrind
+with_dtrace
 with_fpectl
 with_libm
 with_libc
@@ -890,7 +895,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1143,15 +1147,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1289,7 +1284,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1442,7 +1437,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1535,6 +1529,7 @@ Optional Packages:
   --with(out)-doc-strings disable/enable documentation strings
   --with(out)-pymalloc    disable/enable specialized mallocs
   --with-valgrind         Enable Valgrind support
+  --with(out)-dtrace      disable/enable DTrace support
   --with-fpectl           enable SIGFPE catching
   --with-libm=STRING      math library
   --with-libc=STRING      C library
@@ -4580,6 +4575,75 @@ fi
 $as_echo "$ac_cv_path_GREP" >&6; }
  GREP="$ac_cv_path_GREP"
 
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for a sed that does not truncate output" >&5
+$as_echo_n "checking for a sed that does not truncate output... " >&6; }
+if ${ac_cv_path_SED+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+            ac_script=s/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/
+     for ac_i in 1 2 3 4 5 6 7; do
+       ac_script="$ac_script$as_nl$ac_script"
+     done
+     echo "$ac_script" 2>/dev/null | sed 99q >conftest.sed
+     { ac_script=; unset ac_script;}
+     if test -z "$SED"; then
+  ac_path_SED_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in sed gsed; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_SED="$as_dir/$ac_prog$ac_exec_ext"
+      as_fn_executable_p "$ac_path_SED" || continue
+# Check for GNU ac_path_SED and select it if it is found.
+  # Check for GNU $ac_path_SED
+case `"$ac_path_SED" --version 2>&1` in
+*GNU*)
+  ac_cv_path_SED="$ac_path_SED" ac_path_SED_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo '' >> "conftest.nl"
+    "$ac_path_SED" -f conftest.sed < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    as_fn_arith $ac_count + 1 && ac_count=$as_val
+    if test $ac_count -gt ${ac_path_SED_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_SED="$ac_path_SED"
+      ac_path_SED_max=$ac_count
+    fi
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_SED_found && break 3
+    done
+  done
+  done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_SED"; then
+    as_fn_error $? "no acceptable sed could be found in \$PATH" "$LINENO" 5
+  fi
+else
+  ac_cv_path_SED=$SED
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_SED" >&5
+$as_echo "$ac_cv_path_SED" >&6; }
+ SED="$ac_cv_path_SED"
+  rm -f conftest.sed
 
 
 
@@ -10862,6 +10926,102 @@ fi
 
 
     OPT="-DDYNAMIC_ANNOTATIONS_ENABLED=1 $OPT"
+fi
+
+# Check for DTrace support
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-dtrace" >&5
+$as_echo_n "checking for --with-dtrace... " >&6; }
+
+# Check whether --with-dtrace was given.
+if test "${with_dtrace+set}" = set; then :
+  withval=$with_dtrace;
+else
+  with_dtrace=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dtrace" >&5
+$as_echo "$with_dtrace" >&6; }
+
+
+
+
+
+DTRACE=
+DFLAGS=
+DTRACE_HEADERS=
+DTRACE_OBJS=
+
+if test "$with_dtrace" = "yes"
+then
+    # Extract the first word of "dtrace", so it can be a program name with args.
+set dummy dtrace; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DTRACE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DTRACE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DTRACE="$DTRACE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DTRACE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_DTRACE" && ac_cv_path_DTRACE="not found"
+  ;;
+esac
+fi
+DTRACE=$ac_cv_path_DTRACE
+if test -n "$DTRACE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DTRACE" >&5
+$as_echo "$DTRACE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    if test "$DTRACE" = "not found"; then
+        as_fn_error $? "dtrace command not found on \$PATH" "$LINENO" 5
+    fi
+
+$as_echo "#define WITH_DTRACE 1" >>confdefs.h
+
+    DTRACE_HEADERS="Include/pydtrace_probes.h"
+
+    # On OS X, DTrace providers do not need to be explicitly compiled and
+    # linked into the binary. Correspondingly, dtrace(1) is missing the ELF
+    # generation flag '-G'. We check for presence of this flag, rather than
+    # hardcoding support by OS, in the interest of robustness.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether DTrace probes require linking" >&5
+$as_echo_n "checking whether DTrace probes require linking... " >&6; }
+if ${ac_cv_dtrace_link+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+              ac_cv_dtrace_link=no
+            echo 'BEGIN' > conftest.d
+            "$DTRACE" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
+                ac_cv_dtrace_link=yes
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_dtrace_link" >&5
+$as_echo "$ac_cv_dtrace_link" >&6; }
+    if test "$ac_cv_dtrace_link" = "yes"; then
+        DTRACE_OBJS="Python/pydtrace.o"
+    fi
 fi
 
 # -I${DLINCLDIR} is added to the compile rule for importdl.o

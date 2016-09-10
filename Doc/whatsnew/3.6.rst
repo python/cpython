@@ -407,6 +407,31 @@ Example of fatal error on buffer overflow using
 (Contributed by Victor Stinner in :issue:`26516` and :issue:`26564`.)
 
 
+DTrace and SystemTap probing support
+------------------------------------
+
+Python can now be built ``--with-dtrace`` which enables static markers
+for the following events in the interpreter:
+
+* function call/return
+
+* garbage collection started/finished
+
+* line of code executed.
+
+This can be used to instrument running interpreters in production,
+without the need to recompile specific debug builds or providing
+application-specific profiling/debugging code.
+
+More details in:ref:`instrumentation`.
+
+The current implementation is tested on Linux and macOS.  Additional
+markers may be added in the future.
+
+(Contributed by Łukasz Langa in :issue:`21590`, based on patches by
+Jesús Cea Avión, David Malcolm, and Nikhil Benesch.)
+
+
 .. _whatsnew-deforder:
 
 PEP 520: Preserving Class Attribute Definition Order
