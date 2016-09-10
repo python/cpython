@@ -122,6 +122,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14977: mailcap now respects the order of the lines in the mailcap
+  files ("first match"), as required by RFC 1542.  Patch by Michael Lazar.
+
 - Issue #28025: Convert all ssl module constants to IntEnum and IntFlags.
   SSLContext properties now return flags and enums.
 
@@ -144,6 +147,10 @@ Library
 
 - Issue #24277: The new email API is no longer provisional, and the docs
   have been reorganized and rewritten to emphasize the new API.
+
+- Issue #22450: urllib now includes an "Accept: */*" header among the
+  default headers.  This makes the results of REST API requests more
+  consistent and predictable especially when proxy servers are involved.
 
 - lib2to3.pgen3.driver.load_grammar() now creates a stable cache file
   between runs given the same Grammar.txt input regardless of the hash
