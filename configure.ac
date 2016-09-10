@@ -2737,9 +2737,25 @@ AC_MSG_RESULT($with_system_expat)
 # Check for use of the system libffi library
 AC_MSG_CHECKING(for --with-system-ffi)
 AC_ARG_WITH(system_ffi,
-            AS_HELP_STRING([--with-system-ffi], [build _ctypes module using an installed ffi library]),
-            [],
-            [with_system_ffi="no"])
+            AS_HELP_STRING([--with-system-ffi], [build _ctypes module using an installed ffi library]),,,)
+
+case "$with_system_ffi" in
+    "")
+        case $ac_sys_system in
+            Darwin)
+                with_system_ffi="no"
+                ;;
+            *)
+                with_system_ffi="yes"
+                ;;
+        esac
+        ;;
+    yes|no)
+        ;;
+    *)
+        AC_MSG_ERROR([--with-system-ffi accepts no arguments])
+        ;;
+esac
 
 if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
     LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"

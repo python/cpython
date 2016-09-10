@@ -1911,6 +1911,9 @@ class PyBuildExt(build_ext):
             if host_platform == 'darwin':
                 return self.configure_ctypes_darwin(ext)
 
+            print('warning: building with the bundled copy of libffi is'
+                  ' deprecated on this platform.  It will not be'
+                  ' distributed with Python 3.7')
             srcdir = sysconfig.get_config_var('srcdir')
             ffi_builddir = os.path.join(self.build_temp, 'libffi')
             ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
@@ -2007,13 +2010,14 @@ class PyBuildExt(build_ext):
                      libraries=math_libs)
         self.extensions.extend([ext, ext_test])
 
-        if not '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS"):
-            return
-
         if host_platform == 'darwin':
+            if '--with-system-ffi' not in sysconfig.get_config_var("CONFIG_ARGS"):
+                return
             # OS X 10.5 comes with libffi.dylib; the include files are
             # in /usr/include/ffi
             inc_dirs.append('/usr/include/ffi')
+        elif '--without-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS"):
+            return
 
         ffi_inc = [sysconfig.get_config_var("LIBFFI_INCLUDEDIR")]
         if not ffi_inc or ffi_inc[0] == '':
