@@ -160,7 +160,7 @@ access further features, you have to do this yourself:
    This allows you to break into the debugger again by pressing :kbd:`Ctrl-C`.  If you
    want Pdb not to touch the SIGINT handler, set *nosigint* to true.
 
-   The *readrc* argument defaults to True and controls whether Pdb will load
+   The *readrc* argument defaults to true and controls whether Pdb will load
    .pdbrc files from the filesystem.
 
    Example call to enable tracing with *skip*::
@@ -174,7 +174,7 @@ access further features, you have to do this yourself:
       The *nosigint* argument.  Previously, a SIGINT handler was never set by
       Pdb.
 
-   .. versionadded:: 3.5
+   .. versionchanged:: 3.6
       The *readrc* argument.
 
    .. method:: run(statement, globals=None, locals=None)
