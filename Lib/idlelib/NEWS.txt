@@ -2,6 +2,15 @@ What's New in IDLE 2.7.13?
 ==========================
 *Release date: 2017-01-01?*
 
+- Issue #27922: Stop IDLE tests from 'flashing' gui widgets on the screen.
+
+- Issue #17642: add larger font sizes for classroom projection.
+
+- Add version to title of IDLE help window.
+
+- Issue #25564: In section on IDLE -- console differences, mention that
+  using exec means that __builtins__ is defined for each statement.
+
 - Issue #27714: text_textview and test_autocomplete now pass when re-run
   in the same process.  This occurs when test_idle fails when run with the
   -w option but without -jn.  Fix warning from test_config.
