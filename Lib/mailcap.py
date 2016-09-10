@@ -1,8 +1,18 @@
 """Mailcap file handling.  See RFC 1524."""
 
 import os
+import warnings
 
 __all__ = ["getcaps","findmatch"]
+
+
+def lineno_sort_key(entry):
+    # Sort in ascending order, with unspecified entries at the end
+    if 'lineno' in entry:
+        return 0, entry['lineno']
+    else:
+        return 1, 0
+
 
 # Part 1: top-level interface.
 
@@ -17,13 +27,14 @@ def getcaps():
 
     """
     caps = {}
+    lineno = 0
     for mailcap in listmailcapfiles():
         try:
             fp = open(mailcap, 'r')
         except OSError:
             continue
         with fp:
-            morecaps = readmailcapfile(fp)
+            morecaps, lineno = _readmailcapfile(fp, lineno)
         for key, value in morecaps.items():
             if not key in caps:
                 caps[key] = value
@@ -49,8 +60,15 @@ def listmailcapfiles():
 
 
 # Part 2: the parser.
-
 def readmailcapfile(fp):
+    """Read a mailcap file and return a dictionary keyed by MIME type."""
+    warnings.warn('readmailcapfile is deprecated, use getcaps instead',
+                  DeprecationWarning, 2)
+    caps, _ = _readmailcapfile(fp, None)
+    return caps
+
+
+def _readmailcapfile(fp, lineno):
     """Read a mailcap file and return a dictionary keyed by MIME type.
 
     Each MIME type is mapped to an entry consisting of a list of
@@ -76,6 +94,9 @@ def readmailcapfile(fp):
         key, fields = parseline(line)
         if not (key and fields):
             continue
+        if lineno is not None:
+            fields['lineno'] = lineno
+            lineno += 1
         # Normalize the key
         types = key.split('/')
         for j in range(len(types)):
@@ -86,7 +107,7 @@ def readmailcapfile(fp):
             caps[key].append(fields)
         else:
             caps[key] = [fields]
-    return caps
+    return caps, lineno
 
 def parseline(line):
     """Parse one entry in a mailcap file and return a dictionary.
@@ -165,6 +186,7 @@ def lookup(caps, MIMEtype, key=None):
         entries = entries + caps[MIMEtype]
     if key is not None:
         entries = [e for e in entries if key in e]
+    entries = sorted(entries, key=lineno_sort_key)
     return entries
 
 def subst(field, MIMEtype, filename, plist=[]):
