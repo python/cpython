@@ -95,14 +95,14 @@ PyDoc_STRVAR(_winapi_ConnectNamedPipe__doc__,
 "\n");
 
 #define _WINAPI_CONNECTNAMEDPIPE_METHODDEF    \
-    {"ConnectNamedPipe", (PyCFunction)_winapi_ConnectNamedPipe, METH_VARARGS|METH_KEYWORDS, _winapi_ConnectNamedPipe__doc__},
+    {"ConnectNamedPipe", (PyCFunction)_winapi_ConnectNamedPipe, METH_FASTCALL, _winapi_ConnectNamedPipe__doc__},
 
 static PyObject *
 _winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
                               int use_overlapped);
 
 static PyObject *
-_winapi_ConnectNamedPipe(PyObject *module, PyObject *args, PyObject *kwargs)
+_winapi_ConnectNamedPipe(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "overlapped", NULL};
@@ -110,7 +110,7 @@ _winapi_ConnectNamedPipe(PyObject *module, PyObject *args, PyObject *kwargs)
     HANDLE handle;
     int use_overlapped = 0;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &handle, &use_overlapped)) {
         goto exit;
     }
@@ -670,14 +670,14 @@ PyDoc_STRVAR(_winapi_ReadFile__doc__,
 "\n");
 
 #define _WINAPI_READFILE_METHODDEF    \
-    {"ReadFile", (PyCFunction)_winapi_ReadFile, METH_VARARGS|METH_KEYWORDS, _winapi_ReadFile__doc__},
+    {"ReadFile", (PyCFunction)_winapi_ReadFile, METH_FASTCALL, _winapi_ReadFile__doc__},
 
 static PyObject *
 _winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
                       int use_overlapped);
 
 static PyObject *
-_winapi_ReadFile(PyObject *module, PyObject *args, PyObject *kwargs)
+_winapi_ReadFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "size", "overlapped", NULL};
@@ -686,7 +686,7 @@ _winapi_ReadFile(PyObject *module, PyObject *args, PyObject *kwargs)
     int size;
     int use_overlapped = 0;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &handle, &size, &use_overlapped)) {
         goto exit;
     }
@@ -864,14 +864,14 @@ PyDoc_STRVAR(_winapi_WriteFile__doc__,
 "\n");
 
 #define _WINAPI_WRITEFILE_METHODDEF    \
-    {"WriteFile", (PyCFunction)_winapi_WriteFile, METH_VARARGS|METH_KEYWORDS, _winapi_WriteFile__doc__},
+    {"WriteFile", (PyCFunction)_winapi_WriteFile, METH_FASTCALL, _winapi_WriteFile__doc__},
 
 static PyObject *
 _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
                        int use_overlapped);
 
 static PyObject *
-_winapi_WriteFile(PyObject *module, PyObject *args, PyObject *kwargs)
+_winapi_WriteFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"handle", "buffer", "overlapped", NULL};
@@ -880,7 +880,7 @@ _winapi_WriteFile(PyObject *module, PyObject *args, PyObject *kwargs)
     PyObject *buffer;
     int use_overlapped = 0;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &handle, &buffer, &use_overlapped)) {
         goto exit;
     }
@@ -889,4 +889,4 @@ _winapi_WriteFile(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4bfccfb32ab726e8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46d6382a6662c4a9 input=a9049054013a1b77]*/

@@ -851,14 +851,14 @@ PyDoc_STRVAR(cmath_isclose__doc__,
 "not close to anything, even itself. inf and -inf are only close to themselves.");
 
 #define CMATH_ISCLOSE_METHODDEF    \
-    {"isclose", (PyCFunction)cmath_isclose, METH_VARARGS|METH_KEYWORDS, cmath_isclose__doc__},
+    {"isclose", (PyCFunction)cmath_isclose, METH_FASTCALL, cmath_isclose__doc__},
 
 static int
 cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
                    double rel_tol, double abs_tol);
 
 static PyObject *
-cmath_isclose(PyObject *module, PyObject *args, PyObject *kwargs)
+cmath_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
@@ -869,7 +869,7 @@ cmath_isclose(PyObject *module, PyObject *args, PyObject *kwargs)
     double abs_tol = 0.0;
     int _return_value;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &a, &b, &rel_tol, &abs_tol)) {
         goto exit;
     }
@@ -882,4 +882,4 @@ cmath_isclose(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=aa2e77ca9fc26928 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=978f59702b41655f input=a9049054013a1b77]*/
