@@ -680,6 +680,14 @@ restriction that :class:`importlib.machinery.BuiltinImporter` and
 :term:`path-like object`.
 
 
+json
+----
+
+:func:`json.load` and :func:`json.loads` now support binary input.  Encoded
+JSON should be represented using either UTF-8, UTF-16, or UTF-32.
+(Contributed by Serhiy Storchaka in :issue:`17909`.)
+
+
 os
 --
 

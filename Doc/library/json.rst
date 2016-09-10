@@ -268,8 +268,9 @@ Basic Usage
 
 .. function:: loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
-   Deserialize *s* (a :class:`str` instance containing a JSON document) to a
-   Python object using this :ref:`conversion table <json-to-py-table>`.
+   Deserialize *s* (a :class:`str`, :class:`bytes` or :class:`bytearray`
+   instance containing a JSON document) to a Python object using this
+   :ref:`conversion table <json-to-py-table>`.
 
    The other arguments have the same meaning as in :func:`load`, except
    *encoding* which is ignored and deprecated.
