@@ -99,7 +99,7 @@ from enum import Enum as _Enum, IntEnum as _IntEnum, IntFlag as _IntFlag
 import _ssl             # if we can't import it, let the error propagate
 
 from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
-from _ssl import _SSLContext, MemoryBIO
+from _ssl import _SSLContext, MemoryBIO, SSLSession
 from _ssl import (
     SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
     SSLSyscallError, SSLEOFError,
@@ -391,18 +391,18 @@ class SSLContext(_SSLContext):
     def wrap_socket(self, sock, server_side=False,
                     do_handshake_on_connect=True,
                     suppress_ragged_eofs=True,
-                    server_hostname=None):
+                    server_hostname=None, session=None):
         return SSLSocket(sock=sock, server_side=server_side,
                          do_handshake_on_connect=do_handshake_on_connect,
                          suppress_ragged_eofs=suppress_ragged_eofs,
                          server_hostname=server_hostname,
-                         _context=self)
+                         _context=self, _session=session)
 
     def wrap_bio(self, incoming, outgoing, server_side=False,
-                 server_hostname=None):
+                 server_hostname=None, session=None):
         sslobj = self._wrap_bio(incoming, outgoing, server_side=server_side,
                                 server_hostname=server_hostname)
-        return SSLObject(sslobj)
+        return SSLObject(sslobj, session=session)
 
     def set_npn_protocols(self, npn_protocols):
         protos = bytearray()
@@ -572,10 +572,12 @@ class SSLObject:
      * The ``do_handshake_on_connect`` and ``suppress_ragged_eofs`` machinery.
     """
 
-    def __init__(self, sslobj, owner=None):
+    def __init__(self, sslobj, owner=None, session=None):
         self._sslobj = sslobj
         # Note: _sslobj takes a weak reference to owner
         self._sslobj.owner = owner or self
+        if session is not None:
+            self._sslobj.session = session
 
     @property
     def context(self):
@@ -585,6 +587,20 @@ class SSLObject:
     @context.setter
     def context(self, ctx):
         self._sslobj.context = ctx
+
+    @property
+    def session(self):
+        """The SSLSession for client socket."""
+        return self._sslobj.session
+
+    @session.setter
+    def session(self, session):
+        self._sslobj.session = session
+
+    @property
+    def session_reused(self):
+        """Was the client session reused during handshake"""
+        return self._sslobj.session_reused
 
     @property
     def server_side(self):
@@ -703,7 +719,7 @@ class SSLSocket(socket):
                  family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None,
                  suppress_ragged_eofs=True, npn_protocols=None, ciphers=None,
                  server_hostname=None,
-                 _context=None):
+                 _context=None, _session=None):
 
         if _context:
             self._context = _context
@@ -735,11 +751,16 @@ class SSLSocket(socket):
         # mixed in.
         if sock.getsockopt(SOL_SOCKET, SO_TYPE) != SOCK_STREAM:
             raise NotImplementedError("only stream sockets are supported")
-        if server_side and server_hostname:
-            raise ValueError("server_hostname can only be specified "
-                             "in client mode")
+        if server_side:
+            if server_hostname:
+                raise ValueError("server_hostname can only be specified "
+                                 "in client mode")
+            if _session is not None:
+                raise ValueError("session can only be specified in "
+                                 "client mode")
         if self._context.check_hostname and not server_hostname:
             raise ValueError("check_hostname requires server_hostname")
+        self._session = _session
         self.server_side = server_side
         self.server_hostname = server_hostname
         self.do_handshake_on_connect = do_handshake_on_connect
@@ -775,7 +796,8 @@ class SSLSocket(socket):
             try:
                 sslobj = self._context._wrap_socket(self, server_side,
                                                     server_hostname)
-                self._sslobj = SSLObject(sslobj, owner=self)
+                self._sslobj = SSLObject(sslobj, owner=self,
+                                         session=self._session)
                 if do_handshake_on_connect:
                     timeout = self.gettimeout()
                     if timeout == 0.0:
@@ -795,6 +817,24 @@ class SSLSocket(socket):
     def context(self, ctx):
         self._context = ctx
         self._sslobj.context = ctx
+
+    @property
+    def session(self):
+        """The SSLSession for client socket."""
+        if self._sslobj is not None:
+            return self._sslobj.session
+
+    @session.setter
+    def session(self, session):
+        self._session = session
+        if self._sslobj is not None:
+            self._sslobj.session = session
+
+    @property
+    def session_reused(self):
+        """Was the client session reused during handshake"""
+        if self._sslobj is not None:
+            return self._sslobj.session_reused
 
     def dup(self):
         raise NotImplemented("Can't dup() %s instances" %
@@ -1028,7 +1068,8 @@ class SSLSocket(socket):
         if self._connected:
             raise ValueError("attempt to connect already-connected SSLSocket!")
         sslobj = self.context._wrap_socket(self, False, self.server_hostname)
-        self._sslobj = SSLObject(sslobj, owner=self)
+        self._sslobj = SSLObject(sslobj, owner=self,
+                                 session=self._session)
         try:
             if connect_ex:
                 rc = socket.connect_ex(self, addr)

@@ -138,6 +138,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19500: Add client-side SSL session resumption to the ssl module.
+
 - Issue #28022: Deprecate ssl-related arguments in favor of SSLContext. The
   deprecation include manual creation of SSLSocket and certfile/keyfile
   (or similar) in ftplib, httplib, imaplib, smtplib, poplib and urllib.
