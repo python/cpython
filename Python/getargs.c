@@ -79,6 +79,10 @@ static int vgetargskeywords(PyObject *, PyObject *,
                             const char *, char **, va_list *, int);
 static int vgetargskeywordsfast(PyObject *, PyObject *,
                             struct _PyArg_Parser *, va_list *, int);
+static int vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
+                          PyObject *keywords, PyObject *kwnames,
+                          struct _PyArg_Parser *parser,
+                          va_list *p_va, int flags);
 static const char *skipitem(const char **, va_list *, int);
 
 int
@@ -1469,6 +1473,46 @@ _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject *args, PyObject *keywords,
     return retval;
 }
 
+int
+_PyArg_ParseStack(PyObject **args, Py_ssize_t nargs, PyObject *kwnames,
+                  struct _PyArg_Parser *parser, ...)
+{
+    int retval;
+    va_list va;
+
+    if ((kwnames != NULL && !PyTuple_Check(kwnames)) ||
+        parser == NULL)
+    {
+        PyErr_BadInternalCall();
+        return 0;
+    }
+
+    va_start(va, parser);
+    retval = vgetargskeywordsfast_impl(args, nargs, NULL, kwnames, parser, &va, 0);
+    va_end(va);
+    return retval;
+}
+
+int
+_PyArg_ParseStack_SizeT(PyObject **args, Py_ssize_t nargs, PyObject *kwnames,
+                        struct _PyArg_Parser *parser, ...)
+{
+    int retval;
+    va_list va;
+
+    if ((kwnames != NULL && !PyTuple_Check(kwnames)) ||
+        parser == NULL)
+    {
+        PyErr_BadInternalCall();
+        return 0;
+    }
+
+    va_start(va, parser);
+    retval = vgetargskeywordsfast_impl(args, nargs, NULL, kwnames, parser, &va, FLAG_SIZE_T);
+    va_end(va);
+    return retval;
+}
+
 
 int
 _PyArg_VaParseTupleAndKeywordsFast(PyObject *args, PyObject *keywords,
@@ -1899,10 +1943,37 @@ parser_clear(struct _PyArg_Parser *parser)
     Py_CLEAR(parser->kwtuple);
 }
 
+static PyObject*
+find_keyword(PyObject *kwnames, PyObject **kwstack, PyObject *key)
+{
+    Py_ssize_t i, nkwargs;
+
+    nkwargs = PyTuple_GET_SIZE(kwnames);
+    for (i=0; i < nkwargs; i++) {
+        PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
+
+        /* ptr==ptr should match in most cases since keyword keys
+           should be interned strings */
+        if (kwname == key) {
+            return kwstack[i];
+        }
+        if (!PyUnicode_Check(kwname)) {
+            /* ignore non-string keyword keys:
+               an error will be raised above */
+            continue;
+        }
+        if (_PyUnicode_EQ(kwname, key)) {
+            return kwstack[i];
+        }
+    }
+    return NULL;
+}
+
 static int
-vgetargskeywordsfast(PyObject *args, PyObject *keywords,
-                     struct _PyArg_Parser *parser,
-                     va_list *p_va, int flags)
+vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
+                          PyObject *keywords, PyObject *kwnames,
+                          struct _PyArg_Parser *parser,
+                          va_list *p_va, int flags)
 {
     PyObject *kwtuple;
     char msgbuf[512];
@@ -1911,17 +1982,20 @@ vgetargskeywordsfast(PyObject *args, PyObject *keywords,
     const char *msg;
     PyObject *keyword;
     int i, pos, len;
-    Py_ssize_t nargs, nkeywords;
+    Py_ssize_t nkeywords;
     PyObject *current_arg;
     freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
     freelist_t freelist;
+    PyObject **kwstack = NULL;
 
     freelist.entries = static_entries;
     freelist.first_available = 0;
     freelist.entries_malloced = 0;
 
-    assert(args != NULL && PyTuple_Check(args));
     assert(keywords == NULL || PyDict_Check(keywords));
+    assert(kwnames == NULL || PyTuple_Check(kwnames));
+    assert((keywords != NULL || kwnames != NULL)
+           || (keywords == NULL && kwnames == NULL));
     assert(parser != NULL);
     assert(p_va != NULL);
 
@@ -1942,8 +2016,16 @@ vgetargskeywordsfast(PyObject *args, PyObject *keywords,
         freelist.entries_malloced = 1;
     }
 
-    nargs = PyTuple_GET_SIZE(args);
-    nkeywords = (keywords == NULL) ? 0 : PyDict_Size(keywords);
+    if (keywords != NULL) {
+        nkeywords = PyDict_Size(keywords);
+    }
+    else if (kwnames != NULL) {
+        nkeywords = PyTuple_GET_SIZE(kwnames);
+        kwstack = args + nargs;
+    }
+    else {
+        nkeywords = 0;
+    }
     if (nargs + nkeywords > len) {
         PyErr_Format(PyExc_TypeError,
                      "%s%s takes at most %d argument%s (%zd given)",
@@ -1976,9 +2058,14 @@ vgetargskeywordsfast(PyObject *args, PyObject *keywords,
 
         current_arg = NULL;
         if (nkeywords && i >= pos) {
-            current_arg = PyDict_GetItem(keywords, keyword);
-            if (!current_arg && PyErr_Occurred()) {
-                return cleanreturn(0, &freelist);
+            if (keywords != NULL) {
+                current_arg = PyDict_GetItem(keywords, keyword);
+                if (!current_arg && PyErr_Occurred()) {
+                    return cleanreturn(0, &freelist);
+                }
+            }
+            else {
+                current_arg = find_keyword(kwnames, kwstack, keyword);
             }
         }
         if (current_arg) {
@@ -1993,7 +2080,7 @@ vgetargskeywordsfast(PyObject *args, PyObject *keywords,
             }
         }
         else if (i < nargs) {
-            current_arg = PyTuple_GET_ITEM(args, i);
+            current_arg = args[i];
         }
 
         if (current_arg) {
@@ -2040,29 +2127,72 @@ vgetargskeywordsfast(PyObject *args, PyObject *keywords,
 
     /* make sure there are no extraneous keyword arguments */
     if (nkeywords > 0) {
-        PyObject *key, *value;
-        Py_ssize_t pos = 0;
-        while (PyDict_Next(keywords, &pos, &key, &value)) {
-            int match;
-            if (!PyUnicode_Check(key)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "keywords must be strings");
-                return cleanreturn(0, &freelist);
-            }
-            match = PySequence_Contains(kwtuple, key);
-            if (match <= 0) {
-                if (!match) {
-                    PyErr_Format(PyExc_TypeError,
-                                 "'%U' is an invalid keyword "
-                                 "argument for this function",
-                                 key);
+        if (keywords != NULL) {
+            PyObject *key, *value;
+            Py_ssize_t pos = 0;
+            while (PyDict_Next(keywords, &pos, &key, &value)) {
+                int match;
+                if (!PyUnicode_Check(key)) {
+                    PyErr_SetString(PyExc_TypeError,
+                                    "keywords must be strings");
+                    return cleanreturn(0, &freelist);
                 }
-                return cleanreturn(0, &freelist);
+                match = PySequence_Contains(kwtuple, key);
+                if (match <= 0) {
+                    if (!match) {
+                        PyErr_Format(PyExc_TypeError,
+                                     "'%U' is an invalid keyword "
+                                     "argument for this function",
+                                     key);
+                    }
+                    return cleanreturn(0, &freelist);
+                }
+            }
+        }
+        else {
+            Py_ssize_t j, nkwargs;
+
+            nkwargs = PyTuple_GET_SIZE(kwnames);
+            for (j=0; j < nkwargs; j++) {
+                PyObject *key = PyTuple_GET_ITEM(kwnames, j);
+                int match;
+
+                if (!PyUnicode_Check(key)) {
+                    PyErr_SetString(PyExc_TypeError,
+                                    "keywords must be strings");
+                    return cleanreturn(0, &freelist);
+                }
+
+                match = PySequence_Contains(kwtuple, key);
+                if (match <= 0) {
+                    if (!match) {
+                        PyErr_Format(PyExc_TypeError,
+                                     "'%U' is an invalid keyword "
+                                     "argument for this function",
+                                     key);
+                    }
+                    return cleanreturn(0, &freelist);
+                }
             }
         }
     }
 
     return cleanreturn(1, &freelist);
+}
+
+static int
+vgetargskeywordsfast(PyObject *args, PyObject *keywords,
+                     struct _PyArg_Parser *parser, va_list *p_va, int flags)
+{
+    PyObject **stack;
+    Py_ssize_t nargs;
+
+    assert(args != NULL && PyTuple_Check(args));
+
+    stack = &PyTuple_GET_ITEM(args, 0);
+    nargs = PyTuple_GET_SIZE(args);
+    return vgetargskeywordsfast_impl(stack, nargs, keywords, NULL,
+                                     parser, p_va, flags);
 }
 
 
