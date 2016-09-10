@@ -831,7 +831,7 @@ os.close(fd)
         stream._waiter = asyncio.Future(loop=self.loop)
         self.assertRegex(
             repr(stream),
-            "<StreamReader w=<Future pending[\S ]*>>")
+            r"<StreamReader w=<Future pending[\S ]*>>")
         stream._waiter.set_result(None)
         self.loop.run_until_complete(stream._waiter)
         stream._waiter = None
