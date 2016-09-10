@@ -498,61 +498,57 @@ _WIN32_SERVER_RELEASES = {
     (6, None): "post2012ServerR2",
 }
 
-if sys.platform == 'win32':
-    import ctypes
-    import ctypes.wintypes
-
-    class VS_FIXEDFILEINFO(ctypes.Structure):
-        _fields_ = [
-            ("dwSignature", ctypes.wintypes.DWORD),
-            ("dwStrucVersion", ctypes.wintypes.DWORD),
-            ("dwFileVersionMS", ctypes.wintypes.DWORD),
-            ("dwFileVersionLS", ctypes.wintypes.DWORD),
-            ("dwProductVersionMS", ctypes.wintypes.DWORD),
-            ("dwProductVersionLS", ctypes.wintypes.DWORD),
-            ("dwFileFlagsMask", ctypes.wintypes.DWORD),
-            ("dwFileFlags", ctypes.wintypes.DWORD),
-            ("dwFileOS", ctypes.wintypes.DWORD),
-            ("dwFileType", ctypes.wintypes.DWORD),
-            ("dwFileSubtype", ctypes.wintypes.DWORD),
-            ("dwFileDateMS", ctypes.wintypes.DWORD),
-            ("dwFileDateLS", ctypes.wintypes.DWORD),
-        ]
-
-    P_VS_FIXEDFILEINFO = ctypes.POINTER(VS_FIXEDFILEINFO)
-
 def _get_real_winver(maj, min, build):
     if maj < 6 or (maj == 6 and min < 2):
         return maj, min, build
 
-    kernel32 = ctypes.WinDLL('kernel32')
+    from ctypes import (c_buffer, POINTER, byref, create_unicode_buffer,
+                        Structure, WinDLL)
+    from ctypes.wintypes import DWORD, HANDLE
+
+    class VS_FIXEDFILEINFO(Structure):
+        _fields_ = [
+            ("dwSignature", DWORD),
+            ("dwStrucVersion", DWORD),
+            ("dwFileVersionMS", DWORD),
+            ("dwFileVersionLS", DWORD),
+            ("dwProductVersionMS", DWORD),
+            ("dwProductVersionLS", DWORD),
+            ("dwFileFlagsMask", DWORD),
+            ("dwFileFlags", DWORD),
+            ("dwFileOS", DWORD),
+            ("dwFileType", DWORD),
+            ("dwFileSubtype", DWORD),
+            ("dwFileDateMS", DWORD),
+            ("dwFileDateLS", DWORD),
+        ]
+
+    kernel32 = WinDLL('kernel32')
+    version = WinDLL('version')
+
     # We will immediately double the length up to MAX_PATH, but the
     # path may be longer, so we retry until the returned string is
     # shorter than our buffer.
     name_len = actual_len = 130
     while actual_len == name_len:
         name_len *= 2
-        name = ctypes.create_unicode_buffer(name_len)
-        actual_len = kernel32.GetModuleFileNameW(
-            ctypes.wintypes.HANDLE(kernel32._handle),
-            name, len(name)
-        )
+        name = create_unicode_buffer(name_len)
+        actual_len = kernel32.GetModuleFileNameW(HANDLE(kernel32._handle),
+                                                 name, len(name))
         if not actual_len:
             return maj, min, build
 
-    version = ctypes.WinDLL('version')
     size = version.GetFileVersionInfoSizeW(name, None)
     if not size:
         return maj, min, build
 
-    ver_block = ctypes.c_buffer(size)
+    ver_block = c_buffer(size)
     if (not version.GetFileVersionInfoW(name, None, size, ver_block) or
         not ver_block):
         return maj, min, build
 
-    pvi = P_VS_FIXEDFILEINFO()
-    if not version.VerQueryValueW(ver_block, "",
-            ctypes.byref(pvi), ctypes.byref(ctypes.wintypes.DWORD())):
+    pvi = POINTER(VS_FIXEDFILEINFO)()
+    if not version.VerQueryValueW(ver_block, "", byref(pvi), byref(DWORD())):
         return maj, min, build
 
     maj = pvi.contents.dwProductVersionMS >> 16
