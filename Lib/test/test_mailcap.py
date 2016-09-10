@@ -1,6 +1,7 @@
 import mailcap
 import os
 import shutil
+import copy
 import test.support
 import unittest
 
@@ -14,42 +15,54 @@ MAILCAPDICT = {
         [{'compose': 'moviemaker %s',
           'x11-bitmap': '"/usr/lib/Zmail/bitmaps/movie.xbm"',
           'description': '"Movie"',
-          'view': 'movieplayer %s'}],
+          'view': 'movieplayer %s',
+          'lineno': 4}],
     'application/*':
         [{'copiousoutput': '',
-          'view': 'echo "This is \\"%t\\" but        is 50 \\% Greek to me" \\; cat %s'}],
+          'view': 'echo "This is \\"%t\\" but        is 50 \\% Greek to me" \\; cat %s',
+          'lineno': 5}],
     'audio/basic':
         [{'edit': 'audiocompose %s',
           'compose': 'audiocompose %s',
           'description': '"An audio fragment"',
-          'view': 'showaudio %s'}],
+          'view': 'showaudio %s',
+          'lineno': 6}],
     'video/mpeg':
-        [{'view': 'mpeg_play %s'}],
+        [{'view': 'mpeg_play %s', 'lineno': 13}],
     'application/postscript':
-        [{'needsterminal': '', 'view': 'ps-to-terminal %s'},
-         {'compose': 'idraw %s', 'view': 'ps-to-terminal %s'}],
+        [{'needsterminal': '', 'view': 'ps-to-terminal %s', 'lineno': 1},
+         {'compose': 'idraw %s', 'view': 'ps-to-terminal %s', 'lineno': 2}],
     'application/x-dvi':
-        [{'view': 'xdvi %s'}],
+        [{'view': 'xdvi %s', 'lineno': 3}],
     'message/external-body':
         [{'composetyped': 'extcompose %s',
           'description': '"A reference to data stored in an external location"',
           'needsterminal': '',
-          'view': 'showexternal %s %{access-type} %{name} %{site}     %{directory} %{mode} %{server}'}],
+          'view': 'showexternal %s %{access-type} %{name} %{site}     %{directory} %{mode} %{server}',
+          'lineno': 10}],
     'text/richtext':
         [{'test': 'test "`echo     %{charset} | tr \'[A-Z]\' \'[a-z]\'`"  = iso-8859-8',
           'copiousoutput': '',
-          'view': 'shownonascii iso-8859-8 -e richtext -p %s'}],
+          'view': 'shownonascii iso-8859-8 -e richtext -p %s',
+          'lineno': 11}],
     'image/x-xwindowdump':
-        [{'view': 'display %s'}],
+        [{'view': 'display %s', 'lineno': 9}],
     'audio/*':
-        [{'view': '/usr/local/bin/showaudio %t'}],
+        [{'view': '/usr/local/bin/showaudio %t', 'lineno': 7}],
     'video/*':
-        [{'view': 'animate %s'}],
+        [{'view': 'animate %s', 'lineno': 12}],
     'application/frame':
-        [{'print': '"cat %s | lp"', 'view': 'showframe %s'}],
+        [{'print': '"cat %s | lp"', 'view': 'showframe %s', 'lineno': 0}],
     'image/rgb':
-        [{'view': 'display %s'}]
+        [{'view': 'display %s', 'lineno': 8}]
 }
+
+# For backwards compatibility, readmailcapfile() and lookup() still support
+# the old version of mailcapdict without line numbers.
+MAILCAPDICT_DEPRECATED = copy.deepcopy(MAILCAPDICT)
+for entry_list in MAILCAPDICT_DEPRECATED.values():
+    for entry in entry_list:
+        entry.pop('lineno')
 
 
 class HelperFunctionTest(unittest.TestCase):
@@ -76,12 +89,14 @@ class HelperFunctionTest(unittest.TestCase):
     def test_readmailcapfile(self):
         # Test readmailcapfile() using test file. It should match MAILCAPDICT.
         with open(MAILCAPFILE, 'r') as mcf:
-            d = mailcap.readmailcapfile(mcf)
-        self.assertDictEqual(d, MAILCAPDICT)
+            with self.assertWarns(DeprecationWarning):
+                d = mailcap.readmailcapfile(mcf)
+        self.assertDictEqual(d, MAILCAPDICT_DEPRECATED)
 
     def test_lookup(self):
         # Test without key
-        expected = [{'view': 'mpeg_play %s'}, {'view': 'animate %s'}]
+        expected = [{'view': 'animate %s', 'lineno': 12},
+                    {'view': 'mpeg_play %s', 'lineno': 13}]
         actual = mailcap.lookup(MAILCAPDICT, 'video/mpeg')
         self.assertListEqual(expected, actual)
 
@@ -90,8 +105,14 @@ class HelperFunctionTest(unittest.TestCase):
         expected = [{'edit': 'audiocompose %s',
                      'compose': 'audiocompose %s',
                      'description': '"An audio fragment"',
-                     'view': 'showaudio %s'}]
+                     'view': 'showaudio %s',
+                     'lineno': 6}]
         actual = mailcap.lookup(MAILCAPDICT, 'audio/basic', key)
+        self.assertListEqual(expected, actual)
+
+        # Test on user-defined dicts without line numbers
+        expected = [{'view': 'mpeg_play %s'}, {'view': 'animate %s'}]
+        actual = mailcap.lookup(MAILCAPDICT_DEPRECATED, 'video/mpeg')
         self.assertListEqual(expected, actual)
 
     def test_subst(self):
@@ -152,14 +173,16 @@ class FindmatchTest(unittest.TestCase):
             'edit': 'audiocompose %s',
             'compose': 'audiocompose %s',
             'description': '"An audio fragment"',
-            'view': 'showaudio %s'
+            'view': 'showaudio %s',
+            'lineno': 6
         }
-        audio_entry = {"view": "/usr/local/bin/showaudio %t"}
-        video_entry = {'view': 'animate %s'}
+        audio_entry = {"view": "/usr/local/bin/showaudio %t", 'lineno': 7}
+        video_entry = {'view': 'animate %s', 'lineno': 12}
         message_entry = {
             'composetyped': 'extcompose %s',
             'description': '"A reference to data stored in an external location"', 'needsterminal': '',
-            'view': 'showexternal %s %{access-type} %{name} %{site}     %{directory} %{mode} %{server}'
+            'view': 'showexternal %s %{access-type} %{name} %{site}     %{directory} %{mode} %{server}',
+            'lineno': 10,
         }
 
         # test case: (findmatch args, findmatch keyword args, expected output)
@@ -169,7 +192,7 @@ class FindmatchTest(unittest.TestCase):
         cases = [
             ([{}, "video/mpeg"], {}, (None, None)),
             ([c, "foo/bar"], {}, (None, None)),
-            ([c, "video/mpeg"], {}, ('mpeg_play /dev/null', {'view': 'mpeg_play %s'})),
+            ([c, "video/mpeg"], {}, ('animate /dev/null', video_entry)),
             ([c, "audio/basic", "edit"], {}, ("audiocompose /dev/null", audio_basic_entry)),
             ([c, "audio/basic", "compose"], {}, ("audiocompose /dev/null", audio_basic_entry)),
             ([c, "audio/basic", "description"], {}, ('"An audio fragment"', audio_basic_entry)),
