@@ -224,11 +224,12 @@ PyAPI_FUNC(void) PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator);
  * ==========================
  */
 
-/* C equivalent of gc.collect(). */
+/* C equivalent of gc.collect() which ignores the state of gc.enabled. */
 PyAPI_FUNC(Py_ssize_t) PyGC_Collect(void);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_ssize_t) _PyGC_CollectNoFail(void);
+PyAPI_FUNC(Py_ssize_t) _PyGC_CollectIfEnabled(void);
 #endif
 
 /* Test if a type has a GC head */
