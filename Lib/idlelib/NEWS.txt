@@ -1,6 +1,20 @@
 What's New in IDLE 3.6.0?
 ===========================
-*Release date: 2016-09-??*
+*Release date: 2016-12-16?*
+
+- Issue #27922: Stop IDLE tests from 'flashing' gui widgets on the screen.
+
+- Issue #27891: Consistently group and sort imports within idlelib modules.
+
+- Issue #17642: add larger font sizes for classroom projection.
+
+- Add version to title of IDLE help window.
+
+- Issue #25564: In section on IDLE -- console differences, mention that
+  using exec means that __builtins__ is defined for each statement.
+
+- Issue #27821: Fix 3.6.0a3 regression that prevented custom key sets
+  from being selected when no custom theme was defined.
 
 - Issue #27714: text_textview and test_autocomplete now pass when re-run
   in the same process.  This occurs when test_idle fails when run with the
