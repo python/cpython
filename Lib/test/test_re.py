@@ -928,6 +928,9 @@ class ReTests(unittest.TestCase):
         q = p.match(upper_char)
         self.assertTrue(q)
 
+        self.assertTrue(re.match('(?ixu) ' + upper_char, lower_char))
+        self.assertTrue(re.match('(?ixu) ' + lower_char, upper_char))
+
     def test_dollar_matches_twice(self):
         "$ matches the end of string, and just before the terminating \n"
         pattern = re.compile('$')
