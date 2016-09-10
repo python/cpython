@@ -26,7 +26,7 @@
      is set, we believe it.  Otherwise, we use the path of our host .EXE's
      to try and locate on of our "landmarks" and deduce our home.
      - If we DO have a Python Home: The relevant sub-directories (Lib,
-       plat-win, etc) are based on the Python Home
+       DLLs, etc) are based on the Python Home
      - If we DO NOT have a Python Home, the core Python Path is
        loaded from the registry.  This is the main PythonPath key,
        and both HKLM and HKCU are combined to form the path)
@@ -34,7 +34,7 @@
    * Iff - we can not locate the Python Home, have not had a PYTHONPATH
      specified, and can't locate any Registry entries (ie, we have _nothing_
      we can assume is a good path), a default path with relative entries is
-     used (eg. .\Lib;.\plat-win, etc)
+     used (eg. .\Lib;.\DLLs, etc)
 
 
    If a sys.path file exists adjacent to python.exe, it must contain a
