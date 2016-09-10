@@ -300,11 +300,12 @@ non-empty format string typically modifies the result.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: sf
-   format_spec: [[`fill`]`align`][`sign`][#][0][`width`][,][_][.`precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`][#][0][`width`][`option`][.`precision`][`type`]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
    width: `integer`
+   option: "_" | ","
    precision: `integer`
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
