@@ -332,6 +332,23 @@ Library
 - Issue #21201: Improves readability of multiprocessing error message.  Thanks
   to Wojciech Walczak for patch.
 
+IDLE
+----
+
+- Issue #27922: Stop IDLE tests from 'flashing' gui widgets on the screen.
+
+- Issue #27891: Consistently group and sort imports within idlelib modules.
+
+- Issue #17642: add larger font sizes for classroom projection.
+
+- Add version to title of IDLE help window.
+
+- Issue #25564: In section on IDLE -- console differences, mention that
+  using exec means that __builtins__ is defined for each statement.
+
+- Issue #27821: Fix 3.6.0a3 regression that prevented custom key sets
+  from being selected when no custom theme was defined.
+
 C API
 -----
 
