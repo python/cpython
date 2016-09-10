@@ -104,23 +104,24 @@ check_force_ascii(void)
     char *loc;
 #if defined(HAVE_LANGINFO_H) && defined(CODESET)
     char *codeset, **alias;
-    char encoding[100];
+    char encoding[20];   /* longest name: "iso_646.irv_1991\0" */
     int is_ascii;
     unsigned int i;
     char* ascii_aliases[] = {
         "ascii",
+        /* Aliases from Lib/encodings/aliases.py */
         "646",
-        "ansi-x3.4-1968",
-        "ansi-x3-4-1968",
-        "ansi-x3.4-1986",
+        "ansi_x3.4_1968",
+        "ansi_x3.4_1986",
+        "ansi_x3_4_1968",
         "cp367",
         "csascii",
         "ibm367",
-        "iso646-us",
-        "iso-646.irv-1991",
-        "iso-ir-6",
+        "iso646_us",
+        "iso_646.irv_1991",
+        "iso_ir_6",
         "us",
-        "us-ascii",
+        "us_ascii",
         NULL
     };
 #endif
