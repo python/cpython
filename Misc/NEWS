@@ -10,6 +10,13 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #27948: In f-strings, only allow backslashes inside the braces
+  (where the expressions are).  This is a breaking change from the 3.6
+  alpha releases, where backslashes are allowed anywhere in an
+  f-string.  Also, require that expressions inside f-strings be
+  enclosed within literal braces, and not escapes like
+  f'\x7b"hi"\x7d'.
+
 - Issue #28046: Remove platform-specific directories from sys.path.
 
 - Issue #25758: Prevents zipimport from unnecessarily encoding a filename
@@ -55,11 +62,6 @@ Core and Builtins
 
 - Issue #27355: Removed support for Windows CE.  It was never finished,
   and Windows CE is no longer a relevant platform for Python.
-
-- Issue #27921: Disallow backslashes in f-strings. This is a temporary
-  restriction: in beta 2, backslashes will only be disallowed inside
-  the braces (where the expressions are). This is a breaking change
-  from the 3.6 alpha releases.
 
 - Implement PEP 523.
 

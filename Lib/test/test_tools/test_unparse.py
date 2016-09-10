@@ -285,12 +285,12 @@ class DirectoryTestCase(ASTTestCase):
             if test.support.verbose:
                 print('Testing %s' % filename)
 
-            # it's very much a hack that I'm skipping these files, but
-            #  I can't figure out why they fail. I'll fix it when I
-            #  address issue #27948.
-            if os.path.basename(filename) in ('test_fstring.py', 'test_traceback.py'):
+            # Some f-strings are not correctly round-tripped by
+            #  Tools/parser/unparse.py.  See issue 28002 for details.
+            #  We need to skip files that contain such f-strings.
+            if os.path.basename(filename) in ('test_fstring.py', ):
                 if test.support.verbose:
-                    print(f'Skipping {filename}: see issue 27921')
+                    print(f'Skipping {filename}: see issue 28002')
                 continue
 
             with self.subTest(filename=filename):
