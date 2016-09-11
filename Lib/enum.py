@@ -616,9 +616,16 @@ class Enum(metaclass=EnumMeta):
         # for a consistent reverse mapping of number to name when there
         # are multiple names for the same number rather than varying
         # between runs due to hash randomization of the module dictionary.
-        members = OrderedDict((name, source[name])
-                              for name in sorted(source.keys())
-                              if filter(name))
+        members = [
+                (name, source[name])
+                for name in source.keys()
+                if filter(name)]
+        try:
+            # sort by value
+            members.sort(key=lambda t: (t[1], t[0]))
+        except TypeError:
+            # unless some values aren't comparable, in which case sort by name
+            members.sort(key=lambda t: t[0])
         cls = cls(name, members, module=module)
         cls.__reduce_ex__ = _reduce_ex_by_name
         module_globals.update(cls.__members__)
