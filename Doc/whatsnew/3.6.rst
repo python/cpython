@@ -423,7 +423,7 @@ This can be used to instrument running interpreters in production,
 without the need to recompile specific debug builds or providing
 application-specific profiling/debugging code.
 
-More details in:ref:`instrumentation`.
+More details in :ref:`instrumentation`.
 
 The current implementation is tested on Linux and macOS.  Additional
 markers may be added in the future.
