@@ -2255,9 +2255,9 @@ recommended to use :const:`PROTOCOL_TLS_CLIENT` or
 :const:`PROTOCOL_TLS_SERVER` as the protocol version. SSLv2 and SSLv3 are
 disabled by default.
 
-   client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-   client_context.options |= ssl.OP_NO_TLSv1
-   client_context.options |= ssl.OP_NO_TLSv1_1
+   >>> client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+   >>> client_context.options |= ssl.OP_NO_TLSv1
+   >>> client_context.options |= ssl.OP_NO_TLSv1_1
 
 
 The SSL context created above will only allow TLSv1.2 and later (if
