@@ -4419,7 +4419,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         } else if (ch == '#') {
             /* Error: can't include a comment character, inside parens
                or not. */
-            ast_error(c, n, "f-string cannot include '#'");
+            ast_error(c, n, "f-string expression part cannot include '#'");
             return -1;
         } else if (nested_depth == 0 &&
                    (ch == '!' || ch == ':' || ch == '}')) {
