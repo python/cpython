@@ -144,7 +144,7 @@ between conformable Python objects and XML on the wire.
       Added the *context* argument.
 
    .. versionchanged:: 3.6
-      Added support of type tags with prefixes (e.g.``ex:nil``).
+      Added support of type tags with prefixes (e.g. ``ex:nil``).
       Added support of unmarsalling additional types used by Apache XML-RPC
       implementation for numerics: ``i1``, ``i2``, ``i8``, ``biginteger``,
       ``float`` and ``bigdecimal``.
