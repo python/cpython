@@ -51,14 +51,14 @@ class FileListTestCase(support.LoggingSilencer,
 
         for glob, regex in (
             # simple cases
-            ('foo*', r'foo[^%(sep)s]*\Z(?ms)'),
-            ('foo?', r'foo[^%(sep)s]\Z(?ms)'),
-            ('foo??', r'foo[^%(sep)s][^%(sep)s]\Z(?ms)'),
+            ('foo*', r'(?s:foo[^%(sep)s]*)\Z'),
+            ('foo?', r'(?s:foo[^%(sep)s])\Z'),
+            ('foo??', r'(?s:foo[^%(sep)s][^%(sep)s])\Z'),
             # special cases
-            (r'foo\\*', r'foo\\\\[^%(sep)s]*\Z(?ms)'),
-            (r'foo\\\*', r'foo\\\\\\[^%(sep)s]*\Z(?ms)'),
-            ('foo????', r'foo[^%(sep)s][^%(sep)s][^%(sep)s][^%(sep)s]\Z(?ms)'),
-            (r'foo\\??', r'foo\\\\[^%(sep)s][^%(sep)s]\Z(?ms)')):
+            (r'foo\\*', r'(?s:foo\\\\[^%(sep)s]*)\Z'),
+            (r'foo\\\*', r'(?s:foo\\\\\\[^%(sep)s]*)\Z'),
+            ('foo????', r'(?s:foo[^%(sep)s][^%(sep)s][^%(sep)s][^%(sep)s])\Z'),
+            (r'foo\\??', r'(?s:foo\\\\[^%(sep)s][^%(sep)s])\Z')):
             regex = regex % {'sep': sep}
             self.assertEqual(glob_to_re(glob), regex)
 

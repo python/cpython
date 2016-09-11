@@ -106,8 +106,8 @@ tests = [
     ('a.*b', 'acc\nccb', FAIL),
     ('a.{4,5}b', 'acc\nccb', FAIL),
     ('a.b', 'a\rb', SUCCEED, 'found', 'a\rb'),
-    ('a.b(?s)', 'a\nb', SUCCEED, 'found', 'a\nb'),
-    ('a.*(?s)b', 'acc\nccb', SUCCEED, 'found', 'acc\nccb'),
+    ('(?s)a.b', 'a\nb', SUCCEED, 'found', 'a\nb'),
+    ('(?s)a.*b', 'acc\nccb', SUCCEED, 'found', 'acc\nccb'),
     ('(?s)a.{4,5}b', 'acc\nccb', SUCCEED, 'found', 'acc\nccb'),
     ('(?s)a.b', 'a\nb', SUCCEED, 'found', 'a\nb'),
 
@@ -563,7 +563,7 @@ tests = [
     # Check odd placement of embedded pattern modifiers
 
     # not an error under PCRE/PRE:
-    ('w(?i)', 'W', SUCCEED, 'found', 'W'),
+    ('(?i)w', 'W', SUCCEED, 'found', 'W'),
     # ('w(?i)', 'W', SYNTAX_ERROR),
 
     # Comments using the x embedded pattern modifier
@@ -627,7 +627,7 @@ xyzabc
     # bug 114033: nothing to repeat
     (r'(x?)?', 'x', SUCCEED, 'found', 'x'),
     # bug 115040: rescan if flags are modified inside pattern
-    (r' (?x)foo ', 'foo', SUCCEED, 'found', 'foo'),
+    (r'(?x) foo ', 'foo', SUCCEED, 'found', 'foo'),
     # bug 115618: negative lookahead
     (r'(?<!abc)(d.f)', 'abcdefdof', SUCCEED, 'found', 'dof'),
     # bug 116251: character class bug
