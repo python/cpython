@@ -302,21 +302,26 @@ def translate_pattern(pattern, anchor=1, prefix=None, is_regex=0):
         else:
             return pattern
 
+    # ditch start and end characters
+    start, _, end = glob_to_re('_').partition('_')
+
     if pattern:
         pattern_re = glob_to_re(pattern)
+        assert pattern_re.startswith(start) and pattern_re.endswith(end)
     else:
         pattern_re = ''
 
     if prefix is not None:
-        # ditch end of pattern character
-        empty_pattern = glob_to_re('')
-        prefix_re = glob_to_re(prefix)[:-len(empty_pattern)]
+        prefix_re = glob_to_re(prefix)
+        assert prefix_re.startswith(start) and prefix_re.endswith(end)
+        prefix_re = prefix_re[len(start): len(prefix_re) - len(end)]
         sep = os.sep
         if os.sep == '\\':
             sep = r'\\'
-        pattern_re = "^" + sep.join((prefix_re, ".*" + pattern_re))
+        pattern_re = pattern_re[len(start): len(pattern_re) - len(end)]
+        pattern_re = r'%s\A%s%s.*%s%s' % (start, prefix_re, sep, pattern_re, end)
     else:                               # no prefix -- respect anchor flag
         if anchor:
-            pattern_re = "^" + pattern_re
+            pattern_re = r'%s\A%s' % (start, pattern_re[len(start):])
 
     return re.compile(pattern_re)

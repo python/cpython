@@ -62,14 +62,14 @@ class FnmatchTestCase(unittest.TestCase):
 class TranslateTestCase(unittest.TestCase):
 
     def test_translate(self):
-        self.assertEqual(translate('*'), r'.*\Z(?ms)')
-        self.assertEqual(translate('?'), r'.\Z(?ms)')
-        self.assertEqual(translate('a?b*'), r'a.b.*\Z(?ms)')
-        self.assertEqual(translate('[abc]'), r'[abc]\Z(?ms)')
-        self.assertEqual(translate('[]]'), r'[]]\Z(?ms)')
-        self.assertEqual(translate('[!x]'), r'[^x]\Z(?ms)')
-        self.assertEqual(translate('[^x]'), r'[\^x]\Z(?ms)')
-        self.assertEqual(translate('[x'), r'\[x\Z(?ms)')
+        self.assertEqual(translate('*'), r'(?s:.*)\Z')
+        self.assertEqual(translate('?'), r'(?s:.)\Z')
+        self.assertEqual(translate('a?b*'), r'(?s:a.b.*)\Z')
+        self.assertEqual(translate('[abc]'), r'(?s:[abc])\Z')
+        self.assertEqual(translate('[]]'), r'(?s:[]])\Z')
+        self.assertEqual(translate('[!x]'), r'(?s:[^x])\Z')
+        self.assertEqual(translate('[^x]'), r'(?s:[\^x])\Z')
+        self.assertEqual(translate('[x'), r'(?s:\[x)\Z')
 
 
 class FilterTestCase(unittest.TestCase):

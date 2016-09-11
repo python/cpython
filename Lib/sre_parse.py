@@ -279,6 +279,9 @@ class Tokenizer:
                 break
             result += c
         return result
+    @property
+    def pos(self):
+        return self.index - len(self.next or '')
     def tell(self):
         return self.index - len(self.next or '')
     def seek(self, index):
@@ -727,8 +730,13 @@ def _parse(source, state, verbose):
                     state.checklookbehindgroup(condgroup, source)
                 elif char in FLAGS or char == "-":
                     # flags
+                    pos = source.pos
                     flags = _parse_flags(source, state, char)
                     if flags is None:  # global flags
+                        if pos != 3:  # "(?x"
+                            import warnings
+                            warnings.warn('Flags not at the start of the expression',
+                                          DeprecationWarning, stacklevel=7)
                         continue
                     add_flags, del_flags = flags
                     group = None

@@ -1124,6 +1124,15 @@ Deprecated features
   that will not be for several Python releases.  (Contributed by Emanuel Barry
   in :issue:`27364`.)
 
+* Inline flags ``(?letters)`` now should be used only at the start of the
+  regular expression.  Inline flags in the middle of the regular expression
+  affects global flags in Python :mod:`re` module.  This is an exception to
+  other regular expression engines that either apply flags to only part of
+  the regular expression or treat them as an error.  To avoid distinguishing
+  inline flags in the middle of the regular expression now emit a deprecation
+  warning.  It will be an error in future Python releases.
+  (Contributed by Serhiy Storchaka in :issue:`22493`.)
+
 
 Deprecated Python behavior
 --------------------------
