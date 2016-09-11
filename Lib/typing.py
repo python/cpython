@@ -6,11 +6,12 @@ import functools
 import re as stdlib_re  # Avoid confusion with the re we export.
 import sys
 import types
-
 try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc  # Fallback for PY3.2.
+if sys.version_info[:2] >= (3, 3):
+    from collections import ChainMap
 
 
 # Please keep __all__ alphabetized within each category.
@@ -1204,53 +1205,135 @@ def _get_defaults(func):
     return res
 
 
-def get_type_hints(obj, globalns=None, localns=None):
-    """Return type hints for an object.
+if sys.version_info[:2] >= (3, 3):
+    def get_type_hints(obj, globalns=None, localns=None):
+        """Return type hints for an object.
 
-    This is often the same as obj.__annotations__, but it handles
-    forward references encoded as string literals, and if necessary
-    adds Optional[t] if a default value equal to None is set.
+        This is often the same as obj.__annotations__, but it handles
+        forward references encoded as string literals, and if necessary
+        adds Optional[t] if a default value equal to None is set.
 
-    The argument may be a module, class, method, or function. The annotations
-    are returned as a dictionary, or in the case of a class, a ChainMap of
-    dictionaries.
+        The argument may be a module, class, method, or function. The annotations
+        are returned as a dictionary, or in the case of a class, a ChainMap of
+        dictionaries.
 
-    TypeError is raised if the argument is not of a type that can contain
-    annotations, and an empty dictionary is returned if no annotations are
-    present.
+        TypeError is raised if the argument is not of a type that can contain
+        annotations, and an empty dictionary is returned if no annotations are
+        present.
 
-    BEWARE -- the behavior of globalns and localns is counterintuitive
-    (unless you are familiar with how eval() and exec() work).  The
-    search order is locals first, then globals.
+        BEWARE -- the behavior of globalns and localns is counterintuitive
+        (unless you are familiar with how eval() and exec() work).  The
+        search order is locals first, then globals.
 
-    - If no dict arguments are passed, an attempt is made to use the
-      globals from obj, and these are also used as the locals.  If the
-      object does not appear to have globals, an exception is raised.
+        - If no dict arguments are passed, an attempt is made to use the
+          globals from obj, and these are also used as the locals.  If the
+          object does not appear to have globals, an exception is raised.
 
-    - If one dict argument is passed, it is used for both globals and
-      locals.
+        - If one dict argument is passed, it is used for both globals and
+          locals.
 
-    - If two dict arguments are passed, they specify globals and
-      locals, respectively.
-    """
+        - If two dict arguments are passed, they specify globals and
+          locals, respectively.
+        """
 
-    if getattr(obj, '__no_type_check__', None):
-        return {}
-    if globalns is None:
-        globalns = getattr(obj, '__globals__', {})
-        if localns is None:
+        if getattr(obj, '__no_type_check__', None):
+            return {}
+        if globalns is None:
+            globalns = getattr(obj, '__globals__', {})
+            if localns is None:
+                localns = globalns
+        elif localns is None:
             localns = globalns
-    elif localns is None:
-        localns = globalns
 
-    if (isinstance(obj, types.FunctionType) or
-        isinstance(obj, types.BuiltinFunctionType) or
-        isinstance(obj, types.MethodType)):
+        if (isinstance(obj, types.FunctionType) or
+            isinstance(obj, types.BuiltinFunctionType) or
+            isinstance(obj, types.MethodType)):
+            defaults = _get_defaults(obj)
+            hints = obj.__annotations__
+            for name, value in hints.items():
+                if value is None:
+                    value = type(None)
+                if isinstance(value, str):
+                    value = _ForwardRef(value)
+                value = _eval_type(value, globalns, localns)
+                if name in defaults and defaults[name] is None:
+                    value = Optional[value]
+                hints[name] = value
+            return hints
+
+        if isinstance(obj, types.ModuleType):
+            try:
+                hints = obj.__annotations__
+            except AttributeError:
+                return {}
+            # we keep only those annotations that can be accessed on module
+            members = obj.__dict__
+            hints = {name: value for name, value in hints.items()
+                                              if name in members}
+            for name, value in hints.items():
+                if value is None:
+                    value = type(None)
+                if isinstance(value, str):
+                    value = _ForwardRef(value)
+                value = _eval_type(value, globalns, localns)
+                hints[name] = value
+            return hints
+
+        if isinstance(object, type):
+            cmap = None
+            for base in reversed(obj.__mro__):
+                new_map = collections.ChainMap if cmap is None else cmap.new_child
+                try:
+                    hints = base.__dict__['__annotations__']
+                except KeyError:
+                    cmap = new_map()
+                else:
+                    for name, value in hints.items():
+                        if value is None:
+                            value = type(None)
+                        if isinstance(value, str):
+                            value = _ForwardRef(value)
+                        value = _eval_type(value, globalns, localns)
+                        hints[name] = value
+                    cmap = new_map(hints)
+            return cmap
+
+        raise TypeError('{!r} is not a module, class, method, '
+                        'or function.'.format(obj))
+
+else:
+    def get_type_hints(obj, globalns=None, localns=None):
+        """Return type hints for a function or method object.
+
+        This is often the same as obj.__annotations__, but it handles
+        forward references encoded as string literals, and if necessary
+        adds Optional[t] if a default value equal to None is set.
+
+        BEWARE -- the behavior of globalns and localns is counterintuitive
+        (unless you are familiar with how eval() and exec() work).  The
+        search order is locals first, then globals.
+
+        - If no dict arguments are passed, an attempt is made to use the
+          globals from obj, and these are also used as the locals.  If the
+          object does not appear to have globals, an exception is raised.
+
+        - If one dict argument is passed, it is used for both globals and
+          locals.
+
+        - If two dict arguments are passed, they specify globals and
+          locals, respectively.
+        """
+        if getattr(obj, '__no_type_check__', None):
+            return {}
+        if globalns is None:
+            globalns = getattr(obj, '__globals__', {})
+            if localns is None:
+                localns = globalns
+        elif localns is None:
+            localns = globalns
         defaults = _get_defaults(obj)
-        hints = obj.__annotations__
+        hints = dict(obj.__annotations__)
         for name, value in hints.items():
-            if value is None:
-                value = type(None)
             if isinstance(value, str):
                 value = _ForwardRef(value)
             value = _eval_type(value, globalns, localns)
@@ -1259,62 +1342,30 @@ def get_type_hints(obj, globalns=None, localns=None):
             hints[name] = value
         return hints
 
-    if isinstance(obj, types.ModuleType):
-        try:
-            hints = obj.__annotations__
-        except AttributeError:
-            return {}
-        # we keep only those annotations that can be accessed on module
-        members = obj.__dict__
-        hints = {name: value for name, value in hints.items()
-                                          if name in members}
-        for name, value in hints.items():
-            if value is None:
-                value = type(None)
-            if isinstance(value, str):
-                value = _ForwardRef(value)
-            value = _eval_type(value, globalns, localns)
-            hints[name] = value
-        return hints
-
-    if isinstance(object, type):
-        cmap = None
-        for base in reversed(obj.__mro__):
-            new_map = collections.ChainMap if cmap is None else cmap.new_child
-            try:
-                hints = base.__dict__['__annotations__']
-            except KeyError:
-                cmap = new_map()
-            else:
-                for name, value in hints.items():
-                    if value is None:
-                        value = type(None)
-                    if isinstance(value, str):
-                        value = _ForwardRef(value)
-                    value = _eval_type(value, globalns, localns)
-                    hints[name] = value
-                cmap = new_map(hints)
-        return cmap
-
-    raise TypeError('{!r} is not a module, class, method, '
-                    'or function.'.format(obj))
-
 
 def no_type_check(arg):
     """Decorator to indicate that annotations are not type hints.
 
     The argument must be a class or function; if it is a class, it
-    applies recursively to all methods defined in that class (but not
-    to methods defined in its superclasses or subclasses).
+    applies recursively to all methods and classes defined in that class
+    (but not to methods defined in its superclasses or subclasses).
 
-    This mutates the function(s) in place.
+    This mutates the function(s) or class(es) in place.
     """
     if isinstance(arg, type):
-        for obj in arg.__dict__.values():
+        arg_attrs = arg.__dict__.copy()
+        for attr, val in arg.__dict__.items():
+            if val in arg.__bases__:
+                arg_attrs.pop(attr)
+        for obj in arg_attrs.values():
             if isinstance(obj, types.FunctionType):
                 obj.__no_type_check__ = True
-    else:
+            if isinstance(obj, type):
+                no_type_check(obj)
+    try:
         arg.__no_type_check__ = True
+    except TypeError: # built-in classes
+        pass
     return arg
 
 
@@ -1725,7 +1776,7 @@ CT_co = TypeVar('CT_co', covariant=True, bound=type)
 
 
 # This is not a real generic class.  Don't use outside annotations.
-class Type(type, Generic[CT_co], extra=type):
+class Type(Generic[CT_co], extra=type):
     """A special construct usable to annotate class objects.
 
     For example, suppose we have the following classes::
@@ -1750,31 +1801,66 @@ class Type(type, Generic[CT_co], extra=type):
     """
 
 
-def NamedTuple(typename, fields):
-    """Typed version of namedtuple.
-
-    Usage::
-
-        Employee = typing.NamedTuple('Employee', [('name', str), 'id', int)])
-
-    This is equivalent to::
-
-        Employee = collections.namedtuple('Employee', ['name', 'id'])
-
-    The resulting class has one extra attribute: _field_types,
-    giving a dict mapping field names to types.  (The field names
-    are in the _fields attribute, which is part of the namedtuple
-    API.)
-    """
-    fields = [(n, t) for n, t in fields]
-    cls = collections.namedtuple(typename, [n for n, t in fields])
-    cls._field_types = dict(fields)
-    # Set the module to the caller's module (otherwise it'd be 'typing').
+def _make_nmtuple(name, types):
+    nm_tpl = collections.namedtuple(name, [n for n, t in types])
+    nm_tpl._field_types = dict(types)
     try:
-        cls.__module__ = sys._getframe(1).f_globals.get('__name__', '__main__')
+        nm_tpl.__module__ = sys._getframe(2).f_globals.get('__name__', '__main__')
     except (AttributeError, ValueError):
         pass
-    return cls
+    return nm_tpl
+
+
+if sys.version_info[:2] >= (3, 6):
+    class NamedTupleMeta(type):
+
+        def __new__(cls, typename, bases, ns, *, _root=False):
+            if _root:
+                return super().__new__(cls, typename, bases, ns)
+            types = ns.get('__annotations__', {})
+            return _make_nmtuple(typename, types.items())
+
+    class NamedTuple(metaclass=NamedTupleMeta, _root=True):
+        """Typed version of namedtuple.
+
+        Usage::
+
+            class Employee(NamedTuple):
+                name: str
+                id: int
+
+        This is equivalent to::
+
+            Employee = collections.namedtuple('Employee', ['name', 'id'])
+
+        The resulting class has one extra attribute: _field_types,
+        giving a dict mapping field names to types.  (The field names
+        are in the _fields attribute, which is part of the namedtuple
+        API.) Backward-compatible usage::
+
+            Employee = NamedTuple('Employee', [('name', str), ('id', int)])
+        """
+
+        def __new__(self, typename, fields):
+            return _make_nmtuple(typename, fields)
+else:
+    def NamedTuple(typename, fields):
+        """Typed version of namedtuple.
+
+        Usage::
+
+            Employee = typing.NamedTuple('Employee', [('name', str), 'id', int)])
+
+        This is equivalent to::
+
+            Employee = collections.namedtuple('Employee', ['name', 'id'])
+
+        The resulting class has one extra attribute: _field_types,
+        giving a dict mapping field names to types.  (The field names
+        are in the _fields attribute, which is part of the namedtuple
+        API.)
+        """
+        return _make_nmtuple(typename, fields)
 
 
 def NewType(name, tp):
