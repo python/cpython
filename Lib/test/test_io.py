@@ -1812,7 +1812,7 @@ class BufferedRWPairTest(unittest.TestCase):
             with self.subTest(method):
                 pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
 
-                data = byteslike(5)
+                data = byteslike(b'\0' * 5)
                 self.assertEqual(getattr(pair, method)(data), 5)
                 self.assertEqual(bytes(data), b"abcde")
 

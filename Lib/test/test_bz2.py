@@ -562,11 +562,11 @@ class BZ2FileTest(BaseTest):
 
     def testDecompressLimited(self):
         """Decompressed data buffering should be limited"""
-        bomb = bz2.compress(bytes(int(2e6)), compresslevel=9)
+        bomb = bz2.compress(b'\0' * int(2e6), compresslevel=9)
         self.assertLess(len(bomb), _compression.BUFFER_SIZE)
 
         decomp = BZ2File(BytesIO(bomb))
-        self.assertEqual(bytes(1), decomp.read(1))
+        self.assertEqual(decomp.read(1), b'\0')
         max_decomp = 1 + DEFAULT_BUFFER_SIZE
         self.assertLessEqual(decomp._buffer.raw.tell(), max_decomp,
             "Excessive amount of data was decompressed")
