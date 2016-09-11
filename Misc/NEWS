@@ -191,6 +191,13 @@ Build
 - Issue #10910: Avoid C++ compilation errors on FreeBSD and OS X.
   Also update FreedBSD version checks for the original ctype UTF-8 workaround.
 
+Tools/Demos
+-----------
+
+- Issue #27952: Get Tools/scripts/fixcid.py working with the current "re"
+  module, avoid invalid Python backslash escapes, and fix a bug parsing
+  escaped C quote signs.
+
 Windows
 -------
 

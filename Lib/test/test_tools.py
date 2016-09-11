@@ -5,9 +5,11 @@ Tools directory of a Python checkout or tarball, such as reindent.py.
 """
 
 import os
+import runpy
 import sys
 import unittest
 import shutil
+from cStringIO import StringIO
 import subprocess
 import sysconfig
 import tempfile
@@ -357,6 +359,87 @@ class PindentTests(unittest.TestCase):
             # end if
             """)
         self.pindent_test(clean, closed)
+
+
+class FixcidTests(unittest.TestCase):
+    def test_parse_strings(self):
+        old1 = 'int xx = "xx\\"xx"[xx];\n'
+        old2 = "int xx = 'x\\'xx' + xx;\n"
+        output = self.run_script(old1 + old2)
+        new1 = 'int yy = "xx\\"xx"[yy];\n'
+        new2 = "int yy = 'x\\'xx' + yy;\n"
+        self.assertMultiLineEqual(output,
+            "1\n"
+            "< {old1}"
+            "> {new1}"
+            "{new1}"
+            "2\n"
+            "< {old2}"
+            "> {new2}"
+            "{new2}".format(old1=old1, old2=old2, new1=new1, new2=new2)
+        )
+
+    def test_alter_comments(self):
+        output = self.run_script(
+            substfile=
+                "xx yy\n"
+                "*aa bb\n",
+            args=("-c", "-",),
+            input=
+                "/* xx altered */\n"
+                "int xx;\n"
+                "/* aa unaltered */\n"
+                "int aa;\n",
+        )
+        self.assertMultiLineEqual(output,
+            "1\n"
+            "< /* xx altered */\n"
+            "> /* yy altered */\n"
+            "/* yy altered */\n"
+            "2\n"
+            "< int xx;\n"
+            "> int yy;\n"
+            "int yy;\n"
+            "/* aa unaltered */\n"
+            "4\n"
+            "< int aa;\n"
+            "> int bb;\n"
+            "int bb;\n"
+        )
+
+    def test_directory(self):
+        os.mkdir(test_support.TESTFN)
+        self.addCleanup(test_support.rmtree, test_support.TESTFN)
+        c_filename = os.path.join(test_support.TESTFN, "file.c")
+        with open(c_filename, "w") as file:
+            file.write("int xx;\n")
+        with open(os.path.join(test_support.TESTFN, "file.py"), "w") as file:
+            file.write("xx = 'unaltered'\n")
+        script = os.path.join(scriptsdir, "fixcid.py")
+        output = self.run_script(args=(test_support.TESTFN,))
+        self.assertMultiLineEqual(output,
+            "{}:\n"
+            "1\n"
+            '< int xx;\n'
+            '> int yy;\n'.format(c_filename)
+        )
+
+    def run_script(self, input="", args=("-",), substfile="xx yy\n"):
+        substfilename = test_support.TESTFN + ".subst"
+        with open(substfilename, "w") as file:
+            file.write(substfile)
+        self.addCleanup(test_support.unlink, substfilename)
+
+        argv = ["fixcid.py", "-s", substfilename] + list(args)
+        script = os.path.join(scriptsdir, "fixcid.py")
+        with test_support.swap_attr(sys, "argv", argv), \
+                test_support.swap_attr(sys, "stdin", StringIO(input)), \
+                test_support.captured_stdout() as output:
+            try:
+                runpy.run_path(script, run_name="__main__")
+            except SystemExit as exit:
+                self.assertEqual(exit.code, 0)
+        return output.getvalue()
 
 
 def test_main():
