@@ -202,26 +202,6 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     return 0;
 }
 
-/* Empty the entire statement cache of this connection */
-void pysqlite_flush_statement_cache(pysqlite_Connection* self)
-{
-    pysqlite_Node* node;
-    pysqlite_Statement* statement;
-
-    node = self->statement_cache->first;
-
-    while (node) {
-        statement = (pysqlite_Statement*)(node->data);
-        (void)pysqlite_statement_finalize(statement);
-        node = node->next;
-    }
-
-    Py_SETREF(self->statement_cache,
-              (pysqlite_Cache *)PyObject_CallFunction((PyObject *)&pysqlite_CacheType, "O", self));
-    Py_DECREF(self);
-    self->statement_cache->decref_factory = 0;
-}
-
 /* action in (ACTION_RESET, ACTION_FINALIZE) */
 void pysqlite_do_all_statements(pysqlite_Connection* self, int action, int reset_cursors)
 {
