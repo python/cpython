@@ -6920,6 +6920,47 @@ case $GCC in
 yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -Wextra" >&5
+$as_echo_n "checking for -Wextra... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Wextra -Werror"
+     if ${ac_cv_extra_warnings+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+           ac_cv_extra_warnings=yes
+
+else
+
+           ac_cv_extra_warnings=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_extra_warnings" >&5
+$as_echo "$ac_cv_extra_warnings" >&6; }
+
+    if test $ac_cv_extra_warnings = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wextra"
+    fi
+
     # Python doesn't violate C99 aliasing rules, but older versions of
     # GCC produce warnings for legal Python code.  Enable
     # -fno-strict-aliasing on versions of GCC that support but produce
@@ -7040,6 +7081,89 @@ $as_echo "$ac_cv_disable_unused_result_warning" >&6; }
     if test $ac_cv_disable_unused_result_warning = yes
     then
       BASECFLAGS="$BASECFLAGS -Wno-unused-result"
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn off $CC unused parameter warning" >&5
+$as_echo_n "checking if we can turn off $CC unused parameter warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Wunused-parameter -Werror"
+     if ${ac_cv_disable_unused_parameter_warning+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+           ac_cv_disable_unused_parameter_warning=yes
+
+else
+
+           ac_cv_disable_unused_parameter_warning=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_parameter_warning" >&5
+$as_echo "$ac_cv_disable_unused_parameter_warning" >&6; }
+
+    if test $ac_cv_disable_unused_parameter_warning = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn off $CC missing field initializers warning" >&5
+$as_echo_n "checking if we can turn off $CC missing field initializers warning... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -Wmissing-field-initializers -Werror"
+     if ${ac_cv_disable_missing_field_initializers+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+           ac_cv_disable_missing_field_initializers=yes
+
+else
+
+           ac_cv_disable_missing_field_initializers=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_missing_field_initializers" >&5
+$as_echo "$ac_cv_disable_missing_field_initializers" >&6; }
+
+    if test $ac_cv_disable_missing_field_initializers = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"
     fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn on $CC mixed sign comparison warning" >&5
