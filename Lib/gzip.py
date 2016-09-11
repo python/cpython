@@ -357,10 +357,10 @@ class GzipFile(_compression.BaseStream):
             if offset < self.offset:
                 raise OSError('Negative seek in write mode')
             count = offset - self.offset
-            chunk = bytes(1024)
+            chunk = b'\0' * 1024
             for i in range(count // 1024):
                 self.write(chunk)
-            self.write(bytes(count % 1024))
+            self.write(b'\0' * (count % 1024))
         elif self.mode == READ:
             self._check_not_closed()
             return self._buffer.seek(offset, whence)

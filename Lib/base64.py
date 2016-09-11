@@ -155,7 +155,7 @@ def b32encode(s):
     leftover = len(s) % 5
     # Pad the last quantum with zero bits if necessary
     if leftover:
-        s = s + bytes(5 - leftover)  # Don't use += !
+        s = s + b'\0' * (5 - leftover)  # Don't use += !
     encoded = bytearray()
     from_bytes = int.from_bytes
     b32tab2 = _b32tab2

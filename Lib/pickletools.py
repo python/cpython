@@ -707,7 +707,7 @@ def read_unicodestring8(f):
     >>> enc = s.encode('utf-8')
     >>> enc
     b'abcd\xea\xaf\x8d'
-    >>> n = bytes([len(enc)]) + bytes(7)  # little-endian 8-byte length
+    >>> n = bytes([len(enc)]) + b'\0' * 7  # little-endian 8-byte length
     >>> t = read_unicodestring8(io.BytesIO(n + enc + b'junk'))
     >>> s == t
     True

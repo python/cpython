@@ -434,12 +434,12 @@ class TestGzip(BaseTest):
 
     def test_decompress_limited(self):
         """Decompressed data buffering should be limited"""
-        bomb = gzip.compress(bytes(int(2e6)), compresslevel=9)
+        bomb = gzip.compress(b'\0' * int(2e6), compresslevel=9)
         self.assertLess(len(bomb), io.DEFAULT_BUFFER_SIZE)
 
         bomb = io.BytesIO(bomb)
         decomp = gzip.GzipFile(fileobj=bomb)
-        self.assertEqual(bytes(1), decomp.read(1))
+        self.assertEqual(decomp.read(1), b'\0')
         max_decomp = 1 + io.DEFAULT_BUFFER_SIZE
         self.assertLessEqual(decomp._buffer.raw.tell(), max_decomp,
             "Excessive amount of data was decompressed")
