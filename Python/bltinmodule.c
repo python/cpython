@@ -54,7 +54,7 @@ _Py_IDENTIFIER(stderr);
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *cell;
+    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *none;
     PyObject *cls = NULL;
     Py_ssize_t nargs;
     int isclass = 0;   /* initialize to prevent gcc warning */
@@ -167,15 +167,13 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
         Py_DECREF(bases);
         return NULL;
     }
-    cell = PyEval_EvalCodeEx(PyFunction_GET_CODE(func), PyFunction_GET_GLOBALS(func), ns,
+    none = PyEval_EvalCodeEx(PyFunction_GET_CODE(func), PyFunction_GET_GLOBALS(func), ns,
                              NULL, 0, NULL, 0, NULL, 0, NULL,
                              PyFunction_GET_CLOSURE(func));
-    if (cell != NULL) {
+    if (none != NULL) {
         PyObject *margs[3] = {name, bases, ns};
         cls = _PyObject_FastCallDict(meta, margs, 3, mkw);
-        if (cls != NULL && PyCell_Check(cell))
-            PyCell_Set(cell, cls);
-        Py_DECREF(cell);
+        Py_DECREF(none);
     }
     Py_DECREF(ns);
     Py_DECREF(meta);
