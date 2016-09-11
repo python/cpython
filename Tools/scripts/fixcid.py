@@ -88,9 +88,9 @@ def main():
     sys.exit(bad)
 
 # Change this regular expression to select a different set of files
-Wanted = '^[a-zA-Z0-9_]+\.[ch]$'
+Wanted = r'^[a-zA-Z0-9_]+\.[ch]$'
 def wanted(name):
-    return re.match(Wanted, name) >= 0
+    return re.match(Wanted, name)
 
 def recursedown(dirname):
     dbg('recursedown(%r)\n' % (dirname,))
@@ -168,6 +168,7 @@ def fix(filename):
     if filename == '-': return 0 # Done in filter mode
     f.close()
     if not g: return 0 # No changes
+    g.close()
 
     # Finishing touch -- move files
 
@@ -193,21 +194,21 @@ def fix(filename):
 
 # Tokenizing ANSI C (partly)
 
-Identifier = '\(struct \)?[a-zA-Z_][a-zA-Z0-9_]+'
-String = '"\([^\n\\"]\|\\\\.\)*"'
-Char = '\'\([^\n\\\']\|\\\\.\)*\''
-CommentStart = '/\*'
-CommentEnd = '\*/'
+Identifier = '(struct )?[a-zA-Z_][a-zA-Z0-9_]+'
+String = r'"([^\n\\"]|\\.)*"'
+Char = r"'([^\n\\']|\\.)*'"
+CommentStart = r'/\*'
+CommentEnd = r'\*/'
 
 Hexnumber = '0[xX][0-9a-fA-F]*[uUlL]*'
 Octnumber = '0[0-7]*[uUlL]*'
 Decnumber = '[1-9][0-9]*[uUlL]*'
-Intnumber = Hexnumber + '\|' + Octnumber + '\|' + Decnumber
+Intnumber = Hexnumber + '|' + Octnumber + '|' + Decnumber
 Exponent = '[eE][-+]?[0-9]+'
-Pointfloat = '\([0-9]+\.[0-9]*\|\.[0-9]+\)\(' + Exponent + '\)?'
+Pointfloat = r'([0-9]+\.[0-9]*|\.[0-9]+)(' + Exponent + r')?'
 Expfloat = '[0-9]+' + Exponent
-Floatnumber = Pointfloat + '\|' + Expfloat
-Number = Floatnumber + '\|' + Intnumber
+Floatnumber = Pointfloat + '|' + Expfloat
+Number = Floatnumber + '|' + Intnumber
 
 # Anything else is an operator -- don't list this explicitly because of '/*'
 
@@ -225,15 +226,16 @@ def initfixline():
 
 def fixline(line):
     global Program
-##  print '-->', repr(line)
+##  print('-->', repr(line))
     i = 0
     while i < len(line):
-        i = Program.search(line, i)
-        if i < 0: break
-        found = Program.group(0)
-##      if Program is InsideCommentProgram: print '...',
-##      else: print '   ',
-##      print found
+        match = Program.search(line, i)
+        if match is None: break
+        i = match.start()
+        found = match.group(0)
+##      if Program is InsideCommentProgram: print(end='... ')
+##      else: print(end='    ')
+##      print(found)
         if len(found) == 2:
             if found == '/*':
                 Program = InsideCommentProgram
@@ -247,15 +249,15 @@ def fixline(line):
                     print('Found in comment:', found)
                     i = i + n
                     continue
-                if NotInComment.has_key(found):
-##                  print 'Ignored in comment:',
-##                  print found, '-->', subst
-##                  print 'Line:', line,
+                if found in NotInComment:
+##                  print(end='Ignored in comment: ')
+##                  print(found, '-->', subst)
+##                  print('Line:', line, end='')
                     subst = found
 ##              else:
-##                  print 'Substituting in comment:',
-##                  print found, '-->', subst
-##                  print 'Line:', line,
+##                  print(end='Substituting in comment: ')
+##                  print(found, '-->', subst)
+##                  print('Line:', line, end='')
             line = line[:i] + subst + line[i+n:]
             n = len(subst)
         i = i + n
