@@ -2422,9 +2422,6 @@ PyDoc_STRVAR(match_group_doc,
     Return subgroup(s) of the match by indices or names.\n\
     For 0 returns the entire match.");
 
-PyDoc_STRVAR(match_getitem_doc,
-"__getitem__(name) <==> group(name).\n");
-
 static PyObject *
 match_lastindex_get(MatchObject *self)
 {
