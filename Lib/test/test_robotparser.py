@@ -259,6 +259,7 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
         self.t.join()
         self.server.server_close()
 
+    @support.reap_threads
     def testPasswordProtectedSite(self):
         addr = self.server.server_address
         url = 'http://' + support.HOST + ':' + str(addr[1])
