@@ -186,6 +186,8 @@ f'{a * x()}'"""
                             ["f'{1#}'",   # error because the expression becomes "(1#)"
                              "f'{3(#)}'",
                              "f'{#}'",
+                             "f'{)#}'",   # When wrapped in parens, this becomes
+                                          #  '()#)'.  Make sure that doesn't compile.
                              ])
 
     def test_many_expressions(self):
