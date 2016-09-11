@@ -86,6 +86,13 @@ Security improvements:
   is initialized to increase the security. See the :pep:`524` for the
   rationale.
 
+* :mod:`hashlib` and :mod:`ssl` now support OpenSSL 1.1.0.
+
+* The default settings and feature set of the :mod:`ssl` have been improved.
+
+* The :mod:`hashlib` module has got support for BLAKE2, SHA-3 and SHAKE hash
+  algorithms and :func:`~hashlib.scrypt` key derivation function.
+
 Windows improvements:
 
 * PEP 529: :ref:`Change Windows filesystem encoding to UTF-8 <pep-529>`
@@ -646,6 +653,31 @@ exceptions: see :func:`faulthandler.enable`. (Contributed by Victor Stinner in
 :issue:`23848`.)
 
 
+hashlib
+-------
+
+:mod:`hashlib` supports OpenSSL 1.1.0. The minimum recommend version is 1.0.2.
+It has been tested with 0.9.8zc, 0.9.8zh and 1.0.1t as well as LibreSSL 2.3
+and 2.4.
+(Contributed by Christian Heimes in :issue:`26470`.)
+
+BLAKE2 hash functions were added to the module. :func:`~hashlib.blake2b`
+and :func:`~hashlib.blake2s` are always available and support the full
+feature set of BLAKE2.
+(Contributed by Christian Heimes in :issue:`26798` based on code by
+Dmitry Chestnykh and Samuel Neves. Documentation written by Dmitry Chestnykh.)
+
+The SHA-3 hash functions :func:`~hashlib.sha3_224`, :func:`~hashlib.sha3_256`,
+:func:`~hashlib.sha3_384`, :func:`~hashlib.sha3_512`, and SHAKE hash functions
+:func:`~hashlib.shake_128` and :func:`~hashlib.shake_256` were added.
+(Contributed by Christian Heimes in :issue:`16113`. Keccak Code Package
+by Guido Bertoni, Joan Daemen, Michaël Peeters, Gilles Van Assche, and
+Ronny Van Keer.)
+
+The password-based key derivation function :func:`~hashlib.scrypt` is now
+available with OpenSSL 1.1.0 and newer.
+(Contributed by Christian Heimes in :issue:`27928`.)
+
 http.client
 -----------
 
@@ -775,6 +807,11 @@ The :meth:`~socket.socket.getsockopt` constants ``SO_DOMAIN``,
 ``SO_PROTOCOL``, ``SO_PEERSEC``, and ``SO_PASSSEC`` are now supported.
 (Contributed by Christian Heimes in :issue:`26907`.)
 
+The socket module now supports the address family
+:data:`~socket.AF_ALG` to interface with Linux Kernel crypto API. ``ALG_*``,
+``SOL_ALG`` and :meth:`~socket.socket.sendmsg_afalg` were added.
+(Contributed by Christian Heimes in :issue:`27744` with support from
+Victor Stinner.)
 
 socketserver
 ------------
@@ -791,6 +828,39 @@ the :class:`io.BufferedIOBase` writable interface.  In particular,
 calling :meth:`~io.BufferedIOBase.write` is now guaranteed to send the
 data in full.  (Contributed by Martin Panter in :issue:`26721`.)
 
+ssl
+---
+
+:mod:`ssl` supports OpenSSL 1.1.0. The minimum recommend version is 1.0.2.
+It has been tested with 0.9.8zc, 0.9.8zh and 1.0.1t as well as LibreSSL 2.3
+and 2.4.
+(Contributed by Christian Heimes in :issue:`26470`.)
+
+3DES has been removed from the default cipher suites and ChaCha20 Poly1305
+cipher suites are now in the right position.
+(Contributed by Christian Heimes in :issue:`27850` and :issue:`27766`.)
+
+:class:`~ssl.SSLContext` has better default configuration for options
+and ciphers.
+(Contributed by Christian Heimes in :issue:`28043`.)
+
+SSL session can be copied from one client-side connection to another
+with :class:`~ssl.SSLSession`. TLS session resumption can speed up
+the initial handshake, reduce latency and improve performance
+(Contributed by Christian Heimes in :issue:`19500` based on a draft by
+Alex Warhawk.)
+
+All constants and flags have been converted to :class:`~enum.IntEnum` and
+:class:`~enum.IntFlags`.
+(Contributed by Christian Heimes in :issue:`28025`.)
+
+Server and client-side specific TLS protocols for :class:`~ssl.SSLContext`
+were added.
+(Contributed by Christian Heimes in :issue:`28085`.)
+
+General resource ids (``GEN_RID``) in subject alternative name extensions
+no longer case a SystemError.
+(Contributed by Christian Heimes in :issue:`27691`.)
 
 subprocess
 ----------
@@ -1136,6 +1206,16 @@ Deprecated features
   inline flags in the middle of the regular expression now emit a deprecation
   warning.  It will be an error in future Python releases.
   (Contributed by Serhiy Storchaka in :issue:`22493`.)
+
+* SSL-related arguments like ``certfile``, ``keyfile`` and ``check_hostname``
+  in :mod:`ftplib`, :mod:`http.client`, :mod:`imaplib`, :mod:`poplib`,
+  and :mod:`smtplib` have been deprecated in favor of ``context``.
+  (Contributed by Christian Heimes in :issue:`28022`.)
+
+* A couple of protocols and functions of the :mod:`ssl` module are now
+  deprecated. Some features will no longer be available in future versions
+  of OpenSSL. Other features are deprecated in favor of a different API.
+  (Contributed by Christian Heimes in :issue:`28022` and :issue:`26470`.)
 
 
 Deprecated Python behavior
