@@ -17,7 +17,8 @@
     || op==POP_JUMP_IF_FALSE || op==POP_JUMP_IF_TRUE \
     || op==JUMP_IF_FALSE_OR_POP || op==JUMP_IF_TRUE_OR_POP)
 #define JUMPS_ON_TRUE(op) (op==POP_JUMP_IF_TRUE || op==JUMP_IF_TRUE_OR_POP)
-#define GETJUMPTGT(arr, i) (get_arg(arr, i) + (ABSOLUTE_JUMP(arr[i]) ? 0 : i+2))
+#define GETJUMPTGT(arr, i) (get_arg(arr, i) / sizeof(_Py_CODEUNIT) + \
+        (ABSOLUTE_JUMP(_Py_OPCODE(arr[i])) ? 0 : i+1))
 #define ISBASICBLOCK(blocks, start, end) \
     (blocks[start]==blocks[end])
 
@@ -40,7 +41,7 @@
 
 #define CONST_STACK_PUSH_OP(i) do { \
     PyObject *_x; \
-    assert(codestr[i] == LOAD_CONST); \
+    assert(_Py_OPCODE(codestr[i]) == LOAD_CONST); \
     assert(PyList_GET_SIZE(consts) > (Py_ssize_t)get_arg(codestr, i)); \
     _x = PyList_GET_ITEM(consts, get_arg(codestr, i)); \
     if (++const_stack_top >= const_stack_size) { \
@@ -72,33 +73,33 @@
    Callers are responsible to check CONST_STACK_LEN beforehand.
 */
 static Py_ssize_t
-lastn_const_start(unsigned char *codestr, Py_ssize_t i, Py_ssize_t n)
+lastn_const_start(const _Py_CODEUNIT *codestr, Py_ssize_t i, Py_ssize_t n)
 {
-    assert(n > 0 && (i&1) == 0);
+    assert(n > 0);
     for (;;) {
-        i -= 2;
+        i--;
         assert(i >= 0);
-        if (codestr[i] == LOAD_CONST) {
+        if (_Py_OPCODE(codestr[i]) == LOAD_CONST) {
             if (!--n) {
-                while (i > 0 && codestr[i-2] == EXTENDED_ARG) {
-                    i -= 2;
+                while (i > 0 && _Py_OPCODE(codestr[i-1]) == EXTENDED_ARG) {
+                    i--;
                 }
                 return i;
             }
         }
         else {
-            assert(codestr[i] == NOP || codestr[i] == EXTENDED_ARG);
+            assert(_Py_OPCODE(codestr[i]) == NOP ||
+                   _Py_OPCODE(codestr[i]) == EXTENDED_ARG);
         }
     }
 }
 
 /* Scans through EXTENDED ARGs, seeking the index of the effective opcode */
 static Py_ssize_t
-find_op(unsigned char *codestr, Py_ssize_t i)
+find_op(const _Py_CODEUNIT *codestr, Py_ssize_t i)
 {
-    assert((i&1) == 0);
-    while (codestr[i] == EXTENDED_ARG) {
-        i += 2;
+    while (_Py_OPCODE(codestr[i]) == EXTENDED_ARG) {
+        i++;
     }
     return i;
 }
@@ -106,27 +107,34 @@ find_op(unsigned char *codestr, Py_ssize_t i)
 /* Given the index of the effective opcode,
    scan back to construct the oparg with EXTENDED_ARG */
 static unsigned int
-get_arg(unsigned char *codestr, Py_ssize_t i)
+get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
 {
-    unsigned int oparg = codestr[i+1];
-    assert((i&1) == 0);
-    if (i >= 2 && codestr[i-2] == EXTENDED_ARG) {
-        oparg |= codestr[i-1] << 8;
-        if (i >= 4 && codestr[i-4] == EXTENDED_ARG) {
-            oparg |= codestr[i-3] << 16;
-            if (i >= 6 && codestr[i-6] == EXTENDED_ARG) {
-                oparg |= codestr[i-5] << 24;
+    _Py_CODEUNIT word;
+    unsigned int oparg = _Py_OPARG(codestr[i]);
+    if (i >= 1 && _Py_OPCODE(word = codestr[i-1]) == EXTENDED_ARG) {
+        oparg |= _Py_OPARG(word) << 8;
+        if (i >= 2 && _Py_OPCODE(word = codestr[i-2]) == EXTENDED_ARG) {
+            oparg |= _Py_OPARG(word) << 16;
+            if (i >= 3 && _Py_OPCODE(word = codestr[i-3]) == EXTENDED_ARG) {
+                oparg |= _Py_OPARG(word) << 24;
             }
         }
     }
     return oparg;
 }
 
+/* Fill the region with NOPs. */
+static void
+fill_nops(_Py_CODEUNIT *codestr, Py_ssize_t start, Py_ssize_t end)
+{
+    memset(codestr + start, NOP, (end - start) * sizeof(_Py_CODEUNIT));
+}
+
 /* Given the index of the effective opcode,
    attempt to replace the argument, taking into account EXTENDED_ARG.
    Returns -1 on failure, or the new op index on success */
 static Py_ssize_t
-set_arg(unsigned char *codestr, Py_ssize_t i, unsigned int oparg)
+set_arg(_Py_CODEUNIT *codestr, Py_ssize_t i, unsigned int oparg)
 {
     unsigned int curarg = get_arg(codestr, i);
     int curilen, newilen;
@@ -138,8 +146,8 @@ set_arg(unsigned char *codestr, Py_ssize_t i, unsigned int oparg)
         return -1;
     }
 
-    write_op_arg(codestr + i + 2 - curilen, codestr[i], oparg, newilen);
-    memset(codestr + i + 2 - curilen + newilen, NOP, curilen - newilen);
+    write_op_arg(codestr + i + 1 - curilen, _Py_OPCODE(codestr[i]), oparg, newilen);
+    fill_nops(codestr, i + 1 - curilen + newilen, i + 1);
     return i-curilen+newilen;
 }
 
@@ -147,17 +155,16 @@ set_arg(unsigned char *codestr, Py_ssize_t i, unsigned int oparg)
    Preceding memory in the region is overwritten with NOPs.
    Returns -1 on failure, op index on success */
 static Py_ssize_t
-copy_op_arg(unsigned char *codestr, Py_ssize_t i, unsigned char op,
+copy_op_arg(_Py_CODEUNIT *codestr, Py_ssize_t i, unsigned char op,
             unsigned int oparg, Py_ssize_t maxi)
 {
     int ilen = instrsize(oparg);
-    assert((i&1) == 0);
     if (i + ilen > maxi) {
         return -1;
     }
     write_op_arg(codestr + maxi - ilen, op, oparg, ilen);
-    memset(codestr + i, NOP, maxi - i - ilen);
-    return maxi - 2;
+    fill_nops(codestr, i, maxi - ilen);
+    return maxi - 1;
 }
 
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
@@ -170,7 +177,7 @@ copy_op_arg(unsigned char *codestr, Py_ssize_t i, unsigned char op,
    test; for BUILD_SET it assembles a frozenset rather than a tuple.
 */
 static Py_ssize_t
-fold_tuple_on_constants(unsigned char *codestr, Py_ssize_t c_start,
+fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
                         Py_ssize_t opcode_end, unsigned char opcode,
                         PyObject *consts, PyObject **objs, int n)
 {
@@ -222,7 +229,7 @@ fold_tuple_on_constants(unsigned char *codestr, Py_ssize_t c_start,
    becoming large in the presence of code like:  (None,)*1000.
 */
 static Py_ssize_t
-fold_binops_on_constants(unsigned char *codestr, Py_ssize_t c_start,
+fold_binops_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
                          Py_ssize_t opcode_end, unsigned char opcode,
                          PyObject *consts, PyObject **objs)
 {
@@ -311,7 +318,7 @@ fold_binops_on_constants(unsigned char *codestr, Py_ssize_t c_start,
 }
 
 static Py_ssize_t
-fold_unaryops_on_constants(unsigned char *codestr, Py_ssize_t c_start,
+fold_unaryops_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t c_start,
                            Py_ssize_t opcode_end, unsigned char opcode,
                            PyObject *consts, PyObject *v)
 {
@@ -359,7 +366,7 @@ fold_unaryops_on_constants(unsigned char *codestr, Py_ssize_t c_start,
 }
 
 static unsigned int *
-markblocks(unsigned char *code, Py_ssize_t len)
+markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
 {
     unsigned int *blocks = PyMem_New(unsigned int, len);
     int i, j, opcode, blockcnt = 0;
@@ -371,8 +378,8 @@ markblocks(unsigned char *code, Py_ssize_t len)
     memset(blocks, 0, len*sizeof(int));
 
     /* Mark labels in the first pass */
-    for (i=0 ; i<len ; i+=2) {
-        opcode = code[i];
+    for (i = 0; i < len; i++) {
+        opcode = _Py_OPCODE(code[i]);
         switch (opcode) {
             case FOR_ITER:
             case JUMP_FORWARD:
@@ -388,12 +395,13 @@ markblocks(unsigned char *code, Py_ssize_t len)
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
                 j = GETJUMPTGT(code, i);
+                assert(j < len);
                 blocks[j] = 1;
                 break;
         }
     }
     /* Build block numbers in the second pass */
-    for (i=0 ; i<len ; i+=2) {
+    for (i = 0; i < len; i++) {
         blockcnt += blocks[i];          /* increment blockcnt over labels */
         blocks[i] = blockcnt;
     }
@@ -420,7 +428,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     Py_ssize_t h, i, nexti, op_start, codelen, tgt;
     unsigned int j, nops;
     unsigned char opcode, nextop;
-    unsigned char *codestr = NULL;
+    _Py_CODEUNIT *codestr = NULL;
     unsigned char *lnotab;
     unsigned int cum_orig_offset, last_offset;
     Py_ssize_t tabsiz;
@@ -448,16 +456,16 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
     assert(PyBytes_Check(code));
     codelen = PyBytes_GET_SIZE(code);
-    assert(codelen % 2 == 0);
+    assert(codelen % sizeof(_Py_CODEUNIT) == 0);
 
     /* Make a modifiable copy of the code string */
-    codestr = (unsigned char *)PyMem_Malloc(codelen);
+    codestr = (_Py_CODEUNIT *)PyMem_Malloc(codelen);
     if (codestr == NULL) {
         PyErr_NoMemory();
         goto exitError;
     }
-    codestr = (unsigned char *)memcpy(codestr,
-                                      PyBytes_AS_STRING(code), codelen);
+    memcpy(codestr, PyBytes_AS_STRING(code), codelen);
+    codelen /= sizeof(_Py_CODEUNIT);
 
     blocks = markblocks(codestr, codelen);
     if (blocks == NULL)
@@ -469,14 +477,14 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     for (i=find_op(codestr, 0) ; i<codelen ; i=nexti) {
         opcode = codestr[i];
         op_start = i;
-        while (op_start >= 2 && codestr[op_start-2] == EXTENDED_ARG) {
-            op_start -= 2;
+        while (op_start >= 1 && _Py_OPCODE(codestr[op_start-1]) == EXTENDED_ARG) {
+            op_start--;
         }
 
-        nexti = i + 2;
-        while (nexti < codelen && codestr[nexti] == EXTENDED_ARG)
-            nexti += 2;
-        nextop = nexti < codelen ? codestr[nexti] : 0;
+        nexti = i + 1;
+        while (nexti < codelen && _Py_OPCODE(codestr[nexti]) == EXTENDED_ARG)
+            nexti++;
+        nextop = nexti < codelen ? _Py_OPCODE(codestr[nexti]) : 0;
 
         if (!in_consts) {
             CONST_STACK_RESET();
@@ -488,10 +496,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                with    POP_JUMP_IF_TRUE */
             case UNARY_NOT:
                 if (nextop != POP_JUMP_IF_FALSE
-                    || !ISBASICBLOCK(blocks, op_start, i+2))
+                    || !ISBASICBLOCK(blocks, op_start, i + 1))
                     break;
-                memset(codestr + op_start, NOP, i - op_start + 2);
-                codestr[nexti] = POP_JUMP_IF_TRUE;
+                fill_nops(codestr, op_start, i + 1);
+                codestr[nexti] = PACKOPARG(POP_JUMP_IF_TRUE, _Py_OPARG(codestr[nexti]));
                 break;
 
                 /* not a is b -->  a is not b
@@ -503,10 +511,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 j = get_arg(codestr, i);
                 if (j < 6 || j > 9 ||
                     nextop != UNARY_NOT ||
-                    !ISBASICBLOCK(blocks, op_start, i + 2))
+                    !ISBASICBLOCK(blocks, op_start, i + 1))
                     break;
-                codestr[i+1] = (j^1);
-                memset(codestr + i + 2, NOP, nexti - i);
+                codestr[i] = PACKOPARG(opcode, j^1);
+                fill_nops(codestr, i + 1, nexti + 1);
                 break;
 
                 /* Skip over LOAD_CONST trueconst
@@ -515,10 +523,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case LOAD_CONST:
                 CONST_STACK_PUSH_OP(i);
                 if (nextop != POP_JUMP_IF_FALSE  ||
-                    !ISBASICBLOCK(blocks, op_start, i + 2)  ||
+                    !ISBASICBLOCK(blocks, op_start, i + 1)  ||
                     !PyObject_IsTrue(PyList_GET_ITEM(consts, get_arg(codestr, i))))
                     break;
-                memset(codestr + op_start, NOP, nexti - op_start + 2);
+                fill_nops(codestr, op_start, nexti + 1);
                 CONST_STACK_POP(1);
                 break;
 
@@ -537,10 +545,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                           ISBASICBLOCK(blocks, h, op_start)) ||
                          ((opcode == BUILD_LIST || opcode == BUILD_SET) &&
                           ((nextop==COMPARE_OP &&
-                          (codestr[nexti+1]==6 ||
-                           codestr[nexti+1]==7)) ||
-                          nextop == GET_ITER) && ISBASICBLOCK(blocks, h, i + 2))) {
-                        h = fold_tuple_on_constants(codestr, h, i+2, opcode,
+                          (_Py_OPARG(codestr[nexti]) == PyCmp_IN ||
+                           _Py_OPARG(codestr[nexti]) == PyCmp_NOT_IN)) ||
+                          nextop == GET_ITER) && ISBASICBLOCK(blocks, h, i + 1))) {
+                        h = fold_tuple_on_constants(codestr, h, i + 1, opcode,
                                                     consts, CONST_STACK_LASTN(j), j);
                         if (h >= 0) {
                             CONST_STACK_POP(j);
@@ -550,23 +558,20 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                     }
                 }
                 if (nextop != UNPACK_SEQUENCE  ||
-                    !ISBASICBLOCK(blocks, op_start, i + 2) ||
+                    !ISBASICBLOCK(blocks, op_start, i + 1) ||
                     j != get_arg(codestr, nexti) ||
                     opcode == BUILD_SET)
                     break;
                 if (j < 2) {
-                    memset(codestr+op_start, NOP, nexti - op_start + 2);
+                    fill_nops(codestr, op_start, nexti + 1);
                 } else if (j == 2) {
-                    codestr[op_start] = ROT_TWO;
-                    codestr[op_start + 1] = 0;
-                    memset(codestr + op_start + 2, NOP, nexti - op_start);
+                    codestr[op_start] = PACKOPARG(ROT_TWO, 0);
+                    fill_nops(codestr, op_start + 1, nexti + 1);
                     CONST_STACK_RESET();
                 } else if (j == 3) {
-                    codestr[op_start] = ROT_THREE;
-                    codestr[op_start + 1] = 0;
-                    codestr[op_start + 2] = ROT_TWO;
-                    codestr[op_start + 3] = 0;
-                    memset(codestr + op_start + 4, NOP, nexti - op_start - 2);
+                    codestr[op_start] = PACKOPARG(ROT_THREE, 0);
+                    codestr[op_start + 1] = PACKOPARG(ROT_TWO, 0);
+                    fill_nops(codestr, op_start + 2, nexti + 1);
                     CONST_STACK_RESET();
                 }
                 break;
@@ -590,7 +595,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                     break;
                 h = lastn_const_start(codestr, op_start, 2);
                 if (ISBASICBLOCK(blocks, h, op_start)) {
-                    h = fold_binops_on_constants(codestr, h, i+2, opcode,
+                    h = fold_binops_on_constants(codestr, h, i + 1, opcode,
                                                  consts, CONST_STACK_LASTN(2));
                     if (h >= 0) {
                         CONST_STACK_POP(2);
@@ -608,7 +613,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                     break;
                 h = lastn_const_start(codestr, op_start, 1);
                 if (ISBASICBLOCK(blocks, h, op_start)) {
-                    h = fold_unaryops_on_constants(codestr, h, i+2, opcode,
+                    h = fold_unaryops_on_constants(codestr, h, i + 1, opcode,
                                                    consts, *CONST_STACK_LASTN(1));
                     if (h >= 0) {
                         CONST_STACK_POP(1);
@@ -628,15 +633,15 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                    x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_FALSE_OR_POP z
                       -->  x:JUMP_IF_FALSE_OR_POP z
                    x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_TRUE_OR_POP z
-                      -->  x:POP_JUMP_IF_FALSE y+2
-                   where y+2 is the instruction following the second test.
+                      -->  x:POP_JUMP_IF_FALSE y+1
+                   where y+1 is the instruction following the second test.
                 */
             case JUMP_IF_FALSE_OR_POP:
             case JUMP_IF_TRUE_OR_POP:
-                h = get_arg(codestr, i);
+                h = get_arg(codestr, i) / sizeof(_Py_CODEUNIT);
                 tgt = find_op(codestr, h);
 
-                j = codestr[tgt];
+                j = _Py_OPCODE(codestr[tgt]);
                 if (CONDITIONAL_JUMP(j)) {
                     /* NOTE: all possible jumps here are absolute. */
                     if (JUMPS_ON_TRUE(j) == JUMPS_ON_TRUE(opcode)) {
@@ -649,14 +654,14 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                            jump past it), and all conditional jumps pop their
                            argument when they're not taken (so change the
                            first jump to pop its argument when it's taken). */
-                        h = set_arg(codestr, i, tgt + 2);
+                        h = set_arg(codestr, i, (tgt + 1) * sizeof(_Py_CODEUNIT));
                         j = opcode == JUMP_IF_TRUE_OR_POP ?
                             POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE;
                     }
 
                     if (h >= 0) {
                         nexti = h;
-                        codestr[nexti] = j;
+                        codestr[nexti] = PACKOPARG(j, _Py_OPARG(codestr[nexti]));
                         break;
                     }
                 }
@@ -678,32 +683,32 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 tgt = find_op(codestr, h);
                 /* Replace JUMP_* to a RETURN into just a RETURN */
                 if (UNCONDITIONAL_JUMP(opcode) &&
-                    codestr[tgt] == RETURN_VALUE) {
-                    codestr[op_start] = RETURN_VALUE;
-                    codestr[op_start + 1] = 0;
-                    memset(codestr + op_start + 2, NOP, i - op_start);
-                } else if (UNCONDITIONAL_JUMP(codestr[tgt])) {
+                    _Py_OPCODE(codestr[tgt]) == RETURN_VALUE) {
+                    codestr[op_start] = PACKOPARG(RETURN_VALUE, 0);
+                    fill_nops(codestr, op_start + 1, i + 1);
+                } else if (UNCONDITIONAL_JUMP(_Py_OPCODE(codestr[tgt]))) {
                     j = GETJUMPTGT(codestr, tgt);
                     if (opcode == JUMP_FORWARD) { /* JMP_ABS can go backwards */
                         opcode = JUMP_ABSOLUTE;
                     } else if (!ABSOLUTE_JUMP(opcode)) {
-                        if ((Py_ssize_t)j < i + 2) {
+                        if ((Py_ssize_t)j < i + 1) {
                             break;           /* No backward relative jumps */
                         }
-                        j -= i + 2;          /* Calc relative jump addr */
+                        j -= i + 1;          /* Calc relative jump addr */
                     }
-                    copy_op_arg(codestr, op_start, opcode, j, i+2);
+                    j *= sizeof(_Py_CODEUNIT);
+                    copy_op_arg(codestr, op_start, opcode, j, i + 1);
                 }
                 break;
 
                 /* Remove unreachable ops after RETURN */
             case RETURN_VALUE:
-                h = i + 2;
-                while (h + 2 < codelen && ISBASICBLOCK(blocks, i, h + 2)) {
-                    h += 2;
+                h = i + 1;
+                while (h + 1 < codelen && ISBASICBLOCK(blocks, i, h + 1)) {
+                    h++;
                 }
-                if (h > i + 2) {
-                    memset(codestr + i + 2, NOP, h - i);
+                if (h > i + 1) {
+                    fill_nops(codestr, i + 1, h + 1);
                     nexti = find_op(codestr, h);
                 }
                 break;
@@ -711,20 +716,21 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     }
 
     /* Fixup lnotab */
-    for (i=0, nops=0 ; i<codelen ; i += 2) {
+    for (i = 0, nops = 0; i < codelen; i++) {
         assert(i - nops <= INT_MAX);
         /* original code offset => new code offset */
         blocks[i] = i - nops;
-        if (codestr[i] == NOP)
-            nops += 2;
+        if (_Py_OPCODE(codestr[i]) == NOP)
+            nops++;
     }
     cum_orig_offset = 0;
     last_offset = 0;
     for (i=0 ; i < tabsiz ; i+=2) {
         unsigned int offset_delta, new_offset;
         cum_orig_offset += lnotab[i];
-        assert((cum_orig_offset & 1) == 0);
-        new_offset = blocks[cum_orig_offset];
+        assert(cum_orig_offset % sizeof(_Py_CODEUNIT) == 0);
+        new_offset = blocks[cum_orig_offset / sizeof(_Py_CODEUNIT)] *
+                sizeof(_Py_CODEUNIT);
         offset_delta = new_offset - last_offset;
         assert(offset_delta <= 255);
         lnotab[i] = (unsigned char)offset_delta;
@@ -732,13 +738,13 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     }
 
     /* Remove NOPs and fixup jump targets */
-    for (op_start=0, i=0, h=0 ; i<codelen ; i+=2, op_start=i) {
-        j = codestr[i+1];
-        while (codestr[i] == EXTENDED_ARG) {
-            i += 2;
-            j = j<<8 | codestr[i+1];
+    for (op_start = i = h = 0; i < codelen; i++, op_start = i) {
+        j = _Py_OPARG(codestr[i]);
+        while (_Py_OPCODE(codestr[i]) == EXTENDED_ARG) {
+            i++;
+            j = j<<8 | _Py_OPARG(codestr[i]);
         }
-        opcode = codestr[i];
+        opcode = _Py_OPCODE(codestr[i]);
         switch (opcode) {
             case NOP:continue;
 
@@ -748,7 +754,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case POP_JUMP_IF_TRUE:
             case JUMP_IF_FALSE_OR_POP:
             case JUMP_IF_TRUE_OR_POP:
-                j = blocks[j];
+                j = blocks[j / sizeof(_Py_CODEUNIT)] * sizeof(_Py_CODEUNIT);
                 break;
 
             case FOR_ITER:
@@ -758,10 +764,11 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case SETUP_FINALLY:
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
-                j = blocks[j + i + 2] - blocks[i] - 2;
+                j = blocks[j / sizeof(_Py_CODEUNIT) + i + 1] - blocks[i] - 1;
+                j *= sizeof(_Py_CODEUNIT);
                 break;
         }
-        nexti = i - op_start + 2;
+        nexti = i - op_start + 1;
         if (instrsize(j) > nexti)
             goto exitUnchanged;
         /* If instrsize(j) < nexti, we'll emit EXTENDED_ARG 0 */
@@ -772,7 +779,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
     CONST_STACK_DELETE();
     PyMem_Free(blocks);
-    code = PyBytes_FromStringAndSize((char *)codestr, h);
+    code = PyBytes_FromStringAndSize((char *)codestr, h * sizeof(_Py_CODEUNIT));
     PyMem_Free(codestr);
     return code;
 
