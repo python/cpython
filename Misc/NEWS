@@ -369,6 +369,8 @@ IDLE
 C API
 -----
 
+- Issue #26900: Excluded underscored names and other private API from limited API.
+
 - Issue #26027: Add support for path-like objects in PyUnicode_FSConverter() &
   PyUnicode_FSDecoder().
 

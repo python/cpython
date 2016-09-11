@@ -2257,6 +2257,7 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     int check_content);
 #endif
 
+#ifndef Py_LIMITED_API
 /* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
 PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
 /* Clear all static strings. */
@@ -2265,6 +2266,7 @@ PyAPI_FUNC(void) _PyUnicode_ClearStaticStrings(void);
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
+#endif /* !Py_LIMITED_API */
 
 #ifdef __cplusplus
 }

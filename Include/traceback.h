@@ -31,6 +31,7 @@ PyAPI_FUNC(void) _PyTraceback_Add(const char *, const char *, int);
 PyAPI_DATA(PyTypeObject) PyTraceBack_Type;
 #define PyTraceBack_Check(v) (Py_TYPE(v) == &PyTraceBack_Type)
 
+#ifndef Py_LIMITED_API
 /* Write the Python traceback into the file 'fd'. For example:
 
        Traceback (most recent call first):
@@ -79,6 +80,7 @@ PyAPI_FUNC(const char*) _Py_DumpTracebackThreads(
     int fd,
     PyInterpreterState *interp,
     PyThreadState *current_tstate);
+#endif /* !Py_LIMITED_API */
 
 #ifndef Py_LIMITED_API
 
