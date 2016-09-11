@@ -143,6 +143,87 @@ class TestSuper(unittest.TestCase):
                 return __class__
         self.assertIs(X.f(), X)
 
+    def test___class___new(self):
+        test_class = None
+
+        class Meta(type):
+            def __new__(cls, name, bases, namespace):
+                nonlocal test_class
+                self = super().__new__(cls, name, bases, namespace)
+                test_class = self.f()
+                return self
+
+        class A(metaclass=Meta):
+            @staticmethod
+            def f():
+                return __class__
+
+        self.assertIs(test_class, A)
+
+    def test___class___delayed(self):
+        test_namespace = None
+
+        class Meta(type):
+            def __new__(cls, name, bases, namespace):
+                nonlocal test_namespace
+                test_namespace = namespace
+                return None
+
+        class A(metaclass=Meta):
+            @staticmethod
+            def f():
+                return __class__
+
+        self.assertIs(A, None)
+
+        B = type("B", (), test_namespace)
+        self.assertIs(B.f(), B)
+
+    def test___class___mro(self):
+        test_class = None
+
+        class Meta(type):
+            def mro(self):
+                # self.f() doesn't work yet...
+                self.__dict__["f"]()
+                return super().mro()
+
+        class A(metaclass=Meta):
+            def f():
+                nonlocal test_class
+                test_class = __class__
+
+        self.assertIs(test_class, A)
+
+    def test___classcell___deleted(self):
+        class Meta(type):
+            def __new__(cls, name, bases, namespace):
+                del namespace['__classcell__']
+                return super().__new__(cls, name, bases, namespace)
+
+        class A(metaclass=Meta):
+            @staticmethod
+            def f():
+                __class__
+
+        with self.assertRaises(NameError):
+            A.f()
+
+    def test___classcell___reset(self):
+        class Meta(type):
+            def __new__(cls, name, bases, namespace):
+                namespace['__classcell__'] = 0
+                return super().__new__(cls, name, bases, namespace)
+
+        class A(metaclass=Meta):
+            @staticmethod
+            def f():
+                __class__
+
+        with self.assertRaises(NameError):
+            A.f()
+        self.assertEqual(A.__classcell__, 0)
+
     def test_obscure_super_errors(self):
         def f():
             super()
