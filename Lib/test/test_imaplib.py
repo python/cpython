@@ -638,8 +638,10 @@ class RemoteIMAP_SSLTest(RemoteIMAPTest):
 
     def test_logincapa_with_client_certfile(self):
         with transient_internet(self.host):
-            _server = self.imap_class(self.host, self.port, certfile=CERTFILE)
-            self.check_logincapa(_server)
+            with support.check_warnings(('', DeprecationWarning)):
+                _server = self.imap_class(self.host, self.port,
+                                          certfile=CERTFILE)
+                self.check_logincapa(_server)
 
     def test_logincapa_with_client_ssl_context(self):
         with transient_internet(self.host):
