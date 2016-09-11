@@ -57,9 +57,7 @@ The module defines the following:
 
    (Only supported on Linux 2.5.44 and newer.) Return an edge polling object,
    which can be used as Edge or Level Triggered interface for I/O
-   events. *sizehint* is deprecated and completely ignored. *flags* can be set
-   to :const:`EPOLL_CLOEXEC`, which causes the epoll descriptor to be closed
-   automatically when :func:`os.execve` is called.
+   events. *sizehint* and *flags* are deprecated and completely ignored.
 
    See the :ref:`epoll-objects` section below for the methods supported by
    epolling objects.
@@ -76,6 +74,10 @@ The module defines the following:
    .. versionchanged:: 3.4
       Support for the :keyword:`with` statement was added.
       The new file descriptor is now non-inheritable.
+
+   .. deprecated:: 3.4
+      The *flags* parameter.  ``select.EPOLL_CLOEXEC`` is used by default now.
+      Use :func:`os.set_inheritable` to make the file descriptor inheritable.
 
 
 .. function:: poll()
