@@ -127,7 +127,7 @@ PyDoc_STRVAR(_io_open__doc__,
 "opened in a binary mode.");
 
 #define _IO_OPEN_METHODDEF    \
-    {"open", (PyCFunction)_io_open, METH_VARARGS|METH_KEYWORDS, _io_open__doc__},
+    {"open", (PyCFunction)_io_open, METH_FASTCALL, _io_open__doc__},
 
 static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
@@ -135,7 +135,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               const char *newline, int closefd, PyObject *opener);
 
 static PyObject *
-_io_open(PyObject *module, PyObject *args, PyObject *kwargs)
+_io_open(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", "mode", "buffering", "encoding", "errors", "newline", "closefd", "opener", NULL};
@@ -149,7 +149,7 @@ _io_open(PyObject *module, PyObject *args, PyObject *kwargs)
     int closefd = 1;
     PyObject *opener = Py_None;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &file, &mode, &buffering, &encoding, &errors, &newline, &closefd, &opener)) {
         goto exit;
     }
@@ -158,4 +158,4 @@ _io_open(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=14769629391a3130 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c5b8fc8b83102bbf input=a9049054013a1b77]*/
