@@ -934,6 +934,14 @@ Allowed keyword arguments to be passed to :func:`Beep <winsound.Beep>`,
 <winsound.PlaySound>` (:issue:`27982`).
 
 
+xmlrpc.client
+-------------
+
+The module now supports unmarshalling additional data types used by
+Apache XML-RPC implementation for numerics and ``None``.
+(Contributed by Serhiy Storchaka in :issue:`26885`.)
+
+
 zipfile
 -------
 
