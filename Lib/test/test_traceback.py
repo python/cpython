@@ -304,7 +304,6 @@ class TracebackFormatTests(unittest.TestCase):
         ])
 
     # issue 26823 - Shrink recursive tracebacks
-    @unittest.skipIf(True, "FIXME: test broken, see issue #28050")
     def _check_recursive_traceback_display(self, render_exc):
         # Always show full diffs when this test fails
         # Note that rearranging things may require adjusting
@@ -353,7 +352,7 @@ class TracebackFormatTests(unittest.TestCase):
 
         # Check the recursion count is roughly as expected
         rec_limit = sys.getrecursionlimit()
-        self.assertIn(int(re.search(r"\d+", actual[-2]).group()), range(rec_limit-50, rec_limit))
+        self.assertIn(int(re.search(r"\d+", actual[-2]).group()), range(rec_limit-60, rec_limit))
 
         # Check a known (limited) number of recursive invocations
         def g(count=10):
