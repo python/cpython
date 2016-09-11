@@ -429,6 +429,13 @@ Build
 
 - Issue #21122: Fix LTO builds on OS X.
 
+Tools/Demos
+-----------
+
+- Issue #27952: Get Tools/scripts/fixcid.py working with Python 3 and the
+  current "re" module, avoid invalid Python backslash escapes, and fix a bug
+  parsing escaped C quote signs.
+
 Windows
 -------
 
