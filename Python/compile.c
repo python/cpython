@@ -4562,6 +4562,7 @@ static int
 compiler_annassign(struct compiler *c, stmt_ty s)
 {
     expr_ty targ = s->v.AnnAssign.target;
+    PyObject* mangled;
 
     assert(s->kind == AnnAssign_kind);
 
@@ -4576,8 +4577,13 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
+            mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
+            if (!mangled) {
+                return 0;
+            }
             VISIT(c, expr, s->v.AnnAssign.annotation);
-            ADDOP_O(c, STORE_ANNOTATION, targ->v.Name.id, names)
+            /* ADDOP_N decrefs its argument */
+            ADDOP_N(c, STORE_ANNOTATION, mangled, names);
         }
         break;
     case Attribute_kind:
