@@ -5347,8 +5347,10 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             sock.bind((typ, name))
         except FileNotFoundError as e:
             # type / algorithm is not available
+            sock.close()
             raise unittest.SkipTest(str(e), typ, name)
-        return sock
+        else
+            return sock
 
     def test_sha256(self):
         expected = bytes.fromhex("ba7816bf8f01cfea414140de5dae2223b00361a396"
@@ -5494,20 +5496,22 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
 
     def test_sendmsg_afalg_args(self):
         sock = socket.socket(socket.AF_ALG, socket.SOCK_SEQPACKET, 0)
-        with self.assertRaises(TypeError):
-            sock.sendmsg_afalg()
+        with sock:
+            with self.assertRaises(TypeError):
+                sock.sendmsg_afalg()
 
-        with self.assertRaises(TypeError):
-            sock.sendmsg_afalg(op=None)
+            with self.assertRaises(TypeError):
+                sock.sendmsg_afalg(op=None)
 
-        with self.assertRaises(TypeError):
-            sock.sendmsg_afalg(1)
+            with self.assertRaises(TypeError):
+                sock.sendmsg_afalg(1)
 
-        with self.assertRaises(TypeError):
-            sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=None)
+            with self.assertRaises(TypeError):
+                sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=None)
 
-        with self.assertRaises(TypeError):
-            sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=-1)
+            with self.assertRaises(TypeError):
+                sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=-1)
+
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
