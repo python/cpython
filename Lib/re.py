@@ -138,7 +138,7 @@ __all__ = [
 
 __version__ = "2.2.1"
 
-class Flag(enum.IntFlag):
+class RegexFlag(enum.IntFlag):
     ASCII = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
     IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE # ignore case
     LOCALE = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
@@ -157,7 +157,7 @@ class Flag(enum.IntFlag):
     TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
     T = TEMPLATE
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
-globals().update(Flag.__members__)
+globals().update(RegexFlag.__members__)
 
 # sre exception
 error = sre_compile.error
