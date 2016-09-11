@@ -5349,7 +5349,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             # type / algorithm is not available
             sock.close()
             raise unittest.SkipTest(str(e), typ, name)
-        else
+        else:
             return sock
 
     def test_sha256(self):
