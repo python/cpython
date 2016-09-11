@@ -2,6 +2,9 @@
 
 #ifndef Py_DTRACE_H
 #define Py_DTRACE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef WITH_DTRACE
 
@@ -44,4 +47,7 @@ inline int PyDTrace_INSTANCE_DELETE_DONE_ENABLED(void) { return 0; }
 
 #endif /* !WITH_DTRACE */
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* !Py_DTRACE_H */
