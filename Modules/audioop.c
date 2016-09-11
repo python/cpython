@@ -240,7 +240,7 @@ static unsigned char
 st_linear2alaw(int16_t pcm_val) /* 2's complement (13-bit range) */
 {
     int16_t         mask;
-    short           seg;
+    int16_t         seg;
     unsigned char   aval;
 
     /* A-law using even bit inversion */
@@ -294,7 +294,7 @@ static const int stepsizeTable[89] = {
 
 
 #define GETINT8(cp, i)          GETINTX(signed char, (cp), (i))
-#define GETINT16(cp, i)         GETINTX(short, (cp), (i))
+#define GETINT16(cp, i)         GETINTX(int16_t, (cp), (i))
 #define GETINT32(cp, i)         GETINTX(int32_t, (cp), (i))
 
 #if WORDS_BIGENDIAN
@@ -311,7 +311,7 @@ static const int stepsizeTable[89] = {
 
 
 #define SETINT8(cp, i, val)     SETINTX(signed char, (cp), (i), (val))
-#define SETINT16(cp, i, val)    SETINTX(short, (cp), (i), (val))
+#define SETINT16(cp, i, val)    SETINTX(int16_t, (cp), (i), (val))
 #define SETINT32(cp, i, val)    SETINTX(int32_t, (cp), (i), (val))
 
 #if WORDS_BIGENDIAN
@@ -542,7 +542,7 @@ audioop_rms_impl(PyObject *module, Py_buffer *fragment, int width)
     return PyLong_FromUnsignedLong(res);
 }
 
-static double _sum2(const short *a, const short *b, Py_ssize_t len)
+static double _sum2(const int16_t *a, const int16_t *b, Py_ssize_t len)
 {
     Py_ssize_t i;
     double sum = 0.0;
@@ -600,7 +600,7 @@ audioop_findfit_impl(PyObject *module, Py_buffer *fragment,
                      Py_buffer *reference)
 /*[clinic end generated code: output=5752306d83cbbada input=62c305605e183c9a]*/
 {
-    const short *cp1, *cp2;
+    const int16_t *cp1, *cp2;
     Py_ssize_t len1, len2;
     Py_ssize_t j, best_j;
     double aj_m1, aj_lm1;
@@ -610,9 +610,9 @@ audioop_findfit_impl(PyObject *module, Py_buffer *fragment,
         PyErr_SetString(AudioopError, "Strings should be even-sized");
         return NULL;
     }
-    cp1 = (const short *)fragment->buf;
+    cp1 = (const int16_t *)fragment->buf;
     len1 = fragment->len >> 1;
-    cp2 = (const short *)reference->buf;
+    cp2 = (const int16_t *)reference->buf;
     len2 = reference->len >> 1;
 
     if (len1 < len2) {
@@ -669,7 +669,7 @@ audioop_findfactor_impl(PyObject *module, Py_buffer *fragment,
                         Py_buffer *reference)
 /*[clinic end generated code: output=14ea95652c1afcf8 input=816680301d012b21]*/
 {
-    const short *cp1, *cp2;
+    const int16_t *cp1, *cp2;
     Py_ssize_t len;
     double sum_ri_2, sum_aij_ri, result;
 
@@ -681,8 +681,8 @@ audioop_findfactor_impl(PyObject *module, Py_buffer *fragment,
         PyErr_SetString(AudioopError, "Samples should be same size");
         return NULL;
     }
-    cp1 = (const short *)fragment->buf;
-    cp2 = (const short *)reference->buf;
+    cp1 = (const int16_t *)fragment->buf;
+    cp2 = (const int16_t *)reference->buf;
     len = fragment->len >> 1;
     sum_ri_2 = _sum2(cp2, cp2, len);
     sum_aij_ri = _sum2(cp1, cp2, len);
@@ -711,7 +711,7 @@ audioop_findmax_impl(PyObject *module, Py_buffer *fragment,
                      Py_ssize_t length)
 /*[clinic end generated code: output=f008128233523040 input=2f304801ed42383c]*/
 {
-    const short *cp1;
+    const int16_t *cp1;
     Py_ssize_t len1;
     Py_ssize_t j, best_j;
     double aj_m1, aj_lm1;
@@ -721,7 +721,7 @@ audioop_findmax_impl(PyObject *module, Py_buffer *fragment,
         PyErr_SetString(AudioopError, "Strings should be even-sized");
         return NULL;
     }
-    cp1 = (const short *)fragment->buf;
+    cp1 = (const int16_t *)fragment->buf;
     len1 = fragment->len >> 1;
 
     if (length < 0 || len1 < length) {
@@ -1122,7 +1122,7 @@ audioop_bias_impl(PyObject *module, Py_buffer *fragment, int width, int bias)
         if (width == 1)
             val = GETINTX(unsigned char, fragment->buf, i);
         else if (width == 2)
-            val = GETINTX(unsigned short, fragment->buf, i);
+            val = GETINTX(uint16_t, fragment->buf, i);
         else if (width == 3)
             val = ((unsigned int)GETINT24(fragment->buf, i)) & 0xffffffu;
         else {
@@ -1137,7 +1137,7 @@ audioop_bias_impl(PyObject *module, Py_buffer *fragment, int width, int bias)
         if (width == 1)
             SETINTX(unsigned char, ncp, i, val);
         else if (width == 2)
-            SETINTX(unsigned short, ncp, i, val);
+            SETINTX(uint16_t, ncp, i, val);
         else if (width == 3)
             SETINT24(ncp, i, (int)val);
         else {
