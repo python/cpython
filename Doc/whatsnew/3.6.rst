@@ -724,6 +724,10 @@ Added support of modifier spans in regular expressions.  Examples:
 ``'(?i)g(?-i:v)r'`` matches ``'GvR'`` and ``'gvr'``, but not ``'GVR'``.
 (Contributed by Serhiy Storchaka in :issue:`433028`.)
 
+Match object groups can be accessed by ``__getitem__``, which is
+equivalent to ``group()``.  So ``mo['name']`` is now equivalent to
+``mo.group('name')``.  (Contributed by Eric Smith in :issue:`24454`.)
+
 
 readline
 --------

@@ -2733,7 +2733,6 @@ static PyMethodDef match_methods[] = {
     _SRE_SRE_MATCH_EXPAND_METHODDEF
     _SRE_SRE_MATCH___COPY___METHODDEF
     _SRE_SRE_MATCH___DEEPCOPY___METHODDEF
-    {"__getitem__", (PyCFunction)match_getitem, METH_O|METH_COEXIST, match_getitem_doc},
     {NULL, NULL}
 };
 
