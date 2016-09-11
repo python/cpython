@@ -280,23 +280,22 @@ Available static markers
 
    The filename, function name, and line number are provided back to the
    tracing script as positional arguments, which must be accessed using
-   `$arg1`, `$arg2`, `$arg3`:
+   ``$arg1``, ``$arg2``, ``$arg3``:
 
-       * `$arg1` : `(const char *)` filename, accessible using `user_string($arg1)`
+       * ``$arg1`` : ``(const char *)`` filename, accessible using ``user_string($arg1)``
 
-       * `$arg2` : `(const char *)` function name, accessible using
-         `user_string($arg2)`
+       * ``$arg2`` : ``(const char *)`` function name, accessible using
+         ``user_string($arg2)``
 
-       * `$arg3` : `int` line number
+       * ``$arg3`` : ``int`` line number
 
 .. c:function:: function__return(str filename, str funcname, int lineno)
 
-   This marker is the converse of `function__entry`, and indicates that
-   execution of a Python function has ended (either via ``return``, or
-   via an exception).  It is only triggered for pure-Python (bytecode)
-   functions.
+   This marker is the converse of :c:func:`function__entry`, and indicates that
+   execution of a Python function has ended (either via ``return``, or via an
+   exception).  It is only triggered for pure-Python (bytecode) functions.
 
-   The arguments are the same as for `function__entry`
+   The arguments are the same as for :c:func:`function__entry`
 
 .. c:function:: line(str filename, str funcname, int lineno)
 
@@ -304,17 +303,17 @@ Available static markers
    the equivalent of line-by-line tracing with a Python profiler.  It is
    not triggered within C functions.
 
-   The arguments are the same as for `function__entry`.
+   The arguments are the same as for :c:func:`function__entry`.
 
 .. c:function:: gc__start(int generation)
 
    Fires when the Python interpreter starts a garbage collection cycle.
-   `arg0` is the generation to scan, like :func:`gc.collect()`.
+   ``arg0`` is the generation to scan, like :func:`gc.collect()`.
 
 .. c:function:: gc__done(long collected)
 
    Fires when the Python interpreter finishes a garbage collection
-   cycle. `arg0` is the number of collected objects.
+   cycle. ``arg0`` is the number of collected objects.
 
 
 SystemTap Tapsets
@@ -348,7 +347,7 @@ Here is a tapset file, based on a non-shared build of CPython:
     }
 
 If this file is installed in SystemTap's tapset directory (e.g.
-`/usr/share/systemtap/tapset`), then these additional probepoints become
+``/usr/share/systemtap/tapset``), then these additional probepoints become
 available:
 
 .. c:function:: python.function.entry(str filename, str funcname, int lineno, frameptr)
@@ -358,9 +357,10 @@ available:
 
 .. c:function:: python.function.return(str filename, str funcname, int lineno, frameptr)
 
-   This probe point is the converse of `python.function.return`, and indicates
-   that execution of a Python function has ended (either via ``return``, or
-   via an exception).  It is only triggered for pure-python (bytecode) functions.
+   This probe point is the converse of :c:func:`python.function.return`, and
+   indicates that execution of a Python function has ended (either via
+   ``return``, or via an exception).  It is only triggered for pure-python
+   (bytecode) functions.
 
 
 Examples
