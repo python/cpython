@@ -475,7 +475,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     CONST_STACK_CREATE();
 
     for (i=find_op(codestr, 0) ; i<codelen ; i=nexti) {
-        opcode = codestr[i];
+        opcode = _Py_OPCODE(codestr[i]);
         op_start = i;
         while (op_start >= 1 && _Py_OPCODE(codestr[op_start-1]) == EXTENDED_ARG) {
             op_start--;
