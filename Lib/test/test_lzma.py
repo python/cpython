@@ -928,11 +928,11 @@ class FileTestCase(unittest.TestCase):
 
     def test_decompress_limited(self):
         """Decompressed data buffering should be limited"""
-        bomb = lzma.compress(bytes(int(2e6)), preset=6)
+        bomb = lzma.compress(b'\0' * int(2e6), preset=6)
         self.assertLess(len(bomb), _compression.BUFFER_SIZE)
 
         decomp = LZMAFile(BytesIO(bomb))
-        self.assertEqual(bytes(1), decomp.read(1))
+        self.assertEqual(decomp.read(1), b'\0')
         max_decomp = 1 + DEFAULT_BUFFER_SIZE
         self.assertLessEqual(decomp._buffer.raw.tell(), max_decomp,
             "Excessive amount of data was decompressed")

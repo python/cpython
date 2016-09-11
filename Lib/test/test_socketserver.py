@@ -406,7 +406,7 @@ class SocketWriterTest(unittest.TestCase):
                 self.server.sent1 = self.wfile.write(b'write data\n')
                 # Should be sent immediately, without requiring flush()
                 self.server.received = self.rfile.readline()
-                big_chunk = bytes(test.support.SOCK_MAX_SIZE)
+                big_chunk = b'\0' * test.support.SOCK_MAX_SIZE
                 self.server.sent2 = self.wfile.write(big_chunk)
 
         server = socketserver.TCPServer((HOST, 0), Handler)
