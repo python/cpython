@@ -59,6 +59,9 @@ Type aliases are useful for simplifying complex type signatures. For example::
            servers: List[Tuple[Tuple[str, int], Dict[str, str]]]) -> None:
        ...
 
+Note that ``None`` as a type hint is a special case and is replaced by
+``type(None)``.
+
 NewType
 -------
 
@@ -148,7 +151,6 @@ For example::
 It is possible to declare the return type of a callable without specifying
 the call signature by substituting a literal ellipsis
 for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
-``None`` as a type hint is a special case and is replaced by ``type(None)``.
 
 Generics
 --------
@@ -443,7 +445,7 @@ The module defines the following classes, functions and decorators:
 
    Optional type.
 
-   ``Optional[X]`` is equivalent to ``Union[X, type(None)]``.
+   ``Optional[X]`` is equivalent to ``Union[X, None]``.
 
    Note that this is not the same concept as an optional argument,
    which is one that has a default.  An optional argument with a
