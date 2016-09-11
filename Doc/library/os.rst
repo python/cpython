@@ -883,7 +883,7 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
           O_EXCL
           O_TRUNC
 
-   These constants are available on Unix and Windows.
+   The above constants are available on Unix and Windows.
 
 
 .. data:: O_DSYNC
@@ -892,10 +892,8 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
           O_NDELAY
           O_NONBLOCK
           O_NOCTTY
-          O_SHLOCK
-          O_EXLOCK
 
-   These constants are only available on Unix.
+   The above constants are only available on Unix.
 
 
 .. data:: O_BINARY
@@ -906,7 +904,7 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
           O_SEQUENTIAL
           O_TEXT
 
-   These constants are only available on Windows.
+   The above constants are only available on Windows.
 
 
 .. data:: O_ASYNC
@@ -914,9 +912,11 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
           O_DIRECTORY
           O_NOFOLLOW
           O_NOATIME
+          O_SHLOCK
+          O_EXLOCK
 
-   These constants are GNU extensions and not present if they are not defined by
-   the C library.
+   The above constants are extensions and not present if they are not
+   defined by the C library.
 
 
 .. _os-file-dir:
