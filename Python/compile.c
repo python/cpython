@@ -3503,7 +3503,7 @@ compiler_call_helper(struct compiler *c,
                      asdl_seq *keywords)
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
-    int musttupleunpack = 0, mustdictunpack = 0;
+    int mustdictunpack = 0;
 
     /* the number of tuples and dictionaries on the stack */
     Py_ssize_t nsubargs = 0, nsubkwargs = 0;
@@ -3532,7 +3532,6 @@ compiler_call_helper(struct compiler *c,
             }
             VISIT(c, expr, elt->v.Starred.value);
             nsubargs++;
-            musttupleunpack = 1;
         }
         else {
             VISIT(c, expr, elt);
@@ -3541,13 +3540,13 @@ compiler_call_helper(struct compiler *c,
     }
 
     /* Same dance again for keyword arguments */
-    if (musttupleunpack || mustdictunpack) {
+    if (nsubargs || mustdictunpack) {
         if (nseen) {
             /* Pack up any trailing positional arguments. */
             ADDOP_I(c, BUILD_TUPLE, nseen);
             nsubargs++;
         }
-        if (musttupleunpack || nsubargs > 1) {
+        if (nsubargs > 1) {
             /* If we ended up with more than one stararg, we need
                to concatenate them into a single sequence. */
             ADDOP_I(c, BUILD_TUPLE_UNPACK, nsubargs);
@@ -3579,7 +3578,7 @@ compiler_call_helper(struct compiler *c,
                 return 0;
             nsubkwargs++;
         }
-        if (mustdictunpack || nsubkwargs > 1) {
+        if (nsubkwargs > 1) {
             /* Pack it all up */
             ADDOP_I(c, BUILD_MAP_UNPACK_WITH_CALL, nsubkwargs);
         }

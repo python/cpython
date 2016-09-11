@@ -2513,14 +2513,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(BUILD_LIST_UNPACK) {
             int convert_to_tuple = opcode == BUILD_TUPLE_UNPACK;
             Py_ssize_t i;
-            PyObject *sum;
+            PyObject *sum = PyList_New(0);
             PyObject *return_value;
 
-            if (convert_to_tuple && oparg == 1 && PyTuple_CheckExact(TOP())) {
-                DISPATCH();
-            }
-
-            sum = PyList_New(0);
             if (sum == NULL)
                 goto error;
 
@@ -2708,13 +2703,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(BUILD_MAP_UNPACK) {
             int with_call = opcode == BUILD_MAP_UNPACK_WITH_CALL;
             Py_ssize_t i;
-            PyObject *sum;
-
-            if (with_call && oparg == 1 && PyDict_CheckExact(TOP())) {
-                DISPATCH();
-            }
-
-            sum = PyDict_New();
+            PyObject *sum = PyDict_New();
             if (sum == NULL)
                 goto error;
 
@@ -3290,11 +3279,53 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             PCALL(PCALL_ALL);
             if (oparg & 0x01) {
                 kwargs = POP();
+                if (!PyDict_CheckExact(kwargs)) {
+                    PyObject *d = PyDict_New();
+                    if (d == NULL)
+                        goto error;
+                    if (PyDict_Update(d, kwargs) != 0) {
+                        Py_DECREF(d);
+                        /* PyDict_Update raises attribute
+                         * error (percolated from an attempt
+                         * to get 'keys' attribute) instead of
+                         * a type error if its second argument
+                         * is not a mapping.
+                         */
+                        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                            func = SECOND();
+                            PyErr_Format(PyExc_TypeError,
+                                         "%.200s%.200s argument after ** "
+                                         "must be a mapping, not %.200s",
+                                         PyEval_GetFuncName(func),
+                                         PyEval_GetFuncDesc(func),
+                                         kwargs->ob_type->tp_name);
+                        }
+                        goto error;
+                    }
+                    Py_DECREF(kwargs);
+                    kwargs = d;
+                }
                 assert(PyDict_CheckExact(kwargs));
             }
             callargs = POP();
-            assert(PyTuple_CheckExact(callargs));
             func = TOP();
+            if (!PyTuple_Check(callargs)) {
+                if (Py_TYPE(callargs)->tp_iter == NULL &&
+                        !PySequence_Check(callargs)) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "%.200s%.200s argument after * "
+                                 "must be an iterable, not %.200s",
+                                 PyEval_GetFuncName(func),
+                                 PyEval_GetFuncDesc(func),
+                                 callargs->ob_type->tp_name);
+                    goto error;
+                }
+                Py_SETREF(callargs, PySequence_Tuple(callargs));
+                if (callargs == NULL) {
+                    goto error;
+                }
+            }
+            assert(PyTuple_Check(callargs));
 
             result = do_call_core(func, callargs, kwargs);
             Py_DECREF(func);
@@ -3796,8 +3827,8 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
 static PyObject *
 _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
            PyObject **args, Py_ssize_t argcount,
-           PyObject **kws, Py_ssize_t kwcount,
-           PyObject *kwnames, PyObject **kwstack,
+           PyObject **kwnames, PyObject **kwargs,
+           Py_ssize_t kwcount, int kwstep,
            PyObject **defs, Py_ssize_t defcount,
            PyObject *kwdefs, PyObject *closure,
            PyObject *name, PyObject *qualname)
@@ -3811,9 +3842,6 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
     Py_ssize_t i, n;
     PyObject *kwdict;
-    Py_ssize_t kwcount2 = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
-
-    assert((kwcount == 0) || (kws != NULL));
 
     if (globals == NULL) {
         PyErr_SetString(PyExc_SystemError,
@@ -3873,11 +3901,12 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         }
     }
 
-    /* Handle keyword arguments passed as an array of (key, value) pairs */
-    for (i = 0; i < kwcount; i++) {
+    /* Handle keyword arguments passed as two strided arrays */
+    kwcount *= kwstep;
+    for (i = 0; i < kwcount; i += kwstep) {
         PyObject **co_varnames;
-        PyObject *keyword = kws[2*i];
-        PyObject *value = kws[2*i + 1];
+        PyObject *keyword = kwnames[i];
+        PyObject *value = kwargs[i];
         Py_ssize_t j;
 
         if (keyword == NULL || !PyUnicode_Check(keyword)) {
@@ -3926,61 +3955,6 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
             PyErr_Format(PyExc_TypeError,
                          "%U() got multiple values for argument '%S'",
                          co->co_name, keyword);
-            goto fail;
-        }
-        Py_INCREF(value);
-        SETLOCAL(j, value);
-    }
-
-    /* Handle keyword arguments passed as keys tuple + values array */
-    for (i = 0; i < kwcount2; i++) {
-        PyObject **co_varnames;
-        PyObject *keyword = PyTuple_GET_ITEM(kwnames, i);
-        PyObject *value = kwstack[i];
-        int j;
-        if (keyword == NULL || !PyUnicode_Check(keyword)) {
-            PyErr_Format(PyExc_TypeError,
-                         "%U() keywords must be strings",
-                         co->co_name);
-            goto fail;
-        }
-        /* Speed hack: do raw pointer compares. As names are
-           normally interned this should almost always hit. */
-        co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
-        for (j = 0; j < total_args; j++) {
-            PyObject *nm = co_varnames[j];
-            if (nm == keyword)
-                goto kw_found2;
-        }
-        /* Slow fallback, just in case */
-        for (j = 0; j < total_args; j++) {
-            PyObject *nm = co_varnames[j];
-            int cmp = PyObject_RichCompareBool(
-                keyword, nm, Py_EQ);
-            if (cmp > 0)
-                goto kw_found2;
-            else if (cmp < 0)
-                goto fail;
-        }
-        if (j >= total_args && kwdict == NULL) {
-            PyErr_Format(PyExc_TypeError,
-                         "%U() got an unexpected "
-                         "keyword argument '%S'",
-                         co->co_name,
-                         keyword);
-            goto fail;
-        }
-        if (PyDict_SetItem(kwdict, keyword, value) == -1) {
-            goto fail;
-        }
-        continue;
-      kw_found2:
-        if (GETLOCAL(j) != NULL) {
-            PyErr_Format(PyExc_TypeError,
-                         "%U() got multiple "
-                         "values for argument '%S'",
-                         co->co_name,
-                         keyword);
             goto fail;
         }
         Py_INCREF(value);
@@ -4138,8 +4112,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
 {
     return _PyEval_EvalCodeWithName(_co, globals, locals,
                                     args, argcount,
-                                    kws, kwcount,
-                                    NULL, NULL,
+                                    kws, kws + 1, kwcount, 2,
                                     defs, defcount,
                                     kwdefs, closure,
                                     NULL, NULL);
@@ -4923,8 +4896,9 @@ fast_function(PyObject *func, PyObject **stack,
     }
     return _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
                                     stack, nargs,
-                                    NULL, 0,
-                                    kwnames, stack + nargs,
+                                    nkwargs ? &PyTuple_GET_ITEM(kwnames, 0) : NULL,
+                                    stack + nargs,
+                                    nkwargs, 1,
                                     d, (int)nd, kwdefs,
                                     closure, name, qualname);
 }
@@ -5014,8 +4988,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     result = _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
                                       args, nargs,
-                                      k, nk,
-                                      NULL, NULL,
+                                      k, k + 1, nk, 2,
                                       d, nd, kwdefs,
                                       closure, name, qualname);
     Py_XDECREF(kwtuple);
