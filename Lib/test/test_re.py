@@ -1279,6 +1279,9 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match('(?ixu) ' + upper_char, lower_char))
         self.assertTrue(re.match('(?ixu) ' + lower_char, upper_char))
 
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match(upper_char + '(?i)', lower_char))
+
     def test_dollar_matches_twice(self):
         "$ matches the end of string, and just before the terminating \n"
         pattern = re.compile('$')

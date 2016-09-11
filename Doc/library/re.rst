@@ -224,12 +224,8 @@ The special characters are:
    flags are described in :ref:`contents-of-module-re`.) This
    is useful if you wish to include the flags as part of the regular
    expression, instead of passing a *flag* argument to the
-   :func:`re.compile` function.
-
-   Note that the ``(?x)`` flag changes how the expression is parsed. It should be
-   used first in the expression string, or after one or more whitespace characters.
-   If there are non-whitespace characters before the flag, the results are
-   undefined.
+   :func:`re.compile` function.  Flags should be used first in the
+   expression string.
 
 ``(?:...)``
    A non-capturing version of regular parentheses.  Matches whatever regular
