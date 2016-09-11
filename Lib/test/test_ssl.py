@@ -1342,6 +1342,17 @@ class ContextTests(unittest.TestCase):
         ctx.check_hostname = False
         self.assertFalse(ctx.check_hostname)
 
+    def test_context_client_server(self):
+        # PROTOCOL_TLS_CLIENT has sane defaults
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.assertTrue(ctx.check_hostname)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+
+        # PROTOCOL_TLS_SERVER has different but also sane defaults
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        self.assertFalse(ctx.check_hostname)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
+
 
 class SSLErrorTests(unittest.TestCase):
 
@@ -2280,11 +2291,32 @@ if _have_threads:
             if support.verbose:
                 sys.stdout.write("\n")
             for protocol in PROTOCOLS:
+                if protocol in {ssl.PROTOCOL_TLS_CLIENT, ssl.PROTOCOL_TLS_SERVER}:
+                    continue
                 with self.subTest(protocol=ssl._PROTOCOL_NAMES[protocol]):
                     context = ssl.SSLContext(protocol)
                     context.load_cert_chain(CERTFILE)
                     server_params_test(context, context,
                                        chatty=True, connectionchatty=True)
+
+            client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            client_context.load_verify_locations(SIGNING_CA)
+            server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            # server_context.load_verify_locations(SIGNING_CA)
+            server_context.load_cert_chain(SIGNED_CERTFILE2)
+
+            with self.subTest(client='PROTOCOL_TLS_CLIENT', server='PROTOCOL_TLS_SERVER'):
+                server_params_test(client_context=client_context,
+                                   server_context=server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name='fakehostname')
+
+            with self.subTest(client='PROTOCOL_TLS_SERVER', server='PROTOCOL_TLS_CLIENT'):
+                with self.assertRaises(ssl.SSLError):
+                    server_params_test(client_context=server_context,
+                                       server_context=client_context,
+                                       chatty=True, connectionchatty=True,
+                                       sni_name='fakehostname')
 
         def test_getpeercert(self):
             if support.verbose:
