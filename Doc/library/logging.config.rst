@@ -126,10 +126,10 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    Starts up a socket server on the specified port, and listens for new
    configurations. If no port is specified, the module's default
    :const:`DEFAULT_LOGGING_CONFIG_PORT` is used. Logging configurations will be
-   sent as a file suitable for processing by :func:`fileConfig`. Returns a
-   :class:`~threading.Thread` instance on which you can call
-   :meth:`~threading.Thread.start` to start the server, and which you can
-   :meth:`~threading.Thread.join` when appropriate. To stop the server,
+   sent as a file suitable for processing by :func:`dictConfig` or
+   :func:`fileConfig`. Returns a :class:`~threading.Thread` instance on which
+   you can call :meth:`~threading.Thread.start` to start the server, and which
+   you can :meth:`~threading.Thread.join` when appropriate. To stop the server,
    call :func:`stopListening`.
 
    The ``verify`` argument, if specified, should be a callable which should
@@ -165,8 +165,17 @@ in :mod:`logging` itself) and defining handlers which are declared either in
       ``verify`` argument to :func:`listen` to prevent unrecognised
       configurations from being applied.
 
-   .. versionchanged:: 3.4.
+   .. versionchanged:: 3.4
       The ``verify`` argument was added.
+
+   .. note::
+
+      If you want to send configurations to the listener which don't
+      disable existing loggers, you will need to use a JSON format for
+      the configuration, which will use :func:`dictConfig` for configuration.
+      This method allows you to specify ``disable_existing_loggers`` as
+      ``False`` in the configuration you send.
+
 
 .. function:: stopListening()
 
