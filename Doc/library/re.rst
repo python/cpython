@@ -1015,6 +1015,22 @@ Match objects support the following methods and attributes:
       'c3'
 
 
+.. method:: match.__getitem__(g)
+
+   This is identical to ``m.group(g)``.  This allows easier access to
+   an individual group from a match:
+
+      >>> m = re.match(r"(\w+) (\w+)", "Isaac Newton, physicist")
+      >>> m[0]       # The entire match
+      'Isaac Newton'
+      >>> m[1]       # The first parenthesized subgroup.
+      'Isaac'
+      >>> m[2]       # The second parenthesized subgroup.
+      'Newton'
+
+   .. versionadded:: 3.6
+
+
 .. method:: match.groups(default=None)
 
    Return a tuple containing all the subgroups of the match, from 1 up to however
