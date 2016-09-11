@@ -272,12 +272,11 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
 
 class NetworkTestCase(unittest.TestCase):
 
-    @unittest.skip('does not handle the gzip encoding delivered by pydotorg')
     def testPythonOrg(self):
         support.requires('network')
         with support.transient_internet('www.python.org'):
             parser = urllib.robotparser.RobotFileParser(
-                "http://www.python.org/robots.txt")
+                "https://www.python.org/robots.txt")
             parser.read()
             self.assertTrue(
                 parser.can_fetch("*", "http://www.python.org/robots.txt"))
