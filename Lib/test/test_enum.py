@@ -3,7 +3,7 @@ import inspect
 import pydoc
 import unittest
 from collections import OrderedDict
-from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique
+from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -113,6 +113,7 @@ class TestHelpers(unittest.TestCase):
                 '__', '___', '____', '_____',):
             self.assertFalse(enum._is_dunder(s))
 
+# tests
 
 class TestEnum(unittest.TestCase):
 
@@ -1578,6 +1579,61 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(LabelledList.unprocessed, 1)
         self.assertEqual(LabelledList(1), LabelledList.unprocessed)
 
+    def test_auto_number(self):
+        class Color(Enum):
+            red = auto()
+            blue = auto()
+            green = auto()
+
+        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
+        self.assertEqual(Color.red.value, 1)
+        self.assertEqual(Color.blue.value, 2)
+        self.assertEqual(Color.green.value, 3)
+
+    def test_auto_name(self):
+        class Color(Enum):
+            def _generate_next_value_(name, start, count, last):
+                return name
+            red = auto()
+            blue = auto()
+            green = auto()
+
+        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
+        self.assertEqual(Color.red.value, 'red')
+        self.assertEqual(Color.blue.value, 'blue')
+        self.assertEqual(Color.green.value, 'green')
+
+    def test_auto_name_inherit(self):
+        class AutoNameEnum(Enum):
+            def _generate_next_value_(name, start, count, last):
+                return name
+        class Color(AutoNameEnum):
+            red = auto()
+            blue = auto()
+            green = auto()
+
+        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
+        self.assertEqual(Color.red.value, 'red')
+        self.assertEqual(Color.blue.value, 'blue')
+        self.assertEqual(Color.green.value, 'green')
+
+    def test_auto_garbage(self):
+        class Color(Enum):
+            red = 'red'
+            blue = auto()
+        self.assertEqual(Color.blue.value, 1)
+
+    def test_auto_garbage_corrected(self):
+        class Color(Enum):
+            red = 'red'
+            blue = 2
+            green = auto()
+
+        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
+        self.assertEqual(Color.red.value, 'red')
+        self.assertEqual(Color.blue.value, 2)
+        self.assertEqual(Color.green.value, 3)
+
 
 class TestOrder(unittest.TestCase):
 
@@ -1856,7 +1912,6 @@ class TestFlag(unittest.TestCase):
         test_pickle_dump_load(self.assertIs, FlagStooges.CURLY|FlagStooges.MOE)
         test_pickle_dump_load(self.assertIs, FlagStooges)
 
-
     def test_containment(self):
         Perm = self.Perm
         R, W, X = Perm
@@ -1876,6 +1931,24 @@ class TestFlag(unittest.TestCase):
         self.assertFalse(R in WX)
         self.assertFalse(W in RX)
         self.assertFalse(X in RW)
+
+    def test_auto_number(self):
+        class Color(Flag):
+            red = auto()
+            blue = auto()
+            green = auto()
+
+        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
+        self.assertEqual(Color.red.value, 1)
+        self.assertEqual(Color.blue.value, 2)
+        self.assertEqual(Color.green.value, 4)
+
+    def test_auto_number_garbage(self):
+        with self.assertRaisesRegex(TypeError, 'Invalid Flag value: .not an int.'):
+            class Color(Flag):
+                red = 'not an int'
+                blue = auto()
+
 
 class TestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
