@@ -328,12 +328,12 @@ class GrammarTests(unittest.TestCase):
 
         # class semantics
         class C:
-            x: int
+            __foo: int
             s: str = "attr"
             z = 2
             def __init__(self, x):
                 self.x: int = x
-        self.assertEqual(C.__annotations__, {'x': int, 's': str})
+        self.assertEqual(C.__annotations__, {'_C__foo': int, 's': str})
         with self.assertRaises(NameError):
             class CBad:
                 no_such_name_defined.attr: int = 0

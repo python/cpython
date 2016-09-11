@@ -334,9 +334,10 @@ only single right hand side value is allowed.
 For simple names as assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
 attribute :attr:`__annotations__`
-that is a dictionary mapping from variable names to evaluated annotations.
-This attribute is writable and is automatically created at the start
-of class or module body execution, if annotations are found statically.
+that is a dictionary mapping from variable names (mangled if private) to
+evaluated annotations. This attribute is writable and is automatically
+created at the start of class or module body execution, if annotations
+are found statically.
 
 For expressions as assignment targets, the annotations are evaluated if
 in class or module scope, but not stored.
