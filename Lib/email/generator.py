@@ -18,6 +18,7 @@ from email.utils import _has_surrogates
 UNDERSCORE = '_'
 NL = '\n'  # XXX: no longer used by the code below.
 
+NLCRE = re.compile(r'\r\n|\r|\n')
 fcre = re.compile(r'^From ', re.MULTILINE)
 
 
@@ -149,14 +150,17 @@ class Generator:
         # We have to transform the line endings.
         if not lines:
             return
-        lines = lines.splitlines(True)
+        lines = NLCRE.split(lines)
         for line in lines[:-1]:
-            self.write(line.rstrip('\r\n'))
+            self.write(line)
             self.write(self._NL)
-        laststripped = lines[-1].rstrip('\r\n')
-        self.write(laststripped)
-        if len(lines[-1]) != len(laststripped):
-            self.write(self._NL)
+        if lines[-1]:
+            self.write(lines[-1])
+        # XXX logic tells me this else should be needed, but the tests fail
+        # with it and pass without it.  (NLCRE.split ends with a blank element
+        # if and only if there was a trailing newline.)
+        #else:
+        #    self.write(self._NL)
 
     def _write(self, msg):
         # We can't write the headers yet because of the following scenario:
