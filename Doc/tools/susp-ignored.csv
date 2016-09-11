@@ -25,6 +25,30 @@ howto/curses,,:blue,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white. 
 howto/curses,,:magenta,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
 howto/curses,,:cyan,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
 howto/curses,,:white,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
+howto/instrumentation,,::,python$target:::function-entry
+howto/instrumentation,,:function,python$target:::function-entry
+howto/instrumentation,,::,python$target:::function-return
+howto/instrumentation,,:function,python$target:::function-return
+howto/instrumentation,,:call,156641360502280  function-entry:call_stack.py:start:23
+howto/instrumentation,,:start,156641360502280  function-entry:call_stack.py:start:23
+howto/instrumentation,,:function,156641360518804  function-entry: call_stack.py:function_1:1
+howto/instrumentation,,:function,156641360532797  function-entry:  call_stack.py:function_3:9
+howto/instrumentation,,:function,156641360546807 function-return:  call_stack.py:function_3:10
+howto/instrumentation,,:function,156641360563367 function-return: call_stack.py:function_1:2
+howto/instrumentation,,:function,156641360578365  function-entry: call_stack.py:function_2:5
+howto/instrumentation,,:function,156641360591757  function-entry:  call_stack.py:function_1:1
+howto/instrumentation,,:function,156641360605556  function-entry:   call_stack.py:function_3:9
+howto/instrumentation,,:function,156641360617482 function-return:   call_stack.py:function_3:10
+howto/instrumentation,,:function,156641360629814 function-return:  call_stack.py:function_1:2
+howto/instrumentation,,:function,156641360642285 function-return: call_stack.py:function_2:6
+howto/instrumentation,,:function,156641360656770  function-entry: call_stack.py:function_3:9
+howto/instrumentation,,:function,156641360669707 function-return: call_stack.py:function_3:10
+howto/instrumentation,,:function,156641360687853  function-entry: call_stack.py:function_4:13
+howto/instrumentation,,:function,156641360700719 function-return: call_stack.py:function_4:14
+howto/instrumentation,,:function,156641360719640  function-entry: call_stack.py:function_5:18
+howto/instrumentation,,:function,156641360732567 function-return: call_stack.py:function_5:21
+howto/instrumentation,,:call,156641360747370 function-return:call_stack.py:start:28
+howto/instrumentation,,:start,156641360747370 function-return:call_stack.py:start:28
 howto/ipaddress,,:DB8,>>> ipaddress.ip_address('2001:DB8::1')
 howto/ipaddress,,::,>>> ipaddress.ip_address('2001:DB8::1')
 howto/ipaddress,,:db8,IPv6Address('2001:db8::1')
@@ -210,6 +234,7 @@ library/venv,,:param,":param nodist: If True, setuptools and pip are not install
 library/venv,,:param,":param progress: If setuptools or pip are installed, the progress of the"
 library/venv,,:param,":param nopip: If True, pip is not installed into the created"
 library/venv,,:param,:param context: The information for the virtual environment
+library/xmlrpc.client,,:nil,ex:nil
 library/xmlrpc.client,,:pass,http://user:pass@host:port/path
 library/xmlrpc.client,,:pass,user:pass
 library/xmlrpc.client,,:port,http://user:pass@host:port/path
