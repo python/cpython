@@ -88,9 +88,13 @@ between conformable Python objects and XML on the wire.
    +======================+=======================================================+
    | ``boolean``          | :class:`bool`                                         |
    +----------------------+-------------------------------------------------------+
-   | ``int`` or ``i4``    | :class:`int` in range from -2147483648 to 2147483647. |
+   | ``int``, ``i1``,     | :class:`int` in range from -2147483648 to 2147483647. |
+   | ``i2``,  ``i4``,     | Values get the ``<int>`` tag.                         |
+   | ``i8`` or            |                                                       |
+   | ``biginteger``       |                                                       |
    +----------------------+-------------------------------------------------------+
-   | ``double``           | :class:`float`                                        |
+   | ``double`` or        | :class:`float`.  Values get the ``<double>`` tag.     |
+   | ``float``            |                                                       |
    +----------------------+-------------------------------------------------------+
    | ``string``           | :class:`str`                                          |
    +----------------------+-------------------------------------------------------+
@@ -114,6 +118,8 @@ between conformable Python objects and XML on the wire.
    | ``nil``              | The ``None`` constant.  Passing is allowed only if    |
    |                      | *allow_none* is true.                                 |
    +----------------------+-------------------------------------------------------+
+   | ``bigdecimal``       | :class:`decimal.Decimal`.  Returned type only.        |
+   +----------------------+-------------------------------------------------------+
 
    This is the full set of data types supported by XML-RPC.  Method calls may also
    raise a special :exc:`Fault` instance, used to signal XML-RPC server errors, or
@@ -136,6 +142,13 @@ between conformable Python objects and XML on the wire.
 
    .. versionchanged:: 3.5
       Added the *context* argument.
+
+   .. versionchanged:: 3.6
+      Added support of type tags with prefixes (e.g.``ex:nil``).
+      Added support of unmarsalling additional types used by Apache XML-RPC
+      implementation for numerics: ``i1``, ``i2``, ``i8``, ``biginteger``,
+      ``float`` and ``bigdecimal``.
+      See http://ws.apache.org/xmlrpc/types.html for a description.
 
 
 .. seealso::

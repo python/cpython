@@ -143,6 +143,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26885: xmlrpc now supports unmarshalling additional data types used
+  by Apache XML-RPC implementation for numerics and None.
+
 - Issue #28070: Fixed parsing inline verbose flag in regular expressions.
 
 - Issue #19500: Add client-side SSL session resumption to the ssl module.

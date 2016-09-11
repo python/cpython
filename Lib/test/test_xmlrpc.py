@@ -1,5 +1,6 @@
 import base64
 import datetime
+import decimal
 import sys
 import time
 import unittest
@@ -236,6 +237,54 @@ class XMLRPCTestCase(unittest.TestCase):
                 '<member><name>b</name><value><spam/></value></member>'
                 '</struct></value></param></params>')
         self.assertRaises(ResponseError, xmlrpclib.loads, data)
+
+    def check_loads(self, s, value, **kwargs):
+        dump = '<params><param><value>%s</value></param></params>' % s
+        result, m = xmlrpclib.loads(dump, **kwargs)
+        (newvalue,) = result
+        self.assertEqual(newvalue, value)
+        self.assertIs(type(newvalue), type(value))
+        self.assertIsNone(m)
+
+    def test_load_standard_types(self):
+        check = self.check_loads
+        check('string', 'string')
+        check('<string>string</string>', 'string')
+        check('<string>𝔘𝔫𝔦𝔠𝔬𝔡𝔢 string</string>', '𝔘𝔫𝔦𝔠𝔬𝔡𝔢 string')
+        check('<int>2056183947</int>', 2056183947)
+        check('<int>-2056183947</int>', -2056183947)
+        check('<i4>2056183947</i4>', 2056183947)
+        check('<double>46093.78125</double>', 46093.78125)
+        check('<boolean>0</boolean>', False)
+        check('<base64>AGJ5dGUgc3RyaW5n/w==</base64>',
+              xmlrpclib.Binary(b'\x00byte string\xff'))
+        check('<base64>AGJ5dGUgc3RyaW5n/w==</base64>',
+              b'\x00byte string\xff', use_builtin_types=True)
+        check('<dateTime.iso8601>20050210T11:41:23</dateTime.iso8601>',
+              xmlrpclib.DateTime('20050210T11:41:23'))
+        check('<dateTime.iso8601>20050210T11:41:23</dateTime.iso8601>',
+              datetime.datetime(2005, 2, 10, 11, 41, 23),
+              use_builtin_types=True)
+        check('<array><data>'
+              '<value><int>1</int></value><value><int>2</int></value>'
+              '</data></array>', [1, 2])
+        check('<struct>'
+              '<member><name>b</name><value><int>2</int></value></member>'
+              '<member><name>a</name><value><int>1</int></value></member>'
+              '</struct>', {'a': 1, 'b': 2})
+
+    def test_load_extension_types(self):
+        check = self.check_loads
+        check('<nil/>', None)
+        check('<ex:nil/>', None)
+        check('<i1>205</i1>', 205)
+        check('<i2>20561</i2>', 20561)
+        check('<i8>9876543210</i8>', 9876543210)
+        check('<biginteger>98765432100123456789</biginteger>',
+              98765432100123456789)
+        check('<float>93.78125</float>', 93.78125)
+        check('<bigdecimal>9876543210.0123456789</bigdecimal>',
+              decimal.Decimal('9876543210.0123456789'))
 
     def test_get_host_info(self):
         # see bug #3613, this raised a TypeError
