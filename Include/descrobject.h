@@ -78,7 +78,9 @@ PyAPI_DATA(PyTypeObject) PyMemberDescr_Type;
 PyAPI_DATA(PyTypeObject) PyMethodDescr_Type;
 PyAPI_DATA(PyTypeObject) PyWrapperDescr_Type;
 PyAPI_DATA(PyTypeObject) PyDictProxy_Type;
+#ifndef Py_LIMITED_API
 PyAPI_DATA(PyTypeObject) _PyMethodWrapper_Type;
+#endif /* Py_LIMITED_API */
 
 PyAPI_FUNC(PyObject *) PyDescr_NewMethod(PyTypeObject *, PyMethodDef *);
 PyAPI_FUNC(PyObject *) PyDescr_NewClassMethod(PyTypeObject *, PyMethodDef *);

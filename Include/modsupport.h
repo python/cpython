@@ -15,12 +15,16 @@ extern "C" {
 #define PyArg_Parse                     _PyArg_Parse_SizeT
 #define PyArg_ParseTuple                _PyArg_ParseTuple_SizeT
 #define PyArg_ParseTupleAndKeywords     _PyArg_ParseTupleAndKeywords_SizeT
+#ifndef Py_LIMITED_API
 #define PyArg_VaParse                   _PyArg_VaParse_SizeT
 #define PyArg_VaParseTupleAndKeywords   _PyArg_VaParseTupleAndKeywords_SizeT
+#endif /* !Py_LIMITED_API */
 #define Py_BuildValue                   _Py_BuildValue_SizeT
 #define Py_VaBuildValue                 _Py_VaBuildValue_SizeT
 #else
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _Py_VaBuildValue_SizeT(const char *, va_list);
+#endif /* !Py_LIMITED_API */
 #endif
 
 /* Due to a glitch in 3.2, the _SizeT versions weren't exported from the DLL. */
