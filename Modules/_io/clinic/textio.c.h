@@ -46,14 +46,14 @@ PyDoc_STRVAR(_io_IncrementalNewlineDecoder_decode__doc__,
 "\n");
 
 #define _IO_INCREMENTALNEWLINEDECODER_DECODE_METHODDEF    \
-    {"decode", (PyCFunction)_io_IncrementalNewlineDecoder_decode, METH_VARARGS|METH_KEYWORDS, _io_IncrementalNewlineDecoder_decode__doc__},
+    {"decode", (PyCFunction)_io_IncrementalNewlineDecoder_decode, METH_FASTCALL, _io_IncrementalNewlineDecoder_decode__doc__},
 
 static PyObject *
 _io_IncrementalNewlineDecoder_decode_impl(nldecoder_object *self,
                                           PyObject *input, int final);
 
 static PyObject *
-_io_IncrementalNewlineDecoder_decode(nldecoder_object *self, PyObject *args, PyObject *kwargs)
+_io_IncrementalNewlineDecoder_decode(nldecoder_object *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"input", "final", NULL};
@@ -61,7 +61,7 @@ _io_IncrementalNewlineDecoder_decode(nldecoder_object *self, PyObject *args, PyO
     PyObject *input;
     int final = 0;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &input, &final)) {
         goto exit;
     }
@@ -464,4 +464,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=7ec624a9bf6393f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=78ad14eba1667254 input=a9049054013a1b77]*/
