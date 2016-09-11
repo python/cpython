@@ -52,13 +52,13 @@ class TransactionTests(unittest.TestCase):
         except OSError:
             pass
 
-    def CheckDMLdoesAutoCommitBefore(self):
+    def CheckDMLDoesNotAutoCommitBefore(self):
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
         self.cur1.execute("create table test2(j)")
         self.cur2.execute("select i from test")
         res = self.cur2.fetchall()
-        self.assertEqual(len(res), 1)
+        self.assertEqual(len(res), 0)
 
     def CheckInsertStartsTransaction(self):
         self.cur1.execute("create table test(i)")
@@ -153,11 +153,6 @@ class SpecialCommandTests(unittest.TestCase):
         self.con = sqlite.connect(":memory:")
         self.cur = self.con.cursor()
 
-    def CheckVacuum(self):
-        self.cur.execute("create table test(i)")
-        self.cur.execute("insert into test(i) values (5)")
-        self.cur.execute("vacuum")
-
     def CheckDropTable(self):
         self.cur.execute("create table test(i)")
         self.cur.execute("insert into test(i) values (5)")
@@ -172,10 +167,35 @@ class SpecialCommandTests(unittest.TestCase):
         self.cur.close()
         self.con.close()
 
+class TransactionalDDL(unittest.TestCase):
+    def setUp(self):
+        self.con = sqlite.connect(":memory:")
+
+    def CheckDdlDoesNotAutostartTransaction(self):
+        # For backwards compatibility reasons, DDL statements should not
+        # implicitly start a transaction.
+        self.con.execute("create table test(i)")
+        self.con.rollback()
+        result = self.con.execute("select * from test").fetchall()
+        self.assertEqual(result, [])
+
+    def CheckTransactionalDDL(self):
+        # You can achieve transactional DDL by issuing a BEGIN
+        # statement manually.
+        self.con.execute("begin")
+        self.con.execute("create table test(i)")
+        self.con.rollback()
+        with self.assertRaises(sqlite.OperationalError):
+            self.con.execute("select * from test")
+
+    def tearDown(self):
+        self.con.close()
+
 def suite():
     default_suite = unittest.makeSuite(TransactionTests, "Check")
     special_command_suite = unittest.makeSuite(SpecialCommandTests, "Check")
-    return unittest.TestSuite((default_suite, special_command_suite))
+    ddl_suite = unittest.makeSuite(TransactionalDDL, "Check")
+    return unittest.TestSuite((default_suite, special_command_suite, ddl_suite))
 
 def test():
     runner = unittest.TextTestRunner()
