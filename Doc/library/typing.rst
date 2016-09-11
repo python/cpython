@@ -10,7 +10,7 @@
 
 --------------
 
-This module supports type hints as specified by :pep:`484`.  The most
+This module supports type hints as specified by :pep:`484` and :pep:`526`.  The most
 fundamental support consists of the type :class:`Any`, :class:`Union`,
 :class:`Tuple`, :class:`Callable`, :class:`TypeVar`, and
 :class:`Generic`.  For full specification please see :pep:`484`.  For
@@ -62,10 +62,12 @@ Type aliases are useful for simplifying complex type signatures. For example::
 Note that ``None`` as a type hint is a special case and is replaced by
 ``type(None)``.
 
+.. _distinct:
+
 NewType
 -------
 
-Use the ``NewType`` helper function to create distinct types::
+Use the :func:`NewType` helper function to create distinct types::
 
    from typing import NewType
 
@@ -103,7 +105,7 @@ true at runtime.
 
 This also means that it is not possible to create a subtype of ``Derived``
 since it is an identity function at runtime, not an actual type. Similarly, it
-is not possible to create another ``NewType`` based on a ``Derived`` type::
+is not possible to create another :func:`NewType` based on a ``Derived`` type::
 
    from typing import NewType
 
@@ -533,10 +535,10 @@ The module defines the following classes, functions and decorators:
    but should also allow constructor calls in subclasses that match the
    constructor calls in the indicated base class. How the type checker is
    required to handle this particular case may change in future revisions of
-   PEP 484.
+   :pep:`484`.
 
-   The only legal parameters for ``Type`` are classes, unions of classes, and
-   ``Any``. For example::
+   The only legal parameters for :class:`Type` are classes, unions of classes, and
+   :class:`Any`. For example::
 
       def new_non_team_user(user_class: Type[Union[BaseUser, ProUser]]): ...
 
@@ -577,7 +579,21 @@ The module defines the following classes, functions and decorators:
 
     A generic version of :class:`collections.abc.Container`.
 
-.. class:: AbstractSet(Sized, Iterable[T_co], Container[T_co])
+.. class:: Hashable
+
+   An alias to :class:`collections.abc.Hashable`
+
+.. class:: Sized
+
+   An alias to :class:`collections.abc.Sized`
+
+.. class:: Collection(Sized, Iterable[T_co], Container[T_co])
+
+   A generic version of :class:`collections.abc.Collection`
+
+   .. versionadded:: 3.6
+
+.. class:: AbstractSet(Sized, Collection[T_co])
 
     A generic version of :class:`collections.abc.Set`.
 
@@ -585,7 +601,7 @@ The module defines the following classes, functions and decorators:
 
     A generic version of :class:`collections.abc.MutableSet`.
 
-.. class:: Mapping(Sized, Iterable[KT], Container[KT], Generic[VT_co])
+.. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
 
     A generic version of :class:`collections.abc.Mapping`.
 
@@ -593,7 +609,7 @@ The module defines the following classes, functions and decorators:
 
     A generic version of :class:`collections.abc.MutableMapping`.
 
-.. class:: Sequence(Sized, Reversible[T_co], Container[T_co])
+.. class:: Sequence(Reversible[T_co], Collection[T_co])
 
     A generic version of :class:`collections.abc.Sequence`.
 
@@ -673,6 +689,10 @@ The module defines the following classes, functions and decorators:
 
       def get_position_in_index(word_list: Dict[str, int], word: str) -> int:
           return word_list[word]
+
+.. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.defaultdict`
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
@@ -769,6 +789,15 @@ The module defines the following classes, functions and decorators:
    are in the _fields attribute, which is part of the namedtuple
    API.)
 
+.. function:: NewType(typ)
+
+   A helper function to indicate a distinct types to a typechecker,
+   see :ref:`distinct`. At runtime it returns a function that returns
+   its argument. Usage::
+
+      UserId = NewType('UserId', int)
+      first_user = UserId(1)
+
 .. function:: cast(typ, val)
 
    Cast a value to a type.
@@ -780,11 +809,39 @@ The module defines the following classes, functions and decorators:
 
 .. function:: get_type_hints(obj)
 
-   Return type hints for a function or method object.
+   Return type hints for a class, module, function or method object.
 
    This is often the same as ``obj.__annotations__``, but it handles
    forward references encoded as string literals, and if necessary
    adds ``Optional[t]`` if a default value equal to None is set.
+
+.. decorator:: overload
+
+   The ``@overload`` decorator allows describing functions and methods
+   that support multiple different combinations of argument types. A series
+   of ``@overload``-decorated definitions must be followed by exactly one
+   non-``@overload``-decorated definition (for the same function/method).
+   The ``@overload``-decorated definitions are for the benefit of the
+   type checker only, since they will be overwritten by the
+   non-``@overload``-decorated definition, while the latter is used at
+   runtime but should be ignored by a type checker.  At runtime, calling
+   a ``@overload``-decorated function directly will raise
+   ``NotImplementedError``. An example of overload that gives a more
+   precise type than can be expressed using a union or a type variable::
+
+      @overload
+      def process(response: None) -> None:
+          ...
+      @overload
+      def process(response: int) -> Tuple[int, str]:
+          ...
+      @overload
+      def process(response: bytes) -> str:
+          ...
+      def process(response):
+          <actual implementation>
+
+   See :pep:`484` for details and comparison with other typing semantics.
 
 .. decorator:: no_type_check(arg)
 
@@ -802,3 +859,40 @@ The module defines the following classes, functions and decorators:
 
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
+
+.. data:: ClassVar
+
+   Special type construct to mark class variables.
+
+   As introduced in :pep:`526`, a variable annotation wrapped in ClassVar
+   indicates that a given attribute is intended to be used as a class variable
+   and should not be set on instances of that class. Usage::
+
+      class Starship:
+          stats: ClassVar[Dict[str, int]] = {} # class variable
+          damage: int = 10                     # instance variable
+
+   ClassVar accepts only types and cannot be further subscribed.
+
+   ClassVar is not a class itself, and should not
+   be used with isinstance() or issubclass(). Note that ClassVar
+   does not change Python runtime behavior, it can be used by
+   3rd party type checkers, so that the following code will
+   flagged as an error by those::
+
+      enterprise_d = Starship(3000)
+      enterprise_d.stats = {} # Error, setting class variable on instance
+      Starship.stats = {}     # This is OK
+
+   .. versionadded:: 3.6
+
+.. data:: TYPE_CHECKING
+
+   A special constant that is assumed to be ``True`` by 3rd party static
+   type checkers. It is ``False`` at runtime. Usage::
+
+      if TYPE_CHECKING:
+          import expensive_mod
+
+      def fun():
+          local_var: expensive_mod.some_type = other_fun()
