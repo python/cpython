@@ -4948,7 +4948,7 @@ assemble_lnotab(struct assembler *a, struct instr *i)
     Py_ssize_t len;
     unsigned char *lnotab;
 
-    d_bytecode = a->a_offset - a->a_lineno_off;
+    d_bytecode = (a->a_offset - a->a_lineno_off) * sizeof(_Py_CODEUNIT);
     d_lineno = i->i_lineno - a->a_lineno;
 
     assert(d_bytecode >= 0);
@@ -5055,21 +5055,21 @@ assemble_emit(struct assembler *a, struct instr *i)
 {
     int size, arg = 0;
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
-    char *code;
+    _Py_CODEUNIT *code;
 
     arg = i->i_oparg;
     size = instrsize(arg);
     if (i->i_lineno && !assemble_lnotab(a, i))
         return 0;
-    if (a->a_offset + size >= len) {
+    if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
         if (len > PY_SSIZE_T_MAX / 2)
             return 0;
         if (_PyBytes_Resize(&a->a_bytecode, len * 2) < 0)
             return 0;
     }
-    code = PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
+    code = (_Py_CODEUNIT *)PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
     a->a_offset += size;
-    write_op_arg((unsigned char*)code, i->i_opcode, arg, size);
+    write_op_arg(code, i->i_opcode, arg, size);
     return 1;
 }
 
@@ -5106,6 +5106,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
                     if (instr->i_jrel) {
                         instr->i_oparg -= bsize;
                     }
+                    instr->i_oparg *= sizeof(_Py_CODEUNIT);
                     if (instrsize(instr->i_oparg) != isize) {
                         extended_arg_recompile = 1;
                     }
@@ -5351,7 +5352,7 @@ assemble(struct compiler *c, int addNone)
 
     if (_PyBytes_Resize(&a.a_lnotab, a.a_lnotab_off) < 0)
         goto error;
-    if (_PyBytes_Resize(&a.a_bytecode, a.a_offset) < 0)
+    if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0)
         goto error;
 
     co = makecode(c, &a);

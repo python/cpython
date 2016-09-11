@@ -189,7 +189,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     memset(blockstack, '\0', sizeof(blockstack));
     memset(in_finally, '\0', sizeof(in_finally));
     blockstack_top = 0;
-    for (addr = 0; addr < code_len; addr += 2) {
+    for (addr = 0; addr < code_len; addr += sizeof(_Py_CODEUNIT)) {
         unsigned char op = code[addr];
         switch (op) {
         case SETUP_LOOP:
@@ -273,7 +273,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
      * can tell whether the jump goes into any blocks without coming out
      * again - in that case we raise an exception below. */
     delta_iblock = 0;
-    for (addr = min_addr; addr < max_addr; addr += 2) {
+    for (addr = min_addr; addr < max_addr; addr += sizeof(_Py_CODEUNIT)) {
         unsigned char op = code[addr];
         switch (op) {
         case SETUP_LOOP:

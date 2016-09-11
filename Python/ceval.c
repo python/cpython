@@ -62,7 +62,7 @@ static int import_all_from(PyObject *, PyObject *);
 static void format_exc_check_arg(PyObject *, const char *, PyObject *);
 static void format_exc_unbound(PyCodeObject *co, int oparg);
 static PyObject * unicode_concatenate(PyObject *, PyObject *,
-                                      PyFrameObject *, const unsigned short *);
+                                      PyFrameObject *, const _Py_CODEUNIT *);
 static PyObject * special_lookup(PyObject *, _Py_Identifier *);
 
 #define NAME_ERROR_MSG \
@@ -725,7 +725,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     int lastopcode = 0;
 #endif
     PyObject **stack_pointer;  /* Next free slot in value stack */
-    const unsigned short *next_instr;
+    const _Py_CODEUNIT *next_instr;
     int opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     enum why_code why; /* Reason for block stack unwind */
@@ -743,7 +743,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
        time it is tested. */
     int instr_ub = -1, instr_lb = 0, instr_prev = -1;
 
-    const unsigned short *first_instr;
+    const _Py_CODEUNIT *first_instr;
     PyObject *names;
     PyObject *consts;
 
@@ -864,23 +864,16 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
 /* Code access macros */
 
-#ifdef WORDS_BIGENDIAN
-    #define OPCODE(word) ((word) >> 8)
-    #define OPARG(word) ((word) & 255)
-#else
-    #define OPCODE(word) ((word) & 255)
-    #define OPARG(word) ((word) >> 8)
-#endif
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET()  (2*(int)(next_instr - first_instr))
+#define INSTR_OFFSET()  (sizeof(_Py_CODEUNIT) * (int)(next_instr - first_instr))
 #define NEXTOPARG()  do { \
-        unsigned short word = *next_instr; \
-        opcode = OPCODE(word); \
-        oparg = OPARG(word); \
+        _Py_CODEUNIT word = *next_instr; \
+        opcode = _Py_OPCODE(word); \
+        oparg = _Py_OPARG(word); \
         next_instr++; \
     } while (0)
-#define JUMPTO(x)       (next_instr = first_instr + (x)/2)
-#define JUMPBY(x)       (next_instr += (x)/2)
+#define JUMPTO(x)       (next_instr = first_instr + (x) / sizeof(_Py_CODEUNIT))
+#define JUMPBY(x)       (next_instr += (x) / sizeof(_Py_CODEUNIT))
 
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
@@ -913,10 +906,10 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 #else
 #define PREDICT(op) \
     do{ \
-        unsigned short word = *next_instr; \
-        opcode = OPCODE(word); \
+        _Py_CODEUNIT word = *next_instr; \
+        opcode = _Py_OPCODE(word); \
         if (opcode == op){ \
-            oparg = OPARG(word); \
+            oparg = _Py_OPARG(word); \
             next_instr++; \
             goto PRED_##op; \
         } \
@@ -1056,9 +1049,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     freevars = f->f_localsplus + co->co_nlocals;
     assert(PyBytes_Check(co->co_code));
     assert(PyBytes_GET_SIZE(co->co_code) <= INT_MAX);
-    assert(PyBytes_GET_SIZE(co->co_code) % 2 == 0);
-    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(co->co_code), 2));
-    first_instr = (unsigned short*) PyBytes_AS_STRING(co->co_code);
+    assert(PyBytes_GET_SIZE(co->co_code) % sizeof(_Py_CODEUNIT) == 0);
+    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(co->co_code), sizeof(_Py_CODEUNIT)));
+    first_instr = (_Py_CODEUNIT *) PyBytes_AS_STRING(co->co_code);
     /*
        f->f_lasti refers to the index of the last instruction,
        unless it's -1 in which case next_instr should be first_instr.
@@ -1074,10 +1067,11 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
        FOR_ITER is effectively a single opcode and f->f_lasti will point
        to the beginning of the combined pair.)
     */
+    assert(f->f_lasti >= -1);
     next_instr = first_instr;
     if (f->f_lasti >= 0) {
-        assert(f->f_lasti % 2 == 0);
-        next_instr += f->f_lasti/2 + 1;
+        assert(f->f_lasti % sizeof(_Py_CODEUNIT) == 0);
+        next_instr += f->f_lasti / sizeof(_Py_CODEUNIT) + 1;
     }
     stack_pointer = f->f_stacktop;
     assert(stack_pointer != NULL);
@@ -1125,7 +1119,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&eval_breaker)) {
-            if (OPCODE(*next_instr) == SETUP_FINALLY) {
+            if (_Py_OPCODE(*next_instr) == SETUP_FINALLY) {
                 /* Make the last opcode before
                    a try: finally: block uninterruptible. */
                 goto fast_next_opcode;
@@ -2049,7 +2043,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             f->f_stacktop = stack_pointer;
             why = WHY_YIELD;
             /* and repeat... */
-            f->f_lasti -= 2;
+            f->f_lasti -= sizeof(_Py_CODEUNIT);
             goto fast_yield;
         }
 
@@ -5321,7 +5315,7 @@ format_exc_unbound(PyCodeObject *co, int oparg)
 
 static PyObject *
 unicode_concatenate(PyObject *v, PyObject *w,
-                    PyFrameObject *f, const unsigned short *next_instr)
+                    PyFrameObject *f, const _Py_CODEUNIT *next_instr)
 {
     PyObject *res;
     if (Py_REFCNT(v) == 2) {

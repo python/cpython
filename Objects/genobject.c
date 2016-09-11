@@ -390,7 +390,7 @@ _PyGen_yf(PyGenObject *gen)
         PyObject *bytecode = f->f_code->co_code;
         unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
-        if (code[f->f_lasti + 2] != YIELD_FROM)
+        if (code[f->f_lasti + sizeof(_Py_CODEUNIT)] != YIELD_FROM)
             return NULL;
         yf = f->f_stacktop[-1];
         Py_INCREF(yf);
@@ -498,7 +498,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             assert(ret == yf);
             Py_DECREF(ret);
             /* Termination repetition of YIELD_FROM */
-            gen->gi_frame->f_lasti += 2;
+            gen->gi_frame->f_lasti += sizeof(_Py_CODEUNIT);
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send_ex(gen, val, 0, 0);
                 Py_DECREF(val);
