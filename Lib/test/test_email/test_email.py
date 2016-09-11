@@ -1598,6 +1598,18 @@ class TestMIMEApplication(unittest.TestCase):
         self.assertEqual(msg.get_payload(), '\uFFFD' * len(bytesdata))
         self.assertEqual(msg2.get_payload(decode=True), bytesdata)
 
+    def test_binary_body_with_unicode_linend_encode_noop(self):
+        # Issue 19003: This is a variation on #16564.
+        bytesdata = b'\x0b\xfa\xfb\xfc\xfd\xfe\xff'
+        msg = MIMEApplication(bytesdata, _encoder=encoders.encode_noop)
+        self.assertEqual(msg.get_payload(decode=True), bytesdata)
+        s = BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        wireform = s.getvalue()
+        msg2 = email.message_from_bytes(wireform)
+        self.assertEqual(msg2.get_payload(decode=True), bytesdata)
+
     def test_binary_body_with_encode_quopri(self):
         # Issue 14360.
         bytesdata = b'\xfa\xfb\xfc\xfd\xfe\xff '
