@@ -1642,14 +1642,16 @@ class HTTPSTest(TestCase):
         with self.assertRaises(ssl.CertificateError):
             h.request('GET', '/')
         # Same with explicit check_hostname=True
-        h = client.HTTPSConnection('localhost', server.port, context=context,
-                                   check_hostname=True)
+        with support.check_warnings(('', DeprecationWarning)):
+            h = client.HTTPSConnection('localhost', server.port,
+                                       context=context, check_hostname=True)
         with self.assertRaises(ssl.CertificateError):
             h.request('GET', '/')
         # With check_hostname=False, the mismatching is ignored
         context.check_hostname = False
-        h = client.HTTPSConnection('localhost', server.port, context=context,
-                                   check_hostname=False)
+        with support.check_warnings(('', DeprecationWarning)):
+            h = client.HTTPSConnection('localhost', server.port,
+                                       context=context, check_hostname=False)
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
         resp.close()
@@ -1666,8 +1668,9 @@ class HTTPSTest(TestCase):
         h.close()
         # Passing check_hostname to HTTPSConnection should override the
         # context's setting.
-        h = client.HTTPSConnection('localhost', server.port, context=context,
-                                   check_hostname=True)
+        with support.check_warnings(('', DeprecationWarning)):
+            h = client.HTTPSConnection('localhost', server.port,
+                                       context=context, check_hostname=True)
         with self.assertRaises(ssl.CertificateError):
             h.request('GET', '/')
 
