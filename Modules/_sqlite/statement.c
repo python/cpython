@@ -54,6 +54,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     int rc;
     const char* sql_cstr;
     Py_ssize_t sql_cstr_len;
+    const char* p;
 
     self->st = NULL;
     self->in_use = 0;
@@ -71,6 +72,23 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     self->in_weakreflist = NULL;
     Py_INCREF(sql);
     self->sql = sql;
+
+    /* determine if the statement is a DDL statement */
+    self->is_ddl = 0;
+    for (p = sql_cstr; *p != 0; p++) {
+        switch (*p) {
+            case ' ':
+            case '\r':
+            case '\n':
+            case '\t':
+                continue;
+        }
+
+        self->is_ddl = (PyOS_strnicmp(p, "create ", 7) == 0)
+                    || (PyOS_strnicmp(p, "drop ", 5) == 0)
+                    || (PyOS_strnicmp(p, "reindex ", 8) == 0);
+        break;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_prepare(connection->db,
