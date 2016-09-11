@@ -10,7 +10,11 @@ except ImportError:
     from collections import OrderedDict
 
 
-__all__ = ['EnumMeta', 'Enum', 'IntEnum', 'Flag', 'IntFlag', 'unique']
+__all__ = [
+        'EnumMeta',
+        'Enum', 'IntEnum', 'Flag', 'IntFlag',
+        'auto', 'unique',
+        ]
 
 
 def _is_descriptor(obj):
@@ -36,13 +40,18 @@ def _is_sunder(name):
             name[-2:-1] != '_' and
             len(name) > 2)
 
-
 def _make_class_unpicklable(cls):
     """Make the given class un-picklable."""
     def _break_on_call_reduce(self, proto):
         raise TypeError('%r cannot be pickled' % self)
     cls.__reduce_ex__ = _break_on_call_reduce
     cls.__module__ = '<unknown>'
+
+class auto:
+    """
+    Instances are replaced with an appropriate value in Enum class suites.
+    """
+    pass
 
 
 class _EnumDict(dict):
@@ -55,6 +64,7 @@ class _EnumDict(dict):
     def __init__(self):
         super().__init__()
         self._member_names = []
+        self._last_values = []
 
     def __setitem__(self, key, value):
         """Changes anything not dundered or not a descriptor.
@@ -71,6 +81,8 @@ class _EnumDict(dict):
                     '_generate_next_value_', '_missing_',
                     ):
                 raise ValueError('_names_ are reserved for future Enum use')
+            if key == '_generate_next_value_':
+                setattr(self, '_generate_next_value', value)
         elif _is_dunder(key):
             if key == '__order__':
                 key = '_order_'
@@ -81,9 +93,11 @@ class _EnumDict(dict):
             if key in self:
                 # enum overwriting a descriptor?
                 raise TypeError('%r already defined as: %r' % (key, self[key]))
+            if isinstance(value, auto):
+                value = self._generate_next_value(key, 1, len(self._member_names), self._last_values[:])
             self._member_names.append(key)
+            self._last_values.append(value)
         super().__setitem__(key, value)
-
 
 
 # Dummy value for Enum as EnumMeta explicitly checks for it, but of course
@@ -366,10 +380,11 @@ class EnumMeta(type):
             names = names.replace(',', ' ').split()
         if isinstance(names, (tuple, list)) and isinstance(names[0], str):
             original_names, names = names, []
-            last_value = None
+            last_values = []
             for count, name in enumerate(original_names):
-                last_value = first_enum._generate_next_value_(name, start, count, last_value)
-                names.append((name, last_value))
+                value = first_enum._generate_next_value_(name, start, count, last_values[:])
+                last_values.append(value)
+                names.append((name, value))
 
         # Here, names is either an iterable of (name, value) or a mapping.
         for item in names:
@@ -514,11 +529,15 @@ class Enum(metaclass=EnumMeta):
         # still not found -- try _missing_ hook
         return cls._missing_(value)
 
-    @staticmethod
-    def _generate_next_value_(name, start, count, last_value):
-        if not count:
+    def _generate_next_value_(name, start, count, last_values):
+        for last_value in reversed(last_values):
+            try:
+                return last_value + 1
+            except TypeError:
+                pass
+        else:
             return start
-        return last_value + 1
+
     @classmethod
     def _missing_(cls, value):
         raise ValueError("%r is not a valid %s" % (value, cls.__name__))
@@ -616,8 +635,8 @@ def _reduce_ex_by_name(self, proto):
 
 class Flag(Enum):
     """Support for flags"""
-    @staticmethod
-    def _generate_next_value_(name, start, count, last_value):
+
+    def _generate_next_value_(name, start, count, last_values):
         """
         Generate the next value when not given.
 
@@ -628,7 +647,12 @@ class Flag(Enum):
         """
         if not count:
             return start if start is not None else 1
-        high_bit = _high_bit(last_value)
+        for last_value in reversed(last_values):
+            try:
+                high_bit = _high_bit(last_value)
+                break
+            except TypeError:
+                raise TypeError('Invalid Flag value: %r' % last_value) from None
         return 2 ** (high_bit+1)
 
     @classmethod
