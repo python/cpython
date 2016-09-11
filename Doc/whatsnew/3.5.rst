@@ -2176,8 +2176,7 @@ New ``calloc`` functions were added:
 
 * :c:func:`PyMem_RawCalloc`,
 * :c:func:`PyMem_Calloc`,
-* :c:func:`PyObject_Calloc`,
-* :c:func:`_PyObject_GC_Calloc`.
+* :c:func:`PyObject_Calloc`.
 
 (Contributed by Victor Stinner in :issue:`21233`.)
 

@@ -5,8 +5,6 @@
 extern "C" {
 #endif
 
-PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
-
 PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
     const char *arg,
     size_t *size);
@@ -16,6 +14,8 @@ PyAPI_FUNC(char*) Py_EncodeLocale(
     size_t *error_pos);
 
 #ifndef Py_LIMITED_API
+
+PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 
 #ifdef MS_WINDOWS
 struct _Py_stat_struct {
@@ -46,13 +46,11 @@ PyAPI_FUNC(int) _Py_fstat(
 PyAPI_FUNC(int) _Py_fstat_noraise(
     int fd,
     struct _Py_stat_struct *status);
-#endif   /* Py_LIMITED_API */
 
 PyAPI_FUNC(int) _Py_stat(
     PyObject *path,
     struct stat *status);
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _Py_open(
     const char *pathname,
     int flags);
@@ -60,7 +58,6 @@ PyAPI_FUNC(int) _Py_open(
 PyAPI_FUNC(int) _Py_open_noraise(
     const char *pathname,
     int flags);
-#endif
 
 PyAPI_FUNC(FILE *) _Py_wfopen(
     const wchar_t *path,
@@ -107,7 +104,6 @@ PyAPI_FUNC(wchar_t*) _Py_wgetcwd(
     wchar_t *buf,
     size_t size);
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _Py_get_inheritable(int fd);
 
 PyAPI_FUNC(int) _Py_set_inheritable(int fd, int inheritable,

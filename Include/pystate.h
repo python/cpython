@@ -157,7 +157,9 @@ typedef struct _ts {
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
+#endif /* !Py_LIMITED_API */
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* New in 3.3 */
 PyAPI_FUNC(int) PyState_AddModule(PyObject*, struct PyModuleDef*);
@@ -169,14 +171,20 @@ PyAPI_FUNC(void) _PyState_ClearModules(void);
 #endif
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 PyAPI_FUNC(void) _PyThreadState_Init(PyThreadState *);
+#endif /* !Py_LIMITED_API */
 PyAPI_FUNC(void) PyThreadState_Clear(PyThreadState *);
 PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
+#endif /* !Py_LIMITED_API */
 #ifdef WITH_THREAD
 PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyGILState_Reinit(void);
+#endif /* !Py_LIMITED_API */
 #endif
 
 /* Return the current thread state. The global interpreter lock must be held.
@@ -184,9 +192,11 @@ PyAPI_FUNC(void) _PyGILState_Reinit(void);
  * the caller needn't check for NULL). */
 PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
 
+#ifndef Py_LIMITED_API
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
+#endif /* !Py_LIMITED_API */
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
 PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);

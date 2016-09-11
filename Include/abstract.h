@@ -7,7 +7,9 @@ extern "C" {
 #ifdef PY_SSIZE_T_CLEAN
 #define PyObject_CallFunction _PyObject_CallFunction_SizeT
 #define PyObject_CallMethod _PyObject_CallMethod_SizeT
+#ifndef Py_LIMITED_API
 #define _PyObject_CallMethodId _PyObject_CallMethodId_SizeT
+#endif /* !Py_LIMITED_API */
 #endif
 
 /* Abstract Object Interface (many thanks to Jim Fulton) */
@@ -385,6 +387,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      Python expression: o.method(args).
        */
 
+#ifndef Py_LIMITED_API
      PyAPI_FUNC(PyObject *) _PyObject_CallMethodId(PyObject *o,
                                                    _Py_Identifier *method,
                                                    const char *format, ...);
@@ -393,6 +396,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
          Like PyObject_CallMethod, but expect a _Py_Identifier* as the
          method name.
        */
+#endif /* !Py_LIMITED_API */
 
      PyAPI_FUNC(PyObject *) _PyObject_CallFunction_SizeT(PyObject *callable,
                                                          const char *format,
@@ -401,10 +405,12 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
                                                        const char *name,
                                                        const char *format,
                                                        ...);
+#ifndef Py_LIMITED_API
      PyAPI_FUNC(PyObject *) _PyObject_CallMethodId_SizeT(PyObject *o,
                                                        _Py_Identifier *name,
                                                        const char *format,
                                                        ...);
+#endif /* !Py_LIMITED_API */
 
      PyAPI_FUNC(PyObject *) PyObject_CallFunctionObjArgs(PyObject *callable,
                                                          ...);
@@ -420,9 +426,11 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      PyAPI_FUNC(PyObject *) PyObject_CallMethodObjArgs(PyObject *o,
                                                        PyObject *method, ...);
+#ifndef Py_LIMITED_API
      PyAPI_FUNC(PyObject *) _PyObject_CallMethodIdObjArgs(PyObject *o,
                                                struct _Py_Identifier *method,
                                                ...);
+#endif /* !Py_LIMITED_API */
 
        /*
      Call the method named m of object o with a variable number of
@@ -1340,13 +1348,13 @@ PyAPI_FUNC(int) _PyObject_RealIsSubclass(PyObject *derived, PyObject *cls);
 PyAPI_FUNC(char *const *) _PySequence_BytesToCharpArray(PyObject* self);
 
 PyAPI_FUNC(void) _Py_FreeCharPArray(char *const array[]);
-#endif
 
 /* For internal use by buffer API functions */
 PyAPI_FUNC(void) _Py_add_one_to_index_F(int nd, Py_ssize_t *index,
                                         const Py_ssize_t *shape);
 PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
                                         const Py_ssize_t *shape);
+#endif /* !Py_LIMITED_API */
 
 
 #ifdef __cplusplus

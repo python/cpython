@@ -8,11 +8,11 @@ extern "C" {
 #endif
 
 PyAPI_FUNC(PyObject *) PySys_GetObject(const char *);
+PyAPI_FUNC(int) PySys_SetObject(const char *, PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PySys_GetObjectId(_Py_Identifier *key);
-#endif
-PyAPI_FUNC(int) PySys_SetObject(const char *, PyObject *);
 PyAPI_FUNC(int) _PySys_SetObjectId(_Py_Identifier *key, PyObject *);
+#endif
 
 PyAPI_FUNC(void) PySys_SetArgv(int, wchar_t **);
 PyAPI_FUNC(void) PySys_SetArgvEx(int, wchar_t **, int);
