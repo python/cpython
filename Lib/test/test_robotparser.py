@@ -276,7 +276,7 @@ class NetworkTestCase(unittest.TestCase):
         support.requires('network')
         with support.transient_internet('www.python.org'):
             parser = urllib.robotparser.RobotFileParser(
-                "https://www.python.org/robots.txt")
+                "http://www.python.org/robots.txt")
             parser.read()
             self.assertTrue(
                 parser.can_fetch("*", "http://www.python.org/robots.txt"))
