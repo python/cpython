@@ -1195,6 +1195,9 @@ Changes in 'python' Command Behavior
 Changes in the Python API
 -------------------------
 
+* :mod:`sqlite3` no longer implicitly commit an open transaction before DDL
+  statements.
+
 * On Linux, :func:`os.urandom` now blocks until the system urandom entropy pool
   is initialized to increase the security.
 

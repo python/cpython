@@ -51,12 +51,6 @@ typedef struct
     PyObject* in_weakreflist; /* List of weak references */
 } pysqlite_Cursor;
 
-typedef enum {
-    STATEMENT_INVALID, STATEMENT_INSERT, STATEMENT_DELETE,
-    STATEMENT_UPDATE, STATEMENT_REPLACE, STATEMENT_SELECT,
-    STATEMENT_OTHER
-} pysqlite_StatementKind;
-
 extern PyTypeObject pysqlite_CursorType;
 
 PyObject* pysqlite_cursor_execute(pysqlite_Cursor* self, PyObject* args);

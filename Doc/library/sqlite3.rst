@@ -925,9 +925,7 @@ Controlling Transactions
 
 By default, the :mod:`sqlite3` module opens transactions implicitly before a
 Data Modification Language (DML)  statement (i.e.
-``INSERT``/``UPDATE``/``DELETE``/``REPLACE``), and commits transactions
-implicitly before a non-DML, non-query statement (i. e.
-anything other than ``SELECT`` or the aforementioned).
+``INSERT``/``UPDATE``/``DELETE``/``REPLACE``).
 
 So if you are within a transaction and issue a command like ``CREATE TABLE
 ...``, ``VACUUM``, ``PRAGMA``, the :mod:`sqlite3` module will commit implicitly
@@ -947,6 +945,9 @@ Otherwise leave it at its default, which will result in a plain "BEGIN"
 statement, or set it to one of SQLite's supported isolation levels: "DEFERRED",
 "IMMEDIATE" or "EXCLUSIVE".
 
+.. versionchanged:: 3.6
+   :mod:`sqlite3` used to implicitly commit an open transaction before DDL
+   statements.  This is no longer the case.
 
 
 Using :mod:`sqlite3` efficiently
