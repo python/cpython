@@ -10,6 +10,11 @@ What's New in Python 3.6.0 beta 1
 Core and Builtins
 -----------------
 
+- Issue #23722: The __class__ cell used by zero-argument super() is now
+  initialized from type.__new__ rather than __build_class__, so class methods
+  relying on that will now work correctly when called from metaclass methods
+  during class creation. Patch by Martin Teichmann.
+
 - Issue #25221: Fix corrupted result from PyLong_FromLong(0) when Python
   is compiled with NSMALLPOSINTS = 0.
 

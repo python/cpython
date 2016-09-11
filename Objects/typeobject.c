@@ -2285,7 +2285,7 @@ static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
     PyObject *name, *bases = NULL, *orig_dict, *dict = NULL;
-    PyObject *qualname, *slots = NULL, *tmp, *newslots;
+    PyObject *qualname, *slots = NULL, *tmp, *newslots, *cell;
     PyTypeObject *type = NULL, *base, *tmptype, *winner;
     PyHeapTypeObject *et;
     PyMemberDef *mp;
@@ -2293,6 +2293,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     int j, may_add_dict, may_add_weak, add_dict, add_weak;
     _Py_IDENTIFIER(__qualname__);
     _Py_IDENTIFIER(__slots__);
+    _Py_IDENTIFIER(__classcell__);
 
     assert(args != NULL && PyTuple_Check(args));
     assert(kwds == NULL || PyDict_Check(kwds));
@@ -2559,7 +2560,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     }
     et->ht_qualname = qualname ? qualname : et->ht_name;
     Py_INCREF(et->ht_qualname);
-    if (qualname != NULL && PyDict_DelItem(dict, PyId___qualname__.object) < 0)
+    if (qualname != NULL && _PyDict_DelItemId(dict, &PyId___qualname__) < 0)
         goto error;
 
     /* Set tp_doc to a copy of dict['__doc__'], if the latter is there
@@ -2684,6 +2685,14 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     }
     else
         type->tp_free = PyObject_Del;
+
+    /* store type in class' cell */
+    cell = _PyDict_GetItemId(dict, &PyId___classcell__);
+    if (cell != NULL && PyCell_Check(cell)) {
+        PyCell_Set(cell, (PyObject *) type);
+        _PyDict_DelItemId(dict, &PyId___classcell__);
+        PyErr_Clear();
+    }
 
     /* Initialize the rest */
     if (PyType_Ready(type) < 0)
