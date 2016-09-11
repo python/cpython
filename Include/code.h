@@ -7,6 +7,16 @@
 extern "C" {
 #endif
 
+typedef uint16_t _Py_CODEUNIT;
+
+#ifdef WORDS_BIGENDIAN
+#  define _Py_OPCODE(word) ((word) >> 8)
+#  define _Py_OPARG(word) ((word) & 255)
+#else
+#  define _Py_OPCODE(word) ((word) & 255)
+#  define _Py_OPARG(word) ((word) >> 8)
+#endif
+
 /* Bytecode object */
 typedef struct {
     PyObject_HEAD
