@@ -610,6 +610,22 @@ Constants
 
    .. versionadded:: 3.6
 
+.. data:: PROTOCOL_TLS_CLIENT
+
+   Auto-negotiate the the highest protocol version like :data:`PROTOCOL_SSLv23`,
+   but only support client-side :class:`SSLSocket` connections. The protocol
+   enables :data:`CERT_REQUIRED` and :attr:`~SSLContext.check_hostname` by
+   default.
+
+   .. versionadded:: 3.6
+
+.. data:: PROTOCOL_TLS_SERVER
+
+   Auto-negotiate the the highest protocol version like :data:`PROTOCOL_SSLv23`,
+   but only support server-side :class:`SSLSocket` connections.
+
+   .. versionadded:: 3.6
+
 .. data:: PROTOCOL_SSLv23
 
    Alias for data:`PROTOCOL_TLS`.
@@ -2235,18 +2251,20 @@ Protocol versions
 
 SSL versions 2 and 3 are considered insecure and are therefore dangerous to
 use.  If you want maximum compatibility between clients and servers, it is
-recommended to use :const:`PROTOCOL_TLS` as the protocol version and then
-disable SSLv2 and SSLv3 explicitly using the :data:`SSLContext.options`
-attribute::
+recommended to use :const:`PROTOCOL_TLS_CLIENT` or
+:const:`PROTOCOL_TLS_SERVER` as the protocol version. SSLv2 and SSLv3 are
+disabled by default.
 
-   context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-   context.options |= ssl.OP_NO_SSLv2
-   context.options |= ssl.OP_NO_SSLv3
-   context.options |= ssl.OP_NO_TLSv1
-   context.options |= ssl.OP_NO_TLSv1_1
+   client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+   client_context.options |= ssl.OP_NO_TLSv1
+   client_context.options |= ssl.OP_NO_TLSv1_1
+
 
 The SSL context created above will only allow TLSv1.2 and later (if
-supported by your system) connections.
+supported by your system) connections to a server. :const:`PROTOCOL_TLS_CLIENT`
+implies certificate validation and hostname checks by default. You have to
+load certificates into the context.
+
 
 Cipher selection
 ''''''''''''''''
@@ -2257,8 +2275,9 @@ enabled when negotiating a SSL session is possible through the
 ssl module disables certain weak ciphers by default, but you may want
 to further restrict the cipher choice. Be sure to read OpenSSL's documentation
 about the `cipher list format <https://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
-If you want to check which ciphers are enabled by a given cipher list, use the
-``openssl ciphers`` command on your system.
+If you want to check which ciphers are enabled by a given cipher list, use
+:meth:`SSLContext.get_ciphers` or the ``openssl ciphers`` command on your
+system.
 
 Multi-processing
 ^^^^^^^^^^^^^^^^

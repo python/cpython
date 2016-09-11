@@ -140,6 +140,8 @@ struct py_ssl_library_code {
 #endif
 
 #define TLS_method SSLv23_method
+#define TLS_client_method SSLv23_client_method
+#define TLS_server_method SSLv23_server_method
 
 static int X509_NAME_ENTRY_set(const X509_NAME_ENTRY *ne)
 {
@@ -233,14 +235,16 @@ enum py_ssl_cert_requirements {
 enum py_ssl_version {
     PY_SSL_VERSION_SSL2,
     PY_SSL_VERSION_SSL3=1,
-    PY_SSL_VERSION_TLS,
+    PY_SSL_VERSION_TLS, /* SSLv23 */
 #if HAVE_TLSv1_2
     PY_SSL_VERSION_TLS1,
     PY_SSL_VERSION_TLS1_1,
-    PY_SSL_VERSION_TLS1_2
+    PY_SSL_VERSION_TLS1_2,
 #else
-    PY_SSL_VERSION_TLS1
+    PY_SSL_VERSION_TLS1,
 #endif
+    PY_SSL_VERSION_TLS_CLIENT=0x10,
+    PY_SSL_VERSION_TLS_SERVER,
 };
 
 #ifdef WITH_THREAD
@@ -2566,6 +2570,33 @@ static PyTypeObject PySSLSocket_Type = {
  * _SSLContext objects
  */
 
+static int
+_set_verify_mode(SSL_CTX *ctx, enum py_ssl_cert_requirements n)
+{
+    int mode;
+    int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
+
+    switch(n) {
+    case PY_SSL_CERT_NONE:
+        mode = SSL_VERIFY_NONE;
+        break;
+    case PY_SSL_CERT_OPTIONAL:
+        mode = SSL_VERIFY_PEER;
+        break;
+    case PY_SSL_CERT_REQUIRED:
+        mode = SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+        break;
+    default:
+         PyErr_SetString(PyExc_ValueError,
+                        "invalid value for verify_mode");
+        return -1;
+    }
+    /* keep current verify cb */
+    verify_cb = SSL_CTX_get_verify_callback(ctx);
+    SSL_CTX_set_verify(ctx, mode, verify_cb);
+    return 0;
+}
+
 /*[clinic input]
 @classmethod
 _ssl._SSLContext.__new__
@@ -2602,8 +2633,12 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     else if (proto_version == PY_SSL_VERSION_SSL2)
         ctx = SSL_CTX_new(SSLv2_method());
 #endif
-    else if (proto_version == PY_SSL_VERSION_TLS)
+    else if (proto_version == PY_SSL_VERSION_TLS) /* SSLv23 */
         ctx = SSL_CTX_new(TLS_method());
+    else if (proto_version == PY_SSL_VERSION_TLS_CLIENT)
+        ctx = SSL_CTX_new(TLS_client_method());
+    else if (proto_version == PY_SSL_VERSION_TLS_SERVER)
+        ctx = SSL_CTX_new(TLS_server_method());
     else
         proto_version = -1;
     PySSL_END_ALLOW_THREADS
@@ -2636,9 +2671,20 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->set_hostname = NULL;
 #endif
     /* Don't check host name by default */
-    self->check_hostname = 0;
+    if (proto_version == PY_SSL_VERSION_TLS_CLIENT) {
+        self->check_hostname = 1;
+        if (_set_verify_mode(self->ctx, PY_SSL_CERT_REQUIRED) == -1) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    } else {
+        self->check_hostname = 0;
+        if (_set_verify_mode(self->ctx, PY_SSL_CERT_NONE) == -1) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
     /* Defaults */
-    SSL_CTX_set_verify(self->ctx, SSL_VERIFY_NONE, NULL);
     options = SSL_OP_ALL & ~SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS;
     if (proto_version != PY_SSL_VERSION_SSL2)
         options |= SSL_OP_NO_SSLv2;
@@ -2982,28 +3028,16 @@ get_verify_mode(PySSLContext *self, void *c)
 static int
 set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
 {
-    int n, mode;
+    int n;
     if (!PyArg_Parse(arg, "i", &n))
         return -1;
-    if (n == PY_SSL_CERT_NONE)
-        mode = SSL_VERIFY_NONE;
-    else if (n == PY_SSL_CERT_OPTIONAL)
-        mode = SSL_VERIFY_PEER;
-    else if (n == PY_SSL_CERT_REQUIRED)
-        mode = SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
-    else {
-        PyErr_SetString(PyExc_ValueError,
-                        "invalid value for verify_mode");
-        return -1;
-    }
-    if (mode == SSL_VERIFY_NONE && self->check_hostname) {
+    if (n == PY_SSL_CERT_NONE && self->check_hostname) {
         PyErr_SetString(PyExc_ValueError,
                         "Cannot set verify_mode to CERT_NONE when "
                         "check_hostname is enabled.");
         return -1;
     }
-    SSL_CTX_set_verify(self->ctx, mode, NULL);
-    return 0;
+    return _set_verify_mode(self->ctx, n);
 }
 
 static PyObject *
@@ -5313,6 +5347,10 @@ PyInit__ssl(void)
                             PY_SSL_VERSION_TLS);
     PyModule_AddIntConstant(m, "PROTOCOL_TLS",
                             PY_SSL_VERSION_TLS);
+    PyModule_AddIntConstant(m, "PROTOCOL_TLS_CLIENT",
+                            PY_SSL_VERSION_TLS_CLIENT);
+    PyModule_AddIntConstant(m, "PROTOCOL_TLS_SERVER",
+                            PY_SSL_VERSION_TLS_SERVER);
     PyModule_AddIntConstant(m, "PROTOCOL_TLSv1",
                             PY_SSL_VERSION_TLS1);
 #if HAVE_TLSv1_2
