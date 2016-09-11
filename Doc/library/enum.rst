@@ -25,7 +25,8 @@ Module Contents
 
 This module defines four enumeration classes that can be used to define unique
 sets of names and values: :class:`Enum`, :class:`IntEnum`, and
-:class:`IntFlags`.  It also defines one decorator, :func:`unique`.
+:class:`IntFlags`.  It also defines one decorator, :func:`unique`, and one
+helper, :class:`auto`.
 
 .. class:: Enum
 
@@ -52,7 +53,11 @@ sets of names and values: :class:`Enum`, :class:`IntEnum`, and
 
     Enum class decorator that ensures only one name is bound to any one value.
 
-.. versionadded:: 3.6  ``Flag``, ``IntFlag``
+.. class:: auto
+
+    Instances are replaced with an appropriate value for Enum members.
+
+.. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 
 
 Creating an Enum
@@ -69,6 +74,13 @@ follows::
     ...     green = 2
     ...     blue = 3
     ...
+
+.. note:: Enum member values
+
+    Member values can be anything: :class:`int`, :class:`str`, etc..  If
+    the exact value is unimportant you may use :class:`auto` instances and an
+    appropriate value will be chosen for you.  Care must be taken if you mix
+    :class:`auto` with other values.
 
 .. note:: Nomenclature
 
@@ -224,6 +236,42 @@ found :exc:`ValueError` is raised with the details::
     ...
     ValueError: duplicate values found in <enum 'Mistake'>: four -> three
 
+
+Using automatic values
+----------------------
+
+If the exact value is unimportant you can use :class:`auto`::
+
+    >>> from enum import Enum, auto
+    >>> class Color(Enum):
+    ...     red = auto()
+    ...     blue = auto()
+    ...     green = auto()
+    ...
+    >>> list(Color)
+    [<Color.red: 1>, <Color.blue: 2>, <Color.green: 3>]
+
+The values are chosen by :func:`_generate_next_value_`, which can be
+overridden::
+
+    >>> class AutoName(Enum):
+    ...     def _generate_next_value_(name, start, count, last_values):
+    ...         return name
+    ...
+    >>> class Ordinal(AutoName):
+    ...     north = auto()
+    ...     south = auto()
+    ...     east = auto()
+    ...     west = auto()
+    ...
+    >>> list(Ordinal)
+    [<Ordinal.north: 'north'>, <Ordinal.south: 'south'>, <Ordinal.east: 'east'>, <Ordinal.west: 'west'>]
+
+.. note::
+
+    The goal of the default :meth:`_generate_next_value_` methods is to provide
+    the next :class:`int` in sequence with the last :class:`int` provided, but
+    the way it does this is an implementation detail and may change.
 
 Iteration
 ---------
@@ -597,7 +645,9 @@ Flag
 The last variation is :class:`Flag`.  Like :class:`IntFlag`, :class:`Flag`
 members can be combined using the bitwise operators (&, \|, ^, ~).  Unlike
 :class:`IntFlag`, they cannot be combined with, nor compared against, any
-other :class:`Flag` enumeration, nor :class:`int`.
+other :class:`Flag` enumeration, nor :class:`int`.  While it is possible to
+specify the values directly it is recommended to use :class:`auto` as the
+value and let :class:`Flag` select an appropriate value.
 
 .. versionadded:: 3.6
 
@@ -606,9 +656,9 @@ flags being set, the boolean evaluation is :data:`False`::
 
     >>> from enum import Flag
     >>> class Color(Flag):
-    ...     red = 1
-    ...     blue = 2
-    ...     green = 4
+    ...     red = auto()
+    ...     blue = auto()
+    ...     green = auto()
     ...
     >>> Color.red & Color.green
     <Color.0: 0>
@@ -619,21 +669,20 @@ Individual flags should have values that are powers of two (1, 2, 4, 8, ...),
 while combinations of flags won't::
 
     >>> class Color(Flag):
-    ...     red = 1
-    ...     blue = 2
-    ...     green = 4
-    ...     white = 7
-    ...     # or
-    ...     # white = red | blue | green
+    ...     red = auto()
+    ...     blue = auto()
+    ...     green = auto()
+    ...     white = red | blue | green
+    ...
 
 Giving a name to the "no flags set" condition does not change its boolean
 value::
 
     >>> class Color(Flag):
     ...     black = 0
-    ...     red = 1
-    ...     blue = 2
-    ...     green = 4
+    ...     red = auto()
+    ...     blue = auto()
+    ...     green = auto()
     ...
     >>> Color.black
     <Color.black: 0>
@@ -700,6 +749,7 @@ Omitting values
 In many use-cases one doesn't care what the actual value of an enumeration
 is. There are several ways to define this type of simple enumeration:
 
+- use instances of :class:`auto` for the value
 - use instances of :class:`object` as the value
 - use a descriptive string as the value
 - use a tuple as the value and a custom :meth:`__new__` to replace the
@@ -716,6 +766,20 @@ the (unimportant) value::
     ...     def __repr__(self):
     ...         return '<%s.%s>' % (self.__class__.__name__, self.name)
     ...
+
+
+Using :class:`auto`
+"""""""""""""""""""
+
+Using :class:`object` would look like::
+
+    >>> class Color(NoValue):
+    ...     red = auto()
+    ...     blue = auto()
+    ...     green = auto()
+    ...
+    >>> Color.green
+    <Color.green>
 
 
 Using :class:`object`
@@ -930,8 +994,11 @@ Supported ``_sunder_`` names
   overridden
 - ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
   (class attribute, removed during class creation)
+- ``_generate_next_value_`` -- used by the `Functional API`_ and by
+  :class:`auto` to get an appropriate value for an enum member; may be
+  overridden
 
-.. versionadded:: 3.6 ``_missing_``, ``_order_``
+.. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 
 To help keep Python 2 / Python 3 code in sync an :attr:`_order_` attribute can
 be provided.  It will be checked against the actual order of the enumeration
