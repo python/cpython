@@ -92,23 +92,23 @@ def include_in_tools(p):
     return p.suffix.lower() in {'.py', '.pyw', '.txt'}
 
 FULL_LAYOUT = [
-    ('/', '$build', 'python.exe', is_not_debug),
-    ('/', '$build', 'pythonw.exe', is_not_debug),
-    ('/', '$build', 'python{0.major}.dll'.format(sys.version_info), is_not_debug),
-    ('/', '$build', 'python{0.major}{0.minor}.dll'.format(sys.version_info), is_not_debug),
-    ('DLLs/', '$build', '*.pyd', is_not_debug),
-    ('DLLs/', '$build', '*.dll', is_not_debug_or_python),
+    ('/', 'PCBuild/$arch', 'python.exe', is_not_debug),
+    ('/', 'PCBuild/$arch', 'pythonw.exe', is_not_debug),
+    ('/', 'PCBuild/$arch', 'python{0.major}.dll'.format(sys.version_info), is_not_debug),
+    ('/', 'PCBuild/$arch', 'python{0.major}{0.minor}.dll'.format(sys.version_info), is_not_debug),
+    ('DLLs/', 'PCBuild/$arch', '*.pyd', is_not_debug),
+    ('DLLs/', 'PCBuild/$arch', '*.dll', is_not_debug_or_python),
     ('include/', 'include', '*.h', None),
     ('include/', 'PC', 'pyconfig.h', None),
     ('Lib/', 'Lib', '**/*', include_in_lib),
-    ('libs/', '$build', '*.lib', include_in_libs),
+    ('libs/', 'PCBuild/$arch', '*.lib', include_in_libs),
     ('Tools/', 'Tools', '**/*', include_in_tools),
 ]
 
 EMBED_LAYOUT = [
-    ('/', '$build', 'python*.exe', is_not_debug),
-    ('/', '$build', '*.pyd', is_not_debug),
-    ('/', '$build', '*.dll', is_not_debug),
+    ('/', 'PCBuild/$arch', 'python*.exe', is_not_debug),
+    ('/', 'PCBuild/$arch', '*.pyd', is_not_debug),
+    ('/', 'PCBuild/$arch', '*.dll', is_not_debug),
     ('python{0.major}{0.minor}.zip'.format(sys.version_info), 'Lib', '**/*', include_in_lib),
 ]
 
@@ -170,18 +170,18 @@ def rglob(root, pattern, condition):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--source', metavar='dir', help='The directory containing the repository root', type=Path)
-    parser.add_argument('-o', '--out', metavar='file', help='The name of the output archive', type=Path, default=None)
+    parser.add_argument('-o', '--out', metavar='file', help='The name of the output self-extracting archive', type=Path, default=None)
     parser.add_argument('-t', '--temp', metavar='dir', help='A directory to temporarily extract files into', type=Path, default=None)
     parser.add_argument('-e', '--embed', help='Create an embedding layout', action='store_true', default=False)
-    parser.add_argument('-b', '--build', help='Specify the build directory', type=Path)
+    parser.add_argument('-a', '--arch', help='Specify the architecture to use (win32/amd64)', type=str, default="win32")
     ns = parser.parse_args()
 
     source = ns.source or (Path(__file__).resolve().parent.parent.parent)
     out = ns.out
-    build = ns.build
+    arch = ns.arch
     assert isinstance(source, Path)
     assert not out or isinstance(out, Path)
-    assert isinstance(build, Path)
+    assert isinstance(arch, str)
 
     if ns.temp:
         temp = ns.temp
@@ -204,16 +204,14 @@ def main():
 
     try:
         for t, s, p, c in layout:
-            if s == '$build':
-                s = build
-            else:
-                s = source / s
+            s = source / s.replace("$arch", arch)
             copied = copy_to_layout(temp / t.rstrip('/'), rglob(s, p, c))
             print('Copied {} files'.format(copied))
 
-        with open(str(temp / 'sys.path'), 'w') as f:
-            print('python{0.major}{0.minor}.zip'.format(sys.version_info), file=f)
-            print('.', file=f)
+        if ns.embed:
+            with open(str(temp / 'sys.path'), 'w') as f:
+                print('python{0.major}{0.minor}.zip'.format(sys.version_info), file=f)
+                print('.', file=f)
 
         if out:
             total = copy_to_layout(out, rglob(temp, '**/*', None))
