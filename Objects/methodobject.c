@@ -276,6 +276,11 @@ _PyCFunction_FastCallKeywords(PyObject *func, PyObject **stack,
     Py_ssize_t nkwargs;
 
     assert(PyCFunction_Check(func));
+    assert(nargs >= 0);
+    assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
+    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
+    /* kwnames must only contains str strings, no subclass, and all keys must
+       be unique */
 
     nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
     if (nkwargs > 0) {

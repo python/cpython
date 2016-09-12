@@ -273,6 +273,13 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
         PyObject **stack,
         Py_ssize_t nargs);
 
+    /* Convert keyword arguments from the (stack, kwnames) format to a Python
+       dictionary.
+
+       kwnames must only contains str strings, no subclass, and all keys must
+       be unique. kwnames is not checked, usually these checks are done before or later
+       calling _PyStack_AsDict(). For example, _PyArg_ParseStack() raises an
+       error if a key is not a string. */
     PyAPI_FUNC(PyObject *) _PyStack_AsDict(
         PyObject **values,
         PyObject *kwnames);
@@ -293,36 +300,39 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
         PyObject **kwnames,
         PyObject *func);
 
-     /* Call the callable object func with the "fast call" calling convention:
-        args is a C array for positional arguments (nargs is the number of
-        positional arguments), kwargs is a dictionary for keyword arguments.
+    /* Call the callable object func with the "fast call" calling convention:
+       args is a C array for positional arguments (nargs is the number of
+       positional arguments), kwargs is a dictionary for keyword arguments.
 
-        If nargs is equal to zero, args can be NULL. kwargs can be NULL.
-        nargs must be greater or equal to zero.
+       If nargs is equal to zero, args can be NULL. kwargs can be NULL.
+       nargs must be greater or equal to zero.
 
-        Return the result on success. Raise an exception on return NULL on
-        error. */
-     PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(PyObject *func,
-                                                   PyObject **args, Py_ssize_t nargs,
-                                                   PyObject *kwargs);
+       Return the result on success. Raise an exception on return NULL on
+       error. */
+    PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(PyObject *func,
+                                                  PyObject **args, Py_ssize_t nargs,
+                                                  PyObject *kwargs);
 
-     /* Call the callable object func with the "fast call" calling convention:
-        args is a C array for positional arguments followed by values of
-        keyword arguments. Keys of keyword arguments are stored as a tuple
-        of strings in kwnames. nargs is the number of positional parameters at
-        the beginning of stack. The size of kwnames gives the number of keyword
-        values in the stack after positional arguments.
+    /* Call the callable object func with the "fast call" calling convention:
+       args is a C array for positional arguments followed by values of
+       keyword arguments. Keys of keyword arguments are stored as a tuple
+       of strings in kwnames. nargs is the number of positional parameters at
+       the beginning of stack. The size of kwnames gives the number of keyword
+       values in the stack after positional arguments.
 
-        If nargs is equal to zero and there is no keyword argument (kwnames is
-        NULL or its size is zero), args can be NULL.
+       kwnames must only contains str strings, no subclass, and all keys must
+       be unique.
 
-        Return the result on success. Raise an exception and return NULL on
-        error. */
-     PyAPI_FUNC(PyObject *) _PyObject_FastCallKeywords
-        (PyObject *func,
-         PyObject **args,
-         Py_ssize_t nargs,
-         PyObject *kwnames);
+       If nargs is equal to zero and there is no keyword argument (kwnames is
+       NULL or its size is zero), args can be NULL.
+
+       Return the result on success. Raise an exception and return NULL on
+       error. */
+    PyAPI_FUNC(PyObject *) _PyObject_FastCallKeywords
+       (PyObject *func,
+        PyObject **args,
+        Py_ssize_t nargs,
+        PyObject *kwnames);
 
 #define _PyObject_FastCall(func, args, nargs) \
     _PyObject_FastCallDict((func), (args), (nargs), NULL)
