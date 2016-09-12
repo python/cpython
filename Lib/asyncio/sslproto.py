@@ -305,6 +305,12 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         """Get optional transport information."""
         return self._ssl_protocol._get_extra_info(name, default)
 
+    def set_protocol(self, protocol):
+        self._app_protocol = protocol
+
+    def get_protocol(self):
+        return self._app_protocol
+
     def is_closing(self):
         return self._closed
 
