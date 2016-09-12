@@ -1587,12 +1587,6 @@ cipher_to_dict(const SSL_CIPHER *cipher)
     int aead, nid;
     const char *skcipher = NULL, *digest = NULL, *kx = NULL, *auth = NULL;
 #endif
-    PyObject *retval;
-
-    retval = PyDict_New();
-    if (retval == NULL) {
-        goto error;
-    }
 
     /* can be NULL */
     cipher_name = SSL_CIPHER_get_name(cipher);
@@ -1616,7 +1610,7 @@ cipher_to_dict(const SSL_CIPHER *cipher)
     auth = nid != NID_undef ? OBJ_nid2ln(nid) : NULL;
 #endif
 
-    retval = Py_BuildValue(
+    return Py_BuildValue(
         "{sksssssssisi"
 #if OPENSSL_VERSION_1_1
         "sOssssssss"
@@ -1636,11 +1630,6 @@ cipher_to_dict(const SSL_CIPHER *cipher)
         "auth", auth
 #endif
        );
-    return retval;
-
-  error:
-    Py_XDECREF(retval);
-    return NULL;
 }
 #endif
 
