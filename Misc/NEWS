@@ -872,6 +872,9 @@ C API
 Build
 -----
 
+- Issue #28066: Fix the logic that searches build directories for generated
+  include files when building outside the source tree.
+
 - Issue #27442: Expose the Android API level that python was built against, in
   sysconfig.get_config_vars() as 'ANDROID_API_LEVEL'.
 
