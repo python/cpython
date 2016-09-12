@@ -2305,18 +2305,38 @@ if _have_threads:
             # server_context.load_verify_locations(SIGNING_CA)
             server_context.load_cert_chain(SIGNED_CERTFILE2)
 
-            with self.subTest(client='PROTOCOL_TLS_CLIENT', server='PROTOCOL_TLS_SERVER'):
+            with self.subTest(client=ssl.PROTOCOL_TLS_CLIENT, server=ssl.PROTOCOL_TLS_SERVER):
                 server_params_test(client_context=client_context,
                                    server_context=server_context,
                                    chatty=True, connectionchatty=True,
                                    sni_name='fakehostname')
 
-            with self.subTest(client='PROTOCOL_TLS_SERVER', server='PROTOCOL_TLS_CLIENT'):
-                with self.assertRaises(ssl.SSLError):
+            client_context.check_hostname = False
+            with self.subTest(client=ssl.PROTOCOL_TLS_SERVER, server=ssl.PROTOCOL_TLS_CLIENT):
+                with self.assertRaises(ssl.SSLError) as e:
                     server_params_test(client_context=server_context,
                                        server_context=client_context,
                                        chatty=True, connectionchatty=True,
                                        sni_name='fakehostname')
+                self.assertIn('called a function you should not call',
+                              str(e.exception))
+
+            with self.subTest(client=ssl.PROTOCOL_TLS_SERVER, server=ssl.PROTOCOL_TLS_SERVER):
+                with self.assertRaises(ssl.SSLError) as e:
+                    server_params_test(client_context=server_context,
+                                       server_context=server_context,
+                                       chatty=True, connectionchatty=True)
+                self.assertIn('called a function you should not call',
+                              str(e.exception))
+
+            with self.subTest(client=ssl.PROTOCOL_TLS_CLIENT, server=ssl.PROTOCOL_TLS_CLIENT):
+                with self.assertRaises(ssl.SSLError) as e:
+                    server_params_test(client_context=server_context,
+                                       server_context=client_context,
+                                       chatty=True, connectionchatty=True)
+                self.assertIn('called a function you should not call',
+                              str(e.exception))
+
 
         def test_getpeercert(self):
             if support.verbose:
