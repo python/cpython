@@ -25,7 +25,6 @@
     -->
     <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'x64'">amd64</ArchName>
     <ArchName Condition="'$(ArchName)' == ''">win32</ArchName>
-    <ArchName Condition="$(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate'">$(ArchName)-pgo</ArchName>
     
     <!-- Root directory of the repository -->
     <PySourcePath Condition="'$(PySourcePath)' == ''">$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)\..\))</PySourcePath>
