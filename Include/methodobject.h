@@ -85,9 +85,9 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 
 #define METH_COEXIST   0x0040
 
+#ifndef Py_LIMITED_API
 #define METH_FASTCALL  0x0080
 
-#ifndef Py_LIMITED_API
 typedef struct {
     PyObject_HEAD
     PyMethodDef *m_ml; /* Description of the C function to call */
