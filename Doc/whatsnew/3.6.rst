@@ -488,6 +488,8 @@ Some smaller changes made to the core Python language are:
 
 * :func:`dict` now uses a "compact" representation `pioneered by PyPy
   <https://morepypy.blogspot.com/2015/01/faster-more-memory-efficient-and-more.html>`_.
+  The memory usage of the new :func:`dict` is between 20% and 25% smaller
+  compared to Python 3.5.
   :pep:`468` (Preserving the order of ``**kwargs`` in a function.) is
   implemented by this. The order-preserving aspect of this new
   implementation is considered an implementation detail and should
