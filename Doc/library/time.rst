@@ -83,6 +83,10 @@ An explanation of some terminology and conventions is in order.
      and :attr:`tm_zone` attributes when platform supports corresponding
      ``struct tm`` members.
 
+  .. versionchanged:: 3.6
+     The :class:`struct_time` attributes :attr:`tm_gmtoff` and :attr:`tm_zone`
+     are now available on all platforms.
+
 * Use the following functions to convert between time representations:
 
   +-------------------------+-------------------------+-------------------------+
@@ -565,10 +569,6 @@ The module defines the following functions and data items:
    When a tuple with an incorrect length is passed to a function expecting a
    :class:`struct_time`, or having elements of the wrong type, a
    :exc:`TypeError` is raised.
-
-  .. versionchanged:: 3.3
-     :attr:`tm_gmtoff` and :attr:`tm_zone` attributes are available on platforms
-     with C library supporting the corresponding fields in ``struct tm``.
 
 .. function:: time()
 
