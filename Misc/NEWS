@@ -363,6 +363,8 @@ Library
 - Issue #21201: Improves readability of multiprocessing error message.  Thanks
   to Wojciech Walczak for patch.
 
+- asyncio: Add set_protocol / get_protocol to Transports.
+
 IDLE
 ----
 
