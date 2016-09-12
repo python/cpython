@@ -279,7 +279,7 @@ _PyCFunction_FastCallKeywords(PyObject *func, PyObject **stack,
 
     nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
     if (nkwargs > 0) {
-        kwdict = _PyStack_AsDict(stack + nargs, kwnames);
+        kwdict = _PyStack_AsDict(stack + nargs, nkwargs, kwnames, func);
         if (kwdict == NULL) {
             return NULL;
         }

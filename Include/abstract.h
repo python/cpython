@@ -275,7 +275,9 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
     PyAPI_FUNC(PyObject *) _PyStack_AsDict(
         PyObject **values,
-        PyObject *kwnames);
+        Py_ssize_t nkwargs,
+        PyObject *kwnames,
+        PyObject *func);
 
     /* Convert (args, nargs, kwargs) into a (stack, nargs, kwnames).
 
