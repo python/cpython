@@ -66,6 +66,12 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
     def _set_extra(self, sock):
         self._extra['pipe'] = sock
 
+    def set_protocol(self, protocol):
+        self._protocol = protocol
+
+    def get_protocol(self):
+        return self._protocol
+
     def is_closing(self):
         return self._closing
 
