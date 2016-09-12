@@ -14,6 +14,7 @@
     <PropertyGroup>
         <Nuget Condition="$(Nuget) == ''">$(ExternalsDir)\windows-installer\nuget\nuget.exe</Nuget>
         <NuspecVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)</NuspecVersion>
+        <NuspecVersion Condition="$(ReleaseLevelName) != ''">$(NuspecVersion)-$(ReleaseLevelName)</NuspecVersion>
         <SignOutput>false</SignOutput>
         <TargetName>$(OutputName).$(NuspecVersion)</TargetName>
         <TargetExt>.nupkg</TargetExt>
