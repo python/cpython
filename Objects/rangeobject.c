@@ -399,7 +399,7 @@ range_contains_long(rangeobject *r, PyObject *ob)
     tmp2 = PyNumber_Remainder(tmp1, r->step);
     if (tmp2 == NULL)
         goto end;
-    /* result = (int(ob) - start % step) == 0 */
+    /* result = ((int(ob) - start) % step) == 0 */
     result = PyObject_RichCompareBool(tmp2, zero, Py_EQ);
   end:
     Py_XDECREF(tmp1);
