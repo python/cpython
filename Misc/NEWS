@@ -33,6 +33,8 @@ Core and Builtins
 
 - Issue #28046: Remove platform-specific directories from sys.path.
 
+- Issue #28071: Add early-out for differencing from an empty set.
+
 - Issue #25758: Prevents zipimport from unnecessarily encoding a filename
   (patch by Eryk Sun)
 
@@ -143,12 +145,21 @@ Core and Builtins
 Library
 -------
 
+- Issue #28037: Use sqlite3_get_autocommit() instead of setting
+  Connection->inTransaction manually.
+
+- Issue #25283: Attributes tm_gmtoff and tm_zone are now available on
+  all platforms in the return values of time.localtime() and
+  time.gmtime().
+
 - Issue #24454: Regular expression match object groups are now
   accessible using __getitem__.  "mo[x]" is equivalent to
   "mo.group(x)".
 
 - Issue #10740: sqlite3 no longer implicitly commit an open transaction
   before DDL statements.
+
+- Issue #17941: Add a *module* parameter to collections.namedtuple().
 
 - Issue #22493: Inline flags now should be used only at the start of the
   regular expression.  Deprecation warning is emitted if uses them in the
@@ -199,6 +210,9 @@ Library
 - Issue #433028: Added support of modifier spans in regular expressions.
 
 - Issue #24594: Validates persist parameter when opening MSI database
+
+- Issue #17582: xml.etree.ElementTree nows preserves whitespaces in attributes
+  (Patch by Duane Griffin.  Reviewed and approved by Stefan Behnel.)
 
 - Issue #28047: Fixed calculation of line length used for the base64 CTE
   in the new email policies.
@@ -363,8 +377,15 @@ Library
 - Issue #21201: Improves readability of multiprocessing error message.  Thanks
   to Wojciech Walczak for patch.
 
+- asyncio: Add set_protocol / get_protocol to Transports.
+
+- Issue #27456: asyncio: Set TCP_NODELAY by default.
+
 IDLE
 ----
+
+- Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
+  Patch by Roger Serwy, updated by Bayard Randel.
 
 - Issue #27922: Stop IDLE tests from 'flashing' gui widgets on the screen.
 
@@ -442,6 +463,8 @@ Tools/Demos
 
 Windows
 -------
+
+- Issue #28065: Update xz dependency to 5.2.2 and build it from source.
 
 - Issue #25144: Ensures TargetDir is set before continuing with custom
   install.
@@ -867,6 +890,9 @@ C API
 
 Build
 -----
+
+- Issue #28066: Fix the logic that searches build directories for generated
+  include files when building outside the source tree.
 
 - Issue #27442: Expose the Android API level that python was built against, in
   sysconfig.get_config_vars() as 'ANDROID_API_LEVEL'.
