@@ -160,13 +160,14 @@ Edit
   Show surrounding parens  # parenmatch (& Hyperparser)
 
 Shell  # pyshell
-  View Last Restart# pyshell.?
-  Restart Shell    # pyshell.?
+  View Last Restart    # pyshell.PyShell.view_restart_mark
+  Restart Shell        # pyshell.PyShell.restart_shell
+  Interrupt Execution  # pyshell.PyShell.cancel_callback
 
 Debug (Shell only)
   Go to File/Line
-  debugger         # debugger, debugger_r
-  Stack Viewer     # stackviewer
+  debugger         # debugger, debugger_r, PyShell.toggle_debuger
+  Stack Viewer     # stackviewer, PyShell.open_stack_viewer
   Auto-open Stack Viewer  # stackviewer
 
 Format (Editor only)
