@@ -2,6 +2,9 @@ What's New in IDLE 3.6.0?
 ===========================
 *Release date: 2016-12-16?*
 
+- Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
+  Patch by Roger Serwy, updated by Bayard Randel.
+
 - Issue #27922: Stop IDLE tests from 'flashing' gui widgets on the screen.
 
 - Issue #27891: Consistently group and sort imports within idlelib modules.

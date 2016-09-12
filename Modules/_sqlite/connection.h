@@ -37,10 +37,6 @@ typedef struct
     PyObject_HEAD
     sqlite3* db;
 
-    /* 1 if we are currently within a transaction, i. e. if a BEGIN has been
-     * issued */
-    char inTransaction;
-
     /* the type detection mode. Only 0, PARSE_DECLTYPES, PARSE_COLNAMES or a
      * bitwise combination thereof makes sense */
     int detect_types;

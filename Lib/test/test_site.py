@@ -470,7 +470,9 @@ class StartupImportTests(unittest.TestCase):
                            'heapq', 'itertools', 'keyword', 'operator',
                            'reprlib', 'types', 'weakref'
                           }.difference(sys.builtin_module_names)
-        self.assertFalse(modules.intersection(collection_mods), stderr)
+        # http://bugs.python.org/issue28095
+        if sys.platform != 'darwin':
+            self.assertFalse(modules.intersection(collection_mods), stderr)
 
 
 if __name__ == "__main__":

@@ -33,6 +33,14 @@ class BaseTransport:
         """
         raise NotImplementedError
 
+    def set_protocol(self, protocol):
+        """Set a new protocol."""
+        raise NotImplementedError
+
+    def get_protocol(self):
+        """Return the current protocol."""
+        raise NotImplementedError
+
 
 class ReadTransport(BaseTransport):
     """Interface for read-only transports."""

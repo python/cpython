@@ -25,6 +25,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         sslcontext = test_utils.dummy_ssl_context()
         app_proto = asyncio.Protocol()
         proto = sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter)
+        self.assertIs(proto._app_transport.get_protocol(), app_proto)
         self.addCleanup(proto._app_transport.close)
         return proto
 
