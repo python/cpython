@@ -2367,9 +2367,9 @@ _PyObject_Call_Prepend(PyObject *func,
 }
 
 PyObject *
-_PyStack_AsDict(PyObject **values, PyObject *kwnames)
+_PyStack_AsDict(PyObject **values, Py_ssize_t nkwargs, PyObject *kwnames,
+                PyObject *func)
 {
-    Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwnames);
     PyObject *kwdict;
     Py_ssize_t i;
 
@@ -2378,12 +2378,24 @@ _PyStack_AsDict(PyObject **values, PyObject *kwnames)
         return NULL;
     }
 
-    for (i = 0; i < nkwargs; i++) {
+    for (i=0; i < nkwargs; i++) {
+        int err;
         PyObject *key = PyTuple_GET_ITEM(kwnames, i);
         PyObject *value = *values++;
-        assert(PyUnicode_CheckExact(key));
-        assert(PyDict_GetItem(kwdict, key) == NULL);
-        if (PyDict_SetItem(kwdict, key, value)) {
+
+        if (PyDict_GetItem(kwdict, key) != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s%s got multiple values "
+                         "for keyword argument '%U'",
+                         PyEval_GetFuncName(func),
+                         PyEval_GetFuncDesc(func),
+                         key);
+            Py_DECREF(kwdict);
+            return NULL;
+        }
+
+        err = PyDict_SetItem(kwdict, key, value);
+        if (err) {
             Py_DECREF(kwdict);
             return NULL;
         }
@@ -2467,7 +2479,7 @@ _PyObject_FastCallKeywords(PyObject *func, PyObject **stack, Py_ssize_t nargs,
     }
 
     if (nkwargs > 0) {
-        kwdict = _PyStack_AsDict(stack + nargs, kwnames);
+        kwdict = _PyStack_AsDict(stack + nargs, nkwargs, kwnames, func);
         if (kwdict == NULL) {
             return NULL;
         }
