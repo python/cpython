@@ -101,6 +101,7 @@ def getFullVersion():
 
 FW_PREFIX = ["Library", "Frameworks", "Python.framework"]
 FW_VERSION_PREFIX = "--undefined--" # initialized in parseOptions
+FW_SSL_DIRECTORY = "--undefined--" # initialized in parseOptions
 
 # The directory we'll use to create the build (will be erased and recreated)
 WORKDIR = "/tmp/_py"
@@ -206,41 +207,11 @@ def library_recipes():
 
     LT_10_5 = bool(getDeptargetTuple() < (10, 5))
 
-    if not (10, 5) < getDeptargetTuple() < (10, 10):
-        # The OpenSSL libs shipped with OS X 10.5 and earlier are
-        # hopelessly out-of-date and do not include Apple's tie-in to
-        # the root certificates in the user and system keychains via TEA
-        # that was introduced in OS X 10.6.  Note that this applies to
-        # programs built and linked with a 10.5 SDK even when run on
-        # newer versions of OS X.
-        #
-        # Dealing with CAs is messy.  For now, just supply a
-        # local libssl and libcrypto for the older installer variants
-        # (e.g. the python.org 10.5+ 32-bit-only installer) that use the
-        # same default ssl certfile location as the system libs do:
-        #   /System/Library/OpenSSL/cert.pem
-        # Then at least TLS connections can be negotiated with sites that
-        # use sha-256 certs like python.org, assuming the proper CA certs
-        # have been supplied.  The default CA cert management issues for
-        # 10.5 and earlier builds are the same as before, other than it is
-        # now more obvious with cert checking enabled by default in the
-        # standard library.
-        #
-        # For builds with 10.6 through 10.9 SDKs,
-        # continue to use the deprecated but
-        # less out-of-date Apple 0.9.8 libs for now.  While they are less
-        # secure than using an up-to-date 1.0.1 version, doing so
-        # avoids the big problems of forcing users to have to manage
-        # default CAs themselves, thanks to the Apple libs using private TEA
-        # APIs for cert validation from keychains if validation using the
-        # standard OpenSSL locations (/System/Library/OpenSSL, normally empty)
-        # fails.
-        #
-        # Since Apple removed the header files for the deprecated system
-        # OpenSSL as of the Xcode 7 release (for OS X 10.10+), we do not
-        # have much choice but to build our own copy here, too.
+    # Since Apple removed the header files for the deprecated system
+    # OpenSSL as of the Xcode 7 release (for OS X 10.10+), we do not
+    # have much choice but to build our own copy here, too.
 
-        result.extend([
+    result.extend([
           dict(
               name="OpenSSL 1.0.2h",
               url="https://www.openssl.org/source/openssl-1.0.2h.tar.gz",
@@ -252,7 +223,7 @@ def library_recipes():
               configure=None,
               install=None,
           ),
-        ])
+    ])
 
 #   Disable for now
     if False:   # if getDeptargetTuple() > (10, 5):
@@ -676,6 +647,7 @@ def parseOptions(args=None):
     global WORKDIR, DEPSRC, SDKPATH, SRCDIR, DEPTARGET
     global UNIVERSALOPTS, UNIVERSALARCHS, ARCHLIST, CC, CXX
     global FW_VERSION_PREFIX
+    global FW_SSL_DIRECTORY
 
     if args is None:
         args = sys.argv[1:]
@@ -736,6 +708,7 @@ def parseOptions(args=None):
     CC, CXX = getTargetCompilers()
 
     FW_VERSION_PREFIX = FW_PREFIX[:] + ["Versions", getVersion()]
+    FW_SSL_DIRECTORY = FW_VERSION_PREFIX[:] + ["etc", "openssl"]
 
     print("-- Settings:")
     print("   * Source directory:    %s" % SRCDIR)
@@ -877,7 +850,7 @@ def build_universal_openssl(basedir, archList):
             "shared",
             "--install_prefix=%s"%shellQuote(archbase),
             "--prefix=%s"%os.path.join("/", *FW_VERSION_PREFIX),
-            "--openssldir=/System/Library/OpenSSL",
+            "--openssldir=%s"%os.path.join("/", *FW_SSL_DIRECTORY),
         ]
         if no_asm:
             configure_opts.append("no-asm")
@@ -1195,12 +1168,14 @@ def buildPython():
                 'Python.framework', 'Versions', getVersion(),
                 'lib'))))
 
-    path_to_lib = os.path.join(rootDir, 'Library', 'Frameworks',
-                                'Python.framework', 'Versions',
-                                version, 'lib', 'python%s'%(version,))
+    frmDir = os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework')
+    frmDirVersioned = os.path.join(frmDir, 'Versions', version)
+    path_to_lib = os.path.join(frmDirVersioned, 'lib', 'python%s'%(version,))
+    # create directory for OpenSSL certificates
+    sslDir = os.path.join(frmDirVersioned, 'etc', 'openssl')
+    os.makedirs(sslDir)
 
     print("Fix file modes")
-    frmDir = os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework')
     gid = grp.getgrnam('admin').gr_gid
 
     shared_lib_error = False
@@ -1642,6 +1617,8 @@ def main():
     patchFile("resources/ReadMe.rtf",  fn)
     fn = os.path.join(folder, "Update Shell Profile.command")
     patchScript("scripts/postflight.patch-profile",  fn)
+    fn = os.path.join(folder, "Install Certificates.command")
+    patchScript("resources/install_certificates.command",  fn)
     os.chmod(folder, STAT_0o755)
     setIcon(folder, "../Icons/Python Folder.icns")
 
