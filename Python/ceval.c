@@ -3300,6 +3300,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                                          PyEval_GetFuncDesc(func),
                                          kwargs->ob_type->tp_name);
                         }
+                        Py_DECREF(kwargs);
                         goto error;
                     }
                     Py_DECREF(kwargs);
@@ -3318,6 +3319,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                                  PyEval_GetFuncName(func),
                                  PyEval_GetFuncDesc(func),
                                  callargs->ob_type->tp_name);
+                    Py_DECREF(callargs);
                     goto error;
                 }
                 Py_SETREF(callargs, PySequence_Tuple(callargs));
