@@ -209,6 +209,9 @@ Library
 
 - Issue #24594: Validates persist parameter when opening MSI database
 
+- Issue #17582: xml.etree.ElementTree nows preserves whitespaces in attributes
+  (Patch by Duane Griffin.  Reviewed and approved by Stefan Behnel.)
+
 - Issue #28047: Fixed calculation of line length used for the base64 CTE
   in the new email policies.
 
