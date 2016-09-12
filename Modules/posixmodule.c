@@ -5030,11 +5030,13 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
         mode = _P_OVERLAY;
 
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
     spawnval = _wspawnv(mode, path->wide, argvlist);
 #else
     spawnval = _spawnv(mode, path->narrow, argvlist);
 #endif
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
     free_string_array(argvlist, argc);
@@ -5122,11 +5124,13 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
         mode = _P_OVERLAY;
 
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
     spawnval = _wspawnve(mode, path->wide, argvlist, envlist);
 #else
     spawnval = _spawnve(mode, path->narrow, argvlist, envlist);
 #endif
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
     if (spawnval == -1)
