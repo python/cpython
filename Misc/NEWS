@@ -254,6 +254,8 @@ Library
 - Issue #21201: Improves readability of multiprocessing error message.  Thanks
   to Wojciech Walczak for patch.
 
+- Issue #27456: asyncio: Set TCP_NODELAY by default.
+
 IDLE
 ----
 
