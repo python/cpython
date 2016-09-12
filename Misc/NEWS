@@ -365,6 +365,8 @@ Library
 
 - asyncio: Add set_protocol / get_protocol to Transports.
 
+- Issue #27456: asyncio: Set TCP_NODELAY by default.
+
 IDLE
 ----
 
