@@ -614,6 +614,8 @@ iterations of the loop.
    or module body contains :term:`variable annotations <variable annotation>`
    statically.
 
+   .. versionadded:: 3.6
+
 .. opcode:: IMPORT_STAR
 
    Loads all symbols not starting with ``'_'`` directly from the module TOS to
@@ -899,6 +901,8 @@ All of the following opcodes use their arguments.
 .. opcode:: STORE_ANNOTATION (namei)
 
    Stores TOS as ``locals()['__annotations__'][co_names[namei]] = TOS``.
+
+   .. versionadded:: 3.6
 
 
 .. opcode:: LOAD_CLOSURE (i)
