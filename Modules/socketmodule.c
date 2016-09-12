@@ -4072,11 +4072,13 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
     if (ncmsgbufs > 0) {
         struct cmsghdr *cmsgh = NULL;
 
-        if ((msg.msg_control = controlbuf =
-             PyMem_Malloc(controllen)) == NULL) {
+        controlbuf = PyMem_Malloc(controllen);
+        if (controlbuf == NULL) {
             PyErr_NoMemory();
             goto finally;
         }
+        msg.msg_control = controlbuf;
+
         msg.msg_controllen = controllen;
 
         /* Need to zero out the buffer as a workaround for glibc's
@@ -4141,8 +4143,10 @@ finally:
         PyBuffer_Release(&cmsgs[i].data);
     PyMem_Free(cmsgs);
     Py_XDECREF(cmsg_fast);
-    for (i = 0; i < ndatabufs; i++)
+    PyMem_Free(msg.msg_iov);
+    for (i = 0; i < ndatabufs; i++) {
         PyBuffer_Release(&databufs[i]);
+    }
     PyMem_Free(databufs);
     return retval;
 }
@@ -4243,7 +4247,8 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
 
     controlbuf = PyMem_Malloc(controllen);
     if (controlbuf == NULL) {
-        return PyErr_NoMemory();
+        PyErr_NoMemory();
+        goto finally;
     }
     memset(controlbuf, 0, controllen);
 
@@ -4315,8 +4320,10 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
     if (iv.buf != NULL) {
         PyBuffer_Release(&iv);
     }
-    for (i = 0; i < ndatabufs; i++)
+    PyMem_Free(msg.msg_iov);
+    for (i = 0; i < ndatabufs; i++) {
         PyBuffer_Release(&databufs[i]);
+    }
     PyMem_Free(databufs);
     return retval;
 }
