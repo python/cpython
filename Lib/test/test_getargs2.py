@@ -471,7 +471,7 @@ class Tuple_TestCase(unittest.TestCase):
 
         ret = get_args(*TupleSubclass([1, 2]))
         self.assertEqual(ret, (1, 2))
-        self.assertIs(type(ret), tuple)
+        self.assertIsInstance(ret, tuple)
 
         ret = get_args()
         self.assertIn(ret, ((), None))
