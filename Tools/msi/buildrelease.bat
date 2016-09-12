@@ -111,16 +111,10 @@ if "%1" EQU "x86" (
     set BUILD_PLAT=Win32
     set OUTDIR_PLAT=win32
     set OBJDIR_PLAT=x86
-) else if "%~2" NEQ "" (
-    call "%PCBUILD%env.bat" amd64
-    set PGO=%~2
-    set BUILD=%PCBUILD%amd64-pgo\
-    set BUILD_PLAT=x64
-    set OUTDIR_PLAT=amd64
-    set OBJDIR_PLAT=x64
 ) else (
     call "%PCBUILD%env.bat" amd64
     set BUILD=%PCBUILD%amd64\
+    set PGO=%~2
     set BUILD_PLAT=x64
     set OUTDIR_PLAT=amd64
     set OBJDIR_PLAT=x64
@@ -177,7 +171,6 @@ if not "%SKIPBUILD%" EQU "1" (
 )
 
 set BUILDOPTS=/p:Platform=%1 /p:BuildForRelease=true /p:DownloadUrl=%DOWNLOAD_URL% /p:DownloadUrlBase=%DOWNLOAD_URL_BASE% /p:ReleaseUri=%RELEASE_URI%
-if "%PGO%" NEQ "" set BUILDOPTS=%BUILDOPTS% /p:PGOBuildPath=%BUILD%
 msbuild "%D%bundle\releaselocal.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=true
 if errorlevel 1 exit /B
 msbuild "%D%bundle\releaseweb.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
