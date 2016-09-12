@@ -984,8 +984,9 @@ _PyDict_MaybeUntrack(PyObject *op)
 }
 
 /* Internal function to find slot for an item from its hash
- * when it is known that the key is not present in the dict.
- */
+   when it is known that the key is not present in the dict.
+
+   The dict must be combined. */
 static Py_ssize_t
 find_empty_slot(PyDictObject *mp, PyObject *key, Py_hash_t hash,
                 PyObject ***value_addr, Py_ssize_t *hashpos)
@@ -995,8 +996,10 @@ find_empty_slot(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     Py_ssize_t ix;
     PyDictKeyEntry *ep, *ep0 = DK_ENTRIES(mp->ma_keys);
 
+    assert(!_PyDict_HasSplitTable(mp));
     assert(hashpos != NULL);
     assert(key != NULL);
+
     if (!PyUnicode_CheckExact(key))
         mp->ma_keys->dk_lookup = lookdict;
     i = hash & mask;
@@ -2672,8 +2675,9 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         val = defaultobj;
         if (mp->ma_keys->dk_usable <= 0) {
             /* Need to resize. */
-            if (insertion_resize(mp) < 0)
+            if (insertion_resize(mp) < 0) {
                 return NULL;
+            }
             find_empty_slot(mp, key, hash, &value_addr, &hashpos);
         }
         ix = mp->ma_keys->dk_nentries;
