@@ -242,6 +242,10 @@ class TestNamedTuple(unittest.TestCase):
         ]:
             self.assertEqual(namedtuple('NT', spec, rename=True)._fields, renamed)
 
+    def test_module_parameter(self):
+        NT = namedtuple('NT', ['x', 'y'], module=collections)
+        self.assertEqual(NT.__module__, collections)
+
     def test_instance(self):
         Point = namedtuple('Point', 'x y')
         p = Point(11, 22)

@@ -763,7 +763,7 @@ Named tuples assign meaning to each position in a tuple and allow for more reada
 self-documenting code.  They can be used wherever regular tuples are used, and
 they add the ability to access fields by name instead of position index.
 
-.. function:: namedtuple(typename, field_names, *, verbose=False, rename=False)
+.. function:: namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
 
     Returns a new tuple subclass named *typename*.  The new subclass is used to
     create tuple-like objects that have fields accessible by attribute lookup as
@@ -790,6 +790,9 @@ they add the ability to access fields by name instead of position index.
     built.  This option is outdated; instead, it is simpler to print the
     :attr:`_source` attribute.
 
+    If *module* is defined, the ``__module__`` attribute of the named tuple is
+    set to that value.
+
     Named tuple instances do not have per-instance dictionaries, so they are
     lightweight and require no more memory than regular tuples.
 
@@ -800,6 +803,8 @@ they add the ability to access fields by name instead of position index.
        The *verbose* and *rename* parameters became
        :ref:`keyword-only arguments <keyword-only_parameter>`.
 
+    .. versionchanged:: 3.6
+       Added the *module* parameter.
 
 .. doctest::
     :options: +NORMALIZE_WHITESPACE

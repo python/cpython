@@ -159,6 +159,8 @@ Library
 - Issue #10740: sqlite3 no longer implicitly commit an open transaction
   before DDL statements.
 
+- Issue #17941: Add a *module* parameter to collections.namedtuple().
+
 - Issue #22493: Inline flags now should be used only at the start of the
   regular expression.  Deprecation warning is emitted if uses them in the
   middle of the regular expression.
