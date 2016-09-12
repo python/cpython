@@ -3920,21 +3920,33 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
 
     /* Fill in an iovec for each message part, and save the Py_buffer
        structs to release afterwards. */
-    if ((data_fast = PySequence_Fast(data_arg,
-                                     "sendmsg() argument 1 must be an "
-                                     "iterable")) == NULL)
+    data_fast = PySequence_Fast(data_arg,
+                                "sendmsg() argument 1 must be an "
+                                "iterable");
+    if (data_fast == NULL) {
         goto finally;
+    }
+
     ndataparts = PySequence_Fast_GET_SIZE(data_fast);
     if (ndataparts > INT_MAX) {
         PyErr_SetString(PyExc_OSError, "sendmsg() argument 1 is too long");
         goto finally;
     }
+
     msg->msg_iovlen = ndataparts;
-    if (ndataparts > 0 &&
-        ((msg->msg_iov = iovs = PyMem_New(struct iovec, ndataparts)) == NULL ||
-         (databufs = PyMem_New(Py_buffer, ndataparts)) == NULL)) {
-        PyErr_NoMemory();
-        goto finally;
+    if (ndataparts > 0) {
+        iovs = PyMem_New(struct iovec, ndataparts);
+        if (iovs == NULL) {
+            PyErr_NoMemory();
+            goto finally;
+        }
+        msg->msg_iov = iovs;
+
+        databufs = PyMem_New(Py_buffer, ndataparts);
+        if (iovs == NULL) {
+            PyErr_NoMemory();
+            goto finally;
+        }
     }
     for (; ndatabufs < ndataparts; ndatabufs++) {
         if (!PyArg_Parse(PySequence_Fast_GET_ITEM(data_fast, ndatabufs),
@@ -3970,7 +3982,7 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
     Py_ssize_t i, ndatabufs = 0, ncmsgs, ncmsgbufs = 0;
     Py_buffer *databufs = NULL;
     sock_addr_t addrbuf;
-    struct msghdr msg = {0};
+    struct msghdr msg;
     struct cmsginfo {
         int level;
         int type;
@@ -3984,8 +3996,11 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
     struct sock_sendmsg ctx;
 
     if (!PyArg_ParseTuple(args, "O|OiO:sendmsg",
-                          &data_arg, &cmsg_arg, &flags, &addr_arg))
+                          &data_arg, &cmsg_arg, &flags, &addr_arg)) {
         return NULL;
+    }
+
+    memset(&msg, 0, sizeof(msg));
 
     /* Parse destination address. */
     if (addr_arg != NULL && addr_arg != Py_None) {
@@ -4189,8 +4204,11 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
                                      "|O$O!y*O!i:sendmsg_afalg", keywords,
                                      &data_arg,
                                      &PyLong_Type, &opobj, &iv,
-                                     &PyLong_Type, &assoclenobj, &flags))
+                                     &PyLong_Type, &assoclenobj, &flags)) {
         return NULL;
+    }
+
+    memset(&msg, 0, sizeof(msg));
 
     /* op is a required, keyword-only argument >= 0 */
     if (opobj != NULL) {
@@ -4229,7 +4247,6 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
     }
     memset(controlbuf, 0, controllen);
 
-    memset(&msg, 0, sizeof(msg));
     msg.msg_controllen = controllen;
     msg.msg_control = controlbuf;
 
@@ -4287,8 +4304,9 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
 
     ctx.msg = &msg;
     ctx.flags = flags;
-    if (sock_call(self, 1, sock_sendmsg_impl, &ctx) < 0)
+    if (sock_call(self, 1, sock_sendmsg_impl, &ctx) < 0) {
         goto finally;
+    }
 
     retval = PyLong_FromSsize_t(ctx.result);
 
