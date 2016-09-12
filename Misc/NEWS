@@ -33,6 +33,8 @@ Core and Builtins
 
 - Issue #28046: Remove platform-specific directories from sys.path.
 
+- Issue #28071: Add early-out for differencing from an empty set.
+
 - Issue #25758: Prevents zipimport from unnecessarily encoding a filename
   (patch by Eryk Sun)
 
