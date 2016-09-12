@@ -69,6 +69,8 @@ menudefs = [
  ('shell', [
    ('_View Last Restart', '<<view-restart>>'),
    ('_Restart Shell', '<<restart-shell>>'),
+   None,
+   ('_Interrupt Execution', '<<interrupt-execution>>'),
    ]),
  ('debug', [
    ('_Go to File/Line', '<<goto-file-line>>'),
