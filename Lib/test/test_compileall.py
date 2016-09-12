@@ -105,7 +105,6 @@ class CompileallTests(unittest.TestCase):
     def test_compile_path(self):
         # Exclude Lib/test/ which contains invalid Python files like
         # Lib/test/badsyntax_pep3120.py
-        self._skip_if_sys_path_not_writable()
         testdir = os.path.realpath(os.path.dirname(__file__))
         if testdir in sys.path:
             self.addCleanup(setattr, sys, 'path', sys.path)
