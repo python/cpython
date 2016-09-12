@@ -53,8 +53,12 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    to load a shelf from an untrusted source.  Like with pickle, loading a shelf
    can execute arbitrary code.
 
-Shelf objects support all methods supported by dictionaries.  This eases the
-transition from dictionary based scripts to those requiring persistent storage.
+Shelf objects support most of the methods supported by dictionaries.  This
+eases the transition from dictionary based scripts to those requiring
+persistent storage.
+
+Note, the Python 3 transition methods (:meth:`~dict.viewkeys`,
+:meth:`~dict.viewvalues`, and :meth:`~dict.viewitems`) are not supported.
 
 Two additional methods are supported:
 

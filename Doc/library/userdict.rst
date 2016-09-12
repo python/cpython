@@ -74,6 +74,9 @@ provide the following attribute:
    Starting with Python version 2.6, it is recommended to use
    :class:`collections.MutableMapping` instead of :class:`DictMixin`.
 
+   Note that DictMixin does not implement the :meth:`~dict.viewkeys`,
+   :meth:`~dict.viewvalues`, or :meth:`~dict.viewitems` methods.
+
 :mod:`UserList` --- Class wrapper for list objects
 ==================================================
 
