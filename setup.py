@@ -2153,15 +2153,6 @@ class PyBuildExt(build_ext):
         if not sysconfig.get_config_var('WITH_THREAD'):
             define_macros.append(('WITHOUT_THREADS', 1))
 
-        # Increase warning level for gcc:
-        if 'gcc' in cc:
-            cmd = ("echo '' | %s -Wextra -Wno-missing-field-initializers -E - "
-                   "> /dev/null 2>&1" % cc)
-            ret = os.system(cmd)
-            if ret >> 8 == 0:
-                extra_compile_args.extend(['-Wextra',
-                                           '-Wno-missing-field-initializers'])
-
         # Uncomment for extra functionality:
         #define_macros.append(('EXTRA_FUNCTIONALITY', 1))
         ext = Extension (
