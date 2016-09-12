@@ -560,6 +560,12 @@ class _SelectorTransport(transports._FlowControlMixin,
     def abort(self):
         self._force_close(None)
 
+    def set_protocol(self, protocol):
+        self._protocol = protocol
+
+    def get_protocol(self):
+        return self._protocol
+
     def is_closing(self):
         return self._closing
 
