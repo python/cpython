@@ -447,6 +447,8 @@ Tools/Demos
 Windows
 -------
 
+- Issue #28065: Update xz dependency to 5.2.2 and build it from source.
+
 - Issue #25144: Ensures TargetDir is set before continuing with custom
   install.
 

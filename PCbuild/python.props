@@ -45,7 +45,7 @@
     <ExternalsDir>$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals\`))</ExternalsDir>
     <sqlite3Dir>$(ExternalsDir)sqlite-3.14.1.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
-    <lzmaDir>$(ExternalsDir)xz-5.0.5\</lzmaDir>
+    <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
     <opensslDir>$(ExternalsDir)openssl-1.0.2h\</opensslDir>
     <opensslIncludeDir>$(opensslDir)include32</opensslIncludeDir>
     <opensslIncludeDir Condition="'$(ArchName)' == 'amd64'">$(opensslDir)include64</opensslIncludeDir>
