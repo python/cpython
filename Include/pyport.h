@@ -177,26 +177,9 @@ typedef int Py_ssize_clean_t;
 #define Py_LOCAL_INLINE(type) static type
 #endif
 
-/* Py_MEMCPY can be used instead of memcpy in cases where the copied blocks
- * are often very short.  While most platforms have highly optimized code for
- * large transfers, the setup costs for memcpy are often quite high.  MEMCPY
- * solves this by doing short copies "in line".
- */
-
-#if defined(_MSC_VER)
-#define Py_MEMCPY(target, source, length) do {                          \
-        size_t i_, n_ = (length);                                       \
-        char *t_ = (void*) (target);                                    \
-        const char *s_ = (void*) (source);                              \
-        if (n_ >= 16)                                                   \
-            memcpy(t_, s_, n_);                                         \
-        else                                                            \
-            for (i_ = 0; i_ < n_; i_++)                                 \
-                t_[i_] = s_[i_];                                        \
-    } while (0)
-#else
+/* Py_MEMCPY is kept for backwards compatibility,
+ * see https://bugs.python.org/issue28126 */
 #define Py_MEMCPY memcpy
-#endif
 
 #include <stdlib.h>
 
@@ -449,18 +432,18 @@ extern "C" {
 #define HAVE_PY_SET_53BIT_PRECISION 1
 #define _Py_SET_53BIT_PRECISION_HEADER \
   unsigned int old_fpcr, new_fpcr
-#define _Py_SET_53BIT_PRECISION_START					\
-  do {									\
-    __asm__ ("fmove.l %%fpcr,%0" : "=g" (old_fpcr));			\
-    /* Set double precision / round to nearest.  */			\
-    new_fpcr = (old_fpcr & ~0xf0) | 0x80;				\
-    if (new_fpcr != old_fpcr)						\
-      __asm__ volatile ("fmove.l %0,%%fpcr" : : "g" (new_fpcr));	\
+#define _Py_SET_53BIT_PRECISION_START                                   \
+  do {                                                                  \
+    __asm__ ("fmove.l %%fpcr,%0" : "=g" (old_fpcr));                    \
+    /* Set double precision / round to nearest.  */                     \
+    new_fpcr = (old_fpcr & ~0xf0) | 0x80;                               \
+    if (new_fpcr != old_fpcr)                                           \
+      __asm__ volatile ("fmove.l %0,%%fpcr" : : "g" (new_fpcr));        \
   } while (0)
-#define _Py_SET_53BIT_PRECISION_END					\
-  do {									\
-    if (new_fpcr != old_fpcr)						\
-      __asm__ volatile ("fmove.l %0,%%fpcr" : : "g" (old_fpcr));	\
+#define _Py_SET_53BIT_PRECISION_END                                     \
+  do {                                                                  \
+    if (new_fpcr != old_fpcr)                                           \
+      __asm__ volatile ("fmove.l %0,%%fpcr" : : "g" (old_fpcr));        \
   } while (0)
 #endif
 
@@ -742,7 +725,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #endif
 
 #ifdef VA_LIST_IS_ARRAY
-#define Py_VA_COPY(x, y) Py_MEMCPY((x), (y), sizeof(va_list))
+#define Py_VA_COPY(x, y) memcpy((x), (y), sizeof(va_list))
 #else
 #ifdef __va_copy
 #define Py_VA_COPY __va_copy
