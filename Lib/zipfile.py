@@ -1963,19 +1963,19 @@ def main(args = None):
         args = sys.argv[1:]
 
     if not args or args[0] not in ('-l', '-c', '-e', '-t'):
-        print(USAGE)
+        print(USAGE, file=sys.stderr)
         sys.exit(1)
 
     if args[0] == '-l':
         if len(args) != 2:
-            print(USAGE)
+            print(USAGE, file=sys.stderr)
             sys.exit(1)
         with ZipFile(args[1], 'r') as zf:
             zf.printdir()
 
     elif args[0] == '-t':
         if len(args) != 2:
-            print(USAGE)
+            print(USAGE, file=sys.stderr)
             sys.exit(1)
         with ZipFile(args[1], 'r') as zf:
             badfile = zf.testzip()
@@ -1985,7 +1985,7 @@ def main(args = None):
 
     elif args[0] == '-e':
         if len(args) != 3:
-            print(USAGE)
+            print(USAGE, file=sys.stderr)
             sys.exit(1)
 
         with ZipFile(args[1], 'r') as zf:
@@ -1993,7 +1993,7 @@ def main(args = None):
 
     elif args[0] == '-c':
         if len(args) < 3:
-            print(USAGE)
+            print(USAGE, file=sys.stderr)
             sys.exit(1)
 
         def addToZip(zf, path, zippath):
