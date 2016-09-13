@@ -2353,7 +2353,7 @@ _PyObject_Call_Prepend(PyObject *func,
 
     /* use borrowed references */
     stack[0] = obj;
-    Py_MEMCPY(&stack[1],
+    memcpy(&stack[1],
               &PyTuple_GET_ITEM(args, 0),
               argcount * sizeof(PyObject *));
 
@@ -2428,7 +2428,7 @@ _PyStack_UnpackDict(PyObject **args, Py_ssize_t nargs, PyObject *kwargs,
     }
 
     /* Copy position arguments (borrowed references) */
-    Py_MEMCPY(stack, args, nargs * sizeof(stack[0]));
+    memcpy(stack, args, nargs * sizeof(stack[0]));
 
     kwstack = stack + nargs;
     pos = i = 0;

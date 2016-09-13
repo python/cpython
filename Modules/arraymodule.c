@@ -836,10 +836,10 @@ array_repeat(arrayobject *a, Py_ssize_t n)
         memset(np->ob_item, a->ob_item[0], newbytes);
     } else {
         Py_ssize_t done = oldbytes;
-        Py_MEMCPY(np->ob_item, a->ob_item, oldbytes);
+        memcpy(np->ob_item, a->ob_item, oldbytes);
         while (done < newbytes) {
             Py_ssize_t ncopy = (done <= newbytes-done) ? done : newbytes-done;
-            Py_MEMCPY(np->ob_item+done, np->ob_item, ncopy);
+            memcpy(np->ob_item+done, np->ob_item, ncopy);
             done += ncopy;
         }
     }

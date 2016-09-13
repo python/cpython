@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 2
 Core and Builtins
 -----------------
 
+- Issue #28126: Replace Py_MEMCPY with memcpy(). Visual Studio can properly
+  optimize memcpy().
+
 - Issue #28120: Fix dict.pop() for splitted dictionary when trying to remove a
   "pending key" (Not yet inserted in split-table). Patch by Xiang Zhang.
 
