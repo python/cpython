@@ -1721,7 +1721,7 @@ _PyDict_Pop(PyDictObject *mp, PyObject *key, PyObject *deflt)
     ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value_addr, &hashpos);
     if (ix == DKIX_ERROR)
         return NULL;
-    if (ix == DKIX_EMPTY) {
+    if (ix == DKIX_EMPTY || *value_addr == NULL) {
         if (deflt) {
             Py_INCREF(deflt);
             return deflt;
