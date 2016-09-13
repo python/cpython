@@ -1109,6 +1109,11 @@ Build and C API Changes
 * Python now requires some C99 support in the toolchain to build. For more
   information, see :pep:`7`.
 
+* Cross-compiling CPython with the Android NDK and the Android API level set to
+  21 (Android 5.0 Lollilop) or greater, runs successfully. While Android is not
+  yet a supported platform, the Python test suite runs on the Android emulator
+  with only about 16 tests failures. See the Android meta-issue :issue:`26865`.
+
 * The ``--with-optimizations`` configure flag has been added. Turning it on
   will activate LTO and PGO build support (when available).
   (Original patch by Alecsandru Patrascu of Intel in :issue:`26539`.)
