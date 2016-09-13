@@ -721,9 +721,9 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
             new_data = PyBytes_FromStringAndSize(NULL, new_size);
             if (new_data == NULL)
                 return -1;
-            Py_MEMCPY(PyBytes_AS_STRING(new_data),
+            memcpy(PyBytes_AS_STRING(new_data),
                       PyBytes_AS_STRING(self->unused_data), old_size);
-            Py_MEMCPY(PyBytes_AS_STRING(new_data) + old_size,
+            memcpy(PyBytes_AS_STRING(new_data) + old_size,
                       self->zst.next_in, left_size);
             Py_SETREF(self->unused_data, new_data);
             self->zst.avail_in = 0;

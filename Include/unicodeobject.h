@@ -156,7 +156,7 @@ typedef uint8_t Py_UCS1;
     Py_UNICODE_ISNUMERIC(ch))
 
 #define Py_UNICODE_COPY(target, source, length) \
-    Py_MEMCPY((target), (source), (length)*sizeof(Py_UNICODE))
+    memcpy((target), (source), (length)*sizeof(Py_UNICODE))
 
 #define Py_UNICODE_FILL(target, value, length) \
     do {Py_ssize_t i_; Py_UNICODE *t_ = (target); Py_UNICODE v_ = (value);\
