@@ -892,6 +892,15 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
     @support.cpython_only
+    def test_splittable_pop_pending(self):
+        """pop a pending key in a splitted table should not crash"""
+        a, b = self.make_shared_key_dict(2)
+
+        a['a'] = 4
+        with self.assertRaises(KeyError):
+            b.pop('a')
+
+    @support.cpython_only
     def test_splittable_popitem(self):
         """split table must be combined when d.popitem()"""
         a, b = self.make_shared_key_dict(2)
