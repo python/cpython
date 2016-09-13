@@ -158,14 +158,14 @@ trailing underscores are not allowed.
 
 .. seealso::
 
-   :pep:`523` - Underscores in Numeric Literals
-   PEP written by Georg Brandl & Serhiy Storchaka.
+   :pep:`523` -- Underscores in Numeric Literals
+      PEP written by Georg Brandl and Serhiy Storchaka.
 
 
 .. _pep-523:
 
 PEP 523: Adding a frame evaluation API to CPython
-=================================================
+-------------------------------------------------
 
 While Python provides extensive support to customize how code
 executes, one place it has not done so is in the evaluation of frame
@@ -187,14 +187,14 @@ API will change with Python as necessary.
 
 .. seealso::
 
-    :pep:`523` - Adding a frame evaluation API to CPython
+    :pep:`523` -- Adding a frame evaluation API to CPython
        PEP written by Brett Cannon and Dino Viehland.
 
 
 .. _pep-519:
 
 PEP 519: Adding a file system path protocol
-===========================================
+-------------------------------------------
 
 File system paths have historically been represented as :class:`str`
 or :class:`bytes` objects. This has led to people who write code which
@@ -254,7 +254,7 @@ pre-existing code::
 
 .. seealso::
 
-    :pep:`519` - Adding a file system path protocol
+    :pep:`519` -- Adding a file system path protocol
        PEP written by Brett Cannon and Koos Zevenhoven.
 
 
@@ -267,7 +267,7 @@ Formatted string literals are a new kind of string literal, prefixed
 with ``'f'``.  They are similar to the format strings accepted by
 :meth:`str.format`.  They contain replacement fields surrounded by
 curly braces.  The replacement fields are expressions, which are
-evaluated at run time, and then formatted using the :func:`format` protocol.
+evaluated at run time, and then formatted using the :func:`format` protocol::
 
     >>> name = "Fred"
     >>> f"He said his name is {name}."
@@ -278,7 +278,7 @@ See :pep:`498` and the main documentation at :ref:`f-strings`.
 .. _pep-529:
 
 PEP 529: Change Windows filesystem encoding to UTF-8
-====================================================
+----------------------------------------------------
 
 Representing filesystem paths is best performed with str (Unicode) rather than
 bytes. However, there are some situations where using bytes is sufficient and
@@ -304,7 +304,7 @@ may be required.
    encoding may change before the final release.
 
 PEP 487: Simpler customization of class creation
-================================================
+------------------------------------------------
 
 Upon subclassing a class, the ``__init_subclass__`` classmethod (if defined) is
 called on the base class. This makes it straightforward to write classes that
@@ -341,7 +341,7 @@ console use, set :envvar:`PYTHONLEGACYWINDOWSIOENCODING`.
       PEP written and implemented by Steve Dower.
 
 PYTHONMALLOC environment variable
-=================================
+---------------------------------
 
 The new :envvar:`PYTHONMALLOC` environment variable allows setting the Python
 memory allocators and/or install debug hooks.
@@ -442,7 +442,7 @@ Jesús Cea Avión, David Malcolm, and Nikhil Benesch.)
 .. _whatsnew-deforder:
 
 PEP 520: Preserving Class Attribute Definition Order
-====================================================
+----------------------------------------------------
 
 Attributes in a class definition body have a natural ordering: the same
 order in which the names appear in the source.  This order is now
@@ -453,21 +453,21 @@ Also, the effective default class *execution* namespace (returned from
 
 .. seealso::
 
-   :pep:`520` - Preserving Class Attribute Definition Order
+   :pep:`520` -- Preserving Class Attribute Definition Order
       PEP written and implemented by Eric Snow.
 
 
 .. _whatsnew-kwargs:
 
 PEP 468: Preserving Keyword Argument Order
-==========================================
+------------------------------------------
 
 ``**kwargs`` in a function signature is now guaranteed to be an
 insertion-order-preserving mapping.
 
 .. seealso::
 
-   :pep:`468` - Preserving Keyword Argument Order
+   :pep:`468` -- Preserving Keyword Argument Order
       PEP written and implemented by Eric Snow.
 
 
