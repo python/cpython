@@ -13,6 +13,12 @@ Core and Builtins
 Library
 -------
 
+Build
+-----
+
+- Issue #15819: Remove redundant include search directory option for building
+  outside the source tree.
+
 
 What's New in Python 3.6.0 beta 1
 =================================
