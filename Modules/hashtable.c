@@ -64,14 +64,14 @@
 #define ENTRY_READ_PDATA(TABLE, ENTRY, DATA_SIZE, PDATA) \
     do { \
         assert((DATA_SIZE) == (TABLE)->data_size); \
-        Py_MEMCPY((PDATA), _Py_HASHTABLE_ENTRY_PDATA(TABLE, (ENTRY)), \
+        memcpy((PDATA), _Py_HASHTABLE_ENTRY_PDATA(TABLE, (ENTRY)), \
                   (DATA_SIZE)); \
     } while (0)
 
 #define ENTRY_WRITE_PDATA(TABLE, ENTRY, DATA_SIZE, PDATA) \
     do { \
         assert((DATA_SIZE) == (TABLE)->data_size); \
-        Py_MEMCPY((void *)_Py_HASHTABLE_ENTRY_PDATA((TABLE), (ENTRY)), \
+        memcpy((void *)_Py_HASHTABLE_ENTRY_PDATA((TABLE), (ENTRY)), \
                   (PDATA), (DATA_SIZE)); \
     } while (0)
 
@@ -337,7 +337,7 @@ _Py_hashtable_set(_Py_hashtable_t *ht, size_t key_size, const void *pkey,
     }
 
     entry->key_hash = key_hash;
-    Py_MEMCPY((void *)_Py_HASHTABLE_ENTRY_PKEY(entry), pkey, ht->key_size);
+    memcpy((void *)_Py_HASHTABLE_ENTRY_PKEY(entry), pkey, ht->key_size);
     if (data)
         ENTRY_WRITE_PDATA(ht, entry, data_size, data);
 

@@ -120,7 +120,7 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
     if (str == NULL)
         return (PyObject *) op;
 
-    Py_MEMCPY(op->ob_sval, str, size);
+    memcpy(op->ob_sval, str, size);
     /* share short strings */
     if (size == 1) {
         characters[*str & UCHAR_MAX] = op;
@@ -163,7 +163,7 @@ PyBytes_FromString(const char *str)
         return PyErr_NoMemory();
     (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
     op->ob_shash = -1;
-    Py_MEMCPY(op->ob_sval, str, size+1);
+    memcpy(op->ob_sval, str, size+1);
     /* share short strings */
     if (size == 0) {
         nullstring = op;
@@ -437,7 +437,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
         str = _PyBytesWriter_Prepare(writer, str, len);
         if (str == NULL)
             return NULL;
-        Py_MEMCPY(str, p, len);
+        memcpy(str, p, len);
         PyMem_Free(p);
         str += len;
         return str;
@@ -626,7 +626,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 len = format_len - (fmt - format);
             assert(len != 0);
 
-            Py_MEMCPY(res, fmt, len);
+            memcpy(res, fmt, len);
             res += len;
             fmt += len;
             fmtcnt -= (len - 1);
@@ -1009,7 +1009,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             }
 
             /* Copy bytes */
-            Py_MEMCPY(res, pbuf, len);
+            memcpy(res, pbuf, len);
             res += len;
 
             /* Pad right with the fill character if needed */
@@ -1473,12 +1473,12 @@ bytes_repeat(PyBytesObject *a, Py_ssize_t n)
     }
     i = 0;
     if (i < size) {
-        Py_MEMCPY(op->ob_sval, a->ob_sval, Py_SIZE(a));
+        memcpy(op->ob_sval, a->ob_sval, Py_SIZE(a));
         i = Py_SIZE(a);
     }
     while (i < size) {
         j = (i <= size-i)  ?  i  :  size-i;
-        Py_MEMCPY(op->ob_sval+i, op->ob_sval, j);
+        memcpy(op->ob_sval+i, op->ob_sval, j);
         i += j;
     }
     return (PyObject *) op;
@@ -2765,7 +2765,7 @@ bytes_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     n = PyBytes_GET_SIZE(tmp);
     pnew = type->tp_alloc(type, n);
     if (pnew != NULL) {
-        Py_MEMCPY(PyBytes_AS_STRING(pnew),
+        memcpy(PyBytes_AS_STRING(pnew),
                   PyBytes_AS_STRING(tmp), n+1);
         ((PyBytesObject *)pnew)->ob_shash =
             ((PyBytesObject *)tmp)->ob_shash;
@@ -3237,7 +3237,7 @@ _PyBytesWriter_Resize(_PyBytesWriter *writer, void *str, Py_ssize_t size)
                 dest = PyByteArray_AS_STRING(writer->buffer);
             else
                 dest = PyBytes_AS_STRING(writer->buffer);
-            Py_MEMCPY(dest,
+            memcpy(dest,
                       writer->small_buffer,
                       pos);
         }
@@ -3372,7 +3372,7 @@ _PyBytesWriter_WriteBytes(_PyBytesWriter *writer, void *ptr,
     if (str == NULL)
         return NULL;
 
-    Py_MEMCPY(str, bytes, size);
+    memcpy(str, bytes, size);
     str += size;
 
     return str;
