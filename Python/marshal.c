@@ -130,7 +130,7 @@ w_string(const char *s, Py_ssize_t n, WFILE *p)
     m = p->end - p->ptr;
     if (p->fp != NULL) {
         if (n <= m) {
-            Py_MEMCPY(p->ptr, s, n);
+            memcpy(p->ptr, s, n);
             p->ptr += n;
         }
         else {
@@ -140,7 +140,7 @@ w_string(const char *s, Py_ssize_t n, WFILE *p)
     }
     else {
         if (n <= m || w_reserve(p, n - m)) {
-            Py_MEMCPY(p->ptr, s, n);
+            memcpy(p->ptr, s, n);
             p->ptr += n;
         }
     }
