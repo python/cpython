@@ -497,7 +497,7 @@ error:
 static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
-    PyObject *readline = NULL, *stream = NULL, *io = NULL;
+    PyObject *readline = NULL, *stream = NULL, *io = NULL, *bufobj;
     _Py_IDENTIFIER(open);
     _Py_IDENTIFIER(readline);
     int fd;
@@ -528,9 +528,12 @@ fp_setreadl(struct tok_state *tok, const char* enc)
     readline = _PyObject_GetAttrId(stream, &PyId_readline);
     Py_XSETREF(tok->decoding_readline, readline);
     if (pos > 0) {
-        if (PyObject_CallObject(readline, NULL) == NULL) {
+        bufobj = PyObject_CallObject(readline, NULL);
+        if (bufobj == NULL) {
             readline = NULL;
             goto cleanup;
+        } else {
+            Py_DECREF(bufobj);
         }
     }
 
