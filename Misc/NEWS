@@ -179,6 +179,9 @@ Tests
 Build
 -----
 
+- Issue #15819: The Include directory in the build tree is already searched;
+  drop unused code trying to add it again.
+
 - Issue #27566: Fix clean target in freeze makefile (patch by Lisa Roach)
 
 - Issue #27983: Cause lack of llvm-profdata tool when using clang as

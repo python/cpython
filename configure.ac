@@ -988,20 +988,6 @@ else
 	SVNVERSION="echo Unversioned directory"
 fi
 
-AC_SUBST(BASECPPFLAGS)
-if test "$abs_srcdir" != "$abs_builddir"; then
-    # If we're building out-of-tree make sure Include (in the current dir)
-    # gets picked up before its $srcdir counterpart in order for Python-ast.h
-    # and graminit.h to get picked up from the correct directory.
-    # (A side effect of this is that these resources will automatically be
-    #  regenerated when building out-of-tree, regardless of whether or not
-    #  the $srcdir counterpart is up-to-date.  This is an acceptable trade
-    #  off.)
-    BASECPPFLAGS="-IInclude"
-else
-    BASECPPFLAGS=""
-fi
-
 AC_SUBST(HGVERSION)
 AC_SUBST(HGTAG)
 AC_SUBST(HGBRANCH)
