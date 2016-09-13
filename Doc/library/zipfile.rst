@@ -142,8 +142,8 @@ ZipFile Objects
    file, then additional files are added to it.  If *file* does not refer to a
    ZIP file, then a new ZIP archive is appended to the file.  This is meant for
    adding a ZIP archive to another file (such as :file:`python.exe`).  If
-   *mode* is ``a`` and the file does not exist at all, it is created.
-   If *mode* is ``r`` or ``a``, the file should be seekable.
+   *mode* is ``'a'`` and the file does not exist at all, it is created.
+   If *mode* is ``'r'`` or ``'a'``, the file should be seekable.
    *compression* is the ZIP compression method to use when writing the archive,
    and should be :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`,
    :const:`ZIP_BZIP2` or :const:`ZIP_LZMA`; unrecognized
