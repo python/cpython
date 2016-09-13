@@ -987,7 +987,7 @@ _PyDict_MaybeUntrack(PyObject *op)
    when it is known that the key is not present in the dict.
 
    The dict must be combined. */
-static Py_ssize_t
+static void
 find_empty_slot(PyDictObject *mp, PyObject *key, Py_hash_t hash,
                 PyObject ***value_addr, Py_ssize_t *hashpos)
 {
@@ -1011,11 +1011,7 @@ find_empty_slot(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     ep = &ep0[mp->ma_keys->dk_nentries];
     *hashpos = i & mask;
     assert(ep->me_value == NULL);
-    if (mp->ma_values)
-        *value_addr = &mp->ma_values[ix];
-    else
-        *value_addr = &ep->me_value;
-    return ix;
+    *value_addr = &ep->me_value;
 }
 
 static int
