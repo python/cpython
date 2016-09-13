@@ -108,7 +108,7 @@ pad(PyObject *self, Py_ssize_t left, Py_ssize_t right, char fill)
     if (u) {
         if (left)
             memset(STRINGLIB_STR(u), fill, left);
-        Py_MEMCPY(STRINGLIB_STR(u) + left,
+        memcpy(STRINGLIB_STR(u) + left,
                STRINGLIB_STR(self),
                STRINGLIB_LEN(self));
         if (right)
@@ -275,13 +275,13 @@ stringlib_replace_interleave(PyObject *self,
 
     if (to_len > 1) {
         /* Lay the first one down (guaranteed this will occur) */
-        Py_MEMCPY(result_s, to_s, to_len);
+        memcpy(result_s, to_s, to_len);
         result_s += to_len;
         count -= 1;
 
         for (i = 0; i < count; i++) {
             *result_s++ = *self_s++;
-            Py_MEMCPY(result_s, to_s, to_len);
+            memcpy(result_s, to_s, to_len);
             result_s += to_len;
         }
     }
@@ -297,7 +297,7 @@ stringlib_replace_interleave(PyObject *self,
     }
 
     /* Copy the rest of the original string */
-    Py_MEMCPY(result_s, self_s, self_len - i);
+    memcpy(result_s, self_s, self_len - i);
 
     return result;
 }
@@ -337,11 +337,11 @@ stringlib_replace_delete_single_character(PyObject *self,
         next = findchar(start, end - start, from_c);
         if (next == NULL)
             break;
-        Py_MEMCPY(result_s, start, next - start);
+        memcpy(result_s, start, next - start);
         result_s += (next - start);
         start = next + 1;
     }
-    Py_MEMCPY(result_s, start, end - start);
+    memcpy(result_s, start, end - start);
 
     return result;
 }
@@ -390,12 +390,12 @@ stringlib_replace_delete_substring(PyObject *self,
             break;
         next = start + offset;
 
-        Py_MEMCPY(result_s, start, next - start);
+        memcpy(result_s, start, next - start);
 
         result_s += (next - start);
         start = next + from_len;
     }
-    Py_MEMCPY(result_s, start, end - start);
+    memcpy(result_s, start, end - start);
     return result;
 }
 
@@ -427,7 +427,7 @@ stringlib_replace_single_character_in_place(PyObject *self,
         return NULL;
     }
     result_s = STRINGLIB_STR(result);
-    Py_MEMCPY(result_s, self_s, self_len);
+    memcpy(result_s, self_s, self_len);
 
     /* change everything in-place, starting with this one */
     start =  result_s + (next - self_s);
@@ -477,11 +477,11 @@ stringlib_replace_substring_in_place(PyObject *self,
         return NULL;
     }
     result_s = STRINGLIB_STR(result);
-    Py_MEMCPY(result_s, self_s, self_len);
+    memcpy(result_s, self_s, self_len);
 
     /* change everything in-place, starting with this one */
     start =  result_s + offset;
-    Py_MEMCPY(start, to_s, from_len);
+    memcpy(start, to_s, from_len);
     start += from_len;
     end = result_s + self_len;
 
@@ -491,7 +491,7 @@ stringlib_replace_substring_in_place(PyObject *self,
                                 0);
         if (offset == -1)
             break;
-        Py_MEMCPY(start + offset, to_s, from_len);
+        memcpy(start + offset, to_s, from_len);
         start += offset + from_len;
     }
 
@@ -544,20 +544,20 @@ stringlib_replace_single_character(PyObject *self,
 
         if (next == start) {
             /* replace with the 'to' */
-            Py_MEMCPY(result_s, to_s, to_len);
+            memcpy(result_s, to_s, to_len);
             result_s += to_len;
             start += 1;
         } else {
             /* copy the unchanged old then the 'to' */
-            Py_MEMCPY(result_s, start, next - start);
+            memcpy(result_s, start, next - start);
             result_s += (next - start);
-            Py_MEMCPY(result_s, to_s, to_len);
+            memcpy(result_s, to_s, to_len);
             result_s += to_len;
             start = next + 1;
         }
     }
     /* Copy the remainder of the remaining bytes */
-    Py_MEMCPY(result_s, start, end - start);
+    memcpy(result_s, start, end - start);
 
     return result;
 }
@@ -613,20 +613,20 @@ stringlib_replace_substring(PyObject *self,
         next = start + offset;
         if (next == start) {
             /* replace with the 'to' */
-            Py_MEMCPY(result_s, to_s, to_len);
+            memcpy(result_s, to_s, to_len);
             result_s += to_len;
             start += from_len;
         } else {
             /* copy the unchanged old then the 'to' */
-            Py_MEMCPY(result_s, start, next - start);
+            memcpy(result_s, start, next - start);
             result_s += (next - start);
-            Py_MEMCPY(result_s, to_s, to_len);
+            memcpy(result_s, to_s, to_len);
             result_s += to_len;
             start = next + from_len;
         }
     }
     /* Copy the remainder of the remaining bytes */
-    Py_MEMCPY(result_s, start, end - start);
+    memcpy(result_s, start, end - start);
 
     return result;
 }
