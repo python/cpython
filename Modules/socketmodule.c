@@ -3943,7 +3943,7 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
         msg->msg_iov = iovs;
 
         databufs = PyMem_New(Py_buffer, ndataparts);
-        if (iovs == NULL) {
+        if (databufs == NULL) {
             PyErr_NoMemory();
             goto finally;
         }
