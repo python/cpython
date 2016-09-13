@@ -131,6 +131,8 @@ Windows improvements:
     :pep:`4XX` - Python Virtual Environments
        PEP written by Carl Meyer
 
+New built-in features:
+
 * PEP 520: :ref:`Preserving Class Attribute Definition Order<whatsnew-deforder>`
 
 * PEP 468: :ref:`Preserving Keyword Argument Order<whatsnew-kwargs>`
