@@ -328,6 +328,9 @@ Build
 - Issue #28066: Fix the logic that searches build directories for generated
   include files when building outside the source tree.
 
+- Issue #15819: Remove redundant include search directory option for building
+  outside the source tree.
+
 - Issue #27566: Fix clean target in freeze makefile (patch by Lisa Roach)
 
 - Issue #27705: Update message in validate_ucrtbase.py
