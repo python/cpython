@@ -83,7 +83,8 @@ class Test(unittest.TestCase):
         script = os.path.join(scriptsdir, "fixcid.py")
         with support.swap_attr(sys, "argv", argv), \
                 support.swap_attr(sys, "stdin", StringIO(input)), \
-                support.captured_stdout() as output:
+                support.captured_stdout() as output, \
+                support.captured_stderr():
             try:
                 runpy.run_path(script, run_name="__main__")
             except SystemExit as exit:
