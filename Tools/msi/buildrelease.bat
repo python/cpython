@@ -78,7 +78,7 @@ where hg /q || echo Cannot find Mercurial on PATH && exit /B 1
 
 where dlltool /q && goto skipdlltoolsearch
 set _DLLTOOL_PATH=
-where /R "%EXTERNALS%\" dlltool > "%TEMP%\dlltool.loc" 2> nul && set /P _DLLTOOL_PATH= < "%TEMP%\dlltool.loc" & del "%TEMP%\dlltool.loc" 
+where /R "%EXTERNALS%\" dlltool > "%TEMP%\dlltool.loc" 2> nul && set /P _DLLTOOL_PATH= < "%TEMP%\dlltool.loc" & del "%TEMP%\dlltool.loc"
 if not exist "%_DLLTOOL_PATH%" echo Cannot find binutils on PATH or in external && exit /B 1
 for %%f in (%_DLLTOOL_PATH%) do set PATH=%PATH%;%%~dpf
 set _DLLTOOL_PATH=
@@ -143,13 +143,13 @@ if not "%SKIPBUILD%" EQU "1" (
     @if errorlevel 1 exit /B
     @rem build.bat turns echo back on, so we disable it again
     @echo off
-    
+
     if "%PGO%" EQU "" (
         @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -t %TARGET% %CERTOPTS%
     ) else (
         @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -c PGInstrument -t %TARGET% %CERTOPTS%
         @if errorlevel 1 exit /B
-        
+
         @del "%BUILD%*.pgc"
         if "%PGO%" EQU "default" (
             "%BUILD%python.exe" -m test -q --pgo
@@ -158,12 +158,10 @@ if not "%SKIPBUILD%" EQU "1" (
             "%BUILD%python.exe" -m test -r -q --pgo
         ) else if "%PGO%" EQU "default10" (
             for /L %%i in (0, 1, 9) do "%BUILD%python.exe" -m test -q -r --pgo
-        ) else if "%PGO%" EQU "pybench" (
-            "%BUILD%python.exe" "%PCBUILD%..\Tools\pybench\pybench.py"
         ) else (
             "%BUILD%python.exe" %PGO%
         )
-        
+
         @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -c PGUpdate -t Build %CERTOPTS%
     )
     @if errorlevel 1 exit /B
@@ -214,7 +212,6 @@ echo     Shortcut        Description
 echo     default         Test suite with --pgo
 echo     default2        2x test suite with --pgo and randomized test order
 echo     default10       10x test suite with --pgo and randomized test order
-echo     pybench         pybench script
 echo.
 echo The following substitutions will be applied to the download URL:
 echo     Variable        Description         Example
