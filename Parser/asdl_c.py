@@ -1194,7 +1194,7 @@ def main(srcfile):
         sys.exit(1)
     if INC_DIR:
         p = "%s/%s-ast.h" % (INC_DIR, mod.name)
-        f = open(p, "wb")
+        f = open(p, "w")
         f.write(auto_gen_msg)
         f.write('#include "asdl.h"\n\n')
         c = ChainOfVisitors(TypeDefVisitor(f),
@@ -1209,7 +1209,7 @@ def main(srcfile):
 
     if SRC_DIR:
         p = os.path.join(SRC_DIR, str(mod.name) + "-ast.c")
-        f = open(p, "wb")
+        f = open(p, "w")
         f.write(auto_gen_msg)
         f.write(c_file_msg % mod.version)
         f.write('#include "Python.h"\n')
@@ -1237,7 +1237,7 @@ if __name__ == "__main__":
     SRC_DIR = ''
     opts, args = getopt.getopt(sys.argv[1:], "h:c:")
     if len(opts) != 1:
-        print "Must specify exactly one output file"
+        print("Must specify exactly one output file")
         sys.exit(1)
     for o, v in opts:
         if o == '-h':
@@ -1245,6 +1245,6 @@ if __name__ == "__main__":
         if o == '-c':
             SRC_DIR = v
     if len(args) != 1:
-        print "Must specify single input file"
+        print("Must specify single input file")
         sys.exit(1)
     main(args[0])
