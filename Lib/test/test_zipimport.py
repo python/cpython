@@ -513,6 +513,19 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  "some.data": (NOW, "some data")}
         self.doTest(pyc_ext, files, TESTMOD)
 
+    def testDefaultOptimizationLevel(self):
+        # zipimport should use the default optimization level (#28131)
+        src = """if 1:  # indent hack
+        def test(val):
+            assert(val)
+            return val\n"""
+        files = {TESTMOD + '.py': (NOW, src)}
+        self.makeZip(files)
+        sys.path.insert(0, TEMP_ZIP)
+        mod = importlib.import_module(TESTMOD)
+        self.assertEqual(mod.test(1), 1)
+        self.assertRaises(AssertionError, mod.test, False)
+
     def testImport_WithStuff(self):
         # try importing from a zipfile which contains additional
         # stuff at the beginning of the file
