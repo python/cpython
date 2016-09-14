@@ -160,7 +160,9 @@ PyDoc_STRVAR(clock_gettime_doc,
 "clock_gettime(clk_id) -> floating point number\n\
 \n\
 Return the time of the specified clock clk_id.");
+#endif   /* HAVE_CLOCK_GETTIME */
 
+#ifdef HAVE_CLOCK_SETTIME
 static PyObject *
 time_clock_settime(PyObject *self, PyObject *args)
 {
@@ -191,7 +193,9 @@ PyDoc_STRVAR(clock_settime_doc,
 "clock_settime(clk_id, time)\n\
 \n\
 Set the time of the specified clock clk_id.");
+#endif   /* HAVE_CLOCK_SETTIME */
 
+#ifdef HAVE_CLOCK_GETRES
 static PyObject *
 time_clock_getres(PyObject *self, PyObject *args)
 {
@@ -215,7 +219,7 @@ PyDoc_STRVAR(clock_getres_doc,
 "clock_getres(clk_id) -> floating point number\n\
 \n\
 Return the resolution (precision) of the specified clock clk_id.");
-#endif   /* HAVE_CLOCK_GETTIME */
+#endif   /* HAVE_CLOCK_GETRES */
 
 static PyObject *
 time_sleep(PyObject *self, PyObject *obj)
@@ -1287,7 +1291,11 @@ static PyMethodDef time_methods[] = {
 #endif
 #ifdef HAVE_CLOCK_GETTIME
     {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
+#endif
+#ifdef HAVE_CLOCK_SETTIME
     {"clock_settime",   time_clock_settime, METH_VARARGS, clock_settime_doc},
+#endif
+#ifdef HAVE_CLOCK_GETRES
     {"clock_getres",    time_clock_getres, METH_VARARGS, clock_getres_doc},
 #endif
     {"sleep",           time_sleep, METH_O, sleep_doc},
@@ -1383,8 +1391,9 @@ PyInit_time(void)
     /* Set, or reset, module variables like time.timezone */
     PyInit_timezone(m);
 
-#if defined(HAVE_CLOCK_GETTIME)
+#ifdef CLOCK_REALTIME
     PyModule_AddIntMacro(m, CLOCK_REALTIME);
+#endif
 #ifdef CLOCK_MONOTONIC
     PyModule_AddIntMacro(m, CLOCK_MONOTONIC);
 #endif
@@ -1400,7 +1409,6 @@ PyInit_time(void)
 #ifdef CLOCK_THREAD_CPUTIME_ID
     PyModule_AddIntMacro(m, CLOCK_THREAD_CPUTIME_ID);
 #endif
-#endif /* HAVE_CLOCK_GETTIME */
 
     if (!initialized) {
         if (PyStructSequence_InitType2(&StructTimeType,
