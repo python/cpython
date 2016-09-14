@@ -41,12 +41,10 @@ struct _dictkeysobject {
        - lookdict_split(): Version of lookdict() for split tables. */
     dict_lookup_func dk_lookup;
 
-    /* Number of usable entries in dk_entries.
-       0 <= dk_usable <= USABLE_FRACTION(dk_size) */
+    /* Number of usable entries in dk_entries. */
     Py_ssize_t dk_usable;
 
-    /* Number of used entries in dk_entries.
-       0 <= dk_nentries < dk_size */
+    /* Number of used entries in dk_entries. */
     Py_ssize_t dk_nentries;
 
     /* Actual hash table of dk_size entries. It holds indices in dk_entries,
