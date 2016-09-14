@@ -71,6 +71,7 @@ Core and Builtins
 Library
 -------
 
+- Issue #27599: Fixed buffer overrun in binascii.b2a_qp() and binascii.a2b_qp().
 
 - Issue #19003:m email.generator now replaces only \r and/or \n line
   endings, per the RFC, instead of all unicode line endings.
