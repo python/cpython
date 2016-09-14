@@ -3734,6 +3734,12 @@ AC_CHECK_FUNCS(clock_getres, [], [
     ])
 ])
 
+AC_CHECK_FUNCS(clock_settime, [], [
+    AC_CHECK_LIB(rt, clock_settime, [
+        AC_DEFINE(HAVE_CLOCK_SETTIME, 1)
+    ])
+])
+
 AC_MSG_CHECKING(for major, minor, and makedev)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #if defined(MAJOR_IN_MKDEV)
