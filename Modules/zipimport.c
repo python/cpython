@@ -1370,7 +1370,7 @@ compile_source(PyObject *pathname, PyObject *source)
     }
 
     code = Py_CompileStringObject(PyBytes_AsString(fixed_source),
-                                  pathname, Py_file_input, NULL, 1);
+                                  pathname, Py_file_input, NULL, -1);
 
     Py_DECREF(fixed_source);
     return code;
