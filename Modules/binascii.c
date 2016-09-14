@@ -1290,7 +1290,8 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
                 odata[out++] = '=';
                 in++;
             }
-            else if (((ascii_data[in] >= 'A' && ascii_data[in] <= 'F') ||
+            else if ((in + 1 < datalen) &&
+                     ((ascii_data[in] >= 'A' && ascii_data[in] <= 'F') ||
                       (ascii_data[in] >= 'a' && ascii_data[in] <= 'f') ||
                       (ascii_data[in] >= '0' && ascii_data[in] <= '9')) &&
                      ((ascii_data[in+1] >= 'A' && ascii_data[in+1] <= 'F') ||
@@ -1388,7 +1389,8 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
             (databuf[in] == '=') ||
             (header && databuf[in] == '_') ||
             ((databuf[in] == '.') && (linelen == 0) &&
-             (databuf[in+1] == '\n' || databuf[in+1] == '\r' || databuf[in+1] == 0)) ||
+             (in + 1 == datalen || databuf[in+1] == '\n' ||
+              databuf[in+1] == '\r' || databuf[in+1] == 0)) ||
             (!istext && ((databuf[in] == '\r') || (databuf[in] == '\n'))) ||
             ((databuf[in] == '\t' || databuf[in] == ' ') && (in + 1 == datalen)) ||
             ((databuf[in] < 33) &&
@@ -1464,13 +1466,13 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
             (databuf[in] == '=') ||
             (header && databuf[in] == '_') ||
             ((databuf[in] == '.') && (linelen == 0) &&
-             (databuf[in+1] == '\n' || databuf[in+1] == '\r' || databuf[in+1] == 0)) ||
+             (in + 1 == datalen || databuf[in+1] == '\n' ||
+              databuf[in+1] == '\r' || databuf[in+1] == 0)) ||
             (!istext && ((databuf[in] == '\r') || (databuf[in] == '\n'))) ||
             ((databuf[in] == '\t' || databuf[in] == ' ') && (in + 1 == datalen)) ||
             ((databuf[in] < 33) &&
              (databuf[in] != '\r') && (databuf[in] != '\n') &&
-             (quotetabs ||
-            (!quotetabs && ((databuf[in] != '\t') && (databuf[in] != ' '))))))
+             (quotetabs || ((databuf[in] != '\t') && (databuf[in] != ' ')))))
         {
             if ((linelen + 3 )>= MAXLINESIZE) {
                 odata[out++] = '=';
