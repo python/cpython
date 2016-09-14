@@ -1232,7 +1232,7 @@ unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
 {
     Py_UCS4 code;
     unsigned int index;
-    if (name_length > INT_MAX) {
+    if (name_length > NAME_MAXLEN) {
         PyErr_SetString(PyExc_KeyError, "name too long");
         return NULL;
     }
