@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28131: Fix a regression in zipimport's compile_source().  zipimport
+  should use the same optimization level as the interpreter.
+
 - Issue #28126: Replace Py_MEMCPY with memcpy(). Visual Studio can properly
   optimize memcpy().
 
