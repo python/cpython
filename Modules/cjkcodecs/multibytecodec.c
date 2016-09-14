@@ -531,7 +531,7 @@ multibytecodec_encode(MultibyteCodec *codec,
         if (_PyString_Resize(&buf.outobj, finalsize) == -1)
             goto errorexit;
 
-	*data = buf.inbuf;
+    *data = buf.inbuf;
     Py_XDECREF(buf.excobj);
     return buf.outobj;
 

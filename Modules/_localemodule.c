@@ -172,23 +172,23 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
 #endif
 
     if (locale) {
-    /* set locale */
-    result = setlocale(category, locale);
-    if (!result) {
-        /* operation failed, no setting was changed */
-        PyErr_SetString(Error, "unsupported locale setting");
-        return NULL;
-    }
-    result_object = PyString_FromString(result);
-    if (!result_object)
-        return NULL;
-    /* record changes to LC_CTYPE */
-    if (category == LC_CTYPE || category == LC_ALL)
-        fixup_ulcase();
+        /* set locale */
+        result = setlocale(category, locale);
+        if (!result) {
+            /* operation failed, no setting was changed */
+            PyErr_SetString(Error, "unsupported locale setting");
+            return NULL;
+        }
+        result_object = PyString_FromString(result);
+        if (!result_object)
+            return NULL;
+        /* record changes to LC_CTYPE */
+        if (category == LC_CTYPE || category == LC_ALL)
+            fixup_ulcase();
         /* things that got wrong up to here are ignored */
         PyErr_Clear();
     } else {
-    /* get locale */
+        /* get locale */
         result = setlocale(category, NULL);
         if (!result) {
             PyErr_SetString(Error, "locale query failed");
@@ -297,9 +297,9 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
     }
     /* Convert the non-unicode argument to unicode. */
     if (!PyUnicode_Check(os1)) {
-    os1 = PyUnicode_FromObject(os1);
-    if (!os1)
-        return NULL;
+        os1 = PyUnicode_FromObject(os1);
+        if (!os1)
+            return NULL;
         rel1 = 1;
     }
     if (!PyUnicode_Check(os2)) {

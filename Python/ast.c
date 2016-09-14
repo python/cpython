@@ -2284,7 +2284,7 @@ ast_for_print_stmt(struct compiling *c, const node *n)
         dest = ast_for_expr(c, CHILD(n, 2));
         if (!dest)
             return NULL;
-            start = 4;
+        start = 4;
     }
     values_count = (NCH(n) + 1 - start) / 2;
     if (values_count) {
