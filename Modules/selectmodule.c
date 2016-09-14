@@ -2533,13 +2533,21 @@ PyInit_select(void)
     /* event filters */
     PyModule_AddIntConstant(m, "KQ_FILTER_READ", EVFILT_READ);
     PyModule_AddIntConstant(m, "KQ_FILTER_WRITE", EVFILT_WRITE);
+#ifdef EVFILT_AIO
     PyModule_AddIntConstant(m, "KQ_FILTER_AIO", EVFILT_AIO);
+#endif
+#ifdef EVFILT_VNODE
     PyModule_AddIntConstant(m, "KQ_FILTER_VNODE", EVFILT_VNODE);
+#endif
+#ifdef EVFILT_PROC
     PyModule_AddIntConstant(m, "KQ_FILTER_PROC", EVFILT_PROC);
+#endif
 #ifdef EVFILT_NETDEV
     PyModule_AddIntConstant(m, "KQ_FILTER_NETDEV", EVFILT_NETDEV);
 #endif
+#ifdef EVFILT_SIGNAL
     PyModule_AddIntConstant(m, "KQ_FILTER_SIGNAL", EVFILT_SIGNAL);
+#endif
     PyModule_AddIntConstant(m, "KQ_FILTER_TIMER", EVFILT_TIMER);
 
     /* event flags */
@@ -2550,16 +2558,23 @@ PyInit_select(void)
     PyModule_AddIntConstant(m, "KQ_EV_ONESHOT", EV_ONESHOT);
     PyModule_AddIntConstant(m, "KQ_EV_CLEAR", EV_CLEAR);
 
+#ifdef EV_SYSFLAGS
     PyModule_AddIntConstant(m, "KQ_EV_SYSFLAGS", EV_SYSFLAGS);
+#endif
+#ifdef EV_FLAG1
     PyModule_AddIntConstant(m, "KQ_EV_FLAG1", EV_FLAG1);
+#endif
 
     PyModule_AddIntConstant(m, "KQ_EV_EOF", EV_EOF);
     PyModule_AddIntConstant(m, "KQ_EV_ERROR", EV_ERROR);
 
     /* READ WRITE filter flag */
+#ifdef NOTE_LOWAT
     PyModule_AddIntConstant(m, "KQ_NOTE_LOWAT", NOTE_LOWAT);
+#endif
 
     /* VNODE filter flags  */
+#ifdef EVFILT_VNODE
     PyModule_AddIntConstant(m, "KQ_NOTE_DELETE", NOTE_DELETE);
     PyModule_AddIntConstant(m, "KQ_NOTE_WRITE", NOTE_WRITE);
     PyModule_AddIntConstant(m, "KQ_NOTE_EXTEND", NOTE_EXTEND);
@@ -2567,8 +2582,10 @@ PyInit_select(void)
     PyModule_AddIntConstant(m, "KQ_NOTE_LINK", NOTE_LINK);
     PyModule_AddIntConstant(m, "KQ_NOTE_RENAME", NOTE_RENAME);
     PyModule_AddIntConstant(m, "KQ_NOTE_REVOKE", NOTE_REVOKE);
+#endif
 
     /* PROC filter flags  */
+#ifdef EVFILT_PROC
     PyModule_AddIntConstant(m, "KQ_NOTE_EXIT", NOTE_EXIT);
     PyModule_AddIntConstant(m, "KQ_NOTE_FORK", NOTE_FORK);
     PyModule_AddIntConstant(m, "KQ_NOTE_EXEC", NOTE_EXEC);
@@ -2578,6 +2595,7 @@ PyInit_select(void)
     PyModule_AddIntConstant(m, "KQ_NOTE_TRACK", NOTE_TRACK);
     PyModule_AddIntConstant(m, "KQ_NOTE_CHILD", NOTE_CHILD);
     PyModule_AddIntConstant(m, "KQ_NOTE_TRACKERR", NOTE_TRACKERR);
+#endif
 
     /* NETDEV filter flags */
 #ifdef EVFILT_NETDEV
