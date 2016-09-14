@@ -42,6 +42,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #27599: Fixed buffer overrun in binascii.b2a_qp() and binascii.a2b_qp().
+
 - Issue #25969: Update the lib2to3 grammar to handle the unpacking
   generalizations added in 3.5.
 

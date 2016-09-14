@@ -1222,7 +1222,8 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
                 odata[out++] = '=';
                 in++;
             }
-            else if (((data[in] >= 'A' && data[in] <= 'F') ||
+            else if ((in + 1 < datalen) &&
+                     ((data[in] >= 'A' && data[in] <= 'F') ||
                       (data[in] >= 'a' && data[in] <= 'f') ||
                       (data[in] >= '0' && data[in] <= '9')) &&
                      ((data[in+1] >= 'A' && data[in+1] <= 'F') ||
@@ -1321,7 +1322,8 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
             (data[in] == '=') ||
             (header && data[in] == '_') ||
             ((data[in] == '.') && (linelen == 0) &&
-             (data[in+1] == '\n' || data[in+1] == '\r' || data[in+1] == 0)) ||
+             (in + 1 == datalen || data[in+1] == '\n' ||
+              data[in+1] == '\r' || data[in+1] == 0)) ||
             (!istext && ((data[in] == '\r') || (data[in] == '\n'))) ||
             ((data[in] == '\t' || data[in] == ' ') && (in + 1 == datalen)) ||
             ((data[in] < 33) &&
@@ -1400,13 +1402,13 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
             (data[in] == '=') ||
             (header && data[in] == '_') ||
             ((data[in] == '.') && (linelen == 0) &&
-             (data[in+1] == '\n' || data[in+1] == '\r' || data[in+1] == 0)) ||
+             (in + 1 == datalen || data[in+1] == '\n' ||
+              data[in+1] == '\r' || data[in+1] == 0)) ||
             (!istext && ((data[in] == '\r') || (data[in] == '\n'))) ||
             ((data[in] == '\t' || data[in] == ' ') && (in + 1 == datalen)) ||
             ((data[in] < 33) &&
              (data[in] != '\r') && (data[in] != '\n') &&
-             (quotetabs ||
-            (!quotetabs && ((data[in] != '\t') && (data[in] != ' '))))))
+             (quotetabs || ((data[in] != '\t') && (data[in] != ' ')))))
         {
             if ((linelen + 3 )>= MAXLINESIZE) {
                 odata[out++] = '=';
