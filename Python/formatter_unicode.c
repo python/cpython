@@ -115,11 +115,13 @@ is_sign_element(Py_UCS4 c)
 }
 
 /* Locale type codes. LT_NO_LOCALE must be zero. */
-#define LT_NO_LOCALE 0
-#define LT_DEFAULT_LOCALE 1
-#define LT_UNDERSCORE_LOCALE 2
-#define LT_UNDER_FOUR_LOCALE 3
-#define LT_CURRENT_LOCALE 4
+enum LocaleType {
+    LT_NO_LOCALE = 0,
+    LT_DEFAULT_LOCALE,
+    LT_UNDERSCORE_LOCALE,
+    LT_UNDER_FOUR_LOCALE,
+    LT_CURRENT_LOCALE
+};
 
 typedef struct {
     Py_UCS4 fill_char;
@@ -127,7 +129,7 @@ typedef struct {
     int alternate;
     Py_UCS4 sign;
     Py_ssize_t width;
-    int thousands_separators;
+    enum LocaleType thousands_separators;
     Py_ssize_t precision;
     Py_UCS4 type;
 } InternalFormatSpec;
@@ -180,7 +182,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
     format->alternate = 0;
     format->sign = '\0';
     format->width = -1;
-    format->thousands_separators = 0;
+    format->thousands_separators = LT_NO_LOCALE;
     format->precision = -1;
     format->type = default_type;
 
@@ -240,7 +242,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
     }
     /* Underscore signifies add thousands separators */
     if (end-pos && READ_spec(pos) == '_') {
-        if (format->thousands_separators != 0) {
+        if (format->thousands_separators != LT_NO_LOCALE) {
             invalid_comma_and_underscore();
             return 0;
         }
@@ -700,7 +702,7 @@ static const char no_grouping[1] = {CHAR_MAX};
    LT_CURRENT_LOCALE, a hard-coded locale if LT_DEFAULT_LOCALE or
    LT_UNDERSCORE_LOCALE/LT_UNDER_FOUR_LOCALE, or none if LT_NO_LOCALE. */
 static int
-get_locale_info(int type, LocaleInfo *locale_info)
+get_locale_info(enum LocaleType type, LocaleInfo *locale_info)
 {
     switch (type) {
     case LT_CURRENT_LOCALE: {
@@ -713,10 +715,8 @@ get_locale_info(int type, LocaleInfo *locale_info)
         locale_info->thousands_sep = PyUnicode_DecodeLocale(
                                          locale_data->thousands_sep,
                                          NULL);
-        if (locale_info->thousands_sep == NULL) {
-            Py_DECREF(locale_info->decimal_point);
+        if (locale_info->thousands_sep == NULL)
             return -1;
-        }
         locale_info->grouping = locale_data->grouping;
         break;
     }
@@ -726,11 +726,8 @@ get_locale_info(int type, LocaleInfo *locale_info)
         locale_info->decimal_point = PyUnicode_FromOrdinal('.');
         locale_info->thousands_sep = PyUnicode_FromOrdinal(
             type == LT_DEFAULT_LOCALE ? ',' : '_');
-        if (!locale_info->decimal_point || !locale_info->thousands_sep) {
-            Py_XDECREF(locale_info->decimal_point);
-            Py_XDECREF(locale_info->thousands_sep);
+        if (!locale_info->decimal_point || !locale_info->thousands_sep)
             return -1;
-        }
         if (type != LT_UNDER_FOUR_LOCALE)
             locale_info->grouping = "\3"; /* Group every 3 characters.  The
                                          (implicit) trailing 0 means repeat
@@ -741,15 +738,10 @@ get_locale_info(int type, LocaleInfo *locale_info)
     case LT_NO_LOCALE:
         locale_info->decimal_point = PyUnicode_FromOrdinal('.');
         locale_info->thousands_sep = PyUnicode_New(0, 0);
-        if (!locale_info->decimal_point || !locale_info->thousands_sep) {
-            Py_XDECREF(locale_info->decimal_point);
-            Py_XDECREF(locale_info->thousands_sep);
+        if (!locale_info->decimal_point || !locale_info->thousands_sep)
             return -1;
-        }
         locale_info->grouping = no_grouping;
         break;
-    default:
-        assert(0);
     }
     return 0;
 }
