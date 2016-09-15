@@ -434,7 +434,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         self._pipe = pipe
         self._fileno = pipe.fileno()
         self._protocol = protocol
-        self._buffer = []
+        self._buffer = bytearray()
         self._conn_lost = 0
         self._closing = False  # Set when close() or write_eof() called.
 
@@ -450,7 +450,6 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
                              "pipes, sockets and character devices")
 
         _set_nonblocking(self._fileno)
-
         self._loop.call_soon(self._protocol.connection_made, self)
 
         # On AIX, the reader trick (to be notified when the read end of the
@@ -492,7 +491,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         return '<%s>' % ' '.join(info)
 
     def get_write_buffer_size(self):
-        return sum(len(data) for data in self._buffer)
+        return len(self._buffer)
 
     def _read_ready(self):
         # Pipe was closed by peer.
@@ -530,39 +529,37 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             if n == len(data):
                 return
             elif n > 0:
-                data = data[n:]
+                data = memoryview(data)[n:]
             self._loop.add_writer(self._fileno, self._write_ready)
 
-        self._buffer.append(data)
+        self._buffer += data
         self._maybe_pause_protocol()
 
     def _write_ready(self):
-        data = b''.join(self._buffer)
-        assert data, 'Data should not be empty'
+        assert self._buffer, 'Data should not be empty'
 
-        self._buffer.clear()
         try:
-            n = os.write(self._fileno, data)
+            n = os.write(self._fileno, self._buffer)
         except (BlockingIOError, InterruptedError):
-            self._buffer.append(data)
+            pass
         except Exception as exc:
+            self._buffer.clear()
             self._conn_lost += 1
             # Remove writer here, _fatal_error() doesn't it
             # because _buffer is empty.
             self._loop.remove_writer(self._fileno)
             self._fatal_error(exc, 'Fatal write error on pipe transport')
         else:
-            if n == len(data):
+            if n == len(self._buffer):
+                self._buffer.clear()
                 self._loop.remove_writer(self._fileno)
                 self._maybe_resume_protocol()  # May append to buffer.
-                if not self._buffer and self._closing:
+                if self._closing:
                     self._loop.remove_reader(self._fileno)
                     self._call_connection_lost(None)
                 return
             elif n > 0:
-                data = data[n:]
-
-            self._buffer.append(data)  # Try again later.
+                del self._buffer[:n]
 
     def can_write_eof(self):
         return True
