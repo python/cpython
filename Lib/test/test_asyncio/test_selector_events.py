@@ -687,6 +687,20 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
               selectors.EVENT_WRITE)])
         self.loop.remove_writer.assert_called_with(1)
 
+    def test_accept_connection_multiple(self):
+        sock = mock.Mock()
+        sock.accept.return_value = (mock.Mock(), mock.Mock())
+        backlog = 100
+        # Mock the coroutine generation for a connection to prevent
+        # warnings related to un-awaited coroutines.
+        mock_obj = mock.patch.object
+        with mock_obj(self.loop, '_accept_connection2') as accept2_mock:
+            accept2_mock.return_value = None
+            with mock_obj(self.loop, 'create_task') as task_mock:
+                task_mock.return_value = None
+                self.loop._accept_connection(mock.Mock(), sock, backlog=backlog)
+        self.assertEqual(sock.accept.call_count, backlog)
+
 
 class SelectorTransportTests(test_utils.TestCase):
 
