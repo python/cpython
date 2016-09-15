@@ -32,6 +32,18 @@ Library
 
 - Issue #27599: Fixed buffer overrun in binascii.b2a_qp() and binascii.a2b_qp().
 
+- Issue #27906: Fix socket accept exhaustion during high TCP traffic.
+  Patch by Kevin Conway.
+
+- Issue #28174: Handle when SO_REUSEPORT isn't properly supported.
+  Patch by Seth Michael Larson.
+
+- Issue #26654: Inspect functools.partial in asyncio.Handle.__repr__.
+  Patch by iceboy.
+
+- Issue #26909: Fix slow pipes IO in asyncio.
+  Patch by INADA Naoki.
+
 - Issue #28176: Fix callbacks race in asyncio.SelectorLoop.sock_connect.
 
 Build
@@ -430,18 +442,6 @@ Library
 - asyncio: Add set_protocol / get_protocol to Transports.
 
 - Issue #27456: asyncio: Set TCP_NODELAY by default.
-
-- Issue #27906: Fix socket accept exhaustion during high TCP traffic.
-  Patch by Kevin Conway.
-
-- Issue #28174: Handle when SO_REUSEPORT isn't properly supported.
-  Patch by Seth Michael Larson.
-
-- Issue #26654: Inspect functools.partial in asyncio.Handle.__repr__.
-  Patch by iceboy.
-
-- Issue #26909: Fix slow pipes IO in asyncio.
-  Patch by INADA Naoki.
 
 IDLE
 ----
