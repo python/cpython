@@ -35,23 +35,25 @@ def _get_function_source(func):
     return None
 
 
-def _format_args(args):
-    """Format function arguments.
+def _format_args_and_kwargs(args, kwargs):
+    """Format function arguments and keyword arguments.
 
     Special case for a single parameter: ('hello',) is formatted as ('hello').
     """
     # use reprlib to limit the length of the output
-    args_repr = reprlib.repr(args)
-    if len(args) == 1 and args_repr.endswith(',)'):
-        args_repr = args_repr[:-2] + ')'
-    return args_repr
+    items = []
+    if args:
+        items.extend(reprlib.repr(arg) for arg in args)
+    if kwargs:
+        items.extend('{}={}'.format(k, reprlib.repr(v))
+                     for k, v in kwargs.items())
+    return '(' + ', '.join(items) + ')'
 
 
-def _format_callback(func, args, suffix=''):
+def _format_callback(func, args, kwargs, suffix=''):
     if isinstance(func, functools.partial):
-        if args is not None:
-            suffix = _format_args(args) + suffix
-        return _format_callback(func.func, func.args, suffix)
+        suffix = _format_args_and_kwargs(args, kwargs) + suffix
+        return _format_callback(func.func, func.args, func.keywords, suffix)
 
     if hasattr(func, '__qualname__'):
         func_repr = getattr(func, '__qualname__')
@@ -60,14 +62,13 @@ def _format_callback(func, args, suffix=''):
     else:
         func_repr = repr(func)
 
-    if args is not None:
-        func_repr += _format_args(args)
+    func_repr += _format_args_and_kwargs(args, kwargs)
     if suffix:
         func_repr += suffix
     return func_repr
 
 def _format_callback_source(func, args):
-    func_repr = _format_callback(func, args)
+    func_repr = _format_callback(func, args, None)
     source = _get_function_source(func)
     if source:
         func_repr += ' at %s:%s' % source
