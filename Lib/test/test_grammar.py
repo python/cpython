@@ -1345,18 +1345,6 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(m.other, 42)
 
     def test_async_await(self):
-        async = 1
-        await = 2
-        self.assertEqual(async, 1)
-
-        def async():
-            nonlocal await
-            await = 10
-        async()
-        self.assertEqual(await, 10)
-
-        self.assertFalse(bool(async.__code__.co_flags & inspect.CO_COROUTINE))
-
         async def test():
             def sum():
                 pass
