@@ -4729,28 +4729,31 @@ free_string_array(EXECV_CHAR **array, Py_ssize_t count)
     PyMem_DEL(array);
 }
 
-static
-int fsconvert_strdup(PyObject *o, EXECV_CHAR**out)
+static int
+fsconvert_strdup(PyObject *o, EXECV_CHAR **out)
 {
     Py_ssize_t size;
+    PyObject *ub;
+    int result = 0;
 #if defined(HAVE_WEXECV) || defined(HAVE_WSPAWNV)
-    *out = PyUnicode_AsWideCharString(o, &size);
-    if (!*out)
+    if (!PyUnicode_FSDecoder(o, &ub))
         return 0;
+    *out = PyUnicode_AsWideCharString(ub, &size);
+    if (*out)
+        result = 1;
 #else
-    PyObject *bytes;
-    if (!PyUnicode_FSConverter(o, &bytes))
+    if (!PyUnicode_FSConverter(o, &ub))
         return 0;
-    size = PyBytes_GET_SIZE(bytes);
-    *out = PyMem_Malloc(size+1);
-    if (!*out) {
+    size = PyBytes_GET_SIZE(ub);
+    *out = PyMem_Malloc(size + 1);
+    if (*out) {
+        memcpy(*out, PyBytes_AS_STRING(ub), size + 1);
+        result = 1;
+    } else
         PyErr_NoMemory();
-        return 0;
-    }
-    memcpy(*out, PyBytes_AsString(bytes), size+1);
-    Py_DECREF(bytes);
 #endif
-    return 1;
+    Py_DECREF(ub);
+    return result;
 }
 #endif
 
@@ -4760,7 +4763,7 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 {
     Py_ssize_t i, pos, envc;
     PyObject *keys=NULL, *vals=NULL;
-    PyObject *key, *val, *keyval;
+    PyObject *key, *val, *key2, *val2, *keyval;
     EXECV_CHAR **envlist;
 
     i = PyMapping_Size(env);
@@ -4790,7 +4793,26 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
         if (!key || !val)
             goto error;
 
-        keyval = PyUnicode_FromFormat("%U=%U", key, val);
+#if defined(HAVE_WEXECV) || defined(HAVE_WSPAWNV)
+        if (!PyUnicode_FSDecoder(key, &key2))
+            goto error;
+        if (!PyUnicode_FSDecoder(val, &val2)) {
+            Py_DECREF(key2);
+            goto error;
+        }
+        keyval = PyUnicode_FromFormat("%U=%U", key2, val2);
+#else
+        if (!PyUnicode_FSConverter(key, &key2))
+            goto error;
+        if (!PyUnicode_FSConverter(val, &val2)) {
+            Py_DECREF(key2);
+            goto error;
+        }
+        keyval = PyBytes_FromFormat("%s=%s", PyBytes_AS_STRING(key2),
+                                             PyBytes_AS_STRING(val2));
+#endif
+        Py_DECREF(key2);
+        Py_DECREF(val2);
         if (!keyval)
             goto error;
 
@@ -4798,7 +4820,7 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
             Py_DECREF(keyval);
             goto error;
         }
-        
+
         Py_DECREF(keyval);
     }
     Py_DECREF(vals);
