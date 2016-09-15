@@ -408,7 +408,11 @@ if hasattr(select, 'epoll'):
                 epoll_events |= select.EPOLLIN
             if events & EVENT_WRITE:
                 epoll_events |= select.EPOLLOUT
-            self._epoll.register(key.fd, epoll_events)
+            try:
+                self._epoll.register(key.fd, epoll_events)
+            except BaseException:
+                super().unregister(fileobj)
+                raise
             return key
 
         def unregister(self, fileobj):
@@ -530,14 +534,18 @@ if hasattr(select, 'kqueue'):
 
         def register(self, fileobj, events, data=None):
             key = super().register(fileobj, events, data)
-            if events & EVENT_READ:
-                kev = select.kevent(key.fd, select.KQ_FILTER_READ,
-                                    select.KQ_EV_ADD)
-                self._kqueue.control([kev], 0, 0)
-            if events & EVENT_WRITE:
-                kev = select.kevent(key.fd, select.KQ_FILTER_WRITE,
-                                    select.KQ_EV_ADD)
-                self._kqueue.control([kev], 0, 0)
+            try:
+                if events & EVENT_READ:
+                    kev = select.kevent(key.fd, select.KQ_FILTER_READ,
+                                        select.KQ_EV_ADD)
+                    self._kqueue.control([kev], 0, 0)
+                if events & EVENT_WRITE:
+                    kev = select.kevent(key.fd, select.KQ_FILTER_WRITE,
+                                        select.KQ_EV_ADD)
+                    self._kqueue.control([kev], 0, 0)
+            except BaseException:
+                super().unregister(fileobj)
+                raise
             return key
 
         def unregister(self, fileobj):
