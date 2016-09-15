@@ -269,6 +269,9 @@ Library
 - Issue #28174: Handle when SO_REUSEPORT isn't properly supported.
   Patch by Seth Michael Larson.
 
+- Issue #26654: Inspect functools.partial in asyncio.Handle.__repr__.
+  Patch by iceboy.
+
 IDLE
 ----
 
