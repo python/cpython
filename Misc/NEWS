@@ -277,6 +277,9 @@ Library
 
 - Issue #28176: Fix callbacks race in asyncio.SelectorLoop.sock_connect.
 
+- Issue #27759: Fix selectors incorrectly retain invalid file descriptors.
+  Patch by Mark Williams.
+
 IDLE
 ----
 
