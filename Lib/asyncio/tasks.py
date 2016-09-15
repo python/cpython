@@ -519,7 +519,7 @@ def sleep(delay, result=None, *, loop=None):
         h.cancel()
 
 
-def async(coro_or_future, *, loop=None):
+def async_(coro_or_future, *, loop=None):
     """Wrap a coroutine in a future.
 
     If the argument is a Future, it is returned directly.
@@ -531,6 +531,11 @@ def async(coro_or_future, *, loop=None):
                   DeprecationWarning)
 
     return ensure_future(coro_or_future, loop=loop)
+
+# Silence DeprecationWarning:
+globals()['async'] = async_
+async_.__name__ = 'async'
+del async_
 
 
 def ensure_future(coro_or_future, *, loop=None):
