@@ -358,57 +358,110 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             with self.subTest(code=code), self.assertRaises(SyntaxError):
                 compile(code, "<test>", "exec")
 
+    def test_badsyntax_2(self):
+        samples = [
+            """def foo():
+                await = 1
+            """,
+
+            """class Bar:
+                def async(): pass
+            """,
+
+            """class Bar:
+                async = 1
+            """,
+
+            """class async:
+                pass
+            """,
+
+            """class await:
+                pass
+            """,
+
+            """import math as await""",
+
+            """def async():
+                pass""",
+
+            """def foo(*, await=1):
+                pass"""
+
+            """async = 1""",
+
+            """print(await=1)"""
+        ]
+
+        for code in samples:
+            with self.subTest(code=code), self.assertWarnsRegex(
+                    DeprecationWarning,
+                    "'await' will become reserved keywords"):
+                compile(code, "<test>", "exec")
+
+    def test_badsyntax_3(self):
+        with self.assertRaises(DeprecationWarning):
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                compile("async = 1", "<test>", "exec")
+
     def test_goodsyntax_1(self):
         # Tests for issue 24619
 
-        def foo(await):
-            async def foo(): pass
-            async def foo():
-                pass
-            return await + 1
-        self.assertEqual(foo(10), 11)
+        samples = [
+            '''def foo(await):
+                async def foo(): pass
+                async def foo():
+                    pass
+                return await + 1
+            ''',
 
-        def foo(await):
-            async def foo(): pass
-            async def foo(): pass
-            return await + 2
-        self.assertEqual(foo(20), 22)
+            '''def foo(await):
+                async def foo(): pass
+                async def foo(): pass
+                return await + 1
+            ''',
 
-        def foo(await):
+            '''def foo(await):
 
-            async def foo(): pass
+                async def foo(): pass
 
-            async def foo(): pass
+                async def foo(): pass
 
-            return await + 2
-        self.assertEqual(foo(20), 22)
+                return await + 1
+            ''',
 
-        def foo(await):
-            """spam"""
-            async def foo(): \
-                pass
-            # 123
-            async def foo(): pass
-            # 456
-            return await + 2
-        self.assertEqual(foo(20), 22)
+            '''def foo(await):
+                """spam"""
+                async def foo(): \
+                    pass
+                # 123
+                async def foo(): pass
+                # 456
+                return await + 1
+            ''',
 
-        def foo(await):
-            def foo(): pass
-            def foo(): pass
-            async def bar(): return await_
-            await_ = await
-            try:
-                bar().send(None)
-            except StopIteration as ex:
-                return ex.args[0]
-        self.assertEqual(foo(42), 42)
+            '''def foo(await):
+                def foo(): pass
+                def foo(): pass
+                async def bar(): return await_
+                await_ = await
+                try:
+                    bar().send(None)
+                except StopIteration as ex:
+                    return ex.args[0] + 1
+            '''
+        ]
 
-        async def f():
-            async def g(): pass
-            await z
-        await = 1
-        self.assertTrue(inspect.iscoroutinefunction(f))
+        for code in samples:
+            with self.subTest(code=code):
+                loc = {}
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    exec(code, loc, loc)
+
+                self.assertEqual(loc['foo'](10), 11)
 
 
 class TokenizerRegrTest(unittest.TestCase):
