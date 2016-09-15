@@ -2349,6 +2349,8 @@ os_getgid(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_GETGID) */
 
+#if defined(HAVE_GETPID)
+
 PyDoc_STRVAR(os_getpid__doc__,
 "getpid($module, /)\n"
 "--\n"
@@ -2366,6 +2368,8 @@ os_getpid(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return os_getpid_impl(module);
 }
+
+#endif /* defined(HAVE_GETPID) */
 
 #if defined(HAVE_GETGROUPS)
 
@@ -5841,6 +5845,10 @@ exit:
     #define OS_GETGID_METHODDEF
 #endif /* !defined(OS_GETGID_METHODDEF) */
 
+#ifndef OS_GETPID_METHODDEF
+    #define OS_GETPID_METHODDEF
+#endif /* !defined(OS_GETPID_METHODDEF) */
+
 #ifndef OS_GETGROUPS_METHODDEF
     #define OS_GETGROUPS_METHODDEF
 #endif /* !defined(OS_GETGROUPS_METHODDEF) */
@@ -6140,4 +6148,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=dfa6bc9d1f2db750 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b9ed5703d2feb0d9 input=a9049054013a1b77]*/
