@@ -1371,6 +1371,17 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRaises(ValueError, self.loop.run_until_complete, f)
 
     @patch_socket
+    def test_create_server_soreuseport_only_defined(self, m_socket):
+        m_socket.getaddrinfo = socket.getaddrinfo
+        m_socket.socket.return_value = mock.Mock()
+        m_socket.SO_REUSEPORT = -1
+
+        f = self.loop.create_server(
+            MyProto, '0.0.0.0', 0, reuse_port=True)
+
+        self.assertRaises(ValueError, self.loop.run_until_complete, f)
+
+    @patch_socket
     def test_create_server_cant_bind(self, m_socket):
 
         class Err(OSError):
