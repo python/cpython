@@ -2165,7 +2165,7 @@ class PidTests(unittest.TestCase):
 
 
 class SpawnTests(unittest.TestCase):
-    def create_args(self, with_env=False):
+    def create_args(self, with_env=False, use_bytes=False):
         self.exitcode = 17
 
         filename = support.TESTFN
@@ -2185,7 +2185,13 @@ class SpawnTests(unittest.TestCase):
         with open(filename, "w") as fp:
             fp.write(code)
 
-        return [sys.executable, filename]
+        args = [sys.executable, filename]
+        if use_bytes:
+            args = [os.fsencode(a) for a in args]
+            self.env = {os.fsencode(k): os.fsencode(v)
+                        for k, v in self.env.items()}
+
+        return args
 
     @unittest.skipUnless(hasattr(os, 'spawnl'), 'need os.spawnl')
     def test_spawnl(self):
@@ -2247,6 +2253,13 @@ class SpawnTests(unittest.TestCase):
             self.assertEqual(os.WEXITSTATUS(status), self.exitcode)
         else:
             self.assertEqual(status, self.exitcode << 8)
+
+    @unittest.skipUnless(hasattr(os, 'spawnve'), 'need os.spawnve')
+    def test_spawnve_bytes(self):
+        # Test bytes handling in parse_arglist and parse_envlist (#28114)
+        args = self.create_args(with_env=True, use_bytes=True)
+        exitcode = os.spawnve(os.P_WAIT, args[0], args, self.env)
+        self.assertEqual(exitcode, self.exitcode)
 
 
 # The introduction of this TestCase caused at least two different errors on
