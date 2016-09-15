@@ -275,6 +275,8 @@ Library
 - Issue #26909: Fix slow pipes IO in asyncio.
   Patch by INADA Naoki.
 
+- Issue #28176: Fix callbacks race in asyncio.SelectorLoop.sock_connect.
+
 IDLE
 ----
 
