@@ -429,6 +429,9 @@ Library
 
 - Issue #27456: asyncio: Set TCP_NODELAY by default.
 
+- Issue #27906: Fix socket accept exhaustion during high TCP traffic.
+  Patch by Kevin Conway.
+
 IDLE
 ----
 
