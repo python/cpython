@@ -5895,6 +5895,7 @@ os_getgid_impl(PyObject *module)
 #endif /* HAVE_GETGID */
 
 
+#ifdef HAVE_GETPID
 /*[clinic input]
 os.getpid
 
@@ -5907,6 +5908,7 @@ os_getpid_impl(PyObject *module)
 {
     return PyLong_FromPid(getpid());
 }
+#endif /* HAVE_GETPID */
 
 #ifdef HAVE_GETGROUPLIST
 
