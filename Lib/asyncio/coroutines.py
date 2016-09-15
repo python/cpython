@@ -276,10 +276,7 @@ def _format_coroutine(coro):
     try:
         coro_code = coro.gi_code
     except AttributeError:
-        try:
-            coro_code = coro.cr_code
-        except AttributeError:
-            return repr(coro)
+        coro_code = coro.cr_code
 
     try:
         coro_frame = coro.gi_frame
