@@ -45,6 +45,7 @@ typedef struct change_record {
     const unsigned char category_changed;
     const unsigned char decimal_changed;
     const unsigned char mirrored_changed;
+    const unsigned char east_asian_width_changed;
     const double numeric_changed;
 } change_record;
 
@@ -375,6 +376,8 @@ unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr)
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
+        else if (old->east_asian_width_changed != 0xFF)
+            index = old->east_asian_width_changed;
     }
     return PyUnicode_FromString(_PyUnicode_EastAsianWidthNames[index]);
 }

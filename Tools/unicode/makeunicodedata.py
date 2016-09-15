@@ -42,7 +42,7 @@ VERSION = "3.2"
 #   * Doc/library/stdtypes.rst, and
 #   * Doc/library/unicodedata.rst
 #   * Doc/reference/lexical_analysis.rst (two occurrences)
-UNIDATA_VERSION = "8.0.0"
+UNIDATA_VERSION = "9.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
@@ -796,6 +796,7 @@ def merge_old_version(version, new, old):
     category_changes = [0xFF]*0x110000
     decimal_changes = [0xFF]*0x110000
     mirrored_changes = [0xFF]*0x110000
+    east_asian_width_changes = [0xFF]*0x110000
     # In numeric data, 0 means "no change",
     # -1 means "did not have a numeric value
     numeric_changes = [0] * 0x110000
@@ -862,6 +863,9 @@ def merge_old_version(version, new, old):
                     elif k == 14:
                         # change to simple titlecase mapping; ignore
                         pass
+                    elif k == 15:
+                        # change to east asian width
+                        east_asian_width_changes[i] = EASTASIANWIDTH_NAMES.index(value)
                     elif k == 16:
                         # derived property changes; not yet
                         pass
@@ -873,8 +877,9 @@ def merge_old_version(version, new, old):
                         class Difference(Exception):pass
                         raise Difference(hex(i), k, old.table[i], new.table[i])
     new.changed.append((version, list(zip(bidir_changes, category_changes,
-                                     decimal_changes, mirrored_changes,
-                                     numeric_changes)),
+                                          decimal_changes, mirrored_changes,
+                                          east_asian_width_changes,
+                                          numeric_changes)),
                         normalization_changes))
 
 def open_data(template, version):
