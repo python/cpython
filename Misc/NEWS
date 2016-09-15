@@ -438,6 +438,9 @@ Library
 - Issue #26654: Inspect functools.partial in asyncio.Handle.__repr__.
   Patch by iceboy.
 
+- Issue #26909: Fix slow pipes IO in asyncio.
+  Patch by INADA Naoki.
+
 IDLE
 ----
 
