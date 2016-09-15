@@ -380,13 +380,13 @@ zipimporter_get_filename(PyObject *obj, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "s:zipimporter.get_filename",
                          &fullname))
-    return NULL;
+        return NULL;
 
     /* Deciding the filename requires working out where the code
        would come from if the module was actually loaded */
     code = get_module_code(self, fullname, &ispackage, &modpath);
     if (code == NULL)
-    return NULL;
+        return NULL;
     Py_DECREF(code); /* Only need the path info */
 
     return PyString_FromString(modpath);
@@ -689,7 +689,7 @@ set_file_error(const char *archive, int eof)
 
    A toc_entry is a tuple:
 
-       (__file__,      # value to use for __file__, available for all files
+   (__file__,      # value to use for __file__, available for all files
     compress,      # compression kind; 0 for uncompressed
     data_size,     # size of compressed data on disk
     file_size,     # size of decompressed data
@@ -697,7 +697,7 @@ set_file_error(const char *archive, int eof)
     time,          # mod time of file (in dos format)
     date,          # mod data of file (in dos format)
     crc,           # crc checksum of the data
-       )
+   )
 
    Directories can be recognized by the trailing SEP in the name,
    data_size and file_offset are 0.

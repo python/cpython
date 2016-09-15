@@ -1421,11 +1421,11 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
     }
     else {
         if (st->st_cur->ste_type != ModuleBlock) {
-        int lineno = st->st_cur->ste_lineno;
-        if (!symtable_warn(st, IMPORT_STAR_WARNING, lineno)) {
-            Py_DECREF(store_name);
-            return 0;
-        }
+            int lineno = st->st_cur->ste_lineno;
+            if (!symtable_warn(st, IMPORT_STAR_WARNING, lineno)) {
+                Py_DECREF(store_name);
+                return 0;
+            }
         }
         st->st_cur->ste_unoptimized |= OPT_IMPORT_STAR;
         Py_DECREF(store_name);

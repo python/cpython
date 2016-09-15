@@ -73,7 +73,7 @@ round(double x)
     absx = fabs(x);
     y = floor(absx);
     if (absx - y >= 0.5)
-    y += 1.0;
+        y += 1.0;
     return copysign(y, x);
 }
 #endif /* HAVE_ROUND */
