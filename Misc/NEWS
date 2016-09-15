@@ -266,6 +266,9 @@ Library
 - Issue #27906: Fix socket accept exhaustion during high TCP traffic.
   Patch by Kevin Conway.
 
+- Issue #28174: Handle when SO_REUSEPORT isn't properly supported.
+  Patch by Seth Michael Larson.
+
 IDLE
 ----
 
