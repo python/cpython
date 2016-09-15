@@ -518,7 +518,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         tr.write(b'data')
         m_write.assert_called_with(5, b'data')
         self.assertFalse(self.loop.writers)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(bytearray(), tr._buffer)
 
     @mock.patch('os.write')
     def test_write_no_data(self, m_write):
@@ -526,35 +526,34 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         tr.write(b'')
         self.assertFalse(m_write.called)
         self.assertFalse(self.loop.writers)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(bytearray(b''), tr._buffer)
 
     @mock.patch('os.write')
     def test_write_partial(self, m_write):
         tr = self.write_pipe_transport()
         m_write.return_value = 2
         tr.write(b'data')
-        m_write.assert_called_with(5, b'data')
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual([b'ta'], tr._buffer)
+        self.assertEqual(bytearray(b'ta'), tr._buffer)
 
     @mock.patch('os.write')
     def test_write_buffer(self, m_write):
         tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = [b'previous']
+        tr._buffer = bytearray(b'previous')
         tr.write(b'data')
         self.assertFalse(m_write.called)
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual([b'previous', b'data'], tr._buffer)
+        self.assertEqual(bytearray(b'previousdata'), tr._buffer)
 
     @mock.patch('os.write')
     def test_write_again(self, m_write):
         tr = self.write_pipe_transport()
         m_write.side_effect = BlockingIOError()
         tr.write(b'data')
-        m_write.assert_called_with(5, b'data')
+        m_write.assert_called_with(5, bytearray(b'data'))
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual([b'data'], tr._buffer)
+        self.assertEqual(bytearray(b'data'), tr._buffer)
 
     @mock.patch('asyncio.unix_events.logger')
     @mock.patch('os.write')
@@ -566,7 +565,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         tr.write(b'data')
         m_write.assert_called_with(5, b'data')
         self.assertFalse(self.loop.writers)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(bytearray(), tr._buffer)
         tr._fatal_error.assert_called_with(
                             err,
                             'Fatal write error on pipe transport')
@@ -606,58 +605,55 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
     def test__write_ready(self, m_write):
         tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         m_write.return_value = 4
         tr._write_ready()
-        m_write.assert_called_with(5, b'data')
         self.assertFalse(self.loop.writers)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(bytearray(), tr._buffer)
 
     @mock.patch('os.write')
     def test__write_ready_partial(self, m_write):
         tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         m_write.return_value = 3
         tr._write_ready()
-        m_write.assert_called_with(5, b'data')
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual([b'a'], tr._buffer)
+        self.assertEqual(bytearray(b'a'), tr._buffer)
 
     @mock.patch('os.write')
     def test__write_ready_again(self, m_write):
         tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         m_write.side_effect = BlockingIOError()
         tr._write_ready()
-        m_write.assert_called_with(5, b'data')
+        m_write.assert_called_with(5, bytearray(b'data'))
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual([b'data'], tr._buffer)
+        self.assertEqual(bytearray(b'data'), tr._buffer)
 
     @mock.patch('os.write')
     def test__write_ready_empty(self, m_write):
         tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         m_write.return_value = 0
         tr._write_ready()
-        m_write.assert_called_with(5, b'data')
+        m_write.assert_called_with(5, bytearray(b'data'))
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual([b'data'], tr._buffer)
+        self.assertEqual(bytearray(b'data'), tr._buffer)
 
     @mock.patch('asyncio.log.logger.error')
     @mock.patch('os.write')
     def test__write_ready_err(self, m_write, m_logexc):
         tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         m_write.side_effect = err = OSError()
         tr._write_ready()
-        m_write.assert_called_with(5, b'data')
         self.assertFalse(self.loop.writers)
         self.assertFalse(self.loop.readers)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(bytearray(), tr._buffer)
         self.assertTrue(tr.is_closing())
         m_logexc.assert_called_with(
             test_utils.MockPattern(
@@ -673,13 +669,12 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
         tr._closing = True
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         m_write.return_value = 4
         tr._write_ready()
-        m_write.assert_called_with(5, b'data')
         self.assertFalse(self.loop.writers)
         self.assertFalse(self.loop.readers)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(bytearray(), tr._buffer)
         self.protocol.connection_lost.assert_called_with(None)
         self.pipe.close.assert_called_with()
 
