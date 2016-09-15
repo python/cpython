@@ -248,6 +248,10 @@ class AbstractEventLoop:
         """
         raise NotImplementedError
 
+    def shutdown_asyncgens(self):
+        """Shutdown all active asynchronous generators."""
+        raise NotImplementedError
+
     # Methods scheduling callbacks.  All these return Handles.
 
     def _timer_handle_cancelled(self, handle):
