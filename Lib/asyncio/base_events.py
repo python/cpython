@@ -1034,7 +1034,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         for sock in sockets:
             sock.listen(backlog)
             sock.setblocking(False)
-            self._start_serving(protocol_factory, sock, ssl, server)
+            self._start_serving(protocol_factory, sock, ssl, server, backlog)
         if self._debug:
             logger.info("%r is serving", server)
         return server

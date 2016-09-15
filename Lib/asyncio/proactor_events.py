@@ -494,7 +494,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._csock.send(b'\0')
 
     def _start_serving(self, protocol_factory, sock,
-                       sslcontext=None, server=None):
+                       sslcontext=None, server=None, backlog=100):
 
         def loop(f=None):
             try:

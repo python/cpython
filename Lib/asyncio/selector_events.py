@@ -162,43 +162,50 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                                  exc_info=True)
 
     def _start_serving(self, protocol_factory, sock,
-                       sslcontext=None, server=None):
+                       sslcontext=None, server=None, backlog=100):
         self.add_reader(sock.fileno(), self._accept_connection,
-                        protocol_factory, sock, sslcontext, server)
+                        protocol_factory, sock, sslcontext, server, backlog)
 
     def _accept_connection(self, protocol_factory, sock,
-                           sslcontext=None, server=None):
-        try:
-            conn, addr = sock.accept()
-            if self._debug:
-                logger.debug("%r got a new connection from %r: %r",
-                             server, addr, conn)
-            conn.setblocking(False)
-        except (BlockingIOError, InterruptedError, ConnectionAbortedError):
-            pass  # False alarm.
-        except OSError as exc:
-            # There's nowhere to send the error, so just log it.
-            if exc.errno in (errno.EMFILE, errno.ENFILE,
-                             errno.ENOBUFS, errno.ENOMEM):
-                # Some platforms (e.g. Linux keep reporting the FD as
-                # ready, so we remove the read handler temporarily.
-                # We'll try again in a while.
-                self.call_exception_handler({
-                    'message': 'socket.accept() out of system resource',
-                    'exception': exc,
-                    'socket': sock,
-                })
-                self.remove_reader(sock.fileno())
-                self.call_later(constants.ACCEPT_RETRY_DELAY,
-                                self._start_serving,
-                                protocol_factory, sock, sslcontext, server)
+                           sslcontext=None, server=None, backlog=100):
+        # This method is only called once for each event loop tick where the
+        # listening socket has triggered an EVENT_READ. There may be multiple
+        # connections waiting for an .accept() so it is called in a loop.
+        # See https://bugs.python.org/issue27906 for more details.
+        for _ in range(backlog):
+            try:
+                conn, addr = sock.accept()
+                if self._debug:
+                    logger.debug("%r got a new connection from %r: %r",
+                                 server, addr, conn)
+                conn.setblocking(False)
+            except (BlockingIOError, InterruptedError, ConnectionAbortedError):
+                # Early exit because the socket accept buffer is empty.
+                return None
+            except OSError as exc:
+                # There's nowhere to send the error, so just log it.
+                if exc.errno in (errno.EMFILE, errno.ENFILE,
+                                 errno.ENOBUFS, errno.ENOMEM):
+                    # Some platforms (e.g. Linux keep reporting the FD as
+                    # ready, so we remove the read handler temporarily.
+                    # We'll try again in a while.
+                    self.call_exception_handler({
+                        'message': 'socket.accept() out of system resource',
+                        'exception': exc,
+                        'socket': sock,
+                    })
+                    self.remove_reader(sock.fileno())
+                    self.call_later(constants.ACCEPT_RETRY_DELAY,
+                                    self._start_serving,
+                                    protocol_factory, sock, sslcontext, server,
+                                    backlog)
+                else:
+                    raise  # The event loop will catch, log and ignore it.
             else:
-                raise  # The event loop will catch, log and ignore it.
-        else:
-            extra = {'peername': addr}
-            accept = self._accept_connection2(protocol_factory, conn, extra,
-                                              sslcontext, server)
-            self.create_task(accept)
+                extra = {'peername': addr}
+                accept = self._accept_connection2(protocol_factory, conn, extra,
+                                                  sslcontext, server)
+                self.create_task(accept)
 
     @coroutine
     def _accept_connection2(self, protocol_factory, conn, extra,
