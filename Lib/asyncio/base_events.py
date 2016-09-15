@@ -13,7 +13,6 @@ conscious design decision, leaving the door open for keyword arguments
 to modify the meaning of the API call itself.
 """
 
-
 import collections
 import concurrent.futures
 import heapq
@@ -1128,7 +1127,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport = yield from self._make_subprocess_transport(
             protocol, cmd, True, stdin, stdout, stderr, bufsize, **kwargs)
         if self._debug:
-            logger.info('%s: %r' % (debug_log, transport))
+            logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 
     @coroutine
@@ -1158,7 +1157,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             protocol, popen_args, False, stdin, stdout, stderr,
             bufsize, **kwargs)
         if self._debug:
-            logger.info('%s: %r' % (debug_log, transport))
+            logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 
     def get_exception_handler(self):
@@ -1238,7 +1237,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         - 'handle' (optional): Handle instance;
         - 'protocol' (optional): Protocol instance;
         - 'transport' (optional): Transport instance;
-        - 'socket' (optional): Socket instance.
+        - 'socket' (optional): Socket instance;
+        - 'asyncgen' (optional): Asynchronous generator that caused
+                                 the exception.
 
         New keys maybe introduced in the future.
 
