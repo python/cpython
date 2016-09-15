@@ -2224,7 +2224,7 @@ else:
             return asyncio.SelectorEventLoop(selectors.SelectSelector())
 
 
-def noop(*args):
+def noop(*args, **kwargs):
     pass
 
 
@@ -2302,6 +2302,13 @@ class HandleTests(test_utils.TestCase):
         cb = functools.partial(noop, 1, 2)
         h = asyncio.Handle(cb, (3,), self.loop)
         regex = (r'^<Handle noop\(1, 2\)\(3\) at %s:%s>$'
+                 % (re.escape(filename), lineno))
+        self.assertRegex(repr(h), regex)
+
+        # partial function with keyword args
+        cb = functools.partial(noop, x=1)
+        h = asyncio.Handle(cb, (2, 3), self.loop)
+        regex = (r'^<Handle noop\(x=1\)\(2, 3\) at %s:%s>$'
                  % (re.escape(filename), lineno))
         self.assertRegex(repr(h), regex)
 
