@@ -652,7 +652,8 @@ class PyBuildExt(build_ext):
         # profiler (_lsprof is for cProfile.py)
         exts.append( Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']) )
         # static Unicode character database
-        exts.append( Extension('unicodedata', ['unicodedata.c']) )
+        exts.append( Extension('unicodedata', ['unicodedata.c'],
+                               depends=['unicodedata_db.h', 'unicodename_db.h']) )
         # _opcode module
         exts.append( Extension('_opcode', ['_opcode.c']) )
 
