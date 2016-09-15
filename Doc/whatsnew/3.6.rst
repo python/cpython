@@ -966,6 +966,13 @@ representing :class:`contextlib.AbstractContextManager`.
 (Contributed by Brett Cannon in :issue:`25609`.)
 
 
+unicodedata
+-----------
+
+The internal database has been upgraded to use Unicode 9.0.0. (Contributed by
+Benjamin Peterson.)
+
+
 unittest.mock
 -------------
 
