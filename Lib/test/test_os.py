@@ -90,6 +90,10 @@ def ignore_deprecation_warnings(msg_regex, quiet=False):
         yield
 
 
+def requires_os_func(name):
+    return unittest.skipUnless(hasattr(os, name), 'requires os.%s' % name)
+
+
 class _PathLike(os.PathLike):
 
     def __init__(self, path=""):
@@ -2193,55 +2197,55 @@ class SpawnTests(unittest.TestCase):
 
         return args
 
-    @unittest.skipUnless(hasattr(os, 'spawnl'), 'need os.spawnl')
+    @requires_os_func('spawnl')
     def test_spawnl(self):
         args = self.create_args()
         exitcode = os.spawnl(os.P_WAIT, args[0], *args)
         self.assertEqual(exitcode, self.exitcode)
 
-    @unittest.skipUnless(hasattr(os, 'spawnle'), 'need os.spawnle')
+    @requires_os_func('spawnle')
     def test_spawnle(self):
         args = self.create_args(with_env=True)
         exitcode = os.spawnle(os.P_WAIT, args[0], *args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
-    @unittest.skipUnless(hasattr(os, 'spawnlp'), 'need os.spawnlp')
+    @requires_os_func('spawnlp')
     def test_spawnlp(self):
         args = self.create_args()
         exitcode = os.spawnlp(os.P_WAIT, args[0], *args)
         self.assertEqual(exitcode, self.exitcode)
 
-    @unittest.skipUnless(hasattr(os, 'spawnlpe'), 'need os.spawnlpe')
+    @requires_os_func('spawnlpe')
     def test_spawnlpe(self):
         args = self.create_args(with_env=True)
         exitcode = os.spawnlpe(os.P_WAIT, args[0], *args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
-    @unittest.skipUnless(hasattr(os, 'spawnv'), 'need os.spawnv')
+    @requires_os_func('spawnv')
     def test_spawnv(self):
         args = self.create_args()
         exitcode = os.spawnv(os.P_WAIT, args[0], args)
         self.assertEqual(exitcode, self.exitcode)
 
-    @unittest.skipUnless(hasattr(os, 'spawnve'), 'need os.spawnve')
+    @requires_os_func('spawnve')
     def test_spawnve(self):
         args = self.create_args(with_env=True)
         exitcode = os.spawnve(os.P_WAIT, args[0], args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
-    @unittest.skipUnless(hasattr(os, 'spawnvp'), 'need os.spawnvp')
+    @requires_os_func('spawnvp')
     def test_spawnvp(self):
         args = self.create_args()
         exitcode = os.spawnvp(os.P_WAIT, args[0], args)
         self.assertEqual(exitcode, self.exitcode)
 
-    @unittest.skipUnless(hasattr(os, 'spawnvpe'), 'need os.spawnvpe')
+    @requires_os_func('spawnvpe')
     def test_spawnvpe(self):
         args = self.create_args(with_env=True)
         exitcode = os.spawnvpe(os.P_WAIT, args[0], args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
-    @unittest.skipUnless(hasattr(os, 'spawnv'), 'need os.spawnv')
+    @requires_os_func('spawnv')
     def test_nowait(self):
         args = self.create_args()
         pid = os.spawnv(os.P_NOWAIT, args[0], args)
@@ -2254,7 +2258,7 @@ class SpawnTests(unittest.TestCase):
         else:
             self.assertEqual(status, self.exitcode << 8)
 
-    @unittest.skipUnless(hasattr(os, 'spawnve'), 'need os.spawnve')
+    @requires_os_func('spawnve')
     def test_spawnve_bytes(self):
         # Test bytes handling in parse_arglist and parse_envlist (#28114)
         args = self.create_args(with_env=True, use_bytes=True)
