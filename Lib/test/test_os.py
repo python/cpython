@@ -2165,7 +2165,7 @@ class PidTests(unittest.TestCase):
 
 
 class SpawnTests(unittest.TestCase):
-    def create_args(self, with_env=False, use_bytes=False):
+    def create_args(self, *, with_env=False, use_bytes=False):
         self.exitcode = 17
 
         filename = support.TESTFN
@@ -2201,7 +2201,7 @@ class SpawnTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'spawnle'), 'need os.spawnle')
     def test_spawnle(self):
-        args = self.create_args(True)
+        args = self.create_args(with_env=True)
         exitcode = os.spawnle(os.P_WAIT, args[0], *args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
@@ -2213,7 +2213,7 @@ class SpawnTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'spawnlpe'), 'need os.spawnlpe')
     def test_spawnlpe(self):
-        args = self.create_args(True)
+        args = self.create_args(with_env=True)
         exitcode = os.spawnlpe(os.P_WAIT, args[0], *args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
@@ -2225,7 +2225,7 @@ class SpawnTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'spawnve'), 'need os.spawnve')
     def test_spawnve(self):
-        args = self.create_args(True)
+        args = self.create_args(with_env=True)
         exitcode = os.spawnve(os.P_WAIT, args[0], args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
@@ -2237,7 +2237,7 @@ class SpawnTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'spawnvpe'), 'need os.spawnvpe')
     def test_spawnvpe(self):
-        args = self.create_args(True)
+        args = self.create_args(with_env=True)
         exitcode = os.spawnvpe(os.P_WAIT, args[0], args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
