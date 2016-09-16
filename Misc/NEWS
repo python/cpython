@@ -27,6 +27,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22493: Warning message emitted by using inline flags in the middle of
+  regular expression now contains a (truncated) regex pattern.
+  Patch by Tim Graham.
+
 - Issue #25270: Prevent codecs.escape_encode() from raising SystemError when
   an empty bytestring is passed.
 
