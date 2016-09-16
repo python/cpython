@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25270: Prevent codecs.escape_encode() from raising SystemError when
+  an empty bytestring is passed.
+
 - Issue #28181: Get antigravity over HTTPS. Patch by Kaartic Sivaraam.
 
 - Issue #25895: Enable WebSocket URL schemes in urllib.parse.urljoin.
