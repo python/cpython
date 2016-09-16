@@ -198,5 +198,5 @@ called with a non-bytes parameter.
    desired.  On success, *\*bytes* holds the resized bytes object and ``0`` is
    returned; the address in *\*bytes* may differ from its input value.  If the
    reallocation fails, the original bytes object at *\*bytes* is deallocated,
-   *\*bytes* is set to *NULL*, a memory exception is set, and ``-1`` is
+   *\*bytes* is set to *NULL*, :exc:`MemoryError` is set, and ``-1`` is
    returned.
