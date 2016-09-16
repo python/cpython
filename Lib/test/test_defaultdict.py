@@ -175,7 +175,7 @@ class TestDefaultDict(unittest.TestCase):
     def test_callable_arg(self):
         self.assertRaises(TypeError, defaultdict, {})
 
-    def test_pickleing(self):
+    def test_pickling(self):
         d = defaultdict(int)
         d[1]
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
