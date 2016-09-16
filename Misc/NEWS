@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25895: Enable WebSocket URL schemes in urllib.parse.urljoin.
+  Patch by Gergely Imreh and Markus Holtermann.
+
 - Issue #28114: Fix a crash in parse_envlist() when env contains byte strings.
   Patch by Eryk Sun.
 

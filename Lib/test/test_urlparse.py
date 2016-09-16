@@ -425,6 +425,8 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin('', 'http://a/./g', 'http://a/./g')
         self.checkJoin('svn://pathtorepo/dir1', 'dir2', 'svn://pathtorepo/dir2')
         self.checkJoin('svn+ssh://pathtorepo/dir1', 'dir2', 'svn+ssh://pathtorepo/dir2')
+        self.checkJoin('ws://a/b','g','ws://a/g')
+        self.checkJoin('wss://a/b','g','wss://a/g')
 
         # XXX: The following tests are no longer compatible with RFC3986
         # self.checkJoin(SIMPLE_BASE, '../../../g','http://a/../g')
