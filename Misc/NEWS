@@ -42,6 +42,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #24363: When parsing HTTP header fields, if an invalid line is
+  encountered, skip it and continue parsing.  Previously, no more header
+  fields were parsed, which could lead to fields for HTTP framing like
+  Content-Length and Transfer-Encoding being overlooked.
+
 - Issue #27599: Fixed buffer overrun in binascii.b2a_qp() and binascii.a2b_qp().
 
 - Issue #25969: Update the lib2to3 grammar to handle the unpacking

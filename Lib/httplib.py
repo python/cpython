@@ -273,9 +273,8 @@ class HTTPMessage(mimetools.Message):
 
         Read header lines up to the entirely blank line that terminates them.
         The (normally blank) line that ends the headers is skipped, but not
-        included in the returned list.  If a non-header line ends the headers,
-        (which is an error), an attempt is made to backspace over it; it is
-        never included in the returned list.
+        included in the returned list.  If an invalid line is found in the
+        header section, it is skipped, and further lines are processed.
 
         The variable self.status is set to the empty string if all went well,
         otherwise it is an error message.  The variable self.headers is a
@@ -302,19 +301,17 @@ class HTTPMessage(mimetools.Message):
         self.status = ''
         headerseen = ""
         firstline = 1
-        startofline = unread = tell = None
-        if hasattr(self.fp, 'unread'):
-            unread = self.fp.unread
-        elif self.seekable:
+        tell = None
+        if not hasattr(self.fp, 'unread') and self.seekable:
             tell = self.fp.tell
         while True:
             if len(hlist) > _MAXHEADERS:
                 raise HTTPException("got more than %d headers" % _MAXHEADERS)
             if tell:
                 try:
-                    startofline = tell()
+                    tell()
                 except IOError:
-                    startofline = tell = None
+                    tell = None
                     self.seekable = 0
             line = self.fp.readline(_MAXLINE + 1)
             if len(line) > _MAXLINE:
@@ -345,26 +342,14 @@ class HTTPMessage(mimetools.Message):
                 # It's a legal header line, save it.
                 hlist.append(line)
                 self.addheader(headerseen, line[len(headerseen)+1:].strip())
-                continue
             elif headerseen is not None:
                 # An empty header name. These aren't allowed in HTTP, but it's
                 # probably a benign mistake. Don't add the header, just keep
                 # going.
-                continue
+                pass
             else:
-                # It's not a header line; throw it back and stop here.
-                if not self.dict:
-                    self.status = 'No headers'
-                else:
-                    self.status = 'Non-header line where header expected'
-                # Try to undo the read.
-                if unread:
-                    unread(line)
-                elif tell:
-                    self.fp.seek(startofline)
-                else:
-                    self.status = self.status + '; bad seek'
-                break
+                # It's not a header line; skip it and try the next line.
+                self.status = 'Non-header line where header expected'
 
 class HTTPResponse:
 

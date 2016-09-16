@@ -241,6 +241,120 @@ class HeaderTests(TestCase):
         self.assertEqual(resp.getheader('First'), 'val')
         self.assertEqual(resp.getheader('Second'), 'val')
 
+    def test_malformed_truncation(self):
+        # Other malformed header lines, especially without colons, used to
+        # cause the rest of the header section to be truncated
+        resp = (
+            b'HTTP/1.1 200 OK\r\n'
+            b'Public-Key-Pins: \n'
+            b'pin-sha256="xxx=";\n'
+            b'report-uri="https://..."\r\n'
+            b'Transfer-Encoding: chunked\r\n'
+            b'\r\n'
+            b'4\r\nbody\r\n0\r\n\r\n'
+        )
+        resp = httplib.HTTPResponse(FakeSocket(resp))
+        resp.begin()
+        self.assertIsNotNone(resp.getheader('Public-Key-Pins'))
+        self.assertEqual(resp.getheader('Transfer-Encoding'), 'chunked')
+        self.assertEqual(resp.read(), b'body')
+
+    def test_blank_line_forms(self):
+        # Test that both CRLF and LF blank lines can terminate the header
+        # section and start the body
+        for blank in (b'\r\n', b'\n'):
+            resp = b'HTTP/1.1 200 OK\r\n' b'Transfer-Encoding: chunked\r\n'
+            resp += blank
+            resp += b'4\r\nbody\r\n0\r\n\r\n'
+            resp = httplib.HTTPResponse(FakeSocket(resp))
+            resp.begin()
+            self.assertEqual(resp.getheader('Transfer-Encoding'), 'chunked')
+            self.assertEqual(resp.read(), b'body')
+
+            resp = b'HTTP/1.0 200 OK\r\n' + blank + b'body'
+            resp = httplib.HTTPResponse(FakeSocket(resp))
+            resp.begin()
+            self.assertEqual(resp.read(), b'body')
+
+        # A blank line ending in CR is not treated as the end of the HTTP
+        # header section, therefore header fields following it should be
+        # parsed if possible
+        resp = (
+            b'HTTP/1.1 200 OK\r\n'
+            b'\r'
+            b'Name: value\r\n'
+            b'Transfer-Encoding: chunked\r\n'
+            b'\r\n'
+            b'4\r\nbody\r\n0\r\n\r\n'
+        )
+        resp = httplib.HTTPResponse(FakeSocket(resp))
+        resp.begin()
+        self.assertEqual(resp.getheader('Transfer-Encoding'), 'chunked')
+        self.assertEqual(resp.read(), b'body')
+
+        # No header fields nor blank line
+        resp = b'HTTP/1.0 200 OK\r\n'
+        resp = httplib.HTTPResponse(FakeSocket(resp))
+        resp.begin()
+        self.assertEqual(resp.read(), b'')
+
+    def test_from_line(self):
+        # The parser handles "From" lines specially, so test this does not
+        # affect parsing the rest of the header section
+        resp = (
+            b'HTTP/1.1 200 OK\r\n'
+            b'From start\r\n'
+            b' continued\r\n'
+            b'Name: value\r\n'
+            b'From middle\r\n'
+            b' continued\r\n'
+            b'Transfer-Encoding: chunked\r\n'
+            b'From end\r\n'
+            b'\r\n'
+            b'4\r\nbody\r\n0\r\n\r\n'
+        )
+        resp = httplib.HTTPResponse(FakeSocket(resp))
+        resp.begin()
+        self.assertIsNotNone(resp.getheader('Name'))
+        self.assertEqual(resp.getheader('Transfer-Encoding'), 'chunked')
+        self.assertEqual(resp.read(), b'body')
+
+        resp = (
+            b'HTTP/1.0 200 OK\r\n'
+            b'From alone\r\n'
+            b'\r\n'
+            b'body'
+        )
+        resp = httplib.HTTPResponse(FakeSocket(resp))
+        resp.begin()
+        self.assertEqual(resp.read(), b'body')
+
+    def test_parse_all_octets(self):
+        # Ensure no valid header field octet breaks the parser
+        body = (
+            b'HTTP/1.1 200 OK\r\n'
+            b"!#$%&'*+-.^_`|~: value\r\n"  # Special token characters
+            b'VCHAR: ' + bytearray(range(0x21, 0x7E + 1)) + b'\r\n'
+            b'obs-text: ' + bytearray(range(0x80, 0xFF + 1)) + b'\r\n'
+            b'obs-fold: text\r\n'
+            b' folded with space\r\n'
+            b'\tfolded with tab\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        sock = FakeSocket(body)
+        resp = httplib.HTTPResponse(sock)
+        resp.begin()
+        self.assertEqual(resp.getheader('Content-Length'), '0')
+        self.assertEqual(resp.getheader("!#$%&'*+-.^_`|~"), 'value')
+        vchar = ''.join(map(chr, range(0x21, 0x7E + 1)))
+        self.assertEqual(resp.getheader('VCHAR'), vchar)
+        self.assertIsNotNone(resp.getheader('obs-text'))
+        folded = resp.getheader('obs-fold')
+        self.assertTrue(folded.startswith('text'))
+        self.assertIn(' folded with space', folded)
+        self.assertTrue(folded.endswith('folded with tab'))
+
     def test_invalid_headers(self):
         conn = httplib.HTTPConnection('example.com')
         conn.sock = FakeSocket('')
@@ -525,7 +639,7 @@ class BasicTest(TestCase):
         self.assertTrue(hasattr(resp,'fileno'),
                 'HTTPResponse should expose a fileno attribute')
 
-    # Test lines overflowing the max line size (_MAXLINE in http.client)
+    # Test lines overflowing the max line size (_MAXLINE in httplib)
 
     def test_overflowing_status_line(self):
         self.skipTest("disabled for HTTP 0.9 support")
