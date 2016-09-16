@@ -42,11 +42,12 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
 uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'imap',
                  'wais', 'file', 'https', 'shttp', 'mms',
                  'prospero', 'rtsp', 'rtspu', '', 'sftp',
-                 'svn', 'svn+ssh']
+                 'svn', 'svn+ssh', 'ws', 'wss']
 uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
                'imap', 'wais', 'file', 'mms', 'https', 'shttp',
                'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
-               'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh']
+               'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh',
+               'ws', 'wss']
 uses_params = ['ftp', 'hdl', 'prospero', 'http', 'imap',
                'https', 'shttp', 'rtsp', 'rtspu', 'sip', 'sips',
                'mms', '', 'sftp', 'tel']
