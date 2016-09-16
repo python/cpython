@@ -82,7 +82,7 @@ esac
 NL='\
 '
 
-# Setup to link with extra libraries when makeing shared extensions.
+# Setup to link with extra libraries when making shared extensions.
 # Currently, only Cygwin needs this baggage.
 case `uname -s` in
 CYGWIN*) if test $libdir = .

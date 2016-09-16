@@ -12533,7 +12533,7 @@ uudecode bug where it complaints about trailing garbage is still there
 decimal numbers).
 
 - In string.atof(), don't fail when the "re" module is unavailable.
-Plug the ensueing security leak by supplying an empty __builtins__
+Plug the ensuing security leak by supplying an empty __builtins__
 directory to eval().
 
 - A bunch of small fixes and improvements to Tkinter.py.
