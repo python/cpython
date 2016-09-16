@@ -735,8 +735,13 @@ def _parse(source, state, verbose):
                     if flags is None:  # global flags
                         if pos != 3:  # "(?x"
                             import warnings
-                            warnings.warn('Flags not at the start of the expression',
-                                          DeprecationWarning, stacklevel=7)
+                            warnings.warn(
+                                'Flags not at the start of the expression %s%s' % (
+                                    source.string[:20],  # truncate long regexes
+                                    ' (truncated)' if len(source.string) > 20 else '',
+                                ),
+                                DeprecationWarning, stacklevel=7
+                            )
                         continue
                     add_flags, del_flags = flags
                     group = None
