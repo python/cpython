@@ -137,6 +137,25 @@ New built-in features:
 
 * PEP 468: :ref:`Preserving Keyword Argument Order<whatsnew-kwargs>`
 
+A complete list of PEP's implemented in Python 3.6:
+
+* :pep:`468`, :ref:`Preserving Keyword Argument Order<whatsnew-kwargs>`
+* :pep:`487`, :ref:`Simpler customization of class creation<whatsnew-pep487>`
+* :pep:`495`, Local Time Disambiguation
+* :pep:`498`, :ref:`Formatted string literals <whatsnew-fstrings>`
+* :pep:`506`, Adding A Secrets Module To The Standard Library
+* :pep:`509`, :ref:`Add a private version to dict<whatsnew-pep509>`
+* :pep:`515`, :ref:`Underscores in Numeric Literals<pep-515>`
+* :pep:`519`, :ref:`Adding a file system path protocol<pep-519>`
+* :pep:`520`, :ref:`Preserving Class Attribute Definition Order<whatsnew-deforder>`
+* :pep:`523`, :ref:`Adding a frame evaluation API to CPython<pep-523>`
+* :pep:`524`, Make os.urandom() blocking on Linux (during system startup)
+* :pep:`525`, Asynchronous Generators (provisional)
+* :pep:`526`, :ref:`Syntax for Variable Annotations (provisional)<variable-annotations>`
+* :pep:`528`, :ref:`Change Windows console encoding to UTF-8 (provisional)<pep-528>`
+* :pep:`529`, :ref:`Change Windows filesystem encoding to UTF-8 (provisional)<pep-529>`
+* :pep:`530`, Asynchronous Comprehensions
+
 
 New Features
 ============
@@ -160,7 +179,7 @@ trailing underscores are not allowed.
 
 .. seealso::
 
-   :pep:`523` -- Underscores in Numeric Literals
+   :pep:`515` -- Underscores in Numeric Literals
       PEP written by Georg Brandl and Serhiy Storchaka.
 
 
@@ -341,6 +360,8 @@ may be required.
    This change is considered experimental for 3.6.0 beta releases. The default
    encoding may change before the final release.
 
+.. _whatsnew-pep487:
+
 PEP 487: Simpler customization of class creation
 ------------------------------------------------
 
@@ -508,6 +529,7 @@ insertion-order-preserving mapping.
    :pep:`468` -- Preserving Keyword Argument Order
       PEP written and implemented by Eric Snow.
 
+.. _whatsnew-pep509:
 
 PEP 509: Add a private version to dict
 --------------------------------------
