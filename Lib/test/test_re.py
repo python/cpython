@@ -1323,8 +1323,21 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match('(?ixu) ' + upper_char, lower_char))
         self.assertTrue(re.match('(?ixu) ' + lower_char, upper_char))
 
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(re.match(upper_char + '(?i)', lower_char))
+        p = upper_char + '(?i)'
+        with self.assertWarns(DeprecationWarning) as warns:
+            self.assertTrue(re.match(p, lower_char))
+        self.assertEqual(
+            str(warns.warnings[0].message),
+            'Flags not at the start of the expression %s' % p
+        )
+
+        p = upper_char + '(?i)%s' % ('.?' * 100)
+        with self.assertWarns(DeprecationWarning) as warns:
+            self.assertTrue(re.match(p, lower_char))
+        self.assertEqual(
+            str(warns.warnings[0].message),
+            'Flags not at the start of the expression %s (truncated)' % p[:20]
+        )
 
     def test_dollar_matches_twice(self):
         "$ matches the end of string, and just before the terminating \n"
