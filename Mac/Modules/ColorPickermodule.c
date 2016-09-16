@@ -28,7 +28,7 @@ PERFORMANCE OF THIS SOFTWARE.
 /* ----------------------------------------------------- */
 
 
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
 
 static char cp_GetColor__doc__[] =
 "GetColor(prompt, (r, g, b)) -> (r, g, b), ok"
@@ -49,14 +49,14 @@ cp_GetColor(PyObject *self, PyObject *args)
 
     return Py_BuildValue("O&h", QdRGB_New, &outColor, ok);
 }
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 /* List of methods defined in the module */
 
 static struct PyMethodDef cp_methods[] = {
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     {"GetColor",        (PyCFunction)cp_GetColor,       METH_VARARGS,   cp_GetColor__doc__},
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
     {NULL,                      (PyCFunction)NULL,                      0,                              NULL}           /* sentinel */
 };
 
@@ -87,4 +87,3 @@ void initColorPicker(void)
     if (PyErr_Occurred())
         Py_FatalError("can't initialize module ColorPicker");
 }
-

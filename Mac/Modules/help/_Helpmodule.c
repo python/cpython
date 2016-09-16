@@ -2,11 +2,9 @@
 /* ========================== Module _Help ========================== */
 
 #include "Python.h"
-
-#ifndef __LP64__
-
-
 #include "pymactoolbox.h"
+
+#if APPLE_SUPPORTS_QUICKTIME
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -145,10 +143,10 @@ static PyObject *Help_HMHideTag(PyObject *_self, PyObject *_args)
     return _res;
 }
 
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 static PyMethodDef Help_methods[] = {
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     {"HMGetHelpMenu", (PyCFunction)Help_HMGetHelpMenu, 1,
      PyDoc_STR("() -> (MenuRef outHelpMenu, MenuItemIndex outFirstCustomItemIndex)")},
     {"HMAreHelpTagsDisplayed", (PyCFunction)Help_HMAreHelpTagsDisplayed, 1,
@@ -165,31 +163,30 @@ static PyMethodDef Help_methods[] = {
      PyDoc_STR("(DialogPtr inDialog, SInt16 inHdlgRsrcID, SInt16 inItemStart) -> None")},
     {"HMHideTag", (PyCFunction)Help_HMHideTag, 1,
      PyDoc_STR("() -> None")},
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
     {NULL, NULL, 0}
 };
-
 
 
 
 void init_Help(void)
 {
     PyObject *m;
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     PyObject *d;
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 
 
 
     m = Py_InitModule("_Help", Help_methods);
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     d = PyModule_GetDict(m);
     Help_Error = PyMac_GetOSErrException();
     if (Help_Error == NULL ||
         PyDict_SetItemString(d, "Error", Help_Error) != 0)
         return;
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 }
 
 /* ======================== End module _Help ======================== */

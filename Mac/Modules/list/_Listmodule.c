@@ -2,11 +2,10 @@
 /* ========================== Module _List ========================== */
 
 #include "Python.h"
-
-#ifndef __LP64__
-
-
 #include "pymactoolbox.h"
+
+#if APPLE_SUPPORTS_QUICKTIME
+
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -1032,10 +1031,10 @@ static PyObject *List_as_List(PyObject *_self, PyObject *_args)
     return _res;
 
 }
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 static PyMethodDef List_methods[] = {
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     {"CreateCustomList", (PyCFunction)List_CreateCustomList, 1,
      PyDoc_STR("(Rect rView, Rect dataBounds, Point cellSize, ListDefSpec theSpec, WindowPtr theWindow, Boolean drawIt, Boolean hasGrow, Boolean scrollHoriz, Boolean scrollVert) -> (ListHandle outList)")},
     {"LNew", (PyCFunction)List_LNew, 1,
@@ -1058,11 +1057,11 @@ static PyMethodDef List_methods[] = {
      PyDoc_STR("(ListHandle list, OptionBits selectionFlags) -> None")},
     {"as_List", (PyCFunction)List_as_List, 1,
      PyDoc_STR("(Resource)->List.\nReturns List object (which is not auto-freed!)")},
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
     {NULL, NULL, 0}
 };
 
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
 
 
 static void myListDefFunction(SInt16 message,
@@ -1100,13 +1099,13 @@ static void myListDefFunction(SInt16 message,
         Py_DECREF(rv);
     }
 }
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 
 void init_List(void)
 {
     PyObject *m;
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     PyObject *d;
 
 
@@ -1115,11 +1114,11 @@ void init_List(void)
 
     PyMac_INIT_TOOLBOX_OBJECT_NEW(ListHandle, ListObj_New);
     PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ListHandle, ListObj_Convert);
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 
     m = Py_InitModule("_List", List_methods);
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     d = PyModule_GetDict(m);
     List_Error = PyMac_GetOSErrException();
     if (List_Error == NULL ||
@@ -1132,7 +1131,7 @@ void init_List(void)
     /* Backward-compatible name */
     Py_INCREF(&List_Type);
     PyModule_AddObject(m, "ListType", (PyObject *)&List_Type);
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 }
 
 /* ======================== End module _List ======================== */

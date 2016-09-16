@@ -2,11 +2,11 @@
 /* =========================== Module _TE =========================== */
 
 #include "Python.h"
-
-#ifndef __LP64__
-
-
 #include "pymactoolbox.h"
+
+#if APPLE_SUPPORTS_QUICKTIME
+
+
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -1268,10 +1268,10 @@ static PyObject *TE_as_TE(PyObject *_self, PyObject *_args)
                          TEObj_New, _rv);
     return _res;
 }
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 static PyMethodDef TE_methods[] = {
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     {"TEScrapHandle", (PyCFunction)TE_TEScrapHandle, 1,
      PyDoc_STR("() -> (Handle _rv)")},
     {"TEGetScrapLength", (PyCFunction)TE_TEGetScrapLength, 1,
@@ -1298,7 +1298,7 @@ static PyMethodDef TE_methods[] = {
      PyDoc_STR("(UInt8 value) -> None")},
     {"as_TE", (PyCFunction)TE_as_TE, 1,
      PyDoc_STR("(Handle h) -> (TEHandle _rv)")},
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
     {NULL, NULL, 0}
 };
 
@@ -1308,7 +1308,7 @@ static PyMethodDef TE_methods[] = {
 void init_TE(void)
 {
     PyObject *m;
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     PyObject *d;
 
 
@@ -1316,10 +1316,10 @@ void init_TE(void)
         PyMac_INIT_TOOLBOX_OBJECT_NEW(TEHandle, TEObj_New);
         PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TEHandle, TEObj_Convert);
 
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
     m = Py_InitModule("_TE", TE_methods);
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     d = PyModule_GetDict(m);
     TE_Error = PyMac_GetOSErrException();
     if (TE_Error == NULL ||
@@ -1332,7 +1332,7 @@ void init_TE(void)
     /* Backward-compatible name */
     Py_INCREF(&TE_Type);
     PyModule_AddObject(m, "TEType", (PyObject *)&TE_Type);
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 }
 
 /* ========================= End module _TE ========================= */

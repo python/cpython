@@ -2,11 +2,11 @@
 /* ========================== Module _Icn =========================== */
 
 #include "Python.h"
-
-
-#ifndef __LP64__
-
 #include "pymactoolbox.h"
+
+
+#if APPLE_SUPPORTS_QUICKTIME
+
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -1448,10 +1448,10 @@ static PyObject *Icn_WriteIconFile(PyObject *_self, PyObject *_args)
     _res = Py_None;
     return _res;
 }
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 static PyMethodDef Icn_methods[] = {
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     {"GetCIcon", (PyCFunction)Icn_GetCIcon, 1,
      PyDoc_STR("(SInt16 iconID) -> (CIconHandle _rv)")},
     {"PlotCIcon", (PyCFunction)Icn_PlotCIcon, 1,
@@ -1576,7 +1576,7 @@ static PyMethodDef Icn_methods[] = {
      PyDoc_STR("(FSRef ref) -> (IconFamilyHandle iconFamily)")},
     {"WriteIconFile", (PyCFunction)Icn_WriteIconFile, 1,
      PyDoc_STR("(IconFamilyHandle iconFamily, FSSpec iconFile) -> None")},
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
     {NULL, NULL, 0}
 };
 
@@ -1586,21 +1586,21 @@ static PyMethodDef Icn_methods[] = {
 void init_Icn(void)
 {
     PyObject *m;
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     PyObject *d;
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 
 
 
     m = Py_InitModule("_Icn", Icn_methods);
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     d = PyModule_GetDict(m);
     Icn_Error = PyMac_GetOSErrException();
     if (Icn_Error == NULL ||
         PyDict_SetItemString(d, "Error", Icn_Error) != 0)
         return;
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 }
 
 /* ======================== End module _Icn ========================= */

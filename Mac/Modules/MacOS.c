@@ -299,7 +299,7 @@ MacOS_GetCreatorAndType(PyObject *self, PyObject *args)
     FileInfo* finfo;
 
     if (!PyArg_ParseTuple(args, "O&", PyMac_GetFSRef, &ref)) {
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
         /* This function is documented to take an FSSpec as well,
          * which only works in 32-bit mode.
          */
@@ -324,9 +324,9 @@ MacOS_GetCreatorAndType(PyObject *self, PyObject *args)
         Py_DECREF(creator);
         Py_DECREF(type);
         return res;
-#else   /* __LP64__ */
+#else   /* APPLE_SUPPORTS_QUICKTIME */
         return NULL;
-#endif  /* __LP64__ */
+#endif  /* APPLE_SUPPORTS_QUICKTIME */
     }
 
     err = FSGetCatalogInfo(&ref,
@@ -372,7 +372,7 @@ MacOS_SetCreatorAndType(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "O&O&O&",
                     PyMac_GetFSRef, &ref, PyMac_GetOSType, &creator, PyMac_GetOSType, &type)) {
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
         /* Try to handle FSSpec arguments, for backward compatibility */
         FSSpec fss;
         FInfo info;
@@ -391,9 +391,9 @@ MacOS_SetCreatorAndType(PyObject *self, PyObject *args)
             return PyErr_Mac(MacOS_Error, err);
         Py_INCREF(Py_None);
         return Py_None;
-#else /* __LP64__ */
+#else /* APPLE_SUPPORTS_QUICKTIME */
         return NULL;
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
     }
 
     err = FSGetCatalogInfo(&ref,

@@ -2,10 +2,10 @@
 /* ======================= Module _CarbonEvt ======================== */
 
 #include "Python.h"
-
-#ifndef __LP64__
-
 #include "pymactoolbox.h"
+
+#if APPLE_SUPPORTS_QUICKTIME
+
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -2128,27 +2128,27 @@ static PyMethodDef CarbonEvents_methods[] = {
     {NULL, NULL, 0}
 };
 
-#else /* __LP64__ */
+#else /* APPLE_SUPPORTS_QUICKTIME */
 
 static PyMethodDef CarbonEvents_methods[] = {
     {NULL, NULL, 0}
 };
 
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 
 
 void init_CarbonEvt(void)
 {
     PyObject *m;
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     PyObject *d;
-#endif /* !__LP64__ */
+#endif /* !APPLE_SUPPORTS_QUICKTIME */
 
 
     m = Py_InitModule("_CarbonEvt", CarbonEvents_methods);
 
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     myEventHandlerUPP = NewEventHandlerUPP(myEventHandler);
     d = PyModule_GetDict(m);
     CarbonEvents_Error = PyMac_GetOSErrException();
@@ -2211,7 +2211,7 @@ void init_CarbonEvt(void)
     /* Backward-compatible name */
     Py_INCREF(&EventHotKeyRef_Type);
     PyModule_AddObject(m, "EventHotKeyRefType", (PyObject *)&EventHotKeyRef_Type);
-#endif /* !__LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 }
 
 /* ===================== End module _CarbonEvt ====================== */

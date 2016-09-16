@@ -201,6 +201,9 @@ Build
 - Issue #10910: Avoid C++ compilation errors on FreeBSD and OS X.
   Also update FreedBSD version checks for the original ctype UTF-8 workaround.
 
+- Issue #27806: Fix 32-bit builds on macOS Sierra 10.12 broken by removal of
+  deprecated QuickTime/QuickTime.h header file.  Patch by sashk.
+
 Tools/Demos
 -----------
 

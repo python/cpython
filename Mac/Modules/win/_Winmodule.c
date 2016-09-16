@@ -2,10 +2,10 @@
 /* ========================== Module _Win =========================== */
 
 #include "Python.h"
-
-#ifndef __LP64__
-
 #include "pymactoolbox.h"
+
+#if APPLE_SUPPORTS_QUICKTIME
+
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -3147,10 +3147,10 @@ static PyObject *Win_FindWindow(PyObject *_self, PyObject *_args)
                          WinObj_WhichWindow, theWindow);
     return _res;
 }
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 static PyMethodDef Win_methods[] = {
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     {"GetNewCWindow", (PyCFunction)Win_GetNewCWindow, 1,
      PyDoc_STR("(short windowID, WindowPtr behind) -> (WindowPtr _rv)")},
     {"NewWindow", (PyCFunction)Win_NewWindow, 1,
@@ -3202,12 +3202,12 @@ static PyMethodDef Win_methods[] = {
     {"FindWindow", (PyCFunction)Win_FindWindow, 1,
      PyDoc_STR("(Point thePoint) -> (short _rv, WindowPtr theWindow)")},
     {NULL, NULL, 0}
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 };
 
 
 
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
 /* Return the object corresponding to the window, or NULL */
 
 PyObject *
@@ -3230,22 +3230,22 @@ WinObj_WhichWindow(WindowPtr w)
     return it;
 }
 
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 void init_Win(void)
 {
     PyObject *m;
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     PyObject *d;
 
     PyMac_INIT_TOOLBOX_OBJECT_NEW(WindowPtr, WinObj_New);
     PyMac_INIT_TOOLBOX_OBJECT_NEW(WindowPtr, WinObj_WhichWindow);
     PyMac_INIT_TOOLBOX_OBJECT_CONVERT(WindowPtr, WinObj_Convert);
 
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
     m = Py_InitModule("_Win", Win_methods);
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     d = PyModule_GetDict(m);
     Win_Error = PyMac_GetOSErrException();
     if (Win_Error == NULL ||
@@ -3258,7 +3258,7 @@ void init_Win(void)
     /* Backward-compatible name */
     Py_INCREF(&Window_Type);
     PyModule_AddObject(m, "WindowType", (PyObject *)&Window_Type);
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 }
 
 /* ======================== End module _Win ========================= */

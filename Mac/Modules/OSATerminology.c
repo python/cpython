@@ -14,7 +14,7 @@
 
 #include <Carbon/Carbon.h>
 
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
 static PyObject *
 PyOSA_GetAppTerminology(PyObject* self, PyObject* args)
 {
@@ -73,14 +73,14 @@ PyOSA_GetSysTerminology(PyObject* self, PyObject* args)
     if (err) return PyMac_Error(err);
     return Py_BuildValue("O&", AEDesc_New, &theDesc);
 }
-#endif /* !__LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 /*
  * List of methods defined in the module
  */
 static struct PyMethodDef OSATerminology_methods[] =
 {
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     {"GetAppTerminology",
         (PyCFunction) PyOSA_GetAppTerminology,
         METH_VARARGS,
@@ -89,7 +89,7 @@ static struct PyMethodDef OSATerminology_methods[] =
         (PyCFunction) PyOSA_GetSysTerminology,
         METH_VARARGS,
         "Get the AppleScript language's terminology. GetSysTerminology() --> AEDesc"},
-#endif /* !__LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
     {NULL, (PyCFunction) NULL, 0, NULL}
 };
 

@@ -2,11 +2,11 @@
 /* ========================== Module _Ctl =========================== */
 
 #include "Python.h"
-
-#ifndef __LP64__
-
-
 #include "pymactoolbox.h"
+
+#if APPLE_SUPPORTS_QUICKTIME
+
+
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -5766,19 +5766,19 @@ mytrackingproc(ControlHandle control, Point startPt, ControlActionUPP actionProc
     return (ControlPartCode)c_rv;
 }
 
-#else /* __LP64__ */
+#else /* APPLE_SUPPORTS_QUICKTIME */
 
 static PyMethodDef Ctl_methods[] = {
     {NULL, NULL, 0}
 };
 
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 void init_Ctl(void)
 {
     PyObject *m;
 
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     PyObject *d;
 
     mytracker_upp = NewControlActionUPP(mytracker);
@@ -5791,11 +5791,11 @@ void init_Ctl(void)
     mytrackingproc_upp = NewControlUserPaneTrackingUPP(mytrackingproc);
     PyMac_INIT_TOOLBOX_OBJECT_NEW(ControlHandle, CtlObj_New);
     PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ControlHandle, CtlObj_Convert);
-#endif /* !__LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
     m = Py_InitModule("_Ctl", Ctl_methods);
 
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     d = PyModule_GetDict(m);
     Ctl_Error = PyMac_GetOSErrException();
     if (Ctl_Error == NULL ||
@@ -5808,8 +5808,7 @@ void init_Ctl(void)
     /* Backward-compatible name */
     Py_INCREF(&Control_Type);
     PyModule_AddObject(m, "ControlType", (PyObject *)&Control_Type);
-#endif /* !__LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 }
 
 /* ======================== End module _Ctl ========================= */
-

@@ -2,12 +2,10 @@
 /* ========================== Module _App =========================== */
 
 #include "Python.h"
-
-#ifndef __LP64__
-    /* Carbon GUI stuff, not available in 64-bit mode */
-
-
 #include "pymactoolbox.h"
+
+#if APPLE_SUPPORTS_QUICKTIME
+    /* Carbon GUI stuff, not available in 64-bit mode */
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -1806,13 +1804,13 @@ static PyMethodDef App_methods[] = {
 void init_App(void)
 {
     PyObject *m;
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     PyObject *d;
-#endif /* !__LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 
 
     m = Py_InitModule("_App", App_methods);
-#ifndef __LP64__
+#if APPLE_SUPPORTS_QUICKTIME
     d = PyModule_GetDict(m);
     App_Error = PyMac_GetOSErrException();
     if (App_Error == NULL ||
@@ -1825,7 +1823,7 @@ void init_App(void)
     /* Backward-compatible name */
     Py_INCREF(&ThemeDrawingState_Type);
     PyModule_AddObject(m, "ThemeDrawingStateType", (PyObject *)&ThemeDrawingState_Type);
-#endif /* __LP64__ */
+#endif /* APPLE_SUPPORTS_QUICKTIME */
 }
 
 /* ======================== End module _App ========================= */
