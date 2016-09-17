@@ -1485,6 +1485,25 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(s.family, 42424)
             self.assertEqual(s.type, 13331)
 
+    @unittest.skipUnless(hasattr(os, 'sendfile'), 'test needs os.sendfile()')
+    def test__sendfile_use_sendfile(self):
+        class File:
+            def __init__(self, fd):
+                self.fd = fd
+
+            def fileno(self):
+                return self.fd
+        with socket.socket() as sock:
+            fd = os.open(os.curdir, os.O_RDONLY)
+            os.close(fd)
+            with self.assertRaises(socket._GiveupOnSendfile):
+                sock._sendfile_use_sendfile(File(fd))
+            with self.assertRaises(OverflowError):
+                sock._sendfile_use_sendfile(File(2**1000))
+            with self.assertRaises(TypeError):
+                sock._sendfile_use_sendfile(File(None))
+
+
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
 class BasicCANTest(unittest.TestCase):
 

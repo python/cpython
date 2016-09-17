@@ -35,6 +35,8 @@ Core and Builtins
 Library
 -------
 
+- Fix UnboundLocalError in socket._sendfile_use_sendfile.
+
 - Issue #28075: Check for ERROR_ACCESS_DENIED in Windows implementation of
   os.stat().  Patch by Eryk Sun.
 
