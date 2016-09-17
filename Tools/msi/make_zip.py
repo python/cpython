@@ -91,11 +91,13 @@ def include_in_tools(p):
 
     return p.suffix.lower() in {'.py', '.pyw', '.txt'}
 
+BASE_NAME = 'python{0.major}{0.minor}'.format(sys.version_info)
+
 FULL_LAYOUT = [
     ('/', 'PCBuild/$arch', 'python.exe', is_not_debug),
     ('/', 'PCBuild/$arch', 'pythonw.exe', is_not_debug),
-    ('/', 'PCBuild/$arch', 'python{0.major}.dll'.format(sys.version_info), is_not_debug),
-    ('/', 'PCBuild/$arch', 'python{0.major}{0.minor}.dll'.format(sys.version_info), is_not_debug),
+    ('/', 'PCBuild/$arch', 'python{}.dll'.format(sys.version_info.major), is_not_debug),
+    ('/', 'PCBuild/$arch', '{}.dll'.format(BASE_NAME), is_not_debug),
     ('DLLs/', 'PCBuild/$arch', '*.pyd', is_not_debug),
     ('DLLs/', 'PCBuild/$arch', '*.dll', is_not_debug_or_python),
     ('include/', 'include', '*.h', None),
@@ -109,7 +111,7 @@ EMBED_LAYOUT = [
     ('/', 'PCBuild/$arch', 'python*.exe', is_not_debug),
     ('/', 'PCBuild/$arch', '*.pyd', is_not_debug),
     ('/', 'PCBuild/$arch', '*.dll', is_not_debug),
-    ('python{0.major}{0.minor}.zip'.format(sys.version_info), 'Lib', '**/*', include_in_lib),
+    ('{}.zip'.format(BASE_NAME), 'Lib', '**/*', include_in_lib),
 ]
 
 if os.getenv('DOC_FILENAME'):
@@ -209,9 +211,12 @@ def main():
             print('Copied {} files'.format(copied))
 
         if ns.embed:
-            with open(str(temp / 'sys.path'), 'w') as f:
-                print('python{0.major}{0.minor}.zip'.format(sys.version_info), file=f)
+            with open(str(temp / (BASE_NAME + '._pth')), 'w') as f:
+                print(BASE_NAME + '.zip', file=f)
                 print('.', file=f)
+                print('', file=f)
+                print('# Uncomment to run site.main() automatically', file=f)
+                print('#import site', file=f)
 
         if out:
             total = copy_to_layout(out, rglob(temp, '**/*', None))

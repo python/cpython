@@ -6,8 +6,9 @@
    PATH RULES FOR WINDOWS:
    This describes how sys.path is formed on Windows.  It describes the
    functionality, not the implementation (ie, the order in which these
-   are actually fetched is different). The presence of a sys.path file
-   alongside the program overrides these rules - see below.
+   are actually fetched is different). The presence of a python._pth or
+   pythonXY._pth file alongside the program overrides these rules - see
+   below.
 
    * Python always adds an empty entry at the start, which corresponds
      to the current directory.
@@ -37,11 +38,21 @@
      used (eg. .\Lib;.\DLLs, etc)
 
 
-   If a sys.path file exists adjacent to python.exe, it must contain a
-   list of paths to add to sys.path, one per line (like a .pth file but without
-   the ability to execute arbitrary code). Each path is relative to the
-   directory containing the file. No other paths are added to the search path,
-   and the registry finder is not enabled.
+   If a '._pth' file exists adjacent to the executable with the same base name
+   (e.g. python._pth adjacent to python.exe) or adjacent to the shared library
+   (e.g. python36._pth adjacent to python36.dll), it is used in preference to
+   the above process. The shared library file takes precedence over the
+   executable. The path file must contain a list of paths to add to sys.path,
+   one per line. Each path is relative to the directory containing the file.
+   Blank lines and comments beginning with '#' are permitted.
+
+   In the presence of this ._pth file, no other paths are added to the search
+   path, the registry finder is not enabled, site.py is not imported and
+   isolated mode is enabled. The site package can be enabled by including a
+   line reading "import site"; no other imports are recognized. Any invalid
+   entry (other than directories that do not exist) will result in immediate
+   termination of the program.
+
 
   The end result of all this is:
   * When running python.exe, or any other .exe in the main Python directory
@@ -61,8 +72,9 @@
   * An embedding application can use Py_SetPath() to override all of
     these automatic path computations.
 
-  * An isolation install of Python can disable all implicit paths by
-    providing a sys.path file.
+  * An install of Python can fully specify the contents of sys.path using
+    either a 'EXENAME._pth' or 'DLLNAME._pth' file, optionally including
+    "import site" to enable the site module.
 
    ---------------------------------------------------------------- */
 
@@ -135,6 +147,33 @@ reduce(wchar_t *dir)
     dir[i] = '\0';
 }
 
+static int
+change_ext(wchar_t *dest, const wchar_t *src, const wchar_t *ext)
+{
+    size_t src_len = wcsnlen_s(src, MAXPATHLEN+1);
+    size_t i = src_len;
+    if (i >= MAXPATHLEN+1)
+        Py_FatalError("buffer overflow in getpathp.c's reduce()");
+
+    while (i > 0 && src[i] != '.' && !is_sep(src[i]))
+        --i;
+
+    if (i == 0) {
+        dest[0] = '\0';
+        return -1;
+    }
+
+    if (is_sep(src[i]))
+        i = src_len;
+
+    if (wcsncpy_s(dest, MAXPATHLEN+1, src, i) ||
+        wcscat_s(dest, MAXPATHLEN+1, ext)) {
+        dest[0] = '\0';
+        return -1;
+    }
+
+    return 0;
+}
 
 static int
 exists(wchar_t *filename)
@@ -499,11 +538,16 @@ find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
 }
 
 static int
-read_sys_path_file(const wchar_t *path, const wchar_t *prefix)
+read_pth_file(const wchar_t *path, wchar_t *prefix, int *isolated, int *nosite)
 {
     FILE *sp_file = _Py_wfopen(path, L"r");
     if (sp_file == NULL)
         return -1;
+
+    wcscpy_s(prefix, MAXPATHLEN+1, path);
+    reduce(prefix);
+    *isolated = 1;
+    *nosite = 1;
 
     size_t bufsiz = MAXPATHLEN;
     size_t prefixlen = wcslen(prefix);
@@ -516,16 +560,25 @@ read_sys_path_file(const wchar_t *path, const wchar_t *prefix)
         char *p = fgets(line, MAXPATHLEN + 1, sp_file);
         if (!p)
             break;
+        if (*p == '\0' || *p == '#')
+            continue;
+        while (*++p) {
+            if (*p == '\r' || *p == '\n') {
+                *p = '\0';
+                break;
+            }
+        }
 
-        DWORD n = strlen(line);
-        if (n == 0 || p[n - 1] != '\n')
-            break;
-        if (n > 2 && p[n - 1] == '\r')
-            --n;
+        if (strcmp(line, "import site") == 0) {
+            *nosite = 0;
+            continue;
+        } else if (strncmp(line, "import ", 7) == 0) {
+            Py_FatalError("only 'import site' is supported in ._pth file");
+        }
 
-        DWORD wn = MultiByteToWideChar(CP_UTF8, 0, line, n - 1, NULL, 0);
+        DWORD wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, NULL, 0);
         wchar_t *wline = (wchar_t*)PyMem_RawMalloc((wn + 1) * sizeof(wchar_t));
-        wn = MultiByteToWideChar(CP_UTF8, 0, line, n - 1, wline, wn);
+        wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, wline, wn + 1);
         wline[wn] = '\0';
 
         while (wn + prefixlen + 4 > bufsiz) {
@@ -539,8 +592,8 @@ read_sys_path_file(const wchar_t *path, const wchar_t *prefix)
 
         if (buf[0])
             wcscat_s(buf, bufsiz, L";");
+
         wchar_t *b = &buf[wcslen(buf)];
-        
         wcscat_s(buf, bufsiz, prefix);
         join(b, wline);
 
@@ -586,13 +639,12 @@ calculate_path(void)
     {
         wchar_t spbuffer[MAXPATHLEN+1];
 
-        wcscpy_s(spbuffer, MAXPATHLEN+1, argv0_path);
-        join(spbuffer, L"sys.path");
-        if (exists(spbuffer) && read_sys_path_file(spbuffer, argv0_path) == 0) {
-            wcscpy_s(prefix, MAXPATHLEN + 1, argv0_path);
-            Py_IsolatedFlag = 1;
-            Py_NoSiteFlag = 1;
-            return;
+        if ((dllpath[0] && !change_ext(spbuffer, dllpath, L"._pth") && exists(spbuffer)) ||
+            (progpath[0] && !change_ext(spbuffer, progpath, L"._pth") && exists(spbuffer))) {
+
+            if (!read_pth_file(spbuffer, prefix, &Py_IsolatedFlag, &Py_NoSiteFlag)) {
+                return;
+            }
         }
     }
 
@@ -631,16 +683,7 @@ calculate_path(void)
     }
 
     /* Calculate zip archive path from DLL or exe path */
-    if (wcscpy_s(zip_path, MAXPATHLEN + 1, dllpath[0] ? dllpath : progpath)) {
-        /* exceeded buffer length - ignore zip_path */
-        zip_path[0] = '\0';
-    } else {
-        wchar_t *dot = wcsrchr(zip_path, '.');
-        if (!dot || wcscpy_s(dot, MAXPATHLEN + 1 - (dot - zip_path), L".zip")) {
-            /* exceeded buffer length - ignore zip_path */
-            zip_path[0] = L'\0';
-        }
-    }
+    change_ext(zip_path, dllpath[0] ? dllpath : progpath, L".zip");
 
     if (pythonhome == NULL || *pythonhome == '\0') {
         if (zip_path[0] && exists(zip_path)) {

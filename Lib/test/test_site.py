@@ -140,8 +140,6 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertRegex(err_out.getvalue(), 'Traceback')
         self.assertRegex(err_out.getvalue(), 'ModuleNotFoundError')
 
-    @unittest.skipIf(sys.platform == "win32", "Windows does not raise an "
-                      "error for file paths containing null characters")
     def test_addpackage_import_bad_pth_file(self):
         # Issue 5258
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
@@ -447,10 +445,9 @@ class StartupImportTests(unittest.TestCase):
         popen = subprocess.Popen([sys.executable, '-I', '-v', '-c',
                                   'import sys; print(set(sys.modules))'],
                                  stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+                                 stderr=subprocess.PIPE,
+                                 encoding='utf-8')
         stdout, stderr = popen.communicate()
-        stdout = stdout.decode('utf-8')
-        stderr = stderr.decode('utf-8')
         modules = eval(stdout)
 
         self.assertIn('site', modules)
@@ -473,7 +470,6 @@ class StartupImportTests(unittest.TestCase):
         # http://bugs.python.org/issue28095
         if sys.platform != 'darwin':
             self.assertFalse(modules.intersection(collection_mods), stderr)
-
 
 if __name__ == "__main__":
     unittest.main()
