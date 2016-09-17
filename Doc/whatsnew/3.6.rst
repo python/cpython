@@ -108,7 +108,7 @@ Windows improvements:
   which means that when the 260 character path limit may no longer apply.
   See :ref:`removing the MAX_PATH limitation <max-path>` for details.
 
-* A ``sys.path`` file can be added to force isolated mode and fully specify
+* A ``._pth`` file can be added to force isolated mode and fully specify
   all search paths to avoid registry and environment lookup. See
   :ref:`the documentation <finding_modules>` for more information.
 

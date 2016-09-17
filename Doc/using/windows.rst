@@ -720,15 +720,24 @@ installation directory.  So, if you had installed Python to
 :file:`C:\\Python\\Lib\\` and third-party modules should be stored in
 :file:`C:\\Python\\Lib\\site-packages\\`.
 
-To completely override :data:`sys.path`, create a text file named ``'sys.path'``
-containing a list of paths alongside the Python executable. This will ignore all
-registry settings and environment variables, enable isolated mode, disable
-importing :mod:`site`, and fill :data:`sys.path` with exactly the paths listed
-in the file. Paths may be absolute or relative to the directory containing the
-file.
+To completely override :data:`sys.path`, create a ``._pth`` file with the same
+name as the DLL (``python36._pth``) or the executable (``python._pth``) and
+specify one line for each path to add to :data:`sys.path`. The file based on the
+DLL name overrides the one based on the executable, which allows paths to be
+restricted for any program loading the runtime if desired.
 
-When the ``'sys.path'`` file is missing, this is how :data:`sys.path` is
-populated on Windows:
+When the file exists, all registry and environment variables are ignored,
+isolated mode is enabled, and :mod:`site` is not imported unless one line in the
+file specifies ``import site``. Blank paths and lines starting with ``#`` are
+ignored. Each path may be absolute or relative to the location of the file.
+Import statements other than to ``site`` are not permitted, and arbitrary code
+cannot be specified.
+
+Note that ``.pth`` files (without leading underscore) will be processed normally
+by the :mod:`site` module.
+
+When no ``._pth`` file is found, this is how :data:`sys.path` is populated on
+Windows:
 
 * An empty entry is added at the start, which corresponds to the current
   directory.
@@ -782,9 +791,10 @@ The end result of all this is:
 For those who want to bundle Python into their application or distribution, the
 following advice will prevent conflicts with other installations:
 
-* Include a ``sys.path`` file alongside your executable containing the
-  directories to include. This will ignore user site-packages and other paths
-  listed in the registry or in environment variables.
+* Include a ``._pth`` file alongside your executable containing the
+  directories to include. This will ignore paths listed in the registry and
+  environment variables, and also ignore :mod:`site` unless ``import site`` is
+  listed.
 
 * If you are loading :file:`python3.dll` or :file:`python36.dll` in your own
   executable, explicitly call :c:func:`Py_SetPath` or (at least)
