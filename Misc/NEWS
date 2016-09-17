@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28075: Check for ERROR_ACCESS_DENIED in Windows implementation of
+  os.stat().  Patch by Eryk Sun.
+
 - Issue #22493: Warning message emitted by using inline flags in the middle of
   regular expression now contains a (truncated) regex pattern.
   Patch by Tim Graham.
