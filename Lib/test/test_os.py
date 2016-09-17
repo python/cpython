@@ -432,6 +432,25 @@ class StatAttributeTests(unittest.TestCase):
             result.st_file_attributes & stat.FILE_ATTRIBUTE_DIRECTORY,
             stat.FILE_ATTRIBUTE_DIRECTORY)
 
+    @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
+    def test_access_denied(self):
+        # Default to FindFirstFile WIN32_FIND_DATA when access is
+        # denied. See issue 28075.
+        # os.environ['TEMP'] should be located on a volume that
+        # supports file ACLs.
+        fname = os.path.join(os.environ['TEMP'], self.fname)
+        self.addCleanup(support.unlink, fname)
+        create_file(fname, b'ABC')
+        # Deny the right to [S]YNCHRONIZE on the file to
+        # force CreateFile to fail with ERROR_ACCESS_DENIED.
+        DETACHED_PROCESS = 8
+        subprocess.check_call(
+            ['icacls.exe', fname, '/deny', 'Users:(S)'],
+            creationflags=DETACHED_PROCESS
+        )
+        result = os.stat(fname)
+        self.assertNotEqual(result.st_size, 0)
+
 
 class UtimeTests(unittest.TestCase):
     def setUp(self):

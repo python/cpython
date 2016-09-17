@@ -1515,7 +1515,9 @@ win32_xstat_impl(const char *path, struct _Py_stat_struct *result,
         /* Either the target doesn't exist, or we don't have access to
            get a handle to it. If the former, we need to return an error.
            If the latter, we can use attributes_from_dir. */
-        if (GetLastError() != ERROR_SHARING_VIOLATION)
+        DWORD lastError = GetLastError();
+        if (lastError != ERROR_ACCESS_DENIED &&
+            lastError != ERROR_SHARING_VIOLATION)
             return -1;
         /* Could not get attributes on open file. Fall back to
            reading the directory. */
@@ -1525,7 +1527,7 @@ win32_xstat_impl(const char *path, struct _Py_stat_struct *result,
         if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
             if (traverse) {
                 /* Should traverse, but could not open reparse point handle */
-                SetLastError(ERROR_SHARING_VIOLATION);
+                SetLastError(lastError);
                 return -1;
             }
         }
