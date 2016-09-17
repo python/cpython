@@ -258,7 +258,7 @@ class socket(_socket.socket):
                 raise _GiveupOnSendfile(err)  # not a regular file
             try:
                 fsize = os.fstat(fileno).st_size
-            except OSError:
+            except OSError as err:
                 raise _GiveupOnSendfile(err)  # not a regular file
             if not fsize:
                 return 0  # empty file
