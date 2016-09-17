@@ -71,6 +71,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28075: Check for ERROR_ACCESS_DENIED in Windows implementation of
+  os.stat().  Patch by Eryk Sun.
+
 - Issue #25270: Prevent codecs.escape_encode() from raising SystemError when
   an empty bytestring is passed.
 
