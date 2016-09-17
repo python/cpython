@@ -3103,9 +3103,7 @@ long_add(PyLongObject *a, PyLongObject *b)
     CHECK_BINOP(a, b);
 
     if (Py_ABS(Py_SIZE(a)) <= 1 && Py_ABS(Py_SIZE(b)) <= 1) {
-        PyObject *result = PyLong_FromLong(MEDIUM_VALUE(a) +
-                                          MEDIUM_VALUE(b));
-        return result;
+        return PyLong_FromLong(MEDIUM_VALUE(a) + MEDIUM_VALUE(b));
     }
     if (Py_SIZE(a) < 0) {
         if (Py_SIZE(b) < 0) {
@@ -3139,9 +3137,7 @@ long_sub(PyLongObject *a, PyLongObject *b)
     CHECK_BINOP(a, b);
 
     if (Py_ABS(Py_SIZE(a)) <= 1 && Py_ABS(Py_SIZE(b)) <= 1) {
-        PyObject* r;
-        r = PyLong_FromLong(MEDIUM_VALUE(a)-MEDIUM_VALUE(b));
-        return r;
+        return PyLong_FromLong(MEDIUM_VALUE(a) - MEDIUM_VALUE(b));
     }
     if (Py_SIZE(a) < 0) {
         if (Py_SIZE(b) < 0)
