@@ -5138,18 +5138,18 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
     int status;
 
     if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds))
-    return -1;
+        return -1;
 
     if (!PyArg_ParseTuple(args, "OOO:COMError", &hresult, &text, &details))
         return -1;
 
     a = PySequence_GetSlice(args, 1, PySequence_Size(args));
     if (!a)
-    return -1;
+        return -1;
     status = PyObject_SetAttrString(self, "args", a);
     Py_DECREF(a);
     if (status < 0)
-    return -1;
+        return -1;
 
     if (PyObject_SetAttrString(self, "hresult", hresult) < 0)
         return -1;
