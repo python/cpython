@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #27222: Clean up redundant code in long_rshift function. Thanks
+  Oren Milman.
+
 - Upgrade internal unicode databases to Unicode version 9.0.0.
 
 - Issue #28131: Fix a regression in zipimport's compile_source().  zipimport
