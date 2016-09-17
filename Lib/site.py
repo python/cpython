@@ -60,7 +60,8 @@ omitted because it is not mentioned in either path configuration file.
 
 The readline module is also automatically configured to enable
 completion for systems that support it.  This can be overridden in
-sitecustomize, usercustomize or PYTHONSTARTUP.
+sitecustomize, usercustomize or PYTHONSTARTUP.  Starting Python in
+isolated mode (-I) disables automatic readline configuration.
 
 After these operations, an attempt is made to import a module
 named sitecustomize, which can perform arbitrary additional
@@ -491,7 +492,7 @@ def execsitecustomize():
             else:
                 raise
     except Exception as err:
-        if os.environ.get("PYTHONVERBOSE"):
+        if sys.flags.verbose:
             sys.excepthook(*sys.exc_info())
         else:
             sys.stderr.write(
@@ -511,7 +512,7 @@ def execusercustomize():
             else:
                 raise
     except Exception as err:
-        if os.environ.get("PYTHONVERBOSE"):
+        if sys.flags.verbose:
             sys.excepthook(*sys.exc_info())
         else:
             sys.stderr.write(
@@ -538,12 +539,13 @@ def main():
     setquit()
     setcopyright()
     sethelper()
-    enablerlcompleter()
+    if not sys.flags.isolated:
+        enablerlcompleter()
     execsitecustomize()
     if ENABLE_USER_SITE:
         execusercustomize()
 
-# Prevent edition of sys.path when python was started with -S and
+# Prevent extending of sys.path when python was started with -S and
 # site is imported later.
 if not sys.flags.no_site:
     main()
