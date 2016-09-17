@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #27441: Remove some redundant assignments to ob_size in longobject.c.
+  Thanks Oren Milman.
+
 - Issue #27222: Clean up redundant code in long_rshift function. Thanks
   Oren Milman.
 

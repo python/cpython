@@ -315,7 +315,6 @@ PyLong_FromUnsignedLong(unsigned long ival)
     v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->ob_digit;
-        Py_SIZE(v) = ndigits;
         while (ival) {
             *p++ = (digit)(ival & PyLong_MASK);
             ival >>= PyLong_SHIFT;
@@ -1102,7 +1101,6 @@ PyLong_FromUnsignedLongLong(unsigned long long ival)
     v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->ob_digit;
-        Py_SIZE(v) = ndigits;
         while (ival) {
             *p++ = (digit)(ival & PyLong_MASK);
             ival >>= PyLong_SHIFT;
