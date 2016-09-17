@@ -94,6 +94,10 @@ Optimizations
 Build and C API Changes
 =======================
 
+* A full copy of libffi is no longer bundled for use when building the
+  :mod:`_ctypes <ctypes>` module on non-OSX UNIX platforms.  An installed copy
+  of libffi is now required when building ``_ctypes`` on such platforms.
+  Contributed by Zachary Ware in :issue:`27979`.
 
 
 Deprecated

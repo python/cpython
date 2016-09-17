@@ -64,6 +64,10 @@ Library
 Build
 -----
 
+- Issue #27979: A full copy of libffi is no longer bundled for use when
+  building _ctypes on non-OSX UNIX platforms.  An installed copy of libffi is
+  now required when building _ctypes on such platforms.
+
 - Issue #15819: Remove redundant include search directory option for building
   outside the source tree.
 
