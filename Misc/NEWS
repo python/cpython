@@ -71,6 +71,9 @@ Library
 Windows
 -------
 
+- Issue #28110: launcher.msi has different product codes between 32-bit and
+  64-bit
+
 - Issue #28161: Opening CON for write access fails
 
 - Issue #28162: WindowsConsoleIO readall() fails if first line starts with
