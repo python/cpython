@@ -1804,7 +1804,7 @@ class SelectorLoopFunctionalTests(unittest.TestCase):
         return buf
 
     def test_sock_connect_sock_write_race(self):
-        TIMEOUT = 3.0
+        TIMEOUT = 10.0
         PAYLOAD = b'DATA' * 1024 * 1024
 
         class Server(threading.Thread):
