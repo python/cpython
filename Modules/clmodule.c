@@ -964,7 +964,7 @@ initcl(void)
 
     if (PyErr_WarnPy3k("the cl module has been removed in "
                        "Python 3.0", 2) < 0)
-    return;
+        return;
 
     m = Py_InitModule("cl", cl_methods);
     if (m == NULL)

@@ -72,12 +72,12 @@ PyThread_type_lock PyThread_allocate_lock(void)
 
     dprintf(("PyThread_allocate_lock called\n"));
     if (!initialized)
-    PyThread_init_thread();
+        PyThread_init_thread();
 
     aLock = CreateEvent(NULL,           /* Security attributes      */
-            0,              /* Manual-Reset               */
+                        0,              /* Manual-Reset               */
                         1,              /* Is initially signalled  */
-            NULL);          /* Name of event            */
+                        NULL);          /* Name of event            */
 
     dprintf(("%ld: PyThread_allocate_lock() -> %p\n", PyThread_get_thread_ident(), aLock));
 
@@ -117,7 +117,7 @@ int PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 #endif
 
     if (waitResult != WAIT_OBJECT_0) {
-                success = 0;    /* We failed */
+        success = 0;    /* We failed */
     }
 
     dprintf(("%ld: PyThread_acquire_lock(%p, %d) -> %d\n", PyThread_get_thread_ident(),aLock, waitflag, success));
@@ -130,7 +130,7 @@ void PyThread_release_lock(PyThread_type_lock aLock)
     dprintf(("%ld: PyThread_release_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
     if (!SetEvent(aLock))
-    dprintf(("%ld: Could not PyThread_release_lock(%p) error: %l\n", PyThread_get_thread_ident(), aLock, GetLastError()));
+        dprintf(("%ld: Could not PyThread_release_lock(%p) error: %l\n", PyThread_get_thread_ident(), aLock, GetLastError()));
 }
 
 

@@ -395,7 +395,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 
 #define Py_UNICODE_FILL(target, value, length) \
     do {Py_ssize_t i_; Py_UNICODE *t_ = (target); Py_UNICODE v_ = (value);\
-    for (i_ = 0; i_ < (length); i_++) t_[i_] = v_;\
+        for (i_ = 0; i_ < (length); i_++) t_[i_] = v_;\
     } while (0)
 
 /* Check if substring matches at given offset.  the offset must be

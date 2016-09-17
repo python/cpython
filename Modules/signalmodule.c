@@ -126,18 +126,18 @@ itimer_retval(struct itimerval *iv)
 
     r = PyTuple_New(2);
     if (r == NULL)
-    return NULL;
+        return NULL;
 
     if(!(v = PyFloat_FromDouble(double_from_timeval(&iv->it_value)))) {
-    Py_DECREF(r);
-    return NULL;
+        Py_DECREF(r);
+        return NULL;
     }
 
     PyTuple_SET_ITEM(r, 0, v);
 
     if(!(v = PyFloat_FromDouble(double_from_timeval(&iv->it_interval)))) {
-    Py_DECREF(r);
-    return NULL;
+        Py_DECREF(r);
+        return NULL;
     }
 
     PyTuple_SET_ITEM(r, 1, v);
@@ -455,14 +455,14 @@ signal_setitimer(PyObject *self, PyObject *args)
     struct itimerval new, old;
 
     if(!PyArg_ParseTuple(args, "id|d:setitimer", &which, &first, &interval))
-    return NULL;
+        return NULL;
 
     timeval_from_double(first, &new.it_value);
     timeval_from_double(interval, &new.it_interval);
     /* Let OS check "which" value */
     if (setitimer(which, &new, &old) != 0) {
-    PyErr_SetFromErrno(ItimerError);
-    return NULL;
+        PyErr_SetFromErrno(ItimerError);
+        return NULL;
     }
 
     return itimer_retval(&old);
@@ -488,11 +488,11 @@ signal_getitimer(PyObject *self, PyObject *args)
     struct itimerval old;
 
     if (!PyArg_ParseTuple(args, "i:getitimer", &which))
-    return NULL;
+        return NULL;
 
     if (getitimer(which, &old) != 0) {
-    PyErr_SetFromErrno(ItimerError);
-    return NULL;
+        PyErr_SetFromErrno(ItimerError);
+        return NULL;
     }
 
     return itimer_retval(&old);
@@ -834,9 +834,9 @@ initsignal(void)
 
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
     ItimerError = PyErr_NewException("signal.ItimerError",
-     PyExc_IOError, NULL);
+            PyExc_IOError, NULL);
     if (ItimerError != NULL)
-    PyDict_SetItemString(d, "ItimerError", ItimerError);
+        PyDict_SetItemString(d, "ItimerError", ItimerError);
 #endif
 
 #ifdef CTRL_C_EVENT

@@ -1323,71 +1323,71 @@ modified_EncodeRawUnicodeEscape(const Py_UNICODE *s, Py_ssize_t size)
 #endif
 
     if (size > PY_SSIZE_T_MAX / expandsize)
-    return PyErr_NoMemory();
+        return PyErr_NoMemory();
 
     repr = PyString_FromStringAndSize(NULL, expandsize * size);
     if (repr == NULL)
-    return NULL;
+        return NULL;
     if (size == 0)
-    return repr;
+        return repr;
 
     p = q = PyString_AS_STRING(repr);
     while (size-- > 0) {
-    Py_UNICODE ch = *s++;
+        Py_UNICODE ch = *s++;
 #ifdef Py_UNICODE_WIDE
-    /* Map 32-bit characters to '\Uxxxxxxxx' */
-    if (ch >= 0x10000) {
-        *p++ = '\\';
-        *p++ = 'U';
-        *p++ = hexdigit[(ch >> 28) & 0xf];
-        *p++ = hexdigit[(ch >> 24) & 0xf];
-        *p++ = hexdigit[(ch >> 20) & 0xf];
-        *p++ = hexdigit[(ch >> 16) & 0xf];
-        *p++ = hexdigit[(ch >> 12) & 0xf];
-        *p++ = hexdigit[(ch >> 8) & 0xf];
-        *p++ = hexdigit[(ch >> 4) & 0xf];
-        *p++ = hexdigit[ch & 15];
-    }
-    else
-#else
-    /* Map UTF-16 surrogate pairs to '\U00xxxxxx' */
-    if (ch >= 0xD800 && ch < 0xDC00) {
-        Py_UNICODE ch2;
-        Py_UCS4 ucs;
-
-        ch2 = *s++;
-        size--;
-        if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
-        ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
-        *p++ = '\\';
-        *p++ = 'U';
-        *p++ = hexdigit[(ucs >> 28) & 0xf];
-        *p++ = hexdigit[(ucs >> 24) & 0xf];
-        *p++ = hexdigit[(ucs >> 20) & 0xf];
-        *p++ = hexdigit[(ucs >> 16) & 0xf];
-        *p++ = hexdigit[(ucs >> 12) & 0xf];
-        *p++ = hexdigit[(ucs >> 8) & 0xf];
-        *p++ = hexdigit[(ucs >> 4) & 0xf];
-        *p++ = hexdigit[ucs & 0xf];
-        continue;
+        /* Map 32-bit characters to '\Uxxxxxxxx' */
+        if (ch >= 0x10000) {
+            *p++ = '\\';
+            *p++ = 'U';
+            *p++ = hexdigit[(ch >> 28) & 0xf];
+            *p++ = hexdigit[(ch >> 24) & 0xf];
+            *p++ = hexdigit[(ch >> 20) & 0xf];
+            *p++ = hexdigit[(ch >> 16) & 0xf];
+            *p++ = hexdigit[(ch >> 12) & 0xf];
+            *p++ = hexdigit[(ch >> 8) & 0xf];
+            *p++ = hexdigit[(ch >> 4) & 0xf];
+            *p++ = hexdigit[ch & 15];
         }
-        /* Fall through: isolated surrogates are copied as-is */
-        s--;
-        size++;
-    }
+        else
+#else
+        /* Map UTF-16 surrogate pairs to '\U00xxxxxx' */
+        if (ch >= 0xD800 && ch < 0xDC00) {
+            Py_UNICODE ch2;
+            Py_UCS4 ucs;
+
+            ch2 = *s++;
+            size--;
+            if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
+                ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
+                *p++ = '\\';
+                *p++ = 'U';
+                *p++ = hexdigit[(ucs >> 28) & 0xf];
+                *p++ = hexdigit[(ucs >> 24) & 0xf];
+                *p++ = hexdigit[(ucs >> 20) & 0xf];
+                *p++ = hexdigit[(ucs >> 16) & 0xf];
+                *p++ = hexdigit[(ucs >> 12) & 0xf];
+                *p++ = hexdigit[(ucs >> 8) & 0xf];
+                *p++ = hexdigit[(ucs >> 4) & 0xf];
+                *p++ = hexdigit[ucs & 0xf];
+                continue;
+            }
+            /* Fall through: isolated surrogates are copied as-is */
+            s--;
+            size++;
+        }
 #endif
-    /* Map 16-bit characters to '\uxxxx' */
-    if (ch >= 256 || ch == '\\' || ch == '\n') {
-        *p++ = '\\';
-        *p++ = 'u';
-        *p++ = hexdigit[(ch >> 12) & 0xf];
-        *p++ = hexdigit[(ch >> 8) & 0xf];
-        *p++ = hexdigit[(ch >> 4) & 0xf];
-        *p++ = hexdigit[ch & 15];
-    }
-    /* Copy everything else as-is */
-    else
-        *p++ = (char) ch;
+        /* Map 16-bit characters to '\uxxxx' */
+        if (ch >= 256 || ch == '\\' || ch == '\n') {
+            *p++ = '\\';
+            *p++ = 'u';
+            *p++ = hexdigit[(ch >> 12) & 0xf];
+            *p++ = hexdigit[(ch >> 8) & 0xf];
+            *p++ = hexdigit[(ch >> 4) & 0xf];
+            *p++ = hexdigit[ch & 15];
+        }
+        /* Copy everything else as-is */
+        else
+            *p++ = (char) ch;
     }
     *p = '\0';
     _PyString_Resize(&repr, p - q);

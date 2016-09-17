@@ -21,7 +21,7 @@ conv_descriptor(PyObject *object, int *target)
     int fd = PyObject_AsFileDescriptor(object);
 
     if (fd < 0)
-    return 0;
+        return 0;
     *target = fd;
     return 1;
 }

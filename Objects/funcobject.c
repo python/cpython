@@ -590,8 +590,9 @@ PyTypeObject PyFunction_Type = {
    To declare a class method, use this idiom:
 
      class C:
-     def f(cls, arg1, arg2, ...): ...
-     f = classmethod(f)
+         @classmethod
+         def f(cls, arg1, arg2, ...):
+             ...
 
    It can be called either on the class (e.g. C.f()) or on an instance
    (e.g. C().f()); the instance is ignored except for its class.
@@ -676,8 +677,9 @@ just like an instance method receives the instance.\n\
 To declare a class method, use this idiom:\n\
 \n\
   class C:\n\
-      def f(cls, arg1, arg2, ...): ...\n\
-      f = classmethod(f)\n\
+      @classmethod\n\
+      def f(cls, arg1, arg2, ...):\n\
+          ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\
 (e.g. C().f()).  The instance is ignored except for its class.\n\
@@ -748,8 +750,9 @@ PyClassMethod_New(PyObject *callable)
    To declare a static method, use this idiom:
 
      class C:
-     def f(arg1, arg2, ...): ...
-     f = staticmethod(f)
+         @staticmethod
+         def f(arg1, arg2, ...):
+             ....
 
    It can be called either on the class (e.g. C.f()) or on an instance
    (e.g. C().f()); the instance is ignored except for its class.
@@ -828,8 +831,9 @@ A static method does not receive an implicit first argument.\n\
 To declare a static method, use this idiom:\n\
 \n\
      class C:\n\
-     def f(arg1, arg2, ...): ...\n\
-     f = staticmethod(f)\n\
+         @staticmethod\n\
+         def f(arg1, arg2, ...):\n\
+             ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\
 (e.g. C().f()).  The instance is ignored except for its class.\n\

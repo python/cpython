@@ -496,17 +496,17 @@ O_writelines(Oobject *self, PyObject *args) {
             Py_DECREF(it);
             Py_DECREF(s);
             return NULL;
-           }
-           Py_DECREF(s);
-       }
+        }
+        Py_DECREF(s);
+    }
 
-       Py_DECREF(it);
+    Py_DECREF(it);
 
-       /* See if PyIter_Next failed */
-       if (PyErr_Occurred())
-           return NULL;
+    /* See if PyIter_Next failed */
+    if (PyErr_Occurred())
+        return NULL;
 
-       Py_RETURN_NONE;
+    Py_RETURN_NONE;
 }
 static struct PyMethodDef O_methods[] = {
   /* Common methods: */

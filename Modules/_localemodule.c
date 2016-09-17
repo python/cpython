@@ -57,9 +57,10 @@ copy_grouping(char* s)
     int i;
     PyObject *result, *val = NULL;
 
-    if (s[0] == '\0')
-    /* empty string: no grouping at all */
-    return PyList_New(0);
+    if (s[0] == '\0') {
+        /* empty string: no grouping at all */
+        return PyList_New(0);
+    }
 
     for (i = 0; s[i] != '\0' && s[i] != CHAR_MAX; i++)
         ; /* nothing */
@@ -534,7 +535,7 @@ PyLocale_nl_langinfo(PyObject* self, PyObject* args)
 {
     int item, i;
     if (!PyArg_ParseTuple(args, "i:nl_langinfo", &item))
-    return NULL;
+        return NULL;
     /* Check whether this is a supported constant. GNU libc sometimes
        returns numeric values in the char* return value, which would
        crash PyString_FromString.  */

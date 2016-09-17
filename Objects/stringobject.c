@@ -3287,8 +3287,8 @@ string_zfill(PyStringObject *self, PyObject *args)
         }
         else
             return PyString_FromStringAndSize(
-            PyString_AS_STRING(self),
-            PyString_GET_SIZE(self)
+                PyString_AS_STRING(self),
+                PyString_GET_SIZE(self)
             );
     }
 

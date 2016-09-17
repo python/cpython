@@ -56,7 +56,7 @@ PyMODINIT_FUNC inittiming(void)
 {
     if (PyErr_WarnPy3k("the timing module has been removed in "
                         "Python 3.0; use time.clock() instead", 2) < 0)
-    return;
+        return;
 
     (void)Py_InitModule("timing", timing_methods);
 }

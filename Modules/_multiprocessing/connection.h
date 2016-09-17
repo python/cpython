@@ -19,14 +19,14 @@
 
 #define CHECK_READABLE(self) \
     if (!(self->flags & READABLE)) { \
-    PyErr_SetString(PyExc_IOError, "connection is write-only"); \
-    return NULL; \
+        PyErr_SetString(PyExc_IOError, "connection is write-only"); \
+        return NULL; \
     }
 
 #define CHECK_WRITABLE(self) \
     if (!(self->flags & WRITABLE)) { \
-    PyErr_SetString(PyExc_IOError, "connection is read-only"); \
-    return NULL; \
+        PyErr_SetString(PyExc_IOError, "connection is read-only"); \
+        return NULL; \
     }
 
 /*

@@ -30,11 +30,11 @@ get_len_of_range(long lo, long hi, long step)
     ---------------------------------------------------------------*/
     assert(step != 0);
     if (step > 0 && lo < hi)
-    return 1UL + (hi - 1UL - lo) / step;
+        return 1UL + (hi - 1UL - lo) / step;
     else if (step < 0 && lo > hi)
-    return 1UL + (lo - 1UL - hi) / (0UL - step);
+        return 1UL + (lo - 1UL - hi) / (0UL - step);
     else
-    return 0UL;
+        return 0UL;
 }
 
 /* Return a stop value suitable for reconstructing the xrange from

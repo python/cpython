@@ -5396,11 +5396,11 @@ comerror_init(PyObject *self, PyObject *args)
 
     a = PySequence_GetSlice(args, 1, PySequence_Size(args));
     if (!a)
-    return NULL;
+        return NULL;
     status = PyObject_SetAttrString(self, "args", a);
     Py_DECREF(a);
     if (status < 0)
-    return NULL;
+        return NULL;
 
     if (PyObject_SetAttrString(self, "hresult", hresult) < 0)
         return NULL;
@@ -5755,25 +5755,25 @@ PyObject *My_PyUnicode_FromWideChar(register const wchar_t *w,
     PyUnicodeObject *unicode;
 
     if (w == NULL) {
-    PyErr_BadInternalCall();
-    return NULL;
+        PyErr_BadInternalCall();
+        return NULL;
     }
 
     unicode = (PyUnicodeObject *)PyUnicode_FromUnicode(NULL, size);
     if (!unicode)
-    return NULL;
+        return NULL;
 
     /* Copy the wchar_t data into the new object */
 #ifdef HAVE_USABLE_WCHAR_T
     memcpy(unicode->str, w, size * sizeof(wchar_t));
 #else
     {
-    register Py_UNICODE *u;
-    register int i;
-    u = PyUnicode_AS_UNICODE(unicode);
-    /* In Python, the following line has a one-off error */
-    for (i = size; i > 0; i--)
-        *u++ = *w++;
+        register Py_UNICODE *u;
+        register int i;
+        u = PyUnicode_AS_UNICODE(unicode);
+        /* In Python, the following line has a one-off error */
+        for (i = size; i > 0; i--)
+            *u++ = *w++;
     }
 #endif
 
@@ -5785,21 +5785,21 @@ Py_ssize_t My_PyUnicode_AsWideChar(PyUnicodeObject *unicode,
                             Py_ssize_t size)
 {
     if (unicode == NULL) {
-    PyErr_BadInternalCall();
-    return -1;
+        PyErr_BadInternalCall();
+        return -1;
     }
     if (size > PyUnicode_GET_SIZE(unicode))
-    size = PyUnicode_GET_SIZE(unicode);
+        size = PyUnicode_GET_SIZE(unicode);
 #ifdef HAVE_USABLE_WCHAR_T
     memcpy(w, unicode->str, size * sizeof(wchar_t));
 #else
     {
-    register Py_UNICODE *u;
-    register int i;
-    u = PyUnicode_AS_UNICODE(unicode);
-    /* In Python, the following line has a one-off error */
-    for (i = size; i > 0; i--)
-        *w++ = *u++;
+        register Py_UNICODE *u;
+        register int i;
+        u = PyUnicode_AS_UNICODE(unicode);
+        /* In Python, the following line has a one-off error */
+        for (i = size; i > 0; i--)
+            *w++ = *u++;
     }
 #endif
 

@@ -1617,16 +1617,16 @@ SelectPythonDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     PropSheet_SetWizButtons(GetParent(hwnd),
                                             PSWIZB_BACK | PSWIZB_NEXT);
                     /* Get the python directory */
-            ivi = (InstalledVersionInfo *)
+                    ivi = (InstalledVersionInfo *)
                         SendDlgItemMessage(hwnd,
-                                                                IDC_VERSIONS_LIST,
-                                                                LB_GETITEMDATA,
-                                                                id,
-                                                                0);
-            hkey_root = ivi->hkey;
-                                strcpy(python_dir, ivi->prefix);
-                                SetDlgItemText(hwnd, IDC_PATH, python_dir);
-                                /* retrieve the python version and pythondll to use */
+                            IDC_VERSIONS_LIST,
+                            LB_GETITEMDATA,
+                            id,
+                            0);
+                    hkey_root = ivi->hkey;
+                    strcpy(python_dir, ivi->prefix);
+                    SetDlgItemText(hwnd, IDC_PATH, python_dir);
+                    /* retrieve the python version and pythondll to use */
                     result = SendDlgItemMessage(hwnd, IDC_VERSIONS_LIST,
                                                  LB_GETTEXTLEN, (WPARAM)id, 0);
                     pbuf = (char *)malloc(result + 1);

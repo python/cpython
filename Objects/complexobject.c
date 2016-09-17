@@ -495,20 +495,20 @@ to_complex(PyObject **pobj, Py_complex *pc)
 
     pc->real = pc->imag = 0.0;
     if (PyInt_Check(obj)) {
-    pc->real = PyInt_AS_LONG(obj);
-    return 0;
+        pc->real = PyInt_AS_LONG(obj);
+        return 0;
     }
     if (PyLong_Check(obj)) {
-    pc->real = PyLong_AsDouble(obj);
-    if (pc->real == -1.0 && PyErr_Occurred()) {
-        *pobj = NULL;
-        return -1;
-    }
-    return 0;
+        pc->real = PyLong_AsDouble(obj);
+        if (pc->real == -1.0 && PyErr_Occurred()) {
+            *pobj = NULL;
+            return -1;
+        }
+        return 0;
     }
     if (PyFloat_Check(obj)) {
-    pc->real = PyFloat_AsDouble(obj);
-    return 0;
+        pc->real = PyFloat_AsDouble(obj);
+        return 0;
     }
     Py_INCREF(Py_NotImplemented);
     *pobj = Py_NotImplemented;
@@ -909,25 +909,25 @@ complex__format__(PyObject* self, PyObject* args)
     PyObject *format_spec;
 
     if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
-    return NULL;
-    if (PyBytes_Check(format_spec))
-    return _PyComplex_FormatAdvanced(self,
-                                     PyBytes_AS_STRING(format_spec),
-                                     PyBytes_GET_SIZE(format_spec));
-    if (PyUnicode_Check(format_spec)) {
-    /* Convert format_spec to a str */
-    PyObject *result;
-    PyObject *str_spec = PyObject_Str(format_spec);
-
-    if (str_spec == NULL)
         return NULL;
+    if (PyBytes_Check(format_spec))
+        return _PyComplex_FormatAdvanced(self,
+                                         PyBytes_AS_STRING(format_spec),
+                                         PyBytes_GET_SIZE(format_spec));
+    if (PyUnicode_Check(format_spec)) {
+        /* Convert format_spec to a str */
+        PyObject *result;
+        PyObject *str_spec = PyObject_Str(format_spec);
 
-    result = _PyComplex_FormatAdvanced(self,
-                                       PyBytes_AS_STRING(str_spec),
-                                       PyBytes_GET_SIZE(str_spec));
+        if (str_spec == NULL)
+            return NULL;
 
-    Py_DECREF(str_spec);
-    return result;
+        result = _PyComplex_FormatAdvanced(self,
+                                           PyBytes_AS_STRING(str_spec),
+                                           PyBytes_GET_SIZE(str_spec));
+
+        Py_DECREF(str_spec);
+        return result;
     }
     PyErr_SetString(PyExc_TypeError, "__format__ requires str or unicode");
     return NULL;

@@ -46,7 +46,7 @@ riscos_rename(PyObject *self, PyObject *args)
 {
     char *path1, *path2;
     if (!PyArg_ParseTuple(args, "ss:rename", &path1, &path2))
-    return NULL;
+        return NULL;
     if (rename(path1,path2)) return PyErr_SetFromErrno(PyExc_OSError);
     Py_INCREF(Py_None);
     return Py_None;

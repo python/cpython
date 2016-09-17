@@ -257,10 +257,9 @@ static PyMethodDef fm_methods[] = {
 void
 initfm(void)
 {
-
     if (PyErr_WarnPy3k("the fm module has been removed in "
                        "Python 3.0", 2) < 0)
-    return;
+        return;
 
     Py_InitModule("fm", fm_methods);
     if (m == NULL)

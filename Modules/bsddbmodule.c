@@ -851,7 +851,7 @@ initbsddb185(void) {
 
     if (PyErr_WarnPy3k("the bsddb185 module has been removed in "
                        "Python 3.0", 2) < 0)
-    return;
+        return;
 
     Bsddbtype.ob_type = &PyType_Type;
     m = Py_InitModule("bsddb185", bsddbmodule_methods);

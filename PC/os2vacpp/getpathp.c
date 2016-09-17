@@ -325,18 +325,18 @@ calculate_path(void)
             pythonhome = NULL;
     }
     else {
-    char *delim;
+        char *delim;
 
         strcpy(prefix, pythonhome);
 
-    /* Extract Any Optional Trailing EXEC_PREFIX */
-    /* e.g. PYTHONHOME=<prefix>:<exec_prefix>   */
-    delim = strchr(prefix, DELIM);
-    if (delim) {
-        *delim = '\0';
-        strcpy(exec_prefix, delim+1);
-    } else
-        strcpy(exec_prefix, EXEC_PREFIX);
+        /* Extract Any Optional Trailing EXEC_PREFIX */
+        /* e.g. PYTHONHOME=<prefix>:<exec_prefix>   */
+        delim = strchr(prefix, DELIM);
+        if (delim) {
+            *delim = '\0';
+            strcpy(exec_prefix, delim+1);
+        } else
+            strcpy(exec_prefix, EXEC_PREFIX);
     }
 
     if (envpath && *envpath == '\0')
