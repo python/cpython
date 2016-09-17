@@ -10047,23 +10047,30 @@ if test "${with_system_ffi+set}" = set; then :
 fi
 
 
-case "$with_system_ffi" in
-    "")
-        case $ac_sys_system in
-            Darwin)
-                with_system_ffi="no"
-                ;;
-            *)
-                with_system_ffi="yes"
-                ;;
-        esac
-        ;;
-    yes|no)
-        ;;
-    *)
-        as_fn_error $? "--with-system-ffi accepts no arguments" "$LINENO" 5
-        ;;
-esac
+if test "$ac_sys_system" = "Darwin"
+then
+    case "$with_system_ffi" in
+        "")
+            with_system_ffi="no"
+            ;;
+        yes|no)
+            ;;
+        *)
+            as_fn_error $? "--with-system-ffi accepts no arguments" "$LINENO" 5
+            ;;
+    esac
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_system_ffi" >&5
+$as_echo "$with_system_ffi" >&6; }
+else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    if test "$with_system_ffi" != ""
+    then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with(out)-system-ffi is ignored on this platform" >&5
+$as_echo "$as_me: WARNING: --with(out)-system-ffi is ignored on this platform" >&2;}
+    fi
+    with_system_ffi="yes"
+fi
 
 if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
     LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
@@ -10071,9 +10078,6 @@ else
     LIBFFI_INCLUDEDIR=""
 fi
 
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_system_ffi" >&5
-$as_echo "$with_system_ffi" >&6; }
 
 # Check for use of the system libmpdec library
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-system-libmpdec" >&5

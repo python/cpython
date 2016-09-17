@@ -322,6 +322,7 @@ class PyBuildExt(build_ext):
 
         if ext.name == '_ctypes':
             if not self.configure_ctypes(ext):
+                self.failed.append(ext.name)
                 return
 
         try:
@@ -1911,56 +1912,8 @@ class PyBuildExt(build_ext):
         if not self.use_system_libffi:
             if host_platform == 'darwin':
                 return self.configure_ctypes_darwin(ext)
-
-            print('warning: building with the bundled copy of libffi is'
-                  ' deprecated on this platform.  It will not be'
-                  ' distributed with Python 3.7')
-            srcdir = sysconfig.get_config_var('srcdir')
-            ffi_builddir = os.path.join(self.build_temp, 'libffi')
-            ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
-                                         '_ctypes', 'libffi'))
-            ffi_configfile = os.path.join(ffi_builddir, 'fficonfig.py')
-
-            from distutils.dep_util import newer_group
-
-            config_sources = [os.path.join(ffi_srcdir, fname)
-                              for fname in os.listdir(ffi_srcdir)
-                              if os.path.isfile(os.path.join(ffi_srcdir, fname))]
-            if self.force or newer_group(config_sources,
-                                         ffi_configfile):
-                from distutils.dir_util import mkpath
-                mkpath(ffi_builddir)
-                config_args = [arg for arg in sysconfig.get_config_var("CONFIG_ARGS").split()
-                               if (('--host=' in arg) or ('--build=' in arg))]
-                if not self.verbose:
-                    config_args.append("-q")
-
-                # Pass empty CFLAGS because we'll just append the resulting
-                # CFLAGS to Python's; -g or -O2 is to be avoided.
-                cmd = "cd %s && env CFLAGS='' '%s/configure' %s" \
-                      % (ffi_builddir, ffi_srcdir, " ".join(config_args))
-
-                res = os.system(cmd)
-                if res or not os.path.exists(ffi_configfile):
-                    print("Failed to configure _ctypes module")
-                    return False
-
-            fficonfig = {}
-            with open(ffi_configfile) as f:
-                exec(f.read(), globals(), fficonfig)
-
-            # Add .S (preprocessed assembly) to C compiler source extensions.
-            self.compiler.src_extensions.append('.S')
-
-            include_dirs = [os.path.join(ffi_builddir, 'include'),
-                            ffi_builddir,
-                            os.path.join(ffi_srcdir, 'src')]
-            extra_compile_args = fficonfig['ffi_cflags'].split()
-
-            ext.sources.extend(os.path.join(ffi_srcdir, f) for f in
-                               fficonfig['ffi_sources'])
-            ext.include_dirs.extend(include_dirs)
-            ext.extra_compile_args.extend(extra_compile_args)
+            print('INFO: Could not locate ffi libs and/or headers')
+            return False
         return True
 
     def detect_ctypes(self, inc_dirs, lib_dirs):
@@ -2017,8 +1970,6 @@ class PyBuildExt(build_ext):
             # OS X 10.5 comes with libffi.dylib; the include files are
             # in /usr/include/ffi
             inc_dirs.append('/usr/include/ffi')
-        elif '--without-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS"):
-            return
 
         ffi_inc = [sysconfig.get_config_var("LIBFFI_INCLUDEDIR")]
         if not ffi_inc or ffi_inc[0] == '':
