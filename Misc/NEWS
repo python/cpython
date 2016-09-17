@@ -348,6 +348,9 @@ Tools/Demos
 Windows
 -------
 
+- Issue #28110: launcher.msi has different product codes between 32-bit and
+  64-bit
+
 - Issue #25144: Ensures TargetDir is set before continuing with custom
   install.
 

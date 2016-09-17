@@ -4,7 +4,7 @@
         <PackageGroup Id="launcher">
             <!-- The All Users launcher is always the 32-bit version -->
             <MsiPackage Id="launcher_AllUsers"
-                        SourceFile="launcher.msi"
+                        SourceFile="!(bindpath.build32)en-us\launcher.msi"
                         Compressed="$(var.CompressMSI)"
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="yes"
@@ -14,7 +14,7 @@
                         InstallCondition="(InstallAllUsers or InstallLauncherAllUsers) and Include_launcher and not DetectedLauncher" />
 
             <MsiPackage Id="launcher_JustForMe"
-                        SourceFile="launcher.msi"
+                        SourceFile="!(bindpath.build32)en-us\launcher.msi"
                         Compressed="$(var.CompressMSI)"
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="no"
