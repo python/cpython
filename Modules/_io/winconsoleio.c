@@ -22,6 +22,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <fcntl.h>
 
 #include "_iomodule.h"
 
@@ -68,27 +69,34 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
         return _get_console_type(handle);
     }
 
-    PyObject *decoded = Py_None;
-    Py_INCREF(decoded);
+    PyObject *decoded, *decoded_upper;
 
     int d = PyUnicode_FSDecoder(path_or_fd, &decoded);
     if (!d) {
         PyErr_Clear();
+        return '\0';
+    }
+    if (!PyUnicode_Check(decoded)) {
         Py_CLEAR(decoded);
+        return '\0';
+    }
+    decoded_upper = PyObject_CallMethod(decoded, "upper", "");
+    Py_CLEAR(decoded);
+    if (!decoded_upper) {
+        PyErr_Clear();
         return '\0';
     }
 
     char m = '\0';
-    if (!PyUnicode_Check(decoded)) {
-        return '\0';
-    } else if (PyUnicode_CompareWithASCIIString(decoded, "CONIN$") == 0) {
+    if (PyUnicode_CompareWithASCIIString(decoded_upper, "CONIN$") == 0) {
         m = 'r';
-    } else if (PyUnicode_CompareWithASCIIString(decoded, "CONOUT$") == 0 ||
-        PyUnicode_CompareWithASCIIString(decoded, "CON") == 0) {
+    } else if (PyUnicode_CompareWithASCIIString(decoded_upper, "CONOUT$") == 0) {
         m = 'w';
+    } else if (PyUnicode_CompareWithASCIIString(decoded_upper, "CON") == 0) {
+        m = 'x';
     }
 
-    Py_CLEAR(decoded);
+    Py_CLEAR(decoded_upper);
     return m;
 }
 
@@ -227,6 +235,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
 {
     const char *s;
     wchar_t *name = NULL;
+    char console_type = '\0';
     int ret = 0;
     int rwa = 0;
     int fd = -1;
@@ -270,6 +279,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
 
         Py_ssize_t length;
         name = PyUnicode_AsWideCharString(decodedname, &length);
+        console_type = _PyIO_get_console_type(decodedname);
         Py_CLEAR(decodedname);
         if (name == NULL)
             return -1;
@@ -294,12 +304,16 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
                 goto bad_mode;
             rwa = 1;
             self->readable = 1;
+            if (console_type == 'x')
+                console_type = 'r';
             break;
         case 'w':
             if (rwa)
                 goto bad_mode;
             rwa = 1;
             self->writable = 1;
+            if (console_type == 'x')
+                console_type = 'w';
             break;
         default:
             PyErr_Format(PyExc_ValueError,
@@ -327,7 +341,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         }
 
         if (self->writable)
-            access |= GENERIC_WRITE;
+            access = GENERIC_WRITE;
 
         Py_BEGIN_ALLOW_THREADS
         /* Attempt to open for read/write initially, then fall back
@@ -347,12 +361,15 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         }
     }
 
-     if (self->writable && _get_console_type(self->handle) != 'w') {
+    if (console_type == '\0')
+        console_type = _get_console_type(self->handle);
+
+    if (self->writable && console_type != 'w') {
         PyErr_SetString(PyExc_ValueError,
             "Cannot open console input buffer for writing");
         goto error;
     }
-    if (self->readable && _get_console_type(self->handle) != 'r') {
+    if (self->readable && console_type != 'r') {
         PyErr_SetString(PyExc_ValueError,
             "Cannot open console output buffer for reading");
         goto error;
@@ -440,9 +457,9 @@ _io__WindowsConsoleIO_fileno_impl(winconsoleio *self)
     if (self->fd < 0 && self->handle != INVALID_HANDLE_VALUE) {
         _Py_BEGIN_SUPPRESS_IPH
         if (self->writable)
-            self->fd = _open_osfhandle((intptr_t)self->handle, 'wb');
+            self->fd = _open_osfhandle((intptr_t)self->handle, _O_WRONLY | _O_BINARY);
         else
-            self->fd = _open_osfhandle((intptr_t)self->handle, 'rb');
+            self->fd = _open_osfhandle((intptr_t)self->handle, _O_RDONLY | _O_BINARY);
         _Py_END_SUPPRESS_IPH
     }
     if (self->fd < 0)
@@ -776,7 +793,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
         len += n;
     }
 
-    if (len > 0 && buf[0] == '\x1a' && _buflen(self) == 0) {
+    if (len == 0 || buf[0] == '\x1a' && _buflen(self) == 0) {
         /* when the result starts with ^Z we return an empty buffer */
         PyMem_Free(buf);
         return PyBytes_FromStringAndSize(NULL, 0);

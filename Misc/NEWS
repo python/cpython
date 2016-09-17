@@ -71,6 +71,16 @@ Library
 Windows
 -------
 
+- Issue #28161: Opening CON for write access fails
+
+- Issue #28162: WindowsConsoleIO readall() fails if first line starts with
+  Ctrl+Z
+
+- Issue #28163: WindowsConsoleIO fileno() passes wrong flags to
+  _open_osfhandle
+
+- Issue #28164: _PyIO_get_console_type fails for various paths
+
 - Issue #28137: Renames Windows path file to ._pth
 
 - Issue #28138: Windows ._pth file should allow import site
