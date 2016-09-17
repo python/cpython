@@ -174,11 +174,12 @@ if not "%SKIPBUILD%" EQU "1" (
     @echo off
 )
 
-set BUILDOPTS=/p:Platform=%1 /p:BuildForRelease=true /p:DownloadUrl=%DOWNLOAD_URL% /p:DownloadUrlBase=%DOWNLOAD_URL_BASE% /p:ReleaseUri=%RELEASE_URI%
+set BUILDOPTS=/p:BuildForRelease=true /p:DownloadUrl=%DOWNLOAD_URL% /p:DownloadUrlBase=%DOWNLOAD_URL_BASE% /p:ReleaseUri=%RELEASE_URI%
 if "%PGO%" NEQ "" set BUILDOPTS=%BUILDOPTS% /p:PGOBuildPath=%BUILD%
-msbuild "%D%bundle\releaselocal.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=true
+msbuild "%D%launcher\launcher.wixproj" /p:Platform=x86 %CERTOPTS% /p:ReleaseUri=%RELEASE_URI%
+msbuild "%D%bundle\releaselocal.wixproj" /t:Rebuild /p:Platform=%1 %BUILDOPTS% %CERTOPTS% /p:RebuildAll=true
 if errorlevel 1 exit /B
-msbuild "%D%bundle\releaseweb.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
+msbuild "%D%bundle\releaseweb.wixproj" /t:Rebuild /p:Platform=%1 %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
 if errorlevel 1 exit /B
 
 msbuild "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS%
