@@ -154,18 +154,18 @@ itimer_retval(struct itimerval *iv)
 
     r = PyTuple_New(2);
     if (r == NULL)
-    return NULL;
+        return NULL;
 
     if(!(v = PyFloat_FromDouble(double_from_timeval(&iv->it_value)))) {
-    Py_DECREF(r);
-    return NULL;
+        Py_DECREF(r);
+        return NULL;
     }
 
     PyTuple_SET_ITEM(r, 0, v);
 
     if(!(v = PyFloat_FromDouble(double_from_timeval(&iv->it_interval)))) {
-    Py_DECREF(r);
-    return NULL;
+        Py_DECREF(r);
+        return NULL;
     }
 
     PyTuple_SET_ITEM(r, 1, v);
@@ -1433,9 +1433,9 @@ PyInit__signal(void)
 
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
     ItimerError = PyErr_NewException("signal.ItimerError",
-     PyExc_IOError, NULL);
+            PyExc_IOError, NULL);
     if (ItimerError != NULL)
-    PyDict_SetItemString(d, "ItimerError", ItimerError);
+        PyDict_SetItemString(d, "ItimerError", ItimerError);
 #endif
 
 #ifdef CTRL_C_EVENT
