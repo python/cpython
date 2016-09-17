@@ -10,6 +10,8 @@ What's New in Python 3.6.0 beta 2
 Core and Builtins
 -----------------
 
+- Issue #28192: Don't import readline in isolated mode.
+
 - Upgrade internal unicode databases to Unicode version 9.0.0.
 
 - Issue #28131: Fix a regression in zipimport's compile_source().  zipimport
@@ -63,6 +65,13 @@ Library
 
 - Issue #27759: Fix selectors incorrectly retain invalid file descriptors.
   Patch by Mark Williams.
+
+Windows
+-------
+
+- Issue #28137: Renames Windows path file to ._pth
+
+- Issue #28138: Windows ._pth file should allow import site
 
 Build
 -----
