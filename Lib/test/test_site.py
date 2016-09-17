@@ -471,5 +471,23 @@ class StartupImportTests(unittest.TestCase):
         if sys.platform != 'darwin':
             self.assertFalse(modules.intersection(collection_mods), stderr)
 
+    def test_startup_interactivehook(self):
+        r = subprocess.Popen([sys.executable, '-c',
+            'import sys; sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
+        self.assertTrue(r, "'__interactivehook__' not added by site")
+
+    def test_startup_interactivehook_isolated(self):
+        # issue28192 readline is not automatically enabled in isolated mode
+        r = subprocess.Popen([sys.executable, '-I', '-c',
+            'import sys; sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
+        self.assertFalse(r, "'__interactivehook__' added in isolated mode")
+
+    def test_startup_interactivehook_isolated_explicit(self):
+        # issue28192 readline can be explicitly enabled in isolated mode
+        r = subprocess.Popen([sys.executable, '-I', '-c',
+            'import site, sys; site.enablerlcompleter(); sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
+        self.assertTrue(r, "'__interactivehook__' not added by enablerlcompleter()")
+
+
 if __name__ == "__main__":
     unittest.main()
