@@ -440,7 +440,8 @@ class StatAttributeTests(unittest.TestCase):
         # supports file ACLs.
         fname = os.path.join(os.environ['TEMP'], self.fname)
         self.addCleanup(support.unlink, fname)
-        create_file(fname, b'ABC')
+        with open(fname, 'xb', 0) as fp:
+            fp.write(b'ABC')
         # Deny the right to [S]YNCHRONIZE on the file to
         # force CreateFile to fail with ERROR_ACCESS_DENIED.
         DETACHED_PROCESS = 8
