@@ -54,9 +54,10 @@ copy_grouping(char* s)
     int i;
     PyObject *result, *val = NULL;
 
-    if (s[0] == '\0')
+    if (s[0] == '\0') {
         /* empty string: no grouping at all */
         return PyList_New(0);
+    }
 
     for (i = 0; s[i] != '\0' && s[i] != CHAR_MAX; i++)
         ; /* nothing */
