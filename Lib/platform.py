@@ -567,7 +567,7 @@ def _get_real_winver(maj, min, build):
         return maj, min, build
 
     from ctypes import (c_buffer, POINTER, byref, create_unicode_buffer,
-                        Structure, WinDLL)
+                        Structure, WinDLL, _Pointer)
     from ctypes.wintypes import DWORD, HANDLE
 
     class VS_FIXEDFILEINFO(Structure):
@@ -586,6 +586,8 @@ def _get_real_winver(maj, min, build):
             ("dwFileDateMS", DWORD),
             ("dwFileDateLS", DWORD),
         ]
+    class PVS_FIXEDFILEINFO(_Pointer):
+        _type_ = VS_FIXEDFILEINFO
 
     kernel32 = WinDLL('kernel32')
     version = WinDLL('version')
@@ -611,7 +613,7 @@ def _get_real_winver(maj, min, build):
         not ver_block):
         return maj, min, build
 
-    pvi = POINTER(VS_FIXEDFILEINFO)()
+    pvi = PVS_FIXEDFILEINFO()
     if not version.VerQueryValueW(ver_block, "", byref(pvi), byref(DWORD())):
         return maj, min, build
 

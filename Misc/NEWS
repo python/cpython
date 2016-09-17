@@ -214,6 +214,8 @@ Tools/Demos
 Windows
 -------
 
+- Issue #27932: Prevent memory leak in win32_ver().
+
 - Issue #27888: Prevent Windows installer from displaying console windows and
   failing when pip cannot be installed/uninstalled.
 
