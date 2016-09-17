@@ -4296,22 +4296,22 @@ long_rshift(PyLongObject *a, PyLongObject *b)
         PyLongObject *a1, *a2;
         a1 = (PyLongObject *) long_invert(a);
         if (a1 == NULL)
-            goto rshift_error;
+            return NULL;
         a2 = (PyLongObject *) long_rshift(a1, b);
         Py_DECREF(a1);
         if (a2 == NULL)
-            goto rshift_error;
+            return NULL;
         z = (PyLongObject *) long_invert(a2);
         Py_DECREF(a2);
     }
     else {
         shiftby = PyLong_AsSsize_t((PyObject *)b);
         if (shiftby == -1L && PyErr_Occurred())
-            goto rshift_error;
+            return NULL;
         if (shiftby < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "negative shift count");
-            goto rshift_error;
+            return NULL;
         }
         wordshift = shiftby / PyLong_SHIFT;
         newsize = Py_ABS(Py_SIZE(a)) - wordshift;
@@ -4323,19 +4323,15 @@ long_rshift(PyLongObject *a, PyLongObject *b)
         himask = PyLong_MASK ^ lomask;
         z = _PyLong_New(newsize);
         if (z == NULL)
-            goto rshift_error;
-        if (Py_SIZE(a) < 0)
-            Py_SIZE(z) = -(Py_SIZE(z));
+            return NULL;
         for (i = 0, j = wordshift; i < newsize; i++, j++) {
             z->ob_digit[i] = (a->ob_digit[j] >> loshift) & lomask;
             if (i+1 < newsize)
                 z->ob_digit[i] |= (a->ob_digit[j+1] << hishift) & himask;
         }
-        z = long_normalize(z);
+        z = maybe_small_long(long_normalize(z));
     }
-  rshift_error:
-    return (PyObject *) maybe_small_long(z);
-
+    return (PyObject *)z;
 }
 
 static PyObject *
