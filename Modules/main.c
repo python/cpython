@@ -703,7 +703,8 @@ Py_Main(int argc, wchar_t **argv)
     PySys_SetArgv(argc-_PyOS_optind, argv+_PyOS_optind);
 
     if ((Py_InspectFlag || (command == NULL && filename == NULL && module == NULL)) &&
-        isatty(fileno(stdin))) {
+        isatty(fileno(stdin)) &&
+        !Py_IsolatedFlag) {
         PyObject *v;
         v = PyImport_ImportModule("readline");
         if (v == NULL)
