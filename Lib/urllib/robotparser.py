@@ -175,16 +175,20 @@ class RobotFileParser:
         return True
 
     def crawl_delay(self, useragent):
+        if not self.mtime():
+            return None
         for entry in self.entries:
             if entry.applies_to(useragent):
                 return entry.delay
-        return None
+        return self.default_entry.delay
 
     def request_rate(self, useragent):
+        if not self.mtime():
+            return None
         for entry in self.entries:
             if entry.applies_to(useragent):
                 return entry.req_rate
-        return None
+        return self.default_entry.req_rate
 
     def __str__(self):
         return ''.join([str(entry) + "\n" for entry in self.entries])
