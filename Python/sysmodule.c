@@ -825,6 +825,7 @@ static PyStructSequence_Field windows_version_fields[] = {
     {"service_pack_minor", "Service Pack minor version number"},
     {"suite_mask", "Bit mask identifying available product suites"},
     {"product_type", "System product type"},
+    {"_platform_version", "Diagnostic version number"},
     {0}
 };
 
@@ -849,6 +850,12 @@ sys_getwindowsversion(PyObject *self)
     PyObject *version;
     int pos = 0;
     OSVERSIONINFOEX ver;
+    DWORD realMajor, realMinor, realBuild;
+    HANDLE hKernel32;
+    wchar_t kernel32_path[MAX_PATH];
+    LPVOID verblock;
+    DWORD verblock_size;
+
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionEx((OSVERSIONINFO*) &ver))
         return PyErr_SetFromWindowsErr(0);
@@ -867,10 +874,40 @@ sys_getwindowsversion(PyObject *self)
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wSuiteMask));
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wProductType));
 
+    realMajor = ver.dwMajorVersion;
+    realMinor = ver.dwMinorVersion;
+    realBuild = ver.dwBuildNumber;
+
+    // GetVersion will lie if we are running in a compatibility mode.
+    // We need to read the version info from a system file resource
+    // to accurately identify the OS version. If we fail for any reason,
+    // just return whatever GetVersion said.
+    hKernel32 = GetModuleHandleW(L"kernel32.dll");
+    if (hKernel32 && GetModuleFileNameW(hKernel32, kernel32_path, MAX_PATH) &&
+        (verblock_size = GetFileVersionInfoSizeW(kernel32_path, NULL)) &&
+        (verblock = PyMem_RawMalloc(verblock_size))) {
+        VS_FIXEDFILEINFO *ffi;
+        UINT ffi_len;
+
+        if (GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) &&
+            VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
+            realMajor = HIWORD(ffi->dwProductVersionMS);
+            realMinor = LOWORD(ffi->dwProductVersionMS);
+            realBuild = HIWORD(ffi->dwProductVersionLS);
+        }
+        PyMem_RawFree(verblock);
+    }
+    PyStructSequence_SET_ITEM(version, pos++, PyTuple_Pack(3,
+        PyLong_FromLong(realMajor),
+        PyLong_FromLong(realMinor),
+        PyLong_FromLong(realBuild)
+    ));
+
     if (PyErr_Occurred()) {
         Py_DECREF(version);
         return NULL;
     }
+
     return version;
 }
 
