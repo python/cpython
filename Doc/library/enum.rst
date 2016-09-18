@@ -674,6 +674,8 @@ while combinations of flags won't::
     ...     green = auto()
     ...     white = red | blue | green
     ...
+    >>> Color.white
+    <Color.white: 7>
 
 Giving a name to the "no flags set" condition does not change its boolean
 value::
@@ -1067,4 +1069,24 @@ but not of the class::
     ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
     >>> dir(Planet.EARTH)
     ['__class__', '__doc__', '__module__', 'name', 'surface_gravity', 'value']
+
+
+Combining members of ``Flag``
+"""""""""""""""""""""""""""""
+
+If a combination of Flag members is not named, the :func:`repr` will include
+all named flags and all named combinations of flags that are in the value::
+
+    >>> class Color(Flag):
+    ...     red = auto()
+    ...     green = auto()
+    ...     blue = auto()
+    ...     magenta = red | blue
+    ...     yellow = red | green
+    ...     cyan = green | blue
+    ...
+    >>> Color(3)  # named combination
+    <Color.yellow: 3>
+    >>> Color(7)      # not named combination
+    <Color.cyan|magenta|blue|yellow|green|red: 7>
 
