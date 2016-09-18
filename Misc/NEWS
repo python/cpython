@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25400: RobotFileParser now correctly returns default values for
+  crawl_delay and request_rate.  Initial patch by Peter Wirtz.
+
 - Issue #27932: Prevent memory leak in win32_ver().
 
 - Fix UnboundLocalError in socket._sendfile_use_sendfile.
