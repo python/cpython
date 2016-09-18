@@ -82,6 +82,11 @@ else:
 # Issue #14110: Some tests fail on FreeBSD if the user is in the wheel group.
 HAVE_WHEEL_GROUP = sys.platform.startswith('freebsd') and os.getgid() == 0
 
+def create_file(filename, content=b'content'):
+    with open(filename, "xb", 0) as fp:
+        fp.write(content)
+
+
 # Tests creating TESTFN
 class FileTests(unittest.TestCase):
     def setUp(self):
@@ -226,15 +231,9 @@ class FileTests(unittest.TestCase):
 # Test attributes on return values from os.*stat* family.
 class StatAttributeTests(unittest.TestCase):
     def setUp(self):
-        os.mkdir(support.TESTFN)
-        self.fname = os.path.join(support.TESTFN, "f1")
-        f = open(self.fname, 'wb')
-        f.write(b"ABC")
-        f.close()
-
-    def tearDown(self):
-        os.unlink(self.fname)
-        os.rmdir(support.TESTFN)
+        self.fname = support.TESTFN
+        self.addCleanup(support.unlink, self.fname)
+        create_file(self.fname, b"ABC")
 
     @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def check_stat_attributes(self, fname):
@@ -426,7 +425,11 @@ class StatAttributeTests(unittest.TestCase):
             0)
 
         # test directory st_file_attributes (FILE_ATTRIBUTE_DIRECTORY set)
-        result = os.stat(support.TESTFN)
+        dirname = support.TESTFN + "dir"
+        os.mkdir(dirname)
+        self.addCleanup(os.rmdir, dirname)
+
+        result = os.stat(dirname)
         self.check_file_attributes(result)
         self.assertEqual(
             result.st_file_attributes & stat.FILE_ATTRIBUTE_DIRECTORY,
@@ -440,8 +443,7 @@ class StatAttributeTests(unittest.TestCase):
         # supports file ACLs.
         fname = os.path.join(os.environ['TEMP'], self.fname)
         self.addCleanup(support.unlink, fname)
-        with open(fname, 'xb', 0) as fp:
-            fp.write(b'ABC')
+        create_file(fname, b'ABC')
         # Deny the right to [S]YNCHRONIZE on the file to
         # force CreateFile to fail with ERROR_ACCESS_DENIED.
         DETACHED_PROCESS = 8
