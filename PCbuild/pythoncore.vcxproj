@@ -69,7 +69,7 @@
       <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>version.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
   </ItemDefinitionGroup>
