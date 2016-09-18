@@ -1,4 +1,5 @@
 import io
+import os
 import unittest
 import urllib.robotparser
 from collections import namedtuple
@@ -272,14 +273,42 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
 
 class NetworkTestCase(unittest.TestCase):
 
-    def testPythonOrg(self):
+    base_url = 'http://www.pythontest.net/'
+    robots_txt = '{}elsewhere/robots.txt'.format(base_url)
+
+    @classmethod
+    def setUpClass(cls):
         support.requires('network')
-        with support.transient_internet('www.python.org'):
-            parser = urllib.robotparser.RobotFileParser(
-                "http://www.python.org/robots.txt")
-            parser.read()
-            self.assertTrue(
-                parser.can_fetch("*", "http://www.python.org/robots.txt"))
+        with support.transient_internet(cls.base_url):
+            cls.parser = urllib.robotparser.RobotFileParser(cls.robots_txt)
+            cls.parser.read()
+
+    def url(self, path):
+        return '{}{}{}'.format(
+            self.base_url, path, '/' if not os.path.splitext(path)[1] else ''
+        )
+
+    def test_basic(self):
+        self.assertFalse(self.parser.disallow_all)
+        self.assertFalse(self.parser.allow_all)
+        self.assertGreater(self.parser.mtime(), 0)
+        self.assertFalse(self.parser.crawl_delay('*'))
+        self.assertFalse(self.parser.request_rate('*'))
+
+    def test_can_fetch(self):
+        self.assertTrue(self.parser.can_fetch('*', self.url('elsewhere')))
+        self.assertFalse(self.parser.can_fetch('Nutch', self.base_url))
+        self.assertFalse(self.parser.can_fetch('Nutch', self.url('brian')))
+        self.assertFalse(self.parser.can_fetch('Nutch', self.url('webstats')))
+        self.assertFalse(self.parser.can_fetch('*', self.url('webstats')))
+        self.assertTrue(self.parser.can_fetch('*', self.base_url))
+
+    def test_read_404(self):
+        parser = urllib.robotparser.RobotFileParser(self.url('i-robot.txt'))
+        parser.read()
+        self.assertTrue(parser.allow_all)
+        self.assertFalse(parser.disallow_all)
+        self.assertEqual(parser.mtime(), 0)
 
 if __name__=='__main__':
     unittest.main()
