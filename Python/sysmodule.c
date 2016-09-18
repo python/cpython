@@ -894,10 +894,11 @@ Return information about the running version of Windows as a named tuple.\n\
 The members are named: major, minor, build, platform, service_pack,\n\
 service_pack_major, service_pack_minor, suite_mask, and product_type. For\n\
 backward compatibility, only the first 5 items are available by indexing.\n\
-All elements are numbers, except service_pack which is a string. Platform\n\
-may be 0 for win32s, 1 for Windows 9x/ME, 2 for Windows NT/2000/XP/Vista/7,\n\
-3 for Windows CE. Product_type may be 1 for a workstation, 2 for a domain\n\
-controller, 3 for a server."
+All elements are numbers, except service_pack and platform_type which are\n\
+strings, and platform_version which is a 3-tuple. Platform is always 2.\n\
+Product_type may be 1 for a workstation, 2 for a domain controller, 3 for a\n\
+server. Platform_version is a 3-tuple containing a version number that is\n\
+intended for identifying the OS rather than feature detection."
 );
 
 static PyTypeObject WindowsVersionType = {0, 0, 0, 0, 0, 0};
@@ -912,6 +913,7 @@ static PyStructSequence_Field windows_version_fields[] = {
     {"service_pack_minor", "Service Pack minor version number"},
     {"suite_mask", "Bit mask identifying available product suites"},
     {"product_type", "System product type"},
+    {"platform_version", "Diagnostic version number"},
     {0}
 };
 
@@ -936,6 +938,12 @@ sys_getwindowsversion(PyObject *self)
     PyObject *version;
     int pos = 0;
     OSVERSIONINFOEX ver;
+    DWORD realMajor, realMinor, realBuild;
+    HANDLE hKernel32;
+    wchar_t kernel32_path[MAX_PATH];
+    LPVOID verblock;
+    DWORD verblock_size;
+
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionEx((OSVERSIONINFO*) &ver))
         return PyErr_SetFromWindowsErr(0);
@@ -954,10 +962,40 @@ sys_getwindowsversion(PyObject *self)
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wSuiteMask));
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wProductType));
 
+    realMajor = ver.dwMajorVersion;
+    realMinor = ver.dwMinorVersion;
+    realBuild = ver.dwBuildNumber;
+
+    // GetVersion will lie if we are running in a compatibility mode.
+    // We need to read the version info from a system file resource
+    // to accurately identify the OS version. If we fail for any reason,
+    // just return whatever GetVersion said.
+    hKernel32 = GetModuleHandleW(L"kernel32.dll");
+    if (hKernel32 && GetModuleFileNameW(hKernel32, kernel32_path, MAX_PATH) &&
+        (verblock_size = GetFileVersionInfoSizeW(kernel32_path, NULL)) &&
+        (verblock = PyMem_RawMalloc(verblock_size))) {
+        VS_FIXEDFILEINFO *ffi;
+        UINT ffi_len;
+
+        if (GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) &&
+            VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
+            realMajor = HIWORD(ffi->dwProductVersionMS);
+            realMinor = LOWORD(ffi->dwProductVersionMS);
+            realBuild = HIWORD(ffi->dwProductVersionLS);
+        }
+        PyMem_RawFree(verblock);
+    }
+    PyStructSequence_SET_ITEM(version, pos++, PyTuple_Pack(3,
+        PyLong_FromLong(realMajor),
+        PyLong_FromLong(realMinor),
+        PyLong_FromLong(realBuild)
+    ));
+
     if (PyErr_Occurred()) {
         Py_DECREF(version);
         return NULL;
     }
+
     return version;
 }
 
