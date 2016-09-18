@@ -364,6 +364,8 @@ Windows
 Build
 -----
 
+- Issue #26661: setup.py now detects system libffi with multiarch wrapper.
+
 - Issue #28066: Fix the logic that searches build directories for generated
   include files when building outside the source tree.
 
