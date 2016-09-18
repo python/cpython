@@ -552,26 +552,15 @@ always available.
    Return a named tuple describing the Windows version
    currently running.  The named elements are *major*, *minor*,
    *build*, *platform*, *service_pack*, *service_pack_minor*,
-   *service_pack_major*, *suite_mask*, and *product_type*.
-   *service_pack* contains a string while all other values are
+   *service_pack_major*, *suite_mask*, *product_type* and
+   *platform_version*. *service_pack* contains a string,
+   *platform_version* a 3-tuple and all other values are
    integers. The components can also be accessed by name, so
    ``sys.getwindowsversion()[0]`` is equivalent to
    ``sys.getwindowsversion().major``. For compatibility with prior
    versions, only the first 5 elements are retrievable by indexing.
 
-   *platform* may be one of the following values:
-
-   +-----------------------------------------+-------------------------+
-   | Constant                                | Platform                |
-   +=========================================+=========================+
-   | :const:`0 (VER_PLATFORM_WIN32s)`        | Win32s on Windows 3.1   |
-   +-----------------------------------------+-------------------------+
-   | :const:`1 (VER_PLATFORM_WIN32_WINDOWS)` | Windows 95/98/ME        |
-   +-----------------------------------------+-------------------------+
-   | :const:`2 (VER_PLATFORM_WIN32_NT)`      | Windows NT/2000/XP/x64  |
-   +-----------------------------------------+-------------------------+
-   | :const:`3 (VER_PLATFORM_WIN32_CE)`      | Windows CE              |
-   +-----------------------------------------+-------------------------+
+   *platform* will be :const:`2 (VER_PLATFORM_WIN32_NT)`.
 
    *product_type* may be one of the following values:
 
@@ -587,10 +576,14 @@ always available.
    |                                       | a domain controller.            |
    +---------------------------------------+---------------------------------+
 
-
    This function wraps the Win32 :c:func:`GetVersionEx` function; see the
    Microsoft documentation on :c:func:`OSVERSIONINFOEX` for more information
    about these fields.
+
+   *platform_version* returns the accurate major version, minor version and
+   build number of the current operating system, rather than the version that
+   is being emulated for the process. It is intended for use in logging rather
+   than for feature detection.
 
    Availability: Windows.
 
@@ -598,6 +591,8 @@ always available.
       Changed to a named tuple and added *service_pack_minor*,
       *service_pack_major*, *suite_mask*, and *product_type*.
 
+   .. versionchanged:: 3.6
+      Added *platform_version*
 
 .. function:: get_coroutine_wrapper()
 
