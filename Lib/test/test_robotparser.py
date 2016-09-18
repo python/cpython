@@ -79,7 +79,28 @@ Disallow: /
     bad = ['/cyberworld/map/index.html', '/', '/tmp/']
 
 
-class CrawlDelayAndRequestRateTest(BaseRobotTest, unittest.TestCase):
+class BaseRequestRateTest(BaseRobotTest):
+
+    def test_request_rate(self):
+        for url in self.good + self.bad:
+            agent, url = self.get_agent_and_url(url)
+            with self.subTest(url=url, agent=agent):
+                if self.crawl_delay:
+                    self.assertEqual(
+                        self.parser.crawl_delay(agent), self.crawl_delay
+                    )
+                if self.request_rate:
+                    self.assertEqual(
+                        self.parser.request_rate(agent).requests,
+                        self.request_rate.requests
+                    )
+                    self.assertEqual(
+                        self.parser.request_rate(agent).seconds,
+                        self.request_rate.seconds
+                    )
+
+
+class CrawlDelayAndRequestRateTest(BaseRequestRateTest, unittest.TestCase):
     robots_txt = """\
 User-agent: figtree
 Crawl-delay: 3
@@ -95,24 +116,6 @@ Disallow: /%7ejoe/index.html
     good = [('figtree', '/foo.html')]
     bad = ['/tmp', '/tmp.html', '/tmp/a.html', '/a%3cd.html', '/a%3Cd.html',
            '/a%2fb.html', '/~joe/index.html']
-
-    def test_request_rate(self):
-        for url in self.good:
-            agent, url = self.get_agent_and_url(url)
-            with self.subTest(url=url, agent=agent):
-                if self.crawl_delay:
-                    self.assertEqual(
-                        self.parser.crawl_delay(agent), self.crawl_delay
-                    )
-                if self.request_rate and self.parser.request_rate(agent):
-                    self.assertEqual(
-                        self.parser.request_rate(agent).requests,
-                        self.request_rate.requests
-                    )
-                    self.assertEqual(
-                        self.parser.request_rate(agent).seconds,
-                        self.request_rate.seconds
-                    )
 
 
 class DifferentAgentTest(CrawlDelayAndRequestRateTest):
@@ -230,6 +233,19 @@ Disallow: /another/path?
     bad = ['/another/path?']
 
 
+class DefaultEntryTest(BaseRequestRateTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Crawl-delay: 1
+Request-rate: 3/15
+Disallow: /cyberworld/map/
+    """
+    request_rate = namedtuple('req_rate', 'requests seconds')(3, 15)
+    crawl_delay = 1
+    good = ['/', '/test.html']
+    bad = ['/cyberworld/map/index.html']
+
+
 class RobotHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
@@ -309,6 +325,8 @@ class NetworkTestCase(unittest.TestCase):
         self.assertTrue(parser.allow_all)
         self.assertFalse(parser.disallow_all)
         self.assertEqual(parser.mtime(), 0)
+        self.assertIsNone(parser.crawl_delay('*'))
+        self.assertIsNone(parser.request_rate('*'))
 
 if __name__=='__main__':
     unittest.main()
