@@ -1634,6 +1634,13 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(Color.blue.value, 2)
         self.assertEqual(Color.green.value, 3)
 
+    def test_duplicate_auto(self):
+        class Dupes(Enum):
+            first = primero = auto()
+            second = auto()
+            third = auto()
+        self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
+
 
 class TestOrder(unittest.TestCase):
 
@@ -1731,7 +1738,7 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(str(Open.AC), 'Open.AC')
         self.assertEqual(str(Open.RO | Open.CE), 'Open.CE')
         self.assertEqual(str(Open.WO | Open.CE), 'Open.CE|WO')
-        self.assertEqual(str(~Open.RO), 'Open.CE|AC')
+        self.assertEqual(str(~Open.RO), 'Open.CE|AC|RW|WO')
         self.assertEqual(str(~Open.WO), 'Open.CE|RW')
         self.assertEqual(str(~Open.AC), 'Open.CE')
         self.assertEqual(str(~(Open.RO | Open.CE)), 'Open.AC')
@@ -1758,7 +1765,7 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(repr(Open.AC), '<Open.AC: 3>')
         self.assertEqual(repr(Open.RO | Open.CE), '<Open.CE: 524288>')
         self.assertEqual(repr(Open.WO | Open.CE), '<Open.CE|WO: 524289>')
-        self.assertEqual(repr(~Open.RO), '<Open.CE|AC: 524291>')
+        self.assertEqual(repr(~Open.RO), '<Open.CE|AC|RW|WO: 524291>')
         self.assertEqual(repr(~Open.WO), '<Open.CE|RW: 524290>')
         self.assertEqual(repr(~Open.AC), '<Open.CE: 524288>')
         self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC: 3>')
@@ -1949,6 +1956,33 @@ class TestFlag(unittest.TestCase):
                 red = 'not an int'
                 blue = auto()
 
+    def test_cascading_failure(self):
+        class Bizarre(Flag):
+            c = 3
+            d = 4
+            f = 6
+        # Bizarre.c | Bizarre.d
+        self.assertRaisesRegex(ValueError, "5 is not a valid Bizarre", Bizarre, 5)
+        self.assertRaisesRegex(ValueError, "5 is not a valid Bizarre", Bizarre, 5)
+        self.assertRaisesRegex(ValueError, "2 is not a valid Bizarre", Bizarre, 2)
+        self.assertRaisesRegex(ValueError, "2 is not a valid Bizarre", Bizarre, 2)
+        self.assertRaisesRegex(ValueError, "1 is not a valid Bizarre", Bizarre, 1)
+        self.assertRaisesRegex(ValueError, "1 is not a valid Bizarre", Bizarre, 1)
+
+    def test_duplicate_auto(self):
+        class Dupes(Enum):
+            first = primero = auto()
+            second = auto()
+            third = auto()
+        self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
+
+    def test_bizarre(self):
+        class Bizarre(Flag):
+            b = 3
+            c = 4
+            d = 6
+        self.assertEqual(repr(Bizarre(7)), '<Bizarre.d|c|b: 7>')
+
 
 class TestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
@@ -1965,6 +1999,21 @@ class TestIntFlag(unittest.TestCase):
         AC = 3
         CE = 1<<19
 
+    def test_type(self):
+        Perm = self.Perm
+        Open = self.Open
+        for f in Perm:
+            self.assertTrue(isinstance(f, Perm))
+            self.assertEqual(f, f.value)
+        self.assertTrue(isinstance(Perm.W | Perm.X, Perm))
+        self.assertEqual(Perm.W | Perm.X, 3)
+        for f in Open:
+            self.assertTrue(isinstance(f, Open))
+            self.assertEqual(f, f.value)
+        self.assertTrue(isinstance(Open.WO | Open.RW, Open))
+        self.assertEqual(Open.WO | Open.RW, 3)
+
+
     def test_str(self):
         Perm = self.Perm
         self.assertEqual(str(Perm.R), 'Perm.R')
@@ -1975,14 +2024,14 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(str(Perm.R | 8), 'Perm.8|R')
         self.assertEqual(str(Perm(0)), 'Perm.0')
         self.assertEqual(str(Perm(8)), 'Perm.8')
-        self.assertEqual(str(~Perm.R), 'Perm.W|X|-8')
-        self.assertEqual(str(~Perm.W), 'Perm.R|X|-8')
-        self.assertEqual(str(~Perm.X), 'Perm.R|W|-8')
-        self.assertEqual(str(~(Perm.R | Perm.W)), 'Perm.X|-8')
+        self.assertEqual(str(~Perm.R), 'Perm.W|X')
+        self.assertEqual(str(~Perm.W), 'Perm.R|X')
+        self.assertEqual(str(~Perm.X), 'Perm.R|W')
+        self.assertEqual(str(~(Perm.R | Perm.W)), 'Perm.X')
         self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), 'Perm.-8')
-        self.assertEqual(str(~(Perm.R | 8)), 'Perm.W|X|-16')
-        self.assertEqual(str(Perm(~0)), 'Perm.R|W|X|-8')
-        self.assertEqual(str(Perm(~8)), 'Perm.R|W|X|-16')
+        self.assertEqual(str(~(Perm.R | 8)), 'Perm.W|X')
+        self.assertEqual(str(Perm(~0)), 'Perm.R|W|X')
+        self.assertEqual(str(Perm(~8)), 'Perm.R|W|X')
 
         Open = self.Open
         self.assertEqual(str(Open.RO), 'Open.RO')
@@ -1991,12 +2040,12 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(str(Open.RO | Open.CE), 'Open.CE')
         self.assertEqual(str(Open.WO | Open.CE), 'Open.CE|WO')
         self.assertEqual(str(Open(4)), 'Open.4')
-        self.assertEqual(str(~Open.RO), 'Open.CE|AC|-524292')
-        self.assertEqual(str(~Open.WO), 'Open.CE|RW|-524292')
-        self.assertEqual(str(~Open.AC), 'Open.CE|-524292')
-        self.assertEqual(str(~(Open.RO | Open.CE)), 'Open.AC|-524292')
-        self.assertEqual(str(~(Open.WO | Open.CE)), 'Open.RW|-524292')
-        self.assertEqual(str(Open(~4)), 'Open.CE|AC|-524296')
+        self.assertEqual(str(~Open.RO), 'Open.CE|AC|RW|WO')
+        self.assertEqual(str(~Open.WO), 'Open.CE|RW')
+        self.assertEqual(str(~Open.AC), 'Open.CE')
+        self.assertEqual(str(~(Open.RO | Open.CE)), 'Open.AC|RW|WO')
+        self.assertEqual(str(~(Open.WO | Open.CE)), 'Open.RW')
+        self.assertEqual(str(Open(~4)), 'Open.CE|AC|RW|WO')
 
     def test_repr(self):
         Perm = self.Perm
@@ -2008,14 +2057,14 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(Perm.R | 8), '<Perm.8|R: 12>')
         self.assertEqual(repr(Perm(0)), '<Perm.0: 0>')
         self.assertEqual(repr(Perm(8)), '<Perm.8: 8>')
-        self.assertEqual(repr(~Perm.R), '<Perm.W|X|-8: -5>')
-        self.assertEqual(repr(~Perm.W), '<Perm.R|X|-8: -3>')
-        self.assertEqual(repr(~Perm.X), '<Perm.R|W|-8: -2>')
-        self.assertEqual(repr(~(Perm.R | Perm.W)), '<Perm.X|-8: -7>')
+        self.assertEqual(repr(~Perm.R), '<Perm.W|X: -5>')
+        self.assertEqual(repr(~Perm.W), '<Perm.R|X: -3>')
+        self.assertEqual(repr(~Perm.X), '<Perm.R|W: -2>')
+        self.assertEqual(repr(~(Perm.R | Perm.W)), '<Perm.X: -7>')
         self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), '<Perm.-8: -8>')
-        self.assertEqual(repr(~(Perm.R | 8)), '<Perm.W|X|-16: -13>')
-        self.assertEqual(repr(Perm(~0)), '<Perm.R|W|X|-8: -1>')
-        self.assertEqual(repr(Perm(~8)), '<Perm.R|W|X|-16: -9>')
+        self.assertEqual(repr(~(Perm.R | 8)), '<Perm.W|X: -13>')
+        self.assertEqual(repr(Perm(~0)), '<Perm.R|W|X: -1>')
+        self.assertEqual(repr(Perm(~8)), '<Perm.R|W|X: -9>')
 
         Open = self.Open
         self.assertEqual(repr(Open.RO), '<Open.RO: 0>')
@@ -2024,12 +2073,12 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(Open.RO | Open.CE), '<Open.CE: 524288>')
         self.assertEqual(repr(Open.WO | Open.CE), '<Open.CE|WO: 524289>')
         self.assertEqual(repr(Open(4)), '<Open.4: 4>')
-        self.assertEqual(repr(~Open.RO), '<Open.CE|AC|-524292: -1>')
-        self.assertEqual(repr(~Open.WO), '<Open.CE|RW|-524292: -2>')
-        self.assertEqual(repr(~Open.AC), '<Open.CE|-524292: -4>')
-        self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC|-524292: -524289>')
-        self.assertEqual(repr(~(Open.WO | Open.CE)), '<Open.RW|-524292: -524290>')
-        self.assertEqual(repr(Open(~4)), '<Open.CE|AC|-524296: -5>')
+        self.assertEqual(repr(~Open.RO), '<Open.CE|AC|RW|WO: -1>')
+        self.assertEqual(repr(~Open.WO), '<Open.CE|RW: -2>')
+        self.assertEqual(repr(~Open.AC), '<Open.CE: -4>')
+        self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC|RW|WO: -524289>')
+        self.assertEqual(repr(~(Open.WO | Open.CE)), '<Open.RW: -524290>')
+        self.assertEqual(repr(Open(~4)), '<Open.CE|AC|RW|WO: -5>')
 
     def test_or(self):
         Perm = self.Perm
