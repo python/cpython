@@ -186,6 +186,8 @@ Tests
 Build
 -----
 
+- Issue #26661: setup.py now detects system libffi with multiarch wrapper.
+
 - Issue #15819: The Include directory in the build tree is already searched;
   drop unused code trying to add it again.
 

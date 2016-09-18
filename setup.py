@@ -2132,14 +2132,16 @@ class PyBuildExt(build_ext):
             ffi_inc = find_file('ffi.h', [], inc_dirs)
         if ffi_inc is not None:
             ffi_h = ffi_inc[0] + '/ffi.h'
-            fp = open(ffi_h)
-            while 1:
-                line = fp.readline()
-                if not line:
+            with open(ffi_h) as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith(('#define LIBFFI_H',
+                                        '#define ffi_wrapper_h')):
+                        break
+                else:
                     ffi_inc = None
-                    break
-                if line.startswith('#define LIBFFI_H'):
-                    break
+                    print('Header file {} does not define LIBFFI_H or '
+                          'ffi_wrapper_h'.format(ffi_h))
         ffi_lib = None
         if ffi_inc is not None:
             for lib_name in ('ffi_convenience', 'ffi_pic', 'ffi'):
