@@ -772,14 +772,11 @@ class ArgsTestCase(BaseTestCase):
         self.check_line(output, re.escape(line))
 
         line2 = '%s leaked [1, 1, 1] file descriptors, sum=3\n' % test
-        self.check_line(output, re.escape(line2))
+        self.assertIn(line2, output)
 
         with open(filename) as fp:
             reflog = fp.read()
-            if hasattr(sys, 'getcounts'):
-                # Types are immportal if COUNT_ALLOCS is defined
-                reflog = reflog.splitlines(True)[-1]
-            self.assertEqual(reflog, line2)
+            self.assertIn(line2, reflog)
 
     def test_list_tests(self):
         # test --list-tests
