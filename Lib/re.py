@@ -122,6 +122,7 @@ This module also defines an exception 'error'.
 import enum
 import sre_compile
 import sre_parse
+import functools
 try:
     import _locale
 except ImportError:
@@ -234,7 +235,7 @@ def compile(pattern, flags=0):
 def purge():
     "Clear the regular expression caches"
     _cache.clear()
-    _cache_repl.clear()
+    _compile_repl.cache_clear()
 
 def template(pattern, flags=0):
     "Compile a template pattern, returning a pattern object"
@@ -278,7 +279,6 @@ def escape(pattern):
 # internals
 
 _cache = {}
-_cache_repl = {}
 
 _pattern_type = type(sre_compile.compile("", 0))
 
@@ -311,17 +311,10 @@ def _compile(pattern, flags):
         _cache[type(pattern), pattern, flags] = p, loc
     return p
 
+@functools.lru_cache(_MAXCACHE)
 def _compile_repl(repl, pattern):
     # internal: compile replacement pattern
-    try:
-        return _cache_repl[repl, pattern]
-    except KeyError:
-        pass
-    p = sre_parse.parse_template(repl, pattern)
-    if len(_cache_repl) >= _MAXCACHE:
-        _cache_repl.clear()
-    _cache_repl[repl, pattern] = p
-    return p
+    return sre_parse.parse_template(repl, pattern)
 
 def _expand(pattern, match, template):
     # internal: match.expand implementation hook
