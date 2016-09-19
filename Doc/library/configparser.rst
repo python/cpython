@@ -150,8 +150,8 @@ Since this task is so common, config parsers provide a range of handy getter
 methods to handle integers, floats and booleans.  The last one is the most
 interesting because simply passing the value to ``bool()`` would do no good
 since ``bool('False')`` is still ``True``.  This is why config parsers also
-provide :meth:`getboolean`.  This method is case-insensitive and recognizes
-Boolean values from ``'yes'``/``'no'``, ``'on'``/``'off'``,
+provide :meth:`~ConfigParser.getboolean`.  This method is case-insensitive and
+recognizes Boolean values from ``'yes'``/``'no'``, ``'on'``/``'off'``,
 ``'true'``/``'false'`` and ``'1'``/``'0'`` [1]_.  For example:
 
 .. doctest::
@@ -163,8 +163,9 @@ Boolean values from ``'yes'``/``'no'``, ``'on'``/``'off'``,
    >>> config.getboolean('bitbucket.org', 'Compression')
    True
 
-Apart from :meth:`getboolean`, config parsers also provide equivalent
-:meth:`getint` and :meth:`getfloat` methods.  You can register your own
+Apart from :meth:`~ConfigParser.getboolean`, config parsers also
+provide equivalent :meth:`~ConfigParser.getint` and
+:meth:`~ConfigParser.getfloat` methods.  You can register your own
 converters and customize the provided ones. [1]_
 
 Fallback Values
@@ -205,8 +206,9 @@ the ``fallback`` keyword-only argument:
    ...            fallback='No such things as monsters')
    'No such things as monsters'
 
-The same ``fallback`` argument can be used with the :meth:`getint`,
-:meth:`getfloat` and :meth:`getboolean` methods, for example:
+The same ``fallback`` argument can be used with the
+:meth:`~ConfigParser.getint`, :meth:`~ConfigParser.getfloat` and
+:meth:`~ConfigParser.getboolean` methods, for example:
 
 .. doctest::
 
@@ -670,14 +672,15 @@ the :meth:`__init__` options:
 * *converters*, default value: not set
 
   Config parsers provide option value getters that perform type conversion.  By
-  default :meth:`getint`, :meth:`getfloat`, and :meth:`getboolean` are
-  implemented.  Should other getters be desirable, users may define them in
-  a subclass or pass a dictionary where each key is a name of the converter and
-  each value is a callable implementing said conversion.  For instance, passing
-  ``{'decimal': decimal.Decimal}`` would add :meth:`getdecimal` on both the
-  parser object and all section proxies.  In other words, it will be possible
-  to write both ``parser_instance.getdecimal('section', 'key', fallback=0)``
-  and ``parser_instance['section'].getdecimal('key', 0)``.
+  default :meth:`~ConfigParser.getint`, :meth:`~ConfigParser.getfloat`, and
+  :meth:`~ConfigParser.getboolean` are implemented.  Should other getters be
+  desirable, users may define them in a subclass or pass a dictionary where each
+  key is a name of the converter and each value is a callable implementing said
+  conversion.  For instance, passing ``{'decimal': decimal.Decimal}`` would add
+  :meth:`getdecimal` on both the parser object and all section proxies.  In
+  other words, it will be possible to write both
+  ``parser_instance.getdecimal('section', 'key', fallback=0)`` and
+  ``parser_instance['section'].getdecimal('key', 0)``.
 
   If the converter needs to access the state of the parser, it can be
   implemented as a method on a config parser subclass.  If the name of this
@@ -690,11 +693,11 @@ be overridden by subclasses or by attribute assignment.
 
 .. attribute:: BOOLEAN_STATES
 
-  By default when using :meth:`getboolean`, config parsers consider the
-  following values ``True``: ``'1'``, ``'yes'``, ``'true'``, ``'on'`` and the
-  following values ``False``: ``'0'``, ``'no'``, ``'false'``, ``'off'``.  You
-  can override this by specifying a custom dictionary of strings and their
-  Boolean outcomes. For example:
+  By default when using :meth:`~ConfigParser.getboolean`, config parsers
+  consider the following values ``True``: ``'1'``, ``'yes'``, ``'true'``,
+  ``'on'`` and the following values ``False``: ``'0'``, ``'no'``, ``'false'``,
+  ``'off'``.  You can override this by specifying a custom dictionary of strings
+  and their Boolean outcomes. For example:
 
   .. doctest::
 
