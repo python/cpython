@@ -951,7 +951,7 @@ tok_nextc(register struct tok_state *tok)
                 else {
                     tok->done = E_OK;
                     tok->inp = strchr(tok->buf, '\0');
-                    done = tok->inp[-1] == '\n';
+                    done = tok->inp == tok->buf || tok->inp[-1] == '\n';
                 }
             }
             else {
