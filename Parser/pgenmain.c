@@ -67,6 +67,7 @@ main(int argc, char **argv)
         printf("Writing %s ...\n", graminit_h);
     printnonterminals(g, fp);
     fclose(fp);
+    freegrammar(g);
     Py_Exit(0);
     return 0; /* Make gcc -Wall happy */
 }
