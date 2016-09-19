@@ -3149,9 +3149,6 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
                          "unexpected flow_stmt: %d", TYPE(ch));
             return NULL;
     }
-
-    PyErr_SetString(PyExc_SystemError, "unhandled flow statement");
-    return NULL;
 }
 
 static alias_ty
