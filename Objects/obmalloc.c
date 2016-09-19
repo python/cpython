@@ -760,7 +760,7 @@ struct arena_object {
      * here to mark an arena_object that doesn't correspond to an
      * allocated arena.
      */
-    uinptr_t address;
+    uintptr_t address;
 
     /* Pool-aligned pointer to the next pool to be carved off. */
     block* pool_address;
@@ -1091,7 +1091,7 @@ new_arena(void)
         unused_arena_objects = arenaobj;
         return NULL;
     }
-    arenaobj->address = (uinptr_t)address;
+    arenaobj->address = (uintptr_t)address;
 
     ++narenas_currently_allocated;
     ++ntimes_arena_allocated;
@@ -1198,7 +1198,7 @@ address_in_range(void *p, poolp pool)
     // only once.
     uint arenaindex = *((volatile uint *)&pool->arenaindex);
     return arenaindex < maxarenas &&
-        (uinptr_t)p - arenas[arenaindex].address < ARENA_SIZE &&
+        (uintptr_t)p - arenas[arenaindex].address < ARENA_SIZE &&
         arenas[arenaindex].address != 0;
 }
 
@@ -2287,25 +2287,25 @@ _PyObject_DebugMallocStats(FILE *out)
      */
     for (i = 0; i < maxarenas; ++i) {
         uint j;
-        uinptr_t base = arenas[i].address;
+        uintptr_t base = arenas[i].address;
 
         /* Skip arenas which are not allocated. */
-        if (arenas[i].address == (uinptr_t)NULL)
+        if (arenas[i].address == (uintptr_t)NULL)
             continue;
         narenas += 1;
 
         numfreepools += arenas[i].nfreepools;
 
         /* round up to pool alignment */
-        if (base & (uinptr_t)POOL_SIZE_MASK) {
+        if (base & (uintptr_t)POOL_SIZE_MASK) {
             arena_alignment += POOL_SIZE;
-            base &= ~(uinptr_t)POOL_SIZE_MASK;
+            base &= ~(uintptr_t)POOL_SIZE_MASK;
             base += POOL_SIZE;
         }
 
         /* visit every pool in the arena */
-        assert(base <= (uinptr_t) arenas[i].pool_address);
-        for (j = 0; base < (uinptr_t) arenas[i].pool_address;
+        assert(base <= (uintptr_t) arenas[i].pool_address);
+        for (j = 0; base < (uintptr_t) arenas[i].pool_address;
              ++j, base += POOL_SIZE) {
             poolp p = (poolp)base;
             const uint sz = p->szidx;
