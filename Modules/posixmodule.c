@@ -920,7 +920,7 @@ path_converter(PyObject *o, void *p)
 
     if (is_unicode) {
 #ifdef MS_WINDOWS
-        wide = PyUnicode_AsWideCharString(o, &length);
+        wide = PyUnicode_AsUnicodeAndSize(o, &length);
         if (!wide) {
             goto exit;
         }
