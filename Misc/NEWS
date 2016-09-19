@@ -19,6 +19,9 @@ Core and Builtins
 - Issue #25758: Prevents zipimport from unnecessarily encoding a filename
   (patch by Eryk Sun)
 
+- Issue #28189: dictitems_contains no longer swallows compare errors.
+  (Patch by Xiang Zhang)
+
 - Issue #27812: Properly clear out a generator's frame's backreference to the
   generator to prevent crashes in frame.clear().
 
