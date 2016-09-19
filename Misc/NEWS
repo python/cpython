@@ -35,6 +35,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28200: Fix memory leak on Windows in the os module (fix
+  path_converter() function).
+
 - Issue #25400: RobotFileParser now correctly returns default values for
   crawl_delay and request_rate.  Initial patch by Peter Wirtz.
 
