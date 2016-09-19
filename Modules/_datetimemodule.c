@@ -4206,7 +4206,7 @@ typedef struct tm *(*TM_FUNC)(const time_t *timer, struct tm*);
  * 23 hours at 1969-09-30 13:00:00 in Kwajalein. */
 static long long max_fold_seconds = 24 * 3600;
 /* NB: date(1970,1,1).toordinal() == 719163 */
-static long long epoch = Py_LL(719163) * 24 * 60 * 60;
+static long long epoch = 719163LL * 24 * 60 * 60;
 
 static long long
 utc_to_seconds(int year, int month, int day,

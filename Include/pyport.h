@@ -715,10 +715,6 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #pragma error_messages (off,E_END_OF_LOOP_CODE_NOT_REACHED)
 #endif
 
-/*
- * Older Microsoft compilers don't support the C99 long long literal suffixes,
- * so these will be defined in PC/pyconfig.h for those compilers.
- */
 #ifndef Py_LL
 #define Py_LL(x) x##LL
 #endif
