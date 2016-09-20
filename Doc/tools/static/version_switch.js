@@ -2,13 +2,12 @@
   'use strict';
 
   var all_versions = {
-    '3.6': 'dev (3.6)',
+    '3.7': 'dev (3.7)',
+    '3.6': '3.6',
     '3.5': '3.5',
     '3.4': '3.4',
     '3.3': '3.3',
-    '3.2': '3.2',
     '2.7': '2.7',
-    '2.6': '2.6'
   };
 
   function build_select(current_version, current_release) {
