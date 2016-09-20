@@ -121,9 +121,9 @@ py_getentropy(char *buffer, Py_ssize_t size, int raise)
 
 /* Call getrandom()
    - Return 1 on success
-   - Return 0 if getrandom() syscall is not available (fails with ENOSYS)
-     or if getrandom(GRND_NONBLOCK) fails with EAGAIN (blocking=0 and system
-     urandom not initialized yet) and raise=0.
+   - Return 0 if getrandom() syscall is not available (failed with ENOSYS or
+     EPERM) or if getrandom(GRND_NONBLOCK) failed with EAGAIN (system urandom
+     not initialized yet) and raise=0.
    - Raise an exception (if raise is non-zero) and return -1 on error:
      getrandom() failed with EINTR and the Python signal handler raised an
      exception, or getrandom() failed with a different error. */
@@ -131,8 +131,8 @@ static int
 py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 {
     /* Is getrandom() supported by the running kernel? Set to 0 if getrandom()
-       fails with ENOSYS. Need Linux kernel 3.17 or newer, or Solaris 11.3
-       or newer */
+       failed with ENOSYS or EPERM. Need Linux kernel 3.17 or newer, or Solaris
+       11.3 or newer */
     static int getrandom_works = 1;
     int flags;
     char *dest;
@@ -178,7 +178,10 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 #endif
 
         if (n < 0) {
-            if (errno == ENOSYS) {
+            /* ENOSYS: getrandom() syscall not supported by the kernel (but
+             * maybe supported by the host which built Python). EPERM:
+             * getrandom() syscall blocked by SECCOMP or something else. */
+            if (errno == ENOSYS || errno == EPERM) {
                 getrandom_works = 0;
                 return 0;
             }
@@ -246,8 +249,8 @@ dev_urandom(char *buffer, Py_ssize_t size, int blocking, int raise)
     if (res == 1) {
         return 0;
     }
-    /* getrandom() is not supported by the running kernel, fall back
-       on reading /dev/urandom */
+    /* getrandom() failed with ENOSYS or EPERM,
+       fall back on reading /dev/urandom */
 #endif
 
 
