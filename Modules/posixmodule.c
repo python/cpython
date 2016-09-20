@@ -12047,42 +12047,50 @@ static PyObject *
 os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
 /*[clinic end generated code: output=b3a618196a61409c input=59bafac39c594947]*/
 {
-    char *buffer;
-    Py_ssize_t n;
     PyObject *bytes;
+    Py_ssize_t n;
 
     if (size < 0) {
         errno = EINVAL;
         return posix_error();
     }
 
-    buffer = PyMem_Malloc(size);
-    if (buffer == NULL) {
+    bytes = PyBytes_FromStringAndSize(NULL, size);
+    if (bytes == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
 
     while (1) {
-        n = syscall(SYS_getrandom, buffer, size, flags);
+        n = syscall(SYS_getrandom,
+                    PyBytes_AS_STRING(bytes),
+                    PyBytes_GET_SIZE(bytes),
+                    flags);
         if (n < 0 && errno == EINTR) {
             if (PyErr_CheckSignals() < 0) {
-                return NULL;
+                goto error;
             }
+
+            /* getrandom() was interrupted by a signal: retry */
             continue;
         }
         break;
     }
 
     if (n < 0) {
-        PyMem_Free(buffer);
         PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
+        goto error;
     }
 
-    bytes = PyBytes_FromStringAndSize(buffer, n);
-    PyMem_Free(buffer);
+    if (n != size) {
+        _PyBytes_Resize(&bytes, n);
+    }
 
     return bytes;
+
+error:
+    Py_DECREF(bytes);
+    return NULL;
 }
 #endif   /* HAVE_GETRANDOM_SYSCALL */
 
