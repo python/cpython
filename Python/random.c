@@ -121,8 +121,8 @@ py_getentropy(unsigned char *buffer, Py_ssize_t size, int fatal)
 
 /* Call getrandom()
    - Return 1 on success
-   - Return 0 if getrandom() syscall is not available (failed with ENOSYS)
-     or if getrandom(GRND_NONBLOCK) failed with EAGAIN (system urandom
+   - Return 0 if getrandom() syscall is not available (failed with ENOSYS or
+     EPERM) or if getrandom(GRND_NONBLOCK) failed with EAGAIN (system urandom
      not initialized yet) and raise=0.
    - Raise an exception (if raise is non-zero) and return -1 on error:
      getrandom() failed with EINTR and the Python signal handler raised an
@@ -131,7 +131,7 @@ static int
 py_getrandom(void *buffer, Py_ssize_t size, int raise)
 {
     /* Is getrandom() supported by the running kernel? Set to 0 if getrandom()
-       failed with ENOSYS. Need Linux kernel 3.17 or newer, or Solaris
+       failed with ENOSYS or EPERM. Need Linux kernel 3.17 or newer, or Solaris
        11.3 or newer */
     static int getrandom_works = 1;
 
@@ -182,8 +182,9 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
 
         if (n < 0) {
             /* ENOSYS: getrandom() syscall not supported by the kernel (but
-             * maybe supported by the host which built Python). */
-            if (errno == ENOSYS) {
+             * maybe supported by the host which built Python). EPERM:
+             * getrandom() syscall blocked by SECCOMP or something else. */
+            if (errno == ENOSYS || errno == EPERM) {
                 getrandom_works = 0;
                 return 0;
             }
@@ -250,7 +251,7 @@ dev_urandom_noraise(unsigned char *buffer, Py_ssize_t size)
     if (py_getrandom(buffer, size, 0) == 1) {
         return;
     }
-    /* getrandom() failed with ENOSYS,
+    /* getrandom() failed with ENOSYS or EPERM,
        fall back on reading /dev/urandom */
 #endif
 
@@ -301,7 +302,7 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
     if (res == 1) {
         return 0;
     }
-    /* getrandom() failed with ENOSYS,
+    /* getrandom() failed with ENOSYS or EPERM,
        fall back on reading /dev/urandom */
 #endif
 
