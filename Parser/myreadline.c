@@ -172,7 +172,7 @@ _PyOS_WindowsConsoleReadline(HANDLE hStdIn)
     buf = PyMem_RawMalloc(u8len + 1);
     u8len = WideCharToMultiByte(CP_UTF8, 0, wbuf, total_read, buf, u8len, NULL, NULL);
     buf[u8len] = '\0';
-    
+
 exit:
     if (wbuf != wbuf_local)
         PyMem_RawFree(wbuf);
@@ -204,11 +204,11 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 #ifdef MS_WINDOWS
     if (!Py_LegacyWindowsStdioFlag && sys_stdin == stdin) {
         HANDLE hStdIn;
-        
+
         _Py_BEGIN_SUPPRESS_IPH
         hStdIn = (HANDLE)_get_osfhandle(fileno(sys_stdin));
         _Py_END_SUPPRESS_IPH
-        
+
         if (_get_console_type(hStdIn) == 'r') {
             fflush(sys_stdout);
             if (prompt)

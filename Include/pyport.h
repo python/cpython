@@ -747,7 +747,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #define PY_LITTLE_ENDIAN 1
 #endif
 
-#ifdef Py_BUILD_CORE 
+#ifdef Py_BUILD_CORE
 /*
  * Macros to protect CRT calls against instant termination when passed an
  * invalid parameter (issue23524).

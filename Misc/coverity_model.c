@@ -139,7 +139,7 @@ static PyObject *
 build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
 {
     PyObject *result;
-    
+
     __coverity_tainted_data_sanitize__(y);
     __coverity_tainted_data_sanitize__(m);
     __coverity_tainted_data_sanitize__(d);
