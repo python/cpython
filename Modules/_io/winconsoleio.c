@@ -44,7 +44,7 @@ char _get_console_type(HANDLE handle) {
 
     if (handle == INVALID_HANDLE_VALUE)
         return '\0';
-    
+
     if (!GetConsoleMode(handle, &mode))
         return '\0';
 
@@ -803,7 +803,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
     bytes_size = WideCharToMultiByte(CP_UTF8, 0, buf, len,
         NULL, 0, NULL, NULL);
     Py_END_ALLOW_THREADS
-    
+
     if (!bytes_size) {
         DWORD err = GetLastError();
         PyMem_Free(buf);
@@ -854,7 +854,7 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size)
 {
     PyObject *bytes;
     Py_ssize_t bytes_size;
-    
+
     if (self->handle == INVALID_HANDLE_VALUE)
         return err_closed();
     if (!self->readable)
@@ -929,7 +929,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
         wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
     }
     Py_END_ALLOW_THREADS
-    
+
     if (!wlen)
         return PyErr_SetFromWindowsErr(0);
 
@@ -956,7 +956,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     } else
         res = 0;
     Py_END_ALLOW_THREADS
-    
+
     if (!res) {
         DWORD err = GetLastError();
         PyMem_Free(wbuf);
@@ -996,7 +996,7 @@ _io__WindowsConsoleIO_isatty_impl(winconsoleio *self)
 {
     if (self->handle == INVALID_HANDLE_VALUE)
         return err_closed();
-    
+
     Py_RETURN_TRUE;
 }
 
