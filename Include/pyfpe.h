@@ -45,10 +45,10 @@ extern "C" {
  *       Define macros for handling SIGFPE.
  *       Lee Busby, LLNL, November, 1996
  *       busby1@llnl.gov
- * 
+ *
  *********************************************
  * Overview of the system for handling SIGFPE:
- * 
+ *
  * This file (Include/pyfpe.h) defines a couple of "wrapper" macros for
  * insertion into your Python C code of choice. Their proper use is
  * discussed below. The file Python/pyfpe.c defines a pair of global
@@ -59,33 +59,33 @@ extern "C" {
  * named fpectl. This module is standard in every respect. It can be loaded
  * either statically or dynamically as you choose, and like any other
  * Python module, has no effect until you import it.
- * 
+ *
  * In the general case, there are three steps toward handling SIGFPE in any
  * Python code:
- * 
+ *
  * 1) Add the *_PROTECT macros to your C code as required to protect
  *    dangerous floating point sections.
- * 
+ *
  * 2) Turn on the inclusion of the code by adding the ``--with-fpectl''
  *    flag at the time you run configure.  If the fpectl or other modules
  *    which use the *_PROTECT macros are to be dynamically loaded, be
  *    sure they are compiled with WANT_SIGFPE_HANDLER defined.
- * 
+ *
  * 3) When python is built and running, import fpectl, and execute
  *    fpectl.turnon_sigfpe(). This sets up the signal handler and enables
  *    generation of SIGFPE whenever an exception occurs. From this point
  *    on, any properly trapped SIGFPE should result in the Python
  *    FloatingPointError exception.
- * 
+ *
  * Step 1 has been done already for the Python kernel code, and should be
  * done soon for the NumPy array package.  Step 2 is usually done once at
  * python install time. Python's behavior with respect to SIGFPE is not
  * changed unless you also do step 3. Thus you can control this new
  * facility at compile time, or run time, or both.
- * 
- ******************************** 
+ *
+ ********************************
  * Using the macros in your code:
- * 
+ *
  * static PyObject *foobar(PyObject *self,PyObject *args)
  * {
  *     ....
@@ -94,17 +94,17 @@ extern "C" {
  *     PyFPE_END_PROTECT(result)
  *     ....
  * }
- * 
+ *
  * If a floating point error occurs in dangerous_op, foobar returns 0 (NULL),
  * after setting the associated value of the FloatingPointError exception to
  * "Error in foobar". ``Dangerous_op'' can be a single operation, or a block
  * of code, function calls, or any combination, so long as no alternate
  * return is possible before the PyFPE_END_PROTECT macro is reached.
- * 
+ *
  * The macros can only be used in a function context where an error return
  * can be recognized as signaling a Python exception. (Generally, most
  * functions that return a PyObject * will qualify.)
- * 
+ *
  * Guido's original design suggestion for PyFPE_START_PROTECT and
  * PyFPE_END_PROTECT had them open and close a local block, with a locally
  * defined jmp_buf and jmp_buf pointer. This would allow recursive nesting
@@ -112,17 +112,17 @@ extern "C" {
  * variables need to be declared with the "volatile" type qualifier to keep
  * setjmp from corrupting their values. Some current implementations seem
  * to be more restrictive. For example, the HPUX man page for setjmp says
- * 
+ *
  *   Upon the return from a setjmp() call caused by a longjmp(), the
  *   values of any non-static local variables belonging to the routine
  *   from which setjmp() was called are undefined. Code which depends on
  *   such values is not guaranteed to be portable.
- * 
+ *
  * I therefore decided on a more limited form of nesting, using a counter
  * variable (PyFPE_counter) to keep track of any recursion.  If an exception
  * occurs in an ``inner'' pair of macros, the return will apparently
  * come from the outermost level.
- * 
+ *
  */
 
 #ifdef WANT_SIGFPE_HANDLER
@@ -146,14 +146,14 @@ if (!PyFPE_counter++ && setjmp(PyFPE_jbuf)) { \
  * this statement so that it gets executed *before* the unsafe expression
  * which we're trying to protect.  That pretty well messes things up,
  * of course.
- * 
+ *
  * If the expression(s) you're trying to protect don't happen to return a
  * value, you will need to manufacture a dummy result just to preserve the
  * correct ordering of statements.  Note that the macro passes the address
  * of its argument (so you need to give it something which is addressable).
  * If your expression returns multiple results, pass the last such result
  * to PyFPE_END_PROTECT.
- * 
+ *
  * Note that PyFPE_dummy returns a double, which is cast to int.
  * This seeming insanity is to tickle the Floating Point Unit (FPU).
  * If an exception has occurred in a preceding floating point operation,
