@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 2
 Core and Builtins
 -----------------
 
+- Issue #27955: Fallback on reading /dev/urandom device when the getrandom()
+  syscall fails with EPERM, for example when blocked by SECCOMP.
+
 - Issue #28192: Don't import readline in isolated mode.
 
 - Upgrade internal unicode databases to Unicode version 9.0.0.
