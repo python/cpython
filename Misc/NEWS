@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #27955: Fallback on reading /dev/urandom device when the getrandom()
+  syscall fails with EPERM, for example when blocked by SECCOMP.
+
 - Issue #28192: Don't import readline in isolated mode.
 
 - Issue #27441: Remove some redundant assignments to ob_size in longobject.c.
