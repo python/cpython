@@ -486,7 +486,7 @@ nu_halffloat(const char *p, const formatdef *f)
     return unpack_halffloat(p, 1);
 #else
     return unpack_halffloat(p, 0);
-#endif    
+#endif
 }
 
 static PyObject *
