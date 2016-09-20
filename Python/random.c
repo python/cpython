@@ -119,11 +119,20 @@ py_getentropy(unsigned char *buffer, Py_ssize_t size, int fatal)
 #if defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)
 #define PY_GETRANDOM 1
 
+/* Call getrandom()
+   - Return 1 on success
+   - Return 0 if getrandom() syscall is not available (failed with ENOSYS)
+     or if getrandom(GRND_NONBLOCK) failed with EAGAIN (system urandom
+     not initialized yet) and raise=0.
+   - Raise an exception (if raise is non-zero) and return -1 on error:
+     getrandom() failed with EINTR and the Python signal handler raised an
+     exception, or getrandom() failed with a different error. */
 static int
 py_getrandom(void *buffer, Py_ssize_t size, int raise)
 {
-    /* Is getrandom() supported by the running kernel?
-     * Need Linux kernel 3.17 or newer, or Solaris 11.3 or newer */
+    /* Is getrandom() supported by the running kernel? Set to 0 if getrandom()
+       failed with ENOSYS. Need Linux kernel 3.17 or newer, or Solaris
+       11.3 or newer */
     static int getrandom_works = 1;
 
     /* getrandom() on Linux will block if called before the kernel has
@@ -134,8 +143,9 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
     const int flags = GRND_NONBLOCK;
     long n;
 
-    if (!getrandom_works)
+    if (!getrandom_works) {
         return 0;
+    }
 
     while (0 < size) {
 #ifdef sun
@@ -171,36 +181,42 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
 #endif
 
         if (n < 0) {
+            /* ENOSYS: getrandom() syscall not supported by the kernel (but
+             * maybe supported by the host which built Python). */
             if (errno == ENOSYS) {
                 getrandom_works = 0;
                 return 0;
             }
             if (errno == EAGAIN) {
-                /* If we failed with EAGAIN, the entropy pool was
-                 * uninitialized. In this case, we return failure to fall
-                 * back to reading from /dev/urandom.
-                 *
-                 * Note: In this case the data read will not be random so
-                 * should not be used for cryptographic purposes. Retaining
-                 * the existing semantics for practical purposes. */
+                /* getrandom(GRND_NONBLOCK) fails with EAGAIN if the system
+                   urandom is not initialiazed yet. In this case, fall back on
+                   reading from /dev/urandom.
+
+                   Note: In this case the data read will not be random so
+                   should not be used for cryptographic purposes. Retaining
+                   the existing semantics for practical purposes. */
                 getrandom_works = 0;
                 return 0;
             }
 
             if (errno == EINTR) {
                 if (PyErr_CheckSignals()) {
-                    if (!raise)
+                    if (!raise) {
                         Py_FatalError("getrandom() interrupted by a signal");
+                    }
                     return -1;
                 }
+
                 /* retry getrandom() */
                 continue;
             }
 
-            if (raise)
+            if (raise) {
                 PyErr_SetFromErrno(PyExc_OSError);
-            else
+            }
+            else {
                 Py_FatalError("getrandom() failed");
+            }
             return -1;
         }
 
@@ -218,7 +234,9 @@ static struct {
 } urandom_cache = { -1 };
 
 
-/* Read size bytes from /dev/urandom into buffer.
+/* Read 'size' random bytes from py_getrandom(). Fall back on reading from
+   /dev/urandom if getrandom() is not available.
+
    Call Py_FatalError() on error. */
 static void
 dev_urandom_noraise(unsigned char *buffer, Py_ssize_t size)
@@ -229,24 +247,26 @@ dev_urandom_noraise(unsigned char *buffer, Py_ssize_t size)
     assert (0 < size);
 
 #ifdef PY_GETRANDOM
-    if (py_getrandom(buffer, size, 0) == 1)
+    if (py_getrandom(buffer, size, 0) == 1) {
         return;
-    /* getrandom() is not supported by the running kernel, fall back
-     * on reading /dev/urandom */
+    }
+    /* getrandom() failed with ENOSYS,
+       fall back on reading /dev/urandom */
 #endif
 
     fd = _Py_open_noraise("/dev/urandom", O_RDONLY);
-    if (fd < 0)
+    if (fd < 0) {
         Py_FatalError("Failed to open /dev/urandom");
+    }
 
     while (0 < size)
     {
         do {
             n = read(fd, buffer, (size_t)size);
         } while (n < 0 && errno == EINTR);
-        if (n <= 0)
-        {
-            /* stop on error or if read(size) returned 0 */
+
+        if (n <= 0) {
+            /* read() failed or returned 0 bytes */
             Py_FatalError("Failed to read bytes from /dev/urandom");
             break;
         }
@@ -256,8 +276,10 @@ dev_urandom_noraise(unsigned char *buffer, Py_ssize_t size)
     close(fd);
 }
 
-/* Read size bytes from /dev/urandom into buffer.
-   Return 0 on success, raise an exception and return -1 on error. */
+/* Read 'size' random bytes from py_getrandom(). Fall back on reading from
+   /dev/urandom if getrandom() is not available.
+
+   Return 0 on success. Raise an exception and return -1 on error. */
 static int
 dev_urandom_python(char *buffer, Py_ssize_t size)
 {
@@ -273,12 +295,14 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
 
 #ifdef PY_GETRANDOM
     res = py_getrandom(buffer, size, 1);
-    if (res < 0)
+    if (res < 0) {
         return -1;
-    if (res == 1)
+    }
+    if (res == 1) {
         return 0;
-    /* getrandom() is not supported by the running kernel, fall back
-     * on reading /dev/urandom */
+    }
+    /* getrandom() failed with ENOSYS,
+       fall back on reading /dev/urandom */
 #endif
 
     if (urandom_cache.fd >= 0) {
@@ -325,8 +349,9 @@ dev_urandom_python(char *buffer, Py_ssize_t size)
 
     do {
         n = _Py_read(fd, buffer, (size_t)size);
-        if (n == -1)
+        if (n == -1) {
             return -1;
+        }
         if (n == 0) {
             PyErr_Format(PyExc_RuntimeError,
                     "Failed to read %zi bytes from /dev/urandom",
