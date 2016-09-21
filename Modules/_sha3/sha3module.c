@@ -136,8 +136,6 @@ class _sha3.shake_256 "SHA3object *" "&SHAKE256type"
 
 /* The structure for storing SHA3 info */
 
-#define PY_WITH_KECCAK 0
-
 typedef struct {
     PyObject_HEAD
     SHA3_state hash_state;
