@@ -2683,7 +2683,7 @@ objargs_mkstack(PyObject **small_stack, Py_ssize_t small_stack_size,
     PyObject **stack;
 
     /* Count the number of arguments */
-    Py_VA_COPY(countva, va);
+    va_copy(countva, va);
 
     n = 0;
     while (1) {
