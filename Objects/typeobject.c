@@ -6990,19 +6990,21 @@ update_all_slots(PyTypeObject* type)
 static int
 set_names(PyTypeObject *type)
 {
-    PyObject *key, *value, *tmp;
+    PyObject *key, *value, *set_name, *tmp;
     Py_ssize_t i = 0;
 
     while (PyDict_Next(type->tp_dict, &i, &key, &value)) {
-        if (PyObject_HasAttr(value, _PyUnicode_FromId(&PyId___set_name__))) {
-            tmp = PyObject_CallMethodObjArgs(
-                value, _PyUnicode_FromId(&PyId___set_name__),
-                type, key, NULL);
+        set_name = lookup_maybe(value, &PyId___set_name__);
+        if (set_name != NULL) {
+            tmp = PyObject_CallFunctionObjArgs(set_name, type, key, NULL);
+            Py_DECREF(set_name);
             if (tmp == NULL)
                 return -1;
             else
                 Py_DECREF(tmp);
         }
+        else if (PyErr_Occurred())
+            return -1;
     }
 
     return 0;
