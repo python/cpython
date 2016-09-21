@@ -77,6 +77,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25651: Allow falsy values to be used for msg parameter of subTest().
+
 - Issue #27932: Prevent memory leak in win32_ver().
 
 - Fix UnboundLocalError in socket._sendfile_use_sendfile.

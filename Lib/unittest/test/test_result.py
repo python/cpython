@@ -323,6 +323,16 @@ class Test_TestResult(unittest.TestCase):
                     'testGetSubTestDescriptionWithoutDocstringAndParams '
                     '(' + __name__ + '.Test_TestResult) (<subtest>)')
 
+    def testGetSubTestDescriptionForFalsyValues(self):
+        expected = 'testGetSubTestDescriptionForFalsyValues (%s.Test_TestResult) [%s]'
+        result = unittest.TextTestResult(None, True, 1)
+        for arg in [0, None, []]:
+            with self.subTest(arg):
+                self.assertEqual(
+                    result.getDescription(self._subtest),
+                    expected % (__name__, arg)
+                )
+
     def testGetNestedSubTestDescriptionWithoutDocstring(self):
         with self.subTest(foo=1):
             with self.subTest(bar=2):
