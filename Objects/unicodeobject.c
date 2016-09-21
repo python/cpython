@@ -2874,9 +2874,8 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
     writer.min_length = strlen(format) + 100;
     writer.overallocate = 1;
 
-    /* va_list may be an array (of 1 item) on some platforms (ex: AMD64).
-       Copy it to be able to pass a reference to a subfunction. */
-    Py_VA_COPY(vargs2, vargs);
+    // Copy varags to be able to pass a reference to a subfunction.
+    va_copy(vargs2, vargs);
 
     for (f = format; *f; ) {
         if (*f == '%') {
