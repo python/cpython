@@ -17,6 +17,7 @@ from .util import (strclass, safe_repr, _count_diff_all_purpose,
 
 __unittest = True
 
+_subtest_msg_sentinel = object()
 
 DIFF_OMITTED = ('\nDiff is %s characters long. '
                  'Set self.maxDiff to None to see it.')
@@ -497,7 +498,7 @@ class TestCase(object):
             result.addSuccess(test_case)
 
     @contextlib.contextmanager
-    def subTest(self, msg=None, **params):
+    def subTest(self, msg=_subtest_msg_sentinel, **params):
         """Return a context manager that will return the enclosed block
         of code in a subtest identified by the optional message and
         keyword parameters.  A failure in the subtest marks the test
@@ -1397,7 +1398,7 @@ class _SubTest(TestCase):
 
     def _subDescription(self):
         parts = []
-        if self._message:
+        if self._message is not _subtest_msg_sentinel:
             parts.append("[{}]".format(self._message))
         if self.params:
             params_desc = ', '.join(
