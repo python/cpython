@@ -2719,7 +2719,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
                         "PyUnicode_FromFormatV() expects an ASCII-encoded format "
                         "string, got a non-ASCII byte: 0x%02x",
                         (unsigned char)*p);
-                    return NULL;
+                    goto fail;
                 }
                 p++;
             }
