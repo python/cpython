@@ -467,8 +467,7 @@ va_build_value(const char *format, va_list va, int flags)
     const char *f = format;
     int n = countformat(f, '\0');
     va_list lva;
-
-    va_copy(lva, va);
+    PyObject *retval;
 
     if (n < 0)
         return NULL;
@@ -476,9 +475,14 @@ va_build_value(const char *format, va_list va, int flags)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    if (n == 1)
-        return do_mkvalue(&f, &lva, flags);
-    return do_mktuple(&f, &lva, '\0', n, flags);
+    va_copy(lva, va);
+    if (n == 1) {
+        retval = do_mkvalue(&f, &lva, flags);
+    } else {
+        retval = do_mktuple(&f, &lva, '\0', n, flags);
+    }
+    va_end(lva);
+    return retval;
 }
 
 
