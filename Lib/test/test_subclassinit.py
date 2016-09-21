@@ -148,6 +148,18 @@ class Test(unittest.TestCase):
             class A:
                 d = Descriptor()
 
+    def test_set_name_lookup(self):
+        resolved = []
+        class NonDescriptor:
+            def __getattr__(self, name):
+                resolved.append(name)
+
+        class A:
+            d = NonDescriptor()
+
+        self.assertNotIn('__set_name__', resolved,
+                         '__set_name__ is looked up in instance dict')
+
     def test_set_name_init_subclass(self):
         class Descriptor:
             def __set_name__(self, owner, name):
