@@ -2702,6 +2702,7 @@ objargs_mkstack(PyObject **small_stack, Py_ssize_t small_stack_size,
     else {
         stack = PyMem_Malloc(n * sizeof(stack[0]));
         if (stack == NULL) {
+            va_end(countva);
             PyErr_NoMemory();
             return NULL;
         }
@@ -2710,6 +2711,7 @@ objargs_mkstack(PyObject **small_stack, Py_ssize_t small_stack_size,
     for (i = 0; i < n; ++i) {
         stack[i] = va_arg(va, PyObject *);
     }
+    va_end(countva);
     return stack;
 }
 
