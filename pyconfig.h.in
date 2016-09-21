@@ -1361,9 +1361,6 @@
 #endif
 
 
-/* Define if a va_list is an array of some kind */
-#undef VA_LIST_IS_ARRAY
-
 /* Define if you want SIGFPE handled (see Include/pyfpe.h). */
 #undef WANT_SIGFPE_HANDLER
 
