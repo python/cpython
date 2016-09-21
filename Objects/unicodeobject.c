@@ -2891,6 +2891,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             do
             {
                 if ((unsigned char)*p > 127) {
+                    va_end(vargs2);
                     PyErr_Format(PyExc_ValueError,
                         "PyUnicode_FromFormatV() expects an ASCII-encoded format "
                         "string, got a non-ASCII byte: 0x%02x",
@@ -2911,9 +2912,11 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             f = p;
         }
     }
+    va_end(vargs2);
     return _PyUnicodeWriter_Finish(&writer);
 
   fail:
+    va_end(vargs2);
     _PyUnicodeWriter_Dealloc(&writer);
     return NULL;
 }
