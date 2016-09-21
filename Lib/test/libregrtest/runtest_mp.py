@@ -41,7 +41,7 @@ def run_test_in_subprocess(testname, ns):
     slaveargs = json.dumps(slaveargs)
 
     cmd = [sys.executable, *support.args_from_interpreter_flags(),
-           '-X', 'faulthandler',
+           '-u',    # Unbuffered stdout and stderr
            '-m', 'test.regrtest',
            '--slaveargs', slaveargs]
     if ns.pgo:
