@@ -141,20 +141,26 @@ int
 PyArg_VaParse(PyObject *args, const char *format, va_list va)
 {
     va_list lva;
+    int retval;
 
     va_copy(lva, va);
 
-    return vgetargs1(args, format, &lva, 0);
+    retval = vgetargs1(args, format, &lva, 0);
+    va_end(lva);
+    return retval;
 }
 
 int
 _PyArg_VaParse_SizeT(PyObject *args, const char *format, va_list va)
 {
     va_list lva;
+    int retval;
 
     va_copy(lva, va);
 
-    return vgetargs1(args, format, &lva, FLAG_SIZE_T);
+    retval = vgetargs1(args, format, &lva, FLAG_SIZE_T);
+    va_end(lva);
+    return retval;
 }
 
 
@@ -1405,6 +1411,7 @@ PyArg_VaParseTupleAndKeywords(PyObject *args,
     va_copy(lva, va);
 
     retval = vgetargskeywords(args, keywords, format, kwlist, &lva, 0);
+    va_end(lva);
     return retval;
 }
 
@@ -1430,6 +1437,7 @@ _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *args,
 
     retval = vgetargskeywords(args, keywords, format,
                               kwlist, &lva, FLAG_SIZE_T);
+    va_end(lva);
     return retval;
 }
 
@@ -1534,6 +1542,7 @@ _PyArg_VaParseTupleAndKeywordsFast(PyObject *args, PyObject *keywords,
     va_copy(lva, va);
 
     retval = vgetargskeywordsfast(args, keywords, parser, &lva, 0);
+    va_end(lva);
     return retval;
 }
 
@@ -1555,6 +1564,7 @@ _PyArg_VaParseTupleAndKeywordsFast_SizeT(PyObject *args, PyObject *keywords,
     va_copy(lva, va);
 
     retval = vgetargskeywordsfast(args, keywords, parser, &lva, FLAG_SIZE_T);
+    va_end(lva);
     return retval;
 }
 
