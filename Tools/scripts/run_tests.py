@@ -26,6 +26,7 @@ def is_resource_use_flag(arg):
 
 def main(regrtest_args):
     args = [sys.executable,
+            '-u',                 # Unbuffered stdout and stderr
             '-W', 'default',      # Warnings set to 'default'
             '-bb',                # Warnings about bytes/bytearray
             '-E',                 # Ignore environment variables
