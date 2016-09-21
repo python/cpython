@@ -521,15 +521,23 @@ coverage-lcov:
 	    --base-directory $(realpath $(abs_builddir)) \
 	    --path $(realpath $(abs_srcdir)) \
 	    --output-file $(COVERAGE_INFO)
-	: # remove 3rd party modules and system headers
+	: # remove 3rd party modules, system headers and internal files with
+	: # debug, test or dummy functions.
 	@lcov --remove $(COVERAGE_INFO) \
+	    '*/Modules/_blake2/impl/*' \
 	    '*/Modules/_ctypes/libffi*/*' \
 	    '*/Modules/_decimal/libmpdec/*' \
+	    '*/Modules/_sha3/kcp/*' \
 	    '*/Modules/expat/*' \
 	    '*/Modules/zlib/*' \
 	    '*/Include/*' \
+	    '*/Modules/xx*.c' \
+	    '*/Parser/listnode.c' \
+	    '*/Python/pyfpe.c' \
+	    '*/Python/pystrcmp.c' \
 	    '/usr/include/*' \
 	    '/usr/local/include/*' \
+	    '/usr/lib/gcc/*' \
 	    --output-file $(COVERAGE_INFO)
 	@genhtml $(COVERAGE_INFO) --output-directory $(COVERAGE_REPORT) \
 	    $(COVERAGE_REPORT_OPTIONS)
