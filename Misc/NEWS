@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28214: Now __set_name__ is looked up on the class instead of the
+  instance.
+
 - Issue #27955: Fallback on reading /dev/urandom device when the getrandom()
   syscall fails with EPERM, for example when blocked by SECCOMP.
 
