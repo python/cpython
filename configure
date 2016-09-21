@@ -13539,40 +13539,6 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-va_list_is_array=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether va_list is an array" >&5
-$as_echo_n "checking whether va_list is an array... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#ifdef HAVE_STDARG_PROTOTYPES
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-int
-main ()
-{
-va_list list1, list2; list1 = list2;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-else
-
-
-$as_echo "#define VA_LIST_IS_ARRAY 1" >>confdefs.h
-
- va_list_is_array=yes
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $va_list_is_array" >&5
-$as_echo "$va_list_is_array" >&6; }
-
 # sigh -- gethostbyname_r is a mess; it can have 3, 5 or 6 arguments :-(
 
 

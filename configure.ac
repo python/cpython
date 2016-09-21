@@ -4038,20 +4038,6 @@ x.sa_len = 0;]])],
   [AC_MSG_RESULT(no)]
 )
 
-va_list_is_array=no
-AC_MSG_CHECKING(whether va_list is an array)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#ifdef HAVE_STDARG_PROTOTYPES
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-]], [[va_list list1, list2; list1 = list2;]])],[],[
- AC_DEFINE(VA_LIST_IS_ARRAY, 1, [Define if a va_list is an array of some kind])
- va_list_is_array=yes
-])
-AC_MSG_RESULT($va_list_is_array)
-
 # sigh -- gethostbyname_r is a mess; it can have 3, 5 or 6 arguments :-(
 AH_TEMPLATE(HAVE_GETHOSTBYNAME_R,
   [Define this if you have some version of gethostbyname_r()])
