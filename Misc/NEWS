@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28086: Single var-positional argument of tuple subtype was passed
+  unscathed to the C-defined function.  Now it is converted to exact tuple.
+
 - Issue #28214: Now __set_name__ is looked up on the class instead of the
   instance.
 
