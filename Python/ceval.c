@@ -2646,14 +2646,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         _build_map_unpack: {
             int with_call = opcode == BUILD_MAP_UNPACK_WITH_CALL;
             int num_maps;
-            int function_location;
             int i;
             PyObject *sum = PyDict_New();
             if (sum == NULL)
                 goto error;
             if (with_call) {
                 num_maps = oparg & 0xff;
-                function_location = (oparg>>8) & 0xff;
             }
             else {
                 num_maps = oparg;
@@ -2666,6 +2664,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
                     if (intersection == NULL) {
                         if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                            int function_location = (oparg>>8) & 0xff;
                             PyObject *func = (
                                     PEEK(function_location + num_maps));
                             PyErr_Format(PyExc_TypeError,
@@ -2682,6 +2681,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                     if (PySet_GET_SIZE(intersection)) {
                         Py_ssize_t idx = 0;
                         PyObject *key;
+                        int function_location = (oparg>>8) & 0xff;
                         PyObject *func = PEEK(function_location + num_maps);
                         Py_hash_t hash;
                         _PySet_NextEntry(intersection, &idx, &key, &hash);
