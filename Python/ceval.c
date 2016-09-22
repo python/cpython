@@ -3310,7 +3310,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             }
             callargs = POP();
             func = TOP();
-            if (!PyTuple_Check(callargs)) {
+            if (!PyTuple_CheckExact(callargs)) {
                 if (Py_TYPE(callargs)->tp_iter == NULL &&
                         !PySequence_Check(callargs)) {
                     PyErr_Format(PyExc_TypeError,
@@ -3327,7 +3327,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                     goto error;
                 }
             }
-            assert(PyTuple_Check(callargs));
+            assert(PyTuple_CheckExact(callargs));
 
             result = do_call_core(func, callargs, kwargs);
             Py_DECREF(func);
