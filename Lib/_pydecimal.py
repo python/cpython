@@ -4156,7 +4156,7 @@ class Context(object):
         >>> context.create_decimal_from_float(3.1415926535897932)
         Traceback (most recent call last):
             ...
-        decimal.Inexact
+        decimal.Inexact: None
 
         """
         d = Decimal.from_float(f)       # An exact conversion
