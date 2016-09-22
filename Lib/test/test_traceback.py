@@ -19,7 +19,7 @@ test_frame = namedtuple('frame', ['f_code', 'f_globals', 'f_locals'])
 test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next'])
 
 
-class SyntaxTracebackCases(unittest.TestCase):
+class TracebackCases(unittest.TestCase):
     # For now, a very minimal set of tests.  I want to be sure that
     # formatting of SyntaxErrors works based on changes for 2.1.
 
@@ -105,10 +105,6 @@ class SyntaxTracebackCases(unittest.TestCase):
         else:
             str_name = '.'.join([X.__module__, X.__qualname__])
         self.assertEqual(err[0], "%s: %s\n" % (str_name, str_value))
-
-    def test_without_exception(self):
-        err = traceback.format_exception_only(None, None)
-        self.assertEqual(err, ['None\n'])
 
     def test_encoded_file(self):
         # Test that tracebacks are correctly printed for encoded source files:
@@ -455,6 +451,17 @@ class BaseExceptionReportingTests:
             exec("x = 5 | 4 |")
         msg = self.get_report(e).splitlines()
         self.assertEqual(msg[-2], '              ^')
+
+    def test_message_none(self):
+        # A message that looks like "None" should not be treated specially
+        err = self.get_report(Exception(None))
+        self.assertIn('Exception: None\n', err)
+        err = self.get_report(Exception('None'))
+        self.assertIn('Exception: None\n', err)
+        err = self.get_report(Exception())
+        self.assertIn('Exception\n', err)
+        err = self.get_report(Exception(''))
+        self.assertIn('Exception\n', err)
 
 
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):

@@ -140,7 +140,7 @@ def format_exception_only(etype, value):
 
 def _format_final_exc_line(etype, value):
     valuestr = _some_str(value)
-    if value == 'None' or value is None or not valuestr:
+    if value is None or not valuestr:
         line = "%s\n" % etype
     else:
         line = "%s: %s\n" % (etype, valuestr)
