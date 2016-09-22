@@ -1081,7 +1081,7 @@ class TestTotalOrdering(unittest.TestCase):
                 a <= b
 
     def test_pickle(self):
-        for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for name in '__lt__', '__gt__', '__le__', '__ge__':
                 with self.subTest(method=name, proto=proto):
                     method = getattr(Orderable_LT, name)
