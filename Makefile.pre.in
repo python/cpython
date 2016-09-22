@@ -497,7 +497,7 @@ build_all_generate_profile:
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LIBS="$(LIBS)"
 
 run_profile_task:
-	: # FIXME: can't run for a cross build
+	@ # FIXME: can't run for a cross build
 	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK) || true
 
 build_all_merge_profile:
@@ -521,8 +521,8 @@ coverage-lcov:
 	    --base-directory $(realpath $(abs_builddir)) \
 	    --path $(realpath $(abs_srcdir)) \
 	    --output-file $(COVERAGE_INFO)
-	: # remove 3rd party modules, system headers and internal files with
-	: # debug, test or dummy functions.
+	@ # remove 3rd party modules, system headers and internal files with
+	@ # debug, test or dummy functions.
 	@lcov --remove $(COVERAGE_INFO) \
 	    '*/Modules/_blake2/impl/*' \
 	    '*/Modules/_ctypes/libffi*/*' \
@@ -546,15 +546,15 @@ coverage-lcov:
 	@echo
 
 coverage-report:
-	: # force rebuilding of parser and importlib
+	@ # force rebuilding of parser and importlib
 	@touch $(GRAMMAR_INPUT)
 	@touch $(srcdir)/Lib/importlib/_bootstrap.py
 	@touch $(srcdir)/Lib/importlib/_bootstrap_external.py
-	: # build with coverage info
+	@ # build with coverage info
 	$(MAKE) coverage
-	: # run tests, ignore failures
+	@ # run tests, ignore failures
 	$(TESTRUNNER) $(TESTOPTS) || true
-	: # build lcov report
+	@ # build lcov report
 	$(MAKE) coverage-lcov
 
 # Run "Argument Clinic" over all source files
@@ -1020,7 +1020,7 @@ testall:	all platform
 # Run the test suite for both architectures in a Universal build on OSX.
 # Must be run on an Intel box.
 testuniversal:	all platform
-		if [ `arch` != 'i386' ];then \
+		@if [ `arch` != 'i386' ]; then \
 			echo "This can only be used on OSX/i386" ;\
 			exit 1 ;\
 		fi
@@ -1343,15 +1343,15 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 		$(PYTHON_FOR_BUILD) -m lib2to3.pgen2.driver $(DESTDIR)$(LIBDEST)/lib2to3/PatternGrammar.txt
 
 python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
-	# Substitution happens here, as the completely-expanded BINDIR
-	# is not available in configure
+	@ # Substitution happens here, as the completely-expanded BINDIR
+	@ # is not available in configure
 	sed -e "s,@EXENAME@,$(BINDIR)/python$(LDVERSION)$(EXE)," < $(srcdir)/Misc/python-config.in >python-config.py
-	# Replace makefile compat. variable references with shell script compat. ones; $(VAR) -> ${VAR}
+	@ # Replace makefile compat. variable references with shell script compat. ones; $(VAR) -> ${VAR}
 	sed -e 's,\$$(\([A-Za-z0-9_]*\)),\$$\{\1\},g' < Misc/python-config.sh >python-config
-	# On Darwin, always use the python version of the script, the shell
-	# version doesn't use the compiler customizations that are provided
-	# in python (_osx_support.py).
-	if test `uname -s` = Darwin; then \
+	@ # On Darwin, always use the python version of the script, the shell
+	@ # version doesn't use the compiler customizations that are provided
+	@ # in python (_osx_support.py).
+	@if test `uname -s` = Darwin; then \
 		cp python-config.py python-config; \
 	fi
 
