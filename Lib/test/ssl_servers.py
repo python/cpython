@@ -16,7 +16,7 @@ here = os.path.dirname(__file__)
 HOST = support.HOST
 CERTFILE = os.path.join(here, 'keycert.pem')
 
-# This one's based on HTTPServer, which is based on SocketServer
+# This one's based on HTTPServer, which is based on socketserver
 
 class HTTPSServer(_HTTPServer):
 
