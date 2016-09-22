@@ -2661,7 +2661,7 @@ else:
                     s.close()
 
         def test_socketserver(self):
-            """Using a SocketServer to create and manage SSL connections."""
+            """Using socketserver to create and manage SSL connections."""
             server = make_https_server(self, certfile=CERTFILE)
             # try to connect
             if support.verbose:
