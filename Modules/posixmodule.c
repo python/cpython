@@ -7087,7 +7087,7 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     path_t path;
     int dir_fd = DEFAULT_DIR_FD;
-    char buffer[MAXPATHLEN];
+    char buffer[MAXPATHLEN+1];
     ssize_t length;
     PyObject *return_value = NULL;
     static char *keywords[] = {"path", "dir_fd", NULL};
@@ -7102,16 +7102,17 @@ posix_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_READLINKAT
     if (dir_fd != DEFAULT_DIR_FD)
-        length = readlinkat(dir_fd, path.narrow, buffer, sizeof(buffer));
+        length = readlinkat(dir_fd, path.narrow, buffer, MAXPATHLEN);
     else
 #endif
-        length = readlink(path.narrow, buffer, sizeof(buffer));
+        length = readlink(path.narrow, buffer, MAXPATHLEN);
     Py_END_ALLOW_THREADS
 
     if (length < 0) {
         return_value = path_error(&path);
         goto exit;
     }
+    buffer[length] = '\0';
 
     if (PyUnicode_Check(path.object))
         return_value = PyUnicode_DecodeFSDefaultAndSize(buffer, length);
