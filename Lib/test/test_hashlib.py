@@ -339,12 +339,33 @@ class HashLibTestCase(unittest.TestCase):
         self.check_blocksize_name('sha256', 64, 32)
         self.check_blocksize_name('sha384', 128, 48)
         self.check_blocksize_name('sha512', 128, 64)
+
+    @requires_sha3
+    def test_blocksize_name_sha3(self):
         self.check_blocksize_name('sha3_224', 144, 28)
         self.check_blocksize_name('sha3_256', 136, 32)
         self.check_blocksize_name('sha3_384', 104, 48)
         self.check_blocksize_name('sha3_512', 72, 64)
         self.check_blocksize_name('shake_128', 168, 0, 32)
         self.check_blocksize_name('shake_256', 136, 0, 64)
+
+    def check_sha3(self, name, capacity, rate, suffix):
+        constructors = self.constructors_to_test[name]
+        for hash_object_constructor in constructors:
+            m = hash_object_constructor()
+            self.assertEqual(capacity + rate, 1600)
+            self.assertEqual(m._capacity_bits, capacity)
+            self.assertEqual(m._rate_bits, rate)
+            self.assertEqual(m._suffix, suffix)
+
+    @requires_sha3
+    def test_extra_sha3(self):
+        self.check_sha3('sha3_224', 448, 1152, b'\x06')
+        self.check_sha3('sha3_256', 512, 1088, b'\x06')
+        self.check_sha3('sha3_384', 768, 832, b'\x06')
+        self.check_sha3('sha3_512', 1024, 576, b'\x06')
+        self.check_sha3('shake_128', 256, 1344, b'\x1f')
+        self.check_sha3('shake_256', 512, 1088, b'\x1f')
 
     @requires_blake2
     def test_blocksize_name_blake2(self):
