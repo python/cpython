@@ -989,7 +989,7 @@ def runtest(test, verbose, quiet,
                 sys.stderr = stream
                 result = runtest_inner(test, verbose, quiet, huntrleaks,
                                        display_failure=False, pgo=pgo)
-                if result[0] == FAILED and not pgo:
+                if result[0] != PASSED and not pgo:
                     output = stream.getvalue()
                     orig_stderr.write(output)
                     orig_stderr.flush()
