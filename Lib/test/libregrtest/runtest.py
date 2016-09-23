@@ -117,7 +117,7 @@ def runtest(ns, test):
                 sys.stdout = stream
                 sys.stderr = stream
                 result = runtest_inner(ns, test, display_failure=False)
-                if result[0] == FAILED:
+                if result[0] != PASSED:
                     output = stream.getvalue()
                     orig_stderr.write(output)
                     orig_stderr.flush()
