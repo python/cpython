@@ -1282,14 +1282,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                 VISIT_QUIT(st, 0);
             if (cur & (DEF_LOCAL | USE | DEF_ANNOT)) {
                 char* msg;
-                if (cur & DEF_ANNOT) {
-                    msg = GLOBAL_ANNOT;
-                }
-                if (cur & DEF_LOCAL) {
-                    msg = GLOBAL_AFTER_ASSIGN;
-                }
-                else {
+                if (cur & USE) {
                     msg = GLOBAL_AFTER_USE;
+                } else if (cur & DEF_ANNOT) {
+                    msg = GLOBAL_ANNOT;
+                } else {  /* DEF_LOCAL */
+                    msg = GLOBAL_AFTER_ASSIGN;
                 }
                 PyErr_Format(PyExc_SyntaxError,
                              msg, name);
@@ -1315,14 +1313,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                 VISIT_QUIT(st, 0);
             if (cur & (DEF_LOCAL | USE | DEF_ANNOT)) {
                 char* msg;
-                if (cur & DEF_ANNOT) {
-                    msg = NONLOCAL_ANNOT;
-                }
-                if (cur & DEF_LOCAL) {
-                    msg = NONLOCAL_AFTER_ASSIGN;
-                }
-                else {
+                if (cur & USE) {
                     msg = NONLOCAL_AFTER_USE;
+                } else if (cur & DEF_ANNOT) {
+                    msg = NONLOCAL_ANNOT;
+                } else {  /* DEF_LOCAL */
+                    msg = NONLOCAL_AFTER_ASSIGN;
                 }
                 PyErr_Format(PyExc_SyntaxError, msg, name);
                 PyErr_SyntaxLocationObject(st->st_filename,
