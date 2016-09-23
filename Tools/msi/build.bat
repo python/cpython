@@ -43,6 +43,9 @@ if defined BUILDDOC (
     if errorlevel 1 goto :eof
 )
 
+rem Build the launcher MSI separately
+msbuild "%D%launcher\launcher.wixproj" /p:Platform=x86
+
 set BUILD_CMD="%D%bundle\snapshot.wixproj"
 if defined BUILDTEST (
     set BUILD_CMD=%BUILD_CMD% /p:UseTestMarker=true
