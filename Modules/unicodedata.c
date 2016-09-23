@@ -1041,8 +1041,8 @@ _cmpname(PyObject *self, int code, const char* name, int namelen)
 {
     /* check if code corresponds to the given name */
     int i;
-    char buffer[NAME_MAXLEN];
-    if (!_getucname(self, code, buffer, sizeof(buffer), 1))
+    char buffer[NAME_MAXLEN+1];
+    if (!_getucname(self, code, buffer, NAME_MAXLEN, 1))
         return 0;
     for (i = 0; i < namelen; i++) {
         if (Py_TOUPPER(Py_CHARMASK(name[i])) != buffer[i])
@@ -1195,10 +1195,10 @@ static PyObject *
 unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
 /*[clinic end generated code: output=6bbb37a326407707 input=3e0367f534de56d9]*/
 {
-    char name[NAME_MAXLEN];
+    char name[NAME_MAXLEN+1];
     Py_UCS4 c = (Py_UCS4)chr;
 
-    if (!_getucname(self, c, name, sizeof(name), 0)) {
+    if (!_getucname(self, c, name, NAME_MAXLEN, 0)) {
         if (default_value == NULL) {
             PyErr_SetString(PyExc_ValueError, "no such name");
             return NULL;
