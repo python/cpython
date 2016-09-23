@@ -7,6 +7,12 @@
         <PropertyRef Id="UpgradeTable" />
         <PropertyRef Id="REGISTRYKEY" />
         
+        <Property Id="HHExe" Value="C:\Windows\hh.exe" />
+        <CustomAction Id="SetHHExe" Property="HHCExe" Value='[WindowsFolder]\hh.exe' Execute="immediate" />
+        <InstallExecuteSequence>
+            <Custom Action="SetHHExe" Before="CostFinalize">1</Custom>
+        </InstallExecuteSequence>
+        
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="doc" Primary="yes" />
             <ComponentRef Id="OptionalFeature" />
@@ -20,10 +26,12 @@
                     <RegistryValue Name="$(var.OptionalFeatureName)_shortcut" Type="string" Value="$(var.Version)" KeyPath="yes" />
                 </RegistryKey>
                 <Shortcut Id="python.chm"
-                          Target="[#python.chm]"
+                          Target="[HHExe]"
+                          Arguments="[#python.chm]"
                           Name="!(loc.ShortcutName)"
                           Description="!(loc.ShortcutDescription)"
-                          WorkingDirectory="InstallDirectory" />
+                          WorkingDirectory="InstallDirectory"
+                          Show="maximized" />
                 <RemoveFolder Id="Remove_MenuDir" On="uninstall" />
             </Component>
             <?endif ?>

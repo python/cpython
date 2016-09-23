@@ -97,6 +97,8 @@ Library
 Windows
 -------
 
+- Issue #28251: Improvements to help manuals on Windows.
+
 - Issue #28110: launcher.msi has different product codes between 32-bit and
   64-bit
 
