@@ -14,6 +14,7 @@
 {% endblock %}
 {%- macro searchbox() %}
 {# modified from sphinx/themes/basic/searchbox.html #}
+    {%- if builder != "htmlhelp" %}
     <div class="inline-search" style="display: none" role="search">
         <form class="inline-search" action="{{ pathto('search') }}" method="get">
           <input placeholder="{{ _('Quick search') }}" type="text" name="q" />
@@ -23,11 +24,12 @@
         </form>
     </div>
     <script type="text/javascript">$('.inline-search').show(0);</script>
+    {%- endif %}
 {%- endmacro %}
 {% block relbar1 %} {% if builder != 'qthelp' %} {{ relbar() }} {% endif %} {% endblock %}
 {% block relbar2 %} {% if builder != 'qthelp' %} {{ relbar() }} {% endif %} {% endblock %}
 {% block relbaritems %}
-    {%- if pagename != "search" and builder != "singlehtml" %}
+    {%- if pagename != "search" and builder != "singlehtml" and builder != "htmlhelp" %}
     <li class="right">
         {{ searchbox() }}
         {{ reldelim2 }}
@@ -36,6 +38,7 @@
 {% endblock %}
 {% block extrahead %}
     <link rel="shortcut icon" type="image/png" href="{{ pathto('_static/py.png', 1) }}" />
+    {% if builder != "htmlhelp" %}
     {% if not embedded %}<script type="text/javascript" src="{{ pathto('_static/copybutton.js', 1) }}"></script>{% endif %}
     {% if versionswitcher is defined and not embedded %}<script type="text/javascript" src="{{ pathto('_static/version_switch.js', 1) }}"></script>{% endif %}
     {% if pagename == 'whatsnew/changelog' and not embedded %}
@@ -94,6 +97,7 @@
           $('#searchbox-submit').click(dofilter);
       });
     </script>
+    {% endif %}
     {% endif %}
 {{ super() }}
 {% endblock %}
