@@ -2687,7 +2687,7 @@ objargs_mkstack(PyObject **small_stack, Py_ssize_t small_stack_size,
 
     n = 0;
     while (1) {
-        PyObject *arg = (PyObject *)va_arg(countva, PyObject *);
+        PyObject *arg = va_arg(countva, PyObject *);
         if (arg == NULL) {
             break;
         }
