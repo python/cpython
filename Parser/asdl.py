@@ -126,7 +126,7 @@ class ASDLParser(spark.GenericParser, object):
         "version ::= Id String"
         if version.value != "version":
             raise ASDLSyntaxError(version.lineno,
-                                msg="expected 'version', found %" % version)
+                                msg="expected 'version', found %s" % version)
         return V
 
     def p_definition_0(self, (definition,)):
