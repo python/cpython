@@ -17872,7 +17872,7 @@ mv config.c Modules
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&6
     echo "" >&6
-    echo "If you want a release build with all optimizations active (LTO, PGO, etc),"
+    echo "If you want a release build with all optimizations active (LTO, PGO, etc)," >&6
     echo "please run ./configure --with-optimizations" >&6
     echo "" >&6
     echo "" >&6
