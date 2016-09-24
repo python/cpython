@@ -149,10 +149,12 @@ static int X509_NAME_ENTRY_set(const X509_NAME_ENTRY *ne)
 }
 
 #ifndef OPENSSL_NO_COMP
+/* LCOV_EXCL_START */
 static int COMP_get_type(const COMP_METHOD *meth)
 {
     return meth->type;
 }
+/* LCOV_EXCL_END */
 #endif
 
 static pem_password_cb *SSL_CTX_get_default_passwd_cb(SSL_CTX *ctx)
@@ -2408,8 +2410,7 @@ PySSL_get_session(PySSLSocket *self, void *closure) {
         Py_RETURN_NONE;
     }
 #endif
-
-    pysess = PyObject_New(PySSLSession, &PySSLSession_Type);
+    pysess = PyObject_GC_New(PySSLSession, &PySSLSession_Type);
     if (pysess == NULL) {
         SSL_SESSION_free(session);
         return NULL;
@@ -2419,6 +2420,7 @@ PySSL_get_session(PySSLSocket *self, void *closure) {
     pysess->ctx = self->ctx;
     Py_INCREF(pysess->ctx);
     pysess->session = session;
+    PyObject_GC_Track(pysess);
     return (PyObject *)pysess;
 }
 
@@ -4289,11 +4291,12 @@ static PyTypeObject PySSLMemoryBIO_Type = {
 static void
 PySSLSession_dealloc(PySSLSession *self)
 {
+    PyObject_GC_UnTrack(self);
     Py_XDECREF(self->ctx);
     if (self->session != NULL) {
         SSL_SESSION_free(self->session);
     }
-    PyObject_Del(self);
+    PyObject_GC_Del(self);
 }
 
 static PyObject *
@@ -4455,7 +4458,7 @@ static PyTypeObject PySSLSession_Type = {
     0,                                         /*tp_getattro*/
     0,                                         /*tp_setattro*/
     0,                                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,                        /*tp_flags*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
     0,                                         /*tp_doc*/
     (traverseproc)PySSLSession_traverse,       /*tp_traverse*/
     (inquiry)PySSLSession_clear,               /*tp_clear*/
@@ -4590,6 +4593,7 @@ _ssl_RAND_status_impl(PyObject *module)
 }
 
 #ifndef OPENSSL_NO_EGD
+/* LCOV_EXCL_START */
 /*[clinic input]
 _ssl.RAND_egd
     path: object(converter="PyUnicode_FSConverter")
@@ -4615,6 +4619,7 @@ _ssl_RAND_egd_impl(PyObject *module, PyObject *path)
     }
     return PyLong_FromLong(bytes);
 }
+/* LCOV_EXCL_STOP */
 #endif /* OPENSSL_NO_EGD */
 
 
