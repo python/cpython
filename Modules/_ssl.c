@@ -154,7 +154,7 @@ static int COMP_get_type(const COMP_METHOD *meth)
 {
     return meth->type;
 }
-/* LCOV_EXCL_END */
+/* LCOV_EXCL_STOP */
 #endif
 
 static pem_password_cb *SSL_CTX_get_default_passwd_cb(SSL_CTX *ctx)
