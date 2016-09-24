@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #28203: Fix incorrect type in error message from
+  ``complex(1.0, {2:3})``. Patch by Soumya Sharma.
+
 - Issue #27955: Fallback on reading /dev/urandom device when the getrandom()
   syscall fails with EPERM, for example when blocked by SECCOMP.
 
