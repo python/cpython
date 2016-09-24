@@ -965,17 +965,28 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     nbr = r->ob_type->tp_as_number;
-    if (i != NULL)
-        nbi = i->ob_type->tp_as_number;
-    if (nbr == NULL || nbr->nb_float == NULL ||
-        ((i != NULL) && (nbi == NULL || nbi->nb_float == NULL))) {
+    if (nbr == NULL || nbr->nb_float == NULL) {
         PyErr_Format(PyExc_TypeError,
-            "complex() argument must be a string or a number, not '%.200s'",
-            Py_TYPE(r)->tp_name);
+                     "complex() first argument must be a string or a number, "
+                     "not '%.200s'",
+                     Py_TYPE(r)->tp_name);
         if (own_r) {
             Py_DECREF(r);
         }
         return NULL;
+    }
+    if (i != NULL) {
+        nbi = i->ob_type->tp_as_number;
+        if (nbi == NULL || nbi->nb_float == NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "complex() second argument must be a number, "
+                         "not '%.200s'",
+                         Py_TYPE(i)->tp_name);
+            if (own_r) {
+                Py_DECREF(r);
+            }
+            return NULL;
+        }
     }
 
     /* If we get this far, then the "real" and "imag" parts should
