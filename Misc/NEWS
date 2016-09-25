@@ -42,6 +42,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #27611: Fixed support of default root window in the Tix module.
+
 - Issue #24363: When parsing HTTP header fields, if an invalid line is
   encountered, skip it and continue parsing.  Previously, no more header
   fields were parsed, which could lead to fields for HTTP framing like
