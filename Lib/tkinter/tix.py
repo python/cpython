@@ -472,11 +472,17 @@ class DisplayStyle:
     """DisplayStyle - handle configuration options shared by
     (multiple) Display Items"""
 
-    def __init__(self, itemtype, cnf={}, **kw):
-        master = tkinter._default_root              # global from Tkinter
-        if not master and 'refwindow' in cnf: master=cnf['refwindow']
-        elif not master and 'refwindow' in kw:  master= kw['refwindow']
-        elif not master: raise RuntimeError("Too early to create display style: no root window")
+    def __init__(self, itemtype, cnf={}, *, master=None, **kw):
+        if not master:
+            if 'refwindow' in kw:
+                master = kw['refwindow']
+            elif 'refwindow' in cnf:
+                master = cnf['refwindow']
+            else:
+                master = tkinter._default_root
+                if not master:
+                    raise RuntimeError("Too early to create display style: "
+                                       "no root window")
         self.tk = master.tk
         self.stylename = self.tk.call('tixDisplayStyle', itemtype,
                             *self._options(cnf,kw) )
