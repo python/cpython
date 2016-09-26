@@ -80,6 +80,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27897: Fixed possible crash in sqlite3.Connection.create_collation()
+  if pass invalid string-like object as a name.  Patch by Xiang Zhang.
+
 - Issue #18893: Fix invalid exception handling in Lib/ctypes/macholib/dyld.py.
   Patch by Madison May.
 
