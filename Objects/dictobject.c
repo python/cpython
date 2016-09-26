@@ -419,7 +419,7 @@ dk_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
  * (which cannot fail and thus can do no allocation).
  */
 static PyDictKeysObject empty_keys_struct = {
-        2, /* dk_refcnt 1 for this struct, 1 for dummy_struct */
+        1, /* dk_refcnt */
         1, /* dk_size */
         lookdict_split, /* dk_lookup */
         0, /* dk_usable (immutable) */
