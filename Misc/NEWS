@@ -47,6 +47,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18893: Fix invalid exception handling in Lib/ctypes/macholib/dyld.py.
+  Patch by Madison May.
+
 - Issue #27611: Fixed support of default root window in the tkinter.tix module.
   Added the master parameter in the DisplayStyle constructor.
 
