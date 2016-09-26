@@ -710,13 +710,14 @@ top:
     }
     else {
         ep = &ep0[ix];
+        assert(ep->me_key != NULL);
         if (ep->me_key == key) {
             *value_addr = &ep->me_value;
             if (hashpos != NULL)
                 *hashpos = i;
             return ix;
         }
-        if (ep->me_key != NULL && ep->me_hash == hash) {
+        if (ep->me_hash == hash) {
             startkey = ep->me_key;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -755,6 +756,7 @@ top:
             continue;
         }
         ep = &ep0[ix];
+        assert(ep->me_key != NULL);
         if (ep->me_key == key) {
             if (hashpos != NULL) {
                 *hashpos = i;
@@ -762,7 +764,7 @@ top:
             *value_addr = &ep->me_value;
             return ix;
         }
-        if (ep->me_hash == hash && ep->me_key != NULL) {
+        if (ep->me_hash == hash) {
             startkey = ep->me_key;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -822,9 +824,9 @@ lookdict_unicode(PyDictObject *mp, PyObject *key,
     }
     else {
         ep = &ep0[ix];
-        /* only split table can be ix != DKIX_DUMMY && me_key == NULL */
         assert(ep->me_key != NULL);
-        if (ep->me_key == key || (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
+        if (ep->me_key == key
+            || (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
             if (hashpos != NULL)
                 *hashpos = i;
             *value_addr = &ep->me_value;
@@ -849,10 +851,9 @@ lookdict_unicode(PyDictObject *mp, PyObject *key,
             continue;
         }
         ep = &ep0[ix];
+        assert(ep->me_key != NULL);
         if (ep->me_key == key
-            || (ep->me_hash == hash
-                && ep->me_key != NULL
-                && unicode_eq(ep->me_key, key))) {
+            || (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
             *value_addr = &ep->me_value;
             if (hashpos != NULL) {
                 *hashpos = i;
@@ -962,7 +963,7 @@ lookdict_split(PyDictObject *mp, PyObject *key,
     }
     assert(ix >= 0);
     ep = &ep0[ix];
-    assert(ep->me_key == NULL || PyUnicode_CheckExact(ep->me_key));
+    assert(ep->me_key != NULL && PyUnicode_CheckExact(ep->me_key));
     if (ep->me_key == key ||
         (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
         if (hashpos != NULL)
@@ -981,7 +982,7 @@ lookdict_split(PyDictObject *mp, PyObject *key,
         }
         assert(ix >= 0);
         ep = &ep0[ix];
-        assert(ep->me_key == NULL || PyUnicode_CheckExact(ep->me_key));
+        assert(ep->me_key != NULL && PyUnicode_CheckExact(ep->me_key));
         if (ep->me_key == key ||
             (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
             if (hashpos != NULL)
@@ -2881,7 +2882,7 @@ dict_traverse(PyObject *op, visitproc visit, void *arg)
 {
     PyDictObject *mp = (PyDictObject *)op;
     PyDictKeysObject *keys = mp->ma_keys;
-    PyDictKeyEntry *entries = DK_ENTRIES(mp->ma_keys);
+    PyDictKeyEntry *entries = DK_ENTRIES(keys);
     Py_ssize_t i, n = keys->dk_nentries;
 
     if (keys->dk_lookup == lookdict) {
