@@ -1719,6 +1719,8 @@ features:
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
+   Availability: Unix.
+
    .. versionadded:: 3.3
       The *dir_fd* argument.
 
