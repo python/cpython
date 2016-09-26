@@ -1498,11 +1498,13 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    if (!PyArg_ParseTuple(args, "O!O:create_collation(name, callback)", &PyUnicode_Type, &name, &callable)) {
+    if (!PyArg_ParseTuple(args, "UO:create_collation(name, callback)",
+                          &name, &callable)) {
         goto finally;
     }
 
-    uppercase_name = _PyObject_CallMethodId(name, &PyId_upper, NULL);
+    uppercase_name = _PyObject_CallMethodIdObjArgs((PyObject *)&PyUnicode_Type,
+                                                   &PyId_upper, name, NULL);
     if (!uppercase_name) {
         goto finally;
     }
