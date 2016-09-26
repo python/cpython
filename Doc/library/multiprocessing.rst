@@ -496,6 +496,9 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       If the optional argument *timeout* is ``None`` (the default), the method
       blocks until the process whose :meth:`join` method is called terminates.
       If *timeout* is a positive number, it blocks at most *timeout* seconds.
+      Note that the method returns ``None`` if its process terminates or if the
+      method times out.  Check the process's :attr:`exitcode` to determine if
+      it terminated.
 
       A process can be joined many times.
 
