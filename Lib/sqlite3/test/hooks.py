@@ -31,6 +31,11 @@ class CollationTests(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def CheckCreateCollationNotString(self):
+        con = sqlite.connect(":memory:")
+        with self.assertRaises(TypeError):
+            con.create_collation(None, lambda x, y: (x > y) - (x < y))
+
     def CheckCreateCollationNotCallable(self):
         con = sqlite.connect(":memory:")
         try:
@@ -46,6 +51,23 @@ class CollationTests(unittest.TestCase):
             self.fail("should have raised a ProgrammingError")
         except sqlite.ProgrammingError, e:
             pass
+
+    def CheckCreateCollationBadUpper(self):
+        class BadUpperStr(str):
+            def upper(self):
+                return None
+        con = sqlite.connect(":memory:")
+        mycoll = lambda x, y: -((x > y) - (x < y))
+        con.create_collation(BadUpperStr("mycoll"), mycoll)
+        result = con.execute("""
+            select x from (
+            select 'a' as x
+            union
+            select 'b' as x
+            ) order by x collate mycoll
+            """).fetchall()
+        self.assertEqual(result[0][0], 'b')
+        self.assertEqual(result[1][0], 'a')
 
     def CheckCollationIsUsed(self):
         if sqlite.version_info < (3, 2, 1):  # old SQLite versions crash on this test
