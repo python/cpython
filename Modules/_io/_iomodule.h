@@ -153,7 +153,7 @@ extern PyObject *_PyIO_get_locale_module(_PyIO_State *);
 
 #ifdef MS_WINDOWS
 extern char _PyIO_get_console_type(PyObject *);
-#endif
+#endif
 
 extern PyObject *_PyIO_str_close;
 extern PyObject *_PyIO_str_closed;
