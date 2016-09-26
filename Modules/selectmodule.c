@@ -1252,7 +1252,7 @@ pyepoll_internal_close(pyEpoll_Object *self)
 }
 
 static PyObject *
-newPyEpoll_Object(PyTypeObject *type, int sizehint, int flags, SOCKET fd)
+newPyEpoll_Object(PyTypeObject *type, int sizehint, SOCKET fd)
 {
     pyEpoll_Object *self;
 
@@ -1264,12 +1264,10 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, int flags, SOCKET fd)
     if (fd == -1) {
         Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_EPOLL_CREATE1
-        flags |= EPOLL_CLOEXEC;
-        if (flags)
-            self->epfd = epoll_create1(flags);
-        else
-#endif
+        self->epfd = epoll_create1(EPOLL_CLOEXEC);
+#else
         self->epfd = epoll_create(sizehint);
+#endif
         Py_END_ALLOW_THREADS
     }
     else {
@@ -1305,8 +1303,12 @@ pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyErr_SetString(PyExc_ValueError, "negative sizehint");
         return NULL;
     }
+    if (flags && flags != EPOLL_CLOEXEC) {
+        PyErr_SetString(PyExc_OSError, "invalid flags");
+        return NULL;
+    }
 
-    return newPyEpoll_Object(type, sizehint, flags, -1);
+    return newPyEpoll_Object(type, sizehint, -1);
 }
 
 
@@ -1364,7 +1366,7 @@ pyepoll_fromfd(PyObject *cls, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:fromfd", &fd))
         return NULL;
 
-    return newPyEpoll_Object((PyTypeObject*)cls, FD_SETSIZE - 1, 0, fd);
+    return newPyEpoll_Object((PyTypeObject*)cls, FD_SETSIZE - 1, fd);
 }
 
 PyDoc_STRVAR(pyepoll_fromfd_doc,
