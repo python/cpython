@@ -380,7 +380,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
     for (cur_slot = def->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
         switch (cur_slot->slot) {
             case Py_mod_create:
-                /* handled in PyModule_CreateFromSlots */
+                /* handled in PyModule_FromDefAndSpec2 */
                 break;
             case Py_mod_exec:
                 ret = ((int (*)(PyObject *))cur_slot->value)(module);
