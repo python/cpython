@@ -135,10 +135,11 @@ def framework_find(fn, executable_path=None, env=None):
         Python.framework
         Python.framework/Versions/Current
     """
+    error = None
     try:
         return dyld_find(fn, executable_path=executable_path, env=env)
     except ValueError as e:
-        pass
+        error = e
     fmwk_index = fn.rfind('.framework')
     if fmwk_index == -1:
         fmwk_index = len(fn)
@@ -147,7 +148,7 @@ def framework_find(fn, executable_path=None, env=None):
     try:
         return dyld_find(fn, executable_path=executable_path, env=env)
     except ValueError:
-        raise e
+        raise error
 
 def test_dyld_find():
     env = {}
