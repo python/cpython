@@ -521,7 +521,7 @@ error:
         char *cur;
         _Py_write_noraise(errpipe_write, "OSError:", 8);
         cur = hex_errno + sizeof(hex_errno);
-        while (saved_errno != 0 && cur > hex_errno) {
+        while (saved_errno != 0 && cur != hex_errno) {
             *--cur = Py_hexdigits[saved_errno % 16];
             saved_errno /= 16;
         }
