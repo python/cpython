@@ -42,6 +42,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27963: Fixed possible null pointer dereference in
+  ctypes.set_conversion_mode().  Patch by Xiang Zhang.
+
 - Issue #28284: Strengthen resistance of ``_json.encode_basestring_ascii()`` to
   integer overflow.
 

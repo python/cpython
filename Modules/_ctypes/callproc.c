@@ -1688,22 +1688,41 @@ between unicode and strings.  Returns the previous values.\n";
 static PyObject *
 set_conversion_mode(PyObject *self, PyObject *args)
 {
-    char *coding, *mode;
+    char *coding, *mode, *errors, *encoding=NULL;
     PyObject *result;
 
     if (!PyArg_ParseTuple(args, "zs:set_conversion_mode", &coding, &mode))
         return NULL;
-    result = Py_BuildValue("(zz)", _ctypes_conversion_encoding, _ctypes_conversion_errors);
-    if (coding) {
-        PyMem_Free(_ctypes_conversion_encoding);
-        _ctypes_conversion_encoding = PyMem_Malloc(strlen(coding) + 1);
-        strcpy(_ctypes_conversion_encoding, coding);
-    } else {
-        _ctypes_conversion_encoding = NULL;
+
+    result = Py_BuildValue("(zz)", _ctypes_conversion_encoding,
+                           _ctypes_conversion_errors);
+    if (!result) {
+        return NULL;
     }
+
+    if (coding) {
+        encoding = PyMem_Malloc(strlen(coding) + 1);
+        if (!encoding) {
+            Py_DECREF(result);
+            return PyErr_NoMemory();
+        }
+        strcpy(encoding, coding);
+    }
+
+    errors = PyMem_Malloc(strlen(mode) + 1);
+    if (!errors) {
+        Py_DECREF(result);
+        PyMem_Free(encoding);
+        return PyErr_NoMemory();
+    }
+    strcpy(errors, mode);
+
+    PyMem_Free(_ctypes_conversion_encoding);
+    _ctypes_conversion_encoding = encoding;
+
     PyMem_Free(_ctypes_conversion_errors);
-    _ctypes_conversion_errors = PyMem_Malloc(strlen(mode) + 1);
-    strcpy(_ctypes_conversion_errors, mode);
+    _ctypes_conversion_errors = errors;
+
     return result;
 }
 #endif
