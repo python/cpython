@@ -246,6 +246,15 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         lzd = LZMADecompressor(lzma.FORMAT_RAW, filters=FILTERS_RAW_1)
         self.assertRaises(LZMAError, lzd.decompress, COMPRESSED_XZ)
 
+    def test_decompressor_bug_28275(self):
+        # Test coverage for Issue 28275
+        lzd = LZMADecompressor()
+        for i in range(2):
+            try:
+                lzd.decompress(COMPRESSED_RAW_1)
+            except LZMAError:
+                pass
+
     # Test that LZMACompressor->LZMADecompressor preserves the input data.
 
     def test_roundtrip_xz(self):
