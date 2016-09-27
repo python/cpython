@@ -337,7 +337,7 @@ class Random(_random.Random):
                 result[i] = population[j]
         return result
 
-    def choices(self, k, population, weights=None, *, cum_weights=None):
+    def choices(self, population, weights=None, *, cum_weights=None, k=1):
         """Return a k sized list of population elements chosen with replacement.
 
         If the relative weights or cumulative weights are not specified,
