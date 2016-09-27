@@ -995,8 +995,10 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     }
 
     result = decompress_buf(d, max_length);
-    if(result == NULL)
+    if (result == NULL) {
+        lzs->next_in = NULL;
         return NULL;
+    }
 
     if (d->eof) {
         d->needs_input = 0;
