@@ -203,6 +203,7 @@ ascii_escape_unicode(PyObject *pystr)
     Py_ssize_t output_size;
     Py_ssize_t max_output_size;
     Py_ssize_t chars;
+    Py_ssize_t incr;
     PyObject *rval;
     char *output;
     Py_UNICODE *input_unicode;
@@ -210,13 +211,20 @@ ascii_escape_unicode(PyObject *pystr)
     input_chars = PyUnicode_GET_SIZE(pystr);
     input_unicode = PyUnicode_AS_UNICODE(pystr);
 
+    output_size = input_chars;
+    incr = 2; /* for quotes */
     /* One char input can be up to 6 chars output, estimate 4 of these */
-    if (input_chars > (PY_SSIZE_T_MAX - 2)/ MAX_EXPANSION) {
-        PyErr_SetString(PyExc_OverflowError, "string is too long to escape");
+    incr += MIN_EXPANSION * 4;
+    if (PY_SSIZE_T_MAX - incr < output_size) {
+        PyErr_NoMemory();
         return NULL;
     }
-    output_size = 2 + (MIN_EXPANSION * 4) + input_chars;
-    max_output_size = 2 + (input_chars * MAX_EXPANSION);
+    output_size += incr;
+    if (PY_SSIZE_T_MAX / MAX_EXPANSION < input_chars ||
+        PY_SSIZE_T_MAX - 2 < input_chars * MAX_EXPANSION)
+        max_output_size = PY_SSIZE_T_MAX;
+    else
+        max_output_size = 2 + (input_chars * MAX_EXPANSION);
     rval = PyString_FromStringAndSize(NULL, output_size);
     if (rval == NULL) {
         return NULL;
@@ -233,20 +241,20 @@ ascii_escape_unicode(PyObject *pystr)
             chars = ascii_escape_char(c, output, chars);
         }
         if (output_size - chars < (1 + MAX_EXPANSION)) {
+            if (output_size == PY_SSIZE_T_MAX) {
+                Py_DECREF(rval);
+                PyErr_NoMemory();
+                return NULL;
+            }
             /* There's more than four, so let's resize by a lot */
-            Py_ssize_t new_output_size = output_size * 2;
-            /* This is an upper bound */
-            if (new_output_size > max_output_size) {
-                new_output_size = max_output_size;
+            if (PY_SSIZE_T_MAX / 2 >= output_size && output_size * 2 < max_output_size)
+                output_size *= 2;
+            else
+                output_size = max_output_size;
+            if (_PyString_Resize(&rval, output_size) == -1) {
+                return NULL;
             }
-            /* Make sure that the output size changed before resizing */
-            if (new_output_size != output_size) {
-                output_size = new_output_size;
-                if (_PyString_Resize(&rval, output_size) == -1) {
-                    return NULL;
-                }
-                output = PyString_AS_STRING(rval);
-            }
+            output = PyString_AS_STRING(rval);
         }
     }
     output[chars++] = '"';
@@ -263,7 +271,9 @@ ascii_escape_str(PyObject *pystr)
     Py_ssize_t i;
     Py_ssize_t input_chars;
     Py_ssize_t output_size;
+    Py_ssize_t max_output_size;
     Py_ssize_t chars;
+    Py_ssize_t incr;
     PyObject *rval;
     char *output;
     char *input_str;
@@ -295,14 +305,22 @@ ascii_escape_str(PyObject *pystr)
         }
     }
 
-    if (i == input_chars) {
-        /* Input is already ASCII */
-        output_size = 2 + input_chars;
-    }
-    else {
+    output_size = input_chars;
+    incr = 2; /* for quotes */
+    if (i != input_chars) {
         /* One char input can be up to 6 chars output, estimate 4 of these */
-        output_size = 2 + (MIN_EXPANSION * 4) + input_chars;
+        incr += MIN_EXPANSION * 4;
     }
+    if (PY_SSIZE_T_MAX - incr < output_size) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    output_size += incr;
+    if (PY_SSIZE_T_MAX / MIN_EXPANSION < input_chars ||
+        PY_SSIZE_T_MAX - 2 < input_chars * MIN_EXPANSION)
+        max_output_size = PY_SSIZE_T_MAX;
+    else
+        max_output_size = 2 + (input_chars * MIN_EXPANSION);
     rval = PyString_FromStringAndSize(NULL, output_size);
     if (rval == NULL) {
         return NULL;
@@ -324,11 +342,16 @@ ascii_escape_str(PyObject *pystr)
         }
         /* An ASCII char can't possibly expand to a surrogate! */
         if (output_size - chars < (1 + MIN_EXPANSION)) {
-            /* There's more than four, so let's resize by a lot */
-            output_size *= 2;
-            if (output_size > 2 + (input_chars * MIN_EXPANSION)) {
-                output_size = 2 + (input_chars * MIN_EXPANSION);
+            if (output_size == PY_SSIZE_T_MAX) {
+                Py_DECREF(rval);
+                PyErr_NoMemory();
+                return NULL;
             }
+            /* There's more than four, so let's resize by a lot */
+            if (PY_SSIZE_T_MAX / 2 >= output_size && output_size * 2 < max_output_size)
+                output_size *= 2;
+            else
+                output_size = max_output_size;
             if (_PyString_Resize(&rval, output_size) == -1) {
                 return NULL;
             }

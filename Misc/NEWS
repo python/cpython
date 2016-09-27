@@ -42,6 +42,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28284: Strengthen resistance of ``_json.encode_basestring_ascii()`` to
+  integer overflow.
+
 - Issue #27611: Fixed support of default root window in the Tix module.
 
 - Issue #24363: When parsing HTTP header fields, if an invalid line is
