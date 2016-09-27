@@ -2,8 +2,6 @@
 
 import errno
 import socket
-import threading
-import time
 import unittest
 from unittest import mock
 try:
@@ -1785,90 +1783,6 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
             test_utils.MockPattern(
                 'Fatal error on transport\nprotocol:.*\ntransport:.*'),
             exc_info=(ConnectionRefusedError, MOCK_ANY, MOCK_ANY))
-
-
-class SelectorLoopFunctionalTests(unittest.TestCase):
-
-    def setUp(self):
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
-
-    def tearDown(self):
-        self.loop.close()
-
-    @asyncio.coroutine
-    def recv_all(self, sock, nbytes):
-        buf = b''
-        while len(buf) < nbytes:
-            buf += yield from self.loop.sock_recv(sock, nbytes - len(buf))
-        return buf
-
-    def test_sock_connect_sock_write_race(self):
-        TIMEOUT = 60.0
-        PAYLOAD = b'DATA' * 1024 * 1024
-
-        class Server(threading.Thread):
-            def __init__(self, *args, srv_sock, **kwargs):
-                super().__init__(*args, **kwargs)
-                self.srv_sock = srv_sock
-
-            def run(self):
-                with self.srv_sock:
-                    srv_sock.listen(100)
-
-                    sock, addr = self.srv_sock.accept()
-                    sock.settimeout(TIMEOUT)
-
-                    with sock:
-                        sock.sendall(b'helo')
-
-                        buf = bytearray()
-                        while len(buf) < len(PAYLOAD):
-                            pack = sock.recv(1024 * 65)
-                            if not pack:
-                                break
-                            buf.extend(pack)
-
-        @asyncio.coroutine
-        def client(addr):
-            sock = socket.socket()
-            with sock:
-                sock.setblocking(False)
-
-                started = time.monotonic()
-                while True:
-                    if time.monotonic() - started > TIMEOUT:
-                        self.fail('unable to connect to the socket')
-                        return
-                    try:
-                        yield from self.loop.sock_connect(sock, addr)
-                    except OSError:
-                        yield from asyncio.sleep(0.05, loop=self.loop)
-                    else:
-                        break
-
-                # Give 'Server' thread a chance to accept and send b'helo'
-                time.sleep(0.1)
-
-                data = yield from self.recv_all(sock, 4)
-                self.assertEqual(data, b'helo')
-                yield from self.loop.sock_sendall(sock, PAYLOAD)
-
-        srv_sock = socket.socket()
-        srv_sock.settimeout(TIMEOUT)
-        srv_sock.bind(('127.0.0.1', 0))
-        srv_addr = srv_sock.getsockname()
-
-        srv = Server(srv_sock=srv_sock, daemon=True)
-        srv.start()
-
-        try:
-            self.loop.run_until_complete(
-                asyncio.wait_for(client(srv_addr), loop=self.loop,
-                                 timeout=TIMEOUT))
-        finally:
-            srv.join()
-
 
 if __name__ == '__main__':
     unittest.main()
