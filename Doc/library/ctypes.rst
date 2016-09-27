@@ -1400,8 +1400,9 @@ function is used to load the library into the process, and to get a handle to
 it.
 
 The *mode* parameter can be used to specify how the library is loaded.  For
-details, consult the :manpage:`dlopen(3)` manpage, on Windows, *mode* is
-ignored.
+details, consult the :manpage:`dlopen(3)` manpage.  On Windows, *mode* is
+ignored.  On posix systems, RTLD_NOW is always added, and is not
+configurable.
 
 The *use_errno* parameter, when set to True, enables a ctypes mechanism that
 allows accessing the system :data:`errno` error number in a safe way.
