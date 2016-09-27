@@ -1096,6 +1096,22 @@ class ImportErrorTests(unittest.TestCase):
         self.assertEqual(exc.name, 'somename')
         self.assertEqual(exc.path, 'somepath')
 
+        msg = "'invalid' is an invalid keyword argument for this function"
+        with self.assertRaisesRegex(TypeError, msg):
+            ImportError('test', invalid='keyword')
+
+        with self.assertRaisesRegex(TypeError, msg):
+            ImportError('test', name='name', invalid='keyword')
+
+        with self.assertRaisesRegex(TypeError, msg):
+            ImportError('test', path='path', invalid='keyword')
+
+        with self.assertRaisesRegex(TypeError, msg):
+            ImportError(invalid='keyword')
+
+        with self.assertRaisesRegex(TypeError, msg):
+            ImportError('test', invalid='keyword', another=True)
+
     def test_non_str_argument(self):
         # Issue #15778
         with check_warnings(('', BytesWarning), quiet=True):
