@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #21578: Fixed misleading error message when ImportError called with
+  invalid keyword args.
+
 - Issue #28203: Fix incorrect type in complex(1.0, {2:3}) error message.
   Patch by Soumya Sharma.
 
