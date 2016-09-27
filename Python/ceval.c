@@ -4245,6 +4245,9 @@ do_raise(PyObject *exc, PyObject *cause)
         goto raise_error;
     }
 
+    assert(type != NULL);
+    assert(value != NULL);
+
     if (cause) {
         PyObject *fixed_cause;
         if (PyExceptionClass_Check(cause)) {
@@ -4271,8 +4274,8 @@ do_raise(PyObject *exc, PyObject *cause)
 
     PyErr_SetObject(type, value);
     /* PyErr_SetObject incref's its arguments */
-    Py_XDECREF(value);
-    Py_XDECREF(type);
+    Py_DECREF(value);
+    Py_DECREF(type);
     return 0;
 
 raise_error:
