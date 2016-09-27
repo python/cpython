@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #21578: Fixed misleading error message when ImportError called with
+  invalid keyword args.
+
 - Issue #28203: Fix incorrect type in error message from
   ``complex(1.0, {2:3})``. Patch by Soumya Sharma.
 
