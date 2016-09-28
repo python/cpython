@@ -184,6 +184,14 @@ PyAPI_FUNC(int) _PyTime_GetMonotonicClockWithInfo(
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int) _PyTime_Init(void);
 
+/* Converts a timestamp to the Gregorian time, using the local time zone.
+   Return 0 on success, raise an exception and return -1 on error. */
+PyAPI_FUNC(int) _PyTime_localtime(time_t t, struct tm *tm);
+
+/* Converts a timestamp to the Gregorian time, assuming UTC.
+   Return 0 on success, raise an exception and return -1 on error. */
+PyAPI_FUNC(int) _PyTime_gmtime(time_t t, struct tm *tm);
+
 #ifdef __cplusplus
 }
 #endif
