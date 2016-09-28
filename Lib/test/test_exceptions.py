@@ -1112,6 +1112,20 @@ class ImportErrorTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             ImportError('test', invalid='keyword', another=True)
 
+    def test_reset_attributes(self):
+        exc = ImportError('test', name='name', path='path')
+        self.assertEqual(exc.args, ('test',))
+        self.assertEqual(exc.msg, 'test')
+        self.assertEqual(exc.name, 'name')
+        self.assertEqual(exc.path, 'path')
+
+        # Reset not specified attributes
+        exc.__init__()
+        self.assertEqual(exc.args, ())
+        self.assertEqual(exc.msg, None)
+        self.assertEqual(exc.name, None)
+        self.assertEqual(exc.path, None)
+
     def test_non_str_argument(self):
         # Issue #15778
         with check_warnings(('', BytesWarning), quiet=True):
