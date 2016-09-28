@@ -10,6 +10,8 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28289: ImportError.__init__ now resets not specified attributes.
+
 - Issue #21578: Fixed misleading error message when ImportError called with
   invalid keyword args.
 
