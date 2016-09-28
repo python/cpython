@@ -16,7 +16,7 @@ and omissions and lag behind changes in idlelib.
 
 
 IDLELIB FILES
-Implemetation files not in IDLE MENU are marked (nim).
+Implementation files not in IDLE MENU are marked (nim).
 Deprecated files and objects are listed separately as the end.
 
 Startup
