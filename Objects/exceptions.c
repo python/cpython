@@ -631,19 +631,17 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
     }
     Py_DECREF(empty_tuple);
 
-    if (name) {
-        Py_INCREF(name);
-        Py_XSETREF(self->name, name);
-    }
-    if (path) {
-        Py_INCREF(path);
-        Py_XSETREF(self->path, path);
-    }
+    Py_XINCREF(name);
+    Py_XSETREF(self->name, name);
+
+    Py_XINCREF(path);
+    Py_XSETREF(self->path, path);
+
     if (PyTuple_GET_SIZE(args) == 1) {
         msg = PyTuple_GET_ITEM(args, 0);
         Py_INCREF(msg);
-        Py_XSETREF(self->msg, msg);
     }
+    Py_XSETREF(self->msg, msg);
 
     return 0;
 }
