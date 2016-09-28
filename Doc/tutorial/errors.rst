@@ -201,7 +201,7 @@ indirectly) in the try clause. For example::
    ... except ZeroDivisionError as err:
    ...     print('Handling run-time error:', err)
    ...
-   Handling run-time error: int division or modulo by zero
+   Handling run-time error: division by zero
 
 
 .. _tut-raising:
