@@ -766,3 +766,55 @@ _PyTime_Init(void)
 
     return 0;
 }
+
+int
+_PyTime_localtime(time_t t, struct tm *tm)
+{
+#ifdef MS_WINDOWS
+    int error;
+
+    error = localtime_s(tm, &t);
+    if (error != 0) {
+        errno = error;
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+    return 0;
+#else /* !MS_WINDOWS */
+    if (localtime_r(&t, tm) == NULL) {
+#ifdef EINVAL
+        if (errno == 0)
+            errno = EINVAL;
+#endif
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+    return 0;
+#endif /* MS_WINDOWS */
+}
+
+int
+_PyTime_gmtime(time_t t, struct tm *tm)
+{
+#ifdef MS_WINDOWS
+    int error;
+
+    error = gmtime_s(tm, &t);
+    if (error != 0) {
+        errno = error;
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+    return 0;
+#else /* !MS_WINDOWS */
+    if (gmtime_r(&t, tm) == NULL) {
+#ifdef EINVAL
+        if (errno == 0)
+            errno = EINVAL;
+#endif
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+    return 0;
+#endif /* MS_WINDOWS */
+}

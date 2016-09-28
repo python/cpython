@@ -9,18 +9,6 @@
 
 #ifdef MS_WINDOWS
 #  include <winsock2.h>         /* struct timeval */
-static struct tm *localtime_r(const time_t *timep, struct tm *result)
-{
-    if (localtime_s(result, timep) == 0)
-        return result;
-    return NULL;
-}
-static struct tm *gmtime_r(const time_t *timep, struct tm *result)
-{
-    if (gmtime_s(result, timep) == 0)
-        return result;
-    return NULL;
-}
 #endif
 
 /* Differentiate between building the core module and building extension
@@ -2529,15 +2517,8 @@ date_local_from_object(PyObject *cls, PyObject *obj)
     if (_PyTime_ObjectToTime_t(obj, &t, _PyTime_ROUND_FLOOR) == -1)
         return NULL;
 
-    if (localtime_r(&t, &tm) == NULL) {
-        /* unconvertible time */
-#ifdef EINVAL
-        if (errno == 0)
-            errno = EINVAL;
-#endif
-        PyErr_SetFromErrno(PyExc_OSError);
+    if (_PyTime_localtime(t, &tm) != 0)
         return NULL;
-    }
 
     return PyObject_CallFunction(cls, "iii",
                                  tm.tm_year + 1900,
@@ -4199,8 +4180,9 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     return self;
 }
 
-/* TM_FUNC is the shared type of localtime_r() and gmtime_r(). */
-typedef struct tm *(*TM_FUNC)(const time_t *timer, struct tm*);
+/* TM_FUNC is the shared type of _PyTime_localtime() and
+ * _PyTime_gmtime(). */
+typedef int (*TM_FUNC)(time_t timer, struct tm*);
 
 /* As of version 2015f max fold in IANA database is
  * 23 hours at 1969-09-30 13:00:00 in Kwajalein. */
@@ -4229,10 +4211,8 @@ local(long long u)
         return -1;
     }
     /* XXX: add bounds checking */
-    if (localtime_r(&t, &local_time) == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
+    if (_PyTime_localtime(t, &local_time) != 0)
         return -1;
-    }
     return utc_to_seconds(local_time.tm_year + 1900,
                           local_time.tm_mon + 1,
                           local_time.tm_mday,
@@ -4252,13 +4232,8 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
     struct tm tm;
     int year, month, day, hour, minute, second, fold = 0;
 
-    if (f(&timet, &tm) == NULL) {
-#ifdef EINVAL
-        if (errno == 0)
-            errno = EINVAL;
-#endif
-        return PyErr_SetFromErrno(PyExc_OSError);
-    }
+    if (f(timet, &tm) != 0)
+        return NULL;
 
     year = tm.tm_year + 1900;
     month = tm.tm_mon + 1;
@@ -4273,7 +4248,7 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
      */
     second = Py_MIN(59, tm.tm_sec);
 
-    if (tzinfo == Py_None && f == localtime_r) {
+    if (tzinfo == Py_None && f == _PyTime_localtime) {
         long long probe_seconds, result_seconds, transition;
 
         result_seconds = utc_to_seconds(year, month, day,
@@ -4361,7 +4336,8 @@ datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
         return NULL;
 
     self = datetime_best_possible((PyObject *)type,
-                                  tz == Py_None ? localtime_r : gmtime_r,
+                                  tz == Py_None ? _PyTime_localtime :
+                                  _PyTime_gmtime,
                                   tz);
     if (self != NULL && tz != Py_None) {
         /* Convert UTC to tzinfo's zone. */
@@ -4376,7 +4352,7 @@ datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
 static PyObject *
 datetime_utcnow(PyObject *cls, PyObject *dummy)
 {
-    return datetime_best_possible(cls, gmtime_r, Py_None);
+    return datetime_best_possible(cls, _PyTime_gmtime, Py_None);
 }
 
 /* Return new local datetime from timestamp (Python timestamp -- a double). */
@@ -4395,7 +4371,8 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
         return NULL;
 
     self = datetime_from_timestamp(cls,
-                                   tzinfo == Py_None ? localtime_r : gmtime_r,
+                                   tzinfo == Py_None ? _PyTime_localtime :
+                                   _PyTime_gmtime,
                                    timestamp,
                                    tzinfo);
     if (self != NULL && tzinfo != Py_None) {
@@ -4413,7 +4390,7 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
     PyObject *result = NULL;
 
     if (PyArg_ParseTuple(args, "O:utcfromtimestamp", &timestamp))
-        result = datetime_from_timestamp(cls, gmtime_r, timestamp,
+        result = datetime_from_timestamp(cls, _PyTime_gmtime, timestamp,
                                          Py_None);
     return result;
 }
@@ -5040,14 +5017,8 @@ local_timezone_from_timestamp(time_t timestamp)
     PyObject *nameo = NULL;
     const char *zone = NULL;
 
-    if (localtime_r(&timestamp, &local_time_tm) == NULL) {
-#ifdef EINVAL
-        if (errno == 0)
-            errno = EINVAL;
-#endif
-        PyErr_SetFromErrno(PyExc_OSError);
+    if (_PyTime_localtime(timestamp, &local_time_tm) != 0)
         return NULL;
-    }
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     zone = local_time_tm.tm_zone;
     delta = new_delta(0, local_time_tm.tm_gmtoff, 0, 1);
@@ -5067,14 +5038,8 @@ local_timezone_from_timestamp(time_t timestamp)
         if (local_time == NULL) {
             return NULL;
         }
-        if (gmtime_r(&timestamp, &utc_time_tm) == NULL) {
-#ifdef EINVAL
-            if (errno == 0)
-                errno = EINVAL;
-#endif
-            PyErr_SetFromErrno(PyExc_OSError);
+        if (_PyTime_gmtime(timestamp, &utc_time_tm) != 0)
             return NULL;
-        }
         utc_time = new_datetime(utc_time_tm.tm_year + 1900,
                                 utc_time_tm.tm_mon + 1,
                                 utc_time_tm.tm_mday,
