@@ -364,8 +364,8 @@ user your application must create and manage such state via a session), you can
 just download middleware which does that, plug it in, and get on with coding
 the unique parts of your application.  The same thing with compression -- there
 is existing middleware which handles compressing your HTML using gzip to save
-on your server's bandwidth.  Authentication is another a problem easily solved
-using existing middleware.
+on your server's bandwidth.  Authentication is another problem that is easily
+solved using existing middleware.
 
 Although WSGI may seem complex, the initial phase of learning can be very
 rewarding because WSGI and the associated middleware already have solutions to
