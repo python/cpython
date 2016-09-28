@@ -4550,7 +4550,7 @@ class TestNamespace(TestCase):
         self.assertTrue(ns2 != ns3)
         self.assertTrue(ns2 != ns4)
 
-    def test_equality_returns_notimplemeted(self):
+    def test_equality_returns_notimplemented(self):
         # See issue 21481
         ns = argparse.Namespace(a=1, b=2)
         self.assertIs(ns.__eq__(None), NotImplemented)
