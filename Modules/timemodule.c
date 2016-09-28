@@ -343,21 +343,14 @@ static PyObject *
 time_gmtime(PyObject *self, PyObject *args)
 {
     time_t when;
-    struct tm buf, *local;
+    struct tm buf;
 
     if (!parse_time_t_args(args, "|O:gmtime", &when))
         return NULL;
 
     errno = 0;
-    local = gmtime(&when);
-    if (local == NULL) {
-#ifdef EINVAL
-        if (errno == 0)
-            errno = EINVAL;
-#endif
-        return PyErr_SetFromErrno(PyExc_OSError);
-    }
-    buf = *local;
+    if (_PyTime_gmtime(when, &buf) != 0)
+        return NULL;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     return tmtotuple(&buf);
 #else
@@ -388,26 +381,6 @@ GMT).  When 'seconds' is not passed in, convert the current time instead.\n\
 If the platform supports the tm_gmtoff and tm_zone, they are available as\n\
 attributes only.");
 
-static int
-pylocaltime(time_t *timep, struct tm *result)
-{
-    struct tm *local;
-
-    assert (timep != NULL);
-    local = localtime(timep);
-    if (local == NULL) {
-        /* unconvertible time */
-#ifdef EINVAL
-        if (errno == 0)
-            errno = EINVAL;
-#endif
-        PyErr_SetFromErrno(PyExc_OSError);
-        return -1;
-    }
-    *result = *local;
-    return 0;
-}
-
 static PyObject *
 time_localtime(PyObject *self, PyObject *args)
 {
@@ -416,7 +389,7 @@ time_localtime(PyObject *self, PyObject *args)
 
     if (!parse_time_t_args(args, "|O:localtime", &when))
         return NULL;
-    if (pylocaltime(&when, &buf) == -1)
+    if (_PyTime_localtime(when, &buf) != 0)
         return NULL;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     return tmtotuple(&buf);
@@ -611,7 +584,7 @@ time_strftime(PyObject *self, PyObject *args)
 
     if (tup == NULL) {
         time_t tt = time(NULL);
-        if (pylocaltime(&tt, &buf) == -1)
+        if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
     }
     else if (!gettmarg(tup, &buf) || !checktm(&buf))
@@ -796,7 +769,7 @@ time_asctime(PyObject *self, PyObject *args)
         return NULL;
     if (tup == NULL) {
         time_t tt = time(NULL);
-        if (pylocaltime(&tt, &buf) == -1)
+        if (_PyTime_localtime(tt, &buf) != 0)
             return NULL;
 
     } else if (!gettmarg(tup, &buf) || !checktm(&buf))
@@ -818,7 +791,7 @@ time_ctime(PyObject *self, PyObject *args)
     struct tm buf;
     if (!parse_time_t_args(args, "|O:ctime", &tt))
         return NULL;
-    if (pylocaltime(&tt, &buf) == -1)
+    if (_PyTime_localtime(tt, &buf) != 0)
         return NULL;
     return _asctime(&buf);
 }
@@ -1239,18 +1212,18 @@ PyInit_timezone(PyObject *m) {
     {
 #define YEAR ((time_t)((365 * 24 + 6) * 3600))
         time_t t;
-        struct tm *p;
+        struct tm p;
         long janzone, julyzone;
         char janname[10], julyname[10];
         t = (time((time_t *)0) / YEAR) * YEAR;
-        p = localtime(&t);
-        get_zone(janname, 9, p);
-        janzone = -get_gmtoff(t, p);
+        _PyTime_localtime(t, &p);
+        get_zone(janname, 9, &p);
+        janzone = -get_gmtoff(t, &p);
         janname[9] = '\0';
         t += YEAR/2;
-        p = localtime(&t);
-        get_zone(julyname, 9, p);
-        julyzone = -get_gmtoff(t, p);
+        _PyTime_localtime(t, &p);
+        get_zone(julyname, 9, &p);
+        julyzone = -get_gmtoff(t, &p);
         julyname[9] = '\0';
 
         if( janzone < julyzone ) {
