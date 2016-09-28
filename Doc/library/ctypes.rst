@@ -1672,32 +1672,30 @@ different ways, depending on the type and number of the parameters in the call:
 
    The optional third item is the default value for this parameter.
 
-This example demonstrates how to wrap the Windows ``MessageBoxA`` function so
+This example demonstrates how to wrap the Windows ``MessageBoxW`` function so
 that it supports default parameters and named arguments. The C declaration from
 the windows header file is this::
 
    WINUSERAPI int WINAPI
-   MessageBoxA(
+   MessageBoxW(
        HWND hWnd,
-       LPCSTR lpText,
-       LPCSTR lpCaption,
+       LPCWSTR lpText,
+       LPCWSTR lpCaption,
        UINT uType);
 
 Here is the wrapping with :mod:`ctypes`::
 
    >>> from ctypes import c_int, WINFUNCTYPE, windll
-   >>> from ctypes.wintypes import HWND, LPCSTR, UINT
-   >>> prototype = WINFUNCTYPE(c_int, HWND, LPCSTR, LPCSTR, UINT)
-   >>> paramflags = (1, "hwnd", 0), (1, "text", "Hi"), (1, "caption", None), (1, "flags", 0)
-   >>> MessageBox = prototype(("MessageBoxA", windll.user32), paramflags)
-   >>>
+   >>> from ctypes.wintypes import HWND, LPCWSTR, UINT
+   >>> prototype = WINFUNCTYPE(c_int, HWND, LPCWSTR, LPCWSTR, UINT)
+   >>> paramflags = (1, "hwnd", 0), (1, "text", "Hi"), (1, "caption", "Hello from ctypes"), (1, "flags", 0)
+   >>> MessageBox = prototype(("MessageBoxW", windll.user32), paramflags)
 
-The MessageBox foreign function can now be called in these ways::
+The ``MessageBox`` foreign function can now be called in these ways::
 
    >>> MessageBox()
    >>> MessageBox(text="Spam, spam, spam")
    >>> MessageBox(flags=2, text="foo bar")
-   >>>
 
 A second example demonstrates output parameters.  The win32 ``GetWindowRect``
 function retrieves the dimensions of a specified window by copying them into
