@@ -288,7 +288,7 @@ the same library that the Python runtime is using.
 
 .. c:function:: PyObject* Py_CompileStringExFlags(const char *str, const char *filename, int start, PyCompilerFlags *flags, int optimize)
 
-   Like :c:func:`Py_CompileStringExFlags`, but *filename* is a byte string
+   Like :c:func:`Py_CompileStringObject`, but *filename* is a byte string
    decoded from the filesystem encoding (:func:`os.fsdecode`).
 
    .. versionadded:: 3.2
