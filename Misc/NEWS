@@ -334,6 +334,9 @@ Library
 IDLE
 ----
 
+- Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
+  Patch by Roger Serwy, updated by Bayard Randel.
+
 - Issue #27922: Stop IDLE tests from 'flashing' gui widgets on the screen.
 
 - Add version to title of IDLE help window.
