@@ -52,6 +52,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28314: Fix function declaration (C flags) for the getiterator() method
+  of xml.etree.ElementTree.Element.
+
 - Issue #28148: Stop using localtime() and gmtime() in the time
   module.
 
