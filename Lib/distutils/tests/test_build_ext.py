@@ -168,6 +168,13 @@ class BuildExtTestCase(support.TempdirManager,
         cmd.finalize_options()
         self.assertEqual(cmd.rpath, ['one', 'two'])
 
+        # make sure cmd.link_objects is turned into a list
+        # if it's a string
+        cmd = build_ext(dist)
+        cmd.link_objects = 'one two,three'
+        cmd.finalize_options()
+        self.assertEqual(cmd.link_objects, ['one', 'two', 'three'])
+
         # XXX more tests to perform for win32
 
         # make sure define is turned into 2-tuples

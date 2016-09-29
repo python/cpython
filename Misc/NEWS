@@ -42,6 +42,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1703178: Fix the ability to pass the --link-objects option to the
+  distutils build_ext command.
+
 - Issue #28253: Fixed calendar functions for extreme months: 0001-01
   and 9999-12.
 
