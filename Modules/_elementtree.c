@@ -3702,7 +3702,7 @@ static PyMethodDef element_methods[] = {
     _ELEMENTTREE_ELEMENT_ITERTEXT_METHODDEF
     _ELEMENTTREE_ELEMENT_ITERFIND_METHODDEF
 
-    {"getiterator", (PyCFunction)_elementtree_Element_iter, METH_VARARGS|METH_KEYWORDS, _elementtree_Element_iter__doc__},
+    {"getiterator", (PyCFunction)_elementtree_Element_iter, METH_FASTCALL, _elementtree_Element_iter__doc__},
     _ELEMENTTREE_ELEMENT_GETCHILDREN_METHODDEF
 
     _ELEMENTTREE_ELEMENT_ITEMS_METHODDEF
