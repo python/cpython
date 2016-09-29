@@ -155,6 +155,9 @@ Windows
 Build
 -----
 
+- Issue #28258: Fixed build with Estonian locale (python-config and distclean
+  targets in Makefile).  Patch by Arfrever Frehtes Taifersar Arahesis.
+
 - Issue #26661: setup.py now detects system libffi with multiarch wrapper.
 
 - Issue #15819: Remove redundant include search directory option for building
