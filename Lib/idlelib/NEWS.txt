@@ -2,6 +2,9 @@ What's New in IDLE 2.7.13?
 ==========================
 *Release date: 2017-01-01?*
 
+- Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
+  Patch by Roger Serwy, updated by Bayard Randel.
+
 - Issue #27922: Stop IDLE tests from 'flashing' gui widgets on the screen.
 
 - Issue #17642: add larger font sizes for classroom projection.
