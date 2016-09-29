@@ -371,6 +371,9 @@ Library
   pickling and text representation purposes. Patch by Emanuel Barry and
   Serhiy Storchaka.
 
+- Issue #1703178: Fix the ability to pass the --link-objects option to the
+  distutils build_ext command.
+
 - Issue #28019: itertools.count() no longer rounds non-integer step in range
   between 1.0 and 2.0 to 1.
 
