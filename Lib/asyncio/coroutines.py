@@ -120,8 +120,8 @@ class CoroWrapper:
         def send(self, value):
             return self.gen.send(value)
 
-    def throw(self, exc):
-        return self.gen.throw(exc)
+    def throw(self, type, value=None, traceback=None):
+        return self.gen.throw(type, value, traceback)
 
     def close(self):
         return self.gen.close()
