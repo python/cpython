@@ -362,10 +362,9 @@ entries in the dictionary representing the filter):
      select automatically based on other filter options.
 
 The delta filter stores the differences between bytes, producing more repetitive
-input for the compressor in certain circumstances. It only supports a single
-The delta filter supports only one option, ``dist``. This indicates the distance
-between bytes to be subtracted. The default is 1, i.e. take the differences
-between adjacent bytes.
+input for the compressor in certain circumstances. It supports one option,
+``dist``. This indicates the distance between bytes to be subtracted. The
+default is 1, i.e. take the differences between adjacent bytes.
 
 The BCJ filters are intended to be applied to machine code. They convert
 relative branches, calls and jumps in the code to use absolute addressing, with
