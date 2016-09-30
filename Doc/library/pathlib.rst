@@ -930,7 +930,7 @@ call fails (for example because the path doesn't exist):
       >>> p.resolve()
       PosixPath('/home/antoine/pathlib')
 
-   `".."` components are also eliminated (this is the only method to do so)::
+   "``..``" components are also eliminated (this is the only method to do so)::
 
       >>> p = Path('docs/../setup.py')
       >>> p.resolve()
