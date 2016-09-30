@@ -18,7 +18,7 @@ Syntax errors, also known as parsing errors, are perhaps the most common kind of
 complaint you get while you are still learning Python::
 
    >>> while True print 'Hello world'
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1
        while True print 'Hello world'
                       ^
    SyntaxError: invalid syntax
@@ -44,15 +44,15 @@ programs, however, and result in error messages as shown here::
 
    >>> 10 * (1/0)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ZeroDivisionError: integer division or modulo by zero
    >>> 4 + spam*3
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    NameError: name 'spam' is not defined
    >>> '2' + 2
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    TypeError: cannot concatenate 'str' and 'int' objects
 
 The last line of the error message indicates what happened. Exceptions come in
@@ -223,7 +223,7 @@ exception to occur. For example::
 
    >>> raise NameError('HiThere')
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    NameError: HiThere
 
 The sole argument to :keyword:`raise` indicates the exception to be raised.
@@ -242,7 +242,7 @@ re-raise the exception::
    ...
    An exception flew by!
    Traceback (most recent call last):
-     File "<stdin>", line 2, in ?
+     File "<stdin>", line 2, in <module>
    NameError: HiThere
 
 
@@ -270,7 +270,7 @@ example::
    My exception occurred, value: 4
    >>> raise MyError('oops!')
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    __main__.MyError: 'oops!'
 
 In this example, the default :meth:`__init__` of :class:`Exception` has been
@@ -339,7 +339,7 @@ example::
    ...
    Goodbye, world!
    Traceback (most recent call last):
-     File "<stdin>", line 2, in ?
+     File "<stdin>", line 2, in <module>
    KeyboardInterrupt
 
 A *finally clause* is always executed before leaving the :keyword:`try`
@@ -372,7 +372,7 @@ the same :keyword:`try` statement works as of Python 2.5)::
    >>> divide("2", "1")
    executing finally clause
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
      File "<stdin>", line 3, in divide
    TypeError: unsupported operand type(s) for /: 'str' and 'str'
 
