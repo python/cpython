@@ -153,6 +153,9 @@ Public functions
       The *legacy* parameter only writes out ``.pyc`` files, not ``.pyo`` files
       no matter what the value of *optimize* is.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 .. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1)
 
    Compile the file with path *fullname*. Return a true value if the file
@@ -221,6 +224,9 @@ subdirectory and all its subdirectories::
    import re
    compileall.compile_dir('Lib/', rx=re.compile(r'[/\\][.]svn'), force=True)
 
+   # pathlib.Path objects can also be used.
+   import pathlib
+   compileall.compile_dir(pathlib.Path('Lib/'), force=True)
 
 .. seealso::
 

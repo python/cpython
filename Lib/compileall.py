@@ -25,6 +25,8 @@ from functools import partial
 __all__ = ["compile_dir","compile_file","compile_path"]
 
 def _walk_dir(dir, ddir=None, maxlevels=10, quiet=0):
+    if quiet < 2 and isinstance(dir, os.PathLike):
+        dir = os.fspath(dir)
     if not quiet:
         print('Listing {!r}...'.format(dir))
     try:
@@ -105,6 +107,8 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     optimize:  optimization level or -1 for level of the interpreter
     """
     success = True
+    if quiet < 2 and isinstance(fullname, os.PathLike):
+        fullname = os.fspath(fullname)
     name = os.path.basename(fullname)
     if ddir is not None:
         dfile = os.path.join(ddir, name)
