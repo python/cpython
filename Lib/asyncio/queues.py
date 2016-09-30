@@ -7,7 +7,6 @@ import heapq
 
 from . import compat
 from . import events
-from . import futures
 from . import locks
 from .coroutines import coroutine
 

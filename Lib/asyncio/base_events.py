@@ -115,24 +115,16 @@ def _ipaddr_info(host, port, family, type, proto):
 
     if port is None:
         port = 0
-    elif isinstance(port, bytes):
-        if port == b'':
-            port = 0
-        else:
-            try:
-                port = int(port)
-            except ValueError:
-                # Might be a service name like b"http".
-                port = socket.getservbyname(port.decode('ascii'))
-    elif isinstance(port, str):
-        if port == '':
-            port = 0
-        else:
-            try:
-                port = int(port)
-            except ValueError:
-                # Might be a service name like "http".
-                port = socket.getservbyname(port)
+    elif isinstance(port, bytes) and port == b'':
+        port = 0
+    elif isinstance(port, str) and port == '':
+        port = 0
+    else:
+        # If port's a service name like "http", don't skip getaddrinfo.
+        try:
+            port = int(port)
+        except (TypeError, ValueError):
+            return None
 
     if family == socket.AF_UNSPEC:
         afs = [socket.AF_INET, socket.AF_INET6]
