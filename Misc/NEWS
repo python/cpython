@@ -10,6 +10,8 @@ What's New in Python 3.6.0 beta 2
 Core and Builtins
 -----------------
 
+- Issue #27942: String constants now interned recursively in tuples and frozensets.
+
 - Issue #21578: Fixed misleading error message when ImportError called with
   invalid keyword args.
 
