@@ -934,7 +934,7 @@ call fails (for example because the path doesn't exist):
 
 .. method:: Path.rglob(pattern)
 
-   This is like calling :meth:`glob` with "``**``" added in front of the
+   This is like calling :meth:`Path.glob` with "``**``" added in front of the
    given *pattern*:
 
       >>> sorted(Path().rglob("*.py"))
