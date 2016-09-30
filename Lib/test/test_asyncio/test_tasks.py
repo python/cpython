@@ -1723,6 +1723,37 @@ class TaskTests(test_utils.TestCase):
         wd['cw'] = cw  # Would fail without __weakref__ slot.
         cw.gen = None  # Suppress warning from __del__.
 
+    def test_corowrapper_throw(self):
+        # Issue 429: CoroWrapper.throw must be compatible with gen.throw
+        def foo():
+            value = None
+            while True:
+                try:
+                    value = yield value
+                except Exception as e:
+                    value = e
+
+        exception = Exception("foo")
+        cw = asyncio.coroutines.CoroWrapper(foo())
+        cw.send(None)
+        self.assertIs(exception, cw.throw(exception))
+
+        cw = asyncio.coroutines.CoroWrapper(foo())
+        cw.send(None)
+        self.assertIs(exception, cw.throw(Exception, exception))
+
+        cw = asyncio.coroutines.CoroWrapper(foo())
+        cw.send(None)
+        exception = cw.throw(Exception, "foo")
+        self.assertIsInstance(exception, Exception)
+        self.assertEqual(exception.args, ("foo", ))
+
+        cw = asyncio.coroutines.CoroWrapper(foo())
+        cw.send(None)
+        exception = cw.throw(Exception, "foo", None)
+        self.assertIsInstance(exception, Exception)
+        self.assertEqual(exception.args, ("foo", ))
+
     @unittest.skipUnless(PY34,
                          'need python 3.4 or later')
     def test_log_destroyed_pending_task(self):
