@@ -102,6 +102,22 @@ class CompileallTests(unittest.TestCase):
         self.assertFalse(compileall.compile_dir(self.directory,
                                                 force=False, quiet=2))
 
+    def test_compile_file_pathlike(self):
+        self.assertFalse(os.path.isfile(self.bc_path))
+        # we should also test the output
+        with support.captured_stdout() as stdout:
+            self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path)))
+        self.assertEqual(stdout.getvalue(),
+                         "Compiling '{}'...\n".format(self.source_path))
+        self.assertTrue(os.path.isfile(self.bc_path))
+
+    def test_compile_file_pathlike_ddir(self):
+        self.assertFalse(os.path.isfile(self.bc_path))
+        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
+                                                ddir=pathlib.Path('ddir_path'),
+                                                quiet=2))
+        self.assertTrue(os.path.isfile(self.bc_path))
+
     def test_compile_path(self):
         with test.test_importlib.util.import_state(path=[self.directory]):
             self.assertTrue(compileall.compile_path(quiet=2))
@@ -137,6 +153,13 @@ class CompileallTests(unittest.TestCase):
         cached3 = importlib.util.cache_from_source(self.source_path3,
                                                    optimization=opt)
         self.assertTrue(os.path.isfile(cached3))
+
+    def test_compile_dir_pathlike(self):
+        self.assertFalse(os.path.isfile(self.bc_path))
+        with support.captured_stdout() as stdout:
+            compileall.compile_dir(pathlib.Path(self.directory))
+        self.assertIn("Listing '{}'...".format(self.directory), stdout.getvalue())
+        self.assertTrue(os.path.isfile(self.bc_path))
 
     @mock.patch('compileall.ProcessPoolExecutor')
     def test_compile_pool_called(self, pool_mock):
