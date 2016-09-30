@@ -3,7 +3,6 @@ import subprocess
 import warnings
 
 from . import compat
-from . import futures
 from . import protocols
 from . import transports
 from .coroutines import coroutine
