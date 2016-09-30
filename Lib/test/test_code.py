@@ -112,6 +112,37 @@ class CodeTest(unittest.TestCase):
         self.assertEqual(co.co_name, "funcname")
         self.assertEqual(co.co_firstlineno, 15)
 
+class CodeConstsTest(unittest.TestCase):
+
+    def find_const(self, consts, value):
+        for v in consts:
+            if v == value:
+                return v
+        self.assertIn(value, consts)  # rises an exception
+        self.fail('Should be never reached')
+
+    def assertIsInterned(self, s):
+        if s is not intern(s):
+            self.fail('String %r is not interned' % (s,))
+
+    @cpython_only
+    def test_interned_string(self):
+        co = compile('res = "str_value"', '?', 'exec')
+        v = self.find_const(co.co_consts, 'str_value')
+        self.assertIsInterned(v)
+
+    @cpython_only
+    def test_interned_string_in_tuple(self):
+        co = compile('res = ("str_value",)', '?', 'exec')
+        v = self.find_const(co.co_consts, ('str_value',))
+        self.assertIsInterned(v[0])
+
+    @cpython_only
+    def test_interned_string_default(self):
+        def f(a='str_value'):
+            return a
+        self.assertIsInterned(f())
+
 
 class CodeWeakRefTest(unittest.TestCase):
 
@@ -141,7 +172,7 @@ class CodeWeakRefTest(unittest.TestCase):
 def test_main(verbose=None):
     from test import test_code
     run_doctest(test_code, verbose)
-    run_unittest(CodeTest, CodeWeakRefTest)
+    run_unittest(CodeTest, CodeConstsTest, CodeWeakRefTest)
 
 
 if __name__ == "__main__":

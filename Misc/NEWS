@@ -10,6 +10,8 @@ What's New in Python 2.7.13?
 Core and Builtins
 -----------------
 
+- Issue #27942: String constants now interned recursively in tuples and frozensets.
+
 - Issue #15578: Correctly incref the parent module while importing.
 
 - Issue #26307: The profile-opt build now applys PGO to the built-in modules.

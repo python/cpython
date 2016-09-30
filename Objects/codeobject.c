@@ -39,6 +39,50 @@ intern_strings(PyObject *tuple)
     }
 }
 
+/* Intern selected string constants */
+static int
+intern_string_constants(PyObject *tuple)
+{
+    int modified = 0;
+    Py_ssize_t i;
+
+    for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
+        PyObject *v = PyTuple_GET_ITEM(tuple, i);
+        if (PyString_CheckExact(v)) {
+            if (all_name_chars((unsigned char *)PyString_AS_STRING(v))) {
+                PyObject *w = v;
+                PyString_InternInPlace(&v);
+                if (w != v) {
+                    PyTuple_SET_ITEM(tuple, i, v);
+                    modified = 1;
+                }
+            }
+        }
+        else if (PyTuple_CheckExact(v)) {
+            intern_string_constants(v);
+        }
+        else if (PyFrozenSet_CheckExact(v)) {
+            PyObject *tmp = PySequence_Tuple(v);
+            if (tmp == NULL) {
+                PyErr_Clear();
+                continue;
+            }
+            if (intern_string_constants(tmp)) {
+                v = PyFrozenSet_New(tmp);
+                if (v == NULL) {
+                    PyErr_Clear();
+                }
+                else {
+                    PyTuple_SET_ITEM(tuple, i, v);
+                    modified = 1;
+                }
+            }
+            Py_DECREF(tmp);
+        }
+    }
+    return modified;
+}
+
 
 PyCodeObject *
 PyCode_New(int argcount, int nlocals, int stacksize, int flags,
@@ -68,15 +112,7 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
     intern_strings(varnames);
     intern_strings(freevars);
     intern_strings(cellvars);
-    /* Intern selected string constants */
-    for (i = PyTuple_Size(consts); --i >= 0; ) {
-        PyObject *v = PyTuple_GetItem(consts, i);
-        if (!PyString_Check(v))
-            continue;
-        if (!all_name_chars((unsigned char *)PyString_AS_STRING(v)))
-            continue;
-        PyString_InternInPlace(&PyTuple_GET_ITEM(consts, i));
-    }
+    intern_string_constants(consts);
     co = PyObject_NEW(PyCodeObject, &PyCode_Type);
     if (co != NULL) {
         co->co_argcount = argcount;
