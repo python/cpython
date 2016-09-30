@@ -107,8 +107,7 @@ class CompileallTests(unittest.TestCase):
         # we should also test the output
         with support.captured_stdout() as stdout:
             self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path)))
-        self.assertEqual(stdout.getvalue(),
-                         "Compiling '{}'...\n".format(self.source_path))
+        self.assertRegex(stdout.getvalue(), r'Compiling ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_ddir(self):
@@ -158,7 +157,8 @@ class CompileallTests(unittest.TestCase):
         self.assertFalse(os.path.isfile(self.bc_path))
         with support.captured_stdout() as stdout:
             compileall.compile_dir(pathlib.Path(self.directory))
-        self.assertIn("Listing '{}'...".format(self.directory), stdout.getvalue())
+        line = stdout.getvalue().splitlines()[0]
+        self.assertRegex(line, r'Listing ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
     @mock.patch('compileall.ProcessPoolExecutor')
