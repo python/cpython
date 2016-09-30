@@ -142,26 +142,6 @@ class BaseEventTests(test_utils.TestCase):
             (INET, STREAM, TCP, '', ('1.2.3.4', 1)),
             base_events._ipaddr_info('1.2.3.4', b'1', INET, STREAM, TCP))
 
-    def test_getaddrinfo_servname(self):
-        INET = socket.AF_INET
-        STREAM = socket.SOCK_STREAM
-        TCP = socket.IPPROTO_TCP
-
-        self.assertEqual(
-            (INET, STREAM, TCP, '', ('1.2.3.4', 80)),
-            base_events._ipaddr_info('1.2.3.4', 'http', INET, STREAM, TCP))
-
-        self.assertEqual(
-            (INET, STREAM, TCP, '', ('1.2.3.4', 80)),
-            base_events._ipaddr_info('1.2.3.4', b'http', INET, STREAM, TCP))
-
-        # Raises "service/proto not found".
-        with self.assertRaises(OSError):
-            base_events._ipaddr_info('1.2.3.4', 'nonsense', INET, STREAM, TCP)
-
-        with self.assertRaises(OSError):
-            base_events._ipaddr_info('1.2.3.4', 'nonsense', INET, STREAM, TCP)
-
     @patch_socket
     def test_ipaddr_info_no_inet_pton(self, m_socket):
         del m_socket.inet_pton
@@ -1208,6 +1188,37 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     @patch_socket
     def test_create_connection_no_inet_pton(self, m_socket):
         self._test_create_connection_ip_addr(m_socket, False)
+
+    @patch_socket
+    def test_create_connection_service_name(self, m_socket):
+        m_socket.getaddrinfo = socket.getaddrinfo
+        sock = m_socket.socket.return_value
+
+        self.loop.add_reader = mock.Mock()
+        self.loop.add_reader._is_coroutine = False
+        self.loop.add_writer = mock.Mock()
+        self.loop.add_writer._is_coroutine = False
+
+        for service, port in ('http', 80), (b'http', 80):
+            coro = self.loop.create_connection(asyncio.Protocol,
+                                               '127.0.0.1', service)
+
+            t, p = self.loop.run_until_complete(coro)
+            try:
+                sock.connect.assert_called_with(('127.0.0.1', port))
+                _, kwargs = m_socket.socket.call_args
+                self.assertEqual(kwargs['family'], m_socket.AF_INET)
+                self.assertEqual(kwargs['type'], m_socket.SOCK_STREAM)
+            finally:
+                t.close()
+                test_utils.run_briefly(self.loop)  # allow transport to close
+
+        for service in 'nonsense', b'nonsense':
+            coro = self.loop.create_connection(asyncio.Protocol,
+                                               '127.0.0.1', service)
+
+            with self.assertRaises(OSError):
+                self.loop.run_until_complete(coro)
 
     def test_create_connection_no_local_addr(self):
         @asyncio.coroutine

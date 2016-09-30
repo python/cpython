@@ -594,6 +594,10 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
     """Return a future aggregating results from the given coroutines
     or futures.
 
+    Coroutines will be wrapped in a future and scheduled in the event
+    loop. They will not necessarily be scheduled in the same order as
+    passed in.
+
     All futures must share the same event loop.  If all the tasks are
     done successfully, the returned future's result is the list of
     results (in the order of the original sequence, not necessarily
