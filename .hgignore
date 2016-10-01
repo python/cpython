@@ -44,6 +44,7 @@ syntax: glob
 libpython*.a
 libpython*.so*
 libpython*.dylib
+libpython*.dll
 *.swp
 *.o
 *.pyc
@@ -87,8 +88,9 @@ Tools/unicode/build/
 Tools/unicode/MAPPINGS/
 BuildLog.htm
 __pycache__
-Programs/_freeze_importlib
-Programs/_testembed
+Programs/_freeze_importlib{,.exe}
+Programs/_testembed{,.exe}
+Programs/pgen.exe
 .coverage
 coverage/
 externals/
