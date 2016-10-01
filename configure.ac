@@ -3907,6 +3907,8 @@ AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_passwd], [], [], [[
   #include <sys/types.h>
   #include <pwd.h>
 ]])
++# Issue #21085: In Cygwin, siginfo_t does not have si_band field.
++AC_CHECK_MEMBERS([siginfo_t.si_band], [], [], [[#include <signal.h>]])
 
 AC_MSG_CHECKING(for time.h that defines altzone)
 AC_CACHE_VAL(ac_cv_header_time_altzone,[
