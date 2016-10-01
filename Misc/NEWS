@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27897: Fixed possible crash in sqlite3.Connection.create_collation()
+  if pass invalid string-like object as a name.  Original patch by Xiang Zhang.
+
 - Issue #1703178: Fix the ability to pass the --link-objects option to the
   distutils build_ext command.
 
