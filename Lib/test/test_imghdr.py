@@ -1,6 +1,7 @@
 import imghdr
 import io
 import os
+import pathlib
 import unittest
 import warnings
 from test.support import findfile, TESTFN, unlink
@@ -48,6 +49,12 @@ class TestImghdr(unittest.TestCase):
                 data = stream.read()
             self.assertEqual(imghdr.what(None, data), expected)
             self.assertEqual(imghdr.what(None, bytearray(data)), expected)
+
+    def test_pathlike_filename(self):
+        for filename, expected in TEST_FILES:
+            with self.subTest(filename=filename):
+                filename = findfile(filename, subdir='imghdrdata')
+                self.assertEqual(imghdr.what(pathlib.Path(filename)), expected)
 
     def test_register_test(self):
         def test_jumbo(h, file):
