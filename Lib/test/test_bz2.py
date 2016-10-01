@@ -821,6 +821,12 @@ class BZ2DecompressorTest(BaseTest):
         out.append(bzd.decompress(self.DATA[300:]))
         self.assertEqual(b''.join(out), self.TEXT)
 
+    def test_failure(self):
+        bzd = BZ2Decompressor()
+        self.assertRaises(Exception, bzd.decompress, self.BAD_DATA * 30)
+        # Previously, a second call could crash due to internal inconsistency
+        self.assertRaises(Exception, bzd.decompress, self.BAD_DATA * 30)
+
 class CompressDecompressTest(BaseTest):
     def testCompress(self):
         data = bz2.compress(self.TEXT)
