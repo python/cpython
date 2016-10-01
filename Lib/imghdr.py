@@ -1,5 +1,7 @@
 """Recognize image file formats based on their first few bytes."""
 
+from os import PathLike
+
 __all__ = ["what"]
 
 #-------------------------#
@@ -10,7 +12,7 @@ def what(file, h=None):
     f = None
     try:
         if h is None:
-            if isinstance(file, str):
+            if isinstance(file, (str, PathLike)):
                 f = open(file, 'rb')
                 h = f.read(32)
             else:
