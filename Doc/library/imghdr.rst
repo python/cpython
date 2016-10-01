@@ -20,6 +20,9 @@ The :mod:`imghdr` module defines the following function:
    string describing the image type.  If optional *h* is provided, the *filename*
    is ignored and *h* is assumed to contain the byte stream to test.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 The following image types are recognized, as listed below with the return value
 from :func:`what`:
 
