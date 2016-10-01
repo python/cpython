@@ -249,11 +249,9 @@ class CompressorDecompressorTestCase(unittest.TestCase):
     def test_decompressor_bug_28275(self):
         # Test coverage for Issue 28275
         lzd = LZMADecompressor()
-        for i in range(2):
-            try:
-                lzd.decompress(COMPRESSED_RAW_1)
-            except LZMAError:
-                pass
+        self.assertRaises(LZMAError, lzd.decompress, COMPRESSED_RAW_1)
+        # Previously, a second call could crash due to internal inconsistency
+        self.assertRaises(LZMAError, lzd.decompress, COMPRESSED_RAW_1)
 
     # Test that LZMACompressor->LZMADecompressor preserves the input data.
 
