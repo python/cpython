@@ -173,6 +173,9 @@ Windows
 Build
 -----
 
+- Issue #21085: Add configure check for siginfo_t.si_band, which Cygwin does
+  not provide.  Patch by Masayuki Yamamoto with review and rebase by Erik Bray.
+
 - Issue #28258: Fixed build with Estonian locale (python-config and distclean
   targets in Makefile).  Patch by Arfrever Frehtes Taifersar Arahesis.
 
