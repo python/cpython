@@ -95,7 +95,8 @@ Library
   that they don't call itermonthdates() which can cause datetime.date
   under/overflow.
 
-- Issue #28275: Fixed possible use adter free in LZMADecompressor.decompress().
+- Issue #28275: Fixed possible use after free in the decompress()
+  methods of the LZMADecompressor and BZ2Decompressor classes.
   Original patch by John Leitch.
 
 - Issue #27897: Fixed possible crash in sqlite3.Connection.create_collation()
