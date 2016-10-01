@@ -173,6 +173,9 @@ Windows
 Build
 -----
 
+- Issue #13756: Fix building extensions modules on Cygwin.  Patch by Roumen
+  Petrov, based on original patch by Jason Tishler.
+
 - Issue #21085: Add configure check for siginfo_t.si_band, which Cygwin does
   not provide.  Patch by Masayuki Yamamoto with review and rebase by Erik Bray.
 
