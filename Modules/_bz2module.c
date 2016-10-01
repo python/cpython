@@ -534,8 +534,10 @@ decompress(BZ2Decompressor *d, char *data, size_t len, Py_ssize_t max_length)
     }
 
     result = decompress_buf(d, max_length);
-    if(result == NULL)
+    if(result == NULL) {
+        bzs->next_in = NULL;
         return NULL;
+    }
 
     if (d->eof) {
         d->needs_input = 0;
