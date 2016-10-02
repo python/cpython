@@ -1093,7 +1093,7 @@ class PdbTestCase(unittest.TestCase):
 
 def load_tests(*args):
     from test import test_pdb
-    suites = [unittest.makeSuite(PdbTestCase)]
+    suites = [unittest.makeSuite(PdbTestCase), doctest.DocTestSuite(test_pdb)]
     return unittest.TestSuite(suites)
 
 
