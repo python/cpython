@@ -49,7 +49,7 @@ def open(filename, mode="rb", compresslevel=9,
             raise ValueError("Argument 'newline' not supported in binary mode")
 
     gz_mode = mode.replace("t", "")
-    if isinstance(filename, (str, bytes)):
+    if isinstance(filename, (str, bytes, os.PathLike)):
         binary_file = GzipFile(filename, gz_mode, compresslevel)
     elif hasattr(filename, "read") or hasattr(filename, "write"):
         binary_file = GzipFile(None, gz_mode, compresslevel, filename)
@@ -165,6 +165,8 @@ class GzipFile(_compression.BaseStream):
             filename = getattr(fileobj, 'name', '')
             if not isinstance(filename, (str, bytes)):
                 filename = ''
+        else:
+            filename = os.fspath(filename)
         if mode is None:
             mode = getattr(fileobj, 'mode', 'rb')
 
