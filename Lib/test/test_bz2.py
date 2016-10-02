@@ -6,6 +6,7 @@ from io import BytesIO, DEFAULT_BUFFER_SIZE
 import os
 import pickle
 import glob
+import pathlib
 import random
 import subprocess
 import sys
@@ -558,6 +559,13 @@ class BZ2FileTest(BaseTest):
             self.assertEqual(f.read(), self.DATA)
         # Sanity check that we are actually operating on the right file.
         with BZ2File(str_filename, "rb") as f:
+            self.assertEqual(f.read(), self.DATA)
+
+    def testOpenPathLikeFilename(self):
+        filename = pathlib.Path(self.filename)
+        with BZ2File(filename, "wb") as f:
+            f.write(self.DATA)
+        with BZ2File(filename, "rb") as f:
             self.assertEqual(f.read(), self.DATA)
 
     def testDecompressLimited(self):

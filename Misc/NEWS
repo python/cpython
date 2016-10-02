@@ -46,6 +46,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #28225: bz2 module now supports pathlib.  Initial patch by Ethan Furman.
+
 - Issue #28227: gzip now supports pathlib.  Patch by Ethan Furman.
 
 - Issue #27358: Optimized merging var-keyword arguments and improved error
