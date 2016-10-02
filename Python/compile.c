@@ -987,9 +987,9 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return 1-oparg;
         case BUILD_LIST_UNPACK:
         case BUILD_TUPLE_UNPACK:
+        case BUILD_TUPLE_UNPACK_WITH_CALL:
         case BUILD_SET_UNPACK:
         case BUILD_MAP_UNPACK:
-            return 1 - oparg;
         case BUILD_MAP_UNPACK_WITH_CALL:
             return 1 - oparg;
         case BUILD_MAP:
@@ -3549,7 +3549,7 @@ compiler_call_helper(struct compiler *c,
         if (nsubargs > 1) {
             /* If we ended up with more than one stararg, we need
                to concatenate them into a single sequence. */
-            ADDOP_I(c, BUILD_TUPLE_UNPACK, nsubargs);
+            ADDOP_I(c, BUILD_TUPLE_UNPACK_WITH_CALL, nsubargs);
         }
         else if (nsubargs == 0) {
             ADDOP_I(c, BUILD_TUPLE, 0);
