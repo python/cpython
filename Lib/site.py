@@ -336,9 +336,7 @@ def setquit():
     The repr of each object contains a hint at how it works.
 
     """
-    if os.sep == ':':
-        eof = 'Cmd-Q'
-    elif os.sep == '\\':
+    if os.sep == '\\':
         eof = 'Ctrl-Z plus Return'
     else:
         eof = 'Ctrl-D (i.e. EOF)'
