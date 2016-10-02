@@ -175,6 +175,10 @@ Windows
 Build
 -----
 
+- Issue #21124: Fix building the _struct module on Cygwin by passing ``NULL``
+  instead of ``&PyType_Type`` to PyVarObject_HEAD_INIT.  Patch by Masayuki
+  Yamamoto.
+
 - Issue #13756: Fix building extensions modules on Cygwin.  Patch by Roumen
   Petrov, based on original patch by Jason Tishler.
 
