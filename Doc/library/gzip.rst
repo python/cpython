@@ -56,6 +56,8 @@ The module defines the following items:
    .. versionchanged:: 3.4
       Added support for the ``'x'``, ``'xb'`` and ``'xt'`` modes.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 .. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
 
@@ -150,6 +152,9 @@ The module defines the following items:
       :term:`bytes-like objects <bytes-like object>`.
       The :meth:`~io.BufferedIOBase.read` method now accepts an argument of
       ``None``.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 .. function:: compress(data, compresslevel=9)
