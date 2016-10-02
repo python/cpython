@@ -2710,9 +2710,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        TARGET(BUILD_MAP_UNPACK_WITH_CALL)
         TARGET(BUILD_MAP_UNPACK) {
-            int with_call = opcode == BUILD_MAP_UNPACK_WITH_CALL;
             Py_ssize_t i;
             PyObject *sum = PyDict_New();
             if (sum == NULL)
@@ -2720,54 +2718,66 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
             for (i = oparg; i > 0; i--) {
                 PyObject *arg = PEEK(i);
-                if (with_call && PyDict_Size(sum)) {
-                    PyObject *intersection = _PyDictView_Intersect(sum, arg);
-
-                    if (intersection == NULL) {
-                        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                            PyObject *func = PEEK(2 + oparg);
-                            PyErr_Format(PyExc_TypeError,
-                                    "%.200s%.200s argument after ** "
-                                    "must be a mapping, not %.200s",
-                                    PyEval_GetFuncName(func),
-                                    PyEval_GetFuncDesc(func),
-                                    arg->ob_type->tp_name);
-                        }
-                        Py_DECREF(sum);
-                        goto error;
-                    }
-
-                    if (PySet_GET_SIZE(intersection)) {
-                        Py_ssize_t idx = 0;
-                        PyObject *key;
-                        PyObject *func = PEEK(2 + oparg);
-                        Py_hash_t hash;
-                        _PySet_NextEntry(intersection, &idx, &key, &hash);
-                        if (!PyUnicode_Check(key)) {
-                            PyErr_Format(PyExc_TypeError,
-                                    "%.200s%.200s keywords must be strings",
-                                    PyEval_GetFuncName(func),
-                                    PyEval_GetFuncDesc(func));
-                        } else {
-                            PyErr_Format(PyExc_TypeError,
-                                    "%.200s%.200s got multiple "
-                                    "values for keyword argument '%U'",
-                                    PyEval_GetFuncName(func),
-                                    PyEval_GetFuncDesc(func),
-                                    key);
-                        }
-                        Py_DECREF(intersection);
-                        Py_DECREF(sum);
-                        goto error;
-                    }
-                    Py_DECREF(intersection);
-                }
-
                 if (PyDict_Update(sum, arg) < 0) {
                     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
                         PyErr_Format(PyExc_TypeError,
-                                "'%.200s' object is not a mapping",
+                                "'%.200s' object is not a mapping1",
                                 arg->ob_type->tp_name);
+                    }
+                    Py_DECREF(sum);
+                    goto error;
+                }
+            }
+
+            while (oparg--)
+                Py_DECREF(POP());
+            PUSH(sum);
+            DISPATCH();
+        }
+
+        TARGET(BUILD_MAP_UNPACK_WITH_CALL) {
+            Py_ssize_t i;
+            PyObject *sum = PyDict_New();
+            if (sum == NULL)
+                goto error;
+
+            for (i = oparg; i > 0; i--) {
+                PyObject *arg = PEEK(i);
+                if (_PyDict_MergeEx(sum, arg, 2) < 0) {
+                    PyObject *func = PEEK(2 + oparg);
+                    if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                        PyErr_Format(PyExc_TypeError,
+                                "%.200s%.200s argument after ** "
+                                "must be a mapping, not %.200s",
+                                PyEval_GetFuncName(func),
+                                PyEval_GetFuncDesc(func),
+                                arg->ob_type->tp_name);
+                    }
+                    else if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+                        PyObject *exc, *val, *tb;
+                        PyErr_Fetch(&exc, &val, &tb);
+                        if (val && PyTuple_Check(val) && PyTuple_GET_SIZE(val) == 1) {
+                            PyObject *key = PyTuple_GET_ITEM(val, 0);
+                            if (!PyUnicode_Check(key)) {
+                                PyErr_Format(PyExc_TypeError,
+                                        "%.200s%.200s keywords must be strings",
+                                        PyEval_GetFuncName(func),
+                                        PyEval_GetFuncDesc(func));
+                            } else {
+                                PyErr_Format(PyExc_TypeError,
+                                        "%.200s%.200s got multiple "
+                                        "values for keyword argument '%U'",
+                                        PyEval_GetFuncName(func),
+                                        PyEval_GetFuncDesc(func),
+                                        key);
+                            }
+                            Py_XDECREF(exc);
+                            Py_XDECREF(val);
+                            Py_XDECREF(tb);
+                        }
+                        else {
+                            PyErr_Restore(exc, val, tb);
+                        }
                     }
                     Py_DECREF(sum);
                     goto error;
