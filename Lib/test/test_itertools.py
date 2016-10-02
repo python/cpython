@@ -184,6 +184,19 @@ class TestBasicOps(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, chain('abc', 'def'), compare=list('abcdef'))
 
+    def test_chain_setstate(self):
+        self.assertRaises(TypeError, chain().__setstate__, ())
+        self.assertRaises(TypeError, chain().__setstate__, [])
+        self.assertRaises(TypeError, chain().__setstate__, 0)
+        self.assertRaises(TypeError, chain().__setstate__, ([],))
+        self.assertRaises(TypeError, chain().__setstate__, (iter([]), []))
+        it = chain()
+        it.__setstate__((iter(['abc', 'def']),))
+        self.assertEqual(list(it), ['a', 'b', 'c', 'd', 'e', 'f'])
+        it = chain()
+        it.__setstate__((iter(['abc', 'def']), iter(['ghi'])))
+        self.assertEqual(list(it), ['ghi', 'a', 'b', 'c', 'd', 'e', 'f'])
+
     def test_combinations(self):
         self.assertRaises(TypeError, combinations, 'abc')       # missing r argument
         self.assertRaises(TypeError, combinations, 'abc', 2, 1) # too many arguments
@@ -630,6 +643,25 @@ class TestBasicOps(unittest.TestCase):
             next(c)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, cycle('abc'))
+
+    def test_cycle_setstate(self):
+        self.assertRaises(TypeError, cycle('').__setstate__, ())
+        self.assertRaises(TypeError, cycle('').__setstate__, [])
+        self.assertRaises(TypeError, cycle('').__setstate__, 0)
+        self.assertRaises(TypeError, cycle('').__setstate__, ([],))
+        self.assertRaises(TypeError, cycle('').__setstate__, ((), 0))
+        it = cycle('abc')
+        it.__setstate__((['de', 'fg'], 0))
+        self.assertEqual(list(islice(it, 15)),
+                         ['a', 'b', 'c', 'de', 'fg',
+                          'a', 'b', 'c', 'de', 'fg',
+                          'a', 'b', 'c', 'de', 'fg'])
+        it = cycle('abc')
+        it.__setstate__((['de', 'fg'], 1))
+        self.assertEqual(list(islice(it, 15)),
+                         ['a', 'b', 'c', 'de', 'fg',
+                          'de', 'fg', 'de', 'fg', 'de',
+                          'fg', 'de', 'fg', 'de', 'fg'])
 
     def test_groupby(self):
         # Check whether it accepts arguments correctly
