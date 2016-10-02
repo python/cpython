@@ -635,7 +635,7 @@ APIs:
 
    Copy the string *u* into a UCS4 buffer, including a null character, if
    *copy_null* is set.  Returns *NULL* and sets an exception on error (in
-   particular, a :exc:`ValueError` if *buflen* is smaller than the length of
+   particular, a :exc:`SystemError` if *buflen* is smaller than the length of
    *u*).  *buffer* is returned on success.
 
    .. versionadded:: 3.3
