@@ -147,8 +147,13 @@ static PyObject *
 groupby_setstate(groupbyobject *lz, PyObject *state)
 {
     PyObject *currkey, *currvalue, *tgtkey;
-    if (!PyArg_ParseTuple(state, "OOO", &currkey, &currvalue, &tgtkey))
+    if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "state is not a tuple");
         return NULL;
+    }
+    if (!PyArg_ParseTuple(state, "OOO", &currkey, &currvalue, &tgtkey)) {
+        return NULL;
+    }
     Py_INCREF(currkey);
     Py_XSETREF(lz->currkey, currkey);
     Py_INCREF(currvalue);
@@ -727,8 +732,13 @@ tee_setstate(teeobject *to, PyObject *state)
 {
     teedataobject *tdo;
     int index;
-    if (!PyArg_ParseTuple(state, "O!i", &teedataobject_type, &tdo, &index))
+    if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "state is not a tuple");
         return NULL;
+    }
+    if (!PyArg_ParseTuple(state, "O!i", &teedataobject_type, &tdo, &index)) {
+        return NULL;
+    }
     if (index < 0 || index > LINKCELLS) {
         PyErr_SetString(PyExc_ValueError, "Index out of range");
         return NULL;
@@ -971,9 +981,13 @@ cycle_setstate(cycleobject *lz, PyObject *state)
 {
     PyObject *saved=NULL;
     int firstpass;
-
-    if (!PyArg_ParseTuple(state, "O!i", &PyList_Type, &saved, &firstpass))
+    if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "state is not a tuple");
         return NULL;
+    }
+    if (!PyArg_ParseTuple(state, "O!i", &PyList_Type, &saved, &firstpass)) {
+        return NULL;
+    }
     Py_INCREF(saved);
     Py_XSETREF(lz->saved, saved);
     lz->firstpass = firstpass != 0;
@@ -1903,8 +1917,17 @@ chain_setstate(chainobject *lz, PyObject *state)
 {
     PyObject *source, *active=NULL;
 
-    if (! PyArg_ParseTuple(state, "O|O", &source, &active))
+    if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "state is not a tuple");
         return NULL;
+    }
+    if (!PyArg_ParseTuple(state, "O|O", &source, &active)) {
+        return NULL;
+    }
+    if (!PyIter_Check(source) || (active != NULL && !PyIter_Check(active))) {
+        PyErr_SetString(PyExc_TypeError, "Arguments must be iterators.");
+        return NULL;
+    }
 
     Py_INCREF(source);
     Py_XSETREF(lz->source, source);
@@ -3262,10 +3285,15 @@ permutations_setstate(permutationsobject *po, PyObject *state)
     PyObject *indices, *cycles, *result;
     Py_ssize_t n, i;
 
+    if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "state is not a tuple");
+        return NULL;
+    }
     if (!PyArg_ParseTuple(state, "O!O!",
                           &PyTuple_Type, &indices,
-                          &PyTuple_Type, &cycles))
+                          &PyTuple_Type, &cycles)) {
         return NULL;
+    }
 
     n = PyTuple_GET_SIZE(po->pool);
     if (PyTuple_GET_SIZE(indices) != n || PyTuple_GET_SIZE(cycles) != po->r) {
