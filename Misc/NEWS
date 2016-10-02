@@ -148,6 +148,8 @@ Library
 - Issue #27759: Fix selectors incorrectly retain invalid file descriptors.
   Patch by Mark Williams.
 
+- Issue #28325: Remove vestigal MacOS 9 macurl2path module and its tests.
+
 Windows
 -------
 
