@@ -183,6 +183,19 @@ class TestBasicOps(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, chain('abc', 'def'), compare=list('abcdef'))
 
+    def test_chain_setstate(self):
+        self.assertRaises(TypeError, chain().__setstate__, ())
+        self.assertRaises(TypeError, chain().__setstate__, [])
+        self.assertRaises(TypeError, chain().__setstate__, 0)
+        self.assertRaises(TypeError, chain().__setstate__, ([],))
+        self.assertRaises(TypeError, chain().__setstate__, (iter([]), []))
+        it = chain()
+        it.__setstate__((iter(['abc', 'def']),))
+        self.assertEqual(list(it), ['a', 'b', 'c', 'd', 'e', 'f'])
+        it = chain()
+        it.__setstate__((iter(['abc', 'def']), iter(['ghi'])))
+        self.assertEqual(list(it), ['ghi', 'a', 'b', 'c', 'd', 'e', 'f'])
+
     def test_combinations(self):
         self.assertRaises(TypeError, combinations, 'abc')       # missing r argument
         self.assertRaises(TypeError, combinations, 'abc', 2, 1) # too many arguments
@@ -667,18 +680,21 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(20, c), list('defgabcdefgabcdefgab'))
 
         # The first argument to setstate needs to be a tuple
-        with self.assertRaises(SystemError):
+        with self.assertRaises(TypeError):
             cycle('defg').__setstate__([list('abcdefg'), 0])
 
         # The first argument in the setstate tuple must be a list
         with self.assertRaises(TypeError):
             c = cycle('defg')
-            c.__setstate__((dict.fromkeys('defg'), 0))
-            take(20, c)
+            c.__setstate__((tuple('defg'), 0))
+        take(20, c)
 
-        # The first argument in the setstate tuple must be a list
+        # The second argument in the setstate tuple must be an int
         with self.assertRaises(TypeError):
             cycle('defg').__setstate__((list('abcdefg'), 'x'))
+
+        self.assertRaises(TypeError, cycle('').__setstate__, ())
+        self.assertRaises(TypeError, cycle('').__setstate__, ([],))
 
     def test_groupby(self):
         # Check whether it accepts arguments correctly
