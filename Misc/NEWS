@@ -54,6 +54,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #28227: gzip now supports pathlib.  Patch by Ethan Furman.
+
 - Issue #28332: Deprecated silent truncations in socket.htons and socket.ntohs.
   Original patch by Oren Milman.
 
