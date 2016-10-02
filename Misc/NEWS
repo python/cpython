@@ -46,6 +46,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27358: Optimized merging var-keyword arguments and improved error
+  message when pass a non-mapping as a var-keyword argument.
+
 - Issue #28257: Improved error message when pass a non-iterable as
   a var-positional argument.  Added opcode BUILD_TUPLE_UNPACK_WITH_CALL.
 

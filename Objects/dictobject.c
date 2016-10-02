@@ -2380,17 +2380,13 @@ Return:
 }
 
 int
-PyDict_Update(PyObject *a, PyObject *b)
-{
-    return PyDict_Merge(a, b, 1);
-}
-
-int
-PyDict_Merge(PyObject *a, PyObject *b, int override)
+dict_merge(PyObject *a, PyObject *b, int override)
 {
     PyDictObject *mp, *other;
     Py_ssize_t i, n;
     PyDictKeyEntry *entry, *ep0;
+
+    assert(0 <= override && override <= 2);
 
     /* We accept for the argument either a concrete dictionary object,
      * or an abstract "mapping" object.  For the former, we can do
@@ -2436,8 +2432,14 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
                 int err = 0;
                 Py_INCREF(key);
                 Py_INCREF(value);
-                if (override || PyDict_GetItem(a, key) == NULL)
+                if (override == 1 || _PyDict_GetItem_KnownHash(a, key, hash) == NULL)
                     err = insertdict(mp, key, hash, value);
+                else if (override != 0) {
+                    _PyErr_SetKeyError(key);
+                    Py_DECREF(value);
+                    Py_DECREF(key);
+                    return -1;
+                }
                 Py_DECREF(value);
                 Py_DECREF(key);
                 if (err != 0)
@@ -2472,7 +2474,13 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
             return -1;
 
         for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
-            if (!override && PyDict_GetItem(a, key) != NULL) {
+            if (override != 1 && PyDict_GetItem(a, key) != NULL) {
+                if (override != 0) {
+                    _PyErr_SetKeyError(key);
+                    Py_DECREF(key);
+                    Py_DECREF(iter);
+                    return -1;
+                }
                 Py_DECREF(key);
                 continue;
             }
@@ -2497,6 +2505,25 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
     }
     assert(_PyDict_CheckConsistency((PyDictObject *)a));
     return 0;
+}
+
+int
+PyDict_Update(PyObject *a, PyObject *b)
+{
+    return dict_merge(a, b, 1);
+}
+
+int
+PyDict_Merge(PyObject *a, PyObject *b, int override)
+{
+    /* XXX Deprecate override not in (0, 1). */
+    return dict_merge(a, b, override != 0);
+}
+
+int
+_PyDict_MergeEx(PyObject *a, PyObject *b, int override)
+{
+    return dict_merge(a, b, override);
 }
 
 static PyObject *
