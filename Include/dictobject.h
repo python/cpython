@@ -132,6 +132,12 @@ PyAPI_FUNC(int) PyDict_Merge(PyObject *mp,
                                    int override);
 
 #ifndef Py_LIMITED_API
+/* Like PyDict_Merge, but override can be 0, 1 or 2.  If override is 0,
+   the first occurrence of a key wins, if override is 1, the last occurrence
+   of a key wins, if override is 2, a KeyError with conflicting key as
+   argument is raised.
+*/
+PyAPI_FUNC(int) _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
 PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
 #endif
 
