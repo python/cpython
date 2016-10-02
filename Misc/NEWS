@@ -46,6 +46,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #28227: gzip now supports pathlib.  Patch by Ethan Furman.
+
 - Issue #27358: Optimized merging var-keyword arguments and improved error
   message when pass a non-mapping as a var-keyword argument.
 
