@@ -54,6 +54,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28257: Improved error message when pass a non-iterable as
+  a var-positional argument.  Added opcode BUILD_TUPLE_UNPACK_WITH_CALL.
+
 - Issue #28322: Fixed possible crashes when unpickle itertools objects from
   incorrect pickle data.  Based on patch by John Leitch.
 

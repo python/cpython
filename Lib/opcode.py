@@ -196,8 +196,6 @@ def_op('MAP_ADD', 147)
 def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 
-jrel_op('SETUP_ASYNC_WITH', 154)
-
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 
@@ -207,8 +205,11 @@ def_op('BUILD_MAP_UNPACK_WITH_CALL', 151)
 def_op('BUILD_TUPLE_UNPACK', 152)
 def_op('BUILD_SET_UNPACK', 153)
 
+jrel_op('SETUP_ASYNC_WITH', 154)
+
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
+def_op('BUILD_TUPLE_UNPACK_WITH_CALL', 158)
 
 del def_op, name_op, jrel_op, jabs_op
