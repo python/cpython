@@ -2721,7 +2721,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 if (PyDict_Update(sum, arg) < 0) {
                     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
                         PyErr_Format(PyExc_TypeError,
-                                "'%.200s' object is not a mapping1",
+                                "'%.200s' object is not a mapping",
                                 arg->ob_type->tp_name);
                     }
                     Py_DECREF(sum);
