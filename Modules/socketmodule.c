@@ -5498,24 +5498,38 @@ AF_UNIX if defined on the platform; otherwise, the default is AF_INET.");
 static PyObject *
 socket_ntohs(PyObject *self, PyObject *args)
 {
-    int x1, x2;
+    int x;
 
-    if (!PyArg_ParseTuple(args, "i:ntohs", &x1)) {
+    if (!PyArg_ParseTuple(args, "i:ntohs", &x)) {
         return NULL;
     }
-    if (x1 < 0) {
+    if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
-            "can't convert negative number to unsigned long");
+                        "ntohs: can't convert negative Python int to C "
+                        "16-bit unsigned integer");
         return NULL;
     }
-    x2 = (unsigned int)ntohs((unsigned short)x1);
-    return PyLong_FromLong(x2);
+    if (x > 0xffff) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "ntohs: Python int too large to convert to C "
+                         "16-bit unsigned integer (The silent truncation "
+                         "is deprecated)",
+                         1)) {
+            return NULL;
+        }
+    }
+    return PyLong_FromUnsignedLong(ntohs((unsigned short)x));
 }
 
 PyDoc_STRVAR(ntohs_doc,
 "ntohs(integer) -> integer\n\
 \n\
-Convert a 16-bit integer from network to host byte order.");
+Convert a 16-bit unsigned integer from network to host byte order.\n\
+Note that in case the received integer does not fit in 16-bit unsigned\n\
+integer, but does fit in a positive C int, it is silently truncated to\n\
+16-bit unsigned integer.\n\
+However, this silent truncation feature is deprecated, and will raise an \n\
+exception in future versions of Python.");
 
 
 static PyObject *
@@ -5555,24 +5569,38 @@ Convert a 32-bit integer from network to host byte order.");
 static PyObject *
 socket_htons(PyObject *self, PyObject *args)
 {
-    int x1, x2;
+    int x;
 
-    if (!PyArg_ParseTuple(args, "i:htons", &x1)) {
+    if (!PyArg_ParseTuple(args, "i:htons", &x)) {
         return NULL;
     }
-    if (x1 < 0) {
+    if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
-            "can't convert negative number to unsigned long");
+                        "htons: can't convert negative Python int to C "
+                        "16-bit unsigned integer");
         return NULL;
     }
-    x2 = (unsigned int)htons((unsigned short)x1);
-    return PyLong_FromLong(x2);
+    if (x > 0xffff) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "htons: Python int too large to convert to C "
+                         "16-bit unsigned integer (The silent truncation "
+                         "is deprecated)",
+                         1)) {
+            return NULL;
+        }
+    }
+    return PyLong_FromUnsignedLong(htons((unsigned short)x));
 }
 
 PyDoc_STRVAR(htons_doc,
 "htons(integer) -> integer\n\
 \n\
-Convert a 16-bit integer from host to network byte order.");
+Convert a 16-bit unsigned integer from host to network byte order.\n\
+Note that in case the received integer does not fit in 16-bit unsigned\n\
+integer, but does fit in a positive C int, it is silently truncated to\n\
+16-bit unsigned integer.\n\
+However, this silent truncation feature is deprecated, and will raise an \n\
+exception in future versions of Python.");
 
 
 static PyObject *

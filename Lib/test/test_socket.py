@@ -888,18 +888,28 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertRaises(OverflowError, func, 1<<34)
 
     def testNtoHErrors(self):
-        good_values = [ 1, 2, 3, 1, 2, 3 ]
-        bad_values = [ -1, -2, -3, -1, -2, -3 ]
-        for k in good_values:
-            socket.ntohl(k)
+        import _testcapi
+        s_good_values = [0, 1, 2, 0xffff]
+        l_good_values = s_good_values + [0xffffffff]
+        l_bad_values = [-1, -2, 1<<32, 1<<1000]
+        s_bad_values = l_bad_values + [_testcapi.INT_MIN - 1,
+                                       _testcapi.INT_MAX + 1]
+        s_deprecated_values = [1<<16, _testcapi.INT_MAX]
+        for k in s_good_values:
             socket.ntohs(k)
-            socket.htonl(k)
             socket.htons(k)
-        for k in bad_values:
-            self.assertRaises(OverflowError, socket.ntohl, k)
+        for k in l_good_values:
+            socket.ntohl(k)
+            socket.htonl(k)
+        for k in s_bad_values:
             self.assertRaises(OverflowError, socket.ntohs, k)
-            self.assertRaises(OverflowError, socket.htonl, k)
             self.assertRaises(OverflowError, socket.htons, k)
+        for k in l_bad_values:
+            self.assertRaises(OverflowError, socket.ntohl, k)
+            self.assertRaises(OverflowError, socket.htonl, k)
+        for k in s_deprecated_values:
+            self.assertWarns(DeprecationWarning, socket.ntohs, k)
+            self.assertWarns(DeprecationWarning, socket.htons, k)
 
     def testGetServBy(self):
         eq = self.assertEqual
