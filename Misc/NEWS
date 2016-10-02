@@ -54,6 +54,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28322: Fixed possible crashes when unpickle itertools objects from
+  incorrect pickle data.  Based on patch by John Leitch.
+
 - Issue #28228: imghdr now supports pathlib.
 
 - Issue #28226: compileall now supports pathlib.
