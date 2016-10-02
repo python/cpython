@@ -2509,9 +2509,10 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
+        TARGET(BUILD_TUPLE_UNPACK_WITH_CALL)
         TARGET(BUILD_TUPLE_UNPACK)
         TARGET(BUILD_LIST_UNPACK) {
-            int convert_to_tuple = opcode == BUILD_TUPLE_UNPACK;
+            int convert_to_tuple = opcode != BUILD_LIST_UNPACK;
             Py_ssize_t i;
             PyObject *sum = PyList_New(0);
             PyObject *return_value;
@@ -2524,6 +2525,16 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
                 none_val = _PyList_Extend((PyListObject *)sum, PEEK(i));
                 if (none_val == NULL) {
+                    if (opcode == BUILD_TUPLE_UNPACK_WITH_CALL &&
+                        PyErr_ExceptionMatches(PyExc_TypeError)) {
+                        PyObject *func = PEEK(1 + oparg);
+                        PyErr_Format(PyExc_TypeError,
+                                "%.200s%.200s argument after * "
+                                "must be an iterable, not %.200s",
+                                PyEval_GetFuncName(func),
+                                PyEval_GetFuncDesc(func),
+                                PEEK(i)->ob_type->tp_name);
+                    }
                     Py_DECREF(sum);
                     goto error;
                 }
