@@ -1665,6 +1665,13 @@ class UnicodeTest(
         self.assertEqual("%s" % u, u'__unicode__ overridden')
         self.assertEqual("{}".format(u), '__unicode__ overridden')
 
+    def test_free_after_iterating(self):
+        test_support.check_free_after_iterating(self, iter, unicode)
+        test_support.check_free_after_iterating(self, reversed, unicode)
+
+
+class CAPITest(unittest.TestCase):
+
     # Test PyUnicode_FromFormat()
     def test_from_format(self):
         test_support.import_module('ctypes')
@@ -1856,11 +1863,6 @@ class UnicodeTest(
             self.assertEqual(
                     unicode_encodedecimal(u"123" + s, "xmlcharrefreplace"),
                     '123' + exp)
-
-    def test_free_after_iterating(self):
-        test_support.check_free_after_iterating(self, iter, unicode)
-        test_support.check_free_after_iterating(self, reversed, unicode)
-
 
 def test_main():
     test_support.run_unittest(__name__)
