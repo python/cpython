@@ -224,6 +224,11 @@ Tools/Demos
 - Issue #28102: The zipfile module CLI now prints usage to stderr.
   Patch by Stephen J. Turnbull.
 
+Tests
+-----
+
+- Issue #28217: Adds _testconsole module to test console input.
+
 
 What's New in Python 3.6.0 beta 1
 =================================
