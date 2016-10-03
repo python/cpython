@@ -22,7 +22,8 @@ extern PyTypeObject PyIncrementalNewlineDecoder_Type;
 #ifndef Py_LIMITED_API
 #ifdef MS_WINDOWS
 extern PyTypeObject PyWindowsConsoleIO_Type;
-#define PyWindowsConsoleIO_Check(op) (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
+PyAPI_DATA(PyObject *) _PyWindowsConsoleIO_Type;
+#define PyWindowsConsoleIO_Check(op) (PyObject_TypeCheck((op), (PyTypeObject*)_PyWindowsConsoleIO_Type))
 #endif /* MS_WINDOWS */
 #endif /* Py_LIMITED_API */
 
