@@ -559,7 +559,7 @@ class DictConfigurator(BaseConfigurator):
                         handler.name = name
                         handlers[name] = handler
                     except Exception as e:
-                        if 'Unable to set target handler' in str(e):
+                        if 'target not configured yet' in str(e.__cause__):
                             deferred.append(name)
                         else:
                             raise ValueError('Unable to configure handler '
