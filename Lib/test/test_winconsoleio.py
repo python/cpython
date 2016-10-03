@@ -1,12 +1,4 @@
 '''Tests for WindowsConsoleIO
-
-Unfortunately, most testing requires interactive use, since we have no
-API to read back from a real console, and this class is only for use
-with real consoles.
-
-Instead, we validate that basic functionality such as opening, closing
-and in particular fileno() work, but are forced to leave real testing
-to real people with real keyborads.
 '''
 
 import io
@@ -15,6 +7,8 @@ import sys
 
 if sys.platform != 'win32':
     raise unittest.SkipTest("test only relevant on win32")
+
+from _testconsole import write_input
 
 ConIO = io._WindowsConsoleIO
 
@@ -82,6 +76,66 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertIsNotNone(f.fileno())
         f.close()
         f.close()
+
+    def assertStdinRoundTrip(self, text):
+        stdin = open('CONIN$', 'r')
+        old_stdin = sys.stdin
+        try:
+            sys.stdin = stdin
+            write_input(
+                stdin.buffer.raw,
+                (text + '\r\n').encode('utf-16-le', 'surrogatepass')
+            )
+            actual = input()
+        finally:
+            sys.stdin = old_stdin
+        self.assertEqual(actual, text)
+
+    def test_input(self):
+        # ASCII
+        self.assertStdinRoundTrip('abc123')
+        # Non-ASCII
+        self.assertStdinRoundTrip('ϼўТλФЙ')
+        # Combining characters
+        self.assertStdinRoundTrip('A͏B ﬖ̳AA̝')
+        # Non-BMP
+        self.assertStdinRoundTrip('\U00100000\U0010ffff\U0010fffd')
+
+    def test_partial_reads(self):
+        # Test that reading less than 1 full character works when stdin
+        # contains multibyte UTF-8 sequences
+        source = 'ϼўТλФЙ\r\n'.encode('utf-16-le')
+        expected = 'ϼўТλФЙ\r\n'.encode('utf-8')
+        for read_count in range(1, 16):
+            stdin = open('CONIN$', 'rb', buffering=0)
+            write_input(stdin, source)
+
+            actual = b''
+            while not actual.endswith(b'\n'):
+                b = stdin.read(read_count)
+                actual += b
+
+            self.assertEqual(actual, expected, 'stdin.read({})'.format(read_count))
+            stdin.close()
+
+    def test_partial_surrogate_reads(self):
+        # Test that reading less than 1 full character works when stdin
+        # contains surrogate pairs that cannot be decoded to UTF-8 without
+        # reading an extra character.
+        source = '\U00101FFF\U00101001\r\n'.encode('utf-16-le')
+        expected = '\U00101FFF\U00101001\r\n'.encode('utf-8')
+        for read_count in range(1, 16):
+            stdin = open('CONIN$', 'rb', buffering=0)
+            write_input(stdin, source)
+
+            actual = b''
+            while not actual.endswith(b'\n'):
+                b = stdin.read(read_count)
+                actual += b
+
+            self.assertEqual(actual, expected, 'stdin.read({})'.format(read_count))
+            stdin.close()
+
 
 if __name__ == "__main__":
     unittest.main()
