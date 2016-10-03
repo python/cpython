@@ -17,6 +17,9 @@
             <Component Id="_testmultiphase.pyd" Directory="DLLs" Guid="*">
                 <File Id="_testmultiphase.pyd" Name="_testmultiphase.pyd" KeyPath="yes" />
             </Component>
+            <Component Id="_testconsole.pyd" Directory="DLLs" Guid="*">
+                <File Id="_testconsole.pyd" Name="_testconsole.pyd" KeyPath="yes" />
+            </Component>
         </ComponentGroup>
     </Fragment>
     
@@ -36,6 +39,9 @@
             </Component>
             <Component Id="_testmultiphase.pdb" Directory="DLLs" Guid="*">
                 <File Id="_testmultiphase.pdb" Name="_testmultiphase.pdb" />
+            </Component>
+            <Component Id="_testconsole.pdb" Directory="DLLs" Guid="*">
+                <File Id="_testconsole.pdb" Name="_testconsole.pdb" />
             </Component>
         </ComponentGroup>
     </Fragment>
@@ -57,6 +63,9 @@
             <Component Id="_testmultiphase_d.pyd" Directory="DLLs" Guid="*">
                 <File Id="_testmultiphase_d.pyd" Name="_testmultiphase_d.pyd" />
             </Component>
+            <Component Id="_testconsole_d.pyd" Directory="DLLs" Guid="*">
+                <File Id="_testconsole_d.pyd" Name="_testconsole_d.pyd" />
+            </Component>
             <Component Id="_testcapi_d.pdb" Directory="DLLs" Guid="*">
                 <File Id="_testcapi_d.pdb" Name="_testcapi_d.pdb" />
             </Component>
@@ -71,6 +80,9 @@
             </Component>
             <Component Id="_testmultiphase_d.pdb" Directory="DLLs" Guid="*">
                 <File Id="_testmultiphase_d.pdb" Name="_testmultiphase_d.pdb" />
+            </Component>
+            <Component Id="_testconsole_d.pdb" Directory="DLLs" Guid="*">
+                <File Id="_testconsole_d.pdb" Name="_testconsole_d.pdb" />
             </Component>
         </ComponentGroup>
     </Fragment>
