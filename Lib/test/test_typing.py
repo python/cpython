@@ -202,10 +202,13 @@ class UnionTests(BaseTestCase):
     def test_union_any(self):
         u = Union[Any]
         self.assertEqual(u, Any)
-        u = Union[int, Any]
-        self.assertEqual(u, Any)
-        u = Union[Any, int]
-        self.assertEqual(u, Any)
+        u1 = Union[int, Any]
+        u2 = Union[Any, int]
+        u3 = Union[Any, object]
+        self.assertEqual(u1, u2)
+        self.assertNotEqual(u1, Any)
+        self.assertNotEqual(u2, Any)
+        self.assertNotEqual(u3, Any)
 
     def test_union_object(self):
         u = Union[object]
@@ -214,12 +217,6 @@ class UnionTests(BaseTestCase):
         self.assertEqual(u, object)
         u = Union[object, int]
         self.assertEqual(u, object)
-
-    def test_union_any_object(self):
-        u = Union[object, Any]
-        self.assertEqual(u, Any)
-        u = Union[Any, object]
-        self.assertEqual(u, Any)
 
     def test_unordered(self):
         u1 = Union[int, float]
@@ -600,36 +597,32 @@ class GenericTests(BaseTestCase):
         self.assertNotIsInstance({}, MyMapping)
         self.assertNotIsSubclass(dict, MyMapping)
 
-    def test_multiple_abc_bases(self):
+    def test_abc_bases(self):
+        class MM(MutableMapping[str, str]):
+            def __getitem__(self, k):
+                return None
+            def __setitem__(self, k, v):
+                pass
+            def __delitem__(self, k):
+                pass
+            def __iter__(self):
+                return iter(())
+            def __len__(self):
+                return 0
+        # this should just work
+        MM().update()
+        self.assertIsInstance(MM(), collections_abc.MutableMapping)
+        self.assertIsInstance(MM(), MutableMapping)
+        self.assertNotIsInstance(MM(), List)
+        self.assertNotIsInstance({}, MM)
+
+    def test_multiple_bases(self):
         class MM1(MutableMapping[str, str], collections_abc.MutableMapping):
-            def __getitem__(self, k):
-                return None
-            def __setitem__(self, k, v):
+            pass
+        with self.assertRaises(TypeError):
+            # consistent MRO not possible
+            class MM2(collections_abc.MutableMapping, MutableMapping[str, str]):
                 pass
-            def __delitem__(self, k):
-                pass
-            def __iter__(self):
-                return iter(())
-            def __len__(self):
-                return 0
-        class MM2(collections_abc.MutableMapping, MutableMapping[str, str]):
-            def __getitem__(self, k):
-                return None
-            def __setitem__(self, k, v):
-                pass
-            def __delitem__(self, k):
-                pass
-            def __iter__(self):
-                return iter(())
-            def __len__(self):
-                return 0
-        # these two should just work
-        MM1().update()
-        MM2().update()
-        self.assertIsInstance(MM1(), collections_abc.MutableMapping)
-        self.assertIsInstance(MM1(), MutableMapping)
-        self.assertIsInstance(MM2(), collections_abc.MutableMapping)
-        self.assertIsInstance(MM2(), MutableMapping)
 
     def test_pickle(self):
         global C  # pickle wants to reference the class by name
@@ -1380,12 +1373,28 @@ class CollectionsAbcTests(BaseTestCase):
             MMA()
 
         class MMC(MMA):
+            def __getitem__(self, k):
+                return None
+            def __setitem__(self, k, v):
+                pass
+            def __delitem__(self, k):
+                pass
+            def __iter__(self):
+                return iter(())
             def __len__(self):
                 return 0
 
         self.assertEqual(len(MMC()), 0)
 
         class MMB(typing.MutableMapping[KT, VT]):
+            def __getitem__(self, k):
+                return None
+            def __setitem__(self, k, v):
+                pass
+            def __delitem__(self, k):
+                pass
+            def __iter__(self):
+                return iter(())
             def __len__(self):
                 return 0
 
