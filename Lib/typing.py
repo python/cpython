@@ -143,7 +143,6 @@ class _TypingBase(metaclass=TypingMeta, _root=True):
 
     __slots__ = ()
 
-
     def __init__(self, *args, **kwds):
         pass
 
@@ -158,7 +157,7 @@ class _TypingBase(metaclass=TypingMeta, _root=True):
                 isinstance(args[1], tuple)):
             # Close enough.
             raise TypeError("Cannot subclass %r" % cls)
-        return object.__new__(cls)
+        return super().__new__(cls)
 
     # Things that are not classes also need these.
     def _eval_type(self, globalns, localns):
@@ -177,7 +176,11 @@ class _TypingBase(metaclass=TypingMeta, _root=True):
 
 
 class _FinalTypingBase(_TypingBase, _root=True):
-    """Mix-in class to prevent instantiation."""
+    """Mix-in class to prevent instantiation.
+
+    Prevents instantiation unless _root=True is given in class call.
+    It is used to create pseudo-singleton instances Any, Union, Tuple, etc.
+    """
 
     __slots__ = ()
 
@@ -273,7 +276,7 @@ class _TypeAlias(_TypingBase, _root=True):
         assert isinstance(name, str), repr(name)
         assert isinstance(impl_type, type), repr(impl_type)
         assert not isinstance(impl_type, TypingMeta), repr(impl_type)
-        assert isinstance(type_var, (type, _TypingBase))
+        assert isinstance(type_var, (type, _TypingBase)), repr(type_var)
         self.name = name
         self.type_var = type_var
         self.impl_type = impl_type
@@ -375,9 +378,13 @@ def _type_repr(obj):
 class _Any(_FinalTypingBase, _root=True):
     """Special type indicating an unconstrained type.
 
-    - Any object is an instance of Any.
-    - Any class is a subclass of Any.
-    - As a special case, Any and object are subclasses of each other.
+    - Any is compatible with every type.
+    - Any assumed to have all methods.
+    - All values assumed to be instances of Any.
+
+    Note that all the above statements are true from the point of view of
+    static type checkers. At runtime, Any should not be used with instance
+    or class checks.
     """
 
     __slots__ = ()
@@ -502,7 +509,7 @@ def _tp_cache(func):
         try:
             return cached(*args, **kwds)
         except TypeError:
-            pass  # Do not duplicate real errors.
+            pass  # All real errors (not unhashable args) are raised below.
         return func(*args, **kwds)
     return inner
 
@@ -542,15 +549,9 @@ class _Union(_FinalTypingBase, _root=True):
         Union[Manager, int, Employee] == Union[int, Employee]
         Union[Employee, Manager] == Employee
 
-    - Corollary: if Any is present it is the sole survivor, e.g.::
-
-        Union[int, Any] == Any
-
     - Similar for object::
 
         Union[int, object] == object
-
-    - To cut a tie: Union[object, Any] == Union[Any, object] == Any.
 
     - You cannot subclass or instantiate a union.
 
@@ -589,14 +590,11 @@ class _Union(_FinalTypingBase, _root=True):
             assert not all_params, all_params
         # Weed out subclasses.
         # E.g. Union[int, Employee, Manager] == Union[int, Employee].
-        # If Any or object is present it will be the sole survivor.
-        # If both Any and object are present, Any wins.
-        # Never discard type variables, except against Any.
+        # If object is present it will be sole survivor among proper classes.
+        # Never discard type variables.
         # (In particular, Union[str, AnyStr] != AnyStr.)
         all_params = set(params)
         for t1 in params:
-            if t1 is Any:
-                return Any
             if not isinstance(t1, type):
                 continue
             if any(isinstance(t2, type) and issubclass(t1, t2)
@@ -662,7 +660,7 @@ Union = _Union(_root=True)
 class _Optional(_FinalTypingBase, _root=True):
     """Optional type.
 
-    Optional[X] is equivalent to Union[X, type(None)].
+    Optional[X] is equivalent to Union[X, None].
     """
 
     __slots__ = ()
@@ -894,11 +892,55 @@ def _next_in_mro(cls):
     return next_in_mro
 
 
+def _valid_for_check(cls):
+    if cls is Generic:
+        raise TypeError("Class %r cannot be used with class "
+                        "or instance checks" % cls)
+    if (cls.__origin__ is not None and
+        sys._getframe(3).f_globals['__name__'] not in ['abc', 'functools']):
+        raise TypeError("Parameterized generics cannot be used with class "
+                        "or instance checks")
+
+
+def _make_subclasshook(cls):
+    """Construct a __subclasshook__ callable that incorporates
+    the associated __extra__ class in subclass checks performed
+    against cls.
+    """
+    if isinstance(cls.__extra__, abc.ABCMeta):
+        # The logic mirrors that of ABCMeta.__subclasscheck__.
+        # Registered classes need not be checked here because
+        # cls and its extra share the same _abc_registry.
+        def __extrahook__(subclass):
+            _valid_for_check(cls)
+            res = cls.__extra__.__subclasshook__(subclass)
+            if res is not NotImplemented:
+                return res
+            if cls.__extra__ in subclass.__mro__:
+                return True
+            for scls in cls.__extra__.__subclasses__():
+                if isinstance(scls, GenericMeta):
+                    continue
+                if issubclass(subclass, scls):
+                    return True
+            return NotImplemented
+    else:
+        # For non-ABC extras we'll just call issubclass().
+        def __extrahook__(subclass):
+            _valid_for_check(cls)
+            if cls.__extra__ and issubclass(subclass, cls.__extra__):
+                return True
+            return NotImplemented
+    return __extrahook__
+
+
 class GenericMeta(TypingMeta, abc.ABCMeta):
     """Metaclass for generic types."""
 
     def __new__(cls, name, bases, namespace,
                 tvars=None, args=None, origin=None, extra=None):
+        if extra is not None and type(extra) is abc.ABCMeta and extra not in bases:
+            bases = (extra,) + bases
         self = super().__new__(cls, name, bases, namespace, _root=True)
 
         if tvars is not None:
@@ -947,6 +989,13 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
         self.__extra__ = extra
         # Speed hack (https://github.com/python/typing/issues/196).
         self.__next_in_mro__ = _next_in_mro(self)
+
+        # This allows unparameterized generic collections to be used
+        # with issubclass() and isinstance() in the same way as their
+        # collections.abc counterparts (e.g., isinstance([], Iterable)).
+        self.__subclasshook__ = _make_subclasshook(self)
+        if isinstance(extra, abc.ABCMeta):
+            self._abc_registry = extra._abc_registry
         return self
 
     def _get_type_vars(self, tvars):
@@ -1032,21 +1081,7 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
         # latter, we must extend __instancecheck__ too. For simplicity
         # we just skip the cache check -- instance checks for generic
         # classes are supposed to be rare anyways.
-        return self.__subclasscheck__(instance.__class__)
-
-    def __subclasscheck__(self, cls):
-        if self is Generic:
-            raise TypeError("Class %r cannot be used with class "
-                            "or instance checks" % self)
-        if (self.__origin__ is not None and
-            sys._getframe(1).f_globals['__name__'] != 'abc'):
-            raise TypeError("Parameterized generics cannot be used with class "
-                            "or instance checks")
-        if super().__subclasscheck__(cls):
-            return True
-        if self.__extra__ is not None:
-            return issubclass(cls, self.__extra__)
-        return False
+        return issubclass(instance.__class__, self)
 
 
 # Prevent checks for Generic to crash when defining Generic.
