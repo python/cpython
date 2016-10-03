@@ -818,7 +818,7 @@ non-standard paths in the registry and user site-packages.
 .. versionchanged::
    3.6
 
-   * Adds ``sys.path`` file support and removes ``applocal`` option from
+   * Adds ``._pth`` file support and removes ``applocal`` option from
      ``pyvenv.cfg``.
    * Adds ``pythonXX.zip`` as a potential landmark when directly adjacent
      to the executable.
