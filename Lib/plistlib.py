@@ -918,7 +918,7 @@ class _BinaryPlistWriter (object):
                 self._write_size(0x50, len(value))
             except UnicodeEncodeError:
                 t = value.encode('utf-16be')
-                self._write_size(0x60, len(value))
+                self._write_size(0x60, len(t) // 2)
 
             self._fp.write(t)
 

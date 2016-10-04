@@ -361,6 +361,13 @@ class TestPlistlib(unittest.TestCase):
                                   plistlib.dumps,
                                   testString)
 
+    def test_non_bmp_characters(self):
+        pl = {'python': '\U0001f40d'}
+        for fmt in ALL_FORMATS:
+            with self.subTest(fmt=fmt):
+                data = plistlib.dumps(pl, fmt=fmt)
+                self.assertEqual(plistlib.loads(data), pl)
+
     def test_nondictroot(self):
         for fmt in ALL_FORMATS:
             with self.subTest(fmt=fmt):
