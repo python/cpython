@@ -827,6 +827,14 @@ class ReferencesTestCase(TestBase):
         with self.assertRaises(AttributeError):
             ref1.__callback__ = lambda ref: None
 
+    def test_callback_gcs(self):
+        class ObjectWithDel(Object):
+            def __del__(self): pass
+        x = ObjectWithDel(1)
+        ref1 = weakref.ref(x, lambda ref: support.gc_collect())
+        del x
+        support.gc_collect()
+
 
 class SubclassableWeakrefTestCase(TestBase):
 
