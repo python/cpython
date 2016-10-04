@@ -58,6 +58,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #28229: lzma module now supports pathlib.
+
 - Issue #28321: Fixed writing non-BMP characters with binary format in plistlib.
 
 - Issue #28225: bz2 module now supports pathlib.  Initial patch by Ethan Furman.
