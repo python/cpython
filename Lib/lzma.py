@@ -23,6 +23,7 @@ __all__ = [
 
 import builtins
 import io
+import os
 from _lzma import *
 from _lzma import _encode_filter_properties, _decode_filter_properties
 import _compression
@@ -49,9 +50,10 @@ class LZMAFile(_compression.BaseStream):
                  format=None, check=-1, preset=None, filters=None):
         """Open an LZMA-compressed file in binary mode.
 
-        filename can be either an actual file name (given as a str or
-        bytes object), in which case the named file is opened, or it can
-        be an existing file object to read from or write to.
+        filename can be either an actual file name (given as a str,
+        bytes, or PathLike object), in which case the named file is
+        opened, or it can be an existing file object to read from or
+        write to.
 
         mode can be "r" for reading (default), "w" for (over)writing,
         "x" for creating exclusively, or "a" for appending. These can
@@ -112,7 +114,7 @@ class LZMAFile(_compression.BaseStream):
         else:
             raise ValueError("Invalid mode: {!r}".format(mode))
 
-        if isinstance(filename, (str, bytes)):
+        if isinstance(filename, (str, bytes, os.PathLike)):
             if "b" not in mode:
                 mode += "b"
             self._fp = builtins.open(filename, mode)
@@ -122,7 +124,7 @@ class LZMAFile(_compression.BaseStream):
             self._fp = filename
             self._mode = mode_code
         else:
-            raise TypeError("filename must be a str or bytes object, or a file")
+            raise TypeError("filename must be a str, bytes, file or PathLike object")
 
         if self._mode == _MODE_READ:
             raw = _compression.DecompressReader(self._fp, LZMADecompressor,
@@ -263,9 +265,9 @@ def open(filename, mode="rb", *,
          encoding=None, errors=None, newline=None):
     """Open an LZMA-compressed file in binary or text mode.
 
-    filename can be either an actual file name (given as a str or bytes
-    object), in which case the named file is opened, or it can be an
-    existing file object to read from or write to.
+    filename can be either an actual file name (given as a str, bytes,
+    or PathLike object), in which case the named file is opened, or it
+    can be an existing file object to read from or write to.
 
     The mode argument can be "r", "rb" (default), "w", "wb", "x", "xb",
     "a", or "ab" for binary mode, or "rt", "wt", "xt", or "at" for text
