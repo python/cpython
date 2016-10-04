@@ -50,6 +50,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #27181 remove statistics.geometric_mean and defer until 3.7.
+
 - Issue #28229: lzma module now supports pathlib.
 
 - Issue #28321: Fixed writing non-BMP characters with binary format in plistlib.
