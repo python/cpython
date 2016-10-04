@@ -58,6 +58,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #28321: Fixed writing non-BMP characters with binary format in plistlib.
+
 - Issue #28225: bz2 module now supports pathlib.  Initial patch by Ethan Furman.
 
 - Issue #28227: gzip now supports pathlib.  Patch by Ethan Furman.
