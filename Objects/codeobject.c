@@ -19,21 +19,21 @@ static int
 all_name_chars(PyObject *o)
 {
     static char ok_name_char[256];
-    static unsigned char *name_chars = (unsigned char *)NAME_CHARS;
-    PyUnicodeObject *u = (PyUnicodeObject *)o;
-    const unsigned char *s;
+    static const unsigned char *name_chars = (unsigned char *)NAME_CHARS;
+    const unsigned char *s, *e;
 
-    if (!PyUnicode_Check(o) || PyUnicode_READY(u) == -1 ||
-        PyUnicode_MAX_CHAR_VALUE(u) >= 128)
+    if (!PyUnicode_Check(o) || PyUnicode_READY(o) == -1 ||
+        !PyUnicode_IS_ASCII(o))
         return 0;
 
     if (ok_name_char[*name_chars] == 0) {
-        unsigned char *p;
+        const unsigned char *p;
         for (p = name_chars; *p; p++)
             ok_name_char[*p] = 1;
     }
-    s = PyUnicode_1BYTE_DATA(u);
-    while (*s) {
+    s = PyUnicode_1BYTE_DATA(o);
+    e = s + PyUnicode_GET_LENGTH(o);
+    while (s != e) {
         if (ok_name_char[*s++] == 0)
             return 0;
     }
