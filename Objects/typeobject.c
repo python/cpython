@@ -1123,11 +1123,6 @@ subtype_dealloc(PyObject *self)
     Py_TRASHCAN_SAFE_BEGIN(self);
     --_PyTrash_delete_nesting;
     -- tstate->trash_delete_nesting;
-    /* DO NOT restore GC tracking at this point.  weakref callbacks
-     * (if any, and whether directly here or indirectly in something we
-     * call) may trigger GC, and if self is tracked at that point, it
-     * will look like trash to GC and GC will try to delete self again.
-     */
 
     /* Find the nearest base with a different tp_dealloc */
     base = type;
@@ -1138,30 +1133,36 @@ subtype_dealloc(PyObject *self)
 
     has_finalizer = type->tp_finalize || type->tp_del;
 
-    /* Maybe call finalizer; exit early if resurrected */
-    if (has_finalizer)
-        _PyObject_GC_TRACK(self);
-
     if (type->tp_finalize) {
+        _PyObject_GC_TRACK(self);
         if (PyObject_CallFinalizerFromDealloc(self) < 0) {
             /* Resurrected */
             goto endlabel;
         }
+        _PyObject_GC_UNTRACK(self);
     }
-    /* If we added a weaklist, we clear it.      Do this *before* calling
-       tp_del, clearing slots, or clearing the instance dict. */
+    /*
+      If we added a weaklist, we clear it. Do this *before* calling tp_del,
+      clearing slots, or clearing the instance dict.
+
+      GC tracking must be off at this point. weakref callbacks (if any, and
+      whether directly here or indirectly in something we call) may trigger GC,
+      and if self is tracked at that point, it will look like trash to GC and GC
+      will try to delete self again.
+    */
     if (type->tp_weaklistoffset && !base->tp_weaklistoffset)
         PyObject_ClearWeakRefs(self);
 
     if (type->tp_del) {
+        _PyObject_GC_TRACK(self);
         type->tp_del(self);
         if (self->ob_refcnt > 0) {
             /* Resurrected */
             goto endlabel;
         }
+        _PyObject_GC_UNTRACK(self);
     }
     if (has_finalizer) {
-        _PyObject_GC_UNTRACK(self);
         /* New weakrefs could be created during the finalizer call.
            If this occurs, clear them out without calling their
            finalizers since they might rely on part of the object
