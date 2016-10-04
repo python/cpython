@@ -2301,6 +2301,9 @@ PyInit__struct(void)
     if (PyType_Ready(&PyStructType) < 0)
         return NULL;
 
+    if (PyType_Ready(&unpackiter_type) < 0)
+        return NULL;
+
     /* Check endian and swap in faster functions */
     {
         const formatdef *native = native_table;
