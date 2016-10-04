@@ -39,7 +39,6 @@ or sample.
 
 =======================  =============================================
 :func:`mean`             Arithmetic mean ("average") of data.
-:func:`geometric_mean`   Geometric mean of data.
 :func:`harmonic_mean`    Harmonic mean of data.
 :func:`median`           Median (middle value) of data.
 :func:`median_low`       Low median of data.
@@ -111,34 +110,6 @@ However, for reading convenience, most of the examples show sorted sequences.
       ``mean(sample)`` converges on the true mean of the entire population.  If
       *data* represents the entire population rather than a sample, then
       ``mean(data)`` is equivalent to calculating the true population mean μ.
-
-
-.. function:: geometric_mean(data)
-
-   Return the geometric mean of *data*, a sequence or iterator of
-   real-valued numbers.
-
-   The geometric mean is the *n*-th root of the product of *n* data points.
-   It is a type of average, a measure of the central location of the data.
-
-   The geometric mean is appropriate when averaging quantities which
-   are multiplied together rather than added, for example growth rates.
-   Suppose an investment grows by 10% in the first year, falls by 5% in
-   the second, then grows by 12% in the third, what is the average rate
-   of growth over the three years?
-
-   .. doctest::
-
-      >>> geometric_mean([1.10, 0.95, 1.12])
-      1.0538483123382172
-
-   giving an average growth of 5.385%. Using the arithmetic mean will
-   give approximately 5.667%, which is too high.
-
-   :exc:`StatisticsError` is raised if *data* is empty, or any
-   element is less than zero.
-
-   .. versionadded:: 3.6
 
 
 .. function:: harmonic_mean(data)
