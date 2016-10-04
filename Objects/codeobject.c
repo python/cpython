@@ -8,17 +8,20 @@
 /* all_name_chars(s): true iff all chars in s are valid NAME_CHARS */
 
 static int
-all_name_chars(unsigned char *s)
+all_name_chars(PyObject *o)
 {
     static char ok_name_char[256];
-    static unsigned char *name_chars = (unsigned char *)NAME_CHARS;
+    static const unsigned char *name_chars = (unsigned char *)NAME_CHARS;
+    const unsigned char *s, *e;
 
     if (ok_name_char[*name_chars] == 0) {
-        unsigned char *p;
+        const unsigned char *p;
         for (p = name_chars; *p; p++)
             ok_name_char[*p] = 1;
     }
-    while (*s) {
+    s = (unsigned char *)PyString_AS_STRING(o);
+    e = s + PyString_GET_SIZE(o);
+    while (s != e) {
         if (ok_name_char[*s++] == 0)
             return 0;
     }
@@ -49,7 +52,7 @@ intern_string_constants(PyObject *tuple)
     for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyString_CheckExact(v)) {
-            if (all_name_chars((unsigned char *)PyString_AS_STRING(v))) {
+            if (all_name_chars(v)) {
                 PyObject *w = v;
                 PyString_InternInPlace(&v);
                 if (w != v) {

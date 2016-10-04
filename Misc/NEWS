@@ -10,6 +10,8 @@ What's New in Python 2.7.13?
 Core and Builtins
 -----------------
 
+- Issue #28350: String constants with null character no longer interned.
+
 - Issue #27942: String constants now interned recursively in tuples and frozensets.
 
 - Issue #15578: Correctly incref the parent module while importing.
