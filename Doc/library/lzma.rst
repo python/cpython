@@ -39,8 +39,9 @@ Reading and writing compressed files
    object`.
 
    The *filename* argument can be either an actual file name (given as a
-   :class:`str` or :class:`bytes` object), in which case the named file is
-   opened, or it can be an existing file object to read from or write to.
+   :class:`str`, :class:`bytes` or :term:`path-like object` object), in
+   which case the named file is opened, or it can be an existing file object
+   to read from or write to.
 
    The *mode* argument can be any of ``"r"``, ``"rb"``, ``"w"``, ``"wb"``,
    ``"x"``, ``"xb"``, ``"a"`` or ``"ab"`` for binary mode, or ``"rt"``,
@@ -64,6 +65,9 @@ Reading and writing compressed files
    .. versionchanged:: 3.4
       Added support for the ``"x"``, ``"xb"`` and ``"xt"`` modes.
 
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
+
 
 .. class:: LZMAFile(filename=None, mode="r", \*, format=None, check=-1, preset=None, filters=None)
 
@@ -71,9 +75,10 @@ Reading and writing compressed files
 
    An :class:`LZMAFile` can wrap an already-open :term:`file object`, or operate
    directly on a named file. The *filename* argument specifies either the file
-   object to wrap, or the name of the file to open (as a :class:`str` or
-   :class:`bytes` object). When wrapping an existing file object, the wrapped
-   file will not be closed when the :class:`LZMAFile` is closed.
+   object to wrap, or the name of the file to open (as a :class:`str`,
+   :class:`bytes` or :term:`path-like object` object). When wrapping an
+   existing file object, the wrapped file will not be closed when the
+   :class:`LZMAFile` is closed.
 
    The *mode* argument can be either ``"r"`` for reading (default), ``"w"`` for
    overwriting, ``"x"`` for exclusive creation, or ``"a"`` for appending. These
@@ -117,6 +122,9 @@ Reading and writing compressed files
    .. versionchanged:: 3.5
       The :meth:`~io.BufferedIOBase.read` method now accepts an argument of
       ``None``.
+
+   .. versionchanged:: 3.6
+      Accepts a :term:`path-like object`.
 
 
 Compressing and decompressing data in memory
