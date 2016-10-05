@@ -411,7 +411,8 @@ class SSLProtocol(protocols.Protocol):
     """
 
     def __init__(self, loop, app_protocol, sslcontext, waiter,
-                 server_side=False, server_hostname=None):
+                 server_side=False, server_hostname=None,
+                 call_connection_made=True):
         if ssl is None:
             raise RuntimeError('stdlib ssl module not available')
 
@@ -444,6 +445,7 @@ class SSLProtocol(protocols.Protocol):
         self._in_shutdown = False
         # transport, ex: SelectorSocketTransport
         self._transport = None
+        self._call_connection_made = call_connection_made
 
     def _wakeup_waiter(self, exc=None):
         if self._waiter is None:
@@ -607,7 +609,8 @@ class SSLProtocol(protocols.Protocol):
                            compression=sslobj.compression(),
                            ssl_object=sslobj,
                            )
-        self._app_protocol.connection_made(self._app_transport)
+        if self._call_connection_made:
+            self._app_protocol.connection_made(self._app_transport)
         self._wakeup_waiter()
         self._session_established = True
         # In case transport.write() was already called. Don't call
