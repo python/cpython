@@ -173,6 +173,8 @@ Library
 - Issue #28370: Speedup asyncio.StreamReader.readexactly.
   Patch by Коренберг Марк.
 
+- Issue #28371: Deprecate passing asyncio.Handles to run_in_executor.
+
 Windows
 -------
 

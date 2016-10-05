@@ -606,6 +606,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         if isinstance(func, events.Handle):
             assert not args
             assert not isinstance(func, events.TimerHandle)
+            warnings.warn(
+                "Passing Handle to loop.run_in_executor() is deprecated",
+                DeprecationWarning)
             if func._cancelled:
                 f = self.create_future()
                 f.set_result(None)
