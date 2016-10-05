@@ -118,22 +118,13 @@ def _iterdir(dirname, dironly):
         else:
             dirname = os.curdir
     try:
-        if os.name == 'nt' and isinstance(dirname, bytes):
-            names = os.listdir(dirname)
-            if dironly:
-                for name in names:
-                    if os.path.isdir(os.path.join(dirname, name)):
-                        yield name
-            else:
-                yield from names
-        else:
-            with os.scandir(dirname) as it:
-                for entry in it:
-                    try:
-                        if not dironly or entry.is_dir():
-                            yield entry.name
-                    except OSError:
-                        pass
+        with os.scandir(dirname) as it:
+            for entry in it:
+                try:
+                    if not dironly or entry.is_dir():
+                        yield entry.name
+                except OSError:
+                    pass
     except OSError:
         return
 

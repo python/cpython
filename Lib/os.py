@@ -343,12 +343,9 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     # minor reason when (say) a thousand readable directories are still
     # left to visit.  That logic is copied here.
     try:
-        if name == 'nt' and isinstance(top, bytes):
-            scandir_it = _dummy_scandir(top)
-        else:
-            # Note that scandir is global in this module due
-            # to earlier import-*.
-            scandir_it = scandir(top)
+        # Note that scandir is global in this module due
+        # to earlier import-*.
+        scandir_it = scandir(top)
     except OSError as error:
         if onerror is not None:
             onerror(error)
@@ -416,67 +413,6 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             yield from walk(new_path, topdown, onerror, followlinks)
         # Yield after recursion if going bottom up
         yield top, dirs, nondirs
-
-class _DummyDirEntry:
-    """Dummy implementation of DirEntry
-
-    Only used internally by os.walk(bytes). Since os.walk() doesn't need the
-    follow_symlinks parameter: don't implement it, always follow symbolic
-    links.
-    """
-
-    def __init__(self, dir, name):
-        self.name = name
-        self.path = path.join(dir, name)
-        # Mimick FindFirstFile/FindNextFile: we should get file attributes
-        # while iterating on a directory
-        self._stat = None
-        self._lstat = None
-        try:
-            self.stat(follow_symlinks=False)
-        except OSError:
-            pass
-
-    def stat(self, *, follow_symlinks=True):
-        if follow_symlinks:
-            if self._stat is None:
-                self._stat = stat(self.path)
-            return self._stat
-        else:
-            if self._lstat is None:
-                self._lstat = stat(self.path, follow_symlinks=False)
-            return self._lstat
-
-    def is_dir(self):
-        if self._lstat is not None and not self.is_symlink():
-            # use the cache lstat
-            stat = self.stat(follow_symlinks=False)
-            return st.S_ISDIR(stat.st_mode)
-
-        stat = self.stat()
-        return st.S_ISDIR(stat.st_mode)
-
-    def is_symlink(self):
-        stat = self.stat(follow_symlinks=False)
-        return st.S_ISLNK(stat.st_mode)
-
-class _dummy_scandir:
-    # listdir-based implementation for bytes patches on Windows
-    def __init__(self, dir):
-        self.dir = dir
-        self.it = iter(listdir(dir))
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        return _DummyDirEntry(self.dir, next(self.it))
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        self.it = iter(())
 
 __all__.append("walk")
 
