@@ -358,7 +358,8 @@ class BaseEventLoopTests(test_utils.TestCase):
         h = asyncio.Handle(cb, (), self.loop)
         h.cancel()
 
-        f = self.loop.run_in_executor(None, h)
+        with self.assertWarnsRegex(DeprecationWarning, "Passing Handle"):
+            f = self.loop.run_in_executor(None, h)
         self.assertIsInstance(f, asyncio.Future)
         self.assertTrue(f.done())
         self.assertIsNone(f.result())
@@ -373,12 +374,14 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         self.loop.set_default_executor(executor)
 
-        res = self.loop.run_in_executor(None, h)
+        with self.assertWarnsRegex(DeprecationWarning, "Passing Handle"):
+            res = self.loop.run_in_executor(None, h)
         self.assertIs(f, res)
 
         executor = mock.Mock()
         executor.submit.return_value = f
-        res = self.loop.run_in_executor(executor, h)
+        with self.assertWarnsRegex(DeprecationWarning, "Passing Handle"):
+            res = self.loop.run_in_executor(executor, h)
         self.assertIs(f, res)
         self.assertTrue(executor.submit.called)
 
