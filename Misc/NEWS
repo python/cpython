@@ -174,6 +174,10 @@ Library
 
 - Issue #28325: Remove vestigal MacOS 9 macurl2path module and its tests.
 
+- Issue #28368: Refuse monitoring processes if the child watcher has
+  no loop attached.
+  Patch by Vincent Michel.
+
 Windows
 -------
 
