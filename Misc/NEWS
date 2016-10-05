@@ -186,6 +186,8 @@ Library
 
 - Issue #28371: Deprecate passing asyncio.Handles to run_in_executor.
 
+- Issue #28372: Fix asyncio to support formatting of non-python coroutines.
+
 Windows
 -------
 
