@@ -448,6 +448,7 @@ class StreamReader:
         assert not self._eof, '_wait_for_data after EOF'
 
         # Waiting for data while paused will make deadlock, so prevent it.
+        # This is essential for readexactly(n) for case when n > self._limit.
         if self._paused:
             self._paused = False
             self._transport.resume_reading()
@@ -658,25 +659,22 @@ class StreamReader:
         if n == 0:
             return b''
 
-        # There used to be "optimized" code here.  It created its own
-        # Future and waited until self._buffer had at least the n
-        # bytes, then called read(n).  Unfortunately, this could pause
-        # the transport if the argument was larger than the pause
-        # limit (which is twice self._limit).  So now we just read()
-        # into a local buffer.
+        while len(self._buffer) < n:
+            if self._eof:
+                incomplete = bytes(self._buffer)
+                self._buffer.clear()
+                raise IncompleteReadError(incomplete, n)
 
-        blocks = []
-        while n > 0:
-            block = yield from self.read(n)
-            if not block:
-                partial = b''.join(blocks)
-                raise IncompleteReadError(partial, len(partial) + n)
-            blocks.append(block)
-            n -= len(block)
+            yield from self._wait_for_data('readexactly')
 
-        assert n == 0
-
-        return b''.join(blocks)
+        if len(self._buffer) == n:
+            data = bytes(self._buffer)
+            self._buffer.clear()
+        else:
+            data = bytes(self._buffer[:n])
+            del self._buffer[:n]
+        self._maybe_resume_transport()
+        return data
 
     if compat.PY35:
         @coroutine
