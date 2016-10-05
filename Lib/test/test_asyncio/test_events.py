@@ -1,5 +1,6 @@
 """Tests for events.py."""
 
+import collections.abc
 import functools
 import gc
 import io
@@ -25,6 +26,7 @@ if sys.platform != 'win32':
     import tty
 
 import asyncio
+from asyncio import coroutines
 from asyncio import proactor_events
 from asyncio import selector_events
 from asyncio import sslproto
@@ -2379,6 +2381,38 @@ class HandleTests(test_utils.TestCase):
         # call_at
         h = loop.call_later(0, noop)
         check_source_traceback(h)
+
+    @unittest.skipUnless(hasattr(collections.abc, 'Coroutine'),
+                         'No collections.abc.Coroutine')
+    def test_coroutine_like_object_debug_formatting(self):
+        # Test that asyncio can format coroutines that are instances of
+        # collections.abc.Coroutine, but lack cr_core or gi_code attributes
+        # (such as ones compiled with Cython).
+
+        class Coro:
+            __name__ = 'AAA'
+
+            def send(self, v):
+                pass
+
+            def throw(self, *exc):
+                pass
+
+            def close(self):
+                pass
+
+            def __await__(self):
+                pass
+
+        coro = Coro()
+        self.assertTrue(asyncio.iscoroutine(coro))
+        self.assertEqual(coroutines._format_coroutine(coro), 'AAA()')
+
+        coro.__qualname__ = 'BBB'
+        self.assertEqual(coroutines._format_coroutine(coro), 'BBB()')
+
+        coro.cr_running = True
+        self.assertEqual(coroutines._format_coroutine(coro), 'BBB() running')
 
 
 class TimerTests(unittest.TestCase):
