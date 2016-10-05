@@ -321,7 +321,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
 
         self._loop.call_soon(self._protocol.connection_made, self)
         # only start reading when connection_made() has been called
-        self._loop.call_soon(self._loop.add_reader,
+        self._loop.call_soon(self._loop._add_reader,
                              self._fileno, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
@@ -364,15 +364,15 @@ class _UnixReadPipeTransport(transports.ReadTransport):
                 if self._loop.get_debug():
                     logger.info("%r was closed by peer", self)
                 self._closing = True
-                self._loop.remove_reader(self._fileno)
+                self._loop._remove_reader(self._fileno)
                 self._loop.call_soon(self._protocol.eof_received)
                 self._loop.call_soon(self._call_connection_lost, None)
 
     def pause_reading(self):
-        self._loop.remove_reader(self._fileno)
+        self._loop._remove_reader(self._fileno)
 
     def resume_reading(self):
-        self._loop.add_reader(self._fileno, self._read_ready)
+        self._loop._add_reader(self._fileno, self._read_ready)
 
     def set_protocol(self, protocol):
         self._protocol = protocol
@@ -413,7 +413,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
 
     def _close(self, exc):
         self._closing = True
-        self._loop.remove_reader(self._fileno)
+        self._loop._remove_reader(self._fileno)
         self._loop.call_soon(self._call_connection_lost, exc)
 
     def _call_connection_lost(self, exc):
@@ -458,7 +458,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         # works for pipes and sockets. (Exception: OS X 10.4?  Issue #19294.)
         if is_socket or (is_fifo and not sys.platform.startswith("aix")):
             # only start reading when connection_made() has been called
-            self._loop.call_soon(self._loop.add_reader,
+            self._loop.call_soon(self._loop._add_reader,
                                  self._fileno, self._read_ready)
 
         if waiter is not None:
@@ -531,7 +531,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
                 return
             elif n > 0:
                 data = memoryview(data)[n:]
-            self._loop.add_writer(self._fileno, self._write_ready)
+            self._loop._add_writer(self._fileno, self._write_ready)
 
         self._buffer += data
         self._maybe_pause_protocol()
@@ -548,15 +548,15 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             self._conn_lost += 1
             # Remove writer here, _fatal_error() doesn't it
             # because _buffer is empty.
-            self._loop.remove_writer(self._fileno)
+            self._loop._remove_writer(self._fileno)
             self._fatal_error(exc, 'Fatal write error on pipe transport')
         else:
             if n == len(self._buffer):
                 self._buffer.clear()
-                self._loop.remove_writer(self._fileno)
+                self._loop._remove_writer(self._fileno)
                 self._maybe_resume_protocol()  # May append to buffer.
                 if self._closing:
-                    self._loop.remove_reader(self._fileno)
+                    self._loop._remove_reader(self._fileno)
                     self._call_connection_lost(None)
                 return
             elif n > 0:
@@ -571,7 +571,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         assert self._pipe
         self._closing = True
         if not self._buffer:
-            self._loop.remove_reader(self._fileno)
+            self._loop._remove_reader(self._fileno)
             self._loop.call_soon(self._call_connection_lost, None)
 
     def set_protocol(self, protocol):
@@ -618,9 +618,9 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
     def _close(self, exc=None):
         self._closing = True
         if self._buffer:
-            self._loop.remove_writer(self._fileno)
+            self._loop._remove_writer(self._fileno)
         self._buffer.clear()
-        self._loop.remove_reader(self._fileno)
+        self._loop._remove_reader(self._fileno)
         self._loop.call_soon(self._call_connection_lost, exc)
 
     def _call_connection_lost(self, exc):
