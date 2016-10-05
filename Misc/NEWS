@@ -181,6 +181,9 @@ Library
 - Issue #28369: Raise RuntimeError when transport's FD is used with
   add_reader, add_writer, etc.
 
+- Issue #28370: Speedup asyncio.StreamReader.readexactly.
+  Patch by Коренберг Марк.
+
 Windows
 -------
 
