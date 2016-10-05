@@ -72,11 +72,11 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_make_ssl_transport(self):
         m = mock.Mock()
-        self.loop.add_reader = mock.Mock()
-        self.loop.add_reader._is_coroutine = False
-        self.loop.add_writer = mock.Mock()
-        self.loop.remove_reader = mock.Mock()
-        self.loop.remove_writer = mock.Mock()
+        self.loop._add_reader = mock.Mock()
+        self.loop._add_reader._is_coroutine = False
+        self.loop._add_writer = mock.Mock()
+        self.loop._remove_reader = mock.Mock()
+        self.loop._remove_writer = mock.Mock()
         waiter = asyncio.Future(loop=self.loop)
         with test_utils.disable_logger():
             transport = self.loop._make_ssl_transport(
@@ -119,7 +119,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         ssock.fileno.return_value = 7
         csock = self.loop._csock
         csock.fileno.return_value = 1
-        remove_reader = self.loop.remove_reader = mock.Mock()
+        remove_reader = self.loop._remove_reader = mock.Mock()
 
         self.loop._selector.close()
         self.loop._selector = selector = mock.Mock()
@@ -651,12 +651,12 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         reader = mock.Mock()
         reader.cancelled = True
 
-        self.loop.remove_reader = mock.Mock()
+        self.loop._remove_reader = mock.Mock()
         self.loop._process_events(
             [(selectors.SelectorKey(
                 1, 1, selectors.EVENT_READ, (reader, None)),
              selectors.EVENT_READ)])
-        self.loop.remove_reader.assert_called_with(1)
+        self.loop._remove_reader.assert_called_with(1)
 
     def test_process_events_write(self):
         writer = mock.Mock()
@@ -672,13 +672,13 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
     def test_process_events_write_cancelled(self):
         writer = mock.Mock()
         writer.cancelled = True
-        self.loop.remove_writer = mock.Mock()
+        self.loop._remove_writer = mock.Mock()
 
         self.loop._process_events(
             [(selectors.SelectorKey(1, 1, selectors.EVENT_WRITE,
                                     (None, writer)),
               selectors.EVENT_WRITE)])
-        self.loop.remove_writer.assert_called_with(1)
+        self.loop._remove_writer.assert_called_with(1)
 
     def test_accept_connection_multiple(self):
         sock = mock.Mock()
@@ -747,8 +747,8 @@ class SelectorTransportTests(test_utils.TestCase):
     def test_force_close(self):
         tr = self.create_transport()
         tr._buffer.extend(b'1')
-        self.loop.add_reader(7, mock.sentinel)
-        self.loop.add_writer(7, mock.sentinel)
+        self.loop._add_reader(7, mock.sentinel)
+        self.loop._add_writer(7, mock.sentinel)
         tr._force_close(None)
 
         self.assertTrue(tr.is_closing())
@@ -1037,7 +1037,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
         transport = self.socket_transport()
         transport._buffer.extend(data)
-        self.loop.add_writer(7, transport._write_ready)
+        self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
         self.assertTrue(self.sock.send.called)
         self.assertFalse(self.loop.writers)
@@ -1049,7 +1049,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         transport = self.socket_transport()
         transport._closing = True
         transport._buffer.extend(data)
-        self.loop.add_writer(7, transport._write_ready)
+        self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
         self.assertTrue(self.sock.send.called)
         self.assertFalse(self.loop.writers)
@@ -1067,7 +1067,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
         transport = self.socket_transport()
         transport._buffer.extend(data)
-        self.loop.add_writer(7, transport._write_ready)
+        self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
         self.loop.assert_writer(7, transport._write_ready)
         self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
@@ -1078,7 +1078,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
         transport = self.socket_transport()
         transport._buffer.extend(data)
-        self.loop.add_writer(7, transport._write_ready)
+        self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
         self.loop.assert_writer(7, transport._write_ready)
         self.assertEqual(list_to_buffer([b'data']), transport._buffer)
@@ -1088,7 +1088,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
         transport = self.socket_transport()
         transport._buffer = list_to_buffer([b'data1', b'data2'])
-        self.loop.add_writer(7, transport._write_ready)
+        self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
 
         self.loop.assert_writer(7, transport._write_ready)
@@ -1130,7 +1130,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
     @mock.patch('asyncio.base_events.logger')
     def test_transport_close_remove_writer(self, m_log):
-        remove_writer = self.loop.remove_writer = mock.Mock()
+        remove_writer = self.loop._remove_writer = mock.Mock()
 
         transport = self.socket_transport()
         transport.close()
@@ -1288,7 +1288,7 @@ class SelectorSslTransportTests(test_utils.TestCase):
         self.assertEqual((b'data',), self.protocol.data_received.call_args[0])
 
     def test_read_ready_write_wants_read(self):
-        self.loop.add_writer = mock.Mock()
+        self.loop._add_writer = mock.Mock()
         self.sslsock.recv.side_effect = BlockingIOError
         transport = self._make_one()
         transport._write_wants_read = True
@@ -1298,7 +1298,7 @@ class SelectorSslTransportTests(test_utils.TestCase):
 
         self.assertFalse(transport._write_wants_read)
         transport._write_ready.assert_called_with()
-        self.loop.add_writer.assert_called_with(
+        self.loop._add_writer.assert_called_with(
             transport._sock_fd, transport._write_ready)
 
     def test_read_ready_recv_eof(self):
@@ -1333,16 +1333,16 @@ class SelectorSslTransportTests(test_utils.TestCase):
         self.assertFalse(self.protocol.data_received.called)
 
     def test_read_ready_recv_write(self):
-        self.loop.remove_reader = mock.Mock()
-        self.loop.add_writer = mock.Mock()
+        self.loop._remove_reader = mock.Mock()
+        self.loop._add_writer = mock.Mock()
         self.sslsock.recv.side_effect = ssl.SSLWantWriteError
         transport = self._make_one()
         transport._read_ready()
         self.assertFalse(self.protocol.data_received.called)
         self.assertTrue(transport._read_wants_write)
 
-        self.loop.remove_reader.assert_called_with(transport._sock_fd)
-        self.loop.add_writer.assert_called_with(
+        self.loop._remove_reader.assert_called_with(transport._sock_fd)
+        self.loop._add_writer.assert_called_with(
             transport._sock_fd, transport._write_ready)
 
     def test_read_ready_recv_exc(self):
@@ -1419,12 +1419,12 @@ class SelectorSslTransportTests(test_utils.TestCase):
         transport = self._make_one()
         transport._buffer = list_to_buffer([b'data'])
 
-        self.loop.remove_writer = mock.Mock()
+        self.loop._remove_writer = mock.Mock()
         self.sslsock.send.side_effect = ssl.SSLWantReadError
         transport._write_ready()
         self.assertFalse(self.protocol.data_received.called)
         self.assertTrue(transport._write_wants_read)
-        self.loop.remove_writer.assert_called_with(transport._sock_fd)
+        self.loop._remove_writer.assert_called_with(transport._sock_fd)
 
     def test_write_ready_send_exc(self):
         err = self.sslsock.send.side_effect = OSError()
@@ -1439,7 +1439,7 @@ class SelectorSslTransportTests(test_utils.TestCase):
         self.assertEqual(list_to_buffer(), transport._buffer)
 
     def test_write_ready_read_wants_write(self):
-        self.loop.add_reader = mock.Mock()
+        self.loop._add_reader = mock.Mock()
         self.sslsock.send.side_effect = BlockingIOError
         transport = self._make_one()
         transport._read_wants_write = True
@@ -1448,7 +1448,7 @@ class SelectorSslTransportTests(test_utils.TestCase):
 
         self.assertFalse(transport._read_wants_write)
         transport._read_ready.assert_called_with()
-        self.loop.add_reader.assert_called_with(
+        self.loop._add_reader.assert_called_with(
             transport._sock_fd, transport._read_ready)
 
     def test_write_eof(self):
@@ -1699,7 +1699,7 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
 
         transport = self.datagram_transport()
         transport._buffer.append((data, ('0.0.0.0', 12345)))
-        self.loop.add_writer(7, transport._sendto_ready)
+        self.loop._add_writer(7, transport._sendto_ready)
         transport._sendto_ready()
         self.assertTrue(self.sock.sendto.called)
         self.assertEqual(
@@ -1713,7 +1713,7 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         transport = self.datagram_transport()
         transport._closing = True
         transport._buffer.append((data, ()))
-        self.loop.add_writer(7, transport._sendto_ready)
+        self.loop._add_writer(7, transport._sendto_ready)
         transport._sendto_ready()
         self.sock.sendto.assert_called_with(data, ())
         self.assertFalse(self.loop.writers)
@@ -1722,7 +1722,7 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
 
     def test_sendto_ready_no_data(self):
         transport = self.datagram_transport()
-        self.loop.add_writer(7, transport._sendto_ready)
+        self.loop._add_writer(7, transport._sendto_ready)
         transport._sendto_ready()
         self.assertFalse(self.sock.sendto.called)
         self.assertFalse(self.loop.writers)
@@ -1732,7 +1732,7 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
 
         transport = self.datagram_transport()
         transport._buffer.extend([(b'data1', ()), (b'data2', ())])
-        self.loop.add_writer(7, transport._sendto_ready)
+        self.loop._add_writer(7, transport._sendto_ready)
         transport._sendto_ready()
 
         self.loop.assert_writer(7, transport._sendto_ready)
