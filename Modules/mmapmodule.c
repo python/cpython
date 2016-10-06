@@ -267,7 +267,7 @@ static PyObject *
 mmap_read_method(mmap_object *self,
                  PyObject *args)
 {
-    Py_ssize_t num_bytes, remaining;
+    Py_ssize_t num_bytes = PY_SSIZE_T_MAX, remaining;
     PyObject *result;
 
     CHECK_VALID(NULL);
