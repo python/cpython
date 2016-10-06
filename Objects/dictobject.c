@@ -184,8 +184,8 @@ The other half of the strategy is to get the other bits of the hash code
 into play.  This is done by initializing a (unsigned) vrbl "perturb" to the
 full hash code, and changing the recurrence to:
 
-    j = (5*j) + 1 + perturb;
     perturb >>= PERTURB_SHIFT;
+    j = (5*j) + 1 + perturb;
     use j % 2**i as the next table index;
 
 Now the probe sequence depends (eventually) on every bit in the hash code,
@@ -630,7 +630,7 @@ PyDict_New(void)
 static Py_ssize_t
 lookdict_index(PyDictKeysObject *k, Py_hash_t hash, Py_ssize_t index)
 {
-    size_t i, perturb;
+    size_t i;
     size_t mask = DK_MASK(k);
     Py_ssize_t ix;
 
@@ -643,7 +643,8 @@ lookdict_index(PyDictKeysObject *k, Py_hash_t hash, Py_ssize_t index)
         return DKIX_EMPTY;
     }
 
-    for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
+    for (size_t perturb = hash;;) {
+        perturb >>= PERTURB_SHIFT;
         i = mask & ((i << 2) + i + perturb + 1);
         ix = dk_get_index(k, i);
         if (ix == index) {
@@ -685,7 +686,7 @@ static Py_ssize_t
 lookdict(PyDictObject *mp, PyObject *key,
          Py_hash_t hash, PyObject ***value_addr, Py_ssize_t *hashpos)
 {
-    size_t i, perturb, mask;
+    size_t i, mask;
     Py_ssize_t ix, freeslot;
     int cmp;
     PyDictKeysObject *dk;
@@ -740,7 +741,8 @@ top:
         freeslot = -1;
     }
 
-    for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
+    for (size_t perturb = hash;;) {
+        perturb >>= PERTURB_SHIFT;
         i = ((i << 2) + i + perturb + 1) & mask;
         ix = dk_get_index(dk, i);
         if (ix == DKIX_EMPTY) {
@@ -797,7 +799,7 @@ static Py_ssize_t
 lookdict_unicode(PyDictObject *mp, PyObject *key,
                  Py_hash_t hash, PyObject ***value_addr, Py_ssize_t *hashpos)
 {
-    size_t i, perturb;
+    size_t i;
     size_t mask = DK_MASK(mp->ma_keys);
     Py_ssize_t ix, freeslot;
     PyDictKeyEntry *ep, *ep0 = DK_ENTRIES(mp->ma_keys);
@@ -835,7 +837,8 @@ lookdict_unicode(PyDictObject *mp, PyObject *key,
         freeslot = -1;
     }
 
-    for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
+    for (size_t perturb = hash;;) {
+        perturb >>= PERTURB_SHIFT;
         i = mask & ((i << 2) + i + perturb + 1);
         ix = dk_get_index(mp->ma_keys, i);
         if (ix == DKIX_EMPTY) {
@@ -872,7 +875,7 @@ lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
                          Py_hash_t hash, PyObject ***value_addr,
                          Py_ssize_t *hashpos)
 {
-    size_t i, perturb;
+    size_t i;
     size_t mask = DK_MASK(mp->ma_keys);
     Py_ssize_t ix;
     PyDictKeyEntry *ep, *ep0 = DK_ENTRIES(mp->ma_keys);
@@ -905,7 +908,8 @@ lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
         *value_addr = &ep->me_value;
         return ix;
     }
-    for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
+    for (size_t perturb = hash;;) {
+        perturb >>= PERTURB_SHIFT;
         i = mask & ((i << 2) + i + perturb + 1);
         ix = dk_get_index(mp->ma_keys, i);
         assert (ix != DKIX_DUMMY);
@@ -938,7 +942,7 @@ static Py_ssize_t
 lookdict_split(PyDictObject *mp, PyObject *key,
                Py_hash_t hash, PyObject ***value_addr, Py_ssize_t *hashpos)
 {
-    size_t i, perturb;
+    size_t i;
     size_t mask = DK_MASK(mp->ma_keys);
     Py_ssize_t ix;
     PyDictKeyEntry *ep, *ep0 = DK_ENTRIES(mp->ma_keys);
@@ -971,7 +975,8 @@ lookdict_split(PyDictObject *mp, PyObject *key,
         *value_addr = &mp->ma_values[ix];
         return ix;
     }
-    for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
+    for (size_t perturb = hash;;) {
+        perturb >>= PERTURB_SHIFT;
         i = mask & ((i << 2) + i + perturb + 1);
         ix = dk_get_index(mp->ma_keys, i);
         if (ix == DKIX_EMPTY) {
@@ -1064,7 +1069,7 @@ static void
 find_empty_slot(PyDictObject *mp, PyObject *key, Py_hash_t hash,
                 PyObject ***value_addr, Py_ssize_t *hashpos)
 {
-    size_t i, perturb;
+    size_t i;
     size_t mask = DK_MASK(mp->ma_keys);
     Py_ssize_t ix;
     PyDictKeyEntry *ep, *ep0 = DK_ENTRIES(mp->ma_keys);
@@ -1077,7 +1082,8 @@ find_empty_slot(PyDictObject *mp, PyObject *key, Py_hash_t hash,
         mp->ma_keys->dk_lookup = lookdict;
     i = hash & mask;
     ix = dk_get_index(mp->ma_keys, i);
-    for (perturb = hash; ix != DKIX_EMPTY; perturb >>= PERTURB_SHIFT) {
+    for (size_t perturb = hash; ix != DKIX_EMPTY;) {
+        perturb >>= PERTURB_SHIFT;
         i = (i << 2) + i + perturb + 1;
         ix = dk_get_index(mp->ma_keys, i & mask);
     }
@@ -1202,7 +1208,7 @@ static void
 insertdict_clean(PyDictObject *mp, PyObject *key, Py_hash_t hash,
                  PyObject *value)
 {
-    size_t i, perturb;
+    size_t i;
     PyDictKeysObject *k = mp->ma_keys;
     size_t mask = (size_t)DK_SIZE(k)-1;
     PyDictKeyEntry *ep0 = DK_ENTRIES(mp->ma_keys);
@@ -1213,8 +1219,8 @@ insertdict_clean(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     assert(key != NULL);
     assert(PyUnicode_CheckExact(key) || k->dk_lookup == lookdict);
     i = hash & mask;
-    for (perturb = hash; dk_get_index(k, i) != DKIX_EMPTY;
-         perturb >>= PERTURB_SHIFT) {
+    for (size_t perturb = hash; dk_get_index(k, i) != DKIX_EMPTY;) {
+        perturb >>= PERTURB_SHIFT;
         i = mask & ((i << 2) + i + perturb + 1);
     }
     ep = &ep0[k->dk_nentries];
