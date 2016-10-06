@@ -585,11 +585,9 @@ mmap_seek_method(mmap_object *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "n|i:seek", &dist, &how))
         return NULL;
     else {
-        size_t where;
+        Py_ssize_t where;
         switch (how) {
         case 0: /* relative to start */
-            if (dist < 0)
-                goto onoutofrange;
             where = dist;
             break;
         case 1: /* relative to current position */
@@ -606,7 +604,7 @@ mmap_seek_method(mmap_object *self, PyObject *args)
             PyErr_SetString(PyExc_ValueError, "unknown seek type");
             return NULL;
         }
-        if (where > self->size)
+        if (where > self->size || where < 0)
             goto onoutofrange;
         self->pos = where;
         Py_INCREF(Py_None);
