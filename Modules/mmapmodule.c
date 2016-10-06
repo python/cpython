@@ -383,8 +383,10 @@ mmap_write_method(mmap_object *self,
     if (!PyArg_ParseTuple(args, "y*:write", &data))
         return(NULL);
 
-    if (!is_writable(self))
+    if (!is_writable(self)) {
+        PyBuffer_Release(&data);
         return NULL;
+    }
 
     if (self->pos > self->size || self->size - self->pos < data.len) {
         PyBuffer_Release(&data);
