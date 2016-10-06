@@ -713,6 +713,7 @@ class MmapTests(unittest.TestCase):
         gc_collect()
         self.assertIs(wr(), None)
 
+    @unittest.skipIf(os.name == 'nt', 'cannot resize anonymous mmaps on Windows')
     def test_resize_past_pos(self):
         m = mmap.mmap(-1, 8192)
         self.addCleanup(m.close)
