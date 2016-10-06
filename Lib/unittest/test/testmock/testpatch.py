@@ -969,8 +969,14 @@ class PatchTest(unittest.TestCase):
     def test_autospec_function(self):
         @patch('%s.function' % __name__, autospec=True)
         def test(mock):
+            function.assert_not_called()
+            self.assertRaises(AssertionError, function.assert_called)
+            self.assertRaises(AssertionError, function.assert_called_once)
             function(1)
+            self.assertRaises(AssertionError, function.assert_not_called)
             function.assert_called_with(1)
+            function.assert_called()
+            function.assert_called_once()
             function(2, 3)
             function.assert_called_with(2, 3)
 
