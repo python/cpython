@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28201: Dict reduces possibility of 2nd conflict in hash table when
+  hashes have same lower bits.
+
 - Issue #28350: String constants with null character no longer interned.
 
 - Issue #26617: Fix crash when GC runs during weakref callbacks.
