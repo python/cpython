@@ -713,6 +713,17 @@ class MmapTests(unittest.TestCase):
         gc_collect()
         self.assertIs(wr(), None)
 
+    def test_resize_past_pos(self):
+        m = mmap.mmap(-1, 8192)
+        self.addCleanup(m.close)
+        m.read(5000)
+        m.resize(4096)
+        self.assertEqual(m.read(14), b'')
+        self.assertRaises(ValueError, m.read_byte,)
+        self.assertRaises(ValueError, m.write_byte, 42)
+        self.assertRaises(ValueError, m.write, b'abc')
+
+
 class LargeMmapTests(unittest.TestCase):
 
     def setUp(self):
