@@ -53,6 +53,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28380: unittest.mock Mock autospec functions now properly support
+  assert_called, assert_not_called, and assert_called_once.
+
 - Issue #27181 remove statistics.geometric_mean and defer until 3.7.
 
 - Issue #28229: lzma module now supports pathlib.
