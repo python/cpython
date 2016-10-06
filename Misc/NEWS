@@ -441,6 +441,9 @@ Library
   pickling and text representation purposes. Patch by Emanuel Barry and
   Serhiy Storchaka.
 
+- Fix possible integer overflows and crashes in the mmap module with unusual
+  usage patterns.
+
 - Issue #1703178: Fix the ability to pass the --link-objects option to the
   distutils build_ext command.
 
