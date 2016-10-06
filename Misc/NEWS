@@ -46,6 +46,9 @@ Core and Builtins
 Library
 -------
 
+- Fix possible integer overflows and crashes in the mmap module with unusual
+  usage patterns.
+
 - Issue #27897: Fixed possible crash in sqlite3.Connection.create_collation()
   if pass invalid string-like object as a name.  Original patch by Xiang Zhang.
 
