@@ -656,9 +656,12 @@ class MmapTests(unittest.TestCase):
         m = mmap.mmap(-1, 8192)
         self.addCleanup(m.close)
         m.read(5000)
-        m.resize(4096)
+        try:
+            m.resize(4096)
+        except SystemError:
+            self.skipTest("resizing not supported")
         self.assertEqual(m.read(14), '')
-        self.assertRaises(ValueError, m.read_byte,)
+        self.assertRaises(ValueError, m.read_byte,1)
         self.assertRaises(ValueError, m.write_byte, 'b')
         self.assertRaises(ValueError, m.write, 'abc')
 
