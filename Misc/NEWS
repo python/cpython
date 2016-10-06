@@ -61,6 +61,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28380: unittest.mock Mock autospec functions now properly support
+  assert_called, assert_not_called, and assert_called_once.
+
 - Issue #28229: lzma module now supports pathlib.
 
 - Issue #28321: Fixed writing non-BMP characters with binary format in plistlib.
