@@ -92,6 +92,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26293: Fixed writing ZIP files that starts not from the start of the
+  file.  Offsets in ZIP file now are relative to the start of the archive in
+  conforming to the specification.
+
 - Issue #28321: Fixed writing non-BMP characters with binary format in plistlib.
 
 - Issue #28322: Fixed possible crashes when unpickle itertools objects from
