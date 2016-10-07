@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #24098: Fixed possible crash when AST is changed in process of
+  compiling it.
+
 - Issue #28201: Dict reduces possibility of 2nd conflict in hash table when
   hashes have same lower bits.
 
