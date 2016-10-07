@@ -1887,9 +1887,8 @@ wait_for_thread_shutdown(void)
 #ifdef WITH_THREAD
     _Py_IDENTIFIER(_shutdown);
     PyObject *result;
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *threading = PyMapping_GetItemString(tstate->interp->modules,
-                                                  "threading");
+    PyObject *modules = PyImport_GetModuleDict();
+    PyObject *threading = PyMapping_GetItemString(modules, "threading");
     if (threading == NULL) {
         /* threading not imported */
         PyErr_Clear();
