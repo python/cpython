@@ -553,7 +553,6 @@ PyImport_Cleanup(void)
     /* Clear and delete the modules directory.  Actual modules will
        still be there only if imported during the execution of some
        destructor. */
-    interp->modules = NULL;
     Py_DECREF(modules);
 
     /* Once more */

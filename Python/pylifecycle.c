@@ -674,7 +674,6 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     PyObject *modules = PyDict_New();
     if (modules == NULL)
         Py_FatalError("Py_InitializeCore: can't make modules dictionary");
-    interp->modules = modules;
 
     sysmod = _PySys_BeginInit();
     if (sysmod == NULL)
@@ -1210,7 +1209,6 @@ Py_NewInterpreter(void)
     PyObject *modules = PyDict_New();
     if (modules == NULL)
         Py_FatalError("Py_NewInterpreter: can't make modules dictionary");
-    interp->modules = modules;
 
     sysmod = _PyImport_FindBuiltin("sys", modules);
     if (sysmod != NULL) {
