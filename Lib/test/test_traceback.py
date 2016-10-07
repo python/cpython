@@ -688,8 +688,12 @@ class TestFrame(unittest.TestCase):
 class TestStack(unittest.TestCase):
 
     def test_walk_stack(self):
-        s = list(traceback.walk_stack(None))
-        self.assertGreater(len(s), 10)
+        def deeper():
+            return list(traceback.walk_stack(None))
+        s1 = list(traceback.walk_stack(None))
+        s2 = deeper()
+        self.assertEqual(len(s2) - len(s1), 1)
+        self.assertEqual(s2[1:], s1)
 
     def test_walk_tb(self):
         try:
