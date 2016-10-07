@@ -49,6 +49,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26293: Fixed writing ZIP files that starts not from the start of the
+  file.  Offsets in ZIP file now are relative to the start of the archive in
+  conforming to the specification.
+
 - Fix possible integer overflows and crashes in the mmap module with unusual
   usage patterns.
 
