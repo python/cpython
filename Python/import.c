@@ -341,7 +341,7 @@ PyImport_Cleanup(void)
     Py_ssize_t pos;
     PyObject *key, *value, *dict;
     PyInterpreterState *interp = PyThreadState_GET()->interp;
-    PyObject *modules = interp->modules;
+    PyObject *modules = PyImport_GetModuleDict();
     PyObject *weaklist = NULL;
     const char * const *p;
 
@@ -1543,7 +1543,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         Py_INCREF(abs_name);
     }
 
-    mod = PyDict_GetItem(interp->modules, abs_name);
+    PyObject *modules = PyImport_GetModuleDict();
+    mod = PyDict_GetItem(modules, abs_name);
     if (mod != NULL && mod != Py_None) {
         _Py_IDENTIFIER(__spec__);
         _Py_IDENTIFIER(_initializing);
@@ -1630,7 +1631,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                     goto error;
                 }
 
-                final_mod = PyDict_GetItem(interp->modules, to_return);
+                PyObject *modules = PyImport_GetModuleDict();
+                final_mod = PyDict_GetItem(modules, to_return);
                 Py_DECREF(to_return);
                 if (final_mod == NULL) {
                     PyErr_Format(PyExc_KeyError,

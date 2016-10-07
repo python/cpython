@@ -160,8 +160,9 @@ static PyObject *
 sys_displayhook(PyObject *self, PyObject *o)
 {
     PyObject *outf;
-    PyInterpreterState *interp = PyThreadState_GET()->interp;
-    PyObject *modules = interp->modules;
+    PyObject *modules = PyImport_GetModuleDict();
+    if (modules == NULL)
+        return NULL;
     PyObject *builtins;
     static PyObject *newline = NULL;
     int err;
