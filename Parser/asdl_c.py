@@ -513,6 +513,13 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("res = obj2ast_%s(PyList_GET_ITEM(tmp, i), &value, arena);" %
                       field.type, depth+2, reflow=False)
             self.emit("if (res != 0) goto failed;", depth+2)
+            self.emit("if (len != PyList_GET_SIZE(tmp)) {", depth+2)
+            self.emit("PyErr_SetString(PyExc_RuntimeError, \"%s field \\\"%s\\\" "
+                      "changed size during iteration\");" %
+                      (name, field.name),
+                      depth+3, reflow=False)
+            self.emit("goto failed;", depth+3)
+            self.emit("}", depth+2)
             self.emit("asdl_seq_SET(%s, i, value);" % field.name, depth+2)
             self.emit("}", depth+1)
         else:
