@@ -234,6 +234,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         else:
             if sock is None:
                 raise ValueError('no path and sock were specified')
+            if (sock.family != socket.AF_UNIX or
+                    sock.type != socket.SOCK_STREAM):
+                raise ValueError(
+                    'A UNIX Domain Stream Socket was expected, got {!r}'
+                    .format(sock))
             sock.setblocking(False)
 
         transport, protocol = yield from self._create_connection_transport(
@@ -272,9 +277,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     'path was not specified, and no sock specified')
 
-            if sock.family != socket.AF_UNIX:
+            if (sock.family != socket.AF_UNIX or
+                    sock.type != socket.SOCK_STREAM):
                 raise ValueError(
-                    'A UNIX Domain Socket was expected, got {!r}'.format(sock))
+                    'A UNIX Domain Stream Socket was expected, got {!r}'
+                    .format(sock))
 
         server = base_events.Server(self, [sock])
         sock.listen(backlog)

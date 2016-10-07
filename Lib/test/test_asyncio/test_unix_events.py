@@ -273,7 +273,16 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             coro = self.loop.create_unix_server(lambda: None, path=None,
                                                 sock=sock)
             with self.assertRaisesRegex(ValueError,
-                                        'A UNIX Domain Socket was expected'):
+                                        'A UNIX Domain Stream.*was expected'):
+                self.loop.run_until_complete(coro)
+
+    def test_create_unix_connection_path_inetsock(self):
+        sock = socket.socket()
+        with sock:
+            coro = self.loop.create_unix_connection(lambda: None, path=None,
+                                                    sock=sock)
+            with self.assertRaisesRegex(ValueError,
+                                        'A UNIX Domain Stream.*was expected'):
                 self.loop.run_until_complete(coro)
 
     @mock.patch('asyncio.unix_events.socket')
