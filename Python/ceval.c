@@ -2663,7 +2663,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                     PyObject *intersection = _PyDictView_Intersect(sum, arg);
 
                     if (intersection == NULL) {
-                        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                        if (PyErr_ExceptionMatches(PyExc_AttributeError) ||
+                            !PyMapping_Check(arg)) {
                             int function_location = (oparg>>8) & 0xff;
                             PyObject *func = (
                                     PEEK(function_location + num_maps));
@@ -2707,9 +2708,21 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
                 if (PyDict_Update(sum, arg) < 0) {
                     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                        PyErr_Format(PyExc_TypeError,
-                                "'%.200s' object is not a mapping",
-                                arg->ob_type->tp_name);
+                        if (with_call) {
+                            int function_location = (oparg>>8) & 0xff;
+                            PyObject *func = PEEK(function_location + num_maps);
+                            PyErr_Format(PyExc_TypeError,
+                                    "%.200s%.200s argument after ** "
+                                    "must be a mapping, not %.200s",
+                                    PyEval_GetFuncName(func),
+                                    PyEval_GetFuncDesc(func),
+                                    arg->ob_type->tp_name);
+                        }
+                        else {
+                            PyErr_Format(PyExc_TypeError,
+                                    "'%.200s' object is not a mapping",
+                                    arg->ob_type->tp_name);
+                        }
                     }
                     Py_DECREF(sum);
                     goto error;
