@@ -140,7 +140,9 @@ our objects and in some error messages, for example::
 
 Note that the name is a dotted name that includes both the module name and the
 name of the type within the module. The module in this case is :mod:`noddy` and
-the type is :class:`Noddy`, so we set the type name to :class:`noddy.Noddy`. ::
+the type is :class:`Noddy`, so we set the type name to :class:`noddy.Noddy`.
+One side effect of using an undotted name is that the pydoc documentation tool
+will not list the new type in the module documentation. ::
 
    sizeof(noddy_NoddyObject),  /* tp_basicsize */
 

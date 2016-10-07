@@ -122,7 +122,8 @@ type objects) *must* have the :attr:`ob_size` field.
    If no dot is present, the entire :c:member:`~PyTypeObject.tp_name` field is made accessible as the
    :attr:`~definition.__name__` attribute, and the :attr:`__module__` attribute is undefined
    (unless explicitly set in the dictionary, as explained above).  This means your
-   type will be impossible to pickle.
+   type will be impossible to pickle.  Additionally, it will not be listed in
+   module documentations created with pydoc.
 
    This field is not inherited by subtypes.
 
