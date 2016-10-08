@@ -218,7 +218,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
                     int wlen;
                     wlen = MultiByteToWideChar(CP_UTF8, 0, prompt, -1,
                             NULL, 0);
-                    if (wlen++ &&
+                    if (wlen &&
                         (wbuf = PyMem_RawMalloc(wlen * sizeof(wchar_t)))) {
                         wlen = MultiByteToWideChar(CP_UTF8, 0, prompt, -1,
                                 wbuf, wlen);
