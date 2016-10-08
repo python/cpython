@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #28376: The type of long range iterator is now registered as Iterator.
+  Patch by Oren Milman.
+
 - Issue #28376: The constructor of range_iterator now checks that step is not 0.
   Patch by Oren Milman.
 
