@@ -1859,6 +1859,39 @@ unicode_asucs4(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+unicode_copycharacters(PyObject *self, PyObject *args)
+{
+    PyObject *from, *to, *to_copy;
+    Py_ssize_t from_start, to_start, how_many, copied;
+
+    if (!PyArg_ParseTuple(args, "UnOnn:unicode_copycharacters", &to, &to_start,
+                          &from, &from_start, &how_many)) {
+        return NULL;
+    }
+
+    if (PyUnicode_READY(to) < 0) {
+        return NULL;
+    }
+
+    if (!(to_copy = PyUnicode_New(PyUnicode_GET_LENGTH(to),
+                                  PyUnicode_MAX_CHAR_VALUE(to)))) {
+        return NULL;
+    }
+    if (PyUnicode_Fill(to_copy, 0, PyUnicode_GET_LENGTH(to_copy), 0U) < 0) {
+        Py_DECREF(to_copy);
+        return NULL;
+    }
+
+    if ((copied = PyUnicode_CopyCharacters(to_copy, to_start, from,
+                                           from_start, how_many)) < 0) {
+        Py_DECREF(to_copy);
+        return NULL;
+    }
+
+    return Py_BuildValue("(Nn)", to_copy, copied);
+}
+
+static PyObject *
 unicode_encodedecimal(PyObject *self, PyObject *args)
 {
     Py_UNICODE *unicode;
@@ -4061,6 +4094,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_aswidechar",      unicode_aswidechar,              METH_VARARGS},
     {"unicode_aswidecharstring",unicode_aswidecharstring,        METH_VARARGS},
     {"unicode_asucs4",          unicode_asucs4,                  METH_VARARGS},
+    {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
     {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
     {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
