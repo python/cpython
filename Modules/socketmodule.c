@@ -3472,7 +3472,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     int buf_len = (sizeof buf) - 1;
     int errnop;
 #endif
-#if defined(HAVE_GETHOSTBYNAME_R_3_ARG) || defined(HAVE_GETHOSTBYNAME_R_6_ARG)
+#ifdef HAVE_GETHOSTBYNAME_R_3_ARG
     int result;
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
@@ -3484,7 +3484,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-    result = gethostbyname_r(name, &hp_allocated, buf, buf_len,
+    gethostbyname_r(name, &hp_allocated, buf, buf_len,
                              &h, &errnop);
 #elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)
     h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
@@ -3548,7 +3548,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     int buf_len = (sizeof buf) - 1;
     int errnop;
 #endif
-#if defined(HAVE_GETHOSTBYNAME_R_3_ARG) || defined(HAVE_GETHOSTBYNAME_R_6_ARG)
+#ifdef HAVE_GETHOSTBYNAME_R_3_ARG
     int result;
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
@@ -3581,7 +3581,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-    result = gethostbyaddr_r(ap, al, af,
+    gethostbyaddr_r(ap, al, af,
         &hp_allocated, buf, buf_len,
         &h, &errnop);
 #elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)

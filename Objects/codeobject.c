@@ -95,7 +95,6 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
            PyObject *lnotab)
 {
     PyCodeObject *co;
-    Py_ssize_t i;
     /* Check argument types */
     if (argcount < 0 || nlocals < 0 ||
         code == NULL ||
