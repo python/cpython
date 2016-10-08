@@ -1337,27 +1337,37 @@ win32_error_object(const char* function, PyObject* filename)
 #endif /* MS_WINDOWS */
 
 static PyObject *
-path_error(path_t *path)
+path_object_error(PyObject *path)
 {
 #ifdef MS_WINDOWS
-    return PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError,
-                                                        0, path->object);
+    return PyErr_SetExcFromWindowsErrWithFilenameObject(
+                PyExc_OSError, 0, path);
 #else
-    return PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path->object);
+    return PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
 #endif
 }
 
+static PyObject *
+path_object_error2(PyObject *path, PyObject *path2)
+{
+#ifdef MS_WINDOWS
+    return PyErr_SetExcFromWindowsErrWithFilenameObjects(
+                PyExc_OSError, 0, path, path2);
+#else
+    return PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError, path, path2);
+#endif
+}
+
+static PyObject *
+path_error(path_t *path)
+{
+    return path_object_error(path->object);
+}
 
 static PyObject *
 path_error2(path_t *path, path_t *path2)
 {
-#ifdef MS_WINDOWS
-    return PyErr_SetExcFromWindowsErrWithFilenameObjects(PyExc_OSError,
-            0, path->object, path2->object);
-#else
-    return PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError,
-        path->object, path2->object);
-#endif
+    return path_object_error2(path->object, path2->object);
 }
 
 
@@ -11152,41 +11162,26 @@ static PyObject *
 DirEntry_fetch_stat(DirEntry *self, int follow_symlinks)
 {
     int result;
-    struct _Py_stat_struct st;
+    STRUCT_STAT st;
+    PyObject *ub;
 
 #ifdef MS_WINDOWS
-    const wchar_t *path;
-
-    path = PyUnicode_AsUnicode(self->path);
-    if (!path)
-        return NULL;
-
-    if (follow_symlinks)
-        result = win32_stat(path, &st);
-    else
-        result = win32_lstat(path, &st);
-
-    if (result != 0) {
-        return PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError,
-                                                            0, self->path);
-    }
+    if (PyUnicode_FSDecoder(self->path, &ub)) {
+        const wchar_t *path = PyUnicode_AsUnicode(ub);
 #else /* POSIX */
-    PyObject *bytes;
-    const char *path;
-
-    if (!PyUnicode_FSConverter(self->path, &bytes))
+    if (PyUnicode_FSConverter(self->path, &ub)) {
+        const char *path = PyBytes_AS_STRING(ub);
+#endif
+        if (follow_symlinks)
+            result = STAT(path, &st);
+        else
+            result = LSTAT(path, &st);
+        Py_DECREF(ub);
+    } else
         return NULL;
-    path = PyBytes_AS_STRING(bytes);
-
-    if (follow_symlinks)
-        result = STAT(path, &st);
-    else
-        result = LSTAT(path, &st);
-    Py_DECREF(bytes);
 
     if (result != 0)
-        return PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, self->path);
-#endif
+        return path_object_error(self->path);
 
     return _pystat_fromstructstat(&st);
 }
@@ -11356,17 +11351,19 @@ DirEntry_inode(DirEntry *self)
 {
 #ifdef MS_WINDOWS
     if (!self->got_file_index) {
+        PyObject *unicode;
         const wchar_t *path;
-        struct _Py_stat_struct stat;
+        STRUCT_STAT stat;
+        int result;
 
-        path = PyUnicode_AsUnicode(self->path);
-        if (!path)
+        if (!PyUnicode_FSDecoder(self->path, &unicode))
             return NULL;
+        path = PyUnicode_AsUnicode(unicode);
+        result = LSTAT(path, &stat);
+        Py_DECREF(unicode);
 
-        if (win32_lstat(path, &stat) != 0) {
-            return PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError,
-                                                                0, self->path);
-        }
+        if (result != 0)
+            return path_object_error(self->path);
 
         self->win32_file_index = stat.st_ino;
         self->got_file_index = 1;

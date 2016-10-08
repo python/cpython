@@ -62,6 +62,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27998: Fixed bytes path support in os.scandir() on Windows.
+  Patch by Eryk Sun.
+
 - Issue #28317: The disassembler now decodes FORMAT_VALUE argument.
 
 - Issue #26293: Fixed writing ZIP files that starts not from the start of the
