@@ -16,6 +16,8 @@ del _opcodes_all
 _have_code = (types.MethodType, types.FunctionType, types.CodeType,
               classmethod, staticmethod, type)
 
+FORMAT_VALUE = opmap['FORMAT_VALUE']
+
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
        then as a statement if the first approach fails.
@@ -314,6 +316,13 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
                 argrepr = argval
             elif op in hasfree:
                 argval, argrepr = _get_name_info(arg, cells)
+            elif op == FORMAT_VALUE:
+                argval = ((None, str, repr, ascii)[arg & 0x3], bool(arg & 0x4))
+                argrepr = ('', 'str', 'repr', 'ascii')[arg & 0x3]
+                if argval[1]:
+                    if argrepr:
+                        argrepr += ', '
+                    argrepr += 'with format'
         yield Instruction(opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target)
