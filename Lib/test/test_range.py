@@ -499,29 +499,32 @@ class RangeTest(unittest.TestCase):
         import _testcapi
         rangeiter_type = type(iter(range(0)))
 
-        # rangeiter_new doesn't take keyword arguments
-        with self.assertRaises(TypeError):
-            rangeiter_type(a=1)
+        self.assertWarns(DeprecationWarning, rangeiter_type, 1, 3, 1)
 
-        # rangeiter_new takes exactly 3 arguments
-        self.assertRaises(TypeError, rangeiter_type)
-        self.assertRaises(TypeError, rangeiter_type, 1)
-        self.assertRaises(TypeError, rangeiter_type, 1, 1)
-        self.assertRaises(TypeError, rangeiter_type, 1, 1, 1, 1)
+        with test.support.check_warnings(('', DeprecationWarning)):
+            # rangeiter_new doesn't take keyword arguments
+            with self.assertRaises(TypeError):
+                rangeiter_type(a=1)
 
-        # start, stop and stop must fit in C long
-        for good_val in [_testcapi.LONG_MAX, _testcapi.LONG_MIN]:
-            rangeiter_type(good_val, good_val, good_val)
-        for bad_val in [_testcapi.LONG_MAX + 1, _testcapi.LONG_MIN - 1]:
-            self.assertRaises(OverflowError,
-                              rangeiter_type, bad_val, 1, 1)
-            self.assertRaises(OverflowError,
-                              rangeiter_type, 1, bad_val, 1)
-            self.assertRaises(OverflowError,
-                              rangeiter_type, 1, 1, bad_val)
+            # rangeiter_new takes exactly 3 arguments
+            self.assertRaises(TypeError, rangeiter_type)
+            self.assertRaises(TypeError, rangeiter_type, 1)
+            self.assertRaises(TypeError, rangeiter_type, 1, 1)
+            self.assertRaises(TypeError, rangeiter_type, 1, 1, 1, 1)
 
-        # step mustn't be zero
-        self.assertRaises(ValueError, rangeiter_type, 1, 1, 0)
+            # start, stop and stop must fit in C long
+            for good_val in [_testcapi.LONG_MAX, _testcapi.LONG_MIN]:
+                rangeiter_type(good_val, good_val, good_val)
+            for bad_val in [_testcapi.LONG_MAX + 1, _testcapi.LONG_MIN - 1]:
+                self.assertRaises(OverflowError,
+                                  rangeiter_type, bad_val, 1, 1)
+                self.assertRaises(OverflowError,
+                                  rangeiter_type, 1, bad_val, 1)
+                self.assertRaises(OverflowError,
+                                  rangeiter_type, 1, 1, bad_val)
+
+            # step mustn't be zero
+            self.assertRaises(ValueError, rangeiter_type, 1, 1, 0)
 
     def test_slice(self):
         def check(start, stop, step=None):
