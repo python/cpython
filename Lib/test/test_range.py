@@ -4,7 +4,6 @@ import unittest
 import sys
 import pickle
 import itertools
-import test.support
 
 # pure Python implementations (3 args only), for comparison
 def pyrange(start, stop, step):
@@ -494,37 +493,13 @@ class RangeTest(unittest.TestCase):
             test_id = "reversed(range({}, {}, {}))".format(start, end, step)
             self.assert_iterators_equal(iter1, iter2, test_id, limit=100)
 
-    @test.support.cpython_only
-    def test_range_iterator_invocation(self):
-        import _testcapi
+    def test_range_iterators_invocation(self):
+        # verify range iterators instances cannot be created by
+        # calling their type
         rangeiter_type = type(iter(range(0)))
-
-        self.assertWarns(DeprecationWarning, rangeiter_type, 1, 3, 1)
-
-        with test.support.check_warnings(('', DeprecationWarning)):
-            # rangeiter_new doesn't take keyword arguments
-            with self.assertRaises(TypeError):
-                rangeiter_type(a=1)
-
-            # rangeiter_new takes exactly 3 arguments
-            self.assertRaises(TypeError, rangeiter_type)
-            self.assertRaises(TypeError, rangeiter_type, 1)
-            self.assertRaises(TypeError, rangeiter_type, 1, 1)
-            self.assertRaises(TypeError, rangeiter_type, 1, 1, 1, 1)
-
-            # start, stop and stop must fit in C long
-            for good_val in [_testcapi.LONG_MAX, _testcapi.LONG_MIN]:
-                rangeiter_type(good_val, good_val, good_val)
-            for bad_val in [_testcapi.LONG_MAX + 1, _testcapi.LONG_MIN - 1]:
-                self.assertRaises(OverflowError,
-                                  rangeiter_type, bad_val, 1, 1)
-                self.assertRaises(OverflowError,
-                                  rangeiter_type, 1, bad_val, 1)
-                self.assertRaises(OverflowError,
-                                  rangeiter_type, 1, 1, bad_val)
-
-            # step mustn't be zero
-            self.assertRaises(ValueError, rangeiter_type, 1, 1, 0)
+        self.assertRaises(TypeError, rangeiter_type, 1, 3, 1)
+        long_rangeiter_type = type(iter(range(1 << 1000)))
+        self.assertRaises(TypeError, long_rangeiter_type, 1, 3, 1)
 
     def test_slice(self):
         def check(start, stop, step=None):

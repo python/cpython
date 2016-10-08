@@ -11,9 +11,7 @@ Core and Builtins
 -----------------
 
 - Issue #28376: Creating instances of range_iterator by calling range_iterator
-  type now is deprecated.  Patch by Oren Milman.
-
-- Issue #28376: The constructor of range_iterator now checks that step is not 0.
+  type now is disallowed.  Calling iter() on range instance is the only way.
   Patch by Oren Milman.
 
 - Issue #26906: Resolving special methods of uninitialized type now causes
