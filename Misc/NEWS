@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #28376: The constructor of range_iterator now checks that step is not 0.
+  Patch by Oren Milman.
+
 - Issue #26906: Resolving special methods of uninitialized type now causes
   implicit initialization of the type instead of a fail.
 

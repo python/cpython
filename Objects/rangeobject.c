@@ -937,12 +937,20 @@ rangeiter_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     long start, stop, step;
 
-    if (!_PyArg_NoKeywords("rangeiter()", kw))
+    if (!_PyArg_NoKeywords("range_iterator()", kw)) {
         return NULL;
+    }
 
-    if (!PyArg_ParseTuple(args, "lll;rangeiter() requires 3 int arguments",
-                          &start, &stop, &step))
+    if (!PyArg_ParseTuple(args,
+                          "lll;range_iterator() requires 3 int arguments",
+                          &start, &stop, &step)) {
         return NULL;
+    }
+    if (step == 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "range_iterator() arg 3 must not be zero");
+        return NULL;
+    }
 
     return fast_range_iter(start, stop, step);
 }
