@@ -107,16 +107,15 @@ class WindowsConsoleIOTests(unittest.TestCase):
         source = 'ϼўТλФЙ\r\n'.encode('utf-16-le')
         expected = 'ϼўТλФЙ\r\n'.encode('utf-8')
         for read_count in range(1, 16):
-            stdin = open('CONIN$', 'rb', buffering=0)
-            write_input(stdin, source)
+            with open('CONIN$', 'rb', buffering=0) as stdin:
+                write_input(stdin, source)
 
-            actual = b''
-            while not actual.endswith(b'\n'):
-                b = stdin.read(read_count)
-                actual += b
+                actual = b''
+                while not actual.endswith(b'\n'):
+                    b = stdin.read(read_count)
+                    actual += b
 
-            self.assertEqual(actual, expected, 'stdin.read({})'.format(read_count))
-            stdin.close()
+                self.assertEqual(actual, expected, 'stdin.read({})'.format(read_count))
 
     def test_partial_surrogate_reads(self):
         # Test that reading less than 1 full character works when stdin
@@ -125,17 +124,24 @@ class WindowsConsoleIOTests(unittest.TestCase):
         source = '\U00101FFF\U00101001\r\n'.encode('utf-16-le')
         expected = '\U00101FFF\U00101001\r\n'.encode('utf-8')
         for read_count in range(1, 16):
-            stdin = open('CONIN$', 'rb', buffering=0)
+            with open('CONIN$', 'rb', buffering=0) as stdin:
+                write_input(stdin, source)
+
+                actual = b''
+                while not actual.endswith(b'\n'):
+                    b = stdin.read(read_count)
+                    actual += b
+
+                self.assertEqual(actual, expected, 'stdin.read({})'.format(read_count))
+
+    def test_ctrl_z(self):
+        with open('CONIN$', 'rb', buffering=0) as stdin:
+            source = '\xC4\x1A\r\n'.encode('utf-16-le')
+            expected = '\xC4'.encode('utf-8')
             write_input(stdin, source)
-
-            actual = b''
-            while not actual.endswith(b'\n'):
-                b = stdin.read(read_count)
-                actual += b
-
-            self.assertEqual(actual, expected, 'stdin.read({})'.format(read_count))
-            stdin.close()
-
+            a, b = stdin.read(1), stdin.readall()
+            self.assertEqual(expected[0:1], a)
+            self.assertEqual(expected[1:], b)
 
 if __name__ == "__main__":
     unittest.main()
