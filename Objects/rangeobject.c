@@ -930,6 +930,13 @@ rangeiter_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     long start, stop, step;
 
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "range_iterator(): creating instances of range_iterator "
+                     "by calling range_iterator type is deprecated",
+                     1)) {
+        return NULL;
+    }
+
     if (!_PyArg_NoKeywords("range_iterator()", kw)) {
         return NULL;
     }
