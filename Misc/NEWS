@@ -213,6 +213,8 @@ Library
 Windows
 -------
 
+- Issue #28333: Enables Unicode for ps1/ps2 and input() prompts
+
 - Issue #28251: Improvements to help manuals on Windows.
 
 - Issue #28110: launcher.msi has different product codes between 32-bit and
