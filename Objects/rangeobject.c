@@ -829,8 +829,6 @@ static PyMethodDef rangeiter_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyObject *rangeiter_new(PyTypeObject *, PyObject *args, PyObject *kw);
-
 PyTypeObject PyRangeIter_Type = {
         PyVarObject_HEAD_INIT(&PyType_Type, 0)
         "range_iterator",                        /* tp_name */
@@ -862,15 +860,6 @@ PyTypeObject PyRangeIter_Type = {
         (iternextfunc)rangeiter_next,           /* tp_iternext */
         rangeiter_methods,                      /* tp_methods */
         0,                                      /* tp_members */
-        0,                                      /* tp_getset */
-        0,                                      /* tp_base */
-        0,                                      /* tp_dict */
-        0,                                      /* tp_descr_get */
-        0,                                      /* tp_descr_set */
-        0,                                      /* tp_dictoffset */
-        0,                                      /* tp_init */
-        0,                                      /* tp_alloc */
-        rangeiter_new,                          /* tp_new */
 };
 
 /* Return number of items in range (lo, hi, step).  step != 0
@@ -923,36 +912,6 @@ fast_range_iter(long start, long stop, long step)
     it->len = (long)ulen;
     it->index = 0;
     return (PyObject *)it;
-}
-
-static PyObject *
-rangeiter_new(PyTypeObject *type, PyObject *args, PyObject *kw)
-{
-    long start, stop, step;
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "range_iterator(): creating instances of range_iterator "
-                     "by calling range_iterator type is deprecated",
-                     1)) {
-        return NULL;
-    }
-
-    if (!_PyArg_NoKeywords("range_iterator()", kw)) {
-        return NULL;
-    }
-
-    if (!PyArg_ParseTuple(args,
-                          "lll;range_iterator() requires 3 int arguments",
-                          &start, &stop, &step)) {
-        return NULL;
-    }
-    if (step == 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "range_iterator() arg 3 must not be zero");
-        return NULL;
-    }
-
-    return fast_range_iter(start, stop, step);
 }
 
 typedef struct {
