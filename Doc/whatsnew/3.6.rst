@@ -164,7 +164,7 @@ New Features
 .. _pep-515:
 
 PEP 515: Underscores in Numeric Literals
-========================================
+----------------------------------------
 
 Prior to PEP 515, there was no support for writing long numeric
 literals with some form of separator to improve readability. For
@@ -301,7 +301,7 @@ See :pep:`498` and the main documentation at :ref:`f-strings`.
 .. _variable-annotations:
 
 PEP 526: Syntax for variable annotations
-========================================
+----------------------------------------
 
 :pep:`484` introduced standard for type annotations of function parameters,
 a.k.a. type hints. This PEP adds syntax to Python for annotating the
