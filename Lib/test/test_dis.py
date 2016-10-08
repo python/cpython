@@ -301,6 +301,27 @@ dis_traceback = """\
        TRACEBACK_CODE.co_firstlineno + 4,
        TRACEBACK_CODE.co_firstlineno + 5)
 
+def _fstring(a, b, c, d):
+    return f'{a} {b:4} {c!r} {d!r:4}'
+
+dis_fstring = """\
+%3d           0 LOAD_FAST                0 (a)
+              2 FORMAT_VALUE             0
+              4 LOAD_CONST               1 (' ')
+              6 LOAD_FAST                1 (b)
+              8 LOAD_CONST               2 ('4')
+             10 FORMAT_VALUE             4 (with format)
+             12 LOAD_CONST               1 (' ')
+             14 LOAD_FAST                2 (c)
+             16 FORMAT_VALUE             2 (repr)
+             18 LOAD_CONST               1 (' ')
+             20 LOAD_FAST                3 (d)
+             22 LOAD_CONST               2 ('4')
+             24 FORMAT_VALUE             6 (repr, with format)
+             26 BUILD_STRING             7
+             28 RETURN_VALUE
+""" % (_fstring.__code__.co_firstlineno + 1,)
+
 def _g(x):
     yield x
 
@@ -403,6 +424,9 @@ class DisTests(unittest.TestCase):
         gen_func_disas = self.get_disassembly(_g)  # Disassemble generator function
         gen_disas = self.get_disassembly(_g(1))  # Disassemble generator itself
         self.assertEqual(gen_disas, gen_func_disas)
+
+    def test_disassemble_fstring(self):
+        self.do_disassembly_test(_fstring, dis_fstring)
 
     def test_dis_none(self):
         try:
