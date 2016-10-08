@@ -203,17 +203,37 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
 #ifdef MS_WINDOWS
     if (!Py_LegacyWindowsStdioFlag && sys_stdin == stdin) {
-        HANDLE hStdIn;
+        HANDLE hStdIn, hStdErr;
 
         _Py_BEGIN_SUPPRESS_IPH
         hStdIn = (HANDLE)_get_osfhandle(fileno(sys_stdin));
+        hStdErr = (HANDLE)_get_osfhandle(fileno(stderr));
         _Py_END_SUPPRESS_IPH
 
         if (_get_console_type(hStdIn) == 'r') {
             fflush(sys_stdout);
-            if (prompt)
-                fprintf(stderr, "%s", prompt);
-            fflush(stderr);
+            if (prompt) {
+                if (_get_console_type(hStdErr) == 'w') {
+                    wchar_t *wbuf;
+                    int wlen;
+                    wlen = MultiByteToWideChar(CP_UTF8, 0, prompt, -1,
+                            NULL, 0);
+                    if (wlen++ &&
+                        (wbuf = PyMem_RawMalloc(wlen * sizeof(wchar_t)))) {
+                        wlen = MultiByteToWideChar(CP_UTF8, 0, prompt, -1,
+                                wbuf, wlen);
+                        if (wlen) {
+                            DWORD n;
+                            fflush(stderr);
+                            WriteConsoleW(hStdErr, wbuf, wlen, &n, NULL);
+                        }
+                        PyMem_RawFree(wbuf);
+                    }
+                } else {
+                    fprintf(stderr, "%s", prompt);
+                    fflush(stderr);
+                }
+            }
             clearerr(sys_stdin);
             return _PyOS_WindowsConsoleReadline(hStdIn);
         }
