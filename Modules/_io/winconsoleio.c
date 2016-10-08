@@ -816,44 +816,53 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
 
         PyMem_Free(subbuf);
 
-        /* when the read starts with ^Z or is empty we break */
-        if (n == 0 || buf[len] == '\x1a')
+        /* when the read is empty we break */
+        if (n == 0)
             break;
 
         len += n;
     }
 
-    if (len == 0 || buf[0] == '\x1a' && _buflen(self) == 0) {
+    if (len == 0 && _buflen(self) == 0) {
         /* when the result starts with ^Z we return an empty buffer */
         PyMem_Free(buf);
         return PyBytes_FromStringAndSize(NULL, 0);
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    bytes_size = WideCharToMultiByte(CP_UTF8, 0, buf, len,
-        NULL, 0, NULL, NULL);
-    Py_END_ALLOW_THREADS
+    if (len) {
+        Py_BEGIN_ALLOW_THREADS
+        bytes_size = WideCharToMultiByte(CP_UTF8, 0, buf, len,
+            NULL, 0, NULL, NULL);
+        Py_END_ALLOW_THREADS
 
-    if (!bytes_size) {
-        DWORD err = GetLastError();
-        PyMem_Free(buf);
-        return PyErr_SetFromWindowsErr(err);
+        if (!bytes_size) {
+            DWORD err = GetLastError();
+            PyMem_Free(buf);
+            return PyErr_SetFromWindowsErr(err);
+        }
+    } else {
+        bytes_size = 0;
     }
 
     bytes_size += _buflen(self);
     bytes = PyBytes_FromStringAndSize(NULL, bytes_size);
     rn = _copyfrombuf(self, PyBytes_AS_STRING(bytes), bytes_size);
 
-    Py_BEGIN_ALLOW_THREADS
-    bytes_size = WideCharToMultiByte(CP_UTF8, 0, buf, len,
-        &PyBytes_AS_STRING(bytes)[rn], bytes_size - rn, NULL, NULL);
-    Py_END_ALLOW_THREADS
+    if (len) {
+        Py_BEGIN_ALLOW_THREADS
+        bytes_size = WideCharToMultiByte(CP_UTF8, 0, buf, len,
+            &PyBytes_AS_STRING(bytes)[rn], bytes_size - rn, NULL, NULL);
+        Py_END_ALLOW_THREADS
 
-    if (!bytes_size) {
-        DWORD err = GetLastError();
-        PyMem_Free(buf);
-        Py_CLEAR(bytes);
-        return PyErr_SetFromWindowsErr(err);
+        if (!bytes_size) {
+            DWORD err = GetLastError();
+            PyMem_Free(buf);
+            Py_CLEAR(bytes);
+            return PyErr_SetFromWindowsErr(err);
+        }
+
+        /* add back the number of preserved bytes */
+        bytes_size += rn;
     }
 
     PyMem_Free(buf);
