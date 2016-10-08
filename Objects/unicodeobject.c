@@ -1366,15 +1366,19 @@ PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start,
     if (PyUnicode_READY(to) == -1)
         return -1;
 
-    if (from_start < 0) {
+    if ((size_t)from_start > (size_t)PyUnicode_GET_LENGTH(from)) {
         PyErr_SetString(PyExc_IndexError, "string index out of range");
         return -1;
     }
-    if (to_start < 0) {
+    if ((size_t)to_start > (size_t)PyUnicode_GET_LENGTH(to)) {
         PyErr_SetString(PyExc_IndexError, "string index out of range");
         return -1;
     }
-    how_many = Py_MIN(PyUnicode_GET_LENGTH(from), how_many);
+    if (how_many < 0) {
+        PyErr_SetString(PyExc_SystemError, "how_many cannot be negative");
+        return -1;
+    }
+    how_many = Py_MIN(PyUnicode_GET_LENGTH(from)-from_start, how_many);
     if (to_start + how_many > PyUnicode_GET_LENGTH(to)) {
         PyErr_Format(PyExc_SystemError,
                      "Cannot write %zi characters at %zi "

@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #28379: Added sanity checks and tests for PyUnicode_CopyCharacters().
+  Patch by Xiang Zhang.
+
 - Issue #28376: The type of long range iterator is now registered as Iterator.
   Patch by Oren Milman.
 

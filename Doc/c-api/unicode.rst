@@ -578,13 +578,16 @@ APIs:
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start, \
-                    PyObject *from, Py_ssize_t from_start, Py_ssize_t how_many)
+.. c:function:: Py_ssize_t PyUnicode_CopyCharacters(PyObject *to, \
+                                                    Py_ssize_t to_start, \
+                                                    PyObject *from, \
+                                                    Py_ssize_t from_start, \
+                                                    Py_ssize_t how_many)
 
    Copy characters from one Unicode object into another.  This function performs
    character conversion when necessary and falls back to :c:func:`memcpy` if
    possible.  Returns ``-1`` and sets an exception on error, otherwise returns
-   ``0``.
+   the number of copied characters.
 
    .. versionadded:: 3.3
 
