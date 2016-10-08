@@ -4,7 +4,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
-"""#"
+"""
 import _string
 import codecs
 import itertools
@@ -2734,6 +2734,49 @@ class CAPITest(unittest.TestCase):
             s = '\0'.join([s, s])
             self.assertEqual(unicode_asucs4(s, len(s), 1), s+'\0')
             self.assertEqual(unicode_asucs4(s, len(s), 0), s+'\uffff')
+
+    # Test PyUnicode_CopyCharacters()
+    @support.cpython_only
+    def test_copycharacters(self):
+        from _testcapi import unicode_copycharacters
+
+        strings = [
+            'abcde', '\xa1\xa2\xa3\xa4\xa5',
+            '\u4f60\u597d\u4e16\u754c\uff01',
+            '\U0001f600\U0001f601\U0001f602\U0001f603\U0001f604'
+        ]
+
+        for idx, from_ in enumerate(strings):
+            # wide -> narrow: exceed maxchar limitation
+            for to in strings[:idx]:
+                self.assertRaises(
+                    SystemError,
+                    unicode_copycharacters, to, 0, from_, 0, 5
+                )
+            # same kind
+            for from_start in range(5):
+                self.assertEqual(
+                    unicode_copycharacters(from_, 0, from_, from_start, 5),
+                    (from_[from_start:from_start+5].ljust(5, '\0'),
+                     5-from_start)
+                )
+            for to_start in range(5):
+                self.assertEqual(
+                    unicode_copycharacters(from_, to_start, from_, to_start, 5),
+                    (from_[to_start:to_start+5].rjust(5, '\0'),
+                     5-to_start)
+                )
+            # narrow -> wide
+            # Tests omitted since this creates invalid strings.
+
+        s = strings[0]
+        self.assertRaises(IndexError, unicode_copycharacters, s, 6, s, 0, 5)
+        self.assertRaises(IndexError, unicode_copycharacters, s, -1, s, 0, 5)
+        self.assertRaises(IndexError, unicode_copycharacters, s, 0, s, 6, 5)
+        self.assertRaises(IndexError, unicode_copycharacters, s, 0, s, -1, 5)
+        self.assertRaises(SystemError, unicode_copycharacters, s, 1, s, 0, 5)
+        self.assertRaises(SystemError, unicode_copycharacters, s, 0, s, 0, -1)
+        self.assertRaises(SystemError, unicode_copycharacters, s, 0, b'', 0, 0)
 
     @support.cpython_only
     def test_encode_decimal(self):
