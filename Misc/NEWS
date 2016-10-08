@@ -10,6 +10,9 @@ What's New in Python 2.7.13?
 Core and Builtins
 -----------------
 
+- Issue #26906: Resolving special methods of uninitialized type now causes
+  implicit initialization of the type instead of a fail.
+
 - Issue #18287: PyType_Ready() now checks that tp_name is not NULL.
   Original patch by Niklas Koep.
 

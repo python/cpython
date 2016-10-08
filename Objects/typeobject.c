@@ -2545,11 +2545,25 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     /* Look in tp_dict of types in MRO */
     mro = type->tp_mro;
 
-    /* If mro is NULL, the type is either not yet initialized
-       by PyType_Ready(), or already cleared by type_clear().
-       Either way the safest thing to do is to return NULL. */
-    if (mro == NULL)
-        return NULL;
+    if (mro == NULL) {
+        if ((type->tp_flags & Py_TPFLAGS_READYING) == 0 &&
+            PyType_Ready(type) < 0) {
+            /* It's not ideal to clear the error condition,
+               but this function is documented as not setting
+               an exception, and I don't want to change that.
+               When PyType_Ready() can't proceed, it won't
+               set the "ready" flag, so future attempts to ready
+               the same type will call it again -- hopefully
+               in a context that propagates the exception out.
+            */
+            PyErr_Clear();
+            return NULL;
+        }
+        mro = type->tp_mro;
+        if (mro == NULL) {
+            return NULL;
+        }
+    }
 
     res = NULL;
     assert(PyTuple_Check(mro));
