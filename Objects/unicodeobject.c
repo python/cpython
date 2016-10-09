@@ -1029,8 +1029,7 @@ resize_copy(PyObject *unicode, Py_ssize_t length)
     if (_PyUnicode_KIND(unicode) != PyUnicode_WCHAR_KIND) {
         PyObject *copy;
 
-        if (PyUnicode_READY(unicode) == -1)
-            return NULL;
+        assert(PyUnicode_IS_READY(unicode));
 
         copy = PyUnicode_New(length, PyUnicode_MAX_CHAR_VALUE(unicode));
         if (copy == NULL)
@@ -1974,14 +1973,11 @@ unicode_char(Py_UCS4 ch)
     unicode = PyUnicode_New(1, ch);
     if (unicode == NULL)
         return NULL;
-    switch (PyUnicode_KIND(unicode)) {
-    case PyUnicode_1BYTE_KIND:
-        PyUnicode_1BYTE_DATA(unicode)[0] = (Py_UCS1)ch;
-        break;
-    case PyUnicode_2BYTE_KIND:
+
+    assert(PyUnicode_KIND(unicode) != PyUnicode_1BYTE_KIND);
+    if (PyUnicode_KIND(unicode) == PyUnicode_2BYTE_KIND) {
         PyUnicode_2BYTE_DATA(unicode)[0] = (Py_UCS2)ch;
-        break;
-    default:
+    } else {
         assert(PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
         PyUnicode_4BYTE_DATA(unicode)[0] = ch;
     }
