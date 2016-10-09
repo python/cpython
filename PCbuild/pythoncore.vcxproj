@@ -221,6 +221,7 @@
     <ClCompile Include="..\Modules\_collectionsmodule.c" />
     <ClCompile Include="..\Modules\_csv.c" />
     <ClCompile Include="..\Modules\_functoolsmodule.c" />
+    <ClCompile Include="..\Modules\_futuresmodule.c" />
     <ClCompile Include="..\Modules\_heapqmodule.c" />
     <ClCompile Include="..\Modules\_json.c" />
     <ClCompile Include="..\Modules\_localemodule.c" />
