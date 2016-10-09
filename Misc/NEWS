@@ -10,6 +10,8 @@ What's New in Python 3.6.0 beta 2
 Core and Builtins
 -----------------
 
+- Issue #28183: Optimize and cleanup dict iteration.
+
 - Issue #26081: Added C implementation of asyncio.Future.
   Original patch by Yury Selivanov.
 
