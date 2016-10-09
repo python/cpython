@@ -219,6 +219,8 @@ Library
 - Issue #28399: Remove UNIX socket from FS before binding.
   Patch by Коренберг Марк.
 
+- Issue #27972: Prohibit Tasks to await on themselves.
+
 Windows
 -------
 
