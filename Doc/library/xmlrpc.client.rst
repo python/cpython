@@ -555,33 +555,27 @@ Example of Client Usage
            print("ERROR", v)
 
 To access an XML-RPC server through a HTTP proxy, you need to define a custom
-transport.  The following example shows how:
+transport.  The following example shows how::
 
-.. Example taken from http://lowlife.jp/nobonobo/wiki/xmlrpcwithproxy.html
-
-::
-
-   import xmlrpc.client, http.client
+   import http.client
+   import xmlrpc.client
 
    class ProxiedTransport(xmlrpc.client.Transport):
-       def set_proxy(self, proxy):
-           self.proxy = proxy
+
+       def set_proxy(self, host, port=None, headers=None):
+           self.proxy = host, port
+           self.proxy_headers = headers
 
        def make_connection(self, host):
-           self.realhost = host
-           h = http.client.HTTPConnection(self.proxy)
-           return h
+           connection = http.client.HTTPConnection(*self.proxy)
+           connection.set_tunnel(host, headers=self.proxy_headers)
+           self._connection = host, connection
+           return connection
 
-       def send_request(self, connection, handler, request_body, debug):
-           connection.putrequest("POST", 'http://%s%s' % (self.realhost, handler))
-
-       def send_host(self, connection, host):
-           connection.putheader('Host', self.realhost)
-
-   p = ProxiedTransport()
-   p.set_proxy('proxy-server:8080')
-   server = xmlrpc.client.ServerProxy('http://time.xmlrpc.com/RPC2', transport=p)
-   print(server.currentTime.getCurrentTime())
+   transport = ProxiedTransport()
+   transport.set_proxy('proxy-server', 8080)
+   server = xmlrpc.client.ServerProxy('http://betty.userland.com', transport=transport)
+   print(server.examples.getStateName(41))
 
 
 Example of Client and Server Usage
