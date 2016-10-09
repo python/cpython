@@ -1668,9 +1668,6 @@ class ByteString(Sequence[int], extra=collections_abc.ByteString):
     __slots__ = ()
 
 
-ByteString.register(type(memoryview(b'')))
-
-
 class List(list, MutableSequence[T], extra=list):
 
     __slots__ = ()
