@@ -1690,43 +1690,56 @@ PyDict_Clear(PyObject *op)
     assert(_PyDict_CheckConsistency(mp));
 }
 
-/* Returns -1 if no more items (or op is not a dict),
- * index of item otherwise. Stores value in pvalue
+/* Internal version of PyDict_Next that returns a hash value in addition
+ * to the key and value.
+ * Return 1 on success, return 0 when the reached the end of the dictionary
+ * (or if op is not a dictionary)
  */
-static inline Py_ssize_t
-dict_next(PyObject *op, Py_ssize_t i, PyObject **pvalue)
+int
+_PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
+             PyObject **pvalue, Py_hash_t *phash)
 {
-    Py_ssize_t n;
+    Py_ssize_t i, n;
     PyDictObject *mp;
-    PyObject **value_ptr = NULL;
+    PyDictKeyEntry *entry_ptr;
+    PyObject *value;
 
     if (!PyDict_Check(op))
-        return -1;
+        return 0;
     mp = (PyDictObject *)op;
-    if (i < 0)
-        return -1;
-
+    i = *ppos;
     n = mp->ma_keys->dk_nentries;
+    if ((size_t)i >= (size_t)n)
+        return 0;
     if (mp->ma_values) {
-        for (; i < n; i++) {
-            value_ptr = &mp->ma_values[i];
-            if (*value_ptr != NULL)
-                break;
+        PyObject **value_ptr = &mp->ma_values[i];
+        while (i < n && *value_ptr == NULL) {
+            value_ptr++;
+            i++;
         }
+        if (i >= n)
+            return 0;
+        entry_ptr = &DK_ENTRIES(mp->ma_keys)[i];
+        value = *value_ptr;
     }
     else {
-        PyDictKeyEntry *ep0 = DK_ENTRIES(mp->ma_keys);
-        for (; i < n; i++) {
-            value_ptr = &ep0[i].me_value;
-            if (*value_ptr != NULL)
-                break;
+        entry_ptr = &DK_ENTRIES(mp->ma_keys)[i];
+        while (i < n && entry_ptr->me_value == NULL) {
+            entry_ptr++;
+            i++;
         }
+        if (i >= n)
+            return 0;
+        value = entry_ptr->me_value;
     }
-    if (i >= n)
-        return -1;
+    *ppos = i+1;
+    if (pkey)
+        *pkey = entry_ptr->me_key;
+    if (phash)
+        *phash = entry_ptr->me_hash;
     if (pvalue)
-        *pvalue = *value_ptr;
-    return i;
+        *pvalue = value;
+    return 1;
 }
 
 /*
@@ -1736,8 +1749,11 @@ dict_next(PyObject *op, Py_ssize_t i, PyObject **pvalue)
  *     PyObject *key, *value;
  *     i = 0;   # important!  i should not otherwise be changed by you
  *     while (PyDict_Next(yourdict, &i, &key, &value)) {
- *              Refer to borrowed references in key and value.
+ *         Refer to borrowed references in key and value.
  *     }
+ *
+ * Return 1 on success, return 0 when the reached the end of the dictionary
+ * (or if op is not a dictionary)
  *
  * CAUTION:  In general, it isn't safe to use PyDict_Next in a loop that
  * mutates the dict.  One exception:  it is safe if the loop merely changes
@@ -1747,36 +1763,7 @@ dict_next(PyObject *op, Py_ssize_t i, PyObject **pvalue)
 int
 PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 {
-    PyDictObject *mp = (PyDictObject*)op;
-    Py_ssize_t i = dict_next(op, *ppos, pvalue);
-    if (i < 0)
-        return 0;
-    mp = (PyDictObject *)op;
-    *ppos = i+1;
-    if (pkey)
-        *pkey = DK_ENTRIES(mp->ma_keys)[i].me_key;
-    return 1;
-}
-
-/* Internal version of PyDict_Next that returns a hash value in addition
- * to the key and value.
- */
-int
-_PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
-             PyObject **pvalue, Py_hash_t *phash)
-{
-    PyDictObject *mp;
-    PyDictKeyEntry *ep0;
-    Py_ssize_t i = dict_next(op, *ppos, pvalue);
-    if (i < 0)
-        return 0;
-    mp = (PyDictObject *)op;
-    ep0 = DK_ENTRIES(mp->ma_keys);
-    *ppos = i+1;
-    *phash = ep0[i].me_hash;
-    if (pkey)
-        *pkey = ep0[i].me_key;
-    return 1;
+    return _PyDict_Next(op, ppos, pkey, pvalue, NULL);
 }
 
 /* Internal version of dict.pop(). */
@@ -3352,13 +3339,13 @@ static PyMethodDef dictiter_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyObject *dictiter_iternextkey(dictiterobject *di)
+static PyObject*
+dictiter_iternextkey(dictiterobject *di)
 {
     PyObject *key;
-    Py_ssize_t i, n, offset;
+    Py_ssize_t i, n;
     PyDictKeysObject *k;
     PyDictObject *d = di->di_dict;
-    PyObject **value_ptr;
 
     if (d == NULL)
         return NULL;
@@ -3372,27 +3359,30 @@ static PyObject *dictiter_iternextkey(dictiterobject *di)
     }
 
     i = di->di_pos;
-    if (i < 0)
-        goto fail;
     k = d->ma_keys;
+    n = k->dk_nentries;
     if (d->ma_values) {
-        value_ptr = &d->ma_values[i];
-        offset = sizeof(PyObject *);
+        PyObject **value_ptr = &d->ma_values[i];
+        while (i < n && *value_ptr == NULL) {
+            value_ptr++;
+            i++;
+        }
+        if (i >= n)
+            goto fail;
+        key = DK_ENTRIES(k)[i].me_key;
     }
     else {
-        value_ptr = &DK_ENTRIES(k)[i].me_value;
-        offset = sizeof(PyDictKeyEntry);
-    }
-    n = k->dk_nentries - 1;
-    while (i <= n && *value_ptr == NULL) {
-        value_ptr = (PyObject **)(((char *)value_ptr) + offset);
-        i++;
+        PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
+        while (i < n && entry_ptr->me_value == NULL) {
+            entry_ptr++;
+            i++;
+        }
+        if (i >= n)
+            goto fail;
+        key = entry_ptr->me_key;
     }
     di->di_pos = i+1;
-    if (i > n)
-        goto fail;
     di->len--;
-    key = DK_ENTRIES(k)[i].me_key;
     Py_INCREF(key);
     return key;
 
@@ -3435,12 +3425,12 @@ PyTypeObject PyDictIterKey_Type = {
     0,
 };
 
-static PyObject *dictiter_iternextvalue(dictiterobject *di)
+static PyObject *
+dictiter_iternextvalue(dictiterobject *di)
 {
     PyObject *value;
-    Py_ssize_t i, n, offset;
+    Py_ssize_t i, n;
     PyDictObject *d = di->di_dict;
-    PyObject **value_ptr;
 
     if (d == NULL)
         return NULL;
@@ -3454,26 +3444,29 @@ static PyObject *dictiter_iternextvalue(dictiterobject *di)
     }
 
     i = di->di_pos;
-    n = d->ma_keys->dk_nentries - 1;
-    if (i < 0 || i > n)
-        goto fail;
+    n = d->ma_keys->dk_nentries;
     if (d->ma_values) {
-        value_ptr = &d->ma_values[i];
-        offset = sizeof(PyObject *);
+        PyObject **value_ptr = &d->ma_values[i];
+        while (i < n && *value_ptr == NULL) {
+            value_ptr++;
+            i++;
+        }
+        if (i >= n)
+            goto fail;
+        value = *value_ptr;
     }
     else {
-        value_ptr = &DK_ENTRIES(d->ma_keys)[i].me_value;
-        offset = sizeof(PyDictKeyEntry);
-    }
-    while (i <= n && *value_ptr == NULL) {
-        value_ptr = (PyObject **)(((char *)value_ptr) + offset);
-        i++;
-        if (i > n)
+        PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[i];
+        while (i < n && entry_ptr->me_value == NULL) {
+            entry_ptr++;
+            i++;
+        }
+        if (i >= n)
             goto fail;
+        value = entry_ptr->me_value;
     }
     di->di_pos = i+1;
     di->len--;
-    value = *value_ptr;
     Py_INCREF(value);
     return value;
 
@@ -3504,7 +3497,7 @@ PyTypeObject PyDictIterValue_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)dictiter_traverse,            /* tp_traverse */
     0,                                          /* tp_clear */
@@ -3516,12 +3509,12 @@ PyTypeObject PyDictIterValue_Type = {
     0,
 };
 
-static PyObject *dictiter_iternextitem(dictiterobject *di)
+static PyObject *
+dictiter_iternextitem(dictiterobject *di)
 {
     PyObject *key, *value, *result = di->di_result;
-    Py_ssize_t i, n, offset;
+    Py_ssize_t i, n;
     PyDictObject *d = di->di_dict;
-    PyObject **value_ptr;
 
     if (d == NULL)
         return NULL;
@@ -3535,37 +3528,41 @@ static PyObject *dictiter_iternextitem(dictiterobject *di)
     }
 
     i = di->di_pos;
-    if (i < 0)
-        goto fail;
-    n = d->ma_keys->dk_nentries - 1;
+    n = d->ma_keys->dk_nentries;
     if (d->ma_values) {
-        value_ptr = &d->ma_values[i];
-        offset = sizeof(PyObject *);
+        PyObject **value_ptr = &d->ma_values[i];
+        while (i < n && *value_ptr == NULL) {
+            value_ptr++;
+            i++;
+        }
+        if (i >= n)
+            goto fail;
+        key = DK_ENTRIES(d->ma_keys)[i].me_key;
+        value = *value_ptr;
     }
     else {
-        value_ptr = &DK_ENTRIES(d->ma_keys)[i].me_value;
-        offset = sizeof(PyDictKeyEntry);
-    }
-    while (i <= n && *value_ptr == NULL) {
-        value_ptr = (PyObject **)(((char *)value_ptr) + offset);
-        i++;
+        PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[i];
+        while (i < n && entry_ptr->me_value == NULL) {
+            entry_ptr++;
+            i++;
+        }
+        if (i >= n)
+            goto fail;
+        key = entry_ptr->me_key;
+        value = entry_ptr->me_value;
     }
     di->di_pos = i+1;
-    if (i > n)
-        goto fail;
-
+    di->len--;
     if (result->ob_refcnt == 1) {
         Py_INCREF(result);
         Py_DECREF(PyTuple_GET_ITEM(result, 0));
         Py_DECREF(PyTuple_GET_ITEM(result, 1));
-    } else {
+    }
+    else {
         result = PyTuple_New(2);
         if (result == NULL)
             return NULL;
     }
-    di->len--;
-    key = DK_ENTRIES(d->ma_keys)[i].me_key;
-    value = *value_ptr;
     Py_INCREF(key);
     Py_INCREF(value);
     PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
