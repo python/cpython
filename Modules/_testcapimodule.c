@@ -1869,10 +1869,6 @@ unicode_copycharacters(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (PyUnicode_READY(to) < 0) {
-        return NULL;
-    }
-
     if (!(to_copy = PyUnicode_New(PyUnicode_GET_LENGTH(to),
                                   PyUnicode_MAX_CHAR_VALUE(to)))) {
         return NULL;
