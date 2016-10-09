@@ -216,6 +216,9 @@ Library
 
 - Issue #28372: Fix asyncio to support formatting of non-python coroutines.
 
+- Issue #28399: Remove UNIX socket from FS before binding.
+  Patch by Коренберг Марк.
+
 Windows
 -------
 
