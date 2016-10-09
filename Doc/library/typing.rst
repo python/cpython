@@ -11,8 +11,8 @@
 --------------
 
 This module supports type hints as specified by :pep:`484`.  The most
-fundamental support consists of the type :class:`Any`, :class:`Union`,
-:class:`Tuple`, :class:`Callable`, :class:`TypeVar`, and
+fundamental support consists of the type :data:`Any`, :data:`Union`,
+:data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
 :class:`Generic`.  For full specification please see :pep:`484`.  For
 a simplified introduction to type hints see :pep:`483`.
 
@@ -266,8 +266,8 @@ When inheriting from generic classes, some type variables could be fixed::
 
 In this case ``MyDict`` has a single parameter, ``T``.
 
-Subclassing a generic class without specifying type parameters assumes
-:class:`Any` for each position. In the following example, ``MyIterable`` is
+Using a generic class without specifying type parameters assumes
+:data:`Any` for each position. In the following example, ``MyIterable`` is
 not generic but implicitly inherits from ``Iterable[Any]``::
 
    from typing import Iterable
@@ -277,18 +277,20 @@ not generic but implicitly inherits from ``Iterable[Any]``::
 The metaclass used by :class:`Generic` is a subclass of :class:`abc.ABCMeta`.
 A generic class can be an ABC by including abstract methods or properties,
 and generic classes can also have ABCs as base classes without a metaclass
-conflict.  Generic metaclasses are not supported.
+conflict. Generic metaclasses are not supported. The outcome of parameterizing
+generics is cached, and most types in the typing module are hashable and
+comparable for equality.
 
 
-The :class:`Any` type
+The :data:`Any` type
 ---------------------
 
-A special kind of type is :class:`Any`. A static type checker will treat
-every type as being compatible with :class:`Any` and :class:`Any` as being
+A special kind of type is :data:`Any`. A static type checker will treat
+every type as being compatible with :data:`Any` and :data:`Any` as being
 compatible with every type.
 
 This means that it is possible to perform any operation or method call on a
-value of type on :class:`Any` and assign it to any variable::
+value of type on :data:`Any` and assign it to any variable::
 
    from typing import Any
 
@@ -306,13 +308,13 @@ value of type on :class:`Any` and assign it to any variable::
        ...
 
 Notice that no typechecking is performed when assigning a value of type
-:class:`Any` to a more precise type. For example, the static type checker did
+:data:`Any` to a more precise type. For example, the static type checker did
 not report an error when assigning ``a`` to ``s`` even though ``s`` was
 declared to be of type :class:`str` and receives an :class:`int` value at
 runtime!
 
 Furthermore, all functions without a return type or parameter types will
-implicitly default to using :class:`Any`::
+implicitly default to using :data:`Any`::
 
    def legacy_parser(text):
        ...
@@ -324,12 +326,12 @@ implicitly default to using :class:`Any`::
        ...
        return data
 
-This behavior allows :class:`Any` to be used as an *escape hatch* when you
+This behavior allows :data:`Any` to be used as an *escape hatch* when you
 need to mix dynamically and statically typed code.
 
-Contrast the behavior of :class:`Any` with the behavior of :class:`object`.
-Similar to :class:`Any`, every type is a subtype of :class:`object`. However,
-unlike :class:`Any`, the reverse is not true: :class:`object` is *not* a
+Contrast the behavior of :data:`Any` with the behavior of :class:`object`.
+Similar to :data:`Any`, every type is a subtype of :class:`object`. However,
+unlike :data:`Any`, the reverse is not true: :class:`object` is *not* a
 subtype of every other type.
 
 That means when the type of a value is :class:`object`, a type checker will
@@ -355,21 +357,12 @@ it as a return value) of a more specialized type is a type error. For example::
    hash_b("foo")
 
 Use :class:`object` to indicate that a value could be any type in a typesafe
-manner. Use :class:`Any` to indicate that a value is dynamically typed.
+manner. Use :data:`Any` to indicate that a value is dynamically typed.
 
 Classes, functions, and decorators
 ----------------------------------
 
 The module defines the following classes, functions and decorators:
-
-.. class:: Any
-
-   Special type indicating an unconstrained type.
-
-   * Any object is an instance of :class:`Any`.
-   * Any class is a subclass of :class:`Any`.
-   * As a special case, :class:`Any` and :class:`object` are subclasses of
-     each other.
 
 .. class:: TypeVar
 
@@ -409,79 +402,6 @@ The module defines the following classes, functions and decorators:
     for the type variable must be a subclass of the boundary type,
     see :pep:`484`.
 
-.. class:: Union
-
-   Union type; ``Union[X, Y]`` means either X or Y.
-
-   To define a union, use e.g. ``Union[int, str]``.  Details:
-
-   * The arguments must be types and there must be at least one.
-
-   * Unions of unions are flattened, e.g.::
-
-       Union[Union[int, str], float] == Union[int, str, float]
-
-   * Unions of a single argument vanish, e.g.::
-
-       Union[int] == int  # The constructor actually returns int
-
-   * Redundant arguments are skipped, e.g.::
-
-       Union[int, str, int] == Union[int, str]
-
-   * When comparing unions, the argument order is ignored, e.g.::
-
-       Union[int, str] == Union[str, int]
-
-   * If :class:`Any` is present it is the sole survivor, e.g.::
-
-       Union[int, Any] == Any
-
-   * You cannot subclass or instantiate a union.
-
-   * You cannot write ``Union[X][Y]``.
-
-   * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
-
-.. class:: Optional
-
-   Optional type.
-
-   ``Optional[X]`` is equivalent to ``Union[X, None]``.
-
-   Note that this is not the same concept as an optional argument,
-   which is one that has a default.  An optional argument with a
-   default needn't use the ``Optional`` qualifier on its type
-   annotation (although it is inferred if the default is ``None``).
-   A mandatory argument may still have an ``Optional`` type if an
-   explicit value of ``None`` is allowed.
-
-.. class:: Tuple
-
-  Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
-  with the first item of type X and the second of type Y.
-
-  Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
-  to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
-  of an int, a float and a string.
-
-  To specify a variable-length tuple of homogeneous type,
-  use literal ellipsis, e.g. ``Tuple[int, ...]``.
-
-.. class:: Callable
-
-   Callable type; ``Callable[[int], str]`` is a function of (int) -> str.
-
-   The subscription syntax must always be used with exactly two
-   values: the argument list and the return type.  The argument list
-   must be a list of types; the return type must be a single type.
-
-   There is no syntax to indicate optional or keyword arguments,
-   such function types are rarely used as callback types.
-   ``Callable[..., ReturnType]`` could be used to type hint a callable
-   taking any number of arguments and returning ``ReturnType``.
-   A plain :class:`Callable` is equivalent to ``Callable[..., Any]``.
-
 .. class:: Generic
 
    Abstract base class for generic types.
@@ -506,7 +426,7 @@ The module defines the following classes, functions and decorators:
           except KeyError:
               return default
 
-.. class:: Type
+.. class:: Type(Generic[CT_co])
 
    A variable annotated with ``C`` may accept a value of type ``C``. In
    contrast, a variable annotated with ``Type[C]`` may accept values that are
@@ -538,7 +458,7 @@ The module defines the following classes, functions and decorators:
    :pep:`484`.
 
    The only legal parameters for :class:`Type` are classes, unions of classes, and
-   :class:`Any`. For example::
+   :data:`Any`. For example::
 
       def new_non_team_user(user_class: Type[Union[BaseUser, ProUser]]): ...
 
@@ -713,21 +633,6 @@ The module defines the following classes, functions and decorators:
               yield start
               start += 1
 
-.. class:: AnyStr
-
-   ``AnyStr`` is a type variable defined as
-   ``AnyStr = TypeVar('AnyStr', str, bytes)``.
-
-   It is meant to be used for functions that may accept any kind of string
-   without allowing different kinds of strings to mix. For example::
-
-      def concat(a: AnyStr, b: AnyStr) -> AnyStr:
-          return a + b
-
-      concat(u"foo", u"bar")  # Ok, output has type 'unicode'
-      concat(b"foo", b"bar")  # Ok, output has type 'bytes'
-      concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
-
 .. class:: Text
 
    ``Text`` is an alias for ``str``. It is provided to supply a forward
@@ -848,6 +753,89 @@ The module defines the following classes, functions and decorators:
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
 
+.. data:: Any
+
+   Special type indicating an unconstrained type.
+
+   * Every type is compatible with :data:`Any`.
+   * :data:`Any` is compatible with every type.
+
+.. data:: Union
+
+   Union type; ``Union[X, Y]`` means either X or Y.
+
+   To define a union, use e.g. ``Union[int, str]``.  Details:
+
+   * The arguments must be types and there must be at least one.
+
+   * Unions of unions are flattened, e.g.::
+
+       Union[Union[int, str], float] == Union[int, str, float]
+
+   * Unions of a single argument vanish, e.g.::
+
+       Union[int] == int  # The constructor actually returns int
+
+   * Redundant arguments are skipped, e.g.::
+
+       Union[int, str, int] == Union[int, str]
+
+   * When comparing unions, the argument order is ignored, e.g.::
+
+       Union[int, str] == Union[str, int]
+
+   * When a class and its subclass are present, the former is skipped, e.g.::
+
+       Union[int, object] == object
+
+   * You cannot subclass or instantiate a union.
+
+   * You cannot write ``Union[X][Y]``.
+
+   * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
+
+.. data:: Optional
+
+   Optional type.
+
+   ``Optional[X]`` is equivalent to ``Union[X, None]``.
+
+   Note that this is not the same concept as an optional argument,
+   which is one that has a default.  An optional argument with a
+   default needn't use the ``Optional`` qualifier on its type
+   annotation (although it is inferred if the default is ``None``).
+   A mandatory argument may still have an ``Optional`` type if an
+   explicit value of ``None`` is allowed.
+
+.. data:: Tuple
+
+  Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
+  with the first item of type X and the second of type Y.
+
+  Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
+  to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
+  of an int, a float and a string.
+
+  To specify a variable-length tuple of homogeneous type,
+  use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :data:`Tuple`
+  is equivalent to ``Tuple[Any, ...]``, and in turn to :data:`tuple`.
+
+.. data:: Callable
+
+   Callable type; ``Callable[[int], str]`` is a function of (int) -> str.
+
+   The subscription syntax must always be used with exactly two
+   values: the argument list and the return type.  The argument list
+   must be a list of types; the return type must be a single type.
+
+   There is no syntax to indicate optional or keyword arguments;
+   such function types are rarely used as callback types.
+   ``Callable[..., ReturnType]`` (literal ellipsis) can be used to
+   type hint a callable taking any number of arguments and returning
+   ``ReturnType``.  A plain :data:`Callable` is equivalent to
+   ``Callable[..., Any]``, and in turn to
+   :class:`collections.abc.Callable`.
+
 .. data:: ClassVar
 
    Special type construct to mark class variables.
@@ -860,19 +848,34 @@ The module defines the following classes, functions and decorators:
           stats: ClassVar[Dict[str, int]] = {} # class variable
           damage: int = 10                     # instance variable
 
-   ClassVar accepts only types and cannot be further subscribed.
+   :data:`ClassVar` accepts only types and cannot be further subscribed.
 
-   ClassVar is not a class itself, and should not
-   be used with isinstance() or issubclass(). Note that ClassVar
-   does not change Python runtime behavior, it can be used by
-   3rd party type checkers, so that the following code will
-   flagged as an error by those::
+   :data:`ClassVar` is not a class itself, and should not
+   be used with :func:`isinstance` or :func:`issubclass`.
+   Note that :data:`ClassVar` does not change Python runtime behavior;
+   it can be used by 3rd party type checkers, so that the following
+   code might flagged as an error by those::
 
       enterprise_d = Starship(3000)
       enterprise_d.stats = {} # Error, setting class variable on instance
       Starship.stats = {}     # This is OK
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.5.3
+
+.. data:: AnyStr
+
+   ``AnyStr`` is a type variable defined as
+   ``AnyStr = TypeVar('AnyStr', str, bytes)``.
+
+   It is meant to be used for functions that may accept any kind of string
+   without allowing different kinds of strings to mix. For example::
+
+      def concat(a: AnyStr, b: AnyStr) -> AnyStr:
+          return a + b
+
+      concat(u"foo", u"bar")  # Ok, output has type 'unicode'
+      concat(b"foo", b"bar")  # Ok, output has type 'bytes'
+      concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
 
 .. data:: TYPE_CHECKING
 
