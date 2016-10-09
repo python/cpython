@@ -993,7 +993,10 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
         # This allows unparameterized generic collections to be used
         # with issubclass() and isinstance() in the same way as their
         # collections.abc counterparts (e.g., isinstance([], Iterable)).
-        self.__subclasshook__ = _make_subclasshook(self)
+        if ('__subclasshook__' not in namespace and extra  # allow overriding
+            or hasattr(self.__subclasshook__, '__name__') and
+            self.__subclasshook__.__name__ == '__extrahook__'):
+            self.__subclasshook__ = _make_subclasshook(self)
         if isinstance(extra, abc.ABCMeta):
             self._abc_registry = extra._abc_registry
         return self

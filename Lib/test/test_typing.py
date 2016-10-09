@@ -20,6 +20,7 @@ from typing import NewType
 from typing import NamedTuple
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
+import abc
 import typing
 try:
     import collections.abc as collections_abc
@@ -1385,6 +1386,8 @@ class CollectionsAbcTests(BaseTestCase):
                 return 0
 
         self.assertEqual(len(MMC()), 0)
+        assert callable(MMC.update)
+        self.assertIsInstance(MMC(), typing.Mapping)
 
         class MMB(typing.MutableMapping[KT, VT]):
             def __getitem__(self, k):
@@ -1408,6 +1411,82 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(MMA, typing.Mapping)
         self.assertIsSubclass(MMB, typing.Mapping)
         self.assertIsSubclass(MMC, typing.Mapping)
+
+        self.assertIsInstance(MMB[KT, VT](), typing.Mapping)
+        self.assertIsInstance(MMB[KT, VT](), collections.Mapping)
+
+        self.assertIsSubclass(MMA, collections.Mapping)
+        self.assertIsSubclass(MMB, collections.Mapping)
+        self.assertIsSubclass(MMC, collections.Mapping)
+
+        self.assertIsSubclass(MMB[str, str], typing.Mapping)
+        self.assertIsSubclass(MMC, MMA)
+
+        class I(typing.Iterable): ...
+        self.assertNotIsSubclass(list, I)
+
+        class G(typing.Generator[int, int, int]): ...
+        def g(): yield 0
+        self.assertIsSubclass(G, typing.Generator)
+        self.assertIsSubclass(G, typing.Iterable)
+        if hasattr(collections, 'Generator'):
+            self.assertIsSubclass(G, collections.Generator)
+        self.assertIsSubclass(G, collections.Iterable)
+        self.assertNotIsSubclass(type(g), G)
+
+    def test_subclassing_subclasshook(self):
+
+        class Base(typing.Iterable):
+            @classmethod
+            def __subclasshook__(cls, other):
+                if other.__name__ == 'Foo':
+                    return True
+                else:
+                    return False
+
+        class C(Base): ...
+        class Foo: ...
+        class Bar: ...
+        self.assertIsSubclass(Foo, Base)
+        self.assertIsSubclass(Foo, C)
+        self.assertNotIsSubclass(Bar, C)
+
+    def test_subclassing_register(self):
+
+        class A(typing.Container): ...
+        class B(A): ...
+
+        class C: ...
+        A.register(C)
+        self.assertIsSubclass(C, A)
+        self.assertNotIsSubclass(C, B)
+
+        class D: ...
+        B.register(D)
+        self.assertIsSubclass(D, A)
+        self.assertIsSubclass(D, B)
+
+        class M(): ...
+        collections.MutableMapping.register(M)
+        self.assertIsSubclass(M, typing.Mapping)
+
+    def test_collections_as_base(self):
+
+        class M(collections.Mapping): ...
+        self.assertIsSubclass(M, typing.Mapping)
+        self.assertIsSubclass(M, typing.Iterable)
+
+        class S(collections.MutableSequence): ...
+        self.assertIsSubclass(S, typing.MutableSequence)
+        self.assertIsSubclass(S, typing.Iterable)
+
+        class I(collections.Iterable): ...
+        self.assertIsSubclass(I, typing.Iterable)
+
+        class A(collections.Mapping, metaclass=abc.ABCMeta): ...
+        class B: ...
+        A.register(B)
+        self.assertIsSubclass(B, typing.Mapping)
 
 
 class OtherABCTests(BaseTestCase):
