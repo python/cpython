@@ -10,7 +10,7 @@ What's New in Python 3.6.0 beta 2
 Core and Builtins
 -----------------
 
-- Issue #26801: Added C implementation of asyncio.Future.
+- Issue #26081: Added C implementation of asyncio.Future.
   Original patch by Yury Selivanov.
 
 - Issue #28379: Added sanity checks and tests for PyUnicode_CopyCharacters().
