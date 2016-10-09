@@ -258,6 +258,17 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
+            # Check for abstract socket. `str` and `bytes` paths are supported.
+            if path[0] not in (0, '\x00'):
+                try:
+                    if stat.S_ISSOCK(os.stat(path).st_mode):
+                        os.remove(path)
+                except FileNotFoundError:
+                    pass
+                except OSError as err:
+                    # Directory may have permissions only to create socket.
+                    logger.error('Unable to check or remove stale UNIX socket %r: %r', path, err)
+
             try:
                 sock.bind(path)
             except OSError as exc:
