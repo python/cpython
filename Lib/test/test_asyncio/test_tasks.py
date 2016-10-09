@@ -92,6 +92,17 @@ class TaskTests(test_utils.TestCase):
         finally:
             other_loop.close()
 
+    def test_task_awaits_on_itself(self):
+        @asyncio.coroutine
+        def test():
+            yield from task
+
+        task = asyncio.ensure_future(test(), loop=self.loop)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'Task cannot await on itself'):
+            self.loop.run_until_complete(task)
+
     def test_task_class(self):
         @asyncio.coroutine
         def notmuch():
