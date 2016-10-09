@@ -241,7 +241,7 @@ class Task(futures.Future):
                 result = coro.throw(exc)
         except StopIteration as exc:
             self.set_result(exc.value)
-        except futures.CancelledError as exc:
+        except futures.CancelledError:
             super().cancel()  # I.e., Future.cancel(self).
         except Exception as exc:
             self.set_exception(exc)
@@ -259,12 +259,19 @@ class Task(futures.Future):
                             'Task {!r} got Future {!r} attached to a '
                             'different loop'.format(self, result)))
                 elif blocking:
-                    result._asyncio_future_blocking = False
-                    result.add_done_callback(self._wakeup)
-                    self._fut_waiter = result
-                    if self._must_cancel:
-                        if self._fut_waiter.cancel():
-                            self._must_cancel = False
+                    if result is self:
+                        self._loop.call_soon(
+                            self._step,
+                            RuntimeError(
+                                'Task cannot await on itself: {!r}'.format(
+                                    self)))
+                    else:
+                        result._asyncio_future_blocking = False
+                        result.add_done_callback(self._wakeup)
+                        self._fut_waiter = result
+                        if self._must_cancel:
+                            if self._fut_waiter.cancel():
+                                self._must_cancel = False
                 else:
                     self._loop.call_soon(
                         self._step,
