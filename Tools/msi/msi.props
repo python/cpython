@@ -11,6 +11,7 @@
         <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
         <Platform Condition="'$(Platform)' == ''">x86</Platform>
         <InstallScope Condition="'$(InstallScope)' != 'perMachine'">perUser</InstallScope>
+        <_MakeCatCommand Condition="'$(_MakeCatCommand)' == ''">makecat</_MakeCatCommand>
     </PropertyGroup>
 
     <Import Project="wix.props" />
@@ -103,6 +104,7 @@
             <Group>generated_filelist</Group>
             <Condition></Condition>
             <DiskId></DiskId>
+            <IncludeInCat>false</IncludeInCat>
         </InstallFiles>
         <LinkerBindInputPaths>
             <Visible>false</Visible>

@@ -70,4 +70,11 @@
             </Component>
         </ComponentGroup>
     </Fragment>
+    <Fragment>
+        <ComponentGroup Id="lib_cat">
+            <Component Id="lib_cat" Directory="Catalogs" Guid="*">
+                <File Name="python_lib.cat" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
 </Wix>
