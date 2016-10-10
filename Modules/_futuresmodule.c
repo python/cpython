@@ -943,7 +943,7 @@ new_future_iter(PyObject *fut)
     }
     Py_INCREF(fut);
     it->future = (FutureObj*)fut;
-    _PyObject_GC_TRACK(it);
+    PyObject_GC_Track(it);
     return (PyObject*)it;
 }
 
