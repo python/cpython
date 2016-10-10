@@ -25,7 +25,7 @@ Core and Builtins
 
 - Issue #15578: Correctly incref the parent module while importing.
 
-- Issue #26307: The profile-opt build now applys PGO to the built-in modules.
+- Issue #26307: The profile-opt build now applies PGO to the built-in modules.
 
 - Issue #26020: set literal evaluation order did not match documented behaviour.
 
@@ -488,7 +488,7 @@ Library
 - Issue #26385: Remove the file if the internal fdopen() call in
   NamedTemporaryFile() fails.  Based on patch by Silent Ghost.
 
-- Issue #26309: In the "socketserver" module, shut down the request (closing
+- Issue #26309: In the "SocketServer" module, shut down the request (closing
   the connected socket) when verify_request() returns false.  Based on patch
   by Aviv Palivoda.
 
@@ -6537,7 +6537,7 @@ Library
 - Issue #8140: Extend compileall to compile single files.  Add -i option.
 
 - Issue #7774: Set sys.executable to an empty string if ``argv[0]`` has been set
-  to an non existent program name and Python is unable to retrieve the real
+  to a non existent program name and Python is unable to retrieve the real
   program name.
 
 - Issue #8117: logging: Improved algorithm for computing initial rollover time
@@ -8053,7 +8053,7 @@ Library
   is used.  Original patch by Floris Bruynooghe.
 
 - Issue #5941: Distutils build_clib command was not working anymore because of
-  an incomplete costumization of the archiver command.  Added ARFLAGS in the
+  an incomplete customization of the archiver command.  Added ARFLAGS in the
   Makefile besides AR and make Distutils use it.  Original patch by David
   Cournapeau.
 

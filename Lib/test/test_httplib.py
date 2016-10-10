@@ -738,7 +738,7 @@ class SourceAddressTest(TestServerMixin, TestCase):
     def testHTTPSConnectionSourceAddress(self):
         self.conn = httplib.HTTPSConnection(HOST, self.port,
                 source_address=('', self.source_port))
-        # We don't test anything here other the constructor not barfing as
+        # We don't test anything here other than the constructor not barfing as
         # this code doesn't deal with setting up an active running SSL server
         # for an ssl_wrapped connect() to actually return from.
 
