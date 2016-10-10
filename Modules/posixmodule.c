@@ -770,7 +770,7 @@ dir_fd_converter(PyObject *o, void *p)
  *   path.narrow
  *     Points to the path if it was expressed as bytes,
  *     or it was Unicode and was encoded to bytes. (On Windows,
- *     is an non-zero integer if the path was expressed as bytes.
+ *     is a non-zero integer if the path was expressed as bytes.
  *     The type is deliberately incompatible to prevent misuse.)
  *   path.fd
  *     Contains a file descriptor if path.accept_fd was true
