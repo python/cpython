@@ -314,6 +314,21 @@ PyImport_GetModuleDict(void)
     return _PyImport_GetModuleDict(PyThreadState_GET());
 }
 
+/* In some corner cases it is important to be sure that the import
+   machinery has been initialized (or not cleaned up yet).  For
+   example, see issue #4236 and PyModule_Create2(). */
+
+void
+_PyImport_EnsureInitialized(PyInterpreterState *interp)
+{
+    if (interp->modules == NULL)
+        goto notinitialized;
+    return;
+
+notinitialized:
+    Py_FatalError("Python import machinery not initialized");
+}
+
 
 /* List of names to clear in sys */
 static const char * const sys_deletes[] = {
