@@ -3475,7 +3475,7 @@ if _have_threads:
             client_context.verify_mode = ssl.CERT_REQUIRED
             client_context.load_verify_locations(SIGNING_CA)
 
-            # first conncetion without session
+            # first connection without session
             stats = server_params_test(client_context, server_context)
             session = stats['session']
             self.assertTrue(session.id)
