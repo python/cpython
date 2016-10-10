@@ -11,6 +11,7 @@
             <ComponentGroupRef Id="lib_py" />
             <ComponentGroupRef Id="lib_files" />
             <ComponentGroupRef Id="lib_extensions" />
+            <ComponentGroupRef Id="lib_cat" />
             <ComponentRef Id="OptionalFeature" />
         </Feature>
     </Product>

@@ -27,6 +27,7 @@
             <TargetBase>$(PySourcePath)Lib</TargetBase>
             <Target_>Lib\</Target_>
             <Group>lib_py</Group>
+            <IncludeInCat>true</IncludeInCat>
         </InstallFiles>
     </ItemGroup>
     
