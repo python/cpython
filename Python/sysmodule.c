@@ -1940,7 +1940,7 @@ _PySys_BeginInit(void)
     PyObject *m, *sysdict, *version_info;
     int res;
 
-    m = PyModule_Create(&sysmodule);
+    m = _PyModule_Create2(&sysmodule, PYTHON_API_VERSION);
     if (m == NULL)
         return NULL;
     sysdict = PyModule_GetDict(m);
