@@ -610,7 +610,7 @@ iterations of the loop.
 .. opcode:: SETUP_ANNOTATIONS
 
    Checks whether ``__annotations__`` is defined in ``locals()``, if not it is
-   set up to an empty ``dict``. This opcode is only emmitted if a class
+   set up to an empty ``dict``. This opcode is only emitted if a class
    or module body contains :term:`variable annotations <variable annotation>`
    statically.
 
