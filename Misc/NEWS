@@ -5,7 +5,7 @@ Python News
 What's New in Python 3.6.0 beta 2
 =================================
 
-*Release date: XXXX-XX-XX*
+*Release date: 2016-10-10*
 
 Core and Builtins
 -----------------
@@ -265,6 +265,7 @@ Tests
 -----
 
 - Issue #28217: Adds _testconsole module to test console input.
+
 
 What's New in Python 3.6.0 beta 1
 =================================
@@ -1000,6 +1001,7 @@ Build
 
 - Issue #10910: Avoid C++ compilation errors on FreeBSD and OS X.
   Also update FreedBSD version checks for the original ctype UTF-8 workaround.
+
 
 What's New in Python 3.6.0 alpha 3
 ==================================
