@@ -152,7 +152,7 @@ arglist: argument (',' argument)* [',']
 # to our LL(1) parser. Even though 'test' includes '*expr' in star_expr,
 # we explicitly match '*' here, too, to give it proper precedence.
 # Illegal combinations and orderings are blocked in ast.c:
-# multiple (test comp_for) arguements are blocked; keyword unpackings
+# multiple (test comp_for) arguments are blocked; keyword unpackings
 # that precede iterable unpackings are blocked; etc.
 argument: ( test [comp_for] |
             test '=' test |
