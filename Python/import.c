@@ -310,7 +310,11 @@ PyImport_GetModuleDict(void)
 int
 _PyImport_IsInitialized(PyInterpreterState *interp)
 {
-    if (interp->modules == NULL)
+    if (interp->sysdict == NULL)
+        return 0;
+    _Py_IDENTIFIER(modules);
+    PyObject *modules = _PyDict_GetItemId(interp->sysdict, &PyId_modules);
+    if (modules == NULL)
         return 0;
     return 1;
 }
