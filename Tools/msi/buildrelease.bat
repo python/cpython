@@ -168,8 +168,15 @@ if not "%SKIPBUILD%" EQU "1" (
     @echo off
 )
 
+if "%OUTDIR_PLAT%" EQU "win32" (
+    msbuild "%D%launcher\launcher.wixproj" /p:Platform=x86 %CERTOPTS% /p:ReleaseUri=%RELEASE_URI%
+    if errorlevel 1 exit /B
+) else if not exist "%PCBUILD%win32\en-us\launcher.msi" (
+    msbuild "%D%launcher\launcher.wixproj" /p:Platform=x86 %CERTOPTS% /p:ReleaseUri=%RELEASE_URI%
+    if errorlevel 1 exit /B
+)
+
 set BUILDOPTS=/p:Platform=%1 /p:BuildForRelease=true /p:DownloadUrl=%DOWNLOAD_URL% /p:DownloadUrlBase=%DOWNLOAD_URL_BASE% /p:ReleaseUri=%RELEASE_URI%
-msbuild "%D%launcher\launcher.wixproj" /p:Platform=x86 %CERTOPTS% /p:ReleaseUri=%RELEASE_URI%
 msbuild "%D%bundle\releaselocal.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=true
 if errorlevel 1 exit /B
 msbuild "%D%bundle\releaseweb.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
