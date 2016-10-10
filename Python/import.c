@@ -554,7 +554,15 @@ int
 _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
                                PyObject *filename)
 {
-    PyObject *modules, *dict, *key;
+    PyObject *modules = PyImport_GetModuleDict();
+    return _PyImport_FixupExtensionObjectEx(mod, name, filename, modules);
+}
+
+int
+_PyImport_FixupExtensionObjectEx(PyObject *mod, PyObject *name,
+                                 PyObject *filename, PyObject *modules)
+{
+    PyObject *dict, *key;
     struct PyModuleDef *def;
     int res;
     if (extensions == NULL) {
@@ -571,7 +579,6 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         PyErr_BadInternalCall();
         return -1;
     }
-    modules = PyImport_GetModuleDict();
     if (PyDict_SetItem(modules, name, mod) < 0)
         return -1;
     if (_PyState_AddModule(mod, def) < 0) {
@@ -603,14 +610,14 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
 }
 
 int
-_PyImport_FixupBuiltin(PyObject *mod, const char *name)
+_PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
 {
     int res;
     PyObject *nameobj;
     nameobj = PyUnicode_InternFromString(name);
     if (nameobj == NULL)
         return -1;
-    res = _PyImport_FixupExtensionObject(mod, nameobj, nameobj);
+    res = _PyImport_FixupExtensionObjectEx(mod, nameobj, nameobj, modules);
     Py_DECREF(nameobj);
     return res;
 }

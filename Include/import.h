@@ -107,9 +107,12 @@ PyAPI_FUNC(PyObject *) _PyImport_FindExtensionObjectEx(PyObject *, PyObject *,
                                                        PyObject *);
 PyAPI_FUNC(int) _PyImport_FixupBuiltin(
     PyObject *mod,
-    const char *name            /* UTF-8 encoded string */
+    const char *name,            /* UTF-8 encoded string */
+    PyObject *modules
     );
 PyAPI_FUNC(int) _PyImport_FixupExtensionObject(PyObject*, PyObject *, PyObject *);
+PyAPI_FUNC(int) _PyImport_FixupExtensionObjectEx(PyObject*, PyObject *,
+                                                 PyObject *, PyObject *);
 
 struct _inittab {
     const char *name;           /* ASCII encoded string */

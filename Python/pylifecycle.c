@@ -688,7 +688,7 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
         Py_FatalError("Py_InitializeCore: can't initialize sys dict");
     Py_INCREF(interp->sysdict);
     PyDict_SetItemString(interp->sysdict, "modules", modules);
-    _PyImport_FixupBuiltin(sysmod, "sys");
+    _PyImport_FixupBuiltin(sysmod, "sys", modules);
 
     /* Init Unicode implementation; relies on the codec registry */
     if (_PyUnicode_Init() < 0)
@@ -700,7 +700,7 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     bimod = _PyBuiltin_Init();
     if (bimod == NULL)
         Py_FatalError("Py_InitializeCore: can't initialize builtins modules");
-    _PyImport_FixupBuiltin(bimod, "builtins");
+    _PyImport_FixupBuiltin(bimod, "builtins", modules);
     interp->builtins = PyModule_GetDict(bimod);
     if (interp->builtins == NULL)
         Py_FatalError("Py_InitializeCore: can't initialize builtins dict");
