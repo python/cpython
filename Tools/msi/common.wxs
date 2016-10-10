@@ -63,7 +63,9 @@
     <!-- Top-level directories -->
     <Fragment>
         <DirectoryRef Id="InstallDirectory">
-            <Directory Id="DLLs" Name="DLLs" />
+            <Directory Id="DLLs" Name="DLLs">
+                <Directory Id="Catalogs" />
+            </Directory>
         </DirectoryRef>
     </Fragment>
 

@@ -13,4 +13,11 @@
             </Component>
         </ComponentGroup>
     </Fragment>
+    <Fragment>
+        <ComponentGroup Id="tools_cat">
+            <Component Id="tools_cat" Directory="Catalogs" Guid="*">
+                <File Name="python_tools.cat" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
 </Wix>
