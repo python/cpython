@@ -36,6 +36,7 @@
                 <TargetBase>$(PySourcePath)</TargetBase>
                 <Target_></Target_>
                 <Group>tools_py</Group>
+                <IncludeInCat>true</IncludeInCat>
         </InstallFiles>
     </ItemGroup>
     
