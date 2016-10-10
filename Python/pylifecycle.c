@@ -675,9 +675,20 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
     if (!_PyFloat_Init())
         Py_FatalError("Py_InitializeCore: can't init float");
 
-    interp->modules = PyDict_New();
-    if (interp->modules == NULL)
+    PyObject *modules = PyDict_New();
+    if (modules == NULL)
         Py_FatalError("Py_InitializeCore: can't make modules dictionary");
+    interp->modules = modules;
+
+    sysmod = _PySys_BeginInit();
+    if (sysmod == NULL)
+        Py_FatalError("Py_InitializeCore: can't initialize sys");
+    interp->sysdict = PyModule_GetDict(sysmod);
+    if (interp->sysdict == NULL)
+        Py_FatalError("Py_InitializeCore: can't initialize sys dict");
+    Py_INCREF(interp->sysdict);
+    PyDict_SetItemString(interp->sysdict, "modules", modules);
+    _PyImport_FixupBuiltin(sysmod, "sys");
 
     /* Init Unicode implementation; relies on the codec registry */
     if (_PyUnicode_Init() < 0)
@@ -697,17 +708,6 @@ void _Py_InitializeCore(const _PyCoreConfig *config)
 
     /* initialize builtin exceptions */
     _PyExc_Init(bimod);
-
-    sysmod = _PySys_BeginInit();
-    if (sysmod == NULL)
-        Py_FatalError("Py_InitializeCore: can't initialize sys");
-    interp->sysdict = PyModule_GetDict(sysmod);
-    if (interp->sysdict == NULL)
-        Py_FatalError("Py_InitializeCore: can't initialize sys dict");
-    Py_INCREF(interp->sysdict);
-    _PyImport_FixupBuiltin(sysmod, "sys");
-    PyDict_SetItemString(interp->sysdict, "modules",
-                         interp->modules);
 
     /* Set up a preliminary stderr printer until we have enough
        infrastructure for the io module in place. */
@@ -1203,7 +1203,21 @@ Py_NewInterpreter(void)
 
     /* XXX The following is lax in error checking */
 
-    interp->modules = PyDict_New();
+    PyObject *modules = PyDict_New();
+    if (modules == NULL)
+        Py_FatalError("Py_NewInterpreter: can't make modules dictionary");
+    interp->modules = modules;
+
+    sysmod = _PyImport_FindBuiltin("sys");
+    if (sysmod != NULL) {
+        interp->sysdict = PyModule_GetDict(sysmod);
+        if (interp->sysdict == NULL)
+            goto handle_error;
+        Py_INCREF(interp->sysdict);
+        PyDict_SetItemString(interp->sysdict, "modules", modules);
+        PySys_SetPath(Py_GetPath());
+        _PySys_EndInit(interp->sysdict);
+    }
 
     bimod = _PyImport_FindBuiltin("builtins");
     if (bimod != NULL) {
@@ -1216,18 +1230,9 @@ Py_NewInterpreter(void)
     /* initialize builtin exceptions */
     _PyExc_Init(bimod);
 
-    sysmod = _PyImport_FindBuiltin("sys");
     if (bimod != NULL && sysmod != NULL) {
         PyObject *pstderr;
 
-        interp->sysdict = PyModule_GetDict(sysmod);
-        if (interp->sysdict == NULL)
-            goto handle_error;
-        Py_INCREF(interp->sysdict);
-        _PySys_EndInit(interp->sysdict);
-        PySys_SetPath(Py_GetPath());
-        PyDict_SetItemString(interp->sysdict, "modules",
-                             interp->modules);
         /* Set up a preliminary stderr printer until we have enough
            infrastructure for the io module in place. */
         pstderr = PyFile_NewStdPrinter(fileno(stderr));
