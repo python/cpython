@@ -601,6 +601,14 @@ _PyImport_FixupBuiltin(PyObject *mod, const char *name)
 PyObject *
 _PyImport_FindExtensionObject(PyObject *name, PyObject *filename)
 {
+    PyObject *modules = PyImport_GetModuleDict();
+    return _PyImport_FindExtensionObjectEx(name, filename, modules);
+}
+
+PyObject *
+_PyImport_FindExtensionObjectEx(PyObject *name, PyObject *filename,
+                                PyObject *modules)
+{
     PyObject *mod, *mdict, *key;
     PyModuleDef* def;
     if (extensions == NULL)
@@ -616,7 +624,7 @@ _PyImport_FindExtensionObject(PyObject *name, PyObject *filename)
         /* Module does not support repeated initialization */
         if (def->m_base.m_copy == NULL)
             return NULL;
-        mod = PyImport_AddModuleObject(name);
+        mod = _PyImport_AddModuleObject(name, modules);
         if (mod == NULL)
             return NULL;
         mdict = PyModule_GetDict(mod);
@@ -631,14 +639,14 @@ _PyImport_FindExtensionObject(PyObject *name, PyObject *filename)
         mod = def->m_base.m_init();
         if (mod == NULL)
             return NULL;
-        if (PyDict_SetItem(PyImport_GetModuleDict(), name, mod) == -1) {
+        if (PyDict_SetItem(modules, name, mod) == -1) {
             Py_DECREF(mod);
             return NULL;
         }
         Py_DECREF(mod);
     }
     if (_PyState_AddModule(mod, def) < 0) {
-        PyDict_DelItem(PyImport_GetModuleDict(), name);
+        PyDict_DelItem(modules, name);
         Py_DECREF(mod);
         return NULL;
     }
@@ -650,13 +658,13 @@ _PyImport_FindExtensionObject(PyObject *name, PyObject *filename)
 }
 
 PyObject *
-_PyImport_FindBuiltin(const char *name)
+_PyImport_FindBuiltin(const char *name, PyObject *modules)
 {
     PyObject *res, *nameobj;
     nameobj = PyUnicode_InternFromString(name);
     if (nameobj == NULL)
         return NULL;
-    res = _PyImport_FindExtensionObject(nameobj, nameobj);
+    res = _PyImport_FindExtensionObjectEx(nameobj, nameobj, modules);
     Py_DECREF(nameobj);
     return res;
 }
@@ -671,6 +679,12 @@ PyObject *
 PyImport_AddModuleObject(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
+    return _PyImport_AddModuleObject(name, modules);
+}
+
+PyObject *
+_PyImport_AddModuleObject(PyObject *name, PyObject *modules)
+{
     PyObject *m;
 
     if ((m = PyDict_GetItemWithError(modules, name)) != NULL &&
