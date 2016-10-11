@@ -42,7 +42,7 @@
     
     <!-- Directories of external projects. tcltk is handled in tcltk.props -->
     <ExternalsDir>$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals\`))</ExternalsDir>
-    <sqlite3Dir>$(ExternalsDir)sqlite-3.14.1.0\</sqlite3Dir>
+    <sqlite3Dir>$(ExternalsDir)sqlite-3.14.2.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
     <opensslDir>$(ExternalsDir)openssl-1.0.2j\</opensslDir>
