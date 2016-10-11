@@ -301,14 +301,13 @@ _PyImport_Fini(void)
 /* Helper for sys */
 
 PyObject *
-_PyImport_GetModuleDict(PyThreadState *tstate)
+_PyImport_GetModuleDict(PyInterpreterState *interp)
 {
-    if (tstate->interp->sysdict == NULL)
-        Py_FatalError("_PyImport_GetModuleDict: no sys module!");
+    if (interp->sysdict == NULL)
+        Py_FatalError("PyImport_GetModuleDict: no sys module!");
 
     _Py_IDENTIFIER(modules);
-    PyObject *modules = _PyDict_GetItemId(tstate->interp->sysdict,
-                                          &PyId_modules);
+    PyObject *modules = _PyDict_GetItemId(interp->sysdict, &PyId_modules);
     if (modules == NULL)
         Py_FatalError("lost sys.modules");
     return modules;
@@ -317,7 +316,7 @@ _PyImport_GetModuleDict(PyThreadState *tstate)
 PyObject *
 PyImport_GetModuleDict(void)
 {
-    return _PyImport_GetModuleDict(PyThreadState_GET());
+    return _PyImport_GetModuleDict(PyThreadState_GET()->interp);
 }
 
 /* In some corner cases it is important to be sure that the import
