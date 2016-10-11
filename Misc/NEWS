@@ -32,6 +32,11 @@ Library
 - Issue #27759: Fix selectors incorrectly retain invalid file descriptors.
   Patch by Mark Williams.
 
+Build
+-----
+
+- Issue #28248: Update Windows build to use OpenSSL 1.0.2j.
+
 Tests
 -----
 
