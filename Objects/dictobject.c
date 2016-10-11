@@ -2372,7 +2372,7 @@ Return:
     return Py_SAFE_DOWNCAST(i, Py_ssize_t, int);
 }
 
-int
+static int
 dict_merge(PyObject *a, PyObject *b, int override)
 {
     PyDictObject *mp, *other;
