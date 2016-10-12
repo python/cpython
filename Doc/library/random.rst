@@ -131,11 +131,12 @@ Functions for sequences:
 
    If a *weights* sequence is specified, selections are made according to the
    relative weights.  Alternatively, if a *cum_weights* sequence is given, the
-   selections are made according to the cumulative weights.  For example, the
-   relative weights ``[10, 5, 30, 5]`` are equivalent to the cumulative
-   weights ``[10, 15, 45, 50]``.  Internally, the relative weights are
-   converted to cumulative weights before making selections, so supplying the
-   cumulative weights saves work.
+   selections are made according to the cumulative weights (perhaps computed
+   using :func:`itertools.accumulate`).  For example, the relative weights
+   ``[10, 5, 30, 5]`` are equivalent to the cumulative weights
+   ``[10, 15, 45, 50]``.  Internally, the relative weights are converted to
+   cumulative weights before making selections, so supplying the cumulative
+   weights saves work.
 
    If neither *weights* nor *cum_weights* are specified, selections are made
    with equal probability.  If a weights sequence is supplied, it must be
@@ -145,6 +146,9 @@ Functions for sequences:
    The *weights* or *cum_weights* can use any numeric type that interoperates
    with the :class:`float` values returned by :func:`random` (that includes
    integers, floats, and fractions but excludes decimals).
+
+   .. versionadded:: 3.6
+
 
 .. function:: shuffle(x[, random])
 
@@ -335,36 +339,28 @@ Basic usage::
    >>> random.choice('abcdefghij')          # Single random element
    'c'
 
-   >>> items = [1, 2, 3, 4, 5, 6, 7]
-   >>> random.shuffle(items)
-   >>> items
-   [7, 3, 2, 5, 6, 4, 1]
+   >>> deck = ['jack', 'queen', 'king', 'ace']
+   >>> shuffle(deck)
+   >>> deck
+   ['king', 'queen', 'ace', 'jack']
 
    >>> random.sample([1, 2, 3, 4, 5],  3)   # Three samples without replacement
    [4, 1, 5]
 
-A common task is to make a :func:`random.choice` with weighted probabilities.
+   >>>                                      # Six weighted samples with replacement
+   >>> choices(['red', 'black', 'green'], [18, 18, 2], k=6)
+   ['red', 'green', 'black', 'black', 'red', 'black']
 
-If the weights are small integer ratios, a simple technique is to build a sample
-population with repeats::
+Example of `statistical bootstrapping
+<https://en.wikipedia.org/wiki/Bootstrapping_(statistics)>`_ using resampling
+with replacement to estimate a confidence interval for the mean of a small
+sample of size five::
 
-    >>> weighted_choices = [('Red', 3), ('Blue', 2), ('Yellow', 1), ('Green', 4)]
-    >>> population = [val for val, cnt in weighted_choices for i in range(cnt)]
-    >>> population
-    ['Red', 'Red', 'Red', 'Blue', 'Blue', 'Yellow', 'Green', 'Green', 'Green', 'Green']
+   # http://statistics.about.com/od/Applications/a/Example-Of-Bootstrapping.htm
+   from statistics import mean
+   from random import choices
 
-    >>> random.choice(population)
-    'Green'
-
-A more general approach is to arrange the weights in a cumulative distribution
-with :func:`itertools.accumulate`, and then locate the random value with
-:func:`bisect.bisect`::
-
-    >>> choices, weights = zip(*weighted_choices)
-    >>> cumdist = list(itertools.accumulate(weights))
-    >>> cumdist            # [3, 3+2, 3+2+1, 3+2+1+4]
-    [3, 5, 6, 10]
-
-    >>> x = random.random() * cumdist[-1]
-    >>> choices[bisect.bisect(cumdist, x)]
-    'Blue'
+   data = 1, 2, 4, 4, 10
+   means = sorted(mean(choices(data, k=5)) for i in range(20))
+   print('The sample mean of {:.1f} has a 90% confidence interval '
+         'from {:.1f} to {:.1f}'.format(mean(data), means[1], means[-2]))
