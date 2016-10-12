@@ -3100,9 +3100,9 @@ PyUnicode_FromEncodedObject(PyObject *obj,
     return v;
 }
 
-/* Normalize an encoding name: C implementation of
-   encodings.normalize_encoding(). Return 1 on success, or 0 on error (encoding
-   is longer than lower_len-1). */
+/* Normalize an encoding name: similar to encodings.normalize_encoding(), but
+   also convert to lowercase. Return 1 on success, or 0 on error (encoding is
+   longer than lower_len-1). */
 int
 _Py_normalize_encoding(const char *encoding,
                        char *lower,
