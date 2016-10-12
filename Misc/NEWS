@@ -85,6 +85,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20766: Fix references leaked by pdb in the handling of SIGINT
+  handlers.
+
 - Issue #27998: Fixed bytes path support in os.scandir() on Windows.
   Patch by Eryk Sun.
 
