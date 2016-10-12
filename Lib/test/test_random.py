@@ -178,8 +178,6 @@ class TestBasicOps:
         self.assertTrue(set(choices(data, weights=None, k=5)) <= set(data))
         with self.assertRaises(ValueError):
             choices(data, [1,2], k=5)                                    # len(weights) != len(population)
-        with self.assertRaises(IndexError):
-            choices(data, [0]*4, k=5)                                    # weights sum to zero
         with self.assertRaises(TypeError):
             choices(data, 10, k=5)                                       # non-iterable weights
         with self.assertRaises(TypeError):
@@ -194,8 +192,6 @@ class TestBasicOps:
 
         with self.assertRaises(ValueError):
             choices(data, cum_weights=[1,2], k=5)                        # len(weights) != len(population)
-        with self.assertRaises(IndexError):
-            choices(data, cum_weights=[0]*4, k=5)                        # cum_weights sum to zero
         with self.assertRaises(TypeError):
             choices(data, cum_weights=10, k=5)                           # non-iterable cum_weights
         with self.assertRaises(TypeError):
