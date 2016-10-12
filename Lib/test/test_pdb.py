@@ -911,6 +911,29 @@ def test_pdb_next_command_subiterator():
     (Pdb) continue
     """
 
+def test_pdb_issue_20766():
+    """Test for reference leaks when the SIGINT handler is set.
+
+    >>> def test_function():
+    ...     i = 1
+    ...     while i <= 2:
+    ...         sess = pdb.Pdb()
+    ...         sess.set_trace(sys._getframe())
+    ...         print('pdb %d: %s' % (i, sess._previous_sigint_handler))
+    ...         i += 1
+
+    >>> with PdbTestInput(['continue',
+    ...                    'continue']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_20766[0]>(6)test_function()
+    -> print('pdb %d: %s' % (i, sess._previous_sigint_handler))
+    (Pdb) continue
+    pdb 1: <built-in function default_int_handler>
+    > <doctest test.test_pdb.test_pdb_issue_20766[0]>(5)test_function()
+    -> sess.set_trace(sys._getframe())
+    (Pdb) continue
+    pdb 2: <built-in function default_int_handler>
+    """
 
 class PdbTestCase(unittest.TestCase):
 

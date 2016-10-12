@@ -134,6 +134,8 @@ line_prefix = '\n-> '   # Probably a better default
 
 class Pdb(bdb.Bdb, cmd.Cmd):
 
+    _previous_sigint_handler = None
+
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
                  nosigint=False):
         bdb.Bdb.__init__(self, skip=skip)
@@ -187,8 +189,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.message("\nProgram interrupted. (Use 'cont' to resume).")
         self.set_step()
         self.set_trace(frame)
-        # restore previous signal handler
-        signal.signal(signal.SIGINT, self._previous_sigint_handler)
 
     def reset(self):
         bdb.Bdb.reset(self)
@@ -337,6 +337,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                                  (expr, newvalue, oldvalue))
 
     def interaction(self, frame, traceback):
+        # Restore the previous signal handler at the Pdb prompt.
+        if Pdb._previous_sigint_handler:
+            signal.signal(signal.SIGINT, Pdb._previous_sigint_handler)
+            Pdb._previous_sigint_handler = None
         if self.setup(frame, traceback):
             # no interaction desired at this time (happens if .pdbrc contains
             # a command like "continue")
@@ -1037,7 +1041,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         if not self.nosigint:
             try:
-                self._previous_sigint_handler = \
+                Pdb._previous_sigint_handler = \
                     signal.signal(signal.SIGINT, self.sigint_handler)
             except ValueError:
                 # ValueError happens when do_continue() is invoked from
