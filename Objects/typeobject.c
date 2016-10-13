@@ -2848,13 +2848,16 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     /* Set type.__module__ */
     s = strrchr(spec->name, '.');
     if (s != NULL) {
+        int err;
         modname = PyUnicode_FromStringAndSize(
                 spec->name, (Py_ssize_t)(s - spec->name));
         if (modname == NULL) {
             goto fail;
         }
-        _PyDict_SetItemId(type->tp_dict, &PyId___module__, modname);
+        err = _PyDict_SetItemId(type->tp_dict, &PyId___module__, modname);
         Py_DECREF(modname);
+        if (err != 0)
+            goto fail;
     } else {
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                 "builtin type %.200s has no __module__ attribute",
