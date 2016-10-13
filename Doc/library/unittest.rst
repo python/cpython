@@ -1316,19 +1316,17 @@ Test cases
 
    .. attribute:: longMessage
 
-      If set to ``True`` then any explicit failure message you pass in to the
-      :ref:`assert methods <assert-methods>` will be appended to the end of the
-      normal failure message.  The normal messages contain useful information
-      about the objects involved, for example the message from assertEqual
-      shows you the repr of the two unequal objects. Setting this attribute
-      to ``True`` allows you to have a custom error message in addition to the
-      normal one.
+      This class attribute determines what happens when a custom failure message
+      is passed as the msg argument to an assertXYY call that fails.
+      ``True`` is the default value. In this case, the custom message is appended
+      to the end of the standard failure message.
+      When set to ``False``, the custom message replaces the standard message.
 
-      This attribute defaults to ``True``. If set to False then a custom message
-      passed to an assert method will silence the normal message.
+      The class setting can be overridden in individual test methods by assigning
+      an instance attribute, self.longMessage, to ``True`` or ``False`` before
+      calling the assert methods.
 
-      The class setting can be overridden in individual tests by assigning an
-      instance attribute to ``True`` or ``False`` before calling the assert methods.
+      The class setting gets reset before each test call.
 
       .. versionadded:: 3.1
 
