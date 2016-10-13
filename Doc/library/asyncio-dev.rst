@@ -161,6 +161,14 @@ Logging
 The :mod:`asyncio` module logs information with the :mod:`logging` module in
 the logger ``'asyncio'``.
 
+The default log level for the :mod:`asyncio` module is :py:data:`logging.INFO`.
+For those not wanting such verbosity from :mod:`asyncio` the log level can
+be changed.  For example, to change the level to :py:data:`logging.WARNING`:
+
+.. code-block:: none
+
+   logging.getLogger('asyncio').setLevel(logging.WARNING)
+
 
 .. _asyncio-coroutine-not-scheduled:
 
