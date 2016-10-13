@@ -56,15 +56,15 @@ like inline `DTD`_ (document type definition) with entities.
 The following table gives an overview of the known attacks and if the various
 modules are vulnerable to them.
 
-=========================  ========  =========  =========  ========  =========
-kind                       sax       etree      minidom    pulldom   xmlrpc
-=========================  ========  =========  =========  ========  =========
-billion laughs             **Yes**   **Yes**    **Yes**    **Yes**   **Yes**
-quadratic blowup           **Yes**   **Yes**    **Yes**    **Yes**   **Yes**
-external entity expansion  **Yes**   No    (1)  No    (2)  **Yes**   No    (3)
-`DTD`_ retrieval           **Yes**   No         No         **Yes**   No
-decompression bomb         No        No         No         No        **Yes**
-=========================  ========  =========  =========  ========  =========
+=========================  ==============   ===============   ==============   ==============   ==============
+kind                       sax              etree             minidom          pulldom          xmlrpc
+=========================  ==============   ===============   ==============   ==============   ==============
+billion laughs             **Vulnerable**   **Vulnerable**    **Vulnerable**   **Vulnerable**   **Vulnerable**
+quadratic blowup           **Vulnerable**   **Vulnerable**    **Vulnerable**   **Vulnerable**   **Vulnerable**
+external entity expansion  **Vulnerable**   Safe    (1)       Safe    (2)      **Vulnerable**   Safe    (3)
+`DTD`_ retrieval           **Vulnerable**   Safe              Safe             **Vulnerable**   Safe
+decompression bomb         Safe             Safe              Safe             Safe             **Vulnerable**
+=========================  ==============   ===============   ==============   ==============   ==============
 
 1. :mod:`xml.etree.ElementTree` doesn't expand external entities and raises a
    ParserError when an entity occurs.
