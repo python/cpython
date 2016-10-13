@@ -642,6 +642,7 @@ if sys.platform == 'darwin':
     # (but we prefer using the OS X specific stuff)
     register("safari", None, MacOSXOSAScript('safari'), -1)
     register("firefox", None, MacOSXOSAScript('firefox'), -1)
+    register("chrome", None, MacOSXOSAScript('chrome'), -1)
     register("MacOSX", None, MacOSXOSAScript('default'), -1)
 
 
