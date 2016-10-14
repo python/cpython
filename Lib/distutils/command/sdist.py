@@ -95,6 +95,8 @@ class sdist(Command):
 
     sub_commands = [('check', checking_metadata)]
 
+    READMES = 'README', 'README.txt'
+
     def initialize_options(self):
         # 'template' and 'manifest' are, respectively, the names of
         # the manifest template and manifest file.
@@ -218,7 +220,7 @@ class sdist(Command):
         Warns if (README or README.txt) or setup.py are missing; everything
         else is optional.
         """
-        standards = [('README', 'README.txt'), self.distribution.script_name]
+        standards = [self.READMES, self.distribution.script_name]
         for fn in standards:
             if isinstance(fn, tuple):
                 alts = fn
