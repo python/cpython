@@ -261,11 +261,13 @@ class sdist(Command):
         # getting distribution.data_files
         if self.distribution.has_data_files():
             for item in self.distribution.data_files:
-                if isinstance(item, str): # plain file
+                if isinstance(item, str):
+                    # plain file
                     item = convert_path(item)
                     if os.path.isfile(item):
                         self.filelist.append(item)
-                else:    # a (dirname, filenames) tuple
+                else:
+                    # a (dirname, filenames) tuple
                     dirname, filenames = item
                     for f in filenames:
                         f = convert_path(f)
