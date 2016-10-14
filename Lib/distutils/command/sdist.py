@@ -220,6 +220,15 @@ class sdist(Command):
         Warns if (README or README.txt) or setup.py are missing; everything
         else is optional.
         """
+        self._add_defaults_standards()
+        self._add_defaults_optional()
+        self._add_defaults_python()
+        self._add_defaults_data_files()
+        self._add_defaults_ext()
+        self._add_defaults_c_libs()
+        self._add_defaults_scripts()
+
+    def _add_defaults_standards(self):
         standards = [self.READMES, self.distribution.script_name]
         for fn in standards:
             if isinstance(fn, tuple):
@@ -240,11 +249,13 @@ class sdist(Command):
                 else:
                     self.warn("standard file '%s' not found" % fn)
 
+    def _add_defaults_optional(self):
         optional = ['test/test*.py', 'setup.cfg']
         for pattern in optional:
             files = filter(os.path.isfile, glob(pattern))
             self.filelist.extend(files)
 
+    def _add_defaults_python(self):
         # build_py is used to get:
         #  - python modules
         #  - files defined in package_data
@@ -260,6 +271,7 @@ class sdist(Command):
             for filename in filenames:
                 self.filelist.append(os.path.join(src_dir, filename))
 
+    def _add_defaults_data_files(self):
         # getting distribution.data_files
         if self.distribution.has_data_files():
             for item in self.distribution.data_files:
@@ -276,14 +288,17 @@ class sdist(Command):
                         if os.path.isfile(f):
                             self.filelist.append(f)
 
+    def _add_defaults_ext(self):
         if self.distribution.has_ext_modules():
             build_ext = self.get_finalized_command('build_ext')
             self.filelist.extend(build_ext.get_source_files())
 
+    def _add_defaults_c_libs(self):
         if self.distribution.has_c_libraries():
             build_clib = self.get_finalized_command('build_clib')
             self.filelist.extend(build_clib.get_source_files())
 
+    def _add_defaults_scripts(self):
         if self.distribution.has_scripts():
             build_scripts = self.get_finalized_command('build_scripts')
             self.filelist.extend(build_scripts.get_source_files())
