@@ -32,6 +32,24 @@ def show_formats():
     FancyGetopt(formats).print_help(
         "List of available source distribution formats:")
 
+
+def cs_path_exists(fspath):
+    """
+    Case-sensitive path existence check
+
+    >>> cs_path_exists(__file__)
+    True
+    >>> cs_path_exists(__file__.upper())
+    False
+    """
+    if not os.path.exists(fspath):
+        return False
+    # make absolute so we always have a directory
+    abspath = os.path.abspath(fspath)
+    directory, filename = os.path.split(abspath)
+    return filename in os.listdir(directory)
+
+
 class sdist(Command):
 
     description = "create a source distribution (tarball, zip file, etc.)"
@@ -235,7 +253,7 @@ class sdist(Command):
                 alts = fn
                 got_it = False
                 for fn in alts:
-                    if os.path.exists(fn):
+                    if cs_path_exists(fn):
                         got_it = True
                         self.filelist.append(fn)
                         break
@@ -244,7 +262,7 @@ class sdist(Command):
                     self.warn("standard file not found: should have one of " +
                               ', '.join(alts))
             else:
-                if os.path.exists(fn):
+                if cs_path_exists(fn):
                     self.filelist.append(fn)
                 else:
                     self.warn("standard file '%s' not found" % fn)
