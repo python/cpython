@@ -205,6 +205,20 @@ class TestBasicOps:
         ]:
             self.assertTrue(set(choices(data, cum_weights=weights, k=5)) <= set(data))
 
+        # Test weight focused on a single element of the population
+        self.assertEqual(choices('abcd', [1, 0, 0, 0]), ['a'])
+        self.assertEqual(choices('abcd', [0, 1, 0, 0]), ['b'])
+        self.assertEqual(choices('abcd', [0, 0, 1, 0]), ['c'])
+        self.assertEqual(choices('abcd', [0, 0, 0, 1]), ['d'])
+
+        # Test consistency with random.choice() for empty population
+        with self.assertRaises(IndexError):
+            choices([], k=1)
+        with self.assertRaises(IndexError):
+            choices([], weights=[], k=1)
+        with self.assertRaises(IndexError):
+            choices([], cum_weights=[], k=5)
+
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
         # particular, through 2.2.1 it failed to reset a piece of state used
