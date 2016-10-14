@@ -201,7 +201,8 @@ support.
 
    Get a resource from a package.
 
-   This is a wrapper for the :term:`loader` :func:`get_data` API.  The
+   This is a wrapper for the :term:`loader`
+   :meth:`get_data <importlib.abc.ResourceLoader.get_data>` API.  The
    *package* argument should be the name of a package, in standard module format
    (``foo.bar``).  The *resource* argument should be in the form of a relative
    filename, using ``/`` as the path separator.  The parent directory name
@@ -217,4 +218,5 @@ support.
       data = open(os.path.join(d, resource), 'rb').read()
 
    If the package cannot be located or loaded, or it uses a :term:`loader`
-   which does not support :func:`get_data`, then ``None`` is returned.
+   which does not support :meth:`get_data <importlib.abc.ResourceLoader.get_data>`,
+   then ``None`` is returned.
