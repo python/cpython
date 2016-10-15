@@ -656,8 +656,8 @@ class PyBuildExt(build_ext):
                                depends=['unicodedata_db.h', 'unicodename_db.h']) )
         # _opcode module
         exts.append( Extension('_opcode', ['_opcode.c']) )
-        # Fast asyncio Future implementation
-        exts.append( Extension("_futures", ["_futuresmodule.c"]) )
+        # asyncio speedups
+        exts.append( Extension("_asyncio", ["_asynciomodule.c"]) )
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
