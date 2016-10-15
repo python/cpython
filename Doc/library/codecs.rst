@@ -224,6 +224,10 @@ wider range of codecs when working with binary files:
    The *errors* argument (as well as any
    other keyword argument) is passed through to the incremental encoder.
 
+   This function requires that the codec accept text :class:`str` objects
+   to encode. Therefore it does not support bytes-to-bytes encoders such as
+   ``base64_codec``.
+
 
 .. function:: iterdecode(iterator, encoding, errors='strict', **kwargs)
 
@@ -231,6 +235,11 @@ wider range of codecs when working with binary files:
    *iterator*. This function is a :term:`generator`.
    The *errors* argument (as well as any
    other keyword argument) is passed through to the incremental decoder.
+
+   This function requires that the codec accept :class:`bytes` objects
+   to decode. Therefore it does not support text-to-text encoders such as
+   ``rot_13``, although ``rot_13`` may be used equivalently with
+   :func:`iterencode`.
 
 
 The module also provides the following constants which are useful for reading
