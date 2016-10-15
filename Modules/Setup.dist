@@ -181,7 +181,7 @@ _symtable symtablemodule.c
 #_datetime _datetimemodule.c	# datetime accelerator
 #_bisect _bisectmodule.c	# Bisection algorithms
 #_heapq _heapqmodule.c	# Heap queue algorithm
-#_futures _futuresmodule.c  # Fast asyncio Future
+#_asyncio _asynciomodule.c  # Fast asyncio Future
 
 #unicodedata unicodedata.c    # static Unicode character database
 
