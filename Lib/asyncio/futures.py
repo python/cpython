@@ -432,18 +432,18 @@ def _copy_future_state(source, dest):
 
 
 try:
-    import _futures
+    import _asyncio
 except ImportError:
     pass
 else:
-    _futures._init_module(
+    _asyncio._init_module(
         traceback.extract_stack,
         events.get_event_loop,
         _future_repr_info,
         InvalidStateError,
         CancelledError)
 
-    Future = _futures.Future
+    Future = _asyncio.Future
 
 
 def _chain_future(source, destination):
