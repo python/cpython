@@ -832,7 +832,7 @@ call fails (for example because the path doesn't exist):
    If *parents* is false (the default), a missing parent raises
    :exc:`FileNotFoundError`.
 
-   If *exist_ok* is false (the default), an :exc:`FileExistsError` is
+   If *exist_ok* is false (the default), :exc:`FileExistsError` is
    raised if the target directory already exists.
 
    If *exist_ok* is true, :exc:`FileExistsError` exceptions will be
