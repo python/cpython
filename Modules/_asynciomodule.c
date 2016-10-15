@@ -6,8 +6,8 @@
 _Py_IDENTIFIER(call_soon);
 
 
-/* State of the _futures module */
-static int _futuremod_ready;
+/* State of the _asyncio module */
+static int _asynciomod_ready;
 static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop;
 static PyObject *asyncio_repr_info_func;
@@ -21,11 +21,11 @@ static PyObject* new_future_iter(PyObject *fut);
 
 /* make sure module state is initialized and ready to be used. */
 static int
-_FuturesMod_EnsureState(void)
+_AsyncioMod_EnsureState(void)
 {
-    if (!_futuremod_ready) {
+    if (!_asynciomod_ready) {
         PyErr_SetString(PyExc_RuntimeError,
-                        "_futures module wasn't properly initialized");
+                        "_asyncio module wasn't properly initialized");
         return -1;
     }
     return 0;
@@ -108,7 +108,7 @@ FutureObj_init(FutureObj *fut, PyObject *args, PyObject *kwds)
     PyObject *res = NULL;
     _Py_IDENTIFIER(get_debug);
 
-    if (_FuturesMod_EnsureState()) {
+    if (_AsyncioMod_EnsureState()) {
         return -1;
     }
 
@@ -218,7 +218,7 @@ PyDoc_STRVAR(pydoc_exception,
 static PyObject *
 FutureObj_exception(FutureObj *fut, PyObject *arg)
 {
-    if (_FuturesMod_EnsureState()) {
+    if (_AsyncioMod_EnsureState()) {
         return NULL;
     }
 
@@ -251,7 +251,7 @@ PyDoc_STRVAR(pydoc_set_result,
 static PyObject *
 FutureObj_set_result(FutureObj *fut, PyObject *res)
 {
-    if (_FuturesMod_EnsureState()) {
+    if (_AsyncioMod_EnsureState()) {
         return NULL;
     }
 
@@ -282,7 +282,7 @@ FutureObj_set_exception(FutureObj *fut, PyObject *exc)
 {
     PyObject *exc_val = NULL;
 
-    if (_FuturesMod_EnsureState()) {
+    if (_AsyncioMod_EnsureState()) {
         return NULL;
     }
 
@@ -735,7 +735,7 @@ static void FutureObj_dealloc(PyObject *self);
 
 static PyTypeObject FutureType = {
     PyVarObject_HEAD_INIT(0, 0)
-    "_futures.Future",
+    "_asyncio.Future",
     sizeof(FutureObj),                       /* tp_basicsize */
     .tp_dealloc = FutureObj_dealloc,
     .tp_as_async = &FutureType_as_async,
@@ -898,7 +898,7 @@ static PyMethodDef FutureIter_methods[] = {
 
 static PyTypeObject FutureIterType = {
     PyVarObject_HEAD_INIT(0, 0)
-    "_futures.FutureIter",
+    "_asyncio.FutureIter",
     sizeof(futureiterobject),                /* tp_basicsize */
     0,                                       /* tp_itemsize */
     (destructor)FutureIter_dealloc,          /* tp_dealloc */
@@ -949,7 +949,7 @@ new_future_iter(PyObject *fut)
 
 /*********************** Module **************************/
 
-PyDoc_STRVAR(module_doc, "Fast asyncio.Future implementation.\n");
+PyDoc_STRVAR(module_doc, "asyncio speedups.\n");
 
 PyObject *
 _init_module(PyObject *self, PyObject *args)
@@ -984,24 +984,24 @@ _init_module(PyObject *self, PyObject *args)
     Py_INCREF(cancelledError);
     Py_XSETREF(asyncio_CancelledError, cancelledError);
 
-    _futuremod_ready = 1;
+    _asynciomod_ready = 1;
 
     Py_RETURN_NONE;
 }
 
 
-static struct PyMethodDef futuresmod_methods[] = {
+static struct PyMethodDef asynciomod_methods[] = {
     {"_init_module", _init_module, METH_VARARGS, NULL},
     {NULL, NULL}
 };
 
 
-static struct PyModuleDef _futuresmodule = {
+static struct PyModuleDef _asynciomodule = {
     PyModuleDef_HEAD_INIT,      /* m_base */
-    "_futures",                 /* m_name */
+    "_asyncio",                 /* m_name */
     module_doc,                 /* m_doc */
     -1,                         /* m_size */
-    futuresmod_methods,         /* m_methods */
+    asynciomod_methods,         /* m_methods */
     NULL,                       /* m_slots */
     NULL,                       /* m_traverse */
     NULL,                       /* m_clear */
@@ -1010,7 +1010,7 @@ static struct PyModuleDef _futuresmodule = {
 
 
 PyMODINIT_FUNC
-PyInit__futures(void)
+PyInit__asyncio(void)
 {
     if (PyType_Ready(&FutureType) < 0) {
         return NULL;
@@ -1019,7 +1019,7 @@ PyInit__futures(void)
         return NULL;
     }
 
-    PyObject *m = PyModule_Create(&_futuresmodule);
+    PyObject *m = PyModule_Create(&_asynciomodule);
     if (m == NULL) {
         return NULL;
     }
