@@ -3009,7 +3009,7 @@ PyUnicode_Decode(const char *s,
                      "'%.400s' decoder returned '%.400s' instead of 'str'; "
                      "use codecs.decode() to decode to arbitrary types",
                      encoding,
-                     Py_TYPE(unicode)->tp_name, Py_TYPE(unicode)->tp_name);
+                     Py_TYPE(unicode)->tp_name);
         Py_DECREF(unicode);
         goto onError;
     }
@@ -3070,7 +3070,7 @@ PyUnicode_AsDecodedUnicode(PyObject *unicode,
                      "'%.400s' decoder returned '%.400s' instead of 'str'; "
                      "use codecs.decode() to decode to arbitrary types",
                      encoding,
-                     Py_TYPE(unicode)->tp_name, Py_TYPE(unicode)->tp_name);
+                     Py_TYPE(unicode)->tp_name);
         Py_DECREF(v);
         goto onError;
     }
@@ -3398,7 +3398,7 @@ PyUnicode_AsEncodedString(PyObject *unicode,
                  "'%.400s' encoder returned '%.400s' instead of 'bytes'; "
                  "use codecs.encode() to encode to arbitrary types",
                  encoding,
-                 Py_TYPE(v)->tp_name, Py_TYPE(v)->tp_name);
+                 Py_TYPE(v)->tp_name);
     Py_DECREF(v);
     return NULL;
 }
@@ -3427,7 +3427,7 @@ PyUnicode_AsEncodedUnicode(PyObject *unicode,
                      "'%.400s' encoder returned '%.400s' instead of 'str'; "
                      "use codecs.encode() to encode to arbitrary types",
                      encoding,
-                     Py_TYPE(v)->tp_name, Py_TYPE(v)->tp_name);
+                     Py_TYPE(v)->tp_name);
         Py_DECREF(v);
         goto onError;
     }
