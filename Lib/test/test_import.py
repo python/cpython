@@ -415,6 +415,14 @@ class ImportTests(unittest.TestCase):
         finally:
             rmtree(dir_name)
 
+    def test_fromlist_type(self):
+        with self.assertRaises(TypeError) as cm:
+            __import__('encodings', fromlist=[u'aliases'])
+        self.assertIn('must be str, not unicode', str(cm.exception))
+        with self.assertRaises(TypeError) as cm:
+            __import__('encodings', fromlist=[1])
+        self.assertIn('must be str, not int', str(cm.exception))
+
 
 class PycRewritingTests(unittest.TestCase):
     # Test that the `co_filename` attribute on code objects always points

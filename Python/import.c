@@ -2591,8 +2591,9 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
             return 0;
         }
         if (!PyString_Check(item)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "Item in ``from list'' not a string");
+            PyErr_Format(PyExc_TypeError,
+                         "Item in ``from list'' must be str, not %.200s",
+                         Py_TYPE(item)->tp_name);
             Py_DECREF(item);
             return 0;
         }

@@ -10,6 +10,11 @@ What's New in Python 2.7.13?
 Core and Builtins
 -----------------
 
+- Issue #21720: Improve exception message when the type of fromlist is unicode.
+  fromlist parameter of __import__() only accepts str in Python 2 and this
+  will help to identify the problem especially when the unicode_literals
+  future import is used.
+
 - Issue #26906: Resolving special methods of uninitialized type now causes
   implicit initialization of the type instead of a fail.
 
