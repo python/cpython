@@ -787,7 +787,7 @@ system.
    Encode a Unicode object to the current locale encoding. The
    supported error handlers are ``"strict"`` and ``"surrogateescape"``
    (:pep:`383`). The encoder uses ``"strict"`` error handler if
-   *errors* is ``NULL``. Return a :class:`bytes` object. *str* cannot
+   *errors* is ``NULL``. Return a :class:`bytes` object. *unicode* cannot
    contain embedded null characters.
 
    Use :c:func:`PyUnicode_EncodeFSDefault` to encode a string to
