@@ -1538,7 +1538,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
         TARGET(SET_ADD) {
             PyObject *v = POP();
-            PyObject *set = stack_pointer[-oparg];
+            PyObject *set = PEEK(oparg);
             int err;
             err = PySet_Add(set, v);
             Py_DECREF(v);
@@ -2796,7 +2796,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             PyObject *map;
             int err;
             STACKADJ(-2);
-            map = stack_pointer[-oparg];  /* dict */
+            map = PEEK(oparg);                      /* dict */
             assert(PyDict_CheckExact(map));
             err = PyDict_SetItem(map, key, value);  /* map[key] = value */
             Py_DECREF(value);
