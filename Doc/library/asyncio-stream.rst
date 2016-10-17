@@ -142,7 +142,7 @@ StreamReader
 
       This method is a :ref:`coroutine <coroutine>`.
 
-   .. coroutinemethod:: readuntil(separator=b'\n')
+   .. coroutinemethod:: readuntil(separator=b'\\n')
 
       Read data from the stream until ``separator`` is found.
 
