@@ -242,9 +242,6 @@ def _create_parser():
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
                        help='enable Profile Guided Optimization training')
 
-    parser.add_argument('args', nargs='*',
-                        help=argparse.SUPPRESS)
-
     return parser
 
 
@@ -294,7 +291,13 @@ def _parse_args(args, **kwargs):
         ns.use_resources = []
 
     parser = _create_parser()
-    parser.parse_args(args=args, namespace=ns)
+    # Issue #14191: argparse doesn't support "intermixed" positional and
+    # optional arguments. Use parse_known_args() as workaround.
+    ns.args = parser.parse_known_args(args=args, namespace=ns)[1]
+    for arg in ns.args:
+        if arg.startswith('-'):
+            parser.error("unrecognized arguments: %s" % arg)
+            sys.exit(1)
 
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")

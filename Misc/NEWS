@@ -312,6 +312,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #28409: regrtest: fix the parser of command line arguments.
+
 - Issue #28217: Adds _testconsole module to test console input.
 
 
