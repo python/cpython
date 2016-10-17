@@ -1958,10 +1958,11 @@ Customizing file parsing
    The method is called once per line read from the argument file, in order.
 
    A useful override of this method is one that treats each space-separated word
-   as an argument::
+   as an argument.  The following example demonstrates how to do this::
 
-    def convert_arg_line_to_args(self, arg_line):
-        return arg_line.split()
+    class MyArgumentParser(argparse.ArgumentParser):
+        def convert_arg_line_to_args(self, arg_line):
+            return arg_line.split()
 
 
 Exiting methods
