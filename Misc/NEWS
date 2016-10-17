@@ -376,11 +376,11 @@ Library
 - Issue #27759: Fix selectors incorrectly retain invalid file descriptors.
   Patch by Mark Williams.
 
-- Issue #28368: Refuse monitoring processes if the child watcher has 
+- Issue #28368: Refuse monitoring processes if the child watcher has
   no loop attached.
   Patch by Vincent Michel.
 
-- Issue #28369: Raise RuntimeError when transport's FD is used with 
+- Issue #28369: Raise RuntimeError when transport's FD is used with
   add_reader, add_writer, etc.
 
 - Issue #28370: Speedup asyncio.StreamReader.readexactly.
@@ -431,6 +431,8 @@ C API
 
 Tests
 -----
+
+- Issue #28409: regrtest: fix the parser of command line arguments.
 
 - Issue #27787: Call gc.collect() before checking each test for "dangling
   threads", since the dangling threads are weak references.
