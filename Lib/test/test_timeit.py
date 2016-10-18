@@ -331,7 +331,7 @@ class TestTimeit(unittest.TestCase):
             invalid = self.run_main(seconds_per_increment=0.002,
                     switches=['-u', 'parsec'])
         self.assertEqual(error_stringio.getvalue(),
-                    "Unrecognized unit. Please select usec, msec, or sec.\n")
+                    "Unrecognized unit. Please select nsec, usec, msec, or sec.\n")
 
     def test_main_exception(self):
         with captured_stderr() as error_stringio:
