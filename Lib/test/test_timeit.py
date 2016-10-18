@@ -293,18 +293,6 @@ class TestTimeit(unittest.TestCase):
         # the help text, but since it's there, check for it.
         self.assertEqual(s, timeit.__doc__ + ' ')
 
-    def test_main_using_time(self):
-        fake_timer = FakeTimer()
-        s = self.run_main(switches=['-t'], timer=fake_timer)
-        self.assertEqual(s, self.MAIN_DEFAULT_OUTPUT)
-        self.assertIs(fake_timer.saved_timer, time.time)
-
-    def test_main_using_clock(self):
-        fake_timer = FakeTimer()
-        s = self.run_main(switches=['-c'], timer=fake_timer)
-        self.assertEqual(s, self.MAIN_DEFAULT_OUTPUT)
-        self.assertIs(fake_timer.saved_timer, time.clock)
-
     def test_main_verbose(self):
         s = self.run_main(switches=['-v'])
         self.assertEqual(s, dedent("""\
