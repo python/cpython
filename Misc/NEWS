@@ -88,6 +88,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #28240: timeit autorange now uses a single loop iteration if the
+  benchmark takes less than 10 seconds, instead of 10 iterations.
+  "python3 -m timeit -s 'import time' 'time.sleep(1)'" now takes 4 seconds
+  instead of 40 seconds.
+
 - Distutils.sdist now looks for README and setup.py files with case
   sensitivity. This behavior matches that found in Setuptools 6.0 and
   later. See `setuptools 100
