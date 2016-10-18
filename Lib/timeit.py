@@ -264,6 +264,7 @@ def main(args=None, *, _wrap_timer=None):
         print(err)
         print("use -h/--help for command line help")
         return 2
+
     timer = default_timer
     stmt = "\n".join(args) or "pass"
     number = 0 # auto-determine
@@ -271,7 +272,7 @@ def main(args=None, *, _wrap_timer=None):
     repeat = default_repeat
     verbose = 0
     time_unit = None
-    units = {"usec": 1, "msec": 1e3, "sec": 1e6}
+    units = {"usec": 1e-6, "msec": 1e-3, "sec": 1.0}
     precision = 3
     for o, a in opts:
         if o in ("-n", "--number"):
@@ -299,6 +300,7 @@ def main(args=None, *, _wrap_timer=None):
             print(__doc__, end=' ')
             return 0
     setup = "\n".join(setup) or "pass"
+
     # Include the current directory, so that local imports work (sys.path
     # contains the directory of this script, rather than the current
     # directory)
@@ -306,6 +308,7 @@ def main(args=None, *, _wrap_timer=None):
     sys.path.insert(0, os.curdir)
     if _wrap_timer is not None:
         timer = _wrap_timer(timer)
+
     t = Timer(stmt, setup, timer)
     if number == 0:
         # determine number so that 0.2 <= total time < 2.0
@@ -321,37 +324,47 @@ def main(args=None, *, _wrap_timer=None):
         except:
             t.print_exc()
             return 1
+
     try:
-        r = t.repeat(repeat, number)
+        raw_timings = t.repeat(repeat, number)
     except:
         t.print_exc()
         return 1
-    best = min(r)
+
+    def format_time(dt):
+        unit = time_unit
+
+        if unit is not None:
+            scale = units[unit]
+        else:
+            scales = [(scale, unit) for unit, scale in units.items()]
+            scales.sort(reverse=True)
+            for scale, unit in scales:
+                if dt >= scale:
+                    break
+
+        return "%.*g %s" % (precision, dt / scale, unit)
+
     if verbose:
-        print("raw times:", " ".join(["%.*g" % (precision, x) for x in r]))
-    print("%d loop%s," % (number, 's' if number != 1 else ''), end=' ')
-    usec = best * 1e6 / number
-    if time_unit is not None:
-        scale = units[time_unit]
-    else:
-        scales = [(scale, unit) for unit, scale in units.items()]
-        scales.sort(reverse=True)
-        for scale, time_unit in scales:
-            if usec >= scale:
-                break
-    print("best of %d: %.*g %s per loop" % (repeat, precision,
-                                            usec/scale, time_unit))
-    best = min(r)
-    usec = best * 1e6 / number
-    worst = max(r)
+        print("raw times: %s" % ", ".join(map(format_time, raw_timings)))
+
+    timings = [dt / number for dt in raw_timings]
+
+    best = min(timings)
+    print("%d loop%s, best of %d: %s per loop"
+          % (number, 's' if number != 1 else '',
+             repeat, format_time(best)))
+
+    best = min(timings)
+    worst = max(timings)
     if worst >= best * 4:
-        usec = worst * 1e6 / number
         import warnings
-        warnings.warn_explicit(
-            "The test results are likely unreliable. The worst\n"
-            "time (%.*g %s) was more than four times slower than the best time." %
-            (precision, usec/scale, time_unit),
-             UserWarning, '', 0)
+        warnings.warn_explicit("The test results are likely unreliable. "
+                               "The worst time (%s) was more than four times "
+                               "slower than the best time (%s)."
+                               % (precision,
+                                  format_time(worst), format_time(best)),
+                               UserWarning, '', 0)
     return None
 
 if __name__ == "__main__":
