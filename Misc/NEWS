@@ -88,6 +88,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28240: timeit: remove ``-c/--clock`` and ``-t/--time`` command line
+  options which were deprecated since Python 3.3.
+
 - Issue #28240: timeit now repeats the benchmarks 5 times instead of only 3
   to make benchmarks more reliable.
 

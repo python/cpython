@@ -9,7 +9,7 @@ the Python Cookbook, published by O'Reilly.
 Library usage: see the Timer class.
 
 Command line usage:
-    python timeit.py [-n N] [-r N] [-s S] [-t] [-c] [-p] [-h] [--] [statement]
+    python timeit.py [-n N] [-r N] [-s S] [-p] [-h] [--] [statement]
 
 Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
@@ -17,8 +17,6 @@ Options:
   -s/--setup S: statement to be executed once initially (default 'pass').
                 Execution time of this setup statement is NOT timed.
   -p/--process: use time.process_time() (default is time.perf_counter())
-  -t/--time: use time.time() (deprecated)
-  -c/--clock: use time.clock() (deprecated)
   -v/--verbose: print raw timing results; repeat for more digits precision
   -u/--unit: set the output time unit (usec, msec, or sec)
   -h/--help: print this usage message and exit
@@ -291,10 +289,6 @@ def main(args=None, *, _wrap_timer=None):
             repeat = int(a)
             if repeat <= 0:
                 repeat = 1
-        if o in ("-t", "--time"):
-            timer = time.time
-        if o in ("-c", "--clock"):
-            timer = time.clock
         if o in ("-p", "--process"):
             timer = time.process_time
         if o in ("-v", "--verbose"):
