@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #23782: Fixed possible memory leak in _PyTraceback_Add() and exception
+  loss in PyTraceBack_Here().
+
 - Issue #28379: Added sanity checks and tests for PyUnicode_CopyCharacters().
   Patch by Xiang Zhang.
 
