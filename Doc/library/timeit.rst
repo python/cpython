@@ -224,7 +224,7 @@ Where the following options are understood:
 
 .. cmdoption:: -u, --unit=U
 
-    specify a time unit for timer output; can select usec, msec, or sec
+    specify a time unit for timer output; can select nsec, usec, msec, or sec
 
    .. versionadded:: 3.5
 

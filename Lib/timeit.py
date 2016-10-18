@@ -18,7 +18,7 @@ Options:
                 Execution time of this setup statement is NOT timed.
   -p/--process: use time.process_time() (default is time.perf_counter())
   -v/--verbose: print raw timing results; repeat for more digits precision
-  -u/--unit: set the output time unit (usec, msec, or sec)
+  -u/--unit: set the output time unit (nsec, usec, msec, or sec)
   -h/--help: print this usage message and exit
   --: separate options from statement, use when statement starts with -
   statement: statement to be timed (default 'pass')
@@ -272,7 +272,7 @@ def main(args=None, *, _wrap_timer=None):
     repeat = default_repeat
     verbose = 0
     time_unit = None
-    units = {"usec": 1e-6, "msec": 1e-3, "sec": 1.0}
+    units = {"nsec": 1e-9, "usec": 1e-6, "msec": 1e-3, "sec": 1.0}
     precision = 3
     for o, a in opts:
         if o in ("-n", "--number"):
@@ -283,7 +283,7 @@ def main(args=None, *, _wrap_timer=None):
             if a in units:
                 time_unit = a
             else:
-                print("Unrecognized unit. Please select usec, msec, or sec.",
+                print("Unrecognized unit. Please select nsec, usec, msec, or sec.",
                     file=sys.stderr)
                 return 2
         if o in ("-r", "--repeat"):
