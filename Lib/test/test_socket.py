@@ -4562,6 +4562,18 @@ class TestExceptions(unittest.TestCase):
         self.assertTrue(issubclass(socket.gaierror, OSError))
         self.assertTrue(issubclass(socket.timeout, OSError))
 
+    def test_setblocking_invalidfd(self):
+        # Regression test for issue #28471
+
+        sock0 = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+        sock = socket.socket(
+            socket.AF_INET, socket.SOCK_STREAM, 0, sock0.fileno())
+        sock0.close()
+
+        with self.assertRaises(OSError):
+            sock.setblocking(False)
+
+
 @unittest.skipUnless(sys.platform == 'linux', 'Linux specific test')
 class TestLinuxAbstractNamespace(unittest.TestCase):
 
