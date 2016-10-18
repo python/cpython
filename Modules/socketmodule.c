@@ -622,6 +622,7 @@ set_gaierror(int error)
 static int
 internal_setblocking(PySocketSockObject *s, int block)
 {
+    int result = -1;
 #ifdef MS_WINDOWS
     u_long arg;
 #endif
@@ -641,34 +642,39 @@ internal_setblocking(PySocketSockObject *s, int block)
 #if (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO))
     block = !block;
     if (ioctl(s->sock_fd, FIONBIO, (unsigned int *)&block) == -1)
-        goto error;
+        goto done;
 #else
     delay_flag = fcntl(s->sock_fd, F_GETFL, 0);
     if (delay_flag == -1)
-        goto error;
+        goto done;
     if (block)
         new_delay_flag = delay_flag & (~O_NONBLOCK);
     else
         new_delay_flag = delay_flag | O_NONBLOCK;
     if (new_delay_flag != delay_flag)
         if (fcntl(s->sock_fd, F_SETFL, new_delay_flag) == -1)
-            goto error;
+            goto done;
 #endif
 #else /* MS_WINDOWS */
     arg = !block;
     if (ioctlsocket(s->sock_fd, FIONBIO, &arg) != 0)
-        goto error;
+        goto done;
 #endif /* MS_WINDOWS */
+
+    result = 0;
+
+  done:
     Py_END_ALLOW_THREADS
 
-    return 0;
-  error:
+    if (result) {
 #ifndef MS_WINDOWS
-    PyErr_SetFromErrno(PyExc_OSError);
+        PyErr_SetFromErrno(PyExc_OSError);
 #else
-    PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
+        PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
 #endif
-    return -1;
+    }
+
+    return result;
 }
 
 static int
