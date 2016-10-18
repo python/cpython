@@ -13,6 +13,10 @@ Core and Builtins
 - Issue #23782: Fixed possible memory leak in _PyTraceback_Add() and exception
   loss in PyTraceBack_Here().
 
+- Issue #28471: Fix "Python memory allocator called without holding the GIL"
+  crash in socket.setblocking.
+
+
 Library
 -------
 
