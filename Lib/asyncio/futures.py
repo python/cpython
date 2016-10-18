@@ -431,21 +431,6 @@ def _copy_future_state(source, dest):
             dest.set_result(result)
 
 
-try:
-    import _asyncio
-except ImportError:
-    pass
-else:
-    _asyncio._init_module(
-        traceback.extract_stack,
-        events.get_event_loop,
-        _future_repr_info,
-        InvalidStateError,
-        CancelledError)
-
-    Future = _asyncio.Future
-
-
 def _chain_future(source, destination):
     """Chain two futures so that when one completes, so does the other.
 
@@ -496,3 +481,11 @@ def wrap_future(future, *, loop=None):
     new_future = loop.create_future()
     _chain_future(future, new_future)
     return new_future
+
+
+try:
+    import _asyncio
+except ImportError:
+    pass
+else:
+    Future = _asyncio.Future
