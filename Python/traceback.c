@@ -132,47 +132,53 @@ newtracebackobject(PyTracebackObject *next, PyFrameObject *frame)
 int
 PyTraceBack_Here(PyFrameObject *frame)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyTracebackObject *oldtb = (PyTracebackObject *) tstate->curexc_traceback;
-    PyTracebackObject *tb = newtracebackobject(oldtb, frame);
-    if (tb == NULL)
+    PyObject *exc, *val, *tb, *newtb;
+    PyErr_Fetch(&exc, &val, &tb);
+    newtb = (PyObject *)newtracebackobject((PyTracebackObject *)tb, frame);
+    if (newtb == NULL) {
+        _PyErr_ChainExceptions(exc, val, tb);
         return -1;
-    tstate->curexc_traceback = (PyObject *)tb;
-    Py_XDECREF(oldtb);
+    }
+    PyErr_Restore(exc, val, newtb);
+    Py_XDECREF(tb);
     return 0;
 }
 
 /* Insert a frame into the traceback for (funcname, filename, lineno). */
 void _PyTraceback_Add(const char *funcname, const char *filename, int lineno)
 {
-    PyObject *globals = NULL;
-    PyCodeObject *code = NULL;
-    PyFrameObject *frame = NULL;
-    PyObject *exception, *value, *tb;
+    PyObject *globals;
+    PyCodeObject *code;
+    PyFrameObject *frame;
+    PyObject *exc, *val, *tb;
 
     /* Save and clear the current exception. Python functions must not be
        called with an exception set. Calling Python functions happens when
        the codec of the filesystem encoding is implemented in pure Python. */
-    PyErr_Fetch(&exception, &value, &tb);
+    PyErr_Fetch(&exc, &val, &tb);
 
     globals = PyDict_New();
     if (!globals)
-        goto done;
+        goto error;
     code = PyCode_NewEmpty(filename, funcname, lineno);
-    if (!code)
-        goto done;
+    if (!code) {
+        Py_DECREF(globals);
+        goto error;
+    }
     frame = PyFrame_New(PyThreadState_Get(), code, globals, NULL);
+    Py_DECREF(globals);
+    Py_DECREF(code);
     if (!frame)
-        goto done;
+        goto error;
     frame->f_lineno = lineno;
 
-    PyErr_Restore(exception, value, tb);
+    PyErr_Restore(exc, val, tb);
     PyTraceBack_Here(frame);
+    Py_DECREF(frame);
+    return;
 
-done:
-    Py_XDECREF(globals);
-    Py_XDECREF(code);
-    Py_XDECREF(frame);
+error:
+    _PyErr_ChainExceptions(exc, val, tb);
 }
 
 static PyObject *
