@@ -19,13 +19,19 @@
  * ====================================================
  */
 
+#if !defined(HAVE_ACOSH) || !defined(HAVE_ASINH)
 static const double ln2 = 6.93147180559945286227E-01;
-static const double two_pow_m28 = 3.7252902984619141E-09; /* 2**-28 */
 static const double two_pow_p28 = 268435456.0; /* 2**28 */
-#ifndef Py_NAN
+#endif
+#if !defined(HAVE_ASINH) || !defined(HAVE_ATANH)
+static const double two_pow_m28 = 3.7252902984619141E-09; /* 2**-28 */
+#endif
+#if !defined(HAVE_ATANH) && !defined(Py_NAN)
 static const double zero = 0.0;
 #endif
 
+
+#ifndef HAVE_ACOSH
 /* acosh(x)
  * Method :
  *      Based on
@@ -59,23 +65,25 @@ _Py_acosh(double x)
             return x+x;
         }
         else {
-            return log(x)+ln2;          /* acosh(huge)=log(2x) */
+            return log(x) + ln2;          /* acosh(huge)=log(2x) */
         }
     }
     else if (x == 1.) {
         return 0.0;                     /* acosh(1) = 0 */
     }
     else if (x > 2.) {                  /* 2 < x < 2**28 */
-        double t = x*x;
-        return log(2.0*x - 1.0 / (x + sqrt(t - 1.0)));
+        double t = x * x;
+        return log(2.0 * x - 1.0 / (x + sqrt(t - 1.0)));
     }
     else {                              /* 1 < x <= 2 */
         double t = x - 1.0;
-        return m_log1p(t + sqrt(2.0*t + t*t));
+        return m_log1p(t + sqrt(2.0 * t + t * t));
     }
 }
+#endif   /* HAVE_ACOSH */
 
 
+#ifndef HAVE_ASINH
 /* asinh(x)
  * Method :
  *      Based on
@@ -100,10 +108,10 @@ _Py_asinh(double x)
         return x;                       /* return x inexact except 0 */
     }
     if (absx > two_pow_p28) {           /* |x| > 2**28 */
-        w = log(absx)+ln2;
+        w = log(absx) + ln2;
     }
     else if (absx > 2.0) {              /* 2 < |x| < 2**28 */
-        w = log(2.0*absx + 1.0 / (sqrt(x*x + 1.0) + absx));
+        w = log(2.0 * absx + 1.0 / (sqrt(x * x + 1.0) + absx));
     }
     else {                              /* 2**-28 <= |x| < 2= */
         double t = x*x;
@@ -112,7 +120,10 @@ _Py_asinh(double x)
     return copysign(w, x);
 
 }
+#endif   /* HAVE_ASINH */
 
+
+#ifndef HAVE_ATANH
 /* atanh(x)
  * Method :
  *    1.Reduced x to positive by atanh(-x) = -atanh(x)
@@ -145,7 +156,7 @@ _Py_atanh(double x)
 #ifdef Py_NAN
         return Py_NAN;
 #else
-        return x/zero;
+        return x / zero;
 #endif
     }
     if (absx < two_pow_m28) {           /* |x| < 2**-28 */
@@ -160,7 +171,10 @@ _Py_atanh(double x)
     }
     return copysign(t, x);
 }
+#endif   /* HAVE_ATANH */
 
+
+#ifndef HAVE_EXPM1
 /* Mathematically, expm1(x) = exp(x) - 1.  The expm1 function is designed
    to avoid the significant loss of precision that arises from direct
    evaluation of the expression exp(x) - 1, for x near 0. */
@@ -186,16 +200,17 @@ _Py_expm1(double x)
     else
         return exp(x) - 1.0;
 }
+#endif   /* HAVE_EXPM1 */
+
 
 /* log1p(x) = log(1+x).  The log1p function is designed to avoid the
    significant loss of precision that arises from direct evaluation when x is
    small. */
 
-#ifdef HAVE_LOG1P
-
 double
 _Py_log1p(double x)
 {
+#ifdef HAVE_LOG1P
     /* Some platforms supply a log1p function but don't respect the sign of
        zero:  log1p(-0.0) gives 0.0 instead of the correct result of -0.0.
 
@@ -208,13 +223,7 @@ _Py_log1p(double x)
     else {
         return log1p(x);
     }
-}
-
 #else
-
-double
-_Py_log1p(double x)
-{
     /* For x small, we use the following approach.  Let y be the nearest float
        to 1+x, then
 
@@ -236,7 +245,7 @@ _Py_log1p(double x)
     */
 
     double y;
-    if (fabs(x) < DBL_EPSILON/2.) {
+    if (fabs(x) < DBL_EPSILON / 2.) {
         return x;
     }
     else if (-0.5 <= x && x <= 1.) {
@@ -246,12 +255,12 @@ _Py_log1p(double x)
            happens, then results from log1p will be inaccurate
            for small x. */
         y = 1.+x;
-        return log(y)-((y-1.)-x)/y;
+        return log(y) - ((y - 1.) - x) / y;
     }
     else {
         /* NaNs and infinities should end up here */
         return log(1.+x);
     }
+#endif /* ifdef HAVE_LOG1P */
 }
 
-#endif /* ifdef HAVE_LOG1P */
