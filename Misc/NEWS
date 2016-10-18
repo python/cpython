@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #23782: Fixed possible memory leak in _PyTraceback_Add() and exception
+  loss in PyTraceBack_Here().
+
 - Issue #28183: Optimize and cleanup dict iteration.
 
 - Issue #26081: Added C implementation of asyncio.Future.
