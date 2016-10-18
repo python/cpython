@@ -59,7 +59,7 @@ __all__ = ["Timer", "timeit", "repeat", "default_timer"]
 
 dummy_src_name = "<timeit-src>"
 default_number = 1000000
-default_repeat = 3
+default_repeat = 5
 default_timer = time.perf_counter
 
 _globals = globals
