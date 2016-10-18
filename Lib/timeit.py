@@ -218,7 +218,7 @@ class Timer:
         If *callback* is given and is not None, it will be called after
         each trial with two arguments: ``callback(number, time_taken)``.
         """
-        for i in range(1, 10):
+        for i in range(0, 10):
             number = 10**i
             time_taken = self.timeit(number)
             if callback:
@@ -318,8 +318,10 @@ def main(args=None, *, _wrap_timer=None):
         callback = None
         if verbose:
             def callback(number, time_taken):
-                msg = "{num} loops -> {secs:.{prec}g} secs"
-                print(msg.format(num=number, secs=time_taken, prec=precision))
+                msg = "{num} loop{s} -> {secs:.{prec}g} secs"
+                plural = (number != 1)
+                print(msg.format(num=number, s='s' if plural else '',
+                                  secs=time_taken, prec=precision))
         try:
             number, _ = t.autorange(callback)
         except:
@@ -333,7 +335,7 @@ def main(args=None, *, _wrap_timer=None):
     best = min(r)
     if verbose:
         print("raw times:", " ".join(["%.*g" % (precision, x) for x in r]))
-    print("%d loops," % number, end=' ')
+    print("%d loop%s," % (number, 's' if number != 1 else ''), end=' ')
     usec = best * 1e6 / number
     if time_unit is not None:
         scale = units[time_unit]
