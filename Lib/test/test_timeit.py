@@ -297,7 +297,7 @@ class TestTimeit(unittest.TestCase):
         s = self.run_main(switches=['-v'])
         self.assertEqual(s, dedent("""\
                 1 loop -> 1 secs
-                raw times: 1 1 1 1 1
+                raw times: 1 sec, 1 sec, 1 sec, 1 sec, 1 sec
                 1 loop, best of 5: 1 sec per loop
             """))
 
@@ -309,7 +309,7 @@ class TestTimeit(unittest.TestCase):
                 100 loops -> 0.005 secs
                 1000 loops -> 0.05 secs
                 10000 loops -> 0.5 secs
-                raw times: 0.5 0.5 0.5 0.5 0.5
+                raw times: 500 msec, 500 msec, 500 msec, 500 msec, 500 msec
                 10000 loops, best of 5: 50 usec per loop
             """))
 
