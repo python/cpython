@@ -325,6 +325,9 @@ def main(args=None, *, _wrap_timer=None):
             t.print_exc()
             return 1
 
+        if verbose:
+            print()
+
     try:
         raw_timings = t.repeat(repeat, number)
     except:
@@ -347,7 +350,7 @@ def main(args=None, *, _wrap_timer=None):
 
     if verbose:
         print("raw times: %s" % ", ".join(map(format_time, raw_timings)))
-
+        print()
     timings = [dt / number for dt in raw_timings]
 
     best = min(timings)
