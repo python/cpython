@@ -12,7 +12,7 @@ from test.support import captured_stderr
 DEFAULT_NUMBER = 1000000
 
 # timeit's default number of repetitions.
-DEFAULT_REPEAT = 3
+DEFAULT_REPEAT = 5
 
 # XXX: some tests are commented out that would improve the coverage but take a
 # long time to run because they test the default number of loops, which is
@@ -226,7 +226,7 @@ class TestTimeit(unittest.TestCase):
             t.print_exc(s)
         self.assert_exc_string(s.getvalue(), 'ZeroDivisionError')
 
-    MAIN_DEFAULT_OUTPUT = "1 loop, best of 3: 1 sec per loop\n"
+    MAIN_DEFAULT_OUTPUT = "1 loop, best of 5: 1 sec per loop\n"
 
     def run_main(self, seconds_per_increment=1.0, switches=None, timer=None):
         if timer is None:
@@ -252,31 +252,31 @@ class TestTimeit(unittest.TestCase):
 
     def test_main_seconds(self):
         s = self.run_main(seconds_per_increment=5.5)
-        self.assertEqual(s, "1 loop, best of 3: 5.5 sec per loop\n")
+        self.assertEqual(s, "1 loop, best of 5: 5.5 sec per loop\n")
 
     def test_main_milliseconds(self):
         s = self.run_main(seconds_per_increment=0.0055)
-        self.assertEqual(s, "100 loops, best of 3: 5.5 msec per loop\n")
+        self.assertEqual(s, "100 loops, best of 5: 5.5 msec per loop\n")
 
     def test_main_microseconds(self):
         s = self.run_main(seconds_per_increment=0.0000025, switches=['-n100'])
-        self.assertEqual(s, "100 loops, best of 3: 2.5 usec per loop\n")
+        self.assertEqual(s, "100 loops, best of 5: 2.5 usec per loop\n")
 
     def test_main_fixed_iters(self):
         s = self.run_main(seconds_per_increment=2.0, switches=['-n35'])
-        self.assertEqual(s, "35 loops, best of 3: 2 sec per loop\n")
+        self.assertEqual(s, "35 loops, best of 5: 2 sec per loop\n")
 
     def test_main_setup(self):
         s = self.run_main(seconds_per_increment=2.0,
                 switches=['-n35', '-s', 'print("CustomSetup")'])
-        self.assertEqual(s, "CustomSetup\n" * 3 +
-                "35 loops, best of 3: 2 sec per loop\n")
+        self.assertEqual(s, "CustomSetup\n" * DEFAULT_REPEAT +
+                "35 loops, best of 5: 2 sec per loop\n")
 
     def test_main_multiple_setups(self):
         s = self.run_main(seconds_per_increment=2.0,
                 switches=['-n35', '-s', 'a = "CustomSetup"', '-s', 'print(a)'])
-        self.assertEqual(s, "CustomSetup\n" * 3 +
-                "35 loops, best of 3: 2 sec per loop\n")
+        self.assertEqual(s, "CustomSetup\n" * DEFAULT_REPEAT +
+                "35 loops, best of 5: 2 sec per loop\n")
 
     def test_main_fixed_reps(self):
         s = self.run_main(seconds_per_increment=60.0, switches=['-r9'])
@@ -309,8 +309,8 @@ class TestTimeit(unittest.TestCase):
         s = self.run_main(switches=['-v'])
         self.assertEqual(s, dedent("""\
                 1 loop -> 1 secs
-                raw times: 1 1 1
-                1 loop, best of 3: 1 sec per loop
+                raw times: 1 1 1 1 1
+                1 loop, best of 5: 1 sec per loop
             """))
 
     def test_main_very_verbose(self):
@@ -321,23 +321,23 @@ class TestTimeit(unittest.TestCase):
                 100 loops -> 0.005 secs
                 1000 loops -> 0.05 secs
                 10000 loops -> 0.5 secs
-                raw times: 0.5 0.5 0.5
-                10000 loops, best of 3: 50 usec per loop
+                raw times: 0.5 0.5 0.5 0.5 0.5
+                10000 loops, best of 5: 50 usec per loop
             """))
 
     def test_main_with_time_unit(self):
         unit_sec = self.run_main(seconds_per_increment=0.002,
                 switches=['-u', 'sec'])
         self.assertEqual(unit_sec,
-                "100 loops, best of 3: 0.002 sec per loop\n")
+                "100 loops, best of 5: 0.002 sec per loop\n")
         unit_msec = self.run_main(seconds_per_increment=0.002,
                 switches=['-u', 'msec'])
         self.assertEqual(unit_msec,
-                "100 loops, best of 3: 2 msec per loop\n")
+                "100 loops, best of 5: 2 msec per loop\n")
         unit_usec = self.run_main(seconds_per_increment=0.002,
                 switches=['-u', 'usec'])
         self.assertEqual(unit_usec,
-                "100 loops, best of 3: 2e+03 usec per loop\n")
+                "100 loops, best of 5: 2e+03 usec per loop\n")
         # Test invalid unit input
         with captured_stderr() as error_stringio:
             invalid = self.run_main(seconds_per_increment=0.002,
