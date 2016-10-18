@@ -7,7 +7,6 @@ _Py_IDENTIFIER(call_soon);
 
 
 /* State of the _asyncio module */
-static int _asynciomod_ready;
 static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop;
 static PyObject *asyncio_repr_info_func;
@@ -17,19 +16,6 @@ static PyObject *asyncio_CancelledError;
 
 /* Get FutureIter from Future */
 static PyObject* new_future_iter(PyObject *fut);
-
-
-/* make sure module state is initialized and ready to be used. */
-static int
-_AsyncioMod_EnsureState(void)
-{
-    if (!_asynciomod_ready) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "_asyncio module wasn't properly initialized");
-        return -1;
-    }
-    return 0;
-}
 
 
 typedef enum {
@@ -107,10 +93,6 @@ FutureObj_init(FutureObj *fut, PyObject *args, PyObject *kwds)
     PyObject *loop = NULL;
     PyObject *res = NULL;
     _Py_IDENTIFIER(get_debug);
-
-    if (_AsyncioMod_EnsureState()) {
-        return -1;
-    }
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|$O", kwlist, &loop)) {
         return -1;
@@ -218,10 +200,6 @@ PyDoc_STRVAR(pydoc_exception,
 static PyObject *
 FutureObj_exception(FutureObj *fut, PyObject *arg)
 {
-    if (_AsyncioMod_EnsureState()) {
-        return NULL;
-    }
-
     if (fut->fut_state == STATE_CANCELLED) {
         PyErr_SetString(asyncio_CancelledError, "");
         return NULL;
@@ -251,10 +229,6 @@ PyDoc_STRVAR(pydoc_set_result,
 static PyObject *
 FutureObj_set_result(FutureObj *fut, PyObject *res)
 {
-    if (_AsyncioMod_EnsureState()) {
-        return NULL;
-    }
-
     if (fut->fut_state != STATE_PENDING) {
         PyErr_SetString(asyncio_InvalidStateError, "invalid state");
         return NULL;
@@ -281,10 +255,6 @@ static PyObject *
 FutureObj_set_exception(FutureObj *fut, PyObject *exc)
 {
     PyObject *exc_val = NULL;
-
-    if (_AsyncioMod_EnsureState()) {
-        return NULL;
-    }
 
     if (fut->fut_state != STATE_PENDING) {
         PyErr_SetString(asyncio_InvalidStateError, "invalid state");
@@ -949,59 +919,75 @@ new_future_iter(PyObject *fut)
 
 /*********************** Module **************************/
 
-PyDoc_STRVAR(module_doc, "asyncio speedups.\n");
-
-PyObject *
-_init_module(PyObject *self, PyObject *args)
+static int
+init_module(void)
 {
-    PyObject *extract_stack;
-    PyObject *get_event_loop;
-    PyObject *repr_info_func;
-    PyObject *invalidStateError;
-    PyObject *cancelledError;
+    PyObject *module = NULL;
 
-    if (!PyArg_UnpackTuple(args, "_init_module", 5, 5,
-                           &extract_stack,
-                           &get_event_loop,
-                           &repr_info_func,
-                           &invalidStateError,
-                           &cancelledError)) {
-        return NULL;
+    module = PyImport_ImportModule("traceback");
+    if (module == NULL) {
+        return -1;
+    }
+    // new reference
+    traceback_extract_stack = PyObject_GetAttrString(module, "extract_stack");
+    if (traceback_extract_stack == NULL) {
+        goto fail;
+    }
+    Py_DECREF(module);
+
+    module = PyImport_ImportModule("asyncio.events");
+    if (module == NULL) {
+        goto fail;
+    }
+    asyncio_get_event_loop = PyObject_GetAttrString(module, "get_event_loop");
+    if (asyncio_get_event_loop == NULL) {
+        goto fail;
+    }
+    Py_DECREF(module);
+
+    module = PyImport_ImportModule("asyncio.futures");
+    if (module == NULL) {
+        goto fail;
+    }
+    asyncio_repr_info_func = PyObject_GetAttrString(module,
+                                                    "_future_repr_info");
+    if (asyncio_repr_info_func == NULL) {
+        goto fail;
     }
 
-    Py_INCREF(extract_stack);
-    Py_XSETREF(traceback_extract_stack, extract_stack);
+    asyncio_InvalidStateError = PyObject_GetAttrString(module,
+                                                       "InvalidStateError");
+    if (asyncio_InvalidStateError == NULL) {
+        goto fail;
+    }
 
-    Py_INCREF(get_event_loop);
-    Py_XSETREF(asyncio_get_event_loop, get_event_loop);
+    asyncio_CancelledError = PyObject_GetAttrString(module, "CancelledError");
+    if (asyncio_CancelledError == NULL) {
+        goto fail;
+    }
 
-    Py_INCREF(repr_info_func);
-    Py_XSETREF(asyncio_repr_info_func, repr_info_func);
+    Py_DECREF(module);
+    return 0;
 
-    Py_INCREF(invalidStateError);
-    Py_XSETREF(asyncio_InvalidStateError, invalidStateError);
-
-    Py_INCREF(cancelledError);
-    Py_XSETREF(asyncio_CancelledError, cancelledError);
-
-    _asynciomod_ready = 1;
-
-    Py_RETURN_NONE;
+fail:
+    Py_CLEAR(traceback_extract_stack);
+    Py_CLEAR(asyncio_get_event_loop);
+    Py_CLEAR(asyncio_repr_info_func);
+    Py_CLEAR(asyncio_InvalidStateError);
+    Py_CLEAR(asyncio_CancelledError);
+    Py_CLEAR(module);
+    return -1;
 }
 
 
-static struct PyMethodDef asynciomod_methods[] = {
-    {"_init_module", _init_module, METH_VARARGS, NULL},
-    {NULL, NULL}
-};
-
+PyDoc_STRVAR(module_doc, "Accelerator module for asyncio");
 
 static struct PyModuleDef _asynciomodule = {
     PyModuleDef_HEAD_INIT,      /* m_base */
     "_asyncio",                 /* m_name */
     module_doc,                 /* m_doc */
     -1,                         /* m_size */
-    asynciomod_methods,         /* m_methods */
+    NULL,                       /* m_methods */
     NULL,                       /* m_slots */
     NULL,                       /* m_traverse */
     NULL,                       /* m_clear */
@@ -1012,6 +998,9 @@ static struct PyModuleDef _asynciomodule = {
 PyMODINIT_FUNC
 PyInit__asyncio(void)
 {
+    if (init_module() < 0) {
+        return NULL;
+    }
     if (PyType_Ready(&FutureType) < 0) {
         return NULL;
     }
