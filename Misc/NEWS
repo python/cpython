@@ -88,6 +88,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28240: timeit now repeats the benchmarks 5 times instead of only 3
+  to make benchmarks more reliable.
+
 - Issue #28240: timeit autorange now uses a single loop iteration if the
   benchmark takes less than 10 seconds, instead of 10 iterations.
   "python3 -m timeit -s 'import time' 'time.sleep(1)'" now takes 4 seconds
