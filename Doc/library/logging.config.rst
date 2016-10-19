@@ -138,7 +138,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    across the socket, such that the ``verify`` callable can perform
    signature verification and/or decryption. The ``verify`` callable is called
    with a single argument - the bytes received across the socket - and should
-   return the bytes to be processed, or None to indicate that the bytes should
+   return the bytes to be processed, or ``None`` to indicate that the bytes should
    be discarded. The returned bytes could be the same as the passed in bytes
    (e.g. when only verification is done), or they could be completely different
    (perhaps if decryption were performed).

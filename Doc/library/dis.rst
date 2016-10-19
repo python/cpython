@@ -56,12 +56,12 @@ code.
    notably :func:`get_instructions`, as iterating over a :class:`Bytecode`
    instance yields the bytecode operations as :class:`Instruction` instances.
 
-   If *first_line* is not None, it indicates the line number that should be
+   If *first_line* is not ``None``, it indicates the line number that should be
    reported for the first source line in the disassembled code.  Otherwise, the
    source line information (if any) is taken directly from the disassembled code
    object.
 
-   If *current_offset* is not None, it refers to an instruction offset in the
+   If *current_offset* is not ``None``, it refers to an instruction offset in the
    disassembled code. Setting this means :meth:`.dis` will display a "current
    instruction" marker against the specified opcode.
 
@@ -197,7 +197,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    The iterator generates a series of :class:`Instruction` named tuples giving
    the details of each operation in the supplied code.
 
-   If *first_line* is not None, it indicates the line number that should be
+   If *first_line* is not ``None``, it indicates the line number that should be
    reported for the first source line in the disassembled code.  Otherwise, the
    source line information (if any) is taken directly from the disassembled code
    object.
@@ -249,7 +249,7 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: arg
 
-      numeric argument to operation (if any), otherwise None
+      numeric argument to operation (if any), otherwise ``None``
 
 
    .. data:: argval
@@ -269,7 +269,7 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: starts_line
 
-      line started by this opcode (if any), otherwise None
+      line started by this opcode (if any), otherwise ``None``
 
 
    .. data:: is_jump_target
