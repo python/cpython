@@ -5,7 +5,7 @@ import time
 import pickle
 import warnings
 from functools import partial
-from math import log, exp, pi, fsum, sin
+from math import log, exp, pi, fsum, sin, factorial
 from test import support
 from fractions import Fraction
 
@@ -117,10 +117,6 @@ class TestBasicOps:
         n = 5
         pop = range(n)
         trials = 10000  # large num prevents false negatives without slowing normal case
-        def factorial(n):
-            if n == 0:
-                return 1
-            return n * factorial(n - 1)
         for k in range(n):
             expected = factorial(n) // factorial(n-k)
             perms = {}
