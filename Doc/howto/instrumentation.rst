@@ -210,7 +210,7 @@ hierarchy of a Python script:
 
 .. code-block:: c
 
-   probe process('python').mark("function__entry") {
+   probe process("python").mark("function__entry") {
         filename = user_string($arg1);
         funcname = user_string($arg2);
         lineno = $arg3;
@@ -219,7 +219,7 @@ hierarchy of a Python script:
                thread_indent(1), funcname, filename, lineno);
    }
 
-   probe process('python').mark("function__return") {
+   probe process("python").mark("function__return") {
        filename = user_string($arg1);
        funcname = user_string($arg2);
        lineno = $arg3;
@@ -234,7 +234,7 @@ It can be invoked like this:
 
    $ stap \
      show-call-hierarchy.stp \
-     -c ./python test.py
+     -c "./python test.py"
 
 The output looks like this::
 
@@ -259,11 +259,11 @@ For a `--enable-shared` build of CPython, the markers are contained within the
 libpython shared library, and the probe's dotted path needs to reflect this. For
 example, this line from the above example::
 
-   probe process('python').mark("function__entry") {
+   probe process("python").mark("function__entry") {
 
 should instead read::
 
-   probe process('python').library("libpython3.6dm.so.1.0").mark("function__entry") {
+   probe process("python").library("libpython3.6dm.so.1.0").mark("function__entry") {
 
 (assuming a debug build of CPython 3.6)
 
