@@ -537,7 +537,7 @@ Raw File I/O
    The *name* can be one of two things:
 
    * a character string or :class:`bytes` object representing the path to the
-     file which will be opened. In this case closefd must be True (the default)
+     file which will be opened. In this case closefd must be ``True`` (the default)
      otherwise an error will be raised.
    * an integer representing the number of an existing OS-level file descriptor
      to which the resulting :class:`FileIO` object will give access. When the
