@@ -361,8 +361,8 @@ functions.
    manner described in :ref:`converting-argument-sequence`.  This is because
    the underlying ``CreateProcess()`` operates on strings.
 
-   The *shell* argument (which defaults to *False*) specifies whether to use
-   the shell as the program to execute.  If *shell* is *True*, it is
+   The *shell* argument (which defaults to ``False``) specifies whether to use
+   the shell as the program to execute.  If *shell* is ``True``, it is
    recommended to pass *args* as a string rather than as a sequence.
 
    On POSIX with ``shell=True``, the shell defaults to :file:`/bin/sh`.  If
