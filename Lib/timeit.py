@@ -365,8 +365,7 @@ def main(args=None, *, _wrap_timer=None):
         warnings.warn_explicit("The test results are likely unreliable. "
                                "The worst time (%s) was more than four times "
                                "slower than the best time (%s)."
-                               % (precision,
-                                  format_time(worst), format_time(best)),
+                               % (format_time(worst), format_time(best)),
                                UserWarning, '', 0)
     return None
 
