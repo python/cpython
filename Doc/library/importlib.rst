@@ -1056,7 +1056,7 @@ find and load modules.
    (``__loader__``)
 
    The loader to use for loading.  For namespace packages this should be
-   set to None.
+   set to ``None``.
 
    .. attribute:: origin
 
@@ -1064,33 +1064,33 @@ find and load modules.
 
    Name of the place from which the module is loaded, e.g. "builtin" for
    built-in modules and the filename for modules loaded from source.
-   Normally "origin" should be set, but it may be None (the default)
+   Normally "origin" should be set, but it may be ``None`` (the default)
    which indicates it is unspecified.
 
    .. attribute:: submodule_search_locations
 
    (``__path__``)
 
-   List of strings for where to find submodules, if a package (None
+   List of strings for where to find submodules, if a package (``None``
    otherwise).
 
    .. attribute:: loader_state
 
    Container of extra module-specific data for use during loading (or
-   None).
+   ``None``).
 
    .. attribute:: cached
 
    (``__cached__``)
 
-   String for where the compiled module should be stored (or None).
+   String for where the compiled module should be stored (or ``None``).
 
    .. attribute:: parent
 
    (``__package__``)
 
    (Read-only) Fully-qualified name of the package to which the module
-   belongs as a submodule (or None).
+   belongs as a submodule (or ``None``).
 
    .. attribute:: has_location
 

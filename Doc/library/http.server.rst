@@ -280,7 +280,7 @@ of which this module provides three different variants:
 
    .. method:: date_time_string(timestamp=None)
 
-      Returns the date and time given by *timestamp* (which must be None or in
+      Returns the date and time given by *timestamp* (which must be ``None`` or in
       the format returned by :func:`time.time`), formatted for a message
       header. If *timestamp* is omitted, it uses the current date and time.
 
