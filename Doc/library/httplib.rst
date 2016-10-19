@@ -49,7 +49,7 @@ The module provides the following classes:
    server.  It should be instantiated passing it a host and optional port
    number.  If no port number is passed, the port is extracted from the host
    string if it has the form ``host:port``, else the default HTTP port (80) is
-   used.  When True, the optional parameter *strict* (which defaults to a false
+   used.  When true, the optional parameter *strict* (which defaults to a false
    value) causes ``BadStatusLine`` to
    be raised if the status line can't be parsed as a valid HTTP/1.0 or 1.1
    status line.  If the optional *timeout* parameter is given, blocking

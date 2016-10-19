@@ -1026,14 +1026,4 @@ with the :mod:`warnings` module.
       package available from this site is suitable for use with Python 1.5.2, 2.1.x
       and 2.2.x, which do not include the :mod:`logging` package in the standard
       library.
-<<<<<<<
 
-=======
-      :lno: The line number in the file where the logging call was made.
-      :msg: The logging message.
-      :args: The arguments for the logging message.
-      :exc_info: An exception tuple, or ``None``.
-      :func: The name of the function or method which invoked the logging
-             call.
-      :sinfo: A stack traceback such as is provided by
->>>>>>>

@@ -152,7 +152,7 @@ identifier.  Python currently uses eight paths:
    If *vars* is provided, it must be a dictionary of variables that will
    update the dictionary used to expand the paths.
 
-   If *expand* is set to False, the paths will not be expanded.
+   If *expand* is set to false, the paths will not be expanded.
 
    If *scheme* is not an existing scheme, :func:`get_paths` will raise a
    :exc:`KeyError`.

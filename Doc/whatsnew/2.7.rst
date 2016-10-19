@@ -245,8 +245,8 @@ Deleting an entry and reinserting it will move it to the end::
     [('first', 1), ('third', 3), ('second', 5)]
 
 The :meth:`~collections.OrderedDict.popitem` method has an optional *last*
-argument that defaults to True.  If *last* is True, the most recently
-added key is returned and removed; if it's False, the
+argument that defaults to ``True``.  If *last* is true, the most recently
+added key is returned and removed; if it's false, the
 oldest key is selected::
 
     >>> od = OrderedDict([(x,0) for x in range(20)])
@@ -1503,7 +1503,7 @@ changes, or look through the Subversion logs for all the details.
 * The :mod:`SocketServer` module's :class:`~SocketServer.TCPServer` class now
   supports socket timeouts and disabling the Nagle algorithm.
   The :attr:`~SocketServer.TCPServer.disable_nagle_algorithm` class attribute
-  defaults to False; if overridden to be True,
+  defaults to ``False``; if overridden to be true,
   new request connections will have the TCP_NODELAY option set to
   prevent buffering many small sends into a single TCP packet.
   The :attr:`~SocketServer.BaseServer.timeout` class attribute can hold
@@ -1855,7 +1855,7 @@ The error messages for :meth:`~unittest.TestCase.assertEqual`,
 :meth:`~unittest.TestCase.assertTrue`, and :meth:`~unittest.TestCase.assertFalse`
 failures now provide more information.  If you set the
 :attr:`~unittest.TestCase.longMessage` attribute of your :class:`~unittest.TestCase` classes to
-True, both the standard error message and any additional message you
+true, both the standard error message and any additional message you
 provide will be printed for failures.  (Added by Michael Foord; :issue:`5663`.)
 
 The :meth:`~unittest.TestCase.assertRaises` method now
@@ -1962,7 +1962,7 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
   sequence comparison methods do.
 
 :func:`unittest.main` now takes an optional ``exit`` argument.  If
-False, :func:`~unittest.main` doesn't call :func:`sys.exit`, allowing
+false, :func:`~unittest.main` doesn't call :func:`sys.exit`, allowing
 :func:`~unittest.main` to be used from the interactive interpreter.
 (Contributed by J. Pablo Fernández; :issue:`3379`.)
 

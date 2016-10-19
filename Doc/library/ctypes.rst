@@ -1404,7 +1404,7 @@ details, consult the :manpage:`dlopen(3)` manpage.  On Windows, *mode* is
 ignored.  On posix systems, RTLD_NOW is always added, and is not
 configurable.
 
-The *use_errno* parameter, when set to True, enables a ctypes mechanism that
+The *use_errno* parameter, when set to true, enables a ctypes mechanism that
 allows accessing the system :data:`errno` error number in a safe way.
 :mod:`ctypes` maintains a thread-local copy of the systems :data:`errno`
 variable; if you call foreign functions created with ``use_errno=True`` then the
@@ -1415,7 +1415,7 @@ The function :func:`ctypes.get_errno` returns the value of the ctypes private
 copy, and the function :func:`ctypes.set_errno` changes the ctypes private copy
 to a new value and returns the former value.
 
-The *use_last_error* parameter, when set to True, enables the same mechanism for
+The *use_last_error* parameter, when set to true, enables the same mechanism for
 the Windows error code which is managed by the :func:`GetLastError` and
 :func:`SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
 :func:`ctypes.set_last_error` are used to request and change the ctypes private
@@ -1631,7 +1631,7 @@ type and the argument types of the function.
 
    The returned function prototype creates functions that use the standard C
    calling convention.  The function will release the GIL during the call.  If
-   *use_errno* is set to True, the ctypes private copy of the system
+   *use_errno* is set to true, the ctypes private copy of the system
    :data:`errno` variable is exchanged with the real :data:`errno` value before
    and after the call; *use_last_error* does the same for the Windows error
    code.

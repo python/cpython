@@ -1246,7 +1246,7 @@ to speed up repeated connections from the same clients.
    This setting doesn't apply to client sockets.  You can also use the
    :data:`OP_SINGLE_ECDH_USE` option to further improve security.
 
-   This method is not available if :data:`HAS_ECDH` is False.
+   This method is not available if :data:`HAS_ECDH` is ``False``.
 
    .. seealso::
       `SSL/TLS & Perfect Forward Secrecy <http://vincent.bernat.im/en/blog/2011-ssl-perfect-forward-secrecy.html>`_
