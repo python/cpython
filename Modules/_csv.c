@@ -209,23 +209,17 @@ _set_int(const char *name, int *target, PyObject *src, int dflt)
     if (src == NULL)
         *target = dflt;
     else {
-        long value;
+        int value;
         if (!PyLong_CheckExact(src)) {
             PyErr_Format(PyExc_TypeError,
                          "\"%s\" must be an integer", name);
             return -1;
         }
-        value = PyLong_AsLong(src);
-        if (value == -1 && PyErr_Occurred())
-            return -1;
-#if SIZEOF_LONG > SIZEOF_INT
-        if (value > INT_MAX || value < INT_MIN) {
-            PyErr_Format(PyExc_ValueError,
-                         "integer out of range for \"%s\"", name);
+        value = _PyLong_AsInt(src);
+        if (value == -1 && PyErr_Occurred()) {
             return -1;
         }
-#endif
-        *target = (int)value;
+        *target = value;
     }
     return 0;
 }
