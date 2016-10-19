@@ -695,7 +695,7 @@ how the command-line arguments should be handled. The supplied actions are:
 
 * ``'store_true'`` and ``'store_false'`` - These are special cases of
   ``'store_const'`` using for storing the values ``True`` and ``False``
-  respectively.  In addition, they create default values of *False* and *True*
+  respectively.  In addition, they create default values of ``False`` and ``True``
   respectively.  For example::
 
     >>> parser = argparse.ArgumentParser()

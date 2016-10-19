@@ -35,7 +35,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    Because of Python semantics, a shelf cannot know when a mutable
    persistent-dictionary entry is modified.  By default modified objects are
    written *only* when assigned to the shelf (see :ref:`shelve-example`).  If the
-   optional *writeback* parameter is set to *True*, all entries accessed are also
+   optional *writeback* parameter is set to ``True``, all entries accessed are also
    cached in memory, and written back on :meth:`~Shelf.sync` and
    :meth:`~Shelf.close`; this can make it handier to mutate mutable entries in
    the persistent dictionary, but, if many entries are accessed, it can consume

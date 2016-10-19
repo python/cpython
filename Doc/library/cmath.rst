@@ -207,7 +207,7 @@ Classification functions
 
 .. function:: isinf(x)
 
-   Return *True* if the real or the imaginary part of x is positive
+   Return ``True`` if the real or the imaginary part of x is positive
    or negative infinity.
 
    .. versionadded:: 2.6
@@ -215,7 +215,7 @@ Classification functions
 
 .. function:: isnan(x)
 
-   Return *True* if the real or imaginary part of x is not a number (NaN).
+   Return ``True`` if the real or imaginary part of x is not a number (NaN).
 
    .. versionadded:: 2.6
 
