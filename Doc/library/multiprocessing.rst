@@ -948,7 +948,7 @@ Miscellaneous
    Return a context object which has the same attributes as the
    :mod:`multiprocessing` module.
 
-   If *method* is *None* then the default context is returned.
+   If *method* is ``None`` then the default context is returned.
    Otherwise *method* should be ``'fork'``, ``'spawn'``,
    ``'forkserver'``.  :exc:`ValueError` is raised if the specified
    start method is not available.
@@ -962,10 +962,10 @@ Miscellaneous
    If the start method has not been fixed and *allow_none* is false,
    then the start method is fixed to the default and the name is
    returned.  If the start method has not been fixed and *allow_none*
-   is true then *None* is returned.
+   is true then ``None`` is returned.
 
    The return value can be ``'fork'``, ``'spawn'``, ``'forkserver'``
-   or *None*.  ``'fork'`` is the default on Unix, while ``'spawn'`` is
+   or ``None``.  ``'fork'`` is the default on Unix, while ``'spawn'`` is
    the default on Windows.
 
    .. versionadded:: 3.4
@@ -2059,7 +2059,7 @@ with the :class:`Pool` class.
 
    *maxtasksperchild* is the number of tasks a worker process can complete
    before it will exit and be replaced with a fresh worker process, to enable
-   unused resources to be freed. The default *maxtasksperchild* is None, which
+   unused resources to be freed. The default *maxtasksperchild* is ``None``, which
    means worker processes will live as long as the pool.
 
    *context* can be used to specify the context used for starting
@@ -2329,7 +2329,7 @@ multiple connections at the same time.
    ``None`` then digest authentication is used.
 
    If *authkey* is a byte string then it will be used as the
-   authentication key; otherwise it must be *None*.
+   authentication key; otherwise it must be ``None``.
 
    If *authkey* is ``None`` and *authenticate* is ``True`` then
    ``current_process().authkey`` is used as the authentication key.  If

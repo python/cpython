@@ -714,7 +714,7 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
       without an argument would block, return false immediately; otherwise,
       do the same thing as when called without arguments, and return true.
 
-      When invoked with a *timeout* other than None, it will block for at
+      When invoked with a *timeout* other than ``None``, it will block for at
       most *timeout* seconds.  If acquire does not complete successfully in
       that interval, return false.  Return true otherwise.
 
@@ -854,8 +854,8 @@ For example::
 
    Create a timer that will run *function* with arguments *args* and  keyword
    arguments *kwargs*, after *interval* seconds have passed.
-   If *args* is None (the default) then an empty list will be used.
-   If *kwargs* is None (the default) then an empty dict will be used.
+   If *args* is ``None`` (the default) then an empty list will be used.
+   If *kwargs* is ``None`` (the default) then an empty dict will be used.
 
    .. versionchanged:: 3.3
       changed from a factory function to a class.

@@ -1404,7 +1404,7 @@ option. If you don't know the class name of a widget, use the method
 Layouts
 ^^^^^^^
 
-A layout can be just None, if it takes no options, or a dict of
+A layout can be just ``None``, if it takes no options, or a dict of
 options specifying how to arrange the element. The layout mechanism
 uses a simplified version of the pack geometry manager: given an
 initial cavity, each element is allocated a parcel. Valid

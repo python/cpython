@@ -549,7 +549,7 @@ Turtle motion
 
    :param n: an integer (or ``None``)
 
-   Delete all or first/last *n* of turtle's stamps.  If *n* is None, delete
+   Delete all or first/last *n* of turtle's stamps.  If *n* is ``None``, delete
    all stamps, if *n* > 0 delete first *n* stamps, else if *n* < 0 delete
    last *n* stamps.
 
@@ -1799,7 +1799,7 @@ Input methods
    Pop up a dialog window for input of a string. Parameter title is
    the title of the dialog window, propmt is a text mostly describing
    what information to input.
-   Return the string input. If the dialog is canceled, return None. ::
+   Return the string input. If the dialog is canceled, return ``None``. ::
 
       >>> screen.textinput("NIM", "Name of first player:")
 
@@ -1819,7 +1819,7 @@ Input methods
    The number input must be in the range minval .. maxval if these are
    given. If not, a hint is issued and the dialog remains open for
    correction.
-   Return the number input. If the dialog is canceled,  return None. ::
+   Return the number input. If the dialog is canceled,  return ``None``. ::
 
       >>> screen.numinput("Poker", "Your stakes:", 1000, minval=10, maxval=10000)
 
@@ -1984,10 +1984,10 @@ Methods specific to Screen, not inherited from TurtleScreen
    :param height: if an integer, the height in pixels, if a float, a fraction of
                   the screen; default is 75% of screen
    :param startx: if positive, starting position in pixels from the left
-                  edge of the screen, if negative from the right edge, if None,
+                  edge of the screen, if negative from the right edge, if ``None``,
                   center window horizontally
    :param starty: if positive, starting position in pixels from the top
-                  edge of the screen, if negative from the bottom edge, if None,
+                  edge of the screen, if negative from the bottom edge, if ``None``,
                   center window vertically
 
    .. doctest::
