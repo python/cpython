@@ -1001,13 +1001,13 @@ datetime and time
   after 1900.  The new supported year range is from 1000 to 9999 inclusive.
 
 * Whenever a two-digit year is used in a time tuple, the interpretation has been
-  governed by :attr:`time.accept2dyear`.  The default is *True* which means that
+  governed by :attr:`time.accept2dyear`.  The default is ``True`` which means that
   for a two-digit year, the century is guessed according to the POSIX rules
   governing the ``%y`` strptime format.
 
   Starting with Py3.2, use of the century guessing heuristic will emit a
   :exc:`DeprecationWarning`.  Instead, it is recommended that
-  :attr:`time.accept2dyear` be set to *False* so that large date ranges
+  :attr:`time.accept2dyear` be set to ``False`` so that large date ranges
   can be used without guesswork::
 
     >>> import time, warnings
@@ -1043,7 +1043,7 @@ The :mod:`math` module has been updated with six new functions inspired by the
 C99 standard.
 
 The :func:`~math.isfinite` function provides a reliable and fast way to detect
-special values.  It returns *True* for regular numbers and *False* for *Nan* or
+special values.  It returns ``True`` for regular numbers and ``False`` for *Nan* or
 *Infinity*:
 
 >>> from math import isfinite
@@ -1193,7 +1193,7 @@ exception or silently drop the event depending on the value of
 
 The use of filters has been simplified.  Instead of creating a
 :class:`~logging.Filter` object, the predicate can be any Python callable that
-returns *True* or *False*.
+returns ``True`` or ``False``.
 
 There were a number of other improvements that add flexibility and simplify
 configuration.  See the module documentation for a full listing of changes in
