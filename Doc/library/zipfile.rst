@@ -518,7 +518,7 @@ Instances have the following methods and attributes:
 
 .. method:: ZipInfo.is_dir()
 
-   Return True if this archive member is a directory.
+   Return ``True`` if this archive member is a directory.
 
    This uses the entry's name: directories should always end with ``/``.
 
