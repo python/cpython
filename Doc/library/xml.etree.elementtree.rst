@@ -928,7 +928,7 @@ ElementTree Objects
       *method* is either ``"xml"``, ``"html"`` or ``"text"`` (default is
       ``"xml"``).
       The keyword-only *short_empty_elements* parameter controls the formatting
-      of elements that contain no content.  If *True* (the default), they are
+      of elements that contain no content.  If ``True`` (the default), they are
       emitted as a single self-closed tag, otherwise they are emitted as a pair
       of start/end tags.
 
