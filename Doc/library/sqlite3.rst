@@ -308,7 +308,7 @@ Connection Objects
       as the SQL function.
 
       The function can return any of the types supported by SQLite: unicode, str, int,
-      long, float, buffer and None.
+      long, float, buffer and ``None``.
 
       Example:
 
@@ -324,7 +324,7 @@ Connection Objects
       final result of the aggregate.
 
       The ``finalize`` method can return any of the types supported by SQLite:
-      unicode, str, int, long, float, buffer and None.
+      unicode, str, int, long, float, buffer and ``None``.
 
       Example:
 
@@ -346,7 +346,7 @@ Connection Objects
 
       .. literalinclude:: ../includes/sqlite3/collation_reverse.py
 
-      To remove a collation, call ``create_collation`` with None as callable::
+      To remove a collation, call ``create_collation`` with ``None`` as callable::
 
          con.create_collation("reverse", None)
 
@@ -868,7 +868,7 @@ You can control which kind of ``BEGIN`` statements sqlite3 implicitly executes
 (or none at all) via the *isolation_level* parameter to the :func:`connect`
 call, or via the :attr:`isolation_level` property of connections.
 
-If you want **autocommit mode**, then set :attr:`isolation_level` to None.
+If you want **autocommit mode**, then set :attr:`isolation_level` to ``None``.
 
 Otherwise leave it at its default, which will result in a plain "BEGIN"
 statement, or set it to one of SQLite's supported isolation levels: "DEFERRED",

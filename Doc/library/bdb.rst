@@ -233,7 +233,7 @@ The :mod:`bdb` module also defines two classes:
    .. method:: set_continue()
 
       Stop only at breakpoints or when finished.  If there are no breakpoints,
-      set the system trace function to None.
+      set the system trace function to ``None``.
 
    .. method:: set_quit()
 

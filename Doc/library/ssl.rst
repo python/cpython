@@ -449,8 +449,8 @@ Certificate handling
    :meth:`SSLContext.set_default_verify_paths`. The return value is a
    :term:`named tuple` ``DefaultVerifyPaths``:
 
-   * :attr:`cafile` - resolved path to cafile or None if the file doesn't exist,
-   * :attr:`capath` - resolved path to capath or None if the directory doesn't exist,
+   * :attr:`cafile` - resolved path to cafile or ``None`` if the file doesn't exist,
+   * :attr:`capath` - resolved path to capath or ``None`` if the directory doesn't exist,
    * :attr:`openssl_cafile_env` - OpenSSL's environment key that points to a cafile,
    * :attr:`openssl_cafile` - hard coded path to a cafile,
    * :attr:`openssl_capath_env` - OpenSSL's environment key that points to a capath,

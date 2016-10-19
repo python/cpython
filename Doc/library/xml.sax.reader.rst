@@ -306,7 +306,7 @@ InputSource Objects
    Get the byte stream for this input source.
 
    The getEncoding method will return the character encoding for this byte stream,
-   or None if unknown.
+   or ``None`` if unknown.
 
 
 .. method:: InputSource.setCharacterStream(charfile)

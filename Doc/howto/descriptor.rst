@@ -308,7 +308,7 @@ The output suggests that bound and unbound methods are two different types.
 While they could have been implemented that way, the actual C implementation of
 :c:type:`PyMethod_Type` in :source:`Objects/classobject.c` is a single object
 with two different representations depending on whether the :attr:`im_self`
-field is set or is *NULL* (the C equivalent of *None*).
+field is set or is *NULL* (the C equivalent of ``None``).
 
 Likewise, the effects of calling a method object depend on the :attr:`im_self`
 field. If set (meaning bound), the original function (stored in the

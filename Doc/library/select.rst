@@ -295,7 +295,7 @@ Kqueue Objects
 
    Low level interface to kevent
 
-   - changelist must be an iterable of kevent object or None
+   - changelist must be an iterable of kevent object or ``None``
    - max_events must be 0 or a positive integer
    - timeout in seconds (floats possible)
 

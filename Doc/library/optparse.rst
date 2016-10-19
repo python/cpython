@@ -2028,12 +2028,12 @@ Features of note:
 
      values.ensure_value(attr, value)
 
-  If the ``attr`` attribute of ``values`` doesn't exist or is None, then
+  If the ``attr`` attribute of ``values`` doesn't exist or is ``None``, then
   ensure_value() first sets it to ``value``, and then returns 'value. This is
   very handy for actions like ``"extend"``, ``"append"``, and ``"count"``, all
   of which accumulate data in a variable and expect that variable to be of a
   certain type (a list for the first two, an integer for the latter).  Using
   :meth:`ensure_value` means that scripts using your action don't have to worry
   about setting a default value for the option destinations in question; they
-  can just leave the default as None and :meth:`ensure_value` will take care of
+  can just leave the default as ``None`` and :meth:`ensure_value` will take care of
   getting it right when it's needed.

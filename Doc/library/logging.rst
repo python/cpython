@@ -588,7 +588,7 @@ wire).
    :param args: Variable data to merge into the *msg* argument to obtain the
                 event description.
    :param exc_info: An exception tuple with the current exception information,
-                    or *None* if no exception information is available.
+                    or ``None`` if no exception information is available.
    :param func: The name of the function or method from which the logging call
                 was invoked.
 
@@ -636,7 +636,7 @@ format string.
 |                |                         | (as returned by :func:`time.time`).           |
 +----------------+-------------------------+-----------------------------------------------+
 | exc_info       | You shouldn't need to   | Exception tuple (à la ``sys.exc_info``) or,   |
-|                | format this yourself.   | if no exception has occurred, *None*.         |
+|                | format this yourself.   | if no exception has occurred, ``None``.         |
 +----------------+-------------------------+-----------------------------------------------+
 | filename       | ``%(filename)s``        | Filename portion of ``pathname``.             |
 +----------------+-------------------------+-----------------------------------------------+
@@ -1026,4 +1026,14 @@ with the :mod:`warnings` module.
       package available from this site is suitable for use with Python 1.5.2, 2.1.x
       and 2.2.x, which do not include the :mod:`logging` package in the standard
       library.
+<<<<<<<
 
+=======
+      :lno: The line number in the file where the logging call was made.
+      :msg: The logging message.
+      :args: The arguments for the logging message.
+      :exc_info: An exception tuple, or ``None``.
+      :func: The name of the function or method which invoked the logging
+             call.
+      :sinfo: A stack traceback such as is provided by
+>>>>>>>

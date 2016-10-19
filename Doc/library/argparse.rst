@@ -1500,7 +1500,7 @@ Sub-commands
      positional arguments
 
    * description - description for the sub-parser group in help output, by
-     default None
+     default ``None``
 
    * prog - usage information that will be displayed with sub-command help,
      by default the name of the program and any positional arguments before the
@@ -1513,12 +1513,12 @@ Sub-commands
      encountered at the command line
 
    * dest_ - name of the attribute under which sub-command name will be
-     stored; by default None and no value is stored
+     stored; by default ``None`` and no value is stored
 
-   * help_ - help for sub-parser group in help output, by default None
+   * help_ - help for sub-parser group in help output, by default ``None``
 
    * metavar_ - string presenting available sub-commands in help; by default it
-     is None and presents sub-commands in form {cmd1, cmd2, ..}
+     is ``None`` and presents sub-commands in form {cmd1, cmd2, ..}
 
    Some example usage::
 

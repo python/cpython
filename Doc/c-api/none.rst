@@ -2,8 +2,8 @@
 
 .. _noneobject:
 
-The None Object
----------------
+The ``None`` Object
+-------------------
 
 .. index:: object: None
 

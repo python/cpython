@@ -74,7 +74,7 @@ sends logging output to a disk file.  It inherits the output functionality from
 
    Returns a new instance of the :class:`FileHandler` class. The specified file is
    opened and used as the stream for logging. If *mode* is not specified,
-   :const:`'a'` is used.  If *encoding* is not *None*, it is used to open the file
+   :const:`'a'` is used.  If *encoding* is not ``None``, it is used to open the file
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`. By default, the file grows indefinitely.
 
@@ -154,7 +154,7 @@ for this value.
 
    Returns a new instance of the :class:`WatchedFileHandler` class. The specified
    file is opened and used as the stream for logging. If *mode* is not specified,
-   :const:`'a'` is used.  If *encoding* is not *None*, it is used to open the file
+   :const:`'a'` is used.  If *encoding* is not ``None``, it is used to open the file
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`.  By default, the file grows indefinitely.
 
@@ -178,7 +178,7 @@ module, supports rotation of disk log files.
 
    Returns a new instance of the :class:`RotatingFileHandler` class. The specified
    file is opened and used as the stream for logging. If *mode* is not specified,
-   ``'a'`` is used.  If *encoding* is not *None*, it is used to open the file
+   ``'a'`` is used.  If *encoding* is not ``None``, it is used to open the file
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`.  By default, the file grows indefinitely.
 

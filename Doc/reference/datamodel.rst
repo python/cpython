@@ -830,7 +830,7 @@ Classes
    dictionary containing the class's namespace; :attr:`~class.__bases__` is a
    tuple (possibly empty or a singleton) containing the base classes, in the
    order of their occurrence in the base class list; :attr:`__doc__` is the
-   class's documentation string, or None if undefined.
+   class's documentation string, or ``None`` if undefined.
 
 Class instances
    .. index::
@@ -1013,7 +1013,7 @@ Internal types
       called at the start of each source code line (this is used by the debugger);
       :attr:`f_exc_type`, :attr:`f_exc_value`, :attr:`f_exc_traceback` represent the
       last exception raised in the parent frame provided another exception was ever
-      raised in the current frame (in all other cases they are None); :attr:`f_lineno`
+      raised in the current frame (in all other cases they are ``None``); :attr:`f_lineno`
       is the current line number of the frame --- writing to this from within a trace
       function jumps to the given line (only for the bottom-most frame).  A debugger
       can implement a Jump command (aka Set Next Statement) by writing to f_lineno.

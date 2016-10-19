@@ -856,11 +856,11 @@ included in the :mod:`encodings` package). The codec uses mapping to encode and
 decode characters.
 
 Decoding mappings must map single string characters to single Unicode
-characters, integers (which are then interpreted as Unicode ordinals) or None
+characters, integers (which are then interpreted as Unicode ordinals) or ``None``
 (meaning "undefined mapping" and causing an error).
 
 Encoding mappings must map single Unicode characters to single string
-characters, integers (which are then interpreted as Latin-1 ordinals) or None
+characters, integers (which are then interpreted as Latin-1 ordinals) or ``None``
 (meaning "undefined mapping" and causing an error).
 
 The mapping objects provided must only support the __getitem__ mapping
@@ -917,7 +917,7 @@ The following codec API is special in that maps Unicode to Unicode.
    *NULL* when an exception was raised by the codec.
 
    The *mapping* table must map Unicode ordinal integers to Unicode ordinal
-   integers or None (causing deletion of the character).
+   integers or ``None`` (causing deletion of the character).
 
    Mapping tables need only provide the :meth:`__getitem__` interface; dictionaries
    and sequences work well.  Unmapped character ordinals (ones which cause a
@@ -1019,7 +1019,7 @@ They all return *NULL* or ``-1`` if an exception occurs.
    resulting Unicode object.
 
    The mapping table must map Unicode ordinal integers to Unicode ordinal integers
-   or None (causing deletion of the character).
+   or ``None`` (causing deletion of the character).
 
    Mapping tables need only provide the :meth:`__getitem__` interface; dictionaries
    and sequences work well.  Unmapped character ordinals (ones which cause a

@@ -878,7 +878,7 @@ Test cases
    .. method:: assertIsNone(expr, msg=None)
                assertIsNotNone(expr, msg=None)
 
-      Test that *expr* is (or is not) None.
+      Test that *expr* is (or is not) ``None``.
 
       .. versionadded:: 2.7
 
@@ -1240,7 +1240,7 @@ Test cases
       methods that delegate to it), :meth:`assertDictEqual` and
       :meth:`assertMultiLineEqual`.
 
-      Setting ``maxDiff`` to None means that there is no maximum length of
+      Setting ``maxDiff`` to ``None`` means that there is no maximum length of
       diffs.
 
       .. versionadded:: 2.7

@@ -403,7 +403,7 @@ Encoders and Decoders
    (to raise :exc:`TypeError`).
 
    If *skipkeys* is false (the default), then it is a :exc:`TypeError` to
-   attempt encoding of keys that are not str, int, long, float or None.  If
+   attempt encoding of keys that are not str, int, long, float or ``None``.  If
    *skipkeys* is true, such items are simply skipped.
 
    If *ensure_ascii* is true (the default), all non-ASCII characters in the

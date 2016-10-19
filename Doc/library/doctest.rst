@@ -1273,7 +1273,7 @@ DocTest Objects
 
    .. attribute:: docstring
 
-      The string that the test was extracted from, or 'None' if the string is
+      The string that the test was extracted from, or ``None`` if the string is
       unavailable, or if the test was not extracted from a string.
 
 
@@ -1381,7 +1381,7 @@ DocTestFinder objects
       not specified, then ``obj.__name__`` is used.
 
       The optional parameter *module* is the module that contains the given object.
-      If the module is not specified or is None, then the test finder will attempt
+      If the module is not specified or is ``None``, then the test finder will attempt
       to automatically determine the correct module.  The object's module is used:
 
       * As a default namespace, if *globs* is not specified.

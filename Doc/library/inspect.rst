@@ -95,8 +95,9 @@ attributes:
 |           | gi_code         | code object               |       |
 +-----------+-----------------+---------------------------+-------+
 |           | gi_frame        | frame object or possibly  |       |
-|           |                 | None once the generator   |       |
-|           |                 | has been exhausted        |       |
+|           |                 | ``None`` once the         |       |
+|           |                 | generator has been        |       |
+|           |                 | exhausted                 |       |
 +-----------+-----------------+---------------------------+-------+
 |           | gi_running      | set to 1 when generator   |       |
 |           |                 | is executing, 0 otherwise |       |
@@ -478,7 +479,7 @@ Classes and functions
    four things is returned: ``(args, varargs, keywords, defaults)``. *args* is a
    list of the argument names (it may contain nested lists). *varargs* and
    *keywords* are the names of the ``*`` and ``**`` arguments or
-   ``None``. *defaults* is a tuple of default argument values or None if there
+   ``None``. *defaults* is a tuple of default argument values or ``None`` if there
    are no default arguments; if this tuple has *n* elements, they correspond to
    the last *n* elements listed in *args*.
 

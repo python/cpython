@@ -1800,7 +1800,7 @@ with the :class:`Pool` class.
    .. versionadded:: 2.7
       *maxtasksperchild* is the number of tasks a worker process can complete
       before it will exit and be replaced with a fresh worker process, to enable
-      unused resources to be freed. The default *maxtasksperchild* is None, which
+      unused resources to be freed. The default *maxtasksperchild* is ``None``, which
       means worker processes will live as long as the pool.
 
    .. note::
@@ -2017,7 +2017,7 @@ authentication* using the :mod:`hmac` module.
    ``None`` then digest authentication is used.
 
    If *authkey* is a string then it will be used as the authentication key;
-   otherwise it must be *None*.
+   otherwise it must be ``None``.
 
    If *authkey* is ``None`` and *authenticate* is ``True`` then
    ``current_process().authkey`` is used as the authentication key.  If

@@ -94,7 +94,7 @@ Module API
    Bootstraps ``pip`` into the current or designated environment.
 
    *root* specifies an alternative root directory to install relative to.
-   If *root* is None, then installation uses the default install location
+   If *root* is ``None``, then installation uses the default install location
    for the current environment.
 
    *upgrade* indicates whether or not to upgrade an existing installation

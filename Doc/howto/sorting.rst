@@ -24,7 +24,7 @@ returns a new sorted list::
     [1, 2, 3, 4, 5]
 
 You can also use the :meth:`list.sort` method of a list. It modifies the list
-in-place (and returns *None* to avoid confusion). Usually it's less convenient
+in-place (and returns ``None`` to avoid confusion). Usually it's less convenient
 than :func:`sorted` - but if you don't need the original list, it's slightly
 more efficient.
 

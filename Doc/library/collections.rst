@@ -237,7 +237,7 @@ counts, but the output will exclude results with counts of zero or less.
 
    .. versionadded:: 2.4
 
-   If *maxlen* is not specified or is *None*, deques may grow to an
+   If *maxlen* is not specified or is ``None``, deques may grow to an
    arbitrary length.  Otherwise, the deque is bounded to the specified maximum
    length.  Once a bounded length deque is full, when new items are added, a
    corresponding number of items are discarded from the opposite end.  Bounded
@@ -321,7 +321,7 @@ counts, but the output will exclude results with counts of zero or less.
 
    .. attribute:: maxlen
 
-      Maximum size of a deque or *None* if unbounded.
+      Maximum size of a deque or ``None`` if unbounded.
 
       .. versionadded:: 2.7
 
