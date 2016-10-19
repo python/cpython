@@ -296,7 +296,7 @@ is the module's name in the Python package namespace.
 
    Finds the caller's source filename and line number. Returns the filename, line
    number, function name and stack information as a 4-element tuple. The stack
-   information is returned as ``None`` unless *stack_info* is *True*.
+   information is returned as ``None`` unless *stack_info* is ``True``.
 
 
 .. method:: Logger.handle(record)
