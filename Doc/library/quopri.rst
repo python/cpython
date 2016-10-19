@@ -52,7 +52,7 @@ sending a graphics file.
 
    Like :func:`encode`, except that it accepts a source :class:`bytes` and
    returns the corresponding encoded :class:`bytes`. By default, it sends a
-   False value to *quotetabs* parameter of the :func:`encode` function.
+   ``False`` value to *quotetabs* parameter of the :func:`encode` function.
 
 
 

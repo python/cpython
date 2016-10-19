@@ -615,7 +615,7 @@ item to the buffer only needs to wake up one consumer thread.
 
    .. method:: wait_for(predicate, timeout=None)
 
-      Wait until a condition evaluates to True.  *predicate* should be a
+      Wait until a condition evaluates to true.  *predicate* should be a
       callable which result will be interpreted as a boolean value.
       A *timeout* may be provided giving the maximum time to wait.
 

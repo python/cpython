@@ -318,7 +318,7 @@ is the module's name in the Python package namespace.
    looking for handlers in this logger and its parents in the logger hierarchy.
    Returns ``True`` if a handler was found, else ``False``. The method stops searching
    up the hierarchy whenever a logger with the 'propagate' attribute set to
-   False is found - that will be the last logger which is checked for the
+   false is found - that will be the last logger which is checked for the
    existence of handlers.
 
    .. versionadded:: 3.2
