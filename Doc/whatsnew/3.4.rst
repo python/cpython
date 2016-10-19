@@ -161,7 +161,7 @@ CPython implementation improvements:
 
 * :ref:`Safe object finalization <whatsnew-pep-442>` (:pep:`442`).
 * Leveraging :pep:`442`, in most cases :ref:`module globals are no longer set
-  to ``None`` during finalization <whatsnew-pep-442>` (:issue:`18214`).
+  to None during finalization <whatsnew-pep-442>` (:issue:`18214`).
 * :ref:`Configurable memory allocators <whatsnew-pep-445>` (:pep:`445`).
 * :ref:`Argument Clinic <whatsnew-pep-436>` (:pep:`436`).
 
