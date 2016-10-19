@@ -346,7 +346,7 @@ Creating connections
 
    * *reuse_address* tells the kernel to reuse a local socket in
      TIME_WAIT state, without waiting for its natural timeout to
-     expire. If not specified will automatically be set to True on
+     expire. If not specified will automatically be set to ``True`` on
      UNIX.
 
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
@@ -424,7 +424,7 @@ Creating listening connections
 
    * *reuse_address* tells the kernel to reuse a local socket in
      TIME_WAIT state, without waiting for its natural timeout to
-     expire. If not specified will automatically be set to True on
+     expire. If not specified will automatically be set to ``True`` on
      UNIX.
 
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
