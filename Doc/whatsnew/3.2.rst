@@ -1439,7 +1439,7 @@ which is now deprecated.  If specified, the optional *filter* parameter needs to
 be a :term:`keyword argument`.  The user-supplied filter function accepts a
 :class:`~tarfile.TarInfo` object and returns an updated
 :class:`~tarfile.TarInfo` object, or if it wants the file to be excluded, the
-function can return *None*::
+function can return ``None``::
 
     >>> import tarfile, glob
 
@@ -1488,7 +1488,7 @@ evaluating expression strings using the Python literal
 syntax.  The :func:`ast.literal_eval` function serves as a secure alternative to
 the builtin :func:`eval` function which is easily abused.  Python 3.2 adds
 :class:`bytes` and :class:`set` literals to the list of supported types:
-strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None.
+strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and ``None``.
 
 ::
 

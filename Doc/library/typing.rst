@@ -706,7 +706,7 @@ The module defines the following classes, functions and decorators:
 
    This is often the same as ``obj.__annotations__``, but it handles
    forward references encoded as string literals, and if necessary
-   adds ``Optional[t]`` if a default value equal to None is set.
+   adds ``Optional[t]`` if a default value equal to ``None`` is set.
 
 .. decorator:: overload
 

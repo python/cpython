@@ -244,7 +244,7 @@ the *new_callable* argument to :func:`patch`.
 
       .. versionadded:: 3.5
 
-    * *wraps*: Item for the mock object to wrap. If *wraps* is not None then
+    * *wraps*: Item for the mock object to wrap. If *wraps* is not ``None`` then
       calling the Mock will pass the call through to the wrapped object
       (returning the real result). Attribute access on the mock will return a
       Mock object that wraps the corresponding attribute of the wrapped
