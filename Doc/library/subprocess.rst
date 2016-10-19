@@ -64,7 +64,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    is automatically created with ``stdin=PIPE``, and the *stdin* argument may
    not be used as well.
 
-   If *check* is True, and the process exits with a non-zero exit code, a
+   If *check* is true, and the process exits with a non-zero exit code, a
    :exc:`CalledProcessError` exception will be raised. Attributes of that
    exception hold the arguments, the exit code, and stdout and stderr if they
    were captured.
