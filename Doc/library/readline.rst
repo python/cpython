@@ -171,7 +171,7 @@ The following functions operate on a global history list:
 
    Enable or disable automatic calls to :c:func:`add_history` when reading
    input via readline.  The *enabled* argument should be a Boolean value
-   that when true, enables auto history, and that when False, disables
+   that when true, enables auto history, and that when false, disables
    auto history.
 
    .. versionadded:: 3.6
