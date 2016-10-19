@@ -92,7 +92,7 @@ Here is the API for the :class:`BytesFeedParser`:
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.3 Added the *policy* keyword.
-   .. versionchanged:: 3.6 _factory defaults to the policy ``message_factory``.
+   .. versionchanged:: 3.6 *_factory* defaults to the policy ``message_factory``.
 
 
    .. method:: feed(data)
@@ -148,7 +148,7 @@ message body, instead setting the payload to the raw body.
    .. versionchanged:: 3.3
       Removed the *strict* argument that was deprecated in 2.4.  Added the
       *policy* keyword.
-   .. versionchanged:: 3.6 _class defaults to the policy ``message_factory``.
+   .. versionchanged:: 3.6 *_class* defaults to the policy ``message_factory``.
 
 
    .. method:: parse(fp, headersonly=False)
@@ -197,7 +197,7 @@ message body, instead setting the payload to the raw body.
 
    .. versionchanged:: 3.3
       Removed the *strict* argument.  Added the *policy* keyword.
-   .. versionchanged:: 3.6 _class defaults to the policy ``message_factory``.
+   .. versionchanged:: 3.6 *_class* defaults to the policy ``message_factory``.
 
 
    .. method:: parse(fp, headersonly=False)
@@ -277,7 +277,7 @@ in the top-level :mod:`email` package namespace.
 
    .. versionchanged:: 3.3
       Removed the *strict* argument.  Added the *policy* keyword.
-   .. versionchanged:: 3.6 _class defaults to the policy ``message_factory``.
+   .. versionchanged:: 3.6 *_class* defaults to the policy ``message_factory``.
 
 
 Here's an example of how you might use :func:`message_from_bytes` at an
