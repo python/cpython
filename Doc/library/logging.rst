@@ -296,7 +296,7 @@ is the module's name in the Python package namespace.
 
    Finds the caller's source filename and line number. Returns the filename, line
    number, function name and stack information as a 4-element tuple. The stack
-   information is returned as *None* unless *stack_info* is *True*.
+   information is returned as ``None`` unless *stack_info* is *True*.
 
 
 .. method:: Logger.handle(record)
@@ -672,7 +672,7 @@ wire).
    :param args: Variable data to merge into the *msg* argument to obtain the
                 event description.
    :param exc_info: An exception tuple with the current exception information,
-                    or *None* if no exception information is available.
+                    or ``None`` if no exception information is available.
    :param func: The name of the function or method from which the logging call
                 was invoked.
    :param sinfo: A text string representing stack information from the base of
@@ -754,7 +754,7 @@ the options available to you.
 |                |                         | (as returned by :func:`time.time`).           |
 +----------------+-------------------------+-----------------------------------------------+
 | exc_info       | You shouldn't need to   | Exception tuple (à la ``sys.exc_info``) or,   |
-|                | format this yourself.   | if no exception has occurred, *None*.         |
+|                | format this yourself.   | if no exception has occurred, ``None``.         |
 +----------------+-------------------------+-----------------------------------------------+
 | filename       | ``%(filename)s``        | Filename portion of ``pathname``.             |
 +----------------+-------------------------+-----------------------------------------------+
@@ -1187,7 +1187,7 @@ functions.
       :lno: The line number in the file where the logging call was made.
       :msg: The logging message.
       :args: The arguments for the logging message.
-      :exc_info: An exception tuple, or None.
+      :exc_info: An exception tuple, or ``None``.
       :func: The name of the function or method which invoked the logging
              call.
       :sinfo: A stack traceback such as is provided by

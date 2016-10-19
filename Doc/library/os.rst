@@ -257,7 +257,7 @@ process and user.
    executable, similar to a shell, when launching a process.
    *env*, when specified, should be an environment variable dictionary
    to lookup the PATH in.
-   By default, when *env* is None, :data:`environ` is used.
+   By default, when *env* is ``None``, :data:`environ` is used.
 
    .. versionadded:: 3.2
 
@@ -3814,7 +3814,7 @@ Miscellaneous System Information
 
 .. function:: cpu_count()
 
-   Return the number of CPUs in the system. Returns None if undetermined.
+   Return the number of CPUs in the system. Returns ``None`` if undetermined.
 
    This number is not equivalent to the number of CPUs the current process can
    use.  The number of usable CPUs can be obtained with

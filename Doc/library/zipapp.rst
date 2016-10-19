@@ -121,7 +121,7 @@ The module defines two convenience functions:
      the archive will be written to that file.
    * If it is an open file object, the archive will be written to that
      file object, which must be open for writing in bytes mode.
-   * If the target is omitted (or None), the source must be a directory
+   * If the target is omitted (or ``None``), the source must be a directory
      and the target will be a file with the same name as the source, with
      a ``.pyz`` extension added.
 

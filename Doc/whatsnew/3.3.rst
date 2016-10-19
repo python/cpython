@@ -182,7 +182,7 @@ API changes
 * The maximum number of dimensions is officially limited to 64.
 
 * The representation of empty shape, strides and suboffsets is now
-  an empty tuple instead of None.
+  an empty tuple instead of ``None``.
 
 * Accessing a memoryview element with format 'B' (unsigned bytes)
   now returns an integer (in accordance with the struct module syntax).

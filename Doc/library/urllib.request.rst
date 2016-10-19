@@ -495,7 +495,7 @@ request.
 
 .. attribute:: Request.data
 
-   The entity body for the request, or None if not specified.
+   The entity body for the request, or ``None`` if not specified.
 
    .. versionchanged:: 3.4
       Changing value of :attr:`Request.data` now deletes "Content-Length"
