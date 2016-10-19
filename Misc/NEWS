@@ -326,6 +326,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #26944: Fix test_posix for Android where 'id -G' is entirely wrong or
+  missing the effective gid.
+
 - Issue #28409: regrtest: fix the parser of command line arguments.
 
 - Issue #28217: Adds _testconsole module to test console input.

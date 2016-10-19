@@ -799,7 +799,11 @@ class PosixTester(unittest.TestCase):
             groups = idg.read().strip()
             ret = idg.close()
 
-        if ret is not None or not groups:
+        try:
+            idg_groups = set(int(g) for g in groups.split())
+        except ValueError:
+            idg_groups = set()
+        if ret is not None or not idg_groups:
             raise unittest.SkipTest("need working 'id -G'")
 
         # Issues 16698: OS X ABIs prior to 10.6 have limits on getgroups()
@@ -810,12 +814,11 @@ class PosixTester(unittest.TestCase):
                 raise unittest.SkipTest("getgroups(2) is broken prior to 10.6")
 
         # 'id -G' and 'os.getgroups()' should return the same
-        # groups, ignoring order and duplicates.
-        # #10822 - it is implementation defined whether posix.getgroups()
-        # includes the effective gid so we include it anyway, since id -G does
-        self.assertEqual(
-                set([int(x) for x in groups.split()]),
-                set(posix.getgroups() + [posix.getegid()]))
+        # groups, ignoring order, duplicates, and the effective gid.
+        # #10822/#26944 - It is implementation defined whether
+        # posix.getgroups() includes the effective gid.
+        symdiff = idg_groups.symmetric_difference(posix.getgroups())
+        self.assertTrue(not symdiff or symdiff == {posix.getegid()})
 
     # tests for the posix *at functions follow
 
