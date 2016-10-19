@@ -398,7 +398,7 @@ The :mod:`test.support` module defines the following functions:
    A context manager that creates a temporary directory at *path* and
    yields the directory.
 
-   If *path* is None, the temporary directory is created using
+   If *path* is ``None``, the temporary directory is created using
    :func:`tempfile.mkdtemp`.  If *quiet* is ``False``, the context manager
    raises an exception on error.  Otherwise, if *path* is specified and
    cannot be created, only a warning is issued.
@@ -421,7 +421,7 @@ The :mod:`test.support` module defines the following functions:
 
    The context manager creates a temporary directory in the current
    directory with name *name* before temporarily changing the current
-   working directory.  If *name* is None, the temporary directory is
+   working directory.  If *name* is ``None``, the temporary directory is
    created using :func:`tempfile.mkdtemp`.
 
    If *quiet* is ``False`` and it is not possible to create or change

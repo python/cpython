@@ -120,7 +120,7 @@ The following utility functions are defined:
 
    Parse an IMAP4 ``INTERNALDATE`` string and return corresponding local
    time.  The return value is a :class:`time.struct_time` tuple or
-   None if the string has wrong format.
+   ``None`` if the string has wrong format.
 
 .. function:: Int2AP(num)
 
