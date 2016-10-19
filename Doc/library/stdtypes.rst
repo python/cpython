@@ -1751,13 +1751,13 @@ expression support in the :mod:`re` module).
 
    If there is only one argument, it must be a dictionary mapping Unicode
    ordinals (integers) or characters (strings of length 1) to Unicode ordinals,
-   strings (of arbitrary lengths) or None.  Character keys will then be
+   strings (of arbitrary lengths) or ``None``.  Character keys will then be
    converted to ordinals.
 
    If there are two arguments, they must be strings of equal length, and in the
    resulting dictionary, each character in x will be mapped to the character at
    the same position in y.  If there is a third argument, it must be a string,
-   whose characters will be mapped to None in the result.
+   whose characters will be mapped to ``None`` in the result.
 
 
 .. method:: str.partition(sep)
@@ -3751,7 +3751,7 @@ copying.
       memory as an N-dimensional array.
 
       .. versionchanged:: 3.3
-         An empty tuple instead of None when ndim = 0.
+         An empty tuple instead of ``None`` when ndim = 0.
 
    .. attribute:: strides
 
@@ -3759,7 +3759,7 @@ copying.
       access each element for each dimension of the array.
 
       .. versionchanged:: 3.3
-         An empty tuple instead of None when ndim = 0.
+         An empty tuple instead of ``None`` when ndim = 0.
 
    .. attribute:: suboffsets
 

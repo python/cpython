@@ -341,10 +341,10 @@ An :class:`SMTP` instance has the following methods:
    :rfc:`4954` "initial response" bytes which will be encoded and sent with
    the ``AUTH`` command as below.  If the ``authobject()`` does not support an
    initial response (e.g. because it requires a challenge), it should return
-   None when called with ``challenge=None``.  If *initial_response_ok* is
-   false, then ``authobject()`` will not be called first with None.
+   ``None`` when called with ``challenge=None``.  If *initial_response_ok* is
+   false, then ``authobject()`` will not be called first with ``None``.
 
-   If the initial response check returns None, or if *initial_response_ok* is
+   If the initial response check returns ``None``, or if *initial_response_ok* is
    false, ``authobject()`` will be called to process the server's challenge
    response; the *challenge* argument it is passed will be a ``bytes``.  It
    should return ``bytes`` *data* that will be base64 encoded and sent to the
@@ -374,8 +374,9 @@ An :class:`SMTP` instance has the following methods:
    If *keyfile* and *certfile* are provided, these are passed to the :mod:`socket`
    module's :func:`ssl` function.
 
-   Optional *context* parameter is a :class:`ssl.SSLContext` object; This is an alternative to
-   using a keyfile and a certfile and if specified both *keyfile* and *certfile* should be None.
+   Optional *context* parameter is a :class:`ssl.SSLContext` object; This is
+   an alternative to using a keyfile and a certfile and if specified both
+   *keyfile* and *certfile* should be ``None``.
 
    If there has been no previous ``EHLO`` or ``HELO`` command this session,
    this method tries ESMTP ``EHLO`` first.

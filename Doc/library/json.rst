@@ -397,8 +397,9 @@ Encoders and Decoders
    (to raise :exc:`TypeError`).
 
    If *skipkeys* is false (the default), then it is a :exc:`TypeError` to
-   attempt encoding of keys that are not str, int, float or None.  If
-   *skipkeys* is true, such items are simply skipped.
+   attempt encoding of keys that are not :class:`str`, :class:`int`,
+   :class:`float` or ``None``.  If *skipkeys* is true, such items are simply
+   skipped.
 
    If *ensure_ascii* is true (the default), the output is guaranteed to
    have all incoming non-ASCII characters escaped.  If *ensure_ascii* is
