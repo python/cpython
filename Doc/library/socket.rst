@@ -1388,10 +1388,10 @@ to sockets.
    Set the value of the given socket option (see the Unix manual page
    :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the
    :mod:`socket` module (:const:`SO_\*` etc.).  The value can be an integer,
-   None or a :term:`bytes-like object` representing a buffer. In the later
+   ``None`` or a :term:`bytes-like object` representing a buffer. In the later
    case it is up to the caller to ensure that the bytestring contains the
    proper bits (see the optional built-in module :mod:`struct` for a way to
-   encode C structures as bytestrings). When value is set to None,
+   encode C structures as bytestrings). When value is set to ``None``,
    optlen argument is required. It's equivalent to call setsockopt C
    function with optval=NULL and optlen=optlen.
 

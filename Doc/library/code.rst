@@ -150,7 +150,7 @@ interpreter objects as well as the following additions.
 
    The optional *exitmsg* argument specifies an exit message printed when exiting.
    Pass the empty string to suppress the exit message. If *exitmsg* is not given or
-   None, a default message is printed.
+   ``None``, a default message is printed.
 
    .. versionchanged:: 3.4
       To suppress printing any banner, pass an empty string.

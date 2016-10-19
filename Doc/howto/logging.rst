@@ -764,7 +764,7 @@ In Python 3.2 and later, the behaviour is as follows:
   The handler's level is set to ``WARNING``, so all events at this and
   greater severities will be output.
 
-To obtain the pre-3.2 behaviour, ``logging.lastResort`` can be set to *None*.
+To obtain the pre-3.2 behaviour, ``logging.lastResort`` can be set to ``None``.
 
 .. _library-config:
 
