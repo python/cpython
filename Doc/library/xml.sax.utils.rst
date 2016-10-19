@@ -63,8 +63,8 @@ or as base classes.
    should be a file-like object which will default to *sys.stdout*. *encoding* is
    the encoding of the output stream which defaults to ``'iso-8859-1'``.
    *short_empty_elements* controls the formatting of elements that contain no
-   content:  if *False* (the default) they are emitted as a pair of start/end
-   tags, if set to *True* they are emitted as a single self-closed tag.
+   content:  if ``False`` (the default) they are emitted as a pair of start/end
+   tags, if set to ``True`` they are emitted as a single self-closed tag.
 
    .. versionadded:: 3.2
       The *short_empty_elements* parameter.
