@@ -145,7 +145,7 @@ The module defines three convenience functions and a public class:
        100, 1000, ...) up to a maximum of one billion, until the time taken
        is at least 0.2 second, or the maximum is reached.
 
-        If *callback* is given and is not *None*, it will be called after
+        If *callback* is given and is not ``None``, it will be called after
         each trial with two arguments: ``callback(number, time_taken)``.
 
         .. versionadded:: 3.6

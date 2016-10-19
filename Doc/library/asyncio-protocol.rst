@@ -372,10 +372,10 @@ The following callbacks are called on :class:`Protocol` instances:
    (for example by calling :meth:`write_eof`, if the other end also uses
    asyncio).
 
-   This method may return a false value (including None), in which case
+   This method may return a false value (including ``None``), in which case
    the transport will close itself.  Conversely, if this method returns a
    true value, closing the transport is up to the protocol.  Since the
-   default implementation returns None, it implicitly closes the connection.
+   default implementation returns ``None``, it implicitly closes the connection.
 
    .. note::
       Some transports such as SSL don't support half-closed connections,
