@@ -4559,6 +4559,7 @@ class TestExceptions(unittest.TestCase):
         sock = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM, 0, sock0.fileno())
         sock0.close()
+        self.addCleanup(sock.detach)
 
         with self.assertRaises(OSError):
             sock.setblocking(False)
