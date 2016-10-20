@@ -4304,7 +4304,7 @@ class MiscTestCase(unittest.TestCase):
                      'logProcesses', 'currentframe',
                      'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
                      'Filterer', 'PlaceHolder', 'Manager', 'RootLogger',
-                     'root'}
+                     'root', 'threading'}
         support.check__all__(self, logging, blacklist=blacklist)
 
 
