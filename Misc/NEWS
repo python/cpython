@@ -28,6 +28,8 @@ Library
 - Issue #20766: Fix references leaked by pdb in the handling of SIGINT
   handlers.
 
+- Issue #28492: Fix how StopIteration exception is raised in _asyncio.Future.
+
 Build
 -----
 
