@@ -1,10 +1,12 @@
-import asyncio
 import inspect
 import sys
 import types
 import unittest
 
 from unittest import mock
+
+from test.support import import_module
+asyncio = import_module("asyncio")
 
 
 class AwaitException(Exception):
