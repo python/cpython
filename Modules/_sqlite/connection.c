@@ -790,6 +790,7 @@ void _pysqlite_final_callback(sqlite3_context* context)
     }
 
 error:
+    ;  /* necessary for --without-threads flag */
 #ifdef WITH_THREAD
     PyGILState_Release(threadstate);
 #endif
