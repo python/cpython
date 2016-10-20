@@ -88,6 +88,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28480: Fix error building socket module when multithreading is
+  disabled.
+
 - Issue #28240: timeit: remove ``-c/--clock`` and ``-t/--time`` command line
   options which were deprecated since Python 3.3.
 
