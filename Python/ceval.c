@@ -1424,6 +1424,12 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *sum;
+            /* NOTE(haypo): Please don't try to micro-optimize int+int on
+               CPython using bytecode, it is simply worthless.
+               See http://bugs.python.org/issue21955 and
+               http://bugs.python.org/issue10044 for the discussion. In short,
+               no patch shown any impact on a realistic benchmark, only a minor
+               speedup on microbenchmarks. */
             if (PyUnicode_CheckExact(left) &&
                      PyUnicode_CheckExact(right)) {
                 sum = unicode_concatenate(left, right, f, next_instr);
