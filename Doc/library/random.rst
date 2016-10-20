@@ -351,6 +351,13 @@ Basic usage::
    >>> choices(['red', 'black', 'green'], [18, 18, 2], k=6)
    ['red', 'green', 'black', 'black', 'red', 'black']
 
+   # Probability of getting 5 or more heads from 7 spins of a biased coin
+   # that settles on heads 60% of the time.
+   >>> n = 10000
+   >>> cw = [0.60, 1.00]
+   >>> sum(choices('HT', cum_weights=cw, k=7).count('H') >= 5 for i in range(n)) / n
+   0.4169
+
 Example of `statistical bootstrapping
 <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)>`_ using resampling
 with replacement to estimate a confidence interval for the mean of a small
