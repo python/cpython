@@ -437,10 +437,8 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
 
     def test_read1(self):
         buf = self.buftype("1234567890")
-        memio = self.ioclass(buf)
-
-        self.assertRaises(TypeError, memio.read1)
-        self.assertEqual(memio.read(), buf)
+        self.assertEqual(self.ioclass(buf).read1(), buf)
+        self.assertEqual(self.ioclass(buf).read1(-1), buf)
 
     def test_readinto(self):
         buf = self.buftype("1234567890")

@@ -88,6 +88,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23214: In the "io" module, the argument to BufferedReader and
+  BytesIO's read1() methods is now optional and can be -1, matching the
+  BufferedIOBase specification.
+
 - Issue #28480: Fix error building socket module when multithreading is
   disabled.
 

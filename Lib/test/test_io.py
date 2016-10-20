@@ -1146,6 +1146,7 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertEqual(b"a", bufio.read(1))
         self.assertEqual(b"b", bufio.read1(1))
         self.assertEqual(rawio._reads, 1)
+        self.assertEqual(b"", bufio.read1(0))
         self.assertEqual(b"c", bufio.read1(100))
         self.assertEqual(rawio._reads, 1)
         self.assertEqual(b"d", bufio.read1(100))
@@ -1154,8 +1155,17 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertEqual(rawio._reads, 3)
         self.assertEqual(b"", bufio.read1(100))
         self.assertEqual(rawio._reads, 4)
-        # Invalid args
-        self.assertRaises(ValueError, bufio.read1, -1)
+
+    def test_read1_arbitrary(self):
+        rawio = self.MockRawIO((b"abc", b"d", b"efg"))
+        bufio = self.tp(rawio)
+        self.assertEqual(b"a", bufio.read(1))
+        self.assertEqual(b"bc", bufio.read1())
+        self.assertEqual(b"d", bufio.read1())
+        self.assertEqual(b"efg", bufio.read1(-1))
+        self.assertEqual(rawio._reads, 3)
+        self.assertEqual(b"", bufio.read1())
+        self.assertEqual(rawio._reads, 4)
 
     def test_readinto(self):
         rawio = self.MockRawIO((b"abc", b"d", b"efg"))
@@ -1806,6 +1816,7 @@ class BufferedRWPairTest(unittest.TestCase):
         pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
 
         self.assertEqual(pair.read1(3), b"abc")
+        self.assertEqual(pair.read1(), b"def")
 
     def test_readinto(self):
         for method in ("readinto", "readinto1"):
@@ -3467,6 +3478,7 @@ class MiscIOTest(unittest.TestCase):
             self.assertRaises(ValueError, f.read)
             if hasattr(f, "read1"):
                 self.assertRaises(ValueError, f.read1, 1024)
+                self.assertRaises(ValueError, f.read1)
             if hasattr(f, "readall"):
                 self.assertRaises(ValueError, f.readall)
             if hasattr(f, "readinto"):

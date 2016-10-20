@@ -904,7 +904,7 @@ _io__Buffered_read_impl(buffered *self, Py_ssize_t n)
     CHECK_INITIALIZED(self)
     if (n < -1) {
         PyErr_SetString(PyExc_ValueError,
-                        "read length must be positive or -1");
+                        "read length must be non-negative or -1");
         return NULL;
     }
 
@@ -932,22 +932,20 @@ _io__Buffered_read_impl(buffered *self, Py_ssize_t n)
 
 /*[clinic input]
 _io._Buffered.read1
-    size as n: Py_ssize_t
+    size as n: Py_ssize_t = -1
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
-/*[clinic end generated code: output=bcc4fb4e54d103a3 input=8d2869c18b983184]*/
+/*[clinic end generated code: output=bcc4fb4e54d103a3 input=7d22de9630b61774]*/
 {
     Py_ssize_t have, r;
     PyObject *res = NULL;
 
     CHECK_INITIALIZED(self)
     if (n < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "read length must be positive");
-        return NULL;
+        n = self->buffer_size;
     }
 
     CHECK_CLOSED(self, "read of closed file")

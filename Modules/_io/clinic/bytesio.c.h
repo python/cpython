@@ -181,7 +181,7 @@ exit:
 }
 
 PyDoc_STRVAR(_io_BytesIO_read1__doc__,
-"read1($self, size, /)\n"
+"read1($self, size=-1, /)\n"
 "--\n"
 "\n"
 "Read at most size bytes, returned as a bytes object.\n"
@@ -190,7 +190,27 @@ PyDoc_STRVAR(_io_BytesIO_read1__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_READ1_METHODDEF    \
-    {"read1", (PyCFunction)_io_BytesIO_read1, METH_O, _io_BytesIO_read1__doc__},
+    {"read1", (PyCFunction)_io_BytesIO_read1, METH_VARARGS, _io_BytesIO_read1__doc__},
+
+static PyObject *
+_io_BytesIO_read1_impl(bytesio *self, PyObject *size);
+
+static PyObject *
+_io_BytesIO_read1(bytesio *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    PyObject *size = Py_None;
+
+    if (!PyArg_UnpackTuple(args, "read1",
+        0, 1,
+        &size)) {
+        goto exit;
+    }
+    return_value = _io_BytesIO_read1_impl(self, size);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_io_BytesIO_readline__doc__,
 "readline($self, size=None, /)\n"
@@ -428,4 +448,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6382e8eb578eea64 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f469431da1b3857 input=a9049054013a1b77]*/
