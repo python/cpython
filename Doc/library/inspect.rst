@@ -152,9 +152,9 @@ attributes:
 |           | co_firstlineno  | number of first line in   |
 |           |                 | Python source code        |
 +-----------+-----------------+---------------------------+
-|           | co_flags        | bitmap: 1=optimized ``|`` |
-|           |                 | 2=newlocals ``|`` 4=\*arg |
-|           |                 | ``|`` 8=\*\*arg           |
+|           | co_flags        | bitmap of ``CO_*`` flags, |
+|           |                 | read more :ref:`here      |
+|           |                 | <inspect-module-co-flags>`|
 +-----------+-----------------+---------------------------+
 |           | co_lnotab       | encoded mapping of line   |
 |           |                 | numbers to bytecode       |
@@ -1219,6 +1219,69 @@ updated as expected:
    works for coroutine objects created by :keyword:`async def` functions.
 
    .. versionadded:: 3.5
+
+
+.. _inspect-module-co-flags:
+
+Code Objects Bit Flags
+----------------------
+
+Python code objects have a ``co_flags`` attribute, which is a bitmap of
+the following flags:
+
+.. data:: CO_NEWLOCALS
+
+   If set, a new dict will be created for the frame's ``f_locals`` when
+   the code object is executed.
+
+.. data:: CO_VARARGS
+
+   The code object has a variable positional parameter (``*args``-like).
+
+.. data:: CO_VARKEYWORDS
+
+   The code object has a variable keyword parameter (``**kwargs``-like).
+
+.. data:: CO_GENERATOR
+
+   The flag is set when the code object is a generator function, i.e.
+   a generator object is returned when the code object is executed.
+
+.. data:: CO_NOFREE
+
+   The flag is set if there are no free or cell variables.
+
+.. data:: CO_COROUTINE
+
+   The flag is set when the code object is a coroutine function, i.e.
+   a coroutine object is returned when the code object is executed.  See
+   :pep:`492` for more details.
+
+   .. versionadded:: 3.5
+
+.. data:: CO_ITERABLE_COROUTINE
+
+   Used to turn generators into generator-based coroutines.  Generator
+   objects with this flag can be used in ``await`` expression, and can
+   ``yield from`` coroutine objects.  See :pep:`492` for more details.
+
+   .. versionadded:: 3.5
+
+.. data:: CO_ASYNC_GENERATOR
+
+   The flag is set when the code object is a asynchronous generator
+   function, i.e. an asynchronous generator object is returned when the
+   code object is executed.  See :pep:`525` for more details.
+
+   .. versionadded:: 3.6
+
+.. note::
+   The flags are specific to CPython, and may not be defined in other
+   Python implementations.  Furthermore, the flags are an implementation
+   detail, and can be removed or deprecated in future Python releases.
+   It's recommended to use public APIs from the :mod:`inspect` module
+   for any introspection needs.
+
 
 
 .. _inspect-module-cli:
