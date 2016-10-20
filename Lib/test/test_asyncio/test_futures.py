@@ -464,6 +464,19 @@ class FutureTests(test_utils.TestCase):
         futures._set_result_unless_cancelled(fut, 2)
         self.assertTrue(fut.cancelled())
 
+    def test_future_stop_iteration_args(self):
+        fut = asyncio.Future(loop=self.loop)
+        fut.set_result((1, 2))
+        fi = fut.__iter__()
+        result = None
+        try:
+            fi.send(None)
+        except StopIteration as ex:
+            result = ex.args[0]
+        else:
+            self.fail('StopIteration was expected')
+        self.assertEqual(result, (1, 2))
+
 
 class FutureDoneCallbackTests(test_utils.TestCase):
 
