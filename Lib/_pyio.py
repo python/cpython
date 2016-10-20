@@ -635,7 +635,7 @@ class BufferedIOBase(IOBase):
     implementation, but wrap one.
     """
 
-    def read(self, size=None):
+    def read(self, size=-1):
         """Read and return up to size bytes, where size is an int.
 
         If the argument is omitted, None, or negative, reads and
@@ -655,7 +655,7 @@ class BufferedIOBase(IOBase):
         """
         self._unsupported("read")
 
-    def read1(self, size=None):
+    def read1(self, size=-1):
         """Read up to size bytes with at most one read() system call,
         where size is an int.
         """
@@ -863,7 +863,7 @@ class BytesIO(BufferedIOBase):
         self._buffer.clear()
         super().close()
 
-    def read(self, size=None):
+    def read(self, size=-1):
         if self.closed:
             raise ValueError("read from closed file")
         if size is None:
@@ -877,7 +877,7 @@ class BytesIO(BufferedIOBase):
         self._pos = newpos
         return bytes(b)
 
-    def read1(self, size):
+    def read1(self, size=-1):
         """This is the same as read.
         """
         return self.read(size)
@@ -1073,12 +1073,12 @@ class BufferedReader(_BufferedIOMixin):
                 self._read_pos = 0
         return self._read_buf[self._read_pos:]
 
-    def read1(self, size):
+    def read1(self, size=-1):
         """Reads up to size bytes, with at most one read() system call."""
         # Returns up to size bytes.  If at least one byte is buffered, we
         # only return buffered bytes.  Otherwise, we do one raw read.
         if size < 0:
-            raise ValueError("number of bytes to read must be positive")
+            size = self.buffer_size
         if size == 0:
             return b""
         with self._read_lock:
@@ -1270,7 +1270,7 @@ class BufferedRWPair(BufferedIOBase):
         self.reader = BufferedReader(reader, buffer_size)
         self.writer = BufferedWriter(writer, buffer_size)
 
-    def read(self, size=None):
+    def read(self, size=-1):
         if size is None:
             size = -1
         return self.reader.read(size)
@@ -1284,7 +1284,7 @@ class BufferedRWPair(BufferedIOBase):
     def peek(self, size=0):
         return self.reader.peek(size)
 
-    def read1(self, size):
+    def read1(self, size=-1):
         return self.reader.read1(size)
 
     def readinto1(self, b):
@@ -1370,7 +1370,7 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         self.flush()
         return BufferedReader.peek(self, size)
 
-    def read1(self, size):
+    def read1(self, size=-1):
         self.flush()
         return BufferedReader.read1(self, size)
 

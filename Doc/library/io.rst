@@ -477,13 +477,16 @@ I/O Base Classes
       A :exc:`BlockingIOError` is raised if the underlying raw stream is in
       non blocking-mode, and has no data available at the moment.
 
-   .. method:: read1(size=-1)
+   .. method:: read1([size])
 
       Read and return up to *size* bytes, with at most one call to the
       underlying raw stream's :meth:`~RawIOBase.read` (or
       :meth:`~RawIOBase.readinto`) method.  This can be useful if you are
       implementing your own buffering on top of a :class:`BufferedIOBase`
       object.
+
+      If *size* is −1 (the default), an arbitrary number of bytes are
+      returned (more than zero unless EOF is reached).
 
    .. method:: readinto(b)
 
@@ -628,13 +631,16 @@ than raw I/O does.
       Return :class:`bytes` containing the entire contents of the buffer.
 
 
-   .. method:: read1()
+   .. method:: read1([size])
 
-      In :class:`BytesIO`, this is the same as :meth:`read`.
+      In :class:`BytesIO`, this is the same as :meth:`~BufferedIOBase.read`.
 
-   .. method:: readinto1()
+      .. versionchanged:: 3.7
+         The *size* argument is now optional.
 
-      In :class:`BytesIO`, this is the same as :meth:`readinto`.
+   .. method:: readinto1(b)
+
+      In :class:`BytesIO`, this is the same as :meth:`~BufferedIOBase.readinto`.
 
       .. versionadded:: 3.5
 
@@ -664,11 +670,14 @@ than raw I/O does.
       Read and return *size* bytes, or if *size* is not given or negative, until
       EOF or if the read call would block in non-blocking mode.
 
-   .. method:: read1(size)
+   .. method:: read1([size])
 
       Read and return up to *size* bytes with only one call on the raw stream.
       If at least one byte is buffered, only buffered bytes are returned.
       Otherwise, one raw stream read call is made.
+
+      .. versionchanged:: 3.7
+         The *size* argument is now optional.
 
 
 .. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
