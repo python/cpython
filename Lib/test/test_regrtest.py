@@ -696,7 +696,12 @@ class ArgsTestCase(BaseTestCase):
         code = TEST_INTERRUPTED
         test = self.create_test("sigint", code=code)
 
-        for multiprocessing in (False, True):
+        try:
+            import threading
+            tests = (False, True)
+        except ImportError:
+            tests = (False,)
+        for multiprocessing in tests:
             if multiprocessing:
                 args = ("--slowest", "-j2", test)
             else:
