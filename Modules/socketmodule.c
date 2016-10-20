@@ -664,6 +664,7 @@ internal_setblocking(PySocketSockObject *s, int block)
     result = 0;
 
   done:
+    ;  /* necessary for --without-threads flag */
     Py_END_ALLOW_THREADS
 
     if (result) {
