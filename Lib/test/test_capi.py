@@ -630,6 +630,7 @@ class PyMemDebugTests(unittest.TestCase):
         regex = regex.format(ptr=self.PTR_REGEX)
         self.assertRegex(out, regex)
 
+    @unittest.skipUnless(threading, 'Test requires a GIL (multithreading)')
     def check_malloc_without_gil(self, code):
         out = self.check(code)
         expected = ('Fatal Python error: Python memory allocator called '
