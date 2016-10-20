@@ -789,11 +789,11 @@ FutureIter_iternext(futureiterobject *it)
     if (res != NULL) {
         /* The result of the Future is not an exception.
 
-           We cunstruct an exception instance manually with
+           We construct an exception instance manually with
            PyObject_CallFunctionObjArgs and pass it to PyErr_SetObject
            (similarly to what genobject.c does).
 
-           This is to handle a situation when "res" is a tuple, in which
+           We do this to handle a situation when "res" is a tuple, in which
            case PyErr_SetObject would set the value of StopIteration to
            the first element of the tuple.
 
