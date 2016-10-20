@@ -420,7 +420,7 @@ _io_BytesIO_read_impl(bytesio *self, PyObject *arg)
 
 /*[clinic input]
 _io.BytesIO.read1
-    size: object
+    size: object(c_default="Py_None") = -1
     /
 
 Read at most size bytes, returned as a bytes object.
@@ -430,8 +430,8 @@ Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_read1(bytesio *self, PyObject *size)
-/*[clinic end generated code: output=16021f5d0ac3d4e2 input=d4f40bb8f2f99418]*/
+_io_BytesIO_read1_impl(bytesio *self, PyObject *size)
+/*[clinic end generated code: output=a60d80c84c81a6b8 input=0951874bafee8e80]*/
 {
     return _io_BytesIO_read_impl(self, size);
 }
