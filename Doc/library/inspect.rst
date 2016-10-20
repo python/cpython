@@ -1253,25 +1253,26 @@ the following flags:
 
 .. data:: CO_COROUTINE
 
-   The flag is set when the code object is a coroutine function, i.e.
-   a coroutine object is returned when the code object is executed.  See
-   :pep:`492` for more details.
+   The flag is set when the code object is a coroutine function.
+   When the code object is executed it returns a coroutine object.
+   See :pep:`492` for more details.
 
    .. versionadded:: 3.5
 
 .. data:: CO_ITERABLE_COROUTINE
 
-   Used to turn generators into generator-based coroutines.  Generator
-   objects with this flag can be used in ``await`` expression, and can
-   ``yield from`` coroutine objects.  See :pep:`492` for more details.
+   The flag is used to transform generators into generator-based
+   coroutines.  Generator objects with this flag can be used in
+   ``await`` expression, and can ``yield from`` coroutine objects.
+   See :pep:`492` for more details.
 
    .. versionadded:: 3.5
 
 .. data:: CO_ASYNC_GENERATOR
 
-   The flag is set when the code object is a asynchronous generator
-   function, i.e. an asynchronous generator object is returned when the
-   code object is executed.  See :pep:`525` for more details.
+   The flag is set when the code object is an asynchronous generator
+   function.  When the code object is executed it returns an
+   asynchronous generator object.  See :pep:`525` for more details.
 
    .. versionadded:: 3.6
 
@@ -1281,7 +1282,6 @@ the following flags:
    detail, and can be removed or deprecated in future Python releases.
    It's recommended to use public APIs from the :mod:`inspect` module
    for any introspection needs.
-
 
 
 .. _inspect-module-cli:
