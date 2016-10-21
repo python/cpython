@@ -40,6 +40,10 @@ Library
 
 - Issue #28500: Fix asyncio to handle async gens GC from another thread.
 
+- Issue #26923: Fix asyncio.Gather to refuse being cancelled once all
+  children are done.
+  Patch by Johannes Ebke.
+
 Build
 -----
 
