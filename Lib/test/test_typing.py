@@ -1116,9 +1116,9 @@ class OverloadTests(BaseTestCase):
         blah()
 
 
-PY35 = sys.version_info[:2] >= (3, 5)
+ASYNCIO = sys.version_info[:2] >= (3, 5)
 
-PY35_TESTS = """
+ASYNCIO_TESTS = """
 import asyncio
 
 T_a = TypeVar('T')
@@ -1149,8 +1149,11 @@ class AsyncIteratorWrapper(typing.AsyncIterator[T_a]):
             raise StopAsyncIteration
 """
 
-if PY35:
-    exec(PY35_TESTS)
+if ASYNCIO:
+    try:
+        exec(ASYNCIO_TESTS)
+    except ImportError:
+        ASYNCIO = False
 
 PY36 = sys.version_info[:2] >= (3, 6)
 
@@ -1253,7 +1256,7 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsInstance(it, typing.Iterator)
         self.assertNotIsInstance(42, typing.Iterator)
 
-    @skipUnless(PY35, 'Python 3.5 required')
+    @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
     def test_awaitable(self):
         ns = {}
         exec(
@@ -1266,7 +1269,7 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertNotIsInstance(foo, typing.Awaitable)
         g.send(None)  # Run foo() till completion, to avoid warning.
 
-    @skipUnless(PY35, 'Python 3.5 required')
+    @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
     def test_async_iterable(self):
         base_it = range(10)  # type: Iterator[int]
         it = AsyncIteratorWrapper(base_it)
@@ -1274,7 +1277,7 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsInstance(it, typing.AsyncIterable)
         self.assertNotIsInstance(42, typing.AsyncIterable)
 
-    @skipUnless(PY35, 'Python 3.5 required')
+    @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
     def test_async_iterator(self):
         base_it = range(10)  # type: Iterator[int]
         it = AsyncIteratorWrapper(base_it)
