@@ -20,6 +20,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #28448: Fix C implemented asyncio.Future didn't work on Windows.
+
 - Issue #28480: Fix error building socket module when multithreading is
   disabled.
 
