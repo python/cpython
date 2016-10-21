@@ -485,7 +485,7 @@ I/O Base Classes
       implementing your own buffering on top of a :class:`BufferedIOBase`
       object.
 
-      If *size* is −1 (the default), an arbitrary number of bytes are
+      If *size* is ``-1`` (the default), an arbitrary number of bytes are
       returned (more than zero unless EOF is reached).
 
    .. method:: readinto(b)
