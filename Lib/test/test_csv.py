@@ -626,6 +626,24 @@ class TestDictFields(unittest.TestCase):
             self.assertNotIn("'f2'", exception)
             self.assertIn("1", exception)
 
+    def test_typo_in_extrasaction_raises_error(self):
+        fileobj = StringIO()
+        self.assertRaises(ValueError, csv.DictWriter, fileobj, ['f1', 'f2'],
+                          extrasaction="raised")
+
+    def test_write_field_not_in_field_names_raise(self):
+        fileobj = StringIO()
+        writer = csv.DictWriter(fileobj, ['f1', 'f2'], extrasaction="raise")
+        dictrow = {'f0': 0, 'f1': 1, 'f2': 2, 'f3': 3}
+        self.assertRaises(ValueError, csv.DictWriter.writerow, writer, dictrow)
+
+    def test_write_field_not_in_field_names_ignore(self):
+        fileobj = StringIO()
+        writer = csv.DictWriter(fileobj, ['f1', 'f2'], extrasaction="ignore")
+        dictrow = {'f0': 0, 'f1': 1, 'f2': 2, 'f3': 3}
+        csv.DictWriter.writerow(writer, dictrow)
+        self.assertEqual(fileobj.getvalue(), "1,2\r\n")
+
     def test_read_dict_fields(self):
         with TemporaryFile("w+") as fileobj:
             fileobj.write("1,2,abc\r\n")
