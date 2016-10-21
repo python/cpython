@@ -195,10 +195,12 @@ The :mod:`csv` module defines the following classes:
    written if the dictionary is missing a key in *fieldnames*.  If the
    dictionary passed to the :meth:`writerow` method contains a key not found in
    *fieldnames*, the optional *extrasaction* parameter indicates what action to
-   take.  If it is set to ``'raise'`` a :exc:`ValueError` is raised.  If it is
-   set to ``'ignore'``, extra values in the dictionary are ignored.  Any other
-   optional or keyword arguments are passed to the underlying :class:`writer`
-   instance.
+   take.
+   If it is set to ``'raise'``, the default value, a :exc:`ValueError`
+   is raised.
+   If it is set to ``'ignore'``, extra values in the dictionary are ignored.
+   Any other optional or keyword arguments are passed to the underlying
+   :class:`writer` instance.
 
    Note that unlike the :class:`DictReader` class, the *fieldnames* parameter
    of the :class:`DictWriter` is not optional.  Since Python's :class:`dict`
