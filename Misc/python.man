@@ -111,7 +111,7 @@ program.
 .TP
 .B \-B
 Don't write
-.I .py[co]
+.I .pyc
 files on import. See also PYTHONDONTWRITEBYTECODE.
 .TP
 .B \-b
@@ -391,7 +391,7 @@ specifying \fB\-d\fP multiple times.
 .IP PYTHONDONTWRITEBYTECODE
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-B\fP option (don't try to write
-.I .py[co]
+.I .pyc
 files).
 .IP PYTHONINSPECT
 If this is set to a non-empty string it is equivalent to specifying
