@@ -38,6 +38,8 @@ Library
 
 - Issue #28492: Fix how StopIteration exception is raised in _asyncio.Future.
 
+- Issue #28500: Fix asyncio to handle async gens GC from another thread.
+
 Build
 -----
 
