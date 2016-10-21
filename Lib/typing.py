@@ -893,9 +893,9 @@ def _replace_arg(arg, tvars, args):
     if hasattr(arg, '_subs_repr'):
         return arg._subs_repr(tvars, args)
     if isinstance(arg, TypeVar):
-       for i, tvar in enumerate(tvars):
-           if arg.__name__ == tvar.__name__:
-               return args[i]
+        for i, tvar in enumerate(tvars):
+            if arg.__name__ == tvar.__name__:
+                return args[i]
     return _type_repr(arg)
 
 
