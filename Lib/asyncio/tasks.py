@@ -592,9 +592,11 @@ class _GatheringFuture(futures.Future):
     def cancel(self):
         if self.done():
             return False
+        ret = False
         for child in self._children:
-            child.cancel()
-        return True
+            if child.cancel():
+                ret = True
+        return ret
 
 
 def gather(*coros_or_futures, loop=None, return_exceptions=False):
