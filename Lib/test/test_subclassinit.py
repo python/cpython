@@ -133,20 +133,32 @@ class Test(unittest.TestCase):
     def test_set_name_error(self):
         class Descriptor:
             def __set_name__(self, owner, name):
-                raise RuntimeError
+                1/0
 
-        with self.assertRaises(RuntimeError):
-            class A:
-                d = Descriptor()
+        with self.assertRaises(RuntimeError) as cm:
+            class NotGoingToWork:
+                attr = Descriptor()
+
+        exc = cm.exception
+        self.assertRegex(str(exc), r'\bNotGoingToWork\b')
+        self.assertRegex(str(exc), r'\battr\b')
+        self.assertRegex(str(exc), r'\bDescriptor\b')
+        self.assertIsInstance(exc.__cause__, ZeroDivisionError)
 
     def test_set_name_wrong(self):
         class Descriptor:
             def __set_name__(self):
                 pass
 
-        with self.assertRaises(TypeError):
-            class A:
-                d = Descriptor()
+        with self.assertRaises(RuntimeError) as cm:
+            class NotGoingToWork:
+                attr = Descriptor()
+
+        exc = cm.exception
+        self.assertRegex(str(exc), r'\bNotGoingToWork\b')
+        self.assertRegex(str(exc), r'\battr\b')
+        self.assertRegex(str(exc), r'\bDescriptor\b')
+        self.assertIsInstance(exc.__cause__, TypeError)
 
     def test_set_name_lookup(self):
         resolved = []
