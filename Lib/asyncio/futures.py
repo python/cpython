@@ -247,10 +247,10 @@ class Future:
         if self._state != _PENDING:
             return False
         self._state = _CANCELLED
-        self._schedule_callbacks()
+        self.__schedule_callbacks()
         return True
 
-    def _schedule_callbacks(self):
+    def __schedule_callbacks(self):
         """Internal: Ask the event loop to call all callbacks.
 
         The callbacks are scheduled to be called as soon as possible. Also
@@ -352,7 +352,7 @@ class Future:
             raise InvalidStateError('{}: {!r}'.format(self._state, self))
         self._result = result
         self._state = _FINISHED
-        self._schedule_callbacks()
+        self.__schedule_callbacks()
 
     def set_exception(self, exception):
         """Mark the future done and set an exception.
@@ -369,7 +369,7 @@ class Future:
                             "and cannot be raised into a Future")
         self._exception = exception
         self._state = _FINISHED
-        self._schedule_callbacks()
+        self.__schedule_callbacks()
         if compat.PY34:
             self._log_traceback = True
         else:
