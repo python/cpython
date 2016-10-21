@@ -356,7 +356,6 @@
     <ClCompile Include="..\Python\ceval.c" />
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\compile.c" />
-    <ClCompile Include="..\Python\dtrace_stubs.c" />
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />

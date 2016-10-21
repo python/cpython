@@ -851,9 +851,6 @@
     <ClCompile Include="..\Python\compile.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\dtrace_stubs.c">
-      <Filter>Python</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\dynamic_annotations.c">
       <Filter>Python</Filter>
     </ClCompile>
