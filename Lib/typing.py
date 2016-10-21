@@ -292,8 +292,8 @@ class _TypeAlias(_TypingBase, _root=True):
             if not issubclass(parameter, self.type_var.__constraints__):
                 raise TypeError("%s is not a valid substitution for %s." %
                                 (parameter, self.type_var))
-        if isinstance(parameter, TypeVar):
-            raise TypeError("%s cannot be re-parameterized." % self.type_var)
+        if isinstance(parameter, TypeVar) and parameter is not self.type_var:
+            raise TypeError("%s cannot be re-parameterized." % self)
         return self.__class__(self.name, parameter,
                               self.impl_type, self.type_checker)
 
@@ -622,9 +622,12 @@ class _Union(_FinalTypingBase, _root=True):
             _get_type_vars(self.__union_params__, tvars)
 
     def __repr__(self):
+        return self._subs_repr([], [])
+
+    def _subs_repr(self, tvars, args):
         r = super().__repr__()
         if self.__union_params__:
-            r += '[%s]' % (', '.join(_type_repr(t)
+            r += '[%s]' % (', '.join(_replace_arg(t, tvars, args)
                                      for t in self.__union_params__))
         return r
 
@@ -706,9 +709,12 @@ class _Tuple(_FinalTypingBase, _root=True):
             return self.__class__(p, _root=True)
 
     def __repr__(self):
+        return self._subs_repr([], [])
+
+    def _subs_repr(self, tvars, args):
         r = super().__repr__()
         if self.__tuple_params__ is not None:
-            params = [_type_repr(p) for p in self.__tuple_params__]
+            params = [_replace_arg(p, tvars, args) for p in self.__tuple_params__]
             if self.__tuple_use_ellipsis__:
                 params.append('...')
             if not params:
@@ -791,6 +797,8 @@ class _Callable(_FinalTypingBase, _root=True):
     def _get_type_vars(self, tvars):
         if self.__args__ and self.__args__ is not Ellipsis:
             _get_type_vars(self.__args__, tvars)
+        if self.__result__:
+            _get_type_vars([self.__result__], tvars)
 
     def _eval_type(self, globalns, localns):
         if self.__args__ is None and self.__result__ is None:
@@ -806,14 +814,17 @@ class _Callable(_FinalTypingBase, _root=True):
             return self.__class__(args, result, _root=True)
 
     def __repr__(self):
+        return self._subs_repr([], [])
+
+    def _subs_repr(self, tvars, args):
         r = super().__repr__()
         if self.__args__ is not None or self.__result__ is not None:
             if self.__args__ is Ellipsis:
                 args_r = '...'
             else:
-                args_r = '[%s]' % ', '.join(_type_repr(t)
+                args_r = '[%s]' % ', '.join(_replace_arg(t, tvars, args)
                                             for t in self.__args__)
-            r += '[%s, %s]' % (args_r, _type_repr(self.__result__))
+            r += '[%s, %s]' % (args_r, _replace_arg(self.__result__, tvars, args))
         return r
 
     def __getitem__(self, parameters):
@@ -878,6 +889,16 @@ def _geqv(a, b):
     return _gorg(a) is _gorg(b)
 
 
+def _replace_arg(arg, tvars, args):
+    if hasattr(arg, '_subs_repr'):
+        return arg._subs_repr(tvars, args)
+    if isinstance(arg, TypeVar):
+       for i, tvar in enumerate(tvars):
+           if arg.__name__ == tvar.__name__:
+               return args[i]
+    return _type_repr(arg)
+
+
 def _next_in_mro(cls):
     """Helper for Generic.__new__.
 
@@ -938,11 +959,7 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
     """Metaclass for generic types."""
 
     def __new__(cls, name, bases, namespace,
-                tvars=None, args=None, origin=None, extra=None):
-        if extra is not None and type(extra) is abc.ABCMeta and extra not in bases:
-            bases = (extra,) + bases
-        self = super().__new__(cls, name, bases, namespace, _root=True)
-
+                tvars=None, args=None, origin=None, extra=None, orig_bases=None):
         if tvars is not None:
             # Called from __getitem__() below.
             assert origin is not None
@@ -983,12 +1000,25 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
                          ", ".join(str(g) for g in gvars)))
                 tvars = gvars
 
+        initial_bases = bases
+        if extra is not None and type(extra) is abc.ABCMeta and extra not in bases:
+            bases = (extra,) + bases
+        bases = tuple(_gorg(b) if isinstance(b, GenericMeta) else b for b in bases)
+
+        # remove bare Generic from bases if there are other generic bases
+        if any(isinstance(b, GenericMeta) and b is not Generic for b in bases):
+            bases = tuple(b for b in bases if b is not Generic)
+        self = super().__new__(cls, name, bases, namespace, _root=True)
+
         self.__parameters__ = tvars
         self.__args__ = args
         self.__origin__ = origin
         self.__extra__ = extra
         # Speed hack (https://github.com/python/typing/issues/196).
         self.__next_in_mro__ = _next_in_mro(self)
+        # Preserve base classes on subclassing (__bases__ are type erased now).
+        if orig_bases is None:
+            self.__orig_bases__ = initial_bases
 
         # This allows unparameterized generic collections to be used
         # with issubclass() and isinstance() in the same way as their
@@ -1006,17 +1036,29 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
             _get_type_vars(self.__parameters__, tvars)
 
     def __repr__(self):
-        if self.__origin__ is not None:
-            r = repr(self.__origin__)
-        else:
-            r = super().__repr__()
-        if self.__args__:
-            r += '[%s]' % (
-                ', '.join(_type_repr(p) for p in self.__args__))
-        if self.__parameters__:
-            r += '<%s>' % (
-                ', '.join(_type_repr(p) for p in self.__parameters__))
-        return r
+        if self.__origin__ is None:
+            return super().__repr__()
+        return self._subs_repr([], [])
+
+    def _subs_repr(self, tvars, args):
+        assert len(tvars) == len(args)
+        # Construct the chain of __origin__'s.
+        current = self.__origin__
+        orig_chain = []
+        while current.__origin__ is not None:
+            orig_chain.append(current)
+            current = current.__origin__
+        # Replace type variables in __args__ if asked ...
+        str_args = []
+        for arg in self.__args__:
+            str_args.append(_replace_arg(arg, tvars, args))
+        # ... then continue replacing down the origin chain.
+        for cls in orig_chain:
+            new_str_args = []
+            for i, arg in enumerate(cls.__args__):
+                new_str_args.append(_replace_arg(arg, cls.__parameters__, str_args))
+            str_args = new_str_args
+        return super().__repr__() + '[%s]' % ', '.join(str_args)
 
     def __eq__(self, other):
         if not isinstance(other, GenericMeta):
@@ -1049,11 +1091,11 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
                 raise TypeError(
                     "Parameters to Generic[...] must all be unique")
             tvars = params
-            args = None
+            args = params
         elif self is _Protocol:
             # _Protocol is internal, don't check anything.
             tvars = params
-            args = None
+            args = params
         elif self.__origin__ in (Generic, _Protocol):
             # Can't subscript Generic[...] or _Protocol[...].
             raise TypeError("Cannot subscript already-subscripted %s" %
@@ -1071,12 +1113,13 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
             tvars = _type_vars(params)
             args = params
         return self.__class__(self.__name__,
-                              (self,) + self.__bases__,
+                              self.__bases__,
                               dict(self.__dict__),
                               tvars=tvars,
                               args=args,
                               origin=self,
-                              extra=self.__extra__)
+                              extra=self.__extra__,
+                              orig_bases=self.__orig_bases__)
 
     def __instancecheck__(self, instance):
         # Since we extend ABC.__subclasscheck__ and
@@ -1120,6 +1163,10 @@ class Generic(metaclass=GenericMeta):
         else:
             origin = _gorg(cls)
             obj = cls.__next_in_mro__.__new__(origin)
+            try:
+                obj.__orig_class__ = cls
+            except AttributeError:
+                pass
             obj.__init__(*args, **kwds)
             return obj
 
@@ -1163,12 +1210,15 @@ class _ClassVar(_FinalTypingBase, _root=True):
 
     def _get_type_vars(self, tvars):
         if self.__type__:
-            _get_type_vars(self.__type__, tvars)
+            _get_type_vars([self.__type__], tvars)
 
     def __repr__(self):
+        return self._subs_repr([], [])
+
+    def _subs_repr(self, tvars, args):
         r = super().__repr__()
         if self.__type__ is not None:
-            r += '[{}]'.format(_type_repr(self.__type__))
+            r += '[{}]'.format(_replace_arg(self.__type__, tvars, args))
         return r
 
     def __hash__(self):
@@ -1485,6 +1535,7 @@ class _ProtocolMeta(GenericMeta):
                             attr != '__next_in_mro__' and
                             attr != '__parameters__' and
                             attr != '__origin__' and
+                            attr != '__orig_bases__' and
                             attr != '__extra__' and
                             attr != '__module__'):
                         attrs.add(attr)
