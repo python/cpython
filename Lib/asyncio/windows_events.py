@@ -171,8 +171,13 @@ class _WaitCancelFuture(_BaseWaitHandleFuture):
     def cancel(self):
         raise RuntimeError("_WaitCancelFuture must not be cancelled")
 
-    def _schedule_callbacks(self):
-        super(_WaitCancelFuture, self)._schedule_callbacks()
+    def set_result(self, result):
+        super().set_result(result)
+        if self._done_callback is not None:
+            self._done_callback(self)
+
+    def set_exception(self, exception):
+        super().set_exception(exception)
         if self._done_callback is not None:
             self._done_callback(self)
 
