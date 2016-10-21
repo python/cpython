@@ -7022,8 +7022,13 @@ set_names(PyTypeObject *type)
         if (set_name != NULL) {
             tmp = PyObject_CallFunctionObjArgs(set_name, type, key, NULL);
             Py_DECREF(set_name);
-            if (tmp == NULL)
+            if (tmp == NULL) {
+                _PyErr_FormatFromCause(PyExc_RuntimeError,
+                    "Error calling __set_name__ on '%.100s' instance %R "
+                    "in '%.100s'",
+                    value->ob_type->tp_name, key, type->tp_name);
                 return -1;
+            }
             else
                 Py_DECREF(tmp);
         }
