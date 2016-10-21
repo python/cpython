@@ -2198,20 +2198,18 @@ _Py_CheckFunctionResult(PyObject *func, PyObject *result, const char *where)
     }
     else {
         if (err_occurred) {
-            PyObject *exc, *val, *tb;
-            PyErr_Fetch(&exc, &val, &tb);
-
             Py_DECREF(result);
 
-            if (func)
-                PyErr_Format(PyExc_SystemError,
-                             "%R returned a result with an error set",
-                             func);
-            else
-                PyErr_Format(PyExc_SystemError,
-                             "%s returned a result with an error set",
-                             where);
-            _PyErr_ChainExceptions(exc, val, tb);
+            if (func) {
+                _PyErr_FormatFromCause(PyExc_SystemError,
+                        "%R returned a result with an error set",
+                        func);
+            }
+            else {
+                _PyErr_FormatFromCause(PyExc_SystemError,
+                        "%s returned a result with an error set",
+                        where);
+            }
 #ifdef Py_DEBUG
             /* Ensure that the bug is caught in debug mode */
             Py_FatalError("a function returned a result with an error set");
