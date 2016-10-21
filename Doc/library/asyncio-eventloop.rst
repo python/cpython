@@ -671,6 +671,13 @@ pool of processes). By default, an event loop uses a thread pool executor
 
    This method is a :ref:`coroutine <coroutine>`.
 
+   .. versionchanged:: 3.5.3
+      :meth:`BaseEventLoop.run_in_executor` no longer configures the
+      ``max_workers`` of the thread pool executor it creates, instead
+      leaving it up to the thread pool executor
+      (:class:`~concurrent.futures.ThreadPoolExecutor`) to set the
+      default.
+
 .. method:: AbstractEventLoop.set_default_executor(executor)
 
    Set the default executor used by :meth:`run_in_executor`.
