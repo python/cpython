@@ -388,8 +388,11 @@ _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
         PyObject *exc2, *val2, *tb2;
         PyErr_Fetch(&exc2, &val2, &tb2);
         PyErr_NormalizeException(&exc, &val, &tb);
+        if (tb != NULL) {
+            PyException_SetTraceback(val, tb);
+            Py_DECREF(tb);
+        }
         Py_DECREF(exc);
-        Py_XDECREF(tb);
         PyErr_NormalizeException(&exc2, &val2, &tb2);
         PyException_SetContext(val2, val);
         PyErr_Restore(exc2, val2, tb2);
