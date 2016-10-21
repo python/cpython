@@ -145,7 +145,7 @@ class DictWriter:
 
     def _dict_to_list(self, rowdict):
         if self.extrasaction == "raise":
-            wrong_fields = [k for k in rowdict if k not in self.fieldnames]
+            wrong_fields = rowdict.keys() - self.fieldnames
             if wrong_fields:
                 raise ValueError("dict contains fields not in fieldnames: "
                                  + ", ".join([repr(x) for x in wrong_fields]))
