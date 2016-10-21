@@ -255,6 +255,17 @@ PyAPI_FUNC(PyObject *) PyErr_FormatV(
     va_list vargs);
 #endif
 
+#ifndef Py_LIMITED_API
+/* Like PyErr_Format(), but saves current exception as __context__ and
+   __cause__.
+ */
+PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
+    PyObject *exception,
+    const char *format,   /* ASCII-encoded string  */
+    ...
+    );
+#endif
+
 #ifdef MS_WINDOWS
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilename(
     int ierr,
