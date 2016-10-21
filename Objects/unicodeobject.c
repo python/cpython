@@ -3835,13 +3835,10 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
                                 Py_FileSystemDefaultEncodeErrors);
 #ifdef MS_WINDOWS
         if (!res && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
-            PyObject *exc, *val, *tb;
-            PyErr_Fetch(&exc, &val, &tb);
-            PyErr_Format(PyExc_RuntimeError,
-                "filesystem path bytes were not correctly encoded with '%s'. " \
+            _PyErr_FormatFromCause(PyExc_RuntimeError,
+                "filesystem path bytes were not correctly encoded with '%s'. "
                 "Please report this at http://bugs.python.org/issue27781",
                 Py_FileSystemDefaultEncoding);
-            _PyErr_ChainExceptions(exc, val, tb);
         }
 #endif
         return res;
