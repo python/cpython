@@ -88,6 +88,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18219: Optimize csv.DictWriter for large number of columns.
+  Patch by Mariatta Wijaya.
+
 - Issue #28448: Fix C implemented asyncio.Future didn't work on Windows.
 
 - Issue #23214: In the "io" module, the argument to BufferedReader and
