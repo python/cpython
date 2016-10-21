@@ -642,14 +642,7 @@ class HTTPResponse(io.BufferedIOBase):
             return self._read1_chunked(n)
         if self.length is not None and (n < 0 or n > self.length):
             n = self.length
-        try:
-            result = self.fp.read1(n)
-        except ValueError:
-            if n >= 0:
-                raise
-            # some implementations, like BufferedReader, don't support -1
-            # Read an arbitrarily selected largeish chunk.
-            result = self.fp.read1(16*1024)
+        result = self.fp.read1(n)
         if not result and n:
             self._close_conn()
         elif self.length is not None:
