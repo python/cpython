@@ -894,7 +894,7 @@ def _replace_arg(arg, tvars, args):
         return arg._subs_repr(tvars, args)
     if isinstance(arg, TypeVar):
         for i, tvar in enumerate(tvars):
-            if arg.__name__ == tvar.__name__:
+            if arg == tvar:
                 return args[i]
     return _type_repr(arg)
 
@@ -1322,10 +1322,6 @@ if sys.version_info[:2] >= (3, 3):
                 hints = obj.__annotations__
             except AttributeError:
                 return {}
-            # we keep only those annotations that can be accessed on module
-            members = obj.__dict__
-            hints = {name: value for name, value in hints.items()
-                                              if name in members}
             for name, value in hints.items():
                 if value is None:
                     value = type(None)
