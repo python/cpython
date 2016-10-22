@@ -4240,7 +4240,7 @@ unicode_decode_call_errorhandler_wchar(
     Py_ssize_t *endinpos, PyObject **exceptionObject, const char **inptr,
     PyObject **output, Py_ssize_t *outpos)
 {
-    static const char *argparse = "O!n;decoding error handler must return (str, int) tuple";
+    static const char *argparse = "Un;decoding error handler must return (str, int) tuple";
 
     PyObject *restuple = NULL;
     PyObject *repunicode = NULL;
@@ -4273,10 +4273,10 @@ unicode_decode_call_errorhandler_wchar(
     if (restuple == NULL)
         goto onError;
     if (!PyTuple_Check(restuple)) {
-        PyErr_SetString(PyExc_TypeError, &argparse[4]);
+        PyErr_SetString(PyExc_TypeError, &argparse[3]);
         goto onError;
     }
-    if (!PyArg_ParseTuple(restuple, argparse, &PyUnicode_Type, &repunicode, &newpos))
+    if (!PyArg_ParseTuple(restuple, argparse, &repunicode, &newpos))
         goto onError;
 
     /* Copy back the bytes variables, which might have been modified by the
@@ -4284,9 +4284,6 @@ unicode_decode_call_errorhandler_wchar(
     inputobj = PyUnicodeDecodeError_GetObject(*exceptionObject);
     if (!inputobj)
         goto onError;
-    if (!PyBytes_Check(inputobj)) {
-        PyErr_Format(PyExc_TypeError, "exception attribute object must be bytes");
-    }
     *input = PyBytes_AS_STRING(inputobj);
     insize = PyBytes_GET_SIZE(inputobj);
     *inend = *input + insize;
@@ -4327,7 +4324,7 @@ unicode_decode_call_errorhandler_wchar(
     *inptr = *input + newpos;
 
     /* we made it! */
-    Py_XDECREF(restuple);
+    Py_DECREF(restuple);
     return 0;
 
   overflow:
@@ -4348,7 +4345,7 @@ unicode_decode_call_errorhandler_writer(
     Py_ssize_t *endinpos, PyObject **exceptionObject, const char **inptr,
     _PyUnicodeWriter *writer /* PyObject **output, Py_ssize_t *outpos */)
 {
-    static const char *argparse = "O!n;decoding error handler must return (str, int) tuple";
+    static const char *argparse = "Un;decoding error handler must return (str, int) tuple";
 
     PyObject *restuple = NULL;
     PyObject *repunicode = NULL;
@@ -4375,10 +4372,10 @@ unicode_decode_call_errorhandler_writer(
     if (restuple == NULL)
         goto onError;
     if (!PyTuple_Check(restuple)) {
-        PyErr_SetString(PyExc_TypeError, &argparse[4]);
+        PyErr_SetString(PyExc_TypeError, &argparse[3]);
         goto onError;
     }
-    if (!PyArg_ParseTuple(restuple, argparse, &PyUnicode_Type, &repunicode, &newpos))
+    if (!PyArg_ParseTuple(restuple, argparse, &repunicode, &newpos))
         goto onError;
 
     /* Copy back the bytes variables, which might have been modified by the
@@ -4386,9 +4383,6 @@ unicode_decode_call_errorhandler_writer(
     inputobj = PyUnicodeDecodeError_GetObject(*exceptionObject);
     if (!inputobj)
         goto onError;
-    if (!PyBytes_Check(inputobj)) {
-        PyErr_Format(PyExc_TypeError, "exception attribute object must be bytes");
-    }
     *input = PyBytes_AS_STRING(inputobj);
     insize = PyBytes_GET_SIZE(inputobj);
     *inend = *input + insize;
@@ -4403,8 +4397,6 @@ unicode_decode_call_errorhandler_writer(
         goto onError;
     }
 
-    if (PyUnicode_READY(repunicode) < 0)
-        goto onError;
     replen = PyUnicode_GET_LENGTH(repunicode);
     if (replen > 1) {
         writer->min_length += replen - 1;
@@ -4420,7 +4412,7 @@ unicode_decode_call_errorhandler_writer(
     *inptr = *input + newpos;
 
     /* we made it! */
-    Py_XDECREF(restuple);
+    Py_DECREF(restuple);
     return 0;
 
   onError:
