@@ -15,6 +15,7 @@ import string
 import test.support
 import time
 import types
+import typing
 import unittest
 import urllib.parse
 import xml.etree
@@ -814,6 +815,18 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(pydoc.describe(c), 'C')
         expected = 'C in module %s object' % __name__
         self.assertIn(expected, pydoc.render_doc(c))
+
+    def test_typing_pydoc(self):
+        def foo(data: typing.List[typing.Any],
+                x: int) -> typing.Iterator[typing.Tuple[int, typing.Any]]:
+            ...
+        T = typing.TypeVar('T')
+        class C(typing.Generic[T], typing.Mapping[int, str]): ...
+        self.assertEqual(pydoc.render_doc(foo).splitlines()[-1],
+                         'f\x08fo\x08oo\x08o(data:List[Any], x:int)'
+                         ' -> Iterator[Tuple[int, Any]]')
+        self.assertEqual(pydoc.render_doc(C).splitlines()[2],
+                         'class C\x08C(typing.Mapping)')
 
     def test_builtin(self):
         for name in ('str', 'str.translate', 'builtins.str',
