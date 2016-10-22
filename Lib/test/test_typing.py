@@ -1182,7 +1182,7 @@ gth = get_type_hints
 class GetTypeHintTests(BaseTestCase):
     @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_modules(self):
-        self.assertEqual(gth(ann_module), {'x': int, 'y': str})
+        self.assertEqual(gth(ann_module), {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str})
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
 
