@@ -475,6 +475,19 @@ class TestShutil(unittest.TestCase):
 
         with support.change_cwd(work_dir):
             base_name = os.path.abspath(rel_base_name)
+            res = make_archive(rel_base_name, 'zip', root_dir)
+
+        self.assertEqual(res, base_name + '.zip')
+        self.assertTrue(os.path.isfile(res))
+        self.assertTrue(zipfile.is_zipfile(res))
+        with zipfile.ZipFile(res) as zf:
+            self.assertEqual(sorted(zf.namelist()),
+                    ['dist/', 'dist/file1', 'dist/file2',
+                     'dist/sub/', 'dist/sub/file3', 'dist/sub2/',
+                     'outer'])
+
+        with support.change_cwd(work_dir):
+            base_name = os.path.abspath(rel_base_name)
             res = make_archive(rel_base_name, 'zip', root_dir, base_dir)
 
         self.assertEqual(res, base_name + '.zip')

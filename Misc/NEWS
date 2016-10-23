@@ -60,6 +60,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #28488: shutil.make_archive() no longer adds entry "./" to ZIP archive.
+
 - Issue #28480: Fix error building _sqlite3 module when multithreading is
   disabled.
 
