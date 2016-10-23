@@ -5,7 +5,6 @@ import locale
 import re
 from re import Scanner
 import sre_compile
-import sre_constants
 import sys
 import string
 import traceback
@@ -186,18 +185,19 @@ class ReTests(unittest.TestCase):
                                 r'octal escape value \777 outside of '
                                 r'range 0-0o377', 0)
 
-        self.checkTemplateError('x', r'\1', 'x', 'invalid group reference')
-        self.checkTemplateError('x', r'\8', 'x', 'invalid group reference')
-        self.checkTemplateError('x', r'\9', 'x', 'invalid group reference')
-        self.checkTemplateError('x', r'\11', 'x', 'invalid group reference')
-        self.checkTemplateError('x', r'\18', 'x', 'invalid group reference')
-        self.checkTemplateError('x', r'\1a', 'x', 'invalid group reference')
-        self.checkTemplateError('x', r'\90', 'x', 'invalid group reference')
-        self.checkTemplateError('x', r'\99', 'x', 'invalid group reference')
-        self.checkTemplateError('x', r'\118', 'x', 'invalid group reference') # r'\11' + '8'
-        self.checkTemplateError('x', r'\11a', 'x', 'invalid group reference')
-        self.checkTemplateError('x', r'\181', 'x', 'invalid group reference') # r'\18' + '1'
-        self.checkTemplateError('x', r'\800', 'x', 'invalid group reference') # r'\80' + '0'
+        self.checkTemplateError('x', r'\1', 'x', 'invalid group reference 1', 1)
+        self.checkTemplateError('x', r'\8', 'x', 'invalid group reference 8', 1)
+        self.checkTemplateError('x', r'\9', 'x', 'invalid group reference 9', 1)
+        self.checkTemplateError('x', r'\11', 'x', 'invalid group reference 11', 1)
+        self.checkTemplateError('x', r'\18', 'x', 'invalid group reference 18', 1)
+        self.checkTemplateError('x', r'\1a', 'x', 'invalid group reference 1', 1)
+        self.checkTemplateError('x', r'\90', 'x', 'invalid group reference 90', 1)
+        self.checkTemplateError('x', r'\99', 'x', 'invalid group reference 99', 1)
+        self.checkTemplateError('x', r'\118', 'x', 'invalid group reference 11', 1)
+        self.checkTemplateError('x', r'\11a', 'x', 'invalid group reference 11', 1)
+        self.checkTemplateError('x', r'\181', 'x', 'invalid group reference 18', 1)
+        self.checkTemplateError('x', r'\800', 'x', 'invalid group reference 80', 1)
+        self.checkTemplateError('x', r'\8', '', 'invalid group reference 8', 1)
 
         # in python2.3 (etc), these loop endlessly in sre_parser.py
         self.assertEqual(re.sub('(((((((((((x)))))))))))', r'\11', 'x'), 'x')
@@ -271,9 +271,9 @@ class ReTests(unittest.TestCase):
         self.checkTemplateError('(?P<a>x)', r'\g<1a1>', 'xx',
                                 "bad character in group name '1a1'", 3)
         self.checkTemplateError('(?P<a>x)', r'\g<2>', 'xx',
-                                'invalid group reference')
+                                'invalid group reference 2', 3)
         self.checkTemplateError('(?P<a>x)', r'\2', 'xx',
-                                'invalid group reference')
+                                'invalid group reference 2', 1)
         with self.assertRaisesRegex(IndexError, "unknown group name 'ab'"):
             re.sub('(?P<a>x)', r'\g<ab>', 'xx')
         self.assertEqual(re.sub('(?P<a>x)|(?P<b>y)', r'\g<b>', 'xx'), '')
@@ -558,10 +558,11 @@ class ReTests(unittest.TestCase):
                                'two branches', 10)
 
     def test_re_groupref_overflow(self):
-        self.checkTemplateError('()', r'\g<%s>' % sre_constants.MAXGROUPS, 'xx',
-                                'invalid group reference', 3)
-        self.checkPatternError(r'(?P<a>)(?(%d))' % sre_constants.MAXGROUPS,
-                               'invalid group reference', 10)
+        from sre_constants import MAXGROUPS
+        self.checkTemplateError('()', r'\g<%s>' % MAXGROUPS, 'xx',
+                                'invalid group reference %d' % MAXGROUPS, 3)
+        self.checkPatternError(r'(?P<a>)(?(%d))' % MAXGROUPS,
+                               'invalid group reference %d' % MAXGROUPS, 10)
 
     def test_re_groupref(self):
         self.assertEqual(re.match(r'^(\|)?([^()]+)\1$', '|a|').groups(),
@@ -1007,7 +1008,7 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(r"\567",
                                r'octal escape value \567 outside of '
                                r'range 0-0o377', 0)
-        self.checkPatternError(r"\911", 'invalid group reference', 0)
+        self.checkPatternError(r"\911", 'invalid group reference 91', 1)
         self.checkPatternError(r"\x1", r'incomplete escape \x1', 0)
         self.checkPatternError(r"\x1z", r'incomplete escape \x1', 0)
         self.checkPatternError(r"\u123", r'incomplete escape \u123', 0)
@@ -1061,7 +1062,7 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(br"\567",
                                r'octal escape value \567 outside of '
                                r'range 0-0o377', 0)
-        self.checkPatternError(br"\911", 'invalid group reference', 0)
+        self.checkPatternError(br"\911", 'invalid group reference 91', 1)
         self.checkPatternError(br"\x1", r'incomplete escape \x1', 0)
         self.checkPatternError(br"\x1z", r'incomplete escape \x1', 0)
 
