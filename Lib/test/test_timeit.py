@@ -256,7 +256,7 @@ class TestTimeit(unittest.TestCase):
 
     def test_main_milliseconds(self):
         s = self.run_main(seconds_per_increment=0.0055)
-        self.assertEqual(s, "100 loops, best of 5: 5.5 msec per loop\n")
+        self.assertEqual(s, "50 loops, best of 5: 5.5 msec per loop\n")
 
     def test_main_microseconds(self):
         s = self.run_main(seconds_per_increment=0.0000025, switches=['-n100'])
@@ -304,35 +304,43 @@ class TestTimeit(unittest.TestCase):
             """))
 
     def test_main_very_verbose(self):
-        s = self.run_main(seconds_per_increment=0.000050, switches=['-vv'])
+        s = self.run_main(seconds_per_increment=0.000_030, switches=['-vv'])
         self.assertEqual(s, dedent("""\
-                1 loop -> 5e-05 secs
-                10 loops -> 0.0005 secs
-                100 loops -> 0.005 secs
-                1000 loops -> 0.05 secs
-                10000 loops -> 0.5 secs
+                1 loop -> 3e-05 secs
+                2 loops -> 6e-05 secs
+                5 loops -> 0.00015 secs
+                10 loops -> 0.0003 secs
+                20 loops -> 0.0006 secs
+                50 loops -> 0.0015 secs
+                100 loops -> 0.003 secs
+                200 loops -> 0.006 secs
+                500 loops -> 0.015 secs
+                1000 loops -> 0.03 secs
+                2000 loops -> 0.06 secs
+                5000 loops -> 0.15 secs
+                10000 loops -> 0.3 secs
 
-                raw times: 500 msec, 500 msec, 500 msec, 500 msec, 500 msec
+                raw times: 300 msec, 300 msec, 300 msec, 300 msec, 300 msec
 
-                10000 loops, best of 5: 50 usec per loop
+                10000 loops, best of 5: 30 usec per loop
             """))
 
     def test_main_with_time_unit(self):
-        unit_sec = self.run_main(seconds_per_increment=0.002,
+        unit_sec = self.run_main(seconds_per_increment=0.003,
                 switches=['-u', 'sec'])
         self.assertEqual(unit_sec,
-                "100 loops, best of 5: 0.002 sec per loop\n")
-        unit_msec = self.run_main(seconds_per_increment=0.002,
+                "100 loops, best of 5: 0.003 sec per loop\n")
+        unit_msec = self.run_main(seconds_per_increment=0.003,
                 switches=['-u', 'msec'])
         self.assertEqual(unit_msec,
-                "100 loops, best of 5: 2 msec per loop\n")
-        unit_usec = self.run_main(seconds_per_increment=0.002,
+                "100 loops, best of 5: 3 msec per loop\n")
+        unit_usec = self.run_main(seconds_per_increment=0.003,
                 switches=['-u', 'usec'])
         self.assertEqual(unit_usec,
-                "100 loops, best of 5: 2e+03 usec per loop\n")
+                "100 loops, best of 5: 3e+03 usec per loop\n")
         # Test invalid unit input
         with captured_stderr() as error_stringio:
-            invalid = self.run_main(seconds_per_increment=0.002,
+            invalid = self.run_main(seconds_per_increment=0.003,
                     switches=['-u', 'parsec'])
         self.assertEqual(error_stringio.getvalue(),
                     "Unrecognized unit. Please select nsec, usec, msec, or sec.\n")
@@ -347,15 +355,15 @@ class TestTimeit(unittest.TestCase):
             s = self.run_main(switches=['-n1', '1/0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
-    def autorange(self, seconds_per_increment=0.001, callback=None):
+    def autorange(self, seconds_per_increment=1/1024, callback=None):
         timer = FakeTimer(seconds_per_increment=seconds_per_increment)
         t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=timer)
         return t.autorange(callback)
 
     def test_autorange(self):
         num_loops, time_taken = self.autorange()
-        self.assertEqual(num_loops, 1000)
-        self.assertEqual(time_taken, 1.0)
+        self.assertEqual(num_loops, 500)
+        self.assertEqual(time_taken, 500/1024)
 
     def test_autorange_second(self):
         num_loops, time_taken = self.autorange(seconds_per_increment=1.0)
@@ -367,12 +375,17 @@ class TestTimeit(unittest.TestCase):
             print("{} {:.3f}".format(a, b))
         with captured_stdout() as s:
             num_loops, time_taken = self.autorange(callback=callback)
-        self.assertEqual(num_loops, 1000)
-        self.assertEqual(time_taken, 1.0)
+        self.assertEqual(num_loops, 500)
+        self.assertEqual(time_taken, 500/1024)
         expected = ('1 0.001\n'
+                    '2 0.002\n'
+                    '5 0.005\n'
                     '10 0.010\n'
-                    '100 0.100\n'
-                    '1000 1.000\n')
+                    '20 0.020\n'
+                    '50 0.049\n'
+                    '100 0.098\n'
+                    '200 0.195\n'
+                    '500 0.488\n')
         self.assertEqual(s.getvalue(), expected)
 
 
