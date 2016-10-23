@@ -97,6 +97,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28469: timeit now uses the sequence 1, 2, 5, 10, 20, 50,... instead
+  of 1, 10, 100,... for autoranging.
+
 - Issue #28115: Command-line interface of the zipfile module now uses argparse.
   Added support of long options.
 

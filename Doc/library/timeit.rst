@@ -28,11 +28,11 @@ can be used to compare three different expressions:
 .. code-block:: sh
 
    $ python3 -m timeit '"-".join(str(n) for n in range(100))'
-   10000 loops, best of 3: 30.2 usec per loop
+   10000 loops, best of 5: 30.2 usec per loop
    $ python3 -m timeit '"-".join([str(n) for n in range(100)])'
-   10000 loops, best of 3: 27.5 usec per loop
+   10000 loops, best of 5: 27.5 usec per loop
    $ python3 -m timeit '"-".join(map(str, range(100)))'
-   10000 loops, best of 3: 23.2 usec per loop
+   10000 loops, best of 5: 23.2 usec per loop
 
 This can be achieved from the :ref:`python-interface` with::
 
@@ -141,9 +141,8 @@ The module defines three convenience functions and a public class:
        This is a convenience function that calls :meth:`.timeit` repeatedly
        so that the total time >= 0.2 second, returning the eventual
        (number of loops, time taken for that number of loops). It calls
-       :meth:`.timeit` with *number* set to successive powers of ten (10,
-       100, 1000, ...) up to a maximum of one billion, until the time taken
-       is at least 0.2 second, or the maximum is reached.
+       :meth:`.timeit` with increasing numbers from the sequence 1, 2, 5,
+       10, 20, 50, ... until the time taken is at least 0.2 second.
 
         If *callback* is given and is not ``None``, it will be called after
         each trial with two arguments: ``callback(number, time_taken)``.
@@ -268,9 +267,9 @@ It is possible to provide a setup statement that is executed only once at the be
 .. code-block:: sh
 
    $ python -m timeit -s 'text = "sample string"; char = "g"'  'char in text'
-   10000000 loops, best of 3: 0.0877 usec per loop
+   5000000 loops, best of 5: 0.0877 usec per loop
    $ python -m timeit -s 'text = "sample string"; char = "g"'  'text.find(char)'
-   1000000 loops, best of 3: 0.342 usec per loop
+   1000000 loops, best of 5: 0.342 usec per loop
 
 ::
 
@@ -297,14 +296,14 @@ to test for missing and present object attributes:
 .. code-block:: sh
 
    $ python -m timeit 'try:' '  str.__bool__' 'except AttributeError:' '  pass'
-   100000 loops, best of 3: 15.7 usec per loop
+   20000 loops, best of 5: 15.7 usec per loop
    $ python -m timeit 'if hasattr(str, "__bool__"): pass'
-   100000 loops, best of 3: 4.26 usec per loop
+   50000 loops, best of 5: 4.26 usec per loop
 
    $ python -m timeit 'try:' '  int.__bool__' 'except AttributeError:' '  pass'
-   1000000 loops, best of 3: 1.43 usec per loop
+   200000 loops, best of 5: 1.43 usec per loop
    $ python -m timeit 'if hasattr(int, "__bool__"): pass'
-   100000 loops, best of 3: 2.23 usec per loop
+   100000 loops, best of 5: 2.23 usec per loop
 
 ::
 

@@ -208,22 +208,23 @@ class Timer:
     def autorange(self, callback=None):
         """Return the number of loops so that total time >= 0.2.
 
-        Calls the timeit method with *number* set to successive powers of
-        ten (10, 100, 1000, ...) up to a maximum of one billion, until
-        the time taken is at least 0.2 second, or the maximum is reached.
-        Returns ``(number, time_taken)``.
+        Calls the timeit method with increasing numbers from the sequence
+        1, 2, 5, 10, 20, 50, ... until the time taken is at least 0.2
+        second.  Returns (number, time_taken).
 
         If *callback* is given and is not None, it will be called after
         each trial with two arguments: ``callback(number, time_taken)``.
         """
-        for i in range(0, 10):
-            number = 10**i
-            time_taken = self.timeit(number)
-            if callback:
-                callback(number, time_taken)
-            if time_taken >= 0.2:
-                break
-        return (number, time_taken)
+        i = 1
+        while True:
+            for j in 1, 2, 5:
+                number = i * j
+                time_taken = self.timeit(number)
+                if callback:
+                    callback(number, time_taken)
+                if time_taken >= 0.2:
+                    return (number, time_taken)
+            i *= 10
 
 def timeit(stmt="pass", setup="pass", timer=default_timer,
            number=default_number, globals=None):
