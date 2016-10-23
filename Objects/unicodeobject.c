@@ -3400,11 +3400,9 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 {
     Py_ssize_t wlen, wlen2;
     wchar_t *wstr;
-    PyObject *bytes = NULL;
     char *errmsg;
-    PyObject *reason = NULL;
-    PyObject *exc;
-    size_t error_pos;
+    PyObject *bytes, *reason, *exc;
+    size_t error_pos, errlen;
     int surrogateescape;
 
     if (locale_error_handler(errors, &surrogateescape) < 0)
@@ -3459,6 +3457,7 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 
         len2 = wcstombs(PyBytes_AS_STRING(bytes), wstr, len+1);
         if (len2 == (size_t)-1 || len2 > len) {
+            Py_DECREF(bytes);
             error_pos = (size_t)-1;
             goto encode_error;
         }
@@ -3474,17 +3473,15 @@ encode_error:
         error_pos = wcstombs_errorpos(wstr);
 
     PyMem_Free(wstr);
-    Py_XDECREF(bytes);
 
-    if (errmsg != NULL) {
-        size_t errlen;
-        wstr = Py_DecodeLocale(errmsg, &errlen);
-        if (wstr != NULL) {
-            reason = PyUnicode_FromWideChar(wstr, errlen);
-            PyMem_RawFree(wstr);
-        } else
-            errmsg = NULL;
+    wstr = Py_DecodeLocale(errmsg, &errlen);
+    if (wstr != NULL) {
+        reason = PyUnicode_FromWideChar(wstr, errlen);
+        PyMem_RawFree(wstr);
+    } else {
+        errmsg = NULL;
     }
+
     if (errmsg == NULL)
         reason = PyUnicode_FromString(
             "wcstombs() encountered an unencodable "
@@ -3500,7 +3497,7 @@ encode_error:
     Py_DECREF(reason);
     if (exc != NULL) {
         PyCodec_StrictErrors(exc);
-        Py_XDECREF(exc);
+        Py_DECREF(exc);
     }
     return NULL;
 }
@@ -3702,10 +3699,9 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
     size_t wlen, wlen2;
     PyObject *unicode;
     int surrogateescape;
-    size_t error_pos;
+    size_t error_pos, errlen;
     char *errmsg;
-    PyObject *reason = NULL;   /* initialize to prevent gcc warning */
-    PyObject *exc;
+    PyObject *exc, *reason = NULL;   /* initialize to prevent gcc warning */
 
     if (locale_error_handler(errors, &surrogateescape) < 0)
         return NULL;
@@ -3763,19 +3759,16 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
     return unicode;
 
 decode_error:
-    reason = NULL;
     errmsg = strerror(errno);
     assert(errmsg != NULL);
 
     error_pos = mbstowcs_errorpos(str, len);
-    if (errmsg != NULL) {
-        size_t errlen;
-        wstr = Py_DecodeLocale(errmsg, &errlen);
-        if (wstr != NULL) {
-            reason = PyUnicode_FromWideChar(wstr, errlen);
-            PyMem_RawFree(wstr);
-        }
+    wstr = Py_DecodeLocale(errmsg, &errlen);
+    if (wstr != NULL) {
+        reason = PyUnicode_FromWideChar(wstr, errlen);
+        PyMem_RawFree(wstr);
     }
+
     if (reason == NULL)
         reason = PyUnicode_FromString(
             "mbstowcs() encountered an invalid multibyte sequence");
@@ -3790,7 +3783,7 @@ decode_error:
     Py_DECREF(reason);
     if (exc != NULL) {
         PyCodec_StrictErrors(exc);
-        Py_XDECREF(exc);
+        Py_DECREF(exc);
     }
     return NULL;
 }
