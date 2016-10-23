@@ -2055,8 +2055,9 @@ class CommandLineTest(unittest.TestCase):
 
     def test_test_command(self):
         zip_name = findfile('zipdir.zip')
-        out = self.zipfilecmd('-t', zip_name)
-        self.assertEqual(out.rstrip(), b'Done testing')
+        for opt in '-t', '--test':
+            out = self.zipfilecmd(opt, zip_name)
+            self.assertEqual(out.rstrip(), b'Done testing')
         zip_name = findfile('testtar.tar')
         rc, out, err = self.zipfilecmd_failure('-t', zip_name)
         self.assertEqual(out, b'')
@@ -2067,9 +2068,10 @@ class CommandLineTest(unittest.TestCase):
         with zipfile.ZipFile(zip_name, 'r') as tf:
             tf.printdir(t)
         expected = t.getvalue().encode('ascii', 'backslashreplace')
-        out = self.zipfilecmd('-l', zip_name,
-                              PYTHONIOENCODING='ascii:backslashreplace')
-        self.assertEqual(out, expected)
+        for opt in '-l', '--list':
+            out = self.zipfilecmd(opt, zip_name,
+                                  PYTHONIOENCODING='ascii:backslashreplace')
+            self.assertEqual(out, expected)
 
     def test_create_command(self):
         self.addCleanup(unlink, TESTFN)
@@ -2081,31 +2083,33 @@ class CommandLineTest(unittest.TestCase):
             f.write('test 2')
         files = [TESTFN, TESTFNDIR]
         namelist = [TESTFN, TESTFNDIR + '/', TESTFNDIR + '/file.txt']
-        try:
-            out = self.zipfilecmd('-c', TESTFN2, *files)
-            self.assertEqual(out, b'')
-            with zipfile.ZipFile(TESTFN2) as zf:
-                self.assertEqual(zf.namelist(), namelist)
-                self.assertEqual(zf.read(namelist[0]), b'test 1')
-                self.assertEqual(zf.read(namelist[2]), b'test 2')
-        finally:
-            unlink(TESTFN2)
+        for opt in '-c', '--create':
+            try:
+                out = self.zipfilecmd(opt, TESTFN2, *files)
+                self.assertEqual(out, b'')
+                with zipfile.ZipFile(TESTFN2) as zf:
+                    self.assertEqual(zf.namelist(), namelist)
+                    self.assertEqual(zf.read(namelist[0]), b'test 1')
+                    self.assertEqual(zf.read(namelist[2]), b'test 2')
+            finally:
+                unlink(TESTFN2)
 
     def test_extract_command(self):
         zip_name = findfile('zipdir.zip')
-        with temp_dir() as extdir:
-            out = self.zipfilecmd('-e', zip_name, extdir)
-            self.assertEqual(out, b'')
-            with zipfile.ZipFile(zip_name) as zf:
-                for zi in zf.infolist():
-                    path = os.path.join(extdir,
-                                zi.filename.replace('/', os.sep))
-                    if zi.is_dir():
-                        self.assertTrue(os.path.isdir(path))
-                    else:
-                        self.assertTrue(os.path.isfile(path))
-                        with open(path, 'rb') as f:
-                            self.assertEqual(f.read(), zf.read(zi))
+        for opt in '-e', '--extract':
+            with temp_dir() as extdir:
+                out = self.zipfilecmd(opt, zip_name, extdir)
+                self.assertEqual(out, b'')
+                with zipfile.ZipFile(zip_name) as zf:
+                    for zi in zf.infolist():
+                        path = os.path.join(extdir,
+                                    zi.filename.replace('/', os.sep))
+                        if zi.is_dir():
+                            self.assertTrue(os.path.isdir(path))
+                        else:
+                            self.assertTrue(os.path.isfile(path))
+                            with open(path, 'rb') as f:
+                                self.assertEqual(f.read(), zf.read(zi))
 
 if __name__ == "__main__":
     unittest.main()
