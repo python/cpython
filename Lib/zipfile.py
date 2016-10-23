@@ -1950,51 +1950,45 @@ class PyZipFile(ZipFile):
         return (fname, archivename)
 
 
-def main(args = None):
-    import textwrap
-    USAGE=textwrap.dedent("""\
-        Usage:
-            zipfile.py -l zipfile.zip        # Show listing of a zipfile
-            zipfile.py -t zipfile.zip        # Test if a zipfile is valid
-            zipfile.py -e zipfile.zip target # Extract zipfile into target dir
-            zipfile.py -c zipfile.zip src ... # Create zipfile from sources
-        """)
-    if args is None:
-        args = sys.argv[1:]
+def main(args=None):
+    import argparse
 
-    if not args or args[0] not in ('-l', '-c', '-e', '-t'):
-        print(USAGE, file=sys.stderr)
-        sys.exit(1)
+    description = 'A simple command line interface for zipfile module.'
+    parser = argparse.ArgumentParser(description=description)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-l', '--list', metavar='<zipfile>',
+                       help='Show listing of a zipfile')
+    group.add_argument('-e', '--extract', nargs=2,
+                       metavar=('<zipfile>', '<output_dir>'),
+                       help='Extract zipfile into target dir')
+    group.add_argument('-c', '--create', nargs='+',
+                       metavar=('<name>', '<file>'),
+                       help='Create zipfile from sources')
+    group.add_argument('-t', '--test', metavar='<zipfile>',
+                       help='Test if a zipfile is valid')
+    args = parser.parse_args(args)
 
-    if args[0] == '-l':
-        if len(args) != 2:
-            print(USAGE, file=sys.stderr)
-            sys.exit(1)
-        with ZipFile(args[1], 'r') as zf:
-            zf.printdir()
-
-    elif args[0] == '-t':
-        if len(args) != 2:
-            print(USAGE, file=sys.stderr)
-            sys.exit(1)
-        with ZipFile(args[1], 'r') as zf:
+    if args.test is not None:
+        src = args.test
+        with ZipFile(src, 'r') as zf:
             badfile = zf.testzip()
         if badfile:
             print("The following enclosed file is corrupted: {!r}".format(badfile))
         print("Done testing")
 
-    elif args[0] == '-e':
-        if len(args) != 3:
-            print(USAGE, file=sys.stderr)
-            sys.exit(1)
+    elif args.list is not None:
+        src = args.list
+        with ZipFile(src, 'r') as zf:
+            zf.printdir()
 
-        with ZipFile(args[1], 'r') as zf:
-            zf.extractall(args[2])
+    elif args.extract is not None:
+        src, curdir = args.extract
+        with ZipFile(src, 'r') as zf:
+            zf.extractall(curdir)
 
-    elif args[0] == '-c':
-        if len(args) < 3:
-            print(USAGE, file=sys.stderr)
-            sys.exit(1)
+    elif args.create is not None:
+        zip_name = args.create.pop(0)
+        files = args.create
 
         def addToZip(zf, path, zippath):
             if os.path.isfile(path):
@@ -2007,14 +2001,17 @@ def main(args = None):
                              os.path.join(path, nm), os.path.join(zippath, nm))
             # else: ignore
 
-        with ZipFile(args[1], 'w') as zf:
-            for path in args[2:]:
+        with ZipFile(zip_name, 'w') as zf:
+            for path in files:
                 zippath = os.path.basename(path)
                 if not zippath:
                     zippath = os.path.basename(os.path.dirname(path))
                 if zippath in ('', os.curdir, os.pardir):
                     zippath = ''
                 addToZip(zf, path, zippath)
+
+    else:
+        parser.exit(2, parser.format_usage())
 
 if __name__ == "__main__":
     main()
