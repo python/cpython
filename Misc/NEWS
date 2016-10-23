@@ -16,6 +16,12 @@ Core and Builtins
 - Issue #23782: Fixed possible memory leak in _PyTraceback_Add() and exception
   loss in PyTraceBack_Here().
 
+- Issue #25953: re.sub() now raises an error for invalid numerical group
+  reference in replacement template even if the pattern is not found in
+  the string.  Error message for invalid group reference now includes the
+  group index and the position of the reference.
+  Based on patch by SilentGhost.
+
 - Issue #28183: Optimize and cleanup dict iteration.
 
 - Issue #26081: Added C implementation of asyncio.Future.
