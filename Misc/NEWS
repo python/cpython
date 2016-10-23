@@ -23,6 +23,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #25953: re.sub() now raises an error for invalid numerical group
+  reference in replacement template even if the pattern is not found in
+  the string.  Error message for invalid group reference now includes the
+  group index and the position of the reference.
+  Based on patch by SilentGhost.
+
 - Issue #18219: Optimize csv.DictWriter for large number of columns.
   Patch by Mariatta Wijaya.
 
