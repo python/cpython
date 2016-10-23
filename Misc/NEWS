@@ -16,6 +16,8 @@ Core and Builtins
 - Issue #23782: Fixed possible memory leak in _PyTraceback_Add() and exception
   loss in PyTraceBack_Here().
 
+- Issue #28488: shutil.make_archive() no longer adds entry "./" to ZIP archive.
+
 - Issue #25953: re.sub() now raises an error for invalid numerical group
   reference in replacement template even if the pattern is not found in
   the string.  Error message for invalid group reference now includes the
