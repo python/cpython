@@ -8621,7 +8621,7 @@ unicode_translate_call_errorhandler(const char *errors,
                                     Py_ssize_t startpos, Py_ssize_t endpos,
                                     Py_ssize_t *newpos)
 {
-    static const char *argparse = "O!n;translating error handler must return (str, int) tuple";
+    static const char *argparse = "Un;translating error handler must return (str, int) tuple";
 
     Py_ssize_t i_newpos;
     PyObject *restuple;
@@ -8643,11 +8643,11 @@ unicode_translate_call_errorhandler(const char *errors,
     if (restuple == NULL)
         return NULL;
     if (!PyTuple_Check(restuple)) {
-        PyErr_SetString(PyExc_TypeError, &argparse[4]);
+        PyErr_SetString(PyExc_TypeError, &argparse[3]);
         Py_DECREF(restuple);
         return NULL;
     }
-    if (!PyArg_ParseTuple(restuple, argparse, &PyUnicode_Type,
+    if (!PyArg_ParseTuple(restuple, argparse,
                           &resunicode, &i_newpos)) {
         Py_DECREF(restuple);
         return NULL;

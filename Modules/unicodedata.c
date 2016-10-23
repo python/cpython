@@ -808,7 +808,7 @@ unicodedata.UCD.normalize
 
     self: self
     form: str
-    unistr as input: object(subclass_of='&PyUnicode_Type')
+    unistr as input: unicode
     /
 
 Return the normal form 'form' for the Unicode string unistr.
@@ -819,11 +819,8 @@ Valid values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
 static PyObject *
 unicodedata_UCD_normalize_impl(PyObject *self, const char *form,
                                PyObject *input)
-/*[clinic end generated code: output=62d1f8870027efdc input=cd092e631cf11883]*/
+/*[clinic end generated code: output=62d1f8870027efdc input=1744c55f4ab79bf0]*/
 {
-    if (PyUnicode_READY(input) == -1)
-        return NULL;
-
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* Special case empty input strings, since resizing
            them  later would cause internal errors. */

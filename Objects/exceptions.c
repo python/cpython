@@ -1820,18 +1820,10 @@ UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_CLEAR(err->object);
     Py_CLEAR(err->reason);
 
-    if (!PyArg_ParseTuple(args, "O!O!nnO!",
-        &PyUnicode_Type, &err->encoding,
-        &PyUnicode_Type, &err->object,
-        &err->start,
-        &err->end,
-        &PyUnicode_Type, &err->reason)) {
-          err->encoding = err->object = err->reason = NULL;
-          return -1;
-    }
-
-    if (PyUnicode_READY(err->object) < -1) {
-        err->encoding = NULL;
+    if (!PyArg_ParseTuple(args, "UUnnU",
+                          &err->encoding, &err->object,
+                          &err->start, &err->end, &err->reason)) {
+        err->encoding = err->object = err->reason = NULL;
         return -1;
     }
 
@@ -1935,12 +1927,9 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_CLEAR(ude->object);
     Py_CLEAR(ude->reason);
 
-    if (!PyArg_ParseTuple(args, "O!OnnO!",
-         &PyUnicode_Type, &ude->encoding,
-         &ude->object,
-         &ude->start,
-         &ude->end,
-         &PyUnicode_Type, &ude->reason)) {
+    if (!PyArg_ParseTuple(args, "UOnnU",
+                          &ude->encoding, &ude->object,
+                          &ude->start, &ude->end, &ude->reason)) {
              ude->encoding = ude->object = ude->reason = NULL;
              return -1;
     }
@@ -2050,11 +2039,9 @@ UnicodeTranslateError_init(PyUnicodeErrorObject *self, PyObject *args,
     Py_CLEAR(self->object);
     Py_CLEAR(self->reason);
 
-    if (!PyArg_ParseTuple(args, "O!nnO!",
-        &PyUnicode_Type, &self->object,
-        &self->start,
-        &self->end,
-        &PyUnicode_Type, &self->reason)) {
+    if (!PyArg_ParseTuple(args, "UnnU",
+                          &self->object,
+                          &self->start, &self->end, &self->reason)) {
         self->object = self->reason = NULL;
         return -1;
     }
