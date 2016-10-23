@@ -395,7 +395,7 @@ def _escape(source, escape, state):
                                        len(escape))
                 state.checklookbehindgroup(group, source)
                 return GROUPREF, group
-            raise source.error("invalid group reference", len(escape))
+            raise source.error("invalid group reference %d" % group, len(escape) - 1)
         if len(escape) == 2:
             if c in ASCIILETTERS:
                 raise source.error("bad escape %s" % escape, len(escape))
@@ -725,8 +725,8 @@ def _parse(source, state, verbose):
                             raise source.error("bad group number",
                                                len(condname) + 1)
                         if condgroup >= MAXGROUPS:
-                            raise source.error("invalid group reference",
-                                               len(condname) + 1)
+                            msg = "invalid group reference %d" % condgroup
+                            raise source.error(msg, len(condname) + 1)
                     state.checklookbehindgroup(condgroup, source)
                 elif char in FLAGS or char == "-":
                     # flags
@@ -883,7 +883,9 @@ def parse_template(source, pattern):
     literals = []
     literal = []
     lappend = literal.append
-    def addgroup(index):
+    def addgroup(index, pos):
+        if index > pattern.groups:
+            raise s.error("invalid group reference %d" % index, pos)
         if literal:
             literals.append(''.join(literal))
             del literal[:]
@@ -916,9 +918,9 @@ def parse_template(source, pattern):
                         raise s.error("bad character in group name %r" % name,
                                       len(name) + 1) from None
                     if index >= MAXGROUPS:
-                        raise s.error("invalid group reference",
+                        raise s.error("invalid group reference %d" % index,
                                       len(name) + 1)
-                addgroup(index)
+                addgroup(index, len(name) + 1)
             elif c == "0":
                 if s.next in OCTDIGITS:
                     this += sget()
@@ -939,7 +941,7 @@ def parse_template(source, pattern):
                                           'range 0-0o377' % this, len(this))
                         lappend(chr(c))
                 if not isoctal:
-                    addgroup(int(this[1:]))
+                    addgroup(int(this[1:]), len(this) - 1)
             else:
                 try:
                     this = chr(ESCAPES[this][1])
@@ -966,5 +968,5 @@ def expand_template(template, match):
         for index, group in groups:
             literals[index] = g(group) or empty
     except IndexError:
-        raise error("invalid group reference")
+        raise error("invalid group reference %d" % index)
     return empty.join(literals)
