@@ -3243,9 +3243,8 @@ timezone_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     PyObject *offset;
     PyObject *name = NULL;
-    if (PyArg_ParseTupleAndKeywords(args, kw, "O!|O!:timezone", timezone_kws,
-                                    &PyDateTime_DeltaType, &offset,
-                                    &PyUnicode_Type, &name))
+    if (PyArg_ParseTupleAndKeywords(args, kw, "O!|U:timezone", timezone_kws,
+                                    &PyDateTime_DeltaType, &offset, &name))
         return new_timezone(offset, name);
 
     return NULL;
