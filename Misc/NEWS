@@ -97,6 +97,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28115: Command-line interface of the zipfile module now uses argparse.
+  Added support of long options.
+
 - Issue #18219: Optimize csv.DictWriter for large number of columns.
   Patch by Mariatta Wijaya.
 
