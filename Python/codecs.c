@@ -867,17 +867,14 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     Py_UCS4 c;
 
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        unsigned char *p;
+        const unsigned char *p;
         if (PyUnicodeDecodeError_GetStart(exc, &start))
             return NULL;
         if (PyUnicodeDecodeError_GetEnd(exc, &end))
             return NULL;
         if (!(object = PyUnicodeDecodeError_GetObject(exc)))
             return NULL;
-        if (!(p = (unsigned char*)PyBytes_AsString(object))) {
-            Py_DECREF(object);
-            return NULL;
-        }
+        p = (const unsigned char*)PyBytes_AS_STRING(object);
         res = PyUnicode_New(4 * (end - start), 127);
         if (res == NULL) {
             Py_DECREF(object);
@@ -1220,7 +1217,7 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
         return restuple;
     }
     else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        unsigned char *p;
+        const unsigned char *p;
         Py_UCS4 ch = 0;
         if (PyUnicodeDecodeError_GetStart(exc, &start))
             return NULL;
@@ -1228,10 +1225,7 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
             return NULL;
         if (!(object = PyUnicodeDecodeError_GetObject(exc)))
             return NULL;
-        if (!(p = (unsigned char*)PyBytes_AsString(object))) {
-            Py_DECREF(object);
-            return NULL;
-        }
+        p = (const unsigned char*)PyBytes_AS_STRING(object);
         if (!(encode = PyUnicodeDecodeError_GetEncoding(exc))) {
             Py_DECREF(object);
             return NULL;
@@ -1338,7 +1332,7 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
     }
     else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
         PyObject *str;
-        unsigned char *p;
+        const unsigned char *p;
         Py_UCS2 ch[4]; /* decode up to 4 bad bytes. */
         int consumed = 0;
         if (PyUnicodeDecodeError_GetStart(exc, &start))
@@ -1347,10 +1341,7 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
             return NULL;
         if (!(object = PyUnicodeDecodeError_GetObject(exc)))
             return NULL;
-        if (!(p = (unsigned char*)PyBytes_AsString(object))) {
-            Py_DECREF(object);
-            return NULL;
-        }
+        p = (const unsigned char*)PyBytes_AS_STRING(object);
         while (consumed < 4 && consumed < end-start) {
             /* Refuse to escape ASCII bytes. */
             if (p[start+consumed] < 128)
