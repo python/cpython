@@ -2145,6 +2145,7 @@ class CommandLineTest(unittest.TestCase):
                               PYTHONIOENCODING='ascii:backslashreplace')
         self.assertEqual(out, expected)
 
+    @requires_zlib
     def test_create_command(self):
         self.addCleanup(unlink, TESTFN)
         with open(TESTFN, 'w') as f:
