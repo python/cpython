@@ -23,11 +23,6 @@ The action function may be an instance method so it
 has another way to reference private data (besides global variables).
 """
 
-# XXX The timefunc and delayfunc should have been defined as methods
-# XXX so you can define new kinds of schedulers using subclassing
-# XXX instead of having to define a module or class just to hold
-# XXX the global state of your particular time and delay functions.
-
 import time
 import heapq
 from collections import namedtuple
@@ -40,6 +35,7 @@ from time import monotonic as _time
 __all__ = ["scheduler"]
 
 class Event(namedtuple('Event', 'time, priority, action, argument, kwargs')):
+    __slots__ = []
     def __eq__(s, o): return (s.time, s.priority) == (o.time, o.priority)
     def __lt__(s, o): return (s.time, s.priority) <  (o.time, o.priority)
     def __le__(s, o): return (s.time, s.priority) <= (o.time, o.priority)
