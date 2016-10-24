@@ -928,7 +928,11 @@ class HList(TixWidget, XView, YView):
         return self.tk.call(self._w, 'header', 'cget', col, opt)
 
     def header_exists(self,  col):
-        return self.tk.call(self._w, 'header', 'exists', col)
+        # A workaround to Tix library bug (issue #25464).
+        # The documented command is "exists", but only erroneous "exist" is
+        # accepted.
+        return self.tk.getboolean(self.tk.call(self._w, 'header', 'exist', col))
+    header_exist = header_exists
 
     def header_delete(self, col):
         self.tk.call(self._w, 'header', 'delete', col)
