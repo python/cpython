@@ -2,7 +2,7 @@
 
 __all__ = ['CancelledError', 'TimeoutError',
            'InvalidStateError',
-           'Future', 'wrap_future',
+           'Future', 'wrap_future', 'isfuture'
            ]
 
 import concurrent.futures._base
@@ -389,6 +389,10 @@ class Future:
         __await__ = __iter__ # make compatible with 'await' expression
 
 
+# Needed for testing purposes.
+_PyFuture = Future
+
+
 def _set_result_unless_cancelled(fut, result):
     """Helper setting the result only if the future was not cancelled."""
     if fut.cancelled():
@@ -488,4 +492,5 @@ try:
 except ImportError:
     pass
 else:
-    Future = _asyncio.Future
+    # _CFuture is needed for tests.
+    Future = _CFuture = _asyncio.Future
