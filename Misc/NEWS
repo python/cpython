@@ -110,6 +110,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
+  a workaround to Tix library bug.
+
 - Issue #28488: shutil.make_archive() no longer add entry "./" to ZIP archive.
 
 - Issue #24452: Make webbrowser support Chrome on Mac OS X.
