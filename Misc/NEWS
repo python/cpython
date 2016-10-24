@@ -16,6 +16,9 @@ Core and Builtins
 - Issue #23782: Fixed possible memory leak in _PyTraceback_Add() and exception
   loss in PyTraceBack_Here().
 
+- Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
+  a workaround to Tix library bug.
+
 - Issue #28488: shutil.make_archive() no longer adds entry "./" to ZIP archive.
 
 - Issue #25953: re.sub() now raises an error for invalid numerical group
