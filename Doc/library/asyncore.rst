@@ -12,6 +12,9 @@
 
 **Source code:** :source:`Lib/asyncore.py`
 
+.. deprecated:: 3.6
+   Please use :mod:`asyncio` instead.
+
 --------------
 
 .. note::
