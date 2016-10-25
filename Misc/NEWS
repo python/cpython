@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #28353: os.fwalk() no longer fails on broken links.
+
 - Issue #28430: Fix iterator of C implemented asyncio.Future doesn't accept
   non-None value is passed to it.send(val).
 

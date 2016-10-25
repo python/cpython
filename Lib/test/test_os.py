@@ -853,37 +853,53 @@ class WalkTests(unittest.TestCase):
         #           SUB11/          no kids
         #         SUB2/             a file kid and a dirsymlink kid
         #           tmp3
+        #           SUB21/          not readable
+        #             tmp5
         #           link/           a symlink to TESTFN.2
         #           broken_link
+        #           broken_link2
+        #           broken_link3
         #       TEST2/
         #         tmp4              a lone file
         self.walk_path = join(support.TESTFN, "TEST1")
         self.sub1_path = join(self.walk_path, "SUB1")
         self.sub11_path = join(self.sub1_path, "SUB11")
         sub2_path = join(self.walk_path, "SUB2")
+        sub21_path = join(sub2_path, "SUB21")
         tmp1_path = join(self.walk_path, "tmp1")
         tmp2_path = join(self.sub1_path, "tmp2")
         tmp3_path = join(sub2_path, "tmp3")
+        tmp5_path = join(sub21_path, "tmp3")
         self.link_path = join(sub2_path, "link")
         t2_path = join(support.TESTFN, "TEST2")
         tmp4_path = join(support.TESTFN, "TEST2", "tmp4")
         broken_link_path = join(sub2_path, "broken_link")
+        broken_link2_path = join(sub2_path, "broken_link2")
+        broken_link3_path = join(sub2_path, "broken_link3")
 
         # Create stuff.
         os.makedirs(self.sub11_path)
         os.makedirs(sub2_path)
+        os.makedirs(sub21_path)
         os.makedirs(t2_path)
 
-        for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path:
+        for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path, tmp5_path:
             with open(path, "x") as f:
                 f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
 
         if support.can_symlink():
             os.symlink(os.path.abspath(t2_path), self.link_path)
             os.symlink('broken', broken_link_path, True)
-            self.sub2_tree = (sub2_path, ["link"], ["broken_link", "tmp3"])
+            os.symlink(join('tmp3', 'broken'), broken_link2_path, True)
+            os.symlink(join('SUB21', 'tmp5'), broken_link3_path, True)
+            self.sub2_tree = (sub2_path, ["link", "SUB21"],
+                              ["broken_link", "broken_link2", "broken_link3",
+                               "tmp3"])
         else:
             self.sub2_tree = (sub2_path, [], ["tmp3"])
+
+        os.chmod(sub21_path, 0)
+        self.addCleanup(os.chmod, sub21_path, stat.S_IRWXU)
 
     def test_walk_topdown(self):
         # Walk top-down.
