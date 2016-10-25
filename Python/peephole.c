@@ -704,11 +704,11 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 /* Remove unreachable ops after RETURN */
             case RETURN_VALUE:
                 h = i + 1;
-                while (h + 1 < codelen && ISBASICBLOCK(blocks, i, h + 1)) {
+                while (h < codelen && ISBASICBLOCK(blocks, i, h)) {
                     h++;
                 }
                 if (h > i + 1) {
-                    fill_nops(codestr, i + 1, h + 1);
+                    fill_nops(codestr, i + 1, h);
                     nexti = find_op(codestr, h);
                 }
                 break;
