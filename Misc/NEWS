@@ -22,8 +22,6 @@ Core and Builtins
 - Issue #23782: Fixed possible memory leak in _PyTraceback_Add() and exception
   loss in PyTraceBack_Here().
 
-- Issue #28353: os.fwalk() no longer fails on broken links.
-
 - Issue #28183: Optimize and cleanup dict iteration.
 
 - Issue #26081: Added C implementation of asyncio.Future.
@@ -98,6 +96,11 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #20491: The textwrap.TextWrapper class now honors non-breaking spaces.
+  Based on patch by Kaarle Ritvanen.
+
+- Issue #28353: os.fwalk() no longer fails on broken links.
 
 - Issue #28430: Fix iterator of C implemented asyncio.Future doesn't accept
   non-None value is passed to it.send(val).
