@@ -13570,34 +13570,28 @@ PyObject *
 _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
 {
     PyObject *str;
+
     if (writer->pos == 0) {
         Py_CLEAR(writer->buffer);
         _Py_RETURN_UNICODE_EMPTY();
     }
+
+    str = writer->buffer;
+    writer->buffer = NULL;
+
     if (writer->readonly) {
-        str = writer->buffer;
-        writer->buffer = NULL;
         assert(PyUnicode_GET_LENGTH(str) == writer->pos);
         return str;
     }
-    if (writer->pos == 0) {
-        Py_CLEAR(writer->buffer);
 
-        /* Get the empty Unicode string singleton ('') */
-        _Py_INCREF_UNICODE_EMPTY();
-        str  = unicode_empty;
-    }
-    else {
-        str = writer->buffer;
-        writer->buffer = NULL;
-
-        if (PyUnicode_GET_LENGTH(str) != writer->pos) {
-            PyObject *str2;
-            str2 = resize_compact(str, writer->pos);
-            if (str2 == NULL)
-                return NULL;
-            str = str2;
+    if (PyUnicode_GET_LENGTH(str) != writer->pos) {
+        PyObject *str2;
+        str2 = resize_compact(str, writer->pos);
+        if (str2 == NULL) {
+            Py_DECREF(str);
+            return NULL;
         }
+        str = str2;
     }
 
     assert(_PyUnicode_CheckConsistency(str, 1));
