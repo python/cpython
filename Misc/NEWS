@@ -113,6 +113,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #28353: os.fwalk() no longer fails on broken links.
+
 - Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
   a workaround to Tix library bug.
 
