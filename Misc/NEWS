@@ -26,6 +26,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27025: Generated names for Tkinter widgets now start by the "!" prefix
+  for readability (was "`").
+
 - Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
   a workaround to Tix library bug.
 
@@ -1338,6 +1341,9 @@ Library
 - Comment out socket (SO_REUSEPORT) and posix (O_SHLOCK, O_EXLOCK) constants
   exposed on the API which are not implemented on GNU/Hurd. They would not
   work at runtime anyway.
+
+- Issue #27025: Generated names for Tkinter widgets are now more meanful
+  and recognizirable.
 
 - Issue #25455: Fixed crashes in repr of recursive ElementTree.Element and
   functools.partial objects.
