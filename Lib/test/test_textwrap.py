@@ -444,6 +444,37 @@ What a mess!
         text = "aa \xe4\xe4-\xe4\xe4"
         self.check_wrap(text, 7, ["aa \xe4\xe4-", "\xe4\xe4"])
 
+    def test_non_breaking_space(self):
+        text = 'This is a sentence with non-breaking\N{NO-BREAK SPACE}space.'
+
+        self.check_wrap(text, 20,
+                        ['This is a sentence',
+                         'with non-',
+                         'breaking\N{NO-BREAK SPACE}space.'],
+                        break_on_hyphens=True)
+
+        self.check_wrap(text, 20,
+                        ['This is a sentence',
+                         'with',
+                         'non-breaking\N{NO-BREAK SPACE}space.'],
+                        break_on_hyphens=False)
+
+    def test_narrow_non_breaking_space(self):
+        text = ('This is a sentence with non-breaking'
+                '\N{NARROW NO-BREAK SPACE}space.')
+
+        self.check_wrap(text, 20,
+                        ['This is a sentence',
+                         'with non-',
+                         'breaking\N{NARROW NO-BREAK SPACE}space.'],
+                        break_on_hyphens=True)
+
+        self.check_wrap(text, 20,
+                        ['This is a sentence',
+                         'with',
+                         'non-breaking\N{NARROW NO-BREAK SPACE}space.'],
+                        break_on_hyphens=False)
+
 
 class MaxLinesTestCase(BaseTestCase):
     text = "Hello there, how are you this fine day?  I'm glad to hear it!"
