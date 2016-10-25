@@ -815,13 +815,11 @@ FutureIter_iternext(futureiterobject *it)
 }
 
 static PyObject *
-FutureIter_send(futureiterobject *self, PyObject *arg)
+FutureIter_send(futureiterobject *self, PyObject *unused)
 {
-    if (arg != Py_None) {
-        PyErr_Format(PyExc_TypeError,
-                     "can't send non-None value to a FutureIter");
-        return NULL;
-    }
+    /* Future.__iter__ doesn't care about values that are pushed to the
+     * generator, it just returns "self.result().
+     */
     return FutureIter_iternext(self);
 }
 
