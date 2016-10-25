@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 3
 Core and Builtins
 -----------------
 
+- Issue #28517: Fixed of-by-one error in the peephole optimizer that caused
+  keeping unreachable code.
+
 - Issue #28214: Improved exception reporting for problematic __set_name__
   attributes.
 
