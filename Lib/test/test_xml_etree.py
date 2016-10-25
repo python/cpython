@@ -2191,8 +2191,40 @@ class ElementIterTest(unittest.TestCase):
         # make sure both tag=None and tag='*' return all tags
         all_tags = ['document', 'house', 'room', 'room',
                     'shed', 'house', 'room']
+        self.assertEqual(summarize_list(doc.iter()), all_tags)
         self.assertEqual(self._ilist(doc), all_tags)
         self.assertEqual(self._ilist(doc, '*'), all_tags)
+
+    def test_getiterator(self):
+        doc = ET.XML('''
+            <document>
+                <house>
+                    <room>bedroom1</room>
+                    <room>bedroom2</room>
+                </house>
+                <shed>nothing here
+                </shed>
+                <house>
+                    <room>bedroom8</room>
+                </house>
+            </document>''')
+
+        self.assertEqual(summarize_list(doc.getiterator('room')),
+                         ['room'] * 3)
+        self.assertEqual(summarize_list(doc.getiterator('house')),
+                         ['house'] * 2)
+
+        # test that getiterator also accepts 'tag' as a keyword arg
+        self.assertEqual(
+            summarize_list(doc.getiterator(tag='room')),
+            ['room'] * 3)
+
+        # make sure both tag=None and tag='*' return all tags
+        all_tags = ['document', 'house', 'room', 'room',
+                    'shed', 'house', 'room']
+        self.assertEqual(summarize_list(doc.getiterator()), all_tags)
+        self.assertEqual(summarize_list(doc.getiterator(None)), all_tags)
+        self.assertEqual(summarize_list(doc.getiterator('*')), all_tags)
 
     def test_copy(self):
         a = ET.Element('a')
