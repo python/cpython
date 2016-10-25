@@ -869,13 +869,23 @@ class WalkTests(unittest.TestCase):
             os.symlink('broken', broken_link_path, True)
             os.symlink(join('tmp3', 'broken'), broken_link2_path, True)
             os.symlink(join('SUB21', 'tmp5'), broken_link3_path, True)
-            self.sub2_tree = (sub2_path, ["link", "SUB21"],
+            self.sub2_tree = (sub2_path, ["SUB21", "link"],
                               ["broken_link", "broken_link2", "broken_link3",
                                "tmp3"])
         else:
             self.sub2_tree = (sub2_path, [], ["tmp3"])
 
         os.chmod(self.sub21_path, 0)
+        try:
+            os.listdir(self.sub21_path)
+        except PermissionError:
+            pass
+        else:
+            os.chmod(self.sub21_path, stat.S_IRWXU)
+            os.unlink(tmp5_path)
+            os.rmdir(self.sub21_path)
+            self.sub21_path = None
+            del self.sub2_tree[1][:1]
 
     def test_walk_topdown(self):
         # Walk top-down.
@@ -888,6 +898,7 @@ class WalkTests(unittest.TestCase):
         flipped = all[0][1][0] != "SUB1"
         all[0][1].sort()
         all[3 - 2 * flipped][-1].sort()
+        all[3 - 2 * flipped][1].sort()
         self.assertEqual(all[0], (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
         self.assertEqual(all[1 + flipped], (self.sub1_path, ["SUB11"], ["tmp2"]))
         self.assertEqual(all[2 + flipped], (self.sub11_path, [], []))
@@ -908,6 +919,7 @@ class WalkTests(unittest.TestCase):
                          (self.walk_path, ["SUB2"], ["tmp1"]))
 
         all[1][-1].sort()
+        all[1][1].sort()
         self.assertEqual(all[1], self.sub2_tree)
 
     def test_walk_bottom_up(self):
@@ -921,6 +933,7 @@ class WalkTests(unittest.TestCase):
         flipped = all[3][1][0] != "SUB1"
         all[3][1].sort()
         all[2 - 2 * flipped][-1].sort()
+        all[2 - 2 * flipped][1].sort()
         self.assertEqual(all[3],
                          (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
         self.assertEqual(all[flipped],
@@ -949,7 +962,8 @@ class WalkTests(unittest.TestCase):
         # Windows, which doesn't have a recursive delete command.  The
         # (not so) subtlety is that rmdir will fail unless the dir's
         # kids are removed first, so bottom up is essential.
-        os.chmod(self.sub21_path, stat.S_IRWXU)
+        if self.sub21_path:
+            os.chmod(self.sub21_path, stat.S_IRWXU)
         for root, dirs, files in os.walk(support.TESTFN, topdown=False):
             for name in files:
                 os.remove(os.path.join(root, name))
@@ -1045,7 +1059,8 @@ class FwalkTests(WalkTests):
 
     def tearDown(self):
         # cleanup
-        os.chmod(self.sub21_path, stat.S_IRWXU)
+        if self.sub21_path:
+            os.chmod(self.sub21_path, stat.S_IRWXU)
         for root, dirs, files, rootfd in os.fwalk(support.TESTFN, topdown=False):
             for name in files:
                 os.unlink(name, dir_fd=rootfd)
