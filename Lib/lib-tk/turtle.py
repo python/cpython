@@ -728,10 +728,11 @@ class TurtleScreenBase(object):
         """
         return self.cv.create_image(0, 0, image=image)
 
-    def _drawimage(self, item, (x, y), image):
+    def _drawimage(self, item, pos, image):
         """Configure image item as to draw image object
         at position (x,y) on canvas)
         """
+        x, y = pos
         self.cv.coords(item, (x * self.xscale, -y * self.yscale))
         self.cv.itemconfig(item, image=image)
 

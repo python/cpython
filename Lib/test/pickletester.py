@@ -1572,6 +1572,7 @@ class REX_six(object):
         self.items = items
     def __eq__(self, other):
         return type(self) is type(other) and self.items == other.items
+    __hash__ = None
     def append(self, item):
         self.items.append(item)
     def extend(self, items):
@@ -1590,6 +1591,7 @@ class REX_seven(object):
         self.table = table
     def __eq__(self, other):
         return type(self) is type(other) and self.table == other.table
+    __hash__ = None
     def __setitem__(self, key, value):
         self.table[key] = value
     def __reduce__(self):
@@ -1639,6 +1641,7 @@ class SimpleNewObj(int):
         raise TypeError("SimpleNewObj.__init__() didn't expect to get called")
     def __eq__(self, other):
         return int(self) == int(other) and self.__dict__ == other.__dict__
+    __hash__ = None
 
 class ComplexNewObj(SimpleNewObj):
     def __getnewargs__(self):

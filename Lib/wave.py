@@ -243,7 +243,7 @@ class Wave_read:
             assert data.itemsize == self._sampwidth
             nitems = nframes * self._nchannels
             if nitems * self._sampwidth > chunk.chunksize - chunk.size_read:
-                nitems = (chunk.chunksize - chunk.size_read) / self._sampwidth
+                nitems = (chunk.chunksize - chunk.size_read) // self._sampwidth
             data.fromfile(chunk.file.file, nitems)
             # "tell" data chunk how much was read
             chunk.size_read = chunk.size_read + nitems * self._sampwidth

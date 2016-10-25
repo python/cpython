@@ -242,14 +242,14 @@ def fixline(line):
             elif found == '*/':
                 Program = OutsideCommentProgram
         n = len(found)
-        if Dict.has_key(found):
+        if found in Dict:
             subst = Dict[found]
             if Program is InsideCommentProgram:
                 if not Docomments:
                     print 'Found in comment:', found
                     i = i + n
                     continue
-                if NotInComment.has_key(found):
+                if found in NotInComment:
 ##                  print 'Ignored in comment:',
 ##                  print found, '-->', subst
 ##                  print 'Line:', line,
@@ -294,7 +294,7 @@ def addsubst(substfile):
         if not words: continue
         if len(words) == 3 and words[0] == 'struct':
             words[:2] = [words[0] + ' ' + words[1]]
-        elif len(words) <> 2:
+        elif len(words) != 2:
             err(substfile + '%s:%r: warning: bad line: %r' % (substfile, lineno, line))
             continue
         if Reverse:
@@ -306,7 +306,7 @@ def addsubst(substfile):
         if key[0] == '*':
             key = key[1:]
             NotInComment[key] = value
-        if Dict.has_key(key):
+        if key in Dict:
             err('%s:%r: warning: overriding: %r %r\n' % (substfile, lineno, key, value))
             err('%s:%r: warning: previous: %r\n' % (substfile, lineno, Dict[key]))
         Dict[key] = value
