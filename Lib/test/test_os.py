@@ -892,14 +892,22 @@ class WalkTests(unittest.TestCase):
             os.symlink('broken', broken_link_path, True)
             os.symlink(join('tmp3', 'broken'), broken_link2_path, True)
             os.symlink(join('SUB21', 'tmp5'), broken_link3_path, True)
-            self.sub2_tree = (sub2_path, ["link", "SUB21"],
+            self.sub2_tree = (sub2_path, ["SUB21", "link"],
                               ["broken_link", "broken_link2", "broken_link3",
                                "tmp3"])
         else:
             self.sub2_tree = (sub2_path, [], ["tmp3"])
 
         os.chmod(sub21_path, 0)
-        self.addCleanup(os.chmod, sub21_path, stat.S_IRWXU)
+        try:
+            os.listdir(sub21_path)
+        except PermissionError:
+            self.addCleanup(os.chmod, sub21_path, stat.S_IRWXU)
+        else:
+            os.chmod(sub21_path, stat.S_IRWXU)
+            os.unlink(tmp5_path)
+            os.rmdir(sub21_path)
+            del self.sub2_tree[1][:1]
 
     def test_walk_topdown(self):
         # Walk top-down.
@@ -912,6 +920,7 @@ class WalkTests(unittest.TestCase):
         flipped = all[0][1][0] != "SUB1"
         all[0][1].sort()
         all[3 - 2 * flipped][-1].sort()
+        all[3 - 2 * flipped][1].sort()
         self.assertEqual(all[0], (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
         self.assertEqual(all[1 + flipped], (self.sub1_path, ["SUB11"], ["tmp2"]))
         self.assertEqual(all[2 + flipped], (self.sub11_path, [], []))
@@ -934,6 +943,7 @@ class WalkTests(unittest.TestCase):
                          (str(walk_path), ["SUB2"], ["tmp1"]))
 
         all[1][-1].sort()
+        all[1][1].sort()
         self.assertEqual(all[1], self.sub2_tree)
 
     def test_file_like_path(self):
@@ -950,6 +960,7 @@ class WalkTests(unittest.TestCase):
         flipped = all[3][1][0] != "SUB1"
         all[3][1].sort()
         all[2 - 2 * flipped][-1].sort()
+        all[2 - 2 * flipped][1].sort()
         self.assertEqual(all[3],
                          (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
         self.assertEqual(all[flipped],
