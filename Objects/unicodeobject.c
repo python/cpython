@@ -3026,24 +3026,16 @@ PyUnicode_AsDecodedObject(PyObject *unicode,
                           const char *encoding,
                           const char *errors)
 {
-    PyObject *v;
-
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
-        goto onError;
+        return NULL;
     }
 
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
 
     /* Decode via the codec registry */
-    v = PyCodec_Decode(unicode, encoding, errors);
-    if (v == NULL)
-        goto onError;
-    return unicode_result(v);
-
-  onError:
-    return NULL;
+    return PyCodec_Decode(unicode, encoding, errors);
 }
 
 PyObject *
