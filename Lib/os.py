@@ -537,13 +537,13 @@ if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
                     dirs.append(name)
                 else:
                     nondirs.append(name)
-            except FileNotFoundError:
+            except OSError:
                 try:
                     # Add dangling symlinks, ignore disappeared files
                     if st.S_ISLNK(stat(name, dir_fd=topfd, follow_symlinks=False)
                                 .st_mode):
                         nondirs.append(name)
-                except FileNotFoundError:
+                except OSError:
                     continue
 
         if topdown:
