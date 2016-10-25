@@ -225,7 +225,8 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
                         if (wlen) {
                             DWORD n;
                             fflush(stderr);
-                            WriteConsoleW(hStdErr, wbuf, wlen, &n, NULL);
+                            /* wlen includes null terminator, so subtract 1 */
+                            WriteConsoleW(hStdErr, wbuf, wlen - 1, &n, NULL);
                         }
                         PyMem_RawFree(wbuf);
                     }
