@@ -19,17 +19,6 @@ Core and Builtins
 - Issue #23782: Fixed possible memory leak in _PyTraceback_Add() and exception
   loss in PyTraceBack_Here().
 
-- Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
-  a workaround to Tix library bug.
-
-- Issue #28488: shutil.make_archive() no longer adds entry "./" to ZIP archive.
-
-- Issue #25953: re.sub() now raises an error for invalid numerical group
-  reference in replacement template even if the pattern is not found in
-  the string.  Error message for invalid group reference now includes the
-  group index and the position of the reference.
-  Based on patch by SilentGhost.
-
 - Issue #28183: Optimize and cleanup dict iteration.
 
 - Issue #26081: Added C implementation of asyncio.Future.
@@ -104,6 +93,20 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #27025: Generated names for Tkinter widgets now start by the "!" prefix
+  for readability (was "`").
+
+- Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
+  a workaround to Tix library bug.
+
+- Issue #28488: shutil.make_archive() no longer adds entry "./" to ZIP archive.
+
+- Issue #25953: re.sub() now raises an error for invalid numerical group
+  reference in replacement template even if the pattern is not found in
+  the string.  Error message for invalid group reference now includes the
+  group index and the position of the reference.
+  Based on patch by SilentGhost.
 
 - Issue #28469: timeit now uses the sequence 1, 2, 5, 10, 20, 50,... instead
   of 1, 10, 100,... for autoranging.
@@ -1363,6 +1366,9 @@ Library
 - Comment out socket (SO_REUSEPORT) and posix (O_SHLOCK, O_EXLOCK) constants
   exposed on the API which are not implemented on GNU/Hurd. They would not
   work at runtime anyway.
+
+- Issue #27025: Generated names for Tkinter widgets are now more meanful
+  and recognizirable.
 
 - Issue #25455: Fixed crashes in repr of recursive ElementTree.Element and
   functools.partial objects.
