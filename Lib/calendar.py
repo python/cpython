@@ -312,7 +312,7 @@ class TextCalendar(Calendar):
         """
         Print a month's calendar.
         """
-        print(self.formatmonth(theyear, themonth, w, l), end=' ')
+        print(self.formatmonth(theyear, themonth, w, l), end='')
 
     def formatmonth(self, theyear, themonth, w=0, l=0):
         """
