@@ -38,7 +38,7 @@ The :mod:`gc` module provides the following functions:
    Returns true if automatic collection is enabled.
 
 
-.. function:: collect(generations=2)
+.. function:: collect(generation=2)
 
    With no arguments, run a full collection.  The optional argument *generation*
    may be an integer specifying which generation to collect (from 0 to 2).  A
