@@ -9,6 +9,9 @@
 
 **Source code:** :source:`Lib/asynchat.py`
 
+.. deprecated:: 3.6
+   Please use :mod:`asyncio` instead.
+
 --------------
 
 .. note::
