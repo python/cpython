@@ -46,8 +46,13 @@ method) up to the terminator, and then control will be returned to
 you - by calling your self.found_terminator() method.
 """
 import asyncore
+import warnings
+
 from collections import deque
 
+warnings.warn(
+    'asynchat module is deprecated in 3.6. Use asyncio instead.',
+    PendingDeprecationWarning, stacklevel=2)
 
 class async_chat(asyncore.dispatcher):
     """This is an abstract class.  You must derive from this class, and add
