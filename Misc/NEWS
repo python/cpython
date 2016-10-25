@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28430: Fix iterator of C implemented asyncio.Future doesn't accept
+  non-None value is passed to it.send(val).
+
 - Issue #27025: Generated names for Tkinter widgets now start by the "!" prefix
   for readability (was "`").
 
