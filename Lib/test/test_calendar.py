@@ -404,7 +404,7 @@ class OutputTestCase(unittest.TestCase):
         with support.captured_stdout() as out:
             week = [(1,0), (2,1), (3,2), (4,3), (5,4), (6,5), (7,6)]
             calendar.TextCalendar().prweek(week, 1)
-            self.assertEqual(out.getvalue().strip(), "1  2  3  4  5  6  7")
+            self.assertEqual(out.getvalue(), " 1  2  3  4  5  6  7")
 
     def test_prmonth(self):
         with support.captured_stdout() as out:
@@ -414,7 +414,7 @@ class OutputTestCase(unittest.TestCase):
     def test_pryear(self):
         with support.captured_stdout() as out:
             calendar.TextCalendar().pryear(2004)
-            self.assertEqual(out.getvalue().strip(), result_2004_text.strip())
+            self.assertEqual(out.getvalue(), result_2004_text)
 
     def test_format(self):
         with support.captured_stdout() as out:

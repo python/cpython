@@ -267,7 +267,7 @@ class TextCalendar(Calendar):
         """
         Print a single week (no newline).
         """
-        print(self.formatweek(theweek, width), end=' ')
+        print(self.formatweek(theweek, width), end='')
 
     def formatday(self, day, weekday, width):
         """
@@ -371,7 +371,7 @@ class TextCalendar(Calendar):
 
     def pryear(self, theyear, w=0, l=0, c=6, m=3):
         """Print a year's calendar."""
-        print(self.formatyear(theyear, w, l, c, m))
+        print(self.formatyear(theyear, w, l, c, m), end='')
 
 
 class HTMLCalendar(Calendar):
