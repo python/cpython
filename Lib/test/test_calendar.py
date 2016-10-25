@@ -409,8 +409,7 @@ class OutputTestCase(unittest.TestCase):
     def test_prmonth(self):
         with support.captured_stdout() as out:
             calendar.TextCalendar().prmonth(2004, 1)
-            output = out.getvalue().strip()
-            self.assertEqual(output, result_2004_01_text.strip())
+            self.assertEqual(out.getvalue(), result_2004_01_text)
 
     def test_pryear(self):
         with support.captured_stdout() as out:
