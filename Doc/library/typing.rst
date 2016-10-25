@@ -677,22 +677,31 @@ The module defines the following classes, functions and decorators:
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
 
-.. function:: NamedTuple(typename, fields)
+.. class:: NamedTuple
 
    Typed version of namedtuple.
 
    Usage::
 
-       Employee = typing.NamedTuple('Employee', [('name', str), ('id', int)])
+       class Employee(NamedTuple):
+           name: str
+           id: int
 
    This is equivalent to::
 
        Employee = collections.namedtuple('Employee', ['name', 'id'])
 
-   The resulting class has one extra attribute: _field_types,
+   The resulting class has one extra attribute: ``_field_types``,
    giving a dict mapping field names to types.  (The field names
-   are in the _fields attribute, which is part of the namedtuple
+   are in the ``_fields`` attribute, which is part of the namedtuple
    API.)
+
+   Backward-compatible usage::
+
+       Employee = NamedTuple('Employee', [('name', str), ('id', int)])
+
+   .. versionchanged:: 3.6
+      Added support for :pep:`526` variable annotation syntax.
 
 .. function:: NewType(typ)
 
