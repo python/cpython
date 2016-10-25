@@ -7,352 +7,38 @@
 # Licensed to PSF under a Contributor Agreement.
 # See http://www.python.org/2.4/license for licensing details.
 
-r"""subprocess - Subprocesses with accessible I/O streams
+r"""Subprocesses with accessible I/O streams
 
 This module allows you to spawn processes, connect to their
-input/output/error pipes, and obtain their return codes.  This module
-intends to replace several older modules and functions:
-
-os.system
-os.spawn*
-
-Information about how the subprocess module can be used to replace these
-modules and functions can be found below.
-
-
-
-Using the subprocess module
-===========================
-This module defines one class called Popen:
-
-class Popen(args, bufsize=-1, executable=None,
-            stdin=None, stdout=None, stderr=None,
-            preexec_fn=None, close_fds=True, shell=False,
-            cwd=None, env=None, universal_newlines=False,
-            startupinfo=None, creationflags=0,
-            restore_signals=True, start_new_session=False, pass_fds=()):
-
-
-Arguments are:
-
-args should be a string, or a sequence of program arguments.  The
-program to execute is normally the first item in the args sequence or
-string, but can be explicitly set by using the executable argument.
-
-On POSIX, with shell=False (default): In this case, the Popen class
-uses os.execvp() to execute the child program.  args should normally
-be a sequence.  A string will be treated as a sequence with the string
-as the only item (the program to execute).
-
-On POSIX, with shell=True: If args is a string, it specifies the
-command string to execute through the shell.  If args is a sequence,
-the first item specifies the command string, and any additional items
-will be treated as additional shell arguments.
-
-On Windows: the Popen class uses CreateProcess() to execute the child
-program, which operates on strings.  If args is a sequence, it will be
-converted to a string using the list2cmdline method.  Please note that
-not all MS Windows applications interpret the command line the same
-way: The list2cmdline is designed for applications using the same
-rules as the MS C runtime.
-
-bufsize will be supplied as the corresponding argument to the io.open()
-function when creating the stdin/stdout/stderr pipe file objects:
-0 means unbuffered (read & write are one system call and can return short),
-1 means line buffered, any other positive value means use a buffer of
-approximately that size.  A negative bufsize, the default, means the system
-default of io.DEFAULT_BUFFER_SIZE will be used.
-
-stdin, stdout and stderr specify the executed programs' standard
-input, standard output and standard error file handles, respectively.
-Valid values are PIPE, an existing file descriptor (a positive
-integer), an existing file object, and None.  PIPE indicates that a
-new pipe to the child should be created.  With None, no redirection
-will occur; the child's file handles will be inherited from the
-parent.  Additionally, stderr can be STDOUT, which indicates that the
-stderr data from the applications should be captured into the same
-file handle as for stdout.
-
-On POSIX, if preexec_fn is set to a callable object, this object will be
-called in the child process just before the child is executed.  The use
-of preexec_fn is not thread safe, using it in the presence of threads
-could lead to a deadlock in the child process before the new executable
-is executed.
-
-If close_fds is true, all file descriptors except 0, 1 and 2 will be
-closed before the child process is executed.  The default for close_fds
-varies by platform:  Always true on POSIX.  True when stdin/stdout/stderr
-are None on Windows, false otherwise.
-
-pass_fds is an optional sequence of file descriptors to keep open between the
-parent and child.  Providing any pass_fds implicitly sets close_fds to true.
-
-if shell is true, the specified command will be executed through the
-shell.
-
-If cwd is not None, the current directory will be changed to cwd
-before the child is executed.
-
-On POSIX, if restore_signals is True all signals that Python sets to
-SIG_IGN are restored to SIG_DFL in the child process before the exec.
-Currently this includes the SIGPIPE, SIGXFZ and SIGXFSZ signals.  This
-parameter does nothing on Windows.
-
-On POSIX, if start_new_session is True, the setsid() system call will be made
-in the child process prior to executing the command.
-
-If env is not None, it defines the environment variables for the new
-process.
-
-If universal_newlines is False, the file objects stdin, stdout and stderr
-are opened as binary files, and no line ending conversion is done.
-
-If universal_newlines is True, the file objects stdout and stderr are
-opened as a text file, but lines may be terminated by any of '\n',
-the Unix end-of-line convention, '\r', the old Macintosh convention or
-'\r\n', the Windows convention.  All of these external representations
-are seen as '\n' by the Python program.  Also, the newlines attribute
-of the file objects stdout, stdin and stderr are not updated by the
-communicate() method.
-
-In either case, the process being communicated with should start up
-expecting to receive bytes on its standard input and decode them with
-the same encoding they are sent in.
-
-The startupinfo and creationflags, if given, will be passed to the
-underlying CreateProcess() function.  They can specify things such as
-appearance of the main window and priority for the new process.
-(Windows only)
-
-
-This module also defines some shortcut functions:
-
-call(*popenargs, **kwargs):
-    Run command with arguments.  Wait for command to complete, then
-    return the returncode attribute.
-
-    The arguments are the same as for the Popen constructor.  Example:
-
-    >>> retcode = subprocess.call(["ls", "-l"])
-
-check_call(*popenargs, **kwargs):
-    Run command with arguments.  Wait for command to complete.  If the
-    exit code was zero then return, otherwise raise
-    CalledProcessError.  The CalledProcessError object will have the
-    return code in the returncode attribute.
-
-    The arguments are the same as for the Popen constructor.  Example:
-
-    >>> subprocess.check_call(["ls", "-l"])
-    0
-
-getstatusoutput(cmd):
-    Return (status, output) of executing cmd in a shell.
-
-    Execute the string 'cmd' in a shell with 'check_output' and
-    return a 2-tuple (status, output). Universal newlines mode is used,
-    meaning that the result with be decoded to a string.
-
-    A trailing newline is stripped from the output.
-    The exit status for the command can be interpreted
-    according to the rules for the function 'wait'.  Example:
-
-    >>> subprocess.getstatusoutput('ls /bin/ls')
-    (0, '/bin/ls')
-    >>> subprocess.getstatusoutput('cat /bin/junk')
-    (256, 'cat: /bin/junk: No such file or directory')
-    >>> subprocess.getstatusoutput('/bin/junk')
-    (256, 'sh: /bin/junk: not found')
-
-getoutput(cmd):
-    Return output (stdout or stderr) of executing cmd in a shell.
-
-    Like getstatusoutput(), except the exit status is ignored and the return
-    value is a string containing the command's output.  Example:
-
-    >>> subprocess.getoutput('ls /bin/ls')
-    '/bin/ls'
-
-check_output(*popenargs, **kwargs):
-    Run command with arguments and return its output.
-
-    If the exit code was non-zero it raises a CalledProcessError.  The
-    CalledProcessError object will have the return code in the returncode
-    attribute and output in the output attribute.
-
-    The arguments are the same as for the Popen constructor.  Example:
-
-    >>> output = subprocess.check_output(["ls", "-l", "/dev/null"])
-
-    There is an additional optional argument, "input", allowing you to
-    pass a string to the subprocess's stdin.  If you use this argument
-    you may not also use the Popen constructor's "stdin" argument.
-
-    If universal_newlines is set to True, the "input" argument must
-    be a string rather than bytes, and the return value will be a string.
-
-Exceptions
-----------
-Exceptions raised in the child process, before the new program has
-started to execute, will be re-raised in the parent.  Additionally,
-the exception object will have one extra attribute called
-'child_traceback', which is a string containing traceback information
-from the child's point of view.
-
-The most common exception raised is OSError.  This occurs, for
-example, when trying to execute a non-existent file.  Applications
-should prepare for OSErrors.
-
-A ValueError will be raised if Popen is called with invalid arguments.
-
-Exceptions defined within this module inherit from SubprocessError.
-check_call() and check_output() will raise CalledProcessError if the
-called process returns a non-zero return code.  TimeoutExpired
-be raised if a timeout was specified and expired.
-
-
-Security
---------
-Unlike some other popen functions, this implementation will never call
-/bin/sh implicitly.  This means that all characters, including shell
-metacharacters, can safely be passed to child processes.
-
-
-Popen objects
-=============
-Instances of the Popen class have the following methods:
-
-poll()
-    Check if child process has terminated.  Returns returncode
-    attribute.
-
-wait()
-    Wait for child process to terminate.  Returns returncode attribute.
-
-communicate(input=None)
-    Interact with process: Send data to stdin.  Read data from stdout
-    and stderr, until end-of-file is reached.  Wait for process to
-    terminate.  The optional input argument should be data to be
-    sent to the child process, or None, if no data should be sent to
-    the child. If the Popen instance was constructed with universal_newlines
-    set to True, the input argument should be a string and will be encoded
-    using the preferred system encoding (see locale.getpreferredencoding);
-    if universal_newlines is False, the input argument should be a
-    byte string.
-
-    communicate() returns a tuple (stdout, stderr).
-
-    Note: The data read is buffered in memory, so do not use this
-    method if the data size is large or unlimited.
-
-The following attributes are also available:
-
-stdin
-    If the stdin argument is PIPE, this attribute is a file object
-    that provides input to the child process.  Otherwise, it is None.
-
-stdout
-    If the stdout argument is PIPE, this attribute is a file object
-    that provides output from the child process.  Otherwise, it is
-    None.
-
-stderr
-    If the stderr argument is PIPE, this attribute is file object that
-    provides error output from the child process.  Otherwise, it is
-    None.
-
-pid
-    The process ID of the child process.
-
-returncode
-    The child return code.  A None value indicates that the process
-    hasn't terminated yet.  A negative value -N indicates that the
-    child was terminated by signal N (POSIX only).
-
-
-Replacing older functions with the subprocess module
-====================================================
-In this section, "a ==> b" means that b can be used as a replacement
-for a.
-
-Note: All functions in this section fail (more or less) silently if
-the executed program cannot be found; this module raises an OSError
-exception.
-
-In the following examples, we assume that the subprocess module is
-imported with "from subprocess import *".
-
-
-Replacing /bin/sh shell backquote
----------------------------------
-output=`mycmd myarg`
-==>
-output = Popen(["mycmd", "myarg"], stdout=PIPE).communicate()[0]
-
-
-Replacing shell pipe line
--------------------------
-output=`dmesg | grep hda`
-==>
-p1 = Popen(["dmesg"], stdout=PIPE)
-p2 = Popen(["grep", "hda"], stdin=p1.stdout, stdout=PIPE)
-output = p2.communicate()[0]
-
-
-Replacing os.system()
----------------------
-sts = os.system("mycmd" + " myarg")
-==>
-p = Popen("mycmd" + " myarg", shell=True)
-pid, sts = os.waitpid(p.pid, 0)
-
-Note:
-
-* Calling the program through the shell is usually not required.
-
-* It's easier to look at the returncode attribute than the
-  exitstatus.
-
-A more real-world example would look like this:
-
-try:
-    retcode = call("mycmd" + " myarg", shell=True)
-    if retcode < 0:
-        print("Child was terminated by signal", -retcode, file=sys.stderr)
-    else:
-        print("Child returned", retcode, file=sys.stderr)
-except OSError as e:
-    print("Execution failed:", e, file=sys.stderr)
-
-
-Replacing os.spawn*
--------------------
-P_NOWAIT example:
-
-pid = os.spawnlp(os.P_NOWAIT, "/bin/mycmd", "mycmd", "myarg")
-==>
-pid = Popen(["/bin/mycmd", "myarg"]).pid
-
-
-P_WAIT example:
-
-retcode = os.spawnlp(os.P_WAIT, "/bin/mycmd", "mycmd", "myarg")
-==>
-retcode = call(["/bin/mycmd", "myarg"])
-
-
-Vector example:
-
-os.spawnvp(os.P_NOWAIT, path, args)
-==>
-Popen([path] + args[1:])
-
-
-Environment example:
-
-os.spawnlpe(os.P_NOWAIT, "/bin/mycmd", "mycmd", "myarg", env)
-==>
-Popen(["/bin/mycmd", "myarg"], env={"PATH": "/usr/bin"})
+input/output/error pipes, and obtain their return codes.
+
+For a complete description of this module see the Python documentation.
+
+Main API
+========
+run(...): Runs a command, waits for it to complete, then returns a
+          CompletedProcess instance.
+Popen(...): A class for flexibly executing a command in a new process
+
+Constants
+---------
+DEVNULL: Special value that indicates that os.devnull should be used
+PIPE:    Special value that indicates a pipe should be created
+STDOUT:  Special value that indicates that stderr should go to stdout
+
+
+Older API
+=========
+call(...): Runs a command, waits for it to complete, then returns
+    the return code.
+check_call(...): Same as call() but raises CalledProcessError()
+    if return code is not 0
+check_output(...): Same as check_call() but returns the contents of
+    stdout instead of a return code
+getoutput(...): Runs a command in the shell, waits for it to complete,
+    then returns the output
+getstatusoutput(...): Runs a command in the shell, waits for it to complete,
+    then returns a (status, output) tuple
 """
 
 import sys
@@ -372,10 +58,11 @@ class SubprocessError(Exception): pass
 
 
 class CalledProcessError(SubprocessError):
-    """This exception is raised when a process run by check_call() or
-    check_output() returns a non-zero exit status.
-    The exit status will be stored in the returncode attribute;
-    check_output() will also store the output in the output attribute.
+    """Raised when run() is called with check=True and the process
+    returns a non-zero exit status.
+
+    Attributes:
+      cmd, returncode, stdout, stderr, output
     """
     def __init__(self, returncode, cmd, output=None, stderr=None):
         self.returncode = returncode
@@ -401,6 +88,9 @@ class CalledProcessError(SubprocessError):
 class TimeoutExpired(SubprocessError):
     """This exception is raised when the timeout expires while waiting for a
     child process.
+
+    Attributes:
+        cmd, output, stdout, stderr, timeout
     """
     def __init__(self, cmd, timeout, output=None, stderr=None):
         self.cmd = cmd
@@ -828,7 +518,46 @@ _PLATFORM_DEFAULT_CLOSE_FDS = object()
 
 
 class Popen(object):
+    """ Execute a child program in a new process.
 
+    For a complete description of the arguments see the Python documentation.
+
+    Arguments:
+      args: A string, or a sequence of program arguments.
+
+      bufsize: supplied as the buffering argument to the open() function when
+          creating the stdin/stdout/stderr pipe file objects
+
+      executable: A replacement program to execute.
+
+      stdin, stdout and stderr: These specify the executed programs' standard
+          input, standard output and standard error file handles, respectively.
+
+      preexec_fn: (POSIX only) An object to be called in the child process
+          just before the child is executed.
+
+      close_fds: Controls closing or inheriting of file descriptors.
+
+      shell: If true, the command will be executed through the shell.
+
+      cwd: Sets the current directory before the child is executed.
+
+      env: Defines the environment variables for the new process.
+
+      universal_newlines: If true, use universal line endings for file
+          objects stdin, stdout and stderr.
+
+      startupinfo and creationflags (Windows only)
+
+      restore_signals (POSIX only)
+
+      start_new_session (POSIX only)
+
+      pass_fds (POSIX only)
+
+    Attributes:
+        stdin, stdout, stderr, pid, returncode
+    """
     _child_created = False  # Set here since __del__ checks it
 
     def __init__(self, args, bufsize=-1, executable=None,
@@ -1079,6 +808,8 @@ class Popen(object):
 
 
     def poll(self):
+        """Check if child process has terminated. Set and return returncode
+        attribute."""
         return self._internal_poll()
 
 
