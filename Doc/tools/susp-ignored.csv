@@ -325,3 +325,4 @@ whatsnew/3.5,,:exception,ERROR:root:exception
 whatsnew/changelog,,:version,import sys; I = version[:version.index(' ')]
 whatsnew/changelog,,:gz,": TarFile opened with external fileobj and ""w:gz"" mode didn't"
 whatsnew/changelog,,::,": Use ""127.0.0.1"" or ""::1"" instead of ""localhost"" as much as"
+whatsnew/changelog,,`,"for readability (was ""`"")."
