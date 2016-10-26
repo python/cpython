@@ -60,10 +60,6 @@ from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
 _DISCONNECTED = frozenset({ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
                            EBADF})
 
-warnings.warn(
-    'asyncore module is deprecated in 3.6. Use asyncio instead.',
-    PendingDeprecationWarning, stacklevel=2)
-
 try:
     socket_map
 except NameError:
