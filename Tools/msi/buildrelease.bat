@@ -36,6 +36,8 @@ set BUILDX64=
 set TARGET=Rebuild
 set TESTTARGETDIR=
 set PGO=default
+set BUILDNUGET=1
+set BUILDZIP=1
 
 
 :CheckOpts
@@ -56,6 +58,8 @@ if "%1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
 if "%1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
 if "%1" EQU "--pgo" (set PGO=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "--skip-pgo" (set PGO=) && shift && goto CheckOpts
+if "%1" EQU "--skip-nuget" (set BUILDNUGET=) && shift && goto CheckOpts
+if "%1" EQU "--skip-zip" (set BUILDZIP=) && shift && goto CheckOpts
 
 if "%1" NEQ "" echo Invalid option: "%1" && exit /B 1
 
@@ -184,21 +188,31 @@ if errorlevel 1 exit /B
 msbuild "%D%bundle\releaseweb.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
 if errorlevel 1 exit /B
 
-msbuild "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS%
+if defined BUILDZIP (
+    msbuild "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS%
+    if errorlevel 1 exit /B
+)
+
+if defined BUILDNUGET (
+    msbuild "%D%..\nuget\make_pkg.proj" /t:Build /p:Configuration=Release /p:Platform=%1 /p:OutputPath="%BUILD%en-us"
+    if errorlevel 1 exit /B
+)
 
 if not "%OUTDIR%" EQU "" (
     mkdir "%OUTDIR%\%OUTDIR_PLAT%"
-    copy /Y "%BUILD%en-us\*.cab" "%OUTDIR%\%OUTDIR_PLAT%"
-    copy /Y "%BUILD%en-us\*.exe" "%OUTDIR%\%OUTDIR_PLAT%"
-    copy /Y "%BUILD%en-us\*.msi" "%OUTDIR%\%OUTDIR_PLAT%"
-    copy /Y "%BUILD%en-us\*.msu" "%OUTDIR%\%OUTDIR_PLAT%"
+    mkdir "%OUTDIR%\%OUTDIR_PLAT%\binaries"
+    mkdir "%OUTDIR%\%OUTDIR_PLAT%\symbols"
+    robocopy "%BUILD%en-us" "%OUTDIR%\%OUTDIR_PLAT%" /XF "*.wixpdb"
+    robocopy "%BUILD%\" "%OUTDIR%\%OUTDIR_PLAT%\binaries" *.exe *.dll *.pyd /XF "_test*" /XF "*_d.*" /XF "_freeze*" /XF "tcl*" /XF "tk*" /XF "*_test.*"
+    robocopy "%BUILD%\" "%OUTDIR%\%OUTDIR_PLAT%\symbols" *.pdb              /XF "_test*" /XF "*_d.*" /XF "_freeze*" /XF "tcl*" /XF "tk*" /XF "*_test.*"
 )
 
 exit /B 0
 
 :Help
-echo buildrelease.bat [--out DIR] [-x86] [-x64] [--certificate CERTNAME] [--build] [--skip-build]
-echo                  [--pgo COMMAND] [--skip-pgo] [--skip-doc] [--download DOWNLOAD URL] [--test TARGETDIR]
+echo buildrelease.bat [--out DIR] [-x86] [-x64] [--certificate CERTNAME] [--build] [--pgo COMMAND]
+echo                  [--skip-build] [--skip-doc] [--skip-nuget] [--skip-zip] [--skip-pgo]
+echo                  [--download DOWNLOAD URL] [--test TARGETDIR]
 echo                  [-h]
 echo.
 echo    --out (-o)          Specify an additional output directory for installers
@@ -209,6 +223,9 @@ echo    --skip-build (-B)   Do not build Python (just do the installers)
 echo    --skip-doc (-D)     Do not build documentation
 echo    --pgo               Specify PGO command for x64 installers
 echo    --skip-pgo          Build x64 installers using PGO
+echo    --skip-nuget        Do not build Nuget packages
+echo    --skip-zip          Do not build embeddable package
+echo    --pgo               Build x64 installers using PGO
 echo    --download          Specify the full download URL for MSIs
 echo    --test              Specify the test directory to run the installer tests
 echo    -h                  Display this help information
