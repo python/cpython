@@ -10,6 +10,8 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28509: dict.update() no longer allocate unnecessary large memory.
+
 - Issue #28426: Fixed potential crash in PyUnicode_AsDecodedObject() in debug
   build.
 
