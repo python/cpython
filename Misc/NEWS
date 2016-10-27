@@ -349,6 +349,13 @@ Windows
 
 - Issue #28138: Windows ._pth file should allow import site
 
+C API
+-----
+
+- Issue #28426: Deprecated undocumented functions PyUnicode_AsEncodedObject(),
+  PyUnicode_AsDecodedObject(), PyUnicode_AsDecodedUnicode() and
+  PyUnicode_AsEncodedUnicode().
+
 Build
 -----
 

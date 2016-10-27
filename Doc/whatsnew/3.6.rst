@@ -1230,7 +1230,10 @@ Deprecated Python modules, functions and methods
 Deprecated functions and types of the C API
 -------------------------------------------
 
-* None yet.
+* Undocumented functions :c:func:`PyUnicode_AsEncodedObject`,
+  :c:func:`PyUnicode_AsDecodedObject`, :c:func:`PyUnicode_AsEncodedUnicode`
+  and :c:func:`PyUnicode_AsDecodedUnicode` are deprecated now.
+  Use :ref:`generic codec based API <codec-registry>` instead.
 
 
 Deprecated features
