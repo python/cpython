@@ -120,19 +120,19 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    guaranteed to succeed.
 
    Return a nonzero value if the object is valid and matches the name passed in.
-   Return 0 otherwise.  This function will not fail.
+   Return ``0`` otherwise.  This function will not fail.
 
 .. c:function:: int PyCapsule_SetContext(PyObject *capsule, void *context)
 
    Set the context pointer inside *capsule* to *context*.
 
-   Return 0 on success.  Return nonzero and set an exception on failure.
+   Return ``0`` on success.  Return nonzero and set an exception on failure.
 
 .. c:function:: int PyCapsule_SetDestructor(PyObject *capsule, PyCapsule_Destructor destructor)
 
    Set the destructor inside *capsule* to *destructor*.
 
-   Return 0 on success.  Return nonzero and set an exception on failure.
+   Return ``0`` on success.  Return nonzero and set an exception on failure.
 
 .. c:function:: int PyCapsule_SetName(PyObject *capsule, const char *name)
 
@@ -140,11 +140,11 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    outlive the capsule.  If the previous *name* stored in the capsule was not
    *NULL*, no attempt is made to free it.
 
-   Return 0 on success.  Return nonzero and set an exception on failure.
+   Return ``0`` on success.  Return nonzero and set an exception on failure.
 
 .. c:function:: int PyCapsule_SetPointer(PyObject *capsule, void *pointer)
 
    Set the void pointer inside *capsule* to *pointer*.  The pointer may not be
    *NULL*.
 
-   Return 0 on success.  Return nonzero and set an exception on failure.
+   Return ``0`` on success.  Return nonzero and set an exception on failure.
