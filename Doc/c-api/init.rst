@@ -44,8 +44,8 @@ Initializing and finalizing the interpreter
 
 .. c:function:: void Py_InitializeEx(int initsigs)
 
-   This function works like :c:func:`Py_Initialize` if *initsigs* is 1. If
-   *initsigs* is 0, it skips initialization registration of signal handlers, which
+   This function works like :c:func:`Py_Initialize` if *initsigs* is ``1``. If
+   *initsigs* is ``0``, it skips initialization registration of signal handlers, which
    might be useful when Python is embedded.
 
 
@@ -114,7 +114,7 @@ Process-wide parameters
    If :c:func:`Py_Finalize` is called, this function will need to be called
    again in order to affect subsequent calls to :c:func:`Py_Initialize`.
 
-   Returns 0 if successful, a nonzero value on error (e.g. calling after the
+   Returns ``0`` if successful, a nonzero value on error (e.g. calling after the
    interpreter has already been initialized).
 
    .. versionadded:: 3.4
@@ -349,7 +349,7 @@ Process-wide parameters
    - If the name of an existing script is passed in ``argv[0]``, the absolute
      path of the directory where the script is located is prepended to
      :data:`sys.path`.
-   - Otherwise (that is, if *argc* is 0 or ``argv[0]`` doesn't point
+   - Otherwise (that is, if *argc* is ``0`` or ``argv[0]`` doesn't point
      to an existing file name), an empty string is prepended to
      :data:`sys.path`, which is the same as prepending the current working
      directory (``"."``).
@@ -359,7 +359,7 @@ Process-wide parameters
 
    .. note::
       It is recommended that applications embedding the Python interpreter
-      for purposes other than executing a single script pass 0 as *updatepath*,
+      for purposes other than executing a single script pass ``0`` as *updatepath*,
       and update :data:`sys.path` themselves if desired.
       See `CVE-2008-5983 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_.
 
@@ -371,14 +371,14 @@ Process-wide parameters
 
    .. versionadded:: 3.1.3
 
-   .. XXX impl. doesn't seem consistent in allowing 0/NULL for the params;
+   .. XXX impl. doesn't seem consistent in allowing ``0``/``NULL`` for the params;
       check w/ Guido.
 
 
 .. c:function:: void PySys_SetArgv(int argc, wchar_t **argv)
 
    This function works like :c:func:`PySys_SetArgvEx` with *updatepath* set
-   to 1 unless the :program:`python` interpreter was started with the
+   to ``1`` unless the :program:`python` interpreter was started with the
    :option:`-I`.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
@@ -718,10 +718,10 @@ with sub-interpreters:
 
 .. c:function:: int PyGILState_Check()
 
-   Return 1 if the current thread is holding the GIL and 0 otherwise.
+   Return ``1`` if the current thread is holding the GIL and ``0`` otherwise.
    This function can be called from any thread at any time.
    Only if it has had its Python thread state initialized and currently is
-   holding the GIL will it return 1.
+   holding the GIL will it return ``1``.
    This is mainly a helper/diagnostic function.  It can be useful
    for example in callback contexts or memory allocation functions when
    knowing that the GIL is locked can allow the caller to perform sensitive
@@ -991,8 +991,8 @@ pointer and a void pointer argument.
    .. index:: single: Py_AddPendingCall()
 
    Schedule a function to be called from the main interpreter thread.  On
-   success, 0 is returned and *func* is queued for being called in the
-   main thread.  On failure, -1 is returned without setting any exception.
+   success, ``0`` is returned and *func* is queued for being called in the
+   main thread.  On failure, ``-1`` is returned without setting any exception.
 
    When successfully queued, *func* will be *eventually* called from the
    main interpreter thread with the argument *arg*.  It will be called
@@ -1003,7 +1003,7 @@ pointer and a void pointer argument.
    * with the main thread holding the :term:`global interpreter lock`
      (*func* can therefore use the full C API).
 
-   *func* must return 0 on success, or -1 on failure with an exception
+   *func* must return ``0`` on success, or ``-1`` on failure with an exception
    set.  *func* won't be interrupted to perform another asynchronous
    notification recursively, but it can still be interrupted to switch
    threads if the global interpreter lock is released.

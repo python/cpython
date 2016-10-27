@@ -185,10 +185,10 @@ Importing Modules
 
    Return the magic number for Python bytecode files (a.k.a. :file:`.pyc` file).
    The magic number should be present in the first four bytes of the bytecode
-   file, in little-endian byte order. Returns -1 on error.
+   file, in little-endian byte order. Returns ``-1`` on error.
 
    .. versionchanged:: 3.3
-      Return value of -1 upon failure.
+      Return value of ``-1`` upon failure.
 
 
 .. c:function:: const char * PyImport_GetMagicTag()

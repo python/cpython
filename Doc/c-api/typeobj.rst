@@ -1278,7 +1278,7 @@ Buffer Object Structures
    steps:
 
    (1) Check if the request can be met. If not, raise :c:data:`PyExc_BufferError`,
-       set :c:data:`view->obj` to *NULL* and return -1.
+       set :c:data:`view->obj` to *NULL* and return ``-1``.
 
    (2) Fill in the requested fields.
 
@@ -1286,7 +1286,7 @@ Buffer Object Structures
 
    (4) Set :c:data:`view->obj` to *exporter* and increment :c:data:`view->obj`.
 
-   (5) Return 0.
+   (5) Return ``0``.
 
    If *exporter* is part of a chain or tree of buffer providers, two main
    schemes can be used:
@@ -1329,7 +1329,7 @@ Buffer Object Structures
 
    (1) Decrement an internal counter for the number of exports.
 
-   (2) If the counter is 0, free all memory associated with *view*.
+   (2) If the counter is ``0``, free all memory associated with *view*.
 
    The exporter MUST use the :c:member:`~Py_buffer.internal` field to keep
    track of buffer-specific resources. This field is guaranteed to remain
