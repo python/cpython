@@ -2407,9 +2407,11 @@ dict_merge(PyObject *a, PyObject *b, int override)
          * incrementally resizing as we insert new items.  Expect
          * that there will be no (or few) overlapping keys.
          */
-        if (mp->ma_keys->dk_usable * 3 < other->ma_used * 2)
-            if (dictresize(mp, (mp->ma_used + other->ma_used)*2) != 0)
+        if (USABLE_FRACTION(mp->ma_keys->dk_size) < other->ma_used) {
+            if (dictresize(mp, ESTIMATE_SIZE(mp->ma_used + other->ma_used))) {
                return -1;
+            }
+        }
         ep0 = DK_ENTRIES(other->ma_keys);
         for (i = 0, n = other->ma_keys->dk_nentries; i < n; i++) {
             PyObject *key, *value;
