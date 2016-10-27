@@ -581,7 +581,8 @@ read_pth_file(const wchar_t *path, wchar_t *prefix, int *isolated, int *nosite)
         wn = MultiByteToWideChar(CP_UTF8, 0, line, -1, wline, wn + 1);
         wline[wn] = '\0';
 
-        while (wn + prefixlen + 4 > bufsiz) {
+        size_t usedsiz = wcslen(buf);
+        while (usedsiz + wn + prefixlen + 4 > bufsiz) {
             bufsiz += MAXPATHLEN;
             buf = (wchar_t*)PyMem_RawRealloc(buf, (bufsiz + 1) * sizeof(wchar_t));
             if (!buf) {
@@ -590,11 +591,21 @@ read_pth_file(const wchar_t *path, wchar_t *prefix, int *isolated, int *nosite)
             }
         }
 
-        if (buf[0])
+        if (usedsiz) {
             wcscat_s(buf, bufsiz, L";");
+            usedsiz += 1;
+        }
 
-        wchar_t *b = &buf[wcslen(buf)];
-        wcscat_s(buf, bufsiz, prefix);
+        errno_t result;
+        _Py_BEGIN_SUPPRESS_IPH
+        result = wcscat_s(buf, bufsiz, prefix);
+        _Py_END_SUPPRESS_IPH
+        if (result == EINVAL) {
+            Py_FatalError("invalid argument during ._pth processing");
+        } else if (result == ERANGE) {
+            Py_FatalError("buffer overflow during ._pth processing");
+        }
+        wchar_t *b = &buf[usedsiz];
         join(b, wline);
 
         PyMem_RawFree(wline);
