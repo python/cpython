@@ -232,7 +232,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
    method (if present) to convert it to a :c:type:`PyLongObject`.
 
    If the value of *obj* is out of range for an :c:type:`unsigned long`,
-   return the reduction of that value modulo :const:`ULONG_MAX + 1`.
+   return the reduction of that value modulo ``ULONG_MAX + 1``.
 
 
 .. c:function:: unsigned long long PyLong_AsUnsignedLongLongMask(PyObject *obj)
@@ -242,7 +242,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
    method (if present) to convert it to a :c:type:`PyLongObject`.
 
    If the value of *obj* is out of range for an :c:type:`unsigned long long`,
-   return the reduction of that value modulo :const:`PY_ULLONG_MAX + 1`.
+   return the reduction of that value modulo ``PY_ULLONG_MAX + 1``.
 
 
 .. c:function:: double PyLong_AsDouble(PyObject *pylong)

@@ -156,7 +156,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
    .. c:member:: int ndim
 
       The number of dimensions the memory represents as an n-dimensional array.
-      If it is 0, :c:member:`~Py_buffer.buf` points to a single item representing
+      If it is ``0``, :c:member:`~Py_buffer.buf` points to a single item representing
       a scalar. In this case, :c:member:`~Py_buffer.shape`, :c:member:`~Py_buffer.strides`
       and :c:member:`~Py_buffer.suboffsets` MUST be *NULL*.
 
@@ -427,7 +427,7 @@ Buffer-related functions
 
 .. c:function:: int PyObject_CheckBuffer(PyObject *obj)
 
-   Return 1 if *obj* supports the buffer interface otherwise 0.  When 1 is
+   Return ``1`` if *obj* supports the buffer interface otherwise ``0``.  When ``1`` is
    returned, it doesn't guarantee that :c:func:`PyObject_GetBuffer` will
    succeed.
 
@@ -437,7 +437,7 @@ Buffer-related functions
    Send a request to *exporter* to fill in *view* as specified by  *flags*.
    If the exporter cannot provide a buffer of the exact type, it MUST raise
    :c:data:`PyExc_BufferError`, set :c:member:`view->obj` to *NULL* and
-   return -1.
+   return ``-1``.
 
    On success, fill in *view*, set :c:member:`view->obj` to a new reference
    to *exporter* and return 0. In the case of chained buffer providers
@@ -468,9 +468,9 @@ Buffer-related functions
 
 .. c:function:: int PyBuffer_IsContiguous(Py_buffer *view, char order)
 
-   Return 1 if the memory defined by the *view* is C-style (*order* is
+   Return ``1`` if the memory defined by the *view* is C-style (*order* is
    ``'C'``) or Fortran-style (*order* is ``'F'``) :term:`contiguous` or either one
-   (*order* is ``'A'``).  Return 0 otherwise.
+   (*order* is ``'A'``).  Return ``0`` otherwise.
 
 
 .. c:function:: void PyBuffer_FillContiguousStrides(int ndim, Py_ssize_t *shape, Py_ssize_t *strides, Py_ssize_t itemsize, char order)
@@ -492,7 +492,7 @@ Buffer-related functions
 
    On success, set :c:member:`view->obj` to a new reference to *exporter* and
    return 0. Otherwise, raise :c:data:`PyExc_BufferError`, set
-   :c:member:`view->obj` to *NULL* and return -1;
+   :c:member:`view->obj` to *NULL* and return ``-1``;
 
    If this function is used as part of a :ref:`getbufferproc <buffer-structs>`,
    *exporter* MUST be set to the exporting object and *flags* must be passed

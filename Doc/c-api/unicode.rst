@@ -102,7 +102,7 @@ access internal read-only data of Unicode objects:
 
    .. XXX expand on when it is not required
 
-   Returns 0 on success and -1 with an exception set on failure, which in
+   Returns ``0`` on success and ``-1`` with an exception set on failure, which in
    particular happens if memory allocation fails.
 
    .. versionadded:: 3.3
@@ -255,57 +255,57 @@ the Python configuration.
 
 .. c:function:: int Py_UNICODE_ISSPACE(Py_UNICODE ch)
 
-   Return 1 or 0 depending on whether *ch* is a whitespace character.
+   Return ``1`` or ``0`` depending on whether *ch* is a whitespace character.
 
 
 .. c:function:: int Py_UNICODE_ISLOWER(Py_UNICODE ch)
 
-   Return 1 or 0 depending on whether *ch* is a lowercase character.
+   Return ``1`` or ``0`` depending on whether *ch* is a lowercase character.
 
 
 .. c:function:: int Py_UNICODE_ISUPPER(Py_UNICODE ch)
 
-   Return 1 or 0 depending on whether *ch* is an uppercase character.
+   Return ``1`` or ``0`` depending on whether *ch* is an uppercase character.
 
 
 .. c:function:: int Py_UNICODE_ISTITLE(Py_UNICODE ch)
 
-   Return 1 or 0 depending on whether *ch* is a titlecase character.
+   Return ``1`` or ``0`` depending on whether *ch* is a titlecase character.
 
 
 .. c:function:: int Py_UNICODE_ISLINEBREAK(Py_UNICODE ch)
 
-   Return 1 or 0 depending on whether *ch* is a linebreak character.
+   Return ``1`` or ``0`` depending on whether *ch* is a linebreak character.
 
 
 .. c:function:: int Py_UNICODE_ISDECIMAL(Py_UNICODE ch)
 
-   Return 1 or 0 depending on whether *ch* is a decimal character.
+   Return ``1`` or ``0`` depending on whether *ch* is a decimal character.
 
 
 .. c:function:: int Py_UNICODE_ISDIGIT(Py_UNICODE ch)
 
-   Return 1 or 0 depending on whether *ch* is a digit character.
+   Return ``1`` or ``0`` depending on whether *ch* is a digit character.
 
 
 .. c:function:: int Py_UNICODE_ISNUMERIC(Py_UNICODE ch)
 
-   Return 1 or 0 depending on whether *ch* is a numeric character.
+   Return ``1`` or ``0`` depending on whether *ch* is a numeric character.
 
 
 .. c:function:: int Py_UNICODE_ISALPHA(Py_UNICODE ch)
 
-   Return 1 or 0 depending on whether *ch* is an alphabetic character.
+   Return ``1`` or ``0`` depending on whether *ch* is an alphabetic character.
 
 
 .. c:function:: int Py_UNICODE_ISALNUM(Py_UNICODE ch)
 
-   Return 1 or 0 depending on whether *ch* is an alphanumeric character.
+   Return ``1`` or ``0`` depending on whether *ch* is an alphanumeric character.
 
 
 .. c:function:: int Py_UNICODE_ISPRINTABLE(Py_UNICODE ch)
 
-   Return 1 or 0 depending on whether *ch* is a printable character.
+   Return ``1`` or ``0`` depending on whether *ch* is a printable character.
    Nonprintable characters are those characters defined in the Unicode character
    database as "Other" or "Separator", excepting the ASCII space (0x20) which is
    considered printable.  (Note that printable characters in this context are
@@ -908,7 +908,7 @@ wchar_t Support
 .. c:function:: PyObject* PyUnicode_FromWideChar(const wchar_t *w, Py_ssize_t size)
 
    Create a Unicode object from the :c:type:`wchar_t` buffer *w* of the given *size*.
-   Passing -1 as the *size* indicates that the function must itself compute the length,
+   Passing ``-1`` as the *size* indicates that the function must itself compute the length,
    using wcslen.
    Return *NULL* on failure.
 
@@ -918,7 +918,7 @@ wchar_t Support
    Copy the Unicode object contents into the :c:type:`wchar_t` buffer *w*.  At most
    *size* :c:type:`wchar_t` characters are copied (excluding a possibly trailing
    null termination character).  Return the number of :c:type:`wchar_t` characters
-   copied or -1 in case of an error.  Note that the resulting :c:type:`wchar_t*`
+   copied or ``-1`` in case of an error.  Note that the resulting :c:type:`wchar_t*`
    string may or may not be null-terminated.  It is the responsibility of the caller
    to make sure that the :c:type:`wchar_t*` string is null-terminated in case this is
    required by the application. Also, note that the :c:type:`wchar_t*` string
@@ -1566,7 +1566,7 @@ They all return *NULL* or ``-1`` if an exception occurs.
 .. c:function:: PyObject* PyUnicode_Splitlines(PyObject *s, int keepend)
 
    Split a Unicode string at line breaks, returning a list of Unicode strings.
-   CRLF is considered to be one line break.  If *keepend* is 0, the Line break
+   CRLF is considered to be one line break.  If *keepend* is ``0``, the Line break
    characters are not included in the resulting strings.
 
 
@@ -1596,16 +1596,16 @@ They all return *NULL* or ``-1`` if an exception occurs.
 .. c:function:: Py_ssize_t PyUnicode_Tailmatch(PyObject *str, PyObject *substr, \
                         Py_ssize_t start, Py_ssize_t end, int direction)
 
-   Return 1 if *substr* matches ``str[start:end]`` at the given tail end
-   (*direction* == -1 means to do a prefix match, *direction* == 1 a suffix match),
-   0 otherwise. Return ``-1`` if an error occurred.
+   Return ``1`` if *substr* matches ``str[start:end]`` at the given tail end
+   (*direction* == ``-1`` means to do a prefix match, *direction* == ``1`` a suffix match),
+   ``0`` otherwise. Return ``-1`` if an error occurred.
 
 
 .. c:function:: Py_ssize_t PyUnicode_Find(PyObject *str, PyObject *substr, \
                                Py_ssize_t start, Py_ssize_t end, int direction)
 
    Return the first position of *substr* in ``str[start:end]`` using the given
-   *direction* (*direction* == 1 means to do a forward search, *direction* == -1 a
+   *direction* (*direction* == ``1`` means to do a forward search, *direction* == ``-1`` a
    backward search).  The return value is the index of the first match; a value of
    ``-1`` indicates that no match was found, and ``-2`` indicates that an error
    occurred and an exception has been set.
@@ -1615,8 +1615,8 @@ They all return *NULL* or ``-1`` if an exception occurs.
                                Py_ssize_t start, Py_ssize_t end, int direction)
 
    Return the first position of the character *ch* in ``str[start:end]`` using
-   the given *direction* (*direction* == 1 means to do a forward search,
-   *direction* == -1 a backward search).  The return value is the index of the
+   the given *direction* (*direction* == ``1`` means to do a forward search,
+   *direction* == ``-1`` a backward search).  The return value is the index of the
    first match; a value of ``-1`` indicates that no match was found, and ``-2``
    indicates that an error occurred and an exception has been set.
 
@@ -1634,19 +1634,19 @@ They all return *NULL* or ``-1`` if an exception occurs.
                               PyObject *replstr, Py_ssize_t maxcount)
 
    Replace at most *maxcount* occurrences of *substr* in *str* with *replstr* and
-   return the resulting Unicode object. *maxcount* == -1 means replace all
+   return the resulting Unicode object. *maxcount* == ``-1`` means replace all
    occurrences.
 
 
 .. c:function:: int PyUnicode_Compare(PyObject *left, PyObject *right)
 
-   Compare two strings and return -1, 0, 1 for less than, equal, and greater than,
+   Compare two strings and return ``-1``, ``0``, ``1`` for less than, equal, and greater than,
    respectively.
 
 
 .. c:function:: int PyUnicode_CompareWithASCIIString(PyObject *uni, const char *string)
 
-   Compare a unicode object, *uni*, with *string* and return -1, 0, 1 for less
+   Compare a unicode object, *uni*, with *string* and return ``-1``, ``0``, ``1`` for less
    than, equal, and greater than, respectively. It is best to pass only
    ASCII-encoded strings, but the function interprets the input string as
    ISO-8859-1 if it contains non-ASCII characters.
