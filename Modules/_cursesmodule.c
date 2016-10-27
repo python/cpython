@@ -230,7 +230,7 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
                 encoding = win->encoding;
             else
                 encoding = screen_encoding;
-            bytes = PyUnicode_AsEncodedObject(obj, encoding, NULL);
+            bytes = PyUnicode_AsEncodedString(obj, encoding, NULL);
             if (bytes == NULL)
                 return 0;
             if (PyBytes_GET_SIZE(bytes) == 1)
@@ -352,7 +352,7 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
         return 2;
 #else
         assert (wstr == NULL);
-        *bytes = PyUnicode_AsEncodedObject(obj, win->encoding, NULL);
+        *bytes = PyUnicode_AsEncodedString(obj, win->encoding, NULL);
         if (*bytes == NULL)
             return 0;
         return 1;
