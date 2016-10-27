@@ -77,7 +77,8 @@ patterns.
 
 .. function:: translate(pattern)
 
-   Return the shell-style *pattern* converted to a regular expression.
+   Return the shell-style *pattern* converted to a regular expression for
+   using with :func:`re.match`.
 
    Example:
 
