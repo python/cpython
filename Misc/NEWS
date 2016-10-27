@@ -85,6 +85,11 @@ Library
   threadpool executor.
   Initial patch by Hans Lawrenz.
 
+Windows
+-------
+
+- Issue #28522: Fixes mishandled buffer reallocation in getpathp.c
+
 Build
 -----
 
