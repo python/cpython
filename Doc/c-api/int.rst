@@ -88,7 +88,7 @@ Plain Integer Objects
    Will first attempt to cast the object to a :c:type:`PyIntObject`, if it is not
    already one, and then return its value. If there is an error, ``-1`` is
    returned, and the caller should check ``PyErr_Occurred()`` to find out whether
-   there was an error, or whether the value just happened to be -1.
+   there was an error, or whether the value just happened to be ``-1``.
 
 
 .. c:function:: long PyInt_AS_LONG(PyObject *io)

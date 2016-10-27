@@ -43,8 +43,8 @@ Initializing and finalizing the interpreter
 
 .. c:function:: void Py_InitializeEx(int initsigs)
 
-   This function works like :c:func:`Py_Initialize` if *initsigs* is 1. If
-   *initsigs* is 0, it skips initialization registration of signal handlers, which
+   This function works like :c:func:`Py_Initialize` if *initsigs* is ``1``. If
+   *initsigs* is ``0``, it skips initialization registration of signal handlers, which
    might be useful when Python is embedded.
 
    .. versionadded:: 2.4
@@ -295,7 +295,7 @@ Process-wide parameters
 
    .. note::
       It is recommended that applications embedding the Python interpreter
-      for purposes other than executing a single script pass 0 as *updatepath*,
+      for purposes other than executing a single script pass ``0`` as *updatepath*,
       and update :data:`sys.path` themselves if desired.
       See `CVE-2008-5983 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_.
 
@@ -307,13 +307,13 @@ Process-wide parameters
 
    .. versionadded:: 2.6.6
 
-   .. XXX impl. doesn't seem consistent in allowing 0/NULL for the params;
+   .. XXX impl. doesn't seem consistent in allowing ``0``/``NULL`` for the params;
       check w/ Guido.
 
 
 .. c:function:: void PySys_SetArgv(int argc, char **argv)
 
-   This function works like :c:func:`PySys_SetArgvEx` with *updatepath* set to 1.
+   This function works like :c:func:`PySys_SetArgvEx` with *updatepath* set to ``1``.
 
 
 .. c:function:: void Py_SetPythonHome(char *home)
@@ -917,8 +917,8 @@ pointer and a void pointer argument.
    .. index:: single: Py_AddPendingCall()
 
    Schedule a function to be called from the main interpreter thread.  On
-   success, 0 is returned and *func* is queued for being called in the
-   main thread.  On failure, -1 is returned without setting any exception.
+   success, ``0`` is returned and *func* is queued for being called in the
+   main thread.  On failure, ``-1`` is returned without setting any exception.
 
    When successfully queued, *func* will be *eventually* called from the
    main interpreter thread with the argument *arg*.  It will be called
@@ -929,7 +929,7 @@ pointer and a void pointer argument.
    * with the main thread holding the :term:`global interpreter lock`
      (*func* can therefore use the full C API).
 
-   *func* must return 0 on success, or -1 on failure with an exception
+   *func* must return ``0`` on success, or ``-1`` on failure with an exception
    set.  *func* won't be interrupted to perform another asynchronous
    notification recursively, but it can still be interrupted to switch
    threads if the global interpreter lock is released.

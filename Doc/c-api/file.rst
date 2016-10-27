@@ -136,7 +136,7 @@ change in future releases of Python.
 
 .. c:function:: int PyFile_SetEncoding(PyFileObject *p, const char *enc)
 
-   Set the file's encoding for Unicode output to *enc*. Return 1 on success and 0
+   Set the file's encoding for Unicode output to *enc*. Return ``1`` on success and ``0``
    on failure.
 
    .. versionadded:: 2.3
@@ -145,7 +145,7 @@ change in future releases of Python.
 .. c:function:: int PyFile_SetEncodingAndErrors(PyFileObject *p, const char *enc, *errors)
 
    Set the file's encoding for Unicode output to *enc*, and its error
-   mode to *err*. Return 1 on success and 0 on failure.
+   mode to *err*. Return ``1`` on success and ``0`` on failure.
 
    .. versionadded:: 2.6
 

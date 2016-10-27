@@ -74,7 +74,7 @@ The new-style Py_buffer struct
    .. c:member:: int ndim
 
       The number of dimensions the memory represents as a multi-dimensional
-      array.  If it is 0, :c:data:`strides` and :c:data:`suboffsets` must be
+      array.  If it is ``0``, :c:data:`strides` and :c:data:`suboffsets` must be
       *NULL*.
 
    .. c:member:: Py_ssize_t *shape
@@ -143,7 +143,7 @@ Buffer related functions
 
 .. c:function:: int PyObject_CheckBuffer(PyObject *obj)
 
-   Return 1 if *obj* supports the buffer interface otherwise 0.
+   Return ``1`` if *obj* supports the buffer interface otherwise ``0``.
 
 
 .. c:function:: int PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)
@@ -164,7 +164,7 @@ Buffer related functions
       :c:data:`Py_buffer` structure is filled in with non-default values and/or
       raise an error if the object can't support a simpler view of its memory.
 
-      0 is returned on success and -1 on error.
+      ``0`` is returned on success and ``-1`` on error.
 
       The following table gives possible values to the *flags* arguments.
 
@@ -273,9 +273,9 @@ Buffer related functions
 
 .. c:function:: int PyBuffer_IsContiguous(Py_buffer *view, char fortran)
 
-   Return 1 if the memory defined by the *view* is C-style (*fortran* is
+   Return ``1`` if the memory defined by the *view* is C-style (*fortran* is
    ``'C'``) or Fortran-style (*fortran* is ``'F'``) contiguous or either one
-   (*fortran* is ``'A'``).  Return 0 otherwise.
+   (*fortran* is ``'A'``).  Return ``0`` otherwise.
 
 
 .. c:function:: void PyBuffer_FillContiguousStrides(int ndim, Py_ssize_t *shape, Py_ssize_t *strides, Py_ssize_t itemsize, char fortran)
@@ -289,7 +289,7 @@ Buffer related functions
 
    Fill in a buffer-info structure, *view*, correctly for an exporter that can
    only share a contiguous chunk of memory of "unsigned bytes" of the given
-   length.  Return 0 on success and -1 (with raising an error) on error.
+   length.  Return ``0`` on success and ``-1`` (with raising an error) on error.
 
 
 MemoryView objects

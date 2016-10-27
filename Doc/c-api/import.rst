@@ -66,7 +66,7 @@ Importing Modules
 
    .. versionchanged:: 2.6
       The function is an alias for :c:func:`PyImport_ImportModuleLevel` with
-      -1 as level, meaning relative import.
+      ``-1`` as level, meaning relative import.
 
 
 .. c:function:: PyObject* PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals, PyObject *fromlist, int level)

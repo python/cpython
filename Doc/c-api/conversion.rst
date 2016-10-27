@@ -126,7 +126,7 @@ The following functions provide locale-independent string to number conversions.
 
    *format_code* must be one of ``'e'``, ``'E'``, ``'f'``, ``'F'``,
    ``'g'``, ``'G'`` or ``'r'``.  For ``'r'``, the supplied *precision*
-   must be 0 and is ignored.  The ``'r'`` format code specifies the
+   must be ``0`` and is ignored.  The ``'r'`` format code specifies the
    standard :func:`repr` format.
 
    *flags* can be zero or more of the values *Py_DTSF_SIGN*,

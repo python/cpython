@@ -34,9 +34,9 @@ Slice Objects
    assuming a sequence of length *length*. Treats indices greater than
    *length* as errors.
 
-   Returns 0 on success and -1 on error with no exception set (unless one of
+   Returns ``0`` on success and ``-1`` on error with no exception set (unless one of
    the indices was not :const:`None` and failed to be converted to an integer,
-   in which case -1 is returned with an exception set).
+   in which case ``-1`` is returned with an exception set).
 
    You probably do not want to use this function.  If you want to use slice
    objects in versions of Python prior to 2.3, you would probably do well to
@@ -57,7 +57,7 @@ Slice Objects
    of bounds indices are clipped in a manner consistent with the handling of
    normal slices.
 
-   Returns 0 on success and -1 on error with exception set.
+   Returns ``0`` on success and ``-1`` on error with exception set.
 
    .. versionadded:: 2.3
 

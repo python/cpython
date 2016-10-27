@@ -425,7 +425,7 @@ and the following format units are left untouched.
    only if its format string contains two or more format units.  If the format
    string is empty, it returns ``None``; if it contains exactly one format
    unit, it returns whatever object is described by that format unit.  To
-   force it to return a tuple of size 0 or one, parenthesize the format
+   force it to return a tuple of size ``0`` or one, parenthesize the format
    string.
 
    When memory buffers are passed as parameters to supply data to build
