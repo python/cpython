@@ -488,6 +488,58 @@ class StartupImportTests(unittest.TestCase):
             'import site, sys; site.enablerlcompleter(); sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
         self.assertTrue(r, "'__interactivehook__' not added by enablerlcompleter()")
 
+    @unittest.skipUnless(sys.platform == 'win32', "only supported on Windows")
+    def test_underpth_nosite_file(self):
+        _pth_file = os.path.splitext(sys.executable)[0] + '._pth'
+        try:
+            libpath = os.path.dirname(os.path.dirname(encodings.__file__))
+            with open(_pth_file, 'w') as f:
+                print('fake-path-name', file=f)
+                # Ensure the generated path is very long so that buffer
+                # resizing in getpathp.c is exercised
+                for _ in range(200):
+                    print(libpath, file=f)
+                print('# comment', file=f)
+
+            env = os.environ.copy()
+            env['PYTHONPATH'] = 'from-env'
+            rc = subprocess.call([sys.executable, '-c',
+                'import sys; sys.exit(sys.flags.no_site and '
+                'len(sys.path) > 200 and '
+                '%r in sys.path and %r in sys.path and %r not in sys.path)' % (
+                    os.path.join(sys.prefix, 'fake-path-name'),
+                    libpath,
+                    os.path.join(sys.prefix, 'from-env'),
+                )], env=env)
+            self.assertEqual(rc, 0)
+        finally:
+            os.unlink(_pth_file)
+
+    @unittest.skipUnless(sys.platform == 'win32', "only supported on Windows")
+    def test_underpth_file(self):
+        _pth_file = os.path.splitext(sys.executable)[0] + '._pth'
+        try:
+            libpath = os.path.dirname(os.path.dirname(encodings.__file__))
+            with open(_pth_file, 'w') as f:
+                print('fake-path-name', file=f)
+                for _ in range(200):
+                    print(libpath, file=f)
+                print('# comment', file=f)
+                print('import site', file=f)
+
+            env = os.environ.copy()
+            env['PYTHONPATH'] = 'from-env'
+            rc = subprocess.call([sys.executable, '-c',
+                'import sys; sys.exit(not sys.flags.no_site and '
+                '%r in sys.path and %r in sys.path and %r not in sys.path)' % (
+                    os.path.join(sys.prefix, 'fake-path-name'),
+                    libpath,
+                    os.path.join(sys.prefix, 'from-env'),
+                )], env=env)
+            self.assertEqual(rc, 0)
+        finally:
+            os.unlink(_pth_file)
+
 
 if __name__ == "__main__":
     unittest.main()
