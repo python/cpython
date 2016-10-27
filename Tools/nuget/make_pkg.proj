@@ -23,7 +23,7 @@
         <CleanCommand>rmdir /q/s "$(IntermediateOutputPath)"</CleanCommand>
         
         <PythonArguments>"$(PythonExe)" "$(MSBuildThisFileDirectory)\..\msi\make_zip.py"</PythonArguments>
-        <PythonArguments>$(PythonArguments) -t "$(IntermediateOutputPath)" -a $(ArchName)</PythonArguments>
+        <PythonArguments>$(PythonArguments) -t "$(IntermediateOutputPath)" -b "$(OutDir.TrimEnd('\'))\.."</PythonArguments>
         
         <PipArguments>"$(IntermediateOutputPath)\python.exe" -B -c "import sys; sys.path.append(r'$(PySourcePath)\Lib'); import ensurepip; ensurepip._main()"</PipArguments>
         <PackageArguments Condition="$(Packages) != ''">"$(IntermediateOutputPath)\python.exe" -B -m pip install -U $(Packages)</PackageArguments>
