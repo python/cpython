@@ -1769,13 +1769,17 @@ PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 
 /* Internal version of dict.pop(). */
 PyObject *
-_PyDict_Pop(PyDictObject *mp, PyObject *key, PyObject *deflt)
+_PyDict_Pop(PyObject *dict, PyObject *key, PyObject *deflt)
 {
     Py_hash_t hash;
     Py_ssize_t ix, hashpos;
     PyObject *old_value, *old_key;
     PyDictKeyEntry *ep;
     PyObject **value_addr;
+    PyDictObject *mp;
+
+    assert(PyDict_Check(dict));
+    mp = (PyDictObject *)dict;
 
     if (mp->ma_used == 0) {
         if (deflt) {
@@ -2837,7 +2841,7 @@ dict_pop(PyDictObject *mp, PyObject *args)
     if(!PyArg_UnpackTuple(args, "pop", 1, 2, &key, &deflt))
         return NULL;
 
-    return _PyDict_Pop(mp, key, deflt);
+    return _PyDict_Pop((PyObject*)mp, key, deflt);
 }
 
 static PyObject *

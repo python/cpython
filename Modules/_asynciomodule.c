@@ -21,7 +21,7 @@ _Py_IDENTIFIER(_wakeup);
 
 /* State of the _asyncio module */
 static PyObject *all_tasks;
-static PyDictObject *current_tasks;
+static PyObject *current_tasks;
 static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop;
 static PyObject *asyncio_future_repr_info_func;
@@ -1429,11 +1429,11 @@ _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
             return NULL;
         }
 
-        res = PyDict_GetItem((PyObject*)current_tasks, loop);
+        res = PyDict_GetItem(current_tasks, loop);
         Py_DECREF(loop);
     }
     else {
-        res = PyDict_GetItem((PyObject*)current_tasks, loop);
+        res = PyDict_GetItem(current_tasks, loop);
     }
 
     if (res == NULL) {
@@ -2235,7 +2235,7 @@ task_step(TaskObj *task, PyObject *exc)
     PyObject *res;
     PyObject *ot;
 
-    if (PyDict_SetItem((PyObject *)current_tasks,
+    if (PyDict_SetItem(current_tasks,
                        task->task_loop, (PyObject*)task) == -1)
     {
         return NULL;
@@ -2385,7 +2385,7 @@ module_init(void)
         goto fail;
     }
 
-    current_tasks = (PyDictObject *)PyDict_New();
+    current_tasks = PyDict_New();
     if (current_tasks == NULL) {
         goto fail;
     }
