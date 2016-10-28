@@ -57,7 +57,7 @@ _FATAL_ERROR_IGNORE = (BrokenPipeError,
 
 def _format_handle(handle):
     cb = handle._callback
-    if inspect.ismethod(cb) and isinstance(cb.__self__, tasks.Task):
+    if isinstance(getattr(cb, '__self__', None), tasks.Task):
         # format the task
         return repr(cb.__self__)
     else:
