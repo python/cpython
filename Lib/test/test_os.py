@@ -989,16 +989,21 @@ class WalkTests(unittest.TestCase):
         errors = []
         walk_it = self.walk(self.walk_path, onerror=errors.append)
         root, dirs, files = next(walk_it)
-        self.assertFalse(errors)
-        dir1 = dirs[0]
-        dir1new = dir1 + '.new'
-        os.rename(os.path.join(root, dir1), os.path.join(root, dir1new))
-        roots = [r for r, d, f in walk_it]
-        self.assertTrue(errors)
-        self.assertNotIn(os.path.join(root, dir1), roots)
-        self.assertNotIn(os.path.join(root, dir1new), roots)
-        for dir2 in dirs[1:]:
-            self.assertIn(os.path.join(root, dir2), roots)
+        self.assertEqual(errors, [])
+        dir1 = 'SUB1'
+        path1 = os.path.join(root, dir1)
+        path1new = os.path.join(root, dir1 + '.new')
+        os.rename(path1, path1new)
+        try:
+            roots = [r for r, d, f in walk_it]
+            self.assertTrue(errors)
+            self.assertNotIn(path1, roots)
+            self.assertNotIn(path1new, roots)
+            for dir2 in dirs:
+                if dir2 != dir1:
+                    self.assertIn(os.path.join(root, dir2), roots)
+        finally:
+            os.rename(path1new, path1)
 
 
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
