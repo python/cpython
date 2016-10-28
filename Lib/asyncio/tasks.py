@@ -9,11 +9,10 @@ __all__ = ['Task',
 import concurrent.futures
 import functools
 import inspect
-import linecache
-import traceback
 import warnings
 import weakref
 
+from . import base_tasks
 from . import compat
 from . import coroutines
 from . import events
@@ -93,18 +92,7 @@ class Task(futures.Future):
             futures.Future.__del__(self)
 
     def _repr_info(self):
-        info = super()._repr_info()
-
-        if self._must_cancel:
-            # replace status
-            info[0] = 'cancelling'
-
-        coro = coroutines._format_coroutine(self._coro)
-        info.insert(1, 'coro=<%s>' % coro)
-
-        if self._fut_waiter is not None:
-            info.insert(2, 'wait_for=%r' % self._fut_waiter)
-        return info
+        return base_tasks._task_repr_info(self)
 
     def get_stack(self, *, limit=None):
         """Return the list of stack frames for this task's coroutine.
@@ -127,31 +115,7 @@ class Task(futures.Future):
         For reasons beyond our control, only one stack frame is
         returned for a suspended coroutine.
         """
-        frames = []
-        try:
-            # 'async def' coroutines
-            f = self._coro.cr_frame
-        except AttributeError:
-            f = self._coro.gi_frame
-        if f is not None:
-            while f is not None:
-                if limit is not None:
-                    if limit <= 0:
-                        break
-                    limit -= 1
-                frames.append(f)
-                f = f.f_back
-            frames.reverse()
-        elif self._exception is not None:
-            tb = self._exception.__traceback__
-            while tb is not None:
-                if limit is not None:
-                    if limit <= 0:
-                        break
-                    limit -= 1
-                frames.append(tb.tb_frame)
-                tb = tb.tb_next
-        return frames
+        return base_tasks._task_get_stack(self, limit)
 
     def print_stack(self, *, limit=None, file=None):
         """Print the stack or traceback for this task's coroutine.
@@ -162,31 +126,7 @@ class Task(futures.Future):
         to which the output is written; by default output is written
         to sys.stderr.
         """
-        extracted_list = []
-        checked = set()
-        for f in self.get_stack(limit=limit):
-            lineno = f.f_lineno
-            co = f.f_code
-            filename = co.co_filename
-            name = co.co_name
-            if filename not in checked:
-                checked.add(filename)
-                linecache.checkcache(filename)
-            line = linecache.getline(filename, lineno, f.f_globals)
-            extracted_list.append((filename, lineno, name, line))
-        exc = self._exception
-        if not extracted_list:
-            print('No stack for %r' % self, file=file)
-        elif exc is not None:
-            print('Traceback for %r (most recent call last):' % self,
-                  file=file)
-        else:
-            print('Stack for %r (most recent call last):' % self,
-                  file=file)
-        traceback.print_list(extracted_list, file=file)
-        if exc is not None:
-            for line in traceback.format_exception_only(exc.__class__, exc):
-                print(line, file=file, end='')
+        return base_tasks._task_print_stack(self, limit, file)
 
     def cancel(self):
         """Request that this task cancel itself.
@@ -314,6 +254,18 @@ class Task(futures.Future):
             # that return non-generator iterators from their `__iter__`.
             self._step()
         self = None  # Needed to break cycles when an exception occurs.
+
+
+_PyTask = Task
+
+
+try:
+    import _asyncio
+except ImportError:
+    pass
+else:
+    # _CTask is needed for tests.
+    Task = _CTask = _asyncio.Task
 
 
 # wait() and as_completed() similar to those in PEP 3148.
