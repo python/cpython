@@ -893,7 +893,7 @@ static PyGetSetDef FutureType_getsetlist[] = {
 static void FutureObj_dealloc(PyObject *self);
 
 static PyTypeObject FutureType = {
-    PyVarObject_HEAD_INIT(0, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_asyncio.Future",
     sizeof(FutureObj),                       /* tp_basicsize */
     .tp_dealloc = FutureObj_dealloc,
@@ -1092,7 +1092,7 @@ static PyMethodDef FutureIter_methods[] = {
 };
 
 static PyTypeObject FutureIterType = {
-    PyVarObject_HEAD_INIT(0, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_asyncio.FutureIter",
     .tp_basicsize = sizeof(futureiterobject),
     .tp_itemsize = 0,
@@ -1189,7 +1189,7 @@ static PyGetSetDef TaskSendMethWrapper_getsetlist[] = {
 };
 
 PyTypeObject TaskSendMethWrapper_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "TaskSendMethWrapper",
     .tp_basicsize = sizeof(TaskSendMethWrapper),
     .tp_itemsize = 0,
@@ -1260,7 +1260,7 @@ TaskWakeupMethWrapper_dealloc(TaskWakeupMethWrapper *o)
 }
 
 PyTypeObject TaskWakeupMethWrapper_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "TaskWakeupMethWrapper",
     .tp_basicsize = sizeof(TaskWakeupMethWrapper),
     .tp_itemsize = 0,
@@ -1778,7 +1778,7 @@ static PyGetSetDef TaskType_getsetlist[] = {
 };
 
 static PyTypeObject TaskType = {
-    PyVarObject_HEAD_INIT(0, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_asyncio.Task",
     sizeof(TaskObj),                       /* tp_basicsize */
     .tp_base = &FutureType,
