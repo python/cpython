@@ -85,6 +85,8 @@ Library
   threadpool executor.
   Initial patch by Hans Lawrenz.
 
+- Issue #28544: Implement asyncio.Task in C.
+
 Windows
 -------
 
