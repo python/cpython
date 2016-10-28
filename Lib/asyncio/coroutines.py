@@ -11,7 +11,7 @@ import types
 
 from . import compat
 from . import events
-from . import futures
+from . import base_futures
 from .log import logger
 
 
@@ -204,7 +204,7 @@ def coroutine(func):
         @functools.wraps(func)
         def coro(*args, **kw):
             res = func(*args, **kw)
-            if (futures.isfuture(res) or inspect.isgenerator(res) or
+            if (base_futures.isfuture(res) or inspect.isgenerator(res) or
                 isinstance(res, CoroWrapper)):
                 res = yield from res
             elif _AwaitableABC is not None:

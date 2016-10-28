@@ -1,33 +1,30 @@
 """A Future class similar to the one in PEP 3148."""
 
-__all__ = ['CancelledError', 'TimeoutError',
-           'InvalidStateError',
-           'Future', 'wrap_future', 'isfuture'
-           ]
+__all__ = ['CancelledError', 'TimeoutError', 'InvalidStateError',
+           'Future', 'wrap_future', 'isfuture']
 
-import concurrent.futures._base
+import concurrent.futures
 import logging
-import reprlib
 import sys
 import traceback
 
+from . import base_futures
 from . import compat
 from . import events
 
-# States for Future.
-_PENDING = 'PENDING'
-_CANCELLED = 'CANCELLED'
-_FINISHED = 'FINISHED'
 
-Error = concurrent.futures._base.Error
-CancelledError = concurrent.futures.CancelledError
-TimeoutError = concurrent.futures.TimeoutError
+CancelledError = base_futures.CancelledError
+InvalidStateError = base_futures.InvalidStateError
+TimeoutError = base_futures.TimeoutError
+isfuture = base_futures.isfuture
+
+
+_PENDING = base_futures._PENDING
+_CANCELLED = base_futures._CANCELLED
+_FINISHED = base_futures._FINISHED
+
 
 STACK_DEBUG = logging.DEBUG - 1  # heavy-duty debugging
-
-
-class InvalidStateError(Error):
-    """The operation is not allowed in this state."""
 
 
 class _TracebackLogger:
@@ -110,56 +107,6 @@ class _TracebackLogger:
             self.loop.call_exception_handler({'message': msg})
 
 
-def isfuture(obj):
-    """Check for a Future.
-
-    This returns True when obj is a Future instance or is advertising
-    itself as duck-type compatible by setting _asyncio_future_blocking.
-    See comment in Future for more details.
-    """
-    return getattr(obj, '_asyncio_future_blocking', None) is not None
-
-
-def _format_callbacks(cb):
-    """helper function for Future.__repr__"""
-    size = len(cb)
-    if not size:
-        cb = ''
-
-    def format_cb(callback):
-        return events._format_callback_source(callback, ())
-
-    if size == 1:
-        cb = format_cb(cb[0])
-    elif size == 2:
-        cb = '{}, {}'.format(format_cb(cb[0]), format_cb(cb[1]))
-    elif size > 2:
-        cb = '{}, <{} more>, {}'.format(format_cb(cb[0]),
-                                        size-2,
-                                        format_cb(cb[-1]))
-    return 'cb=[%s]' % cb
-
-
-def _future_repr_info(future):
-    # (Future) -> str
-    """helper function for Future.__repr__"""
-    info = [future._state.lower()]
-    if future._state == _FINISHED:
-        if future._exception is not None:
-            info.append('exception={!r}'.format(future._exception))
-        else:
-            # use reprlib to limit the length of the output, especially
-            # for very long strings
-            result = reprlib.repr(future._result)
-            info.append('result={}'.format(result))
-    if future._callbacks:
-        info.append(_format_callbacks(future._callbacks))
-    if future._source_traceback:
-        frame = future._source_traceback[-1]
-        info.append('created at %s:%s' % (frame[0], frame[1]))
-    return info
-
-
 class Future:
     """This class is *almost* compatible with concurrent.futures.Future.
 
@@ -212,7 +159,7 @@ class Future:
         if self._loop.get_debug():
             self._source_traceback = traceback.extract_stack(sys._getframe(1))
 
-    _repr_info = _future_repr_info
+    _repr_info = base_futures._future_repr_info
 
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, ' '.join(self._repr_info()))
@@ -247,10 +194,10 @@ class Future:
         if self._state != _PENDING:
             return False
         self._state = _CANCELLED
-        self.__schedule_callbacks()
+        self._schedule_callbacks()
         return True
 
-    def __schedule_callbacks(self):
+    def _schedule_callbacks(self):
         """Internal: Ask the event loop to call all callbacks.
 
         The callbacks are scheduled to be called as soon as possible. Also
@@ -352,7 +299,7 @@ class Future:
             raise InvalidStateError('{}: {!r}'.format(self._state, self))
         self._result = result
         self._state = _FINISHED
-        self.__schedule_callbacks()
+        self._schedule_callbacks()
 
     def set_exception(self, exception):
         """Mark the future done and set an exception.
@@ -369,7 +316,7 @@ class Future:
                             "and cannot be raised into a Future")
         self._exception = exception
         self._state = _FINISHED
-        self.__schedule_callbacks()
+        self._schedule_callbacks()
         if compat.PY34:
             self._log_traceback = True
         else:
