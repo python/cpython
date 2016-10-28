@@ -22,7 +22,6 @@
             <?foreach ext in $(var.exts)?>
             
             <Component Id="$(var.ext).pdb" Directory="DLLs" Guid="*">
-                <Condition>SYMBOLS=1</Condition>
                 <File Name="$(var.ext).pdb" />
             </Component>
             
