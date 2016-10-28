@@ -1779,7 +1779,7 @@ var_perform(VarEvent *ev)
         PyErr_NormalizeException(&exc, &val, &tb);
         *(ev->exc_type) = exc;
         *(ev->exc_val) = val;
-        Py_DECREF(tb);
+        Py_XDECREF(tb);
     }
 
 }
