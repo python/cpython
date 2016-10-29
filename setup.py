@@ -8,7 +8,6 @@ import importlib.util
 import sysconfig
 
 from distutils import log
-from distutils import text_file
 from distutils.errors import *
 from distutils.core import Extension, setup
 from distutils.command.build_ext import build_ext
@@ -230,7 +229,12 @@ class PyBuildExt(build_ext):
         headers = [sysconfig.get_config_h_filename()]
         headers += glob(os.path.join(sysconfig.get_path('include'), "*.h"))
 
-        for ext in self.extensions[:]:
+        # The sysconfig variable built by makesetup, listing the already
+        # built modules as configured by the Setup files.
+        modnames = sysconfig.get_config_var('MODNAMES').split()
+
+        removed_modules = []
+        for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
                             for filename in ext.sources ]
             if ext.depends is not None:
@@ -241,26 +245,14 @@ class PyBuildExt(build_ext):
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
 
-            # If a module has already been built statically,
-            # don't build it here
-            if ext.name in sys.builtin_module_names:
-                self.extensions.remove(ext)
+            # If a module has already been built by the Makefile,
+            # don't build it here.
+            if ext.name in modnames:
+                removed_modules.append(ext)
 
-        # Parse Modules/Setup and Modules/Setup.local to figure out which
-        # modules are turned on in the file.
-        remove_modules = []
-        for filename in ('Modules/Setup', 'Modules/Setup.local'):
-            input = text_file.TextFile(filename, join_lines=1)
-            while 1:
-                line = input.readline()
-                if not line: break
-                line = line.split()
-                remove_modules.append(line[0])
-            input.close()
-
-        for ext in self.extensions[:]:
-            if ext.name in remove_modules:
-                self.extensions.remove(ext)
+        if removed_modules:
+            self.extensions = [x for x in self.extensions if x not in
+                               removed_modules]
 
         # When you run "make CC=altcc" or something similar, you really want
         # those environment variables passed into the setup.py phase.  Here's
@@ -302,6 +294,13 @@ class PyBuildExt(build_ext):
             print("To find the necessary bits, look in setup.py in"
                   " detect_modules() for the module's name.")
             print()
+
+        if removed_modules:
+            print("The following modules found by detect_modules() in"
+            " setup.py, have been")
+            print("built by the Makefile instead, as configured by the"
+            " Setup files:")
+            print_three_column([ext.name for ext in removed_modules])
 
         if self.failed:
             failed = self.failed[:]
