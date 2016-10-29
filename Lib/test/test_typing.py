@@ -4,6 +4,7 @@ import pickle
 import re
 import sys
 from unittest import TestCase, main, skipUnless, SkipTest
+from copy import copy, deepcopy
 
 from typing import Any
 from typing import TypeVar, AnyStr
@@ -845,6 +846,24 @@ class GenericTests(BaseTestCase):
             self.assertEqual(x.foo, 42)
             self.assertEqual(x.bar, 'abc')
             self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
+        simples = [Any, Union, Tuple, Callable, ClassVar, List, typing.Iterable]
+        for s in simples:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                z = pickle.dumps(s, proto)
+                x = pickle.loads(z)
+                self.assertEqual(s, x)
+
+    def test_copy_and_deepcopy(self):
+        T = TypeVar('T')
+        class Node(Generic[T]): ...
+        things = [Union[T, int], Tuple[T, int], Callable[..., T], Callable[[int], int],
+                  Tuple[Any, Any], Node[T], Node[int], Node[Any], typing.Iterable[T],
+                  typing.Iterable[Any], typing.Iterable[int], typing.Dict[int, str],
+                  typing.Dict[T, Any], ClassVar[int], ClassVar[List[T]], Tuple['T', 'T'],
+                  Union['T', int], List['T'], typing.Mapping['T', int]]
+        for t in things + [Any]:
+            self.assertEqual(t, copy(t))
+            self.assertEqual(t, deepcopy(t))
 
     def test_errors(self):
         with self.assertRaises(TypeError):
