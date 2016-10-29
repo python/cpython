@@ -152,7 +152,7 @@ future_init(FutureObj *fut, PyObject *loop)
     Py_CLEAR(fut->fut_loop);
     fut->fut_loop = loop;
 
-    res = _PyObject_CallMethodId(fut->fut_loop, &PyId_get_debug, "()", NULL);
+    res = _PyObject_CallMethodId(fut->fut_loop, &PyId_get_debug, NULL);
     if (res == NULL) {
         return -1;
     }
