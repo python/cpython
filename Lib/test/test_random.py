@@ -625,6 +625,22 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertTrue(stop < x <= start)
         self.assertEqual((x+stop)%step, 0)
 
+    def test_choices_algorithms(self):
+        # The various ways of specifing weights should produce the same results
+        choices = self.gen.choices
+        n = 13132817
+
+        self.gen.seed(8675309)
+        a = self.gen.choices(range(n), k=10000)
+
+        self.gen.seed(8675309)
+        b = self.gen.choices(range(n), [1]*n, k=10000)
+        self.assertEqual(a, b)
+
+        self.gen.seed(8675309)
+        c = self.gen.choices(range(n), cum_weights=range(1, n+1), k=10000)
+        self.assertEqual(a, c)
+
 def gamma(z, sqrt2pi=(2.0*pi)**0.5):
     # Reflection to right half of complex plane
     if z < 0.5:
