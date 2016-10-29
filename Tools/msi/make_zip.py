@@ -19,6 +19,7 @@ DEBUG_FILES = {
     '_ctypes_test',
     '_testbuffer',
     '_testcapi',
+    '_testconsole',
     '_testimportmultiple',
     '_testmultiphase',
     'xxlimited',
