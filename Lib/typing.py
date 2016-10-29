@@ -333,8 +333,7 @@ def _type_vars(types):
 def _eval_type(t, globalns, localns):
     if isinstance(t, TypingMeta) or isinstance(t, _TypingBase):
         return t._eval_type(globalns, localns)
-    else:
-        return t
+    return t
 
 
 def _type_check(arg, msg):
@@ -353,8 +352,14 @@ def _type_check(arg, msg):
         return type(None)
     if isinstance(arg, str):
         arg = _ForwardRef(arg)
-    if not isinstance(arg, (type, _TypingBase)) and not callable(arg):
+    if (isinstance(arg, _TypingBase) and type(arg).__name__ == '_ClassVar' or
+        not isinstance(arg, (type, _TypingBase)) and not callable(arg)):
         raise TypeError(msg + " Got %.100r." % (arg,))
+    # Bare Union etc. are not valid as type arguments
+    if (type(arg).__name__ in ('_Union', '_Optional')
+        and not getattr(arg, '__origin__', None)
+        or isinstance(arg, TypingMeta) and _gorg(arg) in (Generic, _Protocol)):
+        raise TypeError("Plain %s is not valid as type argument" % arg)
     return arg
 
 
@@ -369,10 +374,12 @@ def _type_repr(obj):
     if isinstance(obj, type) and not isinstance(obj, TypingMeta):
         if obj.__module__ == 'builtins':
             return _qualname(obj)
-        else:
-            return '%s.%s' % (obj.__module__, _qualname(obj))
-    else:
-        return repr(obj)
+        return '%s.%s' % (obj.__module__, _qualname(obj))
+    if obj is ...:
+        return('...')
+    if isinstance(obj, types.FunctionType):
+        return obj.__name__
+    return repr(obj)
 
 
 class _Any(_FinalTypingBase, _root=True):
@@ -502,7 +509,107 @@ T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
 AnyStr = TypeVar('AnyStr', bytes, str)
 
 
+def _replace_arg(arg, tvars, args):
+    """ A helper fuunction: replace arg if it is a type variable
+    found in tvars with corresponding substitution from args or
+    with corresponding substitution sub-tree if arg is a generic type.
+    """
+
+    if tvars is None:
+        tvars = []
+    if hasattr(arg, '_subs_tree'):
+        return arg._subs_tree(tvars, args)
+    if isinstance(arg, TypeVar):
+        for i, tvar in enumerate(tvars):
+            if arg == tvar:
+                return args[i]
+    return arg
+
+
+def _subs_tree(cls, tvars=None, args=None):
+    """ Calculate substitution tree for generic cls after
+    replacing its type parameters with substitutions in tvars -> args (if any).
+    Repeat the same cyclicaly following __origin__'s.
+    """
+
+    if cls.__origin__ is None:
+        return cls
+    # Make of chain of origins (i.e. cls -> cls.__origin__)
+    current = cls.__origin__
+    orig_chain = []
+    while current.__origin__ is not None:
+        orig_chain.append(current)
+        current = current.__origin__
+    # Replace type variables in __args__ if asked ...
+    tree_args = []
+    for arg in cls.__args__:
+        tree_args.append(_replace_arg(arg, tvars, args))
+    # ... then continue replacing down the origin chain.
+    for ocls in orig_chain:
+        new_tree_args = []
+        for i, arg in enumerate(ocls.__args__):
+            new_tree_args.append(_replace_arg(arg, ocls.__parameters__, tree_args))
+        tree_args = new_tree_args
+    return tree_args
+
+
+def _remove_dups_flatten(parameters):
+    """ A helper for Union creation and substitution: flatten Union's
+    among parameters, then remove duplicates and strict subclasses.
+    """
+
+    # Flatten out Union[Union[...], ...].
+    params = []
+    for p in parameters:
+        if isinstance(p, _Union) and p.__origin__ is Union:
+            params.extend(p.__args__)
+        elif isinstance(p, tuple) and len(p) > 0 and p[0] is Union:
+            params.extend(p[1:])
+        else:
+            params.append(p)
+    # Weed out strict duplicates, preserving the first of each occurrence.
+    all_params = set(params)
+    if len(all_params) < len(params):
+        new_params = []
+        for t in params:
+            if t in all_params:
+                new_params.append(t)
+                all_params.remove(t)
+        params = new_params
+        assert not all_params, all_params
+    # Weed out subclasses.
+    # E.g. Union[int, Employee, Manager] == Union[int, Employee].
+    # If object is present it will be sole survivor among proper classes.
+    # Never discard type variables.
+    # (In particular, Union[str, AnyStr] != AnyStr.)
+    all_params = set(params)
+    for t1 in params:
+        if not isinstance(t1, type):
+            continue
+        if any(isinstance(t2, type) and issubclass(t1, t2)
+               for t2 in all_params - {t1}
+               if not (isinstance(t2, GenericMeta) and
+                       t2.__origin__ is not None)):
+            all_params.remove(t1)
+    return tuple(t for t in params if t in all_params)
+
+
+def _check_generic(cls, parameters):
+    # Check correct count for parameters of a generic cls.
+    if not cls.__parameters__:
+        raise TypeError("%s is not a generic class" % repr(cls))
+    alen = len(parameters)
+    elen = len(cls.__parameters__)
+    if alen != elen:
+        raise TypeError("Too %s parameters for %s; actual %s, expected %s" %
+                        ("many" if alen > elen else "few", repr(cls), alen, elen))
+
+
 def _tp_cache(func):
+    """ Caching for __getitem__ of generic types with a fallback to
+    original function for non-hashable arguments.
+    """
+
     cached = functools.lru_cache()(func)
     @functools.wraps(func)
     def inner(*args, **kwds):
@@ -555,100 +662,100 @@ class _Union(_FinalTypingBase, _root=True):
 
     - You cannot subclass or instantiate a union.
 
-    - You cannot write Union[X][Y] (what would it mean?).
-
     - You can use Optional[X] as a shorthand for Union[X, None].
     """
 
-    __slots__ = ('__union_params__', '__union_set_params__')
+    __slots__ = ('__parameters__', '__args__', '__origin__', '__tree_hash__')
 
-    def __new__(cls, parameters=None, *args, _root=False):
-        self = super().__new__(cls, parameters, *args, _root=_root)
-        if parameters is None:
-            self.__union_params__ = None
-            self.__union_set_params__ = None
+    def __new__(cls, parameters=None, origin=None, *args, _root=False):
+        self = super().__new__(cls, parameters, origin, *args, _root=_root)
+        if origin is None:
+            self.__parameters__ = None
+            self.__args__ = None
+            self.__origin__ = None
+            self.__tree_hash__ = hash(frozenset(('Union',)))
             return self
         if not isinstance(parameters, tuple):
             raise TypeError("Expected parameters=<tuple>")
-        # Flatten out Union[Union[...], ...] and type-check non-Union args.
-        params = []
-        msg = "Union[arg, ...]: each arg must be a type."
-        for p in parameters:
-            if isinstance(p, _Union):
-                params.extend(p.__union_params__)
-            else:
-                params.append(_type_check(p, msg))
-        # Weed out strict duplicates, preserving the first of each occurrence.
-        all_params = set(params)
-        if len(all_params) < len(params):
-            new_params = []
-            for t in params:
-                if t in all_params:
-                    new_params.append(t)
-                    all_params.remove(t)
-            params = new_params
-            assert not all_params, all_params
-        # Weed out subclasses.
-        # E.g. Union[int, Employee, Manager] == Union[int, Employee].
-        # If object is present it will be sole survivor among proper classes.
-        # Never discard type variables.
-        # (In particular, Union[str, AnyStr] != AnyStr.)
-        all_params = set(params)
-        for t1 in params:
-            if not isinstance(t1, type):
-                continue
-            if any(isinstance(t2, type) and issubclass(t1, t2)
-                   for t2 in all_params - {t1}
-                   if not (isinstance(t2, GenericMeta) and
-                           t2.__origin__ is not None)):
-                all_params.remove(t1)
-        # It's not a union if there's only one type left.
-        if len(all_params) == 1:
-            return all_params.pop()
-        self.__union_params__ = tuple(t for t in params if t in all_params)
-        self.__union_set_params__ = frozenset(self.__union_params__)
+        if origin is Union:
+            parameters = _remove_dups_flatten(parameters)
+            # It's not a union if there's only one type left.
+            if len(parameters) == 1:
+                return parameters[0]
+        self.__parameters__ = _type_vars(parameters)
+        self.__args__ = parameters
+        self.__origin__ = origin
+        # Pre-calculate the __hash__ on instantiation.
+        # This improves speed for complex substitutions.
+        subs_tree = self._subs_tree()
+        if isinstance(subs_tree, tuple):
+            self.__tree_hash__ = hash(frozenset(subs_tree))
+        else:
+            self.__tree_hash__ = hash(subs_tree)
         return self
 
     def _eval_type(self, globalns, localns):
-        p = tuple(_eval_type(t, globalns, localns)
-                  for t in self.__union_params__)
-        if p == self.__union_params__:
+        if self.__args__ is None:
             return self
-        else:
-            return self.__class__(p, _root=True)
+        ev_args = tuple(_eval_type(t, globalns, localns) for t in self.__args__)
+        ev_origin = _eval_type(self.__origin__, globalns, localns)
+        if ev_args == self.__args__ and ev_origin == self.__origin__:
+            # Everything is already evaluated.
+            return self
+        return self.__class__(ev_args, ev_origin, _root=True)
 
     def _get_type_vars(self, tvars):
-        if self.__union_params__:
-            _get_type_vars(self.__union_params__, tvars)
+        if self.__origin__ and self.__parameters__:
+            _get_type_vars(self.__parameters__, tvars)
 
     def __repr__(self):
-        return self._subs_repr([], [])
+        if self.__origin__ is None:
+            return super().__repr__()
+        tree = self._subs_tree()
+        if not isinstance(tree, tuple):
+            return repr(tree)
+        return tree[0]._tree_repr(tree)
 
-    def _subs_repr(self, tvars, args):
-        r = super().__repr__()
-        if self.__union_params__:
-            r += '[%s]' % (', '.join(_replace_arg(t, tvars, args)
-                                     for t in self.__union_params__))
-        return r
+    def _tree_repr(self, tree):
+        arg_list = []
+        for arg in tree[1:]:
+            if not isinstance(arg, tuple):
+                arg_list.append(_type_repr(arg))
+            else:
+                arg_list.append(arg[0]._tree_repr(arg))
+        return super().__repr__() + '[%s]' % ', '.join(arg_list)
 
     @_tp_cache
     def __getitem__(self, parameters):
-        if self.__union_params__ is not None:
-            raise TypeError(
-                "Cannot subscript an existing Union. Use Union[u, t] instead.")
         if parameters == ():
             raise TypeError("Cannot take a Union of no types.")
         if not isinstance(parameters, tuple):
             parameters = (parameters,)
-        return self.__class__(parameters, _root=True)
+        if self.__origin__ is None:
+            msg = "Union[arg, ...]: each arg must be a type."
+        else:
+            msg = "Parameters to generic types must be types."
+        parameters = tuple(_type_check(p, msg) for p in parameters)
+        if self is not Union:
+            _check_generic(self, parameters)
+        return self.__class__(parameters, origin=self, _root=True)
+
+    def _subs_tree(self, tvars=None, args=None):
+        if self is Union:
+            return Union  # Nothing to substitute
+        tree_args = _subs_tree(self, tvars, args)
+        tree_args = _remove_dups_flatten(tree_args)
+        if len(tree_args) == 1:
+            return tree_args[0]  # Union of a single type is that type
+        return (Union,) + tree_args
 
     def __eq__(self, other):
         if not isinstance(other, _Union):
-            return NotImplemented
-        return self.__union_set_params__ == other.__union_set_params__
+            return self._subs_tree() == other
+        return self.__tree_hash__ == other.__tree_hash__
 
     def __hash__(self):
-        return hash(self.__union_set_params__)
+        return self.__tree_hash__
 
     def __instancecheck__(self, obj):
         raise TypeError("Unions cannot be used with isinstance().")
@@ -677,195 +784,6 @@ class _Optional(_FinalTypingBase, _root=True):
 Optional = _Optional(_root=True)
 
 
-class _Tuple(_FinalTypingBase, _root=True):
-    """Tuple type; Tuple[X, Y] is the cross-product type of X and Y.
-
-    Example: Tuple[T1, T2] is a tuple of two elements corresponding
-    to type variables T1 and T2.  Tuple[int, float, str] is a tuple
-    of an int, a float and a string.
-
-    To specify a variable-length tuple of homogeneous type, use Tuple[T, ...].
-    """
-
-    __slots__ = ('__tuple_params__', '__tuple_use_ellipsis__')
-
-    def __init__(self, parameters=None,
-                use_ellipsis=False, _root=False):
-        self.__tuple_params__ = parameters
-        self.__tuple_use_ellipsis__ = use_ellipsis
-
-    def _get_type_vars(self, tvars):
-        if self.__tuple_params__:
-            _get_type_vars(self.__tuple_params__, tvars)
-
-    def _eval_type(self, globalns, localns):
-        tp = self.__tuple_params__
-        if tp is None:
-            return self
-        p = tuple(_eval_type(t, globalns, localns) for t in tp)
-        if p == self.__tuple_params__:
-            return self
-        else:
-            return self.__class__(p, _root=True)
-
-    def __repr__(self):
-        return self._subs_repr([], [])
-
-    def _subs_repr(self, tvars, args):
-        r = super().__repr__()
-        if self.__tuple_params__ is not None:
-            params = [_replace_arg(p, tvars, args) for p in self.__tuple_params__]
-            if self.__tuple_use_ellipsis__:
-                params.append('...')
-            if not params:
-                params.append('()')
-            r += '[%s]' % (
-                ', '.join(params))
-        return r
-
-    @_tp_cache
-    def __getitem__(self, parameters):
-        if self.__tuple_params__ is not None:
-            raise TypeError("Cannot re-parameterize %r" % (self,))
-        if not isinstance(parameters, tuple):
-            parameters = (parameters,)
-        if len(parameters) == 2 and parameters[1] == Ellipsis:
-            parameters = parameters[:1]
-            use_ellipsis = True
-            msg = "Tuple[t, ...]: t must be a type."
-        else:
-            use_ellipsis = False
-            msg = "Tuple[t0, t1, ...]: each t must be a type."
-        parameters = tuple(_type_check(p, msg) for p in parameters)
-        return self.__class__(parameters,
-                              use_ellipsis=use_ellipsis, _root=True)
-
-    def __eq__(self, other):
-        if not isinstance(other, _Tuple):
-            return NotImplemented
-        return (self.__tuple_params__ == other.__tuple_params__ and
-                self.__tuple_use_ellipsis__ == other.__tuple_use_ellipsis__)
-
-    def __hash__(self):
-        return hash((self.__tuple_params__, self.__tuple_use_ellipsis__))
-
-    def __instancecheck__(self, obj):
-        if self.__tuple_params__ == None:
-            return isinstance(obj, tuple)
-        raise TypeError("Parameterized Tuple cannot be used "
-                        "with isinstance().")
-
-    def __subclasscheck__(self, cls):
-        if self.__tuple_params__ == None:
-            return issubclass(cls, tuple)
-        raise TypeError("Parameterized Tuple cannot be used "
-                        "with issubclass().")
-
-
-Tuple = _Tuple(_root=True)
-
-
-class _Callable(_FinalTypingBase, _root=True):
-    """Callable type; Callable[[int], str] is a function of (int) -> str.
-
-    The subscription syntax must always be used with exactly two
-    values: the argument list and the return type.  The argument list
-    must be a list of types; the return type must be a single type.
-
-    There is no syntax to indicate optional or keyword arguments,
-    such function types are rarely used as callback types.
-    """
-
-    __slots__ = ('__args__', '__result__')
-
-    def __init__(self, args=None, result=None, _root=False):
-        if args is None and result is None:
-            pass
-        else:
-            if args is not Ellipsis:
-                if not isinstance(args, list):
-                    raise TypeError("Callable[args, result]: "
-                                    "args must be a list."
-                                    " Got %.100r." % (args,))
-                msg = "Callable[[arg, ...], result]: each arg must be a type."
-                args = tuple(_type_check(arg, msg) for arg in args)
-            msg = "Callable[args, result]: result must be a type."
-            result = _type_check(result, msg)
-        self.__args__ = args
-        self.__result__ = result
-
-    def _get_type_vars(self, tvars):
-        if self.__args__ and self.__args__ is not Ellipsis:
-            _get_type_vars(self.__args__, tvars)
-        if self.__result__:
-            _get_type_vars([self.__result__], tvars)
-
-    def _eval_type(self, globalns, localns):
-        if self.__args__ is None and self.__result__ is None:
-            return self
-        if self.__args__ is Ellipsis:
-            args = self.__args__
-        else:
-            args = [_eval_type(t, globalns, localns) for t in self.__args__]
-        result = _eval_type(self.__result__, globalns, localns)
-        if args == self.__args__ and result == self.__result__:
-            return self
-        else:
-            return self.__class__(args, result, _root=True)
-
-    def __repr__(self):
-        return self._subs_repr([], [])
-
-    def _subs_repr(self, tvars, args):
-        r = super().__repr__()
-        if self.__args__ is not None or self.__result__ is not None:
-            if self.__args__ is Ellipsis:
-                args_r = '...'
-            else:
-                args_r = '[%s]' % ', '.join(_replace_arg(t, tvars, args)
-                                            for t in self.__args__)
-            r += '[%s, %s]' % (args_r, _replace_arg(self.__result__, tvars, args))
-        return r
-
-    def __getitem__(self, parameters):
-        if self.__args__ is not None or self.__result__ is not None:
-            raise TypeError("This Callable type is already parameterized.")
-        if not isinstance(parameters, tuple) or len(parameters) != 2:
-            raise TypeError(
-                "Callable must be used as Callable[[arg, ...], result].")
-        args, result = parameters
-        return self.__class__(args, result, _root=True)
-
-    def __eq__(self, other):
-        if not isinstance(other, _Callable):
-            return NotImplemented
-        return (self.__args__ == other.__args__ and
-                self.__result__ == other.__result__)
-
-    def __hash__(self):
-        return hash(self.__args__) ^ hash(self.__result__)
-
-    def __instancecheck__(self, obj):
-        # For unparametrized Callable we allow this, because
-        # typing.Callable should be equivalent to
-        # collections.abc.Callable.
-        if self.__args__ is None and self.__result__ is None:
-            return isinstance(obj, collections_abc.Callable)
-        else:
-            raise TypeError("Parameterized Callable cannot be used "
-                            "with isinstance().")
-
-    def __subclasscheck__(self, cls):
-        if self.__args__ is None and self.__result__ is None:
-            return issubclass(cls, collections_abc.Callable)
-        else:
-            raise TypeError("Parameterized Callable cannot be used "
-                            "with issubclass().")
-
-
-Callable = _Callable(_root=True)
-
-
 def _gorg(a):
     """Return the farthest origin of a generic class."""
     assert isinstance(a, GenericMeta)
@@ -887,16 +805,6 @@ def _geqv(a, b):
     assert isinstance(a, GenericMeta) and isinstance(b, GenericMeta)
     # Reduce each to its origin.
     return _gorg(a) is _gorg(b)
-
-
-def _replace_arg(arg, tvars, args):
-    if hasattr(arg, '_subs_repr'):
-        return arg._subs_repr(tvars, args)
-    if isinstance(arg, TypeVar):
-        for i, tvar in enumerate(tvars):
-            if arg == tvar:
-                return args[i]
-    return _type_repr(arg)
 
 
 def _next_in_mro(cls):
@@ -1011,7 +919,11 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
         self = super().__new__(cls, name, bases, namespace, _root=True)
 
         self.__parameters__ = tvars
-        self.__args__ = args
+        # Be prepared that GenericMeta will be subclassed by TupleMeta
+        # and CallableMeta, those two allow ..., (), or [] in __args___.
+        self.__args__ = tuple(... if a is _TypingEllipsis else
+                              () if a is _TypingEmpty else
+                              a for a in args) if args else None
         self.__origin__ = origin
         self.__extra__ = extra
         # Speed hack (https://github.com/python/typing/issues/196).
@@ -1029,55 +941,69 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
             self.__subclasshook__ = _make_subclasshook(self)
         if isinstance(extra, abc.ABCMeta):
             self._abc_registry = extra._abc_registry
+
+        if origin and hasattr(origin, '__qualname__'):  # Fix for Python 3.2.
+            self.__qualname__ = origin.__qualname__
+        self.__tree_hash__ = hash(self._subs_tree()) if origin else hash((self.__name__,))
         return self
 
     def _get_type_vars(self, tvars):
         if self.__origin__ and self.__parameters__:
             _get_type_vars(self.__parameters__, tvars)
 
+    def _eval_type(self, globalns, localns):
+        ev_origin = (self.__origin__._eval_type(globalns, localns)
+                     if self.__origin__ else None)
+        ev_args = tuple(_eval_type(a, globalns, localns) for a
+                        in self.__args__) if self.__args__ else None
+        if ev_origin == self.__origin__ and ev_args == self.__args__:
+            return self
+        return self.__class__(self.__name__,
+                              self.__bases__,
+                              dict(self.__dict__),
+                              tvars=_type_vars(ev_args) if ev_args else None,
+                              args=ev_args,
+                              origin=ev_origin,
+                              extra=self.__extra__,
+                              orig_bases=self.__orig_bases__)
+
     def __repr__(self):
         if self.__origin__ is None:
             return super().__repr__()
-        return self._subs_repr([], [])
+        return self._tree_repr(self._subs_tree())
 
-    def _subs_repr(self, tvars, args):
-        assert len(tvars) == len(args)
-        # Construct the chain of __origin__'s.
-        current = self.__origin__
-        orig_chain = []
-        while current.__origin__ is not None:
-            orig_chain.append(current)
-            current = current.__origin__
-        # Replace type variables in __args__ if asked ...
-        str_args = []
-        for arg in self.__args__:
-            str_args.append(_replace_arg(arg, tvars, args))
-        # ... then continue replacing down the origin chain.
-        for cls in orig_chain:
-            new_str_args = []
-            for i, arg in enumerate(cls.__args__):
-                new_str_args.append(_replace_arg(arg, cls.__parameters__, str_args))
-            str_args = new_str_args
-        return super().__repr__() + '[%s]' % ', '.join(str_args)
+    def _tree_repr(self, tree):
+        arg_list = []
+        for arg in tree[1:]:
+            if arg == ():
+                arg_list.append('()')
+            elif not isinstance(arg, tuple):
+                arg_list.append(_type_repr(arg))
+            else:
+                arg_list.append(arg[0]._tree_repr(arg))
+        return super().__repr__() + '[%s]' % ', '.join(arg_list)
+
+    def _subs_tree(self, tvars=None, args=None):
+        if self.__origin__ is None:
+            return self
+        tree_args = _subs_tree(self, tvars, args)
+        return (_gorg(self),) + tuple(tree_args)
 
     def __eq__(self, other):
         if not isinstance(other, GenericMeta):
             return NotImplemented
-        if self.__origin__ is not None:
-            return (self.__origin__ is other.__origin__ and
-                    self.__args__ == other.__args__ and
-                    self.__parameters__ == other.__parameters__)
-        else:
+        if self.__origin__ is None or other.__origin__ is None:
             return self is other
+        return self.__tree_hash__ == other.__tree_hash__
 
     def __hash__(self):
-        return hash((self.__name__, self.__parameters__))
+        return self.__tree_hash__
 
     @_tp_cache
     def __getitem__(self, params):
         if not isinstance(params, tuple):
             params = (params,)
-        if not params:
+        if not params and not _gorg(self) is Tuple:
             raise TypeError(
                 "Parameter list to %s[...] cannot be empty" % _qualname(self))
         msg = "Parameters to generic types must be types."
@@ -1092,6 +1018,9 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
                     "Parameters to Generic[...] must all be unique")
             tvars = params
             args = params
+        elif self in (Tuple, Callable):
+            tvars = _type_vars(params)
+            args = params
         elif self is _Protocol:
             # _Protocol is internal, don't check anything.
             tvars = params
@@ -1102,14 +1031,7 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
                             repr(self))
         else:
             # Subscripting a regular Generic subclass.
-            if not self.__parameters__:
-                raise TypeError("%s is not a generic class" % repr(self))
-            alen = len(params)
-            elen = len(self.__parameters__)
-            if alen != elen:
-                raise TypeError(
-                    "Too %s parameters for %s; actual %s, expected %s" %
-                    ("many" if alen > elen else "few", repr(self), alen, elen))
+            _check_generic(self, params)
             tvars = _type_vars(params)
             args = params
         return self.__class__(self.__name__,
@@ -1132,6 +1054,22 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
 
 # Prevent checks for Generic to crash when defining Generic.
 Generic = None
+
+
+def _generic_new(base_cls, cls, *args, **kwds):
+    # Assure type is erased on instantiation,
+    # but attempt to store it in __orig_class__
+    if cls.__origin__ is None:
+        return base_cls.__new__(cls)
+    else:
+        origin = _gorg(cls)
+        obj = base_cls.__new__(origin)
+        try:
+            obj.__orig_class__ = cls
+        except AttributeError:
+            pass
+        obj.__init__(*args, **kwds)
+        return obj
 
 
 class Generic(metaclass=GenericMeta):
@@ -1158,17 +1096,154 @@ class Generic(metaclass=GenericMeta):
     __slots__ = ()
 
     def __new__(cls, *args, **kwds):
-        if cls.__origin__ is None:
-            return cls.__next_in_mro__.__new__(cls)
+        return _generic_new(cls.__next_in_mro__, cls, *args, **kwds)
+
+
+class _TypingEmpty:
+    """Placeholder for () or []. Used by TupleMeta and CallableMeta
+    to allow empy list/tuple in specific places, without allowing them
+    to sneak in where prohibited.
+    """
+
+
+class _TypingEllipsis:
+    """Ditto for ..."""
+
+
+class TupleMeta(GenericMeta):
+    """Metaclass for Tuple"""
+
+    @_tp_cache
+    def __getitem__(self, parameters):
+        if self.__origin__ is not None or not _geqv(self, Tuple):
+            # Normal generic rules apply if this is not the first subscription
+            # or a subscription of a subclass.
+            return super().__getitem__(parameters)
+        if parameters == ():
+            return super().__getitem__((_TypingEmpty,))
+        if not isinstance(parameters, tuple):
+            parameters = (parameters,)
+        if len(parameters) == 2 and parameters[1] is ...:
+            msg = "Tuple[t, ...]: t must be a type."
+            p = _type_check(parameters[0], msg)
+            return super().__getitem__((p, _TypingEllipsis))
+        msg = "Tuple[t0, t1, ...]: each t must be a type."
+        parameters = tuple(_type_check(p, msg) for p in parameters)
+        return super().__getitem__(parameters)
+
+    def __instancecheck__(self, obj):
+        if self.__args__ == None:
+            return isinstance(obj, tuple)
+        raise TypeError("Parameterized Tuple cannot be used "
+                        "with isinstance().")
+
+    def __subclasscheck__(self, cls):
+        if self.__args__ == None:
+            return issubclass(cls, tuple)
+        raise TypeError("Parameterized Tuple cannot be used "
+                        "with issubclass().")
+
+
+class Tuple(tuple, extra=tuple, metaclass=TupleMeta):
+    """Tuple type; Tuple[X, Y] is the cross-product type of X and Y.
+
+    Example: Tuple[T1, T2] is a tuple of two elements corresponding
+    to type variables T1 and T2.  Tuple[int, float, str] is a tuple
+    of an int, a float and a string.
+
+    To specify a variable-length tuple of homogeneous type, use Tuple[T, ...].
+    """
+
+    __slots__ = ()
+
+    def __new__(cls, *args, **kwds):
+        if _geqv(cls, Tuple):
+            raise TypeError("Type Tuple cannot be instantiated; "
+                            "use tuple() instead")
+        return _generic_new(tuple, cls, *args, **kwds)
+
+
+class CallableMeta(GenericMeta):
+    """ Metaclass for Callable."""
+
+    def __repr__(self):
+        if self.__origin__ is None:
+            return super().__repr__()
+        return self._tree_repr(self._subs_tree())
+
+    def _tree_repr(self, tree):
+        if _gorg(self) is not Callable:
+            return super()._tree_repr(tree)
+        # For actual Callable (not its subclass) we override
+        # super()._tree_repr() for nice formatting.
+        arg_list = []
+        for arg in tree[1:]:
+            if arg == ():
+                arg_list.append('[]')
+            elif not isinstance(arg, tuple):
+                arg_list.append(_type_repr(arg))
+            else:
+                arg_list.append(arg[0]._tree_repr(arg))
+        if len(arg_list) == 2:
+            return repr(tree[0]) + '[%s]' % ', '.join(arg_list)
+        return (repr(tree[0]) +
+                '[[%s], %s]' % (', '.join(arg_list[:-1]), arg_list[-1]))
+
+    def __getitem__(self, parameters):
+        """ A thin wrapper around __getitem_inner__ to provide the latter
+        with hashable arguments to improve speed.
+        """
+
+        if  self.__origin__ is not None or not _geqv(self, Callable):
+            return super().__getitem__(parameters)
+        if not isinstance(parameters, tuple) or len(parameters) != 2:
+            raise TypeError("Callable must be used as "
+                            "Callable[[arg, ...], result].")
+        args, result = parameters
+        if args is ...:
+            parameters = (..., result)
+        elif args == []:
+            parameters = ((), result)
         else:
-            origin = _gorg(cls)
-            obj = cls.__next_in_mro__.__new__(origin)
-            try:
-                obj.__orig_class__ = cls
-            except AttributeError:
-                pass
-            obj.__init__(*args, **kwds)
-            return obj
+            if not isinstance(args, list):
+                raise TypeError("Callable[args, result]: args must be a list."
+                                " Got %.100r." % (args,))
+            parameters = tuple(args) + (result,)
+        return self.__getitem_inner__(parameters)
+
+    @_tp_cache
+    def __getitem_inner__(self, parameters):
+        *args, result = parameters
+        msg = "Callable[args, result]: result must be a type."
+        result = _type_check(result, msg)
+        if args == [...,]:
+            return super().__getitem__((_TypingEllipsis, result))
+        if args == [(),]:
+            return super().__getitem__((_TypingEmpty, result))
+        msg = "Callable[[arg, ...], result]: each arg must be a type."
+        args = tuple(_type_check(arg, msg) for arg in args)
+        parameters = args + (result,)
+        return super().__getitem__(parameters)
+
+
+class Callable(extra=collections_abc.Callable, metaclass = CallableMeta):
+    """Callable type; Callable[[int], str] is a function of (int) -> str.
+
+    The subscription syntax must always be used with exactly two
+    values: the argument list and the return type.  The argument list
+    must be a list of types; the return type must be a single type.
+
+    There is no syntax to indicate optional or keyword arguments,
+    such function types are rarely used as callback types.
+    """
+
+    __slots__ = ()
+
+    def __new__(cls, *args, **kwds):
+        if _geqv(cls, Callable):
+            raise TypeError("Type Callable cannot be instantiated; "
+                            "use a non-abstract subclass instead")
+        return _generic_new(cls.__next_in_mro__, cls, *args, **kwds)
 
 
 class _ClassVar(_FinalTypingBase, _root=True):
@@ -1208,17 +1283,10 @@ class _ClassVar(_FinalTypingBase, _root=True):
             return self
         return type(self)(new_tp, _root=True)
 
-    def _get_type_vars(self, tvars):
-        if self.__type__:
-            _get_type_vars([self.__type__], tvars)
-
     def __repr__(self):
-        return self._subs_repr([], [])
-
-    def _subs_repr(self, tvars, args):
         r = super().__repr__()
         if self.__type__ is not None:
-            r += '[{}]'.format(_replace_arg(self.__type__, tvars, args))
+            r += '[{}]'.format(_type_repr(self.__type__))
         return r
 
     def __hash__(self):
@@ -1230,6 +1298,7 @@ class _ClassVar(_FinalTypingBase, _root=True):
         if self.__type__ is not None:
             return self.__type__ == other.__type__
         return self is other
+
 
 ClassVar = _ClassVar(_root=True)
 
@@ -1533,6 +1602,7 @@ class _ProtocolMeta(GenericMeta):
                             attr != '__origin__' and
                             attr != '__orig_bases__' and
                             attr != '__extra__' and
+                            attr != '__tree_hash__' and
                             attr != '__module__'):
                         attrs.add(attr)
 
@@ -1723,7 +1793,7 @@ class List(list, MutableSequence[T], extra=list):
         if _geqv(cls, List):
             raise TypeError("Type List cannot be instantiated; "
                             "use list() instead")
-        return list.__new__(cls, *args, **kwds)
+        return _generic_new(list, cls, *args, **kwds)
 
 
 class Set(set, MutableSet[T], extra=set):
@@ -1734,7 +1804,7 @@ class Set(set, MutableSet[T], extra=set):
         if _geqv(cls, Set):
             raise TypeError("Type Set cannot be instantiated; "
                             "use set() instead")
-        return set.__new__(cls, *args, **kwds)
+        return _generic_new(set, cls, *args, **kwds)
 
 
 class FrozenSet(frozenset, AbstractSet[T_co], extra=frozenset):
@@ -1744,7 +1814,7 @@ class FrozenSet(frozenset, AbstractSet[T_co], extra=frozenset):
         if _geqv(cls, FrozenSet):
             raise TypeError("Type FrozenSet cannot be instantiated; "
                             "use frozenset() instead")
-        return frozenset.__new__(cls, *args, **kwds)
+        return _generic_new(frozenset, cls, *args, **kwds)
 
 
 class MappingView(Sized, Iterable[T_co], extra=collections_abc.MappingView):
@@ -1781,7 +1851,7 @@ class Dict(dict, MutableMapping[KT, VT], extra=dict):
         if _geqv(cls, Dict):
             raise TypeError("Type Dict cannot be instantiated; "
                             "use dict() instead")
-        return dict.__new__(cls, *args, **kwds)
+        return _generic_new(dict, cls, *args, **kwds)
 
 class DefaultDict(collections.defaultdict, MutableMapping[KT, VT],
                   extra=collections.defaultdict):
@@ -1792,7 +1862,7 @@ class DefaultDict(collections.defaultdict, MutableMapping[KT, VT],
         if _geqv(cls, DefaultDict):
             raise TypeError("Type DefaultDict cannot be instantiated; "
                             "use collections.defaultdict() instead")
-        return collections.defaultdict.__new__(cls, *args, **kwds)
+        return _generic_new(collections.defaultdict, cls, *args, **kwds)
 
 # Determine what base class to use for Generator.
 if hasattr(collections_abc, 'Generator'):
@@ -1811,7 +1881,7 @@ class Generator(Iterator[T_co], Generic[T_co, T_contra, V_co],
         if _geqv(cls, Generator):
             raise TypeError("Type Generator cannot be instantiated; "
                             "create a subclass instead")
-        return super().__new__(cls, *args, **kwds)
+        return _generic_new(_G_base, cls, *args, **kwds)
 
 
 # Internal type variable used for Type[].
