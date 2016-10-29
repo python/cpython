@@ -190,6 +190,9 @@ class _FinalTypingBase(_TypingBase, _root=True):
             return self
         raise TypeError("Cannot instantiate %r" % cls)
 
+    def __reduce__(self):
+        return _trim_name(type(self).__name__)
+
 
 class _ForwardRef(_TypingBase, _root=True):
     """Wrapper to hold a forward reference."""
@@ -1050,6 +1053,11 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
         # we just skip the cache check -- instance checks for generic
         # classes are supposed to be rare anyways.
         return issubclass(instance.__class__, self)
+
+    def __copy__(self):
+        return self.__class__(self.__name__, self.__bases__, dict(self.__dict__),
+                              self.__parameters__, self.__args__, self.__origin__,
+                              self.__extra__, self.__orig_bases__)
 
 
 # Prevent checks for Generic to crash when defining Generic.
