@@ -517,6 +517,9 @@ class GenericTests(BaseTestCase):
             Y[str, str]
 
     def test_generic_errors(self):
+        T = TypeVar('T')
+        with self.assertRaises(TypeError):
+            Generic[T]()
         with self.assertRaises(TypeError):
             isinstance([], List[int])
         with self.assertRaises(TypeError):
@@ -1255,7 +1258,7 @@ ASYNCIO = sys.version_info[:2] >= (3, 5)
 ASYNCIO_TESTS = """
 import asyncio
 
-T_a = TypeVar('T')
+T_a = TypeVar('T_a')
 
 class AwaitableWrapper(typing.Awaitable[T_a]):
 
@@ -1402,6 +1405,24 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsInstance(g, typing.Awaitable)
         self.assertNotIsInstance(foo, typing.Awaitable)
         g.send(None)  # Run foo() till completion, to avoid warning.
+
+    @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
+    def test_coroutine(self):
+        ns = {}
+        exec(
+            "async def foo():\n"
+            "    return\n",
+            globals(), ns)
+        foo = ns['foo']
+        g = foo()
+        self.assertIsInstance(g, typing.Coroutine)
+        with self.assertRaises(TypeError):
+            isinstance(g, typing.Coroutine[int])
+        self.assertNotIsInstance(foo, typing.Coroutine)
+        try:
+            g.send(None)
+        except StopIteration:
+            pass
 
     @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
     def test_async_iterable(self):
