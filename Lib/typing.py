@@ -29,9 +29,6 @@ __all__ = [
 
     # ABCs (from collections.abc).
     'AbstractSet',  # collections.abc.Set.
-    'Awaitable',
-    'AsyncIterator',
-    'AsyncIterable',
     'ByteString',
     'Container',
     'Hashable',
@@ -47,6 +44,14 @@ __all__ = [
     'Sequence',
     'Sized',
     'ValuesView',
+    # The following are added depending on presence
+    # of their non-generic counterparts in stdlib:
+    # Awaitable,
+    # AsyncIterator,
+    # AsyncIterable,
+    # Coroutine,
+    # Collection,
+    # ContextManager
 
     # Structural checks, a.k.a. protocols.
     'Reversible',
@@ -1104,6 +1109,9 @@ class Generic(metaclass=GenericMeta):
     __slots__ = ()
 
     def __new__(cls, *args, **kwds):
+        if _geqv(cls, Generic):
+            raise TypeError("Type Generic cannot be instantiated; "
+                            "it can be used only as a base class")
         return _generic_new(cls.__next_in_mro__, cls, *args, **kwds)
 
 
@@ -1639,8 +1647,16 @@ Hashable = collections_abc.Hashable  # Not generic.
 if hasattr(collections_abc, 'Awaitable'):
     class Awaitable(Generic[T_co], extra=collections_abc.Awaitable):
         __slots__ = ()
-else:
-    Awaitable = None
+
+    __all__.append('Awaitable')
+
+
+if hasattr(collections_abc, 'Coroutine'):
+    class Coroutine(Awaitable[V_co], Generic[T_co, T_contra, V_co],
+                    extra=collections_abc.Coroutine):
+        __slots__ = ()
+
+    __all__.append('Coroutine')
 
 
 if hasattr(collections_abc, 'AsyncIterable'):
@@ -1652,9 +1668,8 @@ if hasattr(collections_abc, 'AsyncIterable'):
                         extra=collections_abc.AsyncIterator):
         __slots__ = ()
 
-else:
-    AsyncIterable = None
-    AsyncIterator = None
+    __all__.append('AsyncIterable')
+    __all__.append('AsyncIterator')
 
 
 class Iterable(Generic[T_co], extra=collections_abc.Iterable):
