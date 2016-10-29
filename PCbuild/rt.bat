@@ -48,6 +48,9 @@ if defined qmode goto Qmode
 echo Deleting .pyc/.pyo files ...
 "%exe%" "%pcbuild%rmpyc.py"
 
+echo Cleaning _pth files ...
+if exist %prefix%*._pth del %prefix%*._pth 
+
 echo on
 %cmd%
 @echo off
