@@ -4318,13 +4318,6 @@ PyDoc_STRVAR(object_subclasshook_doc,
 "NotImplemented, the normal algorithm is used.  Otherwise, it\n"
 "overrides the normal algorithm (and the outcome is cached).\n");
 
-/*
-   from PEP 3101, this code implements:
-
-   class object:
-       def __format__(self, format_spec):
-           return format(str(self), format_spec)
-*/
 static PyObject *
 object_format(PyObject *self, PyObject *args)
 {
@@ -4335,22 +4328,19 @@ object_format(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
         return NULL;
 
+    /* Issue 7994: If we're converting to a string, we
+       should reject format specifications */
+    if (PyUnicode_GET_LENGTH(format_spec) > 0) {
+        PyErr_Format(PyExc_TypeError,
+                     "unsupported format string passed to %.200s.__format__",
+                     self->ob_type->tp_name);
+        return NULL;
+    }
     self_as_str = PyObject_Str(self);
     if (self_as_str != NULL) {
-        /* Issue 7994: If we're converting to a string, we
-           should reject format specifications */
-        if (PyUnicode_GET_LENGTH(format_spec) > 0) {
-            PyErr_SetString(PyExc_TypeError,
-               "non-empty format string passed to object.__format__");
-            goto done;
-        }
-
         result = PyObject_Format(self_as_str, format_spec);
+        Py_DECREF(self_as_str);
     }
-
-done:
-    Py_XDECREF(self_as_str);
-
     return result;
 }
 

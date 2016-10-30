@@ -1259,6 +1259,15 @@ class AssortedBytesTest(unittest.TestCase):
             self.assertEqual(f(b"'"), '''b"'"''') # '''
             self.assertEqual(f(b"'\""), r"""b'\'"'""") # '
 
+    @check_bytes_warnings
+    def test_format(self):
+        for b in b'abc', bytearray(b'abc'):
+            self.assertEqual(format(b), str(b))
+            self.assertEqual(format(b, ''), str(b))
+            with self.assertRaisesRegex(TypeError,
+                                        r'\b%s\b' % re.escape(type(b).__name__)):
+                format(b, 's')
+
     def test_compare_bytes_to_bytearray(self):
         self.assertEqual(b"abc" == bytes(b"abc"), True)
         self.assertEqual(b"ab" != bytes(b"abc"), True)
