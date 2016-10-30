@@ -236,7 +236,7 @@ the repository.
 Before a package can be uploaded, you must be able to build a distribution using
 the :command:`sdist` Distutils command.  Once that works, you can run ``python
 setup.py upload`` to add your package to the PyPI archive.  Optionally you can
-GPG-sign the package by supplying the :option:`--sign` and :option:`--identity`
+GPG-sign the package by supplying the :option:`!--sign` and :option:`!--identity`
 options.
 
 Package uploading was implemented by Martin von Löwis and Richard Jones.
@@ -1639,7 +1639,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
 * The :mod:`webbrowser` module received a number of enhancements. It's now
   usable as a script with ``python -m webbrowser``, taking a URL as the argument;
-  there are a number of switches  to control the behaviour (:option:`-n` for a new
+  there are a number of switches  to control the behaviour (:option:`!-n` for a new
   browser window,  :option:`!-t` for a new tab).  New module-level functions,
   :func:`open_new` and :func:`open_new_tab`, were added  to support this.  The
   module's :func:`open` function supports an additional feature, an *autoraise*
@@ -2209,7 +2209,7 @@ Port-Specific Changes
 * MacOS X (10.3 and higher): dynamic loading of modules now uses the
   :c:func:`dlopen` function instead of MacOS-specific functions.
 
-* MacOS X: an :option:`--enable-universalsdk` switch was added to the
+* MacOS X: an :option:`!--enable-universalsdk` switch was added to the
   :program:`configure` script that compiles the interpreter as a universal binary
   able to run on both PowerPC and Intel processors. (Contributed by Ronald
   Oussoren; :issue:`2573`.)
