@@ -641,6 +641,23 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         c = self.gen.choices(range(n), cum_weights=range(1, n+1), k=10000)
         self.assertEqual(a, c)
 
+        # Amerian Roulette
+        population = ['Red', 'Black', 'Green']
+        weights = [18, 18, 2]
+        cum_weights = [18, 36, 38]
+        expanded_population = ['Red'] * 18 + ['Black'] * 18 + ['Green'] * 2
+
+        self.gen.seed(9035768)
+        a = self.gen.choices(expanded_population, k=10000)
+
+        self.gen.seed(9035768)
+        b = self.gen.choices(population, weights, k=10000)
+        self.assertEqual(a, b)
+
+        self.gen.seed(9035768)
+        c = self.gen.choices(population, cum_weights=cum_weights, k=10000)
+        self.assertEqual(a, c)
+
 def gamma(z, sqrt2pi=(2.0*pi)**0.5):
     # Reflection to right half of complex plane
     if z < 0.5:
