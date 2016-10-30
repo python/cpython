@@ -476,7 +476,7 @@ lost, because benchmarking this is tricky and depends crucially on how often the
 program creates and destroys objects.  The detection of cycles can be disabled
 when Python is compiled, if you can't afford even a tiny speed penalty or
 suspect that the cycle collection is buggy, by specifying the
-:option:`--without-cycle-gc` switch when running the :program:`configure`
+:option:`!--without-cycle-gc` switch when running the :program:`configure`
 script.
 
 Several people tackled this problem and contributed to a solution.  An early
