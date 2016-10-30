@@ -394,7 +394,7 @@ be shared between all three operating systems without needing to convert the
 line-endings.
 
 This feature can be disabled when compiling Python by specifying the
-:option:`--without-universal-newlines` switch when running Python's
+:option:`!--without-universal-newlines` switch when running Python's
 :program:`configure` script.
 
 
@@ -1812,9 +1812,9 @@ pools of memory and then fulfills smaller memory requests from these pools.
 
 In 2.1 and 2.2, pymalloc was an experimental feature and wasn't enabled by
 default; you had to explicitly enable it when compiling Python by providing the
-:option:`--with-pymalloc` option to the :program:`configure` script.  In 2.3,
+:option:`!--with-pymalloc` option to the :program:`configure` script.  In 2.3,
 pymalloc has had further enhancements and is now enabled by default; you'll have
-to supply :option:`--without-pymalloc` to disable it.
+to supply :option:`!--without-pymalloc` to disable it.
 
 This change is transparent to code written in Python; however, pymalloc may
 expose bugs in C extensions.  Authors of C extension modules should test their
@@ -1853,7 +1853,7 @@ Thanks to lots of work by Tim Peters, pymalloc in 2.3 also provides debugging
 features to catch memory overwrites and doubled frees in both extension modules
 and in the interpreter itself.  To enable this support, compile a debugging
 version of the Python interpreter by running :program:`configure` with
-:option:`--with-pydebug`.
+:option:`!--with-pydebug`.
 
 To aid extension writers, a header file :file:`Misc/pymemcompat.h` is
 distributed with the source to Python 2.3 that allows Python extensions to use
@@ -1879,11 +1879,11 @@ Changes to Python's build process and to the C API include:
 
 * The cycle detection implementation used by the garbage collection has proven
   to be stable, so it's now been made mandatory.  You can no longer compile Python
-  without it, and the :option:`--with-cycle-gc` switch to :program:`configure` has
+  without it, and the :option:`!--with-cycle-gc` switch to :program:`configure` has
   been removed.
 
 * Python can now optionally be built as a shared library
-  (:file:`libpython2.3.so`) by supplying :option:`--enable-shared` when running
+  (:file:`libpython2.3.so`) by supplying :option:`!--enable-shared` when running
   Python's :program:`configure` script.  (Contributed by Ondrej Palkovsky.)
 
 * The :c:macro:`DL_EXPORT` and :c:macro:`DL_IMPORT` macros are now deprecated.
@@ -1892,7 +1892,7 @@ Changes to Python's build process and to the C API include:
   generally use the :c:macro:`PyAPI_FUNC` and :c:macro:`PyAPI_DATA` macros.
 
 * The interpreter can be compiled without any docstrings for the built-in
-  functions and modules by supplying :option:`--without-doc-strings` to the
+  functions and modules by supplying :option:`!--without-doc-strings` to the
   :program:`configure` script. This makes the Python executable about 10% smaller,
   but will also mean that you can't get help for Python's built-ins.  (Contributed
   by Gustavo Niemeyer.)
