@@ -302,7 +302,7 @@ Miscellaneous options
 
    Issue a warning when a source file mixes tabs and spaces for indentation in a
    way that makes it depend on the worth of a tab expressed in spaces.  Issue an
-   error when the option is given twice (:option:`-tt`).
+   error when the option is given twice (:option:`!-tt`).
 
 
 .. cmdoption:: -u
@@ -322,7 +322,7 @@ Miscellaneous options
 
    Print a message each time a module is initialized, showing the place
    (filename or built-in module) from which it is loaded.  When given twice
-   (:option:`-vv`), print a message for each file that is checked for when
+   (:option:`!-vv`), print a message for each file that is checked for when
    searching for a module.  Also provides information on module cleanup at exit.
    See also :envvar:`PYTHONVERBOSE`.
 
@@ -344,7 +344,7 @@ Miscellaneous options
    invalid options when the first warning is issued).
 
    Starting from Python 2.7, :exc:`DeprecationWarning` and its descendants
-   are ignored by default.  The :option:`-Wd` option can be used to re-enable
+   are ignored by default.  The :option:`!-Wd` option can be used to re-enable
    them.
 
    Warnings can also be controlled from within a Python program using the

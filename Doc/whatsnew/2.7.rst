@@ -390,7 +390,7 @@ Here's an example::
     args = parser.parse_args()
     print args.__dict__
 
-Unless you override it, :option:`-h` and :option:`--help` switches
+Unless you override it, :option:`!-h` and :option:`!--help` switches
 are automatically added, and produce neatly formatted output::
 
     -> ./python.exe argparse-example.py --help
@@ -945,7 +945,7 @@ Several performance enhancements have been added:
   benchmark results on 32-bit machines have been mixed.  Therefore,
   the default is to use base 2**30 on 64-bit machines and base 2**15
   on 32-bit machines; on Unix, there's a new configure option
-  :option:`--enable-big-digits` that can be used to override this default.
+  :option:`!--enable-big-digits` that can be used to override this default.
 
   Apart from the performance improvements this change should be
   invisible to end users, with one exception: for testing and
@@ -1820,12 +1820,12 @@ Consult the :mod:`unittest` module documentation for more details.
 
 The :func:`~unittest.main` function supports some other new options:
 
-* :option:`-b <unittest -b>` or :option:`--buffer` will buffer the standard output
+* :option:`-b <unittest -b>` or :option:`!--buffer` will buffer the standard output
   and standard error streams during each test.  If the test passes,
   any resulting output will be discarded; on failure, the buffered
   output will be displayed.
 
-* :option:`-c <unittest -c>` or :option:`--catch` will cause the control-C interrupt
+* :option:`-c <unittest -c>` or :option:`!--catch` will cause the control-C interrupt
   to be handled more gracefully.  Instead of interrupting the test
   process immediately, the currently running test will be completed
   and then the partial results up to the interruption will be reported.
@@ -1839,7 +1839,7 @@ The :func:`~unittest.main` function supports some other new options:
   :func:`~unittest.removeHandler` decorator that can be used to mark tests that
   should have the control-C handling disabled.
 
-* :option:`-f <unittest -f>` or :option:`--failfast` makes
+* :option:`-f <unittest -f>` or :option:`!--failfast` makes
   test execution stop immediately when a test fails instead of
   continuing to execute further tests.  (Suggested by Cliff Dyer and
   implemented by Michael Foord; :issue:`8074`.)
@@ -2214,19 +2214,19 @@ Changes to Python's build process and to the C API include:
   with ``Py``, or with ``_ctypes``.  (Implemented by Thomas
   Heller; :issue:`3102`.)
 
-* New configure option: the :option:`--with-system-expat` switch allows
+* New configure option: the :option:`!--with-system-expat` switch allows
   building the :mod:`pyexpat` module to use the system Expat library.
   (Contributed by Arfrever Frehtes Taifersar Arahesis; :issue:`7609`.)
 
 * New configure option: the
-  :option:`--with-valgrind` option will now disable the pymalloc
+  :option:`!--with-valgrind` option will now disable the pymalloc
   allocator, which is difficult for the Valgrind memory-error detector
   to analyze correctly.
   Valgrind will therefore be better at detecting memory leaks and
   overruns. (Contributed by James Henstridge; :issue:`2422`.)
 
 * New configure option: you can now supply an empty string to
-  :option:`--with-dbmliborder=` in order to disable all of the various
+  :option:`!--with-dbmliborder=` in order to disable all of the various
   DBM modules.  (Added by Arfrever Frehtes Taifersar Arahesis;
   :issue:`6491`.)
 
@@ -2373,19 +2373,19 @@ Other Changes and Fixes
   renamed, moved, or is accessed through different paths.  (Patch by
   Ziga Seilnacht and Jean-Paul Calderone; :issue:`1180193`.)
 
-* The :file:`regrtest.py` script now takes a :option:`--randseed=`
+* The :file:`regrtest.py` script now takes a :option:`!--randseed=`
   switch that takes an integer that will be used as the random seed
-  for the :option:`-r` option that executes tests in random order.
-  The :option:`-r` option also reports the seed that was used
+  for the :option:`!-r` option that executes tests in random order.
+  The :option:`!-r` option also reports the seed that was used
   (Added by Collin Winter.)
 
-* Another :file:`regrtest.py` switch is :option:`-j`, which
+* Another :file:`regrtest.py` switch is :option:`!-j`, which
   takes an integer specifying how many tests run in parallel. This
   allows reducing the total runtime on multi-core machines.
   This option is compatible with several other options, including the
   :option:`!-R` switch which is known to produce long runtimes.
   (Added by Antoine Pitrou, :issue:`6152`.)  This can also be used
-  with a new :option:`-F` switch that runs selected tests in a loop
+  with a new :option:`!-F` switch that runs selected tests in a loop
   until they fail.  (Added by Antoine Pitrou; :issue:`7312`.)
 
 * When executed as a script, the :file:`py_compile.py` module now

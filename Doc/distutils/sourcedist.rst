@@ -14,7 +14,7 @@ or config file), :command:`sdist` creates the archive of the default format for
 the current platform.  The default format is a gzip'ed tar file
 (:file:`.tar.gz`) on Unix, and ZIP file on Windows.
 
-You can specify as many formats as you like using the :option:`--formats`
+You can specify as many formats as you like using the :option:`!--formats`
 option, for example::
 
    python setup.py sdist --formats=gztar,zip
@@ -147,7 +147,7 @@ The normal course of operations for the :command:`sdist` command is as follows:
   in) to create the source distribution archive(s)
 
 There are a couple of options that modify this behaviour.  First, use the
-:option:`--no-defaults` and :option:`--no-prune` to disable the standard
+:option:`!--no-defaults` and :option:`!--no-prune` to disable the standard
 "include" and "exclude" sets.
 
 Second, you might just want to (re)generate the manifest, but not create a
@@ -155,7 +155,7 @@ source distribution::
 
    python setup.py sdist --manifest-only
 
-:option:`-o` is a shortcut for :option:`--manifest-only`.
+:option:`!-o` is a shortcut for :option:`!--manifest-only`.
 
 .. _manifest_template:
 
@@ -189,7 +189,7 @@ matching :file:`\*.txt` or :file:`\*.py`, and exclude all directories matching
 :file:`examples/sample?/build`.  All of this is done *after* the standard
 include set, so you can exclude files from the standard set with explicit
 instructions in the manifest template.  (Or, you can use the
-:option:`--no-defaults` option to disable the standard set entirely.)
+:option:`!--no-defaults` option to disable the standard set entirely.)
 
 The order of commands in the manifest template matters: initially, we have the
 list of default files as described above, and each command in the template adds
@@ -206,8 +206,8 @@ Now we have our complete list of files, which is written to the manifest for
 future reference, and then used to build the source distribution archive(s).
 
 You can disable the default set of included files with the
-:option:`--no-defaults` option, and you can disable the standard exclude set
-with :option:`--no-prune`.
+:option:`!--no-defaults` option, and you can disable the standard exclude set
+with :option:`!--no-prune`.
 
 Following the Distutils' own manifest template, let's trace how the
 :command:`sdist` command builds the list of files to include in the Distutils

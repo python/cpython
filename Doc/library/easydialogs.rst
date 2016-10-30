@@ -94,9 +94,9 @@ The :mod:`EasyDialogs` module defines the following functions:
    +----------------------+------------------------------------------+
    | ``x:`` or ``x=``     | :option:`!-x` (short option with value)  |
    +----------------------+------------------------------------------+
-   | ``xyz``              | :option:`--xyz` (long option)            |
+   | ``xyz``              | :option:`!--xyz` (long option)           |
    +----------------------+------------------------------------------+
-   | ``xyz:`` or ``xyz=`` | :option:`--xyz` (long option with value) |
+   | ``xyz:`` or ``xyz=`` | :option:`!--xyz` (long option with value)|
    +----------------------+------------------------------------------+
 
    *commandlist* is a list of items of the form *cmdstr* or ``(cmdstr, descr)``,

@@ -442,7 +442,7 @@ command line.  Scripts don't require Distutils to do anything very complicated.
 The only clever feature is that if the first line of the script starts with
 ``#!`` and contains the word "python", the Distutils will adjust the first line
 to refer to the current interpreter location. By default, it is replaced with
-the current interpreter location.  The :option:`--executable` (or :option:`-e`)
+the current interpreter location.  The :option:`!--executable` (or :option:`!-e`)
 option will allow the interpreter path to be explicitly overridden.
 
 The ``scripts`` option simply is a list of files to be handled in this

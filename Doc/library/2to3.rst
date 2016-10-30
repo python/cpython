@@ -41,8 +41,8 @@ It can be converted to Python 3.x code via 2to3 on the command line:
 
 A diff against the original source file is printed.  2to3 can also write the
 needed modifications right back to the source file.  (A backup of the original
-file is made unless :option:`-n` is also given.)  Writing the changes back is
-enabled with the :option:`-w` flag:
+file is made unless :option:`!-n` is also given.)  Writing the changes back is
+enabled with the :option:`!-w` flag:
 
 .. code-block:: shell-session
 
@@ -59,8 +59,8 @@ After transformation, :file:`example.py` looks like this::
 Comments and exact indentation are preserved throughout the translation process.
 
 By default, 2to3 runs a set of :ref:`predefined fixers <2to3-fixers>`.  The
-:option:`-l` flag lists all available fixers.  An explicit set of fixers to run
-can be given with :option:`-f`.  Likewise the :option:`!-x` explicitly disables a
+:option:`!-l` flag lists all available fixers.  An explicit set of fixers to run
+can be given with :option:`!-f`.  Likewise the :option:`!-x` explicitly disables a
 fixer.  The following example runs only the ``imports`` and ``has_key`` fixers:
 
 .. code-block:: shell-session
@@ -100,29 +100,29 @@ Since some print statements can be parsed as function calls or statements, 2to3
 cannot always read files containing the print function.  When 2to3 detects the
 presence of the ``from __future__ import print_function`` compiler directive, it
 modifies its internal grammar to interpret :func:`print` as a function.  This
-change can also be enabled manually with the :option:`-p` flag.  Use
-:option:`-p` to run fixers on code that already has had its print statements
+change can also be enabled manually with the :option:`!-p` flag.  Use
+:option:`!-p` to run fixers on code that already has had its print statements
 converted.
 
-The :option:`-o` or :option:`--output-dir` option allows specification of an
+The :option:`!-o` or :option:`!--output-dir` option allows specification of an
 alternate directory for processed output files to be written to.  The
-:option:`-n` flag is required when using this as backup files do not make sense
+:option:`!-n` flag is required when using this as backup files do not make sense
 when not overwriting the input files.
 
 .. versionadded:: 2.7.3
-   The :option:`-o` option was added.
+   The :option:`!-o` option was added.
 
-The :option:`!-W` or :option:`--write-unchanged-files` flag tells 2to3 to always
+The :option:`!-W` or :option:`!--write-unchanged-files` flag tells 2to3 to always
 write output files even if no changes were required to the file.  This is most
-useful with :option:`-o` so that an entire Python source tree is copied with
+useful with :option:`!-o` so that an entire Python source tree is copied with
 translation from one directory to another.
-This option implies the :option:`-w` flag as it would not make sense otherwise.
+This option implies the :option:`!-w` flag as it would not make sense otherwise.
 
 .. versionadded:: 2.7.3
    The :option:`!-W` flag was added.
 
-The :option:`--add-suffix` option specifies a string to append to all output
-filenames.  The :option:`-n` flag is required when specifying this as backups
+The :option:`!--add-suffix` option specifies a string to append to all output
+filenames.  The :option:`!-n` flag is required when specifying this as backups
 are not necessary when writing to different filenames.  Example:
 
 .. code-block:: shell-session
@@ -132,7 +132,7 @@ are not necessary when writing to different filenames.  Example:
 Will cause a converted file named ``example.py3`` to be written.
 
 .. versionadded:: 2.7.3
-   The :option:`--add-suffix` option was added.
+   The :option:`!--add-suffix` option was added.
 
 To translate an entire project from one directory tree to another use:
 

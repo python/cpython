@@ -779,8 +779,8 @@ Unicode Changes
 Python's Unicode support has been enhanced a bit in 2.2.  Unicode strings are
 usually stored as UCS-2, as 16-bit unsigned integers. Python 2.2 can also be
 compiled to use UCS-4, 32-bit unsigned integers, as its internal encoding by
-supplying :option:`--enable-unicode=ucs4` to the configure script.   (It's also
-possible to specify :option:`--disable-unicode` to completely disable Unicode
+supplying :option:`!--enable-unicode=ucs4` to the configure script.   (It's also
+possible to specify :option:`!--disable-unicode` to completely disable Unicode
 support.)
 
 When built to use UCS-4 (a "wide Python"), the interpreter can natively handle
@@ -979,7 +979,7 @@ New and Improved Modules
   output have been corrected.  (Contributed by Fred L. Drake, Jr. and Tim Peters.)
 
 * The :mod:`socket` module can be compiled to support IPv6; specify the
-  :option:`--enable-ipv6` option to Python's configure script.  (Contributed by
+  :option:`!--enable-ipv6` option to Python's configure script.  (Contributed by
   Jun-ichiro "itojun" Hagino.)
 
 * Two new format characters were added to the :mod:`struct` module for 64-bit
@@ -1140,7 +1140,7 @@ Some of the more notable changes are:
   in the main Python CVS tree, and many changes have been made to support MacOS X.
 
   The most significant change is the ability to build Python as a framework,
-  enabled by supplying the :option:`--enable-framework` option to the configure
+  enabled by supplying the :option:`!--enable-framework` option to the configure
   script when compiling Python.  According to Jack Jansen, "This installs a self-
   contained Python installation plus the OS X framework "glue" into
   :file:`/Library/Frameworks/Python.framework` (or another location of choice).

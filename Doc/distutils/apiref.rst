@@ -205,7 +205,7 @@ the full reference.
    |                        | to or ``None`` to define it    |                           |
    |                        | without a particular value     |                           |
    |                        | (equivalent of ``#define FOO`` |                           |
-   |                        | in source or :option:`-DFOO`   |                           |
+   |                        | in source or :option:`!-DFOO`  |                           |
    |                        | on Unix C compiler command     |                           |
    |                        | line)                          |                           |
    +------------------------+--------------------------------+---------------------------+
@@ -314,11 +314,11 @@ This module provides the following functions.
 
 .. function:: gen_preprocess_options(macros, include_dirs)
 
-   Generate C pre-processor options (:option:`-D`, :option:`!-U`, :option:`!-I`) as
+   Generate C pre-processor options (:option:`!-D`, :option:`!-U`, :option:`!-I`) as
    used by at least two types of compilers: the typical Unix compiler and Visual
    C++. *macros* is the usual thing, a list of 1- or 2-tuples, where ``(name,)``
    means undefine (:option:`!-U`) macro *name*, and ``(name, value)`` means define
-   (:option:`-D`) macro *name* to *value*.  *include_dirs* is just a list of
+   (:option:`!-D`) macro *name* to *value*.  *include_dirs* is just a list of
    directory names to be added to the header file search path (:option:`!-I`).
    Returns a list of command-line options suitable for either Unix compilers or
    Visual C++.
@@ -354,7 +354,7 @@ This module provides the following functions.
 
 .. function:: show_compilers()
 
-   Print list of available compilers (used by the :option:`--help-compiler` options
+   Print list of available compilers (used by the :option:`!--help-compiler` options
    to :command:`build`, :command:`build_ext`, :command:`build_clib`).
 
 
@@ -784,15 +784,15 @@ This module provides the following functions.
 This module provides the :class:`UnixCCompiler` class, a subclass of
 :class:`CCompiler` that handles the typical Unix-style command-line  C compiler:
 
-* macros defined with :option:`-Dname[=value]`
+* macros defined with :option:`!-Dname[=value]`
 
-* macros undefined with :option:`-Uname`
+* macros undefined with :option:`!-Uname`
 
-* include search directories specified with :option:`-Idir`
+* include search directories specified with :option:`!-Idir`
 
-* libraries specified with :option:`-llib`
+* libraries specified with :option:`!-llib`
 
-* library search directories specified with :option:`-Ldir`
+* library search directories specified with :option:`!-Ldir`
 
 * compile handled by :program:`cc` (or similar) executable with :option:`!-c`
   option: compiles :file:`.c` to :file:`.o`
@@ -800,7 +800,7 @@ This module provides the :class:`UnixCCompiler` class, a subclass of
 * link static library handled by :program:`ar` command (possibly with
   :program:`ranlib`)
 
-* link shared library handled by :program:`cc` :option:`-shared`
+* link shared library handled by :program:`cc` :option:`!-shared`
 
 
 :mod:`distutils.msvccompiler` --- Microsoft Compiler
@@ -1310,8 +1310,8 @@ provides the following additional features:
 
 * options set attributes of a passed-in object
 
-* boolean options can have "negative aliases" --- eg. if :option:`--quiet` is
-  the "negative alias" of :option:`--verbose`, then :option:`--quiet` on the
+* boolean options can have "negative aliases" --- eg. if :option:`!--quiet` is
+  the "negative alias" of :option:`!--verbose`, then :option:`!--quiet` on the
   command line sets *verbose* to false.
 
 

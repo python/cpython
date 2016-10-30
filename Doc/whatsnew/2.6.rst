@@ -2988,7 +2988,7 @@ Changes to Python's build process and to the C API include:
 
 * On Mac OS X, Python 2.6 can be compiled as a 4-way universal build.
   The :program:`configure` script
-  can take a :option:`--with-universal-archs=[32-bit|64-bit|all]`
+  can take a :option:`!--with-universal-archs=[32-bit|64-bit|all]`
   switch, controlling whether the binaries are built for 32-bit
   architectures (x86, PowerPC), 64-bit (x86-64 and PPC-64), or both.
   (Contributed by Ronald Oussoren.)
@@ -3143,7 +3143,7 @@ Port-Specific Changes: Mac OS X
 
 * When compiling a framework build of Python, you can now specify the
   framework name to be used by providing the
-  :option:`--with-framework-name=` option to the
+  :option:`!--with-framework-name=` option to the
   :program:`configure` script.
 
 * The :mod:`macfs` module has been removed.  This in turn required the

@@ -692,7 +692,7 @@ of the more notable changes are:
   faster than the system :func:`malloc` and have less memory overhead.  The
   allocator uses C's :func:`malloc` function to get large pools of memory, and
   then fulfills smaller memory requests from these pools.  It can be enabled by
-  providing the :option:`--with-pymalloc` option to the :program:`configure`
+  providing the :option:`!--with-pymalloc` option to the :program:`configure`
   script; see :file:`Objects/obmalloc.c` for the implementation details.
 
   Authors of C extension modules should test their code with the object allocator

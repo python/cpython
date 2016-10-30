@@ -57,7 +57,7 @@ built distributions, such as an RPM package or an executable installer for
 Windows, is far more convenient for users even if your distribution doesn't
 include any extensions.
 
-The :command:`bdist` command has a :option:`--formats` option, similar to the
+The :command:`bdist` command has a :option:`!--formats` option, similar to the
 :command:`sdist` command, which you can use to select the types of built
 distribution to generate: for example, ::
 
@@ -115,7 +115,7 @@ Notes:
    requires external :program:`rpm` utility, version 3.0.4 or better (use ``rpm
    --version`` to find out which version you have)
 
-You don't have to use the :command:`bdist` command with the :option:`--formats`
+You don't have to use the :command:`bdist` command with the :option:`!--formats`
 option; you can also use the command that directly implements the format you're
 interested in.  Some of these :command:`bdist` "sub-commands" actually generate
 several similar formats; for instance, the :command:`bdist_dumb` command
@@ -165,7 +165,7 @@ The usual way to create an RPM of your module distribution is to run the
 
    python setup.py bdist_rpm
 
-or the :command:`bdist` command with the :option:`--format` option::
+or the :command:`bdist` command with the :option:`!--format` option::
 
    python setup.py bdist --formats=rpm
 
@@ -258,10 +258,10 @@ Normally, RPM bundles the last two steps together; when you use the Distutils,
 all three steps are typically bundled together.
 
 If you wish, you can separate these three steps.  You can use the
-:option:`--spec-only` option to make :command:`bdist_rpm` just create the
+:option:`!--spec-only` option to make :command:`bdist_rpm` just create the
 :file:`.spec` file and exit; in this case, the :file:`.spec` file will be
 written to the "distribution directory"---normally :file:`dist/`, but
-customizable with the :option:`--dist-dir` option.  (Normally, the :file:`.spec`
+customizable with the :option:`!--dist-dir` option.  (Normally, the :file:`.spec`
 file winds up deep in the "build tree," in a temporary directory created by
 :command:`bdist_rpm`.)
 
@@ -298,7 +298,7 @@ is usually as easy as running::
 
    python setup.py bdist_wininst
 
-or the :command:`bdist` command with the :option:`--formats` option::
+or the :command:`bdist` command with the :option:`!--formats` option::
 
    python setup.py bdist --formats=wininst
 
@@ -316,20 +316,20 @@ support.
 The installer will try to compile pure modules into :term:`bytecode` after installation
 on the target system in normal and optimizing mode.  If you don't want this to
 happen for some reason, you can run the :command:`bdist_wininst` command with
-the :option:`--no-target-compile` and/or the :option:`--no-target-optimize`
+the :option:`!--no-target-compile` and/or the :option:`!--no-target-optimize`
 option.
 
 By default the installer will display the cool "Python Powered" logo when it is
 run, but you can also supply your own 152x261 bitmap which must be a Windows
-:file:`.bmp` file with the :option:`--bitmap` option.
+:file:`.bmp` file with the :option:`!--bitmap` option.
 
 The installer will also display a large title on the desktop background window
 when it is run, which is constructed from the name of your distribution and the
 version number.  This can be changed to another text by using the
-:option:`--title` option.
+:option:`!--title` option.
 
 The installer file will be written to the "distribution directory" --- normally
-:file:`dist/`, but customizable with the :option:`--dist-dir` option.
+:file:`dist/`, but customizable with the :option:`!--dist-dir` option.
 
 .. _cross-compile-windows:
 
@@ -341,7 +341,7 @@ Windows platforms.  In practice, this means that with the correct tools
 installed, you can use a 32bit version of Windows to create 64bit extensions
 and vice-versa.
 
-To build for an alternate platform, specify the :option:`--plat-name` option
+To build for an alternate platform, specify the :option:`!--plat-name` option
 to the build command.  Valid values are currently 'win32', 'win-amd64' and
 'win-ia64'.  For example, on a 32bit version of Windows, you could execute::
 
@@ -374,14 +374,14 @@ The Postinstallation script
 ---------------------------
 
 Starting with Python 2.3, a postinstallation script can be specified with the
-:option:`--install-script` option.  The basename of the script must be
+:option:`!--install-script` option.  The basename of the script must be
 specified, and the script filename must also be listed in the scripts argument
 to the setup function.
 
 This script will be run at installation time on the target system after all the
-files have been copied, with ``argv[1]`` set to :option:`-install`, and again at
+files have been copied, with ``argv[1]`` set to :option:`!-install`, and again at
 uninstallation time before the files are removed with ``argv[1]`` set to
-:option:`-remove`.
+:option:`!-remove`.
 
 The installation script runs embedded in the windows installer, every output
 (``sys.stdout``, ``sys.stderr``) is redirected into a buffer and will be
@@ -444,7 +444,7 @@ built-in functions in the installation script.
 Vista User Access Control (UAC)
 ===============================
 
-Starting with Python 2.6, bdist_wininst supports a :option:`--user-access-control`
+Starting with Python 2.6, bdist_wininst supports a :option:`!--user-access-control`
 option.  The default is 'none' (meaning no UAC handling is done), and other
 valid values are 'auto' (meaning prompt for UAC elevation if Python was
 installed for all users) and 'force' (meaning always prompt for elevation).
