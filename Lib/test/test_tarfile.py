@@ -2,7 +2,9 @@ import sys
 import os
 import shutil
 import StringIO
+from binascii import unhexlify
 from hashlib import md5
+from random import Random
 import errno
 
 import unittest
@@ -276,12 +278,17 @@ class CommonReadTest(ReadTest):
         else:
             _open = open
 
+        # generate 512 pseudorandom bytes
+        data = unhexlify('%1024x' % Random(0).getrandbits(512*8))
         for char in ('\0', 'a'):
             # Test if EOFHeaderError ('\0') and InvalidHeaderError ('a')
             # are ignored correctly.
             with _open(tmpname, "wb") as fobj:
                 fobj.write(char * 1024)
-                fobj.write(tarfile.TarInfo("foo").tobuf())
+                tarinfo = tarfile.TarInfo("foo")
+                tarinfo.size = len(data)
+                fobj.write(tarinfo.tobuf())
+                fobj.write(data)
 
             tar = tarfile.open(tmpname, mode="r", ignore_zeros=True)
             try:
