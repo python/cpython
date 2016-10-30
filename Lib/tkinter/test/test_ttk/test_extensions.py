@@ -69,14 +69,12 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
 
         # variable initialization/passing
         passed_expected = (('0', 0), (0, 0), (10, 10),
-            (-1, -1), (sys.maxsize + 1, sys.maxsize + 1))
+            (-1, -1), (sys.maxsize + 1, sys.maxsize + 1),
+            (2.5, 2), ('2.5', 2))
         for pair in passed_expected:
             x = ttk.LabeledScale(self.root, from_=pair[0])
             self.assertEqual(x.value, pair[1])
             x.destroy()
-        x = ttk.LabeledScale(self.root, from_='2.5')
-        self.assertRaises((ValueError, tkinter.TclError), x._variable.get)
-        x.destroy()
         x = ttk.LabeledScale(self.root, from_=None)
         self.assertRaises((ValueError, tkinter.TclError), x._variable.get)
         x.destroy()
@@ -155,8 +153,10 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         # The following update is needed since the test doesn't use mainloop,
         # at the same time this shouldn't affect test outcome
         x.update()
+        self.assertEqual(x.value, newval)
         self.assertEqual(x.label['text'],
                          newval if self.wantobjects else str(newval))
+        self.assertEqual(float(x.scale.get()), newval)
         self.assertGreater(x.scale.coords()[0], curr_xcoord)
         self.assertEqual(x.scale.coords()[0],
             int(x.label.place_info()['x']))
@@ -168,9 +168,18 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
             conv = int
         x.value = conv(x.scale['to']) + 1 # no changes shouldn't happen
         x.update()
+        self.assertEqual(x.value, newval)
         self.assertEqual(conv(x.label['text']), newval)
+        self.assertEqual(float(x.scale.get()), newval)
         self.assertEqual(x.scale.coords()[0],
             int(x.label.place_info()['x']))
+
+        # non-integer value
+        x.value = newval = newval + 1.5
+        x.update()
+        self.assertEqual(x.value, int(newval))
+        self.assertEqual(conv(x.label['text']), int(newval))
+        self.assertEqual(float(x.scale.get()), newval)
 
         x.destroy()
 
