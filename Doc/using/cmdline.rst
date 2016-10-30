@@ -224,6 +224,7 @@ Miscellaneous options
    raises an exception.  See also :envvar:`PYTHONINSPECT`.
 
 
+.. _using-on-optimizations:
 .. cmdoption:: -O
 
    Turn on basic optimizations.  This changes the filename extension for

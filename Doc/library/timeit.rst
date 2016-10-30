@@ -232,7 +232,8 @@ Unix, you can use :func:`time.clock` to measure CPU time.
    The code here doesn't try to hide it, but you should be aware of it.  The
    baseline overhead can be measured by invoking the program without arguments, and
    it might differ between Python versions.  Also, to fairly compare older Python
-   versions to Python 2.3, you may want to use Python's :option:`-O` option for
+   versions to Python 2.3, you may want to use Python's :option:`!-O`
+   option (see :ref:`Optimizations <using-on-optimizations>`) for
    the older versions to avoid timing ``SET_LINENO`` instructions.
 
 
