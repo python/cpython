@@ -1102,13 +1102,28 @@ _odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
     }
 
     /* Now delete the value from the dict. */
-    if (node != NULL) {
-        value = _PyDict_GetItem_KnownHash(od, key, hash);  /* borrowed */
-        if (value != NULL) {
-            Py_INCREF(value);
-            if (_PyDict_DelItem_KnownHash(od, key, hash) < 0) {
-                Py_DECREF(value);
-                return NULL;
+    if (PyODict_CheckExact(od)) {
+        if (node != NULL) {
+            value = _PyDict_GetItem_KnownHash(od, key, hash);  /* borrowed */
+            if (value != NULL) {
+                Py_INCREF(value);
+                if (_PyDict_DelItem_KnownHash(od, key, hash) < 0) {
+                    Py_DECREF(value);
+                    return NULL;
+                }
+            }
+        }
+    }
+    else {
+        int exists = PySequence_Contains(od, key);
+        if (exists < 0)
+            return NULL;
+        if (exists) {
+            value = PyObject_GetItem(od, key);
+            if (value != NULL) {
+                if (PyObject_DelItem(od, key) == -1) {
+                    Py_CLEAR(value);
+                }
             }
         }
     }

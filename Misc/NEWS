@@ -99,9 +99,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #27275: Fixed implementation of pop() and popitem() methods in
-  subclasses of accelerated OrderedDict.
-
 - Issue #28255: calendar.TextCalendar.prweek() no longer prints a space after
   a weeks's calendar.  calendar.TextCalendar.pryear() no longer prints redundant
   newline after a year's calendar.  Based on patch by Xiang Zhang.
