@@ -31,9 +31,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #27275: Fixed implementation of pop() and popitem() methods in
-  subclasses of accelerated OrderedDict.
-
 - Issue #18844: The various ways of specifing weights for random.choices()
   now produce the same result sequences.
 
