@@ -217,13 +217,12 @@ class TestIntVar(TestBase):
         self.assertEqual(123, v.get())
         self.root.globalsetvar("name", "345")
         self.assertEqual(345, v.get())
+        self.root.globalsetvar("name", "876.5")
+        self.assertEqual(876, v.get())
 
     def test_invalid_value(self):
         v = IntVar(self.root, name="name")
         self.root.globalsetvar("name", "value")
-        with self.assertRaises((ValueError, TclError)):
-            v.get()
-        self.root.globalsetvar("name", "345.0")
         with self.assertRaises((ValueError, TclError)):
             v.get()
 
