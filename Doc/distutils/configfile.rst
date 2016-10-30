@@ -66,7 +66,7 @@ universal :option:`!--help` option, e.g. ::
      --swig-opts          list of SWIG command line options
    [...]
 
-Note that an option spelled :option:`--foo-bar` on the command-line  is spelled
+Note that an option spelled :option:`!--foo-bar` on the command-line  is spelled
 ``foo_bar`` in configuration files.
 
 .. _distutils-build-ext-inplace:
@@ -75,12 +75,12 @@ For example, say you want your extensions to be built "in-place"---that is, you
 have an extension :mod:`pkg.ext`, and you want the compiled extension file
 (:file:`ext.so` on Unix, say) to be put in the same source directory as your
 pure Python modules :mod:`pkg.mod1` and :mod:`pkg.mod2`.  You can always use the
-:option:`--inplace` option on the command-line to ensure this::
+:option:`!--inplace` option on the command-line to ensure this::
 
    python setup.py build_ext --inplace
 
 But this requires that you always specify the :command:`build_ext` command
-explicitly, and remember to provide :option:`--inplace`. An easier way is to
+explicitly, and remember to provide :option:`!--inplace`. An easier way is to
 "set and forget" this option, by encoding it in :file:`setup.cfg`, the
 configuration file for this distribution::
 
