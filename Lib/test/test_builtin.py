@@ -11,6 +11,7 @@ import os
 import pickle
 import platform
 import random
+import re
 import sys
 import traceback
 import types
@@ -1447,21 +1448,14 @@ class BuiltinTest(unittest.TestCase):
 
         # --------------------------------------------------------------------
         # Issue #7994: object.__format__ with a non-empty format string is
-        #  deprecated
-        def test_deprecated_format_string(obj, fmt_str, should_raise):
-            if should_raise:
-                self.assertRaises(TypeError, format, obj, fmt_str)
-            else:
-                format(obj, fmt_str)
-
-        fmt_strs = ['', 's']
-
+        # disallowed
         class A:
             def __format__(self, fmt_str):
                 return format('', fmt_str)
 
-        for fmt_str in fmt_strs:
-            test_deprecated_format_string(A(), fmt_str, False)
+        self.assertEqual(format(A()), '')
+        self.assertEqual(format(A(), ''), '')
+        self.assertEqual(format(A(), 's'), '')
 
         class B:
             pass
@@ -1470,8 +1464,12 @@ class BuiltinTest(unittest.TestCase):
             pass
 
         for cls in [object, B, C]:
-            for fmt_str in fmt_strs:
-                test_deprecated_format_string(cls(), fmt_str, len(fmt_str) != 0)
+            obj = cls()
+            self.assertEqual(format(obj), str(obj))
+            self.assertEqual(format(obj, ''), str(obj))
+            with self.assertRaisesRegex(TypeError,
+                                        r'\b%s\b' % re.escape(cls.__name__)):
+                format(obj, 's')
         # --------------------------------------------------------------------
 
         # make sure we can take a subclass of str as a format spec
