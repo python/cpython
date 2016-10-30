@@ -113,6 +113,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #27939: Fixed bugs in tkinter.ttk.LabeledScale and tkinter.Scale caused
+  by representing the scale as float value internally in Tk.  tkinter.IntVar
+  now works if float value is set to underlying Tk variable.
+
 - Issue #28255: calendar.TextCalendar().prmonth() no longer prints a space
   at the start of new line after printing a month's calendar.  Patch by
   Xiang Zhang.
