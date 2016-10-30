@@ -500,7 +500,11 @@ class IntVar(Variable):
 
     def get(self):
         """Return the value of the variable as an integer."""
-        return self._tk.getint(self._tk.globalgetvar(self._name))
+        value = self._tk.globalgetvar(self._name)
+        try:
+            return self._tk.getint(value)
+        except (TypeError, TclError):
+            return int(self._tk.getdouble(value))
 
 class DoubleVar(Variable):
     """Value holder for float variables."""
@@ -3003,7 +3007,7 @@ class Scale(Widget):
         value = self.tk.call(self._w, 'get')
         try:
             return self.tk.getint(value)
-        except (ValueError, TclError):
+        except (ValueError, TypeError, TclError):
             return self.tk.getdouble(value)
     def set(self, value):
         """Set the value to VALUE."""
