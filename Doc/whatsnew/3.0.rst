@@ -904,7 +904,7 @@ best strategy is the following:
    port from Python 2.x to Python 2.(x+1).  Make sure all your tests
    pass.
 
-2. (Still using 2.6:) Turn on the :option:`-3` command line switch.
+2. (Still using 2.6:) Turn on the :option:`!-3` command line switch.
    This enables warnings about features that will be removed (or
    change) in 3.0.  Run your test suite again, and fix code that you
    get warnings about until there are no warnings left, and all your

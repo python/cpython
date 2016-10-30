@@ -58,7 +58,7 @@ Python 2.6 incorporates new features and syntax from 3.0 while
 remaining compatible with existing code by not removing older features
 or syntax.  When it's not possible to do that, Python 2.6 tries to do
 what it can, adding compatibility functions in a
-:mod:`future_builtins` module and a :option:`-3` switch to warn about
+:mod:`future_builtins` module and a :option:`!-3` switch to warn about
 usages that will become unsupported in 3.0.
 
 Some significant new packages have been added to the standard library,
@@ -116,7 +116,7 @@ module has versions with the new 3.0 semantics.  Code written to be
 compatible with 3.0 can do ``from future_builtins import hex, map`` as
 necessary.
 
-A new command-line switch, :option:`-3`, enables warnings
+A new command-line switch, :option:`!-3`, enables warnings
 about features that will be removed in Python 3.0.  You can run code
 with this switch to see how much work will be necessary to port
 code to 3.0.  The value of this switch is available
@@ -2992,7 +2992,7 @@ Changes to Python's build process and to the C API include:
 
 * On Mac OS X, Python 2.6 can be compiled as a 4-way universal build.
   The :program:`configure` script
-  can take a :option:`--with-universal-archs=[32-bit|64-bit|all]`
+  can take a :option:`!--with-universal-archs=[32-bit|64-bit|all]`
   switch, controlling whether the binaries are built for 32-bit
   architectures (x86, PowerPC), 64-bit (x86-64 and PPC-64), or both.
   (Contributed by Ronald Oussoren.)
@@ -3147,7 +3147,7 @@ Port-Specific Changes: Mac OS X
 
 * When compiling a framework build of Python, you can now specify the
   framework name to be used by providing the
-  :option:`--with-framework-name=` option to the
+  :option:`!--with-framework-name=` option to the
   :program:`configure` script.
 
 * The :mod:`macfs` module has been removed.  This in turn required the

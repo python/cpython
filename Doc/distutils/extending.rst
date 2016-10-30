@@ -62,7 +62,7 @@ requiring modifications to the Python installation.  This is expected to allow
 third-party extensions to provide support for additional packaging systems, but
 the commands can be used for anything distutils commands can be used for.  A new
 configuration option, ``command_packages`` (command-line option
-:option:`--command-packages`), can be used to specify additional packages to be
+:option:`!--command-packages`), can be used to specify additional packages to be
 searched for modules implementing commands.  Like all distutils options, this
 can be specified on the command line or in a configuration file.  This option
 can only be set in the ``[global]`` section of a configuration file, or before

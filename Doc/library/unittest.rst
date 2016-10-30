@@ -1972,7 +1972,8 @@ Loading and running tests
    methods <deprecated-aliases>` are also special-cased and, when the warning
    filters are ``'default'`` or ``'always'``, they will appear only once
    per-module, in order to avoid too many warning messages.  This behavior can
-   be overridden using the :option:`-Wd` or :option:`-Wa` options and leaving
+   be overridden using Python's :option:`!-Wd` or :option:`!-Wa` options
+   (see :ref:`Warning control <using-on-warnings>`) and leaving
    *warnings* to ``None``.
 
    .. versionchanged:: 3.2
@@ -2053,7 +2054,8 @@ Loading and running tests
 
    The *warnings* argument specifies the :ref:`warning filter <warning-filter>`
    that should be used while running the tests.  If it's not specified, it will
-   remain ``None`` if a :option:`-W` option is passed to :program:`python`,
+   remain ``None`` if a :option:`!-W` option is passed to :program:`python`
+   (see :ref:`Warning control <using-on-warnings>`),
    otherwise it will be set to ``'default'``.
 
    Calling ``main`` actually returns an instance of the ``TestProgram`` class.
