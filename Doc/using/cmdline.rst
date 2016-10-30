@@ -313,6 +313,7 @@ Miscellaneous options
    See also :envvar:`PYTHONVERBOSE`.
 
 
+.. _using-on-warnings:
 .. cmdoption:: -W arg
 
    Warning control.  Python's warning machinery by default prints warning
