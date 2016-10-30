@@ -95,6 +95,31 @@ class MozillaCommandTest(CommandTestMixin, unittest.TestCase):
 
     def test_open(self):
         self._test('open',
+                   options=[],
+                   arguments=[URL])
+
+    def test_open_with_autoraise_false(self):
+        self._test('open', kw=dict(autoraise=False),
+                   options=[],
+                   arguments=[URL])
+
+    def test_open_new(self):
+        self._test('open_new',
+                   options=[],
+                   arguments=['-new-window', URL])
+
+    def test_open_new_tab(self):
+        self._test('open_new_tab',
+                   options=[],
+                   arguments=['-new-tab', URL])
+
+
+class NetscapeCommandTest(CommandTestMixin, unittest.TestCase):
+
+    browser_class = webbrowser.Netscape
+
+    def test_open(self):
+        self._test('open',
                    options=['-raise', '-remote'],
                    arguments=['openURL({})'.format(URL)])
 
