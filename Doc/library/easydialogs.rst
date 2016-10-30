@@ -90,9 +90,9 @@ The :mod:`EasyDialogs` module defines the following functions:
    +----------------------+------------------------------------------+
    | *optstr* format      | Command-line format                      |
    +======================+==========================================+
-   | ``x``                | :option:`-x` (short option)              |
+   | ``x``                | :option:`!-x` (short option)             |
    +----------------------+------------------------------------------+
-   | ``x:`` or ``x=``     | :option:`-x` (short option with value)   |
+   | ``x:`` or ``x=``     | :option:`!-x` (short option with value)  |
    +----------------------+------------------------------------------+
    | ``xyz``              | :option:`--xyz` (long option)            |
    +----------------------+------------------------------------------+
