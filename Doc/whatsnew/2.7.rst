@@ -198,8 +198,8 @@ Other new Python3-mode warnings include:
 
 * :func:`operator.isCallable` and :func:`operator.sequenceIncludes`,
   which are not supported in 3.x, now trigger warnings.
-* The :option:`-3` switch now automatically
-  enables the :option:`-Qwarn <-Q>` switch that causes warnings
+* The :option:`!-3` switch now automatically
+  enables the :option:`!-Qwarn` switch that causes warnings
   about using classic division with integers and long integers.
 
 
