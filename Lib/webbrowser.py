@@ -245,7 +245,17 @@ class UnixBrowser(BaseBrowser):
 
 
 class Mozilla(UnixBrowser):
-    """Launcher class for Mozilla/Netscape browsers."""
+    """Launcher class for Mozilla browsers."""
+
+    remote_args = ['%action', '%s']
+    remote_action = ""
+    remote_action_newwin = "-new-window"
+    remote_action_newtab = "-new-tab"
+    background = True
+
+
+class Netscape(UnixBrowser):
+    """Launcher class for Netscape browser."""
 
     raise_opts = ["-noraise", "-raise"]
     remote_args = ['-remote', 'openURL(%s%action)']
@@ -253,8 +263,6 @@ class Mozilla(UnixBrowser):
     remote_action_newwin = ",new-window"
     remote_action_newtab = ",new-tab"
     background = True
-
-Netscape = Mozilla
 
 
 class Galeon(UnixBrowser):
@@ -430,13 +438,17 @@ def register_X_browsers():
     if shutil.which("x-www-browser"):
         register("x-www-browser", None, BackgroundBrowser("x-www-browser"))
 
-    # The Mozilla/Netscape browsers
-    for browser in ("mozilla-firefox", "firefox",
-                    "mozilla-firebird", "firebird",
-                    "iceweasel", "iceape",
-                    "seamonkey", "mozilla", "netscape"):
+    # The Mozilla browsers
+    for browser in ("firefox", "iceweasel", "iceape", "seamonkey"):
         if shutil.which(browser):
             register(browser, None, Mozilla(browser))
+
+    # The Netscape and old Mozilla browsers
+    for browser in ("mozilla-firefox",
+                    "mozilla-firebird", "firebird",
+                    "mozilla", "netscape"):
+        if shutil.which(browser):
+            register(browser, None, Netscape(browser))
 
     # Konqueror/kfm, the KDE browser.
     if shutil.which("kfm"):
