@@ -257,7 +257,8 @@ def detect_encoding(b):
             return 'utf-16-be' if b[1] else 'utf-32-be'
         if not b[1]:
             # XX 00 00 00 - utf-32-le
-            # XX 00 XX XX - utf-16-le
+            # XX 00 00 XX - utf-16-le
+            # XX 00 XX -- - utf-16-le
             return 'utf-16-le' if b[2] or b[3] else 'utf-32-le'
     elif len(b) == 2:
         if not b[0]:
