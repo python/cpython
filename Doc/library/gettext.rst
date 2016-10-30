@@ -621,7 +621,7 @@ In this case, you are marking translatable strings with the function
 However, you will need to teach your message extraction program to
 look for translatable strings marked with :func:`N_`. :program:`xgettext`,
 :program:`pygettext`, ``pybabel extract``, and :program:`xpot` all
-support this through the use of the :option:`-k` command-line switch.
+support this through the use of the :option:`!-k` command-line switch.
 The choice of :func:`N_` here is totally arbitrary; it could have just
 as easily been :func:`MarkThisStringForTranslation`.
 
