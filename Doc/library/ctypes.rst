@@ -1254,7 +1254,7 @@ the library to load.
 
    Try to find a library and return a pathname.  *name* is the library name without
    any prefix like *lib*, suffix like ``.so``, ``.dylib`` or version number (this
-   is the form used for the posix linker option :option:`-l`).  If no library can
+   is the form used for the posix linker option :option:`!-l`).  If no library can
    be found, returns ``None``.
 
 The exact functionality is system dependent.
@@ -1838,7 +1838,7 @@ Utility functions
 
    Try to find a library and return a pathname.  *name* is the library name
    without any prefix like ``lib``, suffix like ``.so``, ``.dylib`` or version
-   number (this is the form used for the posix linker option :option:`-l`).  If
+   number (this is the form used for the posix linker option :option:`!-l`).  If
    no library can be found, returns ``None``.
 
    The exact functionality is system dependent.
