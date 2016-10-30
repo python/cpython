@@ -262,9 +262,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                         Py_ssize_t size,
                         const char *errors)
 {
-#define MAX_SHORT_UNICHARS 300  /* largest size we'll do on the stack */
-
-    Py_ssize_t i;                /* index into s of next input byte */
+    Py_ssize_t i;                /* index into data of next input character */
     char *p;                     /* next free byte in output buffer */
 #if STRINGLIB_SIZEOF_CHAR > 1
     PyObject *error_handler_obj = NULL;
@@ -389,7 +387,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                     goto error;
 
                 /* subtract preallocated bytes */
-                writer.min_size -= max_char_size;
+                writer.min_size -= max_char_size * (newpos - startpos);
 
                 if (PyBytes_Check(rep)) {
                     p = _PyBytesWriter_WriteBytes(&writer, p,
@@ -402,14 +400,12 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                         goto error;
 
                     if (!PyUnicode_IS_ASCII(rep)) {
-                        raise_encode_exception(&exc, "utf-8",
-                                               unicode,
-                                               i-1, i,
+                        raise_encode_exception(&exc, "utf-8", unicode,
+                                               startpos, endpos,
                                                "surrogates not allowed");
                         goto error;
                     }
 
-                    assert(PyUnicode_KIND(rep) == PyUnicode_1BYTE_KIND);
                     p = _PyBytesWriter_WriteBytes(&writer, p,
                                                   PyUnicode_DATA(rep),
                                                   PyUnicode_GET_LENGTH(rep));
@@ -463,8 +459,6 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
     _PyBytesWriter_Dealloc(&writer);
     return NULL;
 #endif
-
-#undef MAX_SHORT_UNICHARS
 }
 
 /* The pattern for constructing UCS2-repeated masks. */
