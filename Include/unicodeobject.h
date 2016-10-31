@@ -1486,6 +1486,17 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUnicodeEscape(
     const char *errors          /* error handling */
     );
 
+/* Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
+   chars. */
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(
+        const char *string,     /* Unicode-Escape encoded string */
+        Py_ssize_t length,      /* size of string */
+        const char *errors,     /* error handling */
+        const char **first_invalid_escape  /* on return, points to first
+                                              invalid escaped char in
+                                              string. */
+);
+
 PyAPI_FUNC(PyObject*) PyUnicode_AsUnicodeEscapeString(
     PyObject *unicode           /* Unicode object */
     );

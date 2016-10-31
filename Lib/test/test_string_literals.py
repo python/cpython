@@ -31,6 +31,7 @@ import os
 import sys
 import shutil
 import tempfile
+import warnings
 import unittest
 
 
@@ -104,6 +105,19 @@ class TestLiterals(unittest.TestCase):
         self.assertRaises(SyntaxError, eval, r""" '\U000000' """)
         self.assertRaises(SyntaxError, eval, r""" '\U0000000' """)
 
+    def test_eval_str_invalid_escape(self):
+        for b in range(1, 128):
+            if b in b"""\n\r"'01234567NU\\abfnrtuvx""":
+                continue
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(eval(r"'\%c'" % b), '\\' + chr(b))
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always', category=DeprecationWarning)
+            eval("'''\n\\z'''")
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].filename, '<string>')
+        self.assertEqual(w[0].lineno, 2)
+
     def test_eval_str_raw(self):
         self.assertEqual(eval(""" r'x' """), 'x')
         self.assertEqual(eval(r""" r'\x01' """), '\\' + 'x01')
@@ -129,6 +143,19 @@ class TestLiterals(unittest.TestCase):
     def test_eval_bytes_incomplete(self):
         self.assertRaises(SyntaxError, eval, r""" b'\x' """)
         self.assertRaises(SyntaxError, eval, r""" b'\x0' """)
+
+    def test_eval_bytes_invalid_escape(self):
+        for b in range(1, 128):
+            if b in b"""\n\r"'01234567\\abfnrtvx""":
+                continue
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(eval(r"b'\%c'" % b), b'\\' + bytes([b]))
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always', category=DeprecationWarning)
+            eval("b'''\n\\z'''")
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].filename, '<string>')
+        self.assertEqual(w[0].lineno, 2)
 
     def test_eval_bytes_raw(self):
         self.assertEqual(eval(""" br'x' """), b'x')
