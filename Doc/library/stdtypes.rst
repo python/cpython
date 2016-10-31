@@ -485,7 +485,7 @@ class`. In addition, it provides a few more methods:
         >>> (-1024).to_bytes(10, byteorder='big', signed=True)
         b'\xff\xff\xff\xff\xff\xff\xff\xff\xfc\x00'
         >>> x = 1000
-        >>> x.to_bytes((x.bit_length() // 8) + 1, byteorder='little')
+        >>> x.to_bytes((x.bit_length() + 7) // 8, byteorder='little')
         b'\xe8\x03'
 
     The integer is represented using *length* bytes.  An :exc:`OverflowError`
