@@ -720,7 +720,7 @@ f'{a * x()}'"""
 
     def test_errors(self):
         # see issue 26287
-        self.assertAllRaise(TypeError, 'non-empty',
+        self.assertAllRaise(TypeError, 'unsupported',
                             [r"f'{(lambda: 0):x}'",
                              r"f'{(0,):x}'",
                              ])
