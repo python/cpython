@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28128: Deprecation warning for invalid str and byte escape
+  sequences now prints better information about where the error
+  occurs. Patch by Serhiy Storchaka and Eric Smith.
+
 - Issue #28509: dict.update() no longer allocate unnecessary large memory.
 
 - Issue #28426: Fixed potential crash in PyUnicode_AsDecodedObject() in debug
