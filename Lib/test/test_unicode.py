@@ -2413,13 +2413,6 @@ class UnicodeTest(string_tests.CommonTest,
         support.check_free_after_iterating(self, iter, str)
         support.check_free_after_iterating(self, reversed, str)
 
-    def test_invalid_sequences(self):
-        for letter in string.ascii_letters + "89": # 0-7 are octal escapes
-            if letter in "abfnrtuvxNU":
-                continue
-            with self.assertWarns(DeprecationWarning):
-                eval(r"'\%s'" % letter)
-
 
 class CAPITest(unittest.TestCase):
 
