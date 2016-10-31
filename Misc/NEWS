@@ -378,7 +378,7 @@ Build
 
 - Issue #28208: Update Windows build and OS X installers to use SQLite 3.14.2.
 
-- Issue #28248: Update Windows build to use OpenSSL 1.0.2j.
+- Issue #28248: Update Windows build and OS X installers to use OpenSSL 1.0.2j.
 
 - Issue #21124: Fix building the _struct module on Cygwin by passing ``NULL``
   instead of ``&PyType_Type`` to PyVarObject_HEAD_INIT.  Patch by Masayuki
