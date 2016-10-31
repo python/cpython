@@ -1105,11 +1105,12 @@ _PyBytes_DecodeEscapeRecode(const char **s, const char *end,
     return p;
 }
 
-PyObject *PyBytes_DecodeEscape(const char *s,
+PyObject *_PyBytes_DecodeEscape(const char *s,
                                 Py_ssize_t len,
                                 const char *errors,
                                 Py_ssize_t unicode,
-                                const char *recode_encoding)
+                                const char *recode_encoding,
+                                const char **first_invalid_escape)
 {
     int c;
     char *p;
@@ -1122,6 +1123,8 @@ PyObject *PyBytes_DecodeEscape(const char *s,
     if (p == NULL)
         return NULL;
     writer.overallocate = 1;
+
+    *first_invalid_escape = NULL;
 
     end = s + len;
     while (s < end) {
@@ -1207,9 +1210,12 @@ PyObject *PyBytes_DecodeEscape(const char *s,
             break;
 
         default:
-            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1, "invalid escape sequence '\\%c'", *(--s)) < 0)
-                goto failed;
+            if (*first_invalid_escape == NULL) {
+                *first_invalid_escape = s-1; /* Back up one char, since we've
+                                                already incremented s. */
+            }
             *p++ = '\\';
+            s--;
             goto non_esc; /* an arbitrary number of unescaped
                              UTF-8 bytes may follow. */
         }
@@ -1222,6 +1228,29 @@ PyObject *PyBytes_DecodeEscape(const char *s,
     return NULL;
 }
 
+PyObject *PyBytes_DecodeEscape(const char *s,
+                                Py_ssize_t len,
+                                const char *errors,
+                                Py_ssize_t unicode,
+                                const char *recode_encoding)
+{
+    const char* first_invalid_escape;
+    PyObject *result = _PyBytes_DecodeEscape(s, len, errors, unicode,
+                                             recode_encoding,
+                                             &first_invalid_escape);
+    if (result == NULL)
+        return NULL;
+    if (first_invalid_escape != NULL) {
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                             "invalid escape sequence '\\%c'",
+                             *first_invalid_escape) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+    return result;
+
+}
 /* -------------------------------------------------------------------- */
 /* object api */
 
