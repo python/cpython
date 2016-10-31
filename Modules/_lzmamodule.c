@@ -521,6 +521,8 @@ compress(Compressor *c, uint8_t *data, size_t len, lzma_action action)
         Py_BEGIN_ALLOW_THREADS
         lzret = lzma_code(&c->lzs, action);
         data_size = (char *)c->lzs.next_out - PyBytes_AS_STRING(result);
+        if (lzret == LZMA_BUF_ERROR && len == 0 && c->lzs.avail_out > 0)
+            lzret = LZMA_OK; /* That wasn't a real error */
         Py_END_ALLOW_THREADS
         if (catch_lzma_error(lzret))
             goto error;
@@ -895,6 +897,9 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
     Py_ssize_t data_size = 0;
     PyObject *result;
     lzma_stream *lzs = &d->lzs;
+
+    if (lzs->avail_in == 0)
+        return PyBytes_FromStringAndSize(NULL, 0);
 
     if (max_length < 0 || max_length >= INITIAL_BUFFER_SIZE)
         result = PyBytes_FromStringAndSize(NULL, INITIAL_BUFFER_SIZE);
