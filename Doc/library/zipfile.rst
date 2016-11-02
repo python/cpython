@@ -497,4 +497,61 @@ Instances have the following attributes:
 
    Size of the uncompressed file.
 
+
+.. _zipfile-commandline:
+.. program:: zipfile
+
+Command-Line Interface
+----------------------
+
+The :mod:`zipfile` module provides a simple command-line interface to interact
+with ZIP archives.
+
+If you want to create a new ZIP archive, specify its name after the :option:`-c`
+option and then list the filename(s) that should be included:
+
+.. code-block:: shell-session
+
+    $ python -m zipfile -c monty.zip spam.txt eggs.txt
+
+Passing a directory is also acceptable:
+
+.. code-block:: shell-session
+
+    $ python -m zipfile -c monty.zip life-of-brian_1979/
+
+If you want to extract a ZIP archive into the specified directory, use
+the :option:`-e` option:
+
+.. code-block:: shell-session
+
+    $ python -m zipfile -e monty.zip target-dir/
+
+For a list of the files in a ZIP archive, use the :option:`-l` option:
+
+.. code-block:: shell-session
+
+    $ python -m zipfile -l monty.zip
+
+
+Command-line options
+~~~~~~~~~~~~~~~~~~~~
+
+.. cmdoption:: -l <zipfile>
+
+   List files in a zipfile.
+
+.. cmdoption:: -c <zipfile> <source1> ... <sourceN>
+
+   Create zipfile from source files.
+
+.. cmdoption:: -e <zipfile> <output_dir>
+
+   Extract zipfile into target directory.
+
+.. cmdoption:: -t <zipfile>
+
+   Test whether the zipfile is valid or not.
+
+
 .. _PKZIP Application Note: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
