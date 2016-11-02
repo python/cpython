@@ -644,13 +644,14 @@ A :class:`TarInfo` object also provides some convenient query methods:
 
 
 .. _tarfile-commandline:
+.. program:: tarfile
 
-Command Line Interface
+Command-Line Interface
 ----------------------
 
 .. versionadded:: 3.4
 
-The :mod:`tarfile` module provides a simple command line interface to interact
+The :mod:`tarfile` module provides a simple command-line interface to interact
 with tar archives.
 
 If you want to create a new tar archive, specify its name after the :option:`-c`
@@ -687,7 +688,7 @@ For a list of the files in a tar archive, use the :option:`-l` option:
     $ python -m tarfile -l monty.tar
 
 
-Command line options
+Command-line options
 ~~~~~~~~~~~~~~~~~~~~
 
 .. cmdoption:: -l <tarfile>
@@ -695,8 +696,8 @@ Command line options
 
    List files in a tarfile.
 
-.. cmdoption:: -c <tarfile> <source1> <sourceN>
-               --create <tarfile> <source1> <sourceN>
+.. cmdoption:: -c <tarfile> <source1> ... <sourceN>
+               --create <tarfile> <source1> ... <sourceN>
 
    Create tarfile from source files.
 
@@ -712,7 +713,7 @@ Command line options
 
 .. cmdoption:: -v, --verbose
 
-   Verbose output
+   Verbose output.
 
 .. _tar-examples:
 
