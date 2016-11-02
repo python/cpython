@@ -350,8 +350,7 @@ class Random(_random.Random):
                 _int = int
                 total = len(population)
                 return [population[_int(random() * total)] for i in range(k)]
-            else:
-                cum_weights = list(_itertools.accumulate(weights))
+            cum_weights = list(_itertools.accumulate(weights))
         elif weights is not None:
             raise TypeError('Cannot specify both weights and cumulative_weights')
         if len(cum_weights) != len(population):
