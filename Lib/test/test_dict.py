@@ -852,6 +852,23 @@ class DictTest(unittest.TestCase):
         return dicts
 
     @support.cpython_only
+    def test_splittable_setdefault(self):
+        """split table must be combined when setdefault()
+        breaks insertion order"""
+        a, b = self.make_shared_key_dict(2)
+
+        a['a'] = 1
+        size_a = sys.getsizeof(a)
+        a['b'] = 2
+        b.setdefault('b', 2)
+        size_b = sys.getsizeof(b)
+        b['a'] = 1
+
+        self.assertGreater(size_b, size_a)
+        self.assertEqual(list(a), ['x', 'y', 'z', 'a', 'b'])
+        self.assertEqual(list(b), ['x', 'y', 'z', 'b', 'a'])
+
+    @support.cpython_only
     def test_splittable_del(self):
         """split table must be combined when del d[k]"""
         a, b = self.make_shared_key_dict(2)
