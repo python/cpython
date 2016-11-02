@@ -16,6 +16,11 @@ Core and Builtins
 Library
 -------
 
+Documentation
+-------------
+
+- Issue #28513: Documented command-line interface of zipfile.
+
 
 What's New in Python 3.6.0 beta 3
 =================================
