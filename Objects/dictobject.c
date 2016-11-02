@@ -2758,58 +2758,88 @@ PyObject *
 PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
 {
     PyDictObject *mp = (PyDictObject *)d;
-    PyObject *val = NULL;
+    PyObject *value;
     Py_hash_t hash;
     Py_ssize_t hashpos, ix;
-    PyDictKeyEntry *ep;
     PyObject **value_addr;
 
     if (!PyDict_Check(d)) {
         PyErr_BadInternalCall();
         return NULL;
     }
+
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return NULL;
     }
+
+    if (mp->ma_values != NULL && !PyUnicode_CheckExact(key)) {
+        if (insertion_resize(mp) < 0)
+            return NULL;
+    }
+
     ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value_addr, &hashpos);
     if (ix == DKIX_ERROR)
         return NULL;
-    if (ix == DKIX_EMPTY || *value_addr == NULL) {
-        val = defaultobj;
+
+    if (_PyDict_HasSplitTable(mp) &&
+        ((ix >= 0 && *value_addr == NULL && mp->ma_used != ix) ||
+         (ix == DKIX_EMPTY && mp->ma_used != mp->ma_keys->dk_nentries))) {
+        if (insertion_resize(mp) < 0) {
+            return NULL;
+        }
+        find_empty_slot(mp, key, hash, &value_addr, &hashpos);
+        ix = DKIX_EMPTY;
+    }
+
+    if (ix == DKIX_EMPTY) {
+        PyDictKeyEntry *ep, *ep0;
+        value = defaultobj;
         if (mp->ma_keys->dk_usable <= 0) {
-            /* Need to resize. */
             if (insertion_resize(mp) < 0) {
                 return NULL;
             }
             find_empty_slot(mp, key, hash, &value_addr, &hashpos);
         }
-        ix = mp->ma_keys->dk_nentries;
-        Py_INCREF(defaultobj);
+        ep0 = DK_ENTRIES(mp->ma_keys);
+        ep = &ep0[mp->ma_keys->dk_nentries];
+        dk_set_index(mp->ma_keys, hashpos, mp->ma_keys->dk_nentries);
         Py_INCREF(key);
-        MAINTAIN_TRACKING(mp, key, defaultobj);
-        dk_set_index(mp->ma_keys, hashpos, ix);
-        ep = &DK_ENTRIES(mp->ma_keys)[ix];
+        Py_INCREF(value);
+        MAINTAIN_TRACKING(mp, key, value);
         ep->me_key = key;
         ep->me_hash = hash;
         if (mp->ma_values) {
-            mp->ma_values[ix] = val;
+            assert(mp->ma_values[mp->ma_keys->dk_nentries] == NULL);
+            mp->ma_values[mp->ma_keys->dk_nentries] = value;
         }
         else {
-            ep->me_value = val;
+            ep->me_value = value;
         }
-        mp->ma_keys->dk_usable--;
-        mp->ma_keys->dk_nentries++;
         mp->ma_used++;
         mp->ma_version_tag = DICT_NEXT_VERSION();
-        assert(_PyDict_CheckConsistency(mp));
+        mp->ma_keys->dk_usable--;
+        mp->ma_keys->dk_nentries++;
+        assert(mp->ma_keys->dk_usable >= 0);
+    }
+    else if (*value_addr == NULL) {
+        value = defaultobj;
+        assert(_PyDict_HasSplitTable(mp));
+        assert(ix == mp->ma_used);
+        Py_INCREF(value);
+        MAINTAIN_TRACKING(mp, key, value);
+        *value_addr = value;
+        mp->ma_used++;
+        mp->ma_version_tag = DICT_NEXT_VERSION();
     }
     else {
-        val = *value_addr;
+        value = *value_addr;
     }
-    return val;
+
+    assert(_PyDict_CheckConsistency(mp));
+    return value;
 }
 
 static PyObject *

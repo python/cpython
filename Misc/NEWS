@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28583: PyDict_SetDefault didn't combine split table when needed.
+  Patch by Xiang Zhang.
+
 - Issue #28128: Deprecation warning for invalid str and byte escape
   sequences now prints better information about where the error
   occurs. Patch by Serhiy Storchaka and Eric Smith.
