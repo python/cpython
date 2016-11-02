@@ -374,6 +374,11 @@ C API
   PyUnicode_AsDecodedObject(), PyUnicode_AsDecodedUnicode() and
   PyUnicode_AsEncodedUnicode().
 
+Documentation
+-------------
+
+- Issue #28513: Documented command-line interface of zipfile.
+
 Build
 -----
 
