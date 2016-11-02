@@ -471,6 +471,11 @@ C API
 - Issue #26754: PyUnicode_FSDecoder() accepted a filename argument encoded as
   an iterable of integers. Now only strings and bytes-like objects are accepted.
 
+Documentation
+-------------
+
+- Issue #28513: Documented command-line interface of zipfile.
+
 Tests
 -----
 
