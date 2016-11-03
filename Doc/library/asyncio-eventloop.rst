@@ -380,6 +380,10 @@ Creating connections
    establish the connection in the background.  When successful, the
    coroutine returns a ``(transport, protocol)`` pair.
 
+   *path* is the name of a UNIX domain socket, and is required unless a *sock*
+   parameter is specified.  Abstract UNIX sockets, :class:`str`, and
+   :class:`bytes` paths are supported.
+
    See the :meth:`AbstractEventLoop.create_connection` method for parameters.
 
    Availability: UNIX.
