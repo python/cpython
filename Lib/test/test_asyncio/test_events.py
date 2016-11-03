@@ -2249,13 +2249,6 @@ class HandleTests(test_utils.TestCase):
         h.cancel()
         self.assertTrue(h._cancelled)
 
-    def test_handle_from_handle(self):
-        def callback(*args):
-            return args
-        h1 = asyncio.Handle(callback, (), loop=self.loop)
-        self.assertRaises(
-            AssertionError, asyncio.Handle, h1, (), self.loop)
-
     def test_callback_with_exception(self):
         def callback():
             raise ValueError()

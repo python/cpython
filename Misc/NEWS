@@ -441,6 +441,8 @@ Library
   threadpool executor.
   Initial patch by Hans Lawrenz.
 
+- Issue #28600: Optimize loop.call_soon().
+
 IDLE
 ----
 

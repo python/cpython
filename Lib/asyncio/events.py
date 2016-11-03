@@ -82,7 +82,6 @@ class Handle:
                  '_source_traceback', '_repr', '__weakref__')
 
     def __init__(self, callback, args, loop):
-        assert not isinstance(callback, Handle), 'A Handle is not a callback'
         self._loop = loop
         self._callback = callback
         self._args = args
