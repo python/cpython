@@ -235,6 +235,11 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertIsInstance(h, asyncio.Handle)
         self.assertIn(h, self.loop._ready)
 
+    def test_call_soon_non_callable(self):
+        self.loop.set_debug(True)
+        with self.assertRaisesRegex(TypeError, 'a callable object'):
+            self.loop.call_soon(1)
+
     def test_call_later(self):
         def cb():
             pass
@@ -341,47 +346,21 @@ class BaseEventLoopTests(test_utils.TestCase):
         # check disabled if debug mode is disabled
         test_thread(self.loop, False, create_loop=True)
 
-    def test_run_once_in_executor_handle(self):
-        def cb():
-            pass
-
-        self.assertRaises(
-            AssertionError, self.loop.run_in_executor,
-            None, asyncio.Handle(cb, (), self.loop), ('',))
-        self.assertRaises(
-            AssertionError, self.loop.run_in_executor,
-            None, asyncio.TimerHandle(10, cb, (), self.loop))
-
-    def test_run_once_in_executor_cancelled(self):
-        def cb():
-            pass
-        h = asyncio.Handle(cb, (), self.loop)
-        h.cancel()
-
-        with self.assertWarnsRegex(DeprecationWarning, "Passing Handle"):
-            f = self.loop.run_in_executor(None, h)
-        self.assertIsInstance(f, asyncio.Future)
-        self.assertTrue(f.done())
-        self.assertIsNone(f.result())
-
     def test_run_once_in_executor_plain(self):
         def cb():
             pass
-        h = asyncio.Handle(cb, (), self.loop)
         f = asyncio.Future(loop=self.loop)
         executor = mock.Mock()
         executor.submit.return_value = f
 
         self.loop.set_default_executor(executor)
 
-        with self.assertWarnsRegex(DeprecationWarning, "Passing Handle"):
-            res = self.loop.run_in_executor(None, h)
+        res = self.loop.run_in_executor(None, cb)
         self.assertIs(f, res)
 
         executor = mock.Mock()
         executor.submit.return_value = f
-        with self.assertWarnsRegex(DeprecationWarning, "Passing Handle"):
-            res = self.loop.run_in_executor(executor, h)
+        res = self.loop.run_in_executor(executor, cb)
         self.assertIs(f, res)
         self.assertTrue(executor.submit.called)
 
@@ -1666,6 +1645,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         def simple_coroutine():
             pass
 
+        self.loop.set_debug(True)
         coro_func = simple_coroutine
         coro_obj = coro_func()
         self.addCleanup(coro_obj.close)
