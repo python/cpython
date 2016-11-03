@@ -20,6 +20,8 @@ Library
   the garbage collector is invoked in other thread.  Based on patch by
   Sebastian Cufre.
 
+- Issue #28600: Optimize loop.call_soon.
+
 Documentation
 -------------
 
