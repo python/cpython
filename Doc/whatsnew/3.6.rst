@@ -1177,7 +1177,7 @@ Build and C API Changes
   with only about 16 tests failures. See the Android meta-issue :issue:`26865`.
 
 * The ``--with-optimizations`` configure flag has been added. Turning it on
-  will activate LTO and PGO build support (when available).
+  will activate expensive optimizations like PGO.
   (Original patch by Alecsandru Patrascu of Intel in :issue:`26539`.)
 
 * New :c:func:`Py_FinalizeEx` API which indicates if flushing buffered data
