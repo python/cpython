@@ -18,12 +18,6 @@ from test.support import (captured_stdout, captured_stderr,
 import unittest
 import venv
 
-# pip currently requires ssl support, so we ensure we handle
-# it being missing (http://bugs.python.org/issue19744)
-try:
-    import ssl
-except ImportError:
-    ssl = None
 
 try:
     import threading
@@ -337,8 +331,6 @@ class EnsurePipTest(BaseTest):
             self.assertTrue(os.path.exists(os.devnull))
 
 
-    # Requesting pip fails without SSL (http://bugs.python.org/issue19744)
-    @unittest.skipIf(ssl is None, ensurepip._MISSING_SSL_MESSAGE)
     @unittest.skipUnless(threading, 'some dependencies of pip import threading'
                                     ' module unconditionally')
     # Issue #26610: pip/pep425tags.py requires ctypes
