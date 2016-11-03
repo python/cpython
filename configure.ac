@@ -1282,7 +1282,7 @@ AC_SUBST(DEF_MAKE_ALL_RULE)
 AC_SUBST(DEF_MAKE_RULE)
 Py_OPT='false'
 AC_MSG_CHECKING(for --with-optimizations)
-AC_ARG_WITH(optimizations, AS_HELP_STRING([--with-optimizations], [Enable expensive optimizations (PGO, maybe LTO, etc).  Disabled by default.]),
+AC_ARG_WITH(optimizations, AS_HELP_STRING([--with-optimizations], [Enable expensive optimizations (PGO, etc).  Disabled by default.]),
 [
 if test "$withval" != no
 then
@@ -1296,7 +1296,7 @@ fi],
 if test "$Py_OPT" = 'true' ; then
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
-  # broken when you do managed to get a toolchain that works with it.  People
+  # broken when you do manage to get a toolchain that works with it.  People
   # who want LTO need to use --with-lto themselves.
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"
