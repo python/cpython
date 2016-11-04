@@ -24,6 +24,7 @@ def close_transport(transport):
 class ProactorSocketTransportTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.addCleanup(self.loop.close)
         self.proactor = mock.Mock()
@@ -436,6 +437,8 @@ class ProactorSocketTransportTests(test_utils.TestCase):
 class BaseProactorEventLoopTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
+
         self.sock = test_utils.mock_nonblocking_socket()
         self.proactor = mock.Mock()
 

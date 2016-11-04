@@ -40,6 +40,7 @@ def close_pipe_transport(transport):
 class SelectorEventLoopSignalTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
 
@@ -234,6 +235,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
 class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
 
@@ -338,6 +340,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 class UnixReadPipeTransportTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.pipe = mock.Mock(spec_set=io.RawIOBase)
@@ -487,6 +490,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
 class UnixWritePipeTransportTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.protocol = test_utils.make_test_protocol(asyncio.BaseProtocol)
         self.pipe = mock.Mock(spec_set=io.RawIOBase)
@@ -805,6 +809,7 @@ class ChildWatcherTestsMixin:
     ignore_warnings = mock.patch.object(log.logger, "warning")
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.running = False
         self.zombies = {}
