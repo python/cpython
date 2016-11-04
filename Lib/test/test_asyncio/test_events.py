@@ -2233,6 +2233,7 @@ def noop(*args, **kwargs):
 class HandleTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = mock.Mock()
         self.loop.get_debug.return_value = True
 
@@ -2411,6 +2412,7 @@ class HandleTests(test_utils.TestCase):
 class TimerTests(unittest.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = mock.Mock()
 
     def test_hash(self):
@@ -2718,6 +2720,27 @@ class PolicyTests(unittest.TestCase):
         asyncio.set_event_loop_policy(policy)
         self.assertIs(policy, asyncio.get_event_loop_policy())
         self.assertIsNot(policy, old_policy)
+
+    def test_get_event_loop_returns_running_loop(self):
+        class Policy(asyncio.DefaultEventLoopPolicy):
+            def get_event_loop(self):
+                raise NotImplementedError
+
+        loop = None
+
+        old_policy = asyncio.get_event_loop_policy()
+        try:
+            asyncio.set_event_loop_policy(Policy())
+            loop = asyncio.new_event_loop()
+
+            async def func():
+                self.assertIs(asyncio.get_event_loop(), loop)
+
+            loop.run_until_complete(func())
+        finally:
+            asyncio.set_event_loop_policy(old_policy)
+            if loop is not None:
+                loop.close()
 
 
 if __name__ == '__main__':

@@ -22,6 +22,7 @@ class StreamReaderTests(test_utils.TestCase):
     DATA = b'line1\nline2\nline3\n'
 
     def setUp(self):
+        super().setUp()
         self.loop = asyncio.new_event_loop()
         self.set_event_loop(self.loop)
 
