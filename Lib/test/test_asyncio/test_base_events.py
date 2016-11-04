@@ -154,6 +154,7 @@ class BaseEventTests(test_utils.TestCase):
 class BaseEventLoopTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = base_events.BaseEventLoop()
         self.loop._selector = mock.Mock()
         self.loop._selector.select.return_value = ()
@@ -976,6 +977,7 @@ class MyDatagramProto(asyncio.DatagramProtocol):
 class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = asyncio.new_event_loop()
         self.set_event_loop(self.loop)
 
@@ -1690,6 +1692,24 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRegex(fmt % tuple(args),
                          "^Executing <Task.*stop_loop_coro.*> "
                          "took .* seconds$")
+
+
+class RunningLoopTests(unittest.TestCase):
+
+    def test_running_loop_within_a_loop(self):
+        @asyncio.coroutine
+        def runner(loop):
+            loop.run_forever()
+
+        loop = asyncio.new_event_loop()
+        outer_loop = asyncio.new_event_loop()
+        try:
+            with self.assertRaisesRegex(RuntimeError,
+                                        'while another loop is running'):
+                outer_loop.run_until_complete(runner(loop))
+        finally:
+            loop.close()
+            outer_loop.close()
 
 
 if __name__ == '__main__':
