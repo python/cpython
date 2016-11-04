@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28580: Optimize iterating split table values.
+  Patch by Xiang Zhang.
+
 - Issue #28583: PyDict_SetDefault didn't combine split table when needed.
   Patch by Xiang Zhang.
 
