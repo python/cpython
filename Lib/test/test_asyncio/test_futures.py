@@ -79,6 +79,7 @@ class DuckFuture:
 class DuckTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.addCleanup(self.loop.close)
 
@@ -96,6 +97,7 @@ class DuckTests(test_utils.TestCase):
 class FutureTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.addCleanup(self.loop.close)
 
@@ -468,6 +470,7 @@ class FutureTests(test_utils.TestCase):
 class FutureDoneCallbackTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
 
     def run_briefly(self):

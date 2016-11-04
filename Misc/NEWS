@@ -443,6 +443,9 @@ Library
 
 - Issue #28600: Optimize loop.call_soon().
 
+- Issue #28613: Fix get_event_loop() return the current loop if 
+  called from coroutines/callbacks.
+
 IDLE
 ----
 
