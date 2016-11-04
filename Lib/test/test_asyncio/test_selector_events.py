@@ -51,6 +51,7 @@ def close_transport(transport):
 class BaseSelectorEventLoopTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.selector = mock.Mock()
         self.selector.select.return_value = []
         self.loop = TestBaseSelectorEventLoop(self.selector)
@@ -698,6 +699,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
 class SelectorTransportTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.sock = mock.Mock(socket.socket)
@@ -793,6 +795,7 @@ class SelectorTransportTests(test_utils.TestCase):
 class SelectorSocketTransportTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.sock = mock.Mock(socket.socket)
@@ -1141,6 +1144,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 class SelectorSslTransportTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.sock = mock.Mock(socket.socket)
@@ -1501,6 +1505,7 @@ class SelectorSslWithoutSslTransportTests(unittest.TestCase):
 class SelectorDatagramTransportTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.protocol = test_utils.make_test_protocol(asyncio.DatagramProtocol)
         self.sock = mock.Mock(spec_set=socket.socket)

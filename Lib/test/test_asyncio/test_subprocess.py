@@ -35,6 +35,7 @@ class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 
 class SubprocessTransportTests(test_utils.TestCase):
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.set_event_loop(self.loop)
 
@@ -466,6 +467,7 @@ if sys.platform != 'win32':
         Watcher = None
 
         def setUp(self):
+            super().setUp()
             policy = asyncio.get_event_loop_policy()
             self.loop = policy.new_event_loop()
             self.set_event_loop(self.loop)
@@ -490,6 +492,7 @@ else:
     class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):
 
         def setUp(self):
+            super().setUp()
             self.loop = asyncio.ProactorEventLoop()
             self.set_event_loop(self.loop)
 

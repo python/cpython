@@ -17,6 +17,7 @@ from asyncio import test_utils
 class BaseTest(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = asyncio.BaseEventLoop()
         self.loop._process_events = mock.Mock()
         self.loop._selector = mock.Mock()

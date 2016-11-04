@@ -18,6 +18,7 @@ from asyncio import test_utils
 class SslProtoHandshakeTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = asyncio.new_event_loop()
         self.set_event_loop(self.loop)
 

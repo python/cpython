@@ -80,6 +80,7 @@ class DuckFuture:
 class DuckTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.addCleanup(self.loop.close)
 
@@ -100,6 +101,7 @@ class BaseFutureTests:
         raise NotImplementedError
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.addCleanup(self.loop.close)
 
@@ -459,6 +461,7 @@ class PyFutureTests(BaseFutureTests, test_utils.TestCase):
 class BaseFutureDoneCallbackTests():
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
 
     def run_briefly(self):
