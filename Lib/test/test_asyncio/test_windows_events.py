@@ -31,6 +31,7 @@ class UpperProto(asyncio.Protocol):
 class ProactorTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = asyncio.ProactorEventLoop()
         self.set_event_loop(self.loop)
 
