@@ -1700,7 +1700,7 @@ int
 _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
              PyObject **pvalue, Py_hash_t *phash)
 {
-    Py_ssize_t i, n;
+    Py_ssize_t i;
     PyDictObject *mp;
     PyDictKeyEntry *entry_ptr;
     PyObject *value;
@@ -1709,21 +1709,18 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
         return 0;
     mp = (PyDictObject *)op;
     i = *ppos;
-    n = mp->ma_keys->dk_nentries;
-    if ((size_t)i >= (size_t)n)
-        return 0;
     if (mp->ma_values) {
-        PyObject **value_ptr = &mp->ma_values[i];
-        while (i < n && *value_ptr == NULL) {
-            value_ptr++;
-            i++;
-        }
-        if (i >= n)
+        if (i < 0 || i >= mp->ma_used)
             return 0;
+        /* values of split table is always dense */
         entry_ptr = &DK_ENTRIES(mp->ma_keys)[i];
-        value = *value_ptr;
+        value = mp->ma_values[i];
+        assert(value != NULL);
     }
     else {
+        Py_ssize_t n = mp->ma_keys->dk_nentries;
+        if (i < 0 || i >= n)
+            return 0;
         entry_ptr = &DK_ENTRIES(mp->ma_keys)[i];
         while (i < n && entry_ptr->me_value == NULL) {
             entry_ptr++;
@@ -3380,7 +3377,7 @@ static PyObject*
 dictiter_iternextkey(dictiterobject *di)
 {
     PyObject *key;
-    Py_ssize_t i, n;
+    Py_ssize_t i;
     PyDictKeysObject *k;
     PyDictObject *d = di->di_dict;
 
@@ -3397,18 +3394,15 @@ dictiter_iternextkey(dictiterobject *di)
 
     i = di->di_pos;
     k = d->ma_keys;
-    n = k->dk_nentries;
+    assert(i >= 0);
     if (d->ma_values) {
-        PyObject **value_ptr = &d->ma_values[i];
-        while (i < n && *value_ptr == NULL) {
-            value_ptr++;
-            i++;
-        }
-        if (i >= n)
+        if (i >= d->ma_used)
             goto fail;
         key = DK_ENTRIES(k)[i].me_key;
+        assert(d->ma_values[i] != NULL);
     }
     else {
+        Py_ssize_t n = k->dk_nentries;
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
         while (i < n && entry_ptr->me_value == NULL) {
             entry_ptr++;
@@ -3466,7 +3460,7 @@ static PyObject *
 dictiter_iternextvalue(dictiterobject *di)
 {
     PyObject *value;
-    Py_ssize_t i, n;
+    Py_ssize_t i;
     PyDictObject *d = di->di_dict;
 
     if (d == NULL)
@@ -3481,18 +3475,15 @@ dictiter_iternextvalue(dictiterobject *di)
     }
 
     i = di->di_pos;
-    n = d->ma_keys->dk_nentries;
+    assert(i >= 0);
     if (d->ma_values) {
-        PyObject **value_ptr = &d->ma_values[i];
-        while (i < n && *value_ptr == NULL) {
-            value_ptr++;
-            i++;
-        }
-        if (i >= n)
+        if (i >= d->ma_used)
             goto fail;
-        value = *value_ptr;
+        value = d->ma_values[i];
+        assert(value != NULL);
     }
     else {
+        Py_ssize_t n = d->ma_keys->dk_nentries;
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[i];
         while (i < n && entry_ptr->me_value == NULL) {
             entry_ptr++;
@@ -3550,7 +3541,7 @@ static PyObject *
 dictiter_iternextitem(dictiterobject *di)
 {
     PyObject *key, *value, *result = di->di_result;
-    Py_ssize_t i, n;
+    Py_ssize_t i;
     PyDictObject *d = di->di_dict;
 
     if (d == NULL)
@@ -3565,19 +3556,16 @@ dictiter_iternextitem(dictiterobject *di)
     }
 
     i = di->di_pos;
-    n = d->ma_keys->dk_nentries;
+    assert(i >= 0);
     if (d->ma_values) {
-        PyObject **value_ptr = &d->ma_values[i];
-        while (i < n && *value_ptr == NULL) {
-            value_ptr++;
-            i++;
-        }
-        if (i >= n)
+        if (i >= d->ma_used)
             goto fail;
         key = DK_ENTRIES(d->ma_keys)[i].me_key;
-        value = *value_ptr;
+        value = d->ma_values[i];
+        assert(value != NULL);
     }
     else {
+        Py_ssize_t n = d->ma_keys->dk_nentries;
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(d->ma_keys)[i];
         while (i < n && entry_ptr->me_value == NULL) {
             entry_ptr++;
