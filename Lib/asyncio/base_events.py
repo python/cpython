@@ -393,7 +393,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Run until stop() is called."""
         self._check_closed()
         if self.is_running():
-            raise RuntimeError('Event loop is running.')
+            raise RuntimeError('This event loop is already running')
+        if events._get_running_loop() is not None:
+            raise RuntimeError(
+                'Cannot run the event loop while another loop is running')
         self._set_coroutine_wrapper(self._debug)
         self._thread_id = threading.get_ident()
         if self._asyncgens is not None:
@@ -401,6 +404,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
                                    finalizer=self._asyncgen_finalizer_hook)
         try:
+            events._set_running_loop(self)
             while True:
                 self._run_once()
                 if self._stopping:
@@ -408,6 +412,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         finally:
             self._stopping = False
             self._thread_id = None
+            events._set_running_loop(None)
             self._set_coroutine_wrapper(False)
             if self._asyncgens is not None:
                 sys.set_asyncgen_hooks(*old_agen_hooks)

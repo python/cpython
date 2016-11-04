@@ -87,6 +87,7 @@ class BaseTaskTests:
         return self.__class__.Future(loop=loop)
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.loop.set_task_factory(self.new_task)
         self.loop.create_future = lambda: self.new_future(self.loop)
@@ -2104,6 +2105,7 @@ class GenericTaskTests(test_utils.TestCase):
 class GatherTestsBase:
 
     def setUp(self):
+        super().setUp()
         self.one_loop = self.new_test_loop()
         self.other_loop = self.new_test_loop()
         self.set_event_loop(self.one_loop, cleanup=False)
@@ -2387,6 +2389,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
     """Test case for asyncio.run_coroutine_threadsafe."""
 
     def setUp(self):
+        super().setUp()
         self.loop = asyncio.new_event_loop()
         self.set_event_loop(self.loop) # Will cleanup properly
 
@@ -2477,12 +2480,14 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
 
 class SleepTests(test_utils.TestCase):
     def setUp(self):
+        super().setUp()
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(None)
 
     def tearDown(self):
         self.loop.close()
         self.loop = None
+        super().tearDown()
 
     def test_sleep_zero(self):
         result = 0

@@ -10,6 +10,7 @@ from asyncio import test_utils
 class _QueueTestBase(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
 
 
