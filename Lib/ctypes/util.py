@@ -318,10 +318,6 @@ def test():
         print(find_library("c"))
         print(find_library("bz2"))
 
-        # getattr
-##        print cdll.m
-##        print cdll.bz2
-
         # load
         if sys.platform == "darwin":
             print(cdll.LoadLibrary("libm.dylib"))
