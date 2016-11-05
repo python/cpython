@@ -573,6 +573,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #28485: Always raise ValueError for negative
+  compileall.compile_dir(workers=...) parameter, even when multithreading is
+  unavailable.
+
 - Issue #28037: Use sqlite3_get_autocommit() instead of setting
   Connection->inTransaction manually.
 
