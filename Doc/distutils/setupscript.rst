@@ -201,7 +201,7 @@ The second argument to the :class:`~distutils.core.Extension` constructor is
 a list of source
 files.  Since the Distutils currently only support C, C++, and Objective-C
 extensions, these are normally C/C++/Objective-C source files.  (Be sure to use
-appropriate extensions to distinguish C++\ source files: :file:`.cc` and
+appropriate extensions to distinguish C++ source files: :file:`.cc` and
 :file:`.cpp` seem to be recognized by both Unix and Windows compilers.)
 
 However, you can also include SWIG interface (:file:`.i`) files in the list; the
