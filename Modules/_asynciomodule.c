@@ -997,26 +997,12 @@ FutureIter_iternext(futureiterobject *it)
 
     res = _asyncio_Future_result_impl(fut);
     if (res != NULL) {
-        /* The result of the Future is not an exception.
-
-           We construct an exception instance manually with
-           PyObject_CallFunctionObjArgs and pass it to PyErr_SetObject
-           (similarly to what genobject.c does).
-
-           We do this to handle a situation when "res" is a tuple, in which
-           case PyErr_SetObject would set the value of StopIteration to
-           the first element of the tuple.
-
-           (See PyErr_SetObject/_PyErr_CreateException code for details.)
-        */
-        PyObject *e = PyObject_CallFunctionObjArgs(
-            PyExc_StopIteration, res, NULL);
-        Py_DECREF(res);
-        if (e == NULL) {
+        /* The result of the Future is not an exception. */
+        if (_PyGen_SetStopIterationValue(res) < 0) {
+            Py_DECREF(res);
             return NULL;
         }
-        PyErr_SetObject(PyExc_StopIteration, e);
-        Py_DECREF(e);
+        Py_DECREF(res);
     }
 
     it->future = NULL;
