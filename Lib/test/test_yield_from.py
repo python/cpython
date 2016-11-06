@@ -384,9 +384,10 @@ class TestPEP380Operation(unittest.TestCase):
             trace.append("Starting g1")
             yield "g1 ham"
             ret = yield from g2()
-            trace.append("g2 returned %s" % (ret,))
-            ret = yield from g2(42)
-            trace.append("g2 returned %s" % (ret,))
+            trace.append("g2 returned %r" % (ret,))
+            for v in 1, (2,), StopIteration(3):
+                ret = yield from g2(v)
+                trace.append("g2 returned %r" % (ret,))
             yield "g1 eggs"
             trace.append("Finishing g1")
         def g2(v = None):
@@ -410,7 +411,17 @@ class TestPEP380Operation(unittest.TestCase):
             "Yielded g2 spam",
             "Yielded g2 more spam",
             "Finishing g2",
-            "g2 returned 42",
+            "g2 returned 1",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Yielded g2 more spam",
+            "Finishing g2",
+            "g2 returned (2,)",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Yielded g2 more spam",
+            "Finishing g2",
+            "g2 returned StopIteration(3,)",
             "Yielded g1 eggs",
             "Finishing g1",
         ])
@@ -670,14 +681,16 @@ class TestPEP380Operation(unittest.TestCase):
                 next(gi)
                 trace.append("f SHOULD NOT BE HERE")
             except StopIteration as e:
-                trace.append("f caught %s" % (repr(e),))
+                trace.append("f caught %r" % (e,))
         def g(r):
             trace.append("g starting")
             yield
-            trace.append("g returning %s" % (r,))
+            trace.append("g returning %r" % (r,))
             return r
         f(None)
-        f(42)
+        f(1)
+        f((2,))
+        f(StopIteration(3))
         self.assertEqual(trace,[
             "g starting",
             "f resuming g",
@@ -685,8 +698,16 @@ class TestPEP380Operation(unittest.TestCase):
             "f caught StopIteration()",
             "g starting",
             "f resuming g",
-            "g returning 42",
-            "f caught StopIteration(42,)",
+            "g returning 1",
+            "f caught StopIteration(1,)",
+            "g starting",
+            "f resuming g",
+            "g returning (2,)",
+            "f caught StopIteration((2,),)",
+            "g starting",
+            "f resuming g",
+            "g returning StopIteration(3,)",
+            "f caught StopIteration(StopIteration(3,),)",
         ])
 
     def test_send_and_return_with_value(self):
@@ -706,22 +727,34 @@ class TestPEP380Operation(unittest.TestCase):
         def g(r):
             trace.append("g starting")
             x = yield
-            trace.append("g received %s" % (x,))
-            trace.append("g returning %s" % (r,))
+            trace.append("g received %r" % (x,))
+            trace.append("g returning %r" % (r,))
             return r
         f(None)
-        f(42)
-        self.assertEqual(trace,[
+        f(1)
+        f((2,))
+        f(StopIteration(3))
+        self.assertEqual(trace, [
             "g starting",
             "f sending spam to g",
-            "g received spam",
+            "g received 'spam'",
             "g returning None",
             "f caught StopIteration()",
             "g starting",
             "f sending spam to g",
-            "g received spam",
-            "g returning 42",
-            "f caught StopIteration(42,)",
+            "g received 'spam'",
+            "g returning 1",
+            'f caught StopIteration(1,)',
+            'g starting',
+            'f sending spam to g',
+            "g received 'spam'",
+            'g returning (2,)',
+            'f caught StopIteration((2,),)',
+            'g starting',
+            'f sending spam to g',
+            "g received 'spam'",
+            'g returning StopIteration(3,)',
+            'f caught StopIteration(StopIteration(3,),)'
         ])
 
     def test_catching_exception_from_subgen_and_returning(self):
@@ -729,27 +762,29 @@ class TestPEP380Operation(unittest.TestCase):
         Test catching an exception thrown into a
         subgenerator and returning a value
         """
-        trace = []
         def inner():
             try:
                 yield 1
             except ValueError:
                 trace.append("inner caught ValueError")
-            return 2
+            return value
 
         def outer():
             v = yield from inner()
-            trace.append("inner returned %r to outer" % v)
+            trace.append("inner returned %r to outer" % (v,))
             yield v
-        g = outer()
-        trace.append(next(g))
-        trace.append(g.throw(ValueError))
-        self.assertEqual(trace,[
-            1,
-            "inner caught ValueError",
-            "inner returned 2 to outer",
-            2,
-        ])
+
+        for value in 2, (2,), StopIteration(2):
+            trace = []
+            g = outer()
+            trace.append(next(g))
+            trace.append(repr(g.throw(ValueError)))
+            self.assertEqual(trace, [
+                1,
+                "inner caught ValueError",
+                "inner returned %r to outer" % (value,),
+                repr(value),
+            ])
 
     def test_throwing_GeneratorExit_into_subgen_that_returns(self):
         """
