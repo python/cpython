@@ -1,3 +1,5 @@
+.. highlight:: shell-session
+
 .. _instrumentation:
 
 ===============================================
@@ -20,9 +22,6 @@ known as "probes", that can be observed by a DTrace or SystemTap script,
 making it easier to monitor what the CPython processes on a system are
 doing.
 
-.. I'm using ".. code-block:: c" for SystemTap scripts, as "c" is syntactically
-   the closest match that Sphinx supports
-
 .. impl-detail::
 
    DTrace markers are implementation details of the CPython interpreter.
@@ -40,14 +39,16 @@ development tools must be installed.
 
 On a Linux machine, this can be done via::
 
-   yum install systemtap-sdt-devel
+   $ yum install systemtap-sdt-devel
 
 or::
 
-   sudo apt-get install systemtap-sdt-dev
+   $ sudo apt-get install systemtap-sdt-dev
 
 
-CPython must then be configured `--with-dtrace`::
+CPython must then be configured ``--with-dtrace``:
+
+.. code-block:: none
 
    checking for --with-dtrace... yes
 
@@ -71,22 +72,18 @@ Python provider::
 On Linux, you can verify if the SystemTap static markers are present in
 the built binary by seeing if it contains a ".note.stapsdt" section.
 
-.. code-block:: bash
+::
 
    $ readelf -S ./python | grep .note.stapsdt
    [30] .note.stapsdt        NOTE         0000000000000000 00308d78
 
 If you've built Python as a shared library (with --enable-shared), you
-need to look instead within the shared library.  For example:
-
-.. code-block:: bash
+need to look instead within the shared library.  For example::
 
    $ readelf -S libpython3.3dm.so.1.0 | grep .note.stapsdt
    [29] .note.stapsdt        NOTE         0000000000000000 00365b68
 
-Sufficiently modern readelf can print the metadata:
-
-.. code-block:: bash
+Sufficiently modern readelf can print the metadata::
 
     $ readelf -n ./python
 
@@ -136,7 +133,7 @@ hierarchy of a Python script, only tracing within the invocation of
 a function called "start". In other words, import-time function
 invocations are not going to be listed:
 
-.. code-block:: c
+.. code-block:: none
 
     self int indent;
 
@@ -170,13 +167,13 @@ invocations are not going to be listed:
             self->trace = 0;
     }
 
-It can be invoked like this:
-
-.. code-block:: bash
+It can be invoked like this::
 
   $ sudo dtrace -q -s call_stack.d -c "python3.6 script.py"
 
-The output looks like this::
+The output looks like this:
+
+.. code-block:: none
 
     156641360502280  function-entry:call_stack.py:start:23
     156641360518804  function-entry: call_stack.py:function_1:1
@@ -208,7 +205,7 @@ containing them.
 For example, this SystemTap script can be used to show the call/return
 hierarchy of a Python script:
 
-.. code-block:: c
+.. code-block:: none
 
    probe process("python").mark("function__entry") {
         filename = user_string($arg1);
@@ -228,15 +225,15 @@ hierarchy of a Python script:
               thread_indent(-1), funcname, filename, lineno);
    }
 
-It can be invoked like this:
-
-.. code-block:: bash
+It can be invoked like this::
 
    $ stap \
      show-call-hierarchy.stp \
      -c "./python test.py"
 
-The output looks like this::
+The output looks like this:
+
+.. code-block:: none
 
    11408 python(8274):        => __contains__ in Lib/_abcoll.py:362
    11414 python(8274):         => __getitem__ in Lib/os.py:425
@@ -325,7 +322,7 @@ details of the static markers.
 
 Here is a tapset file, based on a non-shared build of CPython:
 
-.. code-block:: c
+.. code-block:: none
 
     /*
        Provide a higher-level wrapping around the function__entry and
@@ -369,7 +366,7 @@ This SystemTap script uses the tapset above to more cleanly implement the
 example given above of tracing the Python function-call hierarchy, without
 needing to directly name the static markers:
 
-.. code-block:: c
+.. code-block:: none
 
     probe python.function.entry
     {
@@ -388,7 +385,7 @@ The following script uses the tapset above to provide a top-like view of all
 running CPython code, showing the top 20 most frequently-entered bytecode
 frames, each second, across the whole system:
 
-.. code-block:: c
+.. code-block:: none
 
     global fn_calls;
 
