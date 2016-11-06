@@ -1598,6 +1598,15 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PyDict_Type) < 0)
         Py_FatalError("Can't initialize dict type");
 
+    if (PyType_Ready(&PyDictKeys_Type) < 0)
+        Py_FatalError("Can't initialize dict keys type");
+
+    if (PyType_Ready(&PyDictValues_Type) < 0)
+        Py_FatalError("Can't initialize dict values type");
+
+    if (PyType_Ready(&PyDictItems_Type) < 0)
+        Py_FatalError("Can't initialize dict items type");
+
     if (PyType_Ready(&PyODict_Type) < 0)
         Py_FatalError("Can't initialize OrderedDict type");
 
