@@ -628,6 +628,7 @@ f'{a * x()}'"""
                              "f'}'",
                              "f'x}'",
                              "f'x}x'",
+                             r"f'\u007b}'",
 
                              # Can't have { or } in a format spec.
                              "f'{3:}>10}'",
