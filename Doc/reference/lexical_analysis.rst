@@ -679,17 +679,22 @@ Some examples of formatted string literals::
 
 A consequence of sharing the same syntax as regular string literals is
 that characters in the replacement fields must not conflict with the
-quoting used in the outer formatted string literal.  Also, escape
-sequences normally apply to the outer formatted string literal,
-rather than inner string literals::
+quoting used in the outer formatted string literal::
 
    f"abc {a["x"]} def"    # error: outer string literal ended prematurely
-   f"abc {a[\"x\"]} def"  # workaround: escape the inner quotes
    f"abc {a['x']} def"    # workaround: use different quoting
 
-   f"newline: {ord('\n')}"   # error: literal line break in inner string
-   f"newline: {ord('\\n')}"  # workaround: double escaping
-   fr"newline: {ord('\n')}"  # workaround: raw outer string
+Backslashes are not allowed in format expressions and will raise
+an error::
+
+   f"newline: {ord('\n')}"  # raises SyntaxError
+
+To include a value in which a backslash escape is required, create
+a temporary variable.
+
+   >>> newline = ord('\n')
+   >>> f"newline: {newline}"
+   'newline: 10'
 
 See also :pep:`498` for the proposal that added formatted string literals,
 and :meth:`str.format`, which uses a related format string mechanism.
