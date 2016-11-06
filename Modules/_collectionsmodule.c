@@ -2300,6 +2300,8 @@ _count_elements(PyObject *self, PyObject *args)
 
             oldval = _PyDict_GetItem_KnownHash(mapping, key, hash);
             if (oldval == NULL) {
+                if (PyErr_Occurred())
+                    goto done;
                 if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) < 0)
                     goto done;
             } else {
