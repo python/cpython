@@ -378,6 +378,7 @@ f'{a * x()}'"""
                              r"rf'{\t3}'",
                              r"rf'{\}'",
                              r"""rf'{"\N{LEFT CURLY BRACKET}"}'""",
+                             r"f'{\n}'",
                              ])
 
     def test_no_escapes_for_braces(self):
