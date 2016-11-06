@@ -710,6 +710,21 @@ class CoroutineTest(unittest.TestCase):
             coro.close()
             self.assertEqual(CHK, 1)
 
+    def test_coro_wrapper_send_tuple(self):
+        async def foo():
+            return (10,)
+
+        result = run_async__await__(foo())
+        self.assertEqual(result, ([], (10,)))
+
+    def test_coro_wrapper_send_stop_iterator(self):
+        async def foo():
+            return StopIteration(10)
+
+        result = run_async__await__(foo())
+        self.assertIsInstance(result[1], StopIteration)
+        self.assertEqual(result[1].value, 10)
+
     def test_cr_await(self):
         @types.coroutine
         def a():
@@ -1536,6 +1551,52 @@ class CoroutineTest(unittest.TestCase):
             with warnings.catch_warnings():
                 warnings.simplefilter("error")
                 run_async(foo())
+
+    def test_for_tuple(self):
+        class Done(Exception): pass
+
+        class AIter(tuple):
+            i = 0
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                if self.i >= len(self):
+                    raise StopAsyncIteration
+                self.i += 1
+                return self[self.i - 1]
+
+        result = []
+        async def foo():
+            async for i in AIter([42]):
+                result.append(i)
+            raise Done
+
+        with self.assertRaises(Done):
+            foo().send(None)
+        self.assertEqual(result, [42])
+
+    def test_for_stop_iteration(self):
+        class Done(Exception): pass
+
+        class AIter(StopIteration):
+            i = 0
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                if self.i:
+                    raise StopAsyncIteration
+                self.i += 1
+                return self.value
+
+        result = []
+        async def foo():
+            async for i in AIter(42):
+                result.append(i)
+            raise Done
+
+        with self.assertRaises(Done):
+            foo().send(None)
+        self.assertEqual(result, [42])
 
     def test_copy(self):
         async def func(): pass
