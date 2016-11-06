@@ -120,6 +120,33 @@ name multiple exceptions as a parenthesized tuple, for example::
    ... except (RuntimeError, TypeError, NameError):
    ...     pass
 
+A class in an :keyword:`except` clause is compatible with an exception if it is
+the same class or a base class thereof (but not the other way around --- an
+except clause listing a derived class is not compatible with a base class).  For
+example, the following code will print B, C, D in that order::
+
+   class B(Exception):
+       pass
+
+   class C(B):
+       pass
+
+   class D(C):
+       pass
+
+   for cls in [B, C, D]:
+       try:
+           raise cls()
+       except D:
+           print("D")
+       except C:
+           print("C")
+       except B:
+           print("B")
+
+Note that if the except clauses were reversed (with ``except B`` first), it
+would have printed B, B, B --- the first matching except clause is triggered.
+
 The last except clause may omit the exception name(s), to serve as a wildcard.
 Use this with extreme caution, since it is easy to mask a real programming error
 in this way!  It can also be used to print an error message and then re-raise
@@ -219,7 +246,10 @@ exception to occur. For example::
 
 The sole argument to :keyword:`raise` indicates the exception to be raised.
 This must be either an exception instance or an exception class (a class that
-derives from :class:`Exception`).
+derives from :class:`Exception`).  If an exception class is passed, it will
+be implicitly instantiated by calling its constructor with no arguments::
+
+   raise ValueError  # shorthand for 'raise ValueError()'
 
 If you need to determine whether an exception was raised but don't intend to
 handle it, a simpler form of the :keyword:`raise` statement allows you to
