@@ -723,8 +723,10 @@ top:
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
             Py_DECREF(startkey);
-            if (cmp < 0)
+            if (cmp < 0) {
+                *value_addr = NULL;
                 return DKIX_ERROR;
+            }
             if (dk == mp->ma_keys && ep->me_key == startkey) {
                 if (cmp > 0) {
                     *value_addr = &ep->me_value;
@@ -1424,39 +1426,25 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     return *value_addr;
 }
 
+/* Same as PyDict_GetItemWithError() but with hash supplied by caller.
+   This returns NULL *with* an exception set if an exception occurred.
+   It returns NULL *without* an exception set if the key wasn't present.
+*/
 PyObject *
 _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 {
     Py_ssize_t ix;
     PyDictObject *mp = (PyDictObject *)op;
-    PyThreadState *tstate;
     PyObject **value_addr;
 
-    if (!PyDict_Check(op))
+    if (!PyDict_Check(op)) {
+        PyErr_BadInternalCall();
         return NULL;
-
-    /* We can arrive here with a NULL tstate during initialization: try
-       running "python -Wi" for an example related to string interning.
-       Let's just hope that no exception occurs then...  This must be
-       _PyThreadState_Current and not PyThreadState_GET() because in debug
-       mode, the latter complains if tstate is NULL. */
-    tstate = _PyThreadState_UncheckedGet();
-    if (tstate != NULL && tstate->curexc_type != NULL) {
-        /* preserve the existing exception */
-        PyObject *err_type, *err_value, *err_tb;
-        PyErr_Fetch(&err_type, &err_value, &err_tb);
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value_addr, NULL);
-        /* ignore errors */
-        PyErr_Restore(err_type, err_value, err_tb);
-        if (ix == DKIX_EMPTY)
-            return NULL;
     }
-    else {
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value_addr, NULL);
-        if (ix == DKIX_EMPTY) {
-            PyErr_Clear();
-            return NULL;
-        }
+
+    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value_addr, NULL);
+    if (ix < 0) {
+        return NULL;
     }
     return *value_addr;
 }
@@ -2431,8 +2419,16 @@ dict_merge(PyObject *a, PyObject *b, int override)
                 int err = 0;
                 Py_INCREF(key);
                 Py_INCREF(value);
-                if (override == 1 || _PyDict_GetItem_KnownHash(a, key, hash) == NULL)
+                if (override == 1)
                     err = insertdict(mp, key, hash, value);
+                else if (_PyDict_GetItem_KnownHash(a, key, hash) == NULL) {
+                    if (PyErr_Occurred()) {
+                        Py_DECREF(value);
+                        Py_DECREF(key);
+                        return -1;
+                    }
+                    err = insertdict(mp, key, hash, value);
+                }
                 else if (override != 0) {
                     _PyErr_SetKeyError(key);
                     Py_DECREF(value);
