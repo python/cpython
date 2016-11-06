@@ -382,11 +382,14 @@ f'{a * x()}'"""
                              ])
 
     def test_no_escapes_for_braces(self):
-        # \x7b is '{'.  Make sure it doesn't start an expression.
-        self.assertEqual(f'\x7b2}}', '{2}')
-        self.assertEqual(f'\x7b2', '{2')
-        self.assertEqual(f'\u007b2', '{2')
-        self.assertEqual(f'\N{LEFT CURLY BRACKET}2\N{RIGHT CURLY BRACKET}', '{2}')
+        """
+        Only literal curly braces begin an expression.
+        """
+        # \x7b is '{'.
+        self.assertEqual(f'\x7b1+1}}', '{1+1}')
+        self.assertEqual(f'\x7b1+1', '{1+1')
+        self.assertEqual(f'\u007b1+1', '{1+1')
+        self.assertEqual(f'\N{LEFT CURLY BRACKET}1+1\N{RIGHT CURLY BRACKET}', '{1+1}')
 
     def test_newlines_in_expressions(self):
         self.assertEqual(f'{0}', '0')
