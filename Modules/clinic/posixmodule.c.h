@@ -5596,6 +5596,209 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+PyDoc_STRVAR(os_DirEntry_is_symlink__doc__,
+"is_symlink($self, /)\n"
+"--\n"
+"\n"
+"Return True if the entry is a symbolic link; cached per entry.");
+
+#define OS_DIRENTRY_IS_SYMLINK_METHODDEF    \
+    {"is_symlink", (PyCFunction)os_DirEntry_is_symlink, METH_NOARGS, os_DirEntry_is_symlink__doc__},
+
+static int
+os_DirEntry_is_symlink_impl(DirEntry *self);
+
+static PyObject *
+os_DirEntry_is_symlink(DirEntry *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = os_DirEntry_is_symlink_impl(self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(os_DirEntry_stat__doc__,
+"stat($self, /, *, follow_symlinks=True)\n"
+"--\n"
+"\n"
+"Return stat_result object for the entry; cached per entry.");
+
+#define OS_DIRENTRY_STAT_METHODDEF    \
+    {"stat", (PyCFunction)os_DirEntry_stat, METH_FASTCALL, os_DirEntry_stat__doc__},
+
+static PyObject *
+os_DirEntry_stat_impl(DirEntry *self, int follow_symlinks);
+
+static PyObject *
+os_DirEntry_stat(DirEntry *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"|$p:stat", _keywords, 0};
+    int follow_symlinks = 1;
+
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+        &follow_symlinks)) {
+        goto exit;
+    }
+    return_value = os_DirEntry_stat_impl(self, follow_symlinks);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(os_DirEntry_is_dir__doc__,
+"is_dir($self, /, *, follow_symlinks=True)\n"
+"--\n"
+"\n"
+"Return True if the entry is a directory; cached per entry.");
+
+#define OS_DIRENTRY_IS_DIR_METHODDEF    \
+    {"is_dir", (PyCFunction)os_DirEntry_is_dir, METH_FASTCALL, os_DirEntry_is_dir__doc__},
+
+static int
+os_DirEntry_is_dir_impl(DirEntry *self, int follow_symlinks);
+
+static PyObject *
+os_DirEntry_is_dir(DirEntry *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"|$p:is_dir", _keywords, 0};
+    int follow_symlinks = 1;
+    int _return_value;
+
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+        &follow_symlinks)) {
+        goto exit;
+    }
+    _return_value = os_DirEntry_is_dir_impl(self, follow_symlinks);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(os_DirEntry_is_file__doc__,
+"is_file($self, /, *, follow_symlinks=True)\n"
+"--\n"
+"\n"
+"Return True if the entry is a file; cached per entry.");
+
+#define OS_DIRENTRY_IS_FILE_METHODDEF    \
+    {"is_file", (PyCFunction)os_DirEntry_is_file, METH_FASTCALL, os_DirEntry_is_file__doc__},
+
+static int
+os_DirEntry_is_file_impl(DirEntry *self, int follow_symlinks);
+
+static PyObject *
+os_DirEntry_is_file(DirEntry *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {"|$p:is_file", _keywords, 0};
+    int follow_symlinks = 1;
+    int _return_value;
+
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+        &follow_symlinks)) {
+        goto exit;
+    }
+    _return_value = os_DirEntry_is_file_impl(self, follow_symlinks);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(os_DirEntry_inode__doc__,
+"inode($self, /)\n"
+"--\n"
+"\n"
+"Return inode of the entry; cached per entry.");
+
+#define OS_DIRENTRY_INODE_METHODDEF    \
+    {"inode", (PyCFunction)os_DirEntry_inode, METH_NOARGS, os_DirEntry_inode__doc__},
+
+static PyObject *
+os_DirEntry_inode_impl(DirEntry *self);
+
+static PyObject *
+os_DirEntry_inode(DirEntry *self, PyObject *Py_UNUSED(ignored))
+{
+    return os_DirEntry_inode_impl(self);
+}
+
+PyDoc_STRVAR(os_DirEntry___fspath____doc__,
+"__fspath__($self, /)\n"
+"--\n"
+"\n"
+"Returns the path for the entry.");
+
+#define OS_DIRENTRY___FSPATH___METHODDEF    \
+    {"__fspath__", (PyCFunction)os_DirEntry___fspath__, METH_NOARGS, os_DirEntry___fspath____doc__},
+
+static PyObject *
+os_DirEntry___fspath___impl(DirEntry *self);
+
+static PyObject *
+os_DirEntry___fspath__(DirEntry *self, PyObject *Py_UNUSED(ignored))
+{
+    return os_DirEntry___fspath___impl(self);
+}
+
+PyDoc_STRVAR(os_scandir__doc__,
+"scandir($module, /, path=None)\n"
+"--\n"
+"\n"
+"Return an iterator of DirEntry objects for given path.\n"
+"\n"
+"path can be specified as either str, bytes or path-like object.  If path\n"
+"is bytes, the names of yielded DirEntry objects will also be bytes; in\n"
+"all other circumstances they will be str.\n"
+"\n"
+"If path is None, uses the path=\'.\'.");
+
+#define OS_SCANDIR_METHODDEF    \
+    {"scandir", (PyCFunction)os_scandir, METH_FASTCALL, os_scandir__doc__},
+
+static PyObject *
+os_scandir_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os_scandir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {"|O&:scandir", _keywords, 0};
+    path_t path = PATH_T_INITIALIZE("scandir", "path", 1, 0);
+
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+        path_converter, &path)) {
+        goto exit;
+    }
+    return_value = os_scandir_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(os_fspath__doc__,
 "fspath($module, /, path)\n"
 "--\n"
@@ -6148,4 +6351,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=b9ed5703d2feb0d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e4a3bd36c7bb8356 input=a9049054013a1b77]*/

@@ -11092,10 +11092,10 @@ posix_set_blocking(PyObject *self, PyObject *args)
 #endif   /* !MS_WINDOWS */
 
 
-PyDoc_STRVAR(posix_scandir__doc__,
-"scandir(path='.') -> iterator of DirEntry objects for given path");
-
-static char *follow_symlinks_keywords[] = {"follow_symlinks", NULL};
+/*[clinic input]
+class os.DirEntry "DirEntry *" "&DirEntryType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3138f09f7c683f1d]*/
 
 typedef struct {
     PyObject_HEAD
@@ -11129,9 +11129,15 @@ DirEntry_dealloc(DirEntry *entry)
 static int
 DirEntry_test_mode(DirEntry *self, int follow_symlinks, unsigned short mode_bits);
 
-/* Set exception and return -1 on error, 0 for False, 1 for True */
+/*[clinic input]
+os.DirEntry.is_symlink -> bool
+
+Return True if the entry is a symbolic link; cached per entry.
+[clinic start generated code]*/
+
 static int
-DirEntry_is_symlink(DirEntry *self)
+os_DirEntry_is_symlink_impl(DirEntry *self)
+/*[clinic end generated code: output=42244667d7bcfc25 input=1605a1b4b96976c3]*/
 {
 #ifdef MS_WINDOWS
     return (self->win32_lstat.st_mode & S_IFMT) == S_IFLNK;
@@ -11145,17 +11151,6 @@ DirEntry_is_symlink(DirEntry *self)
     /* POSIX without d_type */
     return DirEntry_test_mode(self, 0, S_IFLNK);
 #endif
-}
-
-static PyObject *
-DirEntry_py_is_symlink(DirEntry *self)
-{
-    int result;
-
-    result = DirEntry_is_symlink(self);
-    if (result == -1)
-        return NULL;
-    return PyBool_FromLong(result);
 }
 
 static PyObject *
@@ -11200,14 +11195,23 @@ DirEntry_get_lstat(DirEntry *self)
     return self->lstat;
 }
 
+/*[clinic input]
+os.DirEntry.stat
+    *
+    follow_symlinks: bool = True
+
+Return stat_result object for the entry; cached per entry.
+[clinic start generated code]*/
+
 static PyObject *
-DirEntry_get_stat(DirEntry *self, int follow_symlinks)
+os_DirEntry_stat_impl(DirEntry *self, int follow_symlinks)
+/*[clinic end generated code: output=008593b3a6d01305 input=280d14c1d6f1d00d]*/
 {
     if (!follow_symlinks)
         return DirEntry_get_lstat(self);
 
     if (!self->stat) {
-        int result = DirEntry_is_symlink(self);
+        int result = os_DirEntry_is_symlink_impl(self);
         if (result == -1)
             return NULL;
         else if (result)
@@ -11218,18 +11222,6 @@ DirEntry_get_stat(DirEntry *self, int follow_symlinks)
 
     Py_XINCREF(self->stat);
     return self->stat;
-}
-
-static PyObject *
-DirEntry_stat(DirEntry *self, PyObject *args, PyObject *kwargs)
-{
-    int follow_symlinks = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|$p:DirEntry.stat",
-                                     follow_symlinks_keywords, &follow_symlinks))
-        return NULL;
-
-    return DirEntry_get_stat(self, follow_symlinks);
 }
 
 /* Set exception and return -1 on error, 0 for False, 1 for True */
@@ -11260,7 +11252,7 @@ DirEntry_test_mode(DirEntry *self, int follow_symlinks, unsigned short mode_bits
 #if defined(MS_WINDOWS) || defined(HAVE_DIRENT_D_TYPE)
     if (need_stat) {
 #endif
-        stat = DirEntry_get_stat(self, follow_symlinks);
+        stat = os_DirEntry_stat_impl(self, follow_symlinks);
         if (!stat) {
             if (PyErr_ExceptionMatches(PyExc_FileNotFoundError)) {
                 /* If file doesn't exist (anymore), then return False
@@ -11311,43 +11303,45 @@ error:
     return -1;
 }
 
-static PyObject *
-DirEntry_py_test_mode(DirEntry *self, int follow_symlinks, unsigned short mode_bits)
-{
-    int result;
+/*[clinic input]
+os.DirEntry.is_dir -> bool
+    *
+    follow_symlinks: bool = True
 
-    result = DirEntry_test_mode(self, follow_symlinks, mode_bits);
-    if (result == -1)
-        return NULL;
-    return PyBool_FromLong(result);
+Return True if the entry is a directory; cached per entry.
+[clinic start generated code]*/
+
+static int
+os_DirEntry_is_dir_impl(DirEntry *self, int follow_symlinks)
+/*[clinic end generated code: output=ad2e8d54365da287 input=0135232766f53f58]*/
+{
+    return DirEntry_test_mode(self, follow_symlinks, S_IFDIR);
 }
 
-static PyObject *
-DirEntry_is_dir(DirEntry *self, PyObject *args, PyObject *kwargs)
+/*[clinic input]
+os.DirEntry.is_file -> bool
+    *
+    follow_symlinks: bool = True
+
+Return True if the entry is a file; cached per entry.
+[clinic start generated code]*/
+
+static int
+os_DirEntry_is_file_impl(DirEntry *self, int follow_symlinks)
+/*[clinic end generated code: output=8462ade481d8a476 input=0dc90be168b041ee]*/
 {
-    int follow_symlinks = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|$p:DirEntry.is_dir",
-                                     follow_symlinks_keywords, &follow_symlinks))
-        return NULL;
-
-    return DirEntry_py_test_mode(self, follow_symlinks, S_IFDIR);
+    return DirEntry_test_mode(self, follow_symlinks, S_IFREG);
 }
 
-static PyObject *
-DirEntry_is_file(DirEntry *self, PyObject *args, PyObject *kwargs)
-{
-    int follow_symlinks = 1;
+/*[clinic input]
+os.DirEntry.inode
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|$p:DirEntry.is_file",
-                                     follow_symlinks_keywords, &follow_symlinks))
-        return NULL;
-
-    return DirEntry_py_test_mode(self, follow_symlinks, S_IFREG);
-}
+Return inode of the entry; cached per entry.
+[clinic start generated code]*/
 
 static PyObject *
-DirEntry_inode(DirEntry *self)
+os_DirEntry_inode_impl(DirEntry *self)
+/*[clinic end generated code: output=156bb3a72162440e input=3ee7b872ae8649f0]*/
 {
 #ifdef MS_WINDOWS
     if (!self->got_file_index) {
@@ -11384,8 +11378,15 @@ DirEntry_repr(DirEntry *self)
     return PyUnicode_FromFormat("<DirEntry %R>", self->name);
 }
 
+/*[clinic input]
+os.DirEntry.__fspath__
+
+Returns the path for the entry.
+[clinic start generated code]*/
+
 static PyObject *
-DirEntry_fspath(DirEntry *self)
+os_DirEntry___fspath___impl(DirEntry *self)
+/*[clinic end generated code: output=6dd7f7ef752e6f4f input=3c49d0cf38df4fac]*/
 {
     Py_INCREF(self->path);
     return self->path;
@@ -11399,25 +11400,15 @@ static PyMemberDef DirEntry_members[] = {
     {NULL}
 };
 
+#include "clinic/posixmodule.c.h"
+
 static PyMethodDef DirEntry_methods[] = {
-    {"is_dir", (PyCFunction)DirEntry_is_dir, METH_VARARGS | METH_KEYWORDS,
-     "return True if the entry is a directory; cached per entry"
-    },
-    {"is_file", (PyCFunction)DirEntry_is_file, METH_VARARGS | METH_KEYWORDS,
-     "return True if the entry is a file; cached per entry"
-    },
-    {"is_symlink", (PyCFunction)DirEntry_py_is_symlink, METH_NOARGS,
-     "return True if the entry is a symbolic link; cached per entry"
-    },
-    {"stat", (PyCFunction)DirEntry_stat, METH_VARARGS | METH_KEYWORDS,
-     "return stat_result object for the entry; cached per entry"
-    },
-    {"inode", (PyCFunction)DirEntry_inode, METH_NOARGS,
-     "return inode of the entry; cached per entry",
-    },
-    {"__fspath__", (PyCFunction)DirEntry_fspath, METH_NOARGS,
-     "returns the path for the entry",
-    },
+    OS_DIRENTRY_IS_DIR_METHODDEF
+    OS_DIRENTRY_IS_FILE_METHODDEF
+    OS_DIRENTRY_IS_SYMLINK_METHODDEF
+    OS_DIRENTRY_STAT_METHODDEF
+    OS_DIRENTRY_INODE_METHODDEF
+    OS_DIRENTRY___FSPATH___METHODDEF
     {NULL}
 };
 
@@ -11890,23 +11881,34 @@ static PyTypeObject ScandirIteratorType = {
     (destructor)ScandirIterator_finalize,   /* tp_finalize */
 };
 
+/*[clinic input]
+os.scandir
+
+    path : path_t(nullable=True) = None
+
+Return an iterator of DirEntry objects for given path.
+
+path can be specified as either str, bytes or path-like object.  If path
+is bytes, the names of yielded DirEntry objects will also be bytes; in
+all other circumstances they will be str.
+
+If path is None, uses the path='.'.
+[clinic start generated code]*/
+
 static PyObject *
-posix_scandir(PyObject *self, PyObject *args, PyObject *kwargs)
+os_scandir_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=6eb2668b675ca89e input=e62b08b3cd41f604]*/
 {
     ScandirIterator *iterator;
-    static char *keywords[] = {"path", NULL};
 #ifdef MS_WINDOWS
     wchar_t *path_strW;
 #else
-    const char *path;
+    const char *path_str;
 #endif
 
     iterator = PyObject_New(ScandirIterator, &ScandirIteratorType);
     if (!iterator)
         return NULL;
-    memset(&iterator->path, 0, sizeof(path_t));
-    iterator->path.function_name = "scandir";
-    iterator->path.nullable = 1;
 
 #ifdef MS_WINDOWS
     iterator->handle = INVALID_HANDLE_VALUE;
@@ -11914,15 +11916,13 @@ posix_scandir(PyObject *self, PyObject *args, PyObject *kwargs)
     iterator->dirp = NULL;
 #endif
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&:scandir", keywords,
-                                     path_converter, &iterator->path))
-        goto error;
-
+    memcpy(&iterator->path, path, sizeof(path_t));
     /* path_converter doesn't keep path.object around, so do it
        manually for the lifetime of the iterator here (the refcount
        is decremented in ScandirIterator_dealloc)
     */
     Py_XINCREF(iterator->path.object);
+    Py_XINCREF(iterator->path.cleanup);
 
 #ifdef MS_WINDOWS
     iterator->first_time = 1;
@@ -11943,13 +11943,13 @@ posix_scandir(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 #else /* POSIX */
     if (iterator->path.narrow)
-        path = iterator->path.narrow;
+        path_str = iterator->path.narrow;
     else
-        path = ".";
+        path_str = ".";
 
     errno = 0;
     Py_BEGIN_ALLOW_THREADS
-    iterator->dirp = opendir(path);
+    iterator->dirp = opendir(path_str);
     Py_END_ALLOW_THREADS
 
     if (!iterator->dirp) {
@@ -12091,13 +12091,6 @@ error:
     return NULL;
 }
 #endif   /* HAVE_GETRANDOM_SYSCALL */
-
-#include "clinic/posixmodule.c.h"
-
-/*[clinic input]
-dump buffer
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=524ce2e021e4eba6]*/
 
 
 static PyMethodDef posix_methods[] = {
@@ -12288,9 +12281,7 @@ static PyMethodDef posix_methods[] = {
     {"get_blocking", posix_get_blocking, METH_VARARGS, get_blocking__doc__},
     {"set_blocking", posix_set_blocking, METH_VARARGS, set_blocking__doc__},
 #endif
-    {"scandir",         (PyCFunction)posix_scandir,
-                        METH_VARARGS | METH_KEYWORDS,
-                        posix_scandir__doc__},
+    OS_SCANDIR_METHODDEF
     OS_FSPATH_METHODDEF
     OS_GETRANDOM_METHODDEF
     {NULL,              NULL}            /* Sentinel */
