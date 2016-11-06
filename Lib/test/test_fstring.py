@@ -378,6 +378,7 @@ f'{a * x()}'"""
                              r"rf'{\t3}'",
                              r"rf'{\}'",
                              r"""rf'{"\N{LEFT CURLY BRACKET}"}'""",
+                             r"f'{\n}'",
                              ])
 
     def test_no_escapes_for_braces(self):
@@ -627,6 +628,7 @@ f'{a * x()}'"""
                              "f'}'",
                              "f'x}'",
                              "f'x}x'",
+                             r"f'\u007b}'",
 
                              # Can't have { or } in a format spec.
                              "f'{3:}>10}'",
