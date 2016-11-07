@@ -3832,18 +3832,9 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
        cannot only rely on it: check also interp->fscodec_initialized for
        subinterpreters. */
     if (Py_FileSystemDefaultEncoding && interp->fscodec_initialized) {
-        PyObject *res = PyUnicode_Decode(s, size,
+        return PyUnicode_Decode(s, size,
                                 Py_FileSystemDefaultEncoding,
                                 Py_FileSystemDefaultEncodeErrors);
-#ifdef MS_WINDOWS
-        if (!res && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
-            _PyErr_FormatFromCause(PyExc_RuntimeError,
-                "filesystem path bytes were not correctly encoded with '%s'. "
-                "Please report this at http://bugs.python.org/issue27781",
-                Py_FileSystemDefaultEncoding);
-        }
-#endif
-        return res;
     }
     else {
         return PyUnicode_DecodeLocaleAndSize(s, size, Py_FileSystemDefaultEncodeErrors);
