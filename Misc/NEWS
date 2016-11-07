@@ -3270,7 +3270,7 @@ Library
 - Issue #24774: Fix docstring in http.server.test. Patch from Chiu-Hsiang Hsu.
 
 - Issue #21159: Improve message in configparser.InterpolationMissingOptionError.
-  Patch from �?ukasz Langa.
+  Patch from Łukasz Langa.
 
 - Issue #20362: Honour TestCase.longMessage correctly in assertRegex.
   Patch from Ilia Kurenkov.
@@ -5198,7 +5198,7 @@ Library
   Based on patch by Martin Panter.
 
 - Issue #17293: uuid.getnode() now determines MAC address on AIX using netstat.
-  Based on patch by Aivars Kalv�?ns.
+  Based on patch by Aivars Kalvāns.
 
 - Issue #22769: Fixed ttk.Treeview.tag_has() when called without arguments.
 
