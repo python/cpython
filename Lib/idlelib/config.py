@@ -1,13 +1,20 @@
-"""Provides access to stored IDLE configuration information.
+"""idlelib.config -- Manage IDLE configuration information.
 
-Refer to the comments at the beginning of config-main.def for a description of
-the available configuration files and the design implemented to update user
-configuration information.  In particular, user configuration choices which
-duplicate the defaults will be removed from the user's configuration files,
-and if a file becomes empty, it will be deleted.
+The comments at the beginning of config-main.def describe the
+configuration files and the design implemented to update user
+configuration information.  In particular, user configuration choices
+which duplicate the defaults will be removed from the user's
+configuration files, and if a user file becomes empty, it will be
+deleted.
 
-The contents of the user files may be altered using the Options/Configure IDLE
-menu to access the configuration GUI (configdialog.py), or manually.
+The configuration database maps options to values.  Comceptually, the
+database keys are tuples (config-type, section, item).  As implemented,
+there are  separate dicts for default and user values.  Each has
+config-type keys 'main', 'extensions', 'highlight', and 'keys'.  The
+value for each key is a ConfigParser instance that maps section and item
+to values.  For 'main' and 'extenstons', user values override
+default values.  For 'highlight' and 'keys', user sections augment the
+default sections (and must, therefore, have distinct names).
 
 Throughout this module there is an emphasis on returning useable defaults
 when a problem occurs in returning a requested configuration value back to
