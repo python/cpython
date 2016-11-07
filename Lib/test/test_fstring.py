@@ -92,6 +92,13 @@ f'{a * x()}'"""
         exec(c)
         self.assertEqual(x[0], 'foo3')
 
+    def test_compile_time_concat_errors(self):
+        self.assertAllRaise(SyntaxError,
+                            'cannot mix bytes and nonbytes literals',
+                            [r"""f'' b''""",
+                             r"""b'' f''""",
+                             ])
+
     def test_literal(self):
         self.assertEqual(f'', '')
         self.assertEqual(f'a', 'a')
