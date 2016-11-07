@@ -87,18 +87,18 @@ BaseTransport
 
         - ``'subprocess'``: :class:`subprocess.Popen` instance
 
-   .. method:: set_protocol(self, protocol)
+   .. method:: set_protocol(protocol)
 
       Set a new protocol.  Switching protocol should only be done when both
       protocols are documented to support the switch.
 
-      .. versionadded:: 3.6.0
+      .. versionadded:: 3.5.3
 
-   .. method:: get_protocol(self)
+   .. method:: get_protocol
 
       Return the current protocol.
 
-      .. versionadded:: 3.6.0
+      .. versionadded:: 3.5.3
 
    .. versionchanged:: 3.5.1
       ``'ssl_object'`` info was added to SSL sockets.
