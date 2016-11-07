@@ -25,6 +25,8 @@ Library
 - Issue #28613: Fix get_event_loop() return the current loop if
   called from coroutines/callbacks.
 
+- Issue #28634: Fix asyncio.isfuture() to support unittest.Mock.
+
 Documentation
 -------------
 
