@@ -5147,7 +5147,8 @@ parsestrplus(struct compiling *c, const node *n)
         /* Check that we're not mixing bytes with unicode. */
         if (i != 0 && bytesmode != this_bytesmode) {
             ast_error(c, n, "cannot mix bytes and nonbytes literals");
-            Py_DECREF(s);
+            /* s is NULL if the current string part is an f-string. */
+            Py_XDECREF(s);
             goto error;
         }
         bytesmode = this_bytesmode;
@@ -5161,11 +5162,12 @@ parsestrplus(struct compiling *c, const node *n)
             if (result < 0)
                 goto error;
         } else {
+            /* A string or byte string. */
+            assert(s != NULL && fstr == NULL);
+
             assert(bytesmode ? PyBytes_CheckExact(s) :
                    PyUnicode_CheckExact(s));
 
-            /* A string or byte string. */
-            assert(s != NULL && fstr == NULL);
             if (bytesmode) {
                 /* For bytes, concat as we go. */
                 if (i == 0) {
@@ -5177,7 +5179,6 @@ parsestrplus(struct compiling *c, const node *n)
                         goto error;
                 }
             } else {
-                assert(s != NULL && fstr == NULL);
                 /* This is a regular string. Concatenate it. */
                 if (FstringParser_ConcatAndDel(&state, s) < 0)
                     goto error;
