@@ -356,11 +356,6 @@ correctly encoded. To revert to the previous behaviour, set
 See :pep:`529` for more information and discussion of code modifications that
 may be required.
 
-.. note::
-
-   This change is considered experimental for 3.6.0 beta releases. The default
-   encoding may change before the final release.
-
 .. _whatsnew-pep487:
 
 PEP 487: Simpler customization of class creation
