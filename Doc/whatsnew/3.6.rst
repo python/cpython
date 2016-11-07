@@ -4,6 +4,7 @@
 
 :Release: |release|
 :Date: |today|
+:Editors: Elvis Pranskevichus <elvis@magic.io>, Yury Selivanov <yury@magic.io>
 
 .. Rules for maintenance:
 
@@ -45,15 +46,17 @@
    This saves the maintainer the effort of going through the Mercurial log
    when researching a change.
 
-This article explains the new features in Python 3.6, compared to 3.5.
-
-For full details, see the :ref:`changelog <changelog>`.
-
 .. note::
 
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.6 moves towards release,
-   so it's worth checking back even after reading earlier versions.
+  Prerelease users should be aware that this document is currently in draft
+  form. It will be updated substantially as Python 3.6 moves towards release,
+  so it's worth checking back even after reading earlier versions.
+
+This article explains the new features in Python 3.6, compared to 3.5.
+
+.. seealso::
+
+    :pep:`494` - Python 3.6 Release Schedule
 
 
 Summary -- Release highlights
@@ -64,40 +67,73 @@ Summary -- Release highlights
 
 New syntax features:
 
-* A ``global`` or ``nonlocal`` statement must now textually appear
-  before the first use of the affected name in the same scope.
-  Previously this was a SyntaxWarning.
+* :ref:`PEP 498 <whatsnew36-pep498>`, formatted string literals.
 
-* PEP 498: :ref:`Formatted string literals <whatsnew-fstrings>`
+* :ref:`PEP 515 <whatsnew36-pep515>`, underscores in numeric literals.
 
-* PEP 515: Underscores in Numeric Literals
+* :ref:`PEP 526 <whatsnew36-pep526>`, syntax for variable annotations.
 
-* PEP 526: :ref:`Syntax for Variable Annotations <variable-annotations>`
+* :ref:`PEP 525 <whatsnew36-pep525>`, asynchronous generators.
 
-* PEP 525: Asynchronous Generators
+* :ref:`PEP 530 <whatsnew36-pep530>`: asynchronous comprehensions.
 
-* PEP 530: Asynchronous Comprehensions
 
-Standard library improvements:
+New library modules:
+
+* :mod:`secrets`: :ref:`PEP 506 -- Adding A Secrets Module To The Standard Library <whatsnew36-pep506>`.
+
+
+CPython implementation improvements:
+
+* The :ref:`dict <typesmapping>` type has been reimplemented to use
+  a :ref:`faster, more compact representation <whatsnew36-compactdict>`
+  similar to the `PyPy dict implementation`_. This resulted in dictionaries
+  using 20% to 25% less memory when compared to Python 3.5.
+
+* Customization of class creation has been simplified with the
+  :ref:`new protocol <whatsnew36-pep487>`.
+
+* The class attibute definition order is
+  :ref:`now preserved  <whatsnew36-pep520>`.
+
+* The order of elements in ``**kwargs`` now corresponds to the order in
+  the function signature:
+  :ref:`Preserving Keyword Argument Order <whatsnew36-pep468>`.
+
+* DTrace and SystemTap :ref:`probing support <whatsnew36-tracing>`.
+
+
+Significant improvements in the standard library:
+
+* A new :ref:`file system path protocol <whatsnew36-pep519>` has been
+  implemented to support :term:`path-like objects <path-like object>`.
+  All standard library functions operating on paths have been updated to
+  work with the new protocol.
+
+* The overhead of :mod:`asyncio` implementation has been reduced by
+  up to 50% thanks to the new C implementation of the :class:`asyncio.Future`
+  and :class:`asyncio.Task` classes and other optimizations.
+
 
 Security improvements:
 
-* On Linux, :func:`os.urandom` now blocks until the system urandom entropy pool
-  is initialized to increase the security. See the :pep:`524` for the
+* On Linux, :func:`os.urandom` now blocks until the system urandom entropy
+  pool is initialized to increase the security. See the :pep:`524` for the
   rationale.
 
-* :mod:`hashlib` and :mod:`ssl` now support OpenSSL 1.1.0.
+* The :mod:`hashlib` and :mod:`ssl` modules now support OpenSSL 1.1.0.
 
-* The default settings and feature set of the :mod:`ssl` have been improved.
+* The default settings and feature set of the :mod:`ssl` module have been
+  improved.
 
-* The :mod:`hashlib` module has got support for BLAKE2, SHA-3 and SHAKE hash
-  algorithms and :func:`~hashlib.scrypt` key derivation function.
+* The :mod:`hashlib` module received support for the BLAKE2, SHA-3 and SHAKE
+  hash algorithms and the :func:`~hashlib.scrypt` key derivation function.
+
 
 Windows improvements:
 
-* PEP 529: :ref:`Change Windows filesystem encoding to UTF-8 <pep-529>`
-
-* PEP 528: :ref:`Change Windows console encoding to UTF-8 <pep-528>`
+* :ref:`PEP 528 <whatsnew36-pep529>` and :ref:`PEP 529 <whatsnew36-pep529>`,
+  Windows filesystem and console encoding changed to UTF-8.
 
 * The ``py.exe`` launcher, when used interactively, no longer prefers
   Python 2 over Python 3 when the user doesn't specify a version (via
@@ -116,66 +152,111 @@ Windows improvements:
   :envvar:`PYTHONHOME`. See :ref:`the documentation <finding_modules>` for
   more information.
 
-.. PEP-sized items next.
-
-.. _pep-4XX:
-
-.. PEP 4XX: Virtual Environments
-.. =============================
-
-
-.. (Implemented by Foo Bar.)
-
-.. .. seealso::
-
-    :pep:`4XX` - Python Virtual Environments
-       PEP written by Carl Meyer
-
-New built-in features:
-
-* PEP 520: :ref:`Preserving Class Attribute Definition Order<whatsnew-deforder>`
-
-* PEP 468: :ref:`Preserving Keyword Argument Order<whatsnew-kwargs>`
 
 A complete list of PEP's implemented in Python 3.6:
 
-* :pep:`468`, :ref:`Preserving Keyword Argument Order<whatsnew-kwargs>`
-* :pep:`487`, :ref:`Simpler customization of class creation<whatsnew-pep487>`
+* :pep:`468`, :ref:`Preserving Keyword Argument Order <whatsnew36-pep468>`
+* :pep:`487`, :ref:`Simpler customization of class creation <whatsnew36-pep487>`
 * :pep:`495`, Local Time Disambiguation
-* :pep:`498`, :ref:`Formatted string literals <whatsnew-fstrings>`
+* :pep:`498`, :ref:`Formatted string literals <whatsnew36-pep498>`
 * :pep:`506`, Adding A Secrets Module To The Standard Library
-* :pep:`509`, :ref:`Add a private version to dict<whatsnew-pep509>`
-* :pep:`515`, :ref:`Underscores in Numeric Literals<pep-515>`
-* :pep:`519`, :ref:`Adding a file system path protocol<pep-519>`
-* :pep:`520`, :ref:`Preserving Class Attribute Definition Order<whatsnew-deforder>`
-* :pep:`523`, :ref:`Adding a frame evaluation API to CPython<pep-523>`
+* :pep:`509`, :ref:`Add a private version to dict <whatsnew36-pep509>`
+* :pep:`515`, :ref:`Underscores in Numeric Literals <whatsnew36-pep515>`
+* :pep:`519`, :ref:`Adding a file system path protocol <whatsnew36-pep519>`
+* :pep:`520`, :ref:`Preserving Class Attribute Definition Order <whatsnew36-pep520>`
+* :pep:`523`, :ref:`Adding a frame evaluation API to CPython <whatsnew36-pep523>`
 * :pep:`524`, Make os.urandom() blocking on Linux (during system startup)
 * :pep:`525`, Asynchronous Generators (provisional)
-* :pep:`526`, :ref:`Syntax for Variable Annotations (provisional)<variable-annotations>`
-* :pep:`528`, :ref:`Change Windows console encoding to UTF-8 (provisional)<pep-528>`
-* :pep:`529`, :ref:`Change Windows filesystem encoding to UTF-8 (provisional)<pep-529>`
+* :pep:`526`, :ref:`Syntax for Variable Annotations (provisional) <whatsnew36-pep526>`
+* :pep:`528`, :ref:`Change Windows console encoding to UTF-8 (provisional) <whatsnew36-pep528>`
+* :pep:`529`, :ref:`Change Windows filesystem encoding to UTF-8 (provisional) <whatsnew36-pep529>`
 * :pep:`530`, Asynchronous Comprehensions
+
+
+.. _PyPy dict implementation: https://morepypy.blogspot.com/2015/01/faster-more-memory-efficient-and-more.html
 
 
 New Features
 ============
 
-.. _pep-515:
+.. _whatsnew36-pep498:
+
+PEP 498: Formatted string literals
+----------------------------------
+
+:pep:`498` introduces a new kind of string literals: *f-strings*, or
+*formatted string literals*.
+
+Formatted string literals are prefixed with ``'f'`` and are similar to
+the format strings accepted by :meth:`str.format`.  They contain replacement
+fields surrounded by curly braces.  The replacement fields are expressions,
+which are evaluated at run time, and then formatted using the
+:func:`format` protocol::
+
+    >>> name = "Fred"
+    >>> f"He said his name is {name}."
+    'He said his name is Fred.'
+
+.. seealso::
+
+    :pep:`498` -- Literal String Interpolation.
+       PEP written and implemented by Eric V. Smith.
+
+    :ref:`Feature documentation <f-strings>`.
+
+
+.. _whatsnew36-pep526:
+
+PEP 526: Syntax for variable annotations
+----------------------------------------
+
+:pep:`484` introduced the standard for type annotations of function
+parameters, a.k.a. type hints. This PEP adds syntax to Python for annotating
+the types of variables including class variables and instance variables::
+
+    primes: List[int] = []
+
+    captain: str  # Note: no initial value!
+
+    class Starship:
+        stats: Dict[str, int] = {}
+
+Just as for function annotations, the Python interpreter does not attach any
+particular meaning to variable annotations and only stores them in the
+``__annotations__`` attribute of a class or module.
+
+In contrast to variable declarations in statically typed languages,
+the goal of annotation syntax is to provide an easy way to specify structured
+type metadata for third party tools and libraries via the abstract syntax tree
+and the ``__annotations__`` attribute.
+
+.. seealso::
+
+   :pep:`526` -- Syntax for variable annotations.
+      PEP written by Ryan Gonzalez, Philip House, Ivan Levkivskyi, Lisa Roach,
+      and Guido van Rossum. Implemented by Ivan Levkivskyi.
+
+   Tools that use or will use the new syntax:
+   `mypy <http://github.com/python/mypy>`_,
+   `pytype <http://github.com/google/pytype>`_, PyCharm, etc.
+
+
+.. _whatsnew36-pep515:
 
 PEP 515: Underscores in Numeric Literals
 ----------------------------------------
 
-Prior to PEP 515, there was no support for writing long numeric
-literals with some form of separator to improve readability. For
-instance, how big is ``1000000000000000``? With :pep:`515`, though,
-you can use underscores to separate digits as desired to make numeric
-literals easier to read: ``1_000_000_000_000_000``. Underscores can be
-used with other numeric literals beyond integers, e.g.
-``0x_FF_FF_FF_FF``.
+:pep:`515` adds the ability to use underscores in numeric literals for
+improved readability.  For example::
+
+    >>> 1_000_000_000_000_000
+    1000000000000000
+    >>> 0x_FF_FF_FF_FF
+    4294967295
 
 Single underscores are allowed between digits and after any base
-specifier. More than a single underscore in a row, leading, or
-trailing underscores are not allowed.
+specifier.  Leading, trailing, or multiple underscores in a row are not
+allowed.
 
 .. seealso::
 
@@ -183,36 +264,115 @@ trailing underscores are not allowed.
       PEP written by Georg Brandl and Serhiy Storchaka.
 
 
-.. _pep-523:
+.. _whatsnew36-pep525:
 
-PEP 523: Adding a frame evaluation API to CPython
--------------------------------------------------
+PEP 525: Asynchronous Generators
+--------------------------------
 
-While Python provides extensive support to customize how code
-executes, one place it has not done so is in the evaluation of frame
-objects. If you wanted some way to intercept frame evaluation in
-Python there really wasn't any way without directly manipulating
-function pointers for defined functions.
+:pep:`492` introduced support for native coroutines and ``async`` / ``await``
+syntax to Python 3.5.  A notable limitation of the Python 3.5 implementation
+is that it was not possible to use ``await`` and ``yield`` in the same
+function body.  In Python 3.6 this restriction has been lifted, making it
+possible to define *asynchronous generators*::
 
-:pep:`523` changes this by providing an API to make frame
-evaluation pluggable at the C level. This will allow for tools such
-as debuggers and JITs to intercept frame evaluation before the
-execution of Python code begins. This enables the use of alternative
-evaluation implementations for Python code, tracking frame
-evaluation, etc.
+    async def ticker(delay, to):
+        """Yield numbers from 0 to `to` every `delay` seconds."""
+        for i in range(to):
+            yield i
+            await asyncio.sleep(delay)
 
-This API is not part of the limited C API and is marked as private to
-signal that usage of this API is expected to be limited and only
-applicable to very select, low-level use-cases. Semantics of the
-API will change with Python as necessary.
+The new syntax allows for faster and more concise code.
 
 .. seealso::
 
-    :pep:`523` -- Adding a frame evaluation API to CPython
-       PEP written by Brett Cannon and Dino Viehland.
+   :pep:`525` -- Asynchronous Generators
+      PEP written and implemented by Yury Selivanov.
 
 
-.. _pep-519:
+.. _whatsnew36-pep530:
+
+PEP 530: Asynchronous Comprehensions
+------------------------------------
+
+:pep:`530` adds support for using ``async for`` in list, set, dict
+comprehensions and generator expressions::
+
+    result = [i async for i in aiter() if i % 2]
+
+Additionally, ``await`` expressions are supported in all kinds
+of comprehensions::
+
+    result = [await fun() for fun in funcs]
+
+.. seealso::
+
+ :pep:`530` -- Asynchronous Comprehensions
+    PEP written and implemented by Yury Selivanov.
+
+
+.. _whatsnew36-pep487:
+
+PEP 487: Simpler customization of class creation
+------------------------------------------------
+
+It is now possible to customize subclass creation without using a metaclass.
+The new ``__init_subclass__`` classmethod will be called on the base class
+whenever a new subclass is created::
+
+    >>> class QuestBase:
+    ...    # this is implicitly a @classmethod
+    ...    def __init_subclass__(cls, swallow, **kwargs):
+    ...        cls.swallow = swallow
+    ...        super().__init_subclass__(**kwargs)
+
+    >>> class Quest(QuestBase, swallow="african"):
+    ...    pass
+
+    >>> Quest.swallow
+    'african'
+
+.. seealso::
+
+ :pep:`487` -- Simpler customization of class creation
+    PEP written and implemented by Martin Teichmann.
+
+ :ref:`Feature documentation <class-customization>`
+
+
+.. _whatsnew36-pep487-descriptors:
+
+PEP 487: Descriptor Protocol Enhancements
+-----------------------------------------
+
+:pep:`487` extends the descriptor protocol has to include the new optional
+``__set_name__`` method.  Whenever a new class is defined, the new method
+will be called on all descriptors included in the definition, providing
+them with a reference to the class being defined and the name given to the
+descriptor within the class namespace.
+
+.. seealso::
+
+    :pep:`487` -- Simpler customization of class creation
+        PEP written and implemented by Martin Teichmann.
+
+    :ref:`Feature documentation <descriptors>`
+
+
+.. _whatsnew36-pep506:
+
+PEP 506: Adding A Secrets Module To The Standard Library
+--------------------------------------------------------
+
+
+
+.. seealso::
+
+    :pep:`506` -- Adding A Secrets Module To The Standard Library
+      PEP written and implemented by Steven D'Aprano.
+
+
+
+.. _whatsnew36-pep519:
 
 PEP 519: Adding a file system path protocol
 -------------------------------------------
@@ -279,60 +439,7 @@ pre-existing code::
        PEP written by Brett Cannon and Koos Zevenhoven.
 
 
-.. _whatsnew-fstrings:
-
-PEP 498: Formatted string literals
-----------------------------------
-
-Formatted string literals are a new kind of string literal, prefixed
-with ``'f'``.  They are similar to the format strings accepted by
-:meth:`str.format`.  They contain replacement fields surrounded by
-curly braces.  The replacement fields are expressions, which are
-evaluated at run time, and then formatted using the :func:`format` protocol::
-
-    >>> name = "Fred"
-    >>> f"He said his name is {name}."
-    'He said his name is Fred.'
-
-See :pep:`498` and the main documentation at :ref:`f-strings`.
-
-
-.. _variable-annotations:
-
-PEP 526: Syntax for variable annotations
-----------------------------------------
-
-:pep:`484` introduced standard for type annotations of function parameters,
-a.k.a. type hints. This PEP adds syntax to Python for annotating the
-types of variables including class variables and instance variables::
-
-    primes: List[int] = []
-
-    captain: str  # Note: no initial value!
-
-    class Starship:
-        stats: Dict[str, int] = {}
-
-Just as for function annotations, the Python interpreter does not attach any
-particular meaning to variable annotations and only stores them in a special
-attribute ``__annotations__`` of a class or module.
-In contrast to variable declarations in statically typed languages,
-the goal of annotation syntax is to provide an easy way to specify structured
-type metadata for third party tools and libraries via the abstract syntax tree
-and the ``__annotations__`` attribute.
-
-.. seealso::
-
-   :pep:`526` -- Syntax for variable annotations.
-      PEP written by Ryan Gonzalez, Philip House, Ivan Levkivskyi, Lisa Roach,
-      and Guido van Rossum. Implemented by Ivan Levkivskyi.
-
-   Tools that use or will use the new syntax:
-   `mypy <http://github.com/python/mypy>`_,
-   `pytype <http://github.com/google/pytype>`_, PyCharm, etc.
-
-
-.. _pep-529:
+.. _whatsnew36-pep529:
 
 PEP 529: Change Windows filesystem encoding to UTF-8
 ----------------------------------------------------
@@ -355,28 +462,8 @@ correctly encoded. To revert to the previous behaviour, set
 See :pep:`529` for more information and discussion of code modifications that
 may be required.
 
-.. _whatsnew-pep487:
 
-PEP 487: Simpler customization of class creation
-------------------------------------------------
-
-Upon subclassing a class, the ``__init_subclass__`` classmethod (if defined) is
-called on the base class. This makes it straightforward to write classes that
-customize initialization of future subclasses without introducing the
-complexity of a full custom metaclass.
-
-The descriptor protocol has also been expanded to include a new optional method,
-``__set_name__``. Whenever a new class is defined, the new method will be called
-on all descriptors included in the definition, providing them with a reference
-to the class being defined and the name given to the descriptor within the
-class namespace.
-
-Also see :pep:`487` and the updated class customization documentation at
-:ref:`class-customization` and :ref:`descriptors`.
-
-(Contributed by Martin Teichmann in :issue:`27366`)
-
-.. _pep-528:
+.. _whatsnew36-pep528:
 
 PEP 528: Change Windows console encoding to UTF-8
 -------------------------------------------------
@@ -393,6 +480,104 @@ console use, set :envvar:`PYTHONLEGACYWINDOWSIOENCODING`.
 
    :pep:`528` -- Change Windows console encoding to UTF-8
       PEP written and implemented by Steve Dower.
+
+
+.. _whatsnew36-pep520:
+
+PEP 520: Preserving Class Attribute Definition Order
+----------------------------------------------------
+
+Attributes in a class definition body have a natural ordering: the same
+order in which the names appear in the source.  This order is now
+preserved in the new class's ``__dict__`` attribute.
+
+Also, the effective default class *execution* namespace (returned from
+``type.__prepare__()``) is now an insertion-order-preserving mapping.
+
+.. seealso::
+
+   :pep:`520` -- Preserving Class Attribute Definition Order
+      PEP written and implemented by Eric Snow.
+
+
+.. _whatsnew36-pep468:
+
+PEP 468: Preserving Keyword Argument Order
+------------------------------------------
+
+``**kwargs`` in a function signature is now guaranteed to be an
+insertion-order-preserving mapping.
+
+.. seealso::
+
+   :pep:`468` -- Preserving Keyword Argument Order
+      PEP written and implemented by Eric Snow.
+
+
+.. _whatsnew36-compactdict:
+
+New :ref:`dict <typesmapping>` implementation
+---------------------------------------------
+
+The :ref:`dict <typesmapping>` type now uses a "compact" representation
+`pioneered by PyPy <https://morepypy.blogspot.com/2015/01/faster-more-memory-efficient-and-more.html>`_.
+The memory usage of the new :func:`dict` is between 20% and 25% smaller
+compared to Python 3.5.
+:pep:`468` (Preserving the order of ``**kwargs`` in a function.) is
+implemented by this. The order-preserving aspect of this new
+implementation is considered an implementation detail and should
+not be relied upon (this may change in the future, but it is desired
+to have this new dict implementation in the language for a few
+releases before changing the language spec to mandate
+order-preserving semantics for all current and future Python
+implementations; this also helps preserve backwards-compatibility
+with older versions of the language where random iteration order is
+still in effect, e.g. Python 3.5).
+(Contributed by INADA Naoki in :issue:`27350`. Idea
+`originally suggested by Raymond Hettinger
+<https://mail.python.org/pipermail/python-dev/2012-December/123028.html>`_.)
+
+
+.. _whatsnew36-pep523:
+
+PEP 523: Adding a frame evaluation API to CPython
+-------------------------------------------------
+
+While Python provides extensive support to customize how code
+executes, one place it has not done so is in the evaluation of frame
+objects. If you wanted some way to intercept frame evaluation in
+Python there really wasn't any way without directly manipulating
+function pointers for defined functions.
+
+:pep:`523` changes this by providing an API to make frame
+evaluation pluggable at the C level. This will allow for tools such
+as debuggers and JITs to intercept frame evaluation before the
+execution of Python code begins. This enables the use of alternative
+evaluation implementations for Python code, tracking frame
+evaluation, etc.
+
+This API is not part of the limited C API and is marked as private to
+signal that usage of this API is expected to be limited and only
+applicable to very select, low-level use-cases. Semantics of the
+API will change with Python as necessary.
+
+.. seealso::
+
+  :pep:`523` -- Adding a frame evaluation API to CPython
+     PEP written by Brett Cannon and Dino Viehland.
+
+
+.. _whatsnew36-pep509:
+
+PEP 509: Add a private version to dict
+--------------------------------------
+
+Add a new private version to the builtin ``dict`` type, incremented at
+each dictionary creation and at each dictionary change, to implement
+fast guards on namespaces.
+
+(Contributed by Victor Stinner in :issue:`26058`.)
+
 
 PYTHONMALLOC environment variable
 ---------------------------------
@@ -468,6 +653,8 @@ Example of fatal error on buffer overflow using
 (Contributed by Victor Stinner in :issue:`26516` and :issue:`26564`.)
 
 
+.. _whatsnew36-tracing:
+
 DTrace and SystemTap probing support
 ------------------------------------
 
@@ -493,71 +680,14 @@ markers may be added in the future.
 Jesús Cea Avión, David Malcolm, and Nikhil Benesch.)
 
 
-.. _whatsnew-deforder:
-
-PEP 520: Preserving Class Attribute Definition Order
-----------------------------------------------------
-
-Attributes in a class definition body have a natural ordering: the same
-order in which the names appear in the source.  This order is now
-preserved in the new class's ``__dict__`` attribute.
-
-Also, the effective default class *execution* namespace (returned from
-``type.__prepare__()``) is now an insertion-order-preserving mapping.
-
-.. seealso::
-
-   :pep:`520` -- Preserving Class Attribute Definition Order
-      PEP written and implemented by Eric Snow.
-
-
-.. _whatsnew-kwargs:
-
-PEP 468: Preserving Keyword Argument Order
-------------------------------------------
-
-``**kwargs`` in a function signature is now guaranteed to be an
-insertion-order-preserving mapping.
-
-.. seealso::
-
-   :pep:`468` -- Preserving Keyword Argument Order
-      PEP written and implemented by Eric Snow.
-
-.. _whatsnew-pep509:
-
-PEP 509: Add a private version to dict
---------------------------------------
-
-Add a new private version to the builtin ``dict`` type, incremented at
-each dictionary creation and at each dictionary change, to implement
-fast guards on namespaces.
-
-(Contributed by Victor Stinner in :issue:`26058`.)
-
-
 Other Language Changes
 ======================
 
 Some smaller changes made to the core Python language are:
 
-* :func:`dict` now uses a "compact" representation `pioneered by PyPy
-  <https://morepypy.blogspot.com/2015/01/faster-more-memory-efficient-and-more.html>`_.
-  The memory usage of the new :func:`dict` is between 20% and 25% smaller
-  compared to Python 3.5.
-  :pep:`468` (Preserving the order of ``**kwargs`` in a function.) is
-  implemented by this. The order-preserving aspect of this new
-  implementation is considered an implementation detail and should
-  not be relied upon (this may change in the future, but it is desired
-  to have this new dict implementation in the language for a few
-  releases before changing the language spec to mandate
-  order-preserving semantics for all current and future Python
-  implementations; this also helps preserve backwards-compatibility
-  with older versions of the language where random iteration order is
-  still in effect, e.g. Python 3.5).
-  (Contributed by INADA Naoki in :issue:`27350`. Idea
-  `originally suggested by Raymond Hettinger
-  <https://mail.python.org/pipermail/python-dev/2012-December/123028.html>`_.)
+* A ``global`` or ``nonlocal`` statement must now textually appear
+  before the first use of the affected name in the same scope.
+  Previously this was a ``SyntaxWarning``.
 
 * Long sequences of repeated traceback lines are now abbreviated as
   ``"[Previous line repeated {count} more times]"`` (see
@@ -572,15 +702,14 @@ Some smaller changes made to the core Python language are:
 New Modules
 ===========
 
-* None yet.
+secrets
+-------
+
+The new :mod:`secrets` module.
 
 
 Improved Modules
 ================
-
-On Linux, :func:`os.urandom` now blocks until the system urandom entropy pool
-is initialized to increase the security. See the :pep:`524` for the rationale.
-
 
 asyncio
 -------
@@ -783,11 +912,14 @@ iterator is neither exhausted nor explicitly closed a :exc:`ResourceWarning`
 will be emitted in its destructor.
 (Contributed by Serhiy Storchaka in :issue:`25994`.)
 
+On Linux, :func:`os.urandom` now blocks until the system urandom entropy pool
+is initialized to increase the security. See the :pep:`524` for the rationale.
+
 The Linux ``getrandom()`` syscall (get random bytes) is now exposed as the new
 :func:`os.getrandom` function.
 (Contributed by Victor Stinner, part of the :pep:`524`)
 
-See the summary for :ref:`PEP 519 <pep-519>` for details on how the
+See the summary for :ref:`PEP 519 <whatsnew36-pep519>` for details on how the
 :mod:`os` and :mod:`os.path` modules now support
 :term:`path-like objects <path-like object>`.
 
@@ -1158,6 +1290,7 @@ Optimizations
 * Optimized globbing in :mod:`pathlib` by using :func:`os.scandir`;
   it is now about 1.5--4 times faster.
   (Contributed by Serhiy Storchaka in :issue:`26032`).
+
 
 Build and C API Changes
 =======================
