@@ -392,28 +392,28 @@ class ConfigDialog(Toplevel):
                                text=' Additional Help Sources ')
         #frameRun
         labelRunChoiceTitle = Label(frameRun, text='At Startup')
-        radioStartupEdit = Radiobutton(
+        self.radioStartupEdit = Radiobutton(
                 frameRun, variable=self.startupEdit, value=1,
-                command=self.SetKeysType, text="Open Edit Window")
-        radioStartupShell = Radiobutton(
+                text="Open Edit Window")
+        self.radioStartupShell = Radiobutton(
                 frameRun, variable=self.startupEdit, value=0,
-                command=self.SetKeysType, text='Open Shell Window')
+                text='Open Shell Window')
         #frameSave
         labelRunSaveTitle = Label(frameSave, text='At Start of Run (F5)  ')
-        radioSaveAsk = Radiobutton(
+        self.radioSaveAsk = Radiobutton(
                 frameSave, variable=self.autoSave, value=0,
-                command=self.SetKeysType, text="Prompt to Save")
-        radioSaveAuto = Radiobutton(
+                text="Prompt to Save")
+        self.radioSaveAuto = Radiobutton(
                 frameSave, variable=self.autoSave, value=1,
-                command=self.SetKeysType, text='No Prompt')
+                text='No Prompt')
         #frameWinSize
         labelWinSizeTitle = Label(
                 frameWinSize, text='Initial Window Size  (in characters)')
         labelWinWidthTitle = Label(frameWinSize, text='Width')
-        entryWinWidth = Entry(
+        self.entryWinWidth = Entry(
                 frameWinSize, textvariable=self.winWidth, width=3)
         labelWinHeightTitle = Label(frameWinSize, text='Height')
-        entryWinHeight = Entry(
+        self.entryWinHeight = Entry(
                 frameWinSize, textvariable=self.winHeight, width=3)
         #frameHelp
         frameHelpList = Frame(frameHelp)
@@ -443,17 +443,17 @@ class ConfigDialog(Toplevel):
         frameHelp.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         #frameRun
         labelRunChoiceTitle.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        radioStartupShell.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        radioStartupEdit.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.radioStartupShell.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.radioStartupEdit.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         #frameSave
         labelRunSaveTitle.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        radioSaveAuto.pack(side=RIGHT, anchor=W, padx=5, pady=5)
-        radioSaveAsk.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.radioSaveAuto.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.radioSaveAsk.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         #frameWinSize
         labelWinSizeTitle.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        entryWinHeight.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        self.entryWinHeight.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         labelWinHeightTitle.pack(side=RIGHT, anchor=E, pady=5)
-        entryWinWidth.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        self.entryWinWidth.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         labelWinWidthTitle.pack(side=RIGHT, anchor=E, pady=5)
         #frameHelp
         frameHelpListButtons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
