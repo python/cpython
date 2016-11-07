@@ -2860,13 +2860,8 @@ class OSErrorTests(unittest.TestCase):
                             func(name, *func_args)
                 except OSError as err:
                     self.assertIs(err.filename, name, str(func))
-                except RuntimeError as err:
-                    if sys.platform != 'win32':
-                        raise
-
-                    # issue27781: undecodable bytes currently raise RuntimeError
-                    # by 3.6.0b4 this will become UnicodeDecodeError or nothing
-                    self.assertIsInstance(err.__context__, UnicodeDecodeError)
+                except UnicodeDecodeError:
+                    pass
                 else:
                     self.fail("No exception thrown by {}".format(func))
 
