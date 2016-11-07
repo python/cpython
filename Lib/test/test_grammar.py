@@ -359,9 +359,6 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(ann_module.M.__annotations__,
                               {'123': 123, 'o': type})
         self.assertEqual(ann_module2.__annotations__, {})
-        self.assertEqual(typing.get_type_hints(ann_module2.CV,
-                                               ann_module2.__dict__),
-                         ChainMap({'var': typing.ClassVar[ann_module2.CV]}, {}))
 
     def test_var_annot_in_module(self):
         # check that functions fail the same way when executed
