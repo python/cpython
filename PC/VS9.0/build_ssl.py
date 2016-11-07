@@ -26,6 +26,7 @@ from __future__ import with_statement, print_function
 
 from __future__ import with_statement
 import os, sys, re, shutil
+import subprocess
 
 # Find all "foo.exe" files on the PATH.
 def find_all_on_path(filename, extras = None):
@@ -48,12 +49,12 @@ def find_all_on_path(filename, extras = None):
 # is available.
 def find_working_perl(perls):
     for perl in perls:
-        fh = os.popen('"%s" -e "use Win32;"' % perl)
-        fh.read()
-        rc = fh.close()
-        if rc:
+        try:
+            subprocess.check_output([perl, "-e", "use win32;"])
+        except Subprocess.CalledProcessError:
             continue
-        return perl
+        else:
+            return perl
     print("Can not find a suitable PERL:")
     if perls:
         print(" the following perl interpreters were found:")
@@ -163,6 +164,8 @@ def main():
     perl = find_working_perl(perls)
     if perl:
         print("Found a working perl at '%s'" % (perl,))
+        # Set PERL for the makefile to find it
+        os.environ["PERL"] = perl
     else:
         print("No Perl installation was found. Existing Makefiles are used.")
     sys.stdout.flush()
