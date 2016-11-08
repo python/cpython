@@ -179,17 +179,22 @@ def isgeneratorfunction(object):
 def iscoroutinefunction(object):
     """Return true if the object is a coroutine function.
 
-    Coroutine functions are defined with "async def" syntax,
-    or generators decorated with "types.coroutine".
+    Coroutine functions are defined with "async def" syntax.
     """
     return bool((isfunction(object) or ismethod(object)) and
                 object.__code__.co_flags & CO_COROUTINE)
 
 def isasyncgenfunction(object):
+    """Return true if the object is an asynchronous generator function.
+
+    Asynchronous generator functions are defined with "async def"
+    syntax and have "yield" expressions in their body.
+    """
     return bool((isfunction(object) or ismethod(object)) and
                 object.__code__.co_flags & CO_ASYNC_GENERATOR)
 
 def isasyncgen(object):
+    """Return true if the object is an asynchronous generator."""
     return isinstance(object, types.AsyncGeneratorType)
 
 def isgenerator(object):
