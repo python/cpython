@@ -944,17 +944,19 @@ forbidden_name(struct compiling *c, identifier name, const node *n,
         PyObject *message = PyUnicode_FromString(
             "'async' and 'await' will become reserved keywords"
             " in Python 3.7");
+        int ret;
         if (message == NULL) {
             return 1;
         }
-        if (PyErr_WarnExplicitObject(
+        ret = PyErr_WarnExplicitObject(
                 PyExc_DeprecationWarning,
                 message,
                 c->c_filename,
                 LINENO(n),
                 NULL,
-                NULL) < 0)
-        {
+                NULL);
+        Py_DECREF(message);
+        if (ret < 0) {
             return 1;
         }
     }
