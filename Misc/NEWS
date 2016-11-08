@@ -109,6 +109,8 @@ Core and Builtins
 - Issue #26182: Raise DeprecationWarning when async and await keywords are
   used as variable/attribute/class/function name.
 
+- Issue #26182: Fix ia refleak in code that raises DeprecationWarning.
+
 Library
 -------
 
