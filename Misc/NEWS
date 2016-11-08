@@ -18,7 +18,7 @@ Core and Builtins
   should result in PendingDeprecationWarning in 3.5 and in
   DeprecationWarning in 3.6.
 
-- Issue #26182: Fix ia refleak in code that raises DeprecationWarning.
+- Issue #26182: Fix a refleak in code that raises DeprecationWarning.
 
 Library
 -------
