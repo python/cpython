@@ -422,8 +422,6 @@ def enablerlcompleter():
 
     sys.__interactivehook__ = register_readline
 
-CONFIG_LINE = r'^(?P<key>(\w|[-_])+)\s*=\s*(?P<value>.*)\s*$'
-
 def venv(known_paths):
     global PREFIXES, ENABLE_USER_SITE
 
@@ -445,19 +443,16 @@ def venv(known_paths):
         ]
 
     if candidate_confs:
-        import re
-        config_line = re.compile(CONFIG_LINE)
         virtual_conf = candidate_confs[0]
         system_site = "true"
         # Issue 25185: Use UTF-8, as that's what the venv module uses when
         # writing the file.
         with open(virtual_conf, encoding='utf-8') as f:
             for line in f:
-                line = line.strip()
-                m = config_line.match(line)
-                if m:
-                    d = m.groupdict()
-                    key, value = d['key'].lower(), d['value']
+                if '=' in line:
+                    key, _, value = line.partition('=')
+                    key = key.strip().lower()
+                    value = value.strip()
                     if key == 'include-system-site-packages':
                         system_site = value.lower()
                     elif key == 'home':
