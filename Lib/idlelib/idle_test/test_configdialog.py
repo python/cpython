@@ -54,25 +54,29 @@ class FontTabTest(unittest.TestCase):
         changes.clear()
 
     def test_font(self):
+        # Set values guaranteed not to be defaults.
+        dfont = idleConf.GetFont(root, 'main', 'EditorWindow')
+        dsize = str(dfont[1])
+        dbold = dfont[2] == 'bold'
         configure.fontName.set('Test Font')
         expected = [
             ('main', 'EditorWindow', 'font', 'Test Font'),
-            ('main', 'EditorWindow', 'font-size', '10'),
-            ('main', 'EditorWindow', 'font-bold', False)]
+            ('main', 'EditorWindow', 'font-size', dsize),
+            ('main', 'EditorWindow', 'font-bold', dbold)]
         self.assertEqual(changes, expected)
         changes.clear()
-        configure.fontSize.set(12)
+        configure.fontSize.set(20)
         expected = [
             ('main', 'EditorWindow', 'font', 'Test Font'),
-            ('main', 'EditorWindow', 'font-size', '12'),
-            ('main', 'EditorWindow', 'font-bold', False)]
+            ('main', 'EditorWindow', 'font-size', '20'),
+            ('main', 'EditorWindow', 'font-bold', dbold)]
         self.assertEqual(changes, expected)
         changes.clear()
-        configure.fontBold.set(True)
+        configure.fontBold.set(not dbold)
         expected = [
             ('main', 'EditorWindow', 'font', 'Test Font'),
-            ('main', 'EditorWindow', 'font-size', '12'),
-            ('main', 'EditorWindow', 'font-bold', True)]
+            ('main', 'EditorWindow', 'font-size', '20'),
+            ('main', 'EditorWindow', 'font-bold', not dbold)]
         self.assertEqual(changes, expected)
 
     #def test_sample(self): pass  # TODO
