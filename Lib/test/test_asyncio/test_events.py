@@ -2732,15 +2732,19 @@ class PolicyTests(unittest.TestCase):
         try:
             asyncio.set_event_loop_policy(Policy())
             loop = asyncio.new_event_loop()
+            self.assertIs(asyncio._get_running_loop(), None)
 
             async def func():
                 self.assertIs(asyncio.get_event_loop(), loop)
+                self.assertIs(asyncio._get_running_loop(), loop)
 
             loop.run_until_complete(func())
         finally:
             asyncio.set_event_loop_policy(old_policy)
             if loop is not None:
                 loop.close()
+
+        self.assertIs(asyncio._get_running_loop(), None)
 
 
 if __name__ == '__main__':
