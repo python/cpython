@@ -59,74 +59,139 @@ __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
 
 _default_localedir = os.path.join(sys.prefix, 'share', 'locale')
 
+# Expression parsing for plural form selection.
+#
+# The gettext library supports a small subset of C syntax.  The only
+# incompatible difference is that integer literals starting with zero are
+# decimal.
+#
+# https://www.gnu.org/software/gettext/manual/gettext.html#Plural-forms
+# http://git.savannah.gnu.org/cgit/gettext.git/tree/gettext-runtime/intl/plural.y
 
-def test(condition, true, false):
-    """
-    Implements the C expression:
+_token_pattern = re.compile(r"""
+        (?P<WHITESPACES>[ \t]+)                    | # spaces and horizontal tabs
+        (?P<NUMBER>[0-9]+\b)                       | # decimal integer
+        (?P<NAME>n\b)                              | # only n is allowed
+        (?P<PARENTHESIS>[()])                      |
+        (?P<OPERATOR>[-*/%+?:]|[><!]=?|==|&&|\|\|) | # !, *, /, %, +, -, <, >,
+                                                     # <=, >=, ==, !=, &&, ||,
+                                                     # ? :
+                                                     # unary and bitwise ops
+                                                     # not allowed
+        (?P<INVALID>\w+|.)                           # invalid token
+    """, re.VERBOSE|re.DOTALL)
 
-      condition ? true : false
+def _tokenize(plural):
+    for mo in re.finditer(_token_pattern, plural):
+        kind = mo.lastgroup
+        if kind == 'WHITESPACES':
+            continue
+        value = mo.group(kind)
+        if kind == 'INVALID':
+            raise ValueError('invalid token in plural form: %s' % value)
+        yield value
+    yield ''
 
-    Required to correctly interpret plural forms.
-    """
-    if condition:
-        return true
+def _error(value):
+    if value:
+        return ValueError('unexpected token in plural form: %s' % value)
     else:
-        return false
+        return ValueError('unexpected end of plural form')
 
+_binary_ops = (
+    ('||',),
+    ('&&',),
+    ('==', '!='),
+    ('<', '>', '<=', '>='),
+    ('+', '-'),
+    ('*', '/', '%'),
+)
+_binary_ops = {op: i for i, ops in enumerate(_binary_ops, 1) for op in ops}
+_c2py_ops = {'||': 'or', '&&': 'and', '/': '//'}
+
+def _parse(tokens, priority=-1):
+    result = ''
+    nexttok = next(tokens)
+    while nexttok == '!':
+        result += 'not '
+        nexttok = next(tokens)
+
+    if nexttok == '(':
+        sub, nexttok = _parse(tokens)
+        result = '%s(%s)' % (result, sub)
+        if nexttok != ')':
+            raise ValueError('unbalanced parenthesis in plural form')
+    elif nexttok == 'n':
+        result = '%s%s' % (result, nexttok)
+    else:
+        try:
+            value = int(nexttok, 10)
+        except ValueError:
+            raise _error(nexttok)
+        result = '%s%d' % (result, value)
+    nexttok = next(tokens)
+
+    j = 100
+    while nexttok in _binary_ops:
+        i = _binary_ops[nexttok]
+        if i < priority:
+            break
+        # Break chained comparisons
+        if i in (3, 4) and j in (3, 4):  # '==', '!=', '<', '>', '<=', '>='
+            result = '(%s)' % result
+        # Replace some C operators by their Python equivalents
+        op = _c2py_ops.get(nexttok, nexttok)
+        right, nexttok = _parse(tokens, i + 1)
+        result = '%s %s %s' % (result, op, right)
+        j = i
+    if j == priority == 4:  # '<', '>', '<=', '>='
+        result = '(%s)' % result
+
+    if nexttok == '?' and priority <= 0:
+        if_true, nexttok = _parse(tokens, 0)
+        if nexttok != ':':
+            raise _error(nexttok)
+        if_false, nexttok = _parse(tokens)
+        result = '%s if %s else %s' % (if_true, result, if_false)
+        if priority == 0:
+            result = '(%s)' % result
+
+    return result, nexttok
 
 def c2py(plural):
     """Gets a C expression as used in PO files for plural forms and returns a
-    Python lambda function that implements an equivalent expression.
+    Python function that implements an equivalent expression.
     """
-    # Security check, allow only the "n" identifier
+
+    if len(plural) > 1000:
+        raise ValueError('plural form expression is too long')
     try:
-        from cStringIO import StringIO
-    except ImportError:
-        from StringIO import StringIO
-    import token, tokenize
-    tokens = tokenize.generate_tokens(StringIO(plural).readline)
-    try:
-        danger = [x for x in tokens if x[0] == token.NAME and x[1] != 'n']
-    except tokenize.TokenError:
-        raise ValueError, \
-              'plural forms expression error, maybe unbalanced parenthesis'
-    else:
-        if danger:
-            raise ValueError, 'plural forms expression could be dangerous'
+        result, nexttok = _parse(_tokenize(plural))
+        if nexttok:
+            raise _error(nexttok)
 
-    # Replace some C operators by their Python equivalents
-    plural = plural.replace('&&', ' and ')
-    plural = plural.replace('||', ' or ')
+        depth = 0
+        for c in result:
+            if c == '(':
+                depth += 1
+                if depth > 20:
+                    # Python compiler limit is about 90.
+                    # The most complex example has 2.
+                    raise ValueError('plural form expression is too complex')
+            elif c == ')':
+                depth -= 1
 
-    expr = re.compile(r'\!([^=])')
-    plural = expr.sub(' not \\1', plural)
-
-    # Regular expression and replacement function used to transform
-    # "a?b:c" to "test(a,b,c)".
-    expr = re.compile(r'(.*?)\?(.*?):(.*)')
-    def repl(x):
-        return "test(%s, %s, %s)" % (x.group(1), x.group(2),
-                                     expr.sub(repl, x.group(3)))
-
-    # Code to transform the plural expression, taking care of parentheses
-    stack = ['']
-    for c in plural:
-        if c == '(':
-            stack.append('')
-        elif c == ')':
-            if len(stack) == 1:
-                # Actually, we never reach this code, because unbalanced
-                # parentheses get caught in the security check at the
-                # beginning.
-                raise ValueError, 'unbalanced parenthesis in plural form'
-            s = expr.sub(repl, stack.pop())
-            stack[-1] += '(%s)' % s
-        else:
-            stack[-1] += c
-    plural = expr.sub(repl, stack.pop())
-
-    return eval('lambda n: int(%s)' % plural)
-
+        ns = {}
+        exec('''if 1:
+            def func(n):
+                if not isinstance(n, int):
+                    raise ValueError('Plural value must be an integer.')
+                return int(%s)
+            ''' % result, ns)
+        return ns['func']
+    except RuntimeError:
+        # Recursion error can be raised in _parse() or exec().
+        raise ValueError('plural form expression is too complex')
 
 
 def _expand_lang(locale):

@@ -60,6 +60,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #28563: Fixed possible DoS and arbitrary code execution when handle
+  plural form selections in the gettext module.  The expression parser now
+  supports exact syntax supported by GNU gettext.
+
 - Issue #28387: Fixed possible crash in _io.TextIOWrapper deallocator when
   the garbage collector is invoked in other thread.  Based on patch by
   Sebastian Cufre.
