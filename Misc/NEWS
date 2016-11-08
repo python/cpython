@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28621: Sped up converting int to float by reusing faster bits counting
+  implementation.  Patch by Adrian Wielgosik.
+
 - Issue #28580: Optimize iterating split table values.
   Patch by Xiang Zhang.
 
