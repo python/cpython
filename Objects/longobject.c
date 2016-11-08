@@ -708,12 +708,33 @@ _PyLong_Sign(PyObject *vv)
     return Py_SIZE(v) == 0 ? 0 : (Py_SIZE(v) < 0 ? -1 : 1);
 }
 
+/* bits_in_digit(d) returns the unique integer k such that 2**(k-1) <= d <
+   2**k if d is nonzero, else 0. */
+
+static const unsigned char BitLengthTable[32] = {
+    0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+};
+
+static int
+bits_in_digit(digit d)
+{
+    int d_bits = 0;
+    while (d >= 32) {
+        d_bits += 6;
+        d >>= 6;
+    }
+    d_bits += (int)BitLengthTable[d];
+    return d_bits;
+}
+
 size_t
 _PyLong_NumBits(PyObject *vv)
 {
     PyLongObject *v = (PyLongObject *)vv;
     size_t result = 0;
     Py_ssize_t ndigits;
+    int msd_bits;
 
     assert(v != NULL);
     assert(PyLong_Check(v));
@@ -724,12 +745,10 @@ _PyLong_NumBits(PyObject *vv)
         if ((size_t)(ndigits - 1) > SIZE_MAX / (size_t)PyLong_SHIFT)
             goto Overflow;
         result = (size_t)(ndigits - 1) * (size_t)PyLong_SHIFT;
-        do {
-            ++result;
-            if (result == 0)
-                goto Overflow;
-            msd >>= 1;
-        } while (msd);
+        msd_bits = bits_in_digit(msd);
+        if (SIZE_MAX - msd_bits < result)
+            goto Overflow;
+        result += msd_bits;
     }
     return result;
 
@@ -1413,26 +1432,6 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         if (!PyLong_Check(v) || !PyLong_Check(w))       \
             Py_RETURN_NOTIMPLEMENTED;                   \
     } while(0)
-
-/* bits_in_digit(d) returns the unique integer k such that 2**(k-1) <= d <
-   2**k if d is nonzero, else 0. */
-
-static const unsigned char BitLengthTable[32] = {
-    0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
-};
-
-static int
-bits_in_digit(digit d)
-{
-    int d_bits = 0;
-    while (d >= 32) {
-        d_bits += 6;
-        d >>= 6;
-    }
-    d_bits += (int)BitLengthTable[d];
-    return d_bits;
-}
 
 /* x[0:m] and y[0:n] are digit vectors, LSD first, m >= n required.  x[0:n]
  * is modified in place, by adding y to it.  Carries are propagated as far as
@@ -5079,7 +5078,8 @@ static PyObject *
 long_bit_length(PyLongObject *v)
 {
     PyLongObject *result, *x, *y;
-    Py_ssize_t ndigits, msd_bits = 0;
+    Py_ssize_t ndigits;
+    int msd_bits;
     digit msd;
 
     assert(v != NULL);
@@ -5090,11 +5090,7 @@ long_bit_length(PyLongObject *v)
         return PyLong_FromLong(0);
 
     msd = v->ob_digit[ndigits-1];
-    while (msd >= 32) {
-        msd_bits += 6;
-        msd >>= 6;
-    }
-    msd_bits += (long)(BitLengthTable[msd]);
+    msd_bits = bits_in_digit(msd);
 
     if (ndigits <= PY_SSIZE_T_MAX/PyLong_SHIFT)
         return PyLong_FromSsize_t((ndigits-1)*PyLong_SHIFT + msd_bits);
