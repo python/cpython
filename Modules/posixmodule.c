@@ -3717,20 +3717,18 @@ os__getfinalpathname_impl(PyObject *module, PyObject *path)
     return result;
 }
 
-PyDoc_STRVAR(posix__isdir__doc__,
-"Return true if the pathname refers to an existing directory.");
-
 /*[clinic input]
 os._isdir
 
     path: path_t
     /
 
+Return true if the pathname refers to an existing directory.
 [clinic start generated code]*/
 
 static PyObject *
 os__isdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=75f56f32720836cb input=e794f12faab62a2a]*/
+/*[clinic end generated code: output=75f56f32720836cb input=5e0800149c0ad95f]*/
 {
     DWORD attributes;
 
