@@ -2196,7 +2196,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             else {
                 PyObject *build_class_str = _PyUnicode_FromId(&PyId___build_class__);
                 if (build_class_str == NULL)
-                    break;
+                    goto error;
                 bc = PyObject_GetItem(f->f_builtins, build_class_str);
                 if (bc == NULL) {
                     if (PyErr_ExceptionMatches(PyExc_KeyError))
