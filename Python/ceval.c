@@ -1917,7 +1917,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 Py_DECREF(iter);
 
                 if (PyErr_WarnFormat(
-                        PyExc_PendingDeprecationWarning, 1,
+                        PyExc_DeprecationWarning, 1,
                         "'%.100s' implements legacy __aiter__ protocol; "
                         "__aiter__ should return an asynchronous "
                         "iterator, not awaitable",
