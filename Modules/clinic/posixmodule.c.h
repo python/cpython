@@ -995,7 +995,8 @@ exit:
 PyDoc_STRVAR(os__isdir__doc__,
 "_isdir($module, path, /)\n"
 "--\n"
-"\n");
+"\n"
+"Return true if the pathname refers to an existing directory.");
 
 #define OS__ISDIR_METHODDEF    \
     {"_isdir", (PyCFunction)os__isdir, METH_O, os__isdir__doc__},
@@ -6148,4 +6149,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=b9ed5703d2feb0d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=50cfb7ebc44efb67 input=a9049054013a1b77]*/
