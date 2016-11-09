@@ -262,8 +262,12 @@ def _format_coroutine(coro):
     assert iscoroutine(coro)
 
     if not hasattr(coro, 'cr_code') and not hasattr(coro, 'gi_code'):
-        # Most likely a Cython coroutine.
-        coro_name = getattr(coro, '__qualname__', coro.__name__)
+        # Most likely a built-in type or a Cython coroutine.
+
+        # Built-in types might not have __qualname__ or __name__.
+        coro_name = getattr(
+            coro, '__qualname__',
+            getattr(coro, '__name__', type(coro).__name__))
         coro_name = '{}()'.format(coro_name)
 
         running = False
