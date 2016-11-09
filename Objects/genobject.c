@@ -1123,7 +1123,7 @@ PyTypeObject _PyCoroWrapper_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     0,                                          /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    0,                                          /* tp_free */
 };
 
 PyObject *
@@ -1208,7 +1208,7 @@ PyTypeObject _PyAIterWrapper_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     0,                                          /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    0,                                          /* tp_free */
 };
 
 
