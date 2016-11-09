@@ -378,6 +378,16 @@ class CallableTests(BaseTestCase):
         with self.assertRaises(TypeError):
             type(c)()
 
+    def test_callable_wrong_forms(self):
+        with self.assertRaises(TypeError):
+            Callable[[...], int]
+        with self.assertRaises(TypeError):
+            Callable[(), int]
+        with self.assertRaises(TypeError):
+            Callable[[()], int]
+        with self.assertRaises(TypeError):
+            Callable[[int, 1], 2]
+
     def test_callable_instance_works(self):
         def f():
             pass
@@ -1296,9 +1306,10 @@ PY36 = sys.version_info[:2] >= (3, 6)
 
 PY36_TESTS = """
 from test import ann_module, ann_module2, ann_module3
-from collections import ChainMap
 
-class B:
+class A:
+    y: float
+class B(A):
     x: ClassVar[Optional['B']] = None
     y: int
 class CSub(B):
@@ -1317,6 +1328,15 @@ if PY36:
 gth = get_type_hints
 
 class GetTypeHintTests(BaseTestCase):
+    def test_get_type_hints_from_various_objects(self):
+        # For invalid objects should fail with TypeError (not AttributeError etc).
+        with self.assertRaises(TypeError):
+            gth(123)
+        with self.assertRaises(TypeError):
+            gth('abc')
+        with self.assertRaises(TypeError):
+            gth(None)
+
     @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_modules(self):
         self.assertEqual(gth(ann_module), {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str})
@@ -1326,18 +1346,15 @@ class GetTypeHintTests(BaseTestCase):
     @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_classes(self):
         self.assertEqual(gth(ann_module.C, ann_module.__dict__),
-                         ChainMap({'y': Optional[ann_module.C]}, {}))
-        self.assertEqual(repr(gth(ann_module.j_class)), 'ChainMap({}, {})')
-        self.assertEqual(gth(ann_module.M), ChainMap({'123': 123, 'o': type},
-                                                     {}, {}))
+                         {'y': Optional[ann_module.C]})
+        self.assertIsInstance(gth(ann_module.j_class), dict)
+        self.assertEqual(gth(ann_module.M), {'123': 123, 'o': type})
         self.assertEqual(gth(ann_module.D),
-                         ChainMap({'j': str, 'k': str,
-                                   'y': Optional[ann_module.C]}, {}))
-        self.assertEqual(gth(ann_module.Y), ChainMap({'z': int}, {}))
+                         {'j': str, 'k': str, 'y': Optional[ann_module.C]})
+        self.assertEqual(gth(ann_module.Y), {'z': int})
         self.assertEqual(gth(ann_module.h_class),
-                         ChainMap({}, {'y': Optional[ann_module.C]}, {}))
-        self.assertEqual(gth(ann_module.S), ChainMap({'x': str, 'y': str},
-                                                     {}))
+                         {'y': Optional[ann_module.C]})
+        self.assertEqual(gth(ann_module.S), {'x': str, 'y': str})
         self.assertEqual(gth(ann_module.foo), {'x': int})
 
     @skipUnless(PY36, 'Python 3.6 required')
@@ -1355,20 +1372,34 @@ class GetTypeHintTests(BaseTestCase):
         class Der(ABase): ...
         self.assertEqual(gth(ABase.meth), {'x': int})
 
+    def test_get_type_hints_for_builins(self):
+        # Should not fail for built-in classes and functions.
+        self.assertEqual(gth(int), {})
+        self.assertEqual(gth(type), {})
+        self.assertEqual(gth(dir), {})
+        self.assertEqual(gth(len), {})
 
     def test_previous_behavior(self):
         def testf(x, y): ...
         testf.__annotations__['x'] = 'int'
         self.assertEqual(gth(testf), {'x': int})
 
+    def test_get_type_hints_for_object_with_annotations(self):
+        class A: ...
+        class B: ...
+        b = B()
+        b.__annotations__ = {'x': 'A'}
+        self.assertEqual(gth(b, locals()), {'x': A})
+
     @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_ClassVar(self):
+        self.assertEqual(gth(ann_module2.CV, ann_module2.__dict__),
+                         {'var': typing.ClassVar[ann_module2.CV]})
         self.assertEqual(gth(B, globals()),
-                         ChainMap({'y': int, 'x': ClassVar[Optional[B]]}, {}))
+                         {'y': int, 'x': ClassVar[Optional[B]]})
         self.assertEqual(gth(CSub, globals()),
-                         ChainMap({'z': ClassVar[CSub]},
-                                  {'y': int, 'x': ClassVar[Optional[B]]}, {}))
-        self.assertEqual(gth(G), ChainMap({'lst': ClassVar[List[T]]},{},{}))
+                         {'z': ClassVar[CSub], 'y': int, 'x': ClassVar[Optional[B]]})
+        self.assertEqual(gth(G), {'lst': ClassVar[List[T]]})
 
 
 class CollectionsAbcTests(BaseTestCase):
