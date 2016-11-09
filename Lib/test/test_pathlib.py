@@ -1486,8 +1486,8 @@ class _BasePathTest(object):
         self.assertEqual(set(p.glob("../xyzzy")), set())
 
 
-    def _check_resolve(self, p, expected):
-        q = p.resolve()
+    def _check_resolve(self, p, expected, strict=True):
+        q = p.resolve(strict)
         self.assertEqual(q, expected)
 
     # this can be used to check both relative and absolute resolutions
@@ -1498,8 +1498,17 @@ class _BasePathTest(object):
         P = self.cls
         p = P(BASE, 'foo')
         with self.assertRaises(OSError) as cm:
-            p.resolve()
+            p.resolve(strict=True)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
+        # Non-strict
+        self.assertEqual(str(p.resolve(strict=False)),
+                         os.path.join(BASE, 'foo'))
+        p = P(BASE, 'foo', 'in', 'spam')
+        self.assertEqual(str(p.resolve(strict=False)),
+                         os.path.join(BASE, 'foo'))
+        p = P(BASE, '..', 'foo', 'in', 'spam')
+        self.assertEqual(str(p.resolve(strict=False)),
+                         os.path.abspath(os.path.join('foo')))
         # These are all relative symlinks
         p = P(BASE, 'dirB', 'fileB')
         self._check_resolve_relative(p, p)
@@ -1509,6 +1518,18 @@ class _BasePathTest(object):
         self._check_resolve_relative(p, P(BASE, 'dirB', 'fileB'))
         p = P(BASE, 'dirB', 'linkD', 'fileB')
         self._check_resolve_relative(p, P(BASE, 'dirB', 'fileB'))
+        # Non-strict
+        p = P(BASE, 'dirA', 'linkC', 'fileB', 'foo', 'in', 'spam')
+        self._check_resolve_relative(p, P(BASE, 'dirB', 'fileB', 'foo'), False)
+        p = P(BASE, 'dirA', 'linkC', '..', 'foo', 'in', 'spam')
+        if os.name == 'nt':
+            # In Windows, if linkY points to dirB, 'dirA\linkY\..'
+            # resolves to 'dirA' without resolving linkY first.
+            self._check_resolve_relative(p, P(BASE, 'dirA', 'foo'), False)
+        else:
+            # In Posix, if linkY points to dirB, 'dirA/linkY/..'
+            # resolves to 'dirB/..' first before resolving to parent of dirB.
+            self._check_resolve_relative(p, P(BASE, 'foo'), False)
         # Now create absolute symlinks
         d = tempfile.mkdtemp(suffix='-dirD')
         self.addCleanup(support.rmtree, d)
@@ -1516,6 +1537,18 @@ class _BasePathTest(object):
         os.symlink(join('dirB'), os.path.join(d, 'linkY'))
         p = P(BASE, 'dirA', 'linkX', 'linkY', 'fileB')
         self._check_resolve_absolute(p, P(BASE, 'dirB', 'fileB'))
+        # Non-strict
+        p = P(BASE, 'dirA', 'linkX', 'linkY', 'foo', 'in', 'spam')
+        self._check_resolve_relative(p, P(BASE, 'dirB', 'foo'), False)
+        p = P(BASE, 'dirA', 'linkX', 'linkY', '..', 'foo', 'in', 'spam')
+        if os.name == 'nt':
+            # In Windows, if linkY points to dirB, 'dirA\linkY\..'
+            # resolves to 'dirA' without resolving linkY first.
+            self._check_resolve_relative(p, P(d, 'foo'), False)
+        else:
+            # In Posix, if linkY points to dirB, 'dirA/linkY/..'
+            # resolves to 'dirB/..' first before resolving to parent of dirB.
+            self._check_resolve_relative(p, P(BASE, 'foo'), False)
 
     @with_symlinks
     def test_resolve_dot(self):
@@ -1525,7 +1558,11 @@ class _BasePathTest(object):
         self.dirlink(os.path.join('0', '0'), join('1'))
         self.dirlink(os.path.join('1', '1'), join('2'))
         q = p / '2'
-        self.assertEqual(q.resolve(), p)
+        self.assertEqual(q.resolve(strict=True), p)
+        r = q / '3' / '4'
+        self.assertRaises(FileNotFoundError, r.resolve, strict=True)
+        # Non-strict
+        self.assertEqual(r.resolve(strict=False), p / '3')
 
     def test_with(self):
         p = self.cls(BASE)
@@ -1972,10 +2009,10 @@ class PathTest(_BasePathTest, unittest.TestCase):
 class PosixPathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.PosixPath
 
-    def _check_symlink_loop(self, *args):
+    def _check_symlink_loop(self, *args, strict=True):
         path = self.cls(*args)
         with self.assertRaises(RuntimeError):
-            print(path.resolve())
+            print(path.resolve(strict))
 
     def test_open_mode(self):
         old_mask = os.umask(0)
@@ -2008,7 +2045,6 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
 
     @with_symlinks
     def test_resolve_loop(self):
-        # Loop detection for broken symlinks under POSIX
         # Loops with relative symlinks
         os.symlink('linkX/inside', join('linkX'))
         self._check_symlink_loop(BASE, 'linkX')
@@ -2016,6 +2052,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         self._check_symlink_loop(BASE, 'linkY')
         os.symlink('linkZ/../linkZ', join('linkZ'))
         self._check_symlink_loop(BASE, 'linkZ')
+        # Non-strict
+        self._check_symlink_loop(BASE, 'linkZ', 'foo', strict=False)
         # Loops with absolute symlinks
         os.symlink(join('linkU/inside'), join('linkU'))
         self._check_symlink_loop(BASE, 'linkU')
@@ -2023,6 +2061,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         self._check_symlink_loop(BASE, 'linkV')
         os.symlink(join('linkW/../linkW'), join('linkW'))
         self._check_symlink_loop(BASE, 'linkW')
+        # Non-strict
+        self._check_symlink_loop(BASE, 'linkW', 'foo', strict=False)
 
     def test_glob(self):
         P = self.cls

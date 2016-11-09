@@ -178,12 +178,26 @@ class _WindowsFlavour(_Flavour):
     def casefold_parts(self, parts):
         return [p.lower() for p in parts]
 
-    def resolve(self, path):
+    def resolve(self, path, strict=False):
         s = str(path)
         if not s:
             return os.getcwd()
+        previous_s = None
         if _getfinalpathname is not None:
-            return self._ext_to_normal(_getfinalpathname(s))
+            if strict:
+                return self._ext_to_normal(_getfinalpathname(s))
+            else:
+                while True:
+                    try:
+                        s = self._ext_to_normal(_getfinalpathname(s))
+                    except FileNotFoundError:
+                        previous_s = s
+                        s = os.path.abspath(os.path.join(s, os.pardir))
+                    else:
+                        if previous_s is None:
+                            return s
+                        else:
+                            return s + os.path.sep + os.path.basename(previous_s)
         # Means fallback on absolute
         return None
 
@@ -285,7 +299,7 @@ class _PosixFlavour(_Flavour):
     def casefold_parts(self, parts):
         return parts
 
-    def resolve(self, path):
+    def resolve(self, path, strict=False):
         sep = self.sep
         accessor = path._accessor
         seen = {}
@@ -315,7 +329,10 @@ class _PosixFlavour(_Flavour):
                     target = accessor.readlink(newpath)
                 except OSError as e:
                     if e.errno != EINVAL:
-                        raise
+                        if strict:
+                            raise
+                        else:
+                            return newpath
                     # Not a symlink
                     path = newpath
                 else:
@@ -1092,7 +1109,7 @@ class Path(PurePath):
         obj._init(template=self)
         return obj
 
-    def resolve(self):
+    def resolve(self, strict=False):
         """
         Make the path absolute, resolving all symlinks on the way and also
         normalizing it (for example turning slashes into backslashes under
@@ -1100,7 +1117,7 @@ class Path(PurePath):
         """
         if self._closed:
             self._raise_closed()
-        s = self._flavour.resolve(self)
+        s = self._flavour.resolve(self, strict=strict)
         if s is None:
             # No symlink resolution => for consistency, raise an error if
             # the path doesn't exist or is forbidden
