@@ -219,10 +219,10 @@ def iscoroutine(object):
     return isinstance(object, types.CoroutineType)
 
 def isawaitable(object):
-    """Return true is object can be passed to an ``await`` expression."""
+    """Return true if object can be passed to an ``await`` expression."""
     return (isinstance(object, types.CoroutineType) or
             isinstance(object, types.GeneratorType) and
-                object.gi_code.co_flags & CO_ITERABLE_COROUTINE or
+                bool(object.gi_code.co_flags & CO_ITERABLE_COROUTINE) or
             isinstance(object, collections.abc.Awaitable))
 
 def istraceback(object):
