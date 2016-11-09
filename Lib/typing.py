@@ -611,12 +611,16 @@ def _check_generic(cls, parameters):
                         ("many" if alen > elen else "few", repr(cls), alen, elen))
 
 
+_cleanups = []
+
+
 def _tp_cache(func):
     """ Caching for __getitem__ of generic types with a fallback to
     original function for non-hashable arguments.
     """
 
     cached = functools.lru_cache()(func)
+    _cleanups.append(cached.cache_clear)
     @functools.wraps(func)
     def inner(*args, **kwds):
         try:
