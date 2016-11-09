@@ -919,7 +919,7 @@ call fails (for example because the path doesn't exist):
    to an existing file or directory, it will be unconditionally replaced.
 
 
-.. method:: Path.resolve()
+.. method:: Path.resolve(strict=False)
 
    Make the path absolute, resolving any symlinks.  A new path object is
    returned::
@@ -936,10 +936,14 @@ call fails (for example because the path doesn't exist):
       >>> p.resolve()
       PosixPath('/home/antoine/pathlib/setup.py')
 
-   If the path doesn't exist, :exc:`FileNotFoundError` is raised.  If an
-   infinite loop is encountered along the resolution path,
-   :exc:`RuntimeError` is raised.
+   If the path doesn't exist and *strict* is ``True``, :exc:`FileNotFoundError`
+   is raised.  If *strict* is ``False``, the path is resolved as far as possible
+   and any remainder is appended without checking whether it exists.  If an
+   infinite loop is encountered along the resolution path, :exc:`RuntimeError`
+   is raised.
 
+   .. versionadded:: 3.6
+      The *strict* argument.
 
 .. method:: Path.rglob(pattern)
 
