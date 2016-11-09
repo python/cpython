@@ -791,9 +791,9 @@ class EventLoopTestsMixin:
         conn, _ = lsock.accept()
         proto = MyProto(loop=loop)
         proto.loop = loop
-        f = loop.create_task(
+        loop.run_until_complete(
             loop.connect_accepted_socket(
-                (lambda : proto), conn, ssl=server_ssl))
+                (lambda: proto), conn, ssl=server_ssl))
         loop.run_forever()
         proto.transport.close()
         lsock.close()
@@ -1377,6 +1377,11 @@ class EventLoopTestsMixin:
         server.transport.close()
 
     def test_create_datagram_endpoint_sock(self):
+        if (sys.platform == 'win32' and
+                isinstance(self.loop, proactor_events.BaseProactorEventLoop)):
+            raise unittest.SkipTest(
+                'UDP is not supported with proactor event loops')
+
         sock = None
         local_address = ('127.0.0.1', 0)
         infos = self.loop.run_until_complete(
@@ -1394,7 +1399,7 @@ class EventLoopTestsMixin:
         else:
             assert False, 'Can not create socket.'
 
-        f = self.loop.create_connection(
+        f = self.loop.create_datagram_endpoint(
             lambda: MyDatagramProto(loop=self.loop), sock=sock)
         tr, pr = self.loop.run_until_complete(f)
         self.assertIsInstance(tr, asyncio.Transport)
