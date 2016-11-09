@@ -110,6 +110,8 @@ Core and Builtins
 - Issue #27443: __length_hint__() of bytearray iterators no longer return a
   negative integer for a resized bytearray.
 
+- Issue #27942: Fix memory leak in codeobject.c
+
 Library
 -------
 
