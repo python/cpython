@@ -743,10 +743,11 @@ class GenericTests(BaseTestCase):
         self.assertEqual(repr(Callable[[], List[T]][int]).replace('typing.', ''),
                          'Callable[[], List[int]]')
 
-    def test_generic_forvard_ref(self):
-        def foobar(x: List[List['T']]): ...
+    def test_generic_forward_ref(self):
+        def foobar(x: List[List['CC']]): ...
+        class CC: ...
+        self.assertEqual(get_type_hints(foobar, globals(), locals()), {'x': List[List[CC]]})
         T = TypeVar('T')
-        self.assertEqual(get_type_hints(foobar, globals(), locals()), {'x': List[List[T]]})
         def barfoo(x: Tuple[T, ...]): ...
         self.assertIs(get_type_hints(barfoo, globals(), locals())['x'], Tuple[T, ...])
 
