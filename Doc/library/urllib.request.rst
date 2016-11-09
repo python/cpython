@@ -18,7 +18,7 @@ authentication, redirections, cookies and more.
 
 .. seealso::
 
-    The `Requests package <https://requests.readthedocs.org/>`_
+    The `Requests package <http://docs.python-requests.org/>`_
     is recommended for a higher-level HTTP client interface.
 
 
