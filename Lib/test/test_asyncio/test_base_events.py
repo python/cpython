@@ -116,6 +116,13 @@ class BaseEventTests(test_utils.TestCase):
         self.assertIsNone(
             base_events._ipaddr_info('::3%lo0', 1, INET6, STREAM, TCP))
 
+        if hasattr(socket, 'SOCK_NONBLOCK'):
+            self.assertEqual(
+                None,
+                base_events._ipaddr_info(
+                    '1.2.3.4', 1, INET, STREAM | socket.SOCK_NONBLOCK, TCP))
+
+
     def test_port_parameter_types(self):
         # Test obscure kinds of arguments for "port".
         INET = socket.AF_INET
@@ -1040,6 +1047,43 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyProto, 'example.com', 80, sock=object())
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
 
+    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'no Unix sockets')
+    def test_create_connection_wrong_sock(self):
+        sock = socket.socket(socket.AF_UNIX)
+        with sock:
+            coro = self.loop.create_connection(MyProto, sock=sock)
+            with self.assertRaisesRegex(ValueError,
+                                        'A TCP Stream Socket was expected'):
+                self.loop.run_until_complete(coro)
+
+    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'no Unix sockets')
+    def test_create_server_wrong_sock(self):
+        sock = socket.socket(socket.AF_UNIX)
+        with sock:
+            coro = self.loop.create_server(MyProto, sock=sock)
+            with self.assertRaisesRegex(ValueError,
+                                        'A TCP Stream Socket was expected'):
+                self.loop.run_until_complete(coro)
+
+    @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
+                         'no socket.SOCK_NONBLOCK (linux only)')
+    def test_create_server_stream_bittype(self):
+        sock = socket.socket(
+            socket.AF_INET, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
+        with sock:
+            coro = self.loop.create_server(lambda: None, sock=sock)
+            srv = self.loop.run_until_complete(coro)
+            srv.close()
+            self.loop.run_until_complete(srv.wait_closed())
+
+    def test_create_datagram_endpoint_wrong_sock(self):
+        sock = socket.socket(socket.AF_INET)
+        with sock:
+            coro = self.loop.create_datagram_endpoint(MyProto, sock=sock)
+            with self.assertRaisesRegex(ValueError,
+                                        'A UDP Socket was expected'):
+                self.loop.run_until_complete(coro)
+
     def test_create_connection_no_host_port_sock(self):
         coro = self.loop.create_connection(MyProto)
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
@@ -1487,36 +1531,39 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertEqual('CLOSED', protocol.state)
 
     def test_create_datagram_endpoint_sock_sockopts(self):
+        class FakeSock:
+            type = socket.SOCK_DGRAM
+
         fut = self.loop.create_datagram_endpoint(
-            MyDatagramProto, local_addr=('127.0.0.1', 0), sock=object())
+            MyDatagramProto, local_addr=('127.0.0.1', 0), sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
         fut = self.loop.create_datagram_endpoint(
-            MyDatagramProto, remote_addr=('127.0.0.1', 0), sock=object())
+            MyDatagramProto, remote_addr=('127.0.0.1', 0), sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
         fut = self.loop.create_datagram_endpoint(
-            MyDatagramProto, family=1, sock=object())
+            MyDatagramProto, family=1, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
         fut = self.loop.create_datagram_endpoint(
-            MyDatagramProto, proto=1, sock=object())
+            MyDatagramProto, proto=1, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
         fut = self.loop.create_datagram_endpoint(
-            MyDatagramProto, flags=1, sock=object())
+            MyDatagramProto, flags=1, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
         fut = self.loop.create_datagram_endpoint(
-            MyDatagramProto, reuse_address=True, sock=object())
+            MyDatagramProto, reuse_address=True, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
         fut = self.loop.create_datagram_endpoint(
-            MyDatagramProto, reuse_port=True, sock=object())
+            MyDatagramProto, reuse_port=True, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
         fut = self.loop.create_datagram_endpoint(
-            MyDatagramProto, allow_broadcast=True, sock=object())
+            MyDatagramProto, allow_broadcast=True, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
     def test_create_datagram_endpoint_sockopts(self):
