@@ -1162,6 +1162,25 @@ class TestLRU:
         self.assertEqual(misses, 4)
         self.assertEqual(currsize, 2)
 
+    def test_lru_type_error(self):
+        # Regression test for issue #28653.
+        # lru_cache was leaking when one of the arguments
+        # wasn't cacheable.
+
+        @functools.lru_cache(maxsize=None)
+        def infinite_cache(o):
+            pass
+
+        @functools.lru_cache(maxsize=10)
+        def limited_cache(o):
+            pass
+
+        with self.assertRaises(TypeError):
+            infinite_cache([])
+
+        with self.assertRaises(TypeError):
+            limited_cache([])
+
     def test_lru_with_maxsize_none(self):
         @self.module.lru_cache(maxsize=None)
         def fib(n):
