@@ -450,6 +450,9 @@ Library
 - Issue #28613: Fix get_event_loop() return the current loop if 
   called from coroutines/callbacks.
 
+- Issue #28639: Fix inspect.isawaitable to always return bool
+  Patch by Justin Mayfield.
+
 IDLE
 ----
 
