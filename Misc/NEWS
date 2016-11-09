@@ -588,6 +588,8 @@ Core and Builtins
 
 - Issue #28008: Implement PEP 530 -- asynchronous comprehensions.
 
+- Issue #27942: Fix memory leak in codeobject.c
+
 Library
 -------
 
