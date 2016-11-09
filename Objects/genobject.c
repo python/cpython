@@ -1503,14 +1503,14 @@ PyAsyncGen_ClearFreeLists(void)
         _PyAsyncGenWrappedValue *o;
         o = ag_value_freelist[--ag_value_freelist_free];
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
-        PyObject_Del(o);
+        PyObject_GC_Del(o);
     }
 
     while (ag_asend_freelist_free) {
         PyAsyncGenASend *o;
         o = ag_asend_freelist[--ag_asend_freelist_free];
         assert(Py_TYPE(o) == &_PyAsyncGenASend_Type);
-        PyObject_Del(o);
+        PyObject_GC_Del(o);
     }
 
     return ret;
@@ -1557,14 +1557,23 @@ async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
 static void
 async_gen_asend_dealloc(PyAsyncGenASend *o)
 {
+    _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->ags_gen);
     Py_CLEAR(o->ags_sendval);
     if (ag_asend_freelist_free < _PyAsyncGen_MAXFREELIST) {
         assert(PyAsyncGenASend_CheckExact(o));
         ag_asend_freelist[ag_asend_freelist_free++] = o;
     } else {
-        PyObject_Del(o);
+        PyObject_GC_Del(o);
     }
+}
+
+static int
+async_gen_asend_traverse(PyAsyncGenASend *o, visitproc visit, void *arg)
+{
+    Py_VISIT(o->ags_gen);
+    Py_VISIT(o->ags_sendval);
+    return 0;
 }
 
 
@@ -1668,9 +1677,9 @@ PyTypeObject _PyAsyncGenASend_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
-    0,                                          /* tp_traverse */
+    (traverseproc)async_gen_asend_traverse,     /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -1699,7 +1708,7 @@ async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
         o = ag_asend_freelist[ag_asend_freelist_free];
         _Py_NewReference((PyObject *)o);
     } else {
-        o = PyObject_New(PyAsyncGenASend, &_PyAsyncGenASend_Type);
+        o = PyObject_GC_New(PyAsyncGenASend, &_PyAsyncGenASend_Type);
         if (o == NULL) {
             return NULL;
         }
@@ -1712,6 +1721,8 @@ async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
     o->ags_sendval = sendval;
 
     o->ags_state = AWAITABLE_STATE_INIT;
+
+    _PyObject_GC_TRACK((PyObject*)o);
     return (PyObject*)o;
 }
 
@@ -1722,13 +1733,23 @@ async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
 static void
 async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
 {
+    _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->agw_val);
     if (ag_value_freelist_free < _PyAsyncGen_MAXFREELIST) {
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         ag_value_freelist[ag_value_freelist_free++] = o;
     } else {
-        PyObject_Del(o);
+        PyObject_GC_Del(o);
     }
+}
+
+
+static int
+async_gen_wrapped_val_traverse(_PyAsyncGenWrappedValue *o,
+                               visitproc visit, void *arg)
+{
+    Py_VISIT(o->agw_val);
+    return 0;
 }
 
 
@@ -1753,9 +1774,9 @@ PyTypeObject _PyAsyncGenWrappedValue_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
-    0,                                          /* tp_traverse */
+    (traverseproc)async_gen_wrapped_val_traverse, /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -1787,13 +1808,15 @@ _PyAsyncGenValueWrapperNew(PyObject *val)
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         _Py_NewReference((PyObject*)o);
     } else {
-        o = PyObject_New(_PyAsyncGenWrappedValue, &_PyAsyncGenWrappedValue_Type);
+        o = PyObject_GC_New(_PyAsyncGenWrappedValue,
+                            &_PyAsyncGenWrappedValue_Type);
         if (o == NULL) {
             return NULL;
         }
     }
     o->agw_val = val;
     Py_INCREF(val);
+    _PyObject_GC_TRACK((PyObject*)o);
     return (PyObject*)o;
 }
 
@@ -1804,9 +1827,19 @@ _PyAsyncGenValueWrapperNew(PyObject *val)
 static void
 async_gen_athrow_dealloc(PyAsyncGenAThrow *o)
 {
+    _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->agt_gen);
     Py_CLEAR(o->agt_args);
-    PyObject_Del(o);
+    PyObject_GC_Del(o);
+}
+
+
+static int
+async_gen_athrow_traverse(PyAsyncGenAThrow *o, visitproc visit, void *arg)
+{
+    Py_VISIT(o->agt_gen);
+    Py_VISIT(o->agt_args);
+    return 0;
 }
 
 
@@ -1990,9 +2023,9 @@ PyTypeObject _PyAsyncGenAThrow_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
-    0,                                          /* tp_traverse */
+    (traverseproc)async_gen_athrow_traverse,    /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -2016,7 +2049,7 @@ static PyObject *
 async_gen_athrow_new(PyAsyncGenObject *gen, PyObject *args)
 {
     PyAsyncGenAThrow *o;
-    o = PyObject_New(PyAsyncGenAThrow, &_PyAsyncGenAThrow_Type);
+    o = PyObject_GC_New(PyAsyncGenAThrow, &_PyAsyncGenAThrow_Type);
     if (o == NULL) {
         return NULL;
     }
@@ -2025,5 +2058,6 @@ async_gen_athrow_new(PyAsyncGenObject *gen, PyObject *args)
     o->agt_state = AWAITABLE_STATE_INIT;
     Py_INCREF(gen);
     Py_XINCREF(args);
+    _PyObject_GC_TRACK((PyObject*)o);
     return (PyObject*)o;
 }
