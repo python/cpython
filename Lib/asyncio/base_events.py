@@ -84,12 +84,26 @@ def _set_reuseport(sock):
                              'SO_REUSEPORT defined but not implemented.')
 
 
-# Linux's sock.type is a bitmask that can include extra info about socket.
-_SOCKET_TYPE_MASK = 0
-if hasattr(socket, 'SOCK_NONBLOCK'):
-    _SOCKET_TYPE_MASK |= socket.SOCK_NONBLOCK
-if hasattr(socket, 'SOCK_CLOEXEC'):
-    _SOCKET_TYPE_MASK |= socket.SOCK_CLOEXEC
+def _is_stream_socket(sock):
+    # Linux's socket.type is a bitmask that can include extra info
+    # about socket, therefore we can't do simple
+    # `sock_type == socket.SOCK_STREAM`.
+    return (sock.type & socket.SOCK_STREAM) == socket.SOCK_STREAM
+
+
+def _is_dgram_socket(sock):
+    # Linux's socket.type is a bitmask that can include extra info
+    # about socket, therefore we can't do simple
+    # `sock_type == socket.SOCK_DGRAM`.
+    return (sock.type & socket.SOCK_DGRAM) == socket.SOCK_DGRAM
+
+
+def _is_ip_socket(sock):
+    if sock.family == socket.AF_INET:
+        return True
+    if hasattr(socket, 'AF_INET6') and sock.family == socket.AF_INET6:
+        return True
+    return False
 
 
 def _ipaddr_info(host, port, family, type, proto):
@@ -102,8 +116,12 @@ def _ipaddr_info(host, port, family, type, proto):
             host is None:
         return None
 
-    type &= ~_SOCKET_TYPE_MASK
     if type == socket.SOCK_STREAM:
+        # Linux only:
+        #    getaddrinfo() can raise when socket.type is a bit mask.
+        #    So if socket.type is a bit mask of SOCK_STREAM, and say
+        #    SOCK_NONBLOCK, we simply return None, which will trigger
+        #    a call to getaddrinfo() letting it process this request.
         proto = socket.IPPROTO_TCP
     elif type == socket.SOCK_DGRAM:
         proto = socket.IPPROTO_UDP
@@ -124,7 +142,9 @@ def _ipaddr_info(host, port, family, type, proto):
             return None
 
     if family == socket.AF_UNSPEC:
-        afs = [socket.AF_INET, socket.AF_INET6]
+        afs = [socket.AF_INET]
+        if hasattr(socket, 'AF_INET6'):
+            afs.append(socket.AF_INET6)
     else:
         afs = [family]
 
@@ -771,9 +791,13 @@ class BaseEventLoop(events.AbstractEventLoop):
                     raise OSError('Multiple exceptions: {}'.format(
                         ', '.join(str(exc) for exc in exceptions)))
 
-        elif sock is None:
-            raise ValueError(
-                'host and port was not specified and no sock specified')
+        else:
+            if sock is None:
+                raise ValueError(
+                    'host and port was not specified and no sock specified')
+            if not _is_stream_socket(sock) or not _is_ip_socket(sock):
+                raise ValueError(
+                    'A TCP Stream Socket was expected, got {!r}'.format(sock))
 
         transport, protocol = yield from self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname)
@@ -817,6 +841,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                                  allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
+            if not _is_dgram_socket(sock):
+                raise ValueError(
+                    'A UDP Socket was expected, got {!r}'.format(sock))
             if (local_addr or remote_addr or
                     family or proto or flags or
                     reuse_address or reuse_port or allow_broadcast):
@@ -1027,6 +1054,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         else:
             if sock is None:
                 raise ValueError('Neither host/port nor sock were specified')
+            if not _is_stream_socket(sock) or not _is_ip_socket(sock):
+                raise ValueError(
+                    'A TCP Stream Socket was expected, got {!r}'.format(sock))
             sockets = [sock]
 
         server = Server(self, sockets)
@@ -1048,6 +1078,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         This method is a coroutine.  When completed, the coroutine
         returns a (transport, protocol) pair.
         """
+        if not _is_stream_socket(sock):
+            raise ValueError(
+                'A Stream Socket was expected, got {!r}'.format(sock))
+
         transport, protocol = yield from self._create_connection_transport(
             sock, protocol_factory, ssl, '', server_side=True)
         if self._debug:
