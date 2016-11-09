@@ -43,6 +43,8 @@ Library
 - Issue #28639: Fix inspect.isawaitable to always return bool
   Patch by Justin Mayfield.
 
+- Issue #28652: Make loop methods reject socket kinds they do not support.
+
 Documentation
 -------------
 
