@@ -184,6 +184,14 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     else:
         ctypes._reset_cache()
 
+    try:
+        typing = sys.modules['typing']
+    except KeyError:
+        pass
+    else:
+        for f in typing._cleanups:
+            f()
+
     # Collect cyclic trash and read memory statistics immediately after.
     func1 = sys.getallocatedblocks
     func2 = sys.gettotalrefcount
