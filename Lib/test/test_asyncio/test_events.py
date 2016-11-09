@@ -2384,8 +2384,6 @@ class HandleTests(test_utils.TestCase):
         # (such as ones compiled with Cython).
 
         class Coro:
-            __name__ = 'AAA'
-
             def send(self, v):
                 pass
 
@@ -2399,6 +2397,7 @@ class HandleTests(test_utils.TestCase):
                 pass
 
         coro = Coro()
+        coro.__name__ = 'AAA'
         self.assertTrue(asyncio.iscoroutine(coro))
         self.assertEqual(coroutines._format_coroutine(coro), 'AAA()')
 
@@ -2407,6 +2406,11 @@ class HandleTests(test_utils.TestCase):
 
         coro.cr_running = True
         self.assertEqual(coroutines._format_coroutine(coro), 'BBB() running')
+
+        coro = Coro()
+        # Some coroutines might not have '__name__', such as
+        # built-in async_gen.asend().
+        self.assertEqual(coroutines._format_coroutine(coro), 'Coro()')
 
 
 class TimerTests(unittest.TestCase):
