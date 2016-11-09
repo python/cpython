@@ -65,6 +65,7 @@ intern_string_constants(PyObject *tuple)
             intern_string_constants(v);
         }
         else if (PyFrozenSet_CheckExact(v)) {
+            PyObject *w = v;
             PyObject *tmp = PySequence_Tuple(v);
             if (tmp == NULL) {
                 PyErr_Clear();
@@ -77,6 +78,7 @@ intern_string_constants(PyObject *tuple)
                 }
                 else {
                     PyTuple_SET_ITEM(tuple, i, v);
+                    Py_DECREF(w);
                     modified = 1;
                 }
             }
