@@ -1044,14 +1044,16 @@ FutureIter_throw(futureiterobject *self, PyObject *args)
     else {
         if (PyExceptionClass_Check(type)) {
             val = PyObject_CallObject(type, NULL);
+            PyErr_SetObject(type, val);
+            Py_DECREF(val);
         }
         else {
             val = type;
             assert (PyExceptionInstance_Check(val));
             type = (PyObject*)Py_TYPE(val);
             assert (PyExceptionClass_Check(type));
+            PyErr_SetObject(type, val);
         }
-        PyErr_SetObject(type, val);
     }
     return FutureIter_iternext(self);
 }
