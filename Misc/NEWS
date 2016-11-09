@@ -40,6 +40,9 @@ Library
 
 - Issue #26081: Fix refleak in _asyncio.Future.__iter__().throw.
 
+- Issue #28639: Fix inspect.isawaitable to always return bool
+  Patch by Justin Mayfield.
+
 Documentation
 -------------
 
