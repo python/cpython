@@ -781,8 +781,10 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
     if (!key)
         return NULL;
     hash = PyObject_Hash(key);
-    if (hash == -1)
+    if (hash == -1) {
+        Py_DECREF(key);
         return NULL;
+    }
     result = _PyDict_GetItem_KnownHash(self->cache, key, hash);
     if (result) {
         Py_INCREF(result);
@@ -837,8 +839,10 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     if (!key)
         return NULL;
     hash = PyObject_Hash(key);
-    if (hash == -1)
+    if (hash == -1) {
+        Py_DECREF(key);
         return NULL;
+    }
     link  = (lru_list_elem *)_PyDict_GetItem_KnownHash(self->cache, key, hash);
     if (link) {
         lru_cache_extricate_link(link);
