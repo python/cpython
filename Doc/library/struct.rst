@@ -232,6 +232,10 @@ platform-dependent.
 .. versionchanged:: 3.3
    Added support for the ``'n'`` and ``'N'`` formats.
 
+.. versionchanged:: 3.6
+   Added support for the ``'e'`` format.
+
+
 Notes:
 
 (1)

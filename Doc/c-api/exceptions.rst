@@ -311,7 +311,7 @@ an error value).
    Much like :c:func:`PyErr_SetImportError` but this function allows for
    specifying a subclass of :exc:`ImportError` to raise.
 
-   .. versionadded:: 3.4
+   .. versionadded:: 3.6
 
 
 .. c:function:: int PyErr_WarnExplicitObject(PyObject *category, PyObject *message, PyObject *filename, int lineno, PyObject *module, PyObject *registry)
