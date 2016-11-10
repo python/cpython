@@ -93,7 +93,7 @@ CPython implementation improvements:
 * Customization of class creation has been simplified with the
   :ref:`new protocol <whatsnew36-pep487>`.
 
-* The class attibute definition order is
+* The class attribute definition order is
   :ref:`now preserved  <whatsnew36-pep520>`.
 
 * The order of elements in ``**kwargs`` now
@@ -127,7 +127,7 @@ Significant improvements in the standard library:
   :ref:`improvements <whatsnew36-typing>` and is no longer provisional.
 
 * The :mod:`tracemalloc` module has been significantly reworked
-  and is now used to provide better output for :exc:`ResourceWarning`s
+  and is now used to provide better output for :exc:`ResourceWarning`
   as well as provide better diagnostics for memory allocation errors.
   See the :ref:`PYTHONMALLOC section <whatsnew36-pythonmalloc>` for more
   information.
@@ -874,14 +874,6 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
   (Contributed by Jim Fulton in :issue:`27392`.)
 
 
-base64
-------
-
-The :func:`~base64.a85decode` function no longer requires the leading
-``'<~'`` characters in input when the *adobe* argument is set.
-(Contributed by Swati Jaiswal in :issue:`25913`.)
-
-
 binascii
 --------
 
@@ -983,15 +975,6 @@ with a positive denominator::
 
 (Contributed by Stefan Krah amd Mark Dickinson in :issue:`25928`.)
 
-
-dis
----
-
-Disassembling a class now disassembles class and static
-methods.  (Contributed by Xiang Zhang in :issue:`26733`.)
-
-The disassembler now decodes ``FORMAT_VALUE`` argument.
-(Contributed by Serhiy Storchaka in :issue:`28317`.)
 
 
 distutils
@@ -1299,10 +1282,6 @@ Private and special attribute names now are omitted unless the prefix starts
 with underscores.  A space or a colon is added after some completed keywords.
 (Contributed by Serhiy Storchaka in :issue:`25011` and :issue:`25209`.)
 
-Names of most attributes listed by :func:`dir` are now completed.
-Previously, names of properties and slots which were not yet created on
-an instance were excluded.  (Contributed by Martin Panter in :issue:`25590`.)
-
 
 shlex
 -----
@@ -1397,10 +1376,6 @@ All constants and flags have been converted to :class:`~enum.IntEnum` and
 Server and client-side specific TLS protocols for :class:`~ssl.SSLContext`
 were added.
 (Contributed by Christian Heimes in :issue:`28085`.)
-
-General resource ids (``GEN_RID``) in subject alternative name extensions
-no longer case a SystemError.
-(Contributed by Christian Heimes in :issue:`27691`.)
 
 
 statistics
@@ -2183,20 +2158,9 @@ Changes in the Python API
   :func:`~collections.namedtuple` are now keyword-only.
   (Contributed by Raymond Hettinger in :issue:`25628`.)
 
-* The :meth:`~cgi.FieldStorage.read_multi` method now ignores the
-  ``Content-Length`` header in part headers.
-  (Contributed by Peter Landry in :issue:`24764`.)
-
 * On Linux, :func:`ctypes.util.find_library` now looks in
   ``LD_LIBRARY_PATH`` for shared libraries.
   (Contributed by Vinay Sajip in :issue:`9998`.)
-
-* The :meth:`datetime.fromtimestamp() <datetime.datetime.fromtimestamp>` and
-  :meth:`datetime.utcfromtimestamp() <datetime.datetime.utcfromtimestamp>`
-  methods now round microseconds to nearest with ties going to
-  nearest even integer (``ROUND_HALF_EVEN``), instead of
-  rounding towards negative infinity (``ROUND_FLOOR``).
-  (Contributed by Victor Stinner in :issue:`23517`.)
 
 * The :class:`imaplib.IMAP4` class now handles flags containing the
   ``']'`` character in messages sent from the server to improve
