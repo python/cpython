@@ -13,6 +13,7 @@ import re
 import sys
 import tempfile
 
+from Tkinter import *
 import tkFileDialog
 import tkMessageBox
 from SimpleDialog import SimpleDialog
@@ -91,6 +92,7 @@ class EncodingMessage(SimpleDialog):
         # l2['state'] = DISABLED
         l2.pack(side=TOP, anchor = W, fill=X)
         l3 = Label(top, text="to your file\n"
+                   "See Language Reference, 2.1.4 Encoding declarations.\n"
                    "Choose OK to save this file as %s\n"
                    "Edit your general options to silence this warning" % enc)
         l3.pack(side=TOP, anchor = W)
