@@ -201,8 +201,7 @@ class _ForwardRef(_TypingBase, _root=True):
     """Wrapper to hold a forward reference."""
 
     __slots__ = ('__forward_arg__', '__forward_code__',
-                 '__forward_evaluated__', '__forward_value__',
-                 '__forward_frame__')
+                 '__forward_evaluated__', '__forward_value__')
 
     def __init__(self, arg):
         super().__init__(arg)
@@ -217,12 +216,6 @@ class _ForwardRef(_TypingBase, _root=True):
         self.__forward_code__ = code
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
-        typing_globals = globals()
-        frame = sys._getframe(1)
-        while frame is not None and frame.f_globals is typing_globals:
-            frame = frame.f_back
-        assert frame is not None
-        self.__forward_frame__ = frame
 
     def _eval_type(self, globalns, localns):
         if not self.__forward_evaluated__:
@@ -242,10 +235,10 @@ class _ForwardRef(_TypingBase, _root=True):
         if not isinstance(other, _ForwardRef):
             return NotImplemented
         return (self.__forward_arg__ == other.__forward_arg__ and
-                self.__forward_frame__ == other.__forward_frame__)
+                self.__forward_value__ == other.__forward_value__)
 
     def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_frame__))
+        return hash((self.__forward_arg__, self.__forward_value__))
 
     def __instancecheck__(self, obj):
         raise TypeError("Forward references cannot be used with isinstance().")
