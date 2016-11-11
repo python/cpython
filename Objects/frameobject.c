@@ -409,7 +409,7 @@ static int numfree = 0;         /* number of frames currently in free_list */
 /* max value for numfree */
 #define PyFrame_MAXFREELIST 200
 
-static void
+static void _Py_HOT_FUNCTION
 frame_dealloc(PyFrameObject *f)
 {
     PyObject **p, **valuestack;
@@ -605,7 +605,7 @@ int _PyFrame_Init()
     return 1;
 }
 
-PyFrameObject *
+PyFrameObject* _Py_HOT_FUNCTION
 PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
             PyObject *locals)
 {

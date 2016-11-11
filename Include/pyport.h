@@ -490,11 +490,34 @@ extern "C" {
  *    typedef int T1 Py_DEPRECATED(2.4);
  *    extern int x() Py_DEPRECATED(2.5);
  */
-#if defined(__GNUC__) && ((__GNUC__ >= 4) || \
-              (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1))
+#if defined(__GNUC__) \
+    && ((__GNUC__ >= 4) || (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1))
 #define Py_DEPRECATED(VERSION_UNUSED) __attribute__((__deprecated__))
 #else
 #define Py_DEPRECATED(VERSION_UNUSED)
+#endif
+
+
+/* Py_HOT_FUNCTION
+ * The hot attribute on a function is used to inform the compiler that the
+ * function is a hot spot of the compiled program. The function is optimized
+ * more aggressively and on many target it is placed into special subsection of
+ * the text section so all hot functions appears close together improving
+ * locality.
+ *
+ * Usage:
+ *    int Py_HOT_FUNCTION x() { return 3; }
+ *
+ * Issue #28618: This attribute must not be abused, otherwise it can have a
+ * negative effect on performance. Only the functions were Python spend most of
+ * its time must use it. Use a profiler when running performance benchmark
+ * suite to find these functions.
+ */
+#if defined(__GNUC__) \
+    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))
+#define _Py_HOT_FUNCTION __attribute__((hot))
+#else
+#define _Py_HOT_FUNCTION
 #endif
 
 /**************************************************************************
