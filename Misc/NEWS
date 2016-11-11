@@ -443,6 +443,8 @@ Tools/Demos
 Tests
 -----
 
+- Issue #23839: Various caches now are cleared before running every test file.
+
 - Issue #26944: Fix test_posix for Android where 'id -G' is entirely wrong or
   missing the effective gid.
 

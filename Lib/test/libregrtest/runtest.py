@@ -7,7 +7,7 @@ import time
 import traceback
 import unittest
 from test import support
-from test.libregrtest.refleak import dash_R
+from test.libregrtest.refleak import dash_R, clear_caches
 from test.libregrtest.save_env import saved_test_environment
 
 
@@ -146,6 +146,7 @@ def runtest_inner(ns, test, display_failure=True):
         else:
             # Always import it from the test package
             abstest = 'test.' + test
+        clear_caches()
         with saved_test_environment(test, ns.verbose, ns.quiet, pgo=ns.pgo) as environment:
             start_time = time.time()
             the_module = importlib.import_module(abstest)
