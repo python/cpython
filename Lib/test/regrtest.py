@@ -1292,6 +1292,7 @@ def runtest_inner(test, verbose, quiet,
         else:
             # Always import it from the test package
             abstest = 'test.' + test
+        clear_caches()
         with saved_test_environment(test, verbose, quiet, pgo=pgo) as environment:
             start_time = time.time()
             the_module = importlib.import_module(abstest)
@@ -1464,16 +1465,8 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
 
 def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     import gc, copyreg
-    import _strptime, linecache
-    import urllib.parse, urllib.request, mimetypes, doctest
-    import struct, filecmp, collections.abc
-    from distutils.dir_util import _path_created
+    import collections.abc
     from weakref import WeakSet
-
-    # Clear the warnings registry, so they can be displayed again
-    for mod in sys.modules.values():
-        if hasattr(mod, '__warningregistry__'):
-            del mod.__warningregistry__
 
     # Restore some original values.
     warnings.filters[:] = fs
@@ -1501,6 +1494,22 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
             obj._abc_cache.clear()
             obj._abc_negative_cache.clear()
 
+    clear_caches()
+
+    # Collect cyclic trash and read memory statistics immediately after.
+    func1 = sys.getallocatedblocks
+    func2 = sys.gettotalrefcount
+    gc.collect()
+    return func1(), func2()
+
+def clear_caches():
+    import gc
+
+    # Clear the warnings registry, so they can be displayed again
+    for mod in sys.modules.values():
+        if hasattr(mod, '__warningregistry__'):
+            del mod.__warningregistry__
+
     # Flush standard output, so that buffered data is sent to the OS and
     # associated Python objects are reclaimed.
     for stream in (sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__):
@@ -1508,20 +1517,75 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
             stream.flush()
 
     # Clear assorted module caches.
-    _path_created.clear()
-    re.purge()
-    _strptime._regex_cache.clear()
-    urllib.parse.clear_cache()
-    urllib.request.urlcleanup()
-    linecache.clearcache()
-    mimetypes._default_mime_types()
-    filecmp._cache.clear()
-    struct._clearcache()
-    doctest.master = None
+    # Don't worry about resetting the cache if the module is not loaded
     try:
-        import ctypes
-    except ImportError:
-        # Don't worry about resetting the cache if ctypes is not supported
+        distutils_dir_util = sys.modules['distutils.dir_util']
+    except KeyError:
+        pass
+    else:
+        distutils_dir_util._path_created.clear()
+
+    re.purge()
+
+    try:
+        _strptime = sys.modules['_strptime']
+    except KeyError:
+        pass
+    else:
+        _strptime._regex_cache.clear()
+
+    try:
+        urllib_parse = sys.modules['urllib.parse']
+    except KeyError:
+        pass
+    else:
+        urllib_parse.clear_cache()
+
+    try:
+        urllib_request = sys.modules['urllib.request']
+    except KeyError:
+        pass
+    else:
+        urllib_request.urlcleanup()
+
+    try:
+        linecache = sys.modules['linecache']
+    except KeyError:
+        pass
+    else:
+        linecache.clearcache()
+
+    try:
+        mimetypes = sys.modules['mimetypes']
+    except KeyError:
+        pass
+    else:
+        mimetypes._default_mime_types()
+
+    try:
+        filecmp = sys.modules['filecmp']
+    except KeyError:
+        pass
+    else:
+        filecmp._cache.clear()
+
+    try:
+        struct = sys.modules['struct']
+    except KeyError:
+        pass
+    else:
+        struct._clearcache()
+
+    try:
+        doctest = sys.modules['doctest']
+    except KeyError:
+        pass
+    else:
+        doctest.master = None
+
+    try:
+        ctypes = sys.modules['ctypes']
+    except KeyError:
         pass
     else:
         ctypes._reset_cache()
@@ -1534,11 +1598,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
         for f in typing._cleanups:
             f()
 
-    # Collect cyclic trash and read memory statistics immediately after.
-    func1 = sys.getallocatedblocks
-    func2 = sys.gettotalrefcount
     gc.collect()
-    return func1(), func2()
 
 def warm_caches():
     # char cache

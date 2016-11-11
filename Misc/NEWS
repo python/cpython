@@ -501,6 +501,8 @@ Documentation
 Tests
 -----
 
+- Issue #23839: Various caches now are cleared before running every test file.
+
 - Issue #28409: regrtest: fix the parser of command line arguments.
 
 - Issue #27787: Call gc.collect() before checking each test for "dangling
