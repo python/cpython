@@ -311,11 +311,11 @@ class TestCoverage(unittest.TestCase):
         with captured_stdout() as stdout:
             self._coverage(tracer)
         stdout = stdout.getvalue()
-        self.assertTrue("pprint.py" in stdout)
-        self.assertTrue("case.py" in stdout)   # from unittest
+        self.assertIn("pprint.py", stdout)
+        self.assertIn("case.py", stdout)   # from unittest
         files = os.listdir(TESTFN)
-        self.assertTrue("pprint.cover" in files)
-        self.assertTrue("unittest.case.cover" in files)
+        self.assertIn("pprint.cover", files)
+        self.assertIn("unittest.case.cover", files)
 
     def test_coverage_ignore(self):
         # Ignore all files, nothing should be traced nor printed
