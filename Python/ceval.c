@@ -2462,8 +2462,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(STORE_DEREF) {
             PyObject *v = POP();
             PyObject *cell = freevars[oparg];
-            PyCell_Set(cell, v);
-            Py_DECREF(v);
+            PyObject *oldobj = PyCell_GET(cell);
+            PyCell_SET(cell, v);
+            Py_XDECREF(oldobj);
             DISPATCH();
         }
 
