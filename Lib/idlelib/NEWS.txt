@@ -2,6 +2,12 @@ What's New in IDLE 2.7.13?
 ==========================
 *Release date: 2017-01-01?*
 
+- Issue #27854: Make Help => IDLE Help work again on Windows.
+  Include idlelib/help.html in 2.7 Windows installer.
+
+- Issue #25507: Add back import needed for 2.x encoding warning box.
+  Add pointer to 'Encoding declaration' in Language Reference.
+
 - Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
   Patch by Roger Serwy, updated by Bayard Randel.
 

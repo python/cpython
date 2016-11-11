@@ -1076,6 +1076,7 @@ def add_files(db):
         if dir=='idlelib':
             lib.glob("*.def")
             lib.add_file("idle.bat")
+            lib.add_file("help.html")
         if dir=="Icons":
             lib.glob("*.gif")
             lib.glob("*.ico")
