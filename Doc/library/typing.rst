@@ -11,7 +11,7 @@
 --------------
 
 This module supports type hints as specified by :pep:`484`.  The most
-fundamental support consists of the type :data:`Any`, :data:`Union`,
+fundamental support consists of the types :data:`Any`, :data:`Union`,
 :data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
 :class:`Generic`.  For full specification please see :pep:`484`.  For
 a simplified introduction to type hints see :pep:`483`.
@@ -273,6 +273,22 @@ not generic but implicitly inherits from ``Iterable[Any]``::
    from typing import Iterable
 
    class MyIterable(Iterable): # Same as Iterable[Any]
+
+User defined generic type aliases are also supported. Examples::
+
+   from typing import TypeVar, Iterable, Tuple, Union
+   S = TypeVar('S')
+   Response = Union[Iterable[S], int]
+
+   # Return type here is same as Union[Iterable[str], int]
+   def response(query: str) -> Response[str]:
+       ...
+
+   T = TypeVar('T', int, float, complex)
+   Vec = Iterable[Tuple[T, T]]
+
+   def inproduct(v: Vec[T]) -> T: # Same as Iterable[Tuple[T, T]]
+       return sum(x*y for x, y in v)
 
 The metaclass used by :class:`Generic` is a subclass of :class:`abc.ABCMeta`.
 A generic class can be an ABC by including abstract methods or properties,
@@ -582,6 +598,19 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.abc.Awaitable`.
 
+.. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
+
+   A generic version of :class:`collections.abc.Coroutine`.
+   The variance and order of type variables
+   correspond to those of :class:`Generator`, for example::
+
+      from typing import List, Coroutine
+      c = None # type: Coroutine[List[str], str, int]
+      ...
+      x = c.send('hi') # type: List[str]
+      async def bar() -> None:
+          x = await c # type: int
+
 .. class:: AsyncIterable(Generic[T_co])
 
    A generic version of :class:`collections.abc.AsyncIterable`.
@@ -700,13 +729,18 @@ The module defines the following classes, functions and decorators:
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
 
-.. function:: get_type_hints(obj)
+.. function:: get_type_hints(obj[, globals[, locals])
 
-   Return type hints for a function or method object.
+   Return a dictionary containing type hints for a function, method, module
+   or class object.
 
-   This is often the same as ``obj.__annotations__``, but it handles
-   forward references encoded as string literals, and if necessary
-   adds ``Optional[t]`` if a default value equal to ``None`` is set.
+   This is often the same as ``obj.__annotations__``. In addition,
+   forward references encoded as string literals are handled by evaluating
+   them in ``globals`` and ``locals`` namespaces. If necessary,
+   ``Optional[t]`` is added for function and method annotations if a default
+   value equal to ``None`` is set. For a class ``C``, return
+   a dictionary constructed by merging all the ``__annotations__`` along
+   ``C.__mro__`` in reverse order.
 
 .. decorator:: overload
 
@@ -809,16 +843,16 @@ The module defines the following classes, functions and decorators:
 
 .. data:: Tuple
 
-  Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
-  with the first item of type X and the second of type Y.
+   Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
+   with the first item of type X and the second of type Y.
 
-  Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
-  to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
-  of an int, a float and a string.
+   Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
+   to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
+   of an int, a float and a string.
 
-  To specify a variable-length tuple of homogeneous type,
-  use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :data:`Tuple`
-  is equivalent to ``Tuple[Any, ...]``, and in turn to :data:`tuple`.
+   To specify a variable-length tuple of homogeneous type,
+   use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :data:`Tuple`
+   is equivalent to ``Tuple[Any, ...]``, and in turn to :class:`tuple`.
 
 .. data:: Callable
 
@@ -826,7 +860,8 @@ The module defines the following classes, functions and decorators:
 
    The subscription syntax must always be used with exactly two
    values: the argument list and the return type.  The argument list
-   must be a list of types; the return type must be a single type.
+   must be a list of types or an ellipsis; the return type must be
+   a single type.
 
    There is no syntax to indicate optional or keyword arguments;
    such function types are rarely used as callback types.
