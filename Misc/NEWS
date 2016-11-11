@@ -13,6 +13,8 @@ Core and Builtins
 - Issue #19398: Extra slash no longer added to sys.path components in case of
   empty compile-time PYTHONPATH components.
 
+- Issue #28665:  Improve speed of the STORE_DEREF opcode by 40%.
+
 - Issue #28583: PyDict_SetDefault didn't combine split table when needed.
   Patch by Xiang Zhang.
 
