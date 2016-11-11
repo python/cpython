@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #19398: Extra slash no longer added to sys.path components in case of
+  empty compile-time PYTHONPATH components.
+
 - Issue #28621: Sped up converting int to float by reusing faster bits counting
   implementation.  Patch by Adrian Wielgosik.
 
