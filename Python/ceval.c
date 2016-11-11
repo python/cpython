@@ -718,7 +718,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     return tstate->interp->eval_frame(f, throwflag);
 }
 
-PyObject *
+PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 {
 #ifdef DXPAIRS
@@ -4771,7 +4771,7 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
     x = call; \
     }
 
-static PyObject *
+static PyObject* _Py_HOT_FUNCTION
 call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
 {
     PyObject **pfunc = (*pp_stack) - oparg - 1;
@@ -4844,7 +4844,7 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
    done before evaluating the frame.
 */
 
-static PyObject*
+static PyObject* _Py_HOT_FUNCTION
 _PyFunction_FastCall(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
                      PyObject *globals)
 {
