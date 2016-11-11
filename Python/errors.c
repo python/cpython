@@ -161,7 +161,7 @@ PyErr_SetString(PyObject *exception, const char *string)
 PyObject *
 PyErr_Occurred(void)
 {
-    PyThreadState *tstate = _PyThreadState_UncheckedGet();
+    PyThreadState *tstate = PyThreadState_GET();
     return tstate == NULL ? NULL : tstate->curexc_type;
 }
 

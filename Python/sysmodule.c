@@ -1547,8 +1547,9 @@ error:
     Py_XDECREF(name);
     Py_XDECREF(value);
     /* No return value, therefore clear error state if possible */
-    if (_PyThreadState_UncheckedGet())
+    if (_PyThreadState_UncheckedGet()) {
         PyErr_Clear();
+    }
 }
 
 PyObject *
