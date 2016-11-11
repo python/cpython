@@ -762,7 +762,10 @@ calculate_path(void)
 
         if (defpath[0] != SEP) {
             wcscat(buf, prefix);
-            wcscat(buf, separator);
+            if (prefixsz >= 2 && prefix[prefixsz - 2] != SEP &&
+                defpath[0] != (delim ? DELIM : L'\0')) {  /* not empty */
+                wcscat(buf, separator);
+            }
         }
 
         if (delim) {
