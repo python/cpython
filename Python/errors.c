@@ -158,7 +158,7 @@ PyErr_SetString(PyObject *exception, const char *string)
 }
 
 
-PyObject *
+PyObject* _Py_HOT_FUNCTION
 PyErr_Occurred(void)
 {
     PyThreadState *tstate = PyThreadState_GET();
