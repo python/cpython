@@ -931,6 +931,7 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False):
             else:
                 # Always import it from the test package
                 abstest = 'test.' + test
+            clear_caches()
             with saved_test_environment(test, verbose, quiet, pgo) as environment:
                 start_time = time.time()
                 the_package = __import__(abstest, globals(), locals(), [])
@@ -1096,16 +1097,6 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
 
 def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     import gc, copy_reg
-    import _strptime, linecache
-    dircache = test_support.import_module('dircache', deprecated=True)
-    import urlparse, urllib, urllib2, mimetypes, doctest
-    import struct, filecmp
-    from distutils.dir_util import _path_created
-
-    # Clear the warnings registry, so they can be displayed again
-    for mod in sys.modules.values():
-        if hasattr(mod, '__warningregistry__'):
-            del mod.__warningregistry__
 
     # Restore some original values.
     warnings.filters[:] = fs
@@ -1130,23 +1121,100 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
         abc._abc_cache.clear()
         abc._abc_negative_cache.clear()
 
+    clear_caches()
+
+def clear_caches():
+    import gc
+
+    # Clear the warnings registry, so they can be displayed again
+    for mod in sys.modules.values():
+        if hasattr(mod, '__warningregistry__'):
+            del mod.__warningregistry__
+
     # Clear assorted module caches.
-    _path_created.clear()
-    re.purge()
-    _strptime._regex_cache.clear()
-    urlparse.clear_cache()
-    urllib.urlcleanup()
-    urllib2.install_opener(None)
-    dircache.reset()
-    linecache.clearcache()
-    mimetypes._default_mime_types()
-    filecmp._cache.clear()
-    struct._clearcache()
-    doctest.master = None
+    # Don't worry about resetting the cache if the module is not loaded
     try:
-        import ctypes
-    except ImportError:
-        # Don't worry about resetting the cache if ctypes is not supported
+        distutils_dir_util = sys.modules['distutils.dir_util']
+    except KeyError:
+        pass
+    else:
+        distutils_dir_util._path_created.clear()
+
+    re.purge()
+
+    try:
+        _strptime = sys.modules['_strptime']
+    except KeyError:
+        pass
+    else:
+        _strptime._regex_cache.clear()
+
+    try:
+        urlparse = sys.modules['urlparse']
+    except KeyError:
+        pass
+    else:
+        urlparse.clear_cache()
+
+    try:
+        urllib = sys.modules['urllib']
+    except KeyError:
+        pass
+    else:
+        urllib.urlcleanup()
+
+    try:
+        urllib2 = sys.modules['urllib2']
+    except KeyError:
+        pass
+    else:
+        urllib2.install_opener(None)
+
+    try:
+        dircache = sys.modules['dircache']
+    except KeyError:
+        pass
+    else:
+        dircache.reset()
+
+    try:
+        linecache = sys.modules['linecache']
+    except KeyError:
+        pass
+    else:
+        linecache.clearcache()
+
+    try:
+        mimetypes = sys.modules['mimetypes']
+    except KeyError:
+        pass
+    else:
+        mimetypes._default_mime_types()
+
+    try:
+        filecmp = sys.modules['filecmp']
+    except KeyError:
+        pass
+    else:
+        filecmp._cache.clear()
+
+    try:
+        struct = sys.modules['struct']
+    except KeyError:
+        pass
+    else:
+        struct._clearcache()
+
+    try:
+        doctest = sys.modules['doctest']
+    except KeyError:
+        pass
+    else:
+        doctest.master = None
+
+    try:
+        ctypes = sys.modules['ctypes']
+    except KeyError:
         pass
     else:
         ctypes._reset_cache()
