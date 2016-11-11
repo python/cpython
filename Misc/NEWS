@@ -55,6 +55,11 @@ Documentation
 
 - Issue #28513: Documented command-line interface of zipfile.
 
+Tests
+-----
+
+- Issue #23839: Various caches now are cleared before running every test file.
+
 
 What's New in Python 3.6.0 beta 3
 =================================
