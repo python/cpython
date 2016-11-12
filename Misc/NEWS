@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on Mac OS X
+  when decode astral characters.  Patch by Xiang Zhang.
+
 - Issue #19398: Extra slash no longer added to sys.path components in case of
   empty compile-time PYTHONPATH components.
 
