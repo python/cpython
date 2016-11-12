@@ -266,9 +266,9 @@ represented as a plain integer, in which case they yield a long integer.
 Integer literals with an ``'L'`` or ``'l'`` suffix yield long integers (``'L'``
 is preferred because ``1l`` looks too much like eleven!).  Numeric literals
 containing a decimal point or an exponent sign yield floating point numbers.
-Appending ``'j'`` or ``'J'`` to a numeric literal yields a complex number with a
-zero real part. A complex numeric literal is the sum of a real and an imaginary
-part.
+Appending ``'j'`` or ``'J'`` to a numeric literal yields an imaginary number
+(a complex number with a zero real part) which you can add to an integer or
+float to get a complex number with real and imaginary parts.
 
 .. index::
    single: arithmetic
