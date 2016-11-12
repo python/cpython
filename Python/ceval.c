@@ -2405,8 +2405,10 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
         TARGET(DELETE_DEREF) {
             PyObject *cell = freevars[oparg];
-            if (PyCell_GET(cell) != NULL) {
-                PyCell_Set(cell, NULL);
+            PyObject *oldobj = PyCell_GET(cell);
+            if (oldobj != NULL) {
+                PyCell_SET(cell, NULL);
+                Py_DECREF(oldobj);
                 DISPATCH();
             }
             format_exc_unbound(co, oparg);
@@ -5351,8 +5353,10 @@ unicode_concatenate(PyObject *v, PyObject *w,
             PyObject **freevars = (f->f_localsplus +
                                    f->f_code->co_nlocals);
             PyObject *c = freevars[oparg];
-            if (PyCell_GET(c) == v)
-                PyCell_Set(c, NULL);
+            if (PyCell_GET(c) ==  v) {
+                PyCell_SET(c, NULL);
+                Py_DECREF(v);
+            }
             break;
         }
         case STORE_NAME:
