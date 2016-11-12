@@ -5101,7 +5101,7 @@ _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
 #if SIZEOF_WCHAR_T == 4
             assert(0);
 #else
-            assert(Py_UNICODE_IS_SURROGATE(ch));
+            assert(ch > 0xFFFF && ch <= MAX_UNICODE);
             /*  compute and append the two surrogates: */
             unicode[outpos++] = (wchar_t)Py_UNICODE_HIGH_SURROGATE(ch);
             unicode[outpos++] = (wchar_t)Py_UNICODE_LOW_SURROGATE(ch);
