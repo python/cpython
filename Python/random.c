@@ -9,9 +9,10 @@
 #  ifdef HAVE_LINUX_RANDOM_H
 #    include <linux/random.h>
 #  endif
-#  ifdef HAVE_GETRANDOM
+#  if defined(HAVE_GETRANDOM) || defined(HAVE_GETENTROPY)
 #    include <sys/random.h>
-#  elif defined(HAVE_GETRANDOM_SYSCALL)
+#  endif
+#  if !defined(HAVE_GETRANDOM) && defined(HAVE_GETRANDOM_SYSCALL)
 #    include <sys/syscall.h>
 #  endif
 #endif
