@@ -295,6 +295,9 @@ Build
 - Issue #27806: Fix 32-bit builds on macOS Sierra 10.12 broken by removal of
   deprecated QuickTime/QuickTime.h header file.  Patch by Aleks Bunin.
 
+- Issue #28676: Prevent missing 'getentropy' declaration warning on macOS.
+  Initial patch by Gareth Rees.
+
 Tools/Demos
 -----------
 

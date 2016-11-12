@@ -3,6 +3,9 @@
 #include <windows.h>
 #else
 #include <fcntl.h>
+#if defined(HAVE_GETRANDOM) || defined(HAVE_GETENTROPY)
+#include <sys/random.h>
+#endif
 #endif
 
 #ifdef Py_DEBUG
