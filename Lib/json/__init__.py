@@ -325,7 +325,7 @@ def loads(s, encoding=None, cls=None, object_hook=None, parse_float=None,
     for JSON integers (e.g. float).
 
     ``parse_constant``, if specified, will be called with one of the
-    following strings: -Infinity, Infinity, NaN, null, true, false.
+    following strings: -Infinity, Infinity, NaN.
     This can be used to raise an exception if invalid JSON numbers
     are encountered.
 
