@@ -626,7 +626,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual((x+stop)%step, 0)
 
     def test_choices_algorithms(self):
-        # The various ways of specifing weights should produce the same results
+        # The various ways of specifying weights should produce the same results
         choices = self.gen.choices
         n = 13132817
 
