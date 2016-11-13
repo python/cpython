@@ -1442,7 +1442,8 @@ class GeneralModuleTests(unittest.TestCase):
         # type and populates the socket object.
         #
         # On Windows this trick won't work, so the test is skipped.
-        fd, _ = tempfile.mkstemp()
+        fd, path = tempfile.mkstemp()
+        self.addCleanup(os.unlink, path)
         with socket.socket(family=42424, type=13331, fileno=fd) as s:
             self.assertEqual(s.family, 42424)
             self.assertEqual(s.type, 13331)
