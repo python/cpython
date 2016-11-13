@@ -1892,7 +1892,7 @@ to request exclusive creation.  (Contributed by Berker Peksag in :issue:`21717`.
 
 The :meth:`TarFile.extractall() <tarfile.TarFile.extractall>` and
 :meth:`TarFile.extract() <tarfile.TarFile.extract>` methods now take a keyword
-argument *numeric_only*.  If set to ``True``, the extracted files and
+argument *numeric_owner*.  If set to ``True``, the extracted files and
 directories will be owned by the numeric ``uid`` and ``gid`` from the tarfile.
 If set to ``False`` (the default, and the behavior in versions prior to 3.5),
 they will be owned by the named user and group in the tarfile.

@@ -388,7 +388,7 @@ be finalized; only the internally used file object will be closed. See the
       dots ``".."``.
 
    .. versionchanged:: 3.5
-      Added the *numeric_only* parameter.
+      Added the *numeric_owner* parameter.
 
 
 .. method:: TarFile.extract(member, path="", set_attrs=True, *, numeric_owner=False)
@@ -416,7 +416,7 @@ be finalized; only the internally used file object will be closed. See the
       Added the *set_attrs* parameter.
 
    .. versionchanged:: 3.5
-      Added the *numeric_only* parameter.
+      Added the *numeric_owner* parameter.
 
 .. method:: TarFile.extractfile(member)
 
