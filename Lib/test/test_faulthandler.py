@@ -44,7 +44,7 @@ def temporary_filename():
 
 def requires_raise(test):
     return (test if not is_android else
-                    requires_android_level(24, 'raise() is buggy')(test))
+                   requires_android_level(24, 'raise() is buggy')(test))
 
 class FaultHandlerTests(unittest.TestCase):
     def get_output(self, code, filename=None, fd=None):
