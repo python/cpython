@@ -90,7 +90,7 @@ __all__ = [
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
-    "check__all__",
+    "check__all__", "requires_android_level",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
     # network
@@ -735,7 +735,8 @@ requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
 is_jython = sys.platform.startswith('java')
 
-is_android = bool(sysconfig.get_config_var('ANDROID_API_LEVEL'))
+_ANDROID_API_LEVEL = sysconfig.get_config_var('ANDROID_API_LEVEL')
+is_android = (_ANDROID_API_LEVEL > 0)
 
 if sys.platform != 'win32':
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -1724,6 +1725,13 @@ def requires_resource(resource):
         return _id
     else:
         return unittest.skip("resource {0!r} is not enabled".format(resource))
+
+def requires_android_level(level, reason):
+    if is_android and _ANDROID_API_LEVEL < level:
+        return unittest.skip('%s at Android API level %d' %
+                             (reason, _ANDROID_API_LEVEL))
+    else:
+        return _id
 
 def cpython_only(test):
     """
