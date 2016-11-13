@@ -736,7 +736,7 @@ requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 is_jython = sys.platform.startswith('java')
 
 _ANDROID_API_LEVEL = sysconfig.get_config_var('ANDROID_API_LEVEL')
-is_android = (_ANDROID_API_LEVEL > 0)
+is_android = (_ANDROID_API_LEVEL is not None and _ANDROID_API_LEVEL > 0)
 
 if sys.platform != 'win32':
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
