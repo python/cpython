@@ -123,7 +123,7 @@ Library
   by representing the scale as float value internally in Tk.  tkinter.IntVar
   now works if float value is set to underlying Tk variable.
 
-- Issue #18844: The various ways of specifing weights for random.choices()
+- Issue #18844: The various ways of specifying weights for random.choices()
   now produce the same result sequences.
 
 - Issue #28255: calendar.TextCalendar().prmonth() no longer prints a space
