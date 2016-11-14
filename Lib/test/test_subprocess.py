@@ -293,7 +293,8 @@ class ProcessTestCase(BaseTestCase):
         # Verify first that the call succeeds without the executable arg.
         pre_args = [sys.executable, "-c"]
         self._assert_python(pre_args)
-        self.assertRaises(FileNotFoundError, self._assert_python, pre_args,
+        self.assertRaises((FileNotFoundError, PermissionError),
+                          self._assert_python, pre_args,
                           executable="doesnotexist")
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
@@ -2753,7 +2754,7 @@ class ContextManagerTests(BaseTestCase):
             self.assertEqual(proc.returncode, 1)
 
     def test_invalid_args(self):
-        with self.assertRaises(FileNotFoundError) as c:
+        with self.assertRaises((FileNotFoundError, PermissionError)) as c:
             with subprocess.Popen(['nonexisting_i_hope'],
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as proc:
