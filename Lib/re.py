@@ -119,6 +119,7 @@ This module also defines an exception 'error'.
 
 """
 
+import enum
 import sre_compile
 import sre_parse
 import functools
@@ -138,18 +139,26 @@ __all__ = [
 
 __version__ = "2.2.1"
 
-# flags
-A = ASCII = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
-I = IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE # ignore case
-L = LOCALE = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
-U = UNICODE = sre_compile.SRE_FLAG_UNICODE # assume unicode "locale"
-M = MULTILINE = sre_compile.SRE_FLAG_MULTILINE # make anchors look for newline
-S = DOTALL = sre_compile.SRE_FLAG_DOTALL # make dot match newline
-X = VERBOSE = sre_compile.SRE_FLAG_VERBOSE # ignore whitespace and comments
-
-# sre extensions (experimental, don't rely on these)
-T = TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
-DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
+class RegexFlag(enum.IntFlag):
+    ASCII = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
+    IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE # ignore case
+    LOCALE = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
+    UNICODE = sre_compile.SRE_FLAG_UNICODE # assume unicode "locale"
+    MULTILINE = sre_compile.SRE_FLAG_MULTILINE # make anchors look for newline
+    DOTALL = sre_compile.SRE_FLAG_DOTALL # make dot match newline
+    VERBOSE = sre_compile.SRE_FLAG_VERBOSE # ignore whitespace and comments
+    A = ASCII
+    I = IGNORECASE
+    L = LOCALE
+    U = UNICODE
+    M = MULTILINE
+    S = DOTALL
+    X = VERBOSE
+    # sre extensions (experimental, don't rely on these)
+    TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
+    T = TEMPLATE
+    DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
+globals().update(RegexFlag.__members__)
 
 # sre exception
 error = sre_compile.error
