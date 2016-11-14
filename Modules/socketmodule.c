@@ -168,12 +168,14 @@ if_indextoname(index) -- return the corresponding interface name\n\
 #endif
 
 #ifdef HAVE_GETHOSTBYNAME_R
-# if defined(_AIX)
+# if defined(_AIX) && !defined(_LINUX_SOURCE_COMPAT)
 #  define HAVE_GETHOSTBYNAME_R_3_ARG
 # elif defined(__sun) || defined(__sgi)
 #  define HAVE_GETHOSTBYNAME_R_5_ARG
 # elif defined(linux)
 /* Rely on the configure script */
+# elif defined(_LINUX_SOURCE_COMPAT) /* Linux compatibility on AIX */
+#  define HAVE_GETHOSTBYNAME_R_6_ARG
 # else
 #  undef HAVE_GETHOSTBYNAME_R
 # endif
