@@ -158,6 +158,14 @@ def _parse(tokens, priority=-1):
 
     return result, nexttok
 
+def _as_int(n):
+    try:
+        i = round(n)
+    except TypeError:
+        raise TypeError('Plural value must be an integer, got %s' %
+                        (n.__class__.__name__,))
+    return n
+
 def c2py(plural):
     """Gets a C expression as used in PO files for plural forms and returns a
     Python function that implements an equivalent expression.
@@ -181,11 +189,11 @@ def c2py(plural):
             elif c == ')':
                 depth -= 1
 
-        ns = {}
+        ns = {'_as_int': _as_int}
         exec('''if 1:
             def func(n):
                 if not isinstance(n, int):
-                    raise ValueError('Plural value must be an integer.')
+                    n = _as_int(n)
                 return int(%s)
             ''' % result, ns)
         return ns['func']
