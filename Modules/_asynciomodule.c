@@ -1031,31 +1031,46 @@ FutureIter_throw(futureiterobject *self, PyObject *args)
     }
     if (tb == Py_None) {
         tb = NULL;
+    } else if (tb != NULL && !PyTraceBack_Check(tb)) {
+        PyErr_SetString(PyExc_TypeError, "throw() third argument must be a traceback");
+        return NULL;
+    }
+
+    Py_INCREF(type);
+    Py_XINCREF(val);
+    Py_XINCREF(tb);
+
+    if (PyExceptionClass_Check(type)) {
+        PyErr_NormalizeException(&type, &val, &tb);
+    } else if (PyExceptionInstance_Check(type)) {
+        if (val) {
+            PyErr_SetString(PyExc_TypeError,
+                            "instance exception may not have a separate value");
+            goto fail;
+        }
+        val = type;
+        type = PyExceptionInstance_Class(type);
+        Py_INCREF(type);
+        if (tb == NULL)
+            tb = PyException_GetTraceback(val);
+    } else {
+        PyErr_SetString(PyExc_TypeError,
+                        "exceptions must be classes deriving BaseException or "
+                        "instances of such a class");
+        goto fail;
     }
 
     Py_CLEAR(self->future);
 
-    if (tb != NULL) {
-        PyErr_Restore(type, val, tb);
-    }
-    else if (val != NULL) {
-        PyErr_SetObject(type, val);
-    }
-    else {
-        if (PyExceptionClass_Check(type)) {
-            val = PyObject_CallObject(type, NULL);
-            PyErr_SetObject(type, val);
-            Py_DECREF(val);
-        }
-        else {
-            val = type;
-            assert (PyExceptionInstance_Check(val));
-            type = (PyObject*)Py_TYPE(val);
-            assert (PyExceptionClass_Check(type));
-            PyErr_SetObject(type, val);
-        }
-    }
+    PyErr_Restore(type, val, tb);
+
     return FutureIter_iternext(self);
+
+  fail:
+    Py_DECREF(type);
+    Py_XDECREF(val);
+    Py_XDECREF(tb);
+    return NULL;
 }
 
 static PyObject *
