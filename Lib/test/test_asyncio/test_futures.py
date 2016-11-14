@@ -466,6 +466,15 @@ class BaseFutureTests:
             self.fail('StopIteration was expected')
         self.assertEqual(result, (1, 2))
 
+    def test_future_iter_throw(self):
+        fut = self._new_future(loop=self.loop)
+        fi = iter(fut)
+        self.assertRaises(TypeError, fi.throw,
+                          Exception, Exception("elephant"), 32)
+        self.assertRaises(TypeError, fi.throw,
+                          Exception("elephant"), Exception("elephant"))
+        self.assertRaises(TypeError, fi.throw, list)
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
