@@ -295,7 +295,7 @@ function body.  In Python 3.6 this restriction has been lifted, making it
 possible to define *asynchronous generators*::
 
     async def ticker(delay, to):
-        """Yield numbers from 0 to `to` every `delay` seconds."""
+        """Yield numbers from 0 to *to* every *delay* seconds."""
         for i in range(to):
             yield i
             await asyncio.sleep(delay)
@@ -490,7 +490,7 @@ between two moments in time for which local times are the same::
     07:00:00 UTC = 02:00:00 EST 0
 
 The values of the :attr:`fold <datetime.datetime.fold>` attribute have the
-value `0`  all instances except those that represent the second
+value ``0`` for all instances except those that represent the second
 (chronologically) moment in time in an ambiguous case.
 
 .. seealso::
@@ -741,6 +741,12 @@ Some smaller changes made to the core Python language are:
   before the first use of the affected name in the same scope.
   Previously this was a ``SyntaxWarning``.
 
+* It is now possible to set a :ref:`special method <specialnames>` to
+  ``None`` to indicate that the corresponding operation is not available.
+  For example, if a class sets :meth:`__iter__` to ``None``, the class
+  is not iterable.
+  (Contributed by Andrew Barnert and Ivan Levkivskyi in :issue:`25958`.)
+
 * Long sequences of repeated traceback lines are now abbreviated as
   ``"[Previous line repeated {count} more times]"`` (see
   :ref:`whatsnew36-traceback` for an example).
@@ -898,8 +904,13 @@ and :const:`cmath.nanj` to match the format used by complex repr.
 collections
 -----------
 
-The new :class:`~collections.Collection` abstract base class has been
+The new :class:`~collections.abc.Collection` abstract base class has been
 added to represent sized iterable container classes.
+(Contributed by Ivan Levkivskyi, docs by Neil Girdhar in :issue:`27598`.)
+
+The new :class:`~collections.abc.Reversible` abstract base class represents
+iterable classes that also provide the :meth:`__reversed__`.
+(Contributed by Ivan Levkivskyi in :issue:`25987`.)
 
 The :func:`~collections.namedtuple` function now accepts an optional
 keyword argument *module*, which, when specified, is used for
@@ -1509,6 +1520,12 @@ Since the :mod:`typing` module was :term:`provisional <provisional api>`
 in Python 3.5, all changes introduced in Python 3.6 have also been
 backported to Python 3.5.x.
 
+The :mod:`typing` module has a much improved support for generic type
+aliases.  For example ``Dict[str, Tuple[S, T]]`` is now a valid
+type annotation.
+(Contributed by Guido van Rossum in `Github #195
+<https://github.com/python/typing/pull/195>`_.)
+
 The :class:`typing.ContextManager` class has been added for
 representing :class:`contextlib.AbstractContextManager`.
 (Contributed by Brett Cannon in :issue:`25609`.)
@@ -1692,12 +1709,17 @@ Optimizations
 * The :class:`Task <asyncio.tasks.Task>` now has an optimized
   C implementation. (Contributed by Yury Selivanov in :issue:`28544`.)
 
+* Various implementation improvements in the :mod:`typing` module
+  (such as caching of generic types) allow up to 30 times performance
+  improvements and reduced memory footprint.
+
 * The ASCII decoder is now up to 60 times as fast for error handlers
   ``surrogateescape``, ``ignore`` and ``replace`` (Contributed
   by Victor Stinner in :issue:`24870`).
 
 * The ASCII and the Latin1 encoders are now up to 3 times as fast for the
-  error handler ``surrogateescape`` (Contributed by Victor Stinner in :issue:`25227`).
+  error handler ``surrogateescape``
+  (Contributed by Victor Stinner in :issue:`25227`).
 
 * The UTF-8 encoder is now up to 75 times as fast for error handlers
   ``ignore``, ``replace``, ``surrogateescape``, ``surrogatepass`` (Contributed
