@@ -1771,6 +1771,12 @@ SUBPATTERN None 0 0
         self.checkPatternError(r'(?<>)', 'unknown extension ?<>', 1)
         self.checkPatternError(r'(?', 'unexpected end of pattern', 2)
 
+    def test_enum(self):
+        # Issue #28082: Check that str(flag) returns a human readable string
+        # instead of an integer
+        self.assertIn('ASCII', str(re.A))
+        self.assertIn('DOTALL', str(re.S))
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
