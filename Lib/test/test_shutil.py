@@ -1869,7 +1869,8 @@ class TermsizeTests(unittest.TestCase):
         """
         try:
             size = subprocess.check_output(['stty', 'size']).decode().split()
-        except (FileNotFoundError, subprocess.CalledProcessError):
+        except (FileNotFoundError, PermissionError,
+                subprocess.CalledProcessError):
             self.skipTest("stty invocation failed")
         expected = (int(size[1]), int(size[0])) # reversed order
 
