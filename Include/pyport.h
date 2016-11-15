@@ -498,7 +498,7 @@ extern "C" {
 #endif
 
 
-/* Py_HOT_FUNCTION
+/* _Py_HOT_FUNCTION
  * The hot attribute on a function is used to inform the compiler that the
  * function is a hot spot of the compiled program. The function is optimized
  * more aggressively and on many target it is placed into special subsection of
@@ -506,7 +506,7 @@ extern "C" {
  * locality.
  *
  * Usage:
- *    int Py_HOT_FUNCTION x() { return 3; }
+ *    int _Py_HOT_FUNCTION x() { return 3; }
  *
  * Issue #28618: This attribute must not be abused, otherwise it can have a
  * negative effect on performance. Only the functions were Python spend most of
