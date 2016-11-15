@@ -465,6 +465,8 @@ Library
 
 - Issue #28653: Fix a refleak in functools.lru_cache.
 
+- Issue #28703: Fix asyncio.iscoroutinefunction to handle Mock objects.
+
 IDLE
 ----
 
