@@ -1865,6 +1865,20 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(CoolEmployee._fields, ('name', 'cool'))
         self.assertEqual(CoolEmployee._field_types, dict(name=str, cool=int))
 
+    @skipUnless(PY36, 'Python 3.6 required')
+    def test_namedtuple_keyword_usage(self):
+        LocalEmployee = NamedTuple("LocalEmployee", name=str, age=int)
+        nick = LocalEmployee('Nick', 25)
+        self.assertIsInstance(nick, tuple)
+        self.assertEqual(nick.name, 'Nick')
+        self.assertEqual(LocalEmployee.__name__, 'LocalEmployee')
+        self.assertEqual(LocalEmployee._fields, ('name', 'age'))
+        self.assertEqual(LocalEmployee._field_types, dict(name=str, age=int))
+        with self.assertRaises(TypeError):
+            NamedTuple('Name', [('x', int)], y=str)
+        with self.assertRaises(TypeError):
+            NamedTuple('Name', x=1, y='a')
+
     def test_pickle(self):
         global Emp  # pickle wants to reference the class by name
         Emp = NamedTuple('Emp', [('name', str), ('id', int)])
