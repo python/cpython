@@ -120,9 +120,9 @@ if "%do_pgo%"=="true" (
     @echo off
     call :Kill
     set conf=PGUpdate
+    set target=Build
 )
 goto Build
-
 :Kill
 echo on
 msbuild "%dir%\pythoncore.vcxproj" /t:KillPython %verbose%^
