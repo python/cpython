@@ -472,11 +472,24 @@ class CalculationTests(unittest.TestCase):
                         "Calculation of day of the week failed;"
                          "%s != %s" % (result.tm_wday, self.time_tuple.tm_wday))
 
+    if support.is_android:
+        # Issue #26929: strftime() on Android incorrectly formats %V or %G for
+        # the last or the first incomplete week in a year.
+        _ymd_excluded = ((1905, 1, 1), (1906, 12, 31), (2008, 12, 29),
+                        (1917, 12, 31))
+        _formats_excluded = ('%G %V',)
+    else:
+        _ymd_excluded = ()
+        _formats_excluded = ()
+
     def test_week_of_year_and_day_of_week_calculation(self):
         # Should be able to infer date if given year, week of year (%U or %W)
         # and day of the week
         def test_helper(ymd_tuple, test_reason):
             for year_week_format in ('%Y %W', '%Y %U', '%G %V'):
+                if (year_week_format in self._formats_excluded and
+                        ymd_tuple in self._ymd_excluded):
+                    return
                 for weekday_format in ('%w', '%u', '%a', '%A'):
                     format_string = year_week_format + ' ' + weekday_format
                     with self.subTest(test_reason,
