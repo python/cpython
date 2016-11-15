@@ -683,7 +683,7 @@ the <dummy> value.
 For both, when the key isn't found a DKIX_EMPTY is returned. hashpos returns
 where the key index should be inserted.
 */
-static Py_ssize_t
+static Py_ssize_t _Py_HOT_FUNCTION
 lookdict(PyDictObject *mp, PyObject *key,
          Py_hash_t hash, PyObject ***value_addr, Py_ssize_t *hashpos)
 {
@@ -798,7 +798,7 @@ top:
 }
 
 /* Specialized version for string-only keys */
-static Py_ssize_t
+static Py_ssize_t _Py_HOT_FUNCTION
 lookdict_unicode(PyDictObject *mp, PyObject *key,
                  Py_hash_t hash, PyObject ***value_addr, Py_ssize_t *hashpos)
 {
@@ -873,7 +873,7 @@ lookdict_unicode(PyDictObject *mp, PyObject *key,
 
 /* Faster version of lookdict_unicode when it is known that no <dummy> keys
  * will be present. */
-static Py_ssize_t
+static Py_ssize_t _Py_HOT_FUNCTION
 lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
                          Py_hash_t hash, PyObject ***value_addr,
                          Py_ssize_t *hashpos)
@@ -941,7 +941,7 @@ lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
  * Split tables only contain unicode keys and no dummy keys,
  * so algorithm is the same as lookdict_unicode_nodummy.
  */
-static Py_ssize_t
+static Py_ssize_t _Py_HOT_FUNCTION
 lookdict_split(PyDictObject *mp, PyObject *key,
                Py_hash_t hash, PyObject ***value_addr, Py_ssize_t *hashpos)
 {
