@@ -139,13 +139,13 @@ if not "%CERTNAME%" EQU "" (
 ) else (
     set CERTOPTS=
 )
-
+if not "%PGO%" EQU "" (
+    set PGOOPTS=--pgo-job "%PGO%"
+) else (
+    set PGOOPTS=
+)
 if not "%SKIPBUILD%" EQU "1" (
-    if "%PGO%" EQU "" (
-        set PGOOPTS=
-    ) else (
-        set PGOOPTS=--pgo --pgojob "%PGO%"
-    )
+    @echo call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -t %TARGET% %CERTOPTS% %PGOOPTS%
     @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -t %TARGET% %CERTOPTS% %PGOOPTS%
     @if errorlevel 1 exit /B
     @rem build.bat turns echo back on, so we disable it again
