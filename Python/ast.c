@@ -4129,7 +4129,13 @@ warn_invalid_escape_sequence(struct compiling *c, const node *n,
                                    NULL, NULL) < 0 &&
         PyErr_ExceptionMatches(PyExc_DeprecationWarning))
     {
-        const char *s = PyUnicode_AsUTF8(msg);
+        const char *s;
+
+        /* Replace the DeprecationWarning exception with a SyntaxError
+           to get a more accurate error report */
+        PyErr_Clear();
+
+        s = PyUnicode_AsUTF8(msg);
         if (s != NULL) {
             ast_error(c, n, s);
         }
