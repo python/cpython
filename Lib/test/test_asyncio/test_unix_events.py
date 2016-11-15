@@ -4,6 +4,7 @@ import collections
 import errno
 import io
 import os
+import pathlib
 import signal
 import socket
 import stat
@@ -248,6 +249,15 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
             coro = self.loop.create_unix_server(lambda: None, path)
             srv = self.loop.run_until_complete(coro)
+            srv.close()
+            self.loop.run_until_complete(srv.wait_closed())
+
+    @unittest.skipUnless(hasattr(os, 'fspath'), 'no os.fspath')
+    def test_create_unix_server_pathlib(self):
+        with test_utils.unix_socket_path() as path:
+            path = pathlib.Path(path)
+            srv_coro = self.loop.create_unix_server(lambda: None, path)
+            srv = self.loop.run_until_complete(srv_coro)
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
