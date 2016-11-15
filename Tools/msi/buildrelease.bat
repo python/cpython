@@ -141,11 +141,6 @@ if not "%CERTNAME%" EQU "" (
 )
 
 if not "%SKIPBUILD%" EQU "1" (
-    @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -d -t %TARGET% %CERTOPTS%
-    @if errorlevel 1 exit /B
-    @rem build.bat turns echo back on, so we disable it again
-    @echo off
-
     if "%PGO%" EQU "" (
         set PGOOPTS=
     ) else (
