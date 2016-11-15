@@ -1390,6 +1390,8 @@ class BaseTaskTests:
             yield
         self.assertTrue(asyncio.iscoroutinefunction(fn2))
 
+        self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
+
     def test_yield_vs_yield_from(self):
         fut = self.new_future(self.loop)
 
