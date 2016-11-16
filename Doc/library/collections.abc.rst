@@ -92,6 +92,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 :class:`Coroutine`         :class:`Awaitable`     ``send``, ``throw``     ``close``
 :class:`AsyncIterable`                            ``__aiter__``
 :class:`AsyncIterator`     :class:`AsyncIterable` ``__anext__``           ``__aiter__``
+:class:`AsyncGenerator`    :class:`AsyncIterator` ``asend``, ``athrow``   ``aclose``, ``__aiter__``, ``__anext__``
 ========================== ====================== ======================= ====================================================
 
 
@@ -221,6 +222,13 @@ ABC                        Inherits from          Abstract Methods        Mixin 
    methods.  See also the definition of :term:`asynchronous iterator`.
 
    .. versionadded:: 3.5
+
+.. class:: Generator
+
+   ABC for asynchronous generator classes that implement the protocol
+   defined in :pep:`525` and :pep:`492`.
+
+   .. versionadded:: 3.6
 
 
 These ABCs allow us to ask classes or instances if they provide
