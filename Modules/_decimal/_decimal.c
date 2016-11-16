@@ -1118,12 +1118,12 @@ context_getattr(PyObject *self, PyObject *name)
     PyObject *retval;
 
     if (PyUnicode_Check(name)) {
-        if (PyUnicode_CompareWithASCIIString(name, "traps") == 0) {
+        if (_PyUnicode_EqualToASCIIString(name, "traps")) {
             retval = ((PyDecContextObject *)self)->traps;
             Py_INCREF(retval);
             return retval;
         }
-        if (PyUnicode_CompareWithASCIIString(name, "flags") == 0) {
+        if (_PyUnicode_EqualToASCIIString(name, "flags")) {
             retval = ((PyDecContextObject *)self)->flags;
             Py_INCREF(retval);
             return retval;
@@ -1143,10 +1143,10 @@ context_setattr(PyObject *self, PyObject *name, PyObject *value)
     }
 
     if (PyUnicode_Check(name)) {
-        if (PyUnicode_CompareWithASCIIString(name, "traps") == 0) {
+        if (_PyUnicode_EqualToASCIIString(name, "traps")) {
             return context_settraps_dict(self, value);
         }
-        if (PyUnicode_CompareWithASCIIString(name, "flags") == 0) {
+        if (_PyUnicode_EqualToASCIIString(name, "flags")) {
             return context_setstatus_dict(self, value);
         }
     }
@@ -2449,14 +2449,14 @@ dectuple_as_str(PyObject *dectuple)
     tmp = PyTuple_GET_ITEM(dectuple, 2);
     if (PyUnicode_Check(tmp)) {
         /* special */
-        if (PyUnicode_CompareWithASCIIString(tmp, "F") == 0) {
+        if (_PyUnicode_EqualToASCIIString(tmp, "F")) {
             strcat(sign_special, "Inf");
             is_infinite = 1;
         }
-        else if (PyUnicode_CompareWithASCIIString(tmp, "n") == 0) {
+        else if (_PyUnicode_EqualToASCIIString(tmp, "n")) {
             strcat(sign_special, "NaN");
         }
-        else if (PyUnicode_CompareWithASCIIString(tmp, "N") == 0) {
+        else if (_PyUnicode_EqualToASCIIString(tmp, "N")) {
             strcat(sign_special, "sNaN");
         }
         else {
