@@ -1216,7 +1216,7 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
             return -1;
         }
         for (candidate = begin_statements; *candidate; candidate++) {
-            if (!PyUnicode_CompareWithASCIIString(uppercase_level, *candidate + 6))
+            if (_PyUnicode_EqualToASCIIString(uppercase_level, *candidate + 6))
                 break;
         }
         Py_DECREF(uppercase_level);
