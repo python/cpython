@@ -934,7 +934,7 @@ PyErr_WriteUnraisable(PyObject *obj)
             goto done;
     }
     else {
-        if (_PyUnicode_CompareWithId(moduleName, &PyId_builtins) != 0) {
+        if (!_PyUnicode_EqualToASCIIId(moduleName, &PyId_builtins)) {
             if (PyFile_WriteObject(moduleName, f, Py_PRINT_RAW) < 0)
                 goto done;
             if (PyFile_WriteString(".", f) < 0)
