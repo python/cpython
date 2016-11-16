@@ -934,12 +934,12 @@ forbidden_name(struct compiling *c, identifier name, const node *n,
                int full_checks)
 {
     assert(PyUnicode_Check(name));
-    if (PyUnicode_CompareWithASCIIString(name, "__debug__") == 0) {
+    if (_PyUnicode_EqualToASCIIString(name, "__debug__")) {
         ast_error(c, n, "assignment to keyword");
         return 1;
     }
-    if (PyUnicode_CompareWithASCIIString(name, "async") == 0 ||
-        PyUnicode_CompareWithASCIIString(name, "await") == 0)
+    if (_PyUnicode_EqualToASCIIString(name, "async") ||
+        _PyUnicode_EqualToASCIIString(name, "await"))
     {
         PyObject *message = PyUnicode_FromString(
             "'async' and 'await' will become reserved keywords"
@@ -963,7 +963,7 @@ forbidden_name(struct compiling *c, identifier name, const node *n,
     if (full_checks) {
         const char * const *p;
         for (p = FORBIDDEN; *p; p++) {
-            if (PyUnicode_CompareWithASCIIString(name, *p) == 0) {
+            if (_PyUnicode_EqualToASCIIString(name, *p)) {
                 ast_error(c, n, "assignment to keyword");
                 return 1;
             }

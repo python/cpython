@@ -503,7 +503,7 @@ warn_explicit(PyObject *category, PyObject *message,
     if (action == NULL)
         goto cleanup;
 
-    if (PyUnicode_CompareWithASCIIString(action, "error") == 0) {
+    if (_PyUnicode_EqualToASCIIString(action, "error")) {
         PyErr_SetObject(category, message);
         goto cleanup;
     }
@@ -511,13 +511,13 @@ warn_explicit(PyObject *category, PyObject *message,
     /* Store in the registry that we've been here, *except* when the action
        is "always". */
     rc = 0;
-    if (PyUnicode_CompareWithASCIIString(action, "always") != 0) {
+    if (!_PyUnicode_EqualToASCIIString(action, "always")) {
         if (registry != NULL && registry != Py_None &&
                 PyDict_SetItem(registry, key, Py_True) < 0)
             goto cleanup;
-        else if (PyUnicode_CompareWithASCIIString(action, "ignore") == 0)
+        else if (_PyUnicode_EqualToASCIIString(action, "ignore"))
             goto return_none;
-        else if (PyUnicode_CompareWithASCIIString(action, "once") == 0) {
+        else if (_PyUnicode_EqualToASCIIString(action, "once")) {
             if (registry == NULL || registry == Py_None) {
                 registry = get_once_registry();
                 if (registry == NULL)
@@ -526,12 +526,12 @@ warn_explicit(PyObject *category, PyObject *message,
             /* _once_registry[(text, category)] = 1 */
             rc = update_registry(registry, text, category, 0);
         }
-        else if (PyUnicode_CompareWithASCIIString(action, "module") == 0) {
+        else if (_PyUnicode_EqualToASCIIString(action, "module")) {
             /* registry[(text, category, 0)] = 1 */
             if (registry != NULL && registry != Py_None)
                 rc = update_registry(registry, text, category, 0);
         }
-        else if (PyUnicode_CompareWithASCIIString(action, "default") != 0) {
+        else if (!_PyUnicode_EqualToASCIIString(action, "default")) {
             PyErr_Format(PyExc_RuntimeError,
                         "Unrecognized action (%R) in warnings.filters:\n %R",
                         action, item);
@@ -715,7 +715,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
     else {
         *filename = NULL;
-        if (*module != Py_None && PyUnicode_CompareWithASCIIString(*module, "__main__") == 0) {
+        if (*module != Py_None && _PyUnicode_EqualToASCIIString(*module, "__main__")) {
             PyObject *argv = _PySys_GetObjectId(&PyId_argv);
             /* PyList_Check() is needed because sys.argv is set to None during
                Python finalization */
