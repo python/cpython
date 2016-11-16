@@ -2038,7 +2038,7 @@ PyAPI_FUNC(int) PyUnicode_Compare(
 
 #ifndef Py_LIMITED_API
 /* Test whether a unicode is equal to ASCII identifier.  Return 1 if true,
-   0 otherwise.  Return 0 if any argument contains non-ASCII characters.
+   0 otherwise.  The right argument must be ASCII identifier.
    Any error occurs inside will be cleared before return. */
 
 PyAPI_FUNC(int) _PyUnicode_EqualToASCIIId(
@@ -2060,7 +2060,7 @@ PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
 
 #ifndef Py_LIMITED_API
 /* Test whether a unicode is equal to ASCII string.  Return 1 if true,
-   0 otherwise.  Return 0 if any argument contains non-ASCII characters.
+   0 otherwise.  The right argument must be ASCII-encoded string.
    Any error occurs inside will be cleared before return. */
 
 PyAPI_FUNC(int) _PyUnicode_EqualToASCIIString(
