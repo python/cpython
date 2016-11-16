@@ -2048,6 +2048,17 @@ PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
     const char *right           /* ASCII-encoded string */
     );
 
+#ifndef Py_LIMITED_API
+/* Test whether a unicode is equal to ASCII string.  Return 1 if true,
+   0 otherwise.  Return 0 if any argument contains non-ASCII characters.
+   Any error occurs inside will be cleared before return. */
+
+PyAPI_FUNC(int) _PyUnicode_EqualToASCIIString(
+    PyObject *left,
+    const char *right           /* ASCII-encoded string */
+    );
+#endif
+
 /* Rich compare two strings and return one of the following:
 
    - NULL in case an exception was raised
