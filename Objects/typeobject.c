@@ -2412,7 +2412,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                 }
                 add_dict++;
             }
-            if (PyUnicode_CompareWithASCIIString(tmp, "__weakref__") == 0) {
+            if (_PyUnicode_EqualToASCIIString(tmp, "__weakref__")) {
                 if (!may_add_weak || add_weak) {
                     PyErr_SetString(PyExc_TypeError,
                         "__weakref__ slot disallowed: "
@@ -2436,7 +2436,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             if ((add_dict &&
                  _PyUnicode_CompareWithId(tmp, &PyId___dict__) == 0) ||
                 (add_weak &&
-                 PyUnicode_CompareWithASCIIString(tmp, "__weakref__") == 0))
+                 _PyUnicode_EqualToASCIIString(tmp, "__weakref__")))
                 continue;
             tmp =_Py_Mangle(name, tmp);
             if (!tmp) {

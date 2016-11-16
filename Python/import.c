@@ -936,10 +936,9 @@ static const struct _frozen * find_frozen(PyObject *);
 static int
 is_builtin(PyObject *name)
 {
-    int i, cmp;
+    int i;
     for (i = 0; PyImport_Inittab[i].name != NULL; i++) {
-        cmp = PyUnicode_CompareWithASCIIString(name, PyImport_Inittab[i].name);
-        if (cmp == 0) {
+        if (_PyUnicode_EqualToASCIIString(name, PyImport_Inittab[i].name)) {
             if (PyImport_Inittab[i].initfunc == NULL)
                 return -1;
             else
@@ -1059,7 +1058,7 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 
     for (p = PyImport_Inittab; p->name != NULL; p++) {
         PyModuleDef *def;
-        if (PyUnicode_CompareWithASCIIString(name, p->name) == 0) {
+        if (_PyUnicode_EqualToASCIIString(name, p->name)) {
             if (p->initfunc == NULL) {
                 /* Cannot re-init internal module ("sys" or "builtins") */
                 mod = PyImport_AddModule(namestr);
@@ -1109,7 +1108,7 @@ find_frozen(PyObject *name)
     for (p = PyImport_FrozenModules; ; p++) {
         if (p->name == NULL)
             return NULL;
-        if (PyUnicode_CompareWithASCIIString(name, p->name) == 0)
+        if (_PyUnicode_EqualToASCIIString(name, p->name))
             break;
     }
     return p;
@@ -1310,12 +1309,8 @@ remove_importlib_frames(void)
         int now_in_importlib;
 
         assert(PyTraceBack_Check(tb));
-        now_in_importlib = (PyUnicode_CompareWithASCIIString(
-                                code->co_filename,
-                                importlib_filename) == 0) ||
-                           (PyUnicode_CompareWithASCIIString(
-                                code->co_filename,
-                                external_filename) == 0);
+        now_in_importlib = _PyUnicode_EqualToASCIIString(code->co_filename, importlib_filename) ||
+                           _PyUnicode_EqualToASCIIString(code->co_filename, external_filename);
         if (now_in_importlib && !in_importlib) {
             /* This is the link to this chunk of importlib tracebacks */
             outer_link = prev_link;
@@ -1324,8 +1319,7 @@ remove_importlib_frames(void)
 
         if (in_importlib &&
             (always_trim ||
-             PyUnicode_CompareWithASCIIString(code->co_name,
-                                              remove_frames) == 0)) {
+             _PyUnicode_EqualToASCIIString(code->co_name, remove_frames))) {
             Py_XINCREF(next);
             Py_XSETREF(*outer_link, next);
             prev_link = outer_link;
