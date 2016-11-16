@@ -2310,7 +2310,7 @@ test_string_from_format(PyObject *self, PyObject *args)
     result = PyUnicode_FromFormat(FORMAT, (TYPE)1);                 \
     if (result == NULL)                                             \
         return NULL;                                                \
-    if (PyUnicode_CompareWithASCIIString(result, "1")) {     \
+    if (!_PyUnicode_EqualToASCIIString(result, "1")) {              \
         msg = FORMAT " failed at 1";                                \
         goto Fail;                                                  \
     }                                                               \

@@ -1023,7 +1023,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         else if (PyUnicode_Check(res)) {
             encodefuncentry *e = encodefuncs;
             while (e->name != NULL) {
-                if (!PyUnicode_CompareWithASCIIString(res, e->name)) {
+                if (_PyUnicode_EqualToASCIIString(res, e->name)) {
                     self->encodefunc = e->encodefunc;
                     break;
                 }

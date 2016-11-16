@@ -4936,9 +4936,9 @@ long_to_bytes(PyLongObject *v, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (!PyUnicode_CompareWithASCIIString(byteorder_str, "little"))
+    if (_PyUnicode_EqualToASCIIString(byteorder_str, "little"))
         little_endian = 1;
-    else if (!PyUnicode_CompareWithASCIIString(byteorder_str, "big"))
+    else if (_PyUnicode_EqualToASCIIString(byteorder_str, "big"))
         little_endian = 0;
     else {
         PyErr_SetString(PyExc_ValueError,
@@ -5019,9 +5019,9 @@ long_from_bytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (!PyUnicode_CompareWithASCIIString(byteorder_str, "little"))
+    if (_PyUnicode_EqualToASCIIString(byteorder_str, "little"))
         little_endian = 1;
-    else if (!PyUnicode_CompareWithASCIIString(byteorder_str, "big"))
+    else if (_PyUnicode_EqualToASCIIString(byteorder_str, "big"))
         little_endian = 0;
     else {
         PyErr_SetString(PyExc_ValueError,
