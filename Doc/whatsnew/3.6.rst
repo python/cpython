@@ -912,6 +912,10 @@ The new :class:`~collections.abc.Reversible` abstract base class represents
 iterable classes that also provide the :meth:`__reversed__`.
 (Contributed by Ivan Levkivskyi in :issue:`25987`.)
 
+The new :class:`~collections.abc.AsyncGenerator` abstract base class represents
+asynchronous generators.
+(Contributed by Yury Selivanov in :issue:`28720`.)
+
 The :func:`~collections.namedtuple` function now accepts an optional
 keyword argument *module*, which, when specified, is used for
 the ``__module__`` attribute of the returned named tuple class.
