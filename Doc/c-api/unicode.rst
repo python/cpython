@@ -1638,6 +1638,9 @@ They all return *NULL* or ``-1`` if an exception occurs.
    Compare two strings and return ``-1``, ``0``, ``1`` for less than, equal, and greater than,
    respectively.
 
+   This function returns ``-1`` upon failure, so one should call
+   :c:func:`PyErr_Occurred` to check for errors.
+
 
 .. c:function:: int PyUnicode_CompareWithASCIIString(PyObject *uni, const char *string)
 
@@ -1645,6 +1648,9 @@ They all return *NULL* or ``-1`` if an exception occurs.
    than, equal, and greater than, respectively. It is best to pass only
    ASCII-encoded strings, but the function interprets the input string as
    ISO-8859-1 if it contains non-ASCII characters.
+
+   This function returns ``-1`` upon failure, so one should call
+   :c:func:`PyErr_Occurred` to check for errors.
 
 
 .. c:function:: PyObject* PyUnicode_RichCompare(PyObject *left,  PyObject *right,  int op)

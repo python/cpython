@@ -1390,7 +1390,7 @@ get_ref_type(struct compiler *c, PyObject *name)
 {
     int scope;
     if (c->u->u_scope_type == COMPILER_SCOPE_CLASS &&
-        !PyUnicode_CompareWithASCIIString(name, "__class__"))
+        _PyUnicode_EqualToASCIIString(name, "__class__"))
         return CELL;
     scope = PyST_GetScope(c->u->u_ste, name);
     if (scope == 0) {
@@ -2513,7 +2513,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
     }
 
     if (s->lineno > c->c_future->ff_lineno && s->v.ImportFrom.module &&
-        !PyUnicode_CompareWithASCIIString(s->v.ImportFrom.module, "__future__")) {
+        _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__")) {
         Py_DECREF(level);
         Py_DECREF(names);
         return compiler_error(c, "from __future__ imports must occur "
@@ -2837,9 +2837,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     if (!mangled)
         return 0;
 
-    assert(PyUnicode_CompareWithASCIIString(name, "None") &&
-           PyUnicode_CompareWithASCIIString(name, "True") &&
-           PyUnicode_CompareWithASCIIString(name, "False"));
+    assert(!_PyUnicode_EqualToASCIIString(name, "None") &&
+           !_PyUnicode_EqualToASCIIString(name, "True") &&
+           !_PyUnicode_EqualToASCIIString(name, "False"));
 
     op = 0;
     optype = OP_NAME;

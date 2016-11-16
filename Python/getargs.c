@@ -1618,7 +1618,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
                 return cleanreturn(0, &freelist);
             }
             for (i = 0; i < len; i++) {
-                if (!PyUnicode_CompareWithASCIIString(key, kwlist[i])) {
+                if (_PyUnicode_EqualToASCIIString(key, kwlist[i])) {
                     match = 1;
                     break;
                 }

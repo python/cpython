@@ -3686,11 +3686,11 @@ xmlparser_getattro(XMLParserObject* self, PyObject* nameobj)
 {
     if (PyUnicode_Check(nameobj)) {
         PyObject* res;
-        if (PyUnicode_CompareWithASCIIString(nameobj, "entity") == 0)
+        if (_PyUnicode_EqualToASCIIString(nameobj, "entity"))
             res = self->entity;
-        else if (PyUnicode_CompareWithASCIIString(nameobj, "target") == 0)
+        else if (_PyUnicode_EqualToASCIIString(nameobj, "target"))
             res = self->target;
-        else if (PyUnicode_CompareWithASCIIString(nameobj, "version") == 0) {
+        else if (_PyUnicode_EqualToASCIIString(nameobj, "version")) {
             return PyUnicode_FromFormat(
                 "Expat %d.%d.%d", XML_MAJOR_VERSION,
                 XML_MINOR_VERSION, XML_MICRO_VERSION);

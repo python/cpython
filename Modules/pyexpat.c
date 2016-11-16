@@ -1247,8 +1247,7 @@ handlername2int(PyObject *name)
 {
     int i;
     for (i = 0; handler_info[i].name != NULL; i++) {
-        if (PyUnicode_CompareWithASCIIString(
-                name, handler_info[i].name) == 0) {
+        if (_PyUnicode_EqualToASCIIString(name, handler_info[i].name)) {
             return i;
         }
     }
@@ -1286,45 +1285,45 @@ xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
 
     first_char = PyUnicode_READ_CHAR(nameobj, 0);
     if (first_char == 'E') {
-        if (PyUnicode_CompareWithASCIIString(nameobj, "ErrorCode") == 0)
+        if (_PyUnicode_EqualToASCIIString(nameobj, "ErrorCode"))
             return PyLong_FromLong((long)
                                   XML_GetErrorCode(self->itself));
-        if (PyUnicode_CompareWithASCIIString(nameobj, "ErrorLineNumber") == 0)
+        if (_PyUnicode_EqualToASCIIString(nameobj, "ErrorLineNumber"))
             return PyLong_FromLong((long)
                                   XML_GetErrorLineNumber(self->itself));
-        if (PyUnicode_CompareWithASCIIString(nameobj, "ErrorColumnNumber") == 0)
+        if (_PyUnicode_EqualToASCIIString(nameobj, "ErrorColumnNumber"))
             return PyLong_FromLong((long)
                                   XML_GetErrorColumnNumber(self->itself));
-        if (PyUnicode_CompareWithASCIIString(nameobj, "ErrorByteIndex") == 0)
+        if (_PyUnicode_EqualToASCIIString(nameobj, "ErrorByteIndex"))
             return PyLong_FromLong((long)
                                   XML_GetErrorByteIndex(self->itself));
     }
     if (first_char == 'C') {
-        if (PyUnicode_CompareWithASCIIString(nameobj, "CurrentLineNumber") == 0)
+        if (_PyUnicode_EqualToASCIIString(nameobj, "CurrentLineNumber"))
             return PyLong_FromLong((long)
                                   XML_GetCurrentLineNumber(self->itself));
-        if (PyUnicode_CompareWithASCIIString(nameobj, "CurrentColumnNumber") == 0)
+        if (_PyUnicode_EqualToASCIIString(nameobj, "CurrentColumnNumber"))
             return PyLong_FromLong((long)
                                   XML_GetCurrentColumnNumber(self->itself));
-        if (PyUnicode_CompareWithASCIIString(nameobj, "CurrentByteIndex") == 0)
+        if (_PyUnicode_EqualToASCIIString(nameobj, "CurrentByteIndex"))
             return PyLong_FromLong((long)
                                   XML_GetCurrentByteIndex(self->itself));
     }
     if (first_char == 'b') {
-        if (PyUnicode_CompareWithASCIIString(nameobj, "buffer_size") == 0)
+        if (_PyUnicode_EqualToASCIIString(nameobj, "buffer_size"))
             return PyLong_FromLong((long) self->buffer_size);
-        if (PyUnicode_CompareWithASCIIString(nameobj, "buffer_text") == 0)
+        if (_PyUnicode_EqualToASCIIString(nameobj, "buffer_text"))
             return get_pybool(self->buffer != NULL);
-        if (PyUnicode_CompareWithASCIIString(nameobj, "buffer_used") == 0)
+        if (_PyUnicode_EqualToASCIIString(nameobj, "buffer_used"))
             return PyLong_FromLong((long) self->buffer_used);
     }
-    if (PyUnicode_CompareWithASCIIString(nameobj, "namespace_prefixes") == 0)
+    if (_PyUnicode_EqualToASCIIString(nameobj, "namespace_prefixes"))
         return get_pybool(self->ns_prefixes);
-    if (PyUnicode_CompareWithASCIIString(nameobj, "ordered_attributes") == 0)
+    if (_PyUnicode_EqualToASCIIString(nameobj, "ordered_attributes"))
         return get_pybool(self->ordered_attributes);
-    if (PyUnicode_CompareWithASCIIString(nameobj, "specified_attributes") == 0)
+    if (_PyUnicode_EqualToASCIIString(nameobj, "specified_attributes"))
         return get_pybool((long) self->specified_attributes);
-    if (PyUnicode_CompareWithASCIIString(nameobj, "intern") == 0) {
+    if (_PyUnicode_EqualToASCIIString(nameobj, "intern")) {
         if (self->intern == NULL) {
             Py_INCREF(Py_None);
             return Py_None;
@@ -1388,7 +1387,7 @@ xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
         PyErr_SetString(PyExc_RuntimeError, "Cannot delete attribute");
         return -1;
     }
-    if (PyUnicode_CompareWithASCIIString(name, "buffer_text") == 0) {
+    if (_PyUnicode_EqualToASCIIString(name, "buffer_text")) {
         int b = PyObject_IsTrue(v);
         if (b < 0)
             return -1;
@@ -1410,7 +1409,7 @@ xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
         }
         return 0;
     }
-    if (PyUnicode_CompareWithASCIIString(name, "namespace_prefixes") == 0) {
+    if (_PyUnicode_EqualToASCIIString(name, "namespace_prefixes")) {
         int b = PyObject_IsTrue(v);
         if (b < 0)
             return -1;
@@ -1418,14 +1417,14 @@ xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
         XML_SetReturnNSTriplet(self->itself, self->ns_prefixes);
         return 0;
     }
-    if (PyUnicode_CompareWithASCIIString(name, "ordered_attributes") == 0) {
+    if (_PyUnicode_EqualToASCIIString(name, "ordered_attributes")) {
         int b = PyObject_IsTrue(v);
         if (b < 0)
             return -1;
         self->ordered_attributes = b;
         return 0;
     }
-    if (PyUnicode_CompareWithASCIIString(name, "specified_attributes") == 0) {
+    if (_PyUnicode_EqualToASCIIString(name, "specified_attributes")) {
         int b = PyObject_IsTrue(v);
         if (b < 0)
             return -1;
@@ -1433,7 +1432,7 @@ xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
         return 0;
     }
 
-    if (PyUnicode_CompareWithASCIIString(name, "buffer_size") == 0) {
+    if (_PyUnicode_EqualToASCIIString(name, "buffer_size")) {
       long new_buffer_size;
       if (!PyLong_Check(v)) {
         PyErr_SetString(PyExc_TypeError, "buffer_size must be an integer");
@@ -1479,7 +1478,7 @@ xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
       return 0;
     }
 
-    if (PyUnicode_CompareWithASCIIString(name, "CharacterDataHandler") == 0) {
+    if (_PyUnicode_EqualToASCIIString(name, "CharacterDataHandler")) {
         /* If we're changing the character data handler, flush all
          * cached data with the old handler.  Not sure there's a
          * "right" thing to do, though, but this probably won't

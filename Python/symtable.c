@@ -1472,7 +1472,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         /* Special-case super: it counts as a use of __class__ */
         if (e->v.Name.ctx == Load &&
             st->st_cur->ste_type == FunctionBlock &&
-            !PyUnicode_CompareWithASCIIString(e->v.Name.id, "super")) {
+            _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
             if (!GET_IDENTIFIER(__class__) ||
                 !symtable_add_def(st, __class__, USE))
                 VISIT_QUIT(st, 0);
@@ -1621,7 +1621,7 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
         store_name = name;
         Py_INCREF(store_name);
     }
-    if (PyUnicode_CompareWithASCIIString(name, "*")) {
+    if (!_PyUnicode_EqualToASCIIString(name, "*")) {
         int r = symtable_add_def(st, store_name, DEF_IMPORT);
         Py_DECREF(store_name);
         return r;
