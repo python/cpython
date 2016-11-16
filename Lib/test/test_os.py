@@ -56,7 +56,7 @@ except ImportError:
 try:
     import pwd
     all_users = [u.pw_uid for u in pwd.getpwall()]
-except ImportError:
+except (ImportError, AttributeError):
     all_users = []
 try:
     from _testcapi import INT_MAX, PY_SSIZE_T_MAX
@@ -1423,7 +1423,12 @@ class URandomFDTests(unittest.TestCase):
                         break
                 os.closerange(3, 256)
             with open({TESTFN!r}, 'rb') as f:
-                os.dup2(f.fileno(), fd)
+                new_fd = f.fileno()
+                # Issue #26935: posix allows new_fd and fd to be equal but
+                # some libc implementations have dup2 return an error in this
+                # case.
+                if new_fd != fd:
+                    os.dup2(new_fd, fd)
                 sys.stdout.buffer.write(os.urandom(4))
                 sys.stdout.buffer.write(os.urandom(4))
             """.format(TESTFN=support.TESTFN)
