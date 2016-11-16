@@ -315,7 +315,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     initialized = 1;
     _Py_Finalizing = NULL;
 
-#if defined(HAVE_LANGINFO_H) && defined(HAVE_SETLOCALE)
+#ifdef HAVE_SETLOCALE
     /* Set up the LC_CTYPE locale, so we can obtain
        the locale's charset without having to switch
        locales. */
