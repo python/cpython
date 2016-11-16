@@ -69,6 +69,8 @@ Library
 - Issue #28704: Fix create_unix_server to support Path-like objects 
   (PEP 519).
 
+- Issue #28720: Add collections.abc.AsyncGenerator.
+
 Documentation
 -------------
 
