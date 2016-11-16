@@ -11070,7 +11070,7 @@ non_ready_unicode_equal_to_ascii_string(PyObject *unicode, const char *str)
     assert(p);
     for (i = 0; i < len; i++) {
         unsigned char c = (unsigned char)str[i];
-        if (c > 128 || p[i] != (wchar_t)c)
+        if (c >= 128 || p[i] != (wchar_t)c)
             return 0;
     }
     return 1;
