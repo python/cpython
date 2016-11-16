@@ -11067,6 +11067,41 @@ PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
     }
 }
 
+static int
+non_ready_unicode_equal_to_ascii_string(PyObject *unicode, const char *str)
+{
+    size_t i, len;
+    const wchar_t *p;
+    len = (size_t)_PyUnicode_WSTR_LENGTH(unicode);
+    if (strlen(str) != len)
+        return 0;
+    p = _PyUnicode_WSTR(unicode);
+    assert(p);
+    for (i = 0; i < len; i++) {
+        unsigned char c = (unsigned char)str[i];
+        if (c > 128 || p[i] != (wchar_t)c)
+            return 0;
+    }
+    return 1;
+}
+
+int
+_PyUnicode_EqualToASCIIString(PyObject *unicode, const char *str)
+{
+    size_t len;
+    assert(_PyUnicode_CHECK(unicode));
+    if (PyUnicode_READY(unicode) == -1) {
+        /* Memory error or bad data */
+        PyErr_Clear();
+        return non_ready_unicode_equal_to_ascii_string(unicode, str);
+    }
+    if (!PyUnicode_IS_ASCII(unicode))
+        return 0;
+    len = (size_t)PyUnicode_GET_LENGTH(unicode);
+    return strlen(str) == len &&
+           memcmp(PyUnicode_1BYTE_DATA(unicode), str, len) == 0;
+}
+
 
 #define TEST_COND(cond)                         \
     ((cond) ? Py_True : Py_False)

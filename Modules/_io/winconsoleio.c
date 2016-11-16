@@ -93,11 +93,11 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
     }
 
     char m = '\0';
-    if (PyUnicode_CompareWithASCIIString(decoded_upper, "CONIN$") == 0) {
+    if (_PyUnicode_EqualToASCIIString(decoded_upper, "CONIN$")) {
         m = 'r';
-    } else if (PyUnicode_CompareWithASCIIString(decoded_upper, "CONOUT$") == 0) {
+    } else if (_PyUnicode_EqualToASCIIString(decoded_upper, "CONOUT$")) {
         m = 'w';
-    } else if (PyUnicode_CompareWithASCIIString(decoded_upper, "CON") == 0) {
+    } else if (_PyUnicode_EqualToASCIIString(decoded_upper, "CON")) {
         m = 'x';
     }
 
