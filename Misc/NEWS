@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #26920: Fix not getting the locale's charset upon initializing the
+  interpreter, on platforms that do not have langinfo.
+
 - Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on Mac OS X
   when decode astral characters.  Patch by Xiang Zhang.
 
