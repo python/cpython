@@ -122,6 +122,9 @@ Core and Builtins
 
 - Issue #26182: Fix a refleak in code that raises DeprecationWarning.
 
+- Issue #28721: Fix asynchronous generators aclose() and athrow() to
+  handle StopAsyncIteration propagation properly.
+
 Library
 -------
 
