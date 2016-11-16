@@ -11062,6 +11062,12 @@ _PyUnicode_EqualToASCIIString(PyObject *unicode, const char *str)
 {
     size_t len;
     assert(_PyUnicode_CHECK(unicode));
+    assert(str);
+#ifndef NDEBUG
+    for (const char *p = str; *p; p++) {
+        assert((unsigned char)*p < 128);
+    }
+#endif
     if (PyUnicode_READY(unicode) == -1) {
         /* Memory error or bad data */
         PyErr_Clear();
@@ -11082,6 +11088,11 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
 
     assert(_PyUnicode_CHECK(left));
     assert(right->string);
+#ifndef NDEBUG
+    for (const char *p = right->string; *p; p++) {
+        assert((unsigned char)*p < 128);
+    }
+#endif
 
     if (PyUnicode_READY(left) == -1) {
         /* memory error or bad data */
