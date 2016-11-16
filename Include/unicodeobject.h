@@ -2037,15 +2037,6 @@ PyAPI_FUNC(int) PyUnicode_Compare(
     );
 
 #ifndef Py_LIMITED_API
-/* Compare a string with an identifier and return -1, 0, 1 for less than,
-   equal, and greater than, respectively.
-   Raise an exception and return -1 on error. */
-
-PyAPI_FUNC(int) _PyUnicode_CompareWithId(
-    PyObject *left,             /* Left string */
-    _Py_Identifier *right       /* Right identifier */
-    );
-
 /* Test whether a unicode is equal to ASCII identifier.  Return 1 if true,
    0 otherwise.  Return 0 if any argument contains non-ASCII characters.
    Any error occurs inside will be cleared before return. */
