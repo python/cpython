@@ -11102,6 +11102,44 @@ _PyUnicode_EqualToASCIIString(PyObject *unicode, const char *str)
            memcmp(PyUnicode_1BYTE_DATA(unicode), str, len) == 0;
 }
 
+int
+_PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
+{
+    PyObject *right_uni;
+    Py_hash_t hash;
+
+    assert(_PyUnicode_CHECK(left));
+    assert(right->string);
+
+    if (PyUnicode_READY(left) == -1) {
+        /* memory error or bad data */
+        PyErr_Clear();
+        return non_ready_unicode_equal_to_ascii_string(left, right->string);
+    }
+
+    if (!PyUnicode_IS_ASCII(left))
+        return 0;
+
+    right_uni = _PyUnicode_FromId(right);       /* borrowed */
+    if (right_uni == NULL) {
+        /* memory error or bad data */
+        PyErr_Clear();
+        return _PyUnicode_EqualToASCIIString(left, right->string);
+    }
+
+    if (left == right_uni)
+        return 1;
+
+    if (PyUnicode_CHECK_INTERNED(left))
+        return 0;
+
+    assert(_PyUnicode_HASH(right_uni) != 1);
+    hash = _PyUnicode_HASH(left);
+    if (hash != -1 && hash != _PyUnicode_HASH(right_uni))
+        return 0;
+
+    return unicode_compare_eq(left, right_uni);
+}
 
 #define TEST_COND(cond)                         \
     ((cond) ? Py_True : Py_False)
