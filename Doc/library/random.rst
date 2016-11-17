@@ -344,15 +344,15 @@ Basic usage::
    >>> deck
    ['king', 'queen', 'ace', 'jack']
 
-   >>> random.sample([1, 2, 3, 4, 5],  3)   # Three samples without replacement
+   >>> random.sample([1, 2, 3, 4, 5], k=3)  # Three samples without replacement
    [4, 1, 5]
 
    >>>                                      # Six weighted samples with replacement
    >>> choices(['red', 'black', 'green'], [18, 18, 2], k=6)
    ['red', 'green', 'black', 'black', 'red', 'black']
 
-   # Probability of getting 5 or more heads from 7 spins of a biased coin
-   # that settles on heads 60% of the time.
+   # Probability of getting 5 or more heads from 7 spins
+   # of a biased coin that settles on heads 60% of the time.
    >>> n = 10000
    >>> cw = [0.60, 1.00]
    >>> sum(choices('HT', cum_weights=cw, k=7).count('H') >= 5 for i in range(n)) / n
@@ -369,5 +369,6 @@ sample of size five::
 
    data = 1, 2, 4, 4, 10
    means = sorted(mean(choices(data, k=5)) for i in range(20))
-   print('The sample mean of {:.1f} has a 90% confidence interval '
-         'from {:.1f} to {:.1f}'.format(mean(data), means[1], means[-2]))
+   print(f'The sample mean of {mean(data):.1f} has a 90% confidence '
+         f'interval from {means[1]:.1f} to {means[-2]:.1f}')
+
