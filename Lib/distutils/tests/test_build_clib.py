@@ -3,7 +3,7 @@ import unittest
 import os
 import sys
 
-from test.support import run_unittest
+from test.support import run_unittest, missing_compiler_executable
 
 from distutils.command.build_clib import build_clib
 from distutils.errors import DistutilsSetupError
@@ -116,19 +116,11 @@ class BuildCLibTestCase(support.TempdirManager,
         cmd.build_temp = build_temp
         cmd.build_clib = build_temp
 
-        # before we run the command, we want to make sure
-        # all commands are present on the system
-        # by creating a compiler and checking its executables
-        from distutils.ccompiler import new_compiler
-        from distutils.sysconfig import customize_compiler
-
-        compiler = new_compiler()
-        customize_compiler(compiler)
-        for ccmd in compiler.executables.values():
-            if ccmd is None:
-                continue
-            if find_executable(ccmd[0]) is None:
-                self.skipTest('The %r command is not found' % ccmd[0])
+        # Before we run the command, we want to make sure
+        # all commands are present on the system.
+        ccmd = missing_compiler_executable()
+        if ccmd is not None:
+            self.skipTest('The %r command is not found' % ccmd)
 
         # this should work
         cmd.run()
