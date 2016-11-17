@@ -17,6 +17,7 @@ from distutils.errors import DistutilsOptionError
 from distutils.extension import Extension
 
 from distutils.tests import support
+from test import support as test_support
 
 
 def _make_ext_name(modname):
@@ -196,6 +197,9 @@ class InstallTestCase(support.TempdirManager,
         self.assertEqual(found, expected)
 
     def test_record_extensions(self):
+        cmd = test_support.missing_compiler_executable()
+        if cmd is not None:
+            self.skipTest('The %r command is not found' % cmd)
         install_dir = self.mkdtemp()
         project_dir, dist = self.create_dist(ext_modules=[
             Extension('xx', ['xxmodule.c'])])
