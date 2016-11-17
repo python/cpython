@@ -152,13 +152,19 @@ Functions for sequences:
 
 .. function:: shuffle(x[, random])
 
-   Shuffle the sequence *x* in place. The optional argument *random* is a
-   0-argument function returning a random float in [0.0, 1.0); by default, this is
-   the function :func:`.random`.
+   Shuffle the sequence *x* in place.
 
-   Note that for even rather small ``len(x)``, the total number of permutations of
-   *x* is larger than the period of most random number generators; this implies
-   that most permutations of a long sequence can never be generated.
+   The optional argument *random* is a 0-argument function returning a random
+   float in [0.0, 1.0); by default, this is the function :func:`.random`.
+
+   To shuffle an immutable sequence and return a new shuffled list, use
+   ``sample(x, k=len(x))`` instead.
+
+   Note that even for small ``len(x)``, the total number of permutations of *x*
+   can quickly grow larger than the period of most random number generators.
+   This implies that most permutations of a long sequence can never be
+   generated.  For example, a sequence of length 2080 is the largest that
+   can fit within the period of the Mersenne Twister random number generator.
 
 
 .. function:: sample(population, k)
@@ -175,9 +181,9 @@ Functions for sequences:
    Members of the population need not be :term:`hashable` or unique.  If the population
    contains repeats, then each occurrence is a possible selection in the sample.
 
-   To choose a sample from a range of integers, use an :func:`range` object as an
+   To choose a sample from a range of integers, use a :func:`range` object as an
    argument.  This is especially fast and space efficient for sampling from a large
-   population:  ``sample(range(10000000), 60)``.
+   population:  ``sample(range(10000000), k=60)``.
 
    If the sample size is larger than the population size, a :exc:`ValueError`
    is raised.
