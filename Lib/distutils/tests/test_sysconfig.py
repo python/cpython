@@ -39,15 +39,6 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         self.assertNotEqual(sysconfig.get_python_lib(),
                             sysconfig.get_python_lib(prefix=TESTFN))
 
-    def test_get_python_inc(self):
-        inc_dir = sysconfig.get_python_inc()
-        # This is not much of a test.  We make sure Python.h exists
-        # in the directory returned by get_python_inc() but we don't know
-        # it is the correct file.
-        self.assertTrue(os.path.isdir(inc_dir), inc_dir)
-        python_h = os.path.join(inc_dir, "Python.h")
-        self.assertTrue(os.path.isfile(python_h), python_h)
-
     def test_get_config_vars(self):
         cvars = sysconfig.get_config_vars()
         self.assertIsInstance(cvars, dict)
