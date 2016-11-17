@@ -350,7 +350,10 @@ class IOTest(unittest.TestCase):
     def large_file_ops(self, f):
         assert f.readable()
         assert f.writable()
-        self.assertEqual(f.seek(self.LARGE), self.LARGE)
+        try:
+            self.assertEqual(f.seek(self.LARGE), self.LARGE)
+        except (OverflowError, ValueError):
+            self.skipTest("no largefile support")
         self.assertEqual(f.tell(), self.LARGE)
         self.assertEqual(f.write(b"xxx"), 3)
         self.assertEqual(f.tell(), self.LARGE + 3)
