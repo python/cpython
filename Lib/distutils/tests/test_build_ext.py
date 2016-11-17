@@ -41,6 +41,9 @@ class BuildExtTestCase(TempdirManager,
         return build_ext(*args, **kwargs)
 
     def test_build_ext(self):
+        cmd = support.missing_compiler_executable()
+        if cmd is not None:
+            self.skipTest('The %r command is not found' % cmd)
         global ALREADY_TESTED
         copy_xxmodule_c(self.tmp_dir)
         xx_c = os.path.join(self.tmp_dir, 'xxmodule.c')
@@ -295,6 +298,9 @@ class BuildExtTestCase(TempdirManager,
         self.assertEqual(cmd.compiler, 'unix')
 
     def test_get_outputs(self):
+        cmd = support.missing_compiler_executable()
+        if cmd is not None:
+            self.skipTest('The %r command is not found' % cmd)
         tmp_dir = self.mkdtemp()
         c_file = os.path.join(tmp_dir, 'foo.c')
         self.write_file(c_file, 'void PyInit_foo(void) {}\n')
