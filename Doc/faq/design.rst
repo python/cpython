@@ -366,33 +366,11 @@ is exactly the same type of object that a lambda expression yields) is assigned!
 Can Python be compiled to machine code, C or some other language?
 -----------------------------------------------------------------
 
-Practical answer:
-
-`Cython <http://cython.org/>`_ and `Pyrex <https://www.cosc.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_
-compile a modified version of Python with optional annotations into C
-extensions.  `Weave <https://scipy.github.io/devdocs/tutorial/weave.html>`_ makes it easy to
-intermingle Python and C code in various ways to increase performance.
-`Nuitka <http://www.nuitka.net/>`_ is an up-and-coming compiler of Python
-into C++ code, aiming to support the full Python language.
-
-Theoretical answer:
-
-   .. XXX not sure what to make of this
-
-Not trivially.  Python's high level data types, dynamic typing of objects and
-run-time invocation of the interpreter (using :func:`eval` or :func:`exec`)
-together mean that a naïvely "compiled" Python program would probably consist
-mostly of calls into the Python run-time system, even for seemingly simple
-operations like ``x+1``.
-
-Several projects described in the Python newsgroup or at past `Python
-conferences <https://www.python.org/community/workshops/>`_ have shown that this
-approach is feasible, although the speedups reached so far are only modest
-(e.g. 2x).  Jython uses the same strategy for compiling to Java bytecode.  (Jim
-Hugunin has demonstrated that in combination with whole-program analysis,
-speedups of 1000x are feasible for small demo programs.  See the proceedings
-from the `1997 Python conference
-<http://legacy.python.org/workshops/1997-10/proceedings/>`_ for more information.)
+`Cython <http://cython.org/>`_ compiles a modified version of Python with
+optional annotations into C extensions.  `Nuitka <http://www.nuitka.net/>`_ is
+an up-and-coming compiler of Python into C++ code, aiming to support the full
+Python language. For compiling to Java you can consider
+`VOC <https://voc.readthedocs.io>`_.
 
 
 How does Python manage memory?
