@@ -886,7 +886,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
         return 0;
     }
 
-    res = fcntl(fd, F_SETFD, flags);
+    res = fcntl(fd, F_SETFD, new_flags);
     if (res < 0) {
         if (raise)
             PyErr_SetFromErrno(PyExc_OSError);
