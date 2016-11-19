@@ -267,8 +267,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         are in self.command, self.path, self.request_version and
         self.headers.
 
-        Return True for success, False for failure; on failure, an
-        error is sent back.
+        Return True for success, False for failure; on failure, any relevant
+        error response has already been sent back.
 
         """
         self.command = None  # set in case of error on the first line
@@ -278,10 +278,13 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         requestline = requestline.rstrip('\r\n')
         self.requestline = requestline
         words = requestline.split()
-        if len(words) == 3:
-            command, path, version = words
+        if len(words) == 0:
+            return False
+
+        if len(words) >= 3:  # Enough to determine protocol version
+            version = words[-1]
             try:
-                if version[:5] != 'HTTP/':
+                if not version.startswith('HTTP/'):
                     raise ValueError
                 base_version_number = version.split('/', 1)[1]
                 version_number = base_version_number.split(".")
@@ -306,22 +309,22 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     HTTPStatus.HTTP_VERSION_NOT_SUPPORTED,
                     "Invalid HTTP version (%s)" % base_version_number)
                 return False
-        elif len(words) == 2:
-            command, path = words
+            self.request_version = version
+
+        if not 2 <= len(words) <= 3:
+            self.send_error(
+                HTTPStatus.BAD_REQUEST,
+                "Bad request syntax (%r)" % requestline)
+            return False
+        command, path = words[:2]
+        if len(words) == 2:
             self.close_connection = True
             if command != 'GET':
                 self.send_error(
                     HTTPStatus.BAD_REQUEST,
                     "Bad HTTP/0.9 request type (%r)" % command)
                 return False
-        elif not words:
-            return False
-        else:
-            self.send_error(
-                HTTPStatus.BAD_REQUEST,
-                "Bad request syntax (%r)" % requestline)
-            return False
-        self.command, self.path, self.request_version = command, path, version
+        self.command, self.path = command, path
 
         # Examine the headers and look for a Connection directive.
         try:
