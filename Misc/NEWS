@@ -10,6 +10,9 @@ What's New in Python 3.6.0 beta 4
 Core and Builtins
 -----------------
 
+- Issue #28746: Fix the set_inheritable() file descriptor method on platforms
+  that do not have the ioctl FIOCLEX and FIONCLEX commands.
+
 - Issue #26920: Fix not getting the locale's charset upon initializing the
   interpreter, on platforms that do not have langinfo.
 
