@@ -822,6 +822,16 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertEqual(result[0], b'<html><body>Data</body></html>\r\n')
         self.verify_get_called()
 
+    def test_extra_space(self):
+        result = self.send_typical_request(
+            b'GET /spaced out HTTP/1.1\r\n'
+            b'Host: dummy\r\n'
+            b'\r\n'
+        )
+        self.assertTrue(result[0].startswith(b'HTTP/1.1 400 '))
+        self.verify_expected_headers(result[1:result.index(b'\r\n')])
+        self.assertFalse(self.handler.get_called)
+
     def test_with_continue_1_0(self):
         result = self.send_typical_request(b'GET / HTTP/1.0\r\nExpect: 100-continue\r\n\r\n')
         self.verify_http_server_response(result[0])
