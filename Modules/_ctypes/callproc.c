@@ -1666,7 +1666,9 @@ POINTER(PyObject *self, PyObject *cls)
         return result;
     }
     if (PyUnicode_CheckExact(cls)) {
-        char *name = _PyUnicode_AsString(cls);
+        const char *name = PyUnicode_AsUTF8(cls);
+        if (name == NULL)
+            return NULL;
         buf = PyMem_Malloc(strlen(name) + 3 + 1);
         if (buf == NULL)
             return PyErr_NoMemory();
