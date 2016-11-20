@@ -70,6 +70,7 @@ if test ! -n "$*"; then
 fi
 
 makexp=`dirname $0`/makexp_aix
+test -x "${makexp}" || makexp="@abs_srcdir@/makexp_aix"
 
 # Check for existence of compiler.
 CC=$1; shift
