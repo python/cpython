@@ -931,6 +931,8 @@ Tests
 Build
 -----
 
+- Issue #26359: Rename --with-optimiations to --enable-optimizations.
+
 - Issue #27566: Fix clean target in freeze makefile (patch by Lisa Roach)
 
 - Issue #27705: Update message in validate_ucrtbase.py
