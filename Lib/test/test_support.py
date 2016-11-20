@@ -236,7 +236,38 @@ if sys.platform.startswith("win"):
 else:
     _unlink = os.unlink
     _rmdir = os.rmdir
-    _rmtree = shutil.rmtree
+
+    def _rmtree(path):
+        import stat
+        try:
+            shutil.rmtree(path)
+            return
+        except EnvironmentError:
+            pass
+
+        def force_run(path, func, *args):
+            try:
+                return func(*args)
+            except EnvironmentError as err:
+                if verbose >= 2:
+                    print('%s: %s' % (err.__class__.__name__, err))
+                    print('re-run %s%r' % (func.__name__, args))
+                os.chmod(path, stat.S_IRWXU)
+                return func(*args)
+        def _rmtree_inner(path):
+            for name in force_run(path, os.listdir, path):
+                fullname = os.path.join(path, name)
+                try:
+                    mode = os.lstat(fullname).st_mode
+                except EnvironmentError:
+                    mode = 0
+                if stat.S_ISDIR(mode):
+                    _rmtree_inner(fullname)
+                    force_run(path, os.rmdir, fullname)
+                else:
+                    force_run(path, os.unlink, fullname)
+        _rmtree_inner(path)
+        os.rmdir(path)
 
 def unlink(filename):
     try:

@@ -262,6 +262,9 @@ Documentation
 Tests
 -----
 
+- Issue #28666: Now test.test_support.rmtree is able to remove unwritable or
+  unreadable directories.
+
 - Issue #23839: Various caches now are cleared before running every test file.
 
 - Issue #27369: In test_pyexpat, avoid testing an error message detail that
