@@ -2016,13 +2016,11 @@ features:
    always requires a system call on Unix but only requires one for
    symbolic links on Windows.
 
-   On Unix, *path* can be of type :class:`str` or :class:`bytes` (either
-   directly or indirectly through the :class:`PathLike` interface; use
-   :func:`~os.fsencode` and :func:`~os.fsdecode` to encode and decode
-   :class:`bytes` paths). On Windows, *path* must be of type :class:`str`.
-   On both systems, the type of the :attr:`~os.DirEntry.name` and
-   :attr:`~os.DirEntry.path` attributes of each :class:`os.DirEntry` will be of
-   the same type as *path*.
+   *path* may be a :term:`path-like object`.  If *path* is of type ``bytes``
+   (directly or indirectly through the :class:`PathLike` interface),
+   the type of the :attr:`~os.DirEntry.name` and :attr:`~os.DirEntry.path`
+   attributes of each :class:`os.DirEntry` will be ``bytes``; in all other
+   circumstances, they will be of type ``str``.
 
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
@@ -2100,8 +2098,8 @@ features:
       The entry's base filename, relative to the :func:`scandir` *path*
       argument.
 
-      The :attr:`name` attribute will be of the same type (``str`` or
-      ``bytes``) as the :func:`scandir` *path* argument. Use
+      The :attr:`name` attribute will be ``bytes`` if the :func:`scandir`
+      *path* argument is of type ``bytes`` and ``str`` otherwise.  Use
       :func:`~os.fsdecode` to decode byte filenames.
 
    .. attribute:: path
@@ -2111,8 +2109,8 @@ features:
       argument.  The path is only absolute if the :func:`scandir` *path*
       argument was absolute.
 
-      The :attr:`path` attribute will be of the same type (``str`` or
-      ``bytes``) as the :func:`scandir` *path* argument. Use
+      The :attr:`path` attribute will be ``bytes`` if the :func:`scandir`
+      *path* argument is of type ``bytes`` and ``str`` otherwise.  Use
       :func:`~os.fsdecode` to decode byte filenames.
 
    .. method:: inode()
@@ -2207,7 +2205,8 @@ features:
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.6
-      Added support for the :class:`~os.PathLike` interface.
+      Added support for the :class:`~os.PathLike` interface.  Added support
+      for :class:`bytes` paths on Windows.
 
 
 .. function:: stat(path, \*, dir_fd=None, follow_symlinks=True)
