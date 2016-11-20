@@ -8,6 +8,7 @@ import errno
 import functools
 import gc
 import socket
+import stat
 import sys
 import os
 import platform
@@ -248,7 +249,6 @@ else:
     _rmdir = os.rmdir
 
     def _rmtree(path):
-        import stat
         try:
             shutil.rmtree(path)
             return
