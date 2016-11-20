@@ -90,6 +90,8 @@ Tests
 Build
 -----
 
+- Issue #26359: Rename --with-optimiations to --enable-optimizations.
+
 - Issue #28676: Prevent missing 'getentropy' declaration warning on macOS.
   Patch by Gareth Rees.
 
@@ -930,8 +932,6 @@ Tests
 
 Build
 -----
-
-- Issue #26359: Rename --with-optimiations to --enable-optimizations.
 
 - Issue #27566: Fix clean target in freeze makefile (patch by Lisa Roach)
 
