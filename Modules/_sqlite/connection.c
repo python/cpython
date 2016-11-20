@@ -1489,7 +1489,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     PyObject* retval;
     Py_ssize_t i, len;
     _Py_IDENTIFIER(upper);
-    char *uppercase_name_str;
+    const char *uppercase_name_str;
     int rc;
     unsigned int kind;
     void *data;

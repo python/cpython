@@ -2398,7 +2398,7 @@ static PyObject *
 test_c_api(PySetObject *so)
 {
     Py_ssize_t count;
-    char *s;
+    const char *s;
     Py_ssize_t i;
     PyObject *elem=NULL, *dup=NULL, *t, *f, *dup2, *x=NULL;
     PyObject *ob = (PyObject *)so;

@@ -1941,7 +1941,7 @@ save_long(PicklerObject *self, PyObject *obj)
             goto error;
     }
     else {
-        char *string;
+        const char *string;
 
         /* proto < 2: write the repr and newline.  This is quadratic-time (in
            the number of digits), in both directions.  We add a trailing 'L'
@@ -2218,7 +2218,7 @@ write_unicode_binary(PicklerObject *self, PyObject *obj)
 {
     PyObject *encoded = NULL;
     Py_ssize_t size;
-    char *data;
+    const char *data;
     int r;
 
     if (PyUnicode_READY(obj))

@@ -693,7 +693,7 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
                            PyObject *newline_obj)
 /*[clinic end generated code: output=a421ea023b22ef4e input=cee2d9181b2577a3]*/
 {
-    char *newline = "\n";
+    const char *newline = "\n";
     Py_ssize_t value_len;
 
     /* Parse the newline argument. We only want to allow unicode objects or

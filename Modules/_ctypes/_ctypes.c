@@ -1829,7 +1829,7 @@ static PyCArgObject *
 PyCSimpleType_paramfunc(CDataObject *self)
 {
     StgDictObject *dict;
-    char *fmt;
+    const char *fmt;
     PyCArgObject *parg;
     struct fielddesc *fd;
 
@@ -2039,7 +2039,7 @@ static PyObject *
 PyCSimpleType_from_param(PyObject *type, PyObject *value)
 {
     StgDictObject *dict;
-    char *fmt;
+    const char *fmt;
     PyCArgObject *parg;
     struct fielddesc *fd;
     PyObject *as_parameter;

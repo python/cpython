@@ -1225,7 +1225,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
     PyObject *result;
     double x;
     long exp, top_exp, lsb, key_digit;
-    char *s, *coeff_start, *s_store, *coeff_end, *exp_start, *s_end;
+    const char *s, *coeff_start, *s_store, *coeff_end, *exp_start, *s_end;
     int half_eps, digit, round_up, negate=0;
     Py_ssize_t length, ndigits, fdigits, i;
 
@@ -1288,7 +1288,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
         s++;
 
     /* infinities and nans */
-    x = _Py_parse_inf_or_nan(s, &coeff_end);
+    x = _Py_parse_inf_or_nan(s, (char **)&coeff_end);
     if (coeff_end != s) {
         s = coeff_end;
         goto finished;
@@ -1619,7 +1619,7 @@ static float_format_type detected_double_format, detected_float_format;
 static PyObject *
 float_getformat(PyTypeObject *v, PyObject* arg)
 {
-    char* s;
+    const char *s;
     float_format_type r;
 
     if (!PyUnicode_Check(arg)) {

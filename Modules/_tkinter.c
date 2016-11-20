@@ -536,7 +536,7 @@ SplitObj(PyObject *arg)
     else if (PyUnicode_Check(arg)) {
         int argc;
         const char **argv;
-        char *list = PyUnicode_AsUTF8(arg);
+        const char *list = PyUnicode_AsUTF8(arg);
 
         if (list == NULL ||
             Tcl_SplitList((Tcl_Interp *)NULL, list, &argc, &argv) != TCL_OK) {
@@ -993,7 +993,7 @@ asBignumObj(PyObject *value)
     Tcl_Obj *result;
     int neg;
     PyObject *hexstr;
-    char *hexchars;
+    const char *hexchars;
     mp_int bigValue;
 
     neg = Py_SIZE(value) < 0;
@@ -1723,7 +1723,7 @@ class varname_converter(CConverter):
 static int
 varname_converter(PyObject *in, void *_out)
 {
-    char *s;
+    const char *s;
     const char **out = (const char**)_out;
     if (PyBytes_Check(in)) {
         if (PyBytes_GET_SIZE(in) > INT_MAX) {

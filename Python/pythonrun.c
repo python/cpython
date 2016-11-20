@@ -154,7 +154,7 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
     PyObject *m, *d, *v, *w, *oenc = NULL, *mod_name;
     mod_ty mod;
     PyArena *arena;
-    char *ps1 = "", *ps2 = "", *enc = NULL;
+    const char *ps1 = "", *ps2 = "", *enc = NULL;
     int errcode = 0;
     _Py_IDENTIFIER(encoding);
     _Py_IDENTIFIER(__main__);
@@ -511,8 +511,8 @@ PyErr_Print(void)
 static void
 print_error_text(PyObject *f, int offset, PyObject *text_obj)
 {
-    char *text;
-    char *nl;
+    const char *text;
+    const char *nl;
 
     text = PyUnicode_AsUTF8(text_obj);
     if (text == NULL)

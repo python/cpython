@@ -1893,7 +1893,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         char *s = NULL;
         PyObject *stdin_encoding = NULL, *stdin_errors = NULL;
         PyObject *stdout_encoding = NULL, *stdout_errors = NULL;
-        char *stdin_encoding_str, *stdin_errors_str;
+        const char *stdin_encoding_str, *stdin_errors_str;
         PyObject *result;
         size_t len;
 
@@ -1914,7 +1914,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
             Py_DECREF(tmp);
         if (prompt != NULL) {
             /* We have a prompt, encode it as stdout would */
-            char *stdout_encoding_str, *stdout_errors_str;
+            const char *stdout_encoding_str, *stdout_errors_str;
             PyObject *stringpo;
             stdout_encoding = _PyObject_GetAttrId(fout, &PyId_encoding);
             stdout_errors = _PyObject_GetAttrId(fout, &PyId_errors);

@@ -231,7 +231,7 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
     PyObject *nameobj;
     PyObject *m = NULL;
     int has_execution_slots = 0;
-    char *name;
+    const char *name;
     int ret;
 
     PyModuleDef_Init(def);
@@ -512,7 +512,7 @@ const char *
 PyModule_GetFilename(PyObject *m)
 {
     PyObject *fileobj;
-    char *utf8;
+    const char *utf8;
     fileobj = PyModule_GetFilenameObject(m);
     if (fileobj == NULL)
         return NULL;

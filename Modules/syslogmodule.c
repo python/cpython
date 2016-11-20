@@ -116,7 +116,7 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
     long facility = LOG_USER;
     PyObject *new_S_ident_o = NULL;
     static char *keywords[] = {"ident", "logoption", "facility", 0};
-    char *ident = NULL;
+    const char *ident = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                           "|Ull:openlog", keywords, &new_S_ident_o, &logopt, &facility))
