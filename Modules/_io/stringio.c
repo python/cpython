@@ -708,7 +708,7 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
                          Py_TYPE(newline_obj)->tp_name);
             return -1;
         }
-        newline = _PyUnicode_AsString(newline_obj);
+        newline = PyUnicode_AsUTF8(newline_obj);
         if (newline == NULL)
             return -1;
     }

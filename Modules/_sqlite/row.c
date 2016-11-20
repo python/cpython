@@ -98,7 +98,7 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
         Py_XINCREF(item);
         return item;
     } else if (PyUnicode_Check(idx)) {
-        key = _PyUnicode_AsString(idx);
+        key = PyUnicode_AsUTF8(idx);
         if (key == NULL)
             return NULL;
 
@@ -108,7 +108,7 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
             PyObject *obj;
             obj = PyTuple_GET_ITEM(self->description, i);
             obj = PyTuple_GET_ITEM(obj, 0);
-            compare_key = _PyUnicode_AsString(obj);
+            compare_key = PyUnicode_AsUTF8(obj);
             if (!compare_key) {
                 return NULL;
             }

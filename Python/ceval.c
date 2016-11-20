@@ -4723,7 +4723,7 @@ PyEval_GetFuncName(PyObject *func)
     if (PyMethod_Check(func))
         return PyEval_GetFuncName(PyMethod_GET_FUNCTION(func));
     else if (PyFunction_Check(func))
-        return _PyUnicode_AsString(((PyFunctionObject*)func)->func_name);
+        return PyUnicode_AsUTF8(((PyFunctionObject*)func)->func_name);
     else if (PyCFunction_Check(func))
         return ((PyCFunctionObject*)func)->m_ml->ml_name;
     else
@@ -5297,7 +5297,7 @@ format_exc_check_arg(PyObject *exc, const char *format_str, PyObject *obj)
     if (!obj)
         return;
 
-    obj_str = _PyUnicode_AsString(obj);
+    obj_str = PyUnicode_AsUTF8(obj);
     if (!obj_str)
         return;
 

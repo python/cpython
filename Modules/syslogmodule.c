@@ -139,7 +139,7 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
      * If NULL, just let openlog figure it out (probably using C argv[0]).
      */
     if (S_ident_o) {
-        ident = _PyUnicode_AsString(S_ident_o);
+        ident = PyUnicode_AsUTF8(S_ident_o);
         if (ident == NULL)
             return NULL;
     }
@@ -167,7 +167,7 @@ syslog_syslog(PyObject * self, PyObject * args)
             return NULL;
     }
 
-    message = _PyUnicode_AsString(message_object);
+    message = PyUnicode_AsUTF8(message_object);
     if (message == NULL)
         return NULL;
 

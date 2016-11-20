@@ -1951,7 +1951,7 @@ save_long(PicklerObject *self, PyObject *obj)
         if (repr == NULL)
             goto error;
 
-        string = _PyUnicode_AsStringAndSize(repr, &size);
+        string = PyUnicode_AsUTF8AndSize(repr, &size);
         if (string == NULL)
             goto error;
 

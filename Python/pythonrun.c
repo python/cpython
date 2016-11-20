@@ -171,7 +171,7 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
         if (v && v != Py_None) {
             oenc = _PyObject_GetAttrId(v, &PyId_encoding);
             if (oenc)
-                enc = _PyUnicode_AsString(oenc);
+                enc = PyUnicode_AsUTF8(oenc);
             if (!enc)
                 PyErr_Clear();
         }
@@ -182,7 +182,7 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
         if (v == NULL)
             PyErr_Clear();
         else if (PyUnicode_Check(v)) {
-            ps1 = _PyUnicode_AsString(v);
+            ps1 = PyUnicode_AsUTF8(v);
             if (ps1 == NULL) {
                 PyErr_Clear();
                 ps1 = "";
@@ -195,7 +195,7 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
         if (w == NULL)
             PyErr_Clear();
         else if (PyUnicode_Check(w)) {
-            ps2 = _PyUnicode_AsString(w);
+            ps2 = PyUnicode_AsUTF8(w);
             if (ps2 == NULL) {
                 PyErr_Clear();
                 ps2 = "";
@@ -514,7 +514,7 @@ print_error_text(PyObject *f, int offset, PyObject *text_obj)
     char *text;
     char *nl;
 
-    text = _PyUnicode_AsString(text_obj);
+    text = PyUnicode_AsUTF8(text_obj);
     if (text == NULL)
         return;
 

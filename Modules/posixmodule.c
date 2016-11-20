@@ -9325,7 +9325,7 @@ conv_confname(PyObject *arg, int *valuep, struct constdef *table,
                 "configuration names must be strings or integers");
             return 0;
         }
-        confname = _PyUnicode_AsString(arg);
+        confname = PyUnicode_AsUTF8(arg);
         if (confname == NULL)
             return 0;
         while (lo < hi) {

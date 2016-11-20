@@ -1219,7 +1219,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
     /* Convert the input format to a C string and size */
-    pin = _PyUnicode_AsStringAndSize(format, &flen);
+    pin = PyUnicode_AsUTF8AndSize(format, &flen);
     if (!pin)
         return NULL;
 
@@ -1287,7 +1287,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             assert(Zreplacement != NULL);
             assert(PyUnicode_Check(Zreplacement));
-            ptoappend = _PyUnicode_AsStringAndSize(Zreplacement,
+            ptoappend = PyUnicode_AsUTF8AndSize(Zreplacement,
                                                   &ntoappend);
             if (ptoappend == NULL)
                 goto Done;

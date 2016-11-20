@@ -1626,7 +1626,7 @@ consistent method resolution\norder (MRO) for bases");
         PyObject *name = class_name(k);
         char *name_str;
         if (name != NULL) {
-            name_str = _PyUnicode_AsString(name);
+            name_str = PyUnicode_AsUTF8(name);
             if (name_str == NULL)
                 name_str = "?";
         } else
@@ -2575,7 +2575,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             char *doc_str;
             char *tp_doc;
 
-            doc_str = _PyUnicode_AsString(doc);
+            doc_str = PyUnicode_AsUTF8(doc);
             if (doc_str == NULL)
                 goto error;
             /* Silently truncate the docstring if it contains null bytes. */
@@ -2623,7 +2623,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     slotoffset = base->tp_basicsize;
     if (et->ht_slots != NULL) {
         for (i = 0; i < nslots; i++, mp++) {
-            mp->name = _PyUnicode_AsString(
+            mp->name = PyUnicode_AsUTF8(
                 PyTuple_GET_ITEM(et->ht_slots, i));
             if (mp->name == NULL)
                 goto error;

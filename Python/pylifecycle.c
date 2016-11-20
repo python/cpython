@@ -205,7 +205,7 @@ get_codec_name(const char *encoding)
     if (!name)
         goto error;
 
-    name_utf8 = _PyUnicode_AsString(name);
+    name_utf8 = PyUnicode_AsUTF8(name);
     if (name_utf8 == NULL)
         goto error;
     name_str = _PyMem_RawStrdup(name_utf8);
@@ -1285,7 +1285,7 @@ initstdio(void)
     encoding_attr = PyObject_GetAttrString(std, "encoding");
     if (encoding_attr != NULL) {
         const char * std_encoding;
-        std_encoding = _PyUnicode_AsString(encoding_attr);
+        std_encoding = PyUnicode_AsUTF8(encoding_attr);
         if (std_encoding != NULL) {
             PyObject *codec_info = _PyCodec_Lookup(std_encoding);
             Py_XDECREF(codec_info);
