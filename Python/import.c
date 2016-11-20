@@ -1035,7 +1035,7 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 {
     struct _inittab *p;
     PyObject *name;
-    char *namestr;
+    const char *namestr;
     PyObject *mod;
 
     name = PyObject_GetAttrString(spec, "name");

@@ -367,7 +367,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 {
     PyObject *unicode;
     PyObject *bytes = NULL;
-    char *str;
+    const char *str;
     Py_ssize_t n;
     int err;
 
@@ -389,10 +389,8 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
         bytes = _PyUnicode_AsUTF8String(unicode, "backslashreplace");
         if (bytes == NULL)
             return NULL;
-        if (PyBytes_AsStringAndSize(bytes, &str, &n) < 0) {
-            Py_DECREF(bytes);
-            return NULL;
-        }
+        str = PyBytes_AS_STRING(bytes);
+        n = PyBytes_GET_SIZE(bytes);
     }
 
     n = _Py_write(self->fd, str, n);

@@ -4039,7 +4039,7 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 static int
 expr_constant(struct compiler *c, expr_ty e)
 {
-    char *id;
+    const char *id;
     switch (e->kind) {
     case Ellipsis_kind:
         return 1;

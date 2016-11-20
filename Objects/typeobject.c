@@ -1624,7 +1624,7 @@ consistent method resolution\norder (MRO) for bases");
     i = 0;
     while (PyDict_Next(set, &i, &k, &v) && (size_t)off < sizeof(buf)) {
         PyObject *name = class_name(k);
-        char *name_str;
+        const char *name_str;
         if (name != NULL) {
             name_str = PyUnicode_AsUTF8(name);
             if (name_str == NULL)
@@ -2572,7 +2572,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         PyObject *doc = _PyDict_GetItemId(dict, &PyId___doc__);
         if (doc != NULL && PyUnicode_Check(doc)) {
             Py_ssize_t len;
-            char *doc_str;
+            const char *doc_str;
             char *tp_doc;
 
             doc_str = PyUnicode_AsUTF8(doc);

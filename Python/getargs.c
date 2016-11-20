@@ -74,7 +74,7 @@ static const char *converttuple(PyObject *, const char **, va_list *, int,
                                 int *, char *, size_t, int, freelist_t *);
 static const char *convertsimple(PyObject *, const char **, va_list *, int,
                                  char *, size_t, freelist_t *);
-static Py_ssize_t convertbuffer(PyObject *, void **p, const char **);
+static Py_ssize_t convertbuffer(PyObject *, const void **p, const char **);
 static int getbuffer(PyObject *, Py_buffer *, const char**);
 
 static int vgetargskeywords(PyObject *, PyObject *,
@@ -625,7 +625,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
     const char *format = *p_format;
     char c = *format++;
-    char *sarg;
+    const char *sarg;
 
     switch (c) {
 
@@ -897,7 +897,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             }
             break;
         }
-        count = convertbuffer(arg, p, &buf);
+        count = convertbuffer(arg, (const void **)p, &buf);
         if (count < 0)
             return converterr(buf, arg, msgbuf, bufsize);
         if (*format == '#') {
@@ -928,7 +928,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 if (sarg == NULL)
                     return converterr(CONV_UNICODE,
                                       arg, msgbuf, bufsize);
-                PyBuffer_FillInfo(p, arg, sarg, len, 1, 0);
+                PyBuffer_FillInfo(p, arg, (void *)sarg, len, 1, 0);
             }
             else { /* any bytes-like object */
                 const char *buf;
@@ -943,7 +943,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             format++;
         } else if (*format == '#') { /* a string or read-only bytes-like object */
             /* "s#" or "z#" */
-            void **p = (void **)va_arg(*p_va, char **);
+            const void **p = (const void **)va_arg(*p_va, const char **);
             FETCH_SIZE;
 
             if (c == 'z' && arg == Py_None) {
@@ -970,7 +970,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             format++;
         } else {
             /* "s" or "z" */
-            char **p = va_arg(*p_va, char **);
+            const char **p = va_arg(*p_va, const char **);
             Py_ssize_t len;
             sarg = NULL;
 
@@ -1300,7 +1300,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 }
 
 static Py_ssize_t
-convertbuffer(PyObject *arg, void **p, const char **errmsg)
+convertbuffer(PyObject *arg, const void **p, const char **errmsg)
 {
     PyBufferProcs *pb = Py_TYPE(arg)->tp_as_buffer;
     Py_ssize_t count;

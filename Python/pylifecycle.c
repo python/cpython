@@ -193,7 +193,8 @@ add_flag(int flag, const char *envs)
 static char*
 get_codec_name(const char *encoding)
 {
-    char *name_utf8, *name_str;
+    const char *name_utf8;
+    char *name_str;
     PyObject *codec, *name = NULL;
 
     codec = _PyCodec_Lookup(encoding);
@@ -1284,8 +1285,7 @@ initstdio(void)
        when import.c tries to write to stderr in verbose mode. */
     encoding_attr = PyObject_GetAttrString(std, "encoding");
     if (encoding_attr != NULL) {
-        const char * std_encoding;
-        std_encoding = PyUnicode_AsUTF8(encoding_attr);
+        const char *std_encoding = PyUnicode_AsUTF8(encoding_attr);
         if (std_encoding != NULL) {
             PyObject *codec_info = _PyCodec_Lookup(std_encoding);
             Py_XDECREF(codec_info);

@@ -182,7 +182,7 @@ structseq_repr(PyStructSequence *obj)
 
     for (i=0; i < VISIBLE_SIZE(obj); i++) {
         PyObject *val, *repr;
-        char *cname, *crepr;
+        const char *cname, *crepr;
 
         cname = typ->tp_members[i].name;
         if (cname == NULL) {

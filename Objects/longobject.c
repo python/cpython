@@ -2491,7 +2491,8 @@ PyObject *
 PyLong_FromUnicodeObject(PyObject *u, int base)
 {
     PyObject *result, *asciidig;
-    char *buffer, *end = NULL;
+    const char *buffer;
+    char *end = NULL;
     Py_ssize_t buflen;
 
     asciidig = _PyUnicode_TransformDecimalAndSpaceToASCII(u);
