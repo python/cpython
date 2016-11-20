@@ -1481,8 +1481,16 @@ class ExecTests(unittest.TestCase):
         self.assertRaises(OSError, os.execvpe, 'no such app-',
                           ['no such app-'], None)
 
+    def test_execv_with_bad_arglist(self):
+        self.assertRaises(ValueError, os.execv, 'notepad', ())
+        self.assertRaises(ValueError, os.execv, 'notepad', [])
+        self.assertRaises(ValueError, os.execv, 'notepad', ('',))
+        self.assertRaises(ValueError, os.execv, 'notepad', [''])
+
     def test_execvpe_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execvpe, 'notepad', [], None)
+        self.assertRaises(ValueError, os.execvpe, 'notepad', [], {})
+        self.assertRaises(ValueError, os.execvpe, 'notepad', [''], {})
 
     @unittest.skipUnless(hasattr(os, '_execvpe'),
                          "No internal os._execvpe function to test.")
@@ -2325,23 +2333,29 @@ class SpawnTests(unittest.TestCase):
     def test_spawnl_noargs(self):
         args = self.create_args()
         self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, args[0])
+        self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, args[0], '')
 
     @requires_os_func('spawnle')
-    def test_spawnl_noargs(self):
+    def test_spawnle_noargs(self):
         args = self.create_args()
         self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, args[0], {})
+        self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, args[0], '', {})
 
     @requires_os_func('spawnv')
     def test_spawnv_noargs(self):
         args = self.create_args()
         self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, args[0], ())
         self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, args[0], [])
+        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, args[0], ('',))
+        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, args[0], [''])
 
     @requires_os_func('spawnve')
-    def test_spawnv_noargs(self):
+    def test_spawnve_noargs(self):
         args = self.create_args()
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], (), {})
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], [], {})
+        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], ('',), {})
+        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], [''], {})
 
 # The introduction of this TestCase caused at least two different errors on
 # *nix buildbots. Temporarily skip this to let the buildbots move along.
