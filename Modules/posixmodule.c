@@ -5186,6 +5186,16 @@ os_spawnv_impl(PyObject *module, int mode, PyObject *path, PyObject *argv)
                         "spawnv() arg 2 must be a tuple or list");
         return NULL;
     }
+#ifdef MS_WINDOWS
+    /* Avoid changing behavior in maintenance release, but
+       the previous Windows behavior was to crash, so this
+       is a "compatible" improvement. */
+    if (argc == 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "spawnv() arg 2 cannot be empty");
+        return NULL;
+    }
+#endif
 
     argvlist = PyMem_NEW(char *, argc+1);
     if (argvlist == NULL) {
@@ -5207,7 +5217,9 @@ os_spawnv_impl(PyObject *module, int mode, PyObject *path, PyObject *argv)
         mode = _P_OVERLAY;
 
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     spawnval = _spawnv(mode, path_char, argvlist);
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
     free_string_array(argvlist, argc);
@@ -5297,7 +5309,9 @@ os_spawnve_impl(PyObject *module, int mode, PyObject *path, PyObject *argv,
         mode = _P_OVERLAY;
 
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     spawnval = _spawnve(mode, path_char, argvlist, envlist);
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
     if (spawnval == -1)
@@ -7022,7 +7036,9 @@ os_waitpid_impl(PyObject *module, Py_intptr_t pid, int options)
 
     do {
         Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
         res = _cwait(&status, pid, options);
+        _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     } while (res < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (res < 0)
