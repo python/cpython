@@ -115,7 +115,7 @@ PyCode_New(int argcount, int kwonlyargcount,
 
     /* Check argument types */
     if (argcount < 0 || kwonlyargcount < 0 || nlocals < 0 ||
-        code == NULL ||
+        code == NULL || !PyBytes_Check(code) ||
         consts == NULL || !PyTuple_Check(consts) ||
         names == NULL || !PyTuple_Check(names) ||
         varnames == NULL || !PyTuple_Check(varnames) ||
@@ -123,8 +123,7 @@ PyCode_New(int argcount, int kwonlyargcount,
         cellvars == NULL || !PyTuple_Check(cellvars) ||
         name == NULL || !PyUnicode_Check(name) ||
         filename == NULL || !PyUnicode_Check(filename) ||
-        lnotab == NULL || !PyBytes_Check(lnotab) ||
-        !PyObject_CheckReadBuffer(code)) {
+        lnotab == NULL || !PyBytes_Check(lnotab)) {
         PyErr_BadInternalCall();
         return NULL;
     }

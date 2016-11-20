@@ -236,7 +236,7 @@ BB_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 static PyObject *
 u_getitem(arrayobject *ap, Py_ssize_t i)
 {
-    return PyUnicode_FromUnicode(&((Py_UNICODE *) ap->ob_item)[i], 1);
+    return PyUnicode_FromOrdinal(((Py_UNICODE *) ap->ob_item)[i]);
 }
 
 static int
@@ -1693,7 +1693,7 @@ array_array_tounicode_impl(arrayobject *self)
              "tounicode() may only be called on unicode type arrays");
         return NULL;
     }
-    return PyUnicode_FromUnicode((Py_UNICODE *) self->ob_item, Py_SIZE(self));
+    return PyUnicode_FromWideChar((Py_UNICODE *) self->ob_item, Py_SIZE(self));
 }
 
 /*[clinic input]

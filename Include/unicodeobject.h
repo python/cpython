@@ -90,7 +90,7 @@ Copyright (c) Corporation for National Research Initiatives.
 
 #ifndef Py_LIMITED_API
 #define PY_UNICODE_TYPE wchar_t
-typedef wchar_t Py_UNICODE;
+typedef wchar_t Py_UNICODE /* Py_DEPRECATED(3.3) */;
 #endif
 
 /* If the compiler provides a wchar_t type we try to support it
@@ -387,9 +387,11 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
       ((void)PyUnicode_AsUnicode((PyObject *)(op)),  \
        assert(((PyASCIIObject *)(op))->wstr),        \
        PyUnicode_WSTR_LENGTH(op)))
+    /* Py_DEPRECATED(3.3) */
 
 #define PyUnicode_GET_DATA_SIZE(op) \
     (PyUnicode_GET_SIZE(op) * Py_UNICODE_SIZE)
+    /* Py_DEPRECATED(3.3) */
 
 /* Alias for PyUnicode_AsUnicode().  This will create a wchar_t/Py_UNICODE
    representation on demand.  Using this macro is very inefficient now,
@@ -400,9 +402,11 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
     (assert(PyUnicode_Check(op)), \
      (((PyASCIIObject *)(op))->wstr) ? (((PyASCIIObject *)(op))->wstr) : \
       PyUnicode_AsUnicode((PyObject *)(op)))
+    /* Py_DEPRECATED(3.3) */
 
 #define PyUnicode_AS_DATA(op) \
     ((const char *)(PyUnicode_AS_UNICODE(op)))
+    /* Py_DEPRECATED(3.3) */
 
 
 /* --- Flexible String Representation Helper Macros (PEP 393) -------------- */
@@ -688,7 +692,7 @@ PyAPI_FUNC(void) _PyUnicode_FastFill(
 PyAPI_FUNC(PyObject*) PyUnicode_FromUnicode(
     const Py_UNICODE *u,        /* Unicode buffer */
     Py_ssize_t size             /* size of buffer */
-    );
+    ) /* Py_DEPRECATED(3.3) */;
 #endif
 
 /* Similar to PyUnicode_FromUnicode(), but u points to UTF-8 encoded bytes */
@@ -756,7 +760,7 @@ PyAPI_FUNC(Py_UCS4*) PyUnicode_AsUCS4Copy(PyObject *unicode);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicode(
     PyObject *unicode           /* Unicode object */
-    );
+    ) /* Py_DEPRECATED(3.3) */;
 #endif
 
 /* Return a read-only pointer to the Unicode object's internal
@@ -768,7 +772,7 @@ PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicode(
 PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
     PyObject *unicode,          /* Unicode object */
     Py_ssize_t *size            /* location where to save the length */
-    );
+    )  /* Py_DEPRECATED(3.3) */;
 #endif
 
 /* Get the length of the Unicode object. */
@@ -782,7 +786,7 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_GetLength(
 
 PyAPI_FUNC(Py_ssize_t) PyUnicode_GetSize(
     PyObject *unicode           /* Unicode object */
-    );
+    ) Py_DEPRECATED(3.3);
 
 /* Read a character from the string. */
 
@@ -804,7 +808,7 @@ PyAPI_FUNC(int) PyUnicode_WriteChar(
 
 #ifndef Py_LIMITED_API
 /* Get the maximum ordinal for a Unicode character. */
-PyAPI_FUNC(Py_UNICODE) PyUnicode_GetMax(void);
+PyAPI_FUNC(Py_UNICODE) PyUnicode_GetMax(void) Py_DEPRECATED(3.3);
 #endif
 
 /* Resize a Unicode object. The length is the number of characters, except
@@ -1205,7 +1209,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_Encode(
     Py_ssize_t size,            /* number of Py_UNICODE chars to encode */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    );
+    ) Py_DEPRECATED(3.3);
 #endif
 
 /* Encodes a Unicode object and returns the result as Python
@@ -1272,7 +1276,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF7(
     int base64SetO,             /* Encode RFC2152 Set O characters in base64 */
     int base64WhiteSpace,       /* Encode whitespace (sp, ht, nl, cr) in base64 */
     const char *errors          /* error handling */
-    );
+    ) Py_DEPRECATED(3.3);
 PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF7(
     PyObject *unicode,          /* Unicode object */
     int base64SetO,             /* Encode RFC2152 Set O characters in base64 */
@@ -1309,7 +1313,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF8(
     const Py_UNICODE *data,     /* Unicode char buffer */
     Py_ssize_t length,          /* number of Py_UNICODE chars to encode */
     const char *errors          /* error handling */
-    );
+    ) Py_DEPRECATED(3.3);
 #endif
 
 /* --- UTF-32 Codecs ------------------------------------------------------ */
@@ -1385,7 +1389,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF32(
     Py_ssize_t length,          /* number of Py_UNICODE chars to encode */
     const char *errors,         /* error handling */
     int byteorder               /* byteorder to use 0=BOM+native;-1=LE,1=BE */
-    );
+    ) Py_DEPRECATED(3.3);
 PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF32(
     PyObject *object,           /* Unicode object */
     const char *errors,         /* error handling */
@@ -1470,7 +1474,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF16(
     Py_ssize_t length,          /* number of Py_UNICODE chars to encode */
     const char *errors,         /* error handling */
     int byteorder               /* byteorder to use 0=BOM+native;-1=LE,1=BE */
-    );
+    ) Py_DEPRECATED(3.3);
 PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF16(
     PyObject* unicode,          /* Unicode object */
     const char *errors,         /* error handling */
@@ -1505,7 +1509,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsUnicodeEscapeString(
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeUnicodeEscape(
     const Py_UNICODE *data,     /* Unicode char buffer */
     Py_ssize_t length           /* Number of Py_UNICODE chars to encode */
-    );
+    ) Py_DEPRECATED(3.3);
 #endif
 
 /* --- Raw-Unicode-Escape Codecs ------------------------------------------ */
@@ -1524,7 +1528,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsRawUnicodeEscapeString(
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeRawUnicodeEscape(
     const Py_UNICODE *data,     /* Unicode char buffer */
     Py_ssize_t length           /* Number of Py_UNICODE chars to encode */
-    );
+    ) Py_DEPRECATED(3.3);
 #endif
 
 /* --- Unicode Internal Codec ---------------------------------------------
@@ -1564,7 +1568,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeLatin1(
     const Py_UNICODE *data,     /* Unicode char buffer */
     Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
     const char *errors          /* error handling */
-    );
+    ) Py_DEPRECATED(3.3);
 #endif
 
 /* --- ASCII Codecs -------------------------------------------------------
@@ -1592,7 +1596,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeASCII(
     const Py_UNICODE *data,     /* Unicode char buffer */
     Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
     const char *errors          /* error handling */
-    );
+    ) Py_DEPRECATED(3.3);
 #endif
 
 /* --- Character Map Codecs -----------------------------------------------
@@ -1638,7 +1642,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeCharmap(
     PyObject *mapping,          /* character mapping
                                    (unicode ordinal -> char ordinal) */
     const char *errors          /* error handling */
-    );
+    ) Py_DEPRECATED(3.3);
 PyAPI_FUNC(PyObject*) _PyUnicode_EncodeCharmap(
     PyObject *unicode,          /* Unicode object */
     PyObject *mapping,          /* character mapping
@@ -1666,7 +1670,7 @@ PyAPI_FUNC(PyObject *) PyUnicode_TranslateCharmap(
     Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
     PyObject *table,            /* Translate table */
     const char *errors          /* error handling */
-    );
+    ) Py_DEPRECATED(3.3);
 #endif
 
 #ifdef MS_WINDOWS
@@ -1703,7 +1707,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeMBCS(
     const Py_UNICODE *data,     /* Unicode char buffer */
     Py_ssize_t length,          /* number of Py_UNICODE chars to encode */
     const char *errors          /* error handling */
-    );
+    ) Py_DEPRECATED(3.3);
 #endif
 
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeCodePage(
@@ -1744,7 +1748,7 @@ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
     Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
     char *output,               /* Output buffer; must have size >= length */
     const char *errors          /* error handling */
-    );
+    ) /* Py_DEPRECATED(3.3) */;
 #endif
 
 /* Transforms code points that have decimal digit property to the
@@ -1757,7 +1761,7 @@ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
 PyAPI_FUNC(PyObject*) PyUnicode_TransformDecimalToASCII(
     Py_UNICODE *s,              /* Unicode buffer */
     Py_ssize_t length           /* Number of Py_UNICODE chars to transform */
-    );
+    ) /* Py_DEPRECATED(3.3) */;
 #endif
 
 /* Similar to PyUnicode_TransformDecimalToASCII(), but takes a PyObject
@@ -2182,15 +2186,15 @@ PyAPI_FUNC(int) _PyUnicode_IsLinebreak(
 
 PyAPI_FUNC(Py_UCS4) _PyUnicode_ToLowercase(
     Py_UCS4 ch       /* Unicode character */
-    );
+    ) /* Py_DEPRECATED(3.3) */;
 
 PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(
     Py_UCS4 ch       /* Unicode character */
-    );
+    ) /* Py_DEPRECATED(3.3) */;
 
 PyAPI_FUNC(Py_UCS4) _PyUnicode_ToTitlecase(
     Py_UCS4 ch       /* Unicode character */
-    );
+    ) Py_DEPRECATED(3.3);
 
 PyAPI_FUNC(int) _PyUnicode_ToLowerFull(
     Py_UCS4 ch,       /* Unicode character */
@@ -2254,40 +2258,40 @@ PyAPI_FUNC(int) _PyUnicode_IsAlpha(
 
 PyAPI_FUNC(size_t) Py_UNICODE_strlen(
     const Py_UNICODE *u
-    );
+    ) Py_DEPRECATED(3.3);
 
 PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strcpy(
     Py_UNICODE *s1,
-    const Py_UNICODE *s2);
+    const Py_UNICODE *s2) Py_DEPRECATED(3.3);
 
 PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strcat(
-    Py_UNICODE *s1, const Py_UNICODE *s2);
+    Py_UNICODE *s1, const Py_UNICODE *s2) Py_DEPRECATED(3.3);
 
 PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strncpy(
     Py_UNICODE *s1,
     const Py_UNICODE *s2,
-    size_t n);
+    size_t n) Py_DEPRECATED(3.3);
 
 PyAPI_FUNC(int) Py_UNICODE_strcmp(
     const Py_UNICODE *s1,
     const Py_UNICODE *s2
-    );
+    ) Py_DEPRECATED(3.3);
 
 PyAPI_FUNC(int) Py_UNICODE_strncmp(
     const Py_UNICODE *s1,
     const Py_UNICODE *s2,
     size_t n
-    );
+    ) Py_DEPRECATED(3.3);
 
 PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strchr(
     const Py_UNICODE *s,
     Py_UNICODE c
-    );
+    ) Py_DEPRECATED(3.3);
 
 PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strrchr(
     const Py_UNICODE *s,
     Py_UNICODE c
-    );
+    ) Py_DEPRECATED(3.3);
 
 PyAPI_FUNC(PyObject*) _PyUnicode_FormatLong(PyObject *, int, int, int);
 
@@ -2297,7 +2301,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_FormatLong(PyObject *, int, int, int);
 
 PyAPI_FUNC(Py_UNICODE*) PyUnicode_AsUnicodeCopy(
     PyObject *unicode
-    );
+    ) Py_DEPRECATED(3.3);
 #endif /* Py_LIMITED_API */
 
 #if defined(Py_DEBUG) && !defined(Py_LIMITED_API)
