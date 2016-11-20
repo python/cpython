@@ -3347,8 +3347,7 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    if (src->wide)
-        result = CreateHardLinkW(dst->wide, src->wide, NULL);
+    result = CreateHardLinkW(dst->wide, src->wide, NULL);
     Py_END_ALLOW_THREADS
 
     if (!result)
@@ -4111,7 +4110,9 @@ os_system_impl(PyObject *module, Py_UNICODE *command)
 {
     long result;
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     result = _wsystem(command);
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     return result;
 }
@@ -6889,7 +6890,9 @@ os_waitpid_impl(PyObject *module, intptr_t pid, int options)
 
     do {
         Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
         res = _cwait(&status, pid, options);
+        _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     } while (res < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (res < 0)
@@ -8256,6 +8259,7 @@ os_pipe_impl(PyObject *module)
     attr.bInheritHandle = FALSE;
 
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     ok = CreatePipe(&read, &write, &attr, 0);
     if (ok) {
         fds[0] = _open_osfhandle((intptr_t)read, _O_RDONLY);
@@ -8266,6 +8270,7 @@ os_pipe_impl(PyObject *module)
             ok = 0;
         }
     }
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
     if (!ok)
