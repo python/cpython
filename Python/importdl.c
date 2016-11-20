@@ -147,6 +147,10 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     /* Package context is needed for single-phase init */
     oldcontext = _Py_PackageContext;
     _Py_PackageContext = PyUnicode_AsUTF8(name_unicode);
+    if (_Py_PackageContext == NULL) {
+        _Py_PackageContext = oldcontext;
+        goto error;
+    }
     m = p0();
     _Py_PackageContext = oldcontext;
 
