@@ -275,7 +275,7 @@ message objects.
       only the key will be added.
 
       If the value contains non-ASCII characters, the charset and language may
-      be explicitly controlled by specifing the value as a three tuple in the
+      be explicitly controlled by specifying the value as a three tuple in the
       format ``(CHARSET, LANGUAGE, VALUE)``, where ``CHARSET`` is a string
       naming the charset to be used to encode the value, ``LANGUAGE`` can
       usually be set to ``None`` or the empty string (see :rfc:`2231` for other
