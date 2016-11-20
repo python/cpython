@@ -549,7 +549,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      PyAPI_FUNC(int) PyObject_AsCharBuffer(PyObject *obj,
                                            const char **buffer,
-                                           Py_ssize_t *buffer_len);
+                                           Py_ssize_t *buffer_len)
+                                           Py_DEPRECATED(3.0);
 
        /*
       Takes an arbitrary object which must support the (character,
@@ -562,7 +563,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
       an exception set.
        */
 
-     PyAPI_FUNC(int) PyObject_CheckReadBuffer(PyObject *obj);
+     PyAPI_FUNC(int) PyObject_CheckReadBuffer(PyObject *obj)
+                                              Py_DEPRECATED(3.0);
 
       /*
       Checks whether an arbitrary object supports the (character,
@@ -572,7 +574,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      PyAPI_FUNC(int) PyObject_AsReadBuffer(PyObject *obj,
                                            const void **buffer,
-                                           Py_ssize_t *buffer_len);
+                                           Py_ssize_t *buffer_len)
+                                           Py_DEPRECATED(3.0);
 
        /*
       Same as PyObject_AsCharBuffer() except that this API expects
@@ -587,7 +590,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      PyAPI_FUNC(int) PyObject_AsWriteBuffer(PyObject *obj,
                                             void **buffer,
-                                            Py_ssize_t *buffer_len);
+                                            Py_ssize_t *buffer_len)
+                                            Py_DEPRECATED(3.0);
 
        /*
       Takes an arbitrary object which must support the (writable,

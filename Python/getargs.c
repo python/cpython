@@ -1027,7 +1027,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 *p = PyUnicode_AsUnicodeAndSize(arg, &len);
                 if (*p == NULL)
                     RETURN_ERR_OCCURRED;
-                if (Py_UNICODE_strlen(*p) != (size_t)len) {
+                if (wcslen(*p) != (size_t)len) {
                     PyErr_SetString(PyExc_ValueError, "embedded null character");
                     RETURN_ERR_OCCURRED;
                 }
@@ -1074,9 +1074,14 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             (PyBytes_Check(arg) || PyByteArray_Check(arg))) {
             s = arg;
             Py_INCREF(s);
-            if (PyObject_AsCharBuffer(s, &ptr, &size) < 0)
-                return converterr("(AsCharBuffer failed)",
-                                  arg, msgbuf, bufsize);
+            if (PyBytes_Check(arg)) {
+                size = PyBytes_GET_SIZE(s);
+                ptr = PyBytes_AS_STRING(s);
+            }
+            else {
+                size = PyByteArray_GET_SIZE(s);
+                ptr = PyByteArray_AS_STRING(s);
+            }
         }
         else if (PyUnicode_Check(arg)) {
             /* Encode object; use default error handling */
