@@ -832,6 +832,10 @@ if _exists("fork") and not _exists("spawnv") and _exists("execv"):
 
     def _spawnvef(mode, file, args, env, func):
         # Internal helper; func is the exec*() function to use
+        if not isinstance(args, (tuple, list)):
+            raise TypeError('argv must be a tuple or a list')
+        if not args[0]:
+            raise ValueError('argv first element cannot be empty')
         pid = fork()
         if not pid:
             # Child
