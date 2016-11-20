@@ -249,7 +249,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         Py_XDECREF(oldv);
         break;
     case T_CHAR: {
-        char *string;
+        const char *string;
         Py_ssize_t len;
 
         string = PyUnicode_AsUTF8AndSize(v, &len);

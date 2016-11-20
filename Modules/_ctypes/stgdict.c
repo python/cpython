@@ -488,8 +488,8 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             bitsize = 0;
 
         if (isStruct && !isPacked) {
-            char *fieldfmt = dict->format ? dict->format : "B";
-            char *fieldname = PyUnicode_AsUTF8(name);
+            const char *fieldfmt = dict->format ? dict->format : "B";
+            const char *fieldname = PyUnicode_AsUTF8(name);
             char *ptr;
             Py_ssize_t len;
             char *buf;

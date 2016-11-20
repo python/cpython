@@ -5982,7 +5982,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     PyObject *hobj = NULL;
     PyObject *pobj = (PyObject *)NULL;
     char pbuf[30];
-    char *hptr, *pptr;
+    const char *hptr, *pptr;
     int family, socktype, protocol, flags;
     int error;
     PyObject *all = (PyObject *)NULL;

@@ -305,7 +305,7 @@ _enter_buffered_busy(buffered *self)
             "could not acquire lock for %A at interpreter "
             "shutdown, possibly due to daemon threads",
             (PyObject *) self);
-        char *msg = PyUnicode_AsUTF8(msgobj);
+        const char *msg = PyUnicode_AsUTF8(msgobj);
         Py_FatalError(msg);
     }
     return 1;

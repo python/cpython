@@ -5440,8 +5440,8 @@ _PyEval_RequestCodeExtraIndex(freefunc free)
 static void
 dtrace_function_entry(PyFrameObject *f)
 {
-    char* filename;
-    char* funcname;
+    const char *filename;
+    const char *funcname;
     int lineno;
 
     filename = PyUnicode_AsUTF8(f->f_code->co_filename);
@@ -5454,8 +5454,8 @@ dtrace_function_entry(PyFrameObject *f)
 static void
 dtrace_function_return(PyFrameObject *f)
 {
-    char* filename;
-    char* funcname;
+    const char *filename;
+    const char *funcname;
     int lineno;
 
     filename = PyUnicode_AsUTF8(f->f_code->co_filename);
@@ -5471,7 +5471,7 @@ maybe_dtrace_line(PyFrameObject *frame,
                   int *instr_lb, int *instr_ub, int *instr_prev)
 {
     int line = frame->f_lineno;
-    char *co_filename, *co_name;
+    const char *co_filename, *co_name;
 
     /* If the last instruction executed isn't in the current
        instruction window, reset the window.
