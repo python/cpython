@@ -483,7 +483,7 @@ PyModule_GetName(PyObject *m)
     if (name == NULL)
         return NULL;
     Py_DECREF(name);   /* module dict has still a reference */
-    return _PyUnicode_AsString(name);
+    return PyUnicode_AsUTF8(name);
 }
 
 PyObject*
@@ -516,7 +516,7 @@ PyModule_GetFilename(PyObject *m)
     fileobj = PyModule_GetFilenameObject(m);
     if (fileobj == NULL)
         return NULL;
-    utf8 = _PyUnicode_AsString(fileobj);
+    utf8 = PyUnicode_AsUTF8(fileobj);
     Py_DECREF(fileobj);   /* module dict has still a reference */
     return utf8;
 }
@@ -569,7 +569,7 @@ _PyModule_ClearDict(PyObject *d)
             if (PyUnicode_READ_CHAR(key, 0) == '_' &&
                 PyUnicode_READ_CHAR(key, 1) != '_') {
                 if (Py_VerboseFlag > 1) {
-                    const char *s = _PyUnicode_AsString(key);
+                    const char *s = PyUnicode_AsUTF8(key);
                     if (s != NULL)
                         PySys_WriteStderr("#   clear[1] %s\n", s);
                     else
@@ -589,7 +589,7 @@ _PyModule_ClearDict(PyObject *d)
                 !_PyUnicode_EqualToASCIIString(key, "__builtins__"))
             {
                 if (Py_VerboseFlag > 1) {
-                    const char *s = _PyUnicode_AsString(key);
+                    const char *s = PyUnicode_AsUTF8(key);
                     if (s != NULL)
                         PySys_WriteStderr("#   clear[2] %s\n", s);
                     else
