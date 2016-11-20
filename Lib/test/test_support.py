@@ -242,7 +242,7 @@ if sys.platform.startswith("win"):
                 else:
                     _force_run(path, os.unlink, fullname)
         _waitfor(_rmtree_inner, path, waitall=True)
-        _waitfor(os.rmdir, path)
+        _waitfor(lambda p: _force_run(p, os.rmdir, p), path)
 else:
     _unlink = os.unlink
     _rmdir = os.rmdir
