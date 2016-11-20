@@ -912,7 +912,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                     Py_DECREF(o);
                 }
             }
-            temp_str = _PyUnicode_AsStringAndSize(temp, &len);
+            temp_str = PyUnicode_AsUTF8AndSize(temp, &len);
             if (temp_str == NULL) {
                 Py_DECREF(temp);
                 Py_XDECREF(elem);
@@ -1013,7 +1013,7 @@ build_node_tree(PyObject *tuple)
             if (res && encoding) {
                 Py_ssize_t len;
                 const char *temp;
-                temp = _PyUnicode_AsStringAndSize(encoding, &len);
+                temp = PyUnicode_AsUTF8AndSize(encoding, &len);
                 if (temp == NULL) {
                     Py_DECREF(res);
                     Py_DECREF(encoding);
