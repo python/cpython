@@ -734,8 +734,7 @@ PyCStructType_setattro(PyObject *self, PyObject *key, PyObject *value)
         return -1;
 
     if (value && PyUnicode_Check(key) &&
-        /* XXX struni _PyUnicode_AsString can fail (also in other places)! */
-        0 == strcmp(_PyUnicode_AsString(key), "_fields_"))
+        _PyUnicode_EqualToASCIIString(key, "_fields_"))
         return PyCStructUnionType_update_stgdict(self, value, 1);
     return 0;
 }
@@ -749,7 +748,7 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
         return -1;
 
     if (PyUnicode_Check(key) &&
-        0 == strcmp(_PyUnicode_AsString(key), "_fields_"))
+        _PyUnicode_EqualToASCIIString(key, "_fields_"))
         return PyCStructUnionType_update_stgdict(self, value, 0);
     return 0;
 }
