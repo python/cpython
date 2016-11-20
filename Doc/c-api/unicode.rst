@@ -685,8 +685,8 @@ Extension modules can continue using them, as they will not be removed in Python
    string content has been filled before using any of the access macros such as
    :c:func:`PyUnicode_KIND`.
 
-   Please migrate to using :c:func:`PyUnicode_FromKindAndData` or
-   :c:func:`PyUnicode_New`.
+   Please migrate to using :c:func:`PyUnicode_FromKindAndData`,
+   :c:func:`PyUnicode_FromWideChar` or :c:func:`PyUnicode_New`.
 
 
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicode(PyObject *unicode)
@@ -700,7 +700,7 @@ Extension modules can continue using them, as they will not be removed in Python
    used in most C functions.
 
    Please migrate to using :c:func:`PyUnicode_AsUCS4`,
-   :c:func:`PyUnicode_Substring`, :c:func:`PyUnicode_ReadChar` or similar new
+   :c:func:`PyUnicode_AsWideChar`, :c:func:`PyUnicode_ReadChar` or similar new
    APIs.
 
 
@@ -1086,7 +1086,8 @@ These are the UTF-8 codec APIs:
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsUTF8String` or :c:func:`PyUnicode_AsUTF8AndSize`.
+      :c:func:`PyUnicode_AsUTF8String`, :c:func:`PyUnicode_AsUTF8AndSize` or
+      :c:func:`PyUnicode_AsEncodedString`.
 
 
 UTF-32 Codecs
@@ -1159,7 +1160,7 @@ These are the UTF-32 codec APIs:
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsUTF32String`.
+      :c:func:`PyUnicode_AsUTF32String` or :c:func:`PyUnicode_AsEncodedString`.
 
 
 UTF-16 Codecs
@@ -1234,7 +1235,7 @@ These are the UTF-16 codec APIs:
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsUTF16String`.
+      :c:func:`PyUnicode_AsUTF16String` or :c:func:`PyUnicode_AsEncodedString`.
 
 
 UTF-7 Codecs
@@ -1271,9 +1272,8 @@ These are the UTF-7 codec APIs:
    Python "utf-7" codec.
 
    .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API.
-
-   .. XXX replace with what?
+      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+      :c:func:`PyUnicode_AsEncodedString`.
 
 
 Unicode-Escape Codecs
@@ -1336,7 +1336,8 @@ These are the "Raw Unicode Escape" codec APIs:
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsRawUnicodeEscapeString`.
+      :c:func:`PyUnicode_AsRawUnicodeEscapeString` or
+      :c:func:`PyUnicode_AsEncodedString`.
 
 
 Latin-1 Codecs
@@ -1367,7 +1368,8 @@ ordinals and only these are accepted by the codecs during encoding.
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsLatin1String`.
+      :c:func:`PyUnicode_AsLatin1String` or
+      :c:func:`PyUnicode_AsEncodedString`.
 
 
 ASCII Codecs
@@ -1398,7 +1400,8 @@ codes generate errors.
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsASCIIString`.
+      :c:func:`PyUnicode_AsASCIIString` or
+      :c:func:`PyUnicode_AsEncodedString`.
 
 
 Character Map Codecs
@@ -1462,9 +1465,9 @@ The following codec API is special in that maps Unicode to Unicode.
    :exc:`LookupError`) are left untouched and are copied as-is.
 
    .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API.
-
-   .. XXX replace with what?
+      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+      :c:func:`PyUnicode_Translate`. or :ref:`generic codec based API
+      <codec-registry>`
 
 
 .. c:function:: PyObject* PyUnicode_EncodeCharmap(const Py_UNICODE *s, Py_ssize_t size, \
@@ -1476,7 +1479,8 @@ The following codec API is special in that maps Unicode to Unicode.
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsCharmapString`.
+      :c:func:`PyUnicode_AsCharmapString` or
+      :c:func:`PyUnicode_AsEncodedString`.
 
 
 MBCS codecs for Windows
@@ -1526,7 +1530,8 @@ the user settings on the machine running the codec.
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsMBCSString` or :c:func:`PyUnicode_EncodeCodePage`.
+      :c:func:`PyUnicode_AsMBCSString`, :c:func:`PyUnicode_EncodeCodePage` or
+      :c:func:`PyUnicode_AsEncodedString`.
 
 
 Methods & Slots
