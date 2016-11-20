@@ -1296,16 +1296,15 @@ These are the "Unicode Escape" codec APIs:
 
 .. c:function:: PyObject* PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 
-   Encode a Unicode object using Unicode-Escape and return the result as Python
-   string object.  Error handling is "strict". Return *NULL* if an exception was
+   Encode a Unicode object using Unicode-Escape and return the result as a
+   bytes object.  Error handling is "strict".  Return *NULL* if an exception was
    raised by the codec.
 
 
 .. c:function:: PyObject* PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s, Py_ssize_t size)
 
    Encode the :c:type:`Py_UNICODE` buffer of the given *size* using Unicode-Escape and
-   return a Python string object.  Return *NULL* if an exception was raised by the
-   codec.
+   return a bytes object.  Return *NULL* if an exception was raised by the codec.
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
@@ -1328,7 +1327,7 @@ These are the "Raw Unicode Escape" codec APIs:
 .. c:function:: PyObject* PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
 
    Encode a Unicode object using Raw-Unicode-Escape and return the result as
-   Python string object. Error handling is "strict". Return *NULL* if an exception
+   a bytes object.  Error handling is "strict".  Return *NULL* if an exception
    was raised by the codec.
 
 
@@ -1336,8 +1335,7 @@ These are the "Raw Unicode Escape" codec APIs:
                               Py_ssize_t size, const char *errors)
 
    Encode the :c:type:`Py_UNICODE` buffer of the given *size* using Raw-Unicode-Escape
-   and return a Python string object.  Return *NULL* if an exception was raised by
-   the codec.
+   and return a bytes object.  Return *NULL* if an exception was raised by the codec.
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
