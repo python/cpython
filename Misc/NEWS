@@ -90,6 +90,9 @@ Tests
 Build
 -----
 
+- Issue #10656: Fix out-of-tree building on AIX.  Patch by Tristan Carel and
+  Michael Haubenwallner.
+
 - Issue #26359: Rename --with-optimiations to --enable-optimizations.
 
 - Issue #28676: Prevent missing 'getentropy' declaration warning on macOS.
