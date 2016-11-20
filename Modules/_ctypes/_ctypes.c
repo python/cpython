@@ -463,7 +463,10 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
     Py_ssize_t offset = 0;
 
     StgDictObject *dict = PyType_stgdict(type);
-    assert (dict);
+    if (!dict) {
+        PyErr_SetString(PyExc_TypeError, "abstract class");
+        return NULL;
+    }
 
     if (!PyArg_ParseTuple(args, "O|n:from_buffer", &obj, &offset))
         return NULL;
@@ -531,9 +534,12 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
     Py_ssize_t offset = 0;
     PyObject *result;
     StgDictObject *dict = PyType_stgdict(type);
-    assert (dict);
+    if (!dict) {
+        PyErr_SetString(PyExc_TypeError, "abstract class");
+        return NULL;
+    }
 
-    if (!PyArg_ParseTuple(args, "y*|n:from_buffer", &buffer, &offset))
+    if (!PyArg_ParseTuple(args, "y*|n:from_buffer_copy", &buffer, &offset))
         return NULL;
 
     if (offset < 0) {
