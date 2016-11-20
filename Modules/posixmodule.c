@@ -5042,6 +5042,11 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
                         "spawnv() arg 2 must be a tuple or list");
         return NULL;
     }
+    if (argc == 0) {
+        PyErr_SetString(PyExc_ValueError,
+            "spawnv() arg 2 cannot be empty");
+        return NULL;
+    }
 
     argvlist = PyMem_NEW(EXECV_CHAR *, argc+1);
     if (argvlist == NULL) {
@@ -5125,6 +5130,11 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
     else {
         PyErr_SetString(PyExc_TypeError,
                         "spawnve() arg 2 must be a tuple or list");
+        goto fail_0;
+    }
+    if (argc == 0) {
+        PyErr_SetString(PyExc_ValueError,
+            "spawnve() arg 2 cannot be empty");
         goto fail_0;
     }
     if (!PyMapping_Check(env)) {
