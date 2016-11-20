@@ -4916,12 +4916,20 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
     if (argvlist == NULL) {
         return NULL;
     }
+    if (!argvlist[0][0]) {
+        PyErr_SetString(PyExc_ValueError,
+            "execv() arg 2 first element cannot be empty");
+        free_string_array(argvlist, argc);
+        return NULL;
+    }
 
+    _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WEXECV
     _wexecv(path->wide, argvlist);
 #else
     execv(path->narrow, argvlist);
 #endif
+    _Py_END_SUPPRESS_IPH
 
     /* If we get here it's definitely an error */
 
@@ -4961,6 +4969,11 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
         goto fail;
     }
     argc = PySequence_Size(argv);
+    if (argc < 1) {
+        PyErr_SetString(PyExc_ValueError, "execve: argv must not be empty");
+        return NULL;
+    }
+
     if (!PyMapping_Check(env)) {
         PyErr_SetString(PyExc_TypeError,
                         "execve: environment must be a mapping object");
@@ -4971,11 +4984,17 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
     if (argvlist == NULL) {
         goto fail;
     }
+    if (!argvlist[0][0]) {
+        PyErr_SetString(PyExc_ValueError,
+            "execve: argv first element cannot be empty");
+        goto fail;
+    }
 
     envlist = parse_envlist(env, &envc);
     if (envlist == NULL)
         goto fail;
 
+    _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_FEXECVE
     if (path->fd > -1)
         fexecve(path->fd, argvlist, envlist);
@@ -4986,6 +5005,7 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
 #else
         execve(path->narrow, argvlist, envlist);
 #endif
+    _Py_END_SUPPRESS_IPH
 
     /* If we get here it's definitely an error */
 
@@ -5059,6 +5079,13 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
             PyErr_SetString(
                 PyExc_TypeError,
                 "spawnv() arg 2 must contain only strings");
+            return NULL;
+        }
+        if (i == 0 && !argvlist[0][0]) {
+            free_string_array(argvlist, i);
+            PyErr_SetString(
+                PyExc_ValueError,
+                "spawnv() arg 2 first element cannot be empty");
             return NULL;
         }
     }
@@ -5153,6 +5180,13 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
                               &argvlist[i]))
         {
             lastarg = i;
+            goto fail_1;
+        }
+        if (i == 0 && !argvlist[0][0]) {
+            lastarg = i;
+            PyErr_SetString(
+                PyExc_ValueError,
+                "spawnv() arg 2 first element cannot be empty");
             goto fail_1;
         }
     }
