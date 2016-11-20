@@ -425,6 +425,8 @@ Documentation
 Build
 -----
 
+- Issue #26359: Rename --with-optimiations to --enable-optimizations.
+
 - Issue #28444: Fix missing extensions modules when cross compiling.
 
 - Issue #28208: Update Windows build and OS X installers to use SQLite 3.14.2.
