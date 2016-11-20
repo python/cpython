@@ -501,7 +501,10 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
     Py_ssize_t offset = 0;
     PyObject *obj, *result;
     StgDictObject *dict = PyType_stgdict(type);
-    assert (dict);
+    if (!dict) {
+        PyErr_SetString(PyExc_TypeError, "abstract class");
+        return NULL;
+    }
 
     if (!PyArg_ParseTuple(args,
 #if (PY_VERSION_HEX < 0x02050000)
@@ -557,13 +560,16 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
     Py_ssize_t offset = 0;
     PyObject *obj, *result;
     StgDictObject *dict = PyType_stgdict(type);
-    assert (dict);
+    if (!dict) {
+        PyErr_SetString(PyExc_TypeError, "abstract class");
+        return NULL;
+    }
 
     if (!PyArg_ParseTuple(args,
 #if (PY_VERSION_HEX < 0x02050000)
-                          "O|i:from_buffer",
+                          "O|i:from_buffer_copy",
 #else
-                          "O|n:from_buffer",
+                          "O|n:from_buffer_copy",
 #endif
                           &obj, &offset))
         return NULL;

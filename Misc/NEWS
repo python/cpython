@@ -63,6 +63,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25659: In ctypes, prevent a crash calling the from_buffer() and
+  from_buffer_copy() methods on abstract classes like Array.
+
 - Issue #28563: Fixed possible DoS and arbitrary code execution when handle
   plural form selections in the gettext module.  The expression parser now
   supports exact syntax supported by GNU gettext.
