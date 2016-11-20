@@ -555,6 +555,8 @@ Windows
 Build
 -----
 
+- Issue #26359: Rename --with-optimiations to --enable-optimizations.
+
 - Issue #28444: Fix missing extensions modules when cross compiling.
 
 - Issue #28248: Update Windows build and OS X installers to use OpenSSL 1.0.2j.
