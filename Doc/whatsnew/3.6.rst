@@ -1196,6 +1196,8 @@ See the summary for :ref:`PEP 519 <whatsnew36-pep519>` for details on how the
 :mod:`os` and :mod:`os.path` modules now support
 :term:`path-like objects <path-like object>`.
 
+:func:`~os.scandir` now supports :class:`bytes` paths on Windows.
+
 A new :meth:`~os.scandir.close` method allows explicitly closing a
 :func:`~os.scandir` iterator.  The :func:`~os.scandir` iterator now
 supports the :term:`context manager` protocol.  If a :func:`scandir`
