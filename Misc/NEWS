@@ -273,6 +273,8 @@ Tests
 Build
 -----
 
+- Issue #26359: Rename --with-optimiations to --enable-optimizations.
+
 - Issue #28248: Update Windows build and OS X installers to use OpenSSL 1.0.2j.
 
 - Issue #28258: Fixed build with Estonian locale (distclean target in

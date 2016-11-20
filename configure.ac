@@ -1370,8 +1370,8 @@ fi
 AC_SUBST(DEF_MAKE_ALL_RULE)
 AC_SUBST(DEF_MAKE_RULE)
 Py_OPT='false'
-AC_MSG_CHECKING(for --with-optimizations)
-AC_ARG_WITH(optimizations, AS_HELP_STRING([--with-optimizations], [Enable expensive optimizations (PGO, maybe LTO, etc).  Disabled by default.]),
+AC_MSG_CHECKING(for --enable-optimizations)
+AC_ARG_ENABLE(optimizations, AS_HELP_STRING([--enable-optimizations], [Enable expensive optimizations (PGO, maybe LTO, etc).  Disabled by default.]),
 [
 if test "$withval" != no
 then
@@ -1490,7 +1490,7 @@ case $CC in
       LLVM_PROF_ERR=yes
       if test "${REQUIRE_PGO}" = "yes"
       then
-        AC_MSG_ERROR([llvm-profdata is required for a --with-optimizations build but could not be found.])
+        AC_MSG_ERROR([llvm-profdata is required for a --enable-optimizations build but could not be found.])
       fi
     fi
     ;;
@@ -1506,7 +1506,7 @@ case $CC in
           LLVM_PROF_ERR=yes
           if test "${REQUIRE_PGO}" = "yes"
 	  then
-	    AC_MSG_ERROR([llvm-profdata is required for a --with-optimizations build but could not be found.])
+	    AC_MSG_ERROR([llvm-profdata is required for a --enable-optimizations build but could not be found.])
 	  fi
         fi
         ;;
@@ -4843,7 +4843,7 @@ if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
     echo "If you want a release build with all optimizations active (LTO, PGO, etc),"
-    echo "please run ./configure --with-optimizations" >&AS_MESSAGE_FD
+    echo "please run ./configure --enable-optimizations" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
 fi
