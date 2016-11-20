@@ -5210,6 +5210,15 @@ os_spawnv_impl(PyObject *module, int mode, PyObject *path, PyObject *argv)
                 "spawnv() arg 2 must contain only strings");
             return NULL;
         }
+#ifdef MS_WINDOWS
+        if (i == 0 && !argvlist[0][0]) {
+            free_string_array(argvlist, i);
+            PyErr_SetString(
+                PyExc_ValueError,
+                "spawnv() arg 2 first element cannot be empty");
+            return NULL;
+        }
+#endif
     }
     argvlist[argc] = NULL;
 
