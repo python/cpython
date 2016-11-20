@@ -298,6 +298,16 @@ def unload(name):
     except KeyError:
         pass
 
+def _force_run(path, func, *args):
+    try:
+        return func(*args)
+    except OSError as err:
+        if verbose >= 2:
+            print('%s: %s' % (err.__class__.__name__, err))
+            print('re-run %s%r' % (func.__name__, args))
+        os.chmod(path, stat.S_IRWXU)
+        return func(*args)
+
 if sys.platform.startswith("win"):
     def _waitfor(func, pathname, waitall=False):
         # Perform the operation
@@ -340,7 +350,7 @@ if sys.platform.startswith("win"):
 
     def _rmtree(path):
         def _rmtree_inner(path):
-            for name in os.listdir(path):
+            for name in _force_run(path, os.listdir, path):
                 fullname = os.path.join(path, name)
                 try:
                     mode = os.lstat(fullname).st_mode
@@ -350,9 +360,9 @@ if sys.platform.startswith("win"):
                     mode = 0
                 if stat.S_ISDIR(mode):
                     _waitfor(_rmtree_inner, fullname, waitall=True)
-                    os.rmdir(fullname)
+                    _force_run(path, os.rmdir, fullname)
                 else:
-                    os.unlink(fullname)
+                    _force_run(path, os.unlink, fullname)
         _waitfor(_rmtree_inner, path, waitall=True)
         _waitfor(os.rmdir, path)
 else:
@@ -366,17 +376,8 @@ else:
         except OSError:
             pass
 
-        def force_run(path, func, *args):
-            try:
-                return func(*args)
-            except OSError as err:
-                if verbose >= 2:
-                    print('%s: %s' % (err.__class__.__name__, err))
-                    print('re-run %s%r' % (func.__name__, args))
-                os.chmod(path, stat.S_IRWXU)
-                return func(*args)
         def _rmtree_inner(path):
-            for name in force_run(path, os.listdir, path):
+            for name in _force_run(path, os.listdir, path):
                 fullname = os.path.join(path, name)
                 try:
                     mode = os.lstat(fullname).st_mode
@@ -384,9 +385,9 @@ else:
                     mode = 0
                 if stat.S_ISDIR(mode):
                     _rmtree_inner(fullname)
-                    force_run(path, os.rmdir, fullname)
+                    _force_run(path, os.rmdir, fullname)
                 else:
-                    force_run(path, os.unlink, fullname)
+                    _force_run(path, os.unlink, fullname)
         _rmtree_inner(path)
         os.rmdir(path)
 
