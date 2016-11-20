@@ -273,6 +273,9 @@ Tests
 Build
 -----
 
+- Issue #10656: Fix out-of-tree building on AIX.  Patch by Tristan Carel and
+  Michael Haubenwallner.
+
 - Issue #26359: Rename --with-optimiations to --enable-optimizations.
 
 - Issue #28248: Update Windows build and OS X installers to use OpenSSL 1.0.2j.
