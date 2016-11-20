@@ -929,11 +929,14 @@ static PyMethodDef oss_mixer_methods[] = {
 static PyObject *
 oss_getattro(oss_audio_t *self, PyObject *nameobj)
 {
-    char *name = "";
+    const char *name = "";
     PyObject * rval = NULL;
 
-    if (PyUnicode_Check(nameobj))
-        name = _PyUnicode_AsString(nameobj);
+    if (PyUnicode_Check(nameobj)) {
+        name = PyUnicode_AsUTF8(nameobj);
+        if (name == NULL)
+            return NULL;
+    }
 
     if (strcmp(name, "closed") == 0) {
         rval = (self->fd == -1) ? Py_True : Py_False;
