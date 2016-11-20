@@ -2466,7 +2466,7 @@ test_c_api(PySetObject *so)
     /* Exercise direct iteration */
     i = 0, count = 0;
     while (_PySet_NextEntry((PyObject *)dup, &i, &x, &hash)) {
-        s = _PyUnicode_AsString(x);
+        s = PyUnicode_AsUTF8(x);
         assert(s && (s[0] == 'a' || s[0] == 'b' || s[0] == 'c'));
         count++;
     }

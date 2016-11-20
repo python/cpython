@@ -505,7 +505,7 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     } else if (PyFloat_Check(py_val)) {
         sqlite3_result_double(context, PyFloat_AsDouble(py_val));
     } else if (PyUnicode_Check(py_val)) {
-        const char *str = _PyUnicode_AsString(py_val);
+        const char *str = PyUnicode_AsUTF8(py_val);
         if (str == NULL)
             return -1;
         sqlite3_result_text(context, str, -1, SQLITE_TRANSIENT);
@@ -1527,7 +1527,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         }
     }
 
-    uppercase_name_str = _PyUnicode_AsString(uppercase_name);
+    uppercase_name_str = PyUnicode_AsUTF8(uppercase_name);
     if (!uppercase_name_str)
         goto finally;
 

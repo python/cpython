@@ -921,7 +921,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
             Py_CLEAR(self->encoding);
     }
     if (self->encoding != NULL) {
-        encoding = _PyUnicode_AsString(self->encoding);
+        encoding = PyUnicode_AsUTF8(self->encoding);
         if (encoding == NULL)
             goto error;
     }
@@ -964,7 +964,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     }
     self->writetranslate = (newline == NULL || newline[0] != '\0');
     if (!self->readuniversal && self->readnl) {
-        self->writenl = _PyUnicode_AsString(self->readnl);
+        self->writenl = PyUnicode_AsUTF8(self->readnl);
         if (self->writenl == NULL)
             goto error;
         if (!strcmp(self->writenl, "\n"))

@@ -1723,7 +1723,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
     if (stgd && CDataObject_Check(value) && stgd->proto && PyUnicode_Check(stgd->proto)) {
         PyCArgObject *parg;
 
-        switch (_PyUnicode_AsString(stgd->proto)[0]) {
+        switch (PyUnicode_AsUTF8(stgd->proto)[0]) {
         case 'z': /* c_char_p */
         case 'Z': /* c_wchar_p */
             parg = PyCArgObject_new();
@@ -1835,7 +1835,7 @@ PyCSimpleType_paramfunc(CDataObject *self)
 
     dict = PyObject_stgdict((PyObject *)self);
     assert(dict); /* Cannot be NULL for CDataObject instances */
-    fmt = _PyUnicode_AsString(dict->proto);
+    fmt = PyUnicode_AsUTF8(dict->proto);
     assert(fmt);
 
     fd = _ctypes_get_fielddesc(fmt);
@@ -2059,7 +2059,7 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     assert(dict);
 
     /* I think we can rely on this being a one-character string */
-    fmt = _PyUnicode_AsString(dict->proto);
+    fmt = PyUnicode_AsUTF8(dict->proto);
     assert(fmt);
 
     fd = _ctypes_get_fielddesc(fmt);
@@ -3128,7 +3128,7 @@ _check_outarg_type(PyObject *arg, Py_ssize_t index)
         /* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
         && PyUnicode_Check(dict->proto)
 /* We only allow c_void_p, c_char_p and c_wchar_p as a simple output parameter type */
-        && (strchr("PzZ", _PyUnicode_AsString(dict->proto)[0]))) {
+        && (strchr("PzZ", PyUnicode_AsUTF8(dict->proto)[0]))) {
         return 1;
     }
 
@@ -3218,7 +3218,7 @@ _get_name(PyObject *obj, const char **pname)
         return *pname ? 1 : 0;
     }
     if (PyUnicode_Check(obj)) {
-        *pname = _PyUnicode_AsString(obj);
+        *pname = PyUnicode_AsUTF8(obj);
         return *pname ? 1 : 0;
     }
     PyErr_SetString(PyExc_TypeError,
@@ -5233,7 +5233,7 @@ cast_check_pointertype(PyObject *arg)
     dict = PyType_stgdict(arg);
     if (dict) {
         if (PyUnicode_Check(dict->proto)
-            && (strchr("sPzUZXO", _PyUnicode_AsString(dict->proto)[0]))) {
+            && (strchr("sPzUZXO", PyUnicode_AsUTF8(dict->proto)[0]))) {
             /* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
             return 1;
         }

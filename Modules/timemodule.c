@@ -441,7 +441,7 @@ gettmarg(PyObject *args, struct tm *p)
     if (Py_TYPE(args) == &StructTimeType) {
         PyObject *item;
         item = PyTuple_GET_ITEM(args, 9);
-        p->tm_zone = item == Py_None ? NULL : _PyUnicode_AsString(item);
+        p->tm_zone = item == Py_None ? NULL : PyUnicode_AsUTF8(item);
         item = PyTuple_GET_ITEM(args, 10);
         p->tm_gmtoff = item == Py_None ? 0 : PyLong_AsLong(item);
         if (PyErr_Occurred())

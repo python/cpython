@@ -5989,7 +5989,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", value);
         pptr = pbuf;
     } else if (PyUnicode_Check(pobj)) {
-        pptr = _PyUnicode_AsString(pobj);
+        pptr = PyUnicode_AsUTF8(pobj);
         if (pptr == NULL)
             goto err;
     } else if (PyBytes_Check(pobj)) {

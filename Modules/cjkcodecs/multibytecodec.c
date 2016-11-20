@@ -85,7 +85,7 @@ call_error_callback(PyObject *errors, PyObject *exc)
     const char *str;
 
     assert(PyUnicode_Check(errors));
-    str = _PyUnicode_AsString(errors);
+    str = PyUnicode_AsUTF8(errors);
     if (str == NULL)
         return NULL;
     cb = PyCodec_LookupError(str);
@@ -138,7 +138,7 @@ codecctx_errors_set(MultibyteStatefulCodecContext *self, PyObject *value,
         return -1;
     }
 
-    str = _PyUnicode_AsString(value);
+    str = PyUnicode_AsUTF8(value);
     if (str == NULL)
         return -1;
 
