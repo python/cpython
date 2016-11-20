@@ -890,7 +890,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
     if (tp->tp_getattro != NULL)
         return (*tp->tp_getattro)(v, name);
     if (tp->tp_getattr != NULL) {
-        char *name_str = _PyUnicode_AsString(name);
+        char *name_str = PyUnicode_AsUTF8(name);
         if (name_str == NULL)
             return NULL;
         return (*tp->tp_getattr)(v, name_str);
@@ -934,7 +934,7 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
         return err;
     }
     if (tp->tp_setattr != NULL) {
-        char *name_str = _PyUnicode_AsString(name);
+        char *name_str = PyUnicode_AsUTF8(name);
         if (name_str == NULL)
             return -1;
         err = (*tp->tp_setattr)(v, name_str, value);

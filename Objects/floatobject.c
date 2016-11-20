@@ -1274,7 +1274,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
      * exp+4*ndigits and exp-4*ndigits are within the range of a long.
      */
 
-    s = _PyUnicode_AsStringAndSize(arg, &length);
+    s = PyUnicode_AsUTF8AndSize(arg, &length);
     if (s == NULL)
         return NULL;
     s_end = s + length;
@@ -1628,7 +1628,7 @@ float_getformat(PyTypeObject *v, PyObject* arg)
                          Py_TYPE(arg)->tp_name);
         return NULL;
     }
-    s = _PyUnicode_AsString(arg);
+    s = PyUnicode_AsUTF8(arg);
     if (s == NULL)
         return NULL;
     if (strcmp(s, "double") == 0) {

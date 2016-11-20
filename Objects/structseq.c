@@ -194,7 +194,7 @@ structseq_repr(PyStructSequence *obj)
         repr = PyObject_Repr(val);
         if (repr == NULL)
             return NULL;
-        crepr = _PyUnicode_AsString(repr);
+        crepr = PyUnicode_AsUTF8(repr);
         if (crepr == NULL) {
             Py_DECREF(repr);
             return NULL;
