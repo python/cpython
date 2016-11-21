@@ -267,7 +267,7 @@ class EnumMeta(type):
 
         This method is used both when an enum class is given a value to match
         to an enumeration member (i.e. Color(3)) and for the functional API
-        (i.e. Color = Enum('Color', names='red green blue')).
+        (i.e. Color = Enum('Color', names='RED GREEN BLUE')).
 
         When used for the functional API:
 
@@ -517,7 +517,7 @@ class Enum(metaclass=EnumMeta):
         # without calling this method; this method is called by the metaclass'
         # __call__ (i.e. Color(3) ), and by pickle
         if type(value) is cls:
-            # For lookups like Color(Color.red)
+            # For lookups like Color(Color.RED)
             return value
         # by-value search for a matching enum member
         # see if it's in the reverse mapping (for hashable values)
