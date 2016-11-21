@@ -176,7 +176,7 @@ PyAPI_FUNC(PyObject *) PyModule_FromDefAndSpec2(PyModuleDef *def,
 #endif /* New in 3.5 */
 
 #ifndef Py_LIMITED_API
-PyAPI_DATA(char *) _Py_PackageContext;
+PyAPI_DATA(const char *) _Py_PackageContext;
 #endif
 
 #ifdef __cplusplus

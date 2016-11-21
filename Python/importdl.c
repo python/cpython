@@ -94,7 +94,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
 #endif
     PyObject *name_unicode = NULL, *name = NULL, *path = NULL, *m = NULL;
     const char *name_buf, *hook_prefix;
-    char *oldcontext;
+    const char *oldcontext;
     dl_funcptr exportfunc;
     PyModuleDef *def;
     PyObject *(*p0)(void);

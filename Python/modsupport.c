@@ -9,7 +9,7 @@ typedef double va_double;
 static PyObject *va_build_value(const char *, va_list, int);
 
 /* Package context -- the full module name for package imports */
-char *_Py_PackageContext = NULL;
+const char *_Py_PackageContext = NULL;
 
 /* Helper for mkvalue() to scan the length of a format */
 
