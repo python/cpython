@@ -949,7 +949,7 @@ are always available.  They are listed here in alphabetical order.
    the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
-   errors are to be handled--this cannot be used in binary mode.
+   errors are to be handled—this cannot be used in binary mode.
    A variety of standard error handlers are available
    (listed under :ref:`error-handlers`), though any
    error handling name that has been registered with
