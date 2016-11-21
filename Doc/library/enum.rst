@@ -70,9 +70,9 @@ follows::
 
     >>> from enum import Enum
     >>> class Color(Enum):
-    ...     red = 1
-    ...     green = 2
-    ...     blue = 3
+    ...     RED = 1
+    ...     GREEN = 2
+    ...     BLUE = 3
     ...
 
 .. note:: Enum member values
@@ -85,10 +85,10 @@ follows::
 .. note:: Nomenclature
 
   - The class :class:`Color` is an *enumeration* (or *enum*)
-  - The attributes :attr:`Color.red`, :attr:`Color.green`, etc., are
-    *enumeration members* (or *enum members*).
+  - The attributes :attr:`Color.RED`, :attr:`Color.GREEN`, etc., are
+    *enumeration members* (or *enum members*) and are functionally constants.
   - The enum members have *names* and *values* (the name of
-    :attr:`Color.red` is ``red``, the value of :attr:`Color.blue` is
+    :attr:`Color.RED` is ``RED``, the value of :attr:`Color.BLUE` is
     ``3``, etc.)
 
 .. note::
@@ -99,49 +99,49 @@ follows::
 
 Enumeration members have human readable string representations::
 
-    >>> print(Color.red)
-    Color.red
+    >>> print(Color.RED)
+    Color.RED
 
 ...while their ``repr`` has more information::
 
-    >>> print(repr(Color.red))
-    <Color.red: 1>
+    >>> print(repr(Color.RED))
+    <Color.RED: 1>
 
 The *type* of an enumeration member is the enumeration it belongs to::
 
-    >>> type(Color.red)
+    >>> type(Color.RED)
     <enum 'Color'>
-    >>> isinstance(Color.green, Color)
+    >>> isinstance(Color.GREEN, Color)
     True
     >>>
 
 Enum members also have a property that contains just their item name::
 
-    >>> print(Color.red.name)
-    red
+    >>> print(Color.RED.name)
+    RED
 
 Enumerations support iteration, in definition order::
 
     >>> class Shake(Enum):
-    ...     vanilla = 7
-    ...     chocolate = 4
-    ...     cookies = 9
-    ...     mint = 3
+    ...     VANILLA = 7
+    ...     CHOCOLATE = 4
+    ...     COOKIES = 9
+    ...     MINT = 3
     ...
     >>> for shake in Shake:
     ...     print(shake)
     ...
-    Shake.vanilla
-    Shake.chocolate
-    Shake.cookies
-    Shake.mint
+    Shake.VANILLA
+    Shake.CHOCOLATE
+    Shake.COOKIES
+    Shake.MINT
 
 Enumeration members are hashable, so they can be used in dictionaries and sets::
 
     >>> apples = {}
-    >>> apples[Color.red] = 'red delicious'
-    >>> apples[Color.green] = 'granny smith'
-    >>> apples == {Color.red: 'red delicious', Color.green: 'granny smith'}
+    >>> apples[Color.RED] = 'red delicious'
+    >>> apples[Color.GREEN] = 'granny smith'
+    >>> apples == {Color.RED: 'red delicious', Color.GREEN: 'granny smith'}
     True
 
 
@@ -149,26 +149,26 @@ Programmatic access to enumeration members and their attributes
 ---------------------------------------------------------------
 
 Sometimes it's useful to access members in enumerations programmatically (i.e.
-situations where ``Color.red`` won't do because the exact color is not known
+situations where ``Color.RED`` won't do because the exact color is not known
 at program-writing time).  ``Enum`` allows such access::
 
     >>> Color(1)
-    <Color.red: 1>
+    <Color.RED: 1>
     >>> Color(3)
-    <Color.blue: 3>
+    <Color.BLUE: 3>
 
 If you want to access enum members by *name*, use item access::
 
-    >>> Color['red']
-    <Color.red: 1>
-    >>> Color['green']
-    <Color.green: 2>
+    >>> Color['RED']
+    <Color.RED: 1>
+    >>> Color['GREEN']
+    <Color.GREEN: 2>
 
 If you have an enum member and need its :attr:`name` or :attr:`value`::
 
-    >>> member = Color.red
+    >>> member = Color.RED
     >>> member.name
-    'red'
+    'RED'
     >>> member.value
     1
 
@@ -179,12 +179,12 @@ Duplicating enum members and values
 Having two enum members with the same name is invalid::
 
     >>> class Shape(Enum):
-    ...     square = 2
-    ...     square = 3
+    ...     SQUARE = 2
+    ...     SQUARE = 3
     ...
     Traceback (most recent call last):
     ...
-    TypeError: Attempted to reuse key: 'square'
+    TypeError: Attempted to reuse key: 'SQUARE'
 
 However, two enum members are allowed to have the same value.  Given two members
 A and B with the same value (and A defined first), B is an alias to A.  By-value
@@ -192,17 +192,17 @@ lookup of the value of A and B will return A.  By-name lookup of B will also
 return A::
 
     >>> class Shape(Enum):
-    ...     square = 2
-    ...     diamond = 1
-    ...     circle = 3
-    ...     alias_for_square = 2
+    ...     SQUARE = 2
+    ...     DIAMOND = 1
+    ...     CIRCLE = 3
+    ...     ALIAS_FOR_SQUARE = 2
     ...
-    >>> Shape.square
-    <Shape.square: 2>
-    >>> Shape.alias_for_square
-    <Shape.square: 2>
+    >>> Shape.SQUARE
+    <Shape.SQUARE: 2>
+    >>> Shape.ALIAS_FOR_SQUARE
+    <Shape.SQUARE: 2>
     >>> Shape(2)
-    <Shape.square: 2>
+    <Shape.SQUARE: 2>
 
 .. note::
 
@@ -227,14 +227,14 @@ found :exc:`ValueError` is raised with the details::
     >>> from enum import Enum, unique
     >>> @unique
     ... class Mistake(Enum):
-    ...     one = 1
-    ...     two = 2
-    ...     three = 3
-    ...     four = 3
+    ...     ONE = 1
+    ...     TWO = 2
+    ...     THREE = 3
+    ...     FOUR = 3
     ...
     Traceback (most recent call last):
     ...
-    ValueError: duplicate values found in <enum 'Mistake'>: four -> three
+    ValueError: duplicate values found in <enum 'Mistake'>: FOUR -> THREE
 
 
 Using automatic values
@@ -244,12 +244,12 @@ If the exact value is unimportant you can use :class:`auto`::
 
     >>> from enum import Enum, auto
     >>> class Color(Enum):
-    ...     red = auto()
-    ...     blue = auto()
-    ...     green = auto()
+    ...     RED = auto()
+    ...     BLUE = auto()
+    ...     GREEN = auto()
     ...
     >>> list(Color)
-    [<Color.red: 1>, <Color.blue: 2>, <Color.green: 3>]
+    [<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN: 3>]
 
 The values are chosen by :func:`_generate_next_value_`, which can be
 overridden::
@@ -259,13 +259,13 @@ overridden::
     ...         return name
     ...
     >>> class Ordinal(AutoName):
-    ...     north = auto()
-    ...     south = auto()
-    ...     east = auto()
-    ...     west = auto()
+    ...     NORTH = auto()
+    ...     SOUTH = auto()
+    ...     EAST = auto()
+    ...     WEST = auto()
     ...
     >>> list(Ordinal)
-    [<Ordinal.north: 'north'>, <Ordinal.south: 'south'>, <Ordinal.east: 'east'>, <Ordinal.west: 'west'>]
+    [<Ordinal.NORTH: 'NORTH'>, <Ordinal.SOUTH: 'SOUTH'>, <Ordinal.EAST: 'EAST'>, <Ordinal.WEST: 'WEST'>]
 
 .. note::
 
@@ -279,7 +279,7 @@ Iteration
 Iterating over the members of an enum does not provide the aliases::
 
     >>> list(Shape)
-    [<Shape.square: 2>, <Shape.diamond: 1>, <Shape.circle: 3>]
+    [<Shape.SQUARE: 2>, <Shape.DIAMOND: 1>, <Shape.CIRCLE: 3>]
 
 The special attribute ``__members__`` is an ordered dictionary mapping names
 to members.  It includes all names defined in the enumeration, including the
@@ -288,16 +288,16 @@ aliases::
     >>> for name, member in Shape.__members__.items():
     ...     name, member
     ...
-    ('square', <Shape.square: 2>)
-    ('diamond', <Shape.diamond: 1>)
-    ('circle', <Shape.circle: 3>)
-    ('alias_for_square', <Shape.square: 2>)
+    ('SQUARE', <Shape.SQUARE: 2>)
+    ('DIAMOND', <Shape.DIAMOND: 1>)
+    ('CIRCLE', <Shape.CIRCLE: 3>)
+    ('ALIAS_FOR_SQUARE', <Shape.SQUARE: 2>)
 
 The ``__members__`` attribute can be used for detailed programmatic access to
 the enumeration members.  For example, finding all the aliases::
 
     >>> [name for name, member in Shape.__members__.items() if member.name != name]
-    ['alias_for_square']
+    ['ALIAS_FOR_SQUARE']
 
 
 Comparisons
@@ -305,35 +305,35 @@ Comparisons
 
 Enumeration members are compared by identity::
 
-    >>> Color.red is Color.red
+    >>> Color.RED is Color.RED
     True
-    >>> Color.red is Color.blue
+    >>> Color.RED is Color.BLUE
     False
-    >>> Color.red is not Color.blue
+    >>> Color.RED is not Color.BLUE
     True
 
 Ordered comparisons between enumeration values are *not* supported.  Enum
 members are not integers (but see `IntEnum`_ below)::
 
-    >>> Color.red < Color.blue
+    >>> Color.RED < Color.BLUE
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
     TypeError: '<' not supported between instances of 'Color' and 'Color'
 
 Equality comparisons are defined though::
 
-    >>> Color.blue == Color.red
+    >>> Color.BLUE == Color.RED
     False
-    >>> Color.blue != Color.red
+    >>> Color.BLUE != Color.RED
     True
-    >>> Color.blue == Color.blue
+    >>> Color.BLUE == Color.BLUE
     True
 
 Comparisons against non-enumeration values will always compare not equal
 (again, :class:`IntEnum` was explicitly designed to behave differently, see
 below)::
 
-    >>> Color.blue == 2
+    >>> Color.BLUE == 2
     False
 
 
@@ -350,8 +350,8 @@ Enumerations are Python classes, and can have methods and special methods as
 usual.  If we have this enumeration::
 
     >>> class Mood(Enum):
-    ...     funky = 1
-    ...     happy = 3
+    ...     FUNKY = 1
+    ...     HAPPY = 3
     ...
     ...     def describe(self):
     ...         # self is the member here
@@ -363,16 +363,16 @@ usual.  If we have this enumeration::
     ...     @classmethod
     ...     def favorite_mood(cls):
     ...         # cls here is the enumeration
-    ...         return cls.happy
+    ...         return cls.HAPPY
     ...
 
 Then::
 
     >>> Mood.favorite_mood()
-    <Mood.happy: 3>
-    >>> Mood.happy.describe()
-    ('happy', 3)
-    >>> str(Mood.funky)
+    <Mood.HAPPY: 3>
+    >>> Mood.HAPPY.describe()
+    ('HAPPY', 3)
+    >>> str(Mood.FUNKY)
     'my custom str! 1'
 
 The rules for what is allowed are as follows: names that start and end with
@@ -393,7 +393,7 @@ Subclassing an enumeration is allowed only if the enumeration does not define
 any members.  So this is forbidden::
 
     >>> class MoreColor(Color):
-    ...     pink = 17
+    ...     PINK = 17
     ...
     Traceback (most recent call last):
     ...
@@ -406,8 +406,8 @@ But this is allowed::
     ...         pass
     ...
     >>> class Bar(Foo):
-    ...     happy = 1
-    ...     sad = 2
+    ...     HAPPY = 1
+    ...     SAD = 2
     ...
 
 Allowing subclassing of enums that define members would lead to a violation of
@@ -423,7 +423,7 @@ Enumerations can be pickled and unpickled::
 
     >>> from test.test_enum import Fruit
     >>> from pickle import dumps, loads
-    >>> Fruit.tomato is loads(dumps(Fruit.tomato))
+    >>> Fruit.TOMATO is loads(dumps(Fruit.TOMATO))
     True
 
 The usual restrictions for pickling apply: picklable enums must be defined in
@@ -444,15 +444,15 @@ Functional API
 
 The :class:`Enum` class is callable, providing the following functional API::
 
-    >>> Animal = Enum('Animal', 'ant bee cat dog')
+    >>> Animal = Enum('Animal', 'ANT BEE CAT DOG')
     >>> Animal
     <enum 'Animal'>
-    >>> Animal.ant
-    <Animal.ant: 1>
-    >>> Animal.ant.value
+    >>> Animal.ANT
+    <Animal.ANT: 1>
+    >>> Animal.ANT.value
     1
     >>> list(Animal)
-    [<Animal.ant: 1>, <Animal.bee: 2>, <Animal.cat: 3>, <Animal.dog: 4>]
+    [<Animal.ANT: 1>, <Animal.BEE: 2>, <Animal.CAT: 3>, <Animal.DOG: 4>]
 
 The semantics of this API resemble :class:`~collections.namedtuple`. The first
 argument of the call to :class:`Enum` is the name of the enumeration.
@@ -467,10 +467,10 @@ new class derived from :class:`Enum` is returned.  In other words, the above
 assignment to :class:`Animal` is equivalent to::
 
     >>> class Animal(Enum):
-    ...     ant = 1
-    ...     bee = 2
-    ...     cat = 3
-    ...     dog = 4
+    ...     ANT = 1
+    ...     BEE = 2
+    ...     CAT = 3
+    ...     DOG = 4
     ...
 
 The reason for defaulting to ``1`` as the starting number and not ``0`` is
@@ -483,7 +483,7 @@ enumeration is being created in (e.g. it will fail if you use a utility
 function in separate module, and also may not work on IronPython or Jython).
 The solution is to specify the module name explicitly as follows::
 
-    >>> Animal = Enum('Animal', 'ant bee cat dog', module=__name__)
+    >>> Animal = Enum('Animal', 'ANT BEE CAT DOG', module=__name__)
 
 .. warning::
 
@@ -496,7 +496,7 @@ The new pickle protocol 4 also, in some circumstances, relies on
 to find the class.  For example, if the class was made available in class
 SomeData in the global scope::
 
-    >>> Animal = Enum('Animal', 'ant bee cat dog', qualname='SomeData.Animal')
+    >>> Animal = Enum('Animal', 'ANT BEE CAT DOG', qualname='SomeData.Animal')
 
 The complete signature is::
 
@@ -507,19 +507,19 @@ The complete signature is::
 :names: The Enum members.  This can be a whitespace or comma separated string
   (values will start at 1 unless otherwise specified)::
 
-    'red green blue' | 'red,green,blue' | 'red, green, blue'
+    'RED GREEN BLUE' | 'RED,GREEN,BLUE' | 'RED, GREEN, BLUE'
 
   or an iterator of names::
 
-    ['red', 'green', 'blue']
+    ['RED', 'GREEN', 'BLUE']
 
   or an iterator of (name, value) pairs::
 
-    [('cyan', 4), ('magenta', 5), ('yellow', 6)]
+    [('CYAN', 4), ('MAGENTA', 5), ('YELLOW', 6)]
 
   or a mapping::
 
-    {'chartreuse': 7, 'sea_green': 11, 'rosemary': 42}
+    {'CHARTREUSE': 7, 'SEA_GREEN': 11, 'ROSEMARY': 42}
 
 :module: name of module where new Enum class can be found.
 
@@ -546,40 +546,40 @@ to each other::
 
     >>> from enum import IntEnum
     >>> class Shape(IntEnum):
-    ...     circle = 1
-    ...     square = 2
+    ...     CIRCLE = 1
+    ...     SQUARE = 2
     ...
     >>> class Request(IntEnum):
-    ...     post = 1
-    ...     get = 2
+    ...     POST = 1
+    ...     GET = 2
     ...
     >>> Shape == 1
     False
-    >>> Shape.circle == 1
+    >>> Shape.CIRCLE == 1
     True
-    >>> Shape.circle == Request.post
+    >>> Shape.CIRCLE == Request.POST
     True
 
 However, they still can't be compared to standard :class:`Enum` enumerations::
 
     >>> class Shape(IntEnum):
-    ...     circle = 1
-    ...     square = 2
+    ...     CIRCLE = 1
+    ...     SQUARE = 2
     ...
     >>> class Color(Enum):
-    ...     red = 1
-    ...     green = 2
+    ...     RED = 1
+    ...     GREEN = 2
     ...
-    >>> Shape.circle == Color.red
+    >>> Shape.CIRCLE == Color.RED
     False
 
 :class:`IntEnum` values behave like integers in other ways you'd expect::
 
-    >>> int(Shape.circle)
+    >>> int(Shape.CIRCLE)
     1
-    >>> ['a', 'b', 'c'][Shape.circle]
+    >>> ['a', 'b', 'c'][Shape.CIRCLE]
     'b'
-    >>> [i for i in range(Shape.square)]
+    >>> [i for i in range(Shape.SQUARE)]
     [0, 1]
 
 
@@ -656,39 +656,39 @@ flags being set, the boolean evaluation is :data:`False`::
 
     >>> from enum import Flag
     >>> class Color(Flag):
-    ...     red = auto()
-    ...     blue = auto()
-    ...     green = auto()
+    ...     RED = auto()
+    ...     BLUE = auto()
+    ...     GREEN = auto()
     ...
-    >>> Color.red & Color.green
+    >>> Color.RED & Color.GREEN
     <Color.0: 0>
-    >>> bool(Color.red & Color.green)
+    >>> bool(Color.RED & Color.GREEN)
     False
 
 Individual flags should have values that are powers of two (1, 2, 4, 8, ...),
 while combinations of flags won't::
 
     >>> class Color(Flag):
-    ...     red = auto()
-    ...     blue = auto()
-    ...     green = auto()
-    ...     white = red | blue | green
+    ...     RED = auto()
+    ...     BLUE = auto()
+    ...     GREEN = auto()
+    ...     WHITE = RED | BLUE | GREEN
     ...
-    >>> Color.white
-    <Color.white: 7>
+    >>> Color.WHITE
+    <Color.WHITE: 7>
 
 Giving a name to the "no flags set" condition does not change its boolean
 value::
 
     >>> class Color(Flag):
-    ...     black = 0
-    ...     red = auto()
-    ...     blue = auto()
-    ...     green = auto()
+    ...     BLACK = 0
+    ...     RED = auto()
+    ...     BLUE = auto()
+    ...     GREEN = auto()
     ...
-    >>> Color.black
-    <Color.black: 0>
-    >>> bool(Color.black)
+    >>> Color.BLACK
+    <Color.BLACK: 0>
+    >>> bool(Color.BLACK)
     False
 
 .. note::
@@ -776,12 +776,12 @@ Using :class:`auto`
 Using :class:`object` would look like::
 
     >>> class Color(NoValue):
-    ...     red = auto()
-    ...     blue = auto()
-    ...     green = auto()
+    ...     RED = auto()
+    ...     BLUE = auto()
+    ...     GREEN = auto()
     ...
-    >>> Color.green
-    <Color.green>
+    >>> Color.GREEN
+    <Color.GREEN>
 
 
 Using :class:`object`
@@ -790,12 +790,12 @@ Using :class:`object`
 Using :class:`object` would look like::
 
     >>> class Color(NoValue):
-    ...     red = object()
-    ...     green = object()
-    ...     blue = object()
+    ...     RED = object()
+    ...     GREEN = object()
+    ...     BLUE = object()
     ...
-    >>> Color.green
-    <Color.green>
+    >>> Color.GREEN
+    <Color.GREEN>
 
 
 Using a descriptive string
@@ -804,13 +804,13 @@ Using a descriptive string
 Using a string as the value would look like::
 
     >>> class Color(NoValue):
-    ...     red = 'stop'
-    ...     green = 'go'
-    ...     blue = 'too fast!'
+    ...     RED = 'stop'
+    ...     GREEN = 'go'
+    ...     BLUE = 'too fast!'
     ...
-    >>> Color.green
-    <Color.green>
-    >>> Color.green.value
+    >>> Color.GREEN
+    <Color.GREEN>
+    >>> Color.GREEN.value
     'go'
 
 
@@ -827,13 +827,13 @@ Using an auto-numbering :meth:`__new__` would look like::
     ...         return obj
     ...
     >>> class Color(AutoNumber):
-    ...     red = ()
-    ...     green = ()
-    ...     blue = ()
+    ...     RED = ()
+    ...     GREEN = ()
+    ...     BLUE = ()
     ...
-    >>> Color.green
-    <Color.green>
-    >>> Color.green.value
+    >>> Color.GREEN
+    <Color.GREEN>
+    >>> Color.GREEN.value
     2
 
 
@@ -897,14 +897,14 @@ alias::
     ...                 % (a, e))
     ...
     >>> class Color(DuplicateFreeEnum):
-    ...     red = 1
-    ...     green = 2
-    ...     blue = 3
-    ...     grene = 2
+    ...     RED = 1
+    ...     GREEN = 2
+    ...     BLUE = 3
+    ...     GRENE = 2
     ...
     Traceback (most recent call last):
     ...
-    ValueError: aliases not allowed in DuplicateFreeEnum:  'grene' --> 'green'
+    ValueError: aliases not allowed in DuplicateFreeEnum:  'GRENE' --> 'GREEN'
 
 .. note::
 
@@ -1007,10 +1007,10 @@ be provided.  It will be checked against the actual order of the enumeration
 and raise an error if the two do not match::
 
     >>> class Color(Enum):
-    ...     _order_ = 'red green blue'
-    ...     red = 1
-    ...     blue = 3
-    ...     green = 2
+    ...     _order_ = 'RED GREEN BLUE'
+    ...     RED = 1
+    ...     BLUE = 3
+    ...     GREEN = 2
     ...
     Traceback (most recent call last):
     ...
@@ -1028,7 +1028,8 @@ and raise an error if the two do not match::
 normally accessed as ``EnumClass.member``.  Under certain circumstances they
 can also be accessed as ``EnumClass.member.member``, but you should never do
 this as that lookup may fail or, worse, return something besides the
-:class:`Enum` member you are looking for::
+:class:`Enum` member you are looking for (this is another good reason to use
+all-uppercase names for members)::
 
     >>> class FieldTypes(Enum):
     ...     name = 0
@@ -1078,15 +1079,15 @@ If a combination of Flag members is not named, the :func:`repr` will include
 all named flags and all named combinations of flags that are in the value::
 
     >>> class Color(Flag):
-    ...     red = auto()
-    ...     green = auto()
-    ...     blue = auto()
-    ...     magenta = red | blue
-    ...     yellow = red | green
-    ...     cyan = green | blue
+    ...     RED = auto()
+    ...     GREEN = auto()
+    ...     BLUE = auto()
+    ...     MAGENTA = RED | BLUE
+    ...     YELLOW = RED | GREEN
+    ...     CYAN = GREEN | BLUE
     ...
     >>> Color(3)  # named combination
-    <Color.yellow: 3>
+    <Color.YELLOW: 3>
     >>> Color(7)      # not named combination
-    <Color.cyan|magenta|blue|yellow|green|red: 7>
+    <Color.CYAN|MAGENTA|BLUE|YELLOW|GREEN|RED: 7>
 
