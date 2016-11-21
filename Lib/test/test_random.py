@@ -633,7 +633,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
     def test_choices_algorithms(self):
         # The various ways of specifying weights should produce the same results
         choices = self.gen.choices
-        n = 13132817
+        n = 104729
 
         self.gen.seed(8675309)
         a = self.gen.choices(range(n), k=10000)
