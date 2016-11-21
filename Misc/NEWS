@@ -726,6 +726,8 @@ Library
 - Issue #28025: Convert all ssl module constants to IntEnum and IntFlags.
   SSLContext properties now return flags and enums.
 
+- Issue #23591: Add Flag, IntFlag, and auto() to enum module.
+
 - Issue #433028: Added support of modifier spans in regular expressions.
 
 - Issue #24594: Validates persist parameter when opening MSI database
