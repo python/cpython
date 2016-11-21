@@ -136,6 +136,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #28752: Restored the __reduce__() methods of datetime objects.
+
 - Issue #28727: Regular expression patterns, _sre.SRE_Pattern objects created
   by re.compile(), become comparable (only x==y and x!=y operators). This
   change should fix the issue #18383: don't duplicate warning filters when the
