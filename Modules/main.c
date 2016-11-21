@@ -74,6 +74,7 @@ static const char usage_3[] = "\
 -v     : verbose (trace import statements); also PYTHONVERBOSE=x\n\
          can be supplied multiple times to increase verbosity\n\
 -V     : print the Python version number and exit (also --version)\n\
+         when given twice, print more information about the build\n\
 -W arg : warning control; arg is action:message:category:module:lineno\n\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
@@ -512,7 +513,7 @@ Py_Main(int argc, wchar_t **argv)
         return usage(0, argv[0]);
 
     if (version) {
-        printf("Python %s\n", PY_VERSION);
+        printf("Python %s\n", version >= 2 ? Py_GetVersion() : PY_VERSION);
         return 0;
     }
 
