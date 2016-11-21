@@ -441,3 +441,23 @@ Simulation of arrival times and service deliveries in a single server queue::
             service_end = service_start + service_time
             print(f'\t\t{service_start:.1f} to {service_end:.1f} serviced')
 
+.. seealso::
+
+   `Statistics for Hackers <https://www.youtube.com/watch?v=Iq9DzN6mvYA>`_
+   a video tutorial by
+   `Jake Vanderplas <https://us.pycon.org/2016/speaker/profile/295/>`_
+   on statistical analysis using just a few fundamental concepts
+   including simulation, sampling, shuffling, and cross-validation.
+
+   `Economics Simulation
+   <http://nbviewer.jupyter.org/url/norvig.com/ipython/Economics.ipynb>`_
+   a simulation of a marketplace by
+   `Peter Norvig <http://norvig.com/bio.html>`_ that shows effective
+   use of many the tools and distributions provided by this module
+   (gauss, uniform, sample, betavariate, choice, triangular, and randrange).
+
+   `A Concrete Introduction to Probability (using Python)
+   <http://nbviewer.jupyter.org/url/norvig.com/ipython/Probability.ipynb>`_
+   a tutorial by `Peter Norvig <http://norvig.com/bio.html>`_ covering
+   the basics of probability theory, how to write simulations, and
+   performing data analysis using Python.
