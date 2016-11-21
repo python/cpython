@@ -42,6 +42,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #28727: Regular expression patterns, _sre.SRE_Pattern objects created
+  by re.compile(), become comparable (only x==y and x!=y operators). This
+  change should fix the issue #18383: don't duplicate warning filters when the
+  warnings module is reloaded (thing usually only done in unit tests).
+
 - Issue #20572: The subprocess.Popen.wait method's undocumented
   endtime parameter now raises a DeprecationWarning.
 
@@ -77,7 +82,7 @@ Library
 
 - Issue #28703: Fix asyncio.iscoroutinefunction to handle Mock objects.
 
-- Issue #28704: Fix create_unix_server to support Path-like objects 
+- Issue #28704: Fix create_unix_server to support Path-like objects
   (PEP 519).
 
 - Issue #28720: Add collections.abc.AsyncGenerator.
