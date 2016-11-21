@@ -932,7 +932,7 @@ class date:
 
     # Pickle support.
 
-    def _getstate(self, protocol=3):
+    def _getstate(self):
         yhi, ylo = divmod(self._year, 256)
         return bytes([yhi, ylo, self._month, self._day]),
 
@@ -940,8 +940,8 @@ class date:
         yhi, ylo, self._month, self._day = string
         self._year = yhi * 256 + ylo
 
-    def __reduce_ex__(self, protocol):
-        return (self.__class__, self._getstate(protocol))
+    def __reduce__(self):
+        return (self.__class__, self._getstate())
 
 _date_class = date  # so functions w/ args named "date" can get at the class
 
@@ -1347,6 +1347,9 @@ class time:
 
     def __reduce_ex__(self, protocol):
         return (time, self._getstate(protocol))
+
+    def __reduce__(self):
+        return self.__reduce_ex__(2)
 
 _time_class = time  # so functions w/ args named "time" can get at the class
 
@@ -1922,6 +1925,9 @@ class datetime(date):
 
     def __reduce_ex__(self, protocol):
         return (self.__class__, self._getstate(protocol))
+
+    def __reduce__(self):
+        return self.__reduce_ex__(2)
 
 
 datetime.min = datetime(1, 1, 1)
