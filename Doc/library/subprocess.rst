@@ -608,12 +608,6 @@ Instances of the :class:`Popen` class have the following methods:
    .. versionchanged:: 3.3
       *timeout* was added.
 
-   .. deprecated:: 3.4
-
-      Do not use the *endtime* parameter.  It is was unintentionally
-      exposed in 3.3 but was left undocumented as it was intended to be
-      private for internal use.  Use *timeout* instead.
-
 .. method:: Popen.communicate(input=None, timeout=None)
 
    Interact with process: Send data to stdin.  Read data from stdout and stderr,
