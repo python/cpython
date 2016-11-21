@@ -425,16 +425,16 @@ which represents a file system path. Code can use :func:`os.fspath`,
 object.
 
 The built-in :func:`open` function has been updated to accept
-:class:`os.PathLike` objects as have all relevant functions in the
-:mod:`os` and :mod:`os.path` modules, as well as most functions and
+:class:`os.PathLike` objects, as have all relevant functions in the
+:mod:`os` and :mod:`os.path` modules, and most other functions and
 classes in the standard library.  The :class:`os.DirEntry` class
 and relevant classes in :mod:`pathlib` have also been updated to
 implement :class:`os.PathLike`.
 
-The hope in is that updating the fundamental functions for operating
+The hope is that updating the fundamental functions for operating
 on file system paths will lead to third-party code to implicitly
 support all :term:`path-like objects <path-like object>` without any
-code changes or at least very minimal ones (e.g. calling
+code changes, or at least very minimal ones (e.g. calling
 :func:`os.fspath` at the beginning of code before operating on a
 path-like object).
 
@@ -635,18 +635,18 @@ PYTHONMALLOC environment variable
 ---------------------------------
 
 The new :envvar:`PYTHONMALLOC` environment variable allows setting the Python
-memory allocators and/or install debug hooks.
+memory allocators and installing debug hooks.
 
 It is now possible to install debug hooks on Python memory allocators on Python
 compiled in release mode using ``PYTHONMALLOC=debug``. Effects of debug hooks:
 
 * Newly allocated memory is filled with the byte ``0xCB``
 * Freed memory is filled with the byte ``0xDB``
-* Detect violations of Python memory allocator API. For example,
+* Detect violations of the Python memory allocator API. For example,
   :c:func:`PyObject_Free` called on a memory block allocated by
   :c:func:`PyMem_Malloc`.
-* Detect write before the start of the buffer (buffer underflow)
-* Detect write after the end of the buffer (buffer overflow)
+* Detect writes before the start of a buffer (buffer underflows)
+* Detect writes after the end of a buffer (buffer overflows)
 * Check that the :term:`GIL <global interpreter lock>` is held when allocator
   functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
   :c:data:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
@@ -658,8 +658,8 @@ memory allocators.
 
 It is now also possible to force the usage of the :c:func:`malloc` allocator of
 the C library for all Python memory allocations using ``PYTHONMALLOC=malloc``.
-It helps to use external memory debuggers like Valgrind on a Python compiled in
-release mode.
+This is helpful when using external memory debuggers like Valgrind on
+a Python compiled in release mode.
 
 On error, the debug hooks on Python memory allocators now use the
 :mod:`tracemalloc` module to get the traceback where a memory block was
@@ -754,7 +754,7 @@ Some smaller changes made to the core Python language are:
 
 * Import now raises the new exception :exc:`ModuleNotFoundError`
   (subclass of :exc:`ImportError`) when it cannot find a module.  Code
-  that current checks for ImportError (in try-except) will still work.
+  that currently checks for ImportError (in try-except) will still work.
   (Contributed by Eric Snow in :issue:`15767`.)
 
 * Class methods relying on zero-argument ``super()`` will now work correctly
@@ -810,7 +810,7 @@ Contributed by Victor Stinner in :issue:`26146`.
 asyncio
 -------
 
-Starting with Python 3.6 the ``asyncio`` is no longer provisional and its
+Starting with Python 3.6 the ``asyncio`` module is no longer provisional and its
 API is considered stable.
 
 Notable changes in the :mod:`asyncio` module since Python 3.5.0
@@ -871,7 +871,7 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
 
 * :meth:`Future.set_exception <asyncio.futures.Future.set_exception>`
   will now raise :exc:`TypeError` when passed an instance of
-  :exc:`StopIteration` exception.
+  the :exc:`StopIteration` exception.
   (Contributed by Chris Angelico in :issue:`26221`.)
 
 * New :meth:`Loop.connect_accepted_socket() <asyncio.BaseEventLoop.connect_accepted_socket>`
@@ -909,7 +909,7 @@ added to represent sized iterable container classes.
 (Contributed by Ivan Levkivskyi, docs by Neil Girdhar in :issue:`27598`.)
 
 The new :class:`~collections.abc.Reversible` abstract base class represents
-iterable classes that also provide the :meth:`__reversed__`.
+iterable classes that also provide the :meth:`__reversed__` method.
 (Contributed by Ivan Levkivskyi in :issue:`25987`.)
 
 The new :class:`~collections.abc.AsyncGenerator` abstract base class represents
@@ -932,7 +932,7 @@ Recursive :class:`collections.deque` instances can now be pickled.
 concurrent.futures
 ------------------
 
-The :class:`ThreadPoolExecutor <concurrent.futures.thread.ThreadPoolExecutor`
+The :class:`ThreadPoolExecutor <concurrent.futures.ThreadPoolExecutor>`
 class constructor now accepts an optional *thread_name_prefix* argument
 to make it possible to customize the names of the threads created by the
 pool.
@@ -998,7 +998,7 @@ distutils
 The ``default_format`` attribute has been removed from
 :class:`distutils.command.sdist.sdist` and the ``formats``
 attribute defaults to ``['gztar']``. Although not anticipated,
-Any code relying on the presence of ``default_format`` may
+any code relying on the presence of ``default_format`` may
 need to be adapted. See :issue:`27819` for more details.
 
 
@@ -1027,7 +1027,7 @@ for the new policies it is :class:`~email.message.EmailMessage`.
 encodings
 ---------
 
-On Windows, added the ``'oem'`` encoding to use ``CP_OEMCP`` and the ``'ansi'``
+On Windows, added the ``'oem'`` encoding to use ``CP_OEMCP``, and the ``'ansi'``
 alias for the existing ``'mbcs'`` encoding, which uses the ``CP_ACP`` code page.
 (Contributed by Steve Dower in :issue:`27959`.)
 
@@ -1192,7 +1192,7 @@ multiprocessing
 os
 --
 
-See the summary for :ref:`PEP 519 <whatsnew36-pep519>` for details on how the
+See the summary of :ref:`PEP 519 <whatsnew36-pep519>` for details on how the
 :mod:`os` and :mod:`os.path` modules now support
 :term:`path-like objects <path-like object>`.
 
@@ -1219,7 +1219,7 @@ pathlib
 :mod:`pathlib` now supports :term:`path-like objects <path-like object>`.
 (Contributed by Brett Cannon in :issue:`27186`.)
 
-See the summary for :ref:`PEP 519 <whatsnew36-pep519>` for details.
+See the summary of :ref:`PEP 519 <whatsnew36-pep519>` for details.
 
 
 pdb
@@ -1232,7 +1232,7 @@ to control whether ``.pdbrc`` files should be read.
 pickle
 ------
 
-Objects that need calling ``__new__`` with keyword arguments can now be pickled
+Objects that need ``__new__`` called with keyword arguments can now be pickled
 using :ref:`pickle protocols <pickle-protocols>` older than protocol version 4.
 Protocol version 4 already supports this case.  (Contributed by Serhiy
 Storchaka in :issue:`24164`.)
@@ -1241,7 +1241,7 @@ Storchaka in :issue:`24164`.)
 pickletools
 -----------
 
-:func:`pickletools.dis()` now outputs implicit memo index for the
+:func:`pickletools.dis()` now outputs the implicit memo index for the
 ``MEMOIZE`` opcode.
 (Contributed by Serhiy Storchaka in :issue:`25382`.)
 
@@ -1278,7 +1278,7 @@ Match object groups can be accessed by ``__getitem__``, which is
 equivalent to ``group()``.  So ``mo['name']`` is now equivalent to
 ``mo.group('name')``.  (Contributed by Eric Smith in :issue:`24454`.)
 
-:class:`~re.Match` objects in the now support
+:class:`~re.Match` objects now support
 :meth:`index-like objects <object.__index__>` as group
 indices.
 (Contributed by Jeroen Demeyer and Xiang Zhang in :issue:`27177`.)
@@ -1338,7 +1338,7 @@ The :meth:`~socket.socket.getsockopt` constants ``SO_DOMAIN``,
 
 The :meth:`~socket.socket.setsockopt` now supports the
 ``setsockopt(level, optname, None, optlen: int)`` form.
-(Contributed by Christian Heimes in issue:`27744`.)
+(Contributed by Christian Heimes in :issue:`27744`.)
 
 The socket module now supports the address family
 :data:`~socket.AF_ALG` to interface with Linux Kernel crypto API. ``ALG_*``,
@@ -1415,9 +1415,9 @@ subprocess
 
 :class:`subprocess.Popen` destructor now emits a :exc:`ResourceWarning` warning
 if the child process is still running. Use the context manager protocol (``with
-proc: ...``) or call explicitly the :meth:`~subprocess.Popen.wait` method to
-read the exit status of the child process (Contributed by Victor Stinner in
-:issue:`26741`).
+proc: ...``) or explicitly call the :meth:`~subprocess.Popen.wait` method to
+read the exit status of the child process. (Contributed by Victor Stinner in
+:issue:`26741`.)
 
 The :class:`subprocess.Popen` constructor and all functions that pass arguments
 through to it now accept *encoding* and *errors* arguments. Specifying either
@@ -1625,8 +1625,8 @@ A new optional *source* parameter has been added to the
 :class:`warnings.WarningMessage` (contributed by Victor Stinner in
 :issue:`26568` and :issue:`26567`).
 
-When a :exc:`ResourceWarning` warning is logged, the :mod:`tracemalloc` is now
-used to try to retrieve the traceback where the detroyed object was allocated.
+When a :exc:`ResourceWarning` warning is logged, the :mod:`tracemalloc` module is now
+used to try to retrieve the traceback where the destroyed object was allocated.
 
 Example with the script ``example.py``::
 
@@ -1648,9 +1648,9 @@ Output of the command ``python3.6 -Wd -X tracemalloc=5 example.py``::
       File "example.py", lineno 6
         f = func()
 
-The "Object allocated at" traceback is new and only displayed if
+The "Object allocated at" traceback is new and is only displayed if
 :mod:`tracemalloc` is tracing Python memory allocations and if the
-:mod:`warnings` was already imported.
+:mod:`warnings` module was already imported.
 
 
 winreg
@@ -1672,7 +1672,7 @@ xmlrpc.client
 -------------
 
 The :mod:`xmlrpc.client` module now supports unmarshalling
-additional data types used by Apache XML-RPC implementation
+additional data types used by the Apache XML-RPC implementation
 for numerics and ``None``.
 (Contributed by Serhiy Storchaka in :issue:`26885`.)
 
@@ -1703,16 +1703,16 @@ Xiang Zhang in :issue:`16764` respectively.)
 Optimizations
 =============
 
-* Python interpreter now uses 16-bit wordcode instead of bytecode which
+* The Python interpreter now uses a 16-bit wordcode instead of bytecode which
   made a number of opcode optimizations possible.
   (Contributed by Demur Rumed with input and reviews from
   Serhiy Storchaka and Victor Stinner in :issue:`26647` and :issue:`28050`.)
 
-* The :class:`Future <asyncio.futures.Future>` now has an optimized
+* The :class:`Future <asyncio.futures.Future>` class now has an optimized
   C implementation.
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26801`.)
 
-* The :class:`Task <asyncio.tasks.Task>` now has an optimized
+* The :class:`Task <asyncio.tasks.Task>` class now has an optimized
   C implementation. (Contributed by Yury Selivanov in :issue:`28544`.)
 
 * Various implementation improvements in the :mod:`typing` module
@@ -1758,7 +1758,7 @@ Optimizations
   deserializing many small objects (Contributed by Victor Stinner in
   :issue:`27056`).
 
-- Passing :term:`keyword arguments <keyword argument>` to a function has an
+* Passing :term:`keyword arguments <keyword argument>` to a function has an
   overhead in comparison with passing :term:`positional arguments
   <positional argument>`.  Now in extension functions implemented with using
   Argument Clinic this overhead is significantly decreased.
@@ -1791,7 +1791,7 @@ Build and C API Changes
   For more information, see :pep:`7` and :issue:`17884`.
 
 * Cross-compiling CPython with the Android NDK and the Android API level set to
-  21 (Android 5.0 Lollilop) or greater, runs successfully. While Android is not
+  21 (Android 5.0 Lollilop) or greater runs successfully. While Android is not
   yet a supported platform, the Python test suite runs on the Android emulator
   with only about 16 tests failures. See the Android meta-issue :issue:`26865`.
 
@@ -1821,7 +1821,7 @@ Build and C API Changes
   (Contributed by Eric Snow in :issue:`15767`.)
 
 * The new :c:func:`PyErr_ResourceWarning` function can be used to generate
-  the :exc:`ResourceWarning` providing the source of the resource allocation.
+  a :exc:`ResourceWarning` providing the source of the resource allocation.
   (Contributed by Victor Stinner in :issue:`26567`.)
 
 * The new :c:func:`PyOS_FSPath` function returns the file system
@@ -1977,7 +1977,7 @@ Deprecated functions and types of the C API
 Undocumented functions :c:func:`PyUnicode_AsEncodedObject`,
 :c:func:`PyUnicode_AsDecodedObject`, :c:func:`PyUnicode_AsEncodedUnicode`
 and :c:func:`PyUnicode_AsDecodedUnicode` are deprecated now.
-Use :ref:`generic codec based API <codec-registry>` instead.
+Use the :ref:`generic codec based API <codec-registry>` instead.
 
 
 Deprecated Build Options
@@ -2054,7 +2054,7 @@ Changes in the Python API
   with ``'+'``.
   (Contributed by Jeff Balogh and John O'Connor in :issue:`2091`.)
 
-* :mod:`sqlite3` no longer implicitly commit an open transaction before DDL
+* :mod:`sqlite3` no longer implicitly commits an open transaction before DDL
   statements.
 
 * On Linux, :func:`os.urandom` now blocks until the system urandom entropy pool
@@ -2067,12 +2067,12 @@ Changes in the Python API
   argument is not set. Previously only ``NULL`` was returned.
 
 * The format of the ``co_lnotab`` attribute of code objects changed to support
-  negative line number delta. By default, Python does not emit bytecode with
-  negative line number delta. Functions using ``frame.f_lineno``,
+  a negative line number delta. By default, Python does not emit bytecode with
+  a negative line number delta. Functions using ``frame.f_lineno``,
   ``PyFrame_GetLineNumber()`` or ``PyCode_Addr2Line()`` are not affected.
-  Functions decoding directly ``co_lnotab`` should be updated to use a signed
-  8-bit integer type for the line number delta, but it's only required to
-  support applications using negative line number delta. See
+  Functions directly decoding ``co_lnotab`` should be updated to use a signed
+  8-bit integer type for the line number delta, but this is only required to
+  support applications using a negative line number delta. See
   ``Objects/lnotab_notes.txt`` for the ``co_lnotab`` format and how to decode
   it, and see the :pep:`511` for the rationale.
 
@@ -2124,7 +2124,7 @@ Changes in the Python API
   an error (e.g. ``EBADF``) was reported by the underlying system call.
   (Contributed by Martin Panter in :issue:`26685`.)
 
-* The *decode_data* argument for :class:`smtpd.SMTPChannel` and
+* The *decode_data* argument for the :class:`smtpd.SMTPChannel` and
   :class:`smtpd.SMTPServer` constructors is now ``False`` by default.
   This means that the argument passed to
   :meth:`~smtpd.SMTPServer.process_message` is now a bytes object by
@@ -2204,15 +2204,15 @@ Changes in the Python API
   (Contributed by Ramchandra Apte in :issue:`17211`.)
 
 * :func:`re.sub` now raises an error for invalid numerical group
-  reference in replacement template even if the pattern is not
-  found in the string.  Error message for invalid group reference
+  references in replacement templates even if the pattern is not
+  found in the string.  The error message for invalid group references
   now includes the group index and the position of the reference.
   (Contributed by SilentGhost, Serhiy Storchaka in :issue:`25953`.)
 
 * :class:`zipfile.ZipFile` will now raise :exc:`NotImplementedError` for
   unrecognized compression values.  Previously a plain :exc:`RuntimeError`
-  was raised.  Additionally, calling :class:`~zipfile.ZipFile` methods or
-  on a closed ZipFile or calling :meth:`~zipfile.ZipFile.write` methods
+  was raised.  Additionally, calling :class:`~zipfile.ZipFile` methods
+  on a closed ZipFile or calling the :meth:`~zipfile.ZipFile.write` method
   on a ZipFile created with mode ``'r'`` will raise a :exc:`ValueError`.
   Previously, a :exc:`RuntimeError` was raised in those scenarios.
 
@@ -2220,8 +2220,8 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
-* :c:func:`PyMem_Malloc` allocator family now uses the :ref:`pymalloc allocator
-  <pymalloc>` rather than system :c:func:`malloc`. Applications calling
+* The :c:func:`PyMem_Malloc` allocator family now uses the :ref:`pymalloc allocator
+  <pymalloc>` rather than the system :c:func:`malloc`. Applications calling
   :c:func:`PyMem_Malloc` without holding the GIL can now crash. Set the
   :envvar:`PYTHONMALLOC` environment variable to ``debug`` to validate the
   usage of memory allocators in your application. See :issue:`26249`.
