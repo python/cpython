@@ -194,7 +194,8 @@ searching for a module.  Also provides information on module cleanup
 at exit.
 .TP
 .B \-V ", " \-\-version
-Prints the Python version number of the executable and exits.
+Prints the Python version number of the executable and exits.  When given
+twice, print more information about the build.
 .TP
 .BI "\-W " argument
 Warning control.  Python sometimes prints warning message to
