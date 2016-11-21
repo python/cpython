@@ -2550,7 +2550,7 @@ An example of an asynchronous context manager class::
 .. [#] "Does not support" here means that the class has no such method, or
    the method returns ``NotImplemented``.  Do not set the method to
    ``None`` if you want to force fallback to the right operand's reflected
-   method--that will instead have the opposite effect of explicitly
+   method—that will instead have the opposite effect of explicitly
    *blocking* such fallback.
 
 .. [#] For operands of the same type, it is assumed that if the non-reflected method
