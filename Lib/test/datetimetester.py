@@ -1329,6 +1329,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+        self.assertEqual(orig.__reduce__(), orig.__reduce_ex__(2))
 
     def test_compare(self):
         t1 = self.theclass(2, 3, 4)
@@ -1830,6 +1831,7 @@ class TestDateTime(TestDate):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+        self.assertEqual(orig.__reduce__(), orig.__reduce_ex__(2))
 
     def test_more_pickling(self):
         a = self.theclass(2003, 2, 7, 16, 48, 37, 444116)
@@ -2469,6 +2471,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+        self.assertEqual(orig.__reduce__(), orig.__reduce_ex__(2))
 
     def test_pickling_subclass_time(self):
         args = 20, 59, 16, 64**2
@@ -2829,6 +2832,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+        self.assertEqual(orig.__reduce__(), orig.__reduce_ex__(2))
 
         # Try one with a tzinfo.
         tinfo = PicklableFixedOffset(-300, 'cookie')
@@ -2840,6 +2844,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             self.assertIsInstance(derived.tzinfo, PicklableFixedOffset)
             self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
             self.assertEqual(derived.tzname(), 'cookie')
+        self.assertEqual(orig.__reduce__(), orig.__reduce_ex__(2))
 
     def test_more_bool(self):
         # time is always True.
@@ -3043,6 +3048,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+        self.assertEqual(orig.__reduce__(), orig.__reduce_ex__(2))
 
         # Try one with a tzinfo.
         tinfo = PicklableFixedOffset(-300, 'cookie')
@@ -3055,6 +3061,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             self.assertIsInstance(derived.tzinfo, PicklableFixedOffset)
             self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
             self.assertEqual(derived.tzname(), 'cookie')
+        self.assertEqual(orig.__reduce__(), orig.__reduce_ex__(2))
 
     def test_extreme_hashes(self):
         # If an attempt is made to hash these via subtracting the offset
