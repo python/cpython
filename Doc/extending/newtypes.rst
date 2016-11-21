@@ -1170,10 +1170,10 @@ If :c:member:`~PyTypeObject.tp_methods` is not *NULL*, it must refer to an array
 structure::
 
    typedef struct PyMethodDef {
-       char        *ml_name;       /* method name */
+       const char  *ml_name;       /* method name */
        PyCFunction  ml_meth;       /* implementation function */
        int          ml_flags;      /* flags */
-       char        *ml_doc;        /* docstring */
+       const char  *ml_doc;        /* docstring */
    } PyMethodDef;
 
 One entry should be defined for each method provided by the type; no entries are
