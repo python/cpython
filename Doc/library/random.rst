@@ -345,8 +345,8 @@ Basic examples::
    >>> randrange(0, 101, 2)                 # Even integer from 0 to 100 inclusive
    26
 
-   >>> choice('abcdefghij')                 # Single random element from a sequence
-   'c'
+   >>> choice(['win', 'lose', 'draw'])      # Single random element from a sequence
+   'draw'
 
    >>> deck = 'ace two three four'.split()
    >>> shuffle(deck)                        # Shuffle a list
@@ -370,8 +370,9 @@ Simulations::
    >>> print(seen.count('tens') / 20)
    0.15
 
-   # Estimate the probability of getting 5 or more heads from 7 spins
-   # of a biased coin that settles on heads 60% of the time.
+   # Estimate the probability of getting 5 or more heads
+   # from 7 spins of a biased coin that settles on heads
+   # 60% of the time.
    >>> n = 10000
    >>> cw = [0.60, 1.00]
    >>> sum(choices('HT', cum_weights=cw, k=7).count('H') >= 5 for i in range(n)) / n
@@ -416,4 +417,27 @@ between the effects of a drug versus a placebo::
     print(f'{n} label reshufflings produced only {count} instances with a difference')
     print(f'at least as extreme as the observed difference of {observed_diff:.1f}.')
     print(f'The one-sided p-value of {count / n:.4f} leads us to reject the null')
-    print(f'hypothesis that the observed difference occurred due to chance.')
+    print(f'hypothesis that there is no difference between the drug and the placebo.')
+
+Simulation of arrival times and service deliveries in a single server queue::
+
+    from random import gauss, expovariate
+
+    average_arrival_interval = 5.6
+    average_service_time = 5.0
+    stdev_service_time = 0.5
+
+    num_waiting = 0
+    arrival = service_end = 0.0
+    for i in range(10000):
+        num_waiting += 1
+        arrival += expovariate(1.0 / average_arrival_interval)
+        print(f'{arrival:6.1f} arrived')
+
+        while arrival > service_end:
+            num_waiting -= 1
+            service_start = service_end if num_waiting else arrival
+            service_time = gauss(average_service_time, stdev_service_time)
+            service_end = service_start + service_time
+            print(f'\t\t{service_start:.1f} to {service_end:.1f} serviced')
+
