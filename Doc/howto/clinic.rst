@@ -376,7 +376,7 @@ Let's dive in!
         [clinic start generated code]*/
 
 12. Save and close the file, then run ``Tools/clinic/clinic.py`` on
-    it.  With luck everything worked--your block now has output, and
+    it.  With luck everything worked---your block now has output, and
     a ``.c.h`` file has been generated! Reopen the file in your
     text editor to see:
 
