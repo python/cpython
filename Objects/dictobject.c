@@ -389,7 +389,7 @@ dk_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
  * This can be used to reserve enough size to insert n entries without
  * resizing.
  */
-#define ESTIMATE_SIZE(n)  (((n)*3) >> 1)
+#define ESTIMATE_SIZE(n)  (((n)*3+1) >> 1)
 
 /* Alternative fraction that is otherwise close enough to 2n/3 to make
  * little difference. 8 * 2/3 == 8 * 5/8 == 5. 16 * 2/3 == 16 * 5/8 == 10.
@@ -1361,12 +1361,26 @@ make_keys_shared(PyObject *op)
 PyObject *
 _PyDict_NewPresized(Py_ssize_t minused)
 {
+    const Py_ssize_t max_presize = 128 * 1024;
     Py_ssize_t newsize;
     PyDictKeysObject *new_keys;
-    for (newsize = PyDict_MINSIZE;
-         newsize <= minused && newsize > 0;
-         newsize <<= 1)
-        ;
+
+    /* There are no strict guarantee that returned dict can contain minused
+     * items without resize.  So we create medium size dict instead of very
+     * large dict or MemoryError.
+     */
+    if (minused > USABLE_FRACTION(max_presize)) {
+        newsize = max_presize;
+    }
+    else {
+        Py_ssize_t minsize = ESTIMATE_SIZE(minused);
+        newsize = PyDict_MINSIZE;
+        while (newsize < minsize) {
+            newsize <<= 1;
+        }
+    }
+    assert(IS_POWER_OF_2(newsize));
+
     new_keys = new_keys_object(newsize);
     if (new_keys == NULL)
         return NULL;
