@@ -2777,19 +2777,5 @@ class ContextManagerTests(BaseTestCase):
         self.assertTrue(proc.stdin.closed)
 
 
-def test_main():
-    unit_tests = (ProcessTestCase,
-                  POSIXProcessTestCase,
-                  Win32ProcessTestCase,
-                  MiscTests,
-                  ProcessTestCaseNoPoll,
-                  CommandsWithSpaces,
-                  ContextManagerTests,
-                  RunFuncTestCase,
-                  )
-
-    support.run_unittest(*unit_tests)
-    support.reap_children()
-
 if __name__ == "__main__":
     unittest.main()
