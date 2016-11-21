@@ -1031,6 +1031,10 @@ class Popen(object):
             """Wait for child process to terminate.  Returns returncode
             attribute."""
             if endtime is not None:
+                warnings.warn(
+                    "'endtime' argument is deprecated; use 'timeout'.",
+                    DeprecationWarning,
+                    stacklevel=2)
                 timeout = self._remaining_time(endtime)
             if timeout is None:
                 timeout_millis = _winapi.INFINITE
@@ -1392,8 +1396,11 @@ class Popen(object):
             if self.returncode is not None:
                 return self.returncode
 
-            # endtime is preferred to timeout.  timeout is only used for
-            # printing.
+            if endtime is not None:
+                warnings.warn(
+                    "'endtime' argument is deprecated; use 'timeout'.",
+                    DeprecationWarning,
+                    stacklevel=2)
             if endtime is not None or timeout is not None:
                 if endtime is None:
                     endtime = _time() + timeout
