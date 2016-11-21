@@ -3,12 +3,13 @@ from test.support import verbose, run_unittest, gc_collect, bigmemtest, _2G, \
 import io
 import locale
 import re
-from re import Scanner
 import sre_compile
-import sys
 import string
+import sys
 import traceback
 import unittest
+import warnings
+from re import Scanner
 from weakref import proxy
 
 # Misc tests from Tim Peters' re.doc
@@ -1776,6 +1777,48 @@ SUBPATTERN None 0 0
         # instead of an integer
         self.assertIn('ASCII', str(re.A))
         self.assertIn('DOTALL', str(re.S))
+
+    def test_pattern_compare(self):
+        pattern1 = re.compile('abc', re.IGNORECASE)
+
+        # equal
+        re.purge()
+        pattern2 = re.compile('abc', re.IGNORECASE)
+        self.assertEqual(hash(pattern2), hash(pattern1))
+        self.assertEqual(pattern2, pattern1)
+
+        # not equal: different pattern
+        re.purge()
+        pattern3 = re.compile('XYZ', re.IGNORECASE)
+        # Don't test hash(pattern3) != hash(pattern1) because there is no
+        # warranty that hash values are different
+        self.assertNotEqual(pattern3, pattern1)
+
+        # not equal: different flag (flags=0)
+        re.purge()
+        pattern4 = re.compile('abc')
+        self.assertNotEqual(pattern4, pattern1)
+
+        # only == and != comparison operators are supported
+        with self.assertRaises(TypeError):
+            pattern1 < pattern2
+
+    def test_pattern_compare_bytes(self):
+        pattern1 = re.compile(b'abc')
+
+        # equal: test bytes patterns
+        re.purge()
+        pattern2 = re.compile(b'abc')
+        self.assertEqual(hash(pattern2), hash(pattern1))
+        self.assertEqual(pattern2, pattern1)
+
+        # not equal: pattern of a different types (str vs bytes),
+        # comparison must not raise a BytesWarning
+        re.purge()
+        pattern3 = re.compile('abc')
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', BytesWarning)
+            self.assertNotEqual(pattern3, pattern1)
 
 
 class PatternReprTests(unittest.TestCase):
