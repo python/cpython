@@ -465,11 +465,11 @@ Simulation of arrival times and service deliveries in a single server queue::
    <http://nbviewer.jupyter.org/url/norvig.com/ipython/Economics.ipynb>`_
    a simulation of a marketplace by
    `Peter Norvig <http://norvig.com/bio.html>`_ that shows effective
-   use of many the tools and distributions provided by this module
+   use of many of the tools and distributions provided by this module
    (gauss, uniform, sample, betavariate, choice, triangular, and randrange).
 
    `A Concrete Introduction to Probability (using Python)
    <http://nbviewer.jupyter.org/url/norvig.com/ipython/Probability.ipynb>`_
    a tutorial by `Peter Norvig <http://norvig.com/bio.html>`_ covering
    the basics of probability theory, how to write simulations, and
-   performing data analysis using Python.
+   how to perform data analysis using Python.
