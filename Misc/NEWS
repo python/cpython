@@ -10,6 +10,8 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28532: Show sys.version when -V option is supplied twice.
+
 - Issue #28746: Fix the set_inheritable() file descriptor method on platforms
   that do not have the ioctl FIOCLEX and FIONCLEX commands.
 

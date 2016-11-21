@@ -180,7 +180,12 @@ Generic options
 
    Print the Python version number and exit.  Example output could be::
 
-       Python 3.0
+       Python 3.6.0b2+
+
+   When given twice, print more information about the build, like::
+
+       Python 3.6.0b2+ (3.6:84a3c5003510+, Oct 26 2016, 02:33:55)
+       [GCC 6.2.0 20161005]
 
 
 .. _using-on-misc-options:
