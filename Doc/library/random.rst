@@ -429,12 +429,12 @@ Simulation of arrival times and service deliveries in a single server queue::
 
     num_waiting = 0
     arrival = service_end = 0.0
-    for i in range(10000):
-        num_waiting += 1
-        arrival += expovariate(1.0 / average_arrival_interval)
-        print(f'{arrival:6.1f} arrived')
-
-        while arrival > service_end:
+    for i in range(20000):
+        if arrival <= service_end:
+            num_waiting += 1
+            arrival += expovariate(1.0 / average_arrival_interval)
+            print(f'{arrival:6.1f} arrived')
+        else:
             num_waiting -= 1
             service_start = service_end if num_waiting else arrival
             service_time = gauss(average_service_time, stdev_service_time)
