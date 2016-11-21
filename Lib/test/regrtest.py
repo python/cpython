@@ -1052,7 +1052,7 @@ class saved_test_environment:
 
     resources = ('sys.argv', 'cwd', 'sys.stdin', 'sys.stdout', 'sys.stderr',
                  'os.environ', 'sys.path', 'sys.path_hooks', '__import__',
-                 'warnings.filters', 'asyncore.socket_map',
+                 'asyncore.socket_map',
                  'logging._handlers', 'logging._handlerList', 'sys.gettrace',
                  'sys.warnoptions',
                  # multiprocessing.process._cleanup() may release ref
@@ -1117,12 +1117,6 @@ class saved_test_environment:
         return builtins.__import__
     def restore___import__(self, import_):
         builtins.__import__ = import_
-
-    def get_warnings_filters(self):
-        return id(warnings.filters), warnings.filters, warnings.filters[:]
-    def restore_warnings_filters(self, saved_filters):
-        warnings.filters = saved_filters[1]
-        warnings.filters[:] = saved_filters[2]
 
     def get_asyncore_socket_map(self):
         asyncore = sys.modules.get('asyncore')
