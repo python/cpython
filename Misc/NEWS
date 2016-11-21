@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28731: Optimize _PyDict_NewPresized() to create correct size dict.
+  Improve speed of dict literal with constant keys up to 30%.
+
 - Issue #28532: Show sys.version when -V option is supplied twice.
 
 - Issue #28746: Fix the set_inheritable() file descriptor method on platforms
