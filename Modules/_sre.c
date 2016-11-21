@@ -1506,13 +1506,11 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 
     self->groups = groups;
 
-    Py_XINCREF(groupindex);
+    Py_INCREF(groupindex);
     self->groupindex = groupindex;
 
-    Py_XINCREF(indexgroup);
+    Py_INCREF(indexgroup);
     self->indexgroup = indexgroup;
-
-    self->weakreflist = NULL;
 
     if (!_validate(self)) {
         Py_DECREF(self);
@@ -2649,6 +2647,69 @@ pattern_scanner(PatternObject *self, PyObject *string, Py_ssize_t pos, Py_ssize_
     return (PyObject*) scanner;
 }
 
+static Py_hash_t
+pattern_hash(PatternObject *self)
+{
+    Py_hash_t hash, hash2;
+
+    hash = PyObject_Hash(self->pattern);
+    if (hash == -1) {
+        return -1;
+    }
+
+    hash2 = _Py_HashBytes(self->code, sizeof(self->code[0]) * self->codesize);
+    hash ^= hash2;
+
+    hash ^= self->flags;
+    hash ^= self->isbytes;
+    hash ^= self->codesize;
+
+    if (hash == -1) {
+        hash = -2;
+    }
+    return hash;
+}
+
+static PyObject*
+pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
+{
+    PatternObject *left, *right;
+    int cmp;
+
+    if (op != Py_EQ && op != Py_NE) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (Py_TYPE(lefto) != &Pattern_Type || Py_TYPE(righto) != &Pattern_Type) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    left = (PatternObject *)lefto;
+    right = (PatternObject *)righto;
+
+    cmp = (left->flags == right->flags
+           && left->isbytes == right->isbytes
+           && left->codesize && right->codesize);
+    if (cmp) {
+        /* Compare the code and the pattern because the same pattern can
+           produce different codes depending on the locale used to compile the
+           pattern when the re.LOCALE flag is used. Don't compare groups,
+           indexgroup nor groupindex: they are derivated from the pattern. */
+        cmp = (memcmp(left->code, right->code,
+                      sizeof(left->code[0]) * left->codesize) == 0);
+    }
+    if (cmp) {
+        cmp = PyObject_RichCompareBool(left->pattern, right->pattern,
+                                       Py_EQ);
+        if (cmp < 0) {
+            return NULL;
+        }
+    }
+    if (op == Py_NE) {
+        cmp = !cmp;
+    }
+    return PyBool_FromLong(cmp);
+}
+
 #include "clinic/_sre.c.h"
 
 static PyMethodDef pattern_methods[] = {
@@ -2693,7 +2754,7 @@ static PyTypeObject Pattern_Type = {
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
     0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
+    (hashfunc)pattern_hash,             /* tp_hash */
     0,                                  /* tp_call */
     0,                                  /* tp_str */
     0,                                  /* tp_getattro */
@@ -2703,7 +2764,7 @@ static PyTypeObject Pattern_Type = {
     pattern_doc,                        /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
+    pattern_richcompare,                /* tp_richcompare */
     offsetof(PatternObject, weakreflist),       /* tp_weaklistoffset */
     0,                                  /* tp_iter */
     0,                                  /* tp_iternext */
