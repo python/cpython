@@ -1047,22 +1047,20 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyProto, 'example.com', 80, sock=object())
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'no Unix sockets')
     def test_create_connection_wrong_sock(self):
-        sock = socket.socket(socket.AF_UNIX)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         with sock:
             coro = self.loop.create_connection(MyProto, sock=sock)
             with self.assertRaisesRegex(ValueError,
-                                        'A TCP Stream Socket was expected'):
+                                        'A Stream Socket was expected'):
                 self.loop.run_until_complete(coro)
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'no Unix sockets')
     def test_create_server_wrong_sock(self):
-        sock = socket.socket(socket.AF_UNIX)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         with sock:
             coro = self.loop.create_server(MyProto, sock=sock)
             with self.assertRaisesRegex(ValueError,
-                                        'A TCP Stream Socket was expected'):
+                                        'A Stream Socket was expected'):
                 self.loop.run_until_complete(coro)
 
     @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
