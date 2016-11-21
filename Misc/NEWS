@@ -416,6 +416,9 @@ Windows
 C API
 -----
 
+- Issue #28748: Private variable _Py_PackageContext is now of type "const char *"
+  rather of "char *".
+
 - Issue #19569: Compiler warnings are now emitted if use most of deprecated
   functions.
 

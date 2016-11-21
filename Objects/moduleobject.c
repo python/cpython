@@ -188,7 +188,7 @@ PyModule_Create2(struct PyModuleDef* module, int module_api_version)
        (if the name actually matches).
     */
     if (_Py_PackageContext != NULL) {
-        char *p = strrchr(_Py_PackageContext, '.');
+        const char *p = strrchr(_Py_PackageContext, '.');
         if (p != NULL && strcmp(module->m_name, p+1) == 0) {
             name = _Py_PackageContext;
             _Py_PackageContext = NULL;
