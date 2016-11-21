@@ -69,9 +69,9 @@ except Exception as exc:
 # for doctests
 try:
     class Fruit(Enum):
-        tomato = 1
-        banana = 2
-        cherry = 3
+        TOMATO = 1
+        BANANA = 2
+        CHERRY = 3
 except Exception:
     pass
 
