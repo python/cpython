@@ -1795,7 +1795,7 @@ Build and C API Changes
   yet a supported platform, the Python test suite runs on the Android emulator
   with only about 16 tests failures. See the Android meta-issue :issue:`26865`.
 
-* The ``--with-optimizations`` configure flag has been added. Turning it on
+* The ``--enable-optimizations`` configure flag has been added. Turning it on
   will activate expensive optimizations like PGO.
   (Original patch by Alecsandru Patrascu of Intel in :issue:`26539`.)
 
