@@ -173,7 +173,7 @@ rebuilt.  In this case, you may have to run make again to correctly
 build your desired target.  The interpreter executable is built in the
 top level directory.
 
-To get an optimized build of Python, "configure --with-optimizations" before
+To get an optimized build of Python, "configure --enable-optimizations" before
 you run make.  This sets the default make targets up to enable Profile Guided
 Optimization (PGO) and may be used to auto-enable Link Time Optimization (LTO)
 on some platforms.  For more details, see the sections bellow.
