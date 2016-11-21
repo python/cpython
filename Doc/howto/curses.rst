@@ -35,7 +35,7 @@ before X is available.
 The curses library hides all the details of different terminals, and provides
 the programmer with an abstraction of a display, containing multiple
 non-overlapping windows.  The contents of a window can be changed in various
-ways-- adding text, erasing it, changing its appearance--and the curses library
+ways---adding text, erasing it, changing its appearance---and the curses library
 will automagically figure out what control codes need to be sent to the terminal
 to produce the right output.
 

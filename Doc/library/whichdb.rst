@@ -11,8 +11,8 @@
 
 
 The single function in this module attempts to guess which of the several simple
-database modules available--\ :mod:`dbm`, :mod:`gdbm`, or :mod:`dbhash`\
---should be used to open a given file.
+database modules available—:mod:`dbm`, :mod:`gdbm`, or :mod:`dbhash`\
+—should be used to open a given file.
 
 
 .. function:: whichdb(filename)

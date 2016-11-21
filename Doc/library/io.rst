@@ -130,7 +130,7 @@ Module Interface
    the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
-   errors are to be handled--this cannot be used in binary mode.  Pass
+   errors are to be handled—this cannot be used in binary mode.  Pass
    ``'strict'`` to raise a :exc:`ValueError` exception if there is an encoding
    error (the default of ``None`` has the same effect), or pass ``'ignore'`` to
    ignore errors.  (Note that ignoring encoding errors can lead to data loss.)
