@@ -1027,11 +1027,9 @@ class Popen(object):
             return self.returncode
 
 
-        def wait(self, timeout=None, endtime=None):
+        def wait(self, timeout=None):
             """Wait for child process to terminate.  Returns returncode
             attribute."""
-            if endtime is not None:
-                timeout = self._remaining_time(endtime)
             if timeout is None:
                 timeout_millis = _winapi.INFINITE
             else:
@@ -1386,21 +1384,14 @@ class Popen(object):
             return (pid, sts)
 
 
-        def wait(self, timeout=None, endtime=None):
+        def wait(self, timeout=None):
             """Wait for child process to terminate.  Returns returncode
             attribute."""
             if self.returncode is not None:
                 return self.returncode
 
-            # endtime is preferred to timeout.  timeout is only used for
-            # printing.
-            if endtime is not None or timeout is not None:
-                if endtime is None:
-                    endtime = _time() + timeout
-                elif timeout is None:
-                    timeout = self._remaining_time(endtime)
-
-            if endtime is not None:
+            if timeout is not None:
+                endtime = _time() + timeout
                 # Enter a busy loop if we have a timeout.  This busy loop was
                 # cribbed from Lib/threading.py in Thread.wait() at r71065.
                 delay = 0.0005 # 500 us -> initial delay of 1 ms
