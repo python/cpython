@@ -32,9 +32,8 @@ typedef struct {
     PyObject *co_varnames;	/* tuple of strings (local variable names) */
     PyObject *co_freevars;	/* tuple of strings (free variable names) */
     PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
-    /* The rest aren't used in either hash or comparisons, except for
-       co_name (used in both) and co_firstlineno (used only in
-       comparisons).  This is done to preserve the name and line number
+    /* The rest aren't used in either hash or comparisons, except for co_name,
+       used in both. This is done to preserve the name and line number
        for tracebacks and debuggers; otherwise, constant de-duplication
        would collapse identical functions/lambdas defined on different lines.
     */
@@ -45,7 +44,7 @@ typedef struct {
 				   Objects/lnotab_notes.txt for details. */
     void *co_zombieframe;     /* for optimization only (see frameobject.c) */
     PyObject *co_weakreflist;   /* to support weakrefs to code objects */
-    /* Scratch space for extra data relating to the code object.__icc_nan
+    /* Scratch space for extra data relating to the code object.
        Type is a void* to keep the format private in codeobject.c to force
        people to go through the proper APIs. */
     void *co_extra;
