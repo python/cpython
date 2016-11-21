@@ -1015,6 +1015,19 @@ class ProcessTestCase(BaseTestCase):
         # time to start.
         self.assertEqual(p.wait(timeout=3), 0)
 
+    def test_wait_endtime(self):
+        """Confirm that the deprecated endtime parameter warns."""
+        p = subprocess.Popen([sys.executable, "-c", "pass"])
+        try:
+            with self.assertWarns(DeprecationWarning) as warn_cm:
+                p.wait(endtime=time.time()+0.01)
+        except subprocess.TimeoutExpired:
+            pass  # We're not testing endtime timeout behavior.
+        finally:
+            p.kill()
+        self.assertIn('test_subprocess.py', warn_cm.filename)
+        self.assertIn('endtime', str(warn_cm.warning))
+
     def test_invalid_bufsize(self):
         # an invalid type of the bufsize argument should raise
         # TypeError.
@@ -2776,20 +2789,6 @@ class ContextManagerTests(BaseTestCase):
         self.assertEqual(proc.returncode, 0)
         self.assertTrue(proc.stdin.closed)
 
-
-def test_main():
-    unit_tests = (ProcessTestCase,
-                  POSIXProcessTestCase,
-                  Win32ProcessTestCase,
-                  MiscTests,
-                  ProcessTestCaseNoPoll,
-                  CommandsWithSpaces,
-                  ContextManagerTests,
-                  RunFuncTestCase,
-                  )
-
-    support.run_unittest(*unit_tests)
-    support.reap_children()
 
 if __name__ == "__main__":
     unittest.main()
