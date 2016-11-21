@@ -107,7 +107,7 @@ Directory and files operations
    If *follow_symlinks* is false, and *src* and *dst* both
    refer to symbolic links, :func:`copystat` will operate on
    the symbolic links themselves rather than the files the
-   symbolic links refer to--reading the information from the
+   symbolic links refer to—reading the information from the
    *src* symbolic link, and writing the information to the
    *dst* symbolic link.
 
