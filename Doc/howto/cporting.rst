@@ -95,7 +95,7 @@ long/int Unification
 --------------------
 
 Python 3 has only one integer type, :func:`int`.  But it actually
-corresponds to Python 2's :func:`long` type--the :func:`int` type
+corresponds to Python 2's :func:`long` type—the :func:`int` type
 used in Python 2 was removed.  In the C-API, ``PyInt_*`` functions
 are replaced by their ``PyLong_*`` equivalents.
 
