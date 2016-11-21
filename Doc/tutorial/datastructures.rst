@@ -60,11 +60,16 @@ objects:
    Remove all items from the list.  Equivalent to ``del a[:]``.
 
 
-.. method:: list.index(x)
+.. method:: list.index(x[, start[, end]])
    :noindex:
 
-   Return the index in the list of the first item whose value is *x*. It is an
-   error if there is no such item.
+   Return zero-based index in the list of the first item whose value is *x*.
+   Raises a :exc:`ValueError` if there is no such item.
+
+   The optional arguments *start* and *end* are interpreted as in the slice
+   notation and are used to limit the search to a particular subsequence of
+   *x*.  The returned index is computed relative to the beginning of the full
+   sequence rather than the *start* argument.
 
 
 .. method:: list.count(x)
@@ -103,6 +108,8 @@ An example that uses most of the list methods::
    [66.25, 333, -1, 333, 1, 1234.5, 333]
    >>> a.index(333)
    1
+   >>> a.index(333, 2)  # search for 333 starting at index 2
+   2
    >>> a.remove(333)
    >>> a
    [66.25, -1, 333, 1, 1234.5, 333]
