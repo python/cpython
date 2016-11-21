@@ -49,8 +49,21 @@ from sources provided by the operating system.
    security purposes.  For security or cryptographic uses, see the
    :mod:`secrets` module.
 
+.. seealso::
 
-Bookkeeping functions:
+   M. Matsumoto and T. Nishimura, "Mersenne Twister: A 623-dimensionally
+   equidistributed uniform pseudorandom number generator", ACM Transactions on
+   Modeling and Computer Simulation Vol. 8, No. 1, January pp.3-30 1998.
+
+
+   `Complementary-Multiply-with-Carry recipe
+   <https://code.activestate.com/recipes/576707/>`_ for a compatible alternative
+   random number generator with a long period and comparatively simple update
+   operations.
+
+
+Bookkeeping functions
+---------------------
 
 .. function:: seed(a=None, version=2)
 
@@ -94,7 +107,8 @@ Bookkeeping functions:
    :meth:`randrange` to handle arbitrarily large ranges.
 
 
-Functions for integers:
+Functions for integers
+----------------------
 
 .. function:: randrange(stop)
               randrange(start, stop[, step])
@@ -117,7 +131,8 @@ Functions for integers:
    ``randrange(a, b+1)``.
 
 
-Functions for sequences:
+Functions for sequences
+-----------------------
 
 .. function:: choice(seq)
 
@@ -187,6 +202,9 @@ Functions for sequences:
 
    If the sample size is larger than the population size, a :exc:`ValueError`
    is raised.
+
+Real-valued distributions
+-------------------------
 
 The following functions generate specific real-valued distributions. Function
 parameters are named after the corresponding variables in the distribution's
@@ -282,7 +300,8 @@ be found in any statistics text.
    parameter.
 
 
-Alternative Generator:
+Alternative Generator
+---------------------
 
 .. class:: SystemRandom([seed])
 
@@ -292,19 +311,6 @@ Alternative Generator:
    the :meth:`seed` method has no effect and is ignored.
    The :meth:`getstate` and :meth:`setstate` methods raise
    :exc:`NotImplementedError` if called.
-
-
-.. seealso::
-
-   M. Matsumoto and T. Nishimura, "Mersenne Twister: A 623-dimensionally
-   equidistributed uniform pseudorandom number generator", ACM Transactions on
-   Modeling and Computer Simulation Vol. 8, No. 1, January pp.3-30 1998.
-
-
-   `Complementary-Multiply-with-Carry recipe
-   <https://code.activestate.com/recipes/576707/>`_ for a compatible alternative
-   random number generator with a long period and comparatively simple update
-   operations.
 
 
 Notes on Reproducibility
@@ -333,13 +339,13 @@ Basic examples::
    >>> random()                             # Random float:  0.0 <= x < 1.0
    0.37444887175646646
 
-   >>> uniform(2, 10)                       # Random float:  2.0 <= x < 10.0
+   >>> uniform(2.5, 10.0)                   # Random float:  2.5 <= x < 10.0
    3.1800146073117523
 
-   >>> expovariate(1/5)                     # Interval between arrivals averaging 5 seconds
+   >>> expovariate(1 / 5)                   # Interval between arrivals averaging 5 seconds
    5.148957571865031
 
-   >>> randrange(10)                        # Integer from 0 to 9
+   >>> randrange(10)                        # Integer from 0 to 9 inclusive
    7
 
    >>> randrange(0, 101, 2)                 # Even integer from 0 to 100 inclusive
@@ -362,17 +368,16 @@ Simulations::
    >>> choices(['red', 'black', 'green'], [18, 18, 2], k=6)
    ['red', 'green', 'black', 'black', 'red', 'black']
 
-   # Deal 20 cards without replacement from a deck of 52
-   # playing cards and determine the proportion of cards
-   # with a ten-value (i.e. a ten, jack, queen, or king).
+   # Deal 20 cards without replacement from a deck of 52 playing cards
+   # and determine the proportion of cards with a ten-value (i.e. a ten,
+   # jack, queen, or king).
    >>> deck = collections.Counter(tens=16, low_cards=36)
    >>> seen = sample(list(deck.elements()), k=20)
    >>> print(seen.count('tens') / 20)
    0.15
 
-   # Estimate the probability of getting 5 or more heads
-   # from 7 spins of a biased coin that settles on heads
-   # 60% of the time.
+   # Estimate the probability of getting 5 or more heads from 7 spins
+   # of a biased coin that settles on heads 60% of the time.
    >>> n = 10000
    >>> cw = [0.60, 1.00]
    >>> sum(choices('HT', cum_weights=cw, k=7).count('H') >= 5 for i in range(n)) / n
