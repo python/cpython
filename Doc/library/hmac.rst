@@ -111,7 +111,7 @@ This module also provides the following helper function:
 
       If *a* and *b* are of different lengths, or if an error occurs,
       a timing attack could theoretically reveal information about the
-      types and lengths of *a* and *b*--but not their values.
+      types and lengths of *a* and *b*—but not their values.
 
 
    .. versionadded:: 3.3
