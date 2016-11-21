@@ -6134,12 +6134,7 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
     return result;
 }
 
-/* Return a Unicode-Escape string version of the Unicode object.
-
-   If quotes is true, the string is enclosed in u"" or u'' quotes as
-   appropriate.
-
-*/
+/* Return a Unicode-Escape string version of the Unicode object. */
 
 PyObject *
 PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
@@ -6177,10 +6172,10 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
     /* 4 byte characters can take up 10 bytes, 2 byte characters can take up 6
        bytes, and 1 byte characters 4. */
     expandsize = kind * 2 + 2;
-    if (len > (PY_SSIZE_T_MAX - 2 - 1) / expandsize) {
+    if (len > PY_SSIZE_T_MAX / expandsize) {
         return PyErr_NoMemory();
     }
-    repr = PyBytes_FromStringAndSize(NULL, 2 + expandsize * len + 1);
+    repr = PyBytes_FromStringAndSize(NULL, expandsize * len);
     if (repr == NULL) {
         return NULL;
     }
@@ -6225,9 +6220,8 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
                 *p++ = Py_hexdigits[ch & 0x000F];
             }
         }
-        /* U+0000-U+00ff range: Map 16-bit characters to '\uHHHH' */
+        /* U+0100-U+ffff range: Map 16-bit characters to '\uHHHH' */
         else if (ch < 0x10000) {
-            /* U+0100-U+ffff */
             *p++ = '\\';
             *p++ = 'u';
             *p++ = Py_hexdigits[(ch >> 12) & 0x000F];
