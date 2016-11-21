@@ -314,7 +314,7 @@ class Random(_random.Random):
         randbelow = self._randbelow
         n = len(population)
         if not 0 <= k <= n:
-            raise ValueError("Sample larger than population")
+            raise ValueError("Sample larger than population or is negative")
         result = [None] * k
         setsize = 21        # size of a small set minus size of an empty list
         if k > 5:

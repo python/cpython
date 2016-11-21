@@ -110,6 +110,7 @@ class TestBasicOps:
         self.assertEqual(self.gen.sample([], 0), [])  # test edge case N==k==0
         # Exception raised if size of sample exceeds that of population
         self.assertRaises(ValueError, self.gen.sample, population, N+1)
+        self.assertRaises(ValueError, self.gen.sample, [], -1)
 
     def test_sample_distribution(self):
         # For the entire allowable range of 0 <= k <= N, validate that
