@@ -98,14 +98,6 @@ def _is_dgram_socket(sock):
     return (sock.type & socket.SOCK_DGRAM) == socket.SOCK_DGRAM
 
 
-def _is_ip_socket(sock):
-    if sock.family == socket.AF_INET:
-        return True
-    if hasattr(socket, 'AF_INET6') and sock.family == socket.AF_INET6:
-        return True
-    return False
-
-
 def _ipaddr_info(host, port, family, type, proto):
     # Try to skip getaddrinfo if "host" is already an IP. Users might have
     # handled name resolution in their own code and pass in resolved IPs.
@@ -796,9 +788,15 @@ class BaseEventLoop(events.AbstractEventLoop):
             if sock is None:
                 raise ValueError(
                     'host and port was not specified and no sock specified')
-            if not _is_stream_socket(sock) or not _is_ip_socket(sock):
+            if not _is_stream_socket(sock):
+                # We allow AF_INET, AF_INET6, AF_UNIX as long as they
+                # are SOCK_STREAM.
+                # We support passing AF_UNIX sockets even though we have
+                # a dedicated API for that: create_unix_connection.
+                # Disallowing AF_UNIX in this method, breaks backwards
+                # compatibility.
                 raise ValueError(
-                    'A TCP Stream Socket was expected, got {!r}'.format(sock))
+                    'A Stream Socket was expected, got {!r}'.format(sock))
 
         transport, protocol = yield from self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname)
@@ -1055,9 +1053,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         else:
             if sock is None:
                 raise ValueError('Neither host/port nor sock were specified')
-            if not _is_stream_socket(sock) or not _is_ip_socket(sock):
+            if not _is_stream_socket(sock):
                 raise ValueError(
-                    'A TCP Stream Socket was expected, got {!r}'.format(sock))
+                    'A Stream Socket was expected, got {!r}'.format(sock))
             sockets = [sock]
 
         server = Server(self, sockets)
