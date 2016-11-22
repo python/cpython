@@ -3141,15 +3141,15 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             _Py_IDENTIFIER(__exit__);
             _Py_IDENTIFIER(__enter__);
             PyObject *mgr = TOP();
-            PyObject *exit = special_lookup(mgr, &PyId___exit__), *enter;
+            PyObject *enter = special_lookup(mgr, &PyId___enter__), *exit;
             PyObject *res;
+            if (enter == NULL)
+                goto error;
+            exit = special_lookup(mgr, &PyId___exit__);
             if (exit == NULL)
                 goto error;
             SET_TOP(exit);
-            enter = special_lookup(mgr, &PyId___enter__);
             Py_DECREF(mgr);
-            if (enter == NULL)
-                goto error;
             res = PyObject_CallFunctionObjArgs(enter, NULL);
             Py_DECREF(enter);
             if (res == NULL)
