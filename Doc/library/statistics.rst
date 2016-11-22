@@ -69,8 +69,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: mean(data)
 
-   Return the sample arithmetic mean of *data*, a sequence or iterator of
-   real-valued numbers.
+   Return the sample arithmetic mean of *data* which can be a sequence or iterator.
 
    The arithmetic mean is the sum of the data divided by the number of data
    points.  It is commonly called "the average", although it is only one of many
@@ -148,6 +147,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Return the median (middle value) of numeric data, using the common "mean of
    middle two" method.  If *data* is empty, :exc:`StatisticsError` is raised.
+   *data* can be a sequence or iterator.
 
    The median is a robust measure of central location, and is less affected by
    the presence of outliers in your data.  When the number of data points is
@@ -175,7 +175,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: median_low(data)
 
    Return the low median of numeric data.  If *data* is empty,
-   :exc:`StatisticsError` is raised.
+   :exc:`StatisticsError` is raised.  *data* can be a sequence or iterator.
 
    The low median is always a member of the data set.  When the number of data
    points is odd, the middle value is returned.  When it is even, the smaller of
@@ -195,7 +195,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: median_high(data)
 
    Return the high median of data.  If *data* is empty, :exc:`StatisticsError`
-   is raised.
+   is raised.  *data* can be a sequence or iterator.
 
    The high median is always a member of the data set.  When the number of data
    points is odd, the middle value is returned.  When it is even, the larger of
@@ -216,7 +216,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Return the median of grouped continuous data, calculated as the 50th
    percentile, using interpolation.  If *data* is empty, :exc:`StatisticsError`
-   is raised.
+   is raised.  *data* can be a sequence or iterator.
 
    .. doctest::
 
