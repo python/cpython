@@ -2688,7 +2688,7 @@ pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
 
     cmp = (left->flags == right->flags
            && left->isbytes == right->isbytes
-           && left->codesize && right->codesize);
+           && left->codesize == right->codesize);
     if (cmp) {
         /* Compare the code and the pattern because the same pattern can
            produce different codes depending on the locale used to compile the
