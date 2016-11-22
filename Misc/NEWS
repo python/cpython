@@ -432,6 +432,10 @@ Windows
 C API
 -----
 
+- Issue #28761: The fields name and doc of structures PyMemberDef, PyGetSetDef,
+  PyStructSequence_Field, PyStructSequence_Desc, and wrapperbase are now of
+  type "const char *" rather of "char *".
+
 - Issue #28748: Private variable _Py_PackageContext is now of type "const char *"
   rather of "char *".
 
