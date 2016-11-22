@@ -3146,8 +3146,10 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             if (enter == NULL)
                 goto error;
             exit = special_lookup(mgr, &PyId___exit__);
-            if (exit == NULL)
+            if (exit == NULL) {
+                Py_DECREF(enter);
                 goto error;
+            }
             SET_TOP(exit);
             Py_DECREF(mgr);
             res = PyObject_CallFunctionObjArgs(enter, NULL);
