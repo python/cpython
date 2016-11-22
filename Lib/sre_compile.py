@@ -576,5 +576,5 @@ def compile(p, flags=0):
     return _sre.compile(
         pattern, flags | p.pattern.flags, code,
         p.pattern.groups-1,
-        groupindex, indexgroup
+        groupindex, tuple(indexgroup)
         )

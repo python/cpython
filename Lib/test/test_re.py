@@ -1506,7 +1506,7 @@ class ReTests(unittest.TestCase):
         long_overflow = 2**128
         self.assertRaises(TypeError, re.finditer, "a", {})
         with self.assertRaises(OverflowError):
-            _sre.compile("abc", 0, [long_overflow], 0, [], [])
+            _sre.compile("abc", 0, [long_overflow], 0, {}, ())
         with self.assertRaises(TypeError):
             _sre.compile({}, 0, [], 0, [], [])
 
