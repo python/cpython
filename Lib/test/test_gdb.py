@@ -679,7 +679,7 @@ class StackNavigationTests(DebuggerTests):
     def test_pyup_command(self):
         'Verify that the "py-up" command works'
         bt = self.get_stack_trace(script=self.get_sample_script(),
-                                  cmds_after_breakpoint=['py-up'])
+                                  cmds_after_breakpoint=['py-up', 'py-up'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
@@ -698,7 +698,7 @@ $''')
     def test_up_at_top(self):
         'Verify handling of "py-up" at the top of the stack'
         bt = self.get_stack_trace(script=self.get_sample_script(),
-                                  cmds_after_breakpoint=['py-up'] * 4)
+                                  cmds_after_breakpoint=['py-up'] * 5)
         self.assertEndsWith(bt,
                             'Unable to find an older python frame\n')
 
@@ -708,7 +708,7 @@ $''')
     def test_up_then_down(self):
         'Verify "py-up" followed by "py-down"'
         bt = self.get_stack_trace(script=self.get_sample_script(),
-                                  cmds_after_breakpoint=['py-up', 'py-down'])
+                                  cmds_after_breakpoint=['py-up', 'py-up', 'py-down'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
@@ -727,6 +727,7 @@ class PyBtTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r'''^.*
 Traceback \(most recent call first\):
+  <built-in method id of module object .*>
   File ".*gdb_sample.py", line 10, in baz
     id\(42\)
   File ".*gdb_sample.py", line 7, in bar
@@ -815,7 +816,6 @@ id(42)
                                           )
         self.assertIn('Garbage-collecting', gdb_output)
 
-    @unittest.skip("FIXME: builtin method is not shown in py-bt and py-bt-full")
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
     # Some older versions of gdb will fail with
@@ -854,7 +854,7 @@ class PyPrintTests(DebuggerTests):
     def test_basic_command(self):
         'Verify that the "py-print" command works'
         bt = self.get_stack_trace(script=self.get_sample_script(),
-                                  cmds_after_breakpoint=['py-print args'])
+                                  cmds_after_breakpoint=['py-up', 'py-print args'])
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'args' = \(1, 2, 3\)\n.*")
 
@@ -863,7 +863,7 @@ class PyPrintTests(DebuggerTests):
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_print_after_up(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
-                                  cmds_after_breakpoint=['py-up', 'py-print c', 'py-print b', 'py-print a'])
+                                  cmds_after_breakpoint=['py-up', 'py-up', 'py-print c', 'py-print b', 'py-print a'])
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'c' = 3\nlocal 'b' = 2\nlocal 'a' = 1\n.*")
 
@@ -871,7 +871,7 @@ class PyPrintTests(DebuggerTests):
                      "Python was compiled with optimizations")
     def test_printing_global(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
-                                  cmds_after_breakpoint=['py-print __name__'])
+                                  cmds_after_breakpoint=['py-up', 'py-print __name__'])
         self.assertMultilineMatches(bt,
                                     r".*\nglobal '__name__' = '__main__'\n.*")
 
@@ -879,7 +879,7 @@ class PyPrintTests(DebuggerTests):
                      "Python was compiled with optimizations")
     def test_printing_builtin(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
-                                  cmds_after_breakpoint=['py-print len'])
+                                  cmds_after_breakpoint=['py-up', 'py-print len'])
         self.assertMultilineMatches(bt,
                                     r".*\nbuiltin 'len' = <built-in method len of module object at remote 0x-?[0-9a-f]+>\n.*")
 
@@ -888,7 +888,7 @@ class PyLocalsTests(DebuggerTests):
                      "Python was compiled with optimizations")
     def test_basic_command(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
-                                  cmds_after_breakpoint=['py-locals'])
+                                  cmds_after_breakpoint=['py-up', 'py-locals'])
         self.assertMultilineMatches(bt,
                                     r".*\nargs = \(1, 2, 3\)\n.*")
 
@@ -897,7 +897,7 @@ class PyLocalsTests(DebuggerTests):
                      "Python was compiled with optimizations")
     def test_locals_after_up(self):
         bt = self.get_stack_trace(script=self.get_sample_script(),
-                                  cmds_after_breakpoint=['py-up', 'py-locals'])
+                                  cmds_after_breakpoint=['py-up', 'py-up', 'py-locals'])
         self.assertMultilineMatches(bt,
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
