@@ -1138,11 +1138,11 @@ in the instance.  A variety of primitive C types are supported, and access may
 be read-only or read-write.  The structures in the table are defined as::
 
    typedef struct PyMemberDef {
-       char *name;
-       int   type;
-       int   offset;
-       int   flags;
-       char *doc;
+       const char *name;
+       int         type;
+       int         offset;
+       int         flags;
+       const char *doc;
    } PyMemberDef;
 
 For each entry in the table, a :term:`descriptor` will be constructed and added to the

@@ -725,11 +725,11 @@ type objects) *must* have the :attr:`ob_size` field.
       typedef int (*setter)(PyObject *, PyObject *, void *);
 
       typedef struct PyGetSetDef {
-          char *name;    /* attribute name */
-          getter get;    /* C function to get the attribute */
-          setter set;    /* C function to set or delete the attribute */
-          char *doc;     /* optional doc string */
-          void *closure; /* optional additional data for getter and setter */
+          const char *name; /* attribute name */
+          getter get;       /* C function to get the attribute */
+          setter set;       /* C function to set or delete the attribute */
+          const char *doc;  /* optional doc string */
+          void *closure;    /* optional additional data for getter and setter */
       } PyGetSetDef;
 
 
