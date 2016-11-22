@@ -78,7 +78,8 @@ call "%D%..\..\doc\make.bat" htmlhelp
 if errorlevel 1 goto :eof
 :skipdoc
 
-where hg /q || echo Cannot find Mercurial on PATH && exit /B 1
+where hg > "%TEMP%\hg.loc" 2> nul && set /P HG= < "%TEMP%\hg.loc" & del "%TEMP%\hg.loc"
+if not exist "%HG%" echo Cannot find Mercurial on PATH && exit /B 1
 
 where dlltool /q && goto skipdlltoolsearch
 set _DLLTOOL_PATH=
@@ -128,6 +129,12 @@ if exist "%BUILD%en-us" (
     if errorlevel 1 exit /B
 )
 
+if exist "%D%obj\Debug_%OBJDIR_PLAT%" (
+    echo Deleting "%D%obj\Debug_%OBJDIR_PLAT%"
+    rmdir /q/s "%D%obj\Debug_%OBJDIR_PLAT%"
+    if errorlevel 1 exit /B
+)
+
 if exist "%D%obj\Release_%OBJDIR_PLAT%" (
     echo Deleting "%D%obj\Release_%OBJDIR_PLAT%"
     rmdir /q/s "%D%obj\Release_%OBJDIR_PLAT%"
@@ -145,8 +152,14 @@ if not "%PGO%" EQU "" (
     set PGOOPTS=
 )
 if not "%SKIPBUILD%" EQU "1" (
-    @echo call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -t %TARGET% %CERTOPTS% %PGOOPTS%
-    @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -t %TARGET% %CERTOPTS% %PGOOPTS%
+    @echo call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -t %TARGET% %PGOOPTS% %CERTOPTS%
+    @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -t %TARGET% %PGOOPTS% %CERTOPTS%
+    @if errorlevel 1 exit /B
+    @rem build.bat turns echo back on, so we disable it again
+    @echo off
+
+    @echo call "%PCBUILD%build.bat" -d -e -p %BUILD_PLAT% -t %TARGET%
+    @call "%PCBUILD%build.bat" -d -e -p %BUILD_PLAT% -t %TARGET%
     @if errorlevel 1 exit /B
     @rem build.bat turns echo back on, so we disable it again
     @echo off
