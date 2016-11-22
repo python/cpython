@@ -493,6 +493,8 @@ Build
 Tools/Demos
 -----------
 
+- Issue #28023: Fix python-gdb.py didn't support new dict implementation.
+
 - Issue #15369: The pybench and pystone microbenchmark have been removed from
   Tools. Please use the new Python benchmark suite
   https://github.com/python/performance which is more reliable and includes a
