@@ -2683,12 +2683,18 @@ pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
     if (Py_TYPE(lefto) != &Pattern_Type || Py_TYPE(righto) != &Pattern_Type) {
         Py_RETURN_NOTIMPLEMENTED;
     }
+
+    if (lefto == righto) {
+        /* a pattern is equal to itself */
+        return PyBool_FromLong(op == Py_EQ);
+    }
+
     left = (PatternObject *)lefto;
     right = (PatternObject *)righto;
 
     cmp = (left->flags == right->flags
            && left->isbytes == right->isbytes
-           && left->codesize && right->codesize);
+           && left->codesize == right->codesize);
     if (cmp) {
         /* Compare the code and the pattern because the same pattern can
            produce different codes depending on the locale used to compile the
