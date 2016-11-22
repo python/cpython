@@ -1781,6 +1781,10 @@ SUBPATTERN None 0 0
     def test_pattern_compare(self):
         pattern1 = re.compile('abc', re.IGNORECASE)
 
+        # equal to itself
+        self.assertEqual(pattern1, pattern1)
+        self.assertFalse(pattern1 != pattern1)
+
         # equal
         re.purge()
         pattern2 = re.compile('abc', re.IGNORECASE)
