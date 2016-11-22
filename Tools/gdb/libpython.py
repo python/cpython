@@ -1492,23 +1492,38 @@ class Frame(object):
          '''
         if self.is_waiting_for_gil():
             return 'Waiting for the GIL'
-        elif self.is_gc_collect():
+
+        if self.is_gc_collect():
             return 'Garbage-collecting'
-        else:
-            # Detect invocations of PyCFunction instances:
-            older = self.older()
-            if older and older._gdbframe.name() == 'PyCFunction_Call':
-                # Within that frame:
-                #   "func" is the local containing the PyObject* of the
-                # PyCFunctionObject instance
-                #   "f" is the same value, but cast to (PyCFunctionObject*)
-                #   "self" is the (PyObject*) of the 'self'
-                try:
-                    # Use the prettyprinter for the func:
-                    func = older._gdbframe.read_var('func')
-                    return str(func)
-                except RuntimeError:
-                    return 'PyCFunction invocation (unable to read "func")'
+
+        # Detect invocations of PyCFunction instances:
+        older = self.older()
+        if not older:
+            return False
+
+        caller = older._gdbframe.name()
+        if not caller:
+            return False
+
+        if caller == 'PyCFunction_Call':
+            # Within that frame:
+            #   "func" is the local containing the PyObject* of the
+            # PyCFunctionObject instance
+            #   "f" is the same value, but cast to (PyCFunctionObject*)
+            #   "self" is the (PyObject*) of the 'self'
+            try:
+                # Use the prettyprinter for the func:
+                func = older._gdbframe.read_var('func')
+                return str(func)
+            except RuntimeError:
+                return 'PyCFunction invocation (unable to read "func")'
+
+        elif caller == '_PyCFunction_FastCallDict':
+            try:
+                func = older._gdbframe.read_var('func_obj')
+                return str(func)
+            except RuntimeError:
+                return 'PyCFunction invocation (unable to read "func_obj")'
 
         # This frame isn't worth reporting:
         return False
