@@ -12,6 +12,10 @@ Core and Builtins
 
 - Issue #28532: Show sys.version when -V option is supplied twice.
 
+- Issue #27100: The with-statement now checks for __enter__ before it
+  checks for __exit__.  This gives less confusing error messages when
+  both methods are missing. Patch by Jonathan Ellington.
+
 - Issue #28746: Fix the set_inheritable() file descriptor method on platforms
   that do not have the ioctl FIOCLEX and FIONCLEX commands.
 
