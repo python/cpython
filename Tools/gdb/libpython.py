@@ -709,6 +709,7 @@ class PyDictObjectPtr(PyObjectPtr):
         out.write('}')
 
     def _get_entries(self, keys):
+        dk_nentries = int(keys['dk_nentries'])
         dk_size = int(keys['dk_size'])
         try:
             # <= Python 3.5
@@ -726,9 +727,12 @@ class PyDictObjectPtr(PyObjectPtr):
         else:
             offset = 8 * dk_size
 
+        ent_addr = keys['dk_indices']['as_1'].address
+        ent_addr = ent_addr.cast(_type_unsigned_char_ptr()) + offset
         ent_ptr_t = gdb.lookup_type('PyDictKeyEntry').pointer()
-        ent_addr = int(keys['dk_indices']['as_1'].address) + offset
-        return gdb.Value(ent_addr).cast(ent_ptr_t), int(keys['dk_nentries'])
+        ent_addr = ent_addr.cast(ent_ptr_t)
+
+        return ent_addr, dk_nentries
 
 
 class PyListObjectPtr(PyObjectPtr):
