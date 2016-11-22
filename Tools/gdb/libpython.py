@@ -666,8 +666,9 @@ class PyDictObjectPtr(PyObjectPtr):
         '''
         keys = self.field('ma_keys')
         values = self.field('ma_values')
-        for i in safe_range(keys['dk_size']):
-            ep = keys['dk_entries'].address + i
+        entries, nentries = self._get_entries(keys)
+        for i in safe_range(nentries):
+            ep = entries[i]
             if long(values):
                 pyop_value = PyObjectPtr.from_pyobject_ptr(values[i])
             else:
@@ -706,6 +707,29 @@ class PyDictObjectPtr(PyObjectPtr):
             out.write(': ')
             pyop_value.write_repr(out, visited)
         out.write('}')
+
+    def _get_entries(self, keys):
+        dk_size = int(keys['dk_size'])
+        try:
+            # <= Python 3.5
+            return keys['dk_entries'], dk_size
+        except gdb.error:
+            # >= Python 3.6
+            pass
+
+        if dk_size <= 0xFF:
+            offset = dk_size
+        elif dk_size <= 0xFFFF:
+            offset = 2 * dk_size
+        elif dk_size <= 0xFFFFFFFF:
+            offset = 4 * dk_size
+        else:
+            offset = 8 * dk_size
+
+        ent_ptr_t = gdb.lookup_type('PyDictKeyEntry').pointer()
+        ent_addr = int(keys['dk_indices']['as_1'].address) + offset
+        return gdb.Value(ent_addr).cast(ent_ptr_t), int(keys['dk_nentries'])
+
 
 class PyListObjectPtr(PyObjectPtr):
     _typename = 'PyListObject'

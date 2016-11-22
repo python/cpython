@@ -13,6 +13,11 @@ Core and Builtins
 Library
 -------
 
+Tools/Demos
+-----------
+
+- Issue #28023: Fix python-gdb.py didn't support new dict implementation.
+
 
 What's New in Python 3.6.0 beta 4
 =================================
