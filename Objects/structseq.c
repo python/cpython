@@ -256,7 +256,7 @@ structseq_reduce(PyStructSequence* self)
     }
 
     for (; i < n_fields; i++) {
-        char *n = Py_TYPE(self)->tp_members[i-n_unnamed_fields].name;
+        const char *n = Py_TYPE(self)->tp_members[i-n_unnamed_fields].name;
         if (PyDict_SetItemString(dict, n, self->ob_item[i]) < 0)
             goto error;
     }

@@ -99,6 +99,12 @@ Build and C API Changes
   of libffi is now required when building ``_ctypes`` on such platforms.
   Contributed by Zachary Ware in :issue:`27979`.
 
+* The fields :c:member:`name` and :c:member:`doc` of structures
+  :c:type:`PyMemberDef`, :c:type:`PyGetSetDef`,
+  :c:type:`PyStructSequence_Field`, :c:type:`PyStructSequence_Desc`,
+  and :c:type:`wrapperbase` are now of type ``const char *`` rather of
+  ``char *``.  (Contributed by Serhiy Storchaka in :issue:`28761`.)
+
 
 Deprecated
 ==========

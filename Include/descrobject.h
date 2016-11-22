@@ -9,10 +9,10 @@ typedef PyObject *(*getter)(PyObject *, void *);
 typedef int (*setter)(PyObject *, PyObject *, void *);
 
 typedef struct PyGetSetDef {
-    char *name;
+    const char *name;
     getter get;
     setter set;
-    char *doc;
+    const char *doc;
     void *closure;
 } PyGetSetDef;
 
@@ -24,11 +24,11 @@ typedef PyObject *(*wrapperfunc_kwds)(PyObject *self, PyObject *args,
                                       void *wrapped, PyObject *kwds);
 
 struct wrapperbase {
-    char *name;
+    const char *name;
     int offset;
     void *function;
     wrapperfunc wrapper;
-    char *doc;
+    const char *doc;
     int flags;
     PyObject *name_strobj;
 };
