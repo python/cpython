@@ -27,8 +27,8 @@
 typedef struct {
     PyObject_VAR_HEAD
     Py_ssize_t groups; /* must be first! */
-    PyObject* groupindex;
-    PyObject* indexgroup;
+    PyObject* groupindex; /* dict */
+    PyObject* indexgroup; /* tuple */
     /* compatibility */
     PyObject* pattern; /* pattern source (or None) */
     int flags; /* flags used when compiling pattern source */

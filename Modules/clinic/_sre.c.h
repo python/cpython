@@ -438,7 +438,7 @@ _sre_compile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"pattern", "flags", "code", "groups", "groupindex", "indexgroup", NULL};
-    static _PyArg_Parser _parser = {"OiO!nOO:compile", _keywords, 0};
+    static _PyArg_Parser _parser = {"OiO!nO!O!:compile", _keywords, 0};
     PyObject *pattern;
     int flags;
     PyObject *code;
@@ -447,7 +447,7 @@ _sre_compile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *indexgroup;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &pattern, &flags, &PyList_Type, &code, &groups, &groupindex, &indexgroup)) {
+        &pattern, &flags, &PyList_Type, &code, &groups, &PyDict_Type, &groupindex, &PyTuple_Type, &indexgroup)) {
         goto exit;
     }
     return_value = _sre_compile_impl(module, pattern, flags, code, groups, groupindex, indexgroup);
@@ -728,4 +728,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=a4a246bca1963bc9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b74b16d90f207358 input=a9049054013a1b77]*/

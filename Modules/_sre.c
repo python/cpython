@@ -1438,8 +1438,8 @@ _sre.compile
     flags: int
     code: object(subclass_of='&PyList_Type')
     groups: Py_ssize_t
-    groupindex: object
-    indexgroup: object
+    groupindex: object(subclass_of='&PyDict_Type')
+    indexgroup: object(subclass_of='&PyTuple_Type')
 
 [clinic start generated code]*/
 
@@ -1447,7 +1447,7 @@ static PyObject *
 _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
                   PyObject *code, Py_ssize_t groups, PyObject *groupindex,
                   PyObject *indexgroup)
-/*[clinic end generated code: output=ef9c2b3693776404 input=7d059ec8ae1edb85]*/
+/*[clinic end generated code: output=ef9c2b3693776404 input=0a68476dbbe5db30]*/
 {
     /* "compile" pattern descriptor to pattern object */
 
