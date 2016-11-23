@@ -7,6 +7,7 @@ import stat
 import os
 import tempfile
 
+from itertools import chain
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 import subprocess
@@ -72,6 +73,10 @@ def include_in_lib(p):
         return True
 
     if name in EXCLUDE_FILE_FROM_LIBRARY:
+        return False
+
+    # Special code is included below to patch this file back in
+    if [d.lower() for d in p.parts[-3:]] == ['distutils', 'command', '__init__.py']:
         return False
 
     suffix = p.suffix.lower()
@@ -203,10 +208,17 @@ def main():
     try:
         for t, s, p, c in layout:
             if s == '$build':
-                s = build
+                fs = build
             else:
-                s = source / s
-            copied = copy_to_layout(temp / t.rstrip('/'), rglob(s, p, c))
+                fs = source / s
+            files = rglob(fs, p, c)
+            extra_files = []
+            if s == 'Lib' and p == '**/*':
+                extra_files.append((
+                    source / 'tools' / 'msi' / 'distutils.command.__init__.py',
+                    Path('distutils') / 'command' / '__init__.py'
+                ))
+            copied = copy_to_layout(temp / t.rstrip('/'), chain(files, extra_files))
             print('Copied {} files'.format(copied))
 
         with open(str(temp / 'pyvenv.cfg'), 'w') as f:
