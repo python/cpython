@@ -7,6 +7,7 @@ import stat
 import os
 import tempfile
 
+from itertools import chain
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 import subprocess
@@ -42,6 +43,7 @@ EXCLUDE_FILE_FROM_LIBRARY = {
 }
 
 EXCLUDE_FILE_FROM_LIBS = {
+    'liblzma',
     'ssleay',
     'libeay',
     'python3stub',
@@ -75,6 +77,10 @@ def include_in_lib(p):
         return True
 
     if name in EXCLUDE_FILE_FROM_LIBRARY:
+        return False
+
+    # Special code is included below to patch this file back in
+    if [d.lower() for d in p.parts[-3:]] == ['distutils', 'command', '__init__.py']:
         return False
 
     suffix = p.suffix.lower()
@@ -173,7 +179,7 @@ def rglob(root, pattern, condition):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--source', metavar='dir', help='The directory containing the repository root', type=Path)
-    parser.add_argument('-o', '--out', metavar='file', help='The name of the output self-extracting archive', type=Path, default=None)
+    parser.add_argument('-o', '--out', metavar='file', help='The name of the output archive', type=Path, default=None)
     parser.add_argument('-t', '--temp', metavar='dir', help='A directory to temporarily extract files into', type=Path, default=None)
     parser.add_argument('-e', '--embed', help='Create an embedding layout', action='store_true', default=False)
     parser.add_argument('-a', '--arch', help='Specify the architecture to use (win32/amd64)', type=str, default="win32")
@@ -207,8 +213,15 @@ def main():
 
     try:
         for t, s, p, c in layout:
-            s = source / s.replace("$arch", arch)
-            copied = copy_to_layout(temp / t.rstrip('/'), rglob(s, p, c))
+            fs = source / s.replace("$arch", arch)
+            files = rglob(fs, p, c)
+            extra_files = []
+            if s == 'Lib' and p == '**/*':
+                extra_files.append((
+                    source / 'tools' / 'msi' / 'distutils.command.__init__.py',
+                    Path('distutils') / 'command' / '__init__.py'
+                ))
+            copied = copy_to_layout(temp / t.rstrip('/'), chain(files, extra_files))
             print('Copied {} files'.format(copied))
 
         if ns.embed:
