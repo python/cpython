@@ -6798,7 +6798,7 @@ unicode_encode_ucs1(PyObject *unicode,
                     goto onError;
 
                 /* subtract preallocated bytes */
-                writer.min_size -= 1;
+                writer.min_size -= newpos - collstart;
 
                 if (PyBytes_Check(rep)) {
                     /* Directly copy bytes result to output. */
@@ -6835,7 +6835,7 @@ unicode_encode_ucs1(PyObject *unicode,
                             ch = PyUnicode_READ_CHAR(rep, i);
                             if (ch >= limit) {
                                 raise_encode_exception(&exc, encoding, unicode,
-                                                       pos, pos+1, reason);
+                                                       collstart, collend, reason);
                                 goto onError;
                             }
                             *str = (char)ch;

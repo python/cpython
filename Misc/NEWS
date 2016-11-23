@@ -10,6 +10,11 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28774: Fix error position of the unicode error in ASCII and Latin1
+  encoders when a string returned by the error handler contains multiple
+  non-encodable characters (non-ASCII for the ASCII codec, characters out
+  of the U+0000-U+00FF range for Latin1).
+
 - Issue #28731: Optimize _PyDict_NewPresized() to create correct size dict.
   Improve speed of dict literal with constant keys up to 30%.
 
