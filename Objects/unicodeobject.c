@@ -6814,33 +6814,19 @@ unicode_encode_ucs1(PyObject *unicode,
                     if (PyUnicode_READY(rep) < 0)
                         goto onError;
 
-                    if (PyUnicode_IS_ASCII(rep)) {
-                        /* Fast path: all characters are smaller than limit */
-                        assert(limit >= 128);
-                        assert(PyUnicode_KIND(rep) == PyUnicode_1BYTE_KIND);
-                        str = _PyBytesWriter_WriteBytes(&writer, str,
-                                                        PyUnicode_DATA(rep),
-                                                        PyUnicode_GET_LENGTH(rep));
+                    if (limit == 256 ?
+                        PyUnicode_KIND(rep) != PyUnicode_1BYTE_KIND :
+                        !PyUnicode_IS_ASCII(rep))
+                    {
+                        /* Not all characters are smaller than limit */
+                        raise_encode_exception(&exc, encoding, unicode,
+                                               collstart, collend, reason);
+                        goto onError;
                     }
-                    else {
-                        Py_ssize_t repsize = PyUnicode_GET_LENGTH(rep);
-
-                        str = _PyBytesWriter_Prepare(&writer, str, repsize);
-                        if (str == NULL)
-                            goto onError;
-
-                        /* check if there is anything unencodable in the
-                           replacement and copy it to the output */
-                        for (i = 0; repsize-->0; ++i, ++str) {
-                            ch = PyUnicode_READ_CHAR(rep, i);
-                            if (ch >= limit) {
-                                raise_encode_exception(&exc, encoding, unicode,
-                                                       collstart, collend, reason);
-                                goto onError;
-                            }
-                            *str = (char)ch;
-                        }
-                    }
+                    assert(PyUnicode_KIND(rep) == PyUnicode_1BYTE_KIND);
+                    str = _PyBytesWriter_WriteBytes(&writer, str,
+                                                    PyUnicode_DATA(rep),
+                                                    PyUnicode_GET_LENGTH(rep));
                 }
                 pos = newpos;
                 Py_CLEAR(rep);
