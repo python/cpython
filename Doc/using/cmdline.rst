@@ -187,6 +187,8 @@ Generic options
        Python 3.6.0b2+ (3.6:84a3c5003510+, Oct 26 2016, 02:33:55)
        [GCC 6.2.0 20161005]
 
+   .. versionadded:: 3.6
+      The ``-VV`` option.
 
 .. _using-on-misc-options:
 
