@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28782: Fix a bug in the implementation ``yield from`` when checking
+  if the next instruction is YIELD_FROM. Regression introduced by WORDCODE
+  (issue #26647).
+
 - Issue #28774: Fix error position of the unicode error in ASCII and Latin1
   encoders when a string returned by the error handler contains multiple
   non-encodable characters (non-ASCII for the ASCII codec, characters out

@@ -2049,6 +2049,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             f->f_stacktop = stack_pointer;
             why = WHY_YIELD;
             /* and repeat... */
+            assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
             goto fast_yield;
         }
