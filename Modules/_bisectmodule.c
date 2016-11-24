@@ -216,18 +216,11 @@ If x is already in a, insert it to the left of the leftmost x.\n\
 Optional args lo (default 0) and hi (default len(a)) bound the\n\
 slice of a to be searched.\n");
 
-PyDoc_STRVAR(bisect_doc, "Alias for bisect_right().\n");
-PyDoc_STRVAR(insort_doc, "Alias for insort_right().\n");
-
 static PyMethodDef bisect_methods[] = {
     {"bisect_right", (PyCFunction)bisect_right,
         METH_VARARGS|METH_KEYWORDS, bisect_right_doc},
-    {"bisect", (PyCFunction)bisect_right,
-        METH_VARARGS|METH_KEYWORDS, bisect_doc},
     {"insort_right", (PyCFunction)insort_right,
         METH_VARARGS|METH_KEYWORDS, insort_right_doc},
-    {"insort", (PyCFunction)insort_right,
-        METH_VARARGS|METH_KEYWORDS, insort_doc},
     {"bisect_left", (PyCFunction)bisect_left,
         METH_VARARGS|METH_KEYWORDS, bisect_left_doc},
     {"insort_left", (PyCFunction)insort_left,
