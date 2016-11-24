@@ -355,6 +355,14 @@ _PyGen_yf(PyGenObject *gen)
         PyObject *bytecode = f->f_code->co_code;
         unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
+        if (f->f_lasti < 0) {
+            /* Return immediately if the frame didn't start yet. YIELD_FROM
+               always come after LOAD_CONST: a code object should not start
+               with YIELD_FROM */
+            assert(code[0] != YIELD_FROM);
+            return NULL;
+        }
+
         if (code[f->f_lasti + sizeof(_Py_CODEUNIT)] != YIELD_FROM)
             return NULL;
         yf = f->f_stacktop[-1];
@@ -463,6 +471,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             assert(ret == yf);
             Py_DECREF(ret);
             /* Termination repetition of YIELD_FROM */
+            assert(gen->gi_frame->f_lasti >= 0);
             gen->gi_frame->f_lasti += sizeof(_Py_CODEUNIT);
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send_ex(gen, val, 0, 0);
