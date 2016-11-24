@@ -1832,6 +1832,18 @@ Build and C API Changes
   functions will now accept :term:`path-like objects <path-like object>`.
 
 
+Other Improvements
+==================
+
+* When :option:`--version` (short form: :option:`-V`) is supplied twice,
+  Python prints :data:`sys.version` for detailed information.
+
+  .. code-block:: shell-session
+
+    $ ./python -VV
+    Python 3.6.0b4+ (3.6:223967b49e49+, Nov 21 2016, 20:55:04)
+    [GCC 4.2.1 Compatible Apple LLVM 8.0.0 (clang-800.0.42.1)]
+
 
 Deprecated
 ==========
