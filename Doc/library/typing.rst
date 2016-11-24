@@ -578,6 +578,10 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`builtins.set <set>`.
 
+.. class:: FrozenSet(frozenset, AbstractSet[T_co])
+
+   A generic version of :class:`builtins.frozenset <frozenset>`.
+
 .. class:: MappingView(Sized, Iterable[T_co])
 
    A generic version of :class:`collections.abc.MappingView`.
