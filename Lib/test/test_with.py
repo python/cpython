@@ -117,7 +117,7 @@ class FailureTestCase(unittest.TestCase):
         def fooLacksEnter():
             foo = LacksEnter()
             with foo: pass
-        self.assertRaisesRegexp(AttributeError, '__enter__', fooLacksEnter)
+        self.assertRaisesRegex(AttributeError, '__enter__', fooLacksEnter)
 
     def testEnterAttributeError2(self):
         class LacksEnterAndExit(object):
@@ -126,7 +126,7 @@ class FailureTestCase(unittest.TestCase):
         def fooLacksEnterAndExit():
             foo = LacksEnterAndExit()
             with foo: pass
-        self.assertRaisesRegexp(AttributeError, '__enter__', fooLacksEnterAndExit)
+        self.assertRaisesRegex(AttributeError, '__enter__', fooLacksEnterAndExit)
 
     def testExitAttributeError(self):
         class LacksExit(object):
@@ -136,7 +136,7 @@ class FailureTestCase(unittest.TestCase):
         def fooLacksExit():
             foo = LacksExit()
             with foo: pass
-        self.assertRaisesRegexp(AttributeError, '__exit__', fooLacksExit)
+        self.assertRaisesRegex(AttributeError, '__exit__', fooLacksExit)
 
     def assertRaisesSyntaxError(self, codestr):
         def shouldRaiseSyntaxError(s):
