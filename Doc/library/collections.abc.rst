@@ -223,7 +223,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
    .. versionadded:: 3.5
 
-.. class:: Generator
+.. class:: AsyncGenerator
 
    ABC for asynchronous generator classes that implement the protocol
    defined in :pep:`525` and :pep:`492`.
