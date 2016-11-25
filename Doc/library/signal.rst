@@ -350,8 +350,9 @@ The :mod:`signal` module defines the following functions:
    attribute descriptions in the :mod:`inspect` module).
 
    On Windows, :func:`signal` can only be called with :const:`SIGABRT`,
-   :const:`SIGFPE`, :const:`SIGILL`, :const:`SIGINT`, :const:`SIGSEGV`, or
-   :const:`SIGTERM`. A :exc:`ValueError` will be raised in any other case.
+   :const:`SIGFPE`, :const:`SIGILL`, :const:`SIGINT`, :const:`SIGSEGV`,
+   :const:`SIGTERM`, or :const:`SIGBREAK`.
+   A :exc:`ValueError` will be raised in any other case.
    Note that not all systems define the same set of signal names; an
    :exc:`AttributeError` will be raised if a signal name is not defined as
    ``SIG*`` module level constant.
