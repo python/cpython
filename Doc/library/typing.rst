@@ -733,7 +733,7 @@ The module defines the following classes, functions and decorators:
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
 
-.. function:: get_type_hints(obj[, globals[, locals])
+.. function:: get_type_hints(obj[, globals[, locals]])
 
    Return a dictionary containing type hints for a function, method, module
    or class object.
