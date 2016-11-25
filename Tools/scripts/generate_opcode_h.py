@@ -32,10 +32,14 @@ enum cmp_op {PyCmp_LT=Py_LT, PyCmp_LE=Py_LE, PyCmp_EQ=Py_EQ, PyCmp_NE=Py_NE,
 #endif /* !Py_OPCODE_H */
 """
 
+import tokenize
+
 
 def main(opcode_py, outfile='Include/opcode.h'):
     opcode = {}
-    exec(open(opcode_py).read(), opcode)
+    with tokenize.open(opcode_py) as fp:
+        code = fp.read()
+    exec(code, opcode)
     opmap = opcode['opmap']
     with open(outfile, 'w') as fobj:
         fobj.write(header)
