@@ -472,6 +472,9 @@ Library
 
 - Issue #28703: Fix asyncio.iscoroutinefunction to handle Mock objects.
 
+- Issue #24142: Reading a corrupt config file left the parser in an
+  invalid state.  Original patch by Florian Höch.
+
 IDLE
 ----
 
