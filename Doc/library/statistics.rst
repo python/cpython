@@ -191,9 +191,9 @@ However, for reading convenience, most of the examples show sorted sequences.
       52.5
 
    In the following example, the data are rounded, so that each value represents
-   the midpoint of data classes, e.g. 1 is the midpoint of the class 0.5-1.5, 2
-   is the midpoint of 1.5-2.5, 3 is the midpoint of 2.5-3.5, etc.  With the data
-   given, the middle value falls somewhere in the class 3.5-4.5, and
+   the midpoint of data classes, e.g. 1 is the midpoint of the class 0.5--1.5, 2
+   is the midpoint of 1.5--2.5, 3 is the midpoint of 2.5--3.5, etc.  With the data
+   given, the middle value falls somewhere in the class 3.5--4.5, and
    interpolation is used to estimate it:
 
    .. doctest::
