@@ -42,14 +42,14 @@ In the 1980s, almost all personal computers were 8-bit, meaning that bytes could
 hold values ranging from 0 to 255.  ASCII codes only went up to 127, so some
 machines assigned values between 128 and 255 to accented characters.  Different
 machines had different codes, however, which led to problems exchanging files.
-Eventually various commonly used sets of values for the 128-255 range emerged.
+Eventually various commonly used sets of values for the 128--255 range emerged.
 Some were true standards, defined by the International Standards Organization,
 and some were **de facto** conventions that were invented by one company or
 another and managed to catch on.
 
 255 characters aren't very many.  For example, you can't fit both the accented
 characters used in Western Europe and the Cyrillic alphabet used for Russian
-into the 128-255 range because there are more than 128 such characters.
+into the 128--255 range because there are more than 128 such characters.
 
 You could write files using different codes (all your Russian files in a coding
 system called KOI8, all your French files in a different coding system called
@@ -62,7 +62,7 @@ bits means you have 2^16 = 65,536 distinct values available, making it possible
 to represent many different characters from many different alphabets; an initial
 goal was to have Unicode contain the alphabets for every single human language.
 It turns out that even 16 bits isn't enough to meet that goal, and the modern
-Unicode specification uses a wider range of codes, 0-1,114,111 (0x10ffff in
+Unicode specification uses a wider range of codes, 0--1,114,111 (0x10ffff in
 base-16).
 
 There's a related ISO standard, ISO 10646.  Unicode and ISO 10646 were
@@ -116,7 +116,7 @@ Encodings
 
 To summarize the previous section: a Unicode string is a sequence of code
 points, which are numbers from 0 to 0x10ffff.  This sequence needs to be
-represented as a set of bytes (meaning, values from 0-255) in memory.  The rules
+represented as a set of bytes (meaning, values from 0--255) in memory.  The rules
 for translating a Unicode string into a sequence of bytes are called an
 **encoding**.
 
@@ -163,7 +163,7 @@ simple; for each code point:
    case.)
 
 Latin-1, also known as ISO-8859-1, is a similar encoding.  Unicode code points
-0-255 are identical to the Latin-1 values, so converting to this encoding simply
+0--255 are identical to the Latin-1 values, so converting to this encoding simply
 requires converting code points to byte values; if a code point larger than 255
 is encountered, the string can't be encoded into Latin-1.
 

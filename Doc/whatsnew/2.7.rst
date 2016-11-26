@@ -104,7 +104,7 @@ Some key consequences of the long-term significance of 2.7 are:
   when compared to earlier 2.x versions. Python 2.7 is currently expected to
   remain supported by the core development team (receiving security updates
   and other bug fixes) until at least 2020 (10 years after its initial
-  release, compared to the more typical support period of 18-24 months).
+  release, compared to the more typical support period of 18--24 months).
 
 * As the Python 2.7 standard library ages, making effective use of the
   Python Package Index (either directly or via a redistributor) becomes
@@ -974,7 +974,7 @@ Several performance enhancements have been added:
   Gregory Smith; :issue:`1087418`).
 
 * The implementation of ``%`` checks for the left-side operand being
-  a Python string and special-cases it; this results in a 1-3%
+  a Python string and special-cases it; this results in a 1--3%
   performance increase for applications that frequently use ``%``
   with strings, such as templating libraries.
   (Implemented by Collin Winter; :issue:`5176`.)

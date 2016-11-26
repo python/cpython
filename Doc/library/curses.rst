@@ -316,7 +316,7 @@ The module :mod:`curses` defines the following functions:
    Return the name of the key numbered *k*.  The name of a key generating printable
    ASCII character is the key's character.  The name of a control-key combination
    is a two-character string consisting of a caret followed by the corresponding
-   printable ASCII character.  The name of an alt-key combination (128-255) is a
+   printable ASCII character.  The name of an alt-key combination (128--255) is a
    string consisting of the prefix 'M-' followed by the name of the corresponding
    ASCII character.
 

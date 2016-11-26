@@ -343,7 +343,7 @@ Examples of basic usage::
 
    M. Matsumoto and T. Nishimura, "Mersenne Twister: A 623-dimensionally
    equidistributed uniform pseudorandom number generator", ACM Transactions on
-   Modeling and Computer Simulation Vol. 8, No. 1, January pp.3-30 1998.
+   Modeling and Computer Simulation Vol. 8, No. 1, January pp.3--30 1998.
 
    Wichmann, B. A. & Hill, I. D., "Algorithm AS 183: An efficient and portable
    pseudo-random number generator", Applied Statistics 31 (1982) 188-190.

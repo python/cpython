@@ -214,7 +214,7 @@ it returns a string.
 
    Return a string representation of the ASCII character *c*.  If *c* is printable,
    this string is the character itself.  If the character is a control character
-   (0x00-0x1f) the string consists of a caret (``'^'``) followed by the
+   (0x00--0x1f) the string consists of a caret (``'^'``) followed by the
    corresponding uppercase letter. If the character is an ASCII delete (0x7f) the
    string is ``'^?'``.  If the character has its meta bit (0x80) set, the meta bit
    is stripped, the preceding rules applied, and ``'!'`` prepended to the result.

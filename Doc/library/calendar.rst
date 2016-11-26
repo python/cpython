@@ -48,7 +48,7 @@ it's the base calendar for all computations.
 
    .. method:: itermonthdates(year, month)
 
-      Return an iterator for the month *month* (1-12) in the year *year*. This
+      Return an iterator for the month *month* (1--12) in the year *year*. This
       iterator will return all days (as :class:`datetime.date` objects) for the
       month and all days before the start of the month or after the end of the
       month that are required to get a complete week.

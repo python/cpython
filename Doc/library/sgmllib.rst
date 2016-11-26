@@ -143,7 +143,7 @@ A single exception is defined as well:
 
    Convert a character reference to a string, or ``None``.  *ref* is the reference
    passed in as a string.  In the base implementation, *ref* must be a decimal
-   number in the range 0-255.  It converts the code point found using the
+   number in the range 0--255.  It converts the code point found using the
    :meth:`convert_codepoint` method. If *ref* is invalid or out of range, this
    method returns ``None``.  This method is called by the default
    :meth:`handle_charref` implementation and by the attribute value parser.

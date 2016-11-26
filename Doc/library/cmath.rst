@@ -255,6 +255,6 @@ cuts for numerical purposes, a good reference should be the following:
 
    Kahan, W:  Branch cuts for complex elementary functions; or, Much ado about
    nothing's sign bit.  In Iserles, A., and Powell, M. (eds.), The state of the art
-   in numerical analysis. Clarendon Press (1987) pp165-211.
+   in numerical analysis. Clarendon Press (1987) pp165--211.
 
 

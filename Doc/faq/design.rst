@@ -31,7 +31,7 @@ least slightly uneasy when reading (or being required to write) another style.
 Many coding styles place begin/end brackets on a line by themselves.  This makes
 programs considerably longer and wastes valuable screen space, making it harder
 to get a good overview of a program.  Ideally, a function should fit on one
-screen (say, 20-30 lines).  20 lines of Python can do a lot more work than 20
+screen (say, 20--30 lines).  20 lines of Python can do a lot more work than 20
 lines of C.  This is not solely due to the lack of begin/end brackets -- the
 lack of declarations and the high-level data types are also responsible -- but
 the indentation-based syntax certainly helps.

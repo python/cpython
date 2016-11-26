@@ -350,7 +350,7 @@ Encoders and Decoders
 
    If *strict* is false (``True`` is the default), then control characters
    will be allowed inside strings.  Control characters in this context are
-   those with character codes in the 0-31 range, including ``'\t'`` (tab),
+   those with character codes in the 0--31 range, including ``'\t'`` (tab),
    ``'\n'``, ``'\r'`` and ``'\0'``.
 
    If the data being deserialized is not a valid JSON document, a
