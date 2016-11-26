@@ -252,7 +252,7 @@ outdated.
 
     Guido van Rossum and Jelke de Boer, "Interactively Testing Remote Servers
     Using the Python Programming Language", CWI Quarterly, Volume 4, Issue 4
-    (December 1991), Amsterdam, pp 283-303.
+    (December 1991), Amsterdam, pp 283--303.
 
 
 Are there any books on Python?

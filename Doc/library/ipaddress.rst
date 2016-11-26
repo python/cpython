@@ -99,7 +99,7 @@ write code that handles both IP versions correctly.
    The following constitutes a valid IPv4 address:
 
    1. A string in decimal-dot notation, consisting of four decimal integers in
-      the inclusive range 0-255, separated by dots (e.g. ``192.168.0.1``). Each
+      the inclusive range 0--255, separated by dots (e.g. ``192.168.0.1``). Each
       integer represents an octet (byte) in the address. Leading zeroes are
       tolerated only for values less than 8 (as there is no ambiguity
       between the decimal and octal interpretations of such strings).
