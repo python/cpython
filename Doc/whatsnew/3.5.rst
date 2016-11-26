@@ -2130,8 +2130,8 @@ Many operations on :class:`io.BytesIO` are now 50% to 100% faster.
 (Contributed by Serhiy Storchaka in :issue:`15381` and David Wilson in
 :issue:`22003`.)
 
-The :func:`marshal.dumps` function is now faster: 65-85% with versions 3
-and 4, 20-25% with versions 0 to 2 on typical data, and up to 5 times in
+The :func:`marshal.dumps` function is now faster: 65--85% with versions 3
+and 4, 20--25% with versions 0 to 2 on typical data, and up to 5 times in
 best cases.
 (Contributed by Serhiy Storchaka in :issue:`20416` and :issue:`23344`.)
 
