@@ -240,8 +240,8 @@ Error Codes
 ~~~~~~~~~~~
 
 Because the default handlers handle redirects (codes in the 300 range), and
-codes in the 100-299 range indicate success, you will usually only see error
-codes in the 400-599 range.
+codes in the 100--299 range indicate success, you will usually only see error
+codes in the 400--599 range.
 
 :attr:`http.server.BaseHTTPRequestHandler.responses` is a useful dictionary of
 response codes in that shows all the response codes used by RFC 2616. The
