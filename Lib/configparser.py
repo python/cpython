@@ -1102,10 +1102,10 @@ class RawConfigParser(MutableMapping):
                         # raised at the end of the file and will contain a
                         # list of all bogus lines
                         e = self._handle_error(e, fpname, lineno, line)
+        self._join_multiline_values()
         # if any parsing errors occurred, raise an exception
         if e:
             raise e
-        self._join_multiline_values()
 
     def _join_multiline_values(self):
         defaults = self.default_section, self._defaults
