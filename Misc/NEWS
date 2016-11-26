@@ -409,6 +409,9 @@ Library
 
 - Issue #27972: Prohibit Tasks to await on themselves.
 
+- Issue #24142: Reading a corrupt config file left configparser in an
+  invalid state.  Original patch by Florian Höch.
+
 Windows
 -------
 
