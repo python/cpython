@@ -3344,11 +3344,8 @@ compiler_dict(struct compiler *c, expr_ty e)
     /* If there is more than one dict, they need to be merged into a new
      * dict.  If there is one dict and it's an unpacking, then it needs
      * to be copied into a new dict." */
-    while (containers > 1 || is_unpacking) {
-        int oparg = containers < 255 ? containers : 255;
-        ADDOP_I(c, BUILD_MAP_UNPACK, oparg);
-        containers -= (oparg - 1);
-        is_unpacking = 0;
+    if (containers > 1 || is_unpacking) {
+        ADDOP_I(c, BUILD_MAP_UNPACK, containers);
     }
     return 1;
 }
