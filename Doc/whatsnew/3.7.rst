@@ -75,6 +75,8 @@ New Features
 Other Language Changes
 ======================
 
+* More than 255 arguments can now be passed to a function.
+  (Contributed by Serhiy Storchaka in :issue:`12844`.)
 
 
 New Modules
