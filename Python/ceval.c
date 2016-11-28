@@ -4736,7 +4736,11 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
     }
     else {
         if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
-            /* optimize access to bound methods */
+            /* Optimize access to bound methods. Reuse the Python stack
+               to pass 'self' as the first argument, replace 'func'
+               with 'self'. It avoids the creation of a new temporary tuple
+               for arguments (to replace func with self) when the method uses
+               FASTCALL. */
             PyObject *self = PyMethod_GET_SELF(func);
             Py_INCREF(self);
             func = PyMethod_GET_FUNCTION(func);
