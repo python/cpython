@@ -83,63 +83,6 @@ static long dxp[256];
 #endif
 #endif
 
-/* Function call profile */
-#ifdef CALL_PROFILE
-#define PCALL_NUM 11
-static int pcall[PCALL_NUM];
-
-#define PCALL_ALL 0
-#define PCALL_FUNCTION 1
-#define PCALL_FAST_FUNCTION 2
-#define PCALL_FASTER_FUNCTION 3
-#define PCALL_METHOD 4
-#define PCALL_BOUND_METHOD 5
-#define PCALL_CFUNCTION 6
-#define PCALL_TYPE 7
-#define PCALL_GENERATOR 8
-#define PCALL_OTHER 9
-#define PCALL_POP 10
-
-/* Notes about the statistics
-
-   PCALL_FAST stats
-
-   FAST_FUNCTION means no argument tuple needs to be created.
-   FASTER_FUNCTION means that the fast-path frame setup code is used.
-
-   If there is a method call where the call can be optimized by changing
-   the argument tuple and calling the function directly, it gets recorded
-   twice.
-
-   As a result, the relationship among the statistics appears to be
-   PCALL_ALL == PCALL_FUNCTION + PCALL_METHOD - PCALL_BOUND_METHOD +
-                PCALL_CFUNCTION + PCALL_TYPE + PCALL_GENERATOR + PCALL_OTHER
-   PCALL_FUNCTION > PCALL_FAST_FUNCTION > PCALL_FASTER_FUNCTION
-   PCALL_METHOD > PCALL_BOUND_METHOD
-*/
-
-#define PCALL(POS) pcall[POS]++
-
-PyObject *
-PyEval_GetCallStats(PyObject *self)
-{
-    return Py_BuildValue("iiiiiiiiiii",
-                         pcall[0], pcall[1], pcall[2], pcall[3],
-                         pcall[4], pcall[5], pcall[6], pcall[7],
-                         pcall[8], pcall[9], pcall[10]);
-}
-#else
-#define PCALL(O)
-
-PyObject *
-PyEval_GetCallStats(PyObject *self)
-{
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-#endif
-
-
 #ifdef WITH_THREAD
 #define GIL_REQUEST _Py_atomic_load_relaxed(&gil_drop_request)
 #else
@@ -3278,7 +3221,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         PREDICTED(CALL_FUNCTION);
         TARGET(CALL_FUNCTION) {
             PyObject **sp, *res;
-            PCALL(PCALL_ALL);
             sp = stack_pointer;
             res = call_function(&sp, oparg, NULL);
             stack_pointer = sp;
@@ -3294,7 +3236,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
             names = POP();
             assert(PyTuple_CheckExact(names) && PyTuple_GET_SIZE(names) <= oparg);
-            PCALL(PCALL_ALL);
             sp = stack_pointer;
             res = call_function(&sp, oparg, names);
             stack_pointer = sp;
@@ -3309,7 +3250,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
         TARGET(CALL_FUNCTION_EX) {
             PyObject *func, *callargs, *kwargs = NULL, *result;
-            PCALL(PCALL_ALL);
             if (oparg & 0x01) {
                 kwargs = POP();
                 if (!PyDict_CheckExact(kwargs)) {
@@ -4099,8 +4039,6 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
          * when the generator is resumed. */
         Py_CLEAR(f->f_back);
 
-        PCALL(PCALL_GENERATOR);
-
         /* Create a new generator that owns the ready to run frame
          * and return that as the value. */
         if (is_coro) {
@@ -4793,8 +4731,6 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
     if (PyCFunction_Check(func)) {
         PyThreadState *tstate = PyThreadState_GET();
 
-        PCALL(PCALL_CFUNCTION);
-
         stack = (*pp_stack) - nargs - nkwargs;
         C_TRACE(x, _PyCFunction_FastCallKeywords(func, stack, nargs, kwnames));
     }
@@ -4802,8 +4738,6 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
         if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
             /* optimize access to bound methods */
             PyObject *self = PyMethod_GET_SELF(func);
-            PCALL(PCALL_METHOD);
-            PCALL(PCALL_BOUND_METHOD);
             Py_INCREF(self);
             func = PyMethod_GET_FUNCTION(func);
             Py_INCREF(func);
@@ -4835,7 +4769,6 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
     while ((*pp_stack) > pfunc) {
         w = EXT_POP(*pp_stack);
         Py_DECREF(w);
-        PCALL(PCALL_POP);
     }
 
     return x;
@@ -4860,7 +4793,6 @@ _PyFunction_FastCall(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
     Py_ssize_t i;
     PyObject *result;
 
-    PCALL(PCALL_FASTER_FUNCTION);
     assert(globals != NULL);
     /* XXX Perhaps we should create a specialized
        PyFrame_New() that doesn't take locals, but does
@@ -4905,9 +4837,6 @@ fast_function(PyObject *func, PyObject **stack,
     assert((nargs == 0 && nkwargs == 0) || stack != NULL);
     /* kwnames must only contains str strings, no subclass, and all keys must
        be unique */
-
-    PCALL(PCALL_FUNCTION);
-    PCALL(PCALL_FAST_FUNCTION);
 
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
         co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
@@ -4970,9 +4899,6 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
     assert(nargs >= 0);
     assert(nargs == 0 || args != NULL);
     assert(kwargs == NULL || PyDict_Check(kwargs));
-
-    PCALL(PCALL_FUNCTION);
-    PCALL(PCALL_FAST_FUNCTION);
 
     if (co->co_kwonlyargcount == 0 &&
         (kwargs == NULL || PyDict_Size(kwargs) == 0) &&
@@ -5041,23 +4967,6 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 static PyObject *
 do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
 {
-#ifdef CALL_PROFILE
-    /* At this point, we have to look at the type of func to
-       update the call stats properly.  Do it here so as to avoid
-       exposing the call stats machinery outside ceval.c
-    */
-    if (PyFunction_Check(func))
-        PCALL(PCALL_FUNCTION);
-    else if (PyMethod_Check(func))
-        PCALL(PCALL_METHOD);
-    else if (PyType_Check(func))
-        PCALL(PCALL_TYPE);
-    else if (PyCFunction_Check(func))
-        PCALL(PCALL_CFUNCTION);
-    else
-        PCALL(PCALL_OTHER);
-#endif
-
     if (PyCFunction_Check(func)) {
         PyObject *result;
         PyThreadState *tstate = PyThreadState_GET();
