@@ -1147,46 +1147,6 @@ Python-level trace functions in previous versions.
    :c:func:`PyEval_SetProfile`, except the tracing function does receive line-number
    events.
 
-.. c:function:: PyObject* PyEval_GetCallStats(PyObject *self)
-
-   Return a tuple of function call counts.  There are constants defined for the
-   positions within the tuple:
-
-   +-------------------------------+-------+
-   | Name                          | Value |
-   +===============================+=======+
-   | :const:`PCALL_ALL`            | 0     |
-   +-------------------------------+-------+
-   | :const:`PCALL_FUNCTION`       | 1     |
-   +-------------------------------+-------+
-   | :const:`PCALL_FAST_FUNCTION`  | 2     |
-   +-------------------------------+-------+
-   | :const:`PCALL_FASTER_FUNCTION`| 3     |
-   +-------------------------------+-------+
-   | :const:`PCALL_METHOD`         | 4     |
-   +-------------------------------+-------+
-   | :const:`PCALL_BOUND_METHOD`   | 5     |
-   +-------------------------------+-------+
-   | :const:`PCALL_CFUNCTION`      | 6     |
-   +-------------------------------+-------+
-   | :const:`PCALL_TYPE`           | 7     |
-   +-------------------------------+-------+
-   | :const:`PCALL_GENERATOR`      | 8     |
-   +-------------------------------+-------+
-   | :const:`PCALL_OTHER`          | 9     |
-   +-------------------------------+-------+
-   | :const:`PCALL_POP`            | 10    |
-   +-------------------------------+-------+
-
-   :const:`PCALL_FAST_FUNCTION` means no argument tuple needs to be created.
-   :const:`PCALL_FASTER_FUNCTION` means that the fast-path frame setup code is used.
-
-   If there is a method call where the call can be optimized by changing
-   the argument tuple and calling the function directly, it gets recorded
-   twice.
-
-   This function is only present if Python is compiled with :const:`CALL_PROFILE`
-   defined.
 
 .. _advanced-debugging:
 
