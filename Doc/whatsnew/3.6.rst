@@ -163,7 +163,7 @@ Windows improvements:
   remains unchanged - "python" refers to Python 2 in that case.
 
 * ``python.exe`` and ``pythonw.exe`` have been marked as long-path aware,
-  which means that when the 260 character path limit may no longer apply.
+  which means that the 260 character path limit may no longer apply.
   See :ref:`removing the MAX_PATH limitation <max-path>` for details.
 
 * A ``._pth`` file can be added to force isolated mode and fully specify
