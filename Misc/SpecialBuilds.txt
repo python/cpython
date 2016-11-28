@@ -223,14 +223,3 @@ the interpreter is doing are sprayed to stdout, such as every opcode and opcode
 argument and values pushed onto and popped off the value stack.
 
 Not useful very often, but very useful when needed.
-
-
-CALL_PROFILE
-------------
-
-Count the number of function calls executed.
-
-When this symbol is defined, the ceval mainloop and helper functions count the
-number of function calls made.  It keeps detailed statistics about what kind of
-object was called and whether the call hit any of the special fast paths in the
-code.
