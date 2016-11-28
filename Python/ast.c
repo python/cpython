@@ -2738,11 +2738,6 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
         return NULL;
     }
 
-    if (nargs + nkeywords + ngens > 255) {
-        ast_error(c, n, "more than 255 arguments");
-        return NULL;
-    }
-
     args = _Py_asdl_seq_new(nargs + ngens, c->c_arena);
     if (!args)
         return NULL;
