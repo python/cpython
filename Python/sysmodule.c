@@ -1287,6 +1287,19 @@ a 11-tuple where the entries in the tuple are counts of:\n\
 10. Number of stack pops performed by call_function()"
 );
 
+static PyObject *
+sys_callstats(PyObject *self)
+{
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                      "sys.callstats() has been deprecated in Python 3.7 "
+                      "and will be removed in the future", 1) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1352,7 +1365,7 @@ Return True if Python is exiting.");
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
-    {"callstats", (PyCFunction)PyEval_GetCallStats, METH_NOARGS,
+    {"callstats", (PyCFunction)sys_callstats, METH_NOARGS,
      callstats_doc},
     {"_clear_type_cache",       sys_clear_type_cache,     METH_NOARGS,
      sys_clear_type_cache__doc__},
