@@ -7004,10 +7004,14 @@ update_all_slots(PyTypeObject* type)
 static int
 set_names(PyTypeObject *type)
 {
-    PyObject *key, *value, *set_name, *tmp;
+    PyObject *names_to_set, *key, *value, *set_name, *tmp;
     Py_ssize_t i = 0;
 
-    while (PyDict_Next(type->tp_dict, &i, &key, &value)) {
+    names_to_set = PyDict_Copy(type->tp_dict);
+    if (names_to_set == NULL)
+        return -1;
+
+    while (PyDict_Next(names_to_set, &i, &key, &value)) {
         set_name = lookup_maybe(value, &PyId___set_name__);
         if (set_name != NULL) {
             tmp = PyObject_CallFunctionObjArgs(set_name, type, key, NULL);
@@ -7017,15 +7021,19 @@ set_names(PyTypeObject *type)
                     "Error calling __set_name__ on '%.100s' instance %R "
                     "in '%.100s'",
                     value->ob_type->tp_name, key, type->tp_name);
+                Py_DECREF(names_to_set);
                 return -1;
             }
             else
                 Py_DECREF(tmp);
         }
-        else if (PyErr_Occurred())
+        else if (PyErr_Occurred()) {
+            Py_DECREF(names_to_set);
             return -1;
+        }
     }
 
+    Py_DECREF(names_to_set);
     return 0;
 }
 
