@@ -14,10 +14,10 @@ PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
 #define PyEval_CallObject(func,arg) \
     PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL)
 
-PyAPI_FUNC(PyObject *) PyEval_CallFunction(PyObject *obj,
+PyAPI_FUNC(PyObject *) PyEval_CallFunction(PyObject *func,
                                            const char *format, ...);
 PyAPI_FUNC(PyObject *) PyEval_CallMethod(PyObject *obj,
-                                         const char *methodname,
+                                         const char *method,
                                          const char *format, ...);
 
 #ifndef Py_LIMITED_API

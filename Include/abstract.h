@@ -257,15 +257,15 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        /* Declared elsewhere
 
-     PyAPI_FUNC(int) PyCallable_Check(PyObject *o);
+     PyAPI_FUNC(int) PyCallable_Check(PyObject *obj);
 
-     Determine if the object, o, is callable.  Return 1 if the
+     Determine if the object, obj, is callable.  Return 1 if the
      object is callable and 0 otherwise.
 
      This function always succeeds.
        */
 
-     PyAPI_FUNC(PyObject *) PyObject_Call(PyObject *callable_object,
+     PyAPI_FUNC(PyObject *) PyObject_Call(PyObject *func,
                                           PyObject *args, PyObject *kwargs);
 
 #ifndef Py_LIMITED_API
@@ -344,7 +344,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
     _PyObject_FastCall((func), &(arg), 1)
 
     PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(PyObject *func,
-                                                  PyObject *obj, PyObject *args,
+                                                  PyObject *arg0, PyObject *args,
                                                   PyObject *kwargs);
 
      PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *func,
@@ -353,27 +353,27 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 #endif   /* Py_LIMITED_API */
 
        /*
-     Call a callable Python object, callable_object, with
+     Call a callable Python object, func, with
      arguments and keywords arguments.  The 'args' argument can not be
      NULL.
        */
 
-     PyAPI_FUNC(PyObject *) PyObject_CallObject(PyObject *callable_object,
+     PyAPI_FUNC(PyObject *) PyObject_CallObject(PyObject *func,
                                                 PyObject *args);
 
        /*
-     Call a callable Python object, callable_object, with
+     Call a callable Python object, func, with
      arguments given by the tuple, args.  If no arguments are
      needed, then args may be NULL.  Returns the result of the
      call on success, or NULL on failure.  This is the equivalent
      of the Python expression: o(*args).
        */
 
-     PyAPI_FUNC(PyObject *) PyObject_CallFunction(PyObject *callable_object,
+     PyAPI_FUNC(PyObject *) PyObject_CallFunction(PyObject *func,
                                                   const char *format, ...);
 
        /*
-     Call a callable Python object, callable_object, with a
+     Call a callable Python object, func, with a
      variable number of C arguments. The C arguments are described
      using a mkvalue-style format string. The format may be NULL,
      indicating that no arguments are provided.  Returns the
@@ -382,7 +382,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 
-     PyAPI_FUNC(PyObject *) PyObject_CallMethod(PyObject *o,
+     PyAPI_FUNC(PyObject *) PyObject_CallMethod(PyObject *obj,
                                                 const char *method,
                                                 const char *format, ...);
 
@@ -396,7 +396,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 #ifndef Py_LIMITED_API
-     PyAPI_FUNC(PyObject *) _PyObject_CallMethodId(PyObject *o,
+     PyAPI_FUNC(PyObject *) _PyObject_CallMethodId(PyObject *obj,
                                                    _Py_Identifier *method,
                                                    const char *format, ...);
 
@@ -406,25 +406,25 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 #endif /* !Py_LIMITED_API */
 
-     PyAPI_FUNC(PyObject *) _PyObject_CallFunction_SizeT(PyObject *callable,
+     PyAPI_FUNC(PyObject *) _PyObject_CallFunction_SizeT(PyObject *func,
                                                          const char *format,
                                                          ...);
-     PyAPI_FUNC(PyObject *) _PyObject_CallMethod_SizeT(PyObject *o,
-                                                       const char *name,
+     PyAPI_FUNC(PyObject *) _PyObject_CallMethod_SizeT(PyObject *obj,
+                                                       const char *method,
                                                        const char *format,
                                                        ...);
 #ifndef Py_LIMITED_API
-     PyAPI_FUNC(PyObject *) _PyObject_CallMethodId_SizeT(PyObject *o,
-                                                       _Py_Identifier *name,
+     PyAPI_FUNC(PyObject *) _PyObject_CallMethodId_SizeT(PyObject *obj,
+                                                       _Py_Identifier *method,
                                                        const char *format,
                                                        ...);
 #endif /* !Py_LIMITED_API */
 
-     PyAPI_FUNC(PyObject *) PyObject_CallFunctionObjArgs(PyObject *callable,
+     PyAPI_FUNC(PyObject *) PyObject_CallFunctionObjArgs(PyObject *func,
                                                          ...);
 
        /*
-     Call a callable Python object, callable_object, with a
+     Call a callable Python object, func, with a
      variable number of C arguments.  The C arguments are provided
      as PyObject * values, terminated by a NULL.  Returns the
      result of the call on success, or NULL on failure.  This is
@@ -432,10 +432,10 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 
-     PyAPI_FUNC(PyObject *) PyObject_CallMethodObjArgs(PyObject *o,
+     PyAPI_FUNC(PyObject *) PyObject_CallMethodObjArgs(PyObject *obj,
                                                        PyObject *method, ...);
 #ifndef Py_LIMITED_API
-     PyAPI_FUNC(PyObject *) _PyObject_CallMethodIdObjArgs(PyObject *o,
+     PyAPI_FUNC(PyObject *) _PyObject_CallMethodIdObjArgs(PyObject *obj,
                                                struct _Py_Identifier *method,
                                                ...);
 #endif /* !Py_LIMITED_API */

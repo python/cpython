@@ -1425,15 +1425,16 @@ _PyObject_LookupSpecial(PyObject *self, _Py_Identifier *attrid)
    as lookup_method to cache the interned name string object. */
 
 static PyObject *
-call_method(PyObject *o, _Py_Identifier *nameid, const char *format, ...)
+call_method(PyObject *obj, _Py_Identifier *method, const char *format, ...)
 {
     va_list va;
-    PyObject *func = NULL, *retval;
+    PyObject *func, *retval;
 
-    func = lookup_maybe(o, nameid);
+    func = lookup_maybe(obj, method);
     if (func == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_SetObject(PyExc_AttributeError, nameid->object);
+        if (!PyErr_Occurred()) {
+            PyErr_SetObject(PyExc_AttributeError, method->object);
+        }
         return NULL;
     }
 
@@ -1465,12 +1466,12 @@ call_method(PyObject *o, _Py_Identifier *nameid, const char *format, ...)
 /* Clone of call_method() that returns NotImplemented when the lookup fails. */
 
 static PyObject *
-call_maybe(PyObject *o, _Py_Identifier *nameid, const char *format, ...)
+call_maybe(PyObject *obj, _Py_Identifier *method, const char *format, ...)
 {
     va_list va;
-    PyObject *func = NULL, *retval;
+    PyObject *func, *retval;
 
-    func = lookup_maybe(o, nameid);
+    func = lookup_maybe(obj, method);
     if (func == NULL) {
         if (!PyErr_Occurred())
             Py_RETURN_NOTIMPLEMENTED;
