@@ -7512,6 +7512,12 @@ PyInit__socket(void)
 #ifdef  TCP_FASTOPEN
     PyModule_AddIntMacro(m, TCP_FASTOPEN);
 #endif
+#ifdef  TCP_CONGESTION
+    PyModule_AddIntMacro(m, TCP_CONGESTION);
+#endif
+#ifdef  TCP_USER_TIMEOUT
+    PyModule_AddIntMacro(m, TCP_USER_TIMEOUT);
+#endif
 
     /* IPX options */
 #ifdef  IPX_TYPE
