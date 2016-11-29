@@ -198,6 +198,22 @@ class Test(unittest.TestCase):
         self.assertIs(B.meta_owner, B)
         self.assertEqual(B.name, 'd')
 
+    def test_set_name_modifying_dict(self):
+        notified = []
+        class Descriptor:
+            def __set_name__(self, owner, name):
+                setattr(owner, name + 'x', None)
+                notified.append(name)
+
+        class A:
+            a = Descriptor()
+            b = Descriptor()
+            c = Descriptor()
+            d = Descriptor()
+            e = Descriptor()
+
+        self.assertCountEqual(notified, ['a', 'b', 'c', 'd', 'e'])
+
     def test_errors(self):
         class MyMeta(type):
             pass
