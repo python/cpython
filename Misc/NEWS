@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28797: Modifying the class __dict__ inside the __set_name__ method of
+  a descriptor that is used inside that class no longer prevents calling the
+  __set_name__ method of other descriptors.
+
 - Issue #28799: Remove the ``PyEval_GetCallStats()`` function and deprecate
   the untested and undocumented ``sys.callstats()`` function. Remove the
   ``CALL_PROFILE`` special build: use the :func:`sys.setprofile` function,
