@@ -160,6 +160,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26273: Add new :data:`socket.TCP_CONGESTION` (Linux 2.6.13) and
+  :data:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37) constants. Patch written by
+  Omar Sandoval.
+
 - Issue #28752: Restored the __reduce__() methods of datetime objects.
 
 - Issue #28727: Regular expression patterns, _sre.SRE_Pattern objects created
