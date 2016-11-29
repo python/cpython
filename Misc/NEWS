@@ -10,6 +10,9 @@ What's New in Python 2.7.13?
 Core and Builtins
 -----------------
 
+- Issue #24469: Fixed memory leak caused by int subclasses without overridden
+  tp_free (e.g. C-inherited Cython classes).
+
 - Issue #19398: Extra slash no longer added to sys.path components in case of
   empty compile-time PYTHONPATH components.
 
