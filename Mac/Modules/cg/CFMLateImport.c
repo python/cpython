@@ -894,7 +894,7 @@ static OSStatus RunRelocationEngine(const FragToFixInfo *fragToFix,
     MoreAssertQ(fragToFix->sectionHeaders != nil);
     MoreAssertQ(fragToFix->loaderSection != nil);
     MoreAssertQ(fragToFix->section0Base != nil);        // Technically, having a nil for these two is not a problem, ...
-    MoreAssertQ(fragToFix->section1Base != nil);        // but in practise it a wildly deviant case and we should know about it.
+    MoreAssertQ(fragToFix->section1Base != nil);        // but in practice it a wildly deviant case and we should know about it.
     MoreAssertQ(importLibrary != nil);
     MoreAssertQ(lookup != nil);
 
