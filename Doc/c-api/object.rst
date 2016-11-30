@@ -55,25 +55,35 @@ Object Protocol
 .. c:function:: int PyObject_SetAttr(PyObject *o, PyObject *attr_name, PyObject *v)
 
    Set the value of the attribute named *attr_name*, for object *o*, to the value
-   *v*. Returns ``-1`` on failure.  This is the equivalent of the Python statement
+   *v*. Raise an exception and return ``-1`` on failure;
+   return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
+
+   If *v* is *NULL*, the attribute is deleted, however this feature is
+   deprecated in favour of using :c:func:`PyObject_DelAttr`.
 
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
 
    Set the value of the attribute named *attr_name*, for object *o*, to the value
-   *v*. Returns ``-1`` on failure.  This is the equivalent of the Python statement
+   *v*. Raise an exception and return ``-1`` on failure;
+   return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
+
+   If *v* is *NULL*, the attribute is deleted, however this feature is
+   deprecated in favour of using :c:func:`PyObject_DelAttrString`.
 
 
 .. c:function:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
 
-   Generic attribute setter function that is meant to be put into a type
-   object's ``tp_setattro`` slot.  It looks for a data descriptor in the
+   Generic attribute setter and deleter function that is meant
+   to be put into a type object's :c:member:`~PyTypeObject.tp_setattro`
+   slot.  It looks for a data descriptor in the
    dictionary of classes in the object's MRO, and if found it takes preference
-   over setting the attribute in the instance dictionary. Otherwise, the
-   attribute is set in the object's :attr:`~object.__dict__` (if present).
-   Otherwise, an :exc:`AttributeError` is raised and ``-1`` is returned.
+   over setting or deleting the attribute in the instance dictionary. Otherwise, the
+   attribute is set or deleted in the object's :attr:`~object.__dict__` (if present).
+   On success, ``0`` is returned, otherwise an :exc:`AttributeError`
+   is raised and ``-1`` is returned.
 
 
 .. c:function:: int PyObject_DelAttr(PyObject *o, PyObject *attr_name)
@@ -367,7 +377,8 @@ attribute is considered sufficient for this determination.
 
 .. c:function:: int PyObject_SetItem(PyObject *o, PyObject *key, PyObject *v)
 
-   Map the object *key* to the value *v*.  Returns ``-1`` on failure.  This is the
+   Map the object *key* to the value *v*.  Raise an exception and
+   return ``-1`` on failure; return ``0`` on success.  This is the
    equivalent of the Python statement ``o[key] = v``.
 
 
