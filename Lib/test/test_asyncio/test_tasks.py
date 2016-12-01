@@ -1952,6 +1952,21 @@ class BaseTaskTests:
         self.assertFalse(gather_task.cancelled())
         self.assertEqual(gather_task.result(), [42])
 
+    def test_exception_traceback(self):
+        # See http://bugs.python.org/issue28843
+
+        @asyncio.coroutine
+        def foo():
+            1 / 0
+
+        @asyncio.coroutine
+        def main():
+            task = self.new_task(self.loop, foo())
+            yield  # skip one loop iteration
+            self.assertIsNotNone(task.exception().__traceback__)
+
+        self.loop.run_until_complete(main())
+
     @mock.patch('asyncio.base_events.logger')
     def test_error_in_call_soon(self, m_log):
         def call_soon(callback, *args):
