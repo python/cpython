@@ -10,6 +10,9 @@ What's New in Python 2.7.13?
 Core and Builtins
 -----------------
 
+- Issue #11145: Fixed miscellaneous issues with C-style formatting of types
+  with custom __oct__ and __hex__.
+
 - Issue #24469: Fixed memory leak caused by int subclasses without overridden
   tp_free (e.g. C-inherited Cython classes).
 

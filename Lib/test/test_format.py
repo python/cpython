@@ -300,6 +300,44 @@ class FormatTest(unittest.TestCase):
             else:
                 raise TestFailed, '"%*d"%(maxsize, -127) should fail'
 
+    def test_invalid_special_methods(self):
+        tests = []
+        for f in 'sriduoxXfge':
+            tests.append(('%' + f, 1, TypeError))
+            tests.append(('%#' + f, 1, TypeError))
+        for r in ['', '-', 'L', '-L']:
+            for f in 'iduoxX':
+                tests.append(('%' + f, r, ValueError))
+                tests.append(('%#' + f, r, ValueError))
+        tests.append(('%o', 'abc', ValueError))
+        for r in ('abc', '0abc', '0x', '0xL'):
+            for f in 'xX':
+                tests.append(('%' + f, r, ValueError))
+        for r in ('0x', '0xL'):
+            for f in 'xX':
+                tests.append(('%#' + f, r, ValueError))
+
+        class X(long):
+            def __repr__(self):
+                return result
+            def __str__(self):
+                return result
+            def __oct__(self):
+                return result
+            def __hex__(self):
+                return result
+            def __float__(self):
+                return result
+        for fmt, result, exc in tests:
+            try:
+                fmt % X()
+            except exc:
+                pass
+            else:
+                self.fail('%s not raised for %r format of %r' %
+                          (exc.__name__, fmt, result))
+
+
 def test_main():
     test_support.run_unittest(FormatTest)
 
