@@ -1098,7 +1098,7 @@ _PySys_GetSizeOf(PyObject *o)
                          Py_TYPE(o)->tp_name);
     }
     else {
-        res = PyObject_CallFunctionObjArgs(method, NULL);
+        res = _PyObject_CallNoArg(method);
         Py_DECREF(method);
     }
 
