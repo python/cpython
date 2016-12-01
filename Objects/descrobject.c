@@ -1414,7 +1414,7 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
         return -1;
     }
     if (value == NULL)
-        res = PyObject_CallFunctionObjArgs(func, obj, NULL);
+        res = _PyObject_CallArg1(func, obj);
     else
         res = PyObject_CallFunctionObjArgs(func, obj, value, NULL);
     if (res == NULL)

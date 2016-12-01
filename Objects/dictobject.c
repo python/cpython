@@ -2066,8 +2066,7 @@ dict_subscript(PyDictObject *mp, PyObject *key)
             _Py_IDENTIFIER(__missing__);
             missing = _PyObject_LookupSpecial((PyObject *)mp, &PyId___missing__);
             if (missing != NULL) {
-                res = PyObject_CallFunctionObjArgs(missing,
-                                                   key, NULL);
+                res = _PyObject_CallArg1(missing, key);
                 Py_DECREF(missing);
                 return res;
             }

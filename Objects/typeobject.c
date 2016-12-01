@@ -3487,9 +3487,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         sorted = _PyDict_GetItemId(builtins, &PyId_sorted);
         if (sorted == NULL)
             goto error;
-        sorted_methods = PyObject_CallFunctionObjArgs(sorted,
-                                                      abstract_methods,
-                                                      NULL);
+        sorted_methods = _PyObject_CallArg1(sorted, abstract_methods);
         if (sorted_methods == NULL)
             goto error;
         comma = _PyUnicode_FromId(&comma_id);
@@ -6193,7 +6191,7 @@ call_attribute(PyObject *self, PyObject *attr, PyObject *name)
         else
             attr = descr;
     }
-    res = PyObject_CallFunctionObjArgs(attr, name, NULL);
+    res = _PyObject_CallArg1(attr, name);
     Py_XDECREF(descr);
     return res;
 }

@@ -312,7 +312,7 @@ pack_from_list(PyObject *obj, PyObject *items, PyObject *format,
     assert(PyObject_CheckBuffer(obj));
     assert(PyList_Check(items) || PyTuple_Check(items));
 
-    structobj = PyObject_CallFunctionObjArgs(Struct, format, NULL);
+    structobj = _PyObject_CallArg1(Struct, format);
     if (structobj == NULL)
         return -1;
 
@@ -406,7 +406,7 @@ pack_single(char *ptr, PyObject *item, const char *fmt, Py_ssize_t itemsize)
     if (format == NULL)
         goto out;
 
-    structobj = PyObject_CallFunctionObjArgs(Struct, format, NULL);
+    structobj = _PyObject_CallArg1(Struct, format);
     if (structobj == NULL)
         goto out;
 
@@ -620,7 +620,7 @@ unpack_rec(PyObject *unpack_from, char *ptr, PyObject *mview, char *item,
 
     if (ndim == 0) {
         memcpy(item, ptr, itemsize);
-        x = PyObject_CallFunctionObjArgs(unpack_from, mview, NULL);
+        x = _PyObject_CallArg1(unpack_from, mview);
         if (x == NULL)
             return NULL;
         if (PyTuple_GET_SIZE(x) == 1) {
@@ -696,7 +696,7 @@ ndarray_as_list(NDArrayObject *nd)
     if (format == NULL)
         goto out;
 
-    structobj = PyObject_CallFunctionObjArgs(Struct, format, NULL);
+    structobj = _PyObject_CallArg1(Struct, format);
     Py_DECREF(format);
     if (structobj == NULL)
         goto out;
@@ -788,7 +788,7 @@ get_itemsize(PyObject *format)
     PyObject *tmp;
     Py_ssize_t itemsize;
 
-    tmp = PyObject_CallFunctionObjArgs(calcsize, format, NULL);
+    tmp = _PyObject_CallArg1(calcsize, format);
     if (tmp == NULL)
         return -1;
     itemsize = PyLong_AsSsize_t(tmp);

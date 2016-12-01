@@ -43,7 +43,7 @@ _PyGen_Finalize(PyObject *self)
             /* Save the current exception, if any. */
             PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
-            res = PyObject_CallFunctionObjArgs(finalizer, self, NULL);
+            res = _PyObject_CallArg1(finalizer, self);
 
             if (res == NULL) {
                 PyErr_WriteUnraisable(self);
@@ -591,7 +591,7 @@ _PyGen_SetStopIterationValue(PyObject *value)
      *
      * (See PyErr_SetObject/_PyErr_CreateException code for details.)
      */
-    e = PyObject_CallFunctionObjArgs(PyExc_StopIteration, value, NULL);
+    e = _PyObject_CallArg1(PyExc_StopIteration, value);
     if (e == NULL) {
         return -1;
     }

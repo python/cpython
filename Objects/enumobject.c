@@ -258,7 +258,7 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     if (reversed_meth != NULL) {
-        PyObject *res = PyObject_CallFunctionObjArgs(reversed_meth, NULL);
+        PyObject *res = _PyObject_CallNoArg(reversed_meth);
         Py_DECREF(reversed_meth);
         return res;
     }

@@ -1256,7 +1256,7 @@ odict_copy(register PyODictObject *od)
     if (PyODict_CheckExact(od))
         od_copy = PyODict_New();
     else
-        od_copy = PyObject_CallFunctionObjArgs((PyObject *)Py_TYPE(od), NULL);
+        od_copy = _PyObject_CallNoArg((PyObject *)Py_TYPE(od));
     if (od_copy == NULL)
         return NULL;
 
