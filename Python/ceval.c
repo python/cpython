@@ -3135,8 +3135,12 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                gotos should still be resumed.)
             */
 
+            PyObject* stack[3];
             PyObject *exit_func;
-            PyObject *exc = TOP(), *val = Py_None, *tb = Py_None, *res;
+            PyObject *exc, *val, *tb, *res;
+
+            val = tb = Py_None;
+            exc = TOP();
             if (exc == Py_None) {
                 (void)POP();
                 exit_func = TOP();
@@ -3180,8 +3184,11 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 assert(block->b_type == EXCEPT_HANDLER);
                 block->b_level--;
             }
-            /* XXX Not the fastest way to call it... */
-            res = PyObject_CallFunctionObjArgs(exit_func, exc, val, tb, NULL);
+
+            stack[0] = exc;
+            stack[1] = val;
+            stack[2] = tb;
+            res = _PyObject_FastCall(exit_func, stack, 3);
             Py_DECREF(exit_func);
             if (res == NULL)
                 goto error;
