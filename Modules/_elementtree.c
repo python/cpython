@@ -2457,7 +2457,7 @@ treebuilder_append_event(TreeBuilderObject *self, PyObject *action,
         PyObject *event = PyTuple_Pack(2, action, node);
         if (event == NULL)
             return -1;
-        res = PyObject_CallFunctionObjArgs(self->events_append, event, NULL);
+        res = _PyObject_CallArg1(self->events_append, event);
         Py_DECREF(event);
         if (res == NULL)
             return -1;
