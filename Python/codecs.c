@@ -284,7 +284,7 @@ PyObject *codec_makeincrementalcodec(PyObject *codec_info,
     if (errors)
         ret = PyObject_CallFunction(inccodec, "s", errors);
     else
-        ret = PyObject_CallFunction(inccodec, NULL);
+        ret = _PyObject_CallNoArg(inccodec);
     Py_DECREF(inccodec);
     return ret;
 }
@@ -322,7 +322,7 @@ PyObject *codec_getstreamcodec(const char *encoding,
     if (errors != NULL)
         streamcodec = PyObject_CallFunction(codeccls, "Os", stream, errors);
     else
-        streamcodec = PyObject_CallFunction(codeccls, "O", stream);
+        streamcodec = _PyObject_CallArg1(codeccls, stream);
     Py_DECREF(codecs);
     return streamcodec;
 }

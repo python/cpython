@@ -2831,7 +2831,7 @@ expat_set_error(enum XML_Error error_code, Py_ssize_t line, Py_ssize_t column,
     if (errmsg == NULL)
         return;
 
-    error = PyObject_CallFunction(st->parseerror_obj, "O", errmsg);
+    error = _PyObject_CallArg1(st->parseerror_obj, errmsg);
     Py_DECREF(errmsg);
     if (!error)
         return;
@@ -2894,7 +2894,7 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
                 (TreeBuilderObject*) self->target, value
                 );
         else if (self->handle_data)
-            res = PyObject_CallFunction(self->handle_data, "O", value);
+            res = _PyObject_CallArg1(self->handle_data, value);
         else
             res = NULL;
         Py_XDECREF(res);
@@ -3004,7 +3004,7 @@ expat_data_handler(XMLParserObject* self, const XML_Char* data_in,
         /* shortcut */
         res = treebuilder_handle_data((TreeBuilderObject*) self->target, data);
     else if (self->handle_data)
-        res = PyObject_CallFunction(self->handle_data, "O", data);
+        res = _PyObject_CallArg1(self->handle_data, data);
     else
         res = NULL;
 
@@ -3031,7 +3031,7 @@ expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
     else if (self->handle_end) {
         tag = makeuniversal(self, tag_in);
         if (tag) {
-            res = PyObject_CallFunction(self->handle_end, "O", tag);
+            res = _PyObject_CallArg1(self->handle_end, tag);
             Py_DECREF(tag);
         }
     }
@@ -3090,7 +3090,7 @@ expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
     if (self->handle_comment) {
         comment = PyUnicode_DecodeUTF8(comment_in, strlen(comment_in), "strict");
         if (comment) {
-            res = PyObject_CallFunction(self->handle_comment, "O", comment);
+            res = _PyObject_CallArg1(self->handle_comment, comment);
             Py_XDECREF(res);
             Py_DECREF(comment);
         }
