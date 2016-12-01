@@ -24,6 +24,8 @@ Library
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
 
+- Issue #28843: Fix asyncio C Task to handle exceptions __traceback__.
+
 Tools/Demos
 -----------
 
