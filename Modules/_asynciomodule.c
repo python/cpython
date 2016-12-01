@@ -1041,6 +1041,8 @@ FutureIter_throw(futureiterobject *self, PyObject *args)
 
     if (PyExceptionClass_Check(type)) {
         PyErr_NormalizeException(&type, &val, &tb);
+        /* No need to call PyException_SetTraceback since we'll be calling
+           PyErr_Restore for `type`, `val`, and `tb`. */
     } else if (PyExceptionInstance_Check(type)) {
         if (val) {
             PyErr_SetString(PyExc_TypeError,
@@ -2000,6 +2002,9 @@ task_step_impl(TaskObj *task, PyObject *exc)
         assert(et);
         if (!ev || !PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
             PyErr_NormalizeException(&et, &ev, &tb);
+        }
+        if (tb != NULL) {
+            PyException_SetTraceback(ev, tb);
         }
         o = future_set_exception((FutureObj*)task, ev);
         if (!o) {
