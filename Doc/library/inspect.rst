@@ -815,45 +815,65 @@ Classes and functions
 
 .. function:: getargspec(func)
 
-   Get the names and default values of a Python function's arguments. A
+   Get the names and default values of a Python function's parameters. A
    :term:`named tuple` ``ArgSpec(args, varargs, keywords, defaults)`` is
-   returned. *args* is a list of the argument names. *varargs* and *keywords*
-   are the names of the ``*`` and ``**`` arguments or ``None``. *defaults* is a
+   returned. *args* is a list of the parameter names. *varargs* and *keywords*
+   are the names of the ``*`` and ``**`` parameters or ``None``. *defaults* is a
    tuple of default argument values or ``None`` if there are no default
    arguments; if this tuple has *n* elements, they correspond to the last
    *n* elements listed in *args*.
 
    .. deprecated:: 3.0
-      Use :func:`signature` and
+      Use :func:`getfullargspec` for an updated API that is usually a drop-in
+      replacement, but also correctly handles function annotations and
+      keyword-only parameters.
+
+      Alternatively, use :func:`signature` and
       :ref:`Signature Object <inspect-signature-object>`, which provide a
-      better introspecting API for callables.
+      more structured introspection API for callables.
 
 
 .. function:: getfullargspec(func)
 
-   Get the names and default values of a Python function's arguments.  A
+   Get the names and default values of a Python function's parameters.  A
    :term:`named tuple` is returned:
 
    ``FullArgSpec(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults,
    annotations)``
 
-   *args* is a list of the argument names.  *varargs* and *varkw* are the names
-   of the ``*`` and ``**`` arguments or ``None``.  *defaults* is an *n*-tuple
-   of the default values of the last *n* arguments, or ``None`` if there are no
-   default arguments.  *kwonlyargs* is a list of
-   keyword-only argument names.  *kwonlydefaults* is a dictionary mapping names
-   from kwonlyargs to defaults.  *annotations* is a dictionary mapping argument
-   names to annotations.
+   *args* is a list of the positional parameter names.
+   *varargs* is the name of the ``*`` parameter or ``None`` if arbitrary
+   positional arguments are not accepted.
+   *varkw* is the name of the ``**`` parameter or ``None`` if arbitrary
+   keyword arguments are not accepted.
+   *defaults* is an *n*-tuple of default argument values corresponding to the
+   last *n* positional parameters, or ``None`` if there are no such defaults
+   defined.
+   *kwonlyargs* is a list of keyword-only parameter names.
+   *kwonlydefaults* is a dictionary mapping parameter names from *kwonlyargs*
+   to the default values used if no argument is supplied.
+   *annotations* is a dictionary mapping parameter names to annotations.
+   The special key ``"return"`` is used to report the function return value
+   annotation (if any).
+
+   Note that :func:`signature` and
+   :ref:`Signature Object <inspect-signature-object>` provide the recommended
+   API for callable introspection, and support additional behaviours (like
+   positional-only arguments) that are sometimes encountered in extension module
+   APIs. This function is retained primarily for use in code that needs to
+   maintain compatibility with the Python 2 ``inspect`` module API.
 
    .. versionchanged:: 3.4
       This function is now based on :func:`signature`, but still ignores
       ``__wrapped__`` attributes and includes the already bound first
       parameter in the signature output for bound methods.
 
-   .. deprecated:: 3.5
-      Use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      better introspecting API for callables.
+   .. versionchanged:: 3.6
+      This method was previously documented as deprecated in favour of
+      :func:`signature` in Python 3.5, but that decision has been reversed
+      in order to restore a clearly supported standard interface for
+      single-source Python 2/3 code migrating away from the legacy
+      :func:`getargspec` API.
 
 
 .. function:: getargvalues(frame)
