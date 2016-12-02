@@ -826,6 +826,13 @@ class SysModuleTest(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok('-c', code)
         self.assertEqual(stdout.rstrip(), b'True')
 
+    @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
+                         'need sys.getandroidapilevel()')
+    def test_getandroidapilevel(self):
+        level = sys.getandroidapilevel()
+        self.assertIsInstance(level, int)
+        self.assertGreater(level, 0)
+
 
 @test.support.cpython_only
 class SizeofTest(unittest.TestCase):
