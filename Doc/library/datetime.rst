@@ -1368,8 +1368,8 @@ Using datetime with tzinfo:
 
 .. _datetime-time:
 
-:class:`time` Objects
----------------------
+:class:`.time` Objects
+----------------------
 
 A time object represents a (local) time of day, independent of any particular
 day, and subject to adjustment via a :class:`tzinfo` object.
@@ -1466,7 +1466,7 @@ Supported operations:
   ``!=``.  The latter cases return :const:`False` or :const:`True`, respectively.
 
   .. versionchanged:: 3.3
-     Equality comparisons between naive and aware :class:`time` instances
+     Equality comparisons between naive and aware :class:`~datetime.time` instances
      don't raise :exc:`TypeError`.
 
 * hash, use as dict key

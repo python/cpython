@@ -1683,13 +1683,13 @@ Date and time types suitable for expressing timestamps were added as the
 fancy features, and just stick to the basics of representing time.
 
 The three primary types are: :class:`date`, representing a day, month, and year;
-:class:`time`, consisting of hour, minute, and second; and :class:`datetime`,
-which contains all the attributes of both :class:`date` and :class:`time`.
+:class:`~datetime.time`, consisting of hour, minute, and second; and :class:`~datetime.datetime`,
+which contains all the attributes of both :class:`date` and :class:`~datetime.time`.
 There's also a :class:`timedelta` class representing differences between two
 points in time, and time zone logic is implemented by classes inheriting from
 the abstract :class:`tzinfo` class.
 
-You can create instances of :class:`date` and :class:`time` by either supplying
+You can create instances of :class:`date` and :class:`~datetime.time` by either supplying
 keyword arguments to the appropriate constructor, e.g.
 ``datetime.date(year=1972, month=10, day=15)``, or by using one of a number of
 class methods.  For example, the :meth:`date.today` class method returns the
@@ -1708,7 +1708,7 @@ number of methods for producing formatted strings from objects::
    '2002 30 Dec'
 
 The :meth:`replace` method allows modifying one or more fields  of a
-:class:`date` or :class:`datetime` instance, returning a new instance::
+:class:`date` or :class:`~datetime.datetime` instance, returning a new instance::
 
    >>> d = datetime.datetime.now()
    >>> d
@@ -1718,11 +1718,11 @@ The :meth:`replace` method allows modifying one or more fields  of a
    >>>
 
 Instances can be compared, hashed, and converted to strings (the result is the
-same as that of :meth:`isoformat`).  :class:`date` and :class:`datetime`
+same as that of :meth:`isoformat`).  :class:`date` and :class:`~datetime.datetime`
 instances can be subtracted from each other, and added to :class:`timedelta`
 instances.  The largest missing feature is that there's no standard library
 support for parsing strings and getting back a :class:`date` or
-:class:`datetime`.
+:class:`~datetime.datetime`.
 
 For more information, refer to the module's reference documentation.
 (Contributed by Tim Peters.)
