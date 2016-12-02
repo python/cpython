@@ -179,31 +179,31 @@ class DebuggingServerTests(unittest.TestCase):
 
     def testBasic(self):
         # connect
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         smtp.quit()
 
     def testNOOP(self):
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         expected = (250, 'Ok')
         self.assertEqual(smtp.noop(), expected)
         smtp.quit()
 
     def testRSET(self):
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         expected = (250, 'Ok')
         self.assertEqual(smtp.rset(), expected)
         smtp.quit()
 
     def testNotImplemented(self):
         # EHLO isn't implemented in DebuggingServer
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         expected = (502, 'Error: command "EHLO" not implemented')
         self.assertEqual(smtp.ehlo(), expected)
         smtp.quit()
 
     def testVRFY(self):
         # VRFY isn't implemented in DebuggingServer
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         expected = (502, 'Error: command "VRFY" not implemented')
         self.assertEqual(smtp.vrfy('nobody@nowhere.com'), expected)
         self.assertEqual(smtp.verify('nobody@nowhere.com'), expected)
@@ -212,21 +212,21 @@ class DebuggingServerTests(unittest.TestCase):
     def testSecondHELO(self):
         # check that a second HELO returns a message that it's a duplicate
         # (this behavior is specific to smtpd.SMTPChannel)
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         smtp.helo()
         expected = (503, 'Duplicate HELO/EHLO')
         self.assertEqual(smtp.helo(), expected)
         smtp.quit()
 
     def testHELP(self):
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         self.assertEqual(smtp.help(), 'Error: command "HELP" not implemented')
         smtp.quit()
 
     def testSend(self):
         # connect and send mail
         m = 'A test message'
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         smtp.sendmail('John', 'Sally', m)
         # XXX(nnorwitz): this test is flaky and dies with a bad file descriptor
         # in asyncore.  This sleep might help, but should really be fixed
