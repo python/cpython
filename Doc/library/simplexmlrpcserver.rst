@@ -20,7 +20,7 @@
 
 The :mod:`SimpleXMLRPCServer` module provides a basic server framework for
 XML-RPC servers written in Python.  Servers can either be free standing, using
-:class:`SimpleXMLRPCServer`, or embedded in a CGI environment, using
+:class:`~SimpleXMLRPCServer.SimpleXMLRPCServer`, or embedded in a CGI environment, using
 :class:`CGIXMLRPCRequestHandler`.
 
 
@@ -62,7 +62,7 @@ XML-RPC servers written in Python.  Servers can either be free standing, using
 
    Create a new request handler instance.  This request handler supports ``POST``
    requests and modifies logging so that the *logRequests* parameter to the
-   :class:`SimpleXMLRPCServer` constructor parameter is honored.
+   :class:`~SimpleXMLRPCServer.SimpleXMLRPCServer` constructor parameter is honored.
 
 
 .. _simple-xmlrpc-servers:
@@ -70,7 +70,7 @@ XML-RPC servers written in Python.  Servers can either be free standing, using
 SimpleXMLRPCServer Objects
 --------------------------
 
-The :class:`SimpleXMLRPCServer` class is based on
+The :class:`~SimpleXMLRPCServer.SimpleXMLRPCServer` class is based on
 :class:`SocketServer.TCPServer` and provides a means of creating simple, stand
 alone XML-RPC servers.
 
@@ -197,7 +197,7 @@ server::
    # Print list of available methods
    print s.system.listMethods()
 
-The following :class:`SimpleXMLRPCServer` example is included in the module
+The following :class:`~SimpleXMLRPCServer.SimpleXMLRPCServer` example is included in the module
 `Lib/SimpleXMLRPCServer.py`::
 
     server = SimpleXMLRPCServer(("localhost", 8000))

@@ -55,7 +55,7 @@ implemented in C.  In particular, it's not possible to subclass built-in types,
 so you can't just subclass, say, lists in order to add a single useful method to
 them. The :mod:`UserList` module provides a class that supports all of the
 methods of lists and that can be subclassed further, but there's lots of C code
-that expects a regular Python list and won't accept a :class:`UserList`
+that expects a regular Python list and won't accept a :class:`~UserList.UserList`
 instance.
 
 Python 2.2 fixes this, and in the process adds some exciting new capabilities.

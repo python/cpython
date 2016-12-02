@@ -12,17 +12,17 @@
    The :mod:`email` package should be used in preference to the :mod:`MimeWriter`
    module.  This module is present only to maintain backward compatibility.
 
-This module defines the class :class:`MimeWriter`.  The :class:`MimeWriter`
+This module defines the class :class:`~MimeWriter.MimeWriter`.  The :class:`~MimeWriter.MimeWriter`
 class implements a basic formatter for creating MIME multi-part files.  It
 doesn't seek around the output file nor does it use large amounts of buffer
 space. You must write the parts out in the order that they should occur in the
-final file. :class:`MimeWriter` does buffer the headers you add, allowing you
+final file. :class:`~MimeWriter.MimeWriter` does buffer the headers you add, allowing you
 to rearrange their order.
 
 
 .. class:: MimeWriter(fp)
 
-   Return a new instance of the :class:`MimeWriter` class.  The only argument
+   Return a new instance of the :class:`~MimeWriter.MimeWriter` class.  The only argument
    passed, *fp*, is a file object to be used for writing. Note that a
    :class:`~StringIO.StringIO` object could also be used.
 
@@ -32,7 +32,7 @@ to rearrange their order.
 MimeWriter Objects
 ------------------
 
-:class:`MimeWriter` instances have the following methods:
+:class:`~MimeWriter.MimeWriter` instances have the following methods:
 
 
 .. method:: MimeWriter.addheader(key, value[, prefix])
@@ -72,7 +72,7 @@ MimeWriter Objects
 
 .. method:: MimeWriter.nextpart()
 
-   Returns a new instance of :class:`MimeWriter` which represents an individual
+   Returns a new instance of :class:`~MimeWriter.MimeWriter` which represents an individual
    part in a multipart message.  This may be used to write the  part as well as
    used for creating recursively complex multipart messages. The message must first
    be initialized with :meth:`startmultipartbody` before using :meth:`nextpart`.

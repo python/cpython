@@ -21,7 +21,7 @@
    single: ini file
    single: Windows ini file
 
-This module defines the class :class:`ConfigParser`.   The :class:`ConfigParser`
+This module defines the class :class:`~ConfigParser.ConfigParser`.   The :class:`~ConfigParser.ConfigParser`
 class implements a basic configuration file parser language which provides a
 structure similar to what you would find on Microsoft Windows INI files.  You
 can use this to write Python programs which can be customized by end users
@@ -74,12 +74,12 @@ For example::
 would resolve the ``%(dir)s`` to the value of ``dir`` (``frob`` in this case).
 All reference expansions are done on demand.
 
-Default values can be specified by passing them into the :class:`ConfigParser`
+Default values can be specified by passing them into the :class:`~ConfigParser.ConfigParser`
 constructor as a dictionary.  Additional defaults  may be passed into the
 :meth:`get` method which will override all others.
 
 Sections are normally stored in a built-in dictionary. An alternative dictionary
-type can be passed to the :class:`ConfigParser` constructor. For example, if a
+type can be passed to the :class:`~ConfigParser.ConfigParser` constructor. For example, if a
 dictionary type is passed that sorts its keys, the sections will be sorted on
 write-back, as will be the keys within each section.
 
@@ -135,7 +135,7 @@ write-back, as will be the keys within each section.
 
 .. class:: SafeConfigParser([defaults[, dict_type[, allow_no_value]]])
 
-   Derived class of :class:`ConfigParser` that implements a more-sane variant of
+   Derived class of :class:`~ConfigParser.ConfigParser` that implements a more-sane variant of
    the magical interpolation feature.  This implementation is more predictable as
    well. New applications should prefer this version if they don't need to be
    compatible with older versions of Python.
@@ -215,7 +215,7 @@ write-back, as will be the keys within each section.
 .. data:: MAX_INTERPOLATION_DEPTH
 
    The maximum depth for recursive interpolation for :meth:`get` when the *raw*
-   parameter is false.  This is relevant only for the :class:`ConfigParser` class.
+   parameter is false.  This is relevant only for the :class:`~ConfigParser.ConfigParser` class.
 
 
 .. seealso::
@@ -279,7 +279,7 @@ RawConfigParser Objects
    list of potential configuration file locations (for example, the current
    directory, the user's home directory, and some system-wide directory), and all
    existing configuration files in the list will be read.  If none of the named
-   files exist, the :class:`ConfigParser` instance will contain an empty dataset.
+   files exist, the :class:`~ConfigParser.ConfigParser` instance will contain an empty dataset.
    An application which requires initial values to be loaded from a file should
    load the required file or files using :meth:`readfp` before calling :meth:`read`
    for any optional files::
@@ -338,7 +338,7 @@ RawConfigParser Objects
 
    If the given section exists, set the given option to the specified value;
    otherwise raise :exc:`NoSectionError`.  While it is possible to use
-   :class:`RawConfigParser` (or :class:`ConfigParser` with *raw* parameters set to
+   :class:`RawConfigParser` (or :class:`~ConfigParser.ConfigParser` with *raw* parameters set to
    true) for *internal* storage of non-string values, full functionality (including
    interpolation and output to files) can only be achieved using string values.
 
@@ -394,7 +394,7 @@ RawConfigParser Objects
 ConfigParser Objects
 --------------------
 
-The :class:`ConfigParser` class extends some methods of the
+The :class:`~ConfigParser.ConfigParser` class extends some methods of the
 :class:`RawConfigParser` interface, adding some optional arguments.
 
 
@@ -422,7 +422,7 @@ SafeConfigParser Objects
 ------------------------
 
 The :class:`SafeConfigParser` class implements the same extended interface as
-:class:`ConfigParser`, with the following addition:
+:class:`~ConfigParser.ConfigParser`, with the following addition:
 
 
 .. method:: SafeConfigParser.set(section, option, value)
@@ -480,7 +480,7 @@ An example of reading the configuration file again::
    if config.getboolean('Section1', 'a_bool'):
        print config.get('Section1', 'foo')
 
-To get interpolation, you will need to use a :class:`ConfigParser` or
+To get interpolation, you will need to use a :class:`~ConfigParser.ConfigParser` or
 :class:`SafeConfigParser`::
 
    import ConfigParser

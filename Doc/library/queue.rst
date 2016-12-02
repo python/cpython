@@ -15,7 +15,7 @@
 
 The :mod:`Queue` module implements multi-producer, multi-consumer queues.
 It is especially useful in threaded programming when information must be
-exchanged safely between multiple threads.  The :class:`Queue` class in this
+exchanged safely between multiple threads.  The :class:`~Queue.Queue` class in this
 module implements all the required locking semantics.  It depends on the
 availability of thread support in Python; see the :mod:`threading`
 module.
@@ -62,14 +62,14 @@ The :mod:`Queue` module defines the following classes and exceptions:
 
    Exception raised when non-blocking :meth:`~Queue.get` (or
    :meth:`~Queue.get_nowait`) is called
-   on a :class:`Queue` object which is empty.
+   on a :class:`~Queue.Queue` object which is empty.
 
 
 .. exception:: Full
 
    Exception raised when non-blocking :meth:`~Queue.put` (or
    :meth:`~Queue.put_nowait`) is called
-   on a :class:`Queue` object which is full.
+   on a :class:`~Queue.Queue` object which is full.
 
 .. seealso::
 
@@ -83,7 +83,7 @@ The :mod:`Queue` module defines the following classes and exceptions:
 Queue Objects
 -------------
 
-Queue objects (:class:`Queue`, :class:`LifoQueue`, or :class:`PriorityQueue`)
+Queue objects (:class:`~Queue.Queue`, :class:`LifoQueue`, or :class:`PriorityQueue`)
 provide the public methods described below.
 
 

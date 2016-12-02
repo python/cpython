@@ -67,7 +67,7 @@ The module defines the following items:
    *fileobj*, since you might wish to append more material after the compressed
    data.  This also allows you to pass a :class:`~StringIO.StringIO` object opened for
    writing as *fileobj*, and retrieve the resulting memory buffer using the
-   :class:`StringIO` object's :meth:`~StringIO.StringIO.getvalue` method.
+   :class:`~StringIO.StringIO` object's :meth:`~StringIO.StringIO.getvalue` method.
 
    :class:`GzipFile` supports iteration and the :keyword:`with` statement.
 

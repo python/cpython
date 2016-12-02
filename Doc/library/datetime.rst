@@ -1170,8 +1170,8 @@ Using datetime with tzinfo:
 
 .. _datetime-time:
 
-:class:`time` Objects
----------------------
+:class:`.time` Objects
+----------------------
 
 A time object represents a (local) time of day, independent of any particular
 day, and subject to adjustment via a :class:`tzinfo` object.

@@ -47,7 +47,7 @@ Another :class:`IOBase` subclass, :class:`TextIOBase`, deals with
 streams whose bytes represent text, and handles encoding and decoding
 from and to :class:`unicode` strings.  :class:`TextIOWrapper`, which extends
 it, is a buffered text interface to a buffered raw stream
-(:class:`BufferedIOBase`). Finally, :class:`StringIO` is an in-memory
+(:class:`BufferedIOBase`). Finally, :class:`~io.StringIO` is an in-memory
 stream for unicode text.
 
 Argument names are not part of the specification, and only the arguments of
@@ -180,7 +180,7 @@ Module Interface
 
    It is also possible to use an :class:`unicode` or :class:`bytes` string
    as a file for both reading and writing.  For :class:`unicode` strings
-   :class:`StringIO` can be used like a file opened in text mode,
+   :class:`~io.StringIO` can be used like a file opened in text mode,
    and for :class:`bytes` a :class:`BytesIO` can be used like a
    file opened in a binary mode.
 
@@ -718,7 +718,7 @@ Text I/O
       After the underlying buffer has been detached, the :class:`TextIOBase` is
       in an unusable state.
 
-      Some :class:`TextIOBase` implementations, like :class:`StringIO`, may not
+      Some :class:`TextIOBase` implementations, like :class:`~io.StringIO`, may not
       have the concept of an underlying buffer and calling this method will
       raise :exc:`UnsupportedOperation`.
 
@@ -834,13 +834,13 @@ Text I/O
    newlines are written as ``\n`` on all platforms, but universal
    newline decoding is still performed when reading.
 
-   :class:`StringIO` provides this method in addition to those from
+   :class:`~io.StringIO` provides this method in addition to those from
    :class:`TextIOWrapper` and its parents:
 
    .. method:: getvalue()
 
       Return a ``unicode`` containing the entire contents of the buffer at any
-      time before the :class:`StringIO` object's :meth:`close` method is
+      time before the :class:`~io.StringIO` object's :meth:`close` method is
       called.  Newlines are decoded as if by :meth:`~TextIOBase.read`,
       although the stream position is not changed.
 
@@ -902,7 +902,7 @@ if you handle huge amounts of text data (for example very large log files).
 Also, :meth:`TextIOWrapper.tell` and :meth:`TextIOWrapper.seek` are both
 quite slow due to the reconstruction algorithm used.
 
-:class:`StringIO`, however, is a native in-memory unicode container and will
+:class:`~io.StringIO`, however, is a native in-memory unicode container and will
 exhibit similar speed to :class:`BytesIO`.
 
 Multi-threading

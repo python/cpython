@@ -14,15 +14,15 @@ for classes that already have a minimum mapping interface.  This greatly
 simplifies writing classes that need to be substitutable for dictionaries (such
 as the shelve module).
 
-This module also defines a class, :class:`UserDict`, that acts as a wrapper
+This module also defines a class, :class:`~UserDict.UserDict`, that acts as a wrapper
 around dictionary objects.  The need for this class has been largely supplanted
 by the ability to subclass directly from :class:`dict` (a feature that became
 available starting with Python version 2.2).  Prior to the introduction of
-:class:`dict`, the :class:`UserDict` class was used to create dictionary-like
+:class:`dict`, the :class:`~UserDict.UserDict` class was used to create dictionary-like
 sub-classes that obtained new behaviors by overriding existing methods or adding
 new ones.
 
-The :mod:`UserDict` module defines the :class:`UserDict` class and
+The :mod:`UserDict` module defines the :class:`~UserDict.UserDict` class and
 :class:`DictMixin`:
 
 
@@ -30,28 +30,28 @@ The :mod:`UserDict` module defines the :class:`UserDict` class and
 
    Class that simulates a dictionary.  The instance's contents are kept in a
    regular dictionary, which is accessible via the :attr:`data` attribute of
-   :class:`UserDict` instances.  If *initialdata* is provided, :attr:`data` is
+   :class:`~UserDict.UserDict` instances.  If *initialdata* is provided, :attr:`data` is
    initialized with its contents; note that a reference to *initialdata* will not
    be kept, allowing it be used for other purposes.
 
    .. note::
 
-      For backward compatibility, instances of :class:`UserDict` are not iterable.
+      For backward compatibility, instances of :class:`~UserDict.UserDict` are not iterable.
 
 
 .. class:: IterableUserDict([initialdata])
 
-   Subclass of :class:`UserDict` that supports direct iteration (e.g.  ``for key in
+   Subclass of :class:`~UserDict.UserDict` that supports direct iteration (e.g.  ``for key in
    myDict``).
 
 In addition to supporting the methods and operations of mappings (see section
-:ref:`typesmapping`), :class:`UserDict` and :class:`IterableUserDict` instances
+:ref:`typesmapping`), :class:`~UserDict.UserDict` and :class:`IterableUserDict` instances
 provide the following attribute:
 
 
 .. attribute:: IterableUserDict.data
 
-   A real dictionary used to store the contents of the :class:`UserDict` class.
+   A real dictionary used to store the contents of the :class:`~UserDict.UserDict` class.
 
 
 .. class:: DictMixin()
@@ -96,7 +96,7 @@ provide the following attribute:
 
    In addition, this class can be mixed-in with built-in classes using multiple
    inheritance.  This can sometimes be useful.  For example, you can inherit
-   from :class:`UserList` and :class:`str` at the same time.  That would not be
+   from :class:`~UserList.UserList` and :class:`str` at the same time.  That would not be
    possible with both a real :class:`list` and a real :class:`str`.
 
 This module defines a class that acts as a wrapper around list objects.  It is a
@@ -104,34 +104,34 @@ useful base class for your own list-like classes, which can inherit from them
 and override existing methods or add new ones.  In this way one can add new
 behaviors to lists.
 
-The :mod:`UserList` module defines the :class:`UserList` class:
+The :mod:`UserList` module defines the :class:`~UserList.UserList` class:
 
 
 .. class:: UserList([list])
 
    Class that simulates a list.  The instance's contents are kept in a regular
-   list, which is accessible via the :attr:`data` attribute of :class:`UserList`
+   list, which is accessible via the :attr:`data` attribute of :class:`~UserList.UserList`
    instances.  The instance's contents are initially set to a copy of *list*,
    defaulting to the empty list ``[]``.  *list* can be any iterable, e.g. a
-   real Python list or a :class:`UserList` object.
+   real Python list or a :class:`~UserList.UserList` object.
 
    .. note::
-      The :class:`UserList` class has been moved to the :mod:`collections`
+      The :class:`~UserList.UserList` class has been moved to the :mod:`collections`
       module in Python 3. The :term:`2to3` tool will automatically adapt
       imports when converting your sources to Python 3.
 
 
 In addition to supporting the methods and operations of mutable sequences (see
-section :ref:`typesseq`), :class:`UserList` instances provide the following
+section :ref:`typesseq`), :class:`~UserList.UserList` instances provide the following
 attribute:
 
 
 .. attribute:: UserList.data
 
-   A real Python list object used to store the contents of the :class:`UserList`
+   A real Python list object used to store the contents of the :class:`~UserList.UserList`
    class.
 
-**Subclassing requirements:** Subclasses of :class:`UserList` are expected to
+**Subclassing requirements:** Subclasses of :class:`~UserList.UserList` are expected to
 offer a constructor which can be called with either no arguments or one
 argument.  List operations which return a new sequence attempt to create an
 instance of the actual implementation class.  To do so, it assumes that the
@@ -160,10 +160,10 @@ in that case.
 
 .. note::
 
-   This :class:`UserString` class from this module is available for backward
+   This :class:`~UserString.UserString` class from this module is available for backward
    compatibility only.  If you are writing code that does not need to work with
    versions of Python earlier than Python 2.2, please consider subclassing directly
-   from the built-in :class:`str` type instead of using :class:`UserString` (there
+   from the built-in :class:`str` type instead of using :class:`~UserString.UserString` (there
    is no built-in equivalent to :class:`MutableString`).
 
 This module defines a class that acts as a wrapper around string objects.  It is
@@ -182,14 +182,14 @@ The :mod:`UserString` module defines the following classes:
 
    Class that simulates a string or a Unicode string object.  The instance's
    content is kept in a regular string or Unicode string object, which is
-   accessible via the :attr:`data` attribute of :class:`UserString` instances.  The
+   accessible via the :attr:`data` attribute of :class:`~UserString.UserString` instances.  The
    instance's contents are initially set to a copy of *sequence*.  *sequence* can
    be either a regular Python string or Unicode string, an instance of
-   :class:`UserString` (or a subclass) or an arbitrary sequence which can be
+   :class:`~UserString.UserString` (or a subclass) or an arbitrary sequence which can be
    converted into a string using the built-in :func:`str` function.
 
    .. note::
-      The :class:`UserString` class has been moved to the :mod:`collections`
+      The :class:`~UserString.UserString` class has been moved to the :mod:`collections`
       module in Python 3. The :term:`2to3` tool will automatically adapt
       imports when converting your sources to Python 3.
 
@@ -197,7 +197,7 @@ The :mod:`UserString` module defines the following classes:
 
 .. class:: MutableString([sequence])
 
-   This class is derived from the :class:`UserString` above and redefines strings
+   This class is derived from the :class:`~UserString.UserString` above and redefines strings
    to be *mutable*.  Mutable strings can't be used as dictionary keys, because
    dictionaries require *immutable* objects as keys.  The main intention of this
    class is to serve as an educational example for inheritance and necessity to
@@ -209,12 +209,12 @@ The :mod:`UserString` module defines the following classes:
       The :class:`MutableString` class has been removed in Python 3.
 
 In addition to supporting the methods and operations of string and Unicode
-objects (see section :ref:`string-methods`), :class:`UserString` instances
+objects (see section :ref:`string-methods`), :class:`~UserString.UserString` instances
 provide the following attribute:
 
 
 .. attribute:: MutableString.data
 
    A real Python string or Unicode object used to store the content of the
-   :class:`UserString` class.
+   :class:`~UserString.UserString` class.
 

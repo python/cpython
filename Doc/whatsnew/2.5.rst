@@ -1307,7 +1307,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
   (Contributed by Skip Montanaro and Andrew McNamara.)
 
-* The :class:`datetime` class in the :mod:`datetime`  module now has a
+* The :class:`~datetime.datetime` class in the :mod:`datetime`  module now has a
   :meth:`strptime(string, format)`  method for parsing date strings, contributed
   by Josh Spoerri. It uses the same format characters as :func:`time.strptime` and
   :func:`time.strftime`::
@@ -1497,7 +1497,7 @@ complete list of changes, or look through the SVN logs for all the details.
 * The :mod:`pyexpat` module now uses version 2.0 of the Expat parser.
   (Contributed by Trent Mick.)
 
-* The :class:`Queue` class provided by the :mod:`Queue` module gained two new
+* The :class:`~Queue.Queue` class provided by the :mod:`Queue` module gained two new
   methods.  :meth:`join` blocks until all items in the queue have been retrieved
   and all processing work on the items  have been completed.  Worker threads call
   the other new method,  :meth:`task_done`, to signal that processing for an item
@@ -1649,7 +1649,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch #754022
 
-* The :mod:`xmlrpclib` module now supports returning  :class:`datetime` objects
+* The :mod:`xmlrpclib` module now supports returning  :class:`~datetime.datetime` objects
   for the XML-RPC date type.  Supply  ``use_datetime=True`` to the :func:`loads`
   function or the :class:`Unmarshaller` class to enable this feature. (Contributed
   by Skip Montanaro.)

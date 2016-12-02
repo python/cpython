@@ -82,7 +82,7 @@ Dumbdbm Objects
 ---------------
 
 In addition to the methods provided by the :class:`UserDict.DictMixin` class,
-:class:`dumbdbm` objects provide the following methods.
+:class:`~dumbdbm.dumbdbm` objects provide the following methods.
 
 
 .. method:: dumbdbm.sync()

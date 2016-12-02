@@ -609,10 +609,10 @@ multiple of 4.
         result = queue.get()
         print 'Factorial', N, '=', result
 
-A :class:`Queue` is used to communicate the result of the factorial.
-The :class:`Queue` object is stored in a global variable.
+A :class:`~Queue.Queue` is used to communicate the result of the factorial.
+The :class:`~Queue.Queue` object is stored in a global variable.
 The child process will use the value of the variable when the child
-was created; because it's a :class:`Queue`, parent and child can use
+was created; because it's a :class:`~Queue.Queue`, parent and child can use
 the object to communicate.  (If the parent were to change the value of
 the global variable, the child's value would be unaffected, and vice
 versa.)
@@ -1077,7 +1077,7 @@ the :mod:`io` module:
   There are two concrete implementations.  :class:`TextIOWrapper`
   wraps a buffered I/O object, supporting all of the methods for
   text I/O and adding a :attr:`buffer` attribute for access
-  to the underlying object.  :class:`StringIO` simply buffers
+  to the underlying object.  :class:`~StringIO.StringIO` simply buffers
   everything in memory without ever writing anything to disk.
 
   (In Python 2.6, :class:`io.StringIO` is implemented in
@@ -2127,7 +2127,7 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Christian Heimes and Mark Dickinson.)
 
-* :class:`mmap` objects now have a :meth:`rfind` method that searches for a
+* :class:`~mmap.mmap` objects now have a :meth:`rfind` method that searches for a
   substring beginning at the end of the string and searching
   backwards.  The :meth:`find` method also gained an *end* parameter
   giving an index at which to stop searching.
@@ -2605,7 +2605,7 @@ changes, or look through the Subversion logs for all the details.
   intended for testing purposes that lets you temporarily modify the
   warning filters and then restore their original values (:issue:`3781`).
 
-* The XML-RPC :class:`SimpleXMLRPCServer` and :class:`DocXMLRPCServer`
+* The XML-RPC :class:`~SimpleXMLRPCServer.SimpleXMLRPCServer` and :class:`~DocXMLRPCServer.DocXMLRPCServer`
   classes can now be prevented from immediately opening and binding to
   their socket by passing True as the ``bind_and_activate``
   constructor parameter.  This can be used to modify the instance's
@@ -2614,7 +2614,7 @@ changes, or look through the Subversion logs for all the details.
   open the socket and begin listening for connections.
   (Contributed by Peter Parente; :issue:`1599845`.)
 
-  :class:`SimpleXMLRPCServer` also has a :attr:`_send_traceback_header`
+  :class:`~SimpleXMLRPCServer.SimpleXMLRPCServer` also has a :attr:`_send_traceback_header`
   attribute; if true, the exception and formatted traceback are returned
   as HTTP headers "X-Exception" and "X-Traceback".  This feature is
   for debugging purposes only and should not be used on production servers
@@ -2626,7 +2626,7 @@ changes, or look through the Subversion logs for all the details.
   :class:`datetime.date` and :class:`datetime.time` to the
   :class:`xmlrpclib.DateTime` type; the conversion semantics were
   not necessarily correct for all applications.  Code using
-  :mod:`xmlrpclib` should convert :class:`date` and :class:`time`
+  :mod:`xmlrpclib` should convert :class:`date` and :class:`~datetime.time`
   instances. (:issue:`1330538`)  The code can also handle
   dates before 1900 (contributed by Ralf Schmitt; :issue:`2014`)
   and 64-bit integers represented by using ``<i8>`` in XML-RPC responses
@@ -3279,7 +3279,7 @@ that may require changes to your code:
   :class:`datetime.date` and :class:`datetime.time` to the
   :class:`xmlrpclib.DateTime` type; the conversion semantics were
   not necessarily correct for all applications.  Code using
-  :mod:`xmlrpclib` should convert :class:`date` and :class:`time`
+  :mod:`xmlrpclib` should convert :class:`date` and :class:`~datetime.time`
   instances. (:issue:`1330538`)
 
 * (3.0-warning mode) The :class:`Exception` class now warns

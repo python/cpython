@@ -40,7 +40,7 @@ The :mod:`mutex` module defines the following class:
 Mutex Objects
 -------------
 
-:class:`mutex` objects have following methods:
+:class:`~mutex.mutex` objects have following methods:
 
 
 .. method:: mutex.test()

@@ -82,11 +82,11 @@ in Cookie name (as :attr:`~Morsel.key`).
       The same security warning from :class:`SerialCookie` applies here.
 
 A further security note is warranted.  For backwards compatibility, the
-:mod:`Cookie` module exports a class named :class:`Cookie` which is just an
-alias for :class:`SmartCookie`.  This is probably a mistake and will likely be
-removed in a future version.  You should not use the :class:`Cookie` class in
-your applications, for the same reason why you should not use the
-:class:`SerialCookie` class.
+:mod:`Cookie` module exports a class named :class:`~Cookie.Cookie` which is
+just an alias for :class:`SmartCookie`.  This is probably a mistake and will
+likely be removed in a future version.  You should not use the
+:class:`~Cookie.Cookie` class in your applications, for the same reason why
+you should not use the :class:`SerialCookie` class.
 
 
 .. seealso::

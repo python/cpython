@@ -100,7 +100,7 @@ The following classes are provided:
    1) are treated according to the RFC 2965 rules.  However, if RFC 2965 handling
    is turned off or :attr:`rfc2109_as_netscape` is ``True``, RFC 2109 cookies are
    'downgraded' by the :class:`CookieJar` instance to Netscape cookies, by
-   setting the :attr:`version` attribute of the :class:`Cookie` instance to 0.
+   setting the :attr:`version` attribute of the :class:`~cookielib.Cookie` instance to 0.
    :class:`DefaultCookiePolicy` also provides some parameters to allow some
    fine-tuning of policy.
 
@@ -108,7 +108,7 @@ The following classes are provided:
 .. class:: Cookie()
 
    This class represents Netscape, RFC 2109 and RFC 2965 cookies.  It is not
-   expected that users of :mod:`cookielib` construct their own :class:`Cookie`
+   expected that users of :mod:`cookielib` construct their own :class:`~cookielib.Cookie`
    instances.  Instead, if necessary, call :meth:`make_cookies` on a
    :class:`CookieJar` instance.
 
@@ -146,7 +146,7 @@ CookieJar and FileCookieJar Objects
 -----------------------------------
 
 :class:`CookieJar` objects support the :term:`iterator` protocol for iterating over
-contained :class:`Cookie` objects.
+contained :class:`~cookielib.Cookie` objects.
 
 :class:`CookieJar` has the following methods:
 
@@ -194,7 +194,7 @@ contained :class:`Cookie` objects.
 
 .. method:: CookieJar.make_cookies(response, request)
 
-   Return sequence of :class:`Cookie` objects extracted from *response* object.
+   Return sequence of :class:`~cookielib.Cookie` objects extracted from *response* object.
 
    See the documentation for :meth:`extract_cookies` for the interfaces required of
    the *response* and *request* arguments.
@@ -202,12 +202,12 @@ contained :class:`Cookie` objects.
 
 .. method:: CookieJar.set_cookie_if_ok(cookie, request)
 
-   Set a :class:`Cookie` if policy says it's OK to do so.
+   Set a :class:`~cookielib.Cookie` if policy says it's OK to do so.
 
 
 .. method:: CookieJar.set_cookie(cookie)
 
-   Set a :class:`Cookie`, without checking with policy to see whether or not it
+   Set a :class:`~cookielib.Cookie`, without checking with policy to see whether or not it
    should be set.
 
 
@@ -383,7 +383,7 @@ methods:
    :meth:`path_return_ok` is called for the cookie path.  Otherwise,
    :meth:`path_return_ok` and :meth:`return_ok` are never called for that cookie
    domain.  If :meth:`path_return_ok` returns true, :meth:`return_ok` is called
-   with the :class:`Cookie` object itself for a full check.  Otherwise,
+   with the :class:`~cookielib.Cookie` object itself for a full check.  Otherwise,
    :meth:`return_ok` is never called for that cookie path.
 
    Note that :meth:`domain_return_ok` is called for every *cookie* domain, not just
@@ -516,7 +516,7 @@ all be assigned to.
    If true, request that the :class:`CookieJar` instance downgrade RFC 2109 cookies
    (ie. cookies received in a :mailheader:`Set-Cookie` header with a version
    cookie-attribute of 1) to Netscape cookies by setting the version attribute of
-   the :class:`Cookie` instance to 0.  The default value is :const:`None`, in which
+   the :class:`~cookielib.Cookie` instance to 0.  The default value is :const:`None`, in which
    case RFC 2109 cookies are downgraded if and only if RFC 2965 handling is turned
    off.  Therefore, RFC 2109 cookies are downgraded by default.
 
@@ -608,7 +608,7 @@ combinations of the above flags:
 Cookie Objects
 --------------
 
-:class:`Cookie` instances have Python attributes roughly corresponding to the
+:class:`~cookielib.Cookie` instances have Python attributes roughly corresponding to the
 standard cookie-attributes specified in the various cookie standards.  The
 correspondence is not one-to-one, because there are complicated rules for
 assigning default values, because the ``max-age`` and ``expires``
@@ -724,7 +724,7 @@ accessed using the following methods:
 
    Set the value of the named cookie-attribute.
 
-The :class:`Cookie` class also defines the following method:
+The :class:`~cookielib.Cookie` class also defines the following method:
 
 
 .. method:: Cookie.is_expired([now=None])

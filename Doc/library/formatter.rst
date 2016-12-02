@@ -9,7 +9,7 @@
 .. index:: single: HTMLParser (class in htmllib)
 
 This module supports two interface definitions, each with multiple
-implementations.  The *formatter* interface is used by the :class:`HTMLParser`
+implementations.  The *formatter* interface is used by the :class:`~HTMLParser.HTMLParser`
 class of the :mod:`htmllib` module, and the *writer* interface is required by
 the formatter interface.
 

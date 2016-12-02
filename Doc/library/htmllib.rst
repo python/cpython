@@ -24,11 +24,11 @@ This module defines a class which can serve as a base for parsing text files
 formatted in the HyperText Mark-up Language (HTML).  The class is not directly
 concerned with I/O --- it must be provided with input in string form via a
 method, and makes calls to methods of a "formatter" object in order to produce
-output.  The :class:`HTMLParser` class is designed to be used as a base class
+output.  The :class:`~HTMLParser.HTMLParser` class is designed to be used as a base class
 for other classes in order to add functionality, and allows most of its methods
 to be extended or overridden.  In turn, this class is derived from and extends
 the :class:`SGMLParser` class defined in module :mod:`sgmllib`.  The
-:class:`HTMLParser` implementation supports the HTML 2.0 language as described
+:class:`~HTMLParser.HTMLParser` implementation supports the HTML 2.0 language as described
 in :rfc:`1866`.  Two implementations of formatter objects are provided in the
 :mod:`formatter` module; refer to the documentation for that module for
 information on the formatter interface.
@@ -70,7 +70,7 @@ The module defines a parser class and an exception:
 
 .. exception:: HTMLParseError
 
-   Exception raised by the :class:`HTMLParser` class when it encounters an error
+   Exception raised by the :class:`~HTMLParser.HTMLParser` class when it encounters an error
    while parsing.
 
    .. versionadded:: 2.4
@@ -91,7 +91,7 @@ The module defines a parser class and an exception:
       Definition of replacement text for XHTML 1.0  entities.
 
    Module :mod:`sgmllib`
-      Base class for :class:`HTMLParser`.
+      Base class for :class:`~HTMLParser.HTMLParser`.
 
 
 .. _html-parser-objects:
@@ -99,7 +99,7 @@ The module defines a parser class and an exception:
 HTMLParser Objects
 ------------------
 
-In addition to tag methods, the :class:`HTMLParser` class provides some
+In addition to tag methods, the :class:`~HTMLParser.HTMLParser` class provides some
 additional methods and instance variables for use within tag methods.
 
 
@@ -173,7 +173,7 @@ additional methods and instance variables for use within tag methods.
 
 This module defines three dictionaries, ``name2codepoint``, ``codepoint2name``,
 and ``entitydefs``. ``entitydefs`` is used by the :mod:`htmllib` module to
-provide the :attr:`entitydefs` attribute of the :class:`HTMLParser` class.  The
+provide the :attr:`entitydefs` attribute of the :class:`~HTMLParser.HTMLParser` class.  The
 definition provided here contains all the entities defined by XHTML 1.0  that
 can be handled using simple textual substitution in the Latin-1 character set
 (ISO-8859-1).

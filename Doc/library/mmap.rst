@@ -15,7 +15,7 @@ change a substring by assigning to a slice: ``obj[i1:i2] = '...'``.  You can
 also read and write data starting at the current file position, and
 :meth:`seek` through the file to different positions.
 
-A memory-mapped file is created by the :class:`mmap` constructor, which is
+A memory-mapped file is created by the :class:`~mmap.mmap` constructor, which is
 different on Unix and on Windows.  In either case you must provide a file
 descriptor for a file opened for update. If you wish to map an existing Python
 file object, use its :meth:`fileno` method to obtain the correct value for the
@@ -77,7 +77,7 @@ memory but does not update the underlying file.
    **(Unix version)** Maps *length* bytes from the file specified by the file
    descriptor *fileno*, and returns a mmap object.  If *length* is ``0``, the
    maximum length of the map will be the current size of the file when
-   :class:`mmap` is called.
+   :class:`~mmap.mmap` is called.
 
    *flags* specifies the nature of the mapping. :const:`MAP_PRIVATE` creates a
    private copy-on-write mapping, so changes to the contents of the mmap
@@ -104,7 +104,7 @@ memory but does not update the underlying file.
    by the descriptor *fileno* is internally automatically synchronized
    with physical backing store on Mac OS X and OpenVMS.
 
-   This example shows a simple way of using :class:`mmap`::
+   This example shows a simple way of using :class:`~mmap.mmap`::
 
       import mmap
 

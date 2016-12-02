@@ -1523,7 +1523,7 @@ code:
   empty list instead of raising a :exc:`TypeError` exception if called with no
   arguments.
 
-* You can no longer compare the :class:`date` and :class:`datetime` instances
+* You can no longer compare the :class:`date` and :class:`~datetime.datetime` instances
   provided by the :mod:`datetime` module.  Two  instances of different classes
   will now always be unequal, and  relative comparisons (``<``, ``>``) will raise
   a :exc:`TypeError`.
