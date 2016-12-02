@@ -160,6 +160,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #27172: To assist with upgrades from 2.7, the previously documented
+  deprecation of ``inspect.getfullargspec()`` has been reversed. This decision
+  may be revisited again after the Python 2.7 branch is no longer officially
+  supported.
+
 - Issue #28740: Add sys.getandroidapilevel(): return the build time API version
   of Android as an integer. Function only available on Android.
 
