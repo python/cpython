@@ -6304,7 +6304,33 @@ update_one_slot(PyTypeObject *type, slotdef *p)
                sanity checks and constructing a new argument
                list.  Cut all that nonsense short -- this speeds
                up instance creation tremendously. */
-            specific = (void *)type->tp_new;
+            PyObject *self = PyCFunction_GET_SELF(descr);
+            if (!self || !PyType_Check(self)) {
+                /* This should never happen because
+                   tp_new_wrapper expects a type for self.
+                   Use slot_tp_new which will call
+                   tp_new_wrapper which will raise an
+                   exception. */
+                specific = (void *)slot_tp_new;
+            }
+            else {
+                specific = ((PyTypeObject *)self)->tp_new;
+                /* Check that the user does not do anything
+                   silly and unsafe like object.__new__(dict).
+                   To do this, we check that the most derived
+                   base that's not a heap type is this type. */
+                PyTypeObject *staticbase = type->tp_base;
+                while (staticbase &&
+                       (staticbase->tp_flags & Py_TPFLAGS_HEAPTYPE))
+                    staticbase = staticbase->tp_base;
+                if (staticbase &&
+                    staticbase->tp_new != specific)
+                    /* Seems to be unsafe, better use
+                       slot_tp_new which will call
+                       tp_new_wrapper which will raise an
+                       exception if it is unsafe. */
+                    specific = (void *)slot_tp_new;
+            }
             /* XXX I'm not 100% sure that there isn't a hole
                in this reasoning that requires additional
                sanity checks.  I'll buy the first person to

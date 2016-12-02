@@ -10,6 +10,9 @@ What's New in Python 2.7.13?
 Core and Builtins
 -----------------
 
+- Issue #5322: Fixed setting __new__ to a PyCFunction inside Python code.
+  Original patch by Andreas Stührk.
+
 - Issue #28847: dubmdbm no longer writes the index file in when it is not
   changed and supports reading read-only files.
 
