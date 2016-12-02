@@ -404,6 +404,15 @@ always available.
    .. versionadded:: 3.4
 
 
+.. function:: getandroidapilevel()
+
+   Return the build time API version of Android as an integer.
+
+   Availability: Android.
+
+   .. versionadded:: 3.7
+
+
 .. function:: getcheckinterval()
 
    Return the interpreter's "check interval"; see :func:`setcheckinterval`.
