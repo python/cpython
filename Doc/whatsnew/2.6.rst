@@ -613,10 +613,10 @@ multiple of 4.
         result = queue.get()
         print 'Factorial', N, '=', result
 
-A :class:`Queue` is used to communicate the result of the factorial.
-The :class:`Queue` object is stored in a global variable.
+A :class:`~queue.Queue` is used to communicate the result of the factorial.
+The :class:`~queue.Queue` object is stored in a global variable.
 The child process will use the value of the variable when the child
-was created; because it's a :class:`Queue`, parent and child can use
+was created; because it's a :class:`~queue.Queue`, parent and child can use
 the object to communicate.  (If the parent were to change the value of
 the global variable, the child's value would be unaffected, and vice
 versa.)
@@ -2131,7 +2131,7 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Christian Heimes and Mark Dickinson.)
 
-* :class:`mmap` objects now have a :meth:`rfind` method that searches for a
+* :class:`~mmap.mmap` objects now have a :meth:`rfind` method that searches for a
   substring beginning at the end of the string and searching
   backwards.  The :meth:`find` method also gained an *end* parameter
   giving an index at which to stop searching.
@@ -2630,7 +2630,7 @@ changes, or look through the Subversion logs for all the details.
   :class:`datetime.date` and :class:`datetime.time` to the
   :class:`xmlrpclib.DateTime` type; the conversion semantics were
   not necessarily correct for all applications.  Code using
-  :mod:`xmlrpclib` should convert :class:`date` and :class:`time`
+  :mod:`xmlrpclib` should convert :class:`date` and :class:`~datetime.time`
   instances. (:issue:`1330538`)  The code can also handle
   dates before 1900 (contributed by Ralf Schmitt; :issue:`2014`)
   and 64-bit integers represented by using ``<i8>`` in XML-RPC responses
@@ -3283,7 +3283,7 @@ that may require changes to your code:
   :class:`datetime.date` and :class:`datetime.time` to the
   :class:`xmlrpclib.DateTime` type; the conversion semantics were
   not necessarily correct for all applications.  Code using
-  :mod:`xmlrpclib` should convert :class:`date` and :class:`time`
+  :mod:`xmlrpclib` should convert :class:`date` and :class:`~datetime.time`
   instances. (:issue:`1330538`)
 
 * (3.0-warning mode) The :class:`Exception` class now warns

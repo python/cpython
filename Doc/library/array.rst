@@ -254,7 +254,7 @@ When an array object is printed or converted to a string, it is represented as
 empty, otherwise it is a string if the *typecode* is ``'u'``, otherwise it is a
 list of numbers.  The string is guaranteed to be able to be converted back to an
 array with the same type and value using :func:`eval`, so long as the
-:func:`array` function has been imported using ``from array import array``.
+:class:`~array.array` class has been imported using ``from array import array``.
 Examples::
 
    array('l')
