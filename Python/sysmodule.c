@@ -1363,6 +1363,20 @@ PyDoc_STRVAR(is_finalizing_doc,
 Return True if Python is exiting.");
 
 
+#ifdef ANDROID_API_LEVEL
+PyDoc_STRVAR(getandroidapilevel_doc,
+"getandroidapilevel()\n\
+\n\
+Return the build time API version of Android as an integer.");
+
+static PyObject *
+sys_getandroidapilevel(PyObject *self)
+{
+    return PyLong_FromLong(ANDROID_API_LEVEL);
+}
+#endif   /* ANDROID_API_LEVEL */
+
+
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     {"callstats", (PyCFunction)sys_callstats, METH_NOARGS,
@@ -1447,6 +1461,10 @@ static PyMethodDef sys_methods[] = {
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     {"get_asyncgen_hooks", sys_get_asyncgen_hooks, METH_NOARGS,
      get_asyncgen_hooks_doc},
+#ifdef ANDROID_API_LEVEL
+    {"getandroidapilevel", (PyCFunction)sys_getandroidapilevel, METH_NOARGS,
+     getandroidapilevel_doc},
+#endif
     {NULL,              NULL}           /* sentinel */
 };
 
