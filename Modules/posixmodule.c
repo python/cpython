@@ -6910,7 +6910,7 @@ posix_fdopen(PyObject *self, PyObject *args)
        tested against in gzip.GzipFile.__init__() - see issue #13781. */
     f = PyFile_FromFile(NULL, "<fdopen>", orgmode, fclose);
     if (f == NULL) {
-        PyMEM_FREE(mode);
+        PyMem_FREE(mode);
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
