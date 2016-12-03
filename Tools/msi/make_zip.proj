@@ -13,7 +13,7 @@
         <SignOutput>false</SignOutput>
         <TargetName>python-$(PythonVersion)-embed-$(ArchName)</TargetName>
         <TargetExt>.zip</TargetExt>
-        <TargetPath>$(OutputPath)\en-us\$(TargetName)$(TargetExt)</TargetPath>
+        <TargetPath>$(OutputPath)\$(TargetName)$(TargetExt)</TargetPath>
         <CleanCommand>rmdir /q/s "$(IntermediateOutputPath)\zip_$(ArchName)"</CleanCommand>
         <Arguments>"$(PythonExe)" "$(MSBuildThisFileDirectory)\make_zip.py"</Arguments>
         <Arguments>$(Arguments) -e -o "$(TargetPath)" -t "$(IntermediateOutputPath)\zip_$(ArchName)" -a $(ArchName)</Arguments>
