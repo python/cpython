@@ -399,9 +399,15 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <Target Name="_GetBuildInfo" BeforeTargets="PrepareForBuild">
-    <Exec Command="hg id -b &gt; &quot;$(IntDir)hgbranch.txt&quot;" ContinueOnError="true" />
-    <Exec Command="hg id -i &gt; &quot;$(IntDir)hgversion.txt&quot;" ContinueOnError="true" />
-    <Exec Command="hg id -t &gt; &quot;$(IntDir)hgtag.txt&quot;" ContinueOnError="true" />
+    <PropertyGroup>
+      <HG Condition="$(HG) == ''">hg</HG>
+      <_HG>$(HG)</_HG>
+      <_HG Condition="$(HG.Contains(` `))">"$(HG)"</_HG>
+    </PropertyGroup>
+    <Message Text="Getting build info from $(_HG)" Importance="high" />
+    <Exec Command="$(_HG) id -b &gt; &quot;$(IntDir)hgbranch.txt&quot;" ContinueOnError="true" />
+    <Exec Command="$(_HG) id -i &gt; &quot;$(IntDir)hgversion.txt&quot;" ContinueOnError="true" />
+    <Exec Command="$(_HG) id -t &gt; &quot;$(IntDir)hgtag.txt&quot;" ContinueOnError="true" />
     <PropertyGroup>
       <HgBranch Condition="Exists('$(IntDir)hgbranch.txt')">$([System.IO.File]::ReadAllText('$(IntDir)hgbranch.txt').Trim())</HgBranch>
       <HgVersion Condition="Exists('$(IntDir)hgversion.txt')">$([System.IO.File]::ReadAllText('$(IntDir)hgversion.txt').Trim())</HgVersion>

@@ -64,6 +64,9 @@ if "%1" NEQ "" echo Invalid option: "%1" && exit /B 1
 
 if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
 
+if not exist "%HG%" where hg > "%TEMP%\hg.loc" 2> nul && set /P HG= < "%TEMP%\hg.loc" & del "%TEMP%\hg.loc"
+if not exist "%HG%" echo Cannot find Mercurial on PATH && exit /B 1
+
 call "%D%get_externals.bat"
 
 :builddoc
@@ -76,8 +79,6 @@ if not defined SPHINXBUILD where sphinx-build -q || echo Cannot find sphinx-buil
 call "%D%..\..\doc\make.bat" htmlhelp
 if errorlevel 1 goto :eof
 :skipdoc
-
-where hg /q || echo Cannot find Mercurial on PATH && exit /B 1
 
 where dlltool /q && goto skipdlltoolsearch
 set _DLLTOOL_PATH=
@@ -187,7 +188,7 @@ msbuild "%D%bundle\releaseweb.wixproj" /t:Rebuild /p:Platform=%1 %BUILDOPTS% %CE
 if errorlevel 1 exit /B
 
 if defined BUILDZIP (
-    msbuild "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS%
+    msbuild "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS% /p:OutputPath="%BUILD%en-us"
     if errorlevel 1 exit /B
 )
 
