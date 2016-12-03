@@ -405,6 +405,7 @@
       <_HG Condition="$(HG.Contains(` `))">"$(HG)"</_HG>
     </PropertyGroup>
     <Message Text="Getting build info from $(_HG)" Importance="high" />
+    <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
     <Exec Command="$(_HG) id -b &gt; &quot;$(IntDir)hgbranch.txt&quot;" ContinueOnError="true" />
     <Exec Command="$(_HG) id -i &gt; &quot;$(IntDir)hgversion.txt&quot;" ContinueOnError="true" />
     <Exec Command="$(_HG) id -t &gt; &quot;$(IntDir)hgtag.txt&quot;" ContinueOnError="true" />
