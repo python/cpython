@@ -6909,8 +6909,10 @@ posix_fdopen(PyObject *self, PyObject *args)
     /* The dummy filename used here must be kept in sync with the value
        tested against in gzip.GzipFile.__init__() - see issue #13781. */
     f = PyFile_FromFile(NULL, "<fdopen>", orgmode, fclose);
-    if (f == NULL)
+    if (f == NULL) {
+        PyMEM_FREE(mode);
         return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
 #if !defined(MS_WINDOWS) && defined(HAVE_FCNTL_H)
     if (mode[0] == 'a') {
