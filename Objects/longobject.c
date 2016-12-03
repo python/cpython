@@ -3710,14 +3710,15 @@ long_lshift(PyObject *v, PyObject *w)
 
     shiftby = PyLong_AsSsize_t((PyObject *)b);
     if (shiftby == -1L && PyErr_Occurred())
-        goto lshift_error;
+        goto out;
     if (shiftby < 0) {
         PyErr_SetString(PyExc_ValueError, "negative shift count");
-        goto lshift_error;
+        goto out;
     }
 
     if (Py_SIZE(a) == 0) {
-        return PyLong_FromLong(0);
+        z = (PyLongObject *)PyLong_FromLong(0);
+        goto out;
     }
 
     /* wordshift, remshift = divmod(shiftby, PyLong_SHIFT) */
@@ -3730,7 +3731,7 @@ long_lshift(PyObject *v, PyObject *w)
         ++newsize;
     z = _PyLong_New(newsize);
     if (z == NULL)
-        goto lshift_error;
+        goto out;
     if (a->ob_size < 0)
         z->ob_size = -(z->ob_size);
     for (i = 0; i < wordshift; i++)
@@ -3746,7 +3747,7 @@ long_lshift(PyObject *v, PyObject *w)
     else
         assert(!accum);
     z = long_normalize(z);
-  lshift_error:
+  out:
     Py_DECREF(a);
     Py_DECREF(b);
     return (PyObject *) z;
