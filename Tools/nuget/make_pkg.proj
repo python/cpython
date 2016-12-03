@@ -18,7 +18,6 @@
         <SignOutput>false</SignOutput>
         <TargetName>$(OutputName).$(NuspecVersion)</TargetName>
         <TargetExt>.nupkg</TargetExt>
-        <TargetPath>$(OutputPath)\$(TargetName)$(TargetExt)</TargetPath>
         <IntermediateOutputPath>$(IntermediateOutputPath)\nuget_$(ArchName)</IntermediateOutputPath>
         
         <CleanCommand>rmdir /q/s "$(IntermediateOutputPath)"</CleanCommand>

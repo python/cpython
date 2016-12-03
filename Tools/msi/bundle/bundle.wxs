@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
-     xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
+     xmlns:bal="http://schemas.microsoft.com/wix/BalExtension"
+     xmlns:dep="http://schemas.microsoft.com/wix/DependencyExtension">
   <Bundle Name="!(loc.FullProductName)"
           UpgradeCode="$(var.CoreUpgradeCode)"
           Version="$(var.Version)"
@@ -8,7 +9,8 @@
           Manufacturer="!(loc.Manufacturer)"
           AboutUrl="http://www.python.org/"
           DisableModify="button"
-          Compressed="no">
+          Compressed="no"
+          dep:ProviderKey="CPython-$(var.MajorVersionNumber).$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)">
     <BootstrapperApplication Id="PythonBA" SourceFile="$(var.BootstrapApp)">
         <Payload Compressed='yes' SourceFile='Default.thm' />
         <Payload Compressed='yes' SourceFile='Default.wxl' />
