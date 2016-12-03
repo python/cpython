@@ -13,7 +13,7 @@ Core and Builtins
 - Issue #5322: Fixed setting __new__ to a PyCFunction inside Python code.
   Original patch by Andreas Stührk.
 
-- Issue #28847: dubmdbm no longer writes the index file in when it is not
+- Issue #28847: dumbdbm no longer writes the index file in when it is not
   changed and supports reading read-only files.
 
 - Issue #11145: Fixed miscellaneous issues with C-style formatting of types
