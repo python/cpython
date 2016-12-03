@@ -6906,6 +6906,11 @@ posix_fdopen(PyObject *self, PyObject *args)
         }
     }
 #endif
+    /* The dummy filename used here must be kept in sync with the value
+       tested against in gzip.GzipFile.__init__() - see issue #13781. */
+    f = PyFile_FromFile(NULL, "<fdopen>", orgmode, fclose);
+    if (f == NULL)
+        return NULL;
     Py_BEGIN_ALLOW_THREADS
 #if !defined(MS_WINDOWS) && defined(HAVE_FCNTL_H)
     if (mode[0] == 'a') {
@@ -6926,13 +6931,10 @@ posix_fdopen(PyObject *self, PyObject *args)
 #endif
     Py_END_ALLOW_THREADS
     PyMem_FREE(mode);
-    if (fp == NULL)
+    if (fp == NULL) {
+        Py_DECREF(f);
         return posix_error();
-    /* The dummy filename used here must be kept in sync with the value
-       tested against in gzip.GzipFile.__init__() - see issue #13781. */
-    f = PyFile_FromFile(NULL, "<fdopen>", orgmode, fclose);
-    if (f == NULL)
-        return NULL;
+    }
     /* We now know we will succeed, so initialize the file object. */
     ((PyFileObject *)f)->f_fp = fp;
     PyFile_SetBufSize(f, bufsize);
