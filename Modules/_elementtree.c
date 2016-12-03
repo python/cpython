@@ -1236,6 +1236,7 @@ element_repr(ElementObject* self)
 
         repr = PyString_FromFormat("<Element %s at %p>",
                                    PyString_AS_STRING(tag), self);
+        Py_ReprLeave((PyObject *)self);
         Py_DECREF(tag);
         return repr;
     }
