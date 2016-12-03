@@ -3286,7 +3286,7 @@ reduce_2(PyObject *obj)
         PyErr_Format(PyExc_TypeError,
                      "can't pickle %.200s objects",
                      ((PyTypeObject *)cls)->tp_name);
-        return NULL;
+        goto end;
     }
 
     getnewargs = PyObject_GetAttrString(obj, "__getnewargs__");
