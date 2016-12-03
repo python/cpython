@@ -239,9 +239,9 @@ if sys.platform.startswith("win"):
                 fullname = os.path.join(path, name)
                 if os.path.isdir(fullname):
                     _waitfor(_rmtree_inner, fullname, waitall=True)
-                    _force_run(path, os.rmdir, fullname)
+                    _force_run(fullname, os.rmdir, fullname)
                 else:
-                    _force_run(path, os.unlink, fullname)
+                    _force_run(fullname, os.unlink, fullname)
         _waitfor(_rmtree_inner, path, waitall=True)
         _waitfor(lambda p: _force_run(p, os.rmdir, p), path)
 else:
