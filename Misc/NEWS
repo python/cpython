@@ -336,6 +336,19 @@ Windows
 - Issue #27888: Prevent Windows installer from displaying console windows and
   failing when pip cannot be installed/uninstalled.
 
+Mac OS X
+--------
+
+- Issue #28440: No longer add /Library/Python/site-packages, the Apple-supplied
+  system Python site-packages directory, to sys.path for macOS framework builds.
+  The coupling between the two Python instances often caused confusion and, as
+  of macOS 10.12, changes to the site-packages layout can cause pip component
+  installations to fail.  This change reverts the effects introduced in 2.7.0
+  by Issue #4865.  If you are using a package with both the Apple system Python
+  2.7 and a user-installed Python 2.7, you will need to ensure that copies of
+  the package are installed with both Python instances.
+
+
 What's New in Python 2.7.12?
 ============================
 

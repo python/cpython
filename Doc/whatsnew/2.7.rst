@@ -2343,6 +2343,18 @@ Port-Specific Changes: Mac OS X
   installation and a user-installed copy of the same version.
   (Changed by Ronald Oussoren; :issue:`4865`.)
 
+   .. versionchanged:: 2.7.13
+
+     As of 2.7.13, this change was removed.
+     ``/Library/Python/2.7/site-packages``, the site-packages directory
+     used by the Apple-supplied system Python 2.7 is no longer appended to
+     ``sys.path`` for user-installed Pythons such as from the python.org
+     installers.  As of macOS 10.12, Apple changed how the system
+     site-packages directory is configured, which could cause installation
+     of pip components, like setuptools, to fail.  Packages installed for
+     the system Python will no longer be shared with user-installed
+     Pythons. (:issue:`28440`)
+
 Port-Specific Changes: FreeBSD
 -----------------------------------
 
