@@ -3197,7 +3197,7 @@ _password_callback(char *buf, int size, int rwflag, void *userdata)
     PySSL_END_ALLOW_THREADS_S(pw_info->thread_state);
 
     if (pw_info->callable) {
-        fn_ret = _PyObject_CallNoArg(pw_info->callable);
+        fn_ret = PyObject_CallFunctionObjArgs(pw_info->callable, NULL);
         if (!fn_ret) {
             /* TODO: It would be nice to move _ctypes_add_traceback() into the
                core python API, so we could use it to add a frame here */

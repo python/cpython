@@ -1970,7 +1970,8 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
         }
 
         for (i = 0; i < saved_ob_size ; i++) {
-            keys[i] = _PyObject_CallArg1(keyfunc, saved_ob_item[i]);
+            keys[i] = PyObject_CallFunctionObjArgs(keyfunc, saved_ob_item[i],
+                                                   NULL);
             if (keys[i] == NULL) {
                 for (i=i-1 ; i>=0 ; i--)
                     Py_DECREF(keys[i]);

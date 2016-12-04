@@ -98,7 +98,8 @@ _canresize(PyByteArrayObject *self)
 PyObject *
 PyByteArray_FromObject(PyObject *input)
 {
-    return _PyObject_CallArg1((PyObject *)&PyByteArray_Type, input);
+    return PyObject_CallFunctionObjArgs((PyObject *)&PyByteArray_Type,
+                                        input, NULL);
 }
 
 PyObject *
@@ -1984,7 +1985,8 @@ bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
 {
     PyObject *result = _PyBytes_FromHex(string, type == &PyByteArray_Type);
     if (type != &PyByteArray_Type && result != NULL) {
-        Py_SETREF(result, _PyObject_CallArg1((PyObject *)type, result));
+        Py_SETREF(result, PyObject_CallFunctionObjArgs((PyObject *)type,
+                                                       result, NULL));
     }
     return result;
 }

@@ -4269,7 +4269,7 @@ unicode_decode_call_errorhandler_wchar(
     if (*exceptionObject == NULL)
         goto onError;
 
-    restuple = _PyObject_CallArg1(*errorHandler, *exceptionObject);
+    restuple = PyObject_CallFunctionObjArgs(*errorHandler, *exceptionObject, NULL);
     if (restuple == NULL)
         goto onError;
     if (!PyTuple_Check(restuple)) {
@@ -4368,7 +4368,7 @@ unicode_decode_call_errorhandler_writer(
     if (*exceptionObject == NULL)
         goto onError;
 
-    restuple = _PyObject_CallArg1(*errorHandler, *exceptionObject);
+    restuple = PyObject_CallFunctionObjArgs(*errorHandler, *exceptionObject, NULL);
     if (restuple == NULL)
         goto onError;
     if (!PyTuple_Check(restuple)) {
@@ -6649,7 +6649,8 @@ unicode_encode_call_errorhandler(const char *errors,
     if (*exceptionObject == NULL)
         return NULL;
 
-    restuple = _PyObject_CallArg1(*errorHandler, *exceptionObject);
+    restuple = PyObject_CallFunctionObjArgs(
+        *errorHandler, *exceptionObject, NULL);
     if (restuple == NULL)
         return NULL;
     if (!PyTuple_Check(restuple)) {
@@ -8643,7 +8644,8 @@ unicode_translate_call_errorhandler(const char *errors,
     if (*exceptionObject == NULL)
         return NULL;
 
-    restuple = _PyObject_CallArg1(*errorHandler, *exceptionObject);
+    restuple = PyObject_CallFunctionObjArgs(
+        *errorHandler, *exceptionObject, NULL);
     if (restuple == NULL)
         return NULL;
     if (!PyTuple_Check(restuple)) {

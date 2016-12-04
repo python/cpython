@@ -273,7 +273,7 @@ try_complex_special_method(PyObject *op) {
 
     f = _PyObject_LookupSpecial(op, &PyId___complex__);
     if (f) {
-        PyObject *res = _PyObject_CallNoArg(f);
+        PyObject *res = PyObject_CallFunctionObjArgs(f, NULL);
         Py_DECREF(f);
         if (res != NULL && !PyComplex_Check(res)) {
             PyErr_SetString(PyExc_TypeError,

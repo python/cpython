@@ -1756,7 +1756,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 Py_DECREF(value);
                 goto error;
             }
-            res = _PyObject_CallArg1(hook, value);
+            res = PyObject_CallFunctionObjArgs(hook, value, NULL);
             Py_DECREF(value);
             if (res == NULL)
                 goto error;
@@ -3062,7 +3062,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             Py_DECREF(mgr);
             if (enter == NULL)
                 goto error;
-            res = _PyObject_CallNoArg(enter);
+            res = PyObject_CallFunctionObjArgs(enter, NULL);
             Py_DECREF(enter);
             if (res == NULL)
                 goto error;
@@ -3096,7 +3096,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             }
             SET_TOP(exit);
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArg(enter);
+            res = PyObject_CallFunctionObjArgs(enter, NULL);
             Py_DECREF(enter);
             if (res == NULL)
                 goto error;

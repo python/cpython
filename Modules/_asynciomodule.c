@@ -721,7 +721,8 @@ static PyObject *
 _asyncio_Future__repr_info_impl(FutureObj *self)
 /*[clinic end generated code: output=fa69e901bd176cfb input=f21504d8e2ae1ca2]*/
 {
-    return _PyObject_CallArg1(asyncio_future_repr_info_func, self);
+    return PyObject_CallFunctionObjArgs(
+        asyncio_future_repr_info_func, self, NULL);
 }
 
 /*[clinic input]
@@ -1536,7 +1537,8 @@ static PyObject *
 _asyncio_Task__repr_info_impl(TaskObj *self)
 /*[clinic end generated code: output=6a490eb66d5ba34b input=3c6d051ed3ddec8b]*/
 {
-    return _PyObject_CallArg1(asyncio_task_repr_info_func, self);
+    return PyObject_CallFunctionObjArgs(
+        asyncio_task_repr_info_func, self, NULL);
 }
 
 /*[clinic input]
@@ -1896,7 +1898,7 @@ task_set_error_soon(TaskObj *task, PyObject *et, const char *format, ...)
         return NULL;
     }
 
-    PyObject *e = _PyObject_CallArg1(et, msg);
+    PyObject *e = PyObject_CallFunctionObjArgs(et, msg, NULL);
     Py_DECREF(msg);
     if (e == NULL) {
         return NULL;
@@ -1946,7 +1948,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
 
         if (!exc) {
             /* exc was not a CancelledError */
-            exc = _PyObject_CallNoArg(asyncio_CancelledError);
+            exc = PyObject_CallFunctionObjArgs(asyncio_CancelledError, NULL);
             if (!exc) {
                 goto fail;
             }
@@ -2179,7 +2181,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
     }
 
     /* Check if `result` is a generator */
-    o = _PyObject_CallArg1(inspect_isgenerator, result);
+    o = PyObject_CallFunctionObjArgs(inspect_isgenerator, result, NULL);
     if (o == NULL) {
         /* An exception in inspect.isgenerator */
         goto fail;

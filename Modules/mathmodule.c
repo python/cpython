@@ -951,7 +951,7 @@ static PyObject * math_ceil(PyObject *self, PyObject *number) {
             return NULL;
         return math_1_to_int(number, ceil, 0);
     }
-    result = _PyObject_CallNoArg(method);
+    result = PyObject_CallFunctionObjArgs(method, NULL);
     Py_DECREF(method);
     return result;
 }
@@ -991,7 +991,7 @@ static PyObject * math_floor(PyObject *self, PyObject *number) {
             return NULL;
         return math_1_to_int(number, floor, 0);
     }
-    result = _PyObject_CallNoArg(method);
+    result = PyObject_CallFunctionObjArgs(method, NULL);
     Py_DECREF(method);
     return result;
 }
@@ -1542,7 +1542,7 @@ math_trunc(PyObject *self, PyObject *number)
                          Py_TYPE(number)->tp_name);
         return NULL;
     }
-    result = _PyObject_CallNoArg(trunc);
+    result = PyObject_CallFunctionObjArgs(trunc, NULL);
     Py_DECREF(trunc);
     return result;
 }
