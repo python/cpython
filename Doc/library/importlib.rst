@@ -1,5 +1,5 @@
-:mod:`importlib` -- The implementation of :keyword:`import`
-===========================================================
+:mod:`importlib` --- The implementation of :keyword:`import`
+============================================================
 
 .. module:: importlib
    :synopsis: The implementation of the import machinery.
