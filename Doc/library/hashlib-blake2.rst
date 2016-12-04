@@ -280,7 +280,7 @@ on the hash function used in digital signatures.
     function providing less collision resistance than expected. Randomized
     hashing offers the signer additional protection by reducing the likelihood
     that a preparer can generate two or more messages that ultimately yield the
-    same hash value during the digital signature generation process – even if
+    same hash value during the digital signature generation process --- even if
     it is practical to find collisions for the hash function. However, the use
     of randomized hashing may reduce the amount of security provided by a
     digital signature when all portions of the message are prepared
