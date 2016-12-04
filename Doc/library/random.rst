@@ -364,24 +364,28 @@ Basic examples::
 
 Simulations::
 
-   # Six roulette wheel spins (weighted sampling with replacement)
+   >>> # Six roulette wheel spins (weighted sampling with replacement)
    >>> choices(['red', 'black', 'green'], [18, 18, 2], k=6)
    ['red', 'green', 'black', 'black', 'red', 'black']
 
-   # Deal 20 cards without replacement from a deck of 52 playing cards
-   # and determine the proportion of cards with a ten-value (i.e. a ten,
-   # jack, queen, or king).
+   >>> # Deal 20 cards without replacement from a deck of 52 playing cards
+   >>> # and determine the proportion of cards with a ten-value
+   >>> # (a ten, jack, queen, or king).
    >>> deck = collections.Counter(tens=16, low_cards=36)
    >>> seen = sample(list(deck.elements()), k=20)
-   >>> print(seen.count('tens') / 20)
+   >>> seen.count('tens') / 20
    0.15
 
-   # Estimate the probability of getting 5 or more heads from 7 spins
-   # of a biased coin that settles on heads 60% of the time.
-   >>> n = 10000
-   >>> cw = [0.60, 1.00]
-   >>> sum(choices('HT', cum_weights=cw, k=7).count('H') >= 5 for i in range(n)) / n
+   >>> # Estimate the probability of getting 5 or more heads from 7 spins
+   >>> # of a biased coin that settles on heads 60% of the time.
+   >>> trial = lambda: choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
+   >>> sum(trial() for i in range(10000)) / 10000
    0.4169
+
+   >>> # Probability of the median of 5 samples being in middle two quartiles
+   >>> trial = lambda : 2500 <= sorted(choices(range(10000), k=5))[2]  < 7500
+   >>> sum(trial() for i in range(10000)) / 10000
+   0.7958
 
 Example of `statistical bootstrapping
 <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)>`_ using resampling
