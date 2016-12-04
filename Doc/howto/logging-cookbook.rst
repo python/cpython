@@ -1088,7 +1088,7 @@ $-formatting to be used to build the actual "message" part which appears in the
 formatted log output in place of "%(message)s" or "{message}" or "$message".
 It's a little unwieldy to use the class names whenever you want to log
 something, but it's quite palatable if you use an alias such as __ (double
-underscore – not to be confused with _, the single underscore used as a
+underscore --- not to be confused with _, the single underscore used as a
 synonym/alias for :func:`gettext.gettext` or its brethren).
 
 The above classes are not included in Python, though they're easy enough to
@@ -1209,7 +1209,7 @@ do simply by adding new packages or modules and doing ::
 at module level). It's probably one too many things to think about. Developers
 could also add the filter to a :class:`~logging.NullHandler` attached to their
 top-level logger, but this would not be invoked if an application developer
-attached a handler to a lower-level library logger – so output from that
+attached a handler to a lower-level library logger --- so output from that
 handler would not reflect the intentions of the library developer.
 
 In Python 3.2 and later, :class:`~logging.LogRecord` creation is done through a
