@@ -1,5 +1,5 @@
-:mod:`importlib` -- Convenience wrappers for :func:`__import__`
-===============================================================
+:mod:`importlib` --- Convenience wrappers for :func:`__import__`
+================================================================
 
 .. module:: importlib
    :synopsis: Convenience wrappers for __import__

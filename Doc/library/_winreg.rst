@@ -1,5 +1,5 @@
-:mod:`_winreg` -- Windows registry access
-=========================================
+:mod:`_winreg` --- Windows registry access
+==========================================
 
 .. module:: _winreg
    :platform: Windows
