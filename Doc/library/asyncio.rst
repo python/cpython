@@ -1,5 +1,5 @@
-:mod:`asyncio` -- Asynchronous I/O, event loop, coroutines and tasks
-====================================================================
+:mod:`asyncio` --- Asynchronous I/O, event loop, coroutines and tasks
+=====================================================================
 
 .. module:: asyncio
    :synopsis: Asynchronous I/O, event loop, coroutines and tasks.
