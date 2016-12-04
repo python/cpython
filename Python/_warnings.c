@@ -415,7 +415,7 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
     if (msg == NULL)
         goto error;
 
-    res = _PyObject_CallArg1(show_fn, msg);
+    res = PyObject_CallFunctionObjArgs(show_fn, msg, NULL);
     Py_DECREF(show_fn);
     Py_DECREF(msg);
 

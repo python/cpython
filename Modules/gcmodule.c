@@ -709,7 +709,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         assert(callback != NULL);
 
         /* copy-paste of weakrefobject.c's handle_callback() */
-        temp = _PyObject_CallArg1(callback, wr);
+        temp = PyObject_CallFunctionObjArgs(callback, wr, NULL);
         if (temp == NULL)
             PyErr_WriteUnraisable(callback);
         else

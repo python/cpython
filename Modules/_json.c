@@ -813,14 +813,14 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
     *next_idx_ptr = idx + 1;
 
     if (has_pairs_hook) {
-        val = _PyObject_CallArg1(s->object_pairs_hook, rval);
+        val = PyObject_CallFunctionObjArgs(s->object_pairs_hook, rval, NULL);
         Py_DECREF(rval);
         return val;
     }
 
     /* if object_hook is not None: rval = object_hook(rval) */
     if (s->object_hook != Py_None) {
-        val = _PyObject_CallArg1(s->object_hook, rval);
+        val = PyObject_CallFunctionObjArgs(s->object_hook, rval, NULL);
         Py_DECREF(rval);
         return val;
     }
@@ -924,7 +924,7 @@ _parse_constant(PyScannerObject *s, const char *constant, Py_ssize_t idx, Py_ssi
         return NULL;
 
     /* rval = parse_constant(constant) */
-    rval = _PyObject_CallArg1(s->parse_constant, cstr);
+    rval = PyObject_CallFunctionObjArgs(s->parse_constant, cstr, NULL);
     idx += PyUnicode_GET_LENGTH(cstr);
     Py_DECREF(cstr);
     *next_idx_ptr = idx;
@@ -1023,7 +1023,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
                                            idx - start);
         if (numstr == NULL)
             return NULL;
-        rval = _PyObject_CallArg1(custom_func, numstr);
+        rval = PyObject_CallFunctionObjArgs(custom_func, numstr, NULL);
     }
     else {
         Py_ssize_t i, n;
@@ -1475,7 +1475,7 @@ encoder_encode_string(PyEncoderObject *s, PyObject *obj)
     if (s->fast_encode)
         return s->fast_encode(NULL, obj);
     else
-        return _PyObject_CallArg1(s->encoder, obj);
+        return PyObject_CallFunctionObjArgs(s->encoder, obj, NULL);
 }
 
 static int
@@ -1553,7 +1553,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
                 return -1;
             }
         }
-        newobj = _PyObject_CallArg1(s->defaultfn, obj);
+        newobj = PyObject_CallFunctionObjArgs(s->defaultfn, obj, NULL);
         if (newobj == NULL) {
             Py_XDECREF(ident);
             return -1;
