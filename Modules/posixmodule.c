@@ -902,7 +902,7 @@ path_converter(PyObject *o, void *p)
             goto error_exit;
         }
 
-        o = to_cleanup = _PyObject_CallNoArg(func);
+        o = to_cleanup = PyObject_CallFunctionObjArgs(func, NULL);
         Py_DECREF(func);
         if (NULL == o) {
             goto error_exit;
@@ -12041,7 +12041,7 @@ PyOS_FSPath(PyObject *path)
                             Py_TYPE(path)->tp_name);
     }
 
-    path_repr = _PyObject_CallNoArg(func);
+    path_repr = PyObject_CallFunctionObjArgs(func, NULL);
     Py_DECREF(func);
     if (NULL == path_repr) {
         return NULL;

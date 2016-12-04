@@ -5282,7 +5282,8 @@ long_from_bytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_DECREF(bytes);
 
     if (type != &PyLong_Type) {
-        Py_SETREF(long_obj, _PyObject_CallArg1((PyObject *)type, long_obj));
+        Py_SETREF(long_obj, PyObject_CallFunctionObjArgs((PyObject *)type,
+                                                         long_obj, NULL));
     }
 
     return long_obj;

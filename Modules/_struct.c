@@ -2046,7 +2046,7 @@ cache_struct(PyObject *fmt)
         return s_object;
     }
 
-    s_object = _PyObject_CallArg1((PyObject *)(&PyStructType), fmt);
+    s_object = PyObject_CallFunctionObjArgs((PyObject *)(&PyStructType), fmt, NULL);
     if (s_object != NULL) {
         if (PyDict_Size(cache) >= MAXCACHE)
             PyDict_Clear(cache);
