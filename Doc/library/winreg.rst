@@ -1,4 +1,4 @@
-:mod:`winreg` -- Windows registry access
+:mod:`winreg` --- Windows registry access
 =========================================
 
 .. module:: winreg
