@@ -1,8 +1,8 @@
 .. _tut-brieftourtwo:
 
 *********************************************
-Brief Tour of the Standard Library -- Part II
-*********************************************
+Brief Tour of the Standard Library --- Part II
+**********************************************
 
 This second tour covers more advanced modules that support professional
 programming needs.  These modules rarely occur in small scripts.
