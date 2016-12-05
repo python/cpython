@@ -1700,6 +1700,10 @@ class defining the method.
 Metaclasses
 ^^^^^^^^^^^
 
+.. index::
+    single: metaclass
+    builtin: type
+
 By default, classes are constructed using :func:`type`. The class body is
 executed in a new namespace and the class name is bound locally to the
 result of ``type(name, bases, namespace)``.
@@ -1730,6 +1734,8 @@ When a class definition is executed, the following steps occur:
 
 Determining the appropriate metaclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. index::
+    single: metaclass hint
 
 The appropriate metaclass for a class definition is determined as follows:
 
@@ -1751,6 +1757,9 @@ that criterion, then the class definition will fail with ``TypeError``.
 Preparing the class namespace
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. index::
+    single: __prepare__ (metaclass method)
+
 Once the appropriate metaclass has been identified, then the class namespace
 is prepared. If the metaclass has a ``__prepare__`` attribute, it is called
 as ``namespace = metaclass.__prepare__(name, bases, **kwds)`` (where the
@@ -1768,6 +1777,9 @@ is initialised as an empty ordered mapping.
 Executing the class body
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. index::
+    single: class; body
+
 The class body is executed (approximately) as
 ``exec(body, globals(), namespace)``. The key difference from a normal
 call to :func:`exec` is that lexical scoping allows the class body (including
@@ -1777,11 +1789,18 @@ class definition occurs inside a function.
 However, even when the class definition occurs inside the function, methods
 defined inside the class still cannot see names defined at the class scope.
 Class variables must be accessed through the first parameter of instance or
-class methods, and cannot be accessed at all from static methods.
+class methods, or through the implicit lexically scoped ``__class__`` reference
+described in the next section.
 
+.. _class-object-creation:
 
 Creating the class object
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+    single: __class__ (method cell)
+    single: __classcell__ (class namespace entry)
+
 
 Once the class namespace has been populated by executing the class body,
 the class object is created by calling
@@ -1795,6 +1814,26 @@ created by the compiler if any methods in a class body refer to either
 :func:`super` to correctly identify the class being defined based on
 lexical scoping, while the class or instance that was used to make the
 current call is identified based on the first argument passed to the method.
+
+.. impl-detail::
+
+   In CPython 3.6 and later, the ``__class__`` cell is passed to the metaclass
+   as a ``__classcell__`` entry in the class namespace. If present, this must
+   be propagated up to the ``type.__new__`` call in order for the class to be
+   initialised correctly.
+   Failing to do so will result in a :exc:`DeprecationWarning` in Python 3.6,
+   and a :exc:`RuntimeWarning` in the future.
+
+When using the default metaclass :class:`type`, or any metaclass that ultimately
+calls ``type.__new__``, the following additional customisation steps are
+invoked after creating the class object:
+
+* first, ``type.__new__`` collects all of the descriptors in the class
+  namespace that define a :meth:`~object.__set_name__` method;
+* second, all of these ``__set_name__`` methods are called with the class
+  being defined and the assigned name of that particular descriptor; and
+* finally, the :meth:`~object.__init_subclass__` hook is called on the
+  immediate parent of the new class in its method resolution order.
 
 After the class object is created, it is passed to the class decorators
 included in the class definition (if any) and the resulting object is bound

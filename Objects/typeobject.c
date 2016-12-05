@@ -2687,9 +2687,16 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     else
         type->tp_free = PyObject_Del;
 
-    /* store type in class' cell */
+    /* store type in class' cell if one is supplied */
     cell = _PyDict_GetItemId(dict, &PyId___classcell__);
-    if (cell != NULL && PyCell_Check(cell)) {
+    if (cell != NULL) {
+        /* At least one method requires a reference to its defining class */
+        if (!PyCell_Check(cell)) {
+            PyErr_Format(PyExc_TypeError,
+                         "__classcell__ must be a nonlocal cell, not %.200R",
+                         Py_TYPE(cell));
+            goto error;
+        }
         PyCell_Set(cell, (PyObject *) type);
         _PyDict_DelItemId(dict, &PyId___classcell__);
         PyErr_Clear();
