@@ -2496,7 +2496,7 @@ call_function_tail(PyObject *callable, PyObject *args)
     assert(args != NULL);
 
     if (!PyTuple_Check(args)) {
-        result = _PyObject_CallArg1(callable, args);
+        result = PyObject_CallFunctionObjArgs(callable, args, NULL);
     }
     else {
         result = PyObject_Call(callable, args, NULL);

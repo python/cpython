@@ -62,7 +62,7 @@ _PyErr_CreateException(PyObject *exception, PyObject *value)
         return PyObject_Call(exception, value, NULL);
     }
     else {
-        return _PyObject_CallArg1(exception, value);
+        return PyObject_CallFunctionObjArgs(exception, value, NULL);
     }
 }
 

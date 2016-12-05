@@ -257,7 +257,7 @@ future_get_result(FutureObj *fut, PyObject **result)
             return -1;
         }
 
-        exc = _PyObject_CallArg1(asyncio_InvalidStateError, msg);
+        exc = PyObject_CallFunctionObjArgs(asyncio_InvalidStateError, msg, NULL);
         Py_DECREF(msg);
         if (exc == NULL) {
             return -1;
@@ -835,7 +835,7 @@ FutureObj_finalize(FutureObj *fut)
 
     func = _PyObject_GetAttrId(fut->fut_loop, &PyId_call_exception_handler);
     if (func != NULL) {
-        res = _PyObject_CallArg1(func, context);
+        res = PyObject_CallFunctionObjArgs(func, context, NULL);
         if (res == NULL) {
             PyErr_WriteUnraisable(func);
         }
@@ -1731,7 +1731,7 @@ TaskObj_finalize(TaskObj *task)
 
     func = _PyObject_GetAttrId(task->task_loop, &PyId_call_exception_handler);
     if (func != NULL) {
-        res = _PyObject_CallArg1(func, context);
+        res = PyObject_CallFunctionObjArgs(func, context, NULL);
         if (res == NULL) {
             PyErr_WriteUnraisable(func);
         }

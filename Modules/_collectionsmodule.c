@@ -538,7 +538,8 @@ deque_copy(PyObject *deque)
         return NULL;
     }
     if (old_deque->maxlen < 0)
-        return _PyObject_CallArg1((PyObject *)(Py_TYPE(deque)), deque);
+        return PyObject_CallFunctionObjArgs((PyObject *)(Py_TYPE(deque)),
+                                            deque, NULL);
     else
         return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
             deque, old_deque->maxlen, NULL);
