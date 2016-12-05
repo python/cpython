@@ -10,6 +10,11 @@ What's New in Python 3.6.0 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #23722: Rather than silently producing a class that doesn't support
+  zero-argument ``super()`` in methods, failing to pass the new
+  ``__classcell__`` namespace entry up to ``type.__new__`` now results in a
+  ``DeprecationWarning`` and a class that supports zero-argument ``super()``.
+
 - Issue #28797: Modifying the class __dict__ inside the __set_name__ method of
   a descriptor that is used inside that class no longer prevents calling the
   __set_name__ method of other descriptors.
@@ -30,6 +35,13 @@ Library
   invalid state.  Original patch by Florian Höch.
 
 - Issue #28843: Fix asyncio C Task to handle exceptions __traceback__.
+
+Documentation
+-------------
+
+- Issue #23722: The data model reference and the porting section in the What's
+  New guide now cover the additional ``__classcell__`` handling needed for
+  custom metaclasses to fully support PEP 487 and zero-argument ``super()``.
 
 Tools/Demos
 -----------
