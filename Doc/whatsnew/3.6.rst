@@ -351,6 +351,11 @@ whenever a new subclass is created::
     class Plugin2(PluginBase):
         pass
 
+In order to allow zero-argument :func:`super` calls to work correctly from
+:meth:`~object.__init_subclass__` implementations, custom metaclasses must
+ensure that the new ``__classcell__`` namespace entry is propagated to
+``type.__new__`` (as described in :ref:`class-object-creation`).
+
 .. seealso::
 
  :pep:`487` -- Simpler customization of class creation
@@ -2235,6 +2240,11 @@ Changes in the Python API
   on a ZipFile created with mode ``'r'`` will raise a :exc:`ValueError`.
   Previously, a :exc:`RuntimeError` was raised in those scenarios.
 
+* when custom metaclasses are combined with zero-argument :func:`super` or
+  direct references from methods to the implicit ``__class__`` closure
+  variable, the implicit ``__classcell__`` namespace entry must now be passed
+  up to ``type.__new__`` for initialisation. Failing to do so will result in
+  a :exc:`DeprecationWarning` in 3.6 and a :exc:`RuntimeWarning` in the future.
 
 Changes in the C API
 --------------------

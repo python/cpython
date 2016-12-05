@@ -239,6 +239,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.6b1  3376 (simplify CALL_FUNCTIONs & BUILD_MAP_UNPACK_WITH_CALL)
 #     Python 3.6b1  3377 (set __class__ cell from type.__new__ #23722)
 #     Python 3.6b2  3378 (add BUILD_TUPLE_UNPACK_WITH_CALL #28257)
+#     Python 3.6rc1 3379 (more thorough __class__ validation #23722)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -247,7 +248,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3378).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3379).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
