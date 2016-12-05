@@ -1652,8 +1652,7 @@ They all return *NULL* or ``-1`` if an exception occurs.
    ASCII-encoded strings, but the function interprets the input string as
    ISO-8859-1 if it contains non-ASCII characters.
 
-   This function returns ``-1`` upon failure, so one should call
-   :c:func:`PyErr_Occurred` to check for errors.
+   This function does not raise exceptions.
 
 
 .. c:function:: PyObject* PyUnicode_RichCompare(PyObject *left,  PyObject *right,  int op)
