@@ -998,13 +998,13 @@ read_directory(PyObject *archive)
             goto file_error;
         }
         name[name_size] = '\0';  /* Add terminating null byte */
-        if (SEP != '/') {
-            for (i = 0; i < name_size; i++) {
-                if (name[i] == '/') {
-                    name[i] = SEP;
-                }
+#if SEP != '/'
+        for (i = 0; i < name_size; i++) {
+            if (name[i] == '/') {
+                name[i] = SEP;
             }
         }
+#endif
         /* Skip the rest of the header.
          * On Windows, calling fseek to skip over the fields we don't use is
          * slower than reading the data because fseek flushes stdio's
