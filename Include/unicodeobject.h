@@ -2051,7 +2051,7 @@ PyAPI_FUNC(int) _PyUnicode_EqualToASCIIId(
    equal, and greater than, respectively.  It is best to pass only
    ASCII-encoded strings, but the function interprets the input string as
    ISO-8859-1 if it contains non-ASCII characters.
-   Raise an exception and return -1 on error. */
+   This function does not raise exceptions. */
 
 PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
     PyObject *left,

@@ -36,6 +36,11 @@ Library
 
 - Issue #28843: Fix asyncio C Task to handle exceptions __traceback__.
 
+C API
+-----
+
+- Issue #28808: PyUnicode_CompareWithASCIIString() now never raises exceptions.
+
 Documentation
 -------------
 
