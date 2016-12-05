@@ -480,6 +480,8 @@ Windows
 C API
 -----
 
+- Issue #28808: PyUnicode_CompareWithASCIIString() now never raises exceptions.
+
 - Issue #28761: The fields name and doc of structures PyMemberDef, PyGetSetDef,
   PyStructSequence_Field, PyStructSequence_Desc, and wrapperbase are now of
   type ``const char *`` rather of ``char *``.
