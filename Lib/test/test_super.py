@@ -1,7 +1,9 @@
-"""Unit tests for new super() implementation."""
+"""Unit tests for zero-argument super() & related machinery."""
 
 import sys
 import unittest
+import warnings
+from test.support import check_warnings
 
 
 class A:
@@ -144,6 +146,8 @@ class TestSuper(unittest.TestCase):
         self.assertIs(X.f(), X)
 
     def test___class___new(self):
+        # See issue #23722
+        # Ensure zero-arg super() works as soon as type.__new__() is completed
         test_class = None
 
         class Meta(type):
@@ -161,6 +165,7 @@ class TestSuper(unittest.TestCase):
         self.assertIs(test_class, A)
 
     def test___class___delayed(self):
+        # See issue #23722
         test_namespace = None
 
         class Meta(type):
@@ -169,10 +174,14 @@ class TestSuper(unittest.TestCase):
                 test_namespace = namespace
                 return None
 
-        class A(metaclass=Meta):
-            @staticmethod
-            def f():
-                return __class__
+        # This case shouldn't trigger the __classcell__ deprecation warning
+        with check_warnings() as w:
+            warnings.simplefilter("always", DeprecationWarning)
+            class A(metaclass=Meta):
+                @staticmethod
+                def f():
+                    return __class__
+        self.assertEqual(w.warnings, [])
 
         self.assertIs(A, None)
 
@@ -180,6 +189,7 @@ class TestSuper(unittest.TestCase):
         self.assertIs(B.f(), B)
 
     def test___class___mro(self):
+        # See issue #23722
         test_class = None
 
         class Meta(type):
@@ -195,34 +205,105 @@ class TestSuper(unittest.TestCase):
 
         self.assertIs(test_class, A)
 
-    def test___classcell___deleted(self):
+    def test___classcell___expected_behaviour(self):
+        # See issue #23722
         class Meta(type):
             def __new__(cls, name, bases, namespace):
-                del namespace['__classcell__']
+                nonlocal namespace_snapshot
+                namespace_snapshot = namespace.copy()
                 return super().__new__(cls, name, bases, namespace)
 
-        class A(metaclass=Meta):
-            @staticmethod
-            def f():
-                __class__
+        # __classcell__ is injected into the class namespace by the compiler
+        # when at least one method needs it, and should be omitted otherwise
+        namespace_snapshot = None
+        class WithoutClassRef(metaclass=Meta):
+            pass
+        self.assertNotIn("__classcell__", namespace_snapshot)
 
-        with self.assertRaises(NameError):
-            A.f()
+        # With zero-arg super() or an explicit __class__ reference,
+        # __classcell__ is the exact cell reference to be populated by
+        # type.__new__
+        namespace_snapshot = None
+        class WithClassRef(metaclass=Meta):
+            def f(self):
+                return __class__
 
-    def test___classcell___reset(self):
+        class_cell = namespace_snapshot["__classcell__"]
+        method_closure = WithClassRef.f.__closure__
+        self.assertEqual(len(method_closure), 1)
+        self.assertIs(class_cell, method_closure[0])
+        # Ensure the cell reference *doesn't* get turned into an attribute
+        with self.assertRaises(AttributeError):
+            WithClassRef.__classcell__
+
+    def test___classcell___missing(self):
+        # See issue #23722
+        # Some metaclasses may not pass the original namespace to type.__new__
+        # We test that case here by forcibly deleting __classcell__
         class Meta(type):
             def __new__(cls, name, bases, namespace):
-                namespace['__classcell__'] = 0
+                namespace.pop('__classcell__', None)
                 return super().__new__(cls, name, bases, namespace)
 
-        class A(metaclass=Meta):
-            @staticmethod
-            def f():
-                __class__
+        # The default case should continue to work without any warnings
+        with check_warnings() as w:
+            warnings.simplefilter("always", DeprecationWarning)
+            class WithoutClassRef(metaclass=Meta):
+                pass
+        self.assertEqual(w.warnings, [])
 
-        with self.assertRaises(NameError):
-            A.f()
-        self.assertEqual(A.__classcell__, 0)
+        # With zero-arg super() or an explicit __class__ reference, we expect
+        # __build_class__ to emit a DeprecationWarning complaining that
+        # __class__ was not set, and asking if __classcell__ was propagated
+        # to type.__new__.
+        # In Python 3.7, that warning will become a RuntimeError.
+        expected_warning = (
+            '__class__ not set.*__classcell__ propagated',
+            DeprecationWarning
+        )
+        with check_warnings(expected_warning):
+            warnings.simplefilter("always", DeprecationWarning)
+            class WithClassRef(metaclass=Meta):
+                def f(self):
+                    return __class__
+        # Check __class__ still gets set despite the warning
+        self.assertIs(WithClassRef().f(), WithClassRef)
+
+        # Check the warning is turned into an error as expected
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            with self.assertRaises(DeprecationWarning):
+                class WithClassRef(metaclass=Meta):
+                    def f(self):
+                        return __class__
+
+    def test___classcell___overwrite(self):
+        # See issue #23722
+        # Overwriting __classcell__ with nonsense is explicitly prohibited
+        class Meta(type):
+            def __new__(cls, name, bases, namespace, cell):
+                namespace['__classcell__'] = cell
+                return super().__new__(cls, name, bases, namespace)
+
+        for bad_cell in (None, 0, "", object()):
+            with self.subTest(bad_cell=bad_cell):
+                with self.assertRaises(TypeError):
+                    class A(metaclass=Meta, cell=bad_cell):
+                        pass
+
+    def test___classcell___wrong_cell(self):
+        # See issue #23722
+        # Pointing the cell reference at the wrong class is also prohibited
+        class Meta(type):
+            def __new__(cls, name, bases, namespace):
+                cls = super().__new__(cls, name, bases, namespace)
+                B = type("B", (), namespace)
+                return cls
+
+        with self.assertRaises(TypeError):
+            class A(metaclass=Meta):
+                def f(self):
+                    return __class__
 
     def test_obscure_super_errors(self):
         def f():
