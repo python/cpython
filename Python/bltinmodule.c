@@ -54,8 +54,8 @@ _Py_IDENTIFIER(stderr);
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *none;
-    PyObject *cls = NULL;
+    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns;
+    PyObject *cls = NULL, *cell = NULL;
     Py_ssize_t nargs;
     int isclass = 0;   /* initialize to prevent gcc warning */
 
@@ -167,14 +167,44 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
         Py_DECREF(bases);
         return NULL;
     }
-    none = PyEval_EvalCodeEx(PyFunction_GET_CODE(func), PyFunction_GET_GLOBALS(func), ns,
+    cell = PyEval_EvalCodeEx(PyFunction_GET_CODE(func), PyFunction_GET_GLOBALS(func), ns,
                              NULL, 0, NULL, 0, NULL, 0, NULL,
                              PyFunction_GET_CLOSURE(func));
-    if (none != NULL) {
+    if (cell != NULL) {
         PyObject *margs[3] = {name, bases, ns};
         cls = _PyObject_FastCallDict(meta, margs, 3, mkw);
-        Py_DECREF(none);
+        if (cls != NULL && PyType_Check(cls) && PyCell_Check(cell)) {
+            PyObject *cell_cls = PyCell_GET(cell);
+            if (cell_cls != cls) {
+                /* TODO: In 3.7, DeprecationWarning will become RuntimeError.
+                 *       At that point, cell_error won't be needed.
+                 */
+                int cell_error;
+                if (cell_cls == NULL) {
+                    const char *msg =
+                        "__class__ not set defining %.200R as %.200R. "
+                        "Was __classcell__ propagated to type.__new__?";
+                    cell_error = PyErr_WarnFormat(
+                        PyExc_DeprecationWarning, 1, msg, name, cls);
+                } else {
+                    const char *msg =
+                        "__class__ set to %.200R defining %.200R as %.200R";
+                    PyErr_Format(PyExc_TypeError, msg, cell_cls, name, cls);
+                    cell_error = 1;
+                }
+                if (cell_error) {
+                    Py_DECREF(cls);
+                    cls = NULL;
+                    goto error;
+                } else {
+                    /* Fill in the cell, since type.__new__ didn't do it */
+                    PyCell_Set(cell, cls);
+                }
+            }
+        }
     }
+error:
+    Py_XDECREF(cell);
     Py_DECREF(ns);
     Py_DECREF(meta);
     Py_XDECREF(mkw);
