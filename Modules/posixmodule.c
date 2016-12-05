@@ -10337,8 +10337,13 @@ os_abort_impl(PyObject *module)
 {
     abort();
     /*NOTREACHED*/
+#ifndef __clang__
+    /* Issue #28152: abort() is declared with __attribute__((__noreturn__)).
+       GCC emits a warning without "return NULL;" (compiler bug?), but Clang
+       is smarter and emits a warning on the return. */
     Py_FatalError("abort() called from Python code didn't abort!");
     return NULL;
+#endif
 }
 
 #ifdef MS_WINDOWS
