@@ -2325,7 +2325,7 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
     if (writer == NULL)
         goto error;
 
-    result = _PyObject_CallArg1(writer, unicode);
+    result = PyObject_CallFunctionObjArgs(writer, unicode, NULL);
     if (result == NULL) {
         goto error;
     } else {

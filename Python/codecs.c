@@ -322,7 +322,7 @@ PyObject *codec_getstreamcodec(const char *encoding,
     if (errors != NULL)
         streamcodec = PyObject_CallFunction(codeccls, "Os", stream, errors);
     else
-        streamcodec = _PyObject_CallArg1(codeccls, stream);
+        streamcodec = PyObject_CallFunctionObjArgs(codeccls, stream, NULL);
     Py_DECREF(codecs);
     return streamcodec;
 }
