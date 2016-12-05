@@ -1341,7 +1341,7 @@ async_gen_init_hooks(PyAsyncGenObject *o)
         PyObject *res;
 
         Py_INCREF(firstiter);
-        res = _PyObject_CallArg1(firstiter, o);
+        res = PyObject_CallFunctionObjArgs(firstiter, o, NULL);
         Py_DECREF(firstiter);
         if (res == NULL) {
             return 1;

@@ -338,10 +338,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
     _PyObject_FastCallDict((func), (args), (nargs), NULL)
 
 #define _PyObject_CallNoArg(func) \
-    _PyObject_FastCall((func), NULL, 0)
-
-#define _PyObject_CallArg1(func, arg) \
-    _PyObject_FastCall((func), (PyObject **)&(arg), 1)
+    _PyObject_FastCallDict((func), NULL, 0, NULL)
 
     PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(PyObject *func,
                                                   PyObject *obj, PyObject *args,

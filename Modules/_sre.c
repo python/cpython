@@ -1157,7 +1157,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
             match = pattern_new_match(self, &state, 1);
             if (!match)
                 goto error;
-            item = _PyObject_CallArg1(filter, match);
+            item = PyObject_CallFunctionObjArgs(filter, match, NULL);
             Py_DECREF(match);
             if (!item)
                 goto error;
