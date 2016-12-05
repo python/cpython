@@ -3082,7 +3082,7 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             type->tp_name);
         return -1;
     }
-    if (PyObject_GenericSetAttr((PyObject *)type, name, value) < 0)
+    if (_PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL) < 0)
         return -1;
     return update_slot(type, name);
 }
