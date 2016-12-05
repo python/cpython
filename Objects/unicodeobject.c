@@ -10977,10 +10977,24 @@ PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
     Py_ssize_t i;
     int kind;
     Py_UCS4 chr;
+    const unsigned char *ustr = (const unsigned char *)str;
 
     assert(_PyUnicode_CHECK(uni));
-    if (PyUnicode_READY(uni) == -1)
-        return -1;
+    if (!PyUnicode_IS_READY(uni)) {
+        const wchar_t *ws = _PyUnicode_WSTR(uni);
+        /* Compare Unicode string and source character set string */
+        for (i = 0; (chr = ws[i]) && ustr[i]; i++) {
+            if (chr != ustr[i])
+                return (chr < ustr[i]) ? -1 : 1;
+        }
+        /* This check keeps Python strings that end in '\0' from comparing equal
+         to C strings identical up to that point. */
+        if (_PyUnicode_WSTR_LENGTH(uni) != i || chr)
+            return 1; /* uni is longer */
+        if (ustr[i])
+            return -1; /* str is longer */
+        return 0;
+    }
     kind = PyUnicode_KIND(uni);
     if (kind == PyUnicode_1BYTE_KIND) {
         const void *data = PyUnicode_1BYTE_DATA(uni);
