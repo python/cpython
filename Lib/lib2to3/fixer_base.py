@@ -4,7 +4,6 @@
 """Base class for fixers (optional, but recommended)."""
 
 # Python imports
-import logging
 import itertools
 
 # Local imports
