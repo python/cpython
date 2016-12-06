@@ -26,6 +26,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27030: Unknown escapes in re.sub() replacement template are allowed
+  again.  But they still are deprecated and will be disabled in 3.7.
+
 - Issue #28835: Fix a regression introduced in warnings.catch_warnings():
   call warnings.showwarning() if it was overriden inside the context manager.
 
