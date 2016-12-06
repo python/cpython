@@ -157,7 +157,7 @@ static void RunInteractiveHook(void)
     if (hook == NULL)
         PyErr_Clear();
     else {
-        result = PyObject_CallObject(hook, NULL);
+        result = _PyObject_CallNoArg(hook);
         Py_DECREF(hook);
         if (result == NULL)
             goto error;

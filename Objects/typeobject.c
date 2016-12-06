@@ -1856,7 +1856,7 @@ mro_invoke(PyTypeObject *type)
         PyObject *mro_meth = lookup_method((PyObject *)type, &PyId_mro);
         if (mro_meth == NULL)
             return NULL;
-        mro_result = PyObject_CallObject(mro_meth, NULL);
+        mro_result = _PyObject_CallNoArg(mro_meth);
         Py_DECREF(mro_meth);
     }
     else {
@@ -4032,7 +4032,7 @@ _PyObject_GetState(PyObject *obj, int required)
         Py_DECREF(slotnames);
     }
     else { /* getstate != NULL */
-        state = PyObject_CallObject(getstate, NULL);
+        state = _PyObject_CallNoArg(getstate);
         Py_DECREF(getstate);
         if (state == NULL)
             return NULL;
@@ -4057,7 +4057,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
        __getnewargs_ex__ on the object. */
     getnewargs_ex = _PyObject_LookupSpecial(obj, &PyId___getnewargs_ex__);
     if (getnewargs_ex != NULL) {
-        PyObject *newargs = PyObject_CallObject(getnewargs_ex, NULL);
+        PyObject *newargs = _PyObject_CallNoArg(getnewargs_ex);
         Py_DECREF(getnewargs_ex);
         if (newargs == NULL) {
             return -1;
@@ -4110,7 +4110,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
        __getnewargs__ instead. */
     getnewargs = _PyObject_LookupSpecial(obj, &PyId___getnewargs__);
     if (getnewargs != NULL) {
-        *args = PyObject_CallObject(getnewargs, NULL);
+        *args = _PyObject_CallNoArg(getnewargs);
         Py_DECREF(getnewargs);
         if (*args == NULL) {
             return -1;
@@ -4362,7 +4362,7 @@ object_reduce_ex(PyObject *self, PyObject *args)
         override = (clsreduce != objreduce);
         Py_DECREF(clsreduce);
         if (override) {
-            res = PyObject_CallObject(reduce, NULL);
+            res = _PyObject_CallNoArg(reduce);
             Py_DECREF(reduce);
             return res;
         }

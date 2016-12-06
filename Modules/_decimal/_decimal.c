@@ -1194,13 +1194,13 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
         return NULL;
     }
 
-    self->traps = PyObject_CallObject((PyObject *)PyDecSignalDict_Type, NULL);
+    self->traps = _PyObject_CallNoArg((PyObject *)PyDecSignalDict_Type);
     if (self->traps == NULL) {
         self->flags = NULL;
         Py_DECREF(self);
         return NULL;
     }
-    self->flags = PyObject_CallObject((PyObject *)PyDecSignalDict_Type, NULL);
+    self->flags = _PyObject_CallNoArg((PyObject *)PyDecSignalDict_Type);
     if (self->flags == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -1395,7 +1395,7 @@ ieee_context(PyObject *dummy UNUSED, PyObject *v)
         goto error;
     }
 
-    context = PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL);
+    context = _PyObject_CallNoArg((PyObject *)&PyDecContext_Type);
     if (context == NULL) {
         return NULL;
     }
@@ -1417,7 +1417,7 @@ context_copy(PyObject *self, PyObject *args UNUSED)
 {
     PyObject *copy;
 
-    copy = PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL);
+    copy = _PyObject_CallNoArg((PyObject *)&PyDecContext_Type);
     if (copy == NULL) {
         return NULL;
     }
@@ -5835,7 +5835,7 @@ PyInit__decimal(void)
 
     /* Init default context template first */
     ASSIGN_PTR(default_context_template,
-               PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
+               _PyObject_CallNoArg((PyObject *)&PyDecContext_Type));
     Py_INCREF(default_context_template);
     CHECK_INT(PyModule_AddObject(m, "DefaultContext",
                                  default_context_template));
@@ -5843,7 +5843,7 @@ PyInit__decimal(void)
 #ifdef WITHOUT_THREADS
     /* Init module context */
     ASSIGN_PTR(module_context,
-               PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
+               _PyObject_CallNoArg((PyObject *)&PyDecContext_Type));
     Py_INCREF(Py_False);
     CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_False));
 #else
@@ -5854,7 +5854,7 @@ PyInit__decimal(void)
 
     /* Init basic context template */
     ASSIGN_PTR(basic_context_template,
-               PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
+               _PyObject_CallNoArg((PyObject *)&PyDecContext_Type));
     init_basic_context(basic_context_template);
     Py_INCREF(basic_context_template);
     CHECK_INT(PyModule_AddObject(m, "BasicContext",
@@ -5862,7 +5862,7 @@ PyInit__decimal(void)
 
     /* Init extended context template */
     ASSIGN_PTR(extended_context_template,
-               PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
+               _PyObject_CallNoArg((PyObject *)&PyDecContext_Type));
     init_extended_context(extended_context_template);
     Py_INCREF(extended_context_template);
     CHECK_INT(PyModule_AddObject(m, "ExtendedContext",

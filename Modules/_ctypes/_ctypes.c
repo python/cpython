@@ -211,7 +211,7 @@ PyDict_SetItemProxy(PyObject *dict, PyObject *key, PyObject *item)
     PyObject *proxy;
     int result;
 
-    obj = PyObject_CallObject((PyObject *)&DictRemover_Type, NULL);
+    obj = _PyObject_CallNoArg((PyObject *)&DictRemover_Type);
     if (obj == NULL)
         return -1;
 
@@ -373,7 +373,7 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
     if (PyDict_GetItemString(result->tp_dict, "_abstract_"))
         return (PyObject *)result;
 
-    dict = (StgDictObject *)PyObject_CallObject((PyObject *)&PyCStgDict_Type, NULL);
+    dict = (StgDictObject *)_PyObject_CallNoArg((PyObject *)&PyCStgDict_Type);
     if (!dict) {
         Py_DECREF(result);
         return NULL;
@@ -3654,10 +3654,10 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
                 goto error;
             }
             if (PyCArrayTypeObject_Check(ob))
-                ob = PyObject_CallObject(ob, NULL);
+                ob = _PyObject_CallNoArg(ob);
             else
                 /* Create an instance of the pointed-to type */
-                ob = PyObject_CallObject(dict->proto, NULL);
+                ob = _PyObject_CallNoArg(dict->proto);
             /*
                XXX Is the following correct any longer?
                We must not pass a byref() to the array then but
