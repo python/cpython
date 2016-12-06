@@ -2021,8 +2021,9 @@ API and Feature Removals
 ------------------------
 
 * Unknown escapes consisting of ``'\'`` and an ASCII letter in
-  regular expressions will now cause an error.  The :const:`re.LOCALE`
-  flag can now only be used with binary patterns.
+  regular expressions will now cause an error.  In replacement templates for
+  :func:`re.sub` they are still allowed, but deprecated.
+  The :const:`re.LOCALE` flag can now only be used with binary patterns.
 
 * ``inspect.getmoduleinfo()`` was removed (was deprecated since CPython 3.3).
   :func:`inspect.getmodulename` should be used for obtaining the module
