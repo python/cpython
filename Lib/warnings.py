@@ -80,32 +80,40 @@ def _formatwarnmsg_impl(msg):
     return s
 
 # Keep a reference to check if the function was replaced
-_showwarning = showwarning
+_showwarning_orig = showwarning
 
 def _showwarnmsg(msg):
     """Hook to write a warning to a file; replace if you like."""
-    showwarning = globals().get('showwarning', _showwarning)
-    if showwarning is not _showwarning:
-        # warnings.showwarning() was replaced
-        if not callable(showwarning):
-            raise TypeError("warnings.showwarning() must be set to a "
-                            "function or method")
+    try:
+        sw = showwarning
+    except NameError:
+        pass
+    else:
+        if sw is not _showwarning_orig:
+            # warnings.showwarning() was replaced
+            if not callable(sw):
+                raise TypeError("warnings.showwarning() must be set to a "
+                                "function or method")
 
-        showwarning(msg.message, msg.category, msg.filename, msg.lineno,
-                    msg.file, msg.line)
-        return
+            sw(msg.message, msg.category, msg.filename, msg.lineno,
+               msg.file, msg.line)
+            return
     _showwarnmsg_impl(msg)
 
 # Keep a reference to check if the function was replaced
-_formatwarning = formatwarning
+_formatwarning_orig = formatwarning
 
 def _formatwarnmsg(msg):
     """Function to format a warning the standard way."""
-    formatwarning = globals().get('formatwarning', _formatwarning)
-    if formatwarning is not _formatwarning:
-        # warnings.formatwarning() was replaced
-        return formatwarning(msg.message, msg.category,
-                             msg.filename, msg.lineno, line=msg.line)
+    try:
+        fw = formatwarning
+    except NameError:
+        pass
+    else:
+        if fw is not _formatwarning_orig:
+            # warnings.formatwarning() was replaced
+            return fw(msg.message, msg.category,
+                      msg.filename, msg.lineno, line=msg.line)
     return _formatwarnmsg_impl(msg)
 
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
@@ -446,21 +454,13 @@ class catch_warnings(object):
         self._module.filters = self._filters[:]
         self._module._filters_mutated()
         self._showwarning = self._module.showwarning
-        self._showwarnmsg = self._module._showwarnmsg
         self._showwarnmsg_impl = self._module._showwarnmsg_impl
         if self._record:
             log = []
-
-            def showarnmsg_logger(msg):
-                nonlocal log
-                log.append(msg)
-
-            self._module._showwarnmsg_impl = showarnmsg_logger
-
+            self._module._showwarnmsg_impl = log.append
             # Reset showwarning() to the default implementation to make sure
             # that _showwarnmsg() calls _showwarnmsg_impl()
-            self._module.showwarning = self._module._showwarning
-
+            self._module.showwarning = self._module._showwarning_orig
             return log
         else:
             return None
@@ -471,7 +471,6 @@ class catch_warnings(object):
         self._module.filters = self._filters
         self._module._filters_mutated()
         self._module.showwarning = self._showwarning
-        self._module._showwarnmsg = self._showwarnmsg
         self._module._showwarnmsg_impl = self._showwarnmsg_impl
 
 
