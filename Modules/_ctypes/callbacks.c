@@ -181,7 +181,7 @@ static void _CallPythonObject(void *mem,
             */
         } else if (dict) {
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
-            CDataObject *obj = (CDataObject *)PyObject_CallFunctionObjArgs(cnv, NULL);
+            CDataObject *obj = (CDataObject *)_PyObject_CallNoArg(cnv);
             if (!obj) {
                 PrintError("create argument %d:\n", i);
                 Py_DECREF(cnv);

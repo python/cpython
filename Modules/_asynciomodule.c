@@ -1948,7 +1948,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
 
         if (!exc) {
             /* exc was not a CancelledError */
-            exc = PyObject_CallFunctionObjArgs(asyncio_CancelledError, NULL);
+            exc = _PyObject_CallNoArg(asyncio_CancelledError);
             if (!exc) {
                 goto fail;
             }
