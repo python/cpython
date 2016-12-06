@@ -266,17 +266,17 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyAPI_FUNC(PyObject *) PyObject_Call(PyObject *callable_object,
                                           PyObject *args, PyObject *kw);
 
-#ifndef Py_LIMITED_API
-     PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *func,
-                                                    PyObject *result,
-                                                    const char *where);
-#endif
-
        /*
      Call a callable Python object, callable_object, with
      arguments and keywords arguments.  The 'args' argument can not be
      NULL, but the 'kw' argument can be NULL.
        */
+
+#ifndef Py_LIMITED_API
+     PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *func,
+                                                    PyObject *result,
+                                                    const char *where);
+#endif
 
      PyAPI_FUNC(PyObject *) PyObject_CallObject(PyObject *callable_object,
                                                 PyObject *args);
