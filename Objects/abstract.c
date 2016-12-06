@@ -2463,7 +2463,7 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t narg
     assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
     assert((nargs == 0 && nkwargs == 0) || stack != NULL);
     /* kwnames must only contains str strings, no subclass, and all keys must
-       be unique: these are implemented in Python/ceval.c and
+       be unique: these checks are implemented in Python/ceval.c and
        _PyArg_ParseStack(). */
 
     if (PyFunction_Check(callable)) {
