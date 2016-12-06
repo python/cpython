@@ -1246,7 +1246,7 @@ PyInit__functools(void)
     if (m == NULL)
         return NULL;
 
-    kwd_mark = PyObject_CallObject((PyObject *)&PyBaseObject_Type, NULL);
+    kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
     if (!kwd_mark) {
         Py_DECREF(m);
         return NULL;

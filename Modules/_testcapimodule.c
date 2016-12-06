@@ -2277,7 +2277,7 @@ static int _pending_callback(void *arg)
 {
     /* we assume the argument is callable object to which we own a reference */
     PyObject *callable = (PyObject *)arg;
-    PyObject *r = PyObject_CallObject(callable, NULL);
+    PyObject *r = _PyObject_CallNoArg(callable);
     Py_DECREF(callable);
     Py_XDECREF(r);
     return r != NULL ? 0 : -1;
