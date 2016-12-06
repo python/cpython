@@ -5258,7 +5258,7 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
     CDataObject *result;
     if (0 == cast_check_pointertype(ctype))
         return NULL;
-    result = (CDataObject *)PyObject_CallFunctionObjArgs(ctype, NULL);
+    result = (CDataObject *)_PyObject_CallNoArg(ctype);
     if (result == NULL)
         return NULL;
 
