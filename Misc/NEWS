@@ -26,7 +26,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #28089: Fix a regression introduced in warnings.catch_warnings():
+- Issue #28835: Fix a regression introduced in warnings.catch_warnings():
   call warnings.showwarning() if it was overriden inside the context manager.
 
 - Issue #27172: To assist with upgrades from 2.7, the previously documented
