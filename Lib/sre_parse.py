@@ -947,7 +947,9 @@ def parse_template(source, pattern):
                     this = chr(ESCAPES[this][1])
                 except KeyError:
                     if c in ASCIILETTERS:
-                        raise s.error('bad escape %s' % this, len(this))
+                        import warnings
+                        warnings.warn('bad escape %s' % this,
+                                      DeprecationWarning, stacklevel=4)
                 lappend(this)
         else:
             lappend(this)
