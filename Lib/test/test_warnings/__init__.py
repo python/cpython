@@ -944,6 +944,51 @@ class CatchWarningTests(BaseTest):
                 self.assertTrue(wmod.filters is not orig_filters)
             self.assertTrue(wmod.filters is orig_filters)
 
+    def test_record_override_showwarning_before(self):
+        # Issue #28089: If warnings.showwarning() was overriden, make sure
+        # that catch_warnings(record=True) overrides it again.
+        text = "This is a warning"
+        wmod = self.module
+        my_log = []
+
+        def my_logger(message, category, filename, lineno, file=None, line=None):
+            nonlocal my_log
+            my_log.append(message)
+
+        # Override warnings.showwarning() before calling catch_warnings()
+        with support.swap_attr(wmod, 'showwarning', my_logger):
+            with wmod.catch_warnings(module=wmod, record=True) as log:
+                self.assertIsNot(wmod.showwarning, my_logger)
+
+                wmod.simplefilter("always")
+                wmod.warn(text)
+
+            self.assertIs(wmod.showwarning, my_logger)
+
+        self.assertEqual(len(log), 1, log)
+        self.assertEqual(log[0].message.args[0], text)
+        self.assertEqual(my_log, [])
+
+    def test_record_override_showwarning_inside(self):
+        # Issue #28089: It is possible to override warnings.showwarning()
+        # in the catch_warnings(record=True) context manager.
+        text = "This is a warning"
+        wmod = self.module
+        my_log = []
+
+        def my_logger(message, category, filename, lineno, file=None, line=None):
+            nonlocal my_log
+            my_log.append(message)
+
+        with wmod.catch_warnings(module=wmod, record=True) as log:
+            wmod.simplefilter("always")
+            wmod.showwarning = my_logger
+            wmod.warn(text)
+
+        self.assertEqual(len(my_log), 1, my_log)
+        self.assertEqual(my_log[0].args[0], text)
+        self.assertEqual(log, [])
+
     def test_check_warnings(self):
         # Explicit tests for the test.support convenience wrapper
         wmod = self.module

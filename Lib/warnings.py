@@ -447,11 +447,20 @@ class catch_warnings(object):
         self._module._filters_mutated()
         self._showwarning = self._module.showwarning
         self._showwarnmsg = self._module._showwarnmsg
+        self._showwarnmsg_impl = self._module._showwarnmsg_impl
         if self._record:
             log = []
-            def showarnmsg(msg):
+
+            def showarnmsg_logger(msg):
+                nonlocal log
                 log.append(msg)
-            self._module._showwarnmsg = showarnmsg
+
+            self._module._showwarnmsg_impl = showarnmsg_logger
+
+            # Reset showwarning() to the default implementation to make sure
+            # that _showwarnmsg() calls _showwarnmsg_impl()
+            self._module.showwarning = self._module._showwarning
+
             return log
         else:
             return None
@@ -463,6 +472,7 @@ class catch_warnings(object):
         self._module._filters_mutated()
         self._module.showwarning = self._showwarning
         self._module._showwarnmsg = self._showwarnmsg
+        self._module._showwarnmsg_impl = self._showwarnmsg_impl
 
 
 # filters contains a sequence of filter 5-tuples
