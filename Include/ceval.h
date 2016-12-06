@@ -8,16 +8,18 @@ extern "C" {
 /* Interface to random parts in ceval.c */
 
 PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
-    PyObject *func, PyObject *args, PyObject *kwargs);
+    PyObject *callable,
+    PyObject *args,
+    PyObject *kwargs);
 
 /* Inline this */
-#define PyEval_CallObject(func,arg) \
-    PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL)
+#define PyEval_CallObject(callable, arg) \
+    PyEval_CallObjectWithKeywords(callable, arg, (PyObject *)NULL)
 
-PyAPI_FUNC(PyObject *) PyEval_CallFunction(PyObject *obj,
+PyAPI_FUNC(PyObject *) PyEval_CallFunction(PyObject *callable,
                                            const char *format, ...);
 PyAPI_FUNC(PyObject *) PyEval_CallMethod(PyObject *obj,
-                                         const char *methodname,
+                                         const char *name,
                                          const char *format, ...);
 
 #ifndef Py_LIMITED_API

@@ -487,7 +487,7 @@ va_build_value(const char *format, va_list va, int flags)
 
 
 PyObject *
-PyEval_CallFunction(PyObject *obj, const char *format, ...)
+PyEval_CallFunction(PyObject *callable, const char *format, ...)
 {
     va_list vargs;
     PyObject *args;
@@ -501,7 +501,7 @@ PyEval_CallFunction(PyObject *obj, const char *format, ...)
     if (args == NULL)
         return NULL;
 
-    res = PyEval_CallObject(obj, args);
+    res = PyEval_CallObject(callable, args);
     Py_DECREF(args);
 
     return res;
@@ -509,14 +509,14 @@ PyEval_CallFunction(PyObject *obj, const char *format, ...)
 
 
 PyObject *
-PyEval_CallMethod(PyObject *obj, const char *methodname, const char *format, ...)
+PyEval_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 {
     va_list vargs;
     PyObject *meth;
     PyObject *args;
     PyObject *res;
 
-    meth = PyObject_GetAttrString(obj, methodname);
+    meth = PyObject_GetAttrString(obj, name);
     if (meth == NULL)
         return NULL;
 
