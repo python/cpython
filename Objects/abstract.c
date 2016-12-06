@@ -2456,12 +2456,9 @@ PyObject *
 _PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t nargs,
                            PyObject *kwnames)
 {
-    PyObject *kwdict, *result;
-    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-
     assert(nargs >= 0);
     assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
-    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
+
     /* kwnames must only contains str strings, no subclass, and all keys must
        be unique: these checks are implemented in Python/ceval.c and
        _PyArg_ParseStack(). */
@@ -2469,24 +2466,57 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t narg
     if (PyFunction_Check(callable)) {
         return _PyFunction_FastCallKeywords(callable, stack, nargs, kwnames);
     }
-
     if (PyCFunction_Check(callable)) {
         return _PyCFunction_FastCallKeywords(callable, stack, nargs, kwnames);
     }
+    else {
+        /* Slow-path: build a temporary tuple for positional arguments and a
+           temporary dictionary for keyword arguments (if any) */
 
-    if (nkwargs > 0) {
-        kwdict = _PyStack_AsDict(stack + nargs, kwnames);
-        if (kwdict == NULL) {
+        ternaryfunc call;
+        PyObject *argtuple;
+        PyObject *kwdict, *result;
+        Py_ssize_t nkwargs;
+
+        result = NULL;
+        nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+        assert((nargs == 0 && nkwargs == 0) || stack != NULL);
+
+        if (Py_EnterRecursiveCall(" while calling a Python object")) {
             return NULL;
         }
-    }
-    else {
-        kwdict = NULL;
-    }
 
-    result = _PyObject_FastCallDict(callable, stack, nargs, kwdict);
-    Py_XDECREF(kwdict);
-    return result;
+        call = callable->ob_type->tp_call;
+        if (call == NULL) {
+            PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
+                         callable->ob_type->tp_name);
+            goto exit;
+        }
+
+        argtuple = _PyStack_AsTuple(stack, nargs);
+        if (argtuple == NULL) {
+            goto exit;
+        }
+
+        if (nkwargs > 0) {
+            kwdict = _PyStack_AsDict(stack + nargs, kwnames);
+            if (kwdict == NULL) {
+                Py_DECREF(argtuple);
+                goto exit;
+            }
+        }
+        else {
+            kwdict = NULL;
+        }
+
+        result = (*call)(callable, argtuple, kwdict);
+        Py_DECREF(argtuple);
+        Py_XDECREF(kwdict);
+
+    exit:
+        Py_LeaveRecursiveCall();
+        return result;
+    }
 }
 
 static PyObject*
