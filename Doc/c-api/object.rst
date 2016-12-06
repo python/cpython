@@ -244,63 +244,82 @@ Object Protocol
    and ``0`` otherwise.  This function always succeeds.
 
 
-.. c:function:: PyObject* PyObject_Call(PyObject *callable_object, PyObject *args, PyObject *kw)
+.. c:function:: PyObject* PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 
-   Call a callable Python object *callable_object*, with arguments given by the
-   tuple *args*, and named arguments given by the dictionary *kw*. If no named
-   arguments are needed, *kw* may be *NULL*. *args* must not be *NULL*, use an
-   empty tuple if no arguments are needed. Returns the result of the call on
-   success, or *NULL* on failure.  This is the equivalent of the Python expression
-   ``callable_object(*args, **kw)``.
+   Call a callable Python object *callable*, with arguments given by the
+   tuple *args*, and named arguments given by the dictionary *kwargs*.
+
+   *args* must not be *NULL*, use an empty tuple if no arguments are needed.
+   If no named arguments are needed, *kwargs* can be *NULL*.
+
+   Returns the result of the call on success, or *NULL* on failure.
+
+   This is the equivalent of the Python expression:
+   ``callable(*args, **kwargs)``.
 
 
-.. c:function:: PyObject* PyObject_CallObject(PyObject *callable_object, PyObject *args)
+.. c:function:: PyObject* PyObject_CallObject(PyObject *callable, PyObject *args)
 
-   Call a callable Python object *callable_object*, with arguments given by the
-   tuple *args*.  If no arguments are needed, then *args* may be *NULL*.  Returns
-   the result of the call on success, or *NULL* on failure.  This is the equivalent
-   of the Python expression ``callable_object(*args)``.
+   Call a callable Python object *callable*, with arguments given by the
+   tuple *args*.  If no arguments are needed, then *args* can be *NULL*.
+
+   Returns the result of the call on success, or *NULL* on failure.
+
+   This is the equivalent of the Python expression: ``callable(*args)``.
 
 
 .. c:function:: PyObject* PyObject_CallFunction(PyObject *callable, const char *format, ...)
 
    Call a callable Python object *callable*, with a variable number of C arguments.
    The C arguments are described using a :c:func:`Py_BuildValue` style format
-   string.  The format may be *NULL*, indicating that no arguments are provided.
-   Returns the result of the call on success, or *NULL* on failure.  This is the
-   equivalent of the Python expression ``callable(*args)``. Note that if you only
-   pass :c:type:`PyObject \*` args, :c:func:`PyObject_CallFunctionObjArgs` is a
-   faster alternative.
+   string.  The format can be *NULL*, indicating that no arguments are provided.
+
+   Returns the result of the call on success, or *NULL* on failure.
+
+   This is the equivalent of the Python expression: ``callable(*args)``.
+
+   Note that if you only pass :c:type:`PyObject \*` args,
+   :c:func:`PyObject_CallFunctionObjArgs` is a faster alternative.
 
    .. versionchanged:: 3.4
       The type of *format* was changed from ``char *``.
 
 
-.. c:function:: PyObject* PyObject_CallMethod(PyObject *o, const char *method, const char *format, ...)
+.. c:function:: PyObject* PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 
-   Call the method named *method* of object *o* with a variable number of C
+   Call the method named *name* of object *obj* with a variable number of C
    arguments.  The C arguments are described by a :c:func:`Py_BuildValue` format
-   string that should  produce a tuple.  The format may be *NULL*, indicating that
-   no arguments are provided. Returns the result of the call on success, or *NULL*
-   on failure.  This is the equivalent of the Python expression ``o.method(args)``.
+   string that should  produce a tuple.
+
+   The format can be *NULL*, indicating that no arguments are provided.
+
+   Returns the result of the call on success, or *NULL* on failure.
+
+   This is the equivalent of the Python expression:
+   ``obj.name(arg1, arg2, ...)``.
+
    Note that if you only pass :c:type:`PyObject \*` args,
    :c:func:`PyObject_CallMethodObjArgs` is a faster alternative.
 
    .. versionchanged:: 3.4
-      The types of *method* and *format* were changed from ``char *``.
+      The types of *name* and *format* were changed from ``char *``.
 
 
 .. c:function:: PyObject* PyObject_CallFunctionObjArgs(PyObject *callable, ..., NULL)
 
    Call a callable Python object *callable*, with a variable number of
    :c:type:`PyObject\*` arguments.  The arguments are provided as a variable number
-   of parameters followed by *NULL*. Returns the result of the call on success, or
-   *NULL* on failure.
+   of parameters followed by *NULL*.
+
+   Returns the result of the call on success, or *NULL* on failure.
+
+   This is the equivalent of the Python expression:
+   ``callable(arg1, arg2, ...)``.
 
 
-.. c:function:: PyObject* PyObject_CallMethodObjArgs(PyObject *o, PyObject *name, ..., NULL)
+.. c:function:: PyObject* PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ..., NULL)
 
-   Calls a method of the object *o*, where the name of the method is given as a
+   Calls a method of the Python object *obj*, where the name of the method is given as a
    Python string object in *name*.  It is called with a variable number of
    :c:type:`PyObject\*` arguments.  The arguments are provided as a variable number
    of parameters followed by *NULL*. Returns the result of the call on success, or
