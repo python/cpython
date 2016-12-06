@@ -4,7 +4,6 @@
 """Base class for fixers (optional, but recommended)."""
 
 # Python imports
-import logging
 import itertools
 
 # Local imports
@@ -75,7 +74,6 @@ class BaseFix(object):
         The main refactoring tool should call this.
         """
         self.filename = filename
-        self.logger = logging.getLogger(filename)
 
     def match(self, node):
         """Returns match for a given parse tree node.
