@@ -2074,7 +2074,7 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     if (ndigits == NULL || ndigits == Py_None)
-        result = PyObject_CallFunctionObjArgs(round, NULL);
+        result = _PyObject_CallNoArg(round);
     else
         result = PyObject_CallFunctionObjArgs(round, ndigits, NULL);
     Py_DECREF(round);

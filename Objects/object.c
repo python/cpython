@@ -596,7 +596,7 @@ PyObject_Bytes(PyObject *v)
 
     func = _PyObject_LookupSpecial(v, &PyId___bytes__);
     if (func != NULL) {
-        result = PyObject_CallFunctionObjArgs(func, NULL);
+        result = _PyObject_CallNoArg(func);
         Py_DECREF(func);
         if (result == NULL)
             return NULL;
@@ -1314,7 +1314,7 @@ _dir_object(PyObject *obj)
         return NULL;
     }
     /* use __dir__ */
-    result = PyObject_CallFunctionObjArgs(dirfunc, NULL);
+    result = _PyObject_CallNoArg(dirfunc);
     Py_DECREF(dirfunc);
     if (result == NULL)
         return NULL;
