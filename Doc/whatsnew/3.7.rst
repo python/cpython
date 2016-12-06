@@ -116,6 +116,11 @@ Deprecated
 Removed
 =======
 
+API and Feature Removals
+------------------------
+
+* Unknown escapes consisting of ``'\'`` and an ASCII letter in replacement
+  templates for :func:`re.sub` will now cause an error.
 
 
 Porting to Python 3.7

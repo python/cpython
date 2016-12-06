@@ -758,7 +758,12 @@ form.
       Unmatched groups are replaced with an empty string.
 
    .. versionchanged:: 3.6
-      Unknown escapes consisting of ``'\'`` and an ASCII letter now are errors.
+      Unknown escapes in *pattern* consisting of ``'\'`` and an ASCII letter
+      now are errors.
+
+   .. versionchanged:: 3.7
+      Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter
+      now are errors.
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
