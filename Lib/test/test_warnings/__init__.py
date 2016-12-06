@@ -945,7 +945,7 @@ class CatchWarningTests(BaseTest):
             self.assertTrue(wmod.filters is orig_filters)
 
     def test_record_override_showwarning_before(self):
-        # Issue #28089: If warnings.showwarning() was overriden, make sure
+        # Issue #28835: If warnings.showwarning() was overriden, make sure
         # that catch_warnings(record=True) overrides it again.
         text = "This is a warning"
         wmod = self.module
@@ -970,7 +970,7 @@ class CatchWarningTests(BaseTest):
         self.assertEqual(my_log, [])
 
     def test_record_override_showwarning_inside(self):
-        # Issue #28089: It is possible to override warnings.showwarning()
+        # Issue #28835: It is possible to override warnings.showwarning()
         # in the catch_warnings(record=True) context manager.
         text = "This is a warning"
         wmod = self.module
