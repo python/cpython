@@ -141,7 +141,7 @@ future_init(FutureObj *fut, PyObject *loop)
     _Py_IDENTIFIER(get_debug);
 
     if (loop == NULL || loop == Py_None) {
-        loop = PyObject_CallObject(asyncio_get_event_loop, NULL);
+        loop = _PyObject_CallNoArg(asyncio_get_event_loop);
         if (loop == NULL) {
             return -1;
         }
@@ -158,7 +158,7 @@ future_init(FutureObj *fut, PyObject *loop)
     }
     if (PyObject_IsTrue(res)) {
         Py_CLEAR(res);
-        fut->fut_source_tb = PyObject_CallObject(traceback_extract_stack, NULL);
+        fut->fut_source_tb = _PyObject_CallNoArg(traceback_extract_stack);
         if (fut->fut_source_tb == NULL) {
             return -1;
         }
@@ -204,7 +204,7 @@ future_set_exception(FutureObj *fut, PyObject *exc)
     }
 
     if (PyExceptionClass_Check(exc)) {
-        exc_val = PyObject_CallObject(exc, NULL);
+        exc_val = _PyObject_CallNoArg(exc);
         if (exc_val == NULL) {
             return NULL;
         }
@@ -1429,7 +1429,7 @@ _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
     PyObject *res;
 
     if (loop == NULL) {
-        loop = PyObject_CallObject(asyncio_get_event_loop, NULL);
+        loop = _PyObject_CallNoArg(asyncio_get_event_loop);
         if (loop == NULL) {
             return NULL;
         }
@@ -1514,7 +1514,7 @@ _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
     PyObject *res;
 
     if (loop == NULL) {
-        loop = PyObject_CallObject(asyncio_get_event_loop, NULL);
+        loop = _PyObject_CallNoArg(asyncio_get_event_loop);
         if (loop == NULL) {
             return NULL;
         }
@@ -2387,7 +2387,7 @@ module_init(void)
 
     WITH_MOD("weakref")
     GET_MOD_ATTR(cls, "WeakSet")
-    all_tasks = PyObject_CallObject(cls, NULL);
+    all_tasks = _PyObject_CallNoArg(cls);
     Py_CLEAR(cls);
     if (all_tasks == NULL) {
         goto fail;

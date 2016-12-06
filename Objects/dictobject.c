@@ -1843,7 +1843,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
     PyObject *d;
     int status;
 
-    d = PyObject_CallObject(cls, NULL);
+    d = _PyObject_CallNoArg(cls);
     if (d == NULL)
         return NULL;
 

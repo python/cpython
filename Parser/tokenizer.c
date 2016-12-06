@@ -440,7 +440,7 @@ fp_readl(char *s, int size, struct tok_state *tok)
     }
     else
     {
-        bufobj = PyObject_CallObject(tok->decoding_readline, NULL);
+        bufobj = _PyObject_CallNoArg(tok->decoding_readline);
         if (bufobj == NULL)
             goto error;
     }
@@ -533,7 +533,7 @@ fp_setreadl(struct tok_state *tok, const char* enc)
     Py_XSETREF(tok->decoding_readline, readline);
 
     if (pos > 0) {
-        PyObject *bufobj = PyObject_CallObject(readline, NULL);
+        PyObject *bufobj = _PyObject_CallNoArg(readline);
         if (bufobj == NULL)
             return 0;
         Py_DECREF(bufobj);
@@ -650,7 +650,7 @@ decoding_feof(struct tok_state *tok)
     } else {
         PyObject* buf = tok->decoding_buffer;
         if (buf == NULL) {
-            buf = PyObject_CallObject(tok->decoding_readline, NULL);
+            buf = _PyObject_CallNoArg(tok->decoding_readline);
             if (buf == NULL) {
                 error_ret(tok);
                 return 1;
