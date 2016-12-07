@@ -10,6 +10,9 @@ What's New in Python 3.6.1 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #5322: Fixed setting __new__ to a PyCFunction inside Python code.
+  Original patch by Andreas Stührk.
+
 Library
 -------
 
