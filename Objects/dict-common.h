@@ -12,7 +12,7 @@ typedef struct {
  * -1 when no entry found, -3 when compare raises error.
  */
 typedef Py_ssize_t (*dict_lookup_func)
-(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject ***value_addr,
+(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr,
  Py_ssize_t *hashpos);
 
 #define DKIX_EMPTY (-1)
