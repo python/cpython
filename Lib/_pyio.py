@@ -277,7 +277,7 @@ class OpenWrapper:
 try:
     UnsupportedOperation = io.UnsupportedOperation
 except AttributeError:
-    class UnsupportedOperation(ValueError, OSError):
+    class UnsupportedOperation(OSError, ValueError):
         pass
 
 
