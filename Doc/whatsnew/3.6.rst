@@ -1938,6 +1938,10 @@ are now deprecated. They were the only remaining implementations of
 been deprecated in previous versions of Python in favour of
 :meth:`importlib.abc.Loader.exec_module`.
 
+The :class:`importlib.machinery.WindowsRegistryFinder` class is now
+deprecated. As of 3.6.0, it is still added to :attr:`sys.meta_path` by
+default (on Windows), but this may change in future releases.
+
 os
 ~~
 
