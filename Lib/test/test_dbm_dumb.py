@@ -252,6 +252,20 @@ class DumbDBMTestCase(unittest.TestCase):
                 f = dumbdbm.open(_fname, value)
             f.close()
 
+    def test_missing_index(self):
+        with dumbdbm.open(_fname, 'n') as f:
+            pass
+        os.unlink(_fname + '.dir')
+        for value in ('r', 'w'):
+            with self.assertWarnsRegex(DeprecationWarning,
+                                       "The index file is missing, the "
+                                       "semantics of the 'c' flag will "
+                                       "be used."):
+                f = dumbdbm.open(_fname, value)
+            f.close()
+            self.assertEqual(os.path.exists(_fname + '.dir'), value == 'w')
+            self.assertFalse(os.path.exists(_fname + '.bak'))
+
     def test_invalid_flag(self):
         for flag in ('x', 'rf', None):
             with self.assertWarnsRegex(DeprecationWarning,

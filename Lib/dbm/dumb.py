@@ -68,7 +68,7 @@ class _Database(collections.MutableMapping):
 
         # Handle the creation
         self._create(flag)
-        self._update()
+        self._update(flag)
 
     def _create(self, flag):
         if flag == 'n':
@@ -92,12 +92,17 @@ class _Database(collections.MutableMapping):
             f.close()
 
     # Read directory file into the in-memory index dict.
-    def _update(self):
+    def _update(self, flag):
         self._index = {}
         try:
             f = _io.open(self._dirfile, 'r', encoding="Latin-1")
         except OSError:
             self._modified = not self._readonly
+            if flag not in ('c', 'n'):
+                import warnings
+                warnings.warn("The index file is missing, the "
+                              "semantics of the 'c' flag will be used.",
+                              DeprecationWarning, stacklevel=4)
         else:
             self._modified = False
             with f:
