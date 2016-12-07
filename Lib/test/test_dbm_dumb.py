@@ -5,6 +5,7 @@
 import io
 import operator
 import os
+import stat
 import unittest
 import warnings
 import dbm.dumb as dumbdbm
@@ -258,6 +259,21 @@ class DumbDBMTestCase(unittest.TestCase):
                                        "'r', 'w', 'c', or 'n'"):
                 f = dumbdbm.open(_fname, flag)
             f.close()
+
+    @unittest.skipUnless(hasattr(os, 'chmod'), 'test needs os.chmod()')
+    def test_readonly_files(self):
+        with support.temp_dir() as dir:
+            fname = os.path.join(dir, 'db')
+            with dumbdbm.open(fname, 'n') as f:
+                self.assertEqual(list(f.keys()), [])
+                for key in self._dict:
+                    f[key] = self._dict[key]
+            os.chmod(fname + ".dir", stat.S_IRUSR)
+            os.chmod(fname + ".dat", stat.S_IRUSR)
+            os.chmod(dir, stat.S_IRUSR|stat.S_IXUSR)
+            with dumbdbm.open(fname, 'r') as f:
+                self.assertEqual(sorted(f.keys()), sorted(self._dict))
+                f.close()  # don't write
 
     def tearDown(self):
         _delete_files()
