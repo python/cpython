@@ -806,6 +806,10 @@ find and load modules.
 
    .. versionadded:: 3.3
 
+   .. deprecated:: 3.6
+      Use :mod:`site` configuration instead. Future versions of Python may
+      not enable this finder by default.
+
 
 .. class:: PathFinder
 
