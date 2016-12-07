@@ -166,7 +166,9 @@ Library
 -------
 
 - Issue #28847: dbm.dumb now supports reading read-only files and no longer
-  writes the index file when it is not changed.
+  writes the index file when it is not changed.  A deprecation warning is now
+  emitted if the index file is missed and recreated in the 'r' and 'w' modes
+  (will be an error in future Python releases).
 
 - Issue #27030: Unknown escapes consisting of ``'\'`` and an ASCII letter in
   re.sub() replacement templates regular expressions now are errors.
