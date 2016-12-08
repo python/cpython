@@ -1322,7 +1322,7 @@ class TestLRU:
                 f.cache_clear()
 
         orig_si = sys.getswitchinterval()
-        sys.setswitchinterval(1e-6)
+        support.setswitchinterval(1e-6)
         try:
             # create n threads in order to fill cache
             threads = [threading.Thread(target=full, args=[k])
