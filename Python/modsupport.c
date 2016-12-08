@@ -14,7 +14,7 @@ const char *_Py_PackageContext = NULL;
 /* Helper for mkvalue() to scan the length of a format */
 
 static Py_ssize_t
-countformat(const char *format, int endchar)
+countformat(const char *format, char endchar)
 {
     Py_ssize_t count = 0;
     int level = 0;
@@ -59,14 +59,14 @@ countformat(const char *format, int endchar)
 /* Generic function to create a value -- the inverse of getargs() */
 /* After an original idea and first implementation by Steven Miale */
 
-static PyObject *do_mktuple(const char**, va_list *, int, Py_ssize_t, int);
-static PyObject *do_mklist(const char**, va_list *, int, Py_ssize_t, int);
-static PyObject *do_mkdict(const char**, va_list *, int, Py_ssize_t, int);
+static PyObject *do_mktuple(const char**, va_list *, char, Py_ssize_t, int);
+static PyObject *do_mklist(const char**, va_list *, char, Py_ssize_t, int);
+static PyObject *do_mkdict(const char**, va_list *, char, Py_ssize_t, int);
 static PyObject *do_mkvalue(const char**, va_list *, int);
 
 
 static void
-do_ignore(const char **p_format, va_list *p_va, int endchar, Py_ssize_t n, int flags)
+do_ignore(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
 {
     PyObject *v;
     Py_ssize_t i;
@@ -99,7 +99,7 @@ do_ignore(const char **p_format, va_list *p_va, int endchar, Py_ssize_t n, int f
 }
 
 static PyObject *
-do_mkdict(const char **p_format, va_list *p_va, int endchar, Py_ssize_t n, int flags)
+do_mkdict(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
 {
     PyObject *d;
     Py_ssize_t i;
@@ -149,7 +149,7 @@ do_mkdict(const char **p_format, va_list *p_va, int endchar, Py_ssize_t n, int f
 }
 
 static PyObject *
-do_mklist(const char **p_format, va_list *p_va, int endchar, Py_ssize_t n, int flags)
+do_mklist(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
 {
     PyObject *v;
     Py_ssize_t i;
@@ -183,7 +183,7 @@ do_mklist(const char **p_format, va_list *p_va, int endchar, Py_ssize_t n, int f
 }
 
 static PyObject *
-do_mktuple(const char **p_format, va_list *p_va, int endchar, Py_ssize_t n, int flags)
+do_mktuple(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
 {
     PyObject *v;
     Py_ssize_t i;
