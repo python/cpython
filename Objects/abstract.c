@@ -2715,80 +2715,77 @@ _PyObject_CallMethodId_SizeT(PyObject *obj, _Py_Identifier *name,
     return retval;
 }
 
-static PyObject **
-objargs_mkstack(PyObject **small_stack, Py_ssize_t small_stack_size,
-                va_list va, Py_ssize_t *p_nargs)
-{
-    Py_ssize_t i, n;
-    va_list countva;
-    PyObject **stack;
-
-    /* Count the number of arguments */
-    va_copy(countva, va);
-
-    n = 0;
-    while (1) {
-        PyObject *arg = va_arg(countva, PyObject *);
-        if (arg == NULL) {
-            break;
-        }
-        n++;
-    }
-    *p_nargs = n;
-
-    /* Copy arguments */
-    if (n <= small_stack_size) {
-        stack = small_stack;
-    }
-    else {
-        stack = PyMem_Malloc(n * sizeof(stack[0]));
-        if (stack == NULL) {
-            va_end(countva);
-            PyErr_NoMemory();
-            return NULL;
-        }
-    }
-
-    for (i = 0; i < n; ++i) {
-        stack[i] = va_arg(va, PyObject *);
-    }
-    va_end(countva);
-    return stack;
-}
-
-PyObject *
-PyObject_CallMethodObjArgs(PyObject *callable, PyObject *name, ...)
+static PyObject *
+_PyObject_FastCallVa(PyObject *callable, va_list vargs)
 {
     PyObject *small_stack[5];
     PyObject **stack;
     Py_ssize_t nargs;
     PyObject *result;
+    Py_ssize_t i;
+    va_list countva;
+
+    if (callable == NULL) {
+        return null_error();
+    }
+
+    /* Count the number of arguments */
+    va_copy(countva, vargs);
+    nargs = 0;
+    while (1) {
+        PyObject *arg = va_arg(countva, PyObject *);
+        if (arg == NULL) {
+            break;
+        }
+        nargs++;
+    }
+    va_end(countva);
+
+    /* Copy arguments */
+    if (nargs <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
+        stack = small_stack;
+    }
+    else {
+        stack = PyMem_Malloc(nargs * sizeof(stack[0]));
+        if (stack == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+    }
+
+    for (i = 0; i < nargs; ++i) {
+        stack[i] = va_arg(vargs, PyObject *);
+    }
+
+    /* Call the function */
+    result = _PyObject_FastCall(callable, stack, nargs);
+
+    if (stack != small_stack) {
+        PyMem_Free(stack);
+    }
+    return result;
+}
+
+PyObject *
+PyObject_CallMethodObjArgs(PyObject *callable, PyObject *name, ...)
+{
     va_list vargs;
+    PyObject *result;
 
     if (callable == NULL || name == NULL) {
         return null_error();
     }
 
     callable = PyObject_GetAttr(callable, name);
-    if (callable == NULL)
+    if (callable == NULL) {
         return NULL;
+    }
 
-    /* count the args */
     va_start(vargs, name);
-    stack = objargs_mkstack(small_stack, Py_ARRAY_LENGTH(small_stack),
-                            vargs, &nargs);
+    result = _PyObject_FastCallVa(callable, vargs);
     va_end(vargs);
-    if (stack == NULL) {
-        Py_DECREF(callable);
-        return NULL;
-    }
 
-    result = _PyObject_FastCall(callable, stack, nargs);
     Py_DECREF(callable);
-    if (stack != small_stack) {
-        PyMem_Free(stack);
-    }
-
     return result;
 }
 
@@ -2796,66 +2793,35 @@ PyObject *
 _PyObject_CallMethodIdObjArgs(PyObject *obj,
                               struct _Py_Identifier *name, ...)
 {
-    PyObject *small_stack[5];
-    PyObject **stack;
-    PyObject *callable;
-    Py_ssize_t nargs;
-    PyObject *result;
     va_list vargs;
+    PyObject *callable, *result;
 
     if (obj == NULL || name == NULL) {
         return null_error();
     }
 
     callable = _PyObject_GetAttrId(obj, name);
-    if (callable == NULL)
+    if (callable == NULL) {
         return NULL;
+    }
 
-    /* count the args */
     va_start(vargs, name);
-    stack = objargs_mkstack(small_stack, Py_ARRAY_LENGTH(small_stack),
-                            vargs, &nargs);
+    result = _PyObject_FastCallVa(callable, vargs);
     va_end(vargs);
-    if (stack == NULL) {
-        Py_DECREF(callable);
-        return NULL;
-    }
 
-    result = _PyObject_FastCall(callable, stack, nargs);
     Py_DECREF(callable);
-    if (stack != small_stack) {
-        PyMem_Free(stack);
-    }
-
     return result;
 }
 
 PyObject *
 PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 {
-    PyObject *small_stack[5];
-    PyObject **stack;
-    Py_ssize_t nargs;
-    PyObject *result;
     va_list vargs;
+    PyObject *result;
 
-    if (callable == NULL) {
-        return null_error();
-    }
-
-    /* count the args */
     va_start(vargs, callable);
-    stack = objargs_mkstack(small_stack, Py_ARRAY_LENGTH(small_stack),
-                            vargs, &nargs);
+    result = _PyObject_FastCallVa(callable, vargs);
     va_end(vargs);
-    if (stack == NULL) {
-        return NULL;
-    }
-
-    result = _PyObject_FastCall(callable, stack, nargs);
-    if (stack != small_stack) {
-        PyMem_Free(stack);
-    }
 
     return result;
 }
