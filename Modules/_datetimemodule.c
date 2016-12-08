@@ -1385,21 +1385,30 @@ static PyObject *
 build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
 {
     PyObject *time;
-    PyObject *result = NULL;
+    PyObject *result;
+    _Py_IDENTIFIER(struct_time);
+    PyObject *args;
+
 
     time = PyImport_ImportModuleNoBlock("time");
-    if (time != NULL) {
-        _Py_IDENTIFIER(struct_time);
-
-        result = _PyObject_CallMethodId(time, &PyId_struct_time,
-                                        "((iiiiiiiii))",
-                                        y, m, d,
-                                        hh, mm, ss,
-                                        weekday(y, m, d),
-                                        days_before_month(y, m) + d,
-                                        dstflag);
-        Py_DECREF(time);
+    if (time == NULL) {
+        return NULL;
     }
+
+    args = Py_BuildValue("iiiiiiiii",
+                         y, m, d,
+                         hh, mm, ss,
+                         weekday(y, m, d),
+                         days_before_month(y, m) + d,
+                         dstflag);
+    if (args == NULL) {
+        Py_DECREF(time);
+        return NULL;
+    }
+
+    result = _PyObject_CallMethodIdObjArgs(time, &PyId_struct_time,
+                                           args, NULL);
+    Py_DECREF(time);
     return result;
 }
 
