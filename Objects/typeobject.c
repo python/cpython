@@ -1420,15 +1420,15 @@ _PyObject_LookupSpecial(PyObject *self, _Py_Identifier *attrid)
     return lookup_maybe(self, attrid);
 }
 
-/* A variation of PyObject_CallMethod that uses lookup_method()
+/* A variation of PyObject_CallMethodObjArgs that uses lookup_method()
    instead of PyObject_GetAttrString().  This uses the same convention
    as lookup_method to cache the interned name string object. */
 
 static PyObject *
-call_method(PyObject *obj, _Py_Identifier *name, const char *format, ...)
+call_method(PyObject *obj, _Py_Identifier *name, ...)
 {
     va_list va;
-    PyObject *func = NULL, *retval;
+    PyObject *func, *retval;
 
     func = lookup_maybe(obj, name);
     if (func == NULL) {
@@ -1437,25 +1437,9 @@ call_method(PyObject *obj, _Py_Identifier *name, const char *format, ...)
         return NULL;
     }
 
-    if (format && *format) {
-        PyObject *args;
-
-        va_start(va, format);
-        args = Py_VaBuildValue(format, va);
-        va_end(va);
-
-        if (args == NULL) {
-            Py_DECREF(func);
-            return NULL;
-        }
-        assert(PyTuple_Check(args));
-
-        retval = PyObject_Call(func, args, NULL);
-        Py_DECREF(args);
-    }
-    else {
-        retval = _PyObject_CallNoArg(func);
-    }
+    va_start(va, name);
+    retval = _PyObject_VaCallFunctionObjArgs(func, va);
+    va_end(va);
 
     Py_DECREF(func);
 
@@ -1465,10 +1449,10 @@ call_method(PyObject *obj, _Py_Identifier *name, const char *format, ...)
 /* Clone of call_method() that returns NotImplemented when the lookup fails. */
 
 static PyObject *
-call_maybe(PyObject *obj, _Py_Identifier *name, const char *format, ...)
+call_maybe(PyObject *obj, _Py_Identifier *name, ...)
 {
     va_list va;
-    PyObject *func = NULL, *retval;
+    PyObject *func, *retval;
 
     func = lookup_maybe(obj, name);
     if (func == NULL) {
@@ -1477,25 +1461,9 @@ call_maybe(PyObject *obj, _Py_Identifier *name, const char *format, ...)
         return NULL;
     }
 
-    if (format && *format) {
-        PyObject *args;
-
-        va_start(va, format);
-        args = Py_VaBuildValue(format, va);
-        va_end(va);
-
-        if (args == NULL) {
-            Py_DECREF(func);
-            return NULL;
-        }
-        assert(PyTuple_Check(args));
-
-        retval = PyObject_Call(func, args, NULL);
-        Py_DECREF(args);
-    }
-    else {
-        retval = _PyObject_CallNoArg(func);
-    }
+    va_start(va, name);
+    retval = _PyObject_VaCallFunctionObjArgs(func, va);
+    va_end(va);
 
     Py_DECREF(func);
 
@@ -5736,12 +5704,12 @@ FUNCNAME(PyObject *self) \
     return call_method(self, &id, NULL); \
 }
 
-#define SLOT1(FUNCNAME, OPSTR, ARG1TYPE, ARGCODES) \
+#define SLOT1(FUNCNAME, OPSTR, ARG1TYPE) \
 static PyObject * \
 FUNCNAME(PyObject *self, ARG1TYPE arg1) \
 { \
     _Py_static_string(id, OPSTR); \
-    return call_method(self, &id, "(" ARGCODES ")", arg1); \
+    return call_method(self, &id, arg1, NULL); \
 }
 
 /* Boolean helper for SLOT1BINFULL().
@@ -5794,34 +5762,26 @@ FUNCNAME(PyObject *self, PyObject *other) \
         if (do_other && \
             PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self)) && \
             method_is_overloaded(self, other, &rop_id)) { \
-            r = call_maybe(other, &rop_id, "(O)", self); \
+            r = call_maybe(other, &rop_id, self, NULL); \
             if (r != Py_NotImplemented) \
                 return r; \
             Py_DECREF(r); \
             do_other = 0; \
         } \
-        r = call_maybe(self, &op_id, "(O)", other); \
+        r = call_maybe(self, &op_id, other, NULL); \
         if (r != Py_NotImplemented || \
             Py_TYPE(other) == Py_TYPE(self)) \
             return r; \
         Py_DECREF(r); \
     } \
     if (do_other) { \
-        return call_maybe(other, &rop_id, "(O)", self); \
+        return call_maybe(other, &rop_id, self, NULL); \
     } \
     Py_RETURN_NOTIMPLEMENTED; \
 }
 
 #define SLOT1BIN(FUNCNAME, SLOTNAME, OPSTR, ROPSTR) \
     SLOT1BINFULL(FUNCNAME, FUNCNAME, SLOTNAME, OPSTR, ROPSTR)
-
-#define SLOT2(FUNCNAME, OPSTR, ARG1TYPE, ARG2TYPE, ARGCODES) \
-static PyObject * \
-FUNCNAME(PyObject *self, ARG1TYPE arg1, ARG2TYPE arg2) \
-{ \
-    _Py_static_string(id, #OPSTR); \
-    return call_method(self, &id, "(" ARGCODES ")", arg1, arg2); \
-}
 
 static Py_ssize_t
 slot_sq_length(PyObject *self)
@@ -5887,13 +5847,22 @@ static int
 slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
 {
     PyObject *res;
+    PyObject *index_obj;
+
+    index_obj = PyLong_FromSsize_t(index);
+    if (index_obj == NULL) {
+        return -1;
+    }
 
     if (value == NULL)
-        res = call_method(self, &PyId___delitem__, "(n)", index);
+        res = call_method(self, &PyId___delitem__, index_obj, NULL);
     else
-        res = call_method(self, &PyId___setitem__, "(nO)", index, value);
-    if (res == NULL)
+        res = call_method(self, &PyId___setitem__, index_obj, value, NULL);
+    Py_DECREF(index_obj);
+
+    if (res == NULL) {
         return -1;
+    }
     Py_DECREF(res);
     return 0;
 }
@@ -5931,7 +5900,7 @@ slot_sq_contains(PyObject *self, PyObject *value)
 
 #define slot_mp_length slot_sq_length
 
-SLOT1(slot_mp_subscript, "__getitem__", PyObject *, "O")
+SLOT1(slot_mp_subscript, "__getitem__", PyObject *)
 
 static int
 slot_mp_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
@@ -5939,9 +5908,9 @@ slot_mp_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
     PyObject *res;
 
     if (value == NULL)
-        res = call_method(self, &PyId___delitem__, "(O)", key);
+        res = call_method(self, &PyId___delitem__, key, NULL);
     else
-        res = call_method(self, &PyId___setitem__, "(OO)", key, value);
+        res = call_method(self, &PyId___setitem__, key, value, NULL);
 
     if (res == NULL)
         return -1;
@@ -5973,7 +5942,7 @@ slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
        slot_nb_power, so check before calling self.__pow__. */
     if (Py_TYPE(self)->tp_as_number != NULL &&
         Py_TYPE(self)->tp_as_number->nb_power == slot_nb_power) {
-        return call_method(self, &PyId___pow__, "(OO)", other, modulus);
+        return call_method(self, &PyId___pow__, other, modulus, NULL);
     }
     Py_RETURN_NOTIMPLEMENTED;
 }
@@ -6053,28 +6022,28 @@ SLOT1BIN(slot_nb_or, nb_or, "__or__", "__ror__")
 
 SLOT0(slot_nb_int, "__int__")
 SLOT0(slot_nb_float, "__float__")
-SLOT1(slot_nb_inplace_add, "__iadd__", PyObject *, "O")
-SLOT1(slot_nb_inplace_subtract, "__isub__", PyObject *, "O")
-SLOT1(slot_nb_inplace_multiply, "__imul__", PyObject *, "O")
-SLOT1(slot_nb_inplace_matrix_multiply, "__imatmul__", PyObject *, "O")
-SLOT1(slot_nb_inplace_remainder, "__imod__", PyObject *, "O")
+SLOT1(slot_nb_inplace_add, "__iadd__", PyObject *)
+SLOT1(slot_nb_inplace_subtract, "__isub__", PyObject *)
+SLOT1(slot_nb_inplace_multiply, "__imul__", PyObject *)
+SLOT1(slot_nb_inplace_matrix_multiply, "__imatmul__", PyObject *)
+SLOT1(slot_nb_inplace_remainder, "__imod__", PyObject *)
 /* Can't use SLOT1 here, because nb_inplace_power is ternary */
 static PyObject *
 slot_nb_inplace_power(PyObject *self, PyObject * arg1, PyObject *arg2)
 {
     _Py_IDENTIFIER(__ipow__);
-    return call_method(self, &PyId___ipow__, "(" "O" ")", arg1);
+    return call_method(self, &PyId___ipow__, arg1, NULL);
 }
-SLOT1(slot_nb_inplace_lshift, "__ilshift__", PyObject *, "O")
-SLOT1(slot_nb_inplace_rshift, "__irshift__", PyObject *, "O")
-SLOT1(slot_nb_inplace_and, "__iand__", PyObject *, "O")
-SLOT1(slot_nb_inplace_xor, "__ixor__", PyObject *, "O")
-SLOT1(slot_nb_inplace_or, "__ior__", PyObject *, "O")
+SLOT1(slot_nb_inplace_lshift, "__ilshift__", PyObject *)
+SLOT1(slot_nb_inplace_rshift, "__irshift__", PyObject *)
+SLOT1(slot_nb_inplace_and, "__iand__", PyObject *)
+SLOT1(slot_nb_inplace_xor, "__ixor__", PyObject *)
+SLOT1(slot_nb_inplace_or, "__ior__", PyObject *)
 SLOT1BIN(slot_nb_floor_divide, nb_floor_divide,
          "__floordiv__", "__rfloordiv__")
 SLOT1BIN(slot_nb_true_divide, nb_true_divide, "__truediv__", "__rtruediv__")
-SLOT1(slot_nb_inplace_floor_divide, "__ifloordiv__", PyObject *, "O")
-SLOT1(slot_nb_inplace_true_divide, "__itruediv__", PyObject *, "O")
+SLOT1(slot_nb_inplace_floor_divide, "__ifloordiv__", PyObject *)
+SLOT1(slot_nb_inplace_true_divide, "__itruediv__", PyObject *)
 
 static PyObject *
 slot_tp_repr(PyObject *self)
@@ -6184,7 +6153,7 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 slot_tp_getattro(PyObject *self, PyObject *name)
 {
-    return call_method(self, &PyId___getattribute__, "(O)", name);
+    return call_method(self, &PyId___getattribute__, name, NULL);
 }
 
 static PyObject *
@@ -6256,9 +6225,9 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
     _Py_IDENTIFIER(__setattr__);
 
     if (value == NULL)
-        res = call_method(self, &PyId___delattr__, "(O)", name);
+        res = call_method(self, &PyId___delattr__, name, NULL);
     else
-        res = call_method(self, &PyId___setattr__, "(OO)", name, value);
+        res = call_method(self, &PyId___setattr__, name, value, NULL);
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -6359,9 +6328,9 @@ slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
     _Py_IDENTIFIER(__set__);
 
     if (value == NULL)
-        res = call_method(self, &PyId___delete__, "(O)", target);
+        res = call_method(self, &PyId___delete__, target, NULL);
     else
-        res = call_method(self, &PyId___set__, "(OO)", target, value);
+        res = call_method(self, &PyId___set__, target, value, NULL);
     if (res == NULL)
         return -1;
     Py_DECREF(res);
