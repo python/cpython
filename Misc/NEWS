@@ -22,6 +22,12 @@ Library
 - Issue #28847: dbm.dumb now supports reading read-only files and no longer
   writes the index file when it is not changed.
 
+Tests
+-----
+
+- Issue #26939: Add the support.setswitchinterval() function to fix
+  test_functools hanging on the Android armv7 qemu emulator.
+
 
 What's New in Python 3.6.0 release candidate 1
 ==============================================
