@@ -93,6 +93,7 @@ __all__ = [
     "check__all__", "requires_android_level", "requires_multiprocessing_queue",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
+    "setswitchinterval",
     # network
     "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
     # processes
@@ -2552,3 +2553,18 @@ def missing_compiler_executable(cmd_names=[]):
             continue
         if spawn.find_executable(cmd[0]) is None:
             return cmd[0]
+
+
+_is_android_emulator = None
+def setswitchinterval(interval):
+    # Setting a very low gil interval on the Android emulator causes python
+    # to hang (issue #26939).
+    minimum_interval = 1e-5
+    if is_android and interval < minimum_interval:
+        global _is_android_emulator
+        if _is_android_emulator is None:
+            _is_android_emulator = (subprocess.check_output(
+                               ['getprop', 'ro.kernel.qemu']).strip() == b'1')
+        if _is_android_emulator:
+            interval = minimum_interval
+    return sys.setswitchinterval(interval)
