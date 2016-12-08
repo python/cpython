@@ -37,9 +37,10 @@ Used in:  Py_SAFE_DOWNCAST
  * integral synonyms.  Only define the ones we actually need.
  */
 
-// long long is required now. Define HAVE_LONG_LONG unconditionally for
-// compatibility.
+// long long is required. Ensure HAVE_LONG_LONG is defined for compatibility.
+#ifndef HAVE_LONG_LONG
 #define HAVE_LONG_LONG
+#endif
 #ifndef PY_LONG_LONG
 #define PY_LONG_LONG long long
 /* If LLONG_MAX is defined in limits.h, use that. */
