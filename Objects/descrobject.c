@@ -804,7 +804,8 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &def))
         return NULL;
-    return _PyObject_CallMethodId(pp->mapping, &PyId_get, "(OO)", key, def);
+    return _PyObject_CallMethodIdObjArgs(pp->mapping, &PyId_get,
+                                         key, def, NULL);
 }
 
 static PyObject *
