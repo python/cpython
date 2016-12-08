@@ -2435,7 +2435,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     }
 
 finally:
-    res = _PyObject_CallMethodId(self->decoder, &PyId_setstate, "(O)", saved_state);
+    res = _PyObject_CallMethodIdObjArgs(self->decoder, &PyId_setstate, saved_state, NULL);
     Py_DECREF(saved_state);
     if (res == NULL)
         return NULL;
@@ -2449,7 +2449,7 @@ fail:
     if (saved_state) {
         PyObject *type, *value, *traceback;
         PyErr_Fetch(&type, &value, &traceback);
-        res = _PyObject_CallMethodId(self->decoder, &PyId_setstate, "(O)", saved_state);
+        res = _PyObject_CallMethodIdObjArgs(self->decoder, &PyId_setstate, saved_state, NULL);
         _PyErr_ChainExceptions(type, value, traceback);
         Py_DECREF(saved_state);
         Py_XDECREF(res);

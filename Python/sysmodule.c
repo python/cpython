@@ -130,7 +130,7 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
 
     buffer = _PyObject_GetAttrId(outf, &PyId_buffer);
     if (buffer) {
-        result = _PyObject_CallMethodId(buffer, &PyId_write, "(O)", encoded);
+        result = _PyObject_CallMethodIdObjArgs(buffer, &PyId_write, encoded, NULL);
         Py_DECREF(buffer);
         Py_DECREF(encoded);
         if (result == NULL)
