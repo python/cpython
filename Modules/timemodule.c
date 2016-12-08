@@ -717,16 +717,22 @@ is not present, current time as returned by localtime() is used.\n\
 static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
-    PyObject *strptime_module = PyImport_ImportModuleNoBlock("_strptime");
-    PyObject *strptime_result;
+    PyObject *module, *func, *result;
     _Py_IDENTIFIER(_strptime_time);
 
-    if (!strptime_module)
+    module = PyImport_ImportModuleNoBlock("_strptime");
+    if (!module)
         return NULL;
-    strptime_result = _PyObject_CallMethodId(strptime_module,
-                                             &PyId__strptime_time, "O", args);
-    Py_DECREF(strptime_module);
-    return strptime_result;
+
+    func = _PyObject_GetAttrId(module, &PyId__strptime_time);
+    Py_DECREF(module);
+    if (!func) {
+        return NULL;
+    }
+
+    result = PyObject_Call(func, args, NULL);
+    Py_DECREF(func);
+    return result;
 }
 
 
