@@ -46,12 +46,6 @@
    This saves the maintainer the effort of going through the Mercurial log
    when researching a change.
 
-.. note::
-
-  Prerelease users should be aware that this document is currently in draft
-  form. It will be updated substantially as Python 3.6 moves towards release,
-  so it's worth checking back even after reading earlier versions.
-
 This article explains the new features in Python 3.6, compared to 3.5.
 
 .. seealso::
@@ -61,9 +55,6 @@ This article explains the new features in Python 3.6, compared to 3.5.
 
 Summary -- Release highlights
 =============================
-
-.. This section singles out the most important changes in Python 3.6.
-   Brevity is key.
 
 New syntax features:
 
