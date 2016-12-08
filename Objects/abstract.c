@@ -2523,7 +2523,12 @@ static PyObject *
 _PyObject_CallFunctionVa(PyObject *callable, const char *format,
                          va_list va, int is_size_t)
 {
-    PyObject *args, *result;
+    PyObject* small_stack[5];
+    /*const Py_ssize_t small_stack_len = Py_ARRAY_LENGTH(small_stack);*/
+    const Py_ssize_t small_stack_len = 0;
+    PyObject **stack;
+    Py_ssize_t nargs, i;
+    PyObject *result;
 
     if (callable == NULL) {
         return null_error();
@@ -2534,24 +2539,35 @@ _PyObject_CallFunctionVa(PyObject *callable, const char *format,
     }
 
     if (is_size_t) {
-        args = Py_VaBuildValue(format, va);
+        stack = _Py_VaBuildStack(small_stack, small_stack_len, format, va, &nargs);
     }
     else {
-        args = _Py_VaBuildValue_SizeT(format, va);
+        stack = _Py_VaBuildStack_SizeT(small_stack, small_stack_len, format, va, &nargs);
     }
-    if (args == NULL) {
+    if (stack == NULL) {
         return NULL;
     }
 
-    if (!PyTuple_Check(args)) {
-        PyObject *stack[1] = {args};
-        result = _PyObject_FastCall(callable, stack, 1);
+    if (nargs == 1 && PyTuple_Check(stack[0])) {
+        /* Special cases:
+           - PyObject_CallFunction(func, "O", tuple) calls func(*tuple)
+           - PyObject_CallFunction(func, "(OOO)", arg1, arg2, arg3) calls
+             func(*(arg1, arg2, arg3)): func(arg1, arg2, arg3) */
+        PyObject *args = stack[0];
+        result = _PyObject_FastCall(callable,
+                                    &PyTuple_GET_ITEM(args, 0),
+                                    PyTuple_GET_SIZE(args));
     }
     else {
-        result = PyObject_Call(callable, args, NULL);
+        result = _PyObject_FastCall(callable, stack, nargs);
     }
 
-    Py_DECREF(args);
+    for (i = 0; i < nargs; ++i) {
+        Py_DECREF(stack[i]);
+    }
+    if (stack != small_stack) {
+        PyMem_Free(stack);
+    }
     return result;
 }
 
