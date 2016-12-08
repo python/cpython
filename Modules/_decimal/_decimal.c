@@ -5716,7 +5716,7 @@ PyInit__decimal(void)
     /* DecimalTuple */
     ASSIGN_PTR(collections, PyImport_ImportModule("collections"));
     ASSIGN_PTR(DecimalTuple, (PyTypeObject *)PyObject_CallMethod(collections,
-                                 "namedtuple", "(ss)", "DecimalTuple",
+                                 "namedtuple", "ss", "DecimalTuple",
                                  "sign digits exponent"));
 
     ASSIGN_PTR(obj, PyUnicode_FromString("decimal"));

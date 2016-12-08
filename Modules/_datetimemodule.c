@@ -4673,7 +4673,7 @@ datetime_repr(PyDateTime_DateTime *self)
 static PyObject *
 datetime_str(PyDateTime_DateTime *self)
 {
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, "(s)", " ");
+    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, "s", " ");
 }
 
 static PyObject *

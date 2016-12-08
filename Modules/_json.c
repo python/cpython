@@ -335,7 +335,7 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
         if (JSONDecodeError == NULL)
             return;
     }
-    exc = PyObject_CallFunction(JSONDecodeError, "(zOn)", msg, s, end);
+    exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
     if (exc) {
         PyErr_SetObject(JSONDecodeError, exc);
         Py_DECREF(exc);
