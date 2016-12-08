@@ -21,9 +21,16 @@ extern "C" {
 #endif /* !Py_LIMITED_API */
 #define Py_BuildValue                   _Py_BuildValue_SizeT
 #define Py_VaBuildValue                 _Py_VaBuildValue_SizeT
+#define _Py_VaBuildStack                _Py_VaBuildStack_SizeT
 #else
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _Py_VaBuildValue_SizeT(const char *, va_list);
+PyAPI_FUNC(PyObject **) _Py_VaBuildStack_SizeT(
+    PyObject **small_stack,
+    Py_ssize_t small_stack_len,
+    const char *format,
+    va_list va,
+    Py_ssize_t *p_nargs);
 #endif /* !Py_LIMITED_API */
 #endif
 
@@ -47,6 +54,12 @@ PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
                                                   const char *, char **, va_list);
 #endif
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
+PyAPI_FUNC(PyObject **) _Py_VaBuildStack(
+    PyObject **small_stack,
+    Py_ssize_t small_stack_len,
+    const char *format,
+    va_list va,
+    Py_ssize_t *p_nargs);
 
 #ifndef Py_LIMITED_API
 typedef struct _PyArg_Parser {
