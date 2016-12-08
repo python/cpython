@@ -2519,85 +2519,14 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t narg
     }
 }
 
-static PyObject*
-call_function_tail(PyObject *callable, PyObject *args)
+static PyObject *
+_PyObject_CallFunctionVa(PyObject *callable, const char *format,
+                         va_list va, int is_size_t)
 {
-    PyObject *result;
-
-    assert(args != NULL);
-
-    if (!PyTuple_Check(args)) {
-        result = PyObject_CallFunctionObjArgs(callable, args, NULL);
-    }
-    else {
-        result = PyObject_Call(callable, args, NULL);
-    }
-
-    return result;
-}
-
-PyObject *
-PyObject_CallFunction(PyObject *callable, const char *format, ...)
-{
-    va_list va;
     PyObject *args, *result;
 
     if (callable == NULL) {
         return null_error();
-    }
-
-    if (!format || !*format) {
-        return _PyObject_CallNoArg(callable);
-    }
-
-    va_start(va, format);
-    args = Py_VaBuildValue(format, va);
-    va_end(va);
-    if (args == NULL) {
-        return NULL;
-    }
-
-    result = call_function_tail(callable, args);
-    Py_DECREF(args);
-    return result;
-}
-
-PyObject *
-_PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
-{
-    va_list va;
-    PyObject *args, *result;
-
-    if (callable == NULL) {
-        return null_error();
-    }
-
-    if (!format || !*format) {
-        return _PyObject_CallNoArg(callable);
-    }
-
-    va_start(va, format);
-    args = _Py_VaBuildValue_SizeT(format, va);
-    va_end(va);
-    if (args == NULL) {
-        return NULL;
-    }
-
-    result = call_function_tail(callable, args);
-    Py_DECREF(args);
-    return result;
-}
-
-static PyObject*
-callmethod(PyObject* callable, const char *format, va_list va, int is_size_t)
-{
-    PyObject *args, *result;
-
-    assert(callable != NULL);
-
-    if (!PyCallable_Check(callable)) {
-        type_error("attribute of type '%.200s' is not callable", callable);
-        return NULL;
     }
 
     if (!format || !*format) {
@@ -2605,18 +2534,64 @@ callmethod(PyObject* callable, const char *format, va_list va, int is_size_t)
     }
 
     if (is_size_t) {
-        args = _Py_VaBuildValue_SizeT(format, va);
+        args = Py_VaBuildValue(format, va);
     }
     else {
-        args = Py_VaBuildValue(format, va);
+        args = _Py_VaBuildValue_SizeT(format, va);
     }
     if (args == NULL) {
         return NULL;
     }
 
-    result = call_function_tail(callable, args);
+    if (!PyTuple_Check(args)) {
+        PyObject *stack[1] = {args};
+        result = _PyObject_FastCall(callable, stack, 1);
+    }
+    else {
+        result = PyObject_Call(callable, args, NULL);
+    }
+
     Py_DECREF(args);
     return result;
+}
+
+PyObject *
+PyObject_CallFunction(PyObject *callable, const char *format, ...)
+{
+    va_list va;
+    PyObject *result;
+
+    va_start(va, format);
+    result = _PyObject_CallFunctionVa(callable, format, va, 0);
+    va_end(va);
+
+    return result;
+}
+
+PyObject *
+_PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
+{
+    va_list va;
+    PyObject *result;
+
+    va_start(va, format);
+    result = _PyObject_CallFunctionVa(callable, format, va, 1);
+    va_end(va);
+
+    return result;
+}
+
+static PyObject*
+callmethod(PyObject* callable, const char *format, va_list va, int is_size_t)
+{
+    assert(callable != NULL);
+
+    if (!PyCallable_Check(callable)) {
+        type_error("attribute of type '%.200s' is not callable", callable);
+        return NULL;
+    }
+
+    return _PyObject_CallFunctionVa(callable, format, va, is_size_t);
 }
 
 PyObject *
