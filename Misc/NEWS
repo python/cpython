@@ -457,6 +457,8 @@ Library
 Windows
 -------
 
+- Issue #28896: Deprecate WindowsRegistryFinder
+
 - Issue #28522: Fixes mishandled buffer reallocation in getpathp.c
 
 - Issue #28402: Adds signed catalog files for stdlib on Windows.
