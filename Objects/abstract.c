@@ -2614,8 +2614,7 @@ PyObject *
 PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 {
     va_list va;
-    PyObject *callable = NULL;
-    PyObject *retval = NULL;
+    PyObject *callable, *retval;
 
     if (obj == NULL || name == NULL) {
         return null_error();
@@ -2638,8 +2637,7 @@ _PyObject_CallMethodId(PyObject *obj, _Py_Identifier *name,
                        const char *format, ...)
 {
     va_list va;
-    PyObject *callable = NULL;
-    PyObject *retval = NULL;
+    PyObject *callable, *retval;
 
     if (obj == NULL || name == NULL) {
         return null_error();
@@ -2662,8 +2660,7 @@ _PyObject_CallMethod_SizeT(PyObject *obj, const char *name,
                            const char *format, ...)
 {
     va_list va;
-    PyObject *callable = NULL;
-    PyObject *retval;
+    PyObject *callable, *retval;
 
     if (obj == NULL || name == NULL) {
         return null_error();
@@ -2686,8 +2683,7 @@ _PyObject_CallMethodId_SizeT(PyObject *obj, _Py_Identifier *name,
                              const char *format, ...)
 {
     va_list va;
-    PyObject *callable = NULL;
-    PyObject *retval;
+    PyObject *callable, *retval;
 
     if (obj == NULL || name == NULL) {
         return null_error();
@@ -3112,7 +3108,8 @@ PyObject *
 PyObject_GetIter(PyObject *o)
 {
     PyTypeObject *t = o->ob_type;
-    getiterfunc f = NULL;
+    getiterfunc f;
+
     f = t->tp_iter;
     if (f == NULL) {
         if (PySequence_Check(o))
