@@ -186,7 +186,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     f->f_back = tstate->frame;
 
     gen->gi_running = 1;
-    result = tstate->interp->eval_frame(f, exc);
+    result = PyEval_EvalFrameEx(f, exc);
     gen->gi_running = 0;
 
     /* Don't keep the reference to f_back any longer than necessary.  It
