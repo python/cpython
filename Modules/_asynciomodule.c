@@ -118,8 +118,8 @@ future_schedule_callbacks(FutureObj *fut)
         PyObject *handle = NULL;
         PyObject *cb = PyList_GET_ITEM(iters, i);
 
-        handle = _PyObject_CallMethodId(
-            fut->fut_loop, &PyId_call_soon, "OO", cb, fut, NULL);
+        handle = _PyObject_CallMethodIdObjArgs(fut->fut_loop, &PyId_call_soon,
+                                               cb, fut, NULL);
 
         if (handle == NULL) {
             Py_DECREF(iters);
@@ -283,8 +283,9 @@ static PyObject *
 future_add_done_callback(FutureObj *fut, PyObject *arg)
 {
     if (fut->fut_state != STATE_PENDING) {
-        PyObject *handle = _PyObject_CallMethodId(
-            fut->fut_loop, &PyId_call_soon, "OO", arg, fut, NULL);
+        PyObject *handle = _PyObject_CallMethodIdObjArgs(fut->fut_loop,
+                                                         &PyId_call_soon,
+                                                         arg, fut, NULL);
 
         if (handle == NULL) {
             return NULL;
@@ -1327,7 +1328,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
         return -1;
     }
 
-    res = _PyObject_CallMethodId(all_tasks, &PyId_add, "O", self, NULL);
+    res = _PyObject_CallMethodIdObjArgs(all_tasks, &PyId_add, self, NULL);
     if (res == NULL) {
         return -1;
     }
@@ -1838,8 +1839,8 @@ task_call_wakeup(TaskObj *task, PyObject *fut)
     }
     else {
         /* `task` is a subclass of Task */
-        return _PyObject_CallMethodId(
-            (PyObject*)task, &PyId__wakeup, "O", fut, NULL);
+        return _PyObject_CallMethodIdObjArgs((PyObject*)task, &PyId__wakeup,
+                                             fut, NULL);
     }
 }
 
@@ -1854,8 +1855,8 @@ task_call_step(TaskObj *task, PyObject *arg)
         if (arg == NULL) {
             arg = Py_None;
         }
-        return _PyObject_CallMethodId(
-            (PyObject*)task, &PyId__step, "O", arg, NULL);
+        return _PyObject_CallMethodIdObjArgs((PyObject*)task, &PyId__step,
+                                             arg, NULL);
     }
 }
 
@@ -1869,8 +1870,8 @@ task_call_step_soon(TaskObj *task, PyObject *arg)
         return -1;
     }
 
-    handle = _PyObject_CallMethodId(
-        task->task_loop, &PyId_call_soon, "O", cb, NULL);
+    handle = _PyObject_CallMethodIdObjArgs(task->task_loop, &PyId_call_soon,
+                                           cb, NULL);
     Py_DECREF(cb);
     if (handle == NULL) {
         return -1;
@@ -1965,13 +1966,13 @@ task_step_impl(TaskObj *task, PyObject *exc)
             result = _PyGen_Send((PyGenObject*)coro, Py_None);
         }
         else {
-            result = _PyObject_CallMethodIdObjArgs(
-                coro, &PyId_send, Py_None, NULL);
+            result = _PyObject_CallMethodIdObjArgs(coro, &PyId_send,
+                                                   Py_None, NULL);
         }
     }
     else {
-        result = _PyObject_CallMethodIdObjArgs(
-            coro, &PyId_throw, exc, NULL);
+        result = _PyObject_CallMethodIdObjArgs(coro, &PyId_throw,
+                                               exc, NULL);
         if (clear_exc) {
             /* We created 'exc' during this call */
             Py_CLEAR(exc);
@@ -2135,8 +2136,9 @@ task_step_impl(TaskObj *task, PyObject *exc)
                 if (wrapper == NULL) {
                     goto fail;
                 }
-                res = _PyObject_CallMethodId(
-                    result, &PyId_add_done_callback, "O", wrapper, NULL);
+                res = _PyObject_CallMethodIdObjArgs(result,
+                                                    &PyId_add_done_callback,
+                                                    wrapper, NULL);
                 Py_DECREF(wrapper);
                 if (res == NULL) {
                     goto fail;
