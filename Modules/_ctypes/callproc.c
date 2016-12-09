@@ -1631,25 +1631,33 @@ resize(PyObject *self, PyObject *args)
 static PyObject *
 unpickle(PyObject *self, PyObject *args)
 {
-    PyObject *typ;
-    PyObject *state;
-    PyObject *result;
-    PyObject *tmp;
+    PyObject *typ, *state, *meth, *obj, *result;
     _Py_IDENTIFIER(__new__);
     _Py_IDENTIFIER(__setstate__);
 
-    if (!PyArg_ParseTuple(args, "OO", &typ, &state))
+    if (!PyArg_ParseTuple(args, "OO!", &typ, &PyTuple_Type, &state))
         return NULL;
-    result = _PyObject_CallMethodId(typ, &PyId___new__, "O", typ);
-    if (result == NULL)
+    obj = _PyObject_CallMethodIdObjArgs(typ, &PyId___new__, typ, NULL);
+    if (obj == NULL)
         return NULL;
-    tmp = _PyObject_CallMethodId(result, &PyId___setstate__, "O", state);
-    if (tmp == NULL) {
-        Py_DECREF(result);
-        return NULL;
+
+    meth = _PyObject_GetAttrId(obj, &PyId___setstate__);
+    if (meth == NULL) {
+        goto error;
     }
-    Py_DECREF(tmp);
-    return result;
+
+    result = PyObject_Call(meth, state, NULL);
+    Py_DECREF(meth);
+    if (result == NULL) {
+        goto error;
+    }
+    Py_DECREF(result);
+
+    return obj;
+
+error:
+    Py_DECREF(obj);
+    return NULL;
 }
 
 static PyObject *
