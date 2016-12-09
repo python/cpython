@@ -661,7 +661,8 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
            to remove the bytecode interpretation overhead, but it could
            probably be removed here. */
         _Py_IDENTIFIER(extend);
-        PyObject *ret = _PyObject_CallMethodId(result, &PyId_extend, "O", self);
+        PyObject *ret = _PyObject_CallMethodIdObjArgs(result, &PyId_extend,
+                                                      self, NULL);
 
         if (ret == NULL) {
             Py_DECREF(result);

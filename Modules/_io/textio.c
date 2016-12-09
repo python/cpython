@@ -899,8 +899,8 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         PyObject *locale_module = _PyIO_get_locale_module(state);
         if (locale_module == NULL)
             goto catch_ImportError;
-        self->encoding = _PyObject_CallMethodId(
-            locale_module, &PyId_getpreferredencoding, "O", Py_False);
+        self->encoding = _PyObject_CallMethodIdObjArgs(
+            locale_module, &PyId_getpreferredencoding, Py_False, NULL);
         Py_DECREF(locale_module);
         if (self->encoding == NULL) {
           catch_ImportError:
@@ -2644,7 +2644,9 @@ _io_TextIOWrapper_close_impl(textio *self)
     else {
         PyObject *exc = NULL, *val, *tb;
         if (self->finalizing) {
-            res = _PyObject_CallMethodId(self->buffer, &PyId__dealloc_warn, "O", self);
+            res = _PyObject_CallMethodIdObjArgs(self->buffer,
+                                                &PyId__dealloc_warn,
+                                                self, NULL);
             if (res)
                 Py_DECREF(res);
             else
