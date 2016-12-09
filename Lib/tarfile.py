@@ -50,9 +50,13 @@ import copy
 import re
 
 try:
-    import grp, pwd
+    import pwd
 except ImportError:
-    grp = pwd = None
+    pwd = None
+try:
+    import grp
+except ImportError:
+    grp = None
 
 # os.symlink on Windows prior to 6.0 raises NotImplementedError
 symlink_exception = (AttributeError, NotImplementedError)
@@ -2219,22 +2223,25 @@ class TarFile(object):
 
     def chown(self, tarinfo, targetpath, numeric_owner):
         """Set owner of targetpath according to tarinfo. If numeric_owner
-           is True, use .gid/.uid instead of .gname/.uname.
+           is True, use .gid/.uid instead of .gname/.uname. If numeric_owner
+           is False, fall back to .gid/.uid when the search based on name
+           fails.
         """
-        if pwd and hasattr(os, "geteuid") and os.geteuid() == 0:
+        if hasattr(os, "geteuid") and os.geteuid() == 0:
             # We have to be root to do so.
-            if numeric_owner:
-                g = tarinfo.gid
-                u = tarinfo.uid
-            else:
+            g = tarinfo.gid
+            u = tarinfo.uid
+            if not numeric_owner:
                 try:
-                    g = grp.getgrnam(tarinfo.gname)[2]
+                    if grp:
+                        g = grp.getgrnam(tarinfo.gname)[2]
                 except KeyError:
-                    g = tarinfo.gid
+                    pass
                 try:
-                    u = pwd.getpwnam(tarinfo.uname)[2]
+                    if pwd:
+                        u = pwd.getpwnam(tarinfo.uname)[2]
                 except KeyError:
-                    u = tarinfo.uid
+                    pass
             try:
                 if tarinfo.issym() and hasattr(os, "lchown"):
                     os.lchown(targetpath, u, g)

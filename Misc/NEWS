@@ -168,6 +168,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26937: The chown() method of the tarfile.TarFile class does not fail
+  now when the grp module cannot be imported, as for example on Android
+  platforms.
+
 - Issue #28847: dbm.dumb now supports reading read-only files and no longer
   writes the index file when it is not changed.  A deprecation warning is now
   emitted if the index file is missed and recreated in the 'r' and 'w' modes
