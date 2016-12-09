@@ -594,7 +594,7 @@ curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1, int y,
     int attr_group = group_right_1;
     int rtn;
     int type;
-    chtype cch;
+    chtype cch = 0;
 #ifdef HAVE_NCURSESW
     wchar_t wstr[2];
     cchar_t wcval;

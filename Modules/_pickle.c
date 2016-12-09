@@ -4762,7 +4762,7 @@ static int
 load_long(UnpicklerObject *self)
 {
     PyObject *value;
-    char *s;
+    char *s = NULL;
     Py_ssize_t len;
 
     if ((len = _Unpickler_Readline(self, &s)) < 0)
@@ -4993,7 +4993,7 @@ load_unicode(UnpicklerObject *self)
 {
     PyObject *str;
     Py_ssize_t len;
-    char *s;
+    char *s = NULL;
 
     if ((len = _Unpickler_Readline(self, &s)) < 0)
         return -1;
@@ -5732,7 +5732,7 @@ load_put(UnpicklerObject *self)
     PyObject *key, *value;
     Py_ssize_t idx;
     Py_ssize_t len;
-    char *s;
+    char *s = NULL;
 
     if ((len = _Unpickler_Readline(self, &s)) < 0)
         return -1;
