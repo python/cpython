@@ -2549,7 +2549,7 @@ _PyObject_CallFunctionVa(PyObject *callable, const char *format,
     }
 
     if (nargs == 1 && PyTuple_Check(stack[0])) {
-        /* Special cases:
+        /* Special cases for backward compatibility:
            - PyObject_CallFunction(func, "O", tuple) calls func(*tuple)
            - PyObject_CallFunction(func, "(OOO)", arg1, arg2, arg3) calls
              func(*(arg1, arg2, arg3)): func(arg1, arg2, arg3) */
