@@ -1649,7 +1649,7 @@ marshal_dump(PyObject *self, PyObject *args)
     s = PyMarshal_WriteObjectToString(x, version);
     if (s == NULL)
         return NULL;
-    res = _PyObject_CallMethodId(f, &PyId_write, "O", s);
+    res = _PyObject_CallMethodIdObjArgs(f, &PyId_write, s, NULL);
     Py_DECREF(s);
     return res;
 }

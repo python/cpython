@@ -1705,7 +1705,7 @@ PyImport_ReloadModule(PyObject *m)
         Py_INCREF(imp);
     }
 
-    reloaded_module = _PyObject_CallMethodId(imp, &PyId_reload, "O", m);
+    reloaded_module = _PyObject_CallMethodIdObjArgs(imp, &PyId_reload, m, NULL);
     Py_DECREF(imp);
     return reloaded_module;
 }

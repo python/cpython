@@ -1611,7 +1611,7 @@ mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
     if (str == NULL)
         return -1;
 
-    wr = _PyObject_CallMethodId(self->stream, &PyId_write, "O", str);
+    wr = _PyObject_CallMethodIdObjArgs(self->stream, &PyId_write, str, NULL);
     Py_DECREF(str);
     if (wr == NULL)
         return -1;
@@ -1702,7 +1702,7 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
     if (PyBytes_Size(pwrt) > 0) {
         PyObject *wr;
 
-        wr = _PyObject_CallMethodId(self->stream, &PyId_write, "O", pwrt);
+        wr = _PyObject_CallMethodIdObjArgs(self->stream, &PyId_write, pwrt);
         if (wr == NULL) {
             Py_DECREF(pwrt);
             return NULL;
