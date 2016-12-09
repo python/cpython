@@ -4069,7 +4069,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         return gen;
     }
 
-    retval = PyEval_EvalFrameEx(f,0);
+    retval = tstate->interp->eval_frame(f, 0);
 
 fail: /* Jump here from prelude on failure */
 
@@ -4822,7 +4822,7 @@ _PyFunction_FastCall(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
         Py_INCREF(*args);
         fastlocals[i] = *args++;
     }
-    result = PyEval_EvalFrameEx(f,0);
+    result = tstate->interp->eval_frame(f,0);
 
     ++tstate->recursion_depth;
     Py_DECREF(f);
