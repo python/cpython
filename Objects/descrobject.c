@@ -1454,7 +1454,7 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
         doc = pold->prop_doc ? pold->prop_doc : Py_None;
     }
 
-    new =  PyObject_CallFunction(type, "OOOO", get, set, del, doc);
+    new =  PyObject_CallFunctionObjArgs(type, get, set, del, doc, NULL);
     Py_DECREF(type);
     if (new == NULL)
         return NULL;
