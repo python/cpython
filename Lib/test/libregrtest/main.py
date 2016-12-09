@@ -179,19 +179,17 @@ class Regrtest:
             self.tests = []
             # regex to match 'test_builtin' in line:
             # '0:00:00 [  4/400] test_builtin -- test_dict took 1 sec'
-            regex = (r'^(?:[0-9]+:[0-9]+:[0-9]+ *)?'
+            regex = (r'(?:[0-9]+:[0-9]+:[0-9]+ *)?'
                      r'(?:\[[0-9/ ]+\] *)?'
-                     r'(test_[a-zA-Z0-9_]+)')
+                     r'(test_[a-zA-Z0-9_]+)\b(?:\.py)?')
             regex = re.compile(regex)
             with open(os.path.join(support.SAVEDCWD, self.ns.fromfile)) as fp:
                 for line in fp:
+                    line = line.split('#', 1)[0]
                     line = line.strip()
-                    if line.startswith('#'):
-                        continue
-                    match = regex.match(line)
-                    if match is None:
-                        continue
-                    self.tests.append(match.group(1))
+                    match = regex.search(line)
+                    if match is not None:
+                        self.tests.append(match.group(1))
 
         removepy(self.tests)
 
