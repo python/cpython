@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "frameobject.h"
+#include "clinic/_warnings.c.h"
 
 #define MODULE_NAME "_warnings"
 
@@ -485,6 +486,10 @@ warn_explicit(PyObject *category, PyObject *message,
     if (lineno_obj == NULL)
         goto cleanup;
 
+    if (source == Py_None) {
+        source = NULL;
+    }
+
     /* Create key. */
     key = PyTuple_Pack(3, text, category, lineno_obj);
     if (key == NULL)
@@ -805,22 +810,26 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
     return res;
 }
 
+/*[clinic input]
+warn as warnings_warn
+
+    message: object
+    category: object = None
+    stacklevel: Py_ssize_t = 1
+    source: object = None
+
+Issue a warning, or maybe ignore it or raise an exception.
+[clinic start generated code]*/
+
 static PyObject *
-warnings_warn(PyObject *self, PyObject *args, PyObject *kwds)
+warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
+                   Py_ssize_t stacklevel, PyObject *source)
+/*[clinic end generated code: output=31ed5ab7d8d760b2 input=bfdf5cf99f6c4edd]*/
 {
-    static char *kw_list[] = {"message", "category", "stacklevel",
-                              "source", NULL};
-    PyObject *message, *category = NULL, *source = NULL;
-    Py_ssize_t stack_level = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OnO:warn", kw_list,
-                                     &message, &category, &stack_level, &source))
-        return NULL;
-
     category = get_category(message, category);
     if (category == NULL)
         return NULL;
-    return do_warn(message, category, stack_level, source);
+    return do_warn(message, category, stacklevel, source);
 }
 
 static PyObject *
@@ -1098,15 +1107,11 @@ exit:
 }
 
 
-PyDoc_STRVAR(warn_doc,
-"Issue a warning, or maybe ignore it or raise an exception.");
-
 PyDoc_STRVAR(warn_explicit_doc,
 "Low-level inferface to warnings functionality.");
 
 static PyMethodDef warnings_functions[] = {
-    {"warn", (PyCFunction)warnings_warn, METH_VARARGS | METH_KEYWORDS,
-        warn_doc},
+    WARNINGS_WARN_METHODDEF
     {"warn_explicit", (PyCFunction)warnings_warn_explicit,
         METH_VARARGS | METH_KEYWORDS, warn_explicit_doc},
     {"_filters_mutated", (PyCFunction)warnings_filters_mutated, METH_NOARGS,
