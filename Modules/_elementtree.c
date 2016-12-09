@@ -2496,11 +2496,13 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
         attrib = PyDict_New();
         if (!attrib)
             return NULL;
-        node = PyObject_CallFunction(self->element_factory, "OO", tag, attrib);
+        node = PyObject_CallFunctionObjArgs(self->element_factory,
+                                            tag, attrib, NULL);
         Py_DECREF(attrib);
     }
     else {
-        node = PyObject_CallFunction(self->element_factory, "OO", tag, attrib);
+        node = PyObject_CallFunctionObjArgs(self->element_factory,
+                                            tag, attrib, NULL);
     }
     if (!node) {
         return NULL;
@@ -2977,7 +2979,8 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
                 return;
             }
         }
-        res = PyObject_CallFunction(self->handle_start, "OO", tag, attrib);
+        res = PyObject_CallFunctionObjArgs(self->handle_start,
+                                           tag, attrib, NULL);
     } else
         res = NULL;
 
@@ -3143,8 +3146,9 @@ expat_start_doctype_handler(XMLParserObject *self,
 
     /* If the target has a handler for doctype, call it. */
     if (self->handle_doctype) {
-        res = PyObject_CallFunction(self->handle_doctype, "OOO",
-                                    doctype_name_obj, pubid_obj, sysid_obj);
+        res = PyObject_CallFunctionObjArgs(self->handle_doctype,
+                                           doctype_name_obj, pubid_obj,
+                                           sysid_obj, NULL);
         Py_CLEAR(res);
     }
     else {
@@ -3163,8 +3167,9 @@ expat_start_doctype_handler(XMLParserObject *self,
             if (!res)
                 goto clear;
             Py_DECREF(res);
-            res = PyObject_CallFunction(parser_doctype, "OOO",
-                                        doctype_name_obj, pubid_obj, sysid_obj);
+            res = PyObject_CallFunctionObjArgs(parser_doctype,
+                                               doctype_name_obj, pubid_obj,
+                                               sysid_obj, NULL);
             Py_CLEAR(res);
         }
     }
@@ -3191,7 +3196,8 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
         target = PyUnicode_DecodeUTF8(target_in, strlen(target_in), "strict");
         data = PyUnicode_DecodeUTF8(data_in, strlen(data_in), "strict");
         if (target && data) {
-            res = PyObject_CallFunction(self->handle_pi, "OO", target, data);
+            res = PyObject_CallFunctionObjArgs(self->handle_pi,
+                                               target, data, NULL);
             Py_XDECREF(res);
             Py_DECREF(data);
             Py_DECREF(target);
