@@ -26,7 +26,7 @@ check_matched(PyObject *obj, PyObject *arg)
 
     if (obj == Py_None)
         return 1;
-    result = _PyObject_CallMethodId(obj, &PyId_match, "O", arg);
+    result = _PyObject_CallMethodIdObjArgs(obj, &PyId_match, arg, NULL);
     if (result == NULL)
         return -1;
 

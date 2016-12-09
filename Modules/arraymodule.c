@@ -1445,7 +1445,7 @@ array_array_tofile(arrayobject *self, PyObject *f)
         bytes = PyBytes_FromStringAndSize(ptr, size);
         if (bytes == NULL)
             return NULL;
-        res = _PyObject_CallMethodId(f, &PyId_write, "O", bytes);
+        res = _PyObject_CallMethodIdObjArgs(f, &PyId_write, bytes, NULL);
         Py_DECREF(bytes);
         if (res == NULL)
             return NULL;
