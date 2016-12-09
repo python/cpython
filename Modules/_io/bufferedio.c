@@ -454,7 +454,8 @@ buffered_dealloc_warn(buffered *self, PyObject *source)
 {
     if (self->ok && self->raw) {
         PyObject *r;
-        r = _PyObject_CallMethodId(self->raw, &PyId__dealloc_warn, "O", source);
+        r = _PyObject_CallMethodIdObjArgs(self->raw, &PyId__dealloc_warn,
+                                          source, NULL);
         if (r)
             Py_DECREF(r);
         else

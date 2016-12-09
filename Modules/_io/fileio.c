@@ -150,8 +150,8 @@ _io_FileIO_close_impl(fileio *self)
     PyObject *exc, *val, *tb;
     int rc;
     _Py_IDENTIFIER(close);
-    res = _PyObject_CallMethodId((PyObject*)&PyRawIOBase_Type,
-                                 &PyId_close, "O", self);
+    res = _PyObject_CallMethodIdObjArgs((PyObject*)&PyRawIOBase_Type,
+                                        &PyId_close, self, NULL);
     if (!self->closefd) {
         self->fd = -1;
         return res;
