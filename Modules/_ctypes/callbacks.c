@@ -535,7 +535,7 @@ long Call_CanUnloadNow(void)
         return E_FAIL;
     }
 
-    result = PyObject_CallFunction(func, NULL);
+    result = _PyObject_CallNoArg(func);
     Py_DECREF(func);
     if (!result) {
         PyErr_WriteUnraisable(context ? context : Py_None);
