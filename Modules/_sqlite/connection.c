@@ -645,7 +645,7 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
 
     if (*aggregate_instance == 0) {
-        *aggregate_instance = PyObject_CallFunction(aggregate_class, NULL);
+        *aggregate_instance = _PyObject_CallNoArg(aggregate_class);
 
         if (PyErr_Occurred()) {
             *aggregate_instance = 0;
@@ -933,7 +933,7 @@ static int _progress_handler(void* user_arg)
 
     gilstate = PyGILState_Ensure();
 #endif
-    ret = PyObject_CallFunction((PyObject*)user_arg, NULL);
+    ret = _PyObject_CallNoArg((PyObject*)user_arg);
 
     if (!ret) {
         if (_enable_callback_tracebacks) {
