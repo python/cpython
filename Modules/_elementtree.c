@@ -1171,8 +1171,8 @@ _elementtree_Element_find_impl(ElementObject *self, PyObject *path,
 
     if (checkpath(path) || namespaces != Py_None) {
         _Py_IDENTIFIER(find);
-        return _PyObject_CallMethodId(
-            st->elementpath_obj, &PyId_find, "OOO", self, path, namespaces
+        return _PyObject_CallMethodIdObjArgs(
+            st->elementpath_obj, &PyId_find, self, path, namespaces, NULL
             );
     }
 
@@ -1216,8 +1216,9 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyObject *path,
     elementtreestate *st = ET_STATE_GLOBAL;
 
     if (checkpath(path) || namespaces != Py_None)
-        return _PyObject_CallMethodId(
-            st->elementpath_obj, &PyId_findtext, "OOOO", self, path, default_value, namespaces
+        return _PyObject_CallMethodIdObjArgs(
+            st->elementpath_obj, &PyId_findtext,
+            self, path, default_value, namespaces, NULL
             );
 
     if (!self->extra) {
@@ -1271,8 +1272,8 @@ _elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
 
     if (checkpath(tag) || namespaces != Py_None) {
         _Py_IDENTIFIER(findall);
-        return _PyObject_CallMethodId(
-            st->elementpath_obj, &PyId_findall, "OOO", self, tag, namespaces
+        return _PyObject_CallMethodIdObjArgs(
+            st->elementpath_obj, &PyId_findall, self, tag, namespaces, NULL
             );
     }
 
@@ -1318,8 +1319,8 @@ _elementtree_Element_iterfind_impl(ElementObject *self, PyObject *path,
     _Py_IDENTIFIER(iterfind);
     elementtreestate *st = ET_STATE_GLOBAL;
 
-    return _PyObject_CallMethodId(
-        st->elementpath_obj, &PyId_iterfind, "OOO", self, tag, namespaces);
+    return _PyObject_CallMethodIdObjArgs(
+        st->elementpath_obj, &PyId_iterfind, self, tag, namespaces, NULL);
 }
 
 /*[clinic input]
@@ -2440,7 +2441,7 @@ treebuilder_add_subelement(PyObject *element, PyObject *child)
     }
     else {
         PyObject *res;
-        res = _PyObject_CallMethodId(element, &PyId_append, "O", child);
+        res = _PyObject_CallMethodIdObjArgs(element, &PyId_append, child, NULL);
         if (res == NULL)
             return -1;
         Py_DECREF(res);
