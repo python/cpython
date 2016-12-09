@@ -85,7 +85,7 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
         Py_CLEAR(decoded);
         return '\0';
     }
-    decoded_upper = PyObject_CallMethod(decoded, "upper", "");
+    decoded_upper = PyObject_CallMethod(decoded, "upper", NULL);
     Py_CLEAR(decoded);
     if (!decoded_upper) {
         PyErr_Clear();
@@ -181,8 +181,8 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self)
     PyObject *exc, *val, *tb;
     int rc;
     _Py_IDENTIFIER(close);
-    res = _PyObject_CallMethodId((PyObject*)&PyRawIOBase_Type,
-                                 &PyId_close, "O", self);
+    res = _PyObject_CallMethodIdObjArgs((PyObject*)&PyRawIOBase_Type,
+                                        &PyId_close, self, NULL);
     if (!self->closehandle) {
         self->handle = INVALID_HANDLE_VALUE;
         return res;
