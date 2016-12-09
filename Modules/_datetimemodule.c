@@ -987,7 +987,8 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
     if (tzinfo == Py_None)
         Py_RETURN_NONE;
 
-    result = _PyObject_CallMethodId(tzinfo, &PyId_tzname, "O", tzinfoarg);
+    result = _PyObject_CallMethodIdObjArgs(tzinfo, &PyId_tzname,
+                                           tzinfoarg, NULL);
 
     if (result == NULL || result == Py_None)
         return result;
@@ -1343,8 +1344,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             goto Done;
         format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
         if (format != NULL) {
-            result = _PyObject_CallMethodId(time, &PyId_strftime, "OO",
-                                            format, timetuple, NULL);
+            result = _PyObject_CallMethodIdObjArgs(time, &PyId_strftime,
+                                                   format, timetuple, NULL);
             Py_DECREF(format);
         }
         Py_DECREF(time);
@@ -2558,7 +2559,8 @@ date_today(PyObject *cls, PyObject *dummy)
      * time.time() delivers; if someone were gonzo about optimization,
      * date.today() could get away with plain C time().
      */
-    result = _PyObject_CallMethodId(cls, &PyId_fromtimestamp, "O", time);
+    result = _PyObject_CallMethodIdObjArgs(cls, &PyId_fromtimestamp,
+                                           time, NULL);
     Py_DECREF(time);
     return result;
 }
@@ -2746,7 +2748,8 @@ date_format(PyDateTime_Date *self, PyObject *args)
     if (PyUnicode_GetLength(format) == 0)
         return PyObject_Str((PyObject *)self);
 
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_strftime, "O", format);
+    return _PyObject_CallMethodIdObjArgs((PyObject *)self, &PyId_strftime,
+                                         format, NULL);
 }
 
 /* ISO methods. */
@@ -4429,8 +4432,8 @@ datetime_strptime(PyObject *cls, PyObject *args)
         if (module == NULL)
             return NULL;
     }
-    return _PyObject_CallMethodId(module, &PyId__strptime_datetime, "OOO",
-                                 cls, string, format);
+    return _PyObject_CallMethodIdObjArgs(module, &PyId__strptime_datetime,
+                                         cls, string, format, NULL);
 }
 
 /* Return new datetime from date/datetime and time arguments. */
@@ -5227,7 +5230,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 
     temp = (PyObject *)result;
     result = (PyDateTime_DateTime *)
-        _PyObject_CallMethodId(tzinfo, &PyId_fromutc, "O", temp);
+        _PyObject_CallMethodIdObjArgs(tzinfo, &PyId_fromutc, temp, NULL);
     Py_DECREF(temp);
 
     return result;
