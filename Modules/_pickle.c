@@ -4571,8 +4571,8 @@ find_class(UnpicklerObject *self, PyObject *module_name, PyObject *global_name)
 {
     _Py_IDENTIFIER(find_class);
 
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_find_class, "OO",
-                                  module_name, global_name);
+    return _PyObject_CallMethodIdObjArgs((PyObject *)self, &PyId_find_class,
+                                         module_name, global_name, NULL);
 }
 
 static Py_ssize_t
@@ -5184,7 +5184,7 @@ instantiate(PyObject *cls, PyObject *args)
     else {
         _Py_IDENTIFIER(__new__);
 
-        result = _PyObject_CallMethodId(cls, &PyId___new__, "O", cls);
+        result = _PyObject_CallMethodIdObjArgs(cls, &PyId___new__, cls, NULL);
     }
     return result;
 }
