@@ -1409,6 +1409,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
     result = _PyObject_CallMethodIdObjArgs(time, &PyId_struct_time,
                                            args, NULL);
     Py_DECREF(time);
+    Py_DECREF(args);
     return result;
 }
 
