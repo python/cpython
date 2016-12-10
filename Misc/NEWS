@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28918: Fix the cross compilation of xxlimited when Python has been
+  built with Py_DEBUG defined.
+
 - Issue #5322: Fixed setting __new__ to a PyCFunction inside Python code.
   Original patch by Andreas Stührk.
 
