@@ -762,7 +762,7 @@ form.
       now are errors.
 
    .. deprecated-removed:: 3.5 3.7
-      Unknown escapes in *repl* consist of ``'\'`` and ASCII letter now raise
+      Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter now raise
       a deprecation warning and will be forbidden in Python 3.7.
 
 
