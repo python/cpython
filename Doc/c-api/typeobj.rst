@@ -199,8 +199,9 @@ type objects) *must* have the :attr:`ob_size` field.
 
    This field is deprecated.  When it is defined, it should point to a function
    that acts the same as the :c:member:`~PyTypeObject.tp_getattro` function, but taking a C string
-   instead of a Python string object to give the attribute name.  The signature is
-   the same as for :c:func:`PyObject_GetAttrString`.
+   instead of a Python string object to give the attribute name.  The signature is ::
+
+      PyObject * tp_getattr(PyObject *o, char *attr_name);
 
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_getattro`: a subtype
    inherits both :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` from its base type when
@@ -213,10 +214,11 @@ type objects) *must* have the :attr:`ob_size` field.
 
    This field is deprecated.  When it is defined, it should point to a function
    that acts the same as the :c:member:`~PyTypeObject.tp_setattro` function, but taking a C string
-   instead of a Python string object to give the attribute name.  The signature is
-   the same as for :c:func:`PyObject_SetAttrString`, but setting
-   *v* to *NULL* to delete an attribute must be supported.
+   instead of a Python string object to give the attribute name.  The signature is ::
 
+      PyObject * tp_setattr(PyObject *o, char *attr_name, PyObject *v);
+
+   The *v* argument is set to *NULL* to delete the attribute.
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_setattro`: a subtype
    inherits both :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` from its base type when
    the subtype's :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` are both *NULL*.
