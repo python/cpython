@@ -385,7 +385,8 @@ class TestSysConfig(unittest.TestCase):
         self.assertIsNotNone(vars['SO'])
         self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
 
-    @unittest.skipUnless(sys.platform == 'linux', 'Linux-specific test')
+    @unittest.skipUnless(hasattr(sys.implementation, '_multiarch'),
+                         'multiarch-specific test')
     def test_triplet_in_ext_suffix(self):
         ctypes = import_module('ctypes')
         import platform, re
@@ -396,7 +397,6 @@ class TestSysConfig(unittest.TestCase):
         if re.match('(i[3-6]86|x86_64)$', machine):
             if ctypes.sizeof(ctypes.c_char_p()) == 4:
                 self.assertTrue(suffix.endswith('i386-linux-gnu.so') or
-                                suffix.endswith('i686-linux-android.so') or
                                 suffix.endswith('x86_64-linux-gnux32.so'),
                                 suffix)
             else: # 8 byte pointer size

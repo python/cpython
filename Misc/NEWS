@@ -528,6 +528,8 @@ Documentation
 Build
 -----
 
+- Issue #28849: Do not define sys.implementation._multiarch on Android.
+
 - Issue #10656: Fix out-of-tree building on AIX.  Patch by Tristan Carel and
   Michael Haubenwallner.
 
