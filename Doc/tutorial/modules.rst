@@ -501,7 +501,7 @@ when the ``from...import`` statement is executed.  (This also works when
 ``__all__`` is defined.)
 
 Although certain modules are designed to export only names that follow certain
-patterns when you use ``import *``, it is still considered bad practise in
+patterns when you use ``import *``, it is still considered bad practice in
 production code.
 
 Remember, there is nothing wrong with using ``from Package import
