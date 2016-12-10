@@ -10,6 +10,9 @@ What's New in Python 3.6.1 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #28918: Fix the cross compilation of xxlimited when Python has been
+  built with Py_DEBUG defined.
+
 - Issue #28731: Optimize _PyDict_NewPresized() to create correct size dict.
   Improve speed of dict literal with constant keys up to 30%.
 
