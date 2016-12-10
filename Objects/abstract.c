@@ -2331,7 +2331,7 @@ exit:
     return result;
 }
 
-/* Positional arguments are obj followed args:
+/* Positional arguments are obj followed by args:
    call callable(obj, *args, **kwargs) */
 PyObject *
 _PyObject_Call_Prepend(PyObject *callable,
