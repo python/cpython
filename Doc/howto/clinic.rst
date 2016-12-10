@@ -375,15 +375,12 @@ Let's dive in!
         Write a pickled representation of obj to the open file.
         [clinic start generated code]*/
 
-12. Save and close the file, then run ``Tools/clinic/clinic.py`` on it.
-    With luck everything worked and your block now has output!  Reopen
-    the file in your text editor to see::
+12. Save and close the file, then run ``Tools/clinic/clinic.py`` on
+    it.  With luck everything worked---your block now has output, and
+    a ``.c.h`` file has been generated! Reopen the file in your
+    text editor to see:
 
-       /*[clinic input]
-       module _pickle
-       class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
-       [clinic start generated code]*/
-       /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+    .. code-block:: c
 
        /*[clinic input]
        _pickle.Pickler.dump
@@ -395,17 +392,21 @@ Let's dive in!
        Write a pickled representation of obj to the open file.
        [clinic start generated code]*/
 
-       PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
-       "Write a pickled representation of obj to the open file.\n"
-       "\n"
-       ...
        static PyObject *
-       _pickle_Pickler_dump_impl(PicklerObject *self, PyObject *obj)
-       /*[clinic end generated code: checksum=3bd30745bf206a48f8b576a1da3d90f55a0a4187]*/
+       _pickle_Pickler_dump(PicklerObject *self, PyObject *obj)
+       /*[clinic end generated code: output=87ecad1261e02ac7 input=552eb1c0f52260d9]*/
 
     Obviously, if Argument Clinic didn't produce any output, it's because
     it found an error in your input.  Keep fixing your errors and retrying
     until Argument Clinic processes your file without complaint.
+
+    For readability, most of the glue code has been generated to a ``.c.h``
+    file.  You'll need to include that in your original ``.c`` file,
+    typically right after the clinic module block:
+
+     .. code-block:: c
+
+       #include "clinic/_pickle.c.h"
 
 13. Double-check that the argument-parsing code Argument Clinic generated
     looks basically the same as the existing code.
