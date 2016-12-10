@@ -3818,6 +3818,19 @@ class TestStartMethod(unittest.TestCase):
             self.assertTrue(methods == ['fork', 'spawn'] or
                             methods == ['fork', 'spawn', 'forkserver'])
 
+    def test_preload_resources(self):
+        if multiprocessing.get_start_method() != 'forkserver':
+            self.skipTest("test only relevant for 'forkserver' method")
+        name = os.path.join(os.path.dirname(__file__), 'mp_preload.py')
+        rc, out, err = test.support.script_helper.assert_python_ok(name)
+        out = out.decode()
+        err = err.decode()
+        if out.rstrip() != 'ok' or err != '':
+            print(out)
+            print(err)
+            self.fail("failed spawning forkserver or grandchild")
+
+
 #
 # Check that killing process does not leak named semaphores
 #
