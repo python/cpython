@@ -218,7 +218,7 @@ def prepare(data):
         process.ORIGINAL_DIR = data['orig_dir']
 
     if 'start_method' in data:
-        set_start_method(data['start_method'])
+        set_start_method(data['start_method'], force=True)
 
     if 'init_main_from_name' in data:
         _fixup_main_from_name(data['init_main_from_name'])

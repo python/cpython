@@ -195,7 +195,7 @@ class BaseContext(object):
     def get_start_method(self, allow_none=False):
         return self._name
 
-    def set_start_method(self, method=None):
+    def set_start_method(self, method, force=False):
         raise ValueError('cannot set start method of concrete context')
 
     def _check_available(self):

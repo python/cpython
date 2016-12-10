@@ -124,6 +124,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #28779: multiprocessing.set_forkserver_preload() would crash the
+  forkserver process if a preloaded module instantiated some
+  multiprocessing objects such as locks.
+
 - Issue #28847: dbm.dumb now supports reading read-only files and no longer
   writes the index file when it is not changed.
 
