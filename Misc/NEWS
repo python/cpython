@@ -171,6 +171,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #28779: multiprocessing.set_forkserver_preload() would crash the
+  forkserver process if a preloaded module instantiated some
+  multiprocessing objects such as locks.
+
 - Issue #26937: The chown() method of the tarfile.TarFile class does not fail
   now when the grp module cannot be imported, as for example on Android
   platforms.
