@@ -1,3 +1,5 @@
+.. highlightlang:: c
+
 **********************
 Argument Clinic How-To
 **********************
@@ -78,17 +80,23 @@ Basic Concepts And Usage
 ========================
 
 Argument Clinic ships with CPython; you'll find it in ``Tools/clinic/clinic.py``.
-If you run that script, specifying a C file as an argument::
+If you run that script, specifying a C file as an argument:
 
-    % python3 Tools/clinic/clinic.py foo.c
+.. code-block:: shell-session
+
+    $ python3 Tools/clinic/clinic.py foo.c
 
 Argument Clinic will scan over the file looking for lines that
-look exactly like this::
+look exactly like this:
+
+.. code-block:: none
 
     /*[clinic input]
 
 When it finds one, it reads everything up to a line that looks
-exactly like this::
+exactly like this:
+
+.. code-block:: none
 
     [clinic start generated code]*/
 
@@ -99,7 +107,9 @@ lines, are collectively called an Argument Clinic "block".
 When Argument Clinic parses one of these blocks, it
 generates output.  This output is rewritten into the C file
 immediately after the block, followed by a comment containing a checksum.
-The Argument Clinic block now looks like this::
+The Argument Clinic block now looks like this:
+
+.. code-block:: none
 
     /*[clinic input]
     ... clinic input goes here ...
@@ -375,15 +385,10 @@ Let's dive in!
         Write a pickled representation of obj to the open file.
         [clinic start generated code]*/
 
-12. Save and close the file, then run ``Tools/clinic/clinic.py`` on it.
-    With luck everything worked and your block now has output!  Reopen
-    the file in your text editor to see::
-
-       /*[clinic input]
-       module _pickle
-       class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
-       [clinic start generated code]*/
-       /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+12. Save and close the file, then run ``Tools/clinic/clinic.py`` on
+    it.  With luck everything worked---your block now has output, and
+    a ``.c.h`` file has been generated! Reopen the file in your
+    text editor to see::
 
        /*[clinic input]
        _pickle.Pickler.dump
@@ -395,17 +400,19 @@ Let's dive in!
        Write a pickled representation of obj to the open file.
        [clinic start generated code]*/
 
-       PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
-       "Write a pickled representation of obj to the open file.\n"
-       "\n"
-       ...
        static PyObject *
-       _pickle_Pickler_dump_impl(PicklerObject *self, PyObject *obj)
-       /*[clinic end generated code: checksum=3bd30745bf206a48f8b576a1da3d90f55a0a4187]*/
+       _pickle_Pickler_dump(PicklerObject *self, PyObject *obj)
+       /*[clinic end generated code: output=87ecad1261e02ac7 input=552eb1c0f52260d9]*/
 
     Obviously, if Argument Clinic didn't produce any output, it's because
     it found an error in your input.  Keep fixing your errors and retrying
     until Argument Clinic processes your file without complaint.
+
+    For readability, most of the glue code has been generated to a ``.c.h``
+    file.  You'll need to include that in your original ``.c`` file,
+    typically right after the clinic module block::
+
+       #include "clinic/_pickle.c.h"
 
 13. Double-check that the argument-parsing code Argument Clinic generated
     looks basically the same as the existing code.
@@ -1027,7 +1034,9 @@ that value, and an error has been set (``PyErr_Occurred()`` returns a true
 value), then the generated code will propagate the error.  Otherwise it will
 encode the value you return like normal.
 
-Currently Argument Clinic supports only a few return converters::
+Currently Argument Clinic supports only a few return converters:
+
+.. code-block:: none
 
     bool
     int
@@ -1606,7 +1615,9 @@ code probably looks like this::
     #endif /* HAVE_FUNCTIONNAME */
 
 And then in the ``PyMethodDef`` structure at the bottom the existing code
-will have::
+will have:
+
+.. code-block:: none
 
     #ifdef HAVE_FUNCTIONNAME
     {'functionname', ... },
@@ -1656,7 +1667,9 @@ extra code when using the "block" output preset?  It can't go in the output bloc
 because that could be deactivated by the ``#ifdef``.  (That's the whole point!)
 
 In this situation, Argument Clinic writes the extra code to the "buffer" destination.
-This may mean that you get a complaint from Argument Clinic::
+This may mean that you get a complaint from Argument Clinic:
+
+.. code-block:: none
 
     Warning in file "Modules/posixmodule.c" on line 12357:
     Destination buffer 'buffer' not empty at end of file, emptying.
@@ -1676,7 +1689,9 @@ wouldn't make any sense to the Python interpreter.  But using Argument Clinic
 to run Python blocks lets you use Python as a Python preprocessor!
 
 Since Python comments are different from C comments, Argument Clinic
-blocks embedded in Python files look slightly different.  They look like this::
+blocks embedded in Python files look slightly different.  They look like this:
+
+.. code-block:: python3
 
     #/*[python input]
     #print("def foo(): pass")
