@@ -44,6 +44,11 @@ Tests
 - Issue #26939: Add the support.setswitchinterval() function to fix
   test_functools hanging on the Android armv7 qemu emulator.
 
+Build
+-----
+
+- Issue #28849: Do not define sys.implementation._multiarch on Android.
+
 
 What's New in Python 3.6.0 release candidate 1
 ==============================================
