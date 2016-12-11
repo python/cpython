@@ -1059,16 +1059,15 @@ PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
             PyErr_Clear();
         Py_DECREF(tmp);
     }
+    tmp = NULL;
     if (col_offset >= 0) {
         tmp = PyLong_FromLong(col_offset);
         if (tmp == NULL)
             PyErr_Clear();
-        else {
-            if (_PyObject_SetAttrId(v, &PyId_offset, tmp))
-                PyErr_Clear();
-            Py_DECREF(tmp);
-        }
     }
+    if (_PyObject_SetAttrId(v, &PyId_offset, tmp ? tmp : Py_None))
+        PyErr_Clear();
+    Py_XDECREF(tmp);
     if (filename != NULL) {
         if (_PyObject_SetAttrId(v, &PyId_filename, filename))
             PyErr_Clear();
@@ -1079,9 +1078,6 @@ PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
                 PyErr_Clear();
             Py_DECREF(tmp);
         }
-    }
-    if (_PyObject_SetAttrId(v, &PyId_offset, Py_None)) {
-        PyErr_Clear();
     }
     if (exc != PyExc_SyntaxError) {
         if (!_PyObject_HasAttrId(v, &PyId_msg)) {
