@@ -2,6 +2,7 @@
 
 import unittest
 from test import support
+import os
 import re
 
 rx = re.compile('\((\S+).py, line (\d+)')
@@ -11,6 +12,12 @@ def get_error_location(msg):
     return mo.group(1, 2)
 
 class FutureTest(unittest.TestCase):
+
+    def check_syntax_error(self, err, basename, lineno, offset=0):
+        self.assertIn('%s.py, line %d' % (basename, lineno), str(err))
+        self.assertEqual(os.path.basename(err.filename), basename + '.py')
+        self.assertEqual(err.lineno, lineno)
+        self.assertEqual(err.offset, offset)
 
     def test_future1(self):
         with support.CleanImport('future_test1'):
@@ -27,68 +34,44 @@ class FutureTest(unittest.TestCase):
             from test import test_future3
 
     def test_badfuture3(self):
-        try:
+        with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future3
-        except SyntaxError as msg:
-            self.assertEqual(get_error_location(msg), ("badsyntax_future3", '3'))
-        else:
-            self.fail("expected exception didn't occur")
+        self.check_syntax_error(cm.exception, "badsyntax_future3", 3)
 
     def test_badfuture4(self):
-        try:
+        with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future4
-        except SyntaxError as msg:
-            self.assertEqual(get_error_location(msg), ("badsyntax_future4", '3'))
-        else:
-            self.fail("expected exception didn't occur")
+        self.check_syntax_error(cm.exception, "badsyntax_future4", 3)
 
     def test_badfuture5(self):
-        try:
+        with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future5
-        except SyntaxError as msg:
-            self.assertEqual(get_error_location(msg), ("badsyntax_future5", '4'))
-        else:
-            self.fail("expected exception didn't occur")
+        self.check_syntax_error(cm.exception, "badsyntax_future5", 4)
 
     def test_badfuture6(self):
-        try:
+        with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future6
-        except SyntaxError as msg:
-            self.assertEqual(get_error_location(msg), ("badsyntax_future6", '3'))
-        else:
-            self.fail("expected exception didn't occur")
+        self.check_syntax_error(cm.exception, "badsyntax_future6", 3)
 
     def test_badfuture7(self):
-        try:
+        with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future7
-        except SyntaxError as msg:
-            self.assertEqual(get_error_location(msg), ("badsyntax_future7", '3'))
-        else:
-            self.fail("expected exception didn't occur")
+        self.check_syntax_error(cm.exception, "badsyntax_future7", 3, 53)
 
     def test_badfuture8(self):
-        try:
+        with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future8
-        except SyntaxError as msg:
-            self.assertEqual(get_error_location(msg), ("badsyntax_future8", '3'))
-        else:
-            self.fail("expected exception didn't occur")
+        self.check_syntax_error(cm.exception, "badsyntax_future8", 3)
 
     def test_badfuture9(self):
-        try:
+        with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future9
-        except SyntaxError as msg:
-            self.assertEqual(get_error_location(msg), ("badsyntax_future9", '3'))
-        else:
-            self.fail("expected exception didn't occur")
+        self.check_syntax_error(cm.exception, "badsyntax_future9", 3, 0)
 
     def test_badfuture10(self):
-        try:
+        with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future10
-        except SyntaxError as msg:
-            self.assertEqual(get_error_location(msg), ("badsyntax_future10", '3'))
-        else:
-            self.fail("expected exception didn't occur")
+        self.check_syntax_error(cm.exception, "badsyntax_future10", 3, 0)
 
     def test_parserhack(self):
         # test that the parser.c::future_hack function works as expected
