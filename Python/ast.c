@@ -4784,6 +4784,7 @@ ExprList_Finish(ExprList *l, PyArena *arena)
 typedef struct {
     PyObject *last_str;
     ExprList expr_list;
+    int fmode;
 } FstringParser;
 
 #ifdef NDEBUG
@@ -4802,6 +4803,7 @@ static void
 FstringParser_Init(FstringParser *state)
 {
     state->last_str = NULL;
+    state->fmode = 0;
     ExprList_Init(&state->expr_list);
     FstringParser_check_invariants(state);
 }
@@ -4864,6 +4866,7 @@ FstringParser_ConcatFstring(FstringParser *state, const char **str,
                             struct compiling *c, const node *n)
 {
     FstringParser_check_invariants(state);
+    state->fmode = 1;
 
     /* Parse the f-string. */
     while (1) {
@@ -4955,7 +4958,8 @@ FstringParser_Finish(FstringParser *state, struct compiling *c,
 
     /* If we're just a constant string with no expressions, return
        that. */
-    if(state->expr_list.size == 0) {
+    if (!state->fmode) {
+        assert(!state->expr_list.size);
         if (!state->last_str) {
             /* Create a zero length string. */
             state->last_str = PyUnicode_FromStringAndSize(NULL, 0);
@@ -4978,11 +4982,6 @@ FstringParser_Finish(FstringParser *state, struct compiling *c,
     seq = ExprList_Finish(&state->expr_list, c->c_arena);
     if (!seq)
         goto error;
-
-    /* If there's only one expression, return it. Otherwise, we need
-       to join them together. */
-    if (seq->size == 1)
-        return seq->elements[0];
 
     return JoinedStr(seq, LINENO(n), n->n_col_offset, c->c_arena);
 

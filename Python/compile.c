@@ -3412,7 +3412,8 @@ static int
 compiler_joined_str(struct compiler *c, expr_ty e)
 {
     VISIT_SEQ(c, expr, e->v.JoinedStr.values);
-    ADDOP_I(c, BUILD_STRING, asdl_seq_LEN(e->v.JoinedStr.values));
+    if (asdl_seq_LEN(e->v.JoinedStr.values) != 1)
+        ADDOP_I(c, BUILD_STRING, asdl_seq_LEN(e->v.JoinedStr.values));
     return 1;
 }
 
