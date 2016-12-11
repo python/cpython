@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28512: Fixed setting the offset attribute of SyntaxError by
+  PyErr_SyntaxLocationEx() and PyErr_SyntaxLocationObject().
+
 - Issue #28918: Fix the cross compilation of xxlimited when Python has been
   built with Py_DEBUG defined.
 
