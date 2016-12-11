@@ -75,10 +75,6 @@ def include_in_lib(p):
     if name in EXCLUDE_FILE_FROM_LIBRARY:
         return False
 
-    # Special code is included below to patch this file back in
-    if [d.lower() for d in p.parts[-3:]] == ['distutils', 'command', '__init__.py']:
-        return False
-
     suffix = p.suffix.lower()
     return suffix not in {'.pyc', '.pyo', '.exe'}
 
@@ -215,8 +211,8 @@ def main():
             extra_files = []
             if s == 'Lib' and p == '**/*':
                 extra_files.append((
-                    source / 'tools' / 'msi' / 'distutils.command.__init__.py',
-                    Path('distutils') / 'command' / '__init__.py'
+                    source / 'tools' / 'msi' / 'distutils.command.bdist_wininst.py',
+                    Path('distutils') / 'command' / 'bdist_wininst.py'
                 ))
             copied = copy_to_layout(temp / t.rstrip('/'), chain(files, extra_files))
             print('Copied {} files'.format(copied))
