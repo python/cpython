@@ -200,42 +200,28 @@ class FormatTest(unittest.TestCase):
         testcommon("%#+37.34o", big, "+0o0012345670123456701234567012345670")
         # next one gets one leading zero from precision
         testcommon("%.33o", big, "012345670123456701234567012345670")
-        # base marker shouldn't change that, since "0" is redundant
+        # base marker added in spite of leading zero (different to Python 2)
         testcommon("%#.33o", big, "0o012345670123456701234567012345670")
-        # but reduce precision, and base marker should add a zero
+        # reduce precision, and base marker is always added
         testcommon("%#.32o", big, "0o12345670123456701234567012345670")
-        # one leading zero from precision, and another from "0" flag & width
-        testcommon("%034.33o", big, "0012345670123456701234567012345670")
-        # base marker shouldn't change that
-        testcommon("%0#34.33o", big, "0o012345670123456701234567012345670")
+        # one leading zero from precision, plus two from "0" flag & width
+        testcommon("%035.33o", big, "00012345670123456701234567012345670")
+        # base marker shouldn't change the size
+        testcommon("%0#35.33o", big, "0o012345670123456701234567012345670")
         # Some small ints, in both Python int and flavors).
-        testcommon("%d", 42, "42")
-        testcommon("%d", -42, "-42")
         testcommon("%d", 42, "42")
         testcommon("%d", -42, "-42")
         testcommon("%d", 42.0, "42")
         testcommon("%#x", 1, "0x1")
-        testcommon("%#x", 1, "0x1")
-        testcommon("%#X", 1, "0X1")
         testcommon("%#X", 1, "0X1")
         testcommon("%#o", 1, "0o1")
-        testcommon("%#o", 1, "0o1")
-        testcommon("%#o", 0, "0o0")
         testcommon("%#o", 0, "0o0")
         testcommon("%o", 0, "0")
-        testcommon("%o", 0, "0")
-        testcommon("%d", 0, "0")
         testcommon("%d", 0, "0")
         testcommon("%#x", 0, "0x0")
-        testcommon("%#x", 0, "0x0")
-        testcommon("%#X", 0, "0X0")
         testcommon("%#X", 0, "0X0")
         testcommon("%x", 0x42, "42")
         testcommon("%x", -0x42, "-42")
-        testcommon("%x", 0x42, "42")
-        testcommon("%x", -0x42, "-42")
-        testcommon("%o", 0o42, "42")
-        testcommon("%o", -0o42, "-42")
         testcommon("%o", 0o42, "42")
         testcommon("%o", -0o42, "-42")
         # alternate float formatting
