@@ -1644,18 +1644,20 @@ expression support in the :mod:`re` module).
 
    Return true if all characters in the string are decimal
    characters and there is at least one character, false
-   otherwise. Decimal characters are those from general category "Nd". This category
-   includes digit characters, and all characters
-   that can be used to form decimal-radix numbers, e.g. U+0660,
-   ARABIC-INDIC DIGIT ZERO.
+   otherwise. Decimal characters are those that can be used to form
+   numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
+   ZERO.  Formally a decimal character is a character in the Unicode
+   General Category "Nd".
 
 
 .. method:: str.isdigit()
 
    Return true if all characters in the string are digits and there is at least one
    character, false otherwise.  Digits include decimal characters and digits that need
-   special handling, such as the compatibility superscript digits.  Formally, a digit
-   is a character that has the property value Numeric_Type=Digit or Numeric_Type=Decimal.
+   special handling, such as the compatibility superscript digits.
+   This covers digits which cannot be used to form numbers in base 10,
+   like the Kharosthi numbers.  Formally, a digit is a character that has the
+   property value Numeric_Type=Digit or Numeric_Type=Decimal.
 
 
 .. method:: str.isidentifier()
@@ -2199,15 +2201,12 @@ The conversion types are:
 Notes:
 
 (1)
-   The alternate form causes a leading zero (``'0'``) to be inserted between
-   left-hand padding and the formatting of the number if the leading character
-   of the result is not already a zero.
+   The alternate form causes a leading octal specifier (``'0o'``) to be
+   inserted before the first digit.
 
 (2)
    The alternate form causes a leading ``'0x'`` or ``'0X'`` (depending on whether
-   the ``'x'`` or ``'X'`` format was used) to be inserted between left-hand padding
-   and the formatting of the number if the leading character of the result is not
-   already a zero.
+   the ``'x'`` or ``'X'`` format was used) to be inserted before the first digit.
 
 (3)
    The alternate form causes the result to always contain a decimal point, even if
@@ -3303,15 +3302,12 @@ The conversion types are:
 Notes:
 
 (1)
-   The alternate form causes a leading zero (``'0'``) to be inserted between
-   left-hand padding and the formatting of the number if the leading character
-   of the result is not already a zero.
+   The alternate form causes a leading octal specifier (``'0o'``) to be
+   inserted before the first digit.
 
 (2)
    The alternate form causes a leading ``'0x'`` or ``'0X'`` (depending on whether
-   the ``'x'`` or ``'X'`` format was used) to be inserted between left-hand padding
-   and the formatting of the number if the leading character of the result is not
-   already a zero.
+   the ``'x'`` or ``'X'`` format was used) to be inserted before the first digit.
 
 (3)
    The alternate form causes the result to always contain a decimal point, even if
