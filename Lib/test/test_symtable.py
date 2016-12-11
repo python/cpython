@@ -159,15 +159,17 @@ class SymtableTest(unittest.TestCase):
     def test_filename_correct(self):
         ### Bug tickler: SyntaxError file name correct whether error raised
         ### while parsing or building symbol table.
-        def checkfilename(brokencode):
+        def checkfilename(brokencode, offset):
             try:
                 symtable.symtable(brokencode, "spam", "exec")
             except SyntaxError as e:
                 self.assertEqual(e.filename, "spam")
+                self.assertEqual(e.lineno, 1)
+                self.assertEqual(e.offset, offset)
             else:
                 self.fail("no SyntaxError for %r" % (brokencode,))
-        checkfilename("def f(x): foo)(")  # parse-time
-        checkfilename("def f(x): global x")  # symtable-build-time
+        checkfilename("def f(x): foo)(", 14)  # parse-time
+        checkfilename("def f(x): global x", 10)  # symtable-build-time
         symtable.symtable("pass", b"spam", "exec")
         with self.assertWarns(DeprecationWarning), \
              self.assertRaises(TypeError):

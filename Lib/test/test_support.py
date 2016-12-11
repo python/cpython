@@ -240,7 +240,7 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(cm.exception.errno, errno.EBADF)
 
     def test_check_syntax_error(self):
-        support.check_syntax_error(self, "def class")
+        support.check_syntax_error(self, "def class", lineno=1, offset=9)
         with self.assertRaises(AssertionError):
             support.check_syntax_error(self, "x=1")
 
