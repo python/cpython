@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28739: f-string expressions no longer accepted as docstrings and
+  by ast.literal_eval() even if they do not include expressions.
+
 - Issue #28512: Fixed setting the offset attribute of SyntaxError by
   PyErr_SyntaxLocationEx() and PyErr_SyntaxLocationObject().
 
