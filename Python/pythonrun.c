@@ -528,7 +528,7 @@ print_error_text(PyObject *f, int offset, PyObject *text_obj)
             offset -= (int)(nl+1-text);
             text = nl+1;
         }
-        while (*text == ' ' || *text == '\t') {
+        while (*text == ' ' || *text == '\t' || *text == '\f') {
             text++;
             offset--;
         }
