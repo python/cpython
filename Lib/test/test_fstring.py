@@ -70,18 +70,18 @@ f'{a * x()}'"""
         # Make sure x was called.
         self.assertTrue(x.called)
 
+    def test_docstring(self):
+        def f():
+            f'''Not a docstring'''
+        self.assertIsNone(f.__doc__)
+        def g():
+            '''Not a docstring''' \
+            f''
+        self.assertIsNone(g.__doc__)
+
     def test_literal_eval(self):
-        # With no expressions, an f-string is okay.
-        self.assertEqual(ast.literal_eval("f'x'"), 'x')
-        self.assertEqual(ast.literal_eval("f'x' 'y'"), 'xy')
-
-        # But this should raise an error.
         with self.assertRaisesRegex(ValueError, 'malformed node or string'):
-            ast.literal_eval("f'x{3}'")
-
-        # As should this, which uses a different ast node
-        with self.assertRaisesRegex(ValueError, 'malformed node or string'):
-            ast.literal_eval("f'{3}'")
+            ast.literal_eval("f'x'")
 
     def test_ast_compile_time_concat(self):
         x = ['']
