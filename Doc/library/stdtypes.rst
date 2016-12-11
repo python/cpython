@@ -1551,9 +1551,7 @@ Notes:
 
 (2)
    The alternate form causes a leading ``'0x'`` or ``'0X'`` (depending on whether
-   the ``'x'`` or ``'X'`` format was used) to be inserted between left-hand padding
-   and the formatting of the number if the leading character of the result is not
-   already a zero.
+   the ``'x'`` or ``'X'`` format was used) to be inserted before the first digit.
 
 (3)
    The alternate form causes the result to always contain a decimal point, even if
