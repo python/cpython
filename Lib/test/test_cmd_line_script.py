@@ -10,6 +10,7 @@ import os
 import os.path
 import py_compile
 import subprocess
+import io
 
 import textwrap
 from test import support
@@ -539,6 +540,38 @@ class CmdLineTest(unittest.TestCase):
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii')
             self.assertEqual(text, "some text")
+
+    def test_syntaxerror_unindented_caret_position(self):
+        script = "1 + 1 = 2\n"
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
+            # Confirm that the caret is located under the first 1 character
+            self.assertIn("\n    1 + 1 = 2\n    ^", text)
+
+    def test_syntaxerror_indented_caret_position(self):
+        script = textwrap.dedent("""\
+            if True:
+                1 + 1 = 2
+            """)
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
+            # Confirm that the caret is located under the first 1 character
+            self.assertIn("\n    1 + 1 = 2\n    ^", text)
+
+            # Try the same with a form feed at the start of the indented line
+            script = (
+                "if True:\n"
+                "\f    1 + 1 = 2\n"
+            )
+            script_name = _make_test_script(script_dir, "script", script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            text = io.TextIOWrapper(io.BytesIO(stderr), "ascii").read()
+            self.assertNotIn("\f", text)
+            self.assertIn("\n    1 + 1 = 2\n    ^", text)
 
 
 def test_main():
