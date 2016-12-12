@@ -28,7 +28,7 @@
       <BuildTarget>Build</BuildTarget>
       <CleanTarget>Clean</CleanTarget>
       <CleanAllTarget>CleanAll</CleanAllTarget>
-      <BuildInParallel>true</BuildInParallel>
+      <BuildInParallel>false</BuildInParallel>
     </Projects2>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -48,8 +48,6 @@
     <Projects Include="pylauncher.vcxproj;pywlauncher.vcxproj" />
     <!-- pyshellext.dll -->
     <Projects Include="pyshellext.vcxproj" />
-    <!-- _freeze_importlib -->
-    <Projects Include="_freeze_importlib.vcxproj" />
     <!-- Extension modules -->
     <ExtensionModules Include="_asyncio;_ctypes;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;select;unicodedata;winsound" />
     <!-- Extension modules that require external sources -->
@@ -68,10 +66,10 @@
       <BuildInParallel>false</BuildInParallel>
     </Projects>
     
+    <!-- _freeze_importlib -->
+    <Projects2 Include="_freeze_importlib.vcxproj" />
     <!-- python[w].exe -->
-    <Projects2 Include="python.vcxproj;pythonw.vcxproj">
-      <BuildInParallel>false</BuildInParallel>
-    </Projects2>
+    <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
   </ItemGroup>
 
   <Target Name="Build">
