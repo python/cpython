@@ -1440,6 +1440,4 @@ def _install(_bootstrap_module):
     _setup(_bootstrap_module)
     supported_loaders = _get_supported_file_loaders()
     sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders)])
-    if _os.__name__ == 'nt':
-        sys.meta_path.append(WindowsRegistryFinder)
     sys.meta_path.append(PathFinder)
