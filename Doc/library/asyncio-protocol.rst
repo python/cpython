@@ -25,6 +25,9 @@ the transport's kind.
 
 The transport classes are :ref:`not thread safe <asyncio-multithreading>`.
 
+.. versionchanged:: 3.6
+   The socket option ``TCP_NODELAY`` is now set by default.
+
 
 BaseTransport
 -------------
