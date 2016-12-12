@@ -2137,9 +2137,9 @@ class MaildirTestCase(unittest.TestCase):
             if mbox:
                 fp.write(FROM_)
             fp.write(DUMMY_MESSAGE)
-        if hasattr(os, "link"):
+        try:
             os.link(tmpname, newname)
-        else:
+        except (AttributeError, PermissionError):
             with open(newname, "w") as fp:
                 fp.write(DUMMY_MESSAGE)
         self._msgfiles.append(newname)
