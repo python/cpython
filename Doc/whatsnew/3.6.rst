@@ -875,6 +875,9 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
   but that use asyncio to handle them.
   (Contributed by Jim Fulton in :issue:`27392`.)
 
+* ``TCP_NODELAY`` flag is now set for all TCP transports by default.
+  (Contributed by Yury Selivanov in :issue:`27456`.)
+
 
 binascii
 --------
