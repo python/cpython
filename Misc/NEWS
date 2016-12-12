@@ -474,7 +474,7 @@ Library
 Windows
 -------
 
-- Issue #28896: Deprecate WindowsRegistryFinder
+- Issue #28896: Deprecate WindowsRegistryFinder and disable it by default
 
 - Issue #28522: Fixes mishandled buffer reallocation in getpathp.c
 
