@@ -588,6 +588,9 @@ Tools/Demos
 Tests
 -----
 
+ - Issue #26936: Fix the test_socket failures on Android - getservbyname(),
+   getservbyport() and getaddrinfo() are broken on some Android API levels.
+
 - Issue #28666: Now test.support.rmtree is able to remove unwritable or
   unreadable directories.
 
