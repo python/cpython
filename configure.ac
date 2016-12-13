@@ -4889,7 +4889,9 @@ fi
 
 # first curses header check
 ac_save_cppflags="$CPPFLAGS"
-CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
+if test "$cross_compiling" = no; then
+  CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
+fi
 
 AC_CHECK_HEADERS(curses.h ncurses.h)
 
