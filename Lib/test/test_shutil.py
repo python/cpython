@@ -22,7 +22,8 @@ import tarfile
 import warnings
 
 from test import support
-from test.support import TESTFN, check_warnings, captured_stdout, requires_zlib
+from test.support import (TESTFN, check_warnings, captured_stdout,
+                          requires_zlib, android_not_root)
 
 try:
     import bz2
@@ -787,6 +788,7 @@ class TestShutil(unittest.TestCase):
 
     @unittest.skipIf(os.name == 'nt', 'temporarily disabled on Windows')
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
+    @unittest.skipIf(android_not_root, "hard links not allowed, non root user")
     def test_dont_copy_file_onto_link_to_itself(self):
         # bug 851123.
         os.mkdir(TESTFN)
@@ -839,6 +841,7 @@ class TestShutil(unittest.TestCase):
 
     # Issue #3002: copyfile and copytree block indefinitely on named pipes
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_copyfile_named_pipe(self):
         os.mkfifo(TESTFN)
         try:
@@ -849,6 +852,7 @@ class TestShutil(unittest.TestCase):
         finally:
             os.remove(TESTFN)
 
+    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @support.skip_unless_symlink
     def test_copytree_named_pipe(self):
