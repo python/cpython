@@ -1204,7 +1204,10 @@ class Popen(object):
                 args = list(args)
 
             if shell:
-                args = ["/bin/sh", "-c"] + args
+                # On Android the default shell is at '/system/bin/sh'.
+                unix_shell = ('/system/bin/sh' if
+                          hasattr(sys, 'getandroidapilevel') else '/bin/sh')
+                args = [unix_shell, "-c"] + args
                 if executable:
                     args[0] = executable
 
