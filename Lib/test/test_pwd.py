@@ -4,10 +4,19 @@ from test import support
 
 pwd = support.import_module('pwd')
 
+def _getpwall():
+    # Android does not have getpwall.
+    if hasattr(pwd, 'getpwall'):
+        return pwd.getpwall()
+    elif hasattr(pwd, 'getpwuid'):
+        return [pwd.getpwuid(0)]
+    else:
+        return []
+
 class PwdTest(unittest.TestCase):
 
     def test_values(self):
-        entries = pwd.getpwall()
+        entries = _getpwall()
 
         for e in entries:
             self.assertEqual(len(e), 7)
@@ -33,7 +42,7 @@ class PwdTest(unittest.TestCase):
             # and check afterwards (done in test_values_extended)
 
     def test_values_extended(self):
-        entries = pwd.getpwall()
+        entries = _getpwall()
         entriesbyname = {}
         entriesbyuid = {}
 
@@ -57,12 +66,13 @@ class PwdTest(unittest.TestCase):
         self.assertRaises(TypeError, pwd.getpwuid, 3.14)
         self.assertRaises(TypeError, pwd.getpwnam)
         self.assertRaises(TypeError, pwd.getpwnam, 42)
-        self.assertRaises(TypeError, pwd.getpwall, 42)
+        if hasattr(pwd, 'getpwall'):
+            self.assertRaises(TypeError, pwd.getpwall, 42)
 
         # try to get some errors
         bynames = {}
         byuids = {}
-        for (n, p, u, g, gecos, d, s) in pwd.getpwall():
+        for (n, p, u, g, gecos, d, s) in _getpwall():
             bynames[n] = u
             byuids[u] = n
 
@@ -96,13 +106,17 @@ class PwdTest(unittest.TestCase):
         # loop, say), pwd.getpwuid() might still be able to find data for that
         # uid. Using sys.maxint may provoke the same problems, but hopefully
         # it will be a more repeatable failure.
+        # Android accepts a very large span of uids including sys.maxsize and
+        # -1; it raises KeyError with 1 or 2 for example.
         fakeuid = sys.maxsize
         self.assertNotIn(fakeuid, byuids)
-        self.assertRaises(KeyError, pwd.getpwuid, fakeuid)
+        if not support.is_android:
+            self.assertRaises(KeyError, pwd.getpwuid, fakeuid)
 
         # -1 shouldn't be a valid uid because it has a special meaning in many
         # uid-related functions
-        self.assertRaises(KeyError, pwd.getpwuid, -1)
+        if not support.is_android:
+            self.assertRaises(KeyError, pwd.getpwuid, -1)
         # should be out of uid_t range
         self.assertRaises(KeyError, pwd.getpwuid, 2**128)
         self.assertRaises(KeyError, pwd.getpwuid, -2**128)
