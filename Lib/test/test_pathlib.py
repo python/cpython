@@ -2080,6 +2080,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         self.assertEqual(given, expect)
         self.assertEqual(set(p.rglob("FILEd*")), set())
 
+    @unittest.skipUnless(hasattr(pwd, 'getpwall'),
+                         'pwd module does not expose getpwall()')
     def test_expanduser(self):
         P = self.cls
         support.import_module('pwd')
