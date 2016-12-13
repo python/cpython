@@ -10,6 +10,7 @@ import tempfile
 import unittest
 
 from test import support
+android_not_root = support.android_not_root
 TESTFN = support.TESTFN
 
 try:
@@ -1864,6 +1865,7 @@ class _BasePathTest(object):
         self.assertFalse((P / 'fileA' / 'bah').is_fifo())
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
+    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_is_fifo_true(self):
         P = self.cls(BASE, 'myfifo')
         os.mkfifo(str(P))
