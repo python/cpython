@@ -932,8 +932,11 @@ class GeneralModuleTests(unittest.TestCase):
         else:
             raise OSError
         # Try same call with optional protocol omitted
-        port2 = socket.getservbyname(service)
-        eq(port, port2)
+        # Issue #26936: Android getservbyname() was broken before API 23.
+        if (not hasattr(sys, 'getandroidapilevel') or
+                sys.getandroidapilevel() >= 23):
+            port2 = socket.getservbyname(service)
+            eq(port, port2)
         # Try udp, but don't barf if it doesn't exist
         try:
             udpport = socket.getservbyname(service, 'udp')
@@ -942,7 +945,9 @@ class GeneralModuleTests(unittest.TestCase):
         else:
             eq(udpport, port)
         # Now make sure the lookup by port returns the same service name
-        eq(socket.getservbyport(port2), service)
+        # Issue #26936: Android getservbyport() is broken.
+        if not support.is_android:
+            eq(socket.getservbyport(port2), service)
         eq(socket.getservbyport(port, 'tcp'), service)
         if udpport is not None:
             eq(socket.getservbyport(udpport, 'udp'), service)
@@ -1275,7 +1280,10 @@ class GeneralModuleTests(unittest.TestCase):
             socket.getaddrinfo('::1', 80)
         # port can be a string service name such as "http", a numeric
         # port number or None
-        socket.getaddrinfo(HOST, "http")
+        # Issue #26936: Android getaddrinfo() was broken before API level 23.
+        if (not hasattr(sys, 'getandroidapilevel') or
+                sys.getandroidapilevel() >= 23):
+            socket.getaddrinfo(HOST, "http")
         socket.getaddrinfo(HOST, 80)
         socket.getaddrinfo(HOST, None)
         # test family and socktype filters
