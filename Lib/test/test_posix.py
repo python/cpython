@@ -1,6 +1,7 @@
 "Test posix functions"
 
 from test import support
+android_not_root = support.android_not_root
 
 # Skip these tests if there is no posix module.
 posix = support.import_module('posix')
@@ -422,6 +423,7 @@ class PosixTester(unittest.TestCase):
                 posix.stat, list(os.fsencode(support.TESTFN)))
 
     @unittest.skipUnless(hasattr(posix, 'mkfifo'), "don't have mkfifo()")
+    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_mkfifo(self):
         support.unlink(support.TESTFN)
         posix.mkfifo(support.TESTFN, stat.S_IRUSR | stat.S_IWUSR)
@@ -429,6 +431,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'mknod') and hasattr(stat, 'S_IFIFO'),
                          "don't have mknod()/S_IFIFO")
+    @unittest.skipIf(android_not_root, "mknod not allowed, non root user")
     def test_mknod(self):
         # Test using mknod() to create a FIFO (the only use specified
         # by POSIX).
@@ -907,6 +910,7 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
 
     @unittest.skipUnless(os.link in os.supports_dir_fd, "test needs dir_fd support in os.link()")
+    @unittest.skipIf(android_not_root, "hard link not allowed, non root user")
     def test_link_dir_fd(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
         try:
@@ -930,6 +934,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless((os.mknod in os.supports_dir_fd) and hasattr(stat, 'S_IFIFO'),
                          "test requires both stat.S_IFIFO and dir_fd support for os.mknod()")
+    @unittest.skipIf(android_not_root, "mknod not allowed, non root user")
     def test_mknod_dir_fd(self):
         # Test using mknodat() to create a FIFO (the only use specified
         # by POSIX).
@@ -1013,6 +1018,7 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
 
     @unittest.skipUnless(os.mkfifo in os.supports_dir_fd, "test needs dir_fd support in os.mkfifo()")
+    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_mkfifo_dir_fd(self):
         support.unlink(support.TESTFN)
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
