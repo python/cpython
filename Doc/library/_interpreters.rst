@@ -1,0 +1,37 @@
+:mod:`_interpreters` --- Low-level interpreters API
+===================================================
+
+.. module:: _interpreters
+   :synopsis: Low-level interpreters API.
+
+.. versionadded:: 3,7
+
+  :ref:`_sub-interpreter-support`
+
+threading
+
+--------------
+
+This module provides low-level primitives for working with multiple
+Python interpreters in the same process.
+
+.. XXX The :mod:`interpreters` module provides an easier to use and
+   higher-level API built on top of this module.
+
+This module is optional.  It is provided by Python implementations which
+support multiple interpreters.
+
+.. XXX For systems lacking the :mod:`_interpreters` module, the
+   :mod:`_dummy_interpreters` module is available.  It duplicates this
+   module's interface and can be used as a drop-in replacement.
+
+It defines the following functions:
+
+
+.. XXX TBD
+
+
+**Caveats:**
+
+* ...
+
