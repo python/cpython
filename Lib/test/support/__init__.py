@@ -96,6 +96,7 @@ __all__ = [
     "setswitchinterval", "android_not_root",
     # network
     "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
+    "bind_unix_socket",
     # processes
     'temp_umask', "reap_children",
     # logging
@@ -707,6 +708,15 @@ def bind_port(sock, host=HOST):
     sock.bind((host, 0))
     port = sock.getsockname()[1]
     return port
+
+def bind_unix_socket(sock, addr):
+    """Bind a unix socket, raising SkipTest if PermissionError is raised."""
+    assert sock.family == socket.AF_UNIX
+    try:
+        sock.bind(addr)
+    except PermissionError:
+        sock.close()
+        raise unittest.SkipTest('cannot bind AF_UNIX sockets')
 
 def _is_ipv6_enabled():
     """Check whether IPv6 is enabled on this host."""
