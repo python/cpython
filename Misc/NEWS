@@ -2,6 +2,17 @@
 Python News
 +++++++++++
 
+What's New in Python 2.7.13
+===========================
+
+*Release date: 2016-12-XX*
+
+Core and Builtins
+-----------------
+
+- Revert a37cc3d926ec (Issue #5322).
+
+
 What's New in Python 2.7.13 release candidate 1?
 ================================================
 
@@ -9,9 +20,6 @@ What's New in Python 2.7.13 release candidate 1?
 
 Core and Builtins
 -----------------
-
-- Issue #5322: Fixed setting __new__ to a PyCFunction inside Python code.
-  Original patch by Andreas Stührk.
 
 - Issue #28847: dumbdbm no longer writes the index file in when it is not
   changed and supports reading read-only files.
