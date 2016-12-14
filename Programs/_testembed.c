@@ -24,7 +24,9 @@ static void print_subinterp(void)
 {
     /* Just output some debug stuff */
     PyThreadState *ts = PyThreadState_Get();
-    printf("interp %p, thread state %p: ", ts->interp, ts);
+    unsigned long id = PyInterpreterState_GetID(ts->interp);
+    printf("interp %lu <%p>, thread state <%p>: ",
+            id, ts->interp, ts);
     fflush(stdout);
     PyRun_SimpleString(
         "import sys;"
@@ -56,6 +58,7 @@ static int test_repeated_init_and_subinterpreters(void)
         PyThreadState_Swap(NULL);
 
         for (j=0; j<3; j++) {
+            unsigned long mis = PyInterpreterState_GetID(mainstate->interp);
             substate = Py_NewInterpreter();
             print_subinterp();
             Py_EndInterpreter(substate);

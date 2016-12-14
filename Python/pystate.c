@@ -66,6 +66,8 @@ static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 #endif
 
 
+static unsigned long _next_id = 1;  // 0 is reserved for errors.
+
 PyInterpreterState *
 PyInterpreterState_New(void)
 {
@@ -103,6 +105,8 @@ PyInterpreterState_New(void)
         HEAD_LOCK();
         interp->next = interp_head;
         interp_head = interp;
+        interp->id = _next_id;
+        _next_id += 1;  // XXX overflow...
         HEAD_UNLOCK();
     }
 
@@ -167,6 +171,17 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
         head_mutex = NULL;
     }
 #endif
+}
+
+
+unsigned long
+PyInterpreterState_GetID(PyInterpreterState *interp)
+{
+    if (interp == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no interpreter provided");
+        return 0;
+    }
+    return interp->id;
 }
 
 

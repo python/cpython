@@ -821,6 +821,14 @@ been created.
    :c:func:`PyThreadState_Clear`.
 
 
+.. c:function:: unsigned long PyInterpreterState_GetID(PyInterpreterState *interp)
+
+   Return the interpreter's unique ID.  If there was any error in doing
+   so then 0 is returned and an error is set.
+
+   .. versionadded:: 3.7
+
+
 .. c:function:: PyObject* PyThreadState_GetDict()
 
    Return a dictionary in which extensions can store thread-specific state
