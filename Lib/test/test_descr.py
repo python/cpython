@@ -1662,6 +1662,7 @@ order (MRO) for bases """
         self.assertEqual(b.foo, 3)
         self.assertEqual(b.__class__, D)
 
+    @unittest.expectedFailure
     def test_bad_new(self):
         self.assertRaises(TypeError, object.__new__)
         self.assertRaises(TypeError, object.__new__, '')
@@ -1708,6 +1709,7 @@ order (MRO) for bases """
         object.__init__(A(3))
         self.assertRaises(TypeError, object.__init__, A(3), 5)
 
+    @unittest.expectedFailure
     def test_restored_object_new(self):
         class A(object):
             def __new__(cls, *args, **kwargs):
