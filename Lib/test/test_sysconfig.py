@@ -385,7 +385,8 @@ class TestSysConfig(unittest.TestCase):
         self.assertIsNotNone(vars['SO'])
         self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
 
-    @unittest.skipUnless(hasattr(sys.implementation, '_multiarch'),
+    @unittest.skipUnless(sys.platform == 'linux' and
+                         hasattr(sys.implementation, '_multiarch'),
                          'multiarch-specific test')
     def test_triplet_in_ext_suffix(self):
         ctypes = import_module('ctypes')
