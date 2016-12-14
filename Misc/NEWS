@@ -540,6 +540,10 @@ Documentation
 Build
 -----
 
+- Issue #20211: Do not add the directory for installing C header files and the
+  directory for installing object code libraries to the cross compilation
+  search paths. Original patch by Thomas Petazzoni.
+
 - Issue #28849: Do not define sys.implementation._multiarch on Android.
 
 - Issue #10656: Fix out-of-tree building on AIX.  Patch by Tristan Carel and
