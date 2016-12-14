@@ -1025,11 +1025,99 @@ _PyObject_NextNotImplemented(PyObject *self)
     return NULL;
 }
 
-/* Generic GetAttr functions - put these in your tp_[gs]etattro slot */
+
+/* Specialized version of _PyObject_GenericGetAttrWithDict
+   specifically for the LOAD_METHOD opcode.
+
+   Return 1 if a method is found, 0 if it's a regular attribute
+   from __dict__ or something returned by using a descriptor
+   protocol.
+
+   `method` will point to the resolved attribute or NULL.  In the
+   latter case, an error will be set.
+*/
+int
+_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
+{
+    PyTypeObject *tp = Py_TYPE(obj);
+    PyObject *descr;
+    descrgetfunc f = NULL;
+    PyObject **dictptr, *dict;
+    PyObject *attr;
+    int meth_found = 0;
+
+    assert(*method == NULL);
+
+    if (Py_TYPE(obj)->tp_getattro != PyObject_GenericGetAttr
+            || !PyUnicode_Check(name)) {
+        *method = PyObject_GetAttr(obj, name);
+        return 0;
+    }
+
+    if (tp->tp_dict == NULL && PyType_Ready(tp) < 0)
+        return 0;
+
+    descr = _PyType_Lookup(tp, name);
+    if (descr != NULL) {
+        Py_INCREF(descr);
+        if (PyFunction_Check(descr)) {
+            /* A python method. */
+            meth_found = 1;
+        } else {
+            f = descr->ob_type->tp_descr_get;
+            if (f != NULL && PyDescr_IsData(descr)) {
+                *method = f(descr, obj, (PyObject *)obj->ob_type);
+                Py_DECREF(descr);
+                return 0;
+            }
+        }
+    }
+
+    dictptr = _PyObject_GetDictPtr(obj);
+    if (dictptr != NULL && (dict = *dictptr) != NULL) {
+        Py_INCREF(dict);
+        attr = PyDict_GetItem(dict, name);
+        if (attr != NULL) {
+            Py_INCREF(attr);
+            *method = attr;
+            Py_DECREF(dict);
+            Py_XDECREF(descr);
+            return 0;
+        }
+        Py_DECREF(dict);
+    }
+
+    if (meth_found) {
+        *method = descr;
+        return 1;
+    }
+
+    if (f != NULL) {
+        *method = f(descr, obj, (PyObject *)Py_TYPE(obj));
+        Py_DECREF(descr);
+        return 0;
+    }
+
+    if (descr != NULL) {
+        *method = descr;
+        return 0;
+    }
+
+    PyErr_Format(PyExc_AttributeError,
+                 "'%.50s' object has no attribute '%U'",
+                 tp->tp_name, name);
+    return 0;
+}
+
+/* Generic GetAttr functions - put these in your tp_[gs]etattro slot. */
 
 PyObject *
 _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
 {
+    /* Make sure the logic of _PyObject_GetMethod is in sync with
+       this method.
+    */
+
     PyTypeObject *tp = Py_TYPE(obj);
     PyObject *descr = NULL;
     PyObject *res = NULL;
