@@ -30,6 +30,9 @@
 #define CHECKEXC 1      /* Double-check exception checking */
 #endif
 
+/* Private API for the LOAD_METHOD opcode. */
+extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
+
 typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
@@ -3222,6 +3225,100 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 PUSH(PyLong_FromLong((long) WHY_SILENCED));
             }
             PREDICT(END_FINALLY);
+            DISPATCH();
+        }
+
+        TARGET(LOAD_METHOD) {
+            /* Designed to work in tamdem with CALL_METHOD. */
+            PyObject *name = GETITEM(names, oparg);
+            PyObject *obj = TOP();
+            PyObject *meth = NULL;
+
+            int meth_found = _PyObject_GetMethod(obj, name, &meth);
+
+            SET_TOP(meth);  /* Replace `obj` on top; OK if NULL. */
+            if (meth == NULL) {
+                /* Most likely attribute wasn't found. */
+                Py_DECREF(obj);
+                goto error;
+            }
+
+            if (meth_found) {
+                /* The method object is now on top of the stack.
+                   Push `obj` back to the stack, so that the stack
+                   layout would be:
+
+                       method | obj | arg1 | ... | argN
+                */
+                PUSH(obj);
+            }
+            else {
+                /* Not a method (but a regular attr, or something
+                   was returned by a descriptor protocol).  Push
+                   NULL to the top of the stack, to signal
+                   CALL_METHOD that it's not a method call.
+                */
+                Py_DECREF(obj);
+                PUSH(NULL);
+            }
+            DISPATCH();
+        }
+
+        TARGET(CALL_METHOD) {
+            /* Designed to work in tamdem with LOAD_METHOD. */
+            PyObject **sp, *res, *obj;
+
+            sp = stack_pointer;
+
+            obj = PEEK(oparg + 1);
+            if (obj == NULL) {
+                /* `obj` is NULL when LOAD_METHOD thinks that it's not
+                   a method call.  Swap the NULL and callable.
+
+                   Stack layout:
+
+                       ... | callable | NULL | arg1 | ... | argN
+                                                           ^- TOP()
+                                              ^- (-oparg)
+                                       ^- (-oparg-1)
+                              ^- (-oparg-2)
+
+                   after the next line it will be:
+
+                       ... | callable | callable | arg1 | ... | argN
+                                                                ^- TOP()
+                                                   ^- (-oparg)
+                                        ^- (-oparg-1)
+                              ^- (-oparg-2)
+
+                   Right side `callable` will be POPed by call_funtion.
+                   Left side `callable` will be POPed manually later
+                   (one of "callbale" refs on the stack is borrowed.)
+                */
+                SET_VALUE(oparg + 1, PEEK(oparg + 2));
+                res = call_function(&sp, oparg, NULL);
+                stack_pointer = sp;
+                (void)POP(); /* POP the left side callable. */
+            }
+            else {
+                /* This is a method call.  Stack layout:
+
+                     ... | method | obj | arg1 | ... | argN
+                                                        ^- TOP()
+                                           ^- (-oparg)
+                                     ^- (-oparg-1)
+
+                  `obj` and `method` will be POPed by call_function.
+                  We'll be passing `oparg + 1` to call_function, to
+                  make it accept the `obj` as a first argument.
+                */
+                res = call_function(&sp, oparg + 1, NULL);
+                stack_pointer = sp;
+            }
+
+            PUSH(res);
+            if (res == NULL)
+                goto error;
             DISPATCH();
         }
 

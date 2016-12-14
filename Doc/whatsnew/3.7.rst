@@ -92,6 +92,11 @@ Improved Modules
 Optimizations
 =============
 
+* Added two new opcodes: ``LOAD_METHOD`` and ``CALL_METHOD`` to avoid
+  instantiation of bound method objects for method calls, which results
+  in method calls being faster up to 20%.
+  (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
+
 
 Build and C API Changes
 =======================
