@@ -278,8 +278,14 @@ class ThreadableTest:
 
     def clientRun(self, test_func):
         self.server_ready.wait()
-        self.clientSetUp()
-        self.client_ready.set()
+        try:
+            self.clientSetUp()
+        except BaseException as e:
+            self.queue.put(e)
+            self.clientTearDown()
+            return
+        finally:
+            self.client_ready.set()
         if self.server_crashed:
             self.clientTearDown()
             return
@@ -520,8 +526,11 @@ class ConnectedStreamTestMixin(SocketListeningTestMixin,
         self.serv_conn = self.cli
 
     def clientTearDown(self):
-        self.serv_conn.close()
-        self.serv_conn = None
+        try:
+            self.serv_conn.close()
+            self.serv_conn = None
+        except AttributeError:
+            pass
         super().clientTearDown()
 
 
@@ -540,7 +549,7 @@ class UnixSocketTestBase(SocketTestBase):
 
     def bindSock(self, sock):
         path = tempfile.mktemp(dir=self.dir_path)
-        sock.bind(path)
+        support.bind_unix_socket(sock, path)
         self.addCleanup(support.unlink, path)
 
 class UnixStreamBase(UnixSocketTestBase):
@@ -4649,7 +4658,7 @@ class TestUnixDomain(unittest.TestCase):
     def bind(self, sock, path):
         # Bind the socket
         try:
-            sock.bind(path)
+            support.bind_unix_socket(sock, path)
         except OSError as e:
             if str(e) == "AF_UNIX path too long":
                 self.skipTest(

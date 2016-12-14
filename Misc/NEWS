@@ -598,6 +598,9 @@ Tools/Demos
 Tests
 -----
 
+- Issue #28683: Fix the tests that bind() a unix socket and raise
+  PermissionError on Android for a non-root user.
+
  - Issue #26936: Fix the test_socket failures on Android - getservbyname(),
    getservbyport() and getaddrinfo() are broken on some Android API levels.
 
