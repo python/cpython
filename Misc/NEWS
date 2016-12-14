@@ -19,9 +19,6 @@ Core and Builtins
 - Issue #28918: Fix the cross compilation of xxlimited when Python has been
   built with Py_DEBUG defined.
 
-- Issue #5322: Fixed setting __new__ to a PyCFunction inside Python code.
-  Original patch by Andreas Stührk.
-
 - Issue #23722: Rather than silently producing a class that doesn't support
   zero-argument ``super()`` in methods, failing to pass the new
   ``__classcell__`` namespace entry up to ``type.__new__`` now results in a
