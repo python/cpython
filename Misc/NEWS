@@ -22,9 +22,6 @@ Core and Builtins
 - Issue #28731: Optimize _PyDict_NewPresized() to create correct size dict.
   Improve speed of dict literal with constant keys up to 30%.
 
-- Issue #5322: Fixed setting __new__ to a PyCFunction inside Python code.
-  Original patch by Andreas Stührk.
-
 Library
 -------
 
