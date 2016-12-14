@@ -95,7 +95,9 @@ def bind_af_aware(sock, addr):
     if HAS_UNIX_SOCKETS and sock.family == socket.AF_UNIX:
         # Make sure the path doesn't exist.
         support.unlink(addr)
-    sock.bind(addr)
+        support.bind_unix_socket(sock, addr)
+    else:
+        sock.bind(addr)
 
 
 class HelperFunctionTests(unittest.TestCase):
