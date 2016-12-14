@@ -6314,12 +6314,12 @@ update_one_slot(PyTypeObject *type, slotdef *p)
                 specific = (void *)slot_tp_new;
             }
             else {
-                PyTypeObject *staticbase = type->tp_base;
                 specific = ((PyTypeObject *)self)->tp_new;
                 /* Check that the user does not do anything
                    silly and unsafe like object.__new__(dict).
                    To do this, we check that the most derived
                    base that's not a heap type is this type. */
+                PyTypeObject *staticbase = type->tp_base;
                 while (staticbase &&
                        (staticbase->tp_flags & Py_TPFLAGS_HEAPTYPE))
                     staticbase = staticbase->tp_base;
