@@ -398,7 +398,7 @@ time_localtime(PyObject *self, PyObject *args)
         struct tm local = buf;
         char zone[100];
         int gmtoff;
-        strftime(zone, sizeof(buf), "%Z", &buf);
+        strftime(zone, sizeof(zone), "%Z", &buf);
         gmtoff = timegm(&buf) - when;
         return tmtotuple(&local, zone, gmtoff);
     }
