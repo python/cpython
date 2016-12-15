@@ -5067,10 +5067,10 @@ onError:
     return NULL;
 }
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__ANDROID__)
 
 /* Simplified UTF-8 decoder using surrogateescape error handler,
-   used to decode the command line arguments on Mac OS X.
+   used to decode the command line arguments on Mac OS X and Android.
 
    Return a pointer to a newly allocated wide character string (use
    PyMem_RawFree() to free the memory), or NULL on memory allocation error. */
@@ -5121,7 +5121,7 @@ _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
     return unicode;
 }
 
-#endif /* __APPLE__ */
+#endif /* __APPLE__ or __ANDROID__ */
 
 /* Primary internal function which creates utf8 encoded bytes objects.
 
