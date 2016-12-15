@@ -318,6 +318,27 @@ attributes:
    .. versionadded:: 3.5
 
 
+.. function:: isasyncgenfunction(object)
+
+   Return true if the object is an :term:`asynchronous generator` function,
+   for example::
+
+    >>> async def agen():
+    ...     yield 1
+    ...
+    >>> inspect.isasyncgenfunction(agen)
+    True
+
+   .. versionadded:: 3.6
+
+
+.. function:: isasyncgen(object)
+
+   Return true if the object is an :term:`asynchronous generator iterator`
+   created by an :term:`asynchronous generator` function.
+
+   .. versionadded:: 3.6
+
 .. function:: istraceback(object)
 
    Return true if the object is a traceback.
