@@ -20,7 +20,7 @@ extern int winerror_to_errno(int);
 #include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__ANDROID__)
 extern wchar_t* _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size);
 #endif
 
@@ -273,7 +273,7 @@ decode_ascii_surrogateescape(const char *arg, size_t *size)
 wchar_t*
 Py_DecodeLocale(const char* arg, size_t *size)
 {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__ANDROID__)
     wchar_t *wstr;
     wstr = _Py_DecodeUTF8_surrogateescape(arg, strlen(arg));
     if (size != NULL) {
@@ -406,7 +406,7 @@ oom:
     if (size != NULL)
         *size = (size_t)-1;
     return NULL;
-#endif   /* __APPLE__ */
+#endif   /* __APPLE__ or __ANDROID__ */
 }
 
 /* Encode a wide character string to the locale encoding with the
@@ -424,7 +424,7 @@ oom:
 char*
 Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__ANDROID__)
     Py_ssize_t len;
     PyObject *unicode, *bytes = NULL;
     char *cpath;
@@ -522,7 +522,7 @@ Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
         bytes = result;
     }
     return result;
-#endif   /* __APPLE__ */
+#endif   /* __APPLE__ or __ANDROID__ */
 }
 
 
