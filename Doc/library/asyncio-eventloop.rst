@@ -88,6 +88,24 @@ Run an event loop
    This is idempotent and irreversible. No other methods should be called after
    this one.
 
+
+.. coroutinemethod:: AbstractEventLoop.shutdown_asyncgens()
+
+   Schedule all currently open :term:`asynchronous generator` objects to
+   close with an :meth:`~agen.aclose()` call.  After calling this method,
+   the event loop will issue a warning whenever a new asynchronous generator
+   is iterated.  Should be used to finalize all scheduled asynchronous
+   generators reliably.  Example::
+
+    try:
+        loop.run_forever()
+    finally:
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
+
+   .. versionadded:: 3.6
+
+
 .. _asyncio-pass-keywords:
 
 Calls
