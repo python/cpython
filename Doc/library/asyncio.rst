@@ -8,13 +8,6 @@
 
 **Source code:** :source:`Lib/asyncio/`
 
-.. note::
-
-   The asyncio package has been included in the standard library on a
-   :term:`provisional basis <provisional package>`. Backwards incompatible
-   changes (up to and including removal of the module) may occur if deemed
-   necessary by the core developers.
-
 --------------
 
 This module provides infrastructure for writing single-threaded concurrent
