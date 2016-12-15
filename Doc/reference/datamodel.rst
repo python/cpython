@@ -627,6 +627,25 @@ Callable types
       as well as :keyword:`async with` and :keyword:`async for` statements. See
       also the :ref:`coroutine-objects` section.
 
+   Asynchronous generator functions
+      .. index::
+         single: asynchronous generator; function
+         single: asynchronous generator; asynchronous iterator
+
+      A function or method which is defined using :keyword:`async def` and
+      which uses the :keyword:`yield` statement is called a
+      :dfn:`asynchronous generator function`.  Such a function, when called,
+      returns an asynchronous iterator object which can be used in an
+      :keyword:`async for` statement to execute the body of the function.
+
+      Calling the asynchronous iterator's :meth:`aiterator.__anext__` method
+      will return an :term:`awaitable` which when awaited
+      will execute until it provides a value using the :keyword:`yield`
+      expression.  When the function executes an empty :keyword:`return`
+      statement or falls off the end, a :exc:`StopAsyncIteration` exception
+      is raised and the asynchronous iterator will have reached the end of
+      the set of values to be yielded.
+
    Built-in functions
       .. index::
          object: built-in function
