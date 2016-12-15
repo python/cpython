@@ -77,7 +77,7 @@ New library modules:
 CPython implementation improvements:
 
 * The :ref:`dict <typesmapping>` type has been reimplemented to use
-  a :ref:`faster, more compact representation <whatsnew36-compactdict>`
+  a :ref:`more compact representation <whatsnew36-compactdict>`
   similar to the `PyPy dict implementation`_.  This resulted in dictionaries
   using 20% to 25% less memory when compared to Python 3.5.
 
