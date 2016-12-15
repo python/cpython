@@ -1245,7 +1245,7 @@ After resizing a table is always combined,
 but can be resplit by make_keys_shared().
 */
 static int
-dictresize(PyDictObject *mp, Py_ssize_t minused)
+dictresize(PyDictObject *mp, Py_ssize_t minsize)
 {
     Py_ssize_t i, newsize;
     PyDictKeysObject *oldkeys;
@@ -1254,7 +1254,7 @@ dictresize(PyDictObject *mp, Py_ssize_t minused)
 
     /* Find the smallest table size > minused. */
     for (newsize = PyDict_MINSIZE;
-         newsize <= minused && newsize > 0;
+         newsize < minsize && newsize > 0;
          newsize <<= 1)
         ;
     if (newsize <= 0) {
@@ -1269,6 +1269,8 @@ dictresize(PyDictObject *mp, Py_ssize_t minused)
         mp->ma_keys = oldkeys;
         return -1;
     }
+    // New table must be large enough.
+    assert(mp->ma_keys->dk_usable >= mp->ma_used);
     if (oldkeys->dk_lookup == lookdict)
         mp->ma_keys->dk_lookup = lookdict;
     mp->ma_values = NULL;
@@ -4292,10 +4294,25 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
                 CACHED_KEYS(tp) = NULL;
                 DK_DECREF(cached);
             }
-        } else {
+        }
+        else {
+            int was_shared = cached == ((PyDictObject *)dict)->ma_keys;
             res = PyDict_SetItem(dict, key, value);
-            if (cached != ((PyDictObject *)dict)->ma_keys) {
-                /* Either update tp->ht_cached_keys or delete it */
+            if (was_shared && cached != ((PyDictObject *)dict)->ma_keys) {
+                /* PyDict_SetItem() may call dictresize and convert split table
+                 * into combined table.  In such case, convert it to split
+                 * table again and update type's shared key only when this is
+                 * the only dict sharing key with the type.
+                 *
+                 * This is to allow using shared key in class like this:
+                 *
+                 *     class C:
+                 *         def __init__(self):
+                 *             # one dict resize happens
+                 *             self.a, self.b, self.c = 1, 2, 3
+                 *             self.d, self.e, self.f = 4, 5, 6
+                 *     a = C()
+                 */
                 if (cached->dk_refcnt == 1) {
                     CACHED_KEYS(tp) = make_keys_shared(dict);
                 }
