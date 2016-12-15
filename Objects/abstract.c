@@ -2524,8 +2524,7 @@ _PyObject_CallFunctionVa(PyObject *callable, const char *format,
                          va_list va, int is_size_t)
 {
     PyObject* small_stack[5];
-    /*const Py_ssize_t small_stack_len = Py_ARRAY_LENGTH(small_stack);*/
-    const Py_ssize_t small_stack_len = 0;
+    const Py_ssize_t small_stack_len = Py_ARRAY_LENGTH(small_stack);
     PyObject **stack;
     Py_ssize_t nargs, i;
     PyObject *result;
