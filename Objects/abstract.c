@@ -2378,7 +2378,7 @@ _PyStack_AsDict(PyObject **values, PyObject *kwnames)
     PyObject *kwdict;
     Py_ssize_t i;
 
-    kwdict = PyDict_New();
+    kwdict = _PyDict_NewPresized(nkwargs);
     if (kwdict == NULL) {
         return NULL;
     }
