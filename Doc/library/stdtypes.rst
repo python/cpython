@@ -2154,7 +2154,7 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'o'``    | Signed octal value.                                 | \(1)  |
 +------------+-----------------------------------------------------+-------+
-| ``'u'``    | Obsolete type -- it is identical to ``'d'``.        | \(7)  |
+| ``'u'``    | Obsolete type -- it is identical to ``'d'``.        | \(6)  |
 +------------+-----------------------------------------------------+-------+
 | ``'x'``    | Signed hexadecimal (lowercase).                     | \(2)  |
 +------------+-----------------------------------------------------+-------+
@@ -2219,8 +2219,7 @@ Notes:
 (5)
    If precision is ``N``, the output is truncated to ``N`` characters.
 
-
-(7)
+(6)
    See :pep:`237`.
 
 Since Python strings have an explicit length, ``%s`` conversions do not assume
