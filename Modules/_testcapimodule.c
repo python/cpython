@@ -259,6 +259,19 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
     return result;
 }
 
+static PyObject*
+dict_hassplittable(PyObject *self, PyObject *arg)
+{
+    if (!PyDict_Check(arg)) {
+        PyErr_Format(PyExc_TypeError,
+                     "dict_hassplittable() argument must be dict, not '%s'",
+                     arg->ob_type->tp_name);
+        return NULL;
+    }
+
+    return PyBool_FromLong(_PyDict_HasSplitTable((PyDictObject*)arg));
+}
+
 /* Issue #4701: Check that PyObject_Hash implicitly calls
  *   PyType_Ready if it hasn't already been called
  */
@@ -4024,6 +4037,7 @@ static PyMethodDef TestMethods[] = {
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
+    {"dict_hassplittable",      dict_hassplittable,              METH_O},
     {"test_lazy_hash_inheritance",      (PyCFunction)test_lazy_hash_inheritance,METH_NOARGS},
     {"test_long_api",           (PyCFunction)test_long_api,      METH_NOARGS},
     {"test_xincref_doesnt_leak",(PyCFunction)test_xincref_doesnt_leak,      METH_NOARGS},
