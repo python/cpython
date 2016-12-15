@@ -859,7 +859,7 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
   function if the address is already resolved.
   (Contributed by A. Jesse Jiryu Davis.)
 
-* The :meth:`BaseEventLoop.stop() <asyncio.BaseEventLoop.stop>`
+* The :meth:`loop.stop() <asyncio.BaseEventLoop.stop>`
   method has been changed to stop the loop immediately after
   the current iteration.  Any new callbacks scheduled as a result
   of the last iteration will be discarded.
@@ -870,13 +870,24 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
   the :exc:`StopIteration` exception.
   (Contributed by Chris Angelico in :issue:`26221`.)
 
-* New :meth:`Loop.connect_accepted_socket() <asyncio.BaseEventLoop.connect_accepted_socket>`
+* New :meth:`loop.connect_accepted_socket() <asyncio.BaseEventLoop.connect_accepted_socket>`
   method to be used by servers that accept connections outside of asyncio,
   but that use asyncio to handle them.
   (Contributed by Jim Fulton in :issue:`27392`.)
 
 * ``TCP_NODELAY`` flag is now set for all TCP transports by default.
   (Contributed by Yury Selivanov in :issue:`27456`.)
+
+* New :meth:`loop.shutdown_asyncgens() <asyncio.AbstractEventLoop.shutdown_asyncgens>`
+  to properly close pending asynchronous generators before closing the
+  loop.
+  (Contributed by Yury Selivanov in :issue:`28003`.)
+
+* :class:`Future <asyncio.Future>` and :class:`Task <asyncio.Task>`
+  classes now have an optimized C implementation which makes asyncio
+  code up to 30% faster.
+  (Contributed by Yury Selivanov and INADA Naoki in :issue:`26081`
+  and :issue:`28544`.)
 
 
 binascii
@@ -1714,11 +1725,10 @@ Optimizations
   (Contributed by Demur Rumed with input and reviews from
   Serhiy Storchaka and Victor Stinner in :issue:`26647` and :issue:`28050`.)
 
-* The :class:`Future <asyncio.futures.Future>` class now has an optimized
-  C implementation.
-  (Contributed by Yury Selivanov and INADA Naoki in :issue:`26801`.)
+* The :class:`asyncio.Future` class now has an optimized C implementation.
+  (Contributed by Yury Selivanov and INADA Naoki in :issue:`26081`.)
 
-* The :class:`Task <asyncio.tasks.Task>` class now has an optimized
+* The :class:`asyncio.Task` class now has an optimized
   C implementation. (Contributed by Yury Selivanov in :issue:`28544`.)
 
 * Various implementation improvements in the :mod:`typing` module
