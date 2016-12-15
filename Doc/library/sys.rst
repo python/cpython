@@ -603,6 +603,24 @@ always available.
    .. versionchanged:: 3.6
       Added *platform_version*
 
+
+.. function:: get_asyncgen_hooks()
+
+   Returns an *asyncgen_hooks* object, which is similar to a
+   :class:`~collections.namedtuple` of the form `(firstiter, finalizer)`,
+   where *firstiter* and *finalizer* are expected to be either ``None`` or
+   functions which take an :term:`asynchronous generator iterator` as an
+   argument, and are used to schedule finalization of an asychronous
+   generator by an event loop.
+
+   .. versionadded:: 3.6
+      See :pep:`525` for more details.
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)
+
+
 .. function:: get_coroutine_wrapper()
 
    Returns ``None``, or a wrapper set by :func:`set_coroutine_wrapper`.
@@ -1106,6 +1124,24 @@ always available.
       profilers, coverage tools and the like.  Its behavior is part of the
       implementation platform, rather than part of the language definition, and
       thus may not be available in all Python implementations.
+
+.. function:: set_asyncgen_hooks(firstiter, finalizer)
+
+   Accepts two optional keyword arguments which are callables that accept an
+   :term:`asynchronous generator iterator` as an argument. The *firstiter*
+   callable will be called when an asynchronous generator is iterated for the
+   first time. The *finalizer* will be called when an asynchronous generator
+   is about to be garbage collected.
+
+   .. versionadded:: 3.6
+      See :pep:`525` for more details, and for a reference example of a
+      *finalizer* method see the implementation of
+      ``asyncio.Loop.shutdown_asyncgens`` in
+      :source:`Lib/asyncio/base_events.py`
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)
 
 
 .. function:: set_coroutine_wrapper(wrapper)
