@@ -1327,7 +1327,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop)
         return -1;
     }
 
-    res = _PyObject_CallMethodId(all_tasks, &PyId_add, "O", self, NULL);
+    res = _PyObject_CallMethodIdObjArgs(all_tasks, &PyId_add, self, NULL);
     if (res == NULL) {
         return -1;
     }
@@ -1838,8 +1838,8 @@ task_call_wakeup(TaskObj *task, PyObject *fut)
     }
     else {
         /* `task` is a subclass of Task */
-        return _PyObject_CallMethodId(
-            (PyObject*)task, &PyId__wakeup, "O", fut, NULL);
+        return _PyObject_CallMethodIdObjArgs((PyObject*)task, &PyId__wakeup,
+                                             fut, NULL);
     }
 }
 
@@ -1854,8 +1854,8 @@ task_call_step(TaskObj *task, PyObject *arg)
         if (arg == NULL) {
             arg = Py_None;
         }
-        return _PyObject_CallMethodId(
-            (PyObject*)task, &PyId__step, "O", arg, NULL);
+        return _PyObject_CallMethodIdObjArgs((PyObject*)task, &PyId__step,
+                                             arg, NULL);
     }
 }
 
@@ -1869,8 +1869,8 @@ task_call_step_soon(TaskObj *task, PyObject *arg)
         return -1;
     }
 
-    handle = _PyObject_CallMethodId(
-        task->task_loop, &PyId_call_soon, "O", cb, NULL);
+    handle = _PyObject_CallMethodIdObjArgs(task->task_loop, &PyId_call_soon,
+                                           cb, NULL);
     Py_DECREF(cb);
     if (handle == NULL) {
         return -1;
@@ -2135,8 +2135,9 @@ task_step_impl(TaskObj *task, PyObject *exc)
                 if (wrapper == NULL) {
                     goto fail;
                 }
-                res = _PyObject_CallMethodId(
-                    result, &PyId_add_done_callback, "O", wrapper, NULL);
+                res = _PyObject_CallMethodIdObjArgs(result,
+                                                    &PyId_add_done_callback,
+                                                    wrapper, NULL);
                 Py_DECREF(wrapper);
                 if (res == NULL) {
                     goto fail;
