@@ -104,6 +104,14 @@ Standard names are defined for the following types:
    .. versionadded:: 3.5
 
 
+.. data:: AsyncGeneratorType
+
+   The type of :term:`asynchronous generator`-iterator objects, created by
+   asynchronous generator functions.
+
+   .. versionadded:: 3.6
+
+
 .. data:: CodeType
 
    .. index:: builtin: compile
