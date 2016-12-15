@@ -3875,52 +3875,22 @@ load_dict(Unpicklerobject *self)
 static PyObject *
 Instance_New(PyObject *cls, PyObject *args)
 {
-    PyObject *r = 0;
-
     if (PyClass_Check(cls)) {
         int l;
 
-        if ((l=PyObject_Size(args)) < 0) goto err;
+        if ((l=PyObject_Size(args)) < 0) return NULL;
         if (!( l ))  {
-            PyObject *__getinitargs__;
-
-            __getinitargs__ = PyObject_GetAttr(cls,
-                                       __getinitargs___str);
-            if (!__getinitargs__)  {
+            if (!PyObject_HasAttr(cls, __getinitargs___str))  {
                 /* We have a class with no __getinitargs__,
                    so bypass usual construction  */
-                PyObject *inst;
-
-                PyErr_Clear();
-                if (!( inst=PyInstance_NewRaw(cls, NULL)))
-                    goto err;
-                return inst;
+                return PyInstance_NewRaw(cls, NULL);
             }
-            Py_DECREF(__getinitargs__);
         }
 
-        if ((r=PyInstance_New(cls, args, NULL))) return r;
-        else goto err;
+        return PyInstance_New(cls, args, NULL);
     }
 
-    if ((r=PyObject_CallObject(cls, args))) return r;
-
-  err:
-    {
-        PyObject *tp, *v, *tb, *tmp_value;
-
-        PyErr_Fetch(&tp, &v, &tb);
-        tmp_value = v;
-        /* NULL occurs when there was a KeyboardInterrupt */
-        if (tmp_value == NULL)
-            tmp_value = Py_None;
-        if ((r = PyTuple_Pack(3, tmp_value, cls, args))) {
-            Py_XDECREF(v);
-            v=r;
-        }
-        PyErr_Restore(tp,v,tb);
-    }
-    return NULL;
+    return PyObject_CallObject(cls, args);
 }
 
 
