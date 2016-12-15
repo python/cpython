@@ -303,6 +303,17 @@ PyAPI_FUNC(PyObject **) _PyStack_UnpackDict(
     PyObject **kwnames,
     PyObject *func);
 
+/* Suggested size (number of positional arguments) for arrays of PyObject*
+   allocated on a C stack to avoid allocating memory on the heap memory. Such
+   array is used to pass positional arguments to call functions of the
+   _PyObject_FastCall() family.
+
+   The size is chosen to not abuse the C stack and so limit the risk of stack
+   overflow. The size is also chosen to allow using the small stack for most
+   function calls of the Python standard library. On 64-bit CPU, it allocates
+   40 bytes on the stack. */
+#define _PY_FASTCALL_SMALL_STACK 5
+
 /* Call the callable object 'callable' with the "fast call" calling convention:
    args is a C array for positional arguments (nargs is the number of
    positional arguments), kwargs is a dictionary for keyword arguments.

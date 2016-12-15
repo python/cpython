@@ -1186,7 +1186,7 @@ map_traverse(mapobject *lz, visitproc visit, void *arg)
 static PyObject *
 map_next(mapobject *lz)
 {
-    PyObject *small_stack[5];
+    PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject **stack;
     Py_ssize_t niters, nargs, i;
     PyObject *result = NULL;
