@@ -17,6 +17,9 @@ Core and Builtins
   to/from UTF-8, instead of the locale encoding to avoid inconsistencies with
   os.fsencode() and os.fsdecode() which are already using UTF-8.
 
+- Issue #28991:  functools.lru_cache() was susceptible to an obscure $
+  bug triggerable by a monkey-patched len() function.
+
 - Issue #28147: Fix a memory leak in split-table dictionaries: setattr()
   must not convert combined table into split table. Patch written by INADA
   Naoki.
