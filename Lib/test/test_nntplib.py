@@ -132,6 +132,8 @@ class NetworkedNNTPTestsMixin:
         self.assertLessEqual(art_num, last)
         self._check_art_dict(art_dict)
 
+    @unittest.skipIf(True, 'temporarily skipped until a permanent solution'
+                           ' is found for issue #28971')
     def test_over(self):
         resp, count, first, last, name = self.server.group(self.GROUP_NAME)
         start = last - 10
