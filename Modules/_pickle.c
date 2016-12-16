@@ -2787,10 +2787,10 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
     const char setitem_op = SETITEM;
     const char setitems_op = SETITEMS;
 
-    assert(obj != NULL);
+    assert(obj != NULL && PyDict_CheckExact(obj));
     assert(self->proto > 0);
 
-    dict_size = PyDict_Size(obj);
+    dict_size = PyDict_GET_SIZE(obj);
 
     /* Special-case len(d) == 1 to save space. */
     if (dict_size == 1) {
@@ -2819,7 +2819,7 @@ batch_dict_exact(PicklerObject *self, PyObject *obj)
         }
         if (_Pickler_Write(self, &setitems_op, 1) < 0)
             return -1;
-        if (PyDict_Size(obj) != dict_size) {
+        if (PyDict_GET_SIZE(obj) != dict_size) {
             PyErr_Format(
                 PyExc_RuntimeError,
                 "dictionary changed size during iteration");
@@ -2837,6 +2837,7 @@ save_dict(PicklerObject *self, PyObject *obj)
     char header[3];
     Py_ssize_t len;
     int status = 0;
+    assert(PyDict_Check(obj));
 
     if (self->fast && !fast_save_enter(self, obj))
         goto error;
@@ -2855,14 +2856,10 @@ save_dict(PicklerObject *self, PyObject *obj)
     if (_Pickler_Write(self, header, len) < 0)
         goto error;
 
-    /* Get dict size, and bow out early if empty. */
-    if ((len = PyDict_Size(obj)) < 0)
-        goto error;
-
     if (memo_put(self, obj) < 0)
         goto error;
 
-    if (len != 0) {
+    if (PyDict_GET_SIZE(obj)) {
         /* Save the dict items. */
         if (PyDict_CheckExact(obj) && self->proto > 0) {
             /* We can take certain shortcuts if we know this is a dict and
@@ -6878,7 +6875,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
         Py_ssize_t i = 0;
         PyObject *key, *value;
 
-        new_memo_size = PyDict_Size(obj);
+        new_memo_size = PyDict_GET_SIZE(obj);
         new_memo = _Unpickler_NewMemo(new_memo_size);
         if (new_memo == NULL)
             return -1;

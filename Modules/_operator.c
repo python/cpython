@@ -1016,16 +1016,7 @@ methodcaller_repr(methodcallerobject *mc)
         return PyUnicode_FromFormat("%s(...)", Py_TYPE(mc)->tp_name);
     }
 
-    if (mc->kwds != NULL) {
-        numkwdargs = PyDict_Size(mc->kwds);
-        if (numkwdargs < 0) {
-            Py_ReprLeave((PyObject *)mc);
-            return NULL;
-        }
-    } else {
-        numkwdargs = 0;
-    }
-
+    numkwdargs = mc->kwds != NULL ? PyDict_GET_SIZE(mc->kwds) : 0;
     numposargs = PyTuple_GET_SIZE(mc->args);
     numtotalargs = numposargs + numkwdargs;
 
@@ -1092,7 +1083,7 @@ static PyObject *
 methodcaller_reduce(methodcallerobject *mc)
 {
     PyObject *newargs;
-    if (!mc->kwds || PyDict_Size(mc->kwds) == 0) {
+    if (!mc->kwds || PyDict_GET_SIZE(mc->kwds) == 0) {
         Py_ssize_t i;
         Py_ssize_t callargcount = PyTuple_GET_SIZE(mc->args);
         newargs = PyTuple_New(1 + callargcount);

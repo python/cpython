@@ -84,7 +84,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
     Py_DECREF(nargs);
 
-    if (pkw == NULL || PyDict_Size(pkw) == 0) {
+    if (pkw == NULL || PyDict_GET_SIZE(pkw) == 0) {
         if (kw == NULL) {
             pto->kw = PyDict_New();
         }
@@ -155,7 +155,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kw)
         assert(PyTuple_Check(argappl));
     }
 
-    if (PyDict_Size(pto->kw) == 0) {
+    if (PyDict_GET_SIZE(pto->kw) == 0) {
         kwappl = kw;
         Py_XINCREF(kwappl);
     }
@@ -713,7 +713,7 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
         return args;
     }
 
-    if (kwds && PyDict_Size(kwds) > 0) {
+    if (kwds && PyDict_GET_SIZE(kwds) > 0) {
         sorted_items = PyDict_Items(kwds);
         if (!sorted_items)
             return NULL;
@@ -933,7 +933,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         }
         lru_cache_append_link(self, link);
         Py_INCREF(result); /* for return */
-        self->full = (PyDict_Size(self->cache) >= self->maxsize);
+        self->full = (PyDict_GET_SIZE(self->cache) >= self->maxsize);
     }
     self->misses++;
     return result;
@@ -1062,7 +1062,7 @@ lru_cache_cache_info(lru_cache_object *self, PyObject *unused)
 {
     return PyObject_CallFunction(self->cache_info_type, "nnOn",
                                  self->hits, self->misses, self->maxsize_O,
-                                 PyDict_Size(self->cache));
+                                 PyDict_GET_SIZE(self->cache));
 }
 
 static PyObject *

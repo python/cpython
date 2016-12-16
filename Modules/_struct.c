@@ -2048,7 +2048,7 @@ cache_struct(PyObject *fmt)
 
     s_object = PyObject_CallFunctionObjArgs((PyObject *)(&PyStructType), fmt, NULL);
     if (s_object != NULL) {
-        if (PyDict_Size(cache) >= MAXCACHE)
+        if (PyDict_GET_SIZE(cache) >= MAXCACHE)
             PyDict_Clear(cache);
         /* Attempt to cache the result */
         if (PyDict_SetItem(cache, fmt, s_object) == -1)

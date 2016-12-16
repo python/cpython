@@ -3169,7 +3169,7 @@ tzinfo_reduce(PyObject *self)
         PyErr_Clear();
         state = Py_None;
         dictptr = _PyObject_GetDictPtr(self);
-        if (dictptr && *dictptr && PyDict_Size(*dictptr)) {
+        if (dictptr && *dictptr && PyDict_GET_SIZE(*dictptr)) {
             state = *dictptr;
         }
         Py_INCREF(state);

@@ -583,7 +583,7 @@ function_call(PyObject *func, PyObject *arg, PyObject *kw)
 
     if (kw != NULL && PyDict_Check(kw)) {
         Py_ssize_t pos, i;
-        nk = PyDict_Size(kw);
+        nk = PyDict_GET_SIZE(kw);
         kwtuple = PyTuple_New(2*nk);
         if (kwtuple == NULL)
             return NULL;

@@ -353,7 +353,7 @@ update_ufd_array(pollObject *self)
     PyObject *key, *value;
     struct pollfd *old_ufds = self->ufds;
 
-    self->ufd_len = PyDict_Size(self->dict);
+    self->ufd_len = PyDict_GET_SIZE(self->dict);
     PyMem_RESIZE(self->ufds, struct pollfd, self->ufd_len);
     if (self->ufds == NULL) {
         self->ufds = old_ufds;

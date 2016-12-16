@@ -1650,7 +1650,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     }
 
     nargs = PyTuple_GET_SIZE(args);
-    nkeywords = (keywords == NULL) ? 0 : PyDict_Size(keywords);
+    nkeywords = (keywords == NULL) ? 0 : PyDict_GET_SIZE(keywords);
     if (nargs + nkeywords > len) {
         PyErr_Format(PyExc_TypeError,
                      "%s%s takes at most %d argument%s (%zd given)",
@@ -2034,7 +2034,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
     }
 
     if (keywords != NULL) {
-        nkeywords = PyDict_Size(keywords);
+        nkeywords = PyDict_GET_SIZE(keywords);
     }
     else if (kwnames != NULL) {
         nkeywords = PyTuple_GET_SIZE(kwnames);
@@ -2421,7 +2421,7 @@ _PyArg_NoKeywords(const char *funcname, PyObject *kw)
         PyErr_BadInternalCall();
         return 0;
     }
-    if (PyDict_Size(kw) == 0)
+    if (PyDict_GET_SIZE(kw) == 0)
         return 1;
 
     PyErr_Format(PyExc_TypeError, "%s does not take keyword arguments",

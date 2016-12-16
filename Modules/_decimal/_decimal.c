@@ -428,7 +428,7 @@ dict_as_flags(PyObject *val)
         return DEC_INVALID_SIGNALS;
     }
 
-    if (PyDict_Size(val) != SIGNAL_MAP_LEN) {
+    if (PyDict_GET_SIZE(val) != SIGNAL_MAP_LEN) {
         PyErr_SetString(PyExc_KeyError,
             "invalid signal dict");
         return DEC_INVALID_SIGNALS;

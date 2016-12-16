@@ -5010,7 +5010,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
     if (co->co_kwonlyargcount == 0 &&
-        (kwargs == NULL || PyDict_Size(kwargs) == 0) &&
+        (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) &&
         co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         /* Fast paths */
@@ -5028,7 +5028,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     if (kwargs != NULL) {
         Py_ssize_t pos, i;
-        nk = PyDict_Size(kwargs);
+        nk = PyDict_GET_SIZE(kwargs);
 
         kwtuple = PyTuple_New(2 * nk);
         if (kwtuple == NULL) {
