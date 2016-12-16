@@ -13,6 +13,9 @@ Core and Builtins
 - Issue #28512: Fixed setting the offset attribute of SyntaxError by
   PyErr_SyntaxLocationEx() and PyErr_SyntaxLocationObject().
 
+- Issue #28991:  functools.lru_cache() was susceptible to an obscure reentrancy
+  bug caused by a monkey-patched len() function.
+
 - Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on Mac OS X
   when decode astral characters.  Patch by Xiang Zhang.
 
