@@ -14,14 +14,18 @@ Core and Builtins
   must not convert combined table into split table. Patch written by INADA
   Naoki.
 
-- Issue #28990: Fix SSL hanging if connection is closed before handshake
-  completed.
-  (Patch by HoHo-Ho)
+- Issue #28990: Fix asynchio SSL hanging if connection is closed before
+  handshake is completed. (Patch by HoHo-Ho)
+
+Tools/Demos
+-----------
+
+- Issue #28770: Fix python-gdb.py for fastcalls.
 
 Windows
 -------
 
-- Issue #28896: Deprecate WindowsRegistryFinder
+- Issue #28896: Deprecate WindowsRegistryFinder.
 
 Build
 -----
