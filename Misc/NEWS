@@ -14,6 +14,10 @@ Core and Builtins
   must not convert combined table into split table. Patch written by INADA
   Naoki.
 
+- Issue #28990: Fix SSL hanging if connection is closed before handshake
+  completed.
+  (Patch by HoHo-Ho)
+
 Windows
 -------
 
