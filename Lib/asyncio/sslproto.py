@@ -480,6 +480,7 @@ class SSLProtocol(protocols.Protocol):
             self._loop.call_soon(self._app_protocol.connection_lost, exc)
         self._transport = None
         self._app_transport = None
+        self._wakeup_waiter(exc)
 
     def pause_writing(self):
         """Called when the low-level transport's buffer goes over
