@@ -85,5 +85,15 @@ class SslProtoHandshakeTests(test_utils.TestCase):
             # Restore error logging.
             log.logger.setLevel(log_level)
 
+    def test_connection_lost(self):
+        # From issue #472.
+        # yield from waiter hang if lost_connection was called.
+        waiter = asyncio.Future(loop=self.loop)
+        ssl_proto = self.ssl_protocol(waiter)
+        self.connection_made(ssl_proto)
+        ssl_proto.connection_lost(ConnectionAbortedError)
+        test_utils.run_briefly(self.loop)
+        self.assertIsInstance(waiter.exception(), ConnectionAbortedError)
+
 if __name__ == '__main__':
     unittest.main()
