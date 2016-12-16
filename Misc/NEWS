@@ -19,6 +19,11 @@ Windows
 
 - Issue #28896: Deprecate WindowsRegistryFinder
 
+Build
+-----
+
+- Issue #28898: Prevent gdb build errors due to HAVE_LONG_LONG redefinition.
+
 
 What's New in Python 3.6.0 release candidate 1
 ==============================================
