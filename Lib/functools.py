@@ -493,6 +493,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
     hits = misses = 0
     full = False
     cache_get = cache.get    # bound method to lookup a key or return None
+    cache_len = cache.__len__  # get cache size without calling len()
     lock = RLock()           # because linkedlist updates aren't threadsafe
     root = []                # root of the circular doubly linked list
     root[:] = [root, root, None, None]     # initialize by pointing to self
@@ -574,16 +575,16 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     last = root[PREV]
                     link = [last, root, key, result]
                     last[NEXT] = root[PREV] = cache[key] = link
-                    # Use the __len__() method instead of the len() function
+                    # Use the cache_len bound method instead of the len() function
                     # which could potentially be wrapped in an lru_cache itself.
-                    full = (cache.__len__() >= maxsize)
+                    full = (cache_len() >= maxsize)
                 misses += 1
             return result
 
     def cache_info():
         """Report cache statistics"""
         with lock:
-            return _CacheInfo(hits, misses, maxsize, cache.__len__())
+            return _CacheInfo(hits, misses, maxsize, cache_len())
 
     def cache_clear():
         """Clear the cache and cache statistics"""
