@@ -267,7 +267,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    *base_name* is the name of the file to create, including the path, minus
    any format-specific extension. *format* is the archive format: one of
-   "zip", "tar", "bztar" or "gztar".
+   "zip" (if the :mod:`zlib` module or external ``zip`` executable is
+   available), "tar", "gztar" (if the :mod:`zlib` module is available), or
+   "bztar" (if the :mod:`bz2` module is available).
 
    *root_dir* is a directory that will be the root directory of the
    archive; ie. we typically chdir into *root_dir* before creating the
@@ -295,10 +297,11 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    By default :mod:`shutil` provides these formats:
 
-   - *gztar*: gzip'ed tar-file
-   - *bztar*: bzip2'ed tar-file
-   - *tar*: uncompressed tar file
-   - *zip*: ZIP file
+   - *zip*: ZIP file (if the :mod:`zlib` module or external ``zip``
+     executable is available).
+   - *tar*: uncompressed tar file.
+   - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
+   - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
 
    You can register new formats or provide your own archiver for any existing
    formats, by using :func:`register_archive_format`.

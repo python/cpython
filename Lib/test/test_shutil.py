@@ -35,6 +35,7 @@ except ImportError:
 
 try:
     import zipfile
+    import zlib
     ZIP_SUPPORT = True
 except ImportError:
     ZIP_SUPPORT = find_executable('zip')
@@ -460,7 +461,6 @@ class TestShutil(unittest.TestCase):
         self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
 
-    @unittest.skipUnless(zlib, "Requires zlib")
     @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
     def test_make_zipfile(self):
         # creating something to zip
@@ -485,6 +485,7 @@ class TestShutil(unittest.TestCase):
                     ['dist/', 'dist/file1', 'dist/file2',
                      'dist/sub/', 'dist/sub/file3', 'dist/sub2/',
                      'outer'])
+        support.unlink(res)
 
         with support.change_cwd(work_dir):
             base_name = os.path.abspath(rel_base_name)
@@ -498,7 +499,6 @@ class TestShutil(unittest.TestCase):
                     ['dist/', 'dist/file1', 'dist/file2',
                      'dist/sub/', 'dist/sub/file3', 'dist/sub2/'])
 
-    @unittest.skipUnless(zlib, "Requires zlib")
     @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
     @unittest.skipUnless(find_executable('zip'),
                          'Need the zip command to run')
@@ -524,7 +524,6 @@ class TestShutil(unittest.TestCase):
             names2 = zf.namelist()
         self.assertEqual(sorted(names), sorted(names2))
 
-    @unittest.skipUnless(zlib, "Requires zlib")
     @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
     @unittest.skipUnless(find_executable('unzip'),
                          'Need the unzip command to run')

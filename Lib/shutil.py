@@ -13,6 +13,20 @@ import collections
 import errno
 
 try:
+    import zlib
+    del zlib
+    _ZLIB_SUPPORTED = True
+except ImportError:
+    _ZLIB_SUPPORTED = False
+
+try:
+    import bz2
+    del bz2
+    _BZ2_SUPPORTED = True
+except ImportError:
+    _BZ2_SUPPORTED = False
+
+try:
     from pwd import getpwnam
 except ImportError:
     getpwnam = None
@@ -351,15 +365,18 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
 
     Returns the output filename.
     """
-    tar_compression = {'gzip': 'gz', 'bzip2': 'bz2', None: ''}
-    compress_ext = {'gzip': '.gz', 'bzip2': '.bz2'}
+    if compress is None:
+        tar_compression = ''
+    elif _ZLIB_SUPPORTED and compress == 'gzip':
+        tar_compression = 'gz'
+    elif _BZ2_SUPPORTED and compress == 'bzip2':
+        tar_compression = 'bz2'
+    else:
+        raise ValueError("bad value for 'compress', or compression format not "
+                         "supported : {0}".format(compress))
 
-    # flags for compression program, each element of list will be an argument
-    if compress is not None and compress not in compress_ext.keys():
-        raise ValueError, \
-              ("bad value for 'compress': must be None, 'gzip' or 'bzip2'")
-
-    archive_name = base_name + '.tar' + compress_ext.get(compress, '')
+    compress_ext = '.' + tar_compression if compress else ''
+    archive_name = base_name + '.tar' + compress_ext
     archive_dir = os.path.dirname(archive_name)
 
     if archive_dir and not os.path.exists(archive_dir):
@@ -388,7 +405,7 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
         return tarinfo
 
     if not dry_run:
-        tar = tarfile.open(archive_name, 'w|%s' % tar_compression[compress])
+        tar = tarfile.open(archive_name, 'w|%s' % tar_compression)
         try:
             tar.add(base_dir, filter=_set_uid_gid)
         finally:
@@ -435,6 +452,7 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
     # If zipfile module is not available, try spawning an external 'zip'
     # command.
     try:
+        import zlib
         import zipfile
     except ImportError:
         zipfile = None
@@ -470,11 +488,17 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
     return zip_filename
 
 _ARCHIVE_FORMATS = {
-    'gztar': (_make_tarball, [('compress', 'gzip')], "gzip'ed tar-file"),
-    'bztar': (_make_tarball, [('compress', 'bzip2')], "bzip2'ed tar-file"),
     'tar':   (_make_tarball, [('compress', None)], "uncompressed tar file"),
-    'zip':   (_make_zipfile, [],"ZIP file")
-    }
+    'zip':   (_make_zipfile, [], "ZIP file")
+}
+
+if _ZLIB_SUPPORTED:
+    _ARCHIVE_FORMATS['gztar'] = (_make_tarball, [('compress', 'gzip')],
+                                "gzip'ed tar-file")
+
+if _BZ2_SUPPORTED:
+    _ARCHIVE_FORMATS['bztar'] = (_make_tarball, [('compress', 'bzip2')],
+                                "bzip2'ed tar-file")
 
 def get_archive_formats():
     """Returns a list of supported formats for archiving and unarchiving.
@@ -515,8 +539,8 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     """Create an archive file (eg. zip or tar).
 
     'base_name' is the name of the file to create, minus any format-specific
-    extension; 'format' is the archive format: one of "zip", "tar", "bztar"
-    or "gztar".
+    extension; 'format' is the archive format: one of "zip", "tar", "gztar",
+    or "bztar".  Or any other registered format.
 
     'root_dir' is a directory that will be the root directory of the
     archive; ie. we typically chdir into 'root_dir' before creating the
