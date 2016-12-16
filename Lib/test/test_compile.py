@@ -401,16 +401,9 @@ if 1:
         self.assertNotIn((Ellipsis, Ellipsis), d)
 
     def test_annotation_limit(self):
-        # 16 bits are available for # of annotations, but only 8 bits are
-        # available for the parameter count, hence 255
-        # is the max. Ensure the result of too many annotations is a
-        # SyntaxError.
+        # more than 255 annotations, should compile ok
         s = "def f(%s): pass"
-        s %= ', '.join('a%d:%d' % (i,i) for i in range(256))
-        self.assertRaises(SyntaxError, compile, s, '?', 'exec')
-        # Test that the max # of annotations compiles.
-        s = "def f(%s): pass"
-        s %= ', '.join('a%d:%d' % (i,i) for i in range(255))
+        s %= ', '.join('a%d:%d' % (i,i) for i in range(300))
         compile(s, '?', 'exec')
 
     def test_mangling(self):

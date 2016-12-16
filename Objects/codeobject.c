@@ -110,7 +110,7 @@ PyCode_New(int argcount, int kwonlyargcount,
            PyObject *lnotab)
 {
     PyCodeObject *co;
-    unsigned char *cell2arg = NULL;
+    Py_ssize_t *cell2arg = NULL;
     Py_ssize_t i, n_cellvars;
 
     /* Check argument types */
@@ -142,19 +142,25 @@ PyCode_New(int argcount, int kwonlyargcount,
     if (n_cellvars) {
         Py_ssize_t total_args = argcount + kwonlyargcount +
             ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
-        Py_ssize_t alloc_size = sizeof(unsigned char) * n_cellvars;
         bool used_cell2arg = false;
-        cell2arg = PyMem_MALLOC(alloc_size);
-        if (cell2arg == NULL)
+        cell2arg = PyMem_NEW(Py_ssize_t, n_cellvars);
+        if (cell2arg == NULL) {
+            PyErr_NoMemory();
             return NULL;
-        memset(cell2arg, CO_CELL_NOT_AN_ARG, alloc_size);
+        }
         /* Find cells which are also arguments. */
         for (i = 0; i < n_cellvars; i++) {
             Py_ssize_t j;
             PyObject *cell = PyTuple_GET_ITEM(cellvars, i);
+            cell2arg[i] = CO_CELL_NOT_AN_ARG;
             for (j = 0; j < total_args; j++) {
                 PyObject *arg = PyTuple_GET_ITEM(varnames, j);
-                if (!PyUnicode_Compare(cell, arg)) {
+                int cmp = PyUnicode_Compare(cell, arg);
+                if (cmp == -1 && PyErr_Occurred()) {
+                    PyMem_FREE(cell2arg);
+                    return NULL;
+                }
+                if (cmp == 0) {
                     cell2arg[i] = j;
                     used_cell2arg = true;
                     break;
@@ -449,7 +455,7 @@ code_sizeof(PyCodeObject *co, void *unused)
 
     res = _PyObject_SIZE(Py_TYPE(co));
     if (co->co_cell2arg != NULL && co->co_cellvars != NULL)
-        res += PyTuple_GET_SIZE(co->co_cellvars) * sizeof(unsigned char);
+        res += PyTuple_GET_SIZE(co->co_cellvars) * sizeof(Py_ssize_t);
     return PyLong_FromSsize_t(res);
 }
 

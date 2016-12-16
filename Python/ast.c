@@ -1411,11 +1411,6 @@ ast_for_arguments(struct compiling *c, const node *n)
     if (!kwdefaults && nkwonlyargs)
         return NULL;
 
-    if (nposargs + nkwonlyargs > 255) {
-        ast_error(c, n, "more than 255 arguments");
-        return NULL;
-    }
-
     /* tfpdef: NAME [':' test]
        vfpdef: NAME
     */
