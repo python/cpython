@@ -981,7 +981,7 @@ set_update_internal(PySetObject *so, PyObject *other)
         PyObject *value;
         Py_ssize_t pos = 0;
         Py_hash_t hash;
-        Py_ssize_t dictsize = PyDict_Size(other);
+        Py_ssize_t dictsize = PyDict_GET_SIZE(other);
 
         /* Do one big resize at the start, rather than
         * incrementally resizing as we insert new keys.  Expect

@@ -3684,7 +3684,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
        must be the same as len(inargs) + len(kwds), otherwise we have
        either too much or not enough arguments. */
 
-    actual_args = PyTuple_GET_SIZE(inargs) + (kwds ? PyDict_Size(kwds) : 0);
+    actual_args = PyTuple_GET_SIZE(inargs) + (kwds ? PyDict_GET_SIZE(kwds) : 0);
     if (actual_args != inargs_index) {
         /* When we have default values or named parameters, this error
            message is misleading.  See unittests/test_paramflags.py

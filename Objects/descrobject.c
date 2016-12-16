@@ -1173,7 +1173,7 @@ wrapper_call(wrapperobject *wp, PyObject *args, PyObject *kwds)
         return (*wk)(self, args, wp->descr->d_wrapped, kwds);
     }
 
-    if (kwds != NULL && (!PyDict_Check(kwds) || PyDict_Size(kwds) != 0)) {
+    if (kwds != NULL && (!PyDict_Check(kwds) || PyDict_GET_SIZE(kwds) != 0)) {
         PyErr_Format(PyExc_TypeError,
                      "wrapper %s doesn't take keyword arguments",
                      wp->descr->d_base->name);

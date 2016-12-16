@@ -2423,8 +2423,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
 
     /* now handle kwargs */
     assert(kwargs == NULL || PyDict_Check(kwargs));
-    len = (kwargs != NULL) ? PyDict_Size(kwargs) : 0;
-    if (len > 0) {
+    if (kwargs != NULL && PyDict_GET_SIZE(kwargs)) {
         PyObject *items = PyDict_Items(kwargs);
         if (items == NULL)
             return NULL;
