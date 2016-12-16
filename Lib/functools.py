@@ -516,14 +516,16 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     last = root[PREV]
                     link = [last, root, key, result]
                     last[NEXT] = root[PREV] = cache[key] = link
-                    full = (len(cache) >= maxsize)
+                    # Use the __len__() method instead of the len() function
+                    # which could potentially be wrapped in an lru_cache itself.
+                    full = (cache.__len__() >= maxsize)
                 misses += 1
             return result
 
     def cache_info():
         """Report cache statistics"""
         with lock:
-            return _CacheInfo(hits, misses, maxsize, len(cache))
+            return _CacheInfo(hits, misses, maxsize, cache.__len__())
 
     def cache_clear():
         """Clear the cache and cache statistics"""

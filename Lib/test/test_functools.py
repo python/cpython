@@ -1,4 +1,5 @@
 import abc
+import builtins
 import collections
 import copy
 from itertools import permutations
@@ -1161,6 +1162,18 @@ class TestLRU:
         self.assertEqual(hits, 12)
         self.assertEqual(misses, 4)
         self.assertEqual(currsize, 2)
+
+    def test_lru_reentrancy_with_len(self):
+        # Test to make sure the LRU cache code isn't thrown-off by
+        # caching the built-in len() function.  Since len() can be
+        # cached, we shouldn't use it inside the lru code itself.
+        old_len = builtins.len
+        try:
+            builtins.len = self.module.lru_cache(4)(len)
+            for i in [0, 0, 1, 2, 3, 3, 4, 5, 6, 1, 7, 2, 1]:
+                self.assertEqual(len('abcdefghijklmn'[:i]), i)
+        finally:
+            builtins.len = old_len
 
     def test_lru_type_error(self):
         # Regression test for issue #28653.
