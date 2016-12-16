@@ -2,7 +2,6 @@
 
 from test.support import captured_stdout
 from test.bytecode_helper import BytecodeTestCase
-import difflib
 import unittest
 import sys
 import dis

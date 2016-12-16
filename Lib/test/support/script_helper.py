@@ -6,11 +6,8 @@ import importlib
 import sys
 import os
 import os.path
-import tempfile
 import subprocess
 import py_compile
-import contextlib
-import shutil
 import zipfile
 
 from importlib.util import source_from_cache

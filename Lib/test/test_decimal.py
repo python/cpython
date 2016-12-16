@@ -37,8 +37,6 @@ from test.support import (run_unittest, run_doctest, is_resource_enabled,
 from test.support import (check_warnings, import_fresh_module, TestFailed,
                           run_with_locale, cpython_only)
 import random
-import time
-import warnings
 import inspect
 try:
     import threading

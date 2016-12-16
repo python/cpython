@@ -1,7 +1,4 @@
 import dis
-import re
-import sys
-import textwrap
 import unittest
 
 from test.bytecode_helper import BytecodeTestCase

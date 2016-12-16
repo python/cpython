@@ -1,7 +1,6 @@
 # Author: Collin Winter
 
 import os
-import unittest
 
 from test.support import load_package_tests
 

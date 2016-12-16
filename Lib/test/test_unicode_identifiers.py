@@ -1,5 +1,4 @@
 import unittest
-import sys
 
 class PEP3131Test(unittest.TestCase):
 

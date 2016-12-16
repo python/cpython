@@ -72,7 +72,6 @@ import email.parser
 import email.message
 import http
 import io
-import os
 import re
 import socket
 import collections

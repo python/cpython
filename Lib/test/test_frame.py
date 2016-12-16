@@ -1,5 +1,3 @@
-import gc
-import sys
 import types
 import unittest
 import weakref

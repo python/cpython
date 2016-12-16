@@ -126,7 +126,6 @@ __version__ = "0.4"
 import socket
 import selectors
 import os
-import errno
 import sys
 try:
     import threading

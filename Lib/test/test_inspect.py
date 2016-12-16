@@ -10,7 +10,6 @@ import os
 from os.path import normcase
 import _pickle
 import pickle
-import re
 import shutil
 import sys
 import types
@@ -55,8 +54,6 @@ modfile = normcase(modfile)
 
 def revise(filename, *args):
     return (normcase(filename),) + args
-
-import builtins
 
 git = mod.StupidGit()
 

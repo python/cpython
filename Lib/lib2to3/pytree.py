@@ -13,7 +13,6 @@ There's also a pattern matching implementation here.
 __author__ = "Guido van Rossum <guido@python.org>"
 
 import sys
-import warnings
 from io import StringIO
 
 HUGE = 0x7FFFFFFF  # maximum repeat count, default max

@@ -1,5 +1,4 @@
 import inspect
-import sys
 import types
 import unittest
 

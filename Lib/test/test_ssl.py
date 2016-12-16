@@ -11,7 +11,6 @@ import gc
 import os
 import errno
 import pprint
-import tempfile
 import urllib.request
 import traceback
 import asyncore

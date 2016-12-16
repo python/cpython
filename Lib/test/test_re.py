@@ -1,12 +1,9 @@
 from test.support import verbose, run_unittest, gc_collect, bigmemtest, _2G, \
         cpython_only, captured_stdout
-import io
 import locale
 import re
 import sre_compile
 import string
-import sys
-import traceback
 import unittest
 import warnings
 from re import Scanner

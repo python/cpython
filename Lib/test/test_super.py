@@ -1,6 +1,5 @@
 """Unit tests for zero-argument super() & related machinery."""
 
-import sys
 import unittest
 import warnings
 from test.support import check_warnings

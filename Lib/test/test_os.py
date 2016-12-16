@@ -15,7 +15,6 @@ import locale
 import mmap
 import os
 import pickle
-import re
 import shutil
 import signal
 import socket

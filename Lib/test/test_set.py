@@ -10,7 +10,6 @@ import warnings
 import collections
 import collections.abc
 import itertools
-import string
 
 class PassThru(Exception):
     pass
