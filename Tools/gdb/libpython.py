@@ -1527,7 +1527,11 @@ class Frame(object):
     def get_selected_python_frame(cls):
         '''Try to obtain the Frame for the python-related code in the selected
         frame, or None'''
-        frame = cls.get_selected_frame()
+        try:
+            frame = cls.get_selected_frame()
+        except gdb.error:
+            # No frame: Python didn't start yet
+            return None
 
         while frame:
             if frame.is_python_frame():
@@ -1668,6 +1672,10 @@ PyList()
 def move_in_stack(move_up):
     '''Move up or down the stack (for the py-up/py-down command)'''
     frame = Frame.get_selected_python_frame()
+    if not frame:
+        print('Unable to locate python frame')
+        return
+
     while frame:
         if move_up:
             iter_frame = frame.older()
@@ -1730,6 +1738,10 @@ class PyBacktraceFull(gdb.Command):
 
     def invoke(self, args, from_tty):
         frame = Frame.get_selected_python_frame()
+        if not frame:
+            print('Unable to locate python frame')
+            return
+
         while frame:
             if frame.is_python_frame():
                 frame.print_summary()
@@ -1747,8 +1759,12 @@ class PyBacktrace(gdb.Command):
 
 
     def invoke(self, args, from_tty):
-        sys.stdout.write('Traceback (most recent call first):\n')
         frame = Frame.get_selected_python_frame()
+        if not frame:
+            print('Unable to locate python frame')
+            return
+
+        sys.stdout.write('Traceback (most recent call first):\n')
         while frame:
             if frame.is_python_frame():
                 frame.print_traceback()
