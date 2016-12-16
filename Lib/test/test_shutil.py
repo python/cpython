@@ -19,23 +19,12 @@ from shutil import (make_archive,
                     unregister_unpack_format, get_unpack_formats,
                     SameFileError)
 import tarfile
+import zipfile
 import warnings
 
 from test import support
 from test.support import (TESTFN, check_warnings, captured_stdout,
-                          requires_zlib, android_not_root)
-
-try:
-    import bz2
-    BZ2_SUPPORTED = True
-except ImportError:
-    BZ2_SUPPORTED = False
-
-try:
-    import lzma
-    LZMA_SUPPORTED = True
-except ImportError:
-    LZMA_SUPPORTED = False
+                          android_not_root)
 
 TESTFN2 = TESTFN + "2"
 
@@ -45,12 +34,6 @@ try:
     UID_GID_SUPPORT = True
 except ImportError:
     UID_GID_SUPPORT = False
-
-try:
-    import zipfile
-    ZIP_SUPPORT = True
-except ImportError:
-    ZIP_SUPPORT = shutil.which('zip')
 
 def _fake_rename(*args, **kwargs):
     # Pretend the destination path is on a different filesystem.
@@ -966,7 +949,7 @@ class TestShutil(unittest.TestCase):
             self.assertEqual(getattr(file1_stat, 'st_flags'),
                              getattr(file2_stat, 'st_flags'))
 
-    @requires_zlib
+    @support.requires_zlib
     def test_make_tarball(self):
         # creating something to tar
         root_dir, base_dir = self._create_files('')
@@ -1022,7 +1005,7 @@ class TestShutil(unittest.TestCase):
             write_file((root_dir, 'outer'), 'xxx')
         return root_dir, base_dir
 
-    @requires_zlib
+    @support.requires_zlib
     @unittest.skipUnless(shutil.which('tar'),
                          'Need the tar command to run')
     def test_tarfile_vs_tar(self):
@@ -1055,8 +1038,7 @@ class TestShutil(unittest.TestCase):
         self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
 
-    @requires_zlib
-    @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
+    @support.requires_zlib
     def test_make_zipfile(self):
         # creating something to zip
         root_dir, base_dir = self._create_files()
@@ -1093,8 +1075,7 @@ class TestShutil(unittest.TestCase):
                     ['dist/', 'dist/sub/', 'dist/sub2/',
                      'dist/file1', 'dist/file2', 'dist/sub/file3'])
 
-    @requires_zlib
-    @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
+    @support.requires_zlib
     @unittest.skipUnless(shutil.which('zip'),
                          'Need the zip command to run')
     def test_zipfile_vs_zip(self):
@@ -1120,8 +1101,7 @@ class TestShutil(unittest.TestCase):
             names2 = zf.namelist()
         self.assertEqual(sorted(names), sorted(names2))
 
-    @requires_zlib
-    @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
+    @support.requires_zlib
     @unittest.skipUnless(shutil.which('unzip'),
                          'Need the unzip command to run')
     def test_unzip_zipfile(self):
@@ -1148,7 +1128,7 @@ class TestShutil(unittest.TestCase):
         base_name = os.path.join(tmpdir, 'archive')
         self.assertRaises(ValueError, make_archive, base_name, 'xxx')
 
-    @requires_zlib
+    @support.requires_zlib
     def test_make_archive_owner_group(self):
         # testing make_archive with owner and group, with various combinations
         # this works even if there's not gid/uid support
@@ -1176,7 +1156,7 @@ class TestShutil(unittest.TestCase):
         self.assertTrue(os.path.isfile(res))
 
 
-    @requires_zlib
+    @support.requires_zlib
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
     def test_tarfile_root_owner(self):
         root_dir, base_dir = self._create_files()
@@ -1221,7 +1201,7 @@ class TestShutil(unittest.TestCase):
             self.assertEqual(make_archive('test', 'tar'), 'test.tar')
             self.assertTrue(os.path.isfile('test.tar'))
 
-    @requires_zlib
+    @support.requires_zlib
     def test_make_zipfile_in_curdir(self):
         # Issue #21280
         root_dir = self.mkdtemp()
@@ -1245,32 +1225,45 @@ class TestShutil(unittest.TestCase):
         formats = [name for name, params in get_archive_formats()]
         self.assertNotIn('xxx', formats)
 
-    @requires_zlib
-    def test_unpack_archive(self):
-        formats = ['tar', 'gztar', 'zip']
-        if BZ2_SUPPORTED:
-            formats.append('bztar')
-        if LZMA_SUPPORTED:
-            formats.append('xztar')
-
+    def check_unpack_archive(self, format):
         root_dir, base_dir = self._create_files()
         expected = rlistdir(root_dir)
         expected.remove('outer')
-        for format in formats:
-            base_name = os.path.join(self.mkdtemp(), 'archive')
-            filename = make_archive(base_name, format, root_dir, base_dir)
 
-            # let's try to unpack it now
-            tmpdir2 = self.mkdtemp()
-            unpack_archive(filename, tmpdir2)
-            self.assertEqual(rlistdir(tmpdir2), expected)
+        base_name = os.path.join(self.mkdtemp(), 'archive')
+        filename = make_archive(base_name, format, root_dir, base_dir)
 
-            # and again, this time with the format specified
-            tmpdir3 = self.mkdtemp()
-            unpack_archive(filename, tmpdir3, format=format)
-            self.assertEqual(rlistdir(tmpdir3), expected)
+        # let's try to unpack it now
+        tmpdir2 = self.mkdtemp()
+        unpack_archive(filename, tmpdir2)
+        self.assertEqual(rlistdir(tmpdir2), expected)
+
+        # and again, this time with the format specified
+        tmpdir3 = self.mkdtemp()
+        unpack_archive(filename, tmpdir3, format=format)
+        self.assertEqual(rlistdir(tmpdir3), expected)
+
         self.assertRaises(shutil.ReadError, unpack_archive, TESTFN)
         self.assertRaises(ValueError, unpack_archive, TESTFN, format='xxx')
+
+    def test_unpack_archive_tar(self):
+        self.check_unpack_archive('tar')
+
+    @support.requires_zlib
+    def test_unpack_archive_gztar(self):
+        self.check_unpack_archive('gztar')
+
+    @support.requires_bz2
+    def test_unpack_archive_bztar(self):
+        self.check_unpack_archive('bztar')
+
+    @support.requires_lzma
+    def test_unpack_archive_xztar(self):
+        self.check_unpack_archive('xztar')
+
+    @support.requires_zlib
+    def test_unpack_archive_zip(self):
+        self.check_unpack_archive('zip')
 
     def test_unpack_registry(self):
 
