@@ -7,7 +7,6 @@ import io
 import os
 import re
 import sys
-import time
 import types
 import unittest
 import weakref

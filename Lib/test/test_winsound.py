@@ -1,8 +1,6 @@
 # Ridiculously simple test of the winsound module for Windows.
 
 import functools
-import os
-import subprocess
 import time
 import unittest
 

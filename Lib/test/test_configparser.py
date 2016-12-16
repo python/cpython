@@ -2,7 +2,6 @@ import collections
 import configparser
 import io
 import os
-import sys
 import textwrap
 import unittest
 import warnings

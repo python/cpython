@@ -6,7 +6,6 @@ Original by Michael Schneider
 
 import cmd
 import sys
-import re
 import unittest
 import io
 from test import support

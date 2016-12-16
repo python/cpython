@@ -4,7 +4,6 @@
 """Tests for the raise statement."""
 
 from test import support
-import re
 import sys
 import types
 import unittest

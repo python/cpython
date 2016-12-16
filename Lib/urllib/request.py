@@ -94,7 +94,6 @@ import socket
 import string
 import sys
 import time
-import collections
 import tempfile
 import contextlib
 import warnings

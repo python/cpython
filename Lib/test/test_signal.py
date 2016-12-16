@@ -1,15 +1,11 @@
 import unittest
 from test import support
 from contextlib import closing
-import enum
-import gc
-import pickle
 import select
 import signal
 import socket
 import struct
 import subprocess
-import traceback
 import sys, os, time, errno
 from test.support.script_helper import assert_python_ok, spawn_python
 try:

@@ -10,7 +10,6 @@ import pathlib
 import random
 import shutil
 import subprocess
-import sys
 from test.support import unlink
 import _compression
 

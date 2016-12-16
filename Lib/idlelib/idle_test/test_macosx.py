@@ -4,7 +4,6 @@ Coverage: 71% on Windows.
 '''
 from idlelib import macosx
 from test.support import requires
-import sys
 import tkinter as tk
 import unittest
 import unittest.mock as mock

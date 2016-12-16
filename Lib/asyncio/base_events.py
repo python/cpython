@@ -16,7 +16,6 @@ to modify the meaning of the API call itself.
 import collections
 import concurrent.futures
 import heapq
-import inspect
 import itertools
 import logging
 import os

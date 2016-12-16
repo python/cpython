@@ -1,5 +1,4 @@
 import abc
-import unittest
 
 
 class FinderTests(metaclass=abc.ABCMeta):
