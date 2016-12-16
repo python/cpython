@@ -37,7 +37,7 @@ typedef struct {
        for tracebacks and debuggers; otherwise, constant de-duplication
        would collapse identical functions/lambdas defined on different lines.
     */
-    unsigned char *co_cell2arg; /* Maps cell vars which are arguments. */
+    Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
     PyObject *co_filename;	/* unicode (where it was loaded from) */
     PyObject *co_name;		/* unicode (name, for reference) */
     PyObject *co_lnotab;	/* string (encoding addr<->lineno mapping) See
@@ -84,9 +84,8 @@ typedef struct {
 #define CO_FUTURE_GENERATOR_STOP  0x80000
 
 /* This value is found in the co_cell2arg array when the associated cell
-   variable does not correspond to an argument. The maximum number of
-   arguments is 255 (indexed up to 254), so 255 work as a special flag.*/
-#define CO_CELL_NOT_AN_ARG 255
+   variable does not correspond to an argument. */
+#define CO_CELL_NOT_AN_ARG (-1)
 
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
