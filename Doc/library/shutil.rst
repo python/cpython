@@ -458,6 +458,10 @@ Archiving operations
 
 .. versionadded:: 3.2
 
+.. versionchanged:: 3.5
+    Added support for the *xztar* format.
+
+
 High-level utilities to create and read compressed and archived files are also
 provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
@@ -467,8 +471,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    *base_name* is the name of the file to create, including the path, minus
    any format-specific extension. *format* is the archive format: one of
-   "zip", "tar", "bztar" (if the :mod:`bz2` module is available), "xztar"
-   (if the :mod:`lzma` module is available) or "gztar".
+   "zip" (if the :mod:`zlib` module is available), "tar", "gztar" (if the
+   :mod:`zlib` module is available), "bztar" (if the :mod:`bz2` module is
+   available), or "xztar" (if the :mod:`lzma` module is available).
 
    *root_dir* is a directory that will be the root directory of the
    archive; for example, we typically chdir into *root_dir* before creating the
@@ -491,9 +496,6 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    The *verbose* argument is unused and deprecated.
 
-   .. versionchanged:: 3.5
-      Added support for the *xztar* format.
-
 
 .. function:: get_archive_formats()
 
@@ -502,11 +504,11 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    By default :mod:`shutil` provides these formats:
 
-   - *gztar*: gzip'ed tar-file
-   - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available.)
-   - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available.)
-   - *tar*: uncompressed tar file
-   - *zip*: ZIP file
+   - *zip*: ZIP file (if the :mod:`zlib` module is available).
+   - *tar*: uncompressed tar file.
+   - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
+   - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
+   - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
 
    You can register new formats or provide your own archiver for any existing
    formats, by using :func:`register_archive_format`.
@@ -541,11 +543,12 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *extract_dir* is the name of the target directory where the archive is
    unpacked. If not provided, the current working directory is used.
 
-   *format* is the archive format: one of "zip", "tar", or "gztar". Or any
-   other format registered with :func:`register_unpack_format`. If not
-   provided, :func:`unpack_archive` will use the archive file name extension
-   and see if an unpacker was registered for that extension. In case none is
-   found, a :exc:`ValueError` is raised.
+   *format* is the archive format: one of "zip", "tar", "gztar", "bztar", or
+   "xztar".  Or any other format registered with
+   :func:`register_unpack_format`.  If not provided, :func:`unpack_archive`
+   will use the archive file name extension and see if an unpacker was
+   registered for that extension.  In case none is found,
+   a :exc:`ValueError` is raised.
 
 
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
@@ -578,11 +581,12 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    By default :mod:`shutil` provides these formats:
 
-   - *gztar*: gzip'ed tar-file
-   - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available.)
-   - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available.)
-   - *tar*: uncompressed tar file
-   - *zip*: ZIP file
+   - *zip*: ZIP file (unpacking compressed files works only if corresponding
+     module is available).
+   - *tar*: uncompressed tar file.
+   - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
+   - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
+   - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
 
    You can register new formats or provide your own unpacker for any existing
    formats, by using :func:`register_unpack_format`.
