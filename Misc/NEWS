@@ -44,6 +44,10 @@ Library
   now when the grp module cannot be imported, as for example on Android
   platforms.
 
+- Issue #28990: Fix SSL hanging if connection is closed before handshake
+  completed.
+  (Patch by HoHo-Ho)
+
 Windows
 -------
 
