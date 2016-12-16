@@ -485,6 +485,10 @@ Library
 - Issue #24142: Reading a corrupt config file left the parser in an
   invalid state.  Original patch by Florian Höch.
 
+- Issue #28990: Fix SSL hanging if connection is closed before handshake 
+  completed.
+  (Patch by HoHo-Ho)
+
 IDLE
 ----
 
