@@ -2,7 +2,6 @@ import timeit
 import unittest
 import sys
 import io
-import time
 from textwrap import dedent
 
 from test.support import captured_stdout

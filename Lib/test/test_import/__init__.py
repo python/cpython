@@ -14,7 +14,6 @@ import unittest
 import unittest.mock as mock
 import textwrap
 import errno
-import shutil
 import contextlib
 
 import test.support

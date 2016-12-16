@@ -4,7 +4,6 @@
 
 import test.support, unittest
 import os
-import shutil
 import sys
 import subprocess
 import tempfile

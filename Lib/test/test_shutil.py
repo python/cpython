@@ -20,7 +20,6 @@ from shutil import (make_archive,
                     SameFileError)
 import tarfile
 import zipfile
-import warnings
 
 from test import support
 from test.support import (TESTFN, check_warnings, captured_stdout,

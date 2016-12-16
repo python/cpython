@@ -7,7 +7,6 @@ import marshal
 import os
 import sys
 import types
-import struct
 import warnings
 with warnings.catch_warnings():
     warnings.simplefilter('ignore', DeprecationWarning)

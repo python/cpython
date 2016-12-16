@@ -7,7 +7,6 @@ import operator
 import os
 import stat
 import unittest
-import warnings
 import dbm.dumb as dumbdbm
 from test import support
 from functools import partial

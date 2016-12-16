@@ -2,7 +2,6 @@ from contextlib import contextmanager
 import datetime
 import faulthandler
 import os
-import re
 import signal
 import subprocess
 import sys

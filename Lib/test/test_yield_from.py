@@ -8,10 +8,7 @@ see <http://www.cosc.canterbury.ac.nz/greg.ewing/python/yield-from/YieldFrom-Pyt
 """
 
 import unittest
-import io
-import sys
 import inspect
-import parser
 
 from test.support import captured_stderr, disable_gc, gc_collect
 
