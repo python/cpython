@@ -150,7 +150,7 @@ list_join(PyObject* list)
 static int
 is_empty_dict(PyObject *obj)
 {
-    return PyDict_CheckExact(obj) && PyDict_Size(obj) == 0;
+    return PyDict_CheckExact(obj) && PyDict_GET_SIZE(obj) == 0;
 }
 
 

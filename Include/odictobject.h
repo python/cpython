@@ -21,7 +21,7 @@ PyAPI_DATA(PyTypeObject) PyODictValues_Type;
 
 #define PyODict_Check(op) PyObject_TypeCheck(op, &PyODict_Type)
 #define PyODict_CheckExact(op) (Py_TYPE(op) == &PyODict_Type)
-#define PyODict_SIZE(op) ((PyDictObject *)op)->ma_used
+#define PyODict_SIZE(op) PyDict_GET_SIZE((op))
 #define PyODict_HasKey(od, key) (PyMapping_HasKey(PyObject *)od, key)
 
 PyAPI_FUNC(PyObject *) PyODict_New(void);

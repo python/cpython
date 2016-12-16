@@ -162,7 +162,7 @@ PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* args)
          * entry in the cache, and make space if necessary by throwing the
          * least used item out of the cache. */
 
-        if (PyDict_Size(self->mapping) == self->size) {
+        if (PyDict_GET_SIZE(self->mapping) == self->size) {
             if (self->last) {
                 node = self->last;
 

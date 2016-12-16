@@ -4180,7 +4180,7 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
 
     if (kwds != NULL)
-        n_kwds = PyDict_Size(kwds);
+        n_kwds = PyDict_GET_SIZE(kwds);
     /* Does user supply times argument? */
     if ((PyTuple_Size(args) + n_kwds == 2) && cnt < 0)
         cnt = 0;
@@ -4331,9 +4331,9 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *fillvalue = Py_None;
     Py_ssize_t tuplesize = PySequence_Length(args);
 
-    if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_Size(kwds) > 0) {
+    if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
         fillvalue = PyDict_GetItemString(kwds, "fillvalue");
-        if (fillvalue == NULL  ||  PyDict_Size(kwds) > 1) {
+        if (fillvalue == NULL || PyDict_GET_SIZE(kwds) > 1) {
             PyErr_SetString(PyExc_TypeError,
                 "zip_longest() got an unexpected keyword argument");
             return NULL;

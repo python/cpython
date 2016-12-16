@@ -87,6 +87,7 @@ PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwds)
     Py_ssize_t size;
     int flags;
 
+    assert(kwds == NULL || PyDict_Check(kwds));
     /* PyCFunction_Call() must not be called with an exception set,
        because it may clear it (directly or indirectly) and so the
        caller loses its exception */
@@ -103,7 +104,7 @@ PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwds)
         res = _PyCFunction_FastCallDict(func, stack, nargs, kwds);
     }
     else {
-        if (kwds != NULL && PyDict_Size(kwds) != 0) {
+        if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
             PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
                          f->m_ml->ml_name);
             return NULL;
@@ -176,7 +177,7 @@ _PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
     switch (flags)
     {
     case METH_NOARGS:
-        if (kwargs != NULL && PyDict_Size(kwargs) != 0) {
+        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
             PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
                          func->m_ml->ml_name);
             return NULL;
@@ -193,7 +194,7 @@ _PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
         break;
 
     case METH_O:
-        if (kwargs != NULL && PyDict_Size(kwargs) != 0) {
+        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
             PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
                          func->m_ml->ml_name);
             return NULL;
@@ -215,7 +216,7 @@ _PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
         /* Slow-path: create a temporary tuple */
         PyObject *tuple;
 
-        if (!(flags & METH_KEYWORDS) && kwargs != NULL && PyDict_Size(kwargs) != 0) {
+        if (!(flags & METH_KEYWORDS) && kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
             PyErr_Format(PyExc_TypeError,
                          "%.200s() takes no keyword arguments",
                          func->m_ml->ml_name);

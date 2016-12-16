@@ -564,7 +564,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
         PyObject *tuple, *name, *zero;
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
-        assert(PyDict_Size(u->u_cellvars) == 0);
+        assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
         name = _PyUnicode_FromId(&PyId___class__);
         if (!name) {
             compiler_unit_free(u);
@@ -591,7 +591,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
 
     u->u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
-                               PyDict_Size(u->u_cellvars));
+                               PyDict_GET_SIZE(u->u_cellvars));
     if (!u->u_freevars) {
         compiler_unit_free(u);
         return 0;
@@ -1128,7 +1128,7 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
             Py_DECREF(t);
             return -1;
         }
-        arg = PyDict_Size(dict);
+        arg = PyDict_GET_SIZE(dict);
         v = PyLong_FromSsize_t(arg);
         if (!v) {
             Py_DECREF(t);
@@ -1999,7 +1999,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         else {
             /* No methods referenced __class__, so just return None */
-            assert(PyDict_Size(c->u->u_cellvars) == 0);
+            assert(PyDict_GET_SIZE(c->u->u_cellvars) == 0);
             ADDOP_O(c, LOAD_CONST, Py_None, consts);
         }
         ADDOP_IN_SCOPE(c, RETURN_VALUE);
@@ -5179,7 +5179,7 @@ static PyObject *
 dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 {
     PyObject *tuple, *k, *v;
-    Py_ssize_t i, pos = 0, size = PyDict_Size(dict);
+    Py_ssize_t i, pos = 0, size = PyDict_GET_SIZE(dict);
 
     tuple = PyTuple_New(size);
     if (tuple == NULL)
@@ -5203,7 +5203,6 @@ compute_code_flags(struct compiler *c)
 {
     PySTEntryObject *ste = c->u->u_ste;
     int flags = 0;
-    Py_ssize_t n;
     if (ste->ste_type == FunctionBlock) {
         flags |= CO_NEWLOCALS | CO_OPTIMIZED;
         if (ste->ste_nested)
@@ -5223,16 +5222,9 @@ compute_code_flags(struct compiler *c)
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
 
-    n = PyDict_Size(c->u->u_freevars);
-    if (n < 0)
-        return -1;
-    if (n == 0) {
-        n = PyDict_Size(c->u->u_cellvars);
-        if (n < 0)
-            return -1;
-        if (n == 0) {
-            flags |= CO_NOFREE;
-        }
+    if (!PyDict_GET_SIZE(c->u->u_freevars) &&
+        !PyDict_GET_SIZE(c->u->u_cellvars)) {
+        flags |= CO_NOFREE;
     }
 
     return flags;
@@ -5273,7 +5265,7 @@ makecode(struct compiler *c, struct assembler *a)
     if (!freevars)
         goto error;
 
-    nlocals = PyDict_Size(c->u->u_varnames);
+    nlocals = PyDict_GET_SIZE(c->u->u_varnames);
     assert(nlocals < INT_MAX);
     nlocals_int = Py_SAFE_DOWNCAST(nlocals, Py_ssize_t, int);
 

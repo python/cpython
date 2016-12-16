@@ -902,7 +902,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (type == &PyType_Type &&
         PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1 &&
         (kwds == NULL ||
-         (PyDict_Check(kwds) && PyDict_Size(kwds) == 0)))
+         (PyDict_Check(kwds) && PyDict_GET_SIZE(kwds) == 0)))
         return obj;
 
     /* If the returned object is not an instance of type,
@@ -1585,7 +1585,7 @@ set_mro_error(PyObject *to_merge, int *remain)
             }
         }
     }
-    n = PyDict_Size(set);
+    n = PyDict_GET_SIZE(set);
 
     off = PyOS_snprintf(buf, sizeof(buf), "Cannot create a \
 consistent method resolution\norder (MRO) for bases");
@@ -2187,7 +2187,7 @@ type_init(PyObject *cls, PyObject *args, PyObject *kwds)
     assert(kwds == NULL || PyDict_Check(kwds));
 
     if (kwds != NULL && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1 &&
-        PyDict_Check(kwds) && PyDict_Size(kwds) != 0) {
+        PyDict_Check(kwds) && PyDict_GET_SIZE(kwds) != 0) {
         PyErr_SetString(PyExc_TypeError,
                         "type.__init__() takes no keyword arguments");
         return -1;
@@ -2272,7 +2272,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
        Note: We don't call PyType_CheckExact as that also allows subclasses */
     if (metatype == &PyType_Type) {
         const Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-        const Py_ssize_t nkwds = kwds == NULL ? 0 : PyDict_Size(kwds);
+        const Py_ssize_t nkwds = kwds == NULL ? 0 : PyDict_GET_SIZE(kwds);
 
         if (nargs == 1 && nkwds == 0) {
             PyObject *x = PyTuple_GET_ITEM(args, 0);
@@ -3416,7 +3416,7 @@ static int
 excess_args(PyObject *args, PyObject *kwds)
 {
     return PyTuple_GET_SIZE(args) ||
-        (kwds && PyDict_Check(kwds) && PyDict_Size(kwds));
+        (kwds && PyDict_Check(kwds) && PyDict_GET_SIZE(kwds));
 }
 
 static int
@@ -3894,7 +3894,7 @@ _PyObject_GetState(PyObject *obj, int required)
                We also return None if the dict is empty to make the behavior
                consistent regardless whether the dict was initialized or not.
                This make unit testing easier. */
-            if (dict != NULL && *dict != NULL && PyDict_Size(*dict) > 0) {
+            if (dict != NULL && *dict != NULL && PyDict_GET_SIZE(*dict)) {
                 state = *dict;
             }
             else {
@@ -3983,7 +3983,7 @@ _PyObject_GetState(PyObject *obj, int required)
 
             /* If we found some slot attributes, pack them in a tuple along
                the original attribute dictionary. */
-            if (PyDict_Size(slots) > 0) {
+            if (PyDict_GET_SIZE(slots) > 0) {
                 PyObject *state2;
 
                 state2 = PyTuple_Pack(2, state, slots);
@@ -4175,7 +4175,7 @@ reduce_newobj(PyObject *obj)
         return NULL;
     }
     hasargs = (args != NULL);
-    if (kwargs == NULL || PyDict_Size(kwargs) == 0) {
+    if (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) {
         _Py_IDENTIFIER(__newobj__);
         PyObject *cls;
         Py_ssize_t i, n;
