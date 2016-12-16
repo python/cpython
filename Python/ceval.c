@@ -4100,7 +4100,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
        vars into frame. */
     for (i = 0; i < PyTuple_GET_SIZE(co->co_cellvars); ++i) {
         PyObject *c;
-        int arg;
+        Py_ssize_t arg;
         /* Possibly account for the cell variable being an argument. */
         if (co->co_cell2arg != NULL &&
             (arg = co->co_cell2arg[i]) != CO_CELL_NOT_AN_ARG) {

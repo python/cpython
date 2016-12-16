@@ -926,7 +926,7 @@ class SizeofTest(unittest.TestCase):
             def inner():
                 return x
             return inner
-        check(get_cell2.__code__, size('6i13P') + 1)
+        check(get_cell2.__code__, size('6i13P') + calcsize('n'))
         # complex
         check(complex(0,1), size('2d'))
         # method_descriptor (descriptor object)

@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #18896: Python function can now have more than 255 parameters.
+  collections.namedtuple() now supports tuples with more than 255 elements.
+
 - Issue #26919: On Android, operating system data is now always encoded/decoded
   to/from UTF-8, instead of the locale encoding to avoid inconsistencies with
   os.fsencode() and os.fsdecode() which are already using UTF-8.
