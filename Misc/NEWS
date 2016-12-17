@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #29000: Fixed bytes formatting of octals with zero padding in alternate
+  form.
+
 - Issue #28512: Fixed setting the offset attribute of SyntaxError by
   PyErr_SyntaxLocationEx() and PyErr_SyntaxLocationObject().
 

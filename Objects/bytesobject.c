@@ -882,7 +882,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 if (width > len)
                     width--;
             }
-            if ((flags & F_ALT) && (c == 'x' || c == 'X')) {
+            if ((flags & F_ALT) && (c == 'o' || c == 'x' || c == 'X')) {
                 assert(pbuf[0] == '0');
                 assert(pbuf[1] == c);
                 if (fill != ' ') {
@@ -904,8 +904,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             if (fill == ' ') {
                 if (sign)
                     *res++ = sign;
-                if ((flags & F_ALT) &&
-                    (c == 'x' || c == 'X')) {
+                if ((flags & F_ALT) && (c == 'o' || c == 'x' || c == 'X')) {
                     assert(pbuf[0] == '0');
                     assert(pbuf[1] == c);
                     *res++ = *pbuf++;
