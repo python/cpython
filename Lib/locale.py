@@ -618,15 +618,21 @@ else:
     try:
         CODESET
     except NameError:
-        # Fall back to parsing environment variables :-(
-        def getpreferredencoding(do_setlocale = True):
-            """Return the charset that the user is likely using,
-            by looking at environment variables."""
-            res = getdefaultlocale()[1]
-            if res is None:
-                # LANG not set, default conservatively to ASCII
-                res = 'ascii'
-            return res
+        if hasattr(sys, 'getandroidapilevel'):
+            # On Android langinfo.h and CODESET are missing, and UTF-8 is
+            # always used in mbstowcs() and wcstombs().
+            def getpreferredencoding(do_setlocale = True):
+                return 'UTF-8'
+        else:
+            # Fall back to parsing environment variables :-(
+            def getpreferredencoding(do_setlocale = True):
+                """Return the charset that the user is likely using,
+                by looking at environment variables."""
+                res = getdefaultlocale()[1]
+                if res is None:
+                    # LANG not set, default conservatively to ASCII
+                    res = 'ascii'
+                return res
     else:
         def getpreferredencoding(do_setlocale = True):
             """Return the charset that the user is likely using,

@@ -14,11 +14,17 @@ else:
     try:
         _locale.CODESET
     except AttributeError:
-        def getpreferredencoding(do_setlocale=True):
-            # This path for legacy systems needs the more complex
-            # getdefaultlocale() function, import the full locale module.
-            import locale
-            return locale.getpreferredencoding(do_setlocale)
+        if hasattr(sys, 'getandroidapilevel'):
+            # On Android langinfo.h and CODESET are missing, and UTF-8 is
+            # always used in mbstowcs() and wcstombs().
+            def getpreferredencoding(do_setlocale=True):
+                return 'UTF-8'
+        else:
+            def getpreferredencoding(do_setlocale=True):
+                # This path for legacy systems needs the more complex
+                # getdefaultlocale() function, import the full locale module.
+                import locale
+                return locale.getpreferredencoding(do_setlocale)
     else:
         def getpreferredencoding(do_setlocale=True):
             assert not do_setlocale
