@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #29000: Fixed bytes formatting of octals with zero padding in alternate
+  form.
+
 - Issue #18896: Python function can now have more than 255 parameters.
   collections.namedtuple() now supports tuples with more than 255 elements.
 
