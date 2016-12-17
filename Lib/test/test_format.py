@@ -114,6 +114,7 @@ class FormatTest(unittest.TestCase):
         testcommon("%o", 100000000000, "1351035564000")
         testcommon("%d", 10, "10")
         testcommon("%d", 100000000000, "100000000000")
+
         big = 123456789012345678901234567890
         testcommon("%d", big, "123456789012345678901234567890")
         testcommon("%d", -big, "-123456789012345678901234567890")
@@ -133,6 +134,7 @@ class FormatTest(unittest.TestCase):
         testcommon("%.31d", big, "0123456789012345678901234567890")
         testcommon("%32.31d", big, " 0123456789012345678901234567890")
         testcommon("%d", float(big), "123456________________________", 6)
+
         big = 0x1234567890abcdef12345  # 21 hex digits
         testcommon("%x", big, "1234567890abcdef12345")
         testcommon("%x", -big, "-1234567890abcdef12345")
@@ -156,19 +158,26 @@ class FormatTest(unittest.TestCase):
         testcommon("%#X", big, "0X1234567890ABCDEF12345")
         testcommon("%#x", big, "0x1234567890abcdef12345")
         testcommon("%#x", -big, "-0x1234567890abcdef12345")
+        testcommon("%#27x", big, "    0x1234567890abcdef12345")
+        testcommon("%#-27x", big, "0x1234567890abcdef12345    ")
+        testcommon("%#027x", big, "0x00001234567890abcdef12345")
+        testcommon("%#.23x", big, "0x001234567890abcdef12345")
         testcommon("%#.23x", -big, "-0x001234567890abcdef12345")
+        testcommon("%#27.23x", big, "  0x001234567890abcdef12345")
+        testcommon("%#-27.23x", big, "0x001234567890abcdef12345  ")
+        testcommon("%#027.23x", big, "0x00001234567890abcdef12345")
         testcommon("%#+.23x", big, "+0x001234567890abcdef12345")
         testcommon("%# .23x", big, " 0x001234567890abcdef12345")
         testcommon("%#+.23X", big, "+0X001234567890ABCDEF12345")
-        testcommon("%#-+.23X", big, "+0X001234567890ABCDEF12345")
-        testcommon("%#-+26.23X", big, "+0X001234567890ABCDEF12345")
-        testcommon("%#-+27.23X", big, "+0X001234567890ABCDEF12345 ")
-        testcommon("%#+27.23X", big, " +0X001234567890ABCDEF12345")
         # next one gets two leading zeroes from precision, and another from the
         # 0 flag and the width
         testcommon("%#+027.23X", big, "+0X0001234567890ABCDEF12345")
+        testcommon("%# 027.23X", big, " 0X0001234567890ABCDEF12345")
         # same, except no 0 flag
         testcommon("%#+27.23X", big, " +0X001234567890ABCDEF12345")
+        testcommon("%#-+27.23x", big, "+0x001234567890abcdef12345 ")
+        testcommon("%#- 27.23x", big, " 0x001234567890abcdef12345 ")
+
         big = 0o12345670123456701234567012345670  # 32 octal digits
         testcommon("%o", big, "12345670123456701234567012345670")
         testcommon("%o", -big, "-12345670123456701234567012345670")
@@ -191,13 +200,21 @@ class FormatTest(unittest.TestCase):
         testcommon("%o", big, "12345670123456701234567012345670")
         testcommon("%#o", big, "0o12345670123456701234567012345670")
         testcommon("%#o", -big, "-0o12345670123456701234567012345670")
+        testcommon("%#38o", big, "    0o12345670123456701234567012345670")
+        testcommon("%#-38o", big, "0o12345670123456701234567012345670    ")
+        testcommon("%#038o", big, "0o000012345670123456701234567012345670")
+        testcommon("%#.34o", big, "0o0012345670123456701234567012345670")
         testcommon("%#.34o", -big, "-0o0012345670123456701234567012345670")
+        testcommon("%#38.34o", big, "  0o0012345670123456701234567012345670")
+        testcommon("%#-38.34o", big, "0o0012345670123456701234567012345670  ")
+        testcommon("%#038.34o", big, "0o000012345670123456701234567012345670")
         testcommon("%#+.34o", big, "+0o0012345670123456701234567012345670")
         testcommon("%# .34o", big, " 0o0012345670123456701234567012345670")
-        testcommon("%#+.34o", big, "+0o0012345670123456701234567012345670")
-        testcommon("%#-+.34o", big, "+0o0012345670123456701234567012345670")
-        testcommon("%#-+37.34o", big, "+0o0012345670123456701234567012345670")
-        testcommon("%#+37.34o", big, "+0o0012345670123456701234567012345670")
+        testcommon("%#+38.34o", big, " +0o0012345670123456701234567012345670")
+        testcommon("%#-+38.34o", big, "+0o0012345670123456701234567012345670 ")
+        testcommon("%#- 38.34o", big, " 0o0012345670123456701234567012345670 ")
+        testcommon("%#+038.34o", big, "+0o00012345670123456701234567012345670")
+        testcommon("%# 038.34o", big, " 0o00012345670123456701234567012345670")
         # next one gets one leading zero from precision
         testcommon("%.33o", big, "012345670123456701234567012345670")
         # base marker added in spite of leading zero (different to Python 2)
@@ -208,6 +225,7 @@ class FormatTest(unittest.TestCase):
         testcommon("%035.33o", big, "00012345670123456701234567012345670")
         # base marker shouldn't change the size
         testcommon("%0#35.33o", big, "0o012345670123456701234567012345670")
+
         # Some small ints, in both Python int and flavors).
         testcommon("%d", 42, "42")
         testcommon("%d", -42, "-42")
