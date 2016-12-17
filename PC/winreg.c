@@ -719,14 +719,13 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
         case REG_SZ:
         case REG_EXPAND_SZ:
             {
-                /* the buffer may or may not have a trailing NULL */
+                /* REG_SZ should be a NUL terminated string, but only by
+                 * convention. The buffer may have been saved without a NUL
+                 * or with embedded NULs. To be consistent with reg.exe and
+                 * regedit.exe, consume only up to the first NUL. */
                 wchar_t *data = (wchar_t *)retDataBuf;
-                int len = retDataSize / 2;
-                if (retDataSize && data[len-1] == '\0')
-                    retDataSize -= 2;
-                if (retDataSize <= 0)
-                    data = L"";
-                obData = PyUnicode_FromWideChar(data, retDataSize/2);
+                size_t len = wcsnlen(data, retDataSize / sizeof(wchar_t));
+                obData = PyUnicode_FromWideChar(data, len);
                 break;
             }
         case REG_MULTI_SZ:
