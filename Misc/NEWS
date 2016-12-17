@@ -17,10 +17,6 @@ Core and Builtins
 - Issue #28991:  functools.lru_cache() was susceptible to an obscure $
   bug triggerable by a monkey-patched len() function.
 
-- Issue #28147: Fix a memory leak in split-table dictionaries: setattr()
-  must not convert combined table into split table. Patch written by INADA
-  Naoki.
-
 - Issue #28739: f-string expressions no longer accepted as docstrings and
   by ast.literal_eval() even if they do not include expressions.
 
@@ -47,10 +43,6 @@ Library
   now when the grp module cannot be imported, as for example on Android
   platforms.
 
-- Issue #28990: Fix SSL hanging if connection is closed before handshake
-  completed.
-  (Patch by HoHo-Ho)
-
 Windows
 -------
 
@@ -73,6 +65,37 @@ Build
   search paths. Original patch by Thomas Petazzoni.
 
 - Issue #28849: Do not define sys.implementation._multiarch on Android.
+
+
+What's New in Python 3.6.0 release candidate 2
+==============================================
+
+*Release date: 2016-12-16*
+
+Core and Builtins
+-----------------
+
+- Issue #28147: Fix a memory leak in split-table dictionaries: setattr()
+  must not convert combined table into split table. Patch written by INADA
+  Naoki.
+
+- Issue #28990: Fix asynchio SSL hanging if connection is closed before
+  handshake is completed. (Patch by HoHo-Ho)
+
+Tools/Demos
+-----------
+
+- Issue #28770: Fix python-gdb.py for fastcalls.
+
+Windows
+-------
+
+- Issue #28896: Deprecate WindowsRegistryFinder.
+
+Build
+-----
+
+- Issue #28898: Prevent gdb build errors due to HAVE_LONG_LONG redefinition.
 
 
 What's New in Python 3.6.0 release candidate 1
