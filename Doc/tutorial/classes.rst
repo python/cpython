@@ -374,11 +374,11 @@ Surely Python raises an exception when a function that requires an argument is
 called without any --- even if the argument isn't actually used...
 
 Actually, you may have guessed the answer: the special thing about methods is
-that the object is passed as the first argument of the function.  In our
+that the instance object is passed as the first argument of the function.  In our
 example, the call ``x.f()`` is exactly equivalent to ``MyClass.f(x)``.  In
 general, calling a method with a list of *n* arguments is equivalent to calling
 the corresponding function with an argument list that is created by inserting
-the method's object before the first argument.
+the method's instance object before the first argument.
 
 If you still don't understand how methods work, a look at the implementation can
 perhaps clarify matters.  When an instance attribute is referenced that isn't a
@@ -906,4 +906,3 @@ Examples::
    namespace; the name :attr:`~object.__dict__` is an attribute but not a global name.
    Obviously, using this violates the abstraction of namespace implementation, and
    should be restricted to things like post-mortem debuggers.
-
