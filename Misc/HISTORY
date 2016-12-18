@@ -6495,7 +6495,7 @@ Core and Builtins
   NULL).
 
 - Issue #10829: Refactor PyUnicode_FromFormat(), use the same function to parse
-  the format string in the 3 steps, fix crashs on invalid format strings.
+  the format string in the 3 steps, fix crashes on invalid format strings.
 
 - Issue #13007: whichdb should recognize gdbm 1.9 magic numbers.
 
