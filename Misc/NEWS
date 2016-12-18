@@ -197,7 +197,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #16255: subrocess.Popen uses /system/bin/sh on Android as the shell,
+- Issue #16255: subprocess.Popen uses /system/bin/sh on Android as the shell,
   instead of /bin/sh.
 
 - Issue #28779: multiprocessing.set_forkserver_preload() would crash the
