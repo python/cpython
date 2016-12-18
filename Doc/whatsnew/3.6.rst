@@ -360,7 +360,7 @@ ensure that the new ``__classcell__`` namespace entry is propagated to
 PEP 487: Descriptor Protocol Enhancements
 -----------------------------------------
 
-:pep:`487` extends the descriptor protocol has to include the new optional
+:pep:`487` extends the descriptor protocol to include the new optional
 :meth:`~object.__set_name__` method.  Whenever a new class is defined, the new
 method will be called on all descriptors included in the definition, providing
 them with a reference to the class being defined and the name given to the
