@@ -581,7 +581,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    By default :mod:`shutil` provides these formats:
 
-   - *zip*: ZIP file (unpacking compressed files works only if corresponding
+   - *zip*: ZIP file (unpacking compressed files works only if the corresponding
      module is available).
    - *tar*: uncompressed tar file.
    - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
