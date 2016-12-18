@@ -1814,7 +1814,7 @@ class CAPITest(unittest.TestCase):
                      b'repr=%V', None, b'abc\xff')
 
         # not supported: copy the raw format string. these tests are just here
-        # to check for crashs and should not be considered as specifications
+        # to check for crashes and should not be considered as specifications
         check_format(u'%s',
                      b'%1%s', b'abc')
         check_format(u'%1abc',

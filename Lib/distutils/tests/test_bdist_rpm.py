@@ -99,7 +99,7 @@ class BuildRpmTestCase(support.TempdirManager,
     @unittest.skipIf(find_executable('rpmbuild') is None,
                      'the rpmbuild command is not found')
     def test_no_optimize_flag(self):
-        # let's create a package that brakes bdist_rpm
+        # let's create a package that breaks bdist_rpm
         tmp_dir = self.mkdtemp()
         os.environ['HOME'] = tmp_dir   # to confine dir '.rpmdb' creation
         pkg_dir = os.path.join(tmp_dir, 'foo')
