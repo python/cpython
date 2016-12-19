@@ -1138,11 +1138,8 @@ err_programtext(FILE *fp, int lineno)
     }
     fclose(fp);
     if (i == lineno) {
-        char *p = linebuf;
         PyObject *res;
-        while (*p == ' ' || *p == '\t' || *p == '\014')
-            p++;
-        res = PyUnicode_FromString(p);
+        res = PyUnicode_FromString(linebuf);
         if (res == NULL)
             PyErr_Clear();
         return res;
