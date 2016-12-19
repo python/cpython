@@ -2378,10 +2378,10 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     end = str + hexlen;
     while (str < end) {
         /* skip over spaces in the input */
-        if (*str == ' ') {
+        if (Py_ISSPACE(*str)) {
             do {
                 str++;
-            } while (*str == ' ');
+            } while (Py_ISSPACE(*str));
             if (str >= end)
                 break;
         }

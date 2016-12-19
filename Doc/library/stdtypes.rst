@@ -2314,10 +2314,14 @@ the bytes type has an additional class method to read data in that format:
 
    This :class:`bytes` class method returns a bytes object, decoding the
    given string object.  The string must contain two hexadecimal digits per
-   byte, with ASCII spaces being ignored.
+   byte, with ASCII whitespace being ignored.
 
    >>> bytes.fromhex('2Ef0 F1f2  ')
    b'.\xf0\xf1\xf2'
+
+   .. versionchanged:: 3.7
+      :meth:`bytes.fromhex` now skips all ASCII whitespace in the string,
+      not just spaces.
 
 A reverse conversion function exists to transform a bytes object into its
 hexadecimal representation.
@@ -2382,10 +2386,14 @@ the bytearray type has an additional class method to read data in that format:
 
    This :class:`bytearray` class method returns bytearray object, decoding
    the given string object.  The string must contain two hexadecimal digits
-   per byte, with ASCII spaces being ignored.
+   per byte, with ASCII whitespace being ignored.
 
    >>> bytearray.fromhex('2Ef0 F1f2  ')
    bytearray(b'.\xf0\xf1\xf2')
+
+   .. versionchanged:: 3.7
+      :meth:`bytearray.fromhex` now skips all ASCII whitespace in the string,
+      not just spaces.
 
 A reverse conversion function exists to transform a bytearray object into its
 hexadecimal representation.
