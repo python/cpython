@@ -1710,3 +1710,13 @@ def check_free_after_iterating(test, iter, cls, args=()):
     # The sequence should be deallocated just after the end of iterating
     gc_collect()
     test.assertTrue(done[0])
+
+@contextlib.contextmanager
+def disable_gc():
+    have_gc = gc.isenabled()
+    gc.disable()
+    try:
+        yield
+    finally:
+        if have_gc:
+            gc.enable()

@@ -202,24 +202,27 @@ class WeakValueDictionary(UserDict.UserDict):
         try:
             o = self.data.pop(key)()
         except KeyError:
+            o = None
+        if o is None:
             if args:
                 return args[0]
-            raise
-        if o is None:
-            raise KeyError, key
+            else:
+                raise KeyError, key
         else:
             return o
 
     def setdefault(self, key, default=None):
         try:
-            wr = self.data[key]
+            o = self.data[key]()
         except KeyError:
+            o = None
+        if o is None:
             if self._pending_removals:
                 self._commit_removals()
             self.data[key] = KeyedRef(default, self._remove, key)
             return default
         else:
-            return wr()
+            return o
 
     def update(*args, **kwargs):
         if not args:
