@@ -200,6 +200,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19542: Fix bugs in WeakValueDictionary.setdefault() and
+  WeakValueDictionary.pop() when a GC collection happens in another
+  thread.
+
 - Issue #20191: Fixed a crash in resource.prlimit() when pass a sequence that
   doesn't own its elements as limits.
 
