@@ -107,29 +107,46 @@ resource_getrusage(PyObject *self, PyObject *args)
 }
 
 static int
-py2rlimit(PyObject *curobj, PyObject *maxobj, struct rlimit *rl_out)
+py2rlimit(PyObject *limits, struct rlimit *rl_out)
 {
+    PyObject *curobj, *maxobj;
+    limits = PySequence_Tuple(limits);
+    if (!limits)
+        /* Here limits is a borrowed reference */
+        return -1;
+
+    if (PyTuple_GET_SIZE(limits) != 2) {
+        PyErr_SetString(PyExc_ValueError,
+                        "expected a tuple of 2 integers");
+        goto error;
+    }
+    curobj = PyTuple_GET_ITEM(limits, 0);
+    maxobj = PyTuple_GET_ITEM(limits, 1);
 #if !defined(HAVE_LARGEFILE_SUPPORT)
     rl_out->rlim_cur = PyLong_AsLong(curobj);
     if (rl_out->rlim_cur == (rlim_t)-1 && PyErr_Occurred())
-        return -1;
+        goto error;
     rl_out->rlim_max = PyLong_AsLong(maxobj);
     if (rl_out->rlim_max == (rlim_t)-1 && PyErr_Occurred())
-        return -1;
+        goto error;
 #else
     /* The limits are probably bigger than a long */
     rl_out->rlim_cur = PyLong_AsLongLong(curobj);
     if (rl_out->rlim_cur == (rlim_t)-1 && PyErr_Occurred())
-        return -1;
+        goto error;
     rl_out->rlim_max = PyLong_AsLongLong(maxobj);
     if (rl_out->rlim_max == (rlim_t)-1 && PyErr_Occurred())
-        return -1;
+        goto error;
 #endif
 
+    Py_DECREF(limits);
     rl_out->rlim_cur = rl_out->rlim_cur & RLIM_INFINITY;
     rl_out->rlim_max = rl_out->rlim_max & RLIM_INFINITY;
     return 0;
 
+error:
+    Py_DECREF(limits);
+    return -1;
 }
 
 static PyObject*
@@ -172,7 +189,7 @@ resource_setrlimit(PyObject *self, PyObject *args)
 {
     struct rlimit rl;
     int resource;
-    PyObject *limits, *curobj, *maxobj;
+    PyObject *limits;
 
     if (!PyArg_ParseTuple(args, "iO:setrlimit", &resource, &limits))
         return NULL;
@@ -183,21 +200,8 @@ resource_setrlimit(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    limits = PySequence_Tuple(limits);
-    if (!limits)
-        /* Here limits is a borrowed reference */
+    if (py2rlimit(limits, &rl) < 0) {
         return NULL;
-
-    if (PyTuple_GET_SIZE(limits) != 2) {
-        PyErr_SetString(PyExc_ValueError,
-                        "expected a tuple of 2 integers");
-        goto error;
-    }
-    curobj = PyTuple_GET_ITEM(limits, 0);
-    maxobj = PyTuple_GET_ITEM(limits, 1);
-
-    if (py2rlimit(curobj, maxobj, &rl) < 0) {
-        goto error;
     }
 
     if (setrlimit(resource, &rl) == -1) {
@@ -209,15 +213,9 @@ resource_setrlimit(PyObject *self, PyObject *args)
                             "not allowed to raise maximum limit");
         else
             PyErr_SetFromErrno(PyExc_OSError);
-        goto error;
+        return NULL;
     }
-    Py_DECREF(limits);
-    Py_INCREF(Py_None);
-    return Py_None;
-
-  error:
-    Py_DECREF(limits);
-    return NULL;
+    Py_RETURN_NONE;
 }
 
 #ifdef HAVE_PRLIMIT
@@ -227,10 +225,10 @@ resource_prlimit(PyObject *self, PyObject *args)
     struct rlimit old_limit, new_limit;
     int resource, retval;
     pid_t pid;
-    PyObject *curobj=NULL, *maxobj=NULL;
+    PyObject *limits = NULL;
 
-    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "i|(OO):prlimit",
-                          &pid, &resource, &curobj, &maxobj))
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "i|O:prlimit",
+                          &pid, &resource, &limits))
         return NULL;
 
     if (resource < 0 || resource >= RLIM_NLIMITS) {
@@ -239,8 +237,8 @@ resource_prlimit(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (curobj != NULL) {
-        if (py2rlimit(curobj, maxobj, &new_limit) < 0) {
+    if (limits != NULL) {
+        if (py2rlimit(limits, &new_limit) < 0) {
             return NULL;
         }
         retval = prlimit(pid, resource, &new_limit, &old_limit);
