@@ -158,6 +158,20 @@ class ResourceTest(unittest.TestCase):
         self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS, limit),
                          limit)
 
+    # Issue 20191: Reference counting bug
+    @unittest.skipUnless(hasattr(resource, 'prlimit'), 'no prlimit')
+    @support.requires_linux_version(2, 6, 36)
+    def test_prlimit_refcount(self):
+        class BadSeq:
+            def __len__(self):
+                return 2
+            def __getitem__(self, key):
+                return limits[key] - 1  # new reference
+
+        limits = resource.getrlimit(resource.RLIMIT_AS)
+        self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS, BadSeq()),
+                         limits)
+
 
 def test_main(verbose=None):
     support.run_unittest(ResourceTest)
