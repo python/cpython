@@ -293,6 +293,14 @@ class BaseBytesTest:
         b = bytearray([0x1a, 0x2b, 0x30])
         self.assertEqual(self.type2test.fromhex('1a2B30'), b)
         self.assertEqual(self.type2test.fromhex('  1A 2B  30   '), b)
+
+        # check that ASCII whitespace is ignored
+        self.assertEqual(self.type2test.fromhex(' 1A\n2B\t30\v'), b)
+        for c in "\x09\x0A\x0B\x0C\x0D\x20":
+            self.assertEqual(self.type2test.fromhex(c), self.type2test())
+        for c in "\x1C\x1D\x1E\x1F\x85\xa0\u2000\u2002\u2028":
+            self.assertRaises(ValueError, self.type2test.fromhex, c)
+
         self.assertEqual(self.type2test.fromhex('0000'), b'\0\0')
         self.assertRaises(TypeError, self.type2test.fromhex, b'1B')
         self.assertRaises(ValueError, self.type2test.fromhex, 'a')

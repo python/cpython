@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1
 Core and Builtins
 -----------------
 
+- Issue #28927: bytes.fromhex() and bytearray.fromhex() now ignore all ASCII
+  whitespace, not only spaces.  Patch by Robert Xiao.
+
 - Issue #25677: Correct the positioning of the syntax error caret for
   indented blocks.  Based on patch by Michael Layzell.
 

@@ -79,6 +79,10 @@ Other Language Changes
   now have more than 255 parameters.
   (Contributed by Serhiy Storchaka in :issue:`12844` and :issue:`18896`.)
 
+* :meth:`bytes.fromhex` and :meth:`bytearray.fromhex` now ignore all ASCII
+  whitespace, not only spaces.
+  (Contributed by Robert Xiao in :issue:`28927`.)
+
 
 New Modules
 ===========
