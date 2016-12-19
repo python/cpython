@@ -197,6 +197,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20191: Fixed a crash in resource.prlimit() when pass a sequence that
+  doesn't own its elements as limits.
+
 - Issue #16255: subprocess.Popen uses /system/bin/sh on Android as the shell,
   instead of /bin/sh.
 
