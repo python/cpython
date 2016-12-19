@@ -2047,10 +2047,6 @@ PyAPI_FUNC(int) _PyUnicode_EqualToASCIIString(
    - Py_True or Py_False for successful comparisons
    - Py_NotImplemented in case the type combination is unknown
 
-   Note that Py_EQ and Py_NE comparisons can cause a UnicodeWarning in
-   case the conversion of the arguments to Unicode fails with a
-   UnicodeDecodeError.
-
    Possible values for op:
 
      Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE
