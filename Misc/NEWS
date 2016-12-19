@@ -10,6 +10,9 @@ What's New in Python 3.6.1 release candidate 1
 Core and Builtins
 -----------------
 
+- Issue #25677: Correct the positioning of the syntax error caret for
+  indented blocks.  Based on patch by Michael Layzell.
+
 - Issue #29000: Fixed bytes formatting of octals with zero padding in alternate
   form.
 
