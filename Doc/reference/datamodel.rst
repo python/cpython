@@ -1409,8 +1409,12 @@ Basic customization
    hashed collections including :class:`set`, :class:`frozenset`, and
    :class:`dict`.  :meth:`__hash__` should return an integer.  The only required
    property is that objects which compare equal have the same hash value; it is
-   advised to somehow mix together (e.g. using exclusive or) the hash values for
-   the components of the object that also play a part in comparison of objects.
+   advised to mix together the hash values of the components of the object that
+   also play a part in comparison of objects by packing them into a tuple and
+   hashing the tuple. Example::
+
+       def __hash__(self):
+           return hash((self.name, self.nick, self.color))
 
    If a class does not define a :meth:`__cmp__` or :meth:`__eq__` method it
    should not define a :meth:`__hash__` operation either; if it defines
