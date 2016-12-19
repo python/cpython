@@ -549,6 +549,9 @@ Documentation
 Tests
 -----
 
+- Issue #28950: Disallow -j0 to be combined with -T/-l/-M in regrtest
+  command line arguments.
+
 - Issue #28666: Now test.support.rmtree is able to remove unwritable or
   unreadable directories.
 
