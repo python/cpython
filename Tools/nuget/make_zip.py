@@ -9,6 +9,7 @@ import stat
 import os
 import tempfile
 
+from itertools import chain
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 import subprocess
@@ -203,8 +204,15 @@ def main():
 
     try:
         for t, s, p, c in layout:
-            s = source / s.replace("$arch", arch)
-            copied = copy_to_layout(temp / t.rstrip('/'), rglob(s, p, c))
+            fs = source / s.replace("$arch", arch)
+            files = rglob(fs, p, c)
+            extra_files = []
+            if s == 'Lib' and p == '**/*':
+                extra_files.append((
+                    source / 'tools' / 'nuget' / 'distutils.command.bdist_wininst.py',
+                    Path('distutils') / 'command' / 'bdist_wininst.py'
+                ))
+            copied = copy_to_layout(temp / t.rstrip('/'), chain(files, extra_files))
             print('Copied {} files'.format(copied))
 
         if out:
