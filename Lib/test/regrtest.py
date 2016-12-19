@@ -380,11 +380,11 @@ def _parse_args(args, **kwargs):
 
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
-    if ns.use_mp and ns.trace:
+    if ns.use_mp is not None and ns.trace:
         parser.error("-T and -j don't go together!")
-    if ns.use_mp and ns.findleaks:
+    if ns.use_mp is not None and ns.findleaks:
         parser.error("-l and -j don't go together!")
-    if ns.use_mp and ns.memlimit:
+    if ns.use_mp is not None and ns.memlimit:
         parser.error("-M and -j don't go together!")
     if ns.failfast and not (ns.verbose or ns.verbose3):
         parser.error("-G/--failfast needs either -v or -W")
