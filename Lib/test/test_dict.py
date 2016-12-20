@@ -836,6 +836,24 @@ class DictTest(unittest.TestCase):
             pass
         self._tracked(MyDict())
 
+    @support.cpython_only
+    def test_splittable_setattr_after_pop(self):
+        """setattr must not convert combined table into split table"""
+        # Issue 28147
+        import _testcapi
+
+        class C:
+            pass
+        a = C()
+        a.a = 2
+        self.assertTrue(_testcapi.dict_hassplittable(a.__dict__))
+        # dict.popitem() convert it to combined table
+        a.__dict__.popitem()
+        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
+        # But C should not convert a.__dict__ to split table again.
+        a.a = 3
+        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
+
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             data = {1:"a", 2:"b", 3:"c"}
