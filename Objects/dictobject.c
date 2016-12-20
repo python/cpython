@@ -985,8 +985,10 @@ make_keys_shared(PyObject *op)
             return NULL;
         }
         else if (mp->ma_keys->dk_lookup == lookdict_unicode) {
-            /* Remove dummy keys */
-            if (dictresize(mp, DK_SIZE(mp->ma_keys)))
+            /* Remove dummy keys
+             * -1 is required since dictresize() uses key size > minused
+             */
+            if (dictresize(mp, DK_SIZE(mp->ma_keys) - 1))
                 return NULL;
         }
         assert(mp->ma_keys->dk_lookup == lookdict_unicode_nodummy);
@@ -2473,7 +2475,8 @@ dict_popitem(PyDictObject *mp)
     }
     /* Convert split table to combined table */
     if (mp->ma_keys->dk_lookup == lookdict_split) {
-        if (dictresize(mp, DK_SIZE(mp->ma_keys))) {
+        /* -1 is required since dictresize() uses key size > minused */
+        if (dictresize(mp, DK_SIZE(mp->ma_keys) - 1)) {
             Py_DECREF(res);
             return NULL;
         }
@@ -3848,10 +3851,16 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
                 CACHED_KEYS(tp) = NULL;
                 DK_DECREF(cached);
             }
-        } else {
+        }
+        else {
+            int was_shared = cached == ((PyDictObject *)dict)->ma_keys;
             res = PyDict_SetItem(dict, key, value);
-            if (cached != ((PyDictObject *)dict)->ma_keys) {
-                /* Either update tp->ht_cached_keys or delete it */
+            /* PyDict_SetItem() may call dictresize() and convert split table
+             * into combined table.  In such case, convert it to split
+             * table again and update type's shared key only when this is
+             * the only dict sharing key with the type.
+             */
+            if (was_shared && cached != ((PyDictObject *)dict)->ma_keys) {
                 if (cached->dk_refcnt == 1) {
                     CACHED_KEYS(tp) = make_keys_shared(dict);
                 } else {

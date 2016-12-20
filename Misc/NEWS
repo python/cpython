@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #28147: Fix a memory leak in split-table dictionaries: setattr()
+  must not convert combined table into split table.
+
 - Issue #25677: Correct the positioning of the syntax error caret for
   indented blocks.  Based on patch by Michael Layzell.
 
