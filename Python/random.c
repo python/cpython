@@ -3,7 +3,7 @@
 #include <windows.h>
 #else
 #include <fcntl.h>
-#if defined(HAVE_GETRANDOM) || defined(HAVE_GETENTROPY)
+#ifdef HAVE_SYS_RANDOM_H
 #include <sys/random.h>
 #endif
 #endif

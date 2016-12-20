@@ -10,6 +10,8 @@ What's New in Python 2.7.14?
 Core and Builtins
 -----------------
 
+- Issue #28932: Do not include <sys/random.h> if it does not exist.
+
 Library
 -------
 
