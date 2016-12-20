@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #29019: Fix dict.fromkeys(x) overallocates when x is sparce dict.
+  Original patch by Rasmus Villemoes.
+
 - Issue #19542: Fix bugs in WeakValueDictionary.setdefault() and
   WeakValueDictionary.pop() when a GC collection happens in another
   thread.

@@ -1391,7 +1391,7 @@ dict_fromkeys(PyObject *cls, PyObject *args)
             PyObject *key;
             long hash;
 
-            if (dictresize(mp, Py_SIZE(seq) / 2 * 3)) {
+            if (dictresize(mp, ((PyDictObject *)seq)->ma_used / 2 * 3)) {
                 Py_DECREF(d);
                 return NULL;
             }
