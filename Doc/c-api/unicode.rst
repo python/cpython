@@ -1625,6 +1625,9 @@ They all return *NULL* or ``-1`` if an exception occurs.
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.7
+      *start* and *end* are now adjusted to behave like ``str[start:end]``.
+
 
 .. c:function:: Py_ssize_t PyUnicode_Count(PyObject *str, PyObject *substr, \
                                Py_ssize_t start, Py_ssize_t end)

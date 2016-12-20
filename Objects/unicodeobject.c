@@ -9461,16 +9461,12 @@ PyUnicode_FindChar(PyObject *str, Py_UCS4 ch,
                    int direction)
 {
     int kind;
-    Py_ssize_t result;
+    Py_ssize_t len, result;
     if (PyUnicode_READY(str) == -1)
         return -2;
-    if (start < 0 || end < 0) {
-        PyErr_SetString(PyExc_IndexError, "string index out of range");
-        return -2;
-    }
-    if (end > PyUnicode_GET_LENGTH(str))
-        end = PyUnicode_GET_LENGTH(str);
-    if (start >= end)
+    len = PyUnicode_GET_LENGTH(str);
+    ADJUST_INDICES(start, end, len);
+    if (end - start < 1)
         return -1;
     kind = PyUnicode_KIND(str);
     result = findchar(PyUnicode_1BYTE_DATA(str) + kind*start,
