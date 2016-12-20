@@ -1888,6 +1888,27 @@ unicode_asucs4(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+unicode_findchar(PyObject *self, PyObject *args)
+{
+    PyObject *str;
+    int direction;
+    unsigned int ch;
+    Py_ssize_t result;
+    Py_ssize_t start, end;
+
+    if (!PyArg_ParseTuple(args, "UInni:unicode_findchar", &str, &ch,
+                          &start, &end, &direction)) {
+        return NULL;
+    }
+
+    result = PyUnicode_FindChar(str, (Py_UCS4)ch, start, end, direction);
+    if (result == -2)
+        return NULL;
+    else
+        return PyLong_FromSsize_t(result);
+}
+
+static PyObject *
 unicode_copycharacters(PyObject *self, PyObject *args)
 {
     PyObject *from, *to, *to_copy;
@@ -4121,6 +4142,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_aswidechar",      unicode_aswidechar,              METH_VARARGS},
     {"unicode_aswidecharstring",unicode_aswidecharstring,        METH_VARARGS},
     {"unicode_asucs4",          unicode_asucs4,                  METH_VARARGS},
+    {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
     {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},

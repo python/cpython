@@ -2728,6 +2728,29 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(unicode_asucs4(s, len(s), 1), s+'\0')
             self.assertEqual(unicode_asucs4(s, len(s), 0), s+'\uffff')
 
+    # Test PyUnicode_FindChar()
+    @support.cpython_only
+    def test_findchar(self):
+        from _testcapi import unicode_findchar
+
+        for str in "\xa1", "\u8000\u8080", "\ud800\udc02", "\U0001f100\U0001f1f1":
+            for i, ch in enumerate(str):
+                self.assertEqual(unicode_findchar(str, ord(ch), 0, len(str), 1), i)
+                self.assertEqual(unicode_findchar(str, ord(ch), 0, len(str), -1), i)
+
+        str = "!>_<!"
+        self.assertEqual(unicode_findchar(str, 0x110000, 0, len(str), 1), -1)
+        self.assertEqual(unicode_findchar(str, 0x110000, 0, len(str), -1), -1)
+        # start < end
+        self.assertEqual(unicode_findchar(str, ord('!'), 1, len(str)+1, 1), 4)
+        self.assertEqual(unicode_findchar(str, ord('!'), 1, len(str)+1, -1), 4)
+        # start >= end
+        self.assertEqual(unicode_findchar(str, ord('!'), 0, 0, 1), -1)
+        self.assertEqual(unicode_findchar(str, ord('!'), len(str), 0, 1), -1)
+        # negative
+        self.assertEqual(unicode_findchar(str, ord('!'), -len(str), -1, 1), 0)
+        self.assertEqual(unicode_findchar(str, ord('!'), -len(str), -1, -1), 0)
+
     # Test PyUnicode_CopyCharacters()
     @support.cpython_only
     def test_copycharacters(self):
