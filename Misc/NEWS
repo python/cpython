@@ -579,6 +579,10 @@ Documentation
 Build
 -----
 
+- Issue #28538: Fix the compilation error that occurs because if_nameindex() is
+  available on Android API level 24, but the if_nameindex structure is not
+  defined.
+
 - Issue #20211: Do not add the directory for installing C header files and the
   directory for installing object code libraries to the cross compilation
   search paths. Original patch by Thomas Petazzoni.

@@ -11202,7 +11202,6 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  futimens futimes gai_strerror getentropy \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
- if_nameindex \
  initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
@@ -12643,6 +12642,39 @@ $as_echo "yes" >&6; }
 
 else
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+# On Android API level 24 if_nameindex() is available, but the if_nameindex
+# structure is not defined.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for if_nameindex" >&5
+$as_echo_n "checking for if_nameindex... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#ifdef HAVE_NET_IF_H
+# include <net/if.h>
+#endif
+
+int
+main ()
+{
+struct if_nameindex *ni = if_nameindex(); int x = ni[0].if_index;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+$as_echo "#define HAVE_IF_NAMEINDEX 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
