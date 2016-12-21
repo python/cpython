@@ -1793,9 +1793,6 @@ class UnicodeTest(string_tests.CommonTest,
             self.assertEqual(seq.decode('utf-8', 'ignore'),
                              res.replace('\uFFFD', ''))
 
-    def to_bytestring(self, seq):
-        return bytes(int(c, 16) for c in seq.split())
-
     def assertCorrectUTF8Decoding(self, seq, res, err):
         """
         Check that an invalid UTF-8 sequence raises a UnicodeDecodeError when
@@ -1851,7 +1848,7 @@ class UnicodeTest(string_tests.CommonTest,
         ]
         FFFD = '\ufffd'
         for seq in sequences:
-            self.assertCorrectUTF8Decoding(self.to_bytestring(seq), '\ufffd',
+            self.assertCorrectUTF8Decoding(bytes.fromhex(seq), '\ufffd',
                                            'unexpected end of data')
 
     def test_invalid_cb_for_2bytes_seq(self):
@@ -1873,7 +1870,7 @@ class UnicodeTest(string_tests.CommonTest,
             ('DF C0', FFFDx2), ('DF FF', FFFDx2),
         ]
         for seq, res in sequences:
-            self.assertCorrectUTF8Decoding(self.to_bytestring(seq), res,
+            self.assertCorrectUTF8Decoding(bytes.fromhex(seq), res,
                                            'invalid continuation byte')
 
     def test_invalid_cb_for_3bytes_seq(self):
@@ -1931,7 +1928,7 @@ class UnicodeTest(string_tests.CommonTest,
             ('EF BF C0', FFFDx2), ('EF BF FF', FFFDx2),
         ]
         for seq, res in sequences:
-            self.assertCorrectUTF8Decoding(self.to_bytestring(seq), res,
+            self.assertCorrectUTF8Decoding(bytes.fromhex(seq), res,
                                            'invalid continuation byte')
 
     def test_invalid_cb_for_4bytes_seq(self):
@@ -2010,7 +2007,7 @@ class UnicodeTest(string_tests.CommonTest,
             ('F4 8F BF C0', FFFDx2), ('F4 8F BF FF', FFFDx2)
         ]
         for seq, res in sequences:
-            self.assertCorrectUTF8Decoding(self.to_bytestring(seq), res,
+            self.assertCorrectUTF8Decoding(bytes.fromhex(seq), res,
                                            'invalid continuation byte')
 
     def test_codecs_idna(self):
