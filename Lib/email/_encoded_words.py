@@ -62,7 +62,7 @@ __all__ = ['decode_q',
 
 # regex based decoder.
 _q_byte_subber = functools.partial(re.compile(br'=([a-fA-F0-9]{2})').sub,
-        lambda m: bytes([int(m.group(1), 16)]))
+        lambda m: bytes.fromhex(m.group(1)))
 
 def decode_q(encoded):
     encoded = encoded.replace(b'_', b' ')

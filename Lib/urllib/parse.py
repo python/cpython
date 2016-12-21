@@ -574,7 +574,7 @@ def unquote_to_bytes(string):
     # if the function is never called
     global _hextobyte
     if _hextobyte is None:
-        _hextobyte = {(a + b).encode(): bytes([int(a + b, 16)])
+        _hextobyte = {(a + b).encode(): bytes.fromhex(a + b)
                       for a in _hexdig for b in _hexdig}
     for item in bits[1:]:
         try:
