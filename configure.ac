@@ -3738,10 +3738,22 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
   AC_MSG_RESULT(no)
 ])
 
-# On Android API level 24 if_nameindex() is available, but the if_nameindex
-# structure is not defined.
+# On Android API level 24 with android-ndk-r13, if_nameindex() is available,
+# but the if_nameindex structure is not defined.
 AC_MSG_CHECKING(for if_nameindex)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <stdio.h>
+#ifdef STDC_HEADERS
+# include <stdlib.h>
+# include <stddef.h>
+#else
+# ifdef HAVE_STDLIB_H
+#  include <stdlib.h>
+# endif
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
 #ifdef HAVE_NET_IF_H
 # include <net/if.h>
 #endif
