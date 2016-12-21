@@ -338,7 +338,7 @@ class TestBase_Mapping(unittest.TestCase):
         uc = re.findall('<a u="([A-F0-9]{4})" b="([0-9A-F ]+)"/>', ucmdata)
         for uni, coded in uc:
             unich = chr(int(uni, 16))
-            codech = bytes(int(c, 16) for c in coded.split())
+            codech = bytes.fromhex(coded)
             self._testpoint(codech, unich)
 
     def test_mapping_supplemental(self):
