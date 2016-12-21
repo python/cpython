@@ -12645,13 +12645,25 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-# On Android API level 24 if_nameindex() is available, but the if_nameindex
-# structure is not defined.
+# On Android API level 24 with android-ndk-r13, if_nameindex() is available,
+# but the if_nameindex structure is not defined.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for if_nameindex" >&5
 $as_echo_n "checking for if_nameindex... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#include <stdio.h>
+#ifdef STDC_HEADERS
+# include <stdlib.h>
+# include <stddef.h>
+#else
+# ifdef HAVE_STDLIB_H
+#  include <stdlib.h>
+# endif
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
 #ifdef HAVE_NET_IF_H
 # include <net/if.h>
 #endif
