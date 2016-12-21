@@ -121,6 +121,18 @@ typedef int Py_ssize_t;
 #define JOIN_SET(p, flag) ((void*) ((Py_uintptr_t) (JOIN_OBJ(p)) | (flag)))
 #define JOIN_OBJ(p) ((PyObject*) ((Py_uintptr_t) (p) & ~1))
 
+/* Py_CLEAR for a PyObject* that uses a join flag. Pass the pointer by
+ * reference since this function sets it to NULL.
+*/
+static void _clear_joined_ptr(PyObject **p)
+{
+    if (*p) {
+        PyObject *tmp = JOIN_OBJ(*p);
+        *p = NULL;
+        Py_DECREF(tmp);
+    }
+}
+
 /* glue functions (see the init function for details) */
 static PyObject* elementtree_parseerror_obj;
 static PyObject* elementtree_copyelement_obj;
@@ -538,17 +550,20 @@ subelement(PyObject* self, PyObject* args, PyObject* kw)
 static void
 element_dealloc(ElementObject* self)
 {
-    if (self->extra)
-        element_dealloc_extra(self);
+    Py_TRASHCAN_SAFE_BEGIN(self)
 
     /* discard attributes */
     Py_DECREF(self->tag);
-    Py_DECREF(JOIN_OBJ(self->text));
-    Py_DECREF(JOIN_OBJ(self->tail));
+    _clear_joined_ptr(&self->text);
+    _clear_joined_ptr(&self->tail);
+
+    if (self->extra)
+        element_dealloc_extra(self);
 
     RELEASE(sizeof(ElementObject), "destroy element");
 
     PyObject_Del(self);
+    Py_TRASHCAN_SAFE_END(self)
 }
 
 /* -------------------------------------------------------------------- */
