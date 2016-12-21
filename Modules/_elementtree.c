@@ -626,6 +626,7 @@ static void
 element_dealloc(ElementObject* self)
 {
     PyObject_GC_UnTrack(self);
+    Py_TRASHCAN_SAFE_BEGIN(self)
 
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
@@ -636,6 +637,7 @@ element_dealloc(ElementObject* self)
 
     RELEASE(sizeof(ElementObject), "destroy element");
     Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TRASHCAN_SAFE_END(self)
 }
 
 /* -------------------------------------------------------------------- */
