@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 28923: Remove editor artifacts from Tix.py,
+  including encoding not recognized by codecs.lookup.
+
 - Issue #29019: Fix dict.fromkeys(x) overallocates when x is sparce dict.
   Original patch by Rasmus Villemoes.
 
