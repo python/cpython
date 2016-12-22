@@ -81,7 +81,7 @@ have to import a function instead of using a built-in one, but otherwise the
 overall transformation should not feel foreign to you.
 
 But you should aim for only supporting Python 2.7. Python 2.6 is no longer
-freely upported and thus is not receiving bugfixes. This means **you** will have
+freely supported and thus is not receiving bugfixes. This means **you** will have
 to work around any issues you come across with Python 2.6. There are also some
 tools mentioned in this HOWTO which do not support Python 2.6 (e.g., Pylint_),
 and this will become more commonplace as time goes on. It will simply be easier
@@ -107,9 +107,9 @@ to, you will want to make sure your test suite has good coverage. A good rule of
 thumb is that if you want to be confident enough in your test suite that any
 failures that appear after having tools rewrite your code are actual bugs in the
 tools and not in your code. If you want a number to aim for, try to get over 80%
-coverage (and don't feel bad if you can't easily get passed 90%). If you
-don't already have a tool to measure test coverage then coverage.py_ is
-recommended.
+coverage (and don't feel bad if you find it hard to get better than 90%
+coverage). If you don't already have a tool to measure test coverage then
+coverage.py_ is recommended.
 
 
 Learn the differences between Python 2 & 3
