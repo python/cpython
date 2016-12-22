@@ -205,6 +205,8 @@ Core and Builtins
 Library
 -------
 
+- Issue 28923: Remove editor artifacts from Tix.py.
+
 - Issue #28871: Fixed a crash when deallocate deep ElementTree.
 
 - Issue #19542: Fix bugs in WeakValueDictionary.setdefault() and
