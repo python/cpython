@@ -14286,11 +14286,12 @@ formatchar(PyObject *v)
             if (iobj == NULL) {
                 goto onError;
             }
-            v = iobj;
+            x = PyLong_AsLong(iobj);
             Py_DECREF(iobj);
         }
-        /* Integer input truncated to a character */
-        x = PyLong_AsLong(v);
+        else {
+            x = PyLong_AsLong(v);
+        }
         if (x == -1 && PyErr_Occurred())
             goto onError;
 
