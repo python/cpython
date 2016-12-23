@@ -2,8 +2,8 @@
 Python News
 +++++++++++
 
-What's New in Python 3.7.0 alpha 1
-==================================
+What's New in Python 3.7.0 alpha 1?
+===================================
 
 *Release date: XXXX-XX-XX*
 
@@ -671,8 +671,720 @@ Tests
   test_functools hanging on the Android armv7 qemu emulator.
 
 
-What's New in Python 3.6.0 beta 1
-=================================
+What's New in Python 3.6.1 release candidate 1?
+===============================================
+
+*Release date: XXXX-XX-XX*
+
+Core and Builtins
+-----------------
+
+- Issue #28932: Do not include <sys/random.h> if it does not exist.
+
+- Issue #25677: Correct the positioning of the syntax error caret for
+  indented blocks.  Based on patch by Michael Layzell.
+
+- Issue #29000: Fixed bytes formatting of octals with zero padding in alternate
+  form.
+
+- Issue #26919: On Android, operating system data is now always encoded/decoded
+  to/from UTF-8, instead of the locale encoding to avoid inconsistencies with
+  os.fsencode() and os.fsdecode() which are already using UTF-8.
+
+- Issue #28991:  functools.lru_cache() was susceptible to an obscure reentrancy
+  bug triggerable by a monkey-patched len() function.
+
+- Issue #28739: f-string expressions are no longer accepted as docstrings and
+  by ast.literal_eval() even if they do not include expressions.
+
+- Issue #28512: Fixed setting the offset attribute of SyntaxError by
+  PyErr_SyntaxLocationEx() and PyErr_SyntaxLocationObject().
+
+- Issue #28918: Fix the cross compilation of xxlimited when Python has been
+  built with Py_DEBUG defined.
+
+- Issue #28731: Optimize _PyDict_NewPresized() to create correct size dict.
+  Improve speed of dict literal with constant keys up to 30%.
+
+Library
+-------
+
+- Issue 28923: Remove editor artifacts from Tix.py.
+
+- Issue #28871: Fixed a crash when deallocate deep ElementTree.
+
+- Issue #19542: Fix bugs in WeakValueDictionary.setdefault() and
+  WeakValueDictionary.pop() when a GC collection happens in another
+  thread.
+
+- Issue #20191: Fixed a crash in resource.prlimit() when pass a sequence that
+  doesn't own its elements as limits.
+
+- Issue #28779: multiprocessing.set_forkserver_preload() would crash the
+  forkserver process if a preloaded module instantiated some
+  multiprocessing objects such as locks.
+
+- Issue #28847: dbm.dumb now supports reading read-only files and no longer
+  writes the index file when it is not changed.
+
+- Issue #26937: The chown() method of the tarfile.TarFile class does not fail
+  now when the grp module cannot be imported, as for example on Android
+  platforms.
+
+Windows
+-------
+
+- Issue #25778: winreg does not truncate string correctly (Patch by Eryk Sun)
+
+- Issue #28896: Deprecate WindowsRegistryFinder and disable it by default.
+
+Tests
+-----
+
+- Issue #28950: Disallow -j0 to be combined with -T/-l in regrtest
+  command line arguments.
+
+- Issue #28683: Fix the tests that bind() a unix socket and raise
+  PermissionError on Android for a non-root user.
+
+- Issue #26939: Add the support.setswitchinterval() function to fix
+  test_functools hanging on the Android armv7 qemu emulator.
+
+Build
+-----
+
+- Issue #28762: lockf() is available on Android API level 24, but the F_LOCK
+  macro is not defined in android-ndk-r13.
+
+- Issue #28538: Fix the compilation error that occurs because if_nameindex() is
+  available on Android API level 24, but the if_nameindex structure is not
+  defined.
+
+- Issue #20211: Do not add the directory for installing C header files and the
+  directory for installing object code libraries to the cross compilation
+  search paths. Original patch by Thomas Petazzoni.
+
+- Issue #28849: Do not define sys.implementation._multiarch on Android.
+
+
+What's New in Python 3.6.0?
+===========================
+
+*Release date: 2016-12-23*
+
+- No changes since release candidate 2
+
+
+What's New in Python 3.6.0 release candidate 2?
+===============================================
+
+*Release date: 2016-12-16*
+
+Core and Builtins
+-----------------
+
+- Issue #28147: Fix a memory leak in split-table dictionaries: setattr()
+  must not convert combined table into split table. Patch written by INADA
+  Naoki.
+
+- Issue #28990: Fix asyncio SSL hanging if connection is closed before
+  handshake is completed. (Patch by HoHo-Ho)
+
+Tools/Demos
+-----------
+
+- Issue #28770: Fix python-gdb.py for fastcalls.
+
+Windows
+-------
+
+- Issue #28896: Deprecate WindowsRegistryFinder.
+
+Build
+-----
+
+- Issue #28898: Prevent gdb build errors due to HAVE_LONG_LONG redefinition.
+
+
+What's New in Python 3.6.0 release candidate 1?
+===============================================
+
+*Release date: 2016-12-06*
+
+Core and Builtins
+-----------------
+
+- Issue #23722: Rather than silently producing a class that doesn't support
+  zero-argument ``super()`` in methods, failing to pass the new
+  ``__classcell__`` namespace entry up to ``type.__new__`` now results in a
+  ``DeprecationWarning`` and a class that supports zero-argument ``super()``.
+
+- Issue #28797: Modifying the class __dict__ inside the __set_name__ method of
+  a descriptor that is used inside that class no longer prevents calling the
+  __set_name__ method of other descriptors.
+
+- Issue #28782: Fix a bug in the implementation ``yield from`` when checking
+  if the next instruction is YIELD_FROM. Regression introduced by WORDCODE
+  (issue #26647).
+
+Library
+-------
+
+- Issue #27030: Unknown escapes in re.sub() replacement template are allowed
+  again.  But they still are deprecated and will be disabled in 3.7.
+
+- Issue #28835: Fix a regression introduced in warnings.catch_warnings():
+  call warnings.showwarning() if it was overriden inside the context manager.
+
+- Issue #27172: To assist with upgrades from 2.7, the previously documented
+  deprecation of ``inspect.getfullargspec()`` has been reversed. This decision
+  may be revisited again after the Python 2.7 branch is no longer officially
+  supported.
+
+- Issue #24142: Reading a corrupt config file left configparser in an
+  invalid state.  Original patch by Florian Höch.
+
+- Issue #28843: Fix asyncio C Task to handle exceptions __traceback__.
+
+C API
+-----
+
+- Issue #28808: PyUnicode_CompareWithASCIIString() now never raises exceptions.
+
+Documentation
+-------------
+
+- Issue #23722: The data model reference and the porting section in the What's
+  New guide now cover the additional ``__classcell__`` handling needed for
+  custom metaclasses to fully support PEP 487 and zero-argument ``super()``.
+
+Tools/Demos
+-----------
+
+- Issue #28023: Fix python-gdb.py didn't support new dict implementation.
+
+
+What's New in Python 3.6.0 beta 4?
+==================================
+
+*Release date: 2016-11-21*
+
+Core and Builtins
+-----------------
+
+- Issue #28532: Show sys.version when -V option is supplied twice.
+
+- Issue #27100: The with-statement now checks for __enter__ before it
+  checks for __exit__.  This gives less confusing error messages when
+  both methods are missing. Patch by Jonathan Ellington.
+
+- Issue #28746: Fix the set_inheritable() file descriptor method on platforms
+  that do not have the ioctl FIOCLEX and FIONCLEX commands.
+
+- Issue #26920: Fix not getting the locale's charset upon initializing the
+  interpreter, on platforms that do not have langinfo.
+
+- Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on Mac OS X
+  when decode astral characters.  Patch by Xiang Zhang.
+
+- Issue #19398: Extra slash no longer added to sys.path components in case of
+  empty compile-time PYTHONPATH components.
+
+- Issue #28665:  Improve speed of the STORE_DEREF opcode by 40%.
+
+- Issue #28583: PyDict_SetDefault didn't combine split table when needed.
+  Patch by Xiang Zhang.
+
+- Issue #27243: Change PendingDeprecationWarning -> DeprecationWarning.
+  As it was agreed in the issue, __aiter__ returning an awaitable
+  should result in PendingDeprecationWarning in 3.5 and in
+  DeprecationWarning in 3.6.
+
+- Issue #26182: Fix a refleak in code that raises DeprecationWarning.
+
+- Issue #28721: Fix asynchronous generators aclose() and athrow() to
+  handle StopAsyncIteration propagation properly.
+
+Library
+-------
+
+- Issue #26273: Add new :data:`socket.TCP_CONGESTION` (Linux 2.6.13) and
+  :data:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37) constants. Patch written by
+  Omar Sandoval.
+
+- Issue #28752: Restored the __reduce__() methods of datetime objects.
+
+- Issue #28727: Regular expression patterns, _sre.SRE_Pattern objects created
+  by re.compile(), become comparable (only x==y and x!=y operators). This
+  change should fix the issue #18383: don't duplicate warning filters when the
+  warnings module is reloaded (thing usually only done in unit tests).
+
+- Issue #20572: The subprocess.Popen.wait method's undocumented
+  endtime parameter now raises a DeprecationWarning.
+
+- Issue #25659: In ctypes, prevent a crash calling the from_buffer() and
+  from_buffer_copy() methods on abstract classes like Array.
+
+- Issue #19717: Makes Path.resolve() succeed on paths that do not exist.
+  Patch by Vajrasky Kok
+
+- Issue #28563: Fixed possible DoS and arbitrary code execution when handle
+  plural form selections in the gettext module.  The expression parser now
+  supports exact syntax supported by GNU gettext.
+
+- Issue #28387: Fixed possible crash in _io.TextIOWrapper deallocator when
+  the garbage collector is invoked in other thread.  Based on patch by
+  Sebastian Cufre.
+
+- Issue #28600: Optimize loop.call_soon.
+
+- Issue #28613: Fix get_event_loop() return the current loop if
+  called from coroutines/callbacks.
+
+- Issue #28634: Fix asyncio.isfuture() to support unittest.Mock.
+
+- Issue #26081: Fix refleak in _asyncio.Future.__iter__().throw.
+
+- Issue #28639: Fix inspect.isawaitable to always return bool
+  Patch by Justin Mayfield.
+
+- Issue #28652: Make loop methods reject socket kinds they do not support.
+
+- Issue #28653: Fix a refleak in functools.lru_cache.
+
+- Issue #28703: Fix asyncio.iscoroutinefunction to handle Mock objects.
+
+- Issue #28704: Fix create_unix_server to support Path-like objects
+  (PEP 519).
+
+- Issue #28720: Add collections.abc.AsyncGenerator.
+
+Documentation
+-------------
+
+- Issue #28513: Documented command-line interface of zipfile.
+
+Tests
+-----
+
+- Issue #28666: Now test.support.rmtree is able to remove unwritable or
+  unreadable directories.
+
+- Issue #23839: Various caches now are cleared before running every test file.
+
+Build
+-----
+
+- Issue #10656: Fix out-of-tree building on AIX.  Patch by Tristan Carel and
+  Michael Haubenwallner.
+
+- Issue #26359: Rename --with-optimiations to --enable-optimizations.
+
+- Issue #28676: Prevent missing 'getentropy' declaration warning on macOS.
+  Patch by Gareth Rees.
+
+
+What's New in Python 3.6.0 beta 3?
+==================================
+
+*Release date: 2016-10-31*
+
+Core and Builtins
+-----------------
+
+- Issue #28128: Deprecation warning for invalid str and byte escape
+  sequences now prints better information about where the error
+  occurs. Patch by Serhiy Storchaka and Eric Smith.
+
+- Issue #28509: dict.update() no longer allocate unnecessary large memory.
+
+- Issue #28426: Fixed potential crash in PyUnicode_AsDecodedObject() in debug
+  build.
+
+- Issue #28517: Fixed of-by-one error in the peephole optimizer that caused
+  keeping unreachable code.
+
+- Issue #28214: Improved exception reporting for problematic __set_name__
+  attributes.
+
+- Issue #23782: Fixed possible memory leak in _PyTraceback_Add() and exception
+  loss in PyTraceBack_Here().
+
+- Issue #28471: Fix "Python memory allocator called without holding the GIL"
+  crash in socket.setblocking.
+
+Library
+-------
+
+- Issue #27517: LZMA compressor and decompressor no longer raise exceptions if
+  given empty data twice.  Patch by Benjamin Fogle.
+
+- Issue #28549: Fixed segfault in curses's addch() with ncurses6.
+
+- Issue #28449: tarfile.open() with mode "r" or "r:" now tries to open a tar
+  file with compression before trying to open it without compression.  Otherwise
+  it had 50% chance failed with ignore_zeros=True.
+
+- Issue #23262: The webbrowser module now supports Firefox 36+ and derived
+  browsers.  Based on patch by Oleg Broytman.
+
+- Issue #27939: Fixed bugs in tkinter.ttk.LabeledScale and tkinter.Scale caused
+  by representing the scale as float value internally in Tk.  tkinter.IntVar
+  now works if float value is set to underlying Tk variable.
+
+- Issue #18844: The various ways of specifying weights for random.choices()
+  now produce the same result sequences.
+
+- Issue #28255: calendar.TextCalendar().prmonth() no longer prints a space
+  at the start of new line after printing a month's calendar.  Patch by
+  Xiang Zhang.
+
+- Issue #20491: The textwrap.TextWrapper class now honors non-breaking spaces.
+  Based on patch by Kaarle Ritvanen.
+
+- Issue #28353: os.fwalk() no longer fails on broken links.
+
+- Issue #28430: Fix iterator of C implemented asyncio.Future doesn't accept
+  non-None value is passed to it.send(val).
+
+- Issue #27025: Generated names for Tkinter widgets now start by the "!" prefix
+  for readability (was "`").
+
+- Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
+  a workaround to Tix library bug.
+
+- Issue #28488: shutil.make_archive() no longer adds entry "./" to ZIP archive.
+
+- Issue #25953: re.sub() now raises an error for invalid numerical group
+  reference in replacement template even if the pattern is not found in
+  the string.  Error message for invalid group reference now includes the
+  group index and the position of the reference.
+  Based on patch by SilentGhost.
+
+- Issue #18219: Optimize csv.DictWriter for large number of columns.
+  Patch by Mariatta Wijaya.
+
+- Issue #28448: Fix C implemented asyncio.Future didn't work on Windows.
+
+- Issue #28480: Fix error building socket module when multithreading is
+  disabled.
+
+- Issue #24452: Make webbrowser support Chrome on Mac OS X.
+
+- Issue #20766: Fix references leaked by pdb in the handling of SIGINT
+  handlers.
+
+- Issue #28492: Fix how StopIteration exception is raised in _asyncio.Future.
+
+- Issue #28500: Fix asyncio to handle async gens GC from another thread.
+
+- Issue #26923: Fix asyncio.Gather to refuse being cancelled once all
+  children are done.
+  Patch by Johannes Ebke.
+
+- Issue #26796: Don't configure the number of workers for default
+  threadpool executor.
+  Initial patch by Hans Lawrenz.
+
+- Issue #28544: Implement asyncio.Task in C.
+
+Windows
+-------
+
+- Issue #28522: Fixes mishandled buffer reallocation in getpathp.c
+
+Build
+-----
+
+- Issue #28444: Fix missing extensions modules when cross compiling.
+
+- Issue #28208: Update Windows build and OS X installers to use SQLite 3.14.2.
+
+- Issue #28248: Update Windows build and OS X installers to use OpenSSL 1.0.2j.
+
+Tests
+-----
+
+- Issue #26944: Fix test_posix for Android where 'id -G' is entirely wrong or
+  missing the effective gid.
+
+- Issue #28409: regrtest: fix the parser of command line arguments.
+
+
+What's New in Python 3.6.0 beta 2?
+==================================
+
+*Release date: 2016-10-10*
+
+Core and Builtins
+-----------------
+
+- Issue #28183: Optimize and cleanup dict iteration.
+
+- Issue #26081: Added C implementation of asyncio.Future.
+  Original patch by Yury Selivanov.
+
+- Issue #28379: Added sanity checks and tests for PyUnicode_CopyCharacters().
+  Patch by Xiang Zhang.
+
+- Issue #28376: The type of long range iterator is now registered as Iterator.
+  Patch by Oren Milman.
+
+- Issue #28376: Creating instances of range_iterator by calling range_iterator
+  type now is deprecated.  Patch by Oren Milman.
+
+- Issue #28376: The constructor of range_iterator now checks that step is not 0.
+  Patch by Oren Milman.
+
+- Issue #26906: Resolving special methods of uninitialized type now causes
+  implicit initialization of the type instead of a fail.
+
+- Issue #18287: PyType_Ready() now checks that tp_name is not NULL.
+  Original patch by Niklas Koep.
+
+- Issue #24098: Fixed possible crash when AST is changed in process of
+  compiling it.
+
+- Issue #28201: Dict reduces possibility of 2nd conflict in hash table when
+  hashes have same lower bits.
+
+- Issue #28350: String constants with null character no longer interned.
+
+- Issue #26617: Fix crash when GC runs during weakref callbacks.
+
+- Issue #27942: String constants now interned recursively in tuples and frozensets.
+
+- Issue #21578: Fixed misleading error message when ImportError called with
+  invalid keyword args.
+
+- Issue #28203: Fix incorrect type in complex(1.0, {2:3}) error message.
+  Patch by Soumya Sharma.
+
+- Issue #28086: Single var-positional argument of tuple subtype was passed
+  unscathed to the C-defined function.  Now it is converted to exact tuple.
+
+- Issue #28214: Now __set_name__ is looked up on the class instead of the
+  instance.
+
+- Issue #27955: Fallback on reading /dev/urandom device when the getrandom()
+  syscall fails with EPERM, for example when blocked by SECCOMP.
+
+- Issue #28192: Don't import readline in isolated mode.
+
+- Upgrade internal unicode databases to Unicode version 9.0.0.
+
+- Issue #28131: Fix a regression in zipimport's compile_source().  zipimport
+  should use the same optimization level as the interpreter.
+
+- Issue #28126: Replace Py_MEMCPY with memcpy(). Visual Studio can properly
+  optimize memcpy().
+
+- Issue #28120: Fix dict.pop() for splitted dictionary when trying to remove a
+  "pending key" (Not yet inserted in split-table). Patch by Xiang Zhang.
+
+- Issue #26182: Raise DeprecationWarning when async and await keywords are
+  used as variable/attribute/class/function name.
+
+Library
+-------
+
+- Issue #27998: Fixed bytes path support in os.scandir() on Windows.
+  Patch by Eryk Sun.
+
+- Issue #28317: The disassembler now decodes FORMAT_VALUE argument.
+
+- Issue #26293: Fixed writing ZIP files that starts not from the start of the
+  file.  Offsets in ZIP file now are relative to the start of the archive in
+  conforming to the specification.
+
+- Issue #28380: unittest.mock Mock autospec functions now properly support
+  assert_called, assert_not_called, and assert_called_once.
+
+- Issue #27181 remove statistics.geometric_mean and defer until 3.7.
+
+- Issue #28229: lzma module now supports pathlib.
+
+- Issue #28321: Fixed writing non-BMP characters with binary format in plistlib.
+
+- Issue #28225: bz2 module now supports pathlib.  Initial patch by Ethan Furman.
+
+- Issue #28227: gzip now supports pathlib.  Patch by Ethan Furman.
+
+- Issue #27358: Optimized merging var-keyword arguments and improved error
+  message when pass a non-mapping as a var-keyword argument.
+
+- Issue #28257: Improved error message when pass a non-iterable as
+  a var-positional argument.  Added opcode BUILD_TUPLE_UNPACK_WITH_CALL.
+
+- Issue #28322: Fixed possible crashes when unpickle itertools objects from
+  incorrect pickle data.  Based on patch by John Leitch.
+
+- Issue #28228: imghdr now supports pathlib.
+
+- Issue #28226: compileall now supports pathlib.
+
+- Issue #28314: Fix function declaration (C flags) for the getiterator() method
+  of xml.etree.ElementTree.Element.
+
+- Issue #28148: Stop using localtime() and gmtime() in the time
+  module.
+
+  Introduced platform independent _PyTime_localtime API that is
+  similar to POSIX localtime_r, but available on all platforms.  Patch
+  by Ed Schouten.
+
+- Issue #28253: Fixed calendar functions for extreme months: 0001-01
+  and 9999-12.
+
+  Methods itermonthdays() and itermonthdays2() are reimplemented so
+  that they don't call itermonthdates() which can cause datetime.date
+  under/overflow.
+
+- Issue #28275: Fixed possible use after free in the decompress()
+  methods of the LZMADecompressor and BZ2Decompressor classes.
+  Original patch by John Leitch.
+
+- Issue #27897: Fixed possible crash in sqlite3.Connection.create_collation()
+  if pass invalid string-like object as a name.  Patch by Xiang Zhang.
+
+- Issue #18844: random.choices() now has k as a keyword-only argument
+  to improve the readability of common cases and come into line
+  with the signature used in other languages.
+
+- Issue #18893: Fix invalid exception handling in Lib/ctypes/macholib/dyld.py.
+  Patch by Madison May.
+
+- Issue #27611: Fixed support of default root window in the tkinter.tix module.
+  Added the master parameter in the DisplayStyle constructor.
+
+- Issue #27348: In the traceback module, restore the formatting of exception
+  messages like "Exception: None".  This fixes a regression introduced in
+  3.5a2.
+
+- Issue #25651: Allow falsy values to be used for msg parameter of subTest().
+
+- Issue #27778: Fix a memory leak in os.getrandom() when the getrandom() is
+  interrupted by a signal and a signal handler raises a Python exception.
+
+- Issue #28200: Fix memory leak on Windows in the os module (fix
+  path_converter() function).
+
+- Issue #25400: RobotFileParser now correctly returns default values for
+  crawl_delay and request_rate.  Initial patch by Peter Wirtz.
+
+- Issue #27932: Prevent memory leak in win32_ver().
+
+- Fix UnboundLocalError in socket._sendfile_use_sendfile.
+
+- Issue #28075: Check for ERROR_ACCESS_DENIED in Windows implementation of
+  os.stat().  Patch by Eryk Sun.
+
+- Issue #22493: Warning message emitted by using inline flags in the middle of
+  regular expression now contains a (truncated) regex pattern.
+  Patch by Tim Graham.
+
+- Issue #25270: Prevent codecs.escape_encode() from raising SystemError when
+  an empty bytestring is passed.
+
+- Issue #28181: Get antigravity over HTTPS. Patch by Kaartic Sivaraam.
+
+- Issue #25895: Enable WebSocket URL schemes in urllib.parse.urljoin.
+  Patch by Gergely Imreh and Markus Holtermann.
+
+- Issue #28114: Fix a crash in parse_envlist() when env contains byte strings.
+  Patch by Eryk Sun.
+
+- Issue #27599: Fixed buffer overrun in binascii.b2a_qp() and binascii.a2b_qp().
+
+- Issue #27906: Fix socket accept exhaustion during high TCP traffic.
+  Patch by Kevin Conway.
+
+- Issue #28174: Handle when SO_REUSEPORT isn't properly supported.
+  Patch by Seth Michael Larson.
+
+- Issue #26654: Inspect functools.partial in asyncio.Handle.__repr__.
+  Patch by iceboy.
+
+- Issue #26909: Fix slow pipes IO in asyncio.
+  Patch by INADA Naoki.
+
+- Issue #28176: Fix callbacks race in asyncio.SelectorLoop.sock_connect.
+
+- Issue #27759: Fix selectors incorrectly retain invalid file descriptors.
+  Patch by Mark Williams.
+
+- Issue #28368: Refuse monitoring processes if the child watcher has no
+  loop attached.
+  Patch by Vincent Michel.
+
+- Issue #28369: Raise RuntimeError when transport's FD is used with
+  add_reader, add_writer, etc.
+
+- Issue #28370: Speedup asyncio.StreamReader.readexactly.
+  Patch by Коренберг Марк.
+
+- Issue #28371: Deprecate passing asyncio.Handles to run_in_executor.
+
+- Issue #28372: Fix asyncio to support formatting of non-python coroutines.
+
+- Issue #28399: Remove UNIX socket from FS before binding.
+  Patch by Коренберг Марк.
+
+- Issue #27972: Prohibit Tasks to await on themselves.
+
+Windows
+-------
+
+- Issue #28402: Adds signed catalog files for stdlib on Windows.
+
+- Issue #28333: Enables Unicode for ps1/ps2 and input() prompts. (Patch by
+  Eryk Sun)
+
+- Issue #28251: Improvements to help manuals on Windows.
+
+- Issue #28110: launcher.msi has different product codes between 32-bit and
+  64-bit
+
+- Issue #28161: Opening CON for write access fails
+
+- Issue #28162: WindowsConsoleIO readall() fails if first line starts with
+  Ctrl+Z
+
+- Issue #28163: WindowsConsoleIO fileno() passes wrong flags to
+  _open_osfhandle
+
+- Issue #28164: _PyIO_get_console_type fails for various paths
+
+- Issue #28137: Renames Windows path file to ._pth
+
+- Issue #28138: Windows ._pth file should allow import site
+
+C API
+-----
+
+- Issue #28426: Deprecated undocumented functions PyUnicode_AsEncodedObject(),
+  PyUnicode_AsDecodedObject(), PyUnicode_AsDecodedUnicode() and
+  PyUnicode_AsEncodedUnicode().
+
+Build
+-----
+
+- Issue #28258: Fixed build with Estonian locale (python-config and distclean
+  targets in Makefile).  Patch by Arfrever Frehtes Taifersar Arahesis.
+
+- Issue #26661: setup.py now detects system libffi with multiarch wrapper.
+
+- Issue #15819: Remove redundant include search directory option for building
+  outside the source tree.
+
+Tests
+-----
+
+- Issue #28217: Adds _testconsole module to test console input.
+
+
+What's New in Python 3.6.0 beta 1?
+==================================
 
 *Release date: 2016-09-12*
 
@@ -1182,8 +1894,8 @@ Windows
 - Issue #27883: Update sqlite to 3.14.1.0 on Windows.
 
 
-What's New in Python 3.6.0 alpha 4
-==================================
+What's New in Python 3.6.0 alpha 4?
+===================================
 
 *Release date: 2016-08-15*
 
@@ -1418,8 +2130,9 @@ Build
 - Issue #10910: Avoid C++ compilation errors on FreeBSD and OS X.
   Also update FreedBSD version checks for the original ctype UTF-8 workaround.
 
-What's New in Python 3.6.0 alpha 3
-==================================
+
+What's New in Python 3.6.0 alpha 3?
+===================================
 
 *Release date: 2016-07-11*
 
@@ -1626,8 +2339,8 @@ Tests
   Android build.
 
 
-What's New in Python 3.6.0 alpha 2
-==================================
+What's New in Python 3.6.0 alpha 2?
+===================================
 
 *Release date: 2016-06-13*
 
@@ -6781,7 +7494,6 @@ Windows
 
 - Issue #22980: .pyd files with a version and platform tag (for example,
   ".cp35-win32.pyd") will now be loaded in preference to those without tags.
-
 
 
 **(For information about older versions, consult the HISTORY file.)**
