@@ -1124,6 +1124,10 @@ to speed up repeated connections from the same clients.
    does not contain certificates from *capath* unless a certificate was
    requested and loaded by a SSL connection.
 
+   .. note::
+      Certificates in a capath directory aren't loaded unless they have
+      been used at least once.
+
 .. method:: SSLContext.set_default_verify_paths()
 
    Load a set of default "certification authority" (CA) certificates from
@@ -1286,16 +1290,6 @@ to speed up repeated connections from the same clients.
       >>> stats = context.session_stats()
       >>> stats['hits'], stats['misses']
       (0, 0)
-
-.. method:: SSLContext.get_ca_certs(binary_form=False)
-
-   Returns a list of dicts with information of loaded CA certs. If the
-   optional argument is true, returns a DER-encoded copy of the CA
-   certificate.
-
-   .. note::
-      Certificates in a capath directory aren't loaded unless they have
-      been used at least once.
 
 .. attribute:: SSLContext.check_hostname
 
