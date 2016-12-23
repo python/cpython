@@ -170,8 +170,8 @@ same prefix you must decide which version (if any) is your "primary" version.
 Install that version using "make install".  Install all other versions using
 "make altinstall".
 
-For example, if you want to install Python 2.6, 2.7 and 3.7 with 2.7 being the
-primary version, you would execute "make install" in your 2.7 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.7 with 3.7 being the
+primary version, you would execute "make install" in your 3.7 build directory
 and "make altinstall" in the others.
 
 
