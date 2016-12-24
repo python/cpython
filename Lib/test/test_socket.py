@@ -1707,9 +1707,17 @@ def isTipcAvailable():
     """
     if not hasattr(socket, "AF_TIPC"):
         return False
-    if not os.path.isfile("/proc/modules"):
-        return False
-    with open("/proc/modules") as f:
+    try:
+        f = open("/proc/modules")
+    except IOError as e:
+        # It's ok if the file does not exist, is a directory or if we
+        # have not the permission to read it. In any other case it's a
+        # real error, so raise it again.
+        if e.errno in (errno.ENOENT, errno.EISDIR, errno.EACCES):
+            return False
+        else:
+            raise
+    with f:
         for line in f:
             if line.startswith("tipc "):
                 return True
