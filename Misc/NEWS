@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #29049: Call _PyObject_GC_TRACK() lazily when calling Python function.
+  Calling function is up to 5% faster.
+
 - Issue #28927: bytes.fromhex() and bytearray.fromhex() now ignore all ASCII
   whitespace, not only spaces.  Patch by Robert Xiao.
 
