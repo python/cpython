@@ -60,7 +60,11 @@ PyAPI_DATA(PyTypeObject) PyFrame_Type;
 #define PyFrame_Check(op) (Py_TYPE(op) == &PyFrame_Type)
 
 PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
-                                       PyObject *, PyObject *);
+                                        PyObject *, PyObject *);
+
+/* only internal use */
+PyFrameObject* _PyFrame_New_NoTrack(PyThreadState *, PyCodeObject *,
+                                    PyObject *, PyObject *);
 
 
 /* The rest of the interface is specific for frame objects */
