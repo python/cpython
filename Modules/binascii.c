@@ -842,7 +842,7 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(doc_crc_hqx,
-"(data, oldcrc) -> newcrc. Compute hqx CRC incrementally");
+"(data, oldcrc) -> newcrc. Compute CRC-CCITT incrementally");
 
 static PyObject *
 binascii_crc_hqx(PyObject *self, PyObject *args)
