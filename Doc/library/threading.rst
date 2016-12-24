@@ -256,7 +256,7 @@ since it is impossible to detect the termination of alien threads.
 
       Wait until the thread terminates. This blocks the calling thread until
       the thread whose :meth:`~Thread.join` method is called terminates -- either
-      normally or through an unhandled exception --, or until the optional
+      normally or through an unhandled exception -- or until the optional
       timeout occurs.
 
       When the *timeout* argument is present and not ``None``, it should be a
