@@ -246,7 +246,7 @@ PyDoc_STRVAR(binascii_crc_hqx__doc__,
 "crc_hqx($module, data, crc, /)\n"
 "--\n"
 "\n"
-"Compute hqx CRC incrementally.");
+"Compute CRC-CCITT incrementally.");
 
 #define BINASCII_CRC_HQX_METHODDEF    \
     {"crc_hqx", (PyCFunction)binascii_crc_hqx, METH_VARARGS, binascii_crc_hqx__doc__},
@@ -516,4 +516,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=51173fc9718a5edc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6d70d5edd9373d92 input=a9049054013a1b77]*/

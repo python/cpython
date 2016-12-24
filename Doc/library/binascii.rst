@@ -115,8 +115,10 @@ The :mod:`binascii` module defines the following functions:
 
 .. function:: crc_hqx(data, value)
 
-   Compute the binhex4 crc value of *data*, starting with *value* as the
-   initial crc, and return the result.
+   Compute a 16-bit CRC value of *data*, starting with *value* as the
+   initial CRC, and return the result.  This uses the CRC-CCITT polynomial
+   *x*:sup:`16` + *x*:sup:`12` + *x*:sup:`5` + 1, often represented as
+   0x1021.  This CRC is used in the binhex4 format.
 
 
 .. function:: crc32(data[, value])
