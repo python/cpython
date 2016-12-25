@@ -396,7 +396,7 @@ Querying the error indicator
       by code that needs to save and restore the error indicator temporarily, e.g.::
 
          {
-            PyObject **type, **value, **traceback;
+            PyObject *type, *value, *traceback;
             PyErr_Fetch(&type, &value, &traceback);
 
             /* ... code that might produce other errors ... */
