@@ -411,7 +411,7 @@ class IMAP4:
         self.literal = _Authenticator(authobject).process
         typ, dat = self._simple_command('AUTHENTICATE', mech)
         if typ != 'OK':
-            raise self.error(dat[-1])
+            raise self.error(dat[-1].decode('utf-8', 'replace'))
         self.state = 'AUTH'
         return typ, dat
 
