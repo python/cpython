@@ -722,10 +722,12 @@ PyAPI_FUNC(PyObject*) _PyUnicode_FromASCII(
     Py_ssize_t size);
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject*) PyUnicode_Substring(
     PyObject *str,
     Py_ssize_t start,
     Py_ssize_t end);
+#endif
 
 #ifndef Py_LIMITED_API
 /* Compute the maximum character of the substring unicode[start:end].
@@ -736,6 +738,7 @@ PyAPI_FUNC(Py_UCS4) _PyUnicode_FindMaxChar (
     Py_ssize_t end);
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Copy the string into a UCS4 buffer including the null character if copy_null
    is set. Return NULL and raise an exception on error. Raise a SystemError if
    the buffer is smaller than the string. Return buffer on success.
@@ -751,6 +754,7 @@ PyAPI_FUNC(Py_UCS4*) PyUnicode_AsUCS4(
  * PyMem_Malloc; if this fails, NULL is returned with a memory error
    exception set. */
 PyAPI_FUNC(Py_UCS4*) PyUnicode_AsUCS4Copy(PyObject *unicode);
+#endif
 
 /* Return a read-only pointer to the Unicode object's internal
    Py_UNICODE buffer.
@@ -775,11 +779,13 @@ PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
     )  /* Py_DEPRECATED(3.3) */;
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Get the length of the Unicode object. */
 
 PyAPI_FUNC(Py_ssize_t) PyUnicode_GetLength(
     PyObject *unicode
 );
+#endif
 
 /* Get the number of Py_UNICODE units in the
    string representation. */
@@ -788,6 +794,7 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_GetSize(
     PyObject *unicode           /* Unicode object */
     ) Py_DEPRECATED(3.3);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Read a character from the string. */
 
 PyAPI_FUNC(Py_UCS4) PyUnicode_ReadChar(
@@ -805,6 +812,7 @@ PyAPI_FUNC(int) PyUnicode_WriteChar(
     Py_ssize_t index,
     Py_UCS4 character
     );
+#endif
 
 #ifndef Py_LIMITED_API
 /* Get the maximum ordinal for a Unicode character. */
@@ -1490,6 +1498,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUnicodeEscape(
     const char *errors          /* error handling */
     );
 
+#ifndef Py_LIMITED_API
 /* Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
    chars. */
 PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(
@@ -1500,6 +1509,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(
                                               invalid escaped char in
                                               string. */
 );
+#endif
 
 PyAPI_FUNC(PyObject*) PyUnicode_AsUnicodeEscapeString(
     PyObject *unicode           /* Unicode object */
@@ -1690,6 +1700,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeMBCSStateful(
     Py_ssize_t *consumed        /* bytes consumed */
     );
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeCodePageStateful(
     int code_page,              /* code page number */
     const char *string,         /* encoded string */
@@ -1697,6 +1708,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeCodePageStateful(
     const char *errors,         /* error handling */
     Py_ssize_t *consumed        /* bytes consumed */
     );
+#endif
 
 PyAPI_FUNC(PyObject*) PyUnicode_AsMBCSString(
     PyObject *unicode           /* Unicode object */
@@ -1710,11 +1722,13 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeMBCS(
     ) Py_DEPRECATED(3.3);
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeCodePage(
     int code_page,              /* code page number */
     PyObject *unicode,          /* Unicode object */
     const char *errors          /* error handling */
     );
+#endif
 
 #endif /* MS_WINDOWS */
 
@@ -1777,6 +1791,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
 
 /* --- Locale encoding --------------------------------------------------- */
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Decode a string from the current locale encoding. The decoder is strict if
    *surrogateescape* is equal to zero, otherwise it uses the 'surrogateescape'
    error handler (PEP 383) to escape undecodable bytes. If a byte sequence can
@@ -1806,6 +1821,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeLocale(
     PyObject *unicode,
     const char *errors
     );
+#endif
 
 /* --- File system encoding ---------------------------------------------- */
 
@@ -2002,6 +2018,7 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_Find(
     int direction               /* Find direction: +1 forward, -1 backward */
     );
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Like PyUnicode_Find, but search for single character only. */
 PyAPI_FUNC(Py_ssize_t) PyUnicode_FindChar(
     PyObject *str,
@@ -2010,6 +2027,7 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_FindChar(
     Py_ssize_t end,
     int direction
     );
+#endif
 
 /* Count the number of occurrences of substr in str[start:end]. */
 
