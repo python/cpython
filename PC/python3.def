@@ -189,7 +189,6 @@ EXPORTS
   PyExc_KeyboardInterrupt=python36.PyExc_KeyboardInterrupt DATA
   PyExc_LookupError=python36.PyExc_LookupError DATA
   PyExc_MemoryError=python36.PyExc_MemoryError DATA
-  PyExc_MemoryErrorInst=python36.PyExc_MemoryErrorInst DATA
   PyExc_NameError=python36.PyExc_NameError DATA
   PyExc_NotImplementedError=python36.PyExc_NotImplementedError DATA
   PyExc_OSError=python36.PyExc_OSError DATA
@@ -441,7 +440,7 @@ EXPORTS
   PyObject_SetItem=python36.PyObject_SetItem
   PyObject_Size=python36.PyObject_Size
   PyObject_Str=python36.PyObject_Str
-  PyObject_Type=python36.PyObject_Type DATA
+  PyObject_Type=python36.PyObject_Type
   PyParser_SimpleParseFileFlags=python36.PyParser_SimpleParseFileFlags
   PyParser_SimpleParseStringFlags=python36.PyParser_SimpleParseStringFlags
   PyProperty_Type=python36.PyProperty_Type DATA
@@ -578,7 +577,7 @@ EXPORTS
   PyUnicode_AsUnicodeEscapeString=python36.PyUnicode_AsUnicodeEscapeString
   PyUnicode_AsWideChar=python36.PyUnicode_AsWideChar
   PyUnicode_BuildEncodingMap=python36.PyUnicode_BuildEncodingMap
-  PyUnicode_ClearFreelist=python36.PyUnicode_ClearFreelist
+  PyUnicode_ClearFreeList=python36.PyUnicode_ClearFreeList
   PyUnicode_Compare=python36.PyUnicode_Compare
   PyUnicode_CompareWithASCIIString=python36.PyUnicode_CompareWithASCIIString
   PyUnicode_Concat=python36.PyUnicode_Concat
@@ -626,13 +625,12 @@ EXPORTS
   PyUnicode_Replace=python36.PyUnicode_Replace
   PyUnicode_Resize=python36.PyUnicode_Resize
   PyUnicode_RichCompare=python36.PyUnicode_RichCompare
-  PyUnicode_SetDefaultEncoding=python36.PyUnicode_SetDefaultEncoding
   PyUnicode_Split=python36.PyUnicode_Split
   PyUnicode_Splitlines=python36.PyUnicode_Splitlines
   PyUnicode_Tailmatch=python36.PyUnicode_Tailmatch
   PyUnicode_Translate=python36.PyUnicode_Translate
   PyUnicode_Type=python36.PyUnicode_Type DATA
-  PyWeakref_GetObject=python36.PyWeakref_GetObject DATA
+  PyWeakref_GetObject=python36.PyWeakref_GetObject
   PyWeakref_NewProxy=python36.PyWeakref_NewProxy
   PyWeakref_NewRef=python36.PyWeakref_NewRef
   PyWrapperDescr_Type=python36.PyWrapperDescr_Type DATA
