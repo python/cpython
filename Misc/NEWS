@@ -714,6 +714,9 @@ Library
 
 - Issue 28923: Remove editor artifacts from Tix.py.
 
+- Issue #29055:  Neaten-up empty population error on random.choice()
+  by suppressing the upstream exception.
+
 - Issue #28871: Fixed a crash when deallocate deep ElementTree.
 
 - Issue #19542: Fix bugs in WeakValueDictionary.setdefault() and
