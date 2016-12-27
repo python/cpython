@@ -1323,7 +1323,7 @@ Instance methods:
 
 Example:
 
-    >>> from datetime import time, tzinfo
+    >>> from datetime import time, tzinfo, timedelta
     >>> class GMT1(tzinfo):
     ...     def utcoffset(self, dt):
     ...         return timedelta(hours=1)
