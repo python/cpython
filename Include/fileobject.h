@@ -23,7 +23,9 @@ PyAPI_FUNC(char *) Py_UniversalNewlineFgets(char *, int, FILE*, PyObject *);
    If non-NULL, this is different than the default encoding for strings
 */
 PyAPI_DATA(const char *) Py_FileSystemDefaultEncoding;
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
 PyAPI_DATA(const char *) Py_FileSystemDefaultEncodeErrors;
+#endif
 PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
 
 /* Internal API
