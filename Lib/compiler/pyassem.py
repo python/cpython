@@ -581,7 +581,7 @@ def getArgCount(args):
 
 def twobyte(val):
     """Convert an int argument into high and low bytes"""
-    assert isinstance(val, int)
+    assert isinstance(val, (int, long))
     return divmod(val, 256)
 
 class LineAddrTable:

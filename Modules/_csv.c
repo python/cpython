@@ -220,15 +220,19 @@ _set_bool(const char *name, int *target, PyObject *src, int dflt)
 static int
 _set_int(const char *name, int *target, PyObject *src, int dflt)
 {
+    int value;
     if (src == NULL)
         *target = dflt;
     else {
-        if (!PyInt_Check(src)) {
+        if (!PyInt_Check(src) && !PyLong_Check(src)) {
             PyErr_Format(PyExc_TypeError,
                          "\"%s\" must be an integer", name);
             return -1;
         }
-        *target = PyInt_AsLong(src);
+        value = PyInt_AsLong(src);
+        if (value == -1 && PyErr_Occurred())
+            return -1;
+        *target = value;
     }
     return 0;
 }
@@ -1443,17 +1447,20 @@ static PyObject *
 csv_field_size_limit(PyObject *module, PyObject *args)
 {
     PyObject *new_limit = NULL;
-    long old_limit = field_limit;
+    long old_limit = field_limit, limit;
 
     if (!PyArg_UnpackTuple(args, "field_size_limit", 0, 1, &new_limit))
         return NULL;
     if (new_limit != NULL) {
-        if (!PyInt_Check(new_limit)) {
+        if (!PyInt_Check(new_limit) && !PyLong_Check(new_limit)) {
             PyErr_Format(PyExc_TypeError,
                          "limit must be an integer");
             return NULL;
         }
-        field_limit = PyInt_AsLong(new_limit);
+        limit = PyInt_AsLong(new_limit);
+        if (limit == -1 && PyErr_Occurred())
+            return NULL;
+        field_limit = limit;
     }
     return PyInt_FromLong(old_limit);
 }

@@ -155,6 +155,11 @@ PyInt_AsLong(register PyObject *op)
         return -1;
     }
 
+    if (PyLong_CheckExact(op)) {
+        /* avoid creating temporary int object */
+        return PyLong_AsLong(op);
+    }
+
     io = (PyIntObject*) (*nb->nb_int) (op);
     if (io == NULL)
         return -1;
@@ -163,8 +168,6 @@ PyInt_AsLong(register PyObject *op)
             /* got a long? => retry int conversion */
             val = PyLong_AsLong((PyObject *)io);
             Py_DECREF(io);
-            if ((val == -1) && PyErr_Occurred())
-                return -1;
             return val;
         }
         else

@@ -74,7 +74,7 @@ class ParserGenerator(object):
             else:
                 # A named token (NAME, NUMBER, STRING)
                 itoken = getattr(token, label, None)
-                assert isinstance(itoken, int), label
+                assert isinstance(itoken, (int, long)), label
                 assert itoken in token.tok_name, label
                 if itoken in c.tokens:
                     return c.tokens[itoken]

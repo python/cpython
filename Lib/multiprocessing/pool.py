@@ -86,7 +86,7 @@ class MaybeEncodingError(Exception):
 
 
 def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
-    assert maxtasks is None or (type(maxtasks) == int and maxtasks > 0)
+    assert maxtasks is None or (type(maxtasks) in (int, long) and maxtasks > 0)
     put = outqueue.put
     get = inqueue.get
     if hasattr(inqueue, '_writer'):

@@ -185,7 +185,7 @@ class ArgumentDescriptor(object):
         assert isinstance(name, str)
         self.name = name
 
-        assert isinstance(n, int) and (n >= 0 or
+        assert isinstance(n, (int, long)) and (n >= 0 or
                                        n in (UP_TO_NEWLINE,
                                              TAKEN_FROM_ARGUMENT1,
                                              TAKEN_FROM_ARGUMENT4))
@@ -873,7 +873,7 @@ class OpcodeInfo(object):
             assert isinstance(x, StackObject)
         self.stack_after = stack_after
 
-        assert isinstance(proto, int) and 0 <= proto <= 2
+        assert isinstance(proto, (int, long)) and 0 <= proto <= 2
         self.proto = proto
 
         assert isinstance(doc, str)

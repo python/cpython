@@ -1409,7 +1409,7 @@ def Time2Internaldate(date_time):
     be in the correct format.
     """
 
-    if isinstance(date_time, (int, float)):
+    if isinstance(date_time, (int, long, float)):
         tt = time.localtime(date_time)
     elif isinstance(date_time, (tuple, time.struct_time)):
         tt = date_time

@@ -227,7 +227,7 @@ class Process(object):
             else:
                 status = 'started'
 
-        if type(status) is int:
+        if type(status) in (int, long):
             if status == 0:
                 status = 'stopped'
             else:
@@ -262,8 +262,8 @@ class Process(object):
         except SystemExit, e:
             if not e.args:
                 exitcode = 1
-            elif isinstance(e.args[0], int):
-                exitcode = e.args[0]
+            elif isinstance(e.args[0], (int, long)):
+                exitcode = int(e.args[0])
             else:
                 sys.stderr.write(str(e.args[0]) + '\n')
                 sys.stderr.flush()

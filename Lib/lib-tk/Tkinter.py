@@ -1174,9 +1174,9 @@ class Misc:
                 elif isinstance(v, (tuple, list)):
                     nv = []
                     for item in v:
-                        if not isinstance(item, (basestring, int)):
+                        if not isinstance(item, (basestring, int, long)):
                             break
-                        elif isinstance(item, int):
+                        elif isinstance(item, (int, long)):
                             nv.append('%d' % item)
                         else:
                             # format it to proper Tcl code if it contains space

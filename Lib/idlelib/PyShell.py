@@ -1370,7 +1370,7 @@ class PseudoInputFile(PseudoFile):
             raise ValueError("read from closed file")
         if size is None:
             size = -1
-        elif not isinstance(size, int):
+        elif not isinstance(size, (int, long)):
             raise TypeError('must be int, not ' + type(size).__name__)
         result = self._line_buffer
         self._line_buffer = ''
@@ -1393,7 +1393,7 @@ class PseudoInputFile(PseudoFile):
             raise ValueError("read from closed file")
         if size is None:
             size = -1
-        elif not isinstance(size, int):
+        elif not isinstance(size, (int, long)):
             raise TypeError('must be int, not ' + type(size).__name__)
         line = self._line_buffer or self.shell.readline()
         if size < 0:

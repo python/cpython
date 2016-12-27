@@ -10,7 +10,7 @@ class _InterruptHandler(object):
     def __init__(self, default_handler):
         self.called = False
         self.original_handler = default_handler
-        if isinstance(default_handler, int):
+        if isinstance(default_handler, (int, long)):
             if default_handler == signal.SIG_DFL:
                 # Pretend it's signal.default_int_handler instead.
                 default_handler = signal.default_int_handler

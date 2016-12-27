@@ -1222,7 +1222,7 @@ class Logger(Filterer):
 
         logger.log(level, "We have a %s", "mysterious problem", exc_info=1)
         """
-        if not isinstance(level, int):
+        if not isinstance(level, (int, long)):
             if raiseExceptions:
                 raise TypeError("level must be an integer")
             else:

@@ -174,7 +174,7 @@ class Finalize(object):
     Class which supports object finalization using weakrefs
     '''
     def __init__(self, obj, callback, args=(), kwargs=None, exitpriority=None):
-        assert exitpriority is None or type(exitpriority) is int
+        assert exitpriority is None or type(exitpriority) in (int, long)
 
         if obj is not None:
             self._weakref = weakref.ref(obj, self)
