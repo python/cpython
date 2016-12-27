@@ -134,11 +134,17 @@ EXPORTS
   PyErr_PrintEx=python35.PyErr_PrintEx
   PyErr_ProgramText=python35.PyErr_ProgramText
   PyErr_Restore=python35.PyErr_Restore
+  PyErr_SetExcFromWindowsErr=python35.PyErr_SetExcFromWindowsErr
+  PyErr_SetExcFromWindowsErrWithFilename=python35.PyErr_SetExcFromWindowsErrWithFilename
+  PyErr_SetExcFromWindowsErrWithFilenameObject=python35.PyErr_SetExcFromWindowsErrWithFilenameObject
+  PyErr_SetExcFromWindowsErrWithFilenameObjects=python35.PyErr_SetExcFromWindowsErrWithFilenameObjects
   PyErr_SetExcInfo=python35.PyErr_SetExcInfo
   PyErr_SetFromErrno=python35.PyErr_SetFromErrno
   PyErr_SetFromErrnoWithFilename=python35.PyErr_SetFromErrnoWithFilename
   PyErr_SetFromErrnoWithFilenameObject=python35.PyErr_SetFromErrnoWithFilenameObject
   PyErr_SetFromErrnoWithFilenameObjects=python35.PyErr_SetFromErrnoWithFilenameObjects
+  PyErr_SetFromWindowsErr=python35.PyErr_SetFromWindowsErr
+  PyErr_SetFromWindowsErrWithFilename=python35.PyErr_SetFromWindowsErrWithFilename
   PyErr_SetImportError=python35.PyErr_SetImportError
   PyErr_SetInterrupt=python35.PyErr_SetInterrupt
   PyErr_SetNone=python35.PyErr_SetNone
@@ -238,6 +244,7 @@ EXPORTS
   PyExc_UserWarning=python35.PyExc_UserWarning DATA
   PyExc_ValueError=python35.PyExc_ValueError DATA
   PyExc_Warning=python35.PyExc_Warning DATA
+  PyExc_WindowsError=python35.PyExc_WindowsError DATA
   PyExc_ZeroDivisionError=python35.PyExc_ZeroDivisionError DATA
   PyException_GetCause=python35.PyException_GetCause
   PyException_GetContext=python35.PyException_GetContext
@@ -414,6 +421,7 @@ EXPORTS
   PyODict_SetItem=python35.PyODict_SetItem
   PyODict_Type=python35.PyODict_Type DATA
   PyOS_AfterFork=python35.PyOS_AfterFork
+  PyOS_CheckStack=python35.PyOS_CheckStack
   PyOS_InitInterrupts=python35.PyOS_InitInterrupts
   PyOS_InputHook=python35.PyOS_InputHook DATA
   PyOS_InterruptOccurred=python35.PyOS_InterruptOccurred
@@ -613,6 +621,7 @@ EXPORTS
   PyUnicode_AsEncodedString=python35.PyUnicode_AsEncodedString
   PyUnicode_AsEncodedUnicode=python35.PyUnicode_AsEncodedUnicode
   PyUnicode_AsLatin1String=python35.PyUnicode_AsLatin1String
+  PyUnicode_AsMBCSString=python35.PyUnicode_AsMBCSString
   PyUnicode_AsRawUnicodeEscapeString=python35.PyUnicode_AsRawUnicodeEscapeString
   PyUnicode_AsUCS4=python35.PyUnicode_AsUCS4
   PyUnicode_AsUCS4Copy=python35.PyUnicode_AsUCS4Copy
@@ -632,11 +641,14 @@ EXPORTS
   PyUnicode_Decode=python35.PyUnicode_Decode
   PyUnicode_DecodeASCII=python35.PyUnicode_DecodeASCII
   PyUnicode_DecodeCharmap=python35.PyUnicode_DecodeCharmap
+  PyUnicode_DecodeCodePageStateful=python35.PyUnicode_DecodeCodePageStateful
   PyUnicode_DecodeFSDefault=python35.PyUnicode_DecodeFSDefault
   PyUnicode_DecodeFSDefaultAndSize=python35.PyUnicode_DecodeFSDefaultAndSize
   PyUnicode_DecodeLatin1=python35.PyUnicode_DecodeLatin1
   PyUnicode_DecodeLocale=python35.PyUnicode_DecodeLocale
   PyUnicode_DecodeLocaleAndSize=python35.PyUnicode_DecodeLocaleAndSize
+  PyUnicode_DecodeMBCS=python35.PyUnicode_DecodeMBCS
+  PyUnicode_DecodeMBCSStateful=python35.PyUnicode_DecodeMBCSStateful
   PyUnicode_DecodeRawUnicodeEscape=python35.PyUnicode_DecodeRawUnicodeEscape
   PyUnicode_DecodeUTF16=python35.PyUnicode_DecodeUTF16
   PyUnicode_DecodeUTF16Stateful=python35.PyUnicode_DecodeUTF16Stateful
@@ -647,6 +659,7 @@ EXPORTS
   PyUnicode_DecodeUTF8=python35.PyUnicode_DecodeUTF8
   PyUnicode_DecodeUTF8Stateful=python35.PyUnicode_DecodeUTF8Stateful
   PyUnicode_DecodeUnicodeEscape=python35.PyUnicode_DecodeUnicodeEscape
+  PyUnicode_EncodeCodePage=python35.PyUnicode_EncodeCodePage
   PyUnicode_EncodeFSDefault=python35.PyUnicode_EncodeFSDefault
   PyUnicode_EncodeLocale=python35.PyUnicode_EncodeLocale
   PyUnicode_FSConverter=python35.PyUnicode_FSConverter
