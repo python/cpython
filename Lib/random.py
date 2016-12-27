@@ -254,7 +254,7 @@ class Random(_random.Random):
         try:
             i = self._randbelow(len(seq))
         except ValueError:
-            raise IndexError('Cannot choose from an empty sequence')
+            raise IndexError('Cannot choose from an empty sequence') from None
         return seq[i]
 
     def shuffle(self, x, random=None):
