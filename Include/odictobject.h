@@ -17,12 +17,13 @@ PyAPI_DATA(PyTypeObject) PyODictKeys_Type;
 PyAPI_DATA(PyTypeObject) PyODictItems_Type;
 PyAPI_DATA(PyTypeObject) PyODictValues_Type;
 
-#endif /* Py_LIMITED_API */
-
 #define PyODict_Check(op) PyObject_TypeCheck(op, &PyODict_Type)
 #define PyODict_CheckExact(op) (Py_TYPE(op) == &PyODict_Type)
 #define PyODict_SIZE(op) ((PyDictObject *)op)->ma_used
-#define PyODict_HasKey(od, key) (PyMapping_HasKey(PyObject *)od, key)
+
+#endif /* Py_LIMITED_API */
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 
 PyAPI_FUNC(PyObject *) PyODict_New(void);
 PyAPI_FUNC(int) PyODict_SetItem(PyObject *od, PyObject *key, PyObject *item);
@@ -36,6 +37,8 @@ PyAPI_FUNC(int) PyODict_DelItem(PyObject *od, PyObject *key);
 #define PyODict_Size(od) PyDict_Size((PyObject *)od)
 #define PyODict_GetItemString(od, key) \
     PyDict_GetItemString((PyObject *)od, key)
+
+#endif
 
 #ifdef __cplusplus
 }
