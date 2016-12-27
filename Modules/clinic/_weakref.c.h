@@ -28,4 +28,33 @@ _weakref_getweakrefcount(PyObject *module, PyObject *object)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d9086c8576d46933 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_weakref__remove_dead_weakref__doc__,
+"_remove_dead_weakref($module, dct, key, /)\n"
+"--\n"
+"\n"
+"Atomically remove key from dict if it points to a dead weakref.");
+
+#define _WEAKREF__REMOVE_DEAD_WEAKREF_METHODDEF    \
+    {"_remove_dead_weakref", (PyCFunction)_weakref__remove_dead_weakref, METH_VARARGS, _weakref__remove_dead_weakref__doc__},
+
+static PyObject *
+_weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
+                                   PyObject *key);
+
+static PyObject *
+_weakref__remove_dead_weakref(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    PyObject *dct;
+    PyObject *key;
+
+    if (!PyArg_ParseTuple(args, "O!O:_remove_dead_weakref",
+        &PyDict_Type, &dct, &key))
+        goto exit;
+    return_value = _weakref__remove_dead_weakref_impl(module, dct, key);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=5764cb64a6f66ffd input=a9049054013a1b77]*/
