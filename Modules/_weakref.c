@@ -35,6 +35,46 @@ _weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
 }
 
 
+static int
+is_dead_weakref(PyObject *value)
+{
+    if (!PyWeakref_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, "not a weakref");
+        return -1;
+    }
+    return PyWeakref_GET_OBJECT(value) == Py_None;
+}
+
+/*[clinic input]
+
+_weakref._remove_dead_weakref -> object
+
+  dct: object(subclass_of='&PyDict_Type')
+  key: object
+  /
+
+Atomically remove key from dict if it points to a dead weakref.
+[clinic start generated code]*/
+
+static PyObject *
+_weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
+                                   PyObject *key)
+/*[clinic end generated code: output=d9ff53061fcb875c input=19fc91f257f96a1d]*/
+{
+    if (_PyDict_DelItemIf(dct, key, is_dead_weakref) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_KeyError))
+            /* This function is meant to allow safe weak-value dicts
+               with GC in another thread (see issue #28427), so it's
+               ok if the key doesn't exist anymore.
+               */
+            PyErr_Clear();
+        else
+            return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 PyDoc_STRVAR(weakref_getweakrefs__doc__,
 "getweakrefs(object) -- return a list of all weak reference objects\n"
 "that point to 'object'.");
@@ -88,6 +128,7 @@ weakref_proxy(PyObject *self, PyObject *args)
 static PyMethodDef
 weakref_functions[] =  {
     _WEAKREF_GETWEAKREFCOUNT_METHODDEF
+    _WEAKREF__REMOVE_DEAD_WEAKREF_METHODDEF
     {"getweakrefs",     weakref_getweakrefs,            METH_O,
      weakref_getweakrefs__doc__},
     {"proxy",           weakref_proxy,                  METH_VARARGS,
