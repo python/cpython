@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28427: old keys should not remove new values from
+  WeakValueDictionary when collecting from another thread.
+
 - Issue #28998: More APIs now support longs as well as ints.
 
 - Issue 28923: Remove editor artifacts from Tix.py,

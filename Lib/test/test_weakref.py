@@ -1437,6 +1437,18 @@ class MappingTestCase(TestBase):
                 x = d.pop(10, 10)
                 self.assertIsNot(x, None)  # we never put None in there!
 
+    def test_threaded_weak_valued_consistency(self):
+        # Issue #28427: old keys should not remove new values from
+        # WeakValueDictionary when collecting from another thread.
+        d = weakref.WeakValueDictionary()
+        with collect_in_thread():
+            for i in range(200000):
+                o = RefCycle()
+                d[10] = o
+                # o is still alive, so the dict can't be empty
+                self.assertEqual(len(d), 1)
+                o = None  # lose ref
+
 
 from test import mapping_tests
 

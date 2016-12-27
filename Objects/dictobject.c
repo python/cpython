@@ -848,13 +848,28 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
     return dict_set_item_by_hash_or_entry(op, key, hash, NULL, value);
 }
 
+static int
+delitem_common(PyDictObject *mp, PyDictEntry *ep)
+{
+    PyObject *old_value, *old_key;
+
+    old_key = ep->me_key;
+    Py_INCREF(dummy);
+    ep->me_key = dummy;
+    old_value = ep->me_value;
+    ep->me_value = NULL;
+    mp->ma_used--;
+    Py_DECREF(old_value);
+    Py_DECREF(old_key);
+    return 0;
+}
+
 int
 PyDict_DelItem(PyObject *op, PyObject *key)
 {
     register PyDictObject *mp;
     register long hash;
     register PyDictEntry *ep;
-    PyObject *old_value, *old_key;
 
     if (!PyDict_Check(op)) {
         PyErr_BadInternalCall();
@@ -875,15 +890,45 @@ PyDict_DelItem(PyObject *op, PyObject *key)
         set_key_error(key);
         return -1;
     }
-    old_key = ep->me_key;
-    Py_INCREF(dummy);
-    ep->me_key = dummy;
-    old_value = ep->me_value;
-    ep->me_value = NULL;
-    mp->ma_used--;
-    Py_DECREF(old_value);
-    Py_DECREF(old_key);
-    return 0;
+
+    return delitem_common(mp, ep);
+}
+
+int
+_PyDict_DelItemIf(PyObject *op, PyObject *key,
+                  int (*predicate)(PyObject *value))
+{
+    register PyDictObject *mp;
+    register long hash;
+    register PyDictEntry *ep;
+    int res;
+
+    if (!PyDict_Check(op)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    assert(key);
+    if (!PyString_CheckExact(key) ||
+        (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+        hash = PyObject_Hash(key);
+        if (hash == -1)
+            return -1;
+    }
+    mp = (PyDictObject *)op;
+    ep = (mp->ma_lookup)(mp, key, hash);
+    if (ep == NULL)
+        return -1;
+    if (ep->me_value == NULL) {
+        set_key_error(key);
+        return -1;
+    }
+    res = predicate(ep->me_value);
+    if (res == -1)
+        return -1;
+    if (res > 0)
+        return delitem_common(mp, ep);
+    else
+        return 0;
 }
 
 void
