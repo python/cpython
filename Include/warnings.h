@@ -18,12 +18,14 @@ PyAPI_FUNC(int) PyErr_WarnFormat(
     const char *format,         /* ASCII-encoded string  */
     ...);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
 /* Emit a ResourceWarning warning */
 PyAPI_FUNC(int) PyErr_ResourceWarning(
     PyObject *source,
     Py_ssize_t stack_level,
     const char *format,         /* ASCII-encoded string  */
     ...);
+#endif
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyErr_WarnExplicitObject(
     PyObject *category,
