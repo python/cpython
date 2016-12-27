@@ -173,7 +173,7 @@ name of all sections describing a repository.
 Each section describing a repository defines three variables:
 
 - *repository*, that defines the url of the PyPI server. Defaults to
-    ``https://www.python.org/pypi``.
+    ``https://upload.pypi.org/legacy/``.
 - *username*, which is the registered username on the PyPI server.
 - *password*, that will be used to authenticate. If omitted the user
     will be prompt to type it when needed.
