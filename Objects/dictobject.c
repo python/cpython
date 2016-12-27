@@ -1583,11 +1583,32 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
     return insertdict(mp, key, hash, value);
 }
 
+static int
+delitem_common(PyDictObject *mp, Py_ssize_t hashpos, Py_ssize_t ix,
+               PyObject *old_value)
+{
+    PyObject *old_key;
+    PyDictKeyEntry *ep;
+
+    mp->ma_used--;
+    mp->ma_version_tag = DICT_NEXT_VERSION();
+    ep = &DK_ENTRIES(mp->ma_keys)[ix];
+    dk_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
+    ENSURE_ALLOWS_DELETIONS(mp);
+    old_key = ep->me_key;
+    ep->me_key = NULL;
+    ep->me_value = NULL;
+    Py_DECREF(old_key);
+    Py_DECREF(old_value);
+
+    assert(_PyDict_CheckConsistency(mp));
+    return 0;
+}
+
 int
 PyDict_DelItem(PyObject *op, PyObject *key)
 {
     Py_hash_t hash;
-
     assert(key);
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1) {
@@ -1604,8 +1625,7 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 {
     Py_ssize_t hashpos, ix;
     PyDictObject *mp;
-    PyDictKeyEntry *ep;
-    PyObject *old_key, *old_value;
+    PyObject *old_value;
 
     if (!PyDict_Check(op)) {
         PyErr_BadInternalCall();
@@ -1632,21 +1652,59 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
         assert(ix >= 0);
     }
 
-    assert(old_value != NULL);
-    mp->ma_used--;
-    mp->ma_version_tag = DICT_NEXT_VERSION();
-    ep = &DK_ENTRIES(mp->ma_keys)[ix];
-    dk_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
-    ENSURE_ALLOWS_DELETIONS(mp);
-    old_key = ep->me_key;
-    ep->me_key = NULL;
-    ep->me_value = NULL;
-    Py_DECREF(old_key);
-    Py_DECREF(old_value);
-
-    assert(_PyDict_CheckConsistency(mp));
-    return 0;
+    return delitem_common(mp, hashpos, ix, old_value);
 }
+
+/* This function promises that the predicate -> deletion sequence is atomic
+ * (i.e. protected by the GIL), assuming the predicate itself doesn't
+ * release the GIL.
+ */
+int
+_PyDict_DelItemIf(PyObject *op, PyObject *key,
+                  int (*predicate)(PyObject *value))
+{
+    Py_ssize_t hashpos, ix;
+    PyDictObject *mp;
+    Py_hash_t hash;
+    PyObject *old_value;
+    int res;
+
+    if (!PyDict_Check(op)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    assert(key);
+    hash = PyObject_Hash(key);
+    if (hash == -1)
+        return -1;
+    mp = (PyDictObject *)op;
+    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &old_value, &hashpos);
+    if (ix == DKIX_ERROR)
+        return -1;
+    if (ix == DKIX_EMPTY || old_value == NULL) {
+        _PyErr_SetKeyError(key);
+        return -1;
+    }
+    assert(dk_get_index(mp->ma_keys, hashpos) == ix);
+
+    // Split table doesn't allow deletion.  Combine it.
+    if (_PyDict_HasSplitTable(mp)) {
+        if (dictresize(mp, DK_SIZE(mp->ma_keys))) {
+            return -1;
+        }
+        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &old_value, &hashpos);
+        assert(ix >= 0);
+    }
+
+    res = predicate(old_value);
+    if (res == -1)
+        return -1;
+    if (res > 0)
+        return delitem_common(mp, hashpos, ix, old_value);
+    else
+        return 0;
+}
+
 
 void
 PyDict_Clear(PyObject *op)
