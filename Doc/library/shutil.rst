@@ -625,8 +625,6 @@ The resulting archive contains:
 Querying the size of the output terminal
 ----------------------------------------
 
-.. versionadded:: 3.3
-
 .. function:: get_terminal_size(fallback=(columns, lines))
 
    Get the size of the terminal window.
@@ -649,6 +647,8 @@ Querying the size of the output terminal
 
    See also: The Single UNIX Specification, Version 2,
    `Other Environment Variables`_.
+
+   .. versionadded:: 3.3
 
 .. _`Other Environment Variables`:
    http://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003
