@@ -135,11 +135,17 @@ EXPORTS
   PyErr_ProgramText=python37.PyErr_ProgramText
   PyErr_ResourceWarning=python37.PyErr_ResourceWarning
   PyErr_Restore=python37.PyErr_Restore
+  PyErr_SetExcFromWindowsErr=python37.PyErr_SetExcFromWindowsErr
+  PyErr_SetExcFromWindowsErrWithFilename=python37.PyErr_SetExcFromWindowsErrWithFilename
+  PyErr_SetExcFromWindowsErrWithFilenameObject=python37.PyErr_SetExcFromWindowsErrWithFilenameObject
+  PyErr_SetExcFromWindowsErrWithFilenameObjects=python37.PyErr_SetExcFromWindowsErrWithFilenameObjects
   PyErr_SetExcInfo=python37.PyErr_SetExcInfo
   PyErr_SetFromErrno=python37.PyErr_SetFromErrno
   PyErr_SetFromErrnoWithFilename=python37.PyErr_SetFromErrnoWithFilename
   PyErr_SetFromErrnoWithFilenameObject=python37.PyErr_SetFromErrnoWithFilenameObject
   PyErr_SetFromErrnoWithFilenameObjects=python37.PyErr_SetFromErrnoWithFilenameObjects
+  PyErr_SetFromWindowsErr=python37.PyErr_SetFromWindowsErr
+  PyErr_SetFromWindowsErrWithFilename=python37.PyErr_SetFromWindowsErrWithFilename
   PyErr_SetImportError=python37.PyErr_SetImportError
   PyErr_SetImportErrorSubclass=python37.PyErr_SetImportErrorSubclass
   PyErr_SetInterrupt=python37.PyErr_SetInterrupt
@@ -241,6 +247,7 @@ EXPORTS
   PyExc_UserWarning=python37.PyExc_UserWarning DATA
   PyExc_ValueError=python37.PyExc_ValueError DATA
   PyExc_Warning=python37.PyExc_Warning DATA
+  PyExc_WindowsError=python37.PyExc_WindowsError DATA
   PyExc_ZeroDivisionError=python37.PyExc_ZeroDivisionError DATA
   PyException_GetCause=python37.PyException_GetCause
   PyException_GetContext=python37.PyException_GetContext
@@ -417,6 +424,7 @@ EXPORTS
   PyODict_SetItem=python37.PyODict_SetItem
   PyODict_Type=python37.PyODict_Type DATA
   PyOS_AfterFork=python37.PyOS_AfterFork
+  PyOS_CheckStack=python37.PyOS_CheckStack
   PyOS_FSPath=python37.PyOS_FSPath
   PyOS_InitInterrupts=python37.PyOS_InitInterrupts
   PyOS_InputHook=python37.PyOS_InputHook DATA
@@ -617,6 +625,7 @@ EXPORTS
   PyUnicode_AsEncodedString=python37.PyUnicode_AsEncodedString
   PyUnicode_AsEncodedUnicode=python37.PyUnicode_AsEncodedUnicode
   PyUnicode_AsLatin1String=python37.PyUnicode_AsLatin1String
+  PyUnicode_AsMBCSString=python37.PyUnicode_AsMBCSString
   PyUnicode_AsRawUnicodeEscapeString=python37.PyUnicode_AsRawUnicodeEscapeString
   PyUnicode_AsUCS4=python37.PyUnicode_AsUCS4
   PyUnicode_AsUCS4Copy=python37.PyUnicode_AsUCS4Copy
@@ -636,11 +645,14 @@ EXPORTS
   PyUnicode_Decode=python37.PyUnicode_Decode
   PyUnicode_DecodeASCII=python37.PyUnicode_DecodeASCII
   PyUnicode_DecodeCharmap=python37.PyUnicode_DecodeCharmap
+  PyUnicode_DecodeCodePageStateful=python37.PyUnicode_DecodeCodePageStateful
   PyUnicode_DecodeFSDefault=python37.PyUnicode_DecodeFSDefault
   PyUnicode_DecodeFSDefaultAndSize=python37.PyUnicode_DecodeFSDefaultAndSize
   PyUnicode_DecodeLatin1=python37.PyUnicode_DecodeLatin1
   PyUnicode_DecodeLocale=python37.PyUnicode_DecodeLocale
   PyUnicode_DecodeLocaleAndSize=python37.PyUnicode_DecodeLocaleAndSize
+  PyUnicode_DecodeMBCS=python37.PyUnicode_DecodeMBCS
+  PyUnicode_DecodeMBCSStateful=python37.PyUnicode_DecodeMBCSStateful
   PyUnicode_DecodeRawUnicodeEscape=python37.PyUnicode_DecodeRawUnicodeEscape
   PyUnicode_DecodeUTF16=python37.PyUnicode_DecodeUTF16
   PyUnicode_DecodeUTF16Stateful=python37.PyUnicode_DecodeUTF16Stateful
@@ -651,6 +663,7 @@ EXPORTS
   PyUnicode_DecodeUTF8=python37.PyUnicode_DecodeUTF8
   PyUnicode_DecodeUTF8Stateful=python37.PyUnicode_DecodeUTF8Stateful
   PyUnicode_DecodeUnicodeEscape=python37.PyUnicode_DecodeUnicodeEscape
+  PyUnicode_EncodeCodePage=python37.PyUnicode_EncodeCodePage
   PyUnicode_EncodeFSDefault=python37.PyUnicode_EncodeFSDefault
   PyUnicode_EncodeLocale=python37.PyUnicode_EncodeLocale
   PyUnicode_FSConverter=python37.PyUnicode_FSConverter
