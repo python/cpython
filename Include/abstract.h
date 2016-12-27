@@ -612,8 +612,10 @@ PyAPI_FUNC(PyObject *) PyNumber_Subtract(PyObject *o1, PyObject *o2);
    This is the equivalent of the Python expression: o1 * o2. */
 PyAPI_FUNC(PyObject *) PyNumber_Multiply(PyObject *o1, PyObject *o2);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 /* This is the equivalent of the Python expression: o1 @ o2. */
 PyAPI_FUNC(PyObject *) PyNumber_MatrixMultiply(PyObject *o1, PyObject *o2);
+#endif
 
 /* Returns the result of dividing o1 by o2 giving an integral result,
    or NULL on failure.
@@ -743,8 +745,10 @@ PyAPI_FUNC(PyObject *) PyNumber_InPlaceSubtract(PyObject *o1, PyObject *o2);
    This is the equivalent of the Python expression: o1 *= o2. */
 PyAPI_FUNC(PyObject *) PyNumber_InPlaceMultiply(PyObject *o1, PyObject *o2);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 /* This is the equivalent of the Python expression: o1 @= o2. */
 PyAPI_FUNC(PyObject *) PyNumber_InPlaceMatrixMultiply(PyObject *o1, PyObject *o2);
+#endif
 
 /* Returns the result of dividing o1 by o2 giving an integral result, possibly
    in-place, or NULL on failure.
