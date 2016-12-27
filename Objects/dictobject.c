@@ -1246,13 +1246,31 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
     return insertdict(mp, key, hash, value);
 }
 
+static int
+delitem_common(PyDictObject *mp, PyDictKeyEntry *ep, PyObject **value_addr)
+{
+    PyObject *old_key, *old_value;
+
+    old_value = *value_addr;
+    *value_addr = NULL;
+    mp->ma_used--;
+    if (!_PyDict_HasSplitTable(mp)) {
+        ENSURE_ALLOWS_DELETIONS(mp);
+        old_key = ep->me_key;
+        Py_INCREF(dummy);
+        ep->me_key = dummy;
+        Py_DECREF(old_key);
+    }
+    Py_DECREF(old_value);
+    return 0;
+}
+
 int
 PyDict_DelItem(PyObject *op, PyObject *key)
 {
     PyDictObject *mp;
     Py_hash_t hash;
     PyDictKeyEntry *ep;
-    PyObject *old_key, *old_value;
     PyObject **value_addr;
 
     if (!PyDict_Check(op)) {
@@ -1274,18 +1292,7 @@ PyDict_DelItem(PyObject *op, PyObject *key)
         _PyErr_SetKeyError(key);
         return -1;
     }
-    old_value = *value_addr;
-    *value_addr = NULL;
-    mp->ma_used--;
-    if (!_PyDict_HasSplitTable(mp)) {
-        ENSURE_ALLOWS_DELETIONS(mp);
-        old_key = ep->me_key;
-        Py_INCREF(dummy);
-        ep->me_key = dummy;
-        Py_DECREF(old_key);
-    }
-    Py_DECREF(old_value);
-    return 0;
+    return delitem_common(mp, ep, value_addr);
 }
 
 int
@@ -1293,7 +1300,6 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 {
     PyDictObject *mp;
     PyDictKeyEntry *ep;
-    PyObject *old_key, *old_value;
     PyObject **value_addr;
 
     if (!PyDict_Check(op)) {
@@ -1310,19 +1316,44 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
         _PyErr_SetKeyError(key);
         return -1;
     }
-    old_value = *value_addr;
-    *value_addr = NULL;
-    mp->ma_used--;
-    if (!_PyDict_HasSplitTable(mp)) {
-        ENSURE_ALLOWS_DELETIONS(mp);
-        old_key = ep->me_key;
-        Py_INCREF(dummy);
-        ep->me_key = dummy;
-        Py_DECREF(old_key);
-    }
-    Py_DECREF(old_value);
-    return 0;
+    return delitem_common(mp, ep, value_addr);
 }
+
+int
+_PyDict_DelItemIf(PyObject *op, PyObject *key,
+                  int (*predicate)(PyObject *value))
+{
+    PyDictObject *mp;
+    Py_hash_t hash;
+    PyDictKeyEntry *ep;
+    PyObject **value_addr;
+    int res;
+
+    if (!PyDict_Check(op)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    assert(key);
+    hash = PyObject_Hash(key);
+    if (hash == -1)
+        return -1;
+    mp = (PyDictObject *)op;
+    ep = (mp->ma_keys->dk_lookup)(mp, key, hash, &value_addr);
+    if (ep == NULL)
+        return -1;
+    if (*value_addr == NULL) {
+        _PyErr_SetKeyError(key);
+        return -1;
+    }
+    res = predicate(*value_addr);
+    if (res == -1)
+        return -1;
+    if (res > 0)
+        return delitem_common(mp, ep, value_addr);
+    else
+        return 0;
+}
+
 
 void
 PyDict_Clear(PyObject *op)
