@@ -3,8 +3,7 @@
 :mod:`hashlib` --- BLAKE2 hash functions
 ========================================
 
-.. module:: hashlib
-   :synopsis: BLAKE2 hash function for Python
+.. currentmodule:: hashlib
 .. sectionauthor:: Dmitry Chestnykh
 
 .. index::
