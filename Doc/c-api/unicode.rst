@@ -942,26 +942,6 @@ wchar_t Support
    .. versionadded:: 3.2
 
 
-UCS4 Support
-""""""""""""
-
-.. versionadded:: 3.3
-
-.. XXX are these meant to be public?
-
-.. c:function:: size_t Py_UCS4_strlen(const Py_UCS4 *u)
-                Py_UCS4* Py_UCS4_strcpy(Py_UCS4 *s1, const Py_UCS4 *s2)
-                Py_UCS4* Py_UCS4_strncpy(Py_UCS4 *s1, const Py_UCS4 *s2, size_t n)
-                Py_UCS4* Py_UCS4_strcat(Py_UCS4 *s1, const Py_UCS4 *s2)
-                int Py_UCS4_strcmp(const Py_UCS4 *s1, const Py_UCS4 *s2)
-                int Py_UCS4_strncmp(const Py_UCS4 *s1, const Py_UCS4 *s2, size_t n)
-                Py_UCS4* Py_UCS4_strchr(const Py_UCS4 *s, Py_UCS4 c)
-                Py_UCS4* Py_UCS4_strrchr(const Py_UCS4 *s, Py_UCS4 c)
-
-   These utility functions work on strings of :c:type:`Py_UCS4` characters and
-   otherwise behave like the C standard library functions with the same name.
-
-
 .. _builtincodecs:
 
 Built-in Codecs
