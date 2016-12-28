@@ -390,6 +390,13 @@ class FormatTest(unittest.TestCase):
             else:
                 raise TestFailed('"%*d"%(maxsize, -127) should fail')
 
+    def test_nul(self):
+        # test the null character
+        testcommon("a\0b", (), 'a\0b')
+        testcommon("a%cb", (0,), 'a\0b')
+        testformat("a%sb", ('c\0d',), 'ac\0db')
+        testcommon(b"a%sb", (b'c\0d',), b'ac\0db')
+
     def test_non_ascii(self):
         testformat("\u20ac=%f", (1.0,), "\u20ac=1.000000")
 
