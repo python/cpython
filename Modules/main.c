@@ -7,6 +7,9 @@
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
 #include <windows.h>
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
