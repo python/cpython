@@ -616,6 +616,8 @@ Windows
 Build
 -----
 
+- Issue #29080: Removes hard dependency on hg.exe from PC/build.bat
+
 - Issue #23903: Added missed names to PC/python3.def.
 
 - Issue #10656: Fix out-of-tree building on AIX.  Patch by Tristan Carel and
