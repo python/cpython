@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13051: Fixed recursion errors in large or resized
+  curses.textpad.Textbox.  Based on patch by Tycho Andersen.
+
 - Issue #9770: curses.ascii predicates now work correctly with negative
   integers.
 
