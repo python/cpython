@@ -103,6 +103,9 @@ Tests
 Build
 -----
 
+- Issue #28768: Fix implicit declaration of function _setmode. Patch by
+  Masayuki Yamamoto
+
 - Issue #29080: Removes hard dependency on hg.exe from PC/build.bat
 
 - Issue #23903: Added missed names to PC/python3.def.
