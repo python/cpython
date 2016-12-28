@@ -10,6 +10,8 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #29073: bytearray formatting no longer truncates on first null byte.
+
 - Issue #28932: Do not include <sys/random.h> if it does not exist.
 
 - Issue #28147: Fix a memory leak in split-table dictionaries: setattr()
