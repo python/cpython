@@ -17,7 +17,6 @@ def sanity():
     """
 
 
-@unittest.skipUnless(cET, 'requires _elementtree')
 class MiscTests(unittest.TestCase):
     # Issue #8651.
     @precisionbigmemtest(size=_2G + 100, memuse=1)
@@ -63,22 +62,12 @@ class MiscTests(unittest.TestCase):
             del element.attrib
         self.assertEqual(element.attrib, {'A': 'B', 'C': 'D'})
 
-    def test_trashcan(self):
-        # If this test fails, it will most likely die via segfault.
-        e = root = cET.Element('root')
-        for i in range(200000):
-            e = cET.SubElement(e, 'x')
-        del e
-        del root
-        test_support.gc_collect()
-
 
 def test_main():
     from test import test_xml_etree, test_xml_etree_c
 
     # Run the tests specific to the C implementation
     test_support.run_doctest(test_xml_etree_c, verbosity=True)
-    test_support.run_unittest(MiscTests)
 
     # Assign the C implementation before running the doctests
     # Patch the __name__, to prevent confusion with the pure Python test
