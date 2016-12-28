@@ -283,13 +283,15 @@ bytearray_format(PyByteArrayObject *self, PyObject *args)
 {
     PyObject *bytes_in, *bytes_out, *res;
     char *bytestring;
+    Py_ssize_t bytesize;
 
     if (self == NULL || !PyByteArray_Check(self) || args == NULL) {
         PyErr_BadInternalCall();
         return NULL;
     }
     bytestring = PyByteArray_AS_STRING(self);
-    bytes_in = PyBytes_FromString(bytestring);
+    bytesize = PyByteArray_GET_SIZE(self);
+    bytes_in = PyBytes_FromStringAndSize(bytestring, bytesize);
     if (bytes_in == NULL)
         return NULL;
     bytes_out = _PyBytes_Format(bytes_in, args);
