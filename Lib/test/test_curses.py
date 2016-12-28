@@ -358,6 +358,25 @@ class TestAscii(unittest.TestCase):
             check(curses.ascii.ispunct, c in string.punctuation)
             check(curses.ascii.isxdigit, c in string.hexdigits)
 
+        for i in (-2, -1, 256, sys.maxunicode, sys.maxunicode+1):
+            self.assertFalse(curses.ascii.isalnum(i))
+            self.assertFalse(curses.ascii.isalpha(i))
+            self.assertFalse(curses.ascii.isdigit(i))
+            self.assertFalse(curses.ascii.islower(i))
+            self.assertFalse(curses.ascii.isspace(i))
+            self.assertFalse(curses.ascii.isupper(i))
+
+            self.assertFalse(curses.ascii.isascii(i))
+            self.assertFalse(curses.ascii.isctrl(i))
+            self.assertFalse(curses.ascii.iscntrl(i))
+            self.assertFalse(curses.ascii.isblank(i))
+            self.assertFalse(curses.ascii.isgraph(i))
+            self.assertFalse(curses.ascii.isprint(i))
+            self.assertFalse(curses.ascii.ispunct(i))
+            self.assertFalse(curses.ascii.isxdigit(i))
+
+        self.assertFalse(curses.ascii.ismeta(-1))
+
     def test_ascii(self):
         ascii = curses.ascii.ascii
         self.assertEqual(ascii('\xc1'), 'A')
