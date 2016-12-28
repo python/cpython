@@ -597,6 +597,8 @@ Documentation
 Build
 -----
 
+- Issue #29080: Removes hard dependency on hg.exe from PC/build.bat
+
 - Issue #23903: Added missed names to PC/python3.def.
 
 - Issue #28762: lockf() is available on Android API level 24, but the F_LOCK
