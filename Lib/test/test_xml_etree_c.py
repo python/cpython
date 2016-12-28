@@ -17,6 +17,7 @@ def sanity():
     """
 
 
+@unittest.skipUnless(cET, 'requires _elementtree')
 class MiscTests(unittest.TestCase):
     # Issue #8651.
     @precisionbigmemtest(size=_2G + 100, memuse=1)
@@ -67,6 +68,7 @@ def test_main():
     from test import test_xml_etree, test_xml_etree_c
 
     # Run the tests specific to the C implementation
+    test_support.run_unittest(MiscTests)
     test_support.run_doctest(test_xml_etree_c, verbosity=True)
 
     # Assign the C implementation before running the doctests
