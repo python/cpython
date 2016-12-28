@@ -43,16 +43,20 @@ class Textbox:
     def __init__(self, win, insert_mode=False):
         self.win = win
         self.insert_mode = insert_mode
-        (self.maxy, self.maxx) = win.getmaxyx()
-        self.maxy = self.maxy - 1
-        self.maxx = self.maxx - 1
+        self._update_max_yx()
         self.stripspaces = 1
         self.lastcmd = None
         win.keypad(1)
 
+    def _update_max_yx(self):
+        maxy, maxx = self.win.getmaxyx()
+        self.maxy = maxy - 1
+        self.maxx = maxx - 1
+
     def _end_of_line(self, y):
         """Go to the location of the first blank on the given line,
         returning the index of the last non-blank character."""
+        self._update_max_yx()
         last = self.maxx
         while True:
             if curses.ascii.ascii(self.win.inch(y, last)) != curses.ascii.SP:
@@ -64,8 +68,10 @@ class Textbox:
         return last
 
     def _insert_printable_char(self, ch):
+        self._update_max_yx()
         (y, x) = self.win.getyx()
-        if y < self.maxy or x < self.maxx:
+        backyx = None
+        while y < self.maxy or x < self.maxx:
             if self.insert_mode:
                 oldch = self.win.inch()
             # The try-catch ignores the error we trigger from some curses
@@ -75,14 +81,20 @@ class Textbox:
                 self.win.addch(ch)
             except curses.error:
                 pass
-            if self.insert_mode:
-                (backy, backx) = self.win.getyx()
-                if curses.ascii.isprint(oldch):
-                    self._insert_printable_char(oldch)
-                    self.win.move(backy, backx)
+            if not self.insert_mode or not curses.ascii.isprint(oldch):
+                break
+            ch = oldch
+            (y, x) = self.win.getyx()
+            # Remember where to put the cursor back since we are in insert_mode
+            if backyx is None:
+                backyx = y, x
+
+        if backyx is not None:
+            self.win.move(*backyx)
 
     def do_command(self, ch):
         "Process a single editing command."
+        self._update_max_yx()
         (y, x) = self.win.getyx()
         self.lastcmd = ch
         if curses.ascii.isprint(ch):
@@ -148,6 +160,7 @@ class Textbox:
     def gather(self):
         "Collect and return the contents of the window."
         result = ""
+        self._update_max_yx()
         for y in range(self.maxy+1):
             self.win.move(y, 0)
             stop = self._end_of_line(y)
