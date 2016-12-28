@@ -42,6 +42,12 @@ Library
 - Issue #28925: cPickle now correctly propagates errors when unpickle instances
   of old-style classes.
 
+Build
+-----
+
+- Issue #28768: Fix implicit declaration of function _setmode. Patch by
+  Masayuki Yamamoto
+
 
 What's New in Python 2.7.13
 ===========================
