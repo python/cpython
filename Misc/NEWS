@@ -616,7 +616,7 @@ Windows
 Build
 -----
 
-- Issue #29080: Removes hard dependency on hg.exe from PC/build.bat
+- Issue #29080: Removes hard dependency on hg.exe from PCBuild/build.bat
 
 - Issue #23903: Added missed names to PC/python3.def.
 
