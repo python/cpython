@@ -27,6 +27,7 @@ requires('curses')
 curses = import_module('curses')
 import_module('curses.panel')
 import_module('curses.ascii')
+import_module('curses.textpad')
 
 def requires_curses_func(name):
     return unittest.skipUnless(hasattr(curses, name),
@@ -391,6 +392,14 @@ class TestCurses(unittest.TestCase):
         # correct too.
         human_readable_signature = stdscr.addch.__doc__.split("\n")[0]
         self.assertIn("[y, x,]", human_readable_signature)
+
+    def test_issue13051(self):
+        stdscr = self.stdscr
+        box = curses.textpad.Textbox(stdscr, insert_mode=True)
+        lines, cols = stdscr.getmaxyx()
+        stdscr.resize(lines-2, cols-2)
+        # this may cause infinite recursion, leading to a RuntimeError
+        box._insert_printable_char('a')
 
 
 class MiscTests(unittest.TestCase):
