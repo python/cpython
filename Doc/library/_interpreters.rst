@@ -28,7 +28,18 @@ support multiple interpreters.
 It defines the following functions:
 
 
-.. XXX TBD
+.. function:: create()
+
+   Initialize a new Python interpreter and return its identifier.  The
+   interpreter will be created in the current thread and will remain
+   idle until something is run in it.
+
+
+.. function:: destroy(id)
+
+   Finalize and destroy the identified interpreter.
+
+.. XXX must not be running?
 
 
 **Caveats:**
