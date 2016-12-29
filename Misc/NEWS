@@ -734,6 +734,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #29085: Allow random.Random.seed() to use high quality OS randomness
+  rather than the pid and time.
+
 - Issue 28923: Remove editor artifacts from Tix.py.
 
 - Issue #29055:  Neaten-up empty population error on random.choice()
