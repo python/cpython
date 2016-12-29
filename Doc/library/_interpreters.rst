@@ -31,6 +31,16 @@ support multiple interpreters.
 
 It defines the following functions:
 
+.. function:: enumerate()
+
+   Return a list of the IDs of every existing interpreter.
+
+
+.. function:: get_current()
+
+   Return the ID of the currently running interpreter.
+
+
 .. function:: create()
 
    Initialize a new Python interpreter and return its identifier.  The

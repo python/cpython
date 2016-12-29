@@ -299,6 +299,27 @@ interp_enumerate(PyObject *self)
     return ids;
 }
 
+PyDoc_STRVAR(enumerate_doc,
+"enumerate() -> [ID]\n\
+\n\
+Return a list containing the ID of every existing interpreter.");
+
+
+static PyObject *
+interp_get_current(PyObject *self)
+{
+    PyInterpreterState *interp =_get_current();
+    if (interp == NULL)
+        return NULL;
+    return _get_id(interp);
+}
+
+PyDoc_STRVAR(get_current_doc,
+"get_current() -> ID\n\
+\n\
+Return the ID of current interpreter.");
+
+
 static PyObject *
 interp_run_string(PyObject *self, PyObject *args)
 {
@@ -402,8 +423,10 @@ static PyMethodDef module_functions[] = {
     {"destroy",                 (PyCFunction)interp_destroy,
      METH_VARARGS, destroy_doc},
 
-    {"_enumerate",              (PyCFunction)interp_enumerate,
-     METH_NOARGS, NULL},
+    {"enumerate",               (PyCFunction)interp_enumerate,
+     METH_NOARGS, enumerate_doc},
+    {"get_current",             (PyCFunction)interp_get_current,
+     METH_NOARGS, get_current_doc},
 
     {"run_string",              (PyCFunction)interp_run_string,
      METH_VARARGS, run_string_doc},

@@ -67,7 +67,7 @@ class InterpreterTests(unittest.TestCase):
 class TestBase(unittest.TestCase):
 
     def tearDown(self):
-        for id in interpreters._enumerate():
+        for id in interpreters.enumerate():
             if id == 0:  # main
                 continue
             try:
@@ -76,13 +76,49 @@ class TestBase(unittest.TestCase):
                 pass  # already destroyed
 
 
+class EnumerateTests(TestBase):
+
+    def test_multiple(self):
+        main, = interpreters.enumerate()
+        id1 = interpreters.create()
+        id2 = interpreters.create()
+        ids = interpreters.enumerate()
+
+        self.assertEqual(set(ids), {main, id1, id2})
+
+    def test_main_only(self):
+        main, = interpreters.enumerate()
+
+        self.assertEqual(main, 0)
+
+
+class GetCurrentTests(TestBase):
+
+    def test_main(self):
+        main, = interpreters.enumerate()
+        id = interpreters.get_current()
+
+        self.assertEqual(id, main)
+
+    def test_sub(self):
+        id1 = interpreters.create()
+        ns = interpreters.run_string_unrestricted(id1, dedent("""
+            import _interpreters
+            id = _interpreters.get_current()
+            """))
+        id2 = ns['id']
+
+        self.assertEqual(id2, id1)
+
+
 class CreateTests(TestBase):
 
     def test_in_main(self):
         id = interpreters.create()
 
-        self.assertIn(id, interpreters._enumerate())
+        self.assertIn(id, interpreters.enumerate())
 
+    @unittest.skip('enable this test when working on pystate.c')
     def test_unique_id(self):
         seen = set()
         for _ in range(100):
@@ -105,10 +141,10 @@ class CreateTests(TestBase):
         with lock:
             t.start()
         t.join()
-        self.assertIn(id, interpreters._enumerate())
+        self.assertIn(id, interpreters.enumerate())
 
     def test_in_subinterpreter(self):
-        main, = interpreters._enumerate()
+        main, = interpreters.enumerate()
         id1 = interpreters.create()
         ns = interpreters.run_string_unrestricted(id1, dedent("""
             import _interpreters
@@ -116,10 +152,10 @@ class CreateTests(TestBase):
             """))
         id2 = ns['id']
 
-        self.assertEqual(set(interpreters._enumerate()), {main, id1, id2})
+        self.assertEqual(set(interpreters.enumerate()), {main, id1, id2})
 
     def test_in_threaded_subinterpreter(self):
-        main, = interpreters._enumerate()
+        main, = interpreters.enumerate()
         id1 = interpreters.create()
         ns = None
         script = dedent("""
@@ -135,11 +171,11 @@ class CreateTests(TestBase):
         t.join()
         id2 = ns['id']
 
-        self.assertEqual(set(interpreters._enumerate()), {main, id1, id2})
+        self.assertEqual(set(interpreters.enumerate()), {main, id1, id2})
 
 
     def test_after_destroy_all(self):
-        before = set(interpreters._enumerate())
+        before = set(interpreters.enumerate())
         # Create 3 subinterpreters.
         ids = []
         for _ in range(3):
@@ -150,10 +186,10 @@ class CreateTests(TestBase):
             interpreters.destroy(id)
         # Finally, create another.
         id = interpreters.create()
-        self.assertEqual(set(interpreters._enumerate()), before | {id})
+        self.assertEqual(set(interpreters.enumerate()), before | {id})
 
     def test_after_destroy_some(self):
-        before = set(interpreters._enumerate())
+        before = set(interpreters.enumerate())
         # Create 3 subinterpreters.
         id1 = interpreters.create()
         id2 = interpreters.create()
@@ -163,7 +199,7 @@ class CreateTests(TestBase):
         interpreters.destroy(id3)
         # Finally, create another.
         id = interpreters.create()
-        self.assertEqual(set(interpreters._enumerate()), before | {id, id2})
+        self.assertEqual(set(interpreters.enumerate()), before | {id, id2})
 
 
 class DestroyTests(TestBase):
@@ -172,25 +208,25 @@ class DestroyTests(TestBase):
         id1 = interpreters.create()
         id2 = interpreters.create()
         id3 = interpreters.create()
-        self.assertIn(id2, interpreters._enumerate())
+        self.assertIn(id2, interpreters.enumerate())
         interpreters.destroy(id2)
-        self.assertNotIn(id2, interpreters._enumerate())
-        self.assertIn(id1, interpreters._enumerate())
-        self.assertIn(id3, interpreters._enumerate())
+        self.assertNotIn(id2, interpreters.enumerate())
+        self.assertIn(id1, interpreters.enumerate())
+        self.assertIn(id3, interpreters.enumerate())
 
     def test_all(self):
-        before = set(interpreters._enumerate())
+        before = set(interpreters.enumerate())
         ids = set()
         for _ in range(3):
             id = interpreters.create()
             ids.add(id)
-        self.assertEqual(set(interpreters._enumerate()), before | ids)
+        self.assertEqual(set(interpreters.enumerate()), before | ids)
         for id in ids:
             interpreters.destroy(id)
-        self.assertEqual(set(interpreters._enumerate()), before)
+        self.assertEqual(set(interpreters.enumerate()), before)
 
     def test_main(self):
-        main, = interpreters._enumerate()
+        main, = interpreters.enumerate()
         with self.assertRaises(RuntimeError):
             interpreters.destroy(main)
 
@@ -217,7 +253,7 @@ class DestroyTests(TestBase):
             interpreters.destroy(-1)
 
     def test_from_current(self):
-        main, = interpreters._enumerate()
+        main, = interpreters.enumerate()
         id = interpreters.create()
         script = dedent("""
             import _interpreters
@@ -226,10 +262,10 @@ class DestroyTests(TestBase):
 
         with self.assertRaises(RuntimeError):
             interpreters.run_string(id, script)
-        self.assertEqual(set(interpreters._enumerate()), {main, id})
+        self.assertEqual(set(interpreters.enumerate()), {main, id})
 
     def test_from_sibling(self):
-        main, = interpreters._enumerate()
+        main, = interpreters.enumerate()
         id1 = interpreters.create()
         id2 = interpreters.create()
         script = dedent("""
@@ -238,7 +274,7 @@ class DestroyTests(TestBase):
             """).format(id2)
         interpreters.run_string(id1, script)
 
-        self.assertEqual(set(interpreters._enumerate()), {main, id1})
+        self.assertEqual(set(interpreters.enumerate()), {main, id1})
 
     def test_from_other_thread(self):
         id = interpreters.create()
@@ -252,7 +288,7 @@ class DestroyTests(TestBase):
     def test_still_running(self):
         # XXX Rewrite this test without files by using
         # run_string_unrestricted().
-        main, = interpreters._enumerate()
+        main, = interpreters.enumerate()
         id = interpreters.create()
         def f():
             interpreters.run_string(id, wait_script)
@@ -265,7 +301,7 @@ class DestroyTests(TestBase):
                 interpreters.destroy(id)
 
         t.join()
-        self.assertEqual(set(interpreters._enumerate()), {main, id})
+        self.assertEqual(set(interpreters.enumerate()), {main, id})
 
 
 class RunStringTests(TestBase):
@@ -389,7 +425,7 @@ class RunStringTests(TestBase):
 
     def test_does_not_exist(self):
         id = 0
-        while id in interpreters._enumerate():
+        while id in interpreters.enumerate():
             id += 1
         with self.assertRaises(RuntimeError):
             interpreters.run_string(id, 'print("spam")')
