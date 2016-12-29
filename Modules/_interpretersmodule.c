@@ -279,6 +279,13 @@ interp_run_string(PyObject *self, PyObject *args)
         Py_RETURN_NONE;
 }
 
+PyDoc_STRVAR(run_string_doc,
+"run_string(ID, sourcetext) -> run_id\n\
+\n\
+Execute the provided string in the identified interpreter.\n\
+See PyRun_SimpleStrings.");
+
+
 static PyMethodDef module_functions[] = {
     {"create",      (PyCFunction)interp_create,
      METH_VARARGS, create_doc},
@@ -288,8 +295,8 @@ static PyMethodDef module_functions[] = {
     {"_enumerate",  (PyCFunction)interp_enumerate,
      METH_NOARGS, NULL},
 
-    {"_run_string", (PyCFunction)interp_run_string,
-     METH_VARARGS, NULL},
+    {"run_string",  (PyCFunction)interp_run_string,
+     METH_VARARGS, run_string_doc},
 
     {NULL,          NULL}           /* sentinel */
 };
