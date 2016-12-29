@@ -208,6 +208,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #29079: Prevent infinite loop in pathlib.resolve() on Windows
+
 - Issue #13051: Fixed recursion errors in large or resized
   curses.textpad.Textbox.  Based on patch by Tycho Andersen.
 
