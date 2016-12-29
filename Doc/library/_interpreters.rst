@@ -27,7 +27,6 @@ support multiple interpreters.
 
 It defines the following functions:
 
-
 .. function:: create()
 
    Initialize a new Python interpreter and return its identifier.  The
@@ -40,6 +39,23 @@ It defines the following functions:
    Finalize and destroy the identified interpreter.
 
 .. XXX must not be running?
+
+
+.. function:: run_string(id, command)
+
+   A wrapper around :c:func:`PyRun_SimpleString` which runs the provided
+   Python program using the identified interpreter.  Providing an
+   invalid or unknown ID results in a RuntimeError, likewise if the main
+   interpreter or any other running interpreter is used.
+
+   Any value returned from the code is thrown away, similar to what
+   threads do.  If the code results in an exception then that exception
+   is raised in the thread in which run_string() was called, similar to
+   how :func:`exec` works.  This aligns with how interpreters are not
+   inherently threaded.
+
+.. XXX must not be running already?
+.. XXX sys.exit() (and SystemExit) is swallowed?
 
 
 **Caveats:**
