@@ -41,6 +41,12 @@ It defines the following functions:
    Return the ID of the currently running interpreter.
 
 
+.. function:: is_running(id)
+
+   Return whether or not the identified interpreter is currently
+   running any code.
+
+
 .. function:: create()
 
    Initialize a new Python interpreter and return its identifier.  The

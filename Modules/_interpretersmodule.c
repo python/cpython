@@ -417,6 +417,34 @@ merged into the execution namespace before the code is executed.\n\
 See PyRun_SimpleStrings.");
 
 
+static PyObject *
+interp_is_running(PyObject *self, PyObject *args)
+{
+    PyObject *id;
+    if (!PyArg_UnpackTuple(args, "is_running", 1, 1, &id))
+        return NULL;
+    if (!PyLong_Check(id)) {
+        PyErr_SetString(PyExc_TypeError, "ID must be an int");
+        return NULL;
+    }
+
+    PyInterpreterState *interp = _look_up(id);
+    if (interp == NULL)
+        return NULL;
+    int is_running = _is_running(interp);
+    if (is_running < 0)
+        return NULL;
+    if (is_running)
+        Py_RETURN_TRUE;
+    Py_RETURN_FALSE;
+}
+
+PyDoc_STRVAR(is_running_doc,
+"is_running(id) -> bool\n\
+\n\
+Return whether or not the identified interpreter is running.");
+
+
 static PyMethodDef module_functions[] = {
     {"create",                  (PyCFunction)interp_create,
      METH_VARARGS, create_doc},
@@ -427,6 +455,8 @@ static PyMethodDef module_functions[] = {
      METH_NOARGS, enumerate_doc},
     {"get_current",             (PyCFunction)interp_get_current,
      METH_NOARGS, get_current_doc},
+    {"is_running",              (PyCFunction)interp_is_running,
+     METH_VARARGS, is_running_doc},
 
     {"run_string",              (PyCFunction)interp_run_string,
      METH_VARARGS, run_string_doc},
