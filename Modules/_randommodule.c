@@ -245,7 +245,7 @@ random_seed(RandomObject *self, PyObject *args)
         return NULL;
 
      if (arg == NULL || arg == Py_None) {
-        if (random_seed_urandom(self) >= 0) {
+        if (random_seed_urandom(self) < 0) {
             PyErr_Clear();
 
             /* Reading system entropy failed, fall back on the worst entropy:
