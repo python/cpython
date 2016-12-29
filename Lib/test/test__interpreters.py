@@ -111,6 +111,36 @@ class GetCurrentTests(TestBase):
         self.assertEqual(id2, id1)
 
 
+class IsRunningTests(TestBase):
+
+    def test_main_running(self):
+        main, = interpreters.enumerate()
+        sub = interpreters.create()
+        main_running = interpreters.is_running(main)
+        sub_running = interpreters.is_running(sub)
+
+        self.assertTrue(main_running)
+        self.assertFalse(sub_running)
+
+    def test_sub_running(self):
+        main, = interpreters.enumerate()
+        sub1 = interpreters.create()
+        sub2 = interpreters.create()
+        ns = interpreters.run_string_unrestricted(sub1, dedent(f"""
+            import _interpreters
+            main = _interpreters.is_running({main})
+            sub1 = _interpreters.is_running({sub1})
+            sub2 = _interpreters.is_running({sub2})
+            """))
+        main_running = ns['main']
+        sub1_running = ns['sub1']
+        sub2_running = ns['sub2']
+
+        self.assertTrue(main_running)
+        self.assertTrue(sub1_running)
+        self.assertFalse(sub2_running)
+
+
 class CreateTests(TestBase):
 
     def test_in_main(self):
