@@ -221,7 +221,7 @@ PyTypeObject _PyManagedBuffer_Type = {
 
 
 PyDoc_STRVAR(memory_doc,
-"memoryview($module, object)\n--\n\
+"memoryview(object)\n--\n\
 \n\
 Create a new memoryview object which references the given object.");
 
