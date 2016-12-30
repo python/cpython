@@ -66,7 +66,9 @@ static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 #endif
 
 
-static unsigned long _next_id = 1;  // 0 is reserved for errors.
+/* We initialize this to 0 so that the pre-Py_Initialize() value
+   results in an error. */
+unsigned long _PyInterpreterState_next_id = 0;
 
 PyInterpreterState *
 PyInterpreterState_New(void)
@@ -105,8 +107,15 @@ PyInterpreterState_New(void)
         HEAD_LOCK();
         interp->next = interp_head;
         interp_head = interp;
-        interp->id = _next_id;
-        _next_id += 1;  // XXX overflow...
+        if (_PyInterpreterState_next_id == 0) {
+            /* overflow or Py_Initialize() not called! */
+            PyErr_SetString(PyExc_RuntimeError,
+                            "failed to get an interpreter ID");
+            interp = NULL;
+        } else {
+            interp->id = _PyInterpreterState_next_id;
+            _PyInterpreterState_next_id += 1;
+        }
         HEAD_UNLOCK();
     }
 

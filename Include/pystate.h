@@ -14,6 +14,15 @@ removed (with effort). */
 
 /* State shared between threads */
 
+#ifndef Py_LIMITED_API
+/* This is initialized to 1 in Py_Initialize().  An interpreter
+   ID of 0 is reserved for errors.  The main interpreter will always
+   have an ID of 1.  Overflow results in a RuntimeError.  If that
+   becomes a problem later then we can adjust, e.g. by using a 64-bit
+   int or even a Python int. */
+PyAPI_DATA(unsigned long) _PyInterpreterState_next_id;
+#endif
+
 struct _ts; /* Forward */
 struct _is; /* Forward */
 struct _frame; /* Forward declaration for PyFrameObject. */
