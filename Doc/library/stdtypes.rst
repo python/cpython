@@ -819,7 +819,7 @@ Notes:
    :ref:`faq-multidimensional-list`.
 
 (3)
-   If *i* or *j* is negative, the index is relative to the end of the string:
+   If *i* or *j* is negative, the index is relative to the end of sequence *s*:
    ``len(s) + i`` or ``len(s) + j`` is substituted.  But note that ``-0`` is still
    ``0``.
 
