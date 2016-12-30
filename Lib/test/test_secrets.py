@@ -70,6 +70,7 @@ class Random_Tests(unittest.TestCase):
         for i in range(2, 10):
             self.assertIn(secrets.randbelow(i), range(i))
         self.assertRaises(ValueError, secrets.randbelow, 0)
+        self.assertRaises(ValueError, secrets.randbelow, -1)
 
 
 class Token_Tests(unittest.TestCase):
