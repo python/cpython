@@ -81,7 +81,9 @@ CPython implementation improvements:
 
 * The :ref:`dict <typesmapping>` type has been reimplemented to use
   a :ref:`more compact representation <whatsnew36-compactdict>`
-  similar to the `PyPy dict implementation`_.  This resulted in dictionaries
+  based on `a proposal by Raymond Hettinger
+  <https://mail.python.org/pipermail/python-dev/2012-December/123028.html>`_
+  and similar to the `PyPy dict implementation`_.  This resulted in dictionaries
   using 20% to 25% less memory when compared to Python 3.5.
 
 * Customization of class creation has been simplified with the
@@ -581,7 +583,10 @@ New :ref:`dict <typesmapping>` implementation
 ---------------------------------------------
 
 The :ref:`dict <typesmapping>` type now uses a "compact" representation
-`pioneered by PyPy <https://morepypy.blogspot.com/2015/01/faster-more-memory-efficient-and-more.html>`_.
+based on `a proposal by Raymond Hettinger
+<https://mail.python.org/pipermail/python-dev/2012-December/123028.html>`_
+which was `first implemented by PyPy
+<https://morepypy.blogspot.com/2015/01/faster-more-memory-efficient-and-more.html>`_.
 The memory usage of the new :func:`dict` is between 20% and 25% smaller
 compared to Python 3.5.
 
