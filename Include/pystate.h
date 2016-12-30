@@ -37,7 +37,7 @@ typedef struct _is {
     struct _is *next;
     struct _ts *tstate_head;
 
-    unsigned long id;  // XXX random hash? UUID?
+    unsigned long id;
 
     PyObject *modules;
     PyObject *modules_by_index;
