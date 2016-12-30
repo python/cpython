@@ -43,6 +43,9 @@ Library
 - Issue #29085: Allow random.Random.seed() to use high quality OS randomness
   rather than the pid and time.
 
+- Issue #29061: Fixed bug in secrets.randbelow() which would hang when given
+  a negative input.  Patch by Brendan Donegan.
+
 - Issue #29079: Prevent infinite loop in pathlib.resolve() on Windows
 
 - Issue #13051: Fixed recursion errors in large or resized
