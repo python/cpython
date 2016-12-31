@@ -292,6 +292,10 @@ class TestUUID(unittest.TestCase):
         badtype(lambda: setattr(u, 'clock_seq_low', 0))
         badtype(lambda: setattr(u, 'node', 0))
 
+        # Comparison with a non-UUID object
+        badtype(lambda: u < object())
+        badtype(lambda: u > object())
+
     def test_getnode(self):
         node1 = uuid.getnode()
         self.assertTrue(0 < node1 < (1 << 48), '%012x' % node1)
