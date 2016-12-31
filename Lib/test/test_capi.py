@@ -415,7 +415,7 @@ class EmbeddingTests(unittest.TestCase):
                     print(line)
                 lastmain = main
                 main = None
-                mainid = 1
+                mainid = 0
                 numloops += 1
                 numinner = 0
                 continue

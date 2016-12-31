@@ -66,9 +66,9 @@ static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 #endif
 
 
-/* We initialize this to 0 so that the pre-Py_Initialize() value
+/* We initialize this to -1 so that the pre-Py_Initialize() value
    results in an error. */
-unsigned long _PyInterpreterState_next_id = 0;
+int_fast64_t _PyInterpreterState_next_id = -1;
 
 PyInterpreterState *
 PyInterpreterState_New(void)
@@ -107,7 +107,7 @@ PyInterpreterState_New(void)
         HEAD_LOCK();
         interp->next = interp_head;
         interp_head = interp;
-        if (_PyInterpreterState_next_id == 0) {
+        if (_PyInterpreterState_next_id < 0) {
             /* overflow or Py_Initialize() not called! */
             PyErr_SetString(PyExc_RuntimeError,
                             "failed to get an interpreter ID");

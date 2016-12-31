@@ -344,7 +344,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 
     _PyRandom_Init();
 
-    _PyInterpreterState_next_id = 1;
+    _PyInterpreterState_next_id = 0;
     interp = PyInterpreterState_New();
     if (interp == NULL)
         Py_FatalError("Py_Initialize: can't make first interpreter");
