@@ -1889,7 +1889,7 @@ def log(level, msg, *args, **kwargs):
         basicConfig()
     root.log(level, msg, *args, **kwargs)
 
-def disable(level):
+def disable(level=CRITICAL):
     """
     Disable all logging calls of severity 'level' and below.
     """

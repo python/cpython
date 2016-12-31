@@ -1023,7 +1023,7 @@ functions.
       handlers being added multiple times to the root logger, which can in turn
       lead to multiple messages for the same event.
 
-.. function:: disable(lvl)
+.. function:: disable(lvl=CRITICAL)
 
    Provides an overriding level *lvl* for all loggers which takes precedence over
    the logger's own level. When the need arises to temporarily throttle logging
@@ -1036,6 +1036,14 @@ functions.
    overriding level, so that logging output again depends on the effective
    levels of individual loggers.
 
+   Note that if you have defined any custom logging level higher than
+   ``CRITICAL`` (this is not recommended), you won't be able to rely on the
+   default value for the *lvl* parameter, but will have to explicitly supply a
+   suitable value.
+
+   .. versionchanged:: 3.7
+      The *lvl* parameter was defaulted to level ``CRITICAL``. See Issue
+      #28524 for more information about this change.
 
 .. function:: addLevelName(lvl, levelName)
 

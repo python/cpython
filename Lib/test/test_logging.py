@@ -3473,6 +3473,11 @@ class ModuleLevelMiscTest(BaseTest):
         logging.disable(83)
         self.assertEqual(logging.root.manager.disable, 83)
 
+        # test the default value introduced in 3.7
+        # (Issue #28524)
+        logging.disable()
+        self.assertEqual(logging.root.manager.disable, logging.CRITICAL)
+
     def _test_log(self, method, level=None):
         called = []
         support.patch(self, logging, 'basicConfig',
