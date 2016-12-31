@@ -382,8 +382,7 @@ class DateTimeTests(unittest.TestCase):
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 1),
                      'the date functions are available on 3.1 or later')
     def CheckSqlTimestamp(self):
-        # SQLite's current_timestamp uses UTC time, while datetime.datetime.now() uses local time.
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
         self.cur.execute("insert into test(ts) values (current_timestamp)")
         self.cur.execute("select ts from test")
         ts = self.cur.fetchone()[0]
