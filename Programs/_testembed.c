@@ -59,7 +59,6 @@ static int test_repeated_init_and_subinterpreters(void)
         PyThreadState_Swap(NULL);
 
         for (j=0; j<3; j++) {
-            unsigned long mis = PyInterpreterState_GetID(mainstate->interp);
             substate = Py_NewInterpreter();
             print_subinterp();
             Py_EndInterpreter(substate);
