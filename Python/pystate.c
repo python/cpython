@@ -196,12 +196,12 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 }
 
 
-unsigned long
+int_fast64_t
 PyInterpreterState_GetID(PyInterpreterState *interp)
 {
     if (interp == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "no interpreter provided");
-        return 0;
+        return -1;
     }
     return interp->id;
 }

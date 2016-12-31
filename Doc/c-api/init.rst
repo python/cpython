@@ -821,10 +821,10 @@ been created.
    :c:func:`PyThreadState_Clear`.
 
 
-.. c:function:: unsigned long PyInterpreterState_GetID(PyInterpreterState *interp)
+.. c:function:: int_fast64_t PyInterpreterState_GetID(PyInterpreterState *interp)
 
    Return the interpreter's unique ID.  If there was any error in doing
-   so then 0 is returned and an error is set.
+   so then -1 is returned and an error is set.
 
    .. versionadded:: 3.7
 
