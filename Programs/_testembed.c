@@ -22,7 +22,8 @@ static void _testembed_Py_Initialize(void)
 
 static void print_subinterp(void)
 {
-    /* Just output some debug stuff */
+    /* Output information about the interpreter in the format
+       expected in Lib/test/test_capi.py (test_subinterps). */
     PyThreadState *ts = PyThreadState_Get();
     unsigned long id = PyInterpreterState_GetID(ts->interp);
     printf("interp %lu <%p>, thread state <%p>: ",
