@@ -28,7 +28,7 @@ typedef struct _is {
     struct _is *next;
     struct _ts *tstate_head;
 
-    int_fast64_t id;
+    PY_INT64_T id;
 
     PyObject *modules;
     PyObject *modules_by_index;
@@ -162,7 +162,7 @@ PyAPI_FUNC(void) _PyInterpreterState_Init(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
-PyAPI_FUNC(int_fast64_t) PyInterpreterState_GetID(PyInterpreterState *);
+PyAPI_FUNC(PY_INT64_T) PyInterpreterState_GetID(PyInterpreterState *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
 #endif /* !Py_LIMITED_API */

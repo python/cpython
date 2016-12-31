@@ -75,7 +75,7 @@ static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 
    We initialize this to -1 so that the pre-Py_Initialize() value
    results in an error. */
-static int_fast64_t _next_interp_id = -1;
+static PY_INT64_T _next_interp_id = -1;
 
 void
 _PyInterpreterState_Init(void)
@@ -196,7 +196,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 }
 
 
-int_fast64_t
+PY_INT64_T
 PyInterpreterState_GetID(PyInterpreterState *interp)
 {
     if (interp == NULL) {

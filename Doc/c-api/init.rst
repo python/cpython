@@ -821,7 +821,7 @@ been created.
    :c:func:`PyThreadState_Clear`.
 
 
-.. c:function:: int_fast64_t PyInterpreterState_GetID(PyInterpreterState *interp)
+.. c:function:: PY_INT64_T PyInterpreterState_GetID(PyInterpreterState *interp)
 
    Return the interpreter's unique ID.  If there was any error in doing
    so then -1 is returned and an error is set.

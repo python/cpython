@@ -25,7 +25,7 @@ static void print_subinterp(void)
     /* Output information about the interpreter in the format
        expected in Lib/test/test_capi.py (test_subinterps). */
     PyThreadState *ts = PyThreadState_Get();
-    int_fast64_t id = PyInterpreterState_GetID(ts->interp);
+    PY_INT64_T id = PyInterpreterState_GetID(ts->interp);
     printf("interp %lu <%p>, thread state <%p>: ",
             id, ts->interp, ts);
     fflush(stdout);
