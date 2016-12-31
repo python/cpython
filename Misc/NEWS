@@ -143,6 +143,10 @@ Library
 - Issue #13051: Fixed recursion errors in large or resized
   curses.textpad.Textbox.  Based on patch by Tycho Andersen.
 
+- Issue #29119: Fix weakrefs in the pure python version of
+  collections.OrderedDict move_to_end() method.
+  Contributed by Andra Bogildea.
+
 - Issue #9770: curses.ascii predicates now work correctly with negative
   integers.
 

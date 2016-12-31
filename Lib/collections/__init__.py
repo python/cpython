@@ -189,6 +189,7 @@ class OrderedDict(dict):
         link = self.__map[key]
         link_prev = link.prev
         link_next = link.next
+        soft_link = link_next.prev
         link_prev.next = link_next
         link_next.prev = link_prev
         root = self.__root
@@ -196,12 +197,14 @@ class OrderedDict(dict):
             last = root.prev
             link.prev = last
             link.next = root
-            last.next = root.prev = link
+            root.prev = soft_link
+            last.next = link
         else:
             first = root.next
             link.prev = root
             link.next = first
-            root.next = first.prev = link
+            first.prev = soft_link
+            root.next = link
 
     def __sizeof__(self):
         sizeof = _sys.getsizeof
