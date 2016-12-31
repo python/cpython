@@ -45,6 +45,13 @@ random UUID.
    variant and version number set according to RFC 4122, overriding bits in the
    given *hex*, *bytes*, *bytes_le*, *fields*, or *int*.
 
+   Comparison of UUID objects are made by way of comparing their
+   :attr:`UUID.int` attributes.  Comparison with a non-UUID object
+   raises a :exc:`TypeError`.
+
+   ``str(uuid)`` returns a string in the form
+   ``12345678-1234-5678-1234-567812345678`` where the 32 hexadecimal digits
+   represent the UUID.
 
 :class:`UUID` instances have these read-only attributes:
 
