@@ -21,13 +21,6 @@ struct _frame; /* Forward declaration for PyFrameObject. */
 #ifdef Py_LIMITED_API
 typedef struct _is PyInterpreterState;
 #else
-/* This is initialized to 0 in Py_Initialize().  A negative interpreter
-   ID indicates an error occurred.  The main interpreter will always
-   have an ID of 0.  Overflow results in a RuntimeError.  If that
-   becomes a problem later then we can adjust, e.g. by using a Python
-   int. */
-PyAPI_DATA(int_fast64_t) _PyInterpreterState_next_id;
-
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
 typedef struct _is {
@@ -163,6 +156,9 @@ typedef struct _ts {
 #endif
 
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(void) _PyInterpreterState_Init(void);
+#endif /* !Py_LIMITED_API */
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);

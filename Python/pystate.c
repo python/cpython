@@ -65,10 +65,23 @@ PyThreadFrameGetter _PyThreadState_GetFrame = NULL;
 static void _PyGILState_NoteThreadState(PyThreadState* tstate);
 #endif
 
+/* _next_interp_id is an auto-numbered sequence of small integers.
+   It gets initialized in _PyInterpreterState_Init(), which is called
+   in Py_Initialize(), and used in PyInterpreterState_New().  A negative
+   interpreter ID indicates an error occurred.  The main interpreter
+   will always have an ID of 0.  Overflow results in a RuntimeError.
+   If that becomes a problem later then we can adjust, e.g. by using
+   a Python int.
 
-/* We initialize this to -1 so that the pre-Py_Initialize() value
+   We initialize this to -1 so that the pre-Py_Initialize() value
    results in an error. */
-int_fast64_t _PyInterpreterState_next_id = -1;
+static int_fast64_t _next_interp_id = -1;
+
+void
+_PyInterpreterState_Init(void)
+{
+    _next_interp_id = 0;
+}
 
 PyInterpreterState *
 PyInterpreterState_New(void)
@@ -107,14 +120,14 @@ PyInterpreterState_New(void)
         HEAD_LOCK();
         interp->next = interp_head;
         interp_head = interp;
-        if (_PyInterpreterState_next_id < 0) {
+        if (_next_interp_id < 0) {
             /* overflow or Py_Initialize() not called! */
             PyErr_SetString(PyExc_RuntimeError,
                             "failed to get an interpreter ID");
             interp = NULL;
         } else {
-            interp->id = _PyInterpreterState_next_id;
-            _PyInterpreterState_next_id += 1;
+            interp->id = _next_interp_id;
+            _next_interp_id += 1;
         }
         HEAD_UNLOCK();
     }
