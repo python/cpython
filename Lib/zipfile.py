@@ -1028,11 +1028,12 @@ class ZipFile:
                 # set the modified flag so central directory gets written
                 # even if no files are added to the archive
                 self._didModify = True
+                self._start_disk = 0
                 try:
-                    self.start_dir = self._start_disk = self.fp.tell()
+                    self.start_dir = self.fp.tell()
                 except (AttributeError, OSError):
                     self.fp = _Tellable(self.fp)
-                    self.start_dir = self._start_disk = 0
+                    self.start_dir = 0
                     self._seekable = False
                 else:
                     # Some file-like objects can provide tell() but not seek()
