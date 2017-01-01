@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #29094: Offsets in a ZIP file created with extern file object and mode
+  "w" now are relative to the start of the file.
+
 - Issue #13051: Fixed recursion errors in large or resized
   curses.textpad.Textbox.  Based on patch by Tycho Andersen.
 
