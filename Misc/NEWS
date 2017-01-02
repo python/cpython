@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15812: inspect.getframeinfo() now correctly shows the first line of
+  a context.  Patch by Sam Breese.
+
 - Issue #29094: Offsets in a ZIP file created with extern file object and modes
   "w" and "x" now are relative to the start of the file.
 
