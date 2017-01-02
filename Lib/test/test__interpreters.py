@@ -8,8 +8,20 @@ import threading
 import unittest
 
 from test import support
+from test.support import script_helper
 
 interpreters = support.import_module('_interpreters')
+
+
+SCRIPT_THREADED_INTERP = """\
+import threading
+import _interpreters
+def f():
+    _interpreters.run_string(id, {!r})
+
+t = threading.Thread(target=f)
+t.start()
+"""
 
 
 @contextlib.contextmanager
@@ -25,6 +37,27 @@ def _blocked(dirname):
         yield wait_script
     finally:
         support.create_empty_file(filename)
+
+
+class InterpreterTests(unittest.TestCase):
+
+    def setUp(self):
+        self.dirname = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.dirname)
+
+    def test_still_running_at_exit(self):
+        script = SCRIPT_THREADED_INTERP.format("""if True:
+            import time
+            # Give plenty of time for the main interpreter to finish.
+            time.sleep(1_000_000)
+            """)
+        filename = script_helper.make_script(self.dirname, 'interp', script)
+        proc = script_helper.spawn_python(filename)
+        retcode = proc.wait()
+
+        self.assertEqual(retcode, 0)
 
 
 class TestBase(unittest.TestCase):
