@@ -1,4 +1,5 @@
 import io
+import itertools
 import shlex
 import string
 import unittest
@@ -183,10 +184,12 @@ class ShlexTest(unittest.TestCase):
             src = ['echo hi %s echo bye' % delimiter,
                    'echo hi%secho bye' % delimiter]
             ref = ['echo', 'hi', delimiter, 'echo', 'bye']
-            for ss in src:
+            for ss, ws in itertools.product(src, (False, True)):
                 s = shlex.shlex(ss, punctuation_chars=True)
+                s.whitespace_split = ws
                 result = list(s)
-                self.assertEqual(ref, result, "While splitting '%s'" % ss)
+                self.assertEqual(ref, result,
+                                 "While splitting '%s' [ws=%s]" % (ss, ws))
 
     def testSyntaxSplitSemicolon(self):
         """Test handling of syntax splitting of ;"""
@@ -197,10 +200,12 @@ class ShlexTest(unittest.TestCase):
                    'echo hi%s echo bye' % delimiter,
                    'echo hi%secho bye' % delimiter]
             ref = ['echo', 'hi', delimiter, 'echo', 'bye']
-            for ss in src:
+            for ss, ws in itertools.product(src, (False, True)):
                 s = shlex.shlex(ss, punctuation_chars=True)
+                s.whitespace_split = ws
                 result = list(s)
-                self.assertEqual(ref, result, "While splitting '%s'" % ss)
+                self.assertEqual(ref, result,
+                                 "While splitting '%s' [ws=%s]" % (ss, ws))
 
     def testSyntaxSplitRedirect(self):
         """Test handling of syntax splitting of >"""
@@ -211,10 +216,11 @@ class ShlexTest(unittest.TestCase):
                    'echo hi%s out' % delimiter,
                    'echo hi%sout' % delimiter]
             ref = ['echo', 'hi', delimiter, 'out']
-            for ss in src:
+            for ss, ws in itertools.product(src, (False, True)):
                 s = shlex.shlex(ss, punctuation_chars=True)
                 result = list(s)
-                self.assertEqual(ref, result, "While splitting '%s'" % ss)
+                self.assertEqual(ref, result,
+                                 "While splitting '%s' [ws=%s]" % (ss, ws))
 
     def testSyntaxSplitParen(self):
         """Test handling of syntax splitting of ()"""
@@ -222,18 +228,25 @@ class ShlexTest(unittest.TestCase):
         src = ['( echo hi )',
                '(echo hi)']
         ref = ['(', 'echo', 'hi', ')']
-        for ss in src:
+        for ss, ws in itertools.product(src, (False, True)):
             s = shlex.shlex(ss, punctuation_chars=True)
+            s.whitespace_split = ws
             result = list(s)
-            self.assertEqual(ref, result, "While splitting '%s'" % ss)
+            self.assertEqual(ref, result,
+                             "While splitting '%s' [ws=%s]" % (ss, ws))
 
     def testSyntaxSplitCustom(self):
         """Test handling of syntax splitting with custom chars"""
+        ss = "~/a&&b-c --color=auto||d *.py?"
         ref = ['~/a', '&', '&', 'b-c', '--color=auto', '||', 'd', '*.py?']
-        ss = "~/a && b-c --color=auto || d *.py?"
         s = shlex.shlex(ss, punctuation_chars="|")
         result = list(s)
-        self.assertEqual(ref, result, "While splitting '%s'" % ss)
+        self.assertEqual(ref, result, "While splitting '%s' [ws=False]" % ss)
+        ref = ['~/a&&b-c', '--color=auto', '||', 'd', '*.py?']
+        s = shlex.shlex(ss, punctuation_chars="|")
+        s.whitespace_split = True
+        result = list(s)
+        self.assertEqual(ref, result, "While splitting '%s' [ws=True]" % ss)
 
     def testTokenTypes(self):
         """Test that tokens are split with types as expected."""
@@ -292,6 +305,19 @@ class ShlexTest(unittest.TestCase):
         expected = ["''", ')', 'abc']
         s = shlex.shlex("'')abc", punctuation_chars=True)
         self.assertEqual(list(s), expected)
+
+    def testUnicodeHandling(self):
+        """Test punctuation_chars and whitespace_split handle unicode."""
+        ss = "\u2119\u01b4\u2602\u210c\u00f8\u1f24"
+        # Should be parsed as one complete token (whitespace_split=True).
+        ref = ['\u2119\u01b4\u2602\u210c\u00f8\u1f24']
+        s = shlex.shlex(ss, punctuation_chars=True)
+        s.whitespace_split = True
+        self.assertEqual(list(s), ref)
+        # Without whitespace_split, uses wordchars and splits on all.
+        ref = ['\u2119', '\u01b4', '\u2602', '\u210c', '\u00f8', '\u1f24']
+        s = shlex.shlex(ss, punctuation_chars=True)
+        self.assertEqual(list(s), ref)
 
     def testQuote(self):
         safeunquoted = string.ascii_letters + string.digits + '@%_-+=:,./'
