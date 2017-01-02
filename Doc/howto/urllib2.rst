@@ -540,8 +540,8 @@ setting up a `Basic Authentication`_ handler: ::
 
 .. note::
 
-   `HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set; see
-   the documentation on :func:`~urllib.request.getproxies`.
+    ``HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set; see
+    the documentation on :func:`~urllib.request.getproxies`.
 
 
 Sockets and Layers
