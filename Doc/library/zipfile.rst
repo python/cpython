@@ -152,7 +152,7 @@ ZipFile Objects
    (:mod:`zlib`, :mod:`bz2` or :mod:`lzma`) is not available, :exc:`RuntimeError`
    is also raised. The default is :const:`ZIP_STORED`.  If *allowZip64* is
    ``True`` (the default) zipfile will create ZIP files that use the ZIP64
-   extensions when the zipfile is larger than 2 GiB. If it is  false :mod:`zipfile`
+   extensions when the zipfile is larger than 4 GiB. If it is  false :mod:`zipfile`
    will raise an exception when the ZIP file would require ZIP64 extensions.
 
    If the file is created with mode ``'w'``, ``'x'`` or ``'a'`` and then
