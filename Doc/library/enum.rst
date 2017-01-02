@@ -773,7 +773,7 @@ the (unimportant) value::
 Using :class:`auto`
 """""""""""""""""""
 
-Using :class:`object` would look like::
+Using :class:`auto` would look like::
 
     >>> class Color(NoValue):
     ...     RED = auto()
