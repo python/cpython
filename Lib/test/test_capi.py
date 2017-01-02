@@ -385,7 +385,7 @@ class EmbeddingTests(unittest.TestCase):
 
     def test_subinterps(self):
         # This is just a "don't crash" test
-        out, err = self.run_embedded_interpreter()
+        out, err = self.run_embedded_interpreter("repeated_init_and_subinterpreters")
         if support.verbose:
             print()
             print(out)
