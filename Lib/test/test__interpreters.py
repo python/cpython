@@ -13,22 +13,18 @@ interpreters = support.import_module('_interpreters')
 
 
 @contextlib.contextmanager
-def _blocked():
-    r, w = os.pipe()
+def _blocked(dirname):
+    filename = os.path.join(dirname, '.lock')
     wait_script = dedent("""
-        import select
-        # Wait for a "done" signal.
-        select.select([{}], [], [])
-
-        #import time
-        #time.sleep(1_000_000)
-        """).format(r)
+        import os.path
+        import time
+        while not os.path.exists('{}'):
+            time.sleep(0.1)
+        """).format(filename)
     try:
         yield wait_script
     finally:
-        os.write(w, b'')  # release!
-        os.close(r)
-        os.close(w)
+        support.create_empty_file(filename)
 
 
 class TestBase(unittest.TestCase):
@@ -211,15 +207,15 @@ class DestroyTests(TestBase):
         t.start()
         t.join()
 
-    @unittest.skip('not working yet')
     def test_still_running(self):
         main, = interpreters._enumerate()
         id = interpreters.create()
         def f():
             interpreters.run_string(id, wait_script)
 
+        dirname = tempfile.mkdtemp()
         t = threading.Thread(target=f)
-        with _blocked() as wait_script:
+        with _blocked(dirname) as wait_script:
             t.start()
             with self.assertRaises(RuntimeError):
                 interpreters.destroy(id)
@@ -243,7 +239,10 @@ class RunStringTests(TestBase):
 
     def tearDown(self):
         if self.dirname is not None:
-            shutil.rmtree(self.dirname)
+            try:
+                shutil.rmtree(self.dirname)
+            except FileNotFoundError:
+                pass  # already deleted
         super().tearDown()
 
     def _resolve_filename(self, name=None):
@@ -304,31 +303,39 @@ class RunStringTests(TestBase):
 
         self.assert_file_contains(expected)
 
-    @unittest.skip('not working yet')
     @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
     def test_fork(self):
         filename = self._empty_file()
         expected = 'spam spam spam spam spam'
         script = dedent("""
             import os
-            import sys
+            r, w = os.pipe()
             pid = os.fork()
-            if pid == 0:
-                with open('{}', 'w') as out:
+            if pid == 0:  # child
+                import sys
+                filename = '{}'
+                with open(filename, 'w') as out:
                     out.write('{}')
-                sys.exit(0)
+                os.write(w, b'done!')
+            else:
+                import select
+                try:
+                    select.select([r], [], [])
+                finally:
+                    os.close(r)
+                    os.close(w)
             """).format(filename, expected)
+        # XXX Kill the child process in a unittest-friendly way.
         interpreters.run_string(self.id, script)
-
         self.assert_file_contains(expected)
 
-    @unittest.skip('not working yet')
     def test_already_running(self):
         def f():
             interpreters.run_string(self.id, wait_script)
 
         t = threading.Thread(target=f)
-        with _blocked() as wait_script:
+        dirname = tempfile.mkdtemp()
+        with _blocked(dirname) as wait_script:
             t.start()
             with self.assertRaises(RuntimeError):
                 interpreters.run_string(self.id, 'print("spam")')
