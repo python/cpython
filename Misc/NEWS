@@ -208,6 +208,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15812: inspect.getframeinfo() now correctly shows the first line of
+  a context.  Patch by Sam Breese.
+
 - Issue #28985: Update authorizer constants in sqlite3 module.
   Patch by Dingyuan Wang.
 
