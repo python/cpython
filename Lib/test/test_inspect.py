@@ -391,6 +391,11 @@ class TestRetrievingSourceCode(GetSourceBase):
         # Check filename override
         self.assertEqual(inspect.getmodule(None, modfile), mod)
 
+    def test_getframeinfo_get_first_line(self):
+        frame_info = inspect.getframeinfo(self.fodderModule.fr, 50)
+        self.assertEqual(frame_info.code_context[0], "# line 1\n")
+        self.assertEqual(frame_info.code_context[1], "'A module docstring.'\n")
+
     def test_getsource(self):
         self.assertSourceEqual(git.abuse, 29, 39)
         self.assertSourceEqual(mod.StupidGit, 21, 51)
