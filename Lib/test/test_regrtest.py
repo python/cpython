@@ -676,6 +676,14 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests('--fromfile', filename)
         self.check_executed_tests(output, tests)
 
+        # test format 'Lib/test/test_opcodes.py'
+        with open(filename, "w") as fp:
+            for name in tests:
+                print('Lib/test/%s.py' % name, file=fp)
+
+        output = self.run_tests('--fromfile', filename)
+        self.check_executed_tests(output, tests)
+
     def test_interrupted(self):
         code = TEST_INTERRUPTED
         test = self.create_test('sigint', code=code)
