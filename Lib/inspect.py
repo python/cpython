@@ -1416,7 +1416,6 @@ def getframeinfo(frame, context=1):
         except OSError:
             lines = index = None
         else:
-            start = max(start, 0)
             start = max(0, min(start, len(lines) - context))
             lines = lines[start:start+context]
             index = lineno - 1 - start
