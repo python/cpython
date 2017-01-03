@@ -845,12 +845,14 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssi
     int kind;
     Py_ssize_t end_idx;
     PyObject *val = NULL;
-    PyObject *rval = PyList_New(0);
+    PyObject *rval;
     Py_ssize_t next_idx;
-    if (rval == NULL)
-        return NULL;
 
     if (PyUnicode_READY(pystr) == -1)
+        return NULL;
+
+    rval = PyList_New(0);
+    if (rval == NULL)
         return NULL;
 
     str = PyUnicode_DATA(pystr);
@@ -1559,8 +1561,11 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
             return -1;
         }
 
-        if (Py_EnterRecursiveCall(" while encoding a JSON object"))
+        if (Py_EnterRecursiveCall(" while encoding a JSON object")) {
+            Py_DECREF(newobj);
+            Py_XDECREF(ident);
             return -1;
+        }
         rv = encoder_listencode_obj(s, acc, newobj, indent_level);
         Py_LeaveRecursiveCall();
 
