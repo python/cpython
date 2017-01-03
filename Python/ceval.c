@@ -5040,9 +5040,9 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
         }
     }
 
-    if (kwargs != NULL) {
+    nk = (kwargs != NULL) ? PyDict_GET_SIZE(kwargs) : 0;
+    if (nk != 0) {
         Py_ssize_t pos, i;
-        nk = PyDict_GET_SIZE(kwargs);
 
         kwtuple = PyTuple_New(2 * nk);
         if (kwtuple == NULL) {
@@ -5052,6 +5052,9 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
         k = &PyTuple_GET_ITEM(kwtuple, 0);
         pos = i = 0;
         while (PyDict_Next(kwargs, &pos, &k[i], &k[i+1])) {
+            /* We must hold strong references because keyword arguments can be
+               indirectly modified while the function is called:
+               see issue #2016 and test_extcall */
             Py_INCREF(k[i]);
             Py_INCREF(k[i+1]);
             i += 2;
@@ -5061,7 +5064,6 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
     else {
         kwtuple = NULL;
         k = NULL;
-        nk = 0;
     }
 
     kwdefs = PyFunction_GET_KW_DEFAULTS(func);
