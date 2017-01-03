@@ -788,11 +788,10 @@ Custom classes
    Special attributes: :attr:`~definition.__name__` is the class name; :attr:`__module__` is
    the module name in which the class was defined; :attr:`~object.__dict__` is the
    dictionary containing the class's namespace; :attr:`~class.__bases__` is a
-   tuple (possibly a singleton) containing the base classes, in the
-   order of their occurrence in the base class list; :attr:`__doc__` is the
-   class's documentation string, or ``None`` if undefined;
-   :attr:`__annotations__` (optional) is a dictionary containing
-   :term:`variable annotations <variable annotation>` collected during
+   tuple containing the base classes, in the order of their occurrence in the
+   base class list; :attr:`__doc__` is the class's documentation string,
+   or ``None`` if undefined; :attr:`__annotations__` (optional) is a dictionary
+   containing :term:`variable annotations <variable annotation>` collected during
    class body execution.
 
 Class instances
