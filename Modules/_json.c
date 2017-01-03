@@ -2077,8 +2077,11 @@ encoder_listencode_obj(PyEncoderObject *s, PyObject *rval, PyObject *obj, Py_ssi
             return -1;
         }
 
-        if (Py_EnterRecursiveCall(" while encoding a JSON object"))
+        if (Py_EnterRecursiveCall(" while encoding a JSON object")) {
+            Py_DECREF(newobj);
+            Py_XDECREF(ident);
             return -1;
+        }
         rv = encoder_listencode_obj(s, rval, newobj, indent_level);
         Py_LeaveRecursiveCall();
 
