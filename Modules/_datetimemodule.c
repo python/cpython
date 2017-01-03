@@ -3843,11 +3843,11 @@ time_hash(PyDateTime_Time *self)
 {
     if (self->hashcode == -1) {
         PyObject *offset, *self0;
-        if (DATE_GET_FOLD(self)) {
-            self0 = new_time_ex2(DATE_GET_HOUR(self),
-                                 DATE_GET_MINUTE(self),
-                                 DATE_GET_SECOND(self),
-                                 DATE_GET_MICROSECOND(self),
+        if (TIME_GET_FOLD(self)) {
+            self0 = new_time_ex2(TIME_GET_HOUR(self),
+                                 TIME_GET_MINUTE(self),
+                                 TIME_GET_SECOND(self),
+                                 TIME_GET_MICROSECOND(self),
                                  HASTZINFO(self) ? self->tzinfo : Py_None,
                                  0, Py_TYPE(self));
             if (self0 == NULL)
