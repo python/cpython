@@ -379,6 +379,9 @@ then
        # a lot of different things including 'define_xopen_source'
        # in the case statement below.
 	case "$host" in
+	*-*-linux-android*)
+		ac_sys_system=Linux-android
+		;;
 	*-*-linux*)
 		ac_sys_system=Linux
 		;;
@@ -913,16 +916,25 @@ AC_MSG_CHECKING([for the Android API level])
 cat >> conftest.c <<EOF
 #ifdef __ANDROID__
 #include <android/api-level.h>
-__ANDROID_API__
+android_api = __ANDROID_API__
+arm_arch = __ARM_ARCH
 #else
 #error not Android
 #endif
 EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
-  ANDROID_API_LEVEL=`grep -v '^#' conftest.out | grep -v '^ *$'`
+  ANDROID_API_LEVEL=`sed -n -e '/__ANDROID_API__/d' -e 's/^android_api = //p' conftest.out`
+  _arm_arch=`sed -n -e '/__ARM_ARCH/d' -e 's/^arm_arch = //p' conftest.out`
   AC_MSG_RESULT([$ANDROID_API_LEVEL])
   AC_DEFINE_UNQUOTED(ANDROID_API_LEVEL, $ANDROID_API_LEVEL, [The Android API level.])
+
+  AC_MSG_CHECKING([for the Android arm ABI])
+  AC_MSG_RESULT([$_arm_arch])
+  if test "$_arm_arch" = 7; then
+    BASECFLAGS="${BASECFLAGS} -mfloat-abi=softfp -mfpu=vfpv3-d16"
+    LDFLAGS="${LDFLAGS} -march=armv7-a -Wl,--fix-cortex-a8"
+  fi
 else
   AC_MSG_RESULT([not Android])
 fi
@@ -2535,6 +2547,7 @@ then
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
+	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	BSD/OS*/4*) CCSHARED="-fpic";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
@@ -2566,6 +2579,7 @@ then
 	    LINKFORSHARED="-Wl,-E -Wl,+s";;
 #	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
 	BSD/OS/4*) LINKFORSHARED="-Xlinker -export-dynamic";;
+	Linux-android*) LINKFORSHARED="-pie -Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
 	Darwin/*)
