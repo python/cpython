@@ -300,7 +300,7 @@ class RunStringTests(TestBase):
     def assert_file_contains(self, expected, filename=None):
         if filename is None:
             filename = self.filename
-        self.assertIsNot(filename, None)
+        self.assertIsNotNone(filename)
         with open(filename) as out:
             content = out.read()
         self.assertEqual(content, expected)
@@ -470,6 +470,15 @@ class RunStringUnrestrictedTests(TestBase):
         ns = interpreters.run_string_unrestricted(self.id, script, updates)
 
         self.assertEqual(ns['__name__'], '__main__')
+
+    def test_main_not_shared(self):
+        ns1 = interpreters.run_string_unrestricted(self.id, 'spam = True')
+        ns2 = interpreters.run_string_unrestricted(self.id, 'eggs = False')
+
+        self.assertIn('spam', ns1)
+        self.assertNotIn('eggs', ns1)
+        self.assertIn('eggs', ns2)
+        self.assertNotIn('spam', ns2)
 
     def test_return_execution_namespace(self):
         script = dedent("""
