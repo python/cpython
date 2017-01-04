@@ -608,6 +608,8 @@ Documentation
 Build
 -----
 
+- Issue #26851: Set Android compilation and link flags.
+
 - Issue #28768: Fix implicit declaration of function _setmode. Patch by
   Masayuki Yamamoto
 
