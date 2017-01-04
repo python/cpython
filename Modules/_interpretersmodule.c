@@ -321,6 +321,19 @@ Return the ID of current interpreter.");
 
 
 static PyObject *
+interp_get_main(PyObject *self)
+{
+    // Currently, 0 is always the main interpreter.
+    return PyLong_FromLongLong(0);
+}
+
+PyDoc_STRVAR(get_main_doc,
+"get_main() -> ID\n\
+\n\
+Return the ID of main interpreter.");
+
+
+static PyObject *
 interp_run_string(PyObject *self, PyObject *args)
 {
     PyObject *id, *code;
@@ -455,6 +468,8 @@ static PyMethodDef module_functions[] = {
      METH_NOARGS, enumerate_doc},
     {"get_current",             (PyCFunction)interp_get_current,
      METH_NOARGS, get_current_doc},
+    {"get_main",                (PyCFunction)interp_get_main,
+     METH_NOARGS, get_main_doc},
     {"is_running",              (PyCFunction)interp_is_running,
      METH_VARARGS, is_running_doc},
 

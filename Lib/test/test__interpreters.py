@@ -111,6 +111,16 @@ class GetCurrentTests(TestBase):
         self.assertEqual(id2, id1)
 
 
+class GetMainTests(TestBase):
+
+    def test_main(self):
+        expected, = interpreters.enumerate()
+        main = interpreters.get_main()
+
+        self.assertEqual(main, 0)
+        self.assertEqual(main, expected)
+
+
 class IsRunningTests(TestBase):
 
     def test_main_running(self):
