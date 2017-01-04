@@ -1053,7 +1053,7 @@ class time:
         hour, minute (required)
         second, microsecond (default to zero)
         tzinfo (default to None)
-        fold (keyword only, default to True)
+        fold (keyword only, default to zero)
         """
         if isinstance(hour, bytes) and len(hour) == 6 and hour[0]&0x7F < 24:
             # Pickle support
