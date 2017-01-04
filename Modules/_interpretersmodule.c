@@ -89,51 +89,61 @@ _ensure_not_running(PyInterpreterState *interp)
     return 0;
 }
 
-static PyObject *
-_run_string(PyInterpreterState *interp, const char *codestr, PyObject *updates)
+static int
+_run_string(PyInterpreterState *interp, const char *codestr, PyObject *ns)
 {
-    if (_ensure_not_running(interp) < 0)
-        return NULL;
-
     // Switch to interpreter.
     PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
     // Run the string (see PyRun_SimpleStringFlags).
     PyObject *exc = NULL, *value = NULL, *tb = NULL;
-    PyObject *ns = NULL;
-    // XXX Force a fresh __main__ module?
-    PyObject *m = PyImport_AddModule("__main__");
-    if (m == NULL) {
-        PyErr_Fetch(&exc, &value, &tb);
-        goto done;
-    }
-    ns = PyModule_GetDict(m);
-    if (ns == NULL) {
-        PyErr_Fetch(&exc, &value, &tb);
-        goto done;
-    }
-    if (updates != NULL && PyDict_Merge(ns, updates, 0) < 0) {
-        PyErr_Fetch(&exc, &value, &tb);
-        goto done;
-    }
     PyObject *result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
     if (result == NULL) {
-        ns = NULL;
         // Get the exception from the subinterpreter.
         PyErr_Fetch(&exc, &value, &tb);
-        goto done;
+    } else {
+        Py_DECREF(result);  // We throw away the result.
     }
-    Py_DECREF(result);  // We throw away the result.
-    Py_INCREF(ns);  // It is a borrowed reference.
 
-done:
     // Switch back.
     if (save_tstate != NULL)
         PyThreadState_Swap(save_tstate);
 
     // Propagate any exception out to the caller.
     PyErr_Restore(exc, value, tb);
+
+    return result == NULL ? -1 : 0;
+}
+
+static PyObject *
+_run_string_in_main(PyInterpreterState *interp, const char *codestr,
+                    PyObject *updates)
+{
+    if (_ensure_not_running(interp) < 0)
+        return NULL;
+
+    // Get the namespace in which to execute.
+    // XXX Force a fresh __main__ module?
+    PyObject *m = PyMapping_GetItemString(interp->modules, "__main__");
+    if (m == NULL)
+        return NULL;
+    PyObject *orig = PyModule_GetDict(m);  // borrowed
+    Py_DECREF(m);
+    if (orig == NULL)
+        return NULL;
+    PyObject *ns = PyDict_Copy(orig);
+    if (ns == NULL)
+        return NULL;
+    if (updates != NULL && PyDict_Merge(ns, updates, 0) < 0) {
+        Py_DECREF(ns);
+        return NULL;
+    }
+
+    if (_run_string(interp, codestr, ns) < 0) {
+        Py_DECREF(ns);
+        return NULL;
+    }
 
     return ns;
 }
@@ -277,7 +287,7 @@ interp_run_string(PyObject *self, PyObject *args)
     }
 
     // Run the code in the interpreter.
-    PyObject *ns = _run_string(interp, codestr, NULL);
+    PyObject *ns = _run_string_in_main(interp, codestr, NULL);
     if (ns == NULL)
         return NULL;
     else
@@ -328,7 +338,7 @@ interp_run_string_unrestricted(PyObject *self, PyObject *args)
     }
 
     // Run the code in the interpreter.
-    return _run_string(interp, codestr, ns);
+    return _run_string_in_main(interp, codestr, ns);
 }
 
 PyDoc_STRVAR(run_string_unrestricted_doc,
