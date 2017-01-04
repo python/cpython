@@ -89,6 +89,33 @@ _ensure_not_running(PyInterpreterState *interp)
     return 0;
 }
 
+static PyObject *
+_copy_module(PyObject *m, PyObject *updates)
+{
+    PyObject *orig = PyModule_GetDict(m);  // borrowed
+    if (orig == NULL) {
+        return NULL;
+    }
+
+    PyObject *copy = PyModule_New("__main__");
+    if (copy == NULL) {
+        return NULL;
+    }
+    PyObject *ns = PyModule_GetDict(copy);  // borrowed
+    if (ns == NULL)
+        goto error;
+
+    if (PyDict_Merge(ns, orig, 1) < 0)
+        goto error;
+    if (updates != NULL && PyDict_Merge(ns, updates, 0) < 0)
+        goto error;
+    return copy;
+
+error:
+    Py_DECREF(copy);
+    return NULL;
+}
+
 static int
 _run_string(PyInterpreterState *interp, const char *codestr, PyObject *ns)
 {
@@ -123,30 +150,45 @@ _run_string_in_main(PyInterpreterState *interp, const char *codestr,
     if (_ensure_not_running(interp) < 0)
         return NULL;
 
-    // Get the namespace in which to execute.
-    // XXX Force a fresh __main__ module?
-    PyObject *m = PyMapping_GetItemString(interp->modules, "__main__");
-    if (m == NULL)
+    // Get the namespace in which to execute.  This involves creating
+    // a new module, updating it from the __main__ module and the given
+    // updates (if any), replacing the __main__ with the new module in
+    // sys.modules, and then using the new module's __dict__.  At the
+    // end we restore the original __main__ module.
+    PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
+    if (main_mod == NULL)
         return NULL;
-    PyObject *orig = PyModule_GetDict(m);  // borrowed
+    PyObject *m = _copy_module(main_mod, updates);
+    if (m == NULL) {
+        Py_DECREF(main_mod);
+        return NULL;
+    }
+    if (PyMapping_SetItemString(interp->modules, "__main__", m) < 0) {
+        Py_DECREF(main_mod);
+        Py_DECREF(m);
+        return NULL;
+    }
+    PyObject *ns = PyModule_GetDict(m);  // borrowed
+    Py_INCREF(ns);
     Py_DECREF(m);
-    if (orig == NULL)
-        return NULL;
-    PyObject *ns = PyDict_Copy(orig);
-    if (ns == NULL)
-        return NULL;
-    if (updates != NULL && PyDict_Merge(ns, updates, 0) < 0) {
-        Py_DECREF(ns);
-        return NULL;
-    }
 
+    // Run the string.
+    PyObject *result = ns;
     if (_run_string(interp, codestr, ns) < 0) {
+        result = NULL;
         Py_DECREF(ns);
-        return NULL;
     }
 
-    return ns;
+    // Restore __main__.
+    if (PyMapping_SetItemString(interp->modules, "__main__", main_mod) < 0) {
+        // XXX Chain exceptions...
+        //PyErr_Restore(exc, value, tb);
+    }
+    Py_DECREF(main_mod);
+
+    return result;
 }
+
 
 /* module level code ********************************************************/
 
