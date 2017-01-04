@@ -41,6 +41,11 @@ It defines the following functions:
    Return the ID of the currently running interpreter.
 
 
+.. function:: get_main()
+
+   Return the ID of the main interpreter.
+
+
 .. function:: is_running(id)
 
    Return whether or not the identified interpreter is currently
