@@ -54,8 +54,8 @@ class InterpreterTests(unittest.TestCase):
             time.sleep(1_000_000)
             """)
         filename = script_helper.make_script(self.dirname, 'interp', script)
-        proc = script_helper.spawn_python(filename)
-        retcode = proc.wait()
+        with script_helper.spawn_python(filename) as proc:
+            retcode = proc.wait()
 
         self.assertEqual(retcode, 0)
 
