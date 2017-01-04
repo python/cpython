@@ -50,9 +50,9 @@ It defines the following functions:
    threads do.  If the code results in an exception then that exception
    is raised in the thread in which run_string() was called, similar to
    how :func:`exec` works.  This aligns with how interpreters are not
-   inherently threaded.
-
-.. XXX sys.exit() (and SystemExit) is swallowed?
+   inherently threaded.  Note that SystemExit (as raised by sys.exit())
+   is not treated any differently and will result in the process ending
+   if not caught explicitly.
 
 
 .. function:: run_string_unrestricted(id, command, ns=None)
