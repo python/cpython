@@ -3,7 +3,7 @@ import os
 import os.path
 import shutil
 import tempfile
-from textwrap import dedent
+from textwrap import dedent, indent
 import threading
 import unittest
 
@@ -14,10 +14,13 @@ interpreters = support.import_module('_interpreters')
 
 
 SCRIPT_THREADED_INTERP = """\
+from textwrap import dedent
 import threading
 import _interpreters
 def f():
-    _interpreters.run_string(id, {!r})
+    _interpreters.run_string(id, dedent('''
+        {}
+        '''))
 
 t = threading.Thread(target=f)
 t.start()
@@ -48,11 +51,12 @@ class InterpreterTests(unittest.TestCase):
         shutil.rmtree(self.dirname)
 
     def test_still_running_at_exit(self):
-        script = SCRIPT_THREADED_INTERP.format("""if True:
+        subscript = dedent("""
             import time
             # Give plenty of time for the main interpreter to finish.
             time.sleep(1_000_000)
             """)
+        script = SCRIPT_THREADED_INTERP.format(indent(subscript, '        '))
         filename = script_helper.make_script(self.dirname, 'interp', script)
         with script_helper.spawn_python(filename) as proc:
             retcode = proc.wait()
