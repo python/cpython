@@ -357,6 +357,9 @@ class RunStringTests(TestBase):
                 with open(filename, 'w') as out:
                     out.write('{}')
                 os.write(w, b'done!')
+
+                # Kill the unittest runner in the child process.
+                os._exit(1)
             else:
                 import select
                 try:
@@ -365,7 +368,6 @@ class RunStringTests(TestBase):
                     os.close(r)
                     os.close(w)
             """).format(filename, expected)
-        # XXX Kill the child process in a unittest-friendly way.
         interpreters.run_string(self.id, script)
         self.assert_file_contains(expected)
 
