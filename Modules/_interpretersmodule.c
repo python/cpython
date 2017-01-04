@@ -45,7 +45,7 @@ _look_up(PyObject *requested_id)
     long long id = PyLong_AsLongLong(requested_id);
     if (id == -1 && PyErr_Occurred() != NULL)
         return NULL;
-    // XXX Fail if larger than INT64_MAX?
+    assert(id <= INT64_MAX);
     return _look_up_int64(id);
 }
 
@@ -100,7 +100,6 @@ _run_string(PyInterpreterState *interp, const char *codestr, PyObject *updates)
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
     // Run the string (see PyRun_SimpleStringFlags).
-    // XXX How to handle sys.exit()?
     PyObject *exc = NULL, *value = NULL, *tb = NULL;
     PyObject *ns = NULL;
     // XXX Force a fresh __main__ module?
@@ -140,8 +139,6 @@ done:
 }
 
 /* module level code ********************************************************/
-
-// XXX track count?
 
 static PyObject *
 interp_create(PyObject *self, PyObject *args)
@@ -205,10 +202,9 @@ interp_destroy(PyObject *self, PyObject *args)
     // Destroy the interpreter.
     //PyInterpreterState_Delete(interp);
     PyThreadState *tstate, *save_tstate;
-    tstate = PyInterpreterState_ThreadHead(interp);  // XXX Is this the right one?
+    tstate = PyInterpreterState_ThreadHead(interp);
     save_tstate = PyThreadState_Swap(tstate);
-    // XXX Stop current execution?
-    Py_EndInterpreter(tstate);  // XXX Handle possible errors?
+    Py_EndInterpreter(tstate);
     PyThreadState_Swap(save_tstate);
 
     Py_RETURN_NONE;
@@ -228,8 +224,6 @@ interp_enumerate(PyObject *self)
 {
     PyObject *ids, *id;
     PyInterpreterState *interp;
-
-    // XXX Handle multiple main interpreters.
 
     ids = PyList_New(0);
     if (ids == NULL)
