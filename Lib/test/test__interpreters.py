@@ -105,34 +105,33 @@ class CreateTests(TestBase):
 
     def test_in_subinterpreter(self):
         main, = interpreters._enumerate()
-        id = interpreters.create()
-        interpreters.run_string(id, dedent("""
+        id1 = interpreters.create()
+        ns = interpreters.run_string_unrestricted(id1, dedent("""
             import _interpreters
             id = _interpreters.create()
             """))
+        id2 = ns['id']
 
-        ids = interpreters._enumerate()
-        self.assertIn(id, ids)
-        self.assertIn(main, ids)
-        self.assertEqual(len(ids), 3)
+        self.assertEqual(set(interpreters._enumerate()), {main, id1, id2})
 
     def test_in_threaded_subinterpreter(self):
         main, = interpreters._enumerate()
-        id = interpreters.create()
+        id1 = interpreters.create()
+        ns = None
+        script = dedent("""
+            import _interpreters
+            id = _interpreters.create()
+            """)
         def f():
-            interpreters.run_string(id, dedent("""
-                import _interpreters
-                _interpreters.create()
-                """))
+            nonlocal ns
+            ns = interpreters.run_string_unrestricted(id1, script)
 
         t = threading.Thread(target=f)
         t.start()
         t.join()
+        id2 = ns['id']
 
-        ids = interpreters._enumerate()
-        self.assertIn(id, ids)
-        self.assertIn(main, ids)
-        self.assertEqual(len(ids), 3)
+        self.assertEqual(set(interpreters._enumerate()), {main, id1, id2})
 
 
     def test_after_destroy_all(self):
@@ -214,21 +213,27 @@ class DestroyTests(TestBase):
             interpreters.destroy(-1)
 
     def test_from_current(self):
+        main, = interpreters._enumerate()
         id = interpreters.create()
+        script = dedent("""
+            import _interpreters
+            _interpreters.destroy({})
+            """).format(id)
+
         with self.assertRaises(RuntimeError):
-            interpreters.run_string(id, dedent("""
-                import _interpreters
-                _interpreters.destroy({})
-                """).format(id))
+            interpreters.run_string(id, script)
+        self.assertEqual(set(interpreters._enumerate()), {main, id})
 
     def test_from_sibling(self):
         main, = interpreters._enumerate()
         id1 = interpreters.create()
         id2 = interpreters.create()
-        interpreters.run_string(id1, dedent("""
+        script = dedent("""
             import _interpreters
             _interpreters.destroy({})
-            """).format(id2))
+            """).format(id2)
+        interpreters.run_string(id1, script)
+
         self.assertEqual(set(interpreters._enumerate()), {main, id1})
 
     def test_from_other_thread(self):
@@ -241,6 +246,8 @@ class DestroyTests(TestBase):
         t.join()
 
     def test_still_running(self):
+        # XXX Rewrite this test without files by using
+        # run_string_unrestricted().
         main, = interpreters._enumerate()
         id = interpreters.create()
         def f():
@@ -426,6 +433,58 @@ class RunStringTests(TestBase):
         with self.assertRaises(SystemExit) as cm:
             interpreters.run_string(self.id, 'raise SystemExit(42)')
         self.assertEqual(cm.exception.code, 42)
+
+
+class RunStringUnrestrictedTests(TestBase):
+
+    def setUp(self):
+        self.id = interpreters.create()
+
+    def test_without_ns(self):
+        script = dedent("""
+            spam = 42
+            """)
+        ns = interpreters.run_string_unrestricted(self.id, script)
+
+        self.assertEqual(ns['spam'], 42)
+
+    def test_with_ns(self):
+        updates = {'spam': 'ham', 'eggs': -1}
+        script = dedent("""
+            spam = 42
+            result = spam + eggs
+            """)
+        ns = interpreters.run_string_unrestricted(self.id, script, updates)
+
+        self.assertEqual(ns['spam'], 42)
+        self.assertEqual(ns['eggs'], -1)
+        self.assertEqual(ns['result'], 41)
+
+    def test_ns_does_not_overwrite(self):
+        updates = {'__name__': 'not __main__'}
+        script = dedent("""
+            spam = 42
+            """)
+        ns = interpreters.run_string_unrestricted(self.id, script, updates)
+
+        self.assertEqual(ns['__name__'], '__main__')
+
+    def test_return_execution_namespace(self):
+        script = dedent("""
+            spam = 42
+            """)
+        ns = interpreters.run_string_unrestricted(self.id, script)
+
+        ns.pop('__builtins__')
+        ns.pop('__loader__')
+        self.assertEqual(ns, {
+            '__name__': '__main__',
+            '__annotations__': {},
+            '__doc__': None,
+            '__package__': None,
+            '__spec__': None,
+            'spam': 42,
+            })
 
 
 if __name__ == '__main__':

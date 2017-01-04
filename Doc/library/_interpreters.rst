@@ -38,8 +38,6 @@ It defines the following functions:
 
    Finalize and destroy the identified interpreter.
 
-.. XXX must not be running?
-
 
 .. function:: run_string(id, command)
 
@@ -54,8 +52,16 @@ It defines the following functions:
    how :func:`exec` works.  This aligns with how interpreters are not
    inherently threaded.
 
-.. XXX must not be running already?
 .. XXX sys.exit() (and SystemExit) is swallowed?
+
+
+.. function:: run_string_unrestricted(id, command, ns=None)
+
+   Like :c:func:`run_string` but returns the dict in which the code
+   was executed.  It also supports providing a namespace that gets
+   merged into the execution namespace before execution.  Note that
+   this allows objects to leak between interpreters, which may not
+   be desirable.
 
 
 **Caveats:**

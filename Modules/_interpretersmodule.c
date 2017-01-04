@@ -89,14 +89,11 @@ _ensure_not_running(PyInterpreterState *interp)
     return 0;
 }
 
-static int
-_run_string(PyInterpreterState *interp, const char *codestr)
+static PyObject *
+_run_string(PyInterpreterState *interp, const char *codestr, PyObject *updates)
 {
-    PyObject *result = NULL;
-    PyObject *exc = NULL, *value = NULL, *tb = NULL;
-
     if (_ensure_not_running(interp) < 0)
-        return -1;
+        return NULL;
 
     // Switch to interpreter.
     PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
@@ -104,19 +101,32 @@ _run_string(PyInterpreterState *interp, const char *codestr)
 
     // Run the string (see PyRun_SimpleStringFlags).
     // XXX How to handle sys.exit()?
+    PyObject *exc = NULL, *value = NULL, *tb = NULL;
+    PyObject *ns = NULL;
+    // XXX Force a fresh __main__ module?
     PyObject *m = PyImport_AddModule("__main__");
     if (m == NULL) {
         PyErr_Fetch(&exc, &value, &tb);
         goto done;
     }
-    PyObject *d = PyModule_GetDict(m);
-    result = PyRun_StringFlags(codestr, Py_file_input, d, d, NULL);
+    ns = PyModule_GetDict(m);
+    if (ns == NULL) {
+        PyErr_Fetch(&exc, &value, &tb);
+        goto done;
+    }
+    if (updates != NULL && PyDict_Merge(ns, updates, 0) < 0) {
+        PyErr_Fetch(&exc, &value, &tb);
+        goto done;
+    }
+    PyObject *result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
     if (result == NULL) {
+        ns = NULL;
         // Get the exception from the subinterpreter.
         PyErr_Fetch(&exc, &value, &tb);
         goto done;
     }
     Py_DECREF(result);  // We throw away the result.
+    Py_INCREF(ns);  // It is a borrowed reference.
 
 done:
     // Switch back.
@@ -126,7 +136,7 @@ done:
     // Propagate any exception out to the caller.
     PyErr_Restore(exc, value, tb);
 
-    return (result == NULL) ? -1 : 0;
+    return ns;
 }
 
 /* module level code ********************************************************/
@@ -273,32 +283,85 @@ interp_run_string(PyObject *self, PyObject *args)
     }
 
     // Run the code in the interpreter.
-    if (_run_string(interp, codestr) < 0)
+    PyObject *ns = _run_string(interp, codestr, NULL);
+    if (ns == NULL)
         return NULL;
     else
         Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(run_string_doc,
-"run_string(ID, sourcetext) -> run_id\n\
+"run_string(ID, sourcetext)\n\
 \n\
 Execute the provided string in the identified interpreter.\n\
+\n\
+See PyRun_SimpleStrings.");
+
+
+static PyObject *
+interp_run_string_unrestricted(PyObject *self, PyObject *args)
+{
+    PyObject *id, *code, *ns = NULL;
+    if (!PyArg_UnpackTuple(args, "run_string_unrestricted", 2, 3,
+                           &id, &code, &ns))
+        return NULL;
+    if (!PyLong_Check(id)) {
+        PyErr_SetString(PyExc_TypeError, "first arg (ID) must be an int");
+        return NULL;
+    }
+    if (!PyUnicode_Check(code)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "second arg (code) must be a string");
+        return NULL;
+    }
+    if (ns == Py_None)
+        ns = NULL;
+
+    // Look up the interpreter.
+    PyInterpreterState *interp = _look_up(id);
+    if (interp == NULL)
+        return NULL;
+
+    // Extract code.
+    Py_ssize_t size;
+    const char *codestr = PyUnicode_AsUTF8AndSize(code, &size);
+    if (codestr == NULL)
+        return NULL;
+    if (strlen(codestr) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError,
+                        "source code string cannot contain null bytes");
+        return NULL;
+    }
+
+    // Run the code in the interpreter.
+    return _run_string(interp, codestr, ns);
+}
+
+PyDoc_STRVAR(run_string_unrestricted_doc,
+"run_string_unrestricted(ID, sourcetext, ns=None) -> main module ns\n\
+\n\
+Execute the provided string in the identified interpreter.  Return the\n\
+dict in which the code executed.  If the ns arg is provided then it is\n\
+merged into the execution namespace before the code is executed.\n\
+\n\
 See PyRun_SimpleStrings.");
 
 
 static PyMethodDef module_functions[] = {
-    {"create",      (PyCFunction)interp_create,
+    {"create",                  (PyCFunction)interp_create,
      METH_VARARGS, create_doc},
-    {"destroy",     (PyCFunction)interp_destroy,
+    {"destroy",                 (PyCFunction)interp_destroy,
      METH_VARARGS, destroy_doc},
 
-    {"_enumerate",  (PyCFunction)interp_enumerate,
+    {"_enumerate",              (PyCFunction)interp_enumerate,
      METH_NOARGS, NULL},
 
-    {"run_string",  (PyCFunction)interp_run_string,
+    {"run_string",              (PyCFunction)interp_run_string,
      METH_VARARGS, run_string_doc},
+    {"run_string_unrestricted", (PyCFunction)interp_run_string_unrestricted,
+     METH_VARARGS, run_string_unrestricted_doc},
 
-    {NULL,          NULL}           /* sentinel */
+    {NULL,                      NULL}           /* sentinel */
 };
 
 
