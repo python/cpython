@@ -6,21 +6,30 @@
 
 .. versionadded:: 3,7
 
-  :ref:`_sub-interpreter-support`
-
-threading
-
 --------------
 
 This module provides low-level primitives for working with multiple
-Python interpreters in the same process.
-
+Python interpreters in the same runtime in the current process.
 .. XXX The :mod:`interpreters` module provides an easier to use and
    higher-level API built on top of this module.
 
+More information about (sub)interpreters is found at
+:ref:`_sub-interpreter-support`, including what data is shared between
+interpreters and what is unique.  Note particularly that interpreters
+aren't inherently threaded, even though they track and manage Python
+threads.  To run code in an interpreter in a different OS thread, call
+:func:`run_string` in a function that you run in a new Python thread.
+For example::
+
+   id = _interpreters.create()
+   def f():
+       _interpreters.run_string(id, 'print("in a thread")')
+
+   t = threading.Thread(target=f)
+   t.start()
+
 This module is optional.  It is provided by Python implementations which
 support multiple interpreters.
-
 .. XXX For systems lacking the :mod:`_interpreters` module, the
    :mod:`_dummy_interpreters` module is available.  It duplicates this
    module's interface and can be used as a drop-in replacement.
@@ -42,9 +51,10 @@ It defines the following functions:
 .. function:: run_string(id, command)
 
    A wrapper around :c:func:`PyRun_SimpleString` which runs the provided
-   Python program using the identified interpreter.  Providing an
-   invalid or unknown ID results in a RuntimeError, likewise if the main
-   interpreter or any other running interpreter is used.
+   Python program in the main thread of the identified interpreter.
+   Providing an invalid or unknown ID results in a RuntimeError,
+   likewise if the main interpreter or any other running interpreter
+   is used.
 
    Any value returned from the code is thrown away, similar to what
    threads do.  If the code results in an exception then that exception
@@ -62,9 +72,3 @@ It defines the following functions:
    merged into the execution namespace before execution.  Note that
    this allows objects to leak between interpreters, which may not
    be desirable.
-
-
-**Caveats:**
-
-* ...
-
