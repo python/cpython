@@ -180,9 +180,12 @@ _run_string_in_main(PyInterpreterState *interp, const char *codestr,
     }
 
     // Restore __main__.
+    PyObject *exc = NULL, *value = NULL, *tb = NULL;
+    PyErr_Fetch(&exc, &value, &tb);
     if (PyMapping_SetItemString(interp->modules, "__main__", main_mod) < 0) {
-        // XXX Chain exceptions...
-        //PyErr_Restore(exc, value, tb);
+        _PyErr_ChainExceptions(exc, value, tb);
+    } else {
+        PyErr_Restore(exc, value, tb);
     }
     Py_DECREF(main_mod);
 
