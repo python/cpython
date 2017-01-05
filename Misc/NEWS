@@ -12,6 +12,11 @@ Core and Builtins
 
 - Issue #28932: Do not include <sys/random.h> if it does not exist.
 
+Extension Modules
+-----------------
+
+- Issue #29169: Update zlib to 1.2.10.
+
 Library
 -------
 
