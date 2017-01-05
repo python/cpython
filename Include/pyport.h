@@ -39,7 +39,7 @@ Used in:  Py_SAFE_DOWNCAST
 
 // long long is required. Ensure HAVE_LONG_LONG is defined for compatibility.
 #ifndef HAVE_LONG_LONG
-#define HAVE_LONG_LONG
+#define HAVE_LONG_LONG 1
 #endif
 #ifndef PY_LONG_LONG
 #define PY_LONG_LONG long long
