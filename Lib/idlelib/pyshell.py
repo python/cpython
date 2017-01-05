@@ -5,15 +5,15 @@ try:
 except ImportError:
     print("** IDLE can't import Tkinter.\n"
           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
-    sys.exit(1)
+    raise SystemExit(1)
 import tkinter.messagebox as tkMessageBox
 if TkVersion < 8.5:
     root = Tk()  # otherwise create root in main
     root.withdraw()
     tkMessageBox.showerror("Idle Cannot Start",
-            "Idle requires tcl/tk 8.5+, not $s." % TkVersion,
+            "Idle requires tcl/tk 8.5+, not %s." % TkVersion,
             parent=root)
-    sys.exit(1)
+    raise SystemExit(1)
 
 from code import InteractiveInterpreter
 import getopt
