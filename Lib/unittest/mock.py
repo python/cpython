@@ -1961,9 +1961,8 @@ class _Call(tuple):
 
     If the _Call has no name then it will match any name.
     """
-    def __new__(cls, value=(), name=None, parent=None, two=False,
+    def __new__(cls, value=(), name='', parent=None, two=False,
                 from_kall=True):
-        name = ''
         args = ()
         kwargs = {}
         _len = len(value)
