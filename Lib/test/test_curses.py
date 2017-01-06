@@ -240,7 +240,7 @@ class TestCurses(unittest.TestCase):
     # Functions only available on a few platforms
     def test_colors_funcs(self):
         if not curses.has_colors():
-            self.skip('requires colors support')
+            self.skipTest('requires colors support')
         curses.start_color()
         curses.init_pair(2, 1,1)
         curses.color_content(1)
@@ -263,7 +263,7 @@ class TestCurses(unittest.TestCase):
     def test_getmouse(self):
         (availmask, oldmask) = curses.mousemask(curses.BUTTON1_PRESSED)
         if availmask == 0:
-            self.skip('mouse stuff not available')
+            self.skipTest('mouse stuff not available')
         curses.mouseinterval(10)
         # just verify these don't cause errors
         curses.ungetmouse(0, 0, 0, 0, curses.BUTTON1_PRESSED)
