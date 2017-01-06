@@ -82,14 +82,18 @@ win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
 #if defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)
 #define PY_GETRANDOM 1
 
-/* Call getrandom()
+/* Call getrandom() to get random bytes:
+
    - Return 1 on success
-   - Return 0 if getrandom() syscall is not available (failed with ENOSYS or
-     EPERM) or if getrandom(GRND_NONBLOCK) failed with EAGAIN (system urandom
-     not initialized yet) and raise=0.
+   - Return 0 if getrandom() is not available (failed with ENOSYS or EPERM),
+     or if getrandom(GRND_NONBLOCK) failed with EAGAIN (system urandom not
+     initialized yet) and raise=0.
    - Raise an exception (if raise is non-zero) and return -1 on error:
-     getrandom() failed with EINTR and the Python signal handler raised an
-     exception, or getrandom() failed with a different error. */
+     if getrandom() failed with EINTR, raise is non-zero and the Python signal
+     handler raised an exception, or if getrandom() failed with a different
+     error.
+
+   getrandom() is retried if it failed with EINTR: interrupted by a signal. */
 static int
 py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 {
@@ -110,7 +114,8 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
     while (0 < size) {
 #ifdef sun
         /* Issue #26735: On Solaris, getrandom() is limited to returning up
-           to 1024 bytes */
+           to 1024 bytes. Call it multiple times if more bytes are
+           requested. */
         n = Py_MIN(size, 1024);
 #else
         n = Py_MIN(size, LONG_MAX);
@@ -141,18 +146,19 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 #endif
 
         if (n < 0) {
-            /* ENOSYS: getrandom() syscall not supported by the kernel (but
-             * maybe supported by the host which built Python). EPERM:
-             * getrandom() syscall blocked by SECCOMP or something else. */
+            /* ENOSYS: the syscall is not supported by the kernel.
+               EPERM: the syscall is blocked by a security policy (ex: SECCOMP)
+               or something else. */
             if (errno == ENOSYS || errno == EPERM) {
                 getrandom_works = 0;
                 return 0;
             }
 
             /* getrandom(GRND_NONBLOCK) fails with EAGAIN if the system urandom
-               is not initialiazed yet. For _PyRandom_Init(), we ignore their
+               is not initialiazed yet. For _PyRandom_Init(), we ignore the
                error and fall back on reading /dev/urandom which never blocks,
-               even if the system urandom is not initialized yet. */
+               even if the system urandom is not initialized yet:
+               see the PEP 524. */
             if (errno == EAGAIN && !raise && !blocking) {
                 return 0;
             }
@@ -313,9 +319,10 @@ dev_urandom(char *buffer, Py_ssize_t size, int raise)
             fd = _Py_open("/dev/urandom", O_RDONLY);
             if (fd < 0) {
                 if (errno == ENOENT || errno == ENXIO ||
-                    errno == ENODEV || errno == EACCES)
+                    errno == ENODEV || errno == EACCES) {
                     PyErr_SetString(PyExc_NotImplementedError,
                                     "/dev/urandom (or equivalent) not found");
+                }
                 /* otherwise, keep the OSError exception raised by _Py_open() */
                 return -1;
             }
