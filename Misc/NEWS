@@ -10,6 +10,8 @@ What's New in Python 3.6.1 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #29159: Fix regression in bytes(x) when x.__index__() raises Exception.
+
 - Issue #28932: Do not include <sys/random.h> if it does not exist.
 
 - Issue #25677: Correct the positioning of the syntax error caret for

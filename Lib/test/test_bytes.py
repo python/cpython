@@ -4,6 +4,7 @@ XXX This is a mess.  Common tests should be unified with string_tests.py (and
 the latter should be modernized).
 """
 
+import array
 import os
 import re
 import sys
@@ -80,6 +81,18 @@ class BaseBytesTest:
         self.assertEqual(list(b), [0, 1, 254, 255])
         self.assertRaises(ValueError, self.type2test, [Indexable(-1)])
         self.assertRaises(ValueError, self.type2test, [Indexable(256)])
+
+    def test_from_buffer(self):
+        a = self.type2test(array.array('B', [1, 2, 3]))
+        self.assertEqual(a, b"\x01\x02\x03")
+
+        # http://bugs.python.org/issue29159
+        # Fallback when __index__ raises exception other than OverflowError
+        class B(bytes):
+            def __index__(self):
+                raise TypeError
+
+        self.assertEqual(self.type2test(B(b"foobar")), b"foobar")
 
     def test_from_ssize(self):
         self.assertEqual(self.type2test(0), b'')
