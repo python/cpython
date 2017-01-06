@@ -226,34 +226,38 @@ static struct {
     ino_t st_ino;
 } urandom_cache = { -1 };
 
-/* Read 'size' random bytes from py_getrandom(). Fall back on reading from
-   /dev/urandom if getrandom() is not available.
+/* Read random bytes from the /dev/urandom device:
 
-   Return 0 on success. Raise an exception (if raise is non-zero) and return -1
-   on error. */
+   - Return 0 on success
+   - Raise an exception (if raise is non-zero) and return -1 on error
+
+   Possible causes of errors:
+
+   - open() failed with ENOENT, ENXIO, ENODEV, EACCES: the /dev/urandom device
+     was not found. For example, it was removed manually or not exposed in a
+     chroot or container.
+   - open() failed with a different error
+   - fstat() failed
+   - read() failed or returned 0
+
+   read() is retried if it failed with EINTR: interrupted by a signal.
+
+   The file descriptor of the device is kept open between calls to avoid using
+   many file descriptors when run in parallel from multiple threads:
+   see the issue #18756.
+
+   st_dev and st_ino fields of the file descriptor (from fstat()) are cached to
+   check if the file descriptor was replaced by a different file (which is
+   likely a bug in the application): see the issue #21207.
+
+   If the file descriptor was closed or replaced, open a new file descriptor
+   but don't close the old file descriptor: it probably points to something
+   important for some third-party code. */
 static int
-dev_urandom(char *buffer, Py_ssize_t size, int blocking, int raise)
+dev_urandom(char *buffer, Py_ssize_t size, int raise)
 {
     int fd;
     Py_ssize_t n;
-#if defined(PY_GETRANDOM) || defined(PY_GETENTROPY)
-    int res;
-
-#ifdef PY_GETENTROPY
-    res = py_getentropy(buffer, size, raise);
-#else
-    res = py_getrandom(buffer, size, blocking, raise);
-#endif
-    if (res < 0) {
-        return -1;
-    }
-    if (res == 1) {
-        return 0;
-    }
-    /* getrandom() or getentropy() function is not available: failed with
-       ENOSYS or EPERM. Fall back on reading from /dev/urandom. */
-#endif
-
 
     if (raise) {
         struct _Py_stat_struct st;
@@ -373,14 +377,51 @@ lcg_urandom(unsigned int x0, unsigned char *buffer, size_t size)
     }
 }
 
-/* If raise is zero:
-   - Don't raise exceptions on error
-   - Don't call PyErr_CheckSignals() on EINTR (retry directly the interrupted
-     syscall)
-   - Don't release the GIL to call syscalls. */
+/* Read random bytes:
+
+   - Return 0 on success
+   - Raise an exception (if raise is non-zero) and return -1 on error
+
+   Used sources of entropy ordered by preference, preferred source first:
+
+   - CryptGenRandom() on Windows
+   - getentropy() function (ex: OpenBSD): call py_getentropy()
+   - getrandom() function (ex: Linux and Solaris): call py_getrandom()
+   - /dev/urandom device
+
+   Read from the /dev/urandom device if getrandom() or getentropy() function
+   is not available or does not work.
+
+   Prefer getrandom() and getentropy() over reading directly /dev/urandom
+   because these functions don't need file descriptors and so avoid ENFILE or
+   EMFILE errors (too many open files): see the issue #18756.
+
+   Only the getrandom() function supports non-blocking mode.
+
+   Only use RNG running in the kernel. They are more secure because it is
+   harder to get the internal state of a RNG running in the kernel land than a
+   RNG running in the user land. The kernel has a direct access to the hardware
+   and has access to hardware RNG, they are used as entropy sources.
+
+   Note: the OpenSSL RAND_pseudo_bytes() function does not automatically reseed
+   its RNG on fork(), two child processes (with the same pid) generate the same
+   random numbers: see issue #18747. Kernel RNGs don't have this issue,
+   they have access to good quality entropy sources.
+
+   If raise is zero:
+
+   - Don't raise an exception on error
+   - Don't call the Python signal handler (don't call PyErr_CheckSignals()) if
+     a function fails with EINTR: retry directly the interrupted function
+   - Don't release the GIL to call functions.
+*/
 static int
 pyurandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 {
+#if defined(PY_GETRANDOM) || defined(PY_GETENTROPY)
+    int res;
+#endif
+
     if (size < 0) {
         if (raise) {
             PyErr_Format(PyExc_ValueError,
@@ -396,7 +437,24 @@ pyurandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 #ifdef MS_WINDOWS
     return win32_urandom((unsigned char *)buffer, size, raise);
 #else
-    return dev_urandom(buffer, size, blocking, raise);
+
+#if defined(PY_GETRANDOM) || defined(PY_GETENTROPY)
+#ifdef PY_GETENTROPY
+    res = py_getentropy(buffer, size, raise);
+#else
+    res = py_getrandom(buffer, size, blocking, raise);
+#endif
+    if (res < 0) {
+        return -1;
+    }
+    if (res == 1) {
+        return 0;
+    }
+    /* getrandom() or getentropy() function is not available: failed with
+       ENOSYS or EPERM. Fall back on reading from /dev/urandom. */
+#endif
+
+    return dev_urandom(buffer, size, raise);
 #endif
 }
 
