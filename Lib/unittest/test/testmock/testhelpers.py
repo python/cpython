@@ -306,6 +306,20 @@ class CallTest(unittest.TestCase):
         other_args = _Call(((1, 2), {'a': 3}))
         self.assertEqual(args, other_args)
 
+    def test_call_with_name(self):
+        self.assertEqual(
+            'foo',
+            _Call((), 'foo')[0],
+        )
+        self.assertEqual(
+            '',
+            _Call((('bar', 'barz'), ), )[0]
+        )
+        self.assertEqual(
+            '',
+            _Call((('bar', 'barz'), {'hello': 'world'}), )[0]
+        )
+
 
 class SpecSignatureTest(unittest.TestCase):
 
