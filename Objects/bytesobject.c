@@ -2593,16 +2593,20 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (PyIndex_Check(x)) {
         size = PyNumber_AsSsize_t(x, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
-            return NULL;
+            if (PyErr_ExceptionMatches(PyExc_OverflowError))
+                return NULL;
+            PyErr_Clear();  /* fall through */
         }
-        if (size < 0) {
-            PyErr_SetString(PyExc_ValueError, "negative count");
-            return NULL;
+        else {
+            if (size < 0) {
+                PyErr_SetString(PyExc_ValueError, "negative count");
+                return NULL;
+            }
+            new = _PyBytes_FromSize(size, 1);
+            if (new == NULL)
+                return NULL;
+            return new;
         }
-        new = _PyBytes_FromSize(size, 1);
-        if (new == NULL)
-            return NULL;
-        return new;
     }
 
     return PyBytes_FromObject(x);
