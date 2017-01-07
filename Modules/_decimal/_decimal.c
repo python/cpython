@@ -5835,7 +5835,7 @@ PyInit__decimal(void)
 
     /* Init default context template first */
     ASSIGN_PTR(default_context_template,
-               _PyObject_CallNoArg((PyObject *)&PyDecContext_Type));
+               PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     Py_INCREF(default_context_template);
     CHECK_INT(PyModule_AddObject(m, "DefaultContext",
                                  default_context_template));
@@ -5843,7 +5843,7 @@ PyInit__decimal(void)
 #ifdef WITHOUT_THREADS
     /* Init module context */
     ASSIGN_PTR(module_context,
-               _PyObject_CallNoArg((PyObject *)&PyDecContext_Type));
+               PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     Py_INCREF(Py_False);
     CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_False));
 #else
@@ -5854,7 +5854,7 @@ PyInit__decimal(void)
 
     /* Init basic context template */
     ASSIGN_PTR(basic_context_template,
-               _PyObject_CallNoArg((PyObject *)&PyDecContext_Type));
+               PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     init_basic_context(basic_context_template);
     Py_INCREF(basic_context_template);
     CHECK_INT(PyModule_AddObject(m, "BasicContext",
@@ -5862,7 +5862,7 @@ PyInit__decimal(void)
 
     /* Init extended context template */
     ASSIGN_PTR(extended_context_template,
-               _PyObject_CallNoArg((PyObject *)&PyDecContext_Type));
+               PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     init_extended_context(extended_context_template);
     Py_INCREF(extended_context_template);
     CHECK_INT(PyModule_AddObject(m, "ExtendedContext",
