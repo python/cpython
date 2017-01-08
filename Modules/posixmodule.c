@@ -785,7 +785,9 @@ dir_fd_converter(PyObject *o, void *p)
  *     The length of the path in characters, if specified as
  *     a string.
  *   path.object
- *     The original object passed in.
+ *     The original object passed in (if get a PathLike object,
+ *     the result of PyOS_FSPath() is treated as the original object).
+ *     Own a reference to the object.
  *   path.cleanup
  *     For internal use only.  May point to a temporary object.
  *     (Pay no attention to the man behind the curtain.)
@@ -836,24 +838,22 @@ typedef struct {
 #endif
 
 static void
-path_cleanup(path_t *path) {
-    if (path->cleanup) {
-        Py_CLEAR(path->cleanup);
-    }
+path_cleanup(path_t *path)
+{
+    Py_CLEAR(path->object);
+    Py_CLEAR(path->cleanup);
 }
 
 static int
 path_converter(PyObject *o, void *p)
 {
     path_t *path = (path_t *)p;
-    PyObject *bytes, *to_cleanup = NULL;
-    Py_ssize_t length;
+    PyObject *bytes = NULL;
+    Py_ssize_t length = 0;
     int is_index, is_buffer, is_bytes, is_unicode;
-    /* Default to failure, forcing explicit signaling of succcess. */
-    int ret = 0;
     const char *narrow;
 #ifdef MS_WINDOWS
-    PyObject *wo;
+    PyObject *wo = NULL;
     const wchar_t *wide;
 #endif
 
@@ -870,7 +870,9 @@ path_converter(PyObject *o, void *p)
     }
 
     /* Ensure it's always safe to call path_cleanup(). */
-    path->cleanup = NULL;
+    path->object = path->cleanup = NULL;
+    /* path->object owns a reference to the original object */
+    Py_INCREF(o);
 
     if ((o == Py_None) && path->nullable) {
         path->wide = NULL;
@@ -879,10 +881,8 @@ path_converter(PyObject *o, void *p)
 #else
         path->narrow = NULL;
 #endif
-        path->length = 0;
-        path->object = o;
         path->fd = -1;
-        return 1;
+        goto success_exit;
     }
 
     /* Only call this here so that we don't treat the return value of
@@ -899,10 +899,11 @@ path_converter(PyObject *o, void *p)
 
         func = _PyObject_LookupSpecial(o, &PyId___fspath__);
         if (NULL == func) {
-            goto error_exit;
+            goto error_format;
         }
-
-        o = to_cleanup = PyObject_CallFunctionObjArgs(func, NULL);
+        /* still owns a reference to the original object */
+        Py_DECREF(o);
+        o = _PyObject_CallNoArg(func);
         Py_DECREF(func);
         if (NULL == o) {
             goto error_exit;
@@ -914,7 +915,7 @@ path_converter(PyObject *o, void *p)
             is_bytes = 1;
         }
         else {
-            goto error_exit;
+            goto error_format;
         }
     }
 
@@ -922,26 +923,24 @@ path_converter(PyObject *o, void *p)
 #ifdef MS_WINDOWS
         wide = PyUnicode_AsUnicodeAndSize(o, &length);
         if (!wide) {
-            goto exit;
+            goto error_exit;
         }
         if (length > 32767) {
             FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
-            goto exit;
+            goto error_exit;
         }
         if (wcslen(wide) != length) {
             FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
-            goto exit;
+            goto error_exit;
         }
 
         path->wide = wide;
-        path->length = length;
-        path->object = o;
+        path->narrow = FALSE;
         path->fd = -1;
-        ret = 1;
-        goto exit;
+        goto success_exit;
 #else
         if (!PyUnicode_FSConverter(o, &bytes)) {
-            goto exit;
+            goto error_exit;
         }
 #endif
     }
@@ -961,16 +960,16 @@ path_converter(PyObject *o, void *p)
             path->nullable ? "string, bytes, os.PathLike or None" :
                              "string, bytes or os.PathLike",
             Py_TYPE(o)->tp_name)) {
-            goto exit;
+            goto error_exit;
         }
         bytes = PyBytes_FromObject(o);
         if (!bytes) {
-            goto exit;
+            goto error_exit;
         }
     }
     else if (is_index) {
         if (!_fd_converter(o, &path->fd)) {
-            goto exit;
+            goto error_exit;
         }
         path->wide = NULL;
 #ifdef MS_WINDOWS
@@ -978,13 +977,10 @@ path_converter(PyObject *o, void *p)
 #else
         path->narrow = NULL;
 #endif
-        path->length = 0;
-        path->object = o;
-        ret = 1;
-        goto exit;
+        goto success_exit;
     }
     else {
- error_exit:
+ error_format:
         PyErr_Format(PyExc_TypeError, "%s%s%s should be %s, not %.200s",
             path->function_name ? path->function_name : "",
             path->function_name ? ": "                : "",
@@ -995,15 +991,14 @@ path_converter(PyObject *o, void *p)
             path->nullable ? "string, bytes, os.PathLike or None" :
                              "string, bytes or os.PathLike",
             Py_TYPE(o)->tp_name);
-        goto exit;
+        goto error_exit;
     }
 
     length = PyBytes_GET_SIZE(bytes);
     narrow = PyBytes_AS_STRING(bytes);
     if ((size_t)length != strlen(narrow)) {
         FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
-        Py_DECREF(bytes);
-        goto exit;
+        goto error_exit;
     }
 
 #ifdef MS_WINDOWS
@@ -1012,43 +1007,51 @@ path_converter(PyObject *o, void *p)
         length
     );
     if (!wo) {
-        goto exit;
+        goto error_exit;
     }
 
-    wide = PyUnicode_AsWideCharString(wo, &length);
-    Py_DECREF(wo);
-
+    wide = PyUnicode_AsUnicodeAndSize(wo, &length);
     if (!wide) {
-        goto exit;
+        goto error_exit;
     }
     if (length > 32767) {
         FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
-        goto exit;
+        goto error_exit;
     }
     if (wcslen(wide) != length) {
         FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
-        goto exit;
+        goto error_exit;
     }
     path->wide = wide;
     path->narrow = TRUE;
+    path->cleanup = wo;
+    Py_DECREF(bytes);
 #else
     path->wide = NULL;
     path->narrow = narrow;
-#endif
-    path->length = length;
-    path->object = o;
-    path->fd = -1;
     if (bytes == o) {
+        /* Still a reference owned by path->object, don't have to
+           worry about path->narrow is used after free. */
         Py_DECREF(bytes);
-        ret = 1;
     }
     else {
         path->cleanup = bytes;
-        ret = Py_CLEANUP_SUPPORTED;
     }
- exit:
-    Py_XDECREF(to_cleanup);
-    return ret;
+#endif
+    path->fd = -1;
+
+ success_exit:
+    path->length = length;
+    path->object = o;
+    return Py_CLEANUP_SUPPORTED;
+
+ error_exit:
+    Py_XDECREF(o);
+    Py_XDECREF(bytes);
+#ifdef MS_WINDOWS
+    Py_XDECREF(wo);
+#endif
+    return 0;
 }
 
 static void
