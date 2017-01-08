@@ -8,6 +8,7 @@ from random import choice
 import sys
 from test import support
 import unittest
+import unittest.mock
 from weakref import proxy
 import contextlib
 try:
@@ -1189,6 +1190,41 @@ class TestLRU:
         self.assertEqual(hits, 12)
         self.assertEqual(misses, 4)
         self.assertEqual(currsize, 2)
+
+    def test_lru_hash_only_once(self):
+        # To protect against weird reentrancy bugs and to improve
+        # efficiency when faced with slow __hash__ methods, the
+        # LRU cache guarantees that it will only call __hash__
+        # only once per use as an argument to the cached function.
+
+        @self.module.lru_cache(maxsize=1)
+        def f(x, y):
+            return x * 3 + y
+
+        # Simulate the integer 5
+        mock_int = unittest.mock.Mock()
+        mock_int.__mul__ = unittest.mock.Mock(return_value=15)
+        mock_int.__hash__ = unittest.mock.Mock(return_value=999)
+
+        # Add to cache:  One use as an argument gives one call
+        assert f(mock_int, 1) == 16
+        assert mock_int.__hash__.call_count == 1
+        assert f.cache_info() == (0, 1, 1, 1)
+
+        # Cache hit: One use as an argument gives one additional call
+        assert f(mock_int, 1) == 16
+        assert mock_int.__hash__.call_count == 2
+        assert f.cache_info() == (1, 1, 1, 1)
+
+        # Cache eviction: No use as an argument gives no additonal call
+        assert f(6, 2) == 20
+        assert mock_int.__hash__.call_count == 2
+        assert f.cache_info() == (1, 2, 1, 1)
+
+        # Cache miss: One use as an argument gives one additional call
+        assert f(mock_int, 1) == 16
+        assert mock_int.__hash__.call_count == 3
+        assert f.cache_info() == (1, 3, 1, 1)
 
     def test_lru_reentrancy_with_len(self):
         # Test to make sure the LRU cache code isn't thrown-off by
