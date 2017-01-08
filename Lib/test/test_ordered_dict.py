@@ -52,6 +52,14 @@ class OrderedDictTests:
         self.assertEqual(list(d.items()),
             [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5), ('f', 6), ('g', 7)])
 
+    def test_468(self):
+        OrderedDict = self.OrderedDict
+        items = [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5), ('f', 6), ('g', 7)]
+        shuffle(items)
+        argdict = OrderedDict(items)
+        d = OrderedDict(**argdict)
+        self.assertEqual(list(d.items()), items)
+
     def test_update(self):
         OrderedDict = self.OrderedDict
         with self.assertRaises(TypeError):
