@@ -10,6 +10,8 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #29034: Fix memory leak and use-after-free in os module (path_converter).
+
 - Issue #29159: Fix regression in bytes(x) when x.__index__() raises Exception.
 
 - Issue #29049: Call _PyObject_GC_TRACK() lazily when calling Python function.
