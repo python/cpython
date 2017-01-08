@@ -1029,13 +1029,14 @@ Equality tests between :class:`OrderedDict` objects and other
 dictionaries.  This allows :class:`OrderedDict` objects to be substituted
 anywhere a regular dictionary is used.
 
-The :class:`OrderedDict` constructor and :meth:`update` method both accept
-keyword arguments, but their order is lost because Python's function call
-semantics pass in keyword arguments using a regular unordered dictionary.
-
 .. versionchanged:: 3.5
    The items, keys, and values :term:`views <dictionary view>`
    of :class:`OrderedDict` now support reverse iteration using :func:`reversed`.
+
+.. versionchanged:: 3.6
+   With the acceptance of :pep:`468`, order is retained for keyword arguments
+   passed to the :class:`OrderedDict` constructor and its :meth:`update`
+   method.
 
 :class:`OrderedDict` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
