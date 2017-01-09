@@ -2358,31 +2358,30 @@ replace_interleave(PyStringObject *self,
 {
     char *self_s, *result_s;
     Py_ssize_t self_len, result_len;
-    Py_ssize_t count, i, product;
+    Py_ssize_t count, i;
     PyStringObject *result;
 
     self_len = PyString_GET_SIZE(self);
 
-    /* 1 at the end plus 1 after every character */
-    count = self_len+1;
-    if (maxcount < count)
+    /* 1 at the end plus 1 after every character;
+       count = min(maxcount, self_len + 1) */
+    if (maxcount <= self_len) {
         count = maxcount;
+    }
+    else {
+        /* Can't overflow: self_len + 1 <= maxcount <= PY_SSIZE_T_MAX. */
+        count = self_len + 1;
+    }
 
     /* Check for overflow */
     /*   result_len = count * to_len + self_len; */
-    product = count * to_len;
-    if (product / to_len != count) {
+    assert(count > 0);
+    if (to_len > (PY_SSIZE_T_MAX - self_len) / count) {
         PyErr_SetString(PyExc_OverflowError,
                         "replace string is too long");
         return NULL;
     }
-    result_len = product + self_len;
-    if (result_len < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "replace string is too long");
-        return NULL;
-    }
-
+    result_len = count * to_len + self_len;
     if (! (result = (PyStringObject *)
                      PyString_FromStringAndSize(NULL, result_len)) )
         return NULL;
@@ -2610,7 +2609,7 @@ replace_single_character(PyStringObject *self,
     char *self_s, *result_s;
     char *start, *next, *end;
     Py_ssize_t self_len, result_len;
-    Py_ssize_t count, product;
+    Py_ssize_t count;
     PyStringObject *result;
 
     self_s = PyString_AS_STRING(self);
@@ -2624,16 +2623,12 @@ replace_single_character(PyStringObject *self,
 
     /* use the difference between current and new, hence the "-1" */
     /*   result_len = self_len + count * (to_len-1)  */
-    product = count * (to_len-1);
-    if (product / (to_len-1) != count) {
+    assert(count > 0);
+    if (to_len - 1 > (PY_SSIZE_T_MAX - self_len) / count) {
         PyErr_SetString(PyExc_OverflowError, "replace string is too long");
         return NULL;
     }
-    result_len = self_len + product;
-    if (result_len < 0) {
-        PyErr_SetString(PyExc_OverflowError, "replace string is too long");
-        return NULL;
-    }
+    result_len = self_len + count * (to_len - 1);
 
     if ( (result = (PyStringObject *)
           PyString_FromStringAndSize(NULL, result_len)) == NULL)
@@ -2676,7 +2671,7 @@ replace_substring(PyStringObject *self,
     char *self_s, *result_s;
     char *start, *next, *end;
     Py_ssize_t self_len, result_len;
-    Py_ssize_t count, offset, product;
+    Py_ssize_t count, offset;
     PyStringObject *result;
 
     self_s = PyString_AS_STRING(self);
@@ -2693,16 +2688,12 @@ replace_substring(PyStringObject *self,
 
     /* Check for overflow */
     /*    result_len = self_len + count * (to_len-from_len) */
-    product = count * (to_len-from_len);
-    if (product / (to_len-from_len) != count) {
+    assert(count > 0);
+    if (to_len - from_len > (PY_SSIZE_T_MAX - self_len) / count) {
         PyErr_SetString(PyExc_OverflowError, "replace string is too long");
         return NULL;
     }
-    result_len = self_len + product;
-    if (result_len < 0) {
-        PyErr_SetString(PyExc_OverflowError, "replace string is too long");
-        return NULL;
-    }
+    result_len = self_len + count * (to_len - from_len);
 
     if ( (result = (PyStringObject *)
           PyString_FromStringAndSize(NULL, result_len)) == NULL)

@@ -5732,20 +5732,20 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 
         /* Make sure we have enough space for the separator and the item. */
         itemlen = PyUnicode_GET_SIZE(item);
-        new_res_used = res_used + itemlen;
-        if (new_res_used < 0)
+        if (res_used > PY_SSIZE_T_MAX - itemlen)
             goto Overflow;
+        new_res_used = res_used + itemlen;
         if (i < seqlen - 1) {
-            new_res_used += seplen;
-            if (new_res_used < 0)
+            if (new_res_used > PY_SSIZE_T_MAX - seplen)
                 goto Overflow;
+            new_res_used += seplen;
         }
         if (new_res_used > res_alloc) {
             /* double allocated size until it's big enough */
             do {
-                res_alloc += res_alloc;
-                if (res_alloc <= 0)
+                if (res_alloc > PY_SSIZE_T_MAX / 2)
                     goto Overflow;
+                res_alloc += res_alloc;
             } while (new_res_used > res_alloc);
             if (_PyUnicode_Resize(&res, res_alloc) < 0) {
                 Py_DECREF(item);
@@ -5943,7 +5943,7 @@ PyObject *replace(PyUnicodeObject *self,
     } else {
 
         Py_ssize_t n, i, j;
-        Py_ssize_t product, new_size, delta;
+        Py_ssize_t new_size, delta;
         Py_UNICODE *p;
 
         /* replace strings */
@@ -5956,18 +5956,13 @@ PyObject *replace(PyUnicodeObject *self,
         if (delta == 0) {
             new_size = self->length;
         } else {
-            product = n * (str2->length - str1->length);
-            if ((product / (str2->length - str1->length)) != n) {
+            assert(n > 0);
+            if (delta > (PY_SSIZE_T_MAX - self->length) / n) {
                 PyErr_SetString(PyExc_OverflowError,
                                 "replace string is too long");
                 return NULL;
             }
-            new_size = self->length + product;
-            if (new_size < 0) {
-                PyErr_SetString(PyExc_OverflowError,
-                                "replace string is too long");
-                return NULL;
-            }
+            new_size = self->length + delta * n;
         }
         u = _PyUnicode_New(new_size);
         if (!u)
