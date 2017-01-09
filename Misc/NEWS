@@ -23,6 +23,11 @@ Extension Modules
 Library
 -------
 
+- Issue #29188: Support glibc 2.24 on Linux: don't use getentropy() function
+  but read from /dev/urandom to get random bytes, for example in os.urandom().
+  On Linux, getentropy() is implemented which getrandom() is blocking mode,
+  whereas os.urandom() should not block.
+
 - Issue #29142: In urllib, suffixes in no_proxy environment variable with
   leading dots could match related hostnames again (e.g. .b.c matches a.b.c).
   Patch by Milan Oberkirch.
