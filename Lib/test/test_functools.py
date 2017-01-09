@@ -1238,6 +1238,15 @@ class TestLRU:
         finally:
             builtins.len = old_len
 
+    def test_lru_star_arg_handling(self):
+        # Test regression that arose in ea064ff3c10f
+        @functools.lru_cache()
+        def f(*args):
+            return args
+
+        self.assertEqual(f(1, 2), (1, 2))
+        self.assertEqual(f((1, 2)), ((1, 2),))
+
     def test_lru_type_error(self):
         # Regression test for issue #28653.
         # lru_cache was leaking when one of the arguments
