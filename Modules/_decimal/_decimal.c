@@ -1194,13 +1194,13 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
         return NULL;
     }
 
-    self->traps = _PyObject_CallNoArg((PyObject *)PyDecSignalDict_Type);
+    self->traps = PyObject_CallObject((PyObject *)PyDecSignalDict_Type, NULL);
     if (self->traps == NULL) {
         self->flags = NULL;
         Py_DECREF(self);
         return NULL;
     }
-    self->flags = _PyObject_CallNoArg((PyObject *)PyDecSignalDict_Type);
+    self->flags = PyObject_CallObject((PyObject *)PyDecSignalDict_Type, NULL);
     if (self->flags == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -1395,7 +1395,7 @@ ieee_context(PyObject *dummy UNUSED, PyObject *v)
         goto error;
     }
 
-    context = _PyObject_CallNoArg((PyObject *)&PyDecContext_Type);
+    context = PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL);
     if (context == NULL) {
         return NULL;
     }
@@ -1417,7 +1417,7 @@ context_copy(PyObject *self, PyObject *args UNUSED)
 {
     PyObject *copy;
 
-    copy = _PyObject_CallNoArg((PyObject *)&PyDecContext_Type);
+    copy = PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL);
     if (copy == NULL) {
         return NULL;
     }
