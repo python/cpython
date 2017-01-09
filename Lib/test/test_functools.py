@@ -1306,6 +1306,16 @@ class TestLRU:
         self.assertEqual(fib.cache_info(),
             self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0))
 
+    def test_kwargs_order(self):
+        # PEP 468: Preserving Keyword Argument Order
+        @self.module.lru_cache(maxsize=10)
+        def f(**kwargs):
+            return list(kwargs.items())
+        self.assertEqual(f(a=1, b=2), [('a', 1), ('b', 2)])
+        self.assertEqual(f(b=2, a=1), [('b', 2), ('a', 1)])
+        self.assertEqual(f.cache_info(),
+            self.module._CacheInfo(hits=0, misses=2, maxsize=10, currsize=2))
+
     def test_lru_cache_decoration(self):
         def f(zomg: 'zomg_annotation'):
             """f doc string"""
