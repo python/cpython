@@ -374,23 +374,19 @@ is changed: any run of these characters is returned as a single token.  While
 this is short of a full parser for shells (which would be out of scope for the
 standard library, given the multiplicity of shells out there), it does allow
 you to perform processing of command lines more easily than you could
-otherwise.  To illustrate, you can see the difference in the following snippet::
+otherwise.  To illustrate, you can see the difference in the following snippet:
 
-    import shlex
+.. doctest::
+   :options: +NORMALIZE_WHITESPACE
 
-    for punct in (False, True):
-        if punct:
-            message = 'Old'
-        else:
-            message = 'New'
-        text = "a && b; c && d || e; f >'abc'; (def \"ghi\")"
-        s = shlex.shlex(text, punctuation_chars=punct)
-        print('%s: %s' % (message, list(s)))
-
-which prints out::
-
-    Old: ['a', '&', '&', 'b', ';', 'c', '&', '&', 'd', '|', '|', 'e', ';', 'f', '>', "'abc'", ';', '(', 'def', '"ghi"', ')']
-    New: ['a', '&&', 'b', ';', 'c', '&&', 'd', '||', 'e', ';', 'f', '>', "'abc'", ';', '(', 'def', '"ghi"', ')']
+    >>> import shlex
+    >>> text = "a && b; c && d || e; f >'abc'; (def \"ghi\")"
+    >>> list(shlex.shlex(text))
+    ['a', '&', '&', 'b', ';', 'c', '&', '&', 'd', '|', '|', 'e', ';', 'f', '>',
+    "'abc'", ';', '(', 'def', '"ghi"', ')']
+    >>> list(shlex.shlex(text, punctuation_chars=True))
+    ['a', '&&', 'b', ';', 'c', '&&', 'd', '||', 'e', ';', 'f', '>', "'abc'",
+    ';', '(', 'def', '"ghi"', ')']
 
 Of course, tokens will be returned which are not valid for shells, and you'll
 need to implement your own error checks on the returned tokens.
