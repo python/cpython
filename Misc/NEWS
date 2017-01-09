@@ -47,6 +47,10 @@ Library
 - Issue #28961: Fix unittest.mock._Call helper: don't ignore the name parameter
   anymore. Patch written by Jiajun Huang.
 
+- Issue #29203:  functools.lru_cache() now respects PEP 468 and preserves
+  the order of keyword arguments.  f(a=1, b=2) is now cached separately
+  from f(b=2, a=1) since both calls could potentially give different results.
+
 - Issue #15812: inspect.getframeinfo() now correctly shows the first line of
   a context.  Patch by Sam Breese.
 
