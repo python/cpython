@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #29142: In urllib.request, suffixes in no_proxy environment variable with
+  leading dots could match related hostnames again (e.g. .b.c matches a.b.c).
+  Patch by Milan Oberkirch.
 
 What's New in Python 3.5.3 release candidate 1?
 ===============================================
