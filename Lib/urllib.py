@@ -1427,6 +1427,7 @@ def proxy_bypass_environment(host, proxies=None):
     no_proxy_list = [proxy.strip() for proxy in no_proxy.split(',')]
     for name in no_proxy_list:
         if name:
+            name = name.lstrip('.')  # ignore leading dots
             name = re.escape(name)
             pattern = r'(.+\.)?%s$' % name
             if (re.match(pattern, hostonly, re.I)

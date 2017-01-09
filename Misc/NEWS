@@ -23,6 +23,10 @@ Extension Modules
 Library
 -------
 
+- Issue #29142: In urllib, suffixes in no_proxy environment variable with
+  leading dots could match related hostnames again (e.g. .b.c matches a.b.c).
+  Patch by Milan Oberkirch.
+
 - Issue #29094: Offsets in a ZIP file created with extern file object and mode
   "w" now are relative to the start of the file.
 
