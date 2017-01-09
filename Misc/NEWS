@@ -44,6 +44,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #29142: In urllib.request, suffixes in no_proxy environment variable with
+  leading dots could match related hostnames again (e.g. .b.c matches a.b.c).
+  Patch by Milan Oberkirch.
+
 - Issue #28961: Fix unittest.mock._Call helper: don't ignore the name parameter
   anymore. Patch written by Jiajun Huang.
 
