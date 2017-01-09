@@ -704,8 +704,8 @@ static PyTypeObject lru_cache_type;
 static PyObject *
 lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
 {
-    PyObject *key, *sorted_items;
-    Py_ssize_t key_size, pos, key_pos;
+    PyObject *key, *keyword, *value;
+    Py_ssize_t key_size, pos, key_pos, kwds_size;
 
     /* short path, key will match args anyway, which is a tuple */
     if (!typed && !kwds) {
@@ -713,28 +713,18 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
         return args;
     }
 
-    if (kwds && PyDict_GET_SIZE(kwds) > 0) {
-        sorted_items = PyDict_Items(kwds);
-        if (!sorted_items)
-            return NULL;
-        if (PyList_Sort(sorted_items) < 0) {
-            Py_DECREF(sorted_items);
-            return NULL;
-        }
-    } else
-        sorted_items = NULL;
+    kwds_size = kwds ? PyDict_GET_SIZE(kwds) : 0;
+    assert(kwds_size >= 0);
 
     key_size = PyTuple_GET_SIZE(args);
-    if (sorted_items)
-        key_size += PyList_GET_SIZE(sorted_items);
+    if (kwds_size)
+        key_size += kwds_size * 2 + 1;
     if (typed)
-        key_size *= 2;
-    if (sorted_items)
-        key_size++;
+        key_size += PyTuple_GET_SIZE(args) + kwds_size;
 
     key = PyTuple_New(key_size);
     if (key == NULL)
-        goto done;
+        return NULL;
 
     key_pos = 0;
     for (pos = 0; pos < PyTuple_GET_SIZE(args); ++pos) {
@@ -742,14 +732,16 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
         Py_INCREF(item);
         PyTuple_SET_ITEM(key, key_pos++, item);
     }
-    if (sorted_items) {
+    if (kwds_size) {
         Py_INCREF(kwd_mark);
         PyTuple_SET_ITEM(key, key_pos++, kwd_mark);
-        for (pos = 0; pos < PyList_GET_SIZE(sorted_items); ++pos) {
-            PyObject *item = PyList_GET_ITEM(sorted_items, pos);
-            Py_INCREF(item);
-            PyTuple_SET_ITEM(key, key_pos++, item);
+        for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
+            Py_INCREF(keyword);
+            PyTuple_SET_ITEM(key, key_pos++, keyword);
+            Py_INCREF(value);
+            PyTuple_SET_ITEM(key, key_pos++, value);
         }
+        assert(key_pos == PyTuple_GET_SIZE(args) + kwds_size * 2 + 1);
     }
     if (typed) {
         for (pos = 0; pos < PyTuple_GET_SIZE(args); ++pos) {
@@ -757,20 +749,15 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
             Py_INCREF(item);
             PyTuple_SET_ITEM(key, key_pos++, item);
         }
-        if (sorted_items) {
-            for (pos = 0; pos < PyList_GET_SIZE(sorted_items); ++pos) {
-                PyObject *tp_items = PyList_GET_ITEM(sorted_items, pos);
-                PyObject *item = (PyObject *)Py_TYPE(PyTuple_GET_ITEM(tp_items, 1));
+        if (kwds_size) {
+            for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
+                PyObject *item = (PyObject *)Py_TYPE(value);
                 Py_INCREF(item);
                 PyTuple_SET_ITEM(key, key_pos++, item);
             }
         }
     }
     assert(key_pos == key_size);
-
-done:
-    if (sorted_items)
-        Py_DECREF(sorted_items);
     return key;
 }
 
