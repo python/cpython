@@ -709,12 +709,6 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
 
     /* short path, key will match args anyway, which is a tuple */
     if (!typed && !kwds) {
-        if (PyTuple_GET_SIZE(args) == 1) {
-            /* Save space and improve speed by unwrapping 1-tuples */
-            key = PyTuple_GET_ITEM(args, 0);
-            Py_INCREF(key);
-            return key;
-        }
         Py_INCREF(args);
         return args;
     }
