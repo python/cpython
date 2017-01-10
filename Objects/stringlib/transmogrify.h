@@ -261,7 +261,7 @@ stringlib_replace_interleave(PyObject *self,
     assert(count > 0);
     if (to_len > (PY_SSIZE_T_MAX - self_len) / count) {
         PyErr_SetString(PyExc_OverflowError,
-                        "replace bytes are too long");
+                        "replace bytes is too long");
         return NULL;
     }
     result_len = count * to_len + self_len;
