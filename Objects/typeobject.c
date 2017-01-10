@@ -1425,9 +1425,9 @@ _PyObject_LookupSpecial(PyObject *self, _Py_Identifier *attrid)
    as lookup_method to cache the interned name string object. */
 
 static PyObject *
-call_method(PyObject *obj, _Py_Identifier *name, ...)
+call_method(PyObject *obj, _Py_Identifier *name,
+            PyObject **args, Py_ssize_t nargs)
 {
-    va_list va;
     PyObject *func, *retval;
 
     func = lookup_maybe(obj, name);
@@ -1437,10 +1437,7 @@ call_method(PyObject *obj, _Py_Identifier *name, ...)
         return NULL;
     }
 
-    va_start(va, name);
-    retval = _PyObject_VaCallFunctionObjArgs(func, va);
-    va_end(va);
-
+    retval = _PyObject_FastCall(func, args, nargs);
     Py_DECREF(func);
 
     return retval;
@@ -1449,9 +1446,9 @@ call_method(PyObject *obj, _Py_Identifier *name, ...)
 /* Clone of call_method() that returns NotImplemented when the lookup fails. */
 
 static PyObject *
-call_maybe(PyObject *obj, _Py_Identifier *name, ...)
+call_maybe(PyObject *obj, _Py_Identifier *name,
+           PyObject **args, Py_ssize_t nargs)
 {
-    va_list va;
     PyObject *func, *retval;
 
     func = lookup_maybe(obj, name);
@@ -1461,10 +1458,7 @@ call_maybe(PyObject *obj, _Py_Identifier *name, ...)
         return NULL;
     }
 
-    va_start(va, name);
-    retval = _PyObject_VaCallFunctionObjArgs(func, va);
-    va_end(va);
-
+    retval = _PyObject_FastCall(func, args, nargs);
     Py_DECREF(func);
 
     return retval;
@@ -5701,15 +5695,16 @@ static PyObject * \
 FUNCNAME(PyObject *self) \
 { \
     _Py_static_string(id, OPSTR); \
-    return call_method(self, &id, NULL); \
+    return call_method(self, &id, NULL, 0); \
 }
 
 #define SLOT1(FUNCNAME, OPSTR, ARG1TYPE) \
 static PyObject * \
 FUNCNAME(PyObject *self, ARG1TYPE arg1) \
 { \
+    PyObject* stack[1] = {arg1}; \
     _Py_static_string(id, OPSTR); \
-    return call_method(self, &id, arg1, NULL); \
+    return call_method(self, &id, stack, 1); \
 }
 
 /* Boolean helper for SLOT1BINFULL().
@@ -5751,6 +5746,7 @@ method_is_overloaded(PyObject *left, PyObject *right, struct _Py_Identifier *nam
 static PyObject * \
 FUNCNAME(PyObject *self, PyObject *other) \
 { \
+    PyObject* stack[1]; \
     _Py_static_string(op_id, OPSTR); \
     _Py_static_string(rop_id, ROPSTR); \
     int do_other = Py_TYPE(self) != Py_TYPE(other) && \
@@ -5762,20 +5758,23 @@ FUNCNAME(PyObject *self, PyObject *other) \
         if (do_other && \
             PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self)) && \
             method_is_overloaded(self, other, &rop_id)) { \
-            r = call_maybe(other, &rop_id, self, NULL); \
+            stack[0] = self; \
+            r = call_maybe(other, &rop_id, stack, 1); \
             if (r != Py_NotImplemented) \
                 return r; \
             Py_DECREF(r); \
             do_other = 0; \
         } \
-        r = call_maybe(self, &op_id, other, NULL); \
+        stack[0] = other; \
+        r = call_maybe(self, &op_id, stack, 1); \
         if (r != Py_NotImplemented || \
             Py_TYPE(other) == Py_TYPE(self)) \
             return r; \
         Py_DECREF(r); \
     } \
     if (do_other) { \
-        return call_maybe(other, &rop_id, self, NULL); \
+        stack[0] = self; \
+        return call_maybe(other, &rop_id, stack, 1); \
     } \
     Py_RETURN_NOTIMPLEMENTED; \
 }
@@ -5786,7 +5785,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
 static Py_ssize_t
 slot_sq_length(PyObject *self)
 {
-    PyObject *res = call_method(self, &PyId___len__, NULL);
+    PyObject *res = call_method(self, &PyId___len__, NULL, 0);
     Py_ssize_t len;
 
     if (res == NULL)
@@ -5846,6 +5845,7 @@ error:
 static int
 slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
 {
+    PyObject *stack[2];
     PyObject *res;
     PyObject *index_obj;
 
@@ -5854,10 +5854,14 @@ slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
         return -1;
     }
 
-    if (value == NULL)
-        res = call_method(self, &PyId___delitem__, index_obj, NULL);
-    else
-        res = call_method(self, &PyId___setitem__, index_obj, value, NULL);
+    stack[0] = index_obj;
+    if (value == NULL) {
+        res = call_method(self, &PyId___delitem__, stack, 1);
+    }
+    else {
+        stack[1] = value;
+        res = call_method(self, &PyId___setitem__, stack, 2);
+    }
     Py_DECREF(index_obj);
 
     if (res == NULL) {
@@ -5905,12 +5909,17 @@ SLOT1(slot_mp_subscript, "__getitem__", PyObject *)
 static int
 slot_mp_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
 {
+    PyObject *stack[2];
     PyObject *res;
 
-    if (value == NULL)
-        res = call_method(self, &PyId___delitem__, key, NULL);
-    else
-        res = call_method(self, &PyId___setitem__, key, value, NULL);
+    stack[0] = key;
+    if (value == NULL) {
+        res = call_method(self, &PyId___delitem__, stack, 1);
+    }
+    else {
+        stack[1] = value;
+        res = call_method(self, &PyId___setitem__, stack, 2);
+    }
 
     if (res == NULL)
         return -1;
@@ -5942,7 +5951,8 @@ slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
        slot_nb_power, so check before calling self.__pow__. */
     if (Py_TYPE(self)->tp_as_number != NULL &&
         Py_TYPE(self)->tp_as_number->nb_power == slot_nb_power) {
-        return call_method(self, &PyId___pow__, other, modulus, NULL);
+        PyObject* stack[2] = {other, modulus};
+        return call_method(self, &PyId___pow__, stack, 2);
     }
     Py_RETURN_NOTIMPLEMENTED;
 }
@@ -6009,7 +6019,7 @@ static PyObject *
 slot_nb_index(PyObject *self)
 {
     _Py_IDENTIFIER(__index__);
-    return call_method(self, &PyId___index__, NULL);
+    return call_method(self, &PyId___index__, NULL, 0);
 }
 
 
@@ -6031,8 +6041,9 @@ SLOT1(slot_nb_inplace_remainder, "__imod__", PyObject *)
 static PyObject *
 slot_nb_inplace_power(PyObject *self, PyObject * arg1, PyObject *arg2)
 {
+    PyObject *stack[1] = {arg1};
     _Py_IDENTIFIER(__ipow__);
-    return call_method(self, &PyId___ipow__, arg1, NULL);
+    return call_method(self, &PyId___ipow__, stack, 1);
 }
 SLOT1(slot_nb_inplace_lshift, "__ilshift__", PyObject *)
 SLOT1(slot_nb_inplace_rshift, "__irshift__", PyObject *)
@@ -6153,7 +6164,8 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 slot_tp_getattro(PyObject *self, PyObject *name)
 {
-    return call_method(self, &PyId___getattribute__, name, NULL);
+    PyObject *stack[1] = {name};
+    return call_method(self, &PyId___getattribute__, stack, 1);
 }
 
 static PyObject *
@@ -6220,14 +6232,19 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 static int
 slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 {
+    PyObject *stack[2];
     PyObject *res;
     _Py_IDENTIFIER(__delattr__);
     _Py_IDENTIFIER(__setattr__);
 
-    if (value == NULL)
-        res = call_method(self, &PyId___delattr__, name, NULL);
-    else
-        res = call_method(self, &PyId___setattr__, name, value, NULL);
+    stack[0] = name;
+    if (value == NULL) {
+        res = call_method(self, &PyId___delattr__, stack, 1);
+    }
+    else {
+        stack[1] = value;
+        res = call_method(self, &PyId___setattr__, stack, 2);
+    }
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -6295,7 +6312,7 @@ static PyObject *
 slot_tp_iternext(PyObject *self)
 {
     _Py_IDENTIFIER(__next__);
-    return call_method(self, &PyId___next__, NULL);
+    return call_method(self, &PyId___next__, NULL, 0);
 }
 
 static PyObject *
@@ -6323,14 +6340,19 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 static int
 slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
 {
+    PyObject* stack[2];
     PyObject *res;
     _Py_IDENTIFIER(__delete__);
     _Py_IDENTIFIER(__set__);
 
-    if (value == NULL)
-        res = call_method(self, &PyId___delete__, target, NULL);
-    else
-        res = call_method(self, &PyId___set__, target, value, NULL);
+    stack[0] = target;
+    if (value == NULL) {
+        res = call_method(self, &PyId___delete__, stack, 1);
+    }
+    else {
+        stack[1] = value;
+        res = call_method(self, &PyId___set__, stack, 2);
+    }
     if (res == NULL)
         return -1;
     Py_DECREF(res);

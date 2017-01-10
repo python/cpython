@@ -323,14 +323,6 @@ PyAPI_FUNC(PyObject *) _PyObject_CallMethodId_SizeT(PyObject *obj,
 PyAPI_FUNC(PyObject *) PyObject_CallFunctionObjArgs(PyObject *callable,
                                                     ...);
 
-#ifndef Py_LIMITED_API
-/* Similar PyObject_CallFunctionObjArgs(), but pass positional arguments
-   as a va_list: list of PyObject* object. */
-PyAPI_FUNC(PyObject *) _PyObject_VaCallFunctionObjArgs(
-    PyObject *callable,
-    va_list vargs);
-#endif
-
 /* Call the method named 'name' of object 'obj' with a variable number of
    C arguments.  The C arguments are provided as PyObject* values, terminated
    by NULL.
