@@ -36,7 +36,7 @@ extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
 typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
-static PyObject * call_function(PyObject ***, Py_ssize_t, PyObject *);
+Py_LOCAL_INLINE(PyObject *) call_function(PyObject ***, Py_ssize_t, PyObject *);
 static PyObject * fast_function(PyObject *, PyObject **, Py_ssize_t, PyObject *);
 static PyObject * do_call_core(PyObject *, PyObject *, PyObject *);
 
@@ -4829,7 +4829,9 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
     x = call; \
     }
 
-static PyObject* _Py_HOT_FUNCTION
+/* Issue #29227: Inline call_function() into _PyEval_EvalFrameDefault()
+   to reduce the stack consumption. */
+Py_LOCAL_INLINE(PyObject *) _Py_HOT_FUNCTION
 call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
 {
     PyObject **pfunc = (*pp_stack) - oparg - 1;
