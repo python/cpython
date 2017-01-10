@@ -9752,7 +9752,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
     use_memcpy = 1;
 #endif
     for (i = 0; i < seqlen; i++) {
-        const Py_ssize_t old_sz = sz;
+        size_t add_sz;
         item = items[i];
         if (!PyUnicode_Check(item)) {
             PyErr_Format(PyExc_TypeError,
@@ -9763,16 +9763,18 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         }
         if (PyUnicode_READY(item) == -1)
             goto onError;
-        sz += PyUnicode_GET_LENGTH(item);
+        add_sz = PyUnicode_GET_LENGTH(item);
         item_maxchar = PyUnicode_MAX_CHAR_VALUE(item);
         maxchar = Py_MAX(maxchar, item_maxchar);
-        if (i != 0)
-            sz += seplen;
-        if (sz < old_sz || sz > PY_SSIZE_T_MAX) {
+        if (i != 0) {
+            add_sz += seplen;
+        }
+        if (add_sz > (size_t)(PY_SSIZE_T_MAX - sz)) {
             PyErr_SetString(PyExc_OverflowError,
                             "join() result is too long for a Python string");
             goto onError;
         }
+        sz += add_sz;
         if (use_memcpy && last_obj != NULL) {
             if (PyUnicode_KIND(last_obj) != PyUnicode_KIND(item))
                 use_memcpy = 0;
@@ -10418,7 +10420,7 @@ replace(PyObject *self, PyObject *str1,
             u = unicode_empty;
             goto done;
         }
-        if (new_size > (PY_SSIZE_T_MAX >> (rkind-1))) {
+        if (new_size > (PY_SSIZE_T_MAX / rkind)) {
             PyErr_SetString(PyExc_OverflowError,
                             "replace string is too long");
             goto error;
