@@ -104,7 +104,7 @@ random UUID.
 .. attribute:: UUID.variant
 
    The UUID variant, which determines the internal layout of the UUID. This will be
-   one of the integer constants :const:`RESERVED_NCS`, :const:`RFC_4122`,
+   one of the constants :const:`RESERVED_NCS`, :const:`RFC_4122`,
    :const:`RESERVED_MICROSOFT`, or :const:`RESERVED_FUTURE`.
 
 
