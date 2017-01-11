@@ -309,6 +309,12 @@ class BuiltinLevelsTest(BaseTest):
         self.assertEqual(logging.getLevelName('INFO'), logging.INFO)
         self.assertEqual(logging.getLevelName(logging.INFO), 'INFO')
 
+    def test_regression_29220(self):
+        """See issue #29220 for more information."""
+        logging.addLevelName(logging.INFO, '')
+        self.addCleanup(logging.addLevelName, logging.INFO, 'INFO')
+        self.assertEqual(logging.getLevelName(logging.INFO), '')
+
     def test_issue27935(self):
         fatal = logging.getLevelName('FATAL')
         self.assertEqual(fatal, logging.FATAL)
