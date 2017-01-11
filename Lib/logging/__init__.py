@@ -133,11 +133,12 @@ def getLevelName(level):
     """
     # See Issues #22386, #27937 and #29220 for why it's this way
     result = _levelToName.get(level)
-    if result is None:
-        result = _nameToLevel.get(level)
-    if result is None:
-        result = "Level %s" % level
-    return result
+    if result is not None:
+        return result
+    result = _nameToLevel.get(level)
+    if result is not None:
+        return result
+    return "Level %s" % level
 
 def addLevelName(level, levelName):
     """
