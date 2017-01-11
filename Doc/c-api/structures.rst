@@ -150,9 +150,8 @@ specific C type of the *self* object.
 The :attr:`ml_flags` field is a bitfield which can include the following flags.
 The individual flags indicate either a calling convention or a binding
 convention.  Of the calling convention flags, only :const:`METH_VARARGS` and
-:const:`METH_KEYWORDS` can be combined (but note that :const:`METH_KEYWORDS`
-alone is equivalent to ``METH_VARARGS | METH_KEYWORDS``). Any of the calling
-convention flags can be combined with a binding flag.
+:const:`METH_KEYWORDS` can be combined. Any of the calling convention flags
+can be combined with a binding flag.
 
 
 .. data:: METH_VARARGS
@@ -169,7 +168,7 @@ convention flags can be combined with a binding flag.
 
    Methods with these flags must be of type :c:type:`PyCFunctionWithKeywords`.
    The function expects three parameters: *self*, *args*, and a dictionary of
-   all the keyword arguments.  The flag is typically combined with
+   all the keyword arguments.  The flag must be combined with
    :const:`METH_VARARGS`, and the parameters are typically processed using
    :c:func:`PyArg_ParseTupleAndKeywords`.
 
