@@ -507,7 +507,7 @@ extern "C" {
  * locality.
  *
  * Usage:
- *    int _Py_HOT_FUNCTION x() { return 3; }
+ *    int _Py_HOT_FUNCTION x(void) { return 3; }
  *
  * Issue #28618: This attribute must not be abused, otherwise it can have a
  * negative effect on performance. Only the functions were Python spend most of
@@ -519,6 +519,19 @@ extern "C" {
 #define _Py_HOT_FUNCTION __attribute__((hot))
 #else
 #define _Py_HOT_FUNCTION
+#endif
+
+/* _Py_NO_INLINE
+ * Disable inlining on a function. For example, it helps to reduce the C stack
+ * consumption.
+ *
+ * Usage:
+ *    int _Py_NO_INLINE x(void) { return 3; }
+ */
+#if defined(__GNUC__) || defined(__clang__)
+#  define _Py_NO_INLINE __attribute__((noinline))
+#else
+#  define _Py_NO_INLINE
 #endif
 
 /**************************************************************************
