@@ -2256,7 +2256,9 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
     return _Py_CheckFunctionResult(callable, result, NULL);
 }
 
-PyObject*
+/* Issue #29234: Inlining _PyStack_AsTuple() into callers increases their
+   stack consumption, Disable inlining to optimize the stack consumption. */
+PyObject* _Py_NO_INLINE
 _PyStack_AsTuple(PyObject **stack, Py_ssize_t nargs)
 {
     PyObject *args;
