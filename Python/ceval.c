@@ -4017,7 +4017,8 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
             }
         }
 
-        if (j >= total_args && kwdict == NULL) {
+        assert(j >= total_args);
+        if (kwdict == NULL) {
             PyErr_Format(PyExc_TypeError,
                          "%U() got an unexpected keyword argument '%S'",
                          co->co_name, keyword);
