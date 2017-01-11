@@ -168,7 +168,7 @@ can be combined with a binding flag.
 
    Methods with these flags must be of type :c:type:`PyCFunctionWithKeywords`.
    The function expects three parameters: *self*, *args*, and a dictionary of
-   all the keyword arguments.  The flag is typically combined with
+   all the keyword arguments.  The flag must be combined with
    :const:`METH_VARARGS`, and the parameters are typically processed using
    :c:func:`PyArg_ParseTupleAndKeywords`.
 
