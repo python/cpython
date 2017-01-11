@@ -319,6 +319,14 @@ class BuiltinLevelsTest(BaseTest):
         fatal = logging.getLevelName('FATAL')
         self.assertEqual(fatal, logging.FATAL)
 
+    def test_regression_29220(self):
+        """See issue #29220 for more information."""
+        logging.addLevelName(logging.INFO, '')
+        self.addCleanup(logging.addLevelName, logging.INFO, 'INFO')
+        self.assertEqual(logging.getLevelName(logging.INFO), '')
+        self.assertEqual(logging.getLevelName(logging.NOTSET), 'NOTSET')
+        self.assertEqual(logging.getLevelName('NOTSET'), logging.NOTSET)
+
 class BasicFilterTest(BaseTest):
 
     """Test the bundled Filter class."""
