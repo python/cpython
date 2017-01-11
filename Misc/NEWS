@@ -1233,7 +1233,7 @@ Build
 
 - Issue #26307: The profile-opt build now applies PGO to the built-in modules.
 
-- Issue #26539: Add the --with-optimizations flag to turn on LTO and PGO build
+- Issue #26359: Add the --with-optimizations flag to turn on LTO and PGO build
   support when available.
 
 - Issue #27917: Set platform triplets for Android builds.
