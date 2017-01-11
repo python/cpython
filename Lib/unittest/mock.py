@@ -238,6 +238,9 @@ class _SentinelObject(object):
     def __repr__(self):
         return 'sentinel.%s' % self.name
 
+    def __reduce__(self):
+        return 'sentinel.%s' % self.name
+
 
 class _Sentinel(object):
     """Access attributes to return a named object, usable as a sentinel."""
@@ -249,6 +252,9 @@ class _Sentinel(object):
             # Without this help(unittest.mock) raises an exception
             raise AttributeError
         return self._sentinels.setdefault(name, _SentinelObject(name))
+
+    def __reduce__(self):
+        return 'sentinel'
 
 
 sentinel = _Sentinel()

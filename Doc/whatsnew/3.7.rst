@@ -93,6 +93,13 @@ New Modules
 Improved Modules
 ================
 
+unittest.mock
+-------------
+
+The :const:`~unittest.mock.sentinel` attributes now preserve their identity
+when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`.
+(Contributed by Serhiy Storchaka in :issue:`20804`.)
+
 
 Optimizations
 =============
