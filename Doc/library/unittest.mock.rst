@@ -1795,6 +1795,9 @@ sentinel
     the same attribute will always return the same object. The objects
     returned have a sensible repr so that test failure messages are readable.
 
+    The ``sentinel`` attributes don't preserve their identity when they are
+    :mod:`copied <copy>` or :mod:`pickled <pickle>`.
+
 Sometimes when testing you need to test that a specific object is passed as an
 argument to another method, or returned. It can be common to create named
 sentinel objects to test this. :data:`sentinel` provides a convenient way of
