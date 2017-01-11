@@ -1821,7 +1821,7 @@ Build and C API Changes
 
 * The ``--enable-optimizations`` configure flag has been added. Turning it on
   will activate expensive optimizations like PGO.
-  (Original patch by Alecsandru Patrascu of Intel in :issue:`26539`.)
+  (Original patch by Alecsandru Patrascu of Intel in :issue:`26359`.)
 
 * The :term:`GIL <global interpreter lock>` must now be held when allocator
   functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
