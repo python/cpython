@@ -212,6 +212,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #28969: Fixed race condition in C implementation of functools.lru_cache.
+  KeyError could be raised when cached function with full cache was
+  simultaneously called from differen threads with the same uncached arguments.
+
 - Issue #20804: The unittest.mock.sentinel attributes now preserve their
   identity when they are copied or pickled.
 
