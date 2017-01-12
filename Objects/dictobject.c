@@ -1475,9 +1475,8 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
 
 /* Internal version of dict.pop(). */
 PyObject *
-_PyDict_Pop(PyDictObject *mp, PyObject *key, PyObject *deflt)
+_PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *deflt)
 {
-    Py_hash_t hash;
     PyObject *old_value, *old_key;
     PyDictKeyEntry *ep;
     PyObject **value_addr;
@@ -1489,12 +1488,6 @@ _PyDict_Pop(PyDictObject *mp, PyObject *key, PyObject *deflt)
         }
         _PyErr_SetKeyError(key);
         return NULL;
-    }
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return NULL;
     }
     ep = (mp->ma_keys->dk_lookup)(mp, key, hash, &value_addr);
     if (ep == NULL)
@@ -1518,6 +1511,28 @@ _PyDict_Pop(PyDictObject *mp, PyObject *key, PyObject *deflt)
         Py_DECREF(old_key);
     }
     return old_value;
+}
+
+PyObject *
+_PyDict_Pop(PyDictObject *mp, PyObject *key, PyObject *deflt)
+{
+    Py_hash_t hash;
+
+    if (mp->ma_used == 0) {
+        if (deflt) {
+            Py_INCREF(deflt);
+            return deflt;
+        }
+        _PyErr_SetKeyError(key);
+        return NULL;
+    }
+    if (!PyUnicode_CheckExact(key) ||
+        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+        hash = PyObject_Hash(key);
+        if (hash == -1)
+            return NULL;
+    }
+    return _PyDict_Pop_KnownHash(mp, key, hash, deflt);
 }
 
 /* Internal version of dict.from_keys().  It is subclass-friendly. */
