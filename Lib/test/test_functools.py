@@ -7,6 +7,7 @@ import pickle
 from random import choice
 import sys
 from test import support
+import time
 import unittest
 from weakref import proxy
 import contextlib
@@ -1400,6 +1401,20 @@ class TestLRU:
                 stop.wait(10)
                 pause.reset()
                 self.assertEqual(f.cache_info(), (0, (i+1)*n, m*n, i+1))
+
+    @unittest.skipUnless(threading, 'This test requires threading.')
+    def test_lru_cache_threaded3(self):
+        @self.module.lru_cache(maxsize=2)
+        def f(x):
+            time.sleep(.01)
+            return 3 * x
+        def test(i, x):
+            with self.subTest(thread=i):
+                self.assertEqual(f(x), 3 * x, i)
+        threads = [threading.Thread(target=test, args=(i, v))
+                   for i, v in enumerate([1, 2, 2, 3, 2])]
+        with support.start_threads(threads):
+            pass
 
     def test_need_for_rlock(self):
         # This will deadlock on an LRU cache that uses a regular lock
