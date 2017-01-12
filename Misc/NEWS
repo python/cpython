@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #29006: Revert change from issue #10513 for making sqlite more liable to
+  emit "database table is locked" errors.
+
 - Issue #29094: Offsets in a ZIP file created with extern file object and mode
   "w" now are relative to the start of the file.
 
@@ -224,9 +227,6 @@ Library
   creates not a cursor.  Patch by Xiang Zhang.
 
 - Issue #19884: Avoid spurious output on OS X with Gnu Readline.
-
-- Issue #10513: Fix a regression in Connection.commit().  Statements should
-  not be reset after a commit.
 
 - Issue #2466: posixpath.ismount now correctly recognizes mount points which
   the user does not have permission to access.

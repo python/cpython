@@ -467,6 +467,7 @@ PyObject* pysqlite_connection_commit(pysqlite_Connection* self, PyObject* args)
     }
 
     if (self->inTransaction) {
+        pysqlite_do_all_statements(self, ACTION_RESET, 0);
 
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_prepare(self->db, "COMMIT", -1, &statement, &tail);
