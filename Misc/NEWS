@@ -10,13 +10,30 @@ What's New in Python 2.7.14?
 Core and Builtins
 -----------------
 
+- Issue #29145: Fix overflow checks in string, bytearray and unicode.
+  Patch by jan matejek and Xiang Zhang.
+
 - Issue #28932: Do not include <sys/random.h> if it does not exist.
+
+Extension Modules
+-----------------
+
+- Issue #29169: Update zlib to 1.2.10.
 
 Library
 -------
 
 - Issue #29006: Revert change from issue #10513 for making sqlite more liable to
   emit "database table is locked" errors.
+
+- Issue #29188: Support glibc 2.24 on Linux: don't use getentropy() function
+  but read from /dev/urandom to get random bytes, for example in os.urandom().
+  On Linux, getentropy() is implemented which getrandom() is blocking mode,
+  whereas os.urandom() should not block.
+
+- Issue #29142: In urllib, suffixes in no_proxy environment variable with
+  leading dots could match related hostnames again (e.g. .b.c matches a.b.c).
+  Patch by Milan Oberkirch.
 
 - Issue #29094: Offsets in a ZIP file created with extern file object and mode
   "w" now are relative to the start of the file.
@@ -44,6 +61,12 @@ Library
 
 - Issue #28925: cPickle now correctly propagates errors when unpickle instances
   of old-style classes.
+
+Build
+-----
+
+- Issue #28768: Fix implicit declaration of function _setmode. Patch by
+  Masayuki Yamamoto
 
 
 What's New in Python 2.7.13

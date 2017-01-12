@@ -10,6 +10,9 @@
 #endif
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif

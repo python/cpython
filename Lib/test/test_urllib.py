@@ -185,11 +185,12 @@ class ProxyTests(unittest.TestCase):
     def test_proxy_bypass_environment_host_match(self):
         bypass = urllib.proxy_bypass_environment
         self.env.set('NO_PROXY',
-            'localhost, anotherdomain.com, newdomain.com:1234')
+                     'localhost, anotherdomain.com, newdomain.com:1234, .d.o.t')
         self.assertTrue(bypass('localhost'))
         self.assertTrue(bypass('LocalHost'))                 # MixedCase
         self.assertTrue(bypass('LOCALHOST'))                 # UPPERCASE
         self.assertTrue(bypass('newdomain.com:1234'))
+        self.assertTrue(bypass('foo.d.o.t'))                 # issue 29142
         self.assertTrue(bypass('anotherdomain.com:8888'))
         self.assertTrue(bypass('www.newdomain.com:1234'))
         self.assertFalse(bypass('prelocalhost'))
