@@ -44,6 +44,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #28969: Fixed race condition in C implementation of functools.lru_cache.
+  KeyError could be raised when cached function with full cache was
+  simultaneously called from differen threads with the same uncached arguments.
+
 - Issue #29142: In urllib.request, suffixes in no_proxy environment variable with
   leading dots could match related hostnames again (e.g. .b.c matches a.b.c).
   Patch by Milan Oberkirch.
