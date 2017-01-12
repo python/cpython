@@ -23,6 +23,9 @@ Extension Modules
 Library
 -------
 
+- Issue #29082: Fixed loading libraries in ctypes by unicode names on Windows.
+  Original patch by Chi Hsuan Yen.
+
 - Issue #29006: Revert change from issue #10513 for making sqlite more liable to
   emit "database table is locked" errors.
 

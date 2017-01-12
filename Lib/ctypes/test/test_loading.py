@@ -3,6 +3,7 @@ import sys, unittest
 import os
 from ctypes.util import find_library
 from ctypes.test import is_resource_enabled
+import test.test_support as support
 
 libc_name = None
 if os.name == "nt":
@@ -26,6 +27,12 @@ class LoaderTest(unittest.TestCase):
         CDLL(libc_name)
         CDLL(os.path.basename(libc_name))
         self.assertRaises(OSError, CDLL, self.unknowndll)
+
+    @support.requires_unicode
+    @unittest.skipUnless(libc_name is not None, 'could not find libc')
+    def test_load_unicode(self):
+        CDLL(unicode(libc_name))
+        self.assertRaises(OSError, CDLL, unicode(self.unknowndll))
 
     @unittest.skipUnless(libc_name is not None, 'could not find libc')
     @unittest.skipUnless(libc_name is not None and

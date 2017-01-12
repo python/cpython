@@ -1281,7 +1281,7 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     PyObject *nameobj;
     PyObject *ignored;
     HMODULE hMod;
-    if (!PyArg_ParseTuple(args, "S|O:LoadLibrary", &nameobj, &ignored))
+    if (!PyArg_ParseTuple(args, "O|O:LoadLibrary", &nameobj, &ignored))
         return NULL;
 #ifdef _UNICODE
     name = alloca((PyString_Size(nameobj) + 1) * sizeof(WCHAR));
