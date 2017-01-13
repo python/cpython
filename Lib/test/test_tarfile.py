@@ -1145,33 +1145,6 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         finally:
             tar.close()
 
-    def test_exclude(self):
-        tempdir = os.path.join(TEMPDIR, "exclude")
-        os.mkdir(tempdir)
-        try:
-            for name in ("foo", "bar", "baz"):
-                name = os.path.join(tempdir, name)
-                support.create_empty_file(name)
-
-            exclude = os.path.isfile
-
-            tar = tarfile.open(tmpname, self.mode, encoding="iso8859-1")
-            try:
-                with support.check_warnings(("use the filter argument",
-                                             DeprecationWarning)):
-                    tar.add(tempdir, arcname="empty_dir", exclude=exclude)
-            finally:
-                tar.close()
-
-            tar = tarfile.open(tmpname, "r")
-            try:
-                self.assertEqual(len(tar.getmembers()), 1)
-                self.assertEqual(tar.getnames()[0], "empty_dir")
-            finally:
-                tar.close()
-        finally:
-            support.rmtree(tempdir)
-
     def test_filter(self):
         tempdir = os.path.join(TEMPDIR, "filter")
         os.mkdir(tempdir)

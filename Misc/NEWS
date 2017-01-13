@@ -212,6 +212,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #29210:  Removed support of deprecated argument "exclude" in
+  tarfile.TarFile.add().
+
 - Issue #29219: Fixed infinite recursion in the repr of uninitialized
   ctypes.CDLL instances.
 
