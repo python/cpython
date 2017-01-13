@@ -1609,7 +1609,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
         if (open_dict == NULL || close_dict == NULL || empty_dict == NULL)
             return -1;
     }
-    if (Py_SIZE(dct) == 0)
+    if (PyDict_Size(dct) == 0)  /* Fast path */
         return _PyAccu_Accumulate(acc, empty_dict);
 
     if (s->markers != Py_None) {
