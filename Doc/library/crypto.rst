@@ -15,6 +15,5 @@ Here's an overview:
 .. toctree::
 
    hashlib.rst
-   hashlib-blake2.rst
    hmac.rst
    secrets.rst
