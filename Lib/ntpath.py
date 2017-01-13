@@ -15,7 +15,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
            "ismount", "expanduser","expandvars","normpath","abspath",
-           "splitunc","curdir","pardir","sep","pathsep","defpath","altsep",
+           "curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
            "samefile", "sameopenfile", "samestat", "commonpath"]
 
@@ -167,28 +167,6 @@ def splitdrive(p):
         if normp[1:2] == colon:
             return p[:2], p[2:]
     return p[:0], p
-
-
-# Parse UNC paths
-def splitunc(p):
-    """Deprecated since Python 3.1.  Please use splitdrive() instead;
-    it now handles UNC paths.
-
-    Split a pathname into UNC mount point and relative path specifiers.
-
-    Return a 2-tuple (unc, rest); either part may be empty.
-    If unc is not empty, it has the form '//host/mount' (or similar
-    using backslashes).  unc+rest is always the input path.
-    Paths containing drive letters never have a UNC part.
-    """
-    import warnings
-    warnings.warn("ntpath.splitunc is deprecated, use ntpath.splitdrive instead",
-                  DeprecationWarning, 2)
-    drive, path = splitdrive(p)
-    if len(drive) == 2:
-         # Drive letter present
-        return p[:0], p
-    return drive, path
 
 
 # Split a path in head (everything up to the last '/') and tail (the
