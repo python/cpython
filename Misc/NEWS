@@ -212,6 +212,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #29193: A format string argument for string.Formatter.format()
+  is now positional-only.
+
 - Issue #29195: Removed support of deprecated undocumented keyword arguments
   in methods of regular expression objects.
 
