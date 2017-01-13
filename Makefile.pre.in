@@ -1244,7 +1244,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \
 		unittest unittest/test unittest/test/testmock \
-		venv venv/scripts venv/scripts/posix \
+		venv venv/scripts venv/scripts/common venv/scripts/posix \
 		curses pydoc_data
 libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
