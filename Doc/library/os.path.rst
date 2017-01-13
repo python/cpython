@@ -453,19 +453,6 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: splitunc(path)
-
-   .. deprecated:: 3.1
-      Use *splitdrive* instead.
-
-   Split the pathname *path* into a pair ``(unc, rest)`` so that *unc* is the UNC
-   mount point (such as ``r'\\host\mount'``), if present, and *rest* the rest of
-   the path (such as  ``r'\path\file.ext'``).  For paths containing drive letters,
-   *unc* will always be the empty string.
-
-   Availability:  Windows.
-
-
 .. data:: supports_unicode_filenames
 
    ``True`` if arbitrary Unicode strings can be used as file names (within limitations

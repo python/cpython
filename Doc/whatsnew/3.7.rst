@@ -142,6 +142,10 @@ API and Feature Removals
 * Removed support of the *exclude* argument in :meth:`tarfile.TarFile.add`.
   Use the *filter* argument instead.
 
+* The ``splitunc()`` function in the :mod:`ntpath` module was deprecated in
+  Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
+  function instead.
+
 
 Porting to Python 3.7
 =====================
