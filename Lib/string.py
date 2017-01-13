@@ -175,14 +175,8 @@ class Formatter:
         try:
             format_string, *args = args # allow the "format_string" keyword be passed
         except ValueError:
-            if 'format_string' in kwargs:
-                format_string = kwargs.pop('format_string')
-                import warnings
-                warnings.warn("Passing 'format_string' as keyword argument is "
-                              "deprecated", DeprecationWarning, stacklevel=2)
-            else:
-                raise TypeError("format() missing 1 required positional "
-                                "argument: 'format_string'") from None
+            raise TypeError("format() missing 1 required positional "
+                            "argument: 'format_string'") from None
         return self.vformat(format_string, args, kwargs)
 
     def vformat(self, format_string, args, kwargs):
