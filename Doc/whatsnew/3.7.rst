@@ -153,3 +153,10 @@ Changes in the Python API
 * A format string argument for :meth:`string.Formatter.format`
   is now :ref:`positional-only <positional-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`29193`.)
+
+* Attributes :attr:`~http.cookies.Morsel.key`,
+  :attr:`~http.cookies.Morsel.value` and
+  :attr:`~http.cookies.Morsel.coded_value` of class
+  :class:`http.cookies.Morsel` are now read-only.
+  Use the :meth:`~http.cookies.Morsel.set` method for setting them.
+  (Contributed by Serhiy Storchaka in :issue:`29192`.)
