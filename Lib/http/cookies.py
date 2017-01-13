@@ -138,12 +138,6 @@ _nulljoin = ''.join
 _semispacejoin = '; '.join
 _spacejoin = ' '.join
 
-def _warn_deprecated_setter(setter):
-    import warnings
-    msg = ('The .%s setter is deprecated. The attribute will be read-only in '
-           'future releases. Please use the set() method instead.' % setter)
-    warnings.warn(msg, DeprecationWarning, stacklevel=3)
-
 #
 # Define an exception visible to External modules
 #
@@ -303,28 +297,13 @@ class Morsel(dict):
     def key(self):
         return self._key
 
-    @key.setter
-    def key(self, key):
-        _warn_deprecated_setter('key')
-        self._key = key
-
     @property
     def value(self):
         return self._value
 
-    @value.setter
-    def value(self, value):
-        _warn_deprecated_setter('value')
-        self._value = value
-
     @property
     def coded_value(self):
         return self._coded_value
-
-    @coded_value.setter
-    def coded_value(self, coded_value):
-        _warn_deprecated_setter('coded_value')
-        self._coded_value = coded_value
 
     def __setitem__(self, K, V):
         K = K.lower()
@@ -366,14 +345,7 @@ class Morsel(dict):
     def isReservedKey(self, K):
         return K.lower() in self._reserved
 
-    def set(self, key, val, coded_val, LegalChars=_LegalChars):
-        if LegalChars != _LegalChars:
-            import warnings
-            warnings.warn(
-                'LegalChars parameter is deprecated, ignored and will '
-                'be removed in future versions.', DeprecationWarning,
-                stacklevel=2)
-
+    def set(self, key, val, coded_val):
         if key.lower() in self._reserved:
             raise CookieError('Attempt to set a reserved key %r' % (key,))
         if not _is_legal_key(key):
