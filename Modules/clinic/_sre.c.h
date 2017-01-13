@@ -63,7 +63,7 @@ exit:
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern_match__doc__,
-"match($self, /, string=None, pos=0, endpos=sys.maxsize, *, pattern=None)\n"
+"match($self, /, string, pos=0, endpos=sys.maxsize)\n"
 "--\n"
 "\n"
 "Matches zero or more characters at the beginning of the string.");
@@ -73,33 +73,30 @@ PyDoc_STRVAR(_sre_SRE_Pattern_match__doc__,
 
 static PyObject *
 _sre_SRE_Pattern_match_impl(PatternObject *self, PyObject *string,
-                            Py_ssize_t pos, Py_ssize_t endpos,
-                            PyObject *pattern);
+                            Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
 _sre_SRE_Pattern_match(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", "pos", "endpos", "pattern", NULL};
-    static _PyArg_Parser _parser = {"|Onn$O:match", _keywords, 0};
-    PyObject *string = NULL;
+    static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
+    static _PyArg_Parser _parser = {"O|nn:match", _keywords, 0};
+    PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
-    PyObject *pattern = NULL;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &string, &pos, &endpos, &pattern)) {
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    return_value = _sre_SRE_Pattern_match_impl(self, string, pos, endpos, pattern);
+    return_value = _sre_SRE_Pattern_match_impl(self, string, pos, endpos);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern_fullmatch__doc__,
-"fullmatch($self, /, string=None, pos=0, endpos=sys.maxsize, *,\n"
-"          pattern=None)\n"
+"fullmatch($self, /, string, pos=0, endpos=sys.maxsize)\n"
 "--\n"
 "\n"
 "Matches against all of the string");
@@ -109,33 +106,30 @@ PyDoc_STRVAR(_sre_SRE_Pattern_fullmatch__doc__,
 
 static PyObject *
 _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyObject *string,
-                                Py_ssize_t pos, Py_ssize_t endpos,
-                                PyObject *pattern);
+                                Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
 _sre_SRE_Pattern_fullmatch(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", "pos", "endpos", "pattern", NULL};
-    static _PyArg_Parser _parser = {"|Onn$O:fullmatch", _keywords, 0};
-    PyObject *string = NULL;
+    static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
+    static _PyArg_Parser _parser = {"O|nn:fullmatch", _keywords, 0};
+    PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
-    PyObject *pattern = NULL;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &string, &pos, &endpos, &pattern)) {
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    return_value = _sre_SRE_Pattern_fullmatch_impl(self, string, pos, endpos, pattern);
+    return_value = _sre_SRE_Pattern_fullmatch_impl(self, string, pos, endpos);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern_search__doc__,
-"search($self, /, string=None, pos=0, endpos=sys.maxsize, *,\n"
-"       pattern=None)\n"
+"search($self, /, string, pos=0, endpos=sys.maxsize)\n"
 "--\n"
 "\n"
 "Scan through string looking for a match, and return a corresponding match object instance.\n"
@@ -147,33 +141,30 @@ PyDoc_STRVAR(_sre_SRE_Pattern_search__doc__,
 
 static PyObject *
 _sre_SRE_Pattern_search_impl(PatternObject *self, PyObject *string,
-                             Py_ssize_t pos, Py_ssize_t endpos,
-                             PyObject *pattern);
+                             Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
 _sre_SRE_Pattern_search(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", "pos", "endpos", "pattern", NULL};
-    static _PyArg_Parser _parser = {"|Onn$O:search", _keywords, 0};
-    PyObject *string = NULL;
+    static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
+    static _PyArg_Parser _parser = {"O|nn:search", _keywords, 0};
+    PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
-    PyObject *pattern = NULL;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &string, &pos, &endpos, &pattern)) {
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    return_value = _sre_SRE_Pattern_search_impl(self, string, pos, endpos, pattern);
+    return_value = _sre_SRE_Pattern_search_impl(self, string, pos, endpos);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern_findall__doc__,
-"findall($self, /, string=None, pos=0, endpos=sys.maxsize, *,\n"
-"        source=None)\n"
+"findall($self, /, string, pos=0, endpos=sys.maxsize)\n"
 "--\n"
 "\n"
 "Return a list of all non-overlapping matches of pattern in string.");
@@ -183,25 +174,23 @@ PyDoc_STRVAR(_sre_SRE_Pattern_findall__doc__,
 
 static PyObject *
 _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
-                              Py_ssize_t pos, Py_ssize_t endpos,
-                              PyObject *source);
+                              Py_ssize_t pos, Py_ssize_t endpos);
 
 static PyObject *
 _sre_SRE_Pattern_findall(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", "pos", "endpos", "source", NULL};
-    static _PyArg_Parser _parser = {"|Onn$O:findall", _keywords, 0};
-    PyObject *string = NULL;
+    static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
+    static _PyArg_Parser _parser = {"O|nn:findall", _keywords, 0};
+    PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
-    PyObject *source = NULL;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &string, &pos, &endpos, &source)) {
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    return_value = _sre_SRE_Pattern_findall_impl(self, string, pos, endpos, source);
+    return_value = _sre_SRE_Pattern_findall_impl(self, string, pos, endpos);
 
 exit:
     return return_value;
@@ -275,7 +264,7 @@ exit:
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern_split__doc__,
-"split($self, /, string=None, maxsplit=0, *, source=None)\n"
+"split($self, /, string, maxsplit=0)\n"
 "--\n"
 "\n"
 "Split string by the occurrences of pattern.");
@@ -285,23 +274,22 @@ PyDoc_STRVAR(_sre_SRE_Pattern_split__doc__,
 
 static PyObject *
 _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
-                            Py_ssize_t maxsplit, PyObject *source);
+                            Py_ssize_t maxsplit);
 
 static PyObject *
 _sre_SRE_Pattern_split(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"string", "maxsplit", "source", NULL};
-    static _PyArg_Parser _parser = {"|On$O:split", _keywords, 0};
-    PyObject *string = NULL;
+    static const char * const _keywords[] = {"string", "maxsplit", NULL};
+    static _PyArg_Parser _parser = {"O|n:split", _keywords, 0};
+    PyObject *string;
     Py_ssize_t maxsplit = 0;
-    PyObject *source = NULL;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
-        &string, &maxsplit, &source)) {
+        &string, &maxsplit)) {
         goto exit;
     }
-    return_value = _sre_SRE_Pattern_split_impl(self, string, maxsplit, source);
+    return_value = _sre_SRE_Pattern_split_impl(self, string, maxsplit);
 
 exit:
     return return_value;
@@ -728,4 +716,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=b74b16d90f207358 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=586a4132fbe8c6a7 input=a9049054013a1b77]*/

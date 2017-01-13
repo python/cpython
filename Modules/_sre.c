@@ -551,55 +551,25 @@ sre_search(SRE_STATE* state, SRE_CODE* pattern)
     return sre_ucs4_search(state, pattern);
 }
 
-static PyObject *
-fix_string_param(PyObject *string, PyObject *string2, const char *oldname)
-{
-    if (string2 != NULL) {
-        if (string != NULL) {
-            PyErr_Format(PyExc_TypeError,
-                         "Argument given by name ('%s') and position (1)",
-                         oldname);
-            return NULL;
-        }
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                             "The '%s' keyword parameter name is deprecated.  "
-                             "Use 'string' instead.", oldname) < 0)
-            return NULL;
-        return string2;
-    }
-    if (string == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Required argument 'string' (pos 1) not found");
-        return NULL;
-    }
-    return string;
-}
-
 /*[clinic input]
 _sre.SRE_Pattern.match
 
-    string: object = NULL
+    string: object
     pos: Py_ssize_t = 0
     endpos: Py_ssize_t(c_default="PY_SSIZE_T_MAX") = sys.maxsize
-    *
-    pattern: object = NULL
 
 Matches zero or more characters at the beginning of the string.
 [clinic start generated code]*/
 
 static PyObject *
 _sre_SRE_Pattern_match_impl(PatternObject *self, PyObject *string,
-                            Py_ssize_t pos, Py_ssize_t endpos,
-                            PyObject *pattern)
-/*[clinic end generated code: output=74b4b1da3bb2d84e input=3d079aa99979b81d]*/
+                            Py_ssize_t pos, Py_ssize_t endpos)
+/*[clinic end generated code: output=ea2d838888510661 input=a2ba191647abebe5]*/
 {
     SRE_STATE state;
     Py_ssize_t status;
     PyObject *match;
 
-    string = fix_string_param(string, pattern, "pattern");
-    if (!string)
-        return NULL;
     if (!state_init(&state, (PatternObject *)self, string, pos, endpos))
         return NULL;
 
@@ -623,28 +593,21 @@ _sre_SRE_Pattern_match_impl(PatternObject *self, PyObject *string,
 /*[clinic input]
 _sre.SRE_Pattern.fullmatch
 
-    string: object = NULL
+    string: object
     pos: Py_ssize_t = 0
     endpos: Py_ssize_t(c_default="PY_SSIZE_T_MAX") = sys.maxsize
-    *
-    pattern: object = NULL
 
 Matches against all of the string
 [clinic start generated code]*/
 
 static PyObject *
 _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyObject *string,
-                                Py_ssize_t pos, Py_ssize_t endpos,
-                                PyObject *pattern)
-/*[clinic end generated code: output=1c98bc5da744ea94 input=d4228606cc12580f]*/
+                                Py_ssize_t pos, Py_ssize_t endpos)
+/*[clinic end generated code: output=5833c47782a35f4a input=a6f640614aaefceb]*/
 {
     SRE_STATE state;
     Py_ssize_t status;
     PyObject *match;
-
-    string = fix_string_param(string, pattern, "pattern");
-    if (!string)
-        return NULL;
 
     if (!state_init(&state, self, string, pos, endpos))
         return NULL;
@@ -669,11 +632,9 @@ _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyObject *string,
 /*[clinic input]
 _sre.SRE_Pattern.search
 
-    string: object = NULL
+    string: object
     pos: Py_ssize_t = 0
     endpos: Py_ssize_t(c_default="PY_SSIZE_T_MAX") = sys.maxsize
-    *
-    pattern: object = NULL
 
 Scan through string looking for a match, and return a corresponding match object instance.
 
@@ -682,17 +643,12 @@ Return None if no position in the string matches.
 
 static PyObject *
 _sre_SRE_Pattern_search_impl(PatternObject *self, PyObject *string,
-                             Py_ssize_t pos, Py_ssize_t endpos,
-                             PyObject *pattern)
-/*[clinic end generated code: output=3839394a18e5ea4f input=dab42720f4be3a4b]*/
+                             Py_ssize_t pos, Py_ssize_t endpos)
+/*[clinic end generated code: output=25f302a644e951e8 input=4ae5cb7dc38fed1b]*/
 {
     SRE_STATE state;
     Py_ssize_t status;
     PyObject *match;
-
-    string = fix_string_param(string, pattern, "pattern");
-    if (!string)
-        return NULL;
 
     if (!state_init(&state, self, string, pos, endpos))
         return NULL;
@@ -762,29 +718,22 @@ deepcopy(PyObject** object, PyObject* memo)
 /*[clinic input]
 _sre.SRE_Pattern.findall
 
-    string: object = NULL
+    string: object
     pos: Py_ssize_t = 0
     endpos: Py_ssize_t(c_default="PY_SSIZE_T_MAX") = sys.maxsize
-    *
-    source: object = NULL
 
 Return a list of all non-overlapping matches of pattern in string.
 [clinic start generated code]*/
 
 static PyObject *
 _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
-                              Py_ssize_t pos, Py_ssize_t endpos,
-                              PyObject *source)
-/*[clinic end generated code: output=51295498b300639d input=df688355c056b9de]*/
+                              Py_ssize_t pos, Py_ssize_t endpos)
+/*[clinic end generated code: output=f4966baceea60aca input=5b6a4ee799741563]*/
 {
     SRE_STATE state;
     PyObject* list;
     Py_ssize_t status;
     Py_ssize_t i, b, e;
-
-    string = fix_string_param(string, source, "source");
-    if (!string)
-        return NULL;
 
     if (!state_init(&state, self, string, pos, endpos))
         return NULL;
@@ -922,18 +871,16 @@ _sre_SRE_Pattern_scanner_impl(PatternObject *self, PyObject *string,
 /*[clinic input]
 _sre.SRE_Pattern.split
 
-    string: object = NULL
+    string: object
     maxsplit: Py_ssize_t = 0
-    *
-    source: object = NULL
 
 Split string by the occurrences of pattern.
 [clinic start generated code]*/
 
 static PyObject *
 _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
-                            Py_ssize_t maxsplit, PyObject *source)
-/*[clinic end generated code: output=20bac2ff55b9f84c input=41e0b2e35e599d7b]*/
+                            Py_ssize_t maxsplit)
+/*[clinic end generated code: output=7ac66f381c45e0be input=1eeeb10dafc9947a]*/
 {
     SRE_STATE state;
     PyObject* list;
@@ -942,10 +889,6 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
     Py_ssize_t n;
     Py_ssize_t i;
     void* last;
-
-    string = fix_string_param(string, source, "source");
-    if (!string)
-        return NULL;
 
     assert(self->codesize != 0);
     if (self->code[0] != SRE_OP_INFO || self->code[3] == 0) {
