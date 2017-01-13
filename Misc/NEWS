@@ -212,6 +212,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #29219: Fixed infinite recursion in the repr of uninitialized
+  ctypes.CDLL instances.
+
 - Issue #29192: Removed deprecated features in the http.cookies module.
 
 - Issue #29193: A format string argument for string.Formatter.format()
