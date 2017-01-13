@@ -1897,13 +1897,12 @@ class TarFile(object):
                     _safe_print("link to " + tarinfo.linkname)
             print()
 
-    def add(self, name, arcname=None, recursive=True, exclude=None, *, filter=None):
+    def add(self, name, arcname=None, recursive=True, *, filter=None):
         """Add the file `name' to the archive. `name' may be any type of file
            (directory, fifo, symbolic link, etc.). If given, `arcname'
            specifies an alternative name for the file in the archive.
            Directories are added recursively by default. This can be avoided by
-           setting `recursive' to False. `exclude' is a function that should
-           return True for each filename to be excluded. `filter' is a function
+           setting `recursive' to False. `filter' is a function
            that expects a TarInfo object argument and returns the changed
            TarInfo object, if it returns None the TarInfo object will be
            excluded from the archive.
@@ -1912,15 +1911,6 @@ class TarFile(object):
 
         if arcname is None:
             arcname = name
-
-        # Exclude pathnames.
-        if exclude is not None:
-            import warnings
-            warnings.warn("use the filter argument instead",
-                    DeprecationWarning, 2)
-            if exclude(name):
-                self._dbg(2, "tarfile: Excluded %r" % name)
-                return
 
         # Skip if somebody tries to archive the archive...
         if self.name is not None and os.path.abspath(name) == self.name:
@@ -1953,7 +1943,7 @@ class TarFile(object):
             if recursive:
                 for f in os.listdir(name):
                     self.add(os.path.join(name, f), os.path.join(arcname, f),
-                            recursive, exclude, filter=filter)
+                            recursive, filter=filter)
 
         else:
             self.addfile(tarinfo)
