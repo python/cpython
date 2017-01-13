@@ -5,7 +5,8 @@ import subprocess
 import shutil
 from copy import copy
 
-from test.support import (run_unittest, TESTFN, unlink, check_warnings,
+from test.support import (run_unittest,
+                          import_module, TESTFN, unlink, check_warnings,
                           captured_stdout, skip_unless_symlink, change_cwd)
 
 import sysconfig
@@ -387,7 +388,8 @@ class TestSysConfig(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == 'linux', 'Linux-specific test')
     def test_triplet_in_ext_suffix(self):
-        import ctypes, platform, re
+        ctypes = import_module('ctypes')
+        import platform, re
         machine = platform.machine()
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         if re.match('(aarch64|arm|mips|ppc|powerpc|s390|sparc)', machine):
