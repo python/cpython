@@ -139,6 +139,9 @@ API and Feature Removals
 * Unknown escapes consisting of ``'\'`` and an ASCII letter in replacement
   templates for :func:`re.sub` will now cause an error.
 
+* Removed support of the *exclude* argument in :meth:`tarfile.TarFile.add`.
+  Use the *filter* argument instead.
+
 
 Porting to Python 3.7
 =====================

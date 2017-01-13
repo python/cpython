@@ -429,16 +429,13 @@ be finalized; only the internally used file object will be closed. See the
       Return an :class:`io.BufferedReader` object.
 
 
-.. method:: TarFile.add(name, arcname=None, recursive=True, exclude=None, *, filter=None)
+.. method:: TarFile.add(name, arcname=None, recursive=True, *, filter=None)
 
    Add the file *name* to the archive. *name* may be any type of file
    (directory, fifo, symbolic link, etc.). If given, *arcname* specifies an
    alternative name for the file in the archive. Directories are added
    recursively by default. This can be avoided by setting *recursive* to
-   :const:`False`. If *exclude* is given, it must be a function that takes one
-   filename argument and returns a boolean value. Depending on this value the
-   respective file is either excluded (:const:`True`) or added
-   (:const:`False`). If *filter* is specified it must be a keyword argument.  It
+   :const:`False`.  If *filter* is given, it
    should be a function that takes a :class:`TarInfo` object argument and
    returns the changed :class:`TarInfo` object. If it instead returns
    :const:`None` the :class:`TarInfo` object will be excluded from the
@@ -446,10 +443,6 @@ be finalized; only the internally used file object will be closed. See the
 
    .. versionchanged:: 3.2
       Added the *filter* parameter.
-
-   .. deprecated:: 3.2
-      The *exclude* parameter is deprecated, please use the *filter* parameter
-      instead.
 
 
 .. method:: TarFile.addfile(tarinfo, fileobj=None)
