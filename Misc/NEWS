@@ -23,6 +23,9 @@ Extension Modules
 Library
 -------
 
+- Issue #29219: Fixed infinite recursion in the repr of uninitialized
+  ctypes.CDLL instances.
+
 - Issue #29082: Fixed loading libraries in ctypes by unicode names on Windows.
   Original patch by Chi Hsuan Yen.
 
