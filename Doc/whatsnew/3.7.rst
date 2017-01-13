@@ -137,10 +137,11 @@ API and Feature Removals
 ------------------------
 
 * Unknown escapes consisting of ``'\'`` and an ASCII letter in replacement
-  templates for :func:`re.sub` will now cause an error.
+  templates for :func:`re.sub` were deprecated in Python 3.5, and will now
+  cause an error.
 
 * Removed support of the *exclude* argument in :meth:`tarfile.TarFile.add`.
-  Use the *filter* argument instead.
+  It was deprecated in Python 2.7 and 3.2.  Use the *filter* argument instead.
 
 * The ``splitunc()`` function in the :mod:`ntpath` module was deprecated in
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
@@ -159,11 +160,13 @@ Changes in the Python API
 
 * A format string argument for :meth:`string.Formatter.format`
   is now :ref:`positional-only <positional-only_parameter>`.
+  Passing it as a keyword argument was deprecated in Python 3.5.
   (Contributed by Serhiy Storchaka in :issue:`29193`.)
 
 * Attributes :attr:`~http.cookies.Morsel.key`,
   :attr:`~http.cookies.Morsel.value` and
   :attr:`~http.cookies.Morsel.coded_value` of class
   :class:`http.cookies.Morsel` are now read-only.
+  Assigning to them was deprecated in Python 3.5.
   Use the :meth:`~http.cookies.Morsel.set` method for setting them.
   (Contributed by Serhiy Storchaka in :issue:`29192`.)
