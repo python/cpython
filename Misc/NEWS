@@ -212,7 +212,9 @@ Core and Builtins
 Library
 -------
 
-- Issue #29210:  Removed support of deprecated argument "exclude" in
+- Issue #29197: Removed deprecated function ntpath.splitunc().
+
+- Issue #29210: Removed support of deprecated argument "exclude" in
   tarfile.TarFile.add().
 
 - Issue #29219: Fixed infinite recursion in the repr of uninitialized
