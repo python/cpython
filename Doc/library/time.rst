@@ -464,8 +464,13 @@ The module defines the following functions and data items:
 
 .. function:: tzset()
 
-   Resets the time conversion rules used by the library routines. The environment
-   variable :envvar:`TZ` specifies how this is done.
+   Reset the time conversion rules used by the library routines. The environment
+   variable :envvar:`TZ` specifies how this is done. It will also set the variables
+   ``tzname`` (from the :envvar:`TZ` environment variable), ``timezone`` (non-DST
+   seconds West of UTC), ``altzone`` (DST seconds west of UTC) and ``daylight``
+   (to 0 if this timezone does not have any daylight saving time rules, or to
+   nonzero if there is a time, past, present or future when daylight saving time
+   applies).
 
    .. versionadded:: 2.3
 
