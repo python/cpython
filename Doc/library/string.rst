@@ -95,9 +95,9 @@ implementation as the built-in :meth:`~str.format` method.
       an arbitrary set of positional and keyword arguments.
       It is just a wrapper that calls :meth:`vformat`.
 
-      .. deprecated:: 3.5
-         Passing a format string as keyword argument *format_string* has been
-         deprecated.
+      .. versionchanged:: 3.7
+         A format string argument is now :ref:`positional-only
+         <positional-only_parameter>`.
 
    .. method:: vformat(format_string, args, kwargs)
 

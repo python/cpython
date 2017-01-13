@@ -48,9 +48,8 @@ class ModuleTest(unittest.TestCase):
         self.assertEqual(fmt.format("-{format_string}-", format_string='test'),
                          '-test-')
         self.assertRaises(KeyError, fmt.format, "-{format_string}-")
-        with self.assertWarnsRegex(DeprecationWarning, "format_string"):
-            self.assertEqual(fmt.format(arg='test', format_string="-{arg}-"),
-                             '-test-')
+        with self.assertRaisesRegex(TypeError, "format_string"):
+            fmt.format(format_string="-{arg}-", arg='test')
 
     def test_auto_numbering(self):
         fmt = string.Formatter()
