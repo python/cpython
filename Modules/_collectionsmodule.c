@@ -2234,7 +2234,7 @@ static PyTypeObject defdict_type = {
 PyDoc_STRVAR(_count_elements_doc,
 "_count_elements(mapping, iterable) -> None\n\
 \n\
-Count elements in the iterable, updating the mappping");
+Count elements in the iterable, updating the mapping");
 
 static PyObject *
 _count_elements(PyObject *self, PyObject *args)
