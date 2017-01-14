@@ -506,8 +506,8 @@ This produces the following output::
    ZeroDivisionError: integer division or modulo by zero
 
 Slightly more advanced programs will use a logger other than the root logger.
-The :func:`getLogger(name)` function is used to get a particular log, creating
-it if it doesn't exist yet. :func:`getLogger(None)` returns the root logger. ::
+The ``getLogger(name)`` function is used to get a particular log, creating
+it if it doesn't exist yet. ``getLogger(None)`` returns the root logger. ::
 
    log = logging.getLogger('server')
     ...
@@ -726,10 +726,10 @@ module:
   objects to it.  Additional built-in and frozen modules can be imported by an
   object added to this list.
 
-Importer objects must have a single method, :meth:`find_module(fullname,
-path=None)`.  *fullname* will be a module or package name, e.g. ``string`` or
+Importer objects must have a single method, ``find_module(fullname,
+path=None)``.  *fullname* will be a module or package name, e.g. ``string`` or
 ``distutils.core``.  :meth:`find_module` must return a loader object that has a
-single method, :meth:`load_module(fullname)`, that creates and returns the
+single method, ``load_module(fullname)``, that creates and returns the
 corresponding module object.
 
 Pseudo-code for Python's new import logic, therefore, looks something like this
@@ -937,7 +937,7 @@ Or use slice objects directly in subscripts::
    [0, 2, 4]
 
 To simplify implementing sequences that support extended slicing, slice objects
-now have a method :meth:`indices(length)` which, given the length of a sequence,
+now have a method ``indices(length)`` which, given the length of a sequence,
 returns a ``(start, stop, step)`` tuple that can be passed directly to
 :func:`range`. :meth:`indices` handles omitted and out-of-bounds indices in a
 manner consistent with regular slices (and this innocuous phrase hides a welter
@@ -986,7 +986,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
 * Built-in types now support the extended slicing syntax, as described in
   section :ref:`section-slices` of this document.
 
-* A new built-in function, :func:`sum(iterable, start=0)`,  adds up the numeric
+* A new built-in function, ``sum(iterable, start=0)``,  adds up the numeric
   items in the iterable object and returns their sum.  :func:`sum` only accepts
   numbers, meaning that you can't use it to concatenate a bunch of strings.
   (Contributed by Alex Martelli.)
@@ -1000,7 +1000,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   its index, now takes optional  *start* and *stop* arguments to limit the search
   to  only part of the list.
 
-* Dictionaries have a new method, :meth:`pop(key[, *default*])`, that returns
+* Dictionaries have a new method, ``pop(key[, *default*])``, that returns
   the value corresponding to *key* and removes that key/value pair from the
   dictionary.  If the requested key isn't present in the dictionary, *default* is
   returned if it's specified and :exc:`KeyError` raised if it isn't. ::
@@ -1022,7 +1022,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
      {}
      >>>
 
-  There's also a new class method,  :meth:`dict.fromkeys(iterable, value)`, that
+  There's also a new class method,  ``dict.fromkeys(iterable, value)``, that
   creates a dictionary with keys taken from the supplied iterator *iterable* and
   all values set to *value*, defaulting to ``None``.
 
@@ -1095,7 +1095,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   100 bytecodes, speeding up single-threaded applications by reducing the
   switching overhead.  Some multithreaded applications may suffer slower response
   time, but that's easily fixed by setting the limit back to a lower number using
-  :func:`sys.setcheckinterval(N)`. The limit can be retrieved with the new
+  ``sys.setcheckinterval(N)``. The limit can be retrieved with the new
   :func:`sys.getcheckinterval` function.
 
 * One minor but far-reaching change is that the names of extension types defined
@@ -1274,10 +1274,10 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * Previously the :mod:`doctest` module would only search the docstrings of
   public methods and functions for test cases, but it now also examines private
-  ones as well.  The :func:`DocTestSuite(` function creates a
+  ones as well.  The :func:`DocTestSuite` function creates a
   :class:`unittest.TestSuite` object from a set of :mod:`doctest` tests.
 
-* The new :func:`gc.get_referents(object)` function returns a list of all the
+* The new ``gc.get_referents(object)`` function returns a list of all the
   objects referenced by *object*.
 
 * The :mod:`getopt` module gained a new function, :func:`gnu_getopt`, that
@@ -1349,8 +1349,8 @@ complete list of changes, or look through the CVS logs for all the details.
   documentation for details.
   (Contributed by Raymond Hettinger.)
 
-* Two new functions in the :mod:`math` module, :func:`degrees(rads)` and
-  :func:`radians(degs)`, convert between radians and degrees.  Other functions in
+* Two new functions in the :mod:`math` module, ``degrees(rads)`` and
+  ``radians(degs)``, convert between radians and degrees.  Other functions in
   the :mod:`math` module such as :func:`math.sin` and :func:`math.cos` have always
   required input values measured in radians.  Also, an optional *base* argument
   was added to :func:`math.log` to make it easier to compute logarithms for bases
@@ -1407,7 +1407,7 @@ complete list of changes, or look through the CVS logs for all the details.
   and therefore faster performance.  Setting the parser object's
   :attr:`buffer_text` attribute to :const:`True` will enable buffering.
 
-* The :func:`sample(population, k)` function was added to the :mod:`random`
+* The ``sample(population, k)`` function was added to the :mod:`random`
   module.  *population* is a sequence or :class:`xrange` object containing the
   elements of a population, and :func:`sample` chooses *k* elements from the
   population without replacing chosen elements.  *k* can be any value up to
@@ -1453,7 +1453,7 @@ complete list of changes, or look through the CVS logs for all the details.
   encryption is not believed to be secure.  If you need encryption, use one of the
   several AES Python modules that are available separately.
 
-* The :mod:`shutil` module gained a :func:`move(src, dest)` function that
+* The :mod:`shutil` module gained a ``move(src, dest)`` function that
   recursively moves a file or directory to a new location.
 
 * Support for more advanced POSIX signal handling was added to the :mod:`signal`
@@ -1461,7 +1461,7 @@ complete list of changes, or look through the CVS logs for all the details.
   platforms.
 
 * The :mod:`socket` module now supports timeouts.  You can call the
-  :meth:`settimeout(t)` method on a socket object to set a timeout of *t* seconds.
+  ``settimeout(t)`` method on a socket object to set a timeout of *t* seconds.
   Subsequent socket operations that take longer than *t* seconds to complete will
   abort and raise a :exc:`socket.timeout` exception.
 
@@ -1482,9 +1482,9 @@ complete list of changes, or look through the CVS logs for all the details.
   :program:`tar`\ -format archive files. (Contributed by Lars Gustäbel.)
 
 * The new :mod:`textwrap` module contains functions for wrapping strings
-  containing paragraphs of text.  The :func:`wrap(text, width)` function takes a
+  containing paragraphs of text.  The ``wrap(text, width)`` function takes a
   string and returns a list containing the text split into lines of no more than
-  the chosen width.  The :func:`fill(text, width)` function returns a single
+  the chosen width.  The ``fill(text, width)`` function returns a single
   string, reformatted to fit into lines no longer than the chosen width. (As you
   can guess, :func:`fill` is built on top of :func:`wrap`.  For example::
 
@@ -1909,7 +1909,7 @@ Changes to Python's build process and to the C API include:
   short int`,  ``I`` for :c:type:`unsigned int`,  and ``K`` for :c:type:`unsigned
   long long`.
 
-* A new function, :c:func:`PyObject_DelItemString(mapping, char \*key)` was added
+* A new function, ``PyObject_DelItemString(mapping, char *key)`` was added
   as shorthand for ``PyObject_DelItem(mapping, PyString_New(key))``.
 
 * File objects now manage their internal string buffer differently, increasing

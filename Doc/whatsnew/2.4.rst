@@ -37,7 +37,7 @@ PEP 218: Built-In Set Objects
 
 Python 2.3 introduced the :mod:`sets` module.  C implementations of set data
 types have now been added to the Python core as two new built-in types,
-:func:`set(iterable)` and :func:`frozenset(iterable)`.  They provide high speed
+``set(iterable)`` and ``frozenset(iterable)``.  They provide high speed
 operations for membership testing, for eliminating duplicates from sequences,
 and for mathematical operations like unions, intersections, differences, and
 symmetric differences. ::
@@ -346,7 +346,7 @@ returned.
 PEP 322: Reverse Iteration
 ==========================
 
-A new built-in function, :func:`reversed(seq)`, takes a sequence and returns an
+A new built-in function, ``reversed(seq)``, takes a sequence and returns an
 iterator that loops over the elements of the sequence  in reverse order.   ::
 
    >>> for i in reversed(xrange(1,4)):
@@ -384,7 +384,7 @@ PEP 324: New subprocess Module
 
 The standard library provides a number of ways to execute a subprocess, offering
 different features and different levels of complexity.
-:func:`os.system(command)` is easy to use, but slow (it runs a shell process
+``os.system(command)`` is easy to use, but slow (it runs a shell process
 which executes the command) and dangerous (you have to be careful about escaping
 the shell's metacharacters).  The :mod:`popen2` module offers classes that can
 capture standard output and standard error from the subprocess, but the naming
@@ -431,8 +431,8 @@ The constructor has a number of handy options:
 
 Once you've created the :class:`Popen` instance,  you can call its :meth:`wait`
 method to pause until the subprocess has exited, :meth:`poll` to check if it's
-exited without pausing,  or :meth:`communicate(data)` to send the string *data*
-to the subprocess's standard input.   :meth:`communicate(data)`  then reads any
+exited without pausing,  or ``communicate(data)`` to send the string *data*
+to the subprocess's standard input.   ``communicate(data)``  then reads any
 data that the subprocess has sent to its standard output  or standard error,
 returning a tuple ``(stdout_data, stderr_data)``.
 
@@ -749,10 +749,10 @@ numbers in the current locale.
 The solution described in the PEP is to add three new functions to the Python
 API that perform ASCII-only conversions, ignoring the locale setting:
 
-* :c:func:`PyOS_ascii_strtod(str, ptr)`  and :c:func:`PyOS_ascii_atof(str, ptr)`
+* ``PyOS_ascii_strtod(str, ptr)``  and ``PyOS_ascii_atof(str, ptr)``
   both convert a string to a C :c:type:`double`.
 
-* :c:func:`PyOS_ascii_formatd(buffer, buf_len, format, d)` converts a
+* ``PyOS_ascii_formatd(buffer, buf_len, format, d)`` converts a
   :c:type:`double` to an ASCII string.
 
 The code for these functions came from the GLib library
@@ -778,7 +778,7 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
 * Decorators for functions and methods were added (:pep:`318`).
 
 * Built-in :func:`set` and :func:`frozenset` types were  added (:pep:`218`).
-  Other new built-ins include the :func:`reversed(seq)` function (:pep:`322`).
+  Other new built-ins include the ``reversed(seq)`` function (:pep:`322`).
 
 * Generator expressions were added (:pep:`289`).
 
@@ -857,7 +857,7 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
 
   (All changes to :meth:`sort` contributed by Raymond Hettinger.)
 
-* There is a new built-in function :func:`sorted(iterable)` that works like the
+* There is a new built-in function ``sorted(iterable)`` that works like the
   in-place :meth:`list.sort` method but can be used in expressions.  The
   differences are:
 
@@ -898,8 +898,8 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
   For example,  you can now run the Python profiler with ``python -m profile``.
   (Contributed by Nick Coghlan.)
 
-* The :func:`eval(expr, globals, locals)` and :func:`execfile(filename, globals,
-  locals)` functions and the :keyword:`exec` statement now accept any mapping type
+* The ``eval(expr, globals, locals)`` and ``execfile(filename, globals,
+  locals)`` functions and the :keyword:`exec` statement now accept any mapping type
   for the *locals* parameter.  Previously this had to be a regular Python
   dictionary.  (Contributed by Raymond Hettinger.)
 
@@ -1090,7 +1090,7 @@ complete list of changes, or look through the CVS logs for all the details.
   Yves Dionne) and new :meth:`deleteacl` and :meth:`myrights` methods (contributed
   by Arnaud Mazin).
 
-* The :mod:`itertools` module gained a :func:`groupby(iterable[, *func*])`
+* The :mod:`itertools` module gained a ``groupby(iterable[, *func*])``
   function. *iterable* is something that can be iterated over to return a stream
   of elements, and the optional *func* parameter is a function that takes an
   element and returns a key value; if omitted, the key is simply the element
@@ -1139,7 +1139,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
   (Contributed by Hye-Shik Chang.)
 
-* :mod:`itertools` also gained a function named :func:`tee(iterator, N)` that
+* :mod:`itertools` also gained a function named ``tee(iterator, N)`` that
   returns *N* independent iterators that replicate *iterator*.  If *N* is omitted,
   the default is 2. ::
 
@@ -1177,7 +1177,7 @@ complete list of changes, or look through the CVS logs for all the details.
          level=0,  # Log all messages
          format='%(levelname):%(process):%(thread):%(message)')
 
-  Other additions to the :mod:`logging` package include a :meth:`log(level, msg)`
+  Other additions to the :mod:`logging` package include a ``log(level, msg)``
   convenience method, as well as a :class:`TimedRotatingFileHandler` class that
   rotates its log files at a timed interval.  The module already had
   :class:`RotatingFileHandler`, which rotated logs once the file exceeded a
@@ -1196,7 +1196,7 @@ complete list of changes, or look through the CVS logs for all the details.
   group or for a range of groups. (Contributed by Jürgen A. Erhard.)
 
 * Two new functions were added to the :mod:`operator` module,
-  :func:`attrgetter(attr)` and :func:`itemgetter(index)`. Both functions return
+  ``attrgetter(attr)`` and ``itemgetter(index)``. Both functions return
   callables that take a single argument and return the corresponding attribute or
   item; these callables make excellent data extractors when used with :func:`map`
   or :func:`sorted`.  For example::
@@ -1223,14 +1223,14 @@ complete list of changes, or look through the CVS logs for all the details.
   replacement for :func:`rfc822.formatdate`.  You may want to write new e-mail
   processing code with this in mind.  (Change implemented by Anthony Baxter.)
 
-* A new :func:`urandom(n)` function was added to the :mod:`os` module, returning
+* A new ``urandom(n)`` function was added to the :mod:`os` module, returning
   a string containing *n* bytes of random data.  This function provides access to
   platform-specific sources of randomness such as :file:`/dev/urandom` on Linux or
   the Windows CryptoAPI.  (Contributed by Trevor Perrin.)
 
-* Another new function: :func:`os.path.lexists(path)`  returns true if the file
+* Another new function: ``os.path.lexists(path)``  returns true if the file
   specified by *path* exists, whether or not it's a symbolic link.  This differs
-  from the existing :func:`os.path.exists(path)` function, which returns false if
+  from the existing ``os.path.exists(path)`` function, which returns false if
   *path* is a symlink that points to a destination that doesn't exist.
   (Contributed by Beni Cherniavsky.)
 
@@ -1243,7 +1243,7 @@ complete list of changes, or look through the CVS logs for all the details.
 * The :mod:`profile` module can now profile C extension functions. (Contributed
   by Nick Bastin.)
 
-* The :mod:`random` module has a new method called :meth:`getrandbits(N)` that
+* The :mod:`random` module has a new method called ``getrandbits(N)`` that
   returns a long integer *N* bits in length.  The existing :meth:`randrange`
   method now uses :meth:`getrandbits` where appropriate, making generation of
   arbitrarily large random numbers more efficient.  (Contributed by Raymond
@@ -1272,7 +1272,7 @@ complete list of changes, or look through the CVS logs for all the details.
   this, but 2.4 will raise a :exc:`RuntimeError` exception.
 
 * Two new functions were added to the :mod:`socket` module. :func:`socketpair`
-  returns a pair of connected sockets and :func:`getservbyport(port)` looks up the
+  returns a pair of connected sockets and ``getservbyport(port)`` looks up the
   service name for a given port number. (Contributed by Dave Cole and Barry
   Warsaw.)
 
@@ -1456,11 +1456,11 @@ Some of the changes to Python's build process and to the C API are:
 * Another new macro, :c:macro:`Py_CLEAR(obj)`,  decreases the reference count of
   *obj* and sets *obj* to the null pointer.  (Contributed by Jim Fulton.)
 
-* A new function, :c:func:`PyTuple_Pack(N, obj1, obj2, ..., objN)`, constructs
+* A new function, ``PyTuple_Pack(N, obj1, obj2, ..., objN)``, constructs
   tuples from a variable length argument list of Python objects.  (Contributed by
   Raymond Hettinger.)
 
-* A new function, :c:func:`PyDict_Contains(d, k)`, implements fast dictionary
+* A new function, ``PyDict_Contains(d, k)``, implements fast dictionary
   lookups without masking exceptions raised during the look-up process.
   (Contributed by Raymond Hettinger.)
 

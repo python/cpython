@@ -173,12 +173,12 @@ attributes of their own:
 
 * :attr:`__doc__` is the attribute's docstring.
 
-* :meth:`__get__(object)` is a method that retrieves the attribute value from
+* ``__get__(object)`` is a method that retrieves the attribute value from
   *object*.
 
-* :meth:`__set__(object, value)` sets the attribute on *object* to *value*.
+* ``__set__(object, value)`` sets the attribute on *object* to *value*.
 
-* :meth:`__delete__(object, value)` deletes the *value*  attribute of *object*.
+* ``__delete__(object, value)`` deletes the *value*  attribute of *object*.
 
 For example, when you write ``obj.x``, the steps that Python actually performs
 are::
@@ -288,7 +288,7 @@ Following this rule, referring to :meth:`D.save` will return :meth:`C.save`,
 which is the behaviour we're after.  This lookup rule is the same as the one
 followed by Common Lisp.  A new built-in function, :func:`super`, provides a way
 to get at a class's superclasses without having to reimplement Python's
-algorithm. The most commonly used form will be  :func:`super(class, obj)`, which
+algorithm. The most commonly used form will be  ``super(class, obj)``, which
 returns  a bound superclass object (not the actual class object).  This form
 will be used in methods to call a method in the superclass; for example,
 :class:`D`'s :meth:`save` method would look like this::
@@ -301,7 +301,7 @@ will be used in methods to call a method in the superclass; for example,
            ...
 
 :func:`super` can also return unbound superclass objects when called as
-:func:`super(class)` or :func:`super(class1, class2)`, but this probably won't
+``super(class)`` or ``super(class1, class2)``, but this probably won't
 often be useful.
 
 
@@ -314,13 +314,13 @@ code more readable by automatically mapping an attribute access such as
 ``obj.parent`` into a method call such as ``obj.get_parent``.  Python 2.2 adds
 some new ways of controlling attribute access.
 
-First, :meth:`__getattr__(attr_name)` is still supported by new-style classes,
+First, ``__getattr__(attr_name)`` is still supported by new-style classes,
 and nothing about it has changed.  As before, it will be called when an attempt
 is made to access ``obj.foo`` and no attribute named ``foo`` is found in the
 instance's dictionary.
 
 New-style classes also support a new method,
-:meth:`__getattribute__(attr_name)`.  The difference between the two methods is
+``__getattribute__(attr_name)``.  The difference between the two methods is
 that :meth:`__getattribute__` is *always* called whenever any attribute is
 accessed, while the old :meth:`__getattr__` is only called if ``foo`` isn't
 found in the instance's dictionary.
@@ -441,8 +441,8 @@ work, though it really should.
 
 In Python 2.2, iteration can be implemented separately, and :meth:`__getitem__`
 methods can be limited to classes that really do support random access.  The
-basic idea of iterators is  simple.  A new built-in function, :func:`iter(obj)`
-or ``iter(C, sentinel)``, is used to get an iterator. :func:`iter(obj)` returns
+basic idea of iterators is  simple.  A new built-in function, ``iter(obj)``
+or ``iter(C, sentinel)``, is used to get an iterator. ``iter(obj)`` returns
 an iterator for the object *obj*, while ``iter(C, sentinel)`` returns an
 iterator that will invoke the callable object *C* until it returns *sentinel* to
 signal that the iterator is done.
@@ -793,7 +793,7 @@ further details.
 
 Another change is simpler to explain. Since their introduction, Unicode strings
 have supported an :meth:`encode` method to convert the string to a selected
-encoding such as UTF-8 or Latin-1.  A symmetric :meth:`decode([*encoding*])`
+encoding such as UTF-8 or Latin-1.  A symmetric ``decode([*encoding*])``
 method has been added to 8-bit strings (though not to Unicode strings) in 2.2.
 :meth:`decode` assumes that the string is in the specified encoding and decodes
 it, returning whatever is returned by the codec.
@@ -1203,7 +1203,7 @@ Some of the more notable changes are:
   to an MBCS encoded string, as used by the Microsoft file APIs.  As MBCS is
   explicitly used by the file APIs, Python's choice of ASCII as the default
   encoding turns out to be an annoyance.  On Unix, the locale's character set is
-  used if :func:`locale.nl_langinfo(CODESET)` is available.  (Windows support was
+  used if ``locale.nl_langinfo(CODESET)`` is available.  (Windows support was
   contributed by Mark Hammond with assistance from Marc-André Lemburg. Unix
   support was added by Martin von Löwis.)
 

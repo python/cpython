@@ -171,7 +171,7 @@ method, where the first argument has been provided. ::
            popup_menu.append( ("Open", open_func, 1) )
 
 Another function in the :mod:`functools` module is the
-:func:`update_wrapper(wrapper, wrapped)` function that helps you write well-
+``update_wrapper(wrapper, wrapped)`` function that helps you write well-
 behaved decorators.  :func:`update_wrapper` copies the name, module, and
 docstring attribute to a wrapper function so that tracebacks inside the wrapped
 function are easier to understand.  For example, you might write::
@@ -454,7 +454,7 @@ expression on the right-hand side of an assignment.  This means you can write
 ``val = yield i`` but have to use parentheses when there's an operation, as in
 ``val = (yield i) + 12``.)
 
-Values are sent into a generator by calling its :meth:`send(value)` method.  The
+Values are sent into a generator by calling its ``send(value)`` method.  The
 generator's code is then resumed and the :keyword:`yield` expression returns the
 specified *value*.  If the regular :meth:`next` method is called, the
 :keyword:`yield` returns :const:`None`.
@@ -496,7 +496,7 @@ function.
 
 In addition to :meth:`send`, there are two other new methods on generators:
 
-* :meth:`throw(type, value=None, traceback=None)` is used to raise an exception
+* ``throw(type, value=None, traceback=None)`` is used to raise an exception
   inside the generator; the exception is raised by the :keyword:`yield` expression
   where the generator's execution is paused.
 
@@ -660,7 +660,7 @@ A high-level explanation of the context management protocol is:
 
 * The code in *BLOCK* is executed.
 
-* If *BLOCK* raises an exception, the :meth:`__exit__(type, value, traceback)`
+* If *BLOCK* raises an exception, the ``__exit__(type, value, traceback)``
   is called with the exception details, the same values returned by
   :func:`sys.exc_info`.  The method's return value controls whether the exception
   is re-raised: any false value re-raises the exception, and ``True`` will result
@@ -773,7 +773,7 @@ decorator as::
    with db_transaction(db) as cursor:
        ...
 
-The :mod:`contextlib` module also has a :func:`nested(mgr1, mgr2, ...)` function
+The :mod:`contextlib` module also has a ``nested(mgr1, mgr2, ...)`` function
 that combines a number of context managers so you don't need to write nested
 ':keyword:`with`' statements.  In this example, the single ':keyword:`with`'
 statement both starts a database transaction and acquires a thread lock::
@@ -782,7 +782,7 @@ statement both starts a database transaction and acquires a thread lock::
    with nested (db_transaction(db), lock) as (cursor, locked):
        ...
 
-Finally, the :func:`closing(object)` function returns *object* so that it can be
+Finally, the ``closing(object)`` function returns *object* so that it can be
 bound to a variable, and calls ``object.close`` at the end of the block. ::
 
    import urllib, sys
@@ -955,7 +955,7 @@ interpreter will check that the type returned is correct, and raises a
 
 A corresponding :attr:`nb_index` slot was added to the C-level
 :c:type:`PyNumberMethods` structure to let C extensions implement this protocol.
-:c:func:`PyNumber_Index(obj)` can be used in extension code to call the
+``PyNumber_Index(obj)`` can be used in extension code to call the
 :meth:`__index__` function and retrieve its result.
 
 
@@ -976,7 +976,7 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
 
 * The :class:`dict` type has a new hook for letting subclasses provide a default
   value when a key isn't contained in the dictionary. When a key isn't found, the
-  dictionary's :meth:`__missing__(key)` method will be called.  This hook is used
+  dictionary's ``__missing__(key)`` method will be called.  This hook is used
   to implement the new :class:`defaultdict` class in the :mod:`collections`
   module.  The following example defines a dictionary  that returns zero for any
   missing key::
@@ -989,16 +989,16 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
      print d[1], d[2]   # Prints 1, 2
      print d[3], d[4]   # Prints 0, 0
 
-* Both 8-bit and Unicode strings have new :meth:`partition(sep)`  and
-  :meth:`rpartition(sep)` methods that simplify a common use case.
+* Both 8-bit and Unicode strings have new ``partition(sep)``  and
+  ``rpartition(sep)`` methods that simplify a common use case.
 
-  The :meth:`find(S)` method is often used to get an index which is then used to
+  The ``find(S)`` method is often used to get an index which is then used to
   slice the string and obtain the pieces that are before and after the separator.
-  :meth:`partition(sep)` condenses this pattern into a single method call that
+  ``partition(sep)`` condenses this pattern into a single method call that
   returns a 3-tuple containing the substring before the separator, the separator
   itself, and the substring after the separator.  If the separator isn't found,
   the first element of the tuple is the entire string and the other two elements
-  are empty.  :meth:`rpartition(sep)` also returns a 3-tuple but starts searching
+  are empty.  ``rpartition(sep)`` also returns a 3-tuple but starts searching
   from the end of the string; the ``r`` stands for 'reverse'.
 
   Some examples::
@@ -1157,7 +1157,7 @@ marked in the following list.
 
   .. Patch 1313939, 1359618
 
-* The :func:`long(str, base)` function is now faster on long digit strings
+* The ``long(str, base)`` function is now faster on long digit strings
   because fewer intermediate results are calculated.  The peak is for strings of
   around 800--1000 digits where  the function is 6 times faster. (Contributed by
   Alan McIntyre and committed at the NeedForSpeed sprint.)
@@ -1268,7 +1268,7 @@ complete list of changes, or look through the SVN logs for all the details.
   (Contributed by Guido van Rossum.)
 
 * The :class:`deque` double-ended queue type supplied by the :mod:`collections`
-  module now has a :meth:`remove(value)` method that removes the first occurrence
+  module now has a ``remove(value)`` method that removes the first occurrence
   of *value* in the queue, raising :exc:`ValueError` if the value isn't found.
   (Contributed by Raymond Hettinger.)
 
@@ -1291,7 +1291,7 @@ complete list of changes, or look through the SVN logs for all the details.
 * The :mod:`csv` module, which parses files in comma-separated value format,
   received several enhancements and a number of bugfixes.  You can now set the
   maximum size in bytes of a field by calling the
-  :meth:`csv.field_size_limit(new_limit)` function; omitting the *new_limit*
+  ``csv.field_size_limit(new_limit)`` function; omitting the *new_limit*
   argument will return the currently-set limit.  The :class:`reader` class now has
   a :attr:`line_num` attribute that counts the number of physical lines read from
   the source; records can span multiple physical lines, so :attr:`line_num` is not
@@ -1308,7 +1308,7 @@ complete list of changes, or look through the SVN logs for all the details.
   (Contributed by Skip Montanaro and Andrew McNamara.)
 
 * The :class:`~datetime.datetime` class in the :mod:`datetime`  module now has a
-  :meth:`strptime(string, format)`  method for parsing date strings, contributed
+  ``strptime(string, format)``  method for parsing date strings, contributed
   by Josh Spoerri. It uses the same format characters as :func:`time.strptime` and
   :func:`time.strftime`::
 
@@ -1403,7 +1403,7 @@ complete list of changes, or look through the SVN logs for all the details.
 * The :mod:`mailbox` module underwent a massive rewrite to add the capability to
   modify mailboxes in addition to reading them.  A new set of classes that include
   :class:`mbox`, :class:`MH`, and :class:`Maildir` are used to read mailboxes, and
-  have an :meth:`add(message)` method to add messages, :meth:`remove(key)` to
+  have an ``add(message)`` method to add messages, ``remove(key)`` to
   remove messages, and :meth:`lock`/:meth:`unlock` to lock/unlock the mailbox.
   The following example converts a maildir-format mailbox into an mbox-format
   one::
@@ -1458,7 +1458,7 @@ complete list of changes, or look through the SVN logs for all the details.
   :func:`wait4` return additional information.  :func:`wait3` doesn't take a
   process ID as input, so it waits for any child process to exit and returns a
   3-tuple of *process-id*, *exit-status*, *resource-usage* as returned from the
-  :func:`resource.getrusage` function. :func:`wait4(pid)` does take a process ID.
+  :func:`resource.getrusage` function. ``wait4(pid)`` does take a process ID.
   (Contributed by Chad J. Schroeder.)
 
   On FreeBSD, the :func:`os.stat` function now returns  times with nanosecond
@@ -1532,8 +1532,8 @@ complete list of changes, or look through the SVN logs for all the details.
   In Python code, netlink addresses are represented as a tuple of 2 integers,
   ``(pid, group_mask)``.
 
-  Two new methods on socket objects, :meth:`recv_into(buffer)` and
-  :meth:`recvfrom_into(buffer)`, store the received data in an object  that
+  Two new methods on socket objects, ``recv_into(buffer)`` and
+  ``recvfrom_into(buffer)``, store the received data in an object  that
   supports the buffer protocol instead of returning the data as a string.  This
   means you can put the data directly into an array or a memory-mapped file.
 
@@ -1557,8 +1557,8 @@ complete list of changes, or look through the SVN logs for all the details.
      year, number, name = s.unpack(data)
 
   You can also pack and unpack data to and from buffer objects directly using the
-  :meth:`pack_into(buffer, offset, v1, v2, ...)` and :meth:`unpack_from(buffer,
-  offset)` methods.  This lets you store data directly into an array or a memory-
+  ``pack_into(buffer, offset, v1, v2, ...)`` and ``unpack_from(buffer,
+  offset)`` methods.  This lets you store data directly into an array or a memory-
   mapped file.
 
   (:class:`Struct` objects were implemented by Bob Ippolito at the NeedForSpeed
@@ -1592,7 +1592,7 @@ complete list of changes, or look through the SVN logs for all the details.
   .. patch 918101
 
 * The :mod:`threading` module now lets you set the stack size used when new
-  threads are created. The :func:`stack_size([*size*])` function returns the
+  threads are created. The ``stack_size([*size*])`` function returns the
   currently configured stack size, and supplying the optional *size* parameter
   sets a new value.  Not all platforms support changing the stack size, but
   Windows, POSIX threading, and OS/2 all do. (Contributed by Andrew MacIntyre.)
@@ -1911,7 +1911,7 @@ differently. ::
    h = hashlib.new('md5')          # Provide algorithm as a string
 
 Once a hash object has been created, its methods are the same as before:
-:meth:`update(string)` hashes the specified string into the  current digest
+``update(string)`` hashes the specified string into the  current digest
 state, :meth:`digest` and :meth:`hexdigest` return the digest value as a binary
 string or a string of hex digits, and :meth:`copy` returns a new hashing object
 with the same digest state.
@@ -2168,20 +2168,20 @@ Changes to Python's build process and to the C API include:
 
 * Two new macros can be used to indicate C functions that are local to the
   current file so that a faster calling convention can be used.
-  :c:func:`Py_LOCAL(type)` declares the function as returning a value of the
+  ``Py_LOCAL(type)`` declares the function as returning a value of the
   specified *type* and uses a fast-calling qualifier.
-  :c:func:`Py_LOCAL_INLINE(type)` does the same thing and also requests the
+  ``Py_LOCAL_INLINE(type)`` does the same thing and also requests the
   function be inlined.  If :c:func:`PY_LOCAL_AGGRESSIVE` is defined before
   :file:`python.h` is included, a set of more aggressive optimizations are enabled
   for the module; you should benchmark the results to find out if these
   optimizations actually make the code faster.  (Contributed by Fredrik Lundh at
   the NeedForSpeed sprint.)
 
-* :c:func:`PyErr_NewException(name, base, dict)` can now accept a tuple of base
+* ``PyErr_NewException(name, base, dict)`` can now accept a tuple of base
   classes as its *base* argument.  (Contributed by Georg Brandl.)
 
 * The :c:func:`PyErr_Warn` function for issuing warnings is now deprecated in
-  favour of :c:func:`PyErr_WarnEx(category, message, stacklevel)` which lets you
+  favour of ``PyErr_WarnEx(category, message, stacklevel)`` which lets you
   specify the number of stack frames separating this function and the caller.  A
   *stacklevel* of 1 is the function calling :c:func:`PyErr_WarnEx`, 2 is the
   function above that, and so forth.  (Added by Neal Norwitz.)
