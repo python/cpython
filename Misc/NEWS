@@ -189,7 +189,7 @@ Library
   WeakValueDictionary.pop() when a GC collection happens in another
   thread.
 
-- Issue #20191: Fixed a crash in resource.prlimit() when pass a sequence that
+- Issue #20191: Fixed a crash in resource.prlimit() when passing a sequence that
   doesn't own its elements as limits.
 
 - Issue #28779: multiprocessing.set_forkserver_preload() would crash the
