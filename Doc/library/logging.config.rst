@@ -93,8 +93,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    :param disable_existing_loggers: If specified as ``False``, loggers which
                                     exist when this call is made are left
                                     enabled. The default is ``True`` because this
-                                    enables old behaviour in a backward-
-                                    compatible way. This behaviour is to
+                                    enables old behaviour in a
+                                    backward-compatible way. This behaviour is to
                                     disable any existing loggers unless they or
                                     their ancestors are explicitly named in the
                                     logging configuration.

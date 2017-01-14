@@ -1179,8 +1179,8 @@ Speaking logging messages
 -------------------------
 
 There might be situations when it is desirable to have logging messages rendered
-in an audible rather than a visible format. This is easy to do if you have text-
-to-speech (TTS) functionality available in your system, even if it doesn't have
+in an audible rather than a visible format. This is easy to do if you have
+text-to-speech (TTS) functionality available in your system, even if it doesn't have
 a Python binding. Most TTS systems have a command line program you can run, and
 this can be invoked from a handler using :mod:`subprocess`. It's assumed here
 that TTS command line programs won't expect to interact with users or take a

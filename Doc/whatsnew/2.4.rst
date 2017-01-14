@@ -517,8 +517,8 @@ Sometimes you can see this inaccuracy when the number is printed::
    >>> 1.1
    1.1000000000000001
 
-The inaccuracy isn't always visible when you print the number because the FP-to-
-decimal-string conversion is provided by the C library, and most C libraries try
+The inaccuracy isn't always visible when you print the number because the
+FP-to-decimal-string conversion is provided by the C library, and most C libraries try
 to produce sensible output.  Even if it's not displayed, however, the inaccuracy
 is still there and subsequent operations can magnify the error.
 
@@ -595,8 +595,8 @@ exponent::
      ...
    decimal.InvalidOperation: x ** (non-integer)
 
-You can combine :class:`Decimal` instances with integers, but not with floating-
-point numbers::
+You can combine :class:`Decimal` instances with integers, but not with
+floating-point numbers::
 
    >>> a + 4
    Decimal("39.72")
@@ -684,8 +684,8 @@ includes a quick-start tutorial and a reference.
       Raymond Hettinger, Aahz, and Tim Peters.
 
    http://www.lahey.com/float.htm
-      The article uses Fortran code to illustrate many of the problems that floating-
-      point inaccuracy can cause.
+      The article uses Fortran code to illustrate many of the problems that
+      floating-point inaccuracy can cause.
 
    http://speleotrove.com/decimal/
       A description of a decimal-based representation.  This representation is being
@@ -741,8 +741,8 @@ functions in Python's implementation required that the numeric locale remain set
 to the ``'C'`` locale.  Often this was because the code was using the C
 library's :c:func:`atof` function.
 
-Not setting the numeric locale caused trouble for extensions that used third-
-party C libraries, however, because they wouldn't have the correct locale set.
+Not setting the numeric locale caused trouble for extensions that used third-party
+C libraries, however, because they wouldn't have the correct locale set.
 The motivating example was GTK+, whose user interface widgets weren't displaying
 numbers in the current locale.
 
@@ -918,8 +918,8 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
 
   (Contributed by Raymond Hettinger.)
 
-* Encountering a failure while importing a module no longer leaves a partially-
-  initialized module object in ``sys.modules``.  The incomplete module object left
+* Encountering a failure while importing a module no longer leaves a partially-initialized
+  module object in ``sys.modules``.  The incomplete module object left
   behind would fool further imports of the same module into succeeding, leading to
   confusing errors.   (Fixed by Tim Peters.)
 
@@ -1028,8 +1028,8 @@ complete list of changes, or look through the CVS logs for all the details.
   previous ones left off.  (Implemented by Walter Dörwald.)
 
 * There is a new :mod:`collections` module for  various specialized collection
-  datatypes.   Currently it contains just one type, :class:`deque`,  a double-
-  ended queue that supports efficiently adding and removing elements from either
+  datatypes.  Currently it contains just one type, :class:`deque`, a double-ended
+  queue that supports efficiently adding and removing elements from either
   end::
 
      >>> from collections import deque
@@ -1485,8 +1485,8 @@ Some of the changes to Python's build process and to the C API are:
   intended as an aid to people developing the Python core.  Providing
   :option:`!--enable-profiling` to the :program:`configure` script will let you
   profile the interpreter with :program:`gprof`, and providing the
-  :option:`!--with-tsc` switch enables profiling using the Pentium's Time-Stamp-
-  Counter register.  Note that the :option:`!--with-tsc` switch is slightly
+  :option:`!--with-tsc` switch enables profiling using the Pentium's
+  Time-Stamp-Counter register.  Note that the :option:`!--with-tsc` switch is slightly
   misnamed, because the profiling feature also works on the PowerPC platform,
   though that processor architecture doesn't call that register "the TSC
   register".  (Contributed by Jeremy Hylton.)
@@ -1540,8 +1540,8 @@ code:
 
 * The :mod:`tarfile` module now generates GNU-format tar files by default.
 
-* Encountering a failure while importing a module no longer leaves a partially-
-  initialized module object in ``sys.modules``.
+* Encountering a failure while importing a module no longer leaves a
+  partially-initialized module object in ``sys.modules``.
 
 * :const:`None` is now a constant; code that binds a new value to  the name
   ``None`` is now a syntax error.

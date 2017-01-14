@@ -286,8 +286,8 @@ be used with the ':keyword:`with`' statement. File objects are one example::
            ... more processing code ...
 
 After this statement has executed, the file object in *f* will have been
-automatically closed, even if the :keyword:`for` loop raised an exception part-
-way through the block.
+automatically closed, even if the :keyword:`for` loop raised an exception
+part-way through the block.
 
 .. note::
 
