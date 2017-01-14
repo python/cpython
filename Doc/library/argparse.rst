@@ -174,7 +174,7 @@ ArgumentParser objects
    * conflict_handler_ - The strategy for resolving conflicting optionals
      (usually unnecessary)
 
-   * add_help_ - Add a -h/--help option to the parser (default: ``True``)
+   * add_help_ - Add a ``-h/--help`` option to the parser (default: ``True``)
 
    * allow_abbrev_ - Allows long options to be abbreviated if the
      abbreviation is unambiguous. (default: ``True``)
@@ -211,7 +211,7 @@ The help for this program will display ``myprogram.py`` as the program name
     -h, --help  show this help message and exit
     --foo FOO   foo help
    $ cd ..
-   $ python subdir\myprogram.py --help
+   $ python subdir/myprogram.py --help
    usage: myprogram.py [-h] [--foo FOO]
 
    optional arguments:
