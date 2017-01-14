@@ -157,8 +157,8 @@ Here's a small but realistic example::
    server_log = functools.partial(log, subsystem='server')
    server_log('Unable to open socket')
 
-Here's another example, from a program that uses PyGTK.  Here a context-
-sensitive pop-up menu is being constructed dynamically.  The callback provided
+Here's another example, from a program that uses PyGTK.  Here a context-sensitive
+pop-up menu is being constructed dynamically.  The callback provided
 for the menu option is a partially applied version of the :meth:`open_item`
 method, where the first argument has been provided. ::
 
@@ -171,8 +171,8 @@ method, where the first argument has been provided. ::
            popup_menu.append( ("Open", open_func, 1) )
 
 Another function in the :mod:`functools` module is the
-``update_wrapper(wrapper, wrapped)`` function that helps you write well-
-behaved decorators.  :func:`update_wrapper` copies the name, module, and
+``update_wrapper(wrapper, wrapped)`` function that helps you write
+well-behaved decorators.  :func:`update_wrapper` copies the name, module, and
 docstring attribute to a wrapper function so that tracebacks inside the wrapped
 function are easier to understand.  For example, you might write::
 
@@ -297,8 +297,8 @@ can't protect against having your submodule's name being used for a new module
 added in a future version of Python.
 
 In Python 2.5, you can switch :keyword:`import`'s behaviour to  absolute imports
-using a ``from __future__ import absolute_import`` directive.  This absolute-
-import behaviour will become the default in a future version (probably Python
+using a ``from __future__ import absolute_import`` directive.  This absolute-import
+behaviour will become the default in a future version (probably Python
 2.7).  Once absolute imports  are the default, ``import string`` will always
 find the standard library's version. It's suggested that users should begin
 using absolute imports as much as possible, so it's preferable to begin writing
@@ -602,8 +602,8 @@ be used with the ':keyword:`with`' statement. File objects are one example::
            ... more processing code ...
 
 After this statement has executed, the file object in *f* will have been
-automatically closed, even if the :keyword:`for` loop raised an exception part-
-way through the block.
+automatically closed, even if the :keyword:`for` loop raised an exception
+part-way through the block.
 
 .. note::
 
@@ -1558,8 +1558,8 @@ complete list of changes, or look through the SVN logs for all the details.
 
   You can also pack and unpack data to and from buffer objects directly using the
   ``pack_into(buffer, offset, v1, v2, ...)`` and ``unpack_from(buffer,
-  offset)`` methods.  This lets you store data directly into an array or a memory-
-  mapped file.
+  offset)`` methods.  This lets you store data directly into an array or a
+  memory-mapped file.
 
   (:class:`Struct` objects were implemented by Bob Ippolito at the NeedForSpeed
   sprint.  Support for buffer objects was added by Martin Blais, also at the
@@ -2281,8 +2281,8 @@ Acknowledgements
 
 The author would like to thank the following people for offering suggestions,
 corrections and assistance with various drafts of this article: Georg Brandl,
-Nick Coghlan, Phillip J. Eby, Lars Gustäbel, Raymond Hettinger, Ralf W. Grosse-
-Kunstleve, Kent Johnson, Iain Lowe, Martin von Löwis, Fredrik Lundh, Andrew
+Nick Coghlan, Phillip J. Eby, Lars Gustäbel, Raymond Hettinger, Ralf W.
+Grosse-Kunstleve, Kent Johnson, Iain Lowe, Martin von Löwis, Fredrik Lundh, Andrew
 McNamara, Skip Montanaro, Gustavo Niemeyer, Paul Prescod, James Pryor, Mike
 Rovner, Scott Weikart, Barry Warsaw, Thomas Wouters.
 
