@@ -962,8 +962,8 @@ New and Improved Modules
 * The new :mod:`hmac` module implements the HMAC algorithm described by
   :rfc:`2104`. (Contributed by Gerhard Häring.)
 
-* Several functions that originally returned lengthy tuples now return pseudo-
-  sequences that still behave like tuples but also have mnemonic attributes such
+* Several functions that originally returned lengthy tuples now return
+  pseudo-sequences that still behave like tuples but also have mnemonic attributes such
   as memberst_mtime or :attr:`tm_year`. The enhanced functions include
   :func:`stat`, :func:`fstat`, :func:`statvfs`, and :func:`fstatvfs` in the
   :mod:`os` module, and :func:`localtime`, :func:`gmtime`, and :func:`strptime` in
@@ -1141,8 +1141,8 @@ Some of the more notable changes are:
 
   The most significant change is the ability to build Python as a framework,
   enabled by supplying the :option:`!--enable-framework` option to the configure
-  script when compiling Python.  According to Jack Jansen, "This installs a self-
-  contained Python installation plus the OS X framework "glue" into
+  script when compiling Python.  According to Jack Jansen, "This installs a
+  self-contained Python installation plus the OS X framework "glue" into
   :file:`/Library/Frameworks/Python.framework` (or another location of choice).
   For now there is little immediate added benefit to this (actually, there is the
   disadvantage that you have to change your PATH to be able to find Python), but
