@@ -804,6 +804,9 @@ listextend(PyListObject *self, PyObject *b)
             Py_RETURN_NONE;
         }
         m = Py_SIZE(self);
+        /* It should not be possible to allocate a list large enough to cause
+        an overflow on any relevant platform */
+        assert(m < PY_SSIZE_T_MAX - n);
         if (list_resize(self, m + n) < 0) {
             Py_DECREF(b);
             return NULL;
