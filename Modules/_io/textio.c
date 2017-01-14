@@ -983,7 +983,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
                                                            errors);
         if (self->encoder == NULL)
             goto error;
-        /* Get the normalized named of the codec */
+        /* Get the normalized name of the codec */
         res = PyObject_GetAttrString(codec_info, "name");
         if (res == NULL) {
             if (PyErr_ExceptionMatches(PyExc_AttributeError))
