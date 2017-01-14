@@ -795,7 +795,7 @@ Library
   WeakValueDictionary.pop() when a GC collection happens in another
   thread.
 
-- Issue #20191: Fixed a crash in resource.prlimit() when pass a sequence that
+- Issue #20191: Fixed a crash in resource.prlimit() when passing a sequence that
   doesn't own its elements as limits.
 
 - Issue #28779: multiprocessing.set_forkserver_preload() would crash the
@@ -1289,9 +1289,9 @@ Library
 - Issue #28227: gzip now supports pathlib.  Patch by Ethan Furman.
 
 - Issue #27358: Optimized merging var-keyword arguments and improved error
-  message when pass a non-mapping as a var-keyword argument.
+  message when passing a non-mapping as a var-keyword argument.
 
-- Issue #28257: Improved error message when pass a non-iterable as
+- Issue #28257: Improved error message when passing a non-iterable as
   a var-positional argument.  Added opcode BUILD_TUPLE_UNPACK_WITH_CALL.
 
 - Issue #28322: Fixed possible crashes when unpickle itertools objects from

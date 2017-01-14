@@ -2231,7 +2231,7 @@ odictvalues_new(PyObject *od)
 
 
 /* ----------------------------------------------
-   MutableMappping implementations
+   MutableMapping implementations
 
 Mapping:
 
