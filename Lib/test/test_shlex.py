@@ -273,6 +273,14 @@ class ShlexTest(unittest.TestCase):
         # white space
         self.assertEqual(list(s), ['a', '&&', 'b', '||', 'c'])
 
+    def testPunctuationWithPosix(self):
+        """Test that punctuation_chars and posix behave correctly together."""
+        # see Issue #29132
+        s = shlex.shlex('f >"abc"', posix=True, punctuation_chars=True)
+        self.assertEqual(list(s), ['f', '>', 'abc'])
+        s = shlex.shlex('f >\\"abc\\"', posix=True, punctuation_chars=True)
+        self.assertEqual(list(s), ['f', '>', '"abc"'])
+
     def testEmptyStringHandling(self):
         """Test that parsing of empty strings is correctly handled."""
         # see Issue #21999
