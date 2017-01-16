@@ -170,3 +170,10 @@ Changes in the Python API
   Assigning to them was deprecated in Python 3.5.
   Use the :meth:`~http.cookies.Morsel.set` method for setting them.
   (Contributed by Serhiy Storchaka in :issue:`29192`.)
+
+
+CPython bytecode changes
+------------------------
+
+* Added two new opcodes: :opcode:`LOAD_METHOD`` and :opcode:`CALL_METHOD`.
+  (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
