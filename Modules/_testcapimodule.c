@@ -1824,7 +1824,7 @@ set_errno(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-#ifdef Py_USING_UNICODE
+#if defined(Py_USING_UNICODE) && !defined(Py_BUILD_CORE)
 static int test_run_counter = 0;
 
 static PyObject *
@@ -2486,7 +2486,7 @@ static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             (PyCFunction)test_config,        METH_NOARGS},
-#ifdef Py_USING_UNICODE
+#if defined(Py_USING_UNICODE) && !defined(Py_BUILD_CORE)
     {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
 #endif
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
