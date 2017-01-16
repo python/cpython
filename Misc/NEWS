@@ -29,9 +29,6 @@ Library
 - Issue #29082: Fixed loading libraries in ctypes by unicode names on Windows.
   Original patch by Chi Hsuan Yen.
 
-- Issue #29006: Revert change from issue #10513 for making sqlite more liable to
-  emit "database table is locked" errors.
-
 - Issue #29188: Support glibc 2.24 on Linux: don't use getentropy() function
   but read from /dev/urandom to get random bytes, for example in os.urandom().
   On Linux, getentropy() is implemented which getrandom() is blocking mode,
@@ -256,6 +253,9 @@ Library
   creates not a cursor.  Patch by Xiang Zhang.
 
 - Issue #19884: Avoid spurious output on OS X with Gnu Readline.
+
+- Issue #10513: Fix a regression in Connection.commit().  Statements should
+  not be reset after a commit.
 
 - Issue #2466: posixpath.ismount now correctly recognizes mount points which
   the user does not have permission to access.
