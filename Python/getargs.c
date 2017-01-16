@@ -1545,7 +1545,7 @@ PyArg_ValidateKeywordArguments(PyObject *kwargs)
 #define IS_END_OF_FORMAT(c) (c == '\0' || c == ';' || c == ':')
 
 static int
-vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
+vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                  char **kwlist, va_list *p_va, int flags)
 {
     char msgbuf[512];
@@ -1555,7 +1555,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     int max = INT_MAX;
     int i, pos, len;
     int skip = 0;
-    Py_ssize_t nargs, nkeywords;
+    Py_ssize_t nargs, nkwargs;
     PyObject *current_arg;
     freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
     freelist_t freelist;
@@ -1565,7 +1565,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     freelist.entries_malloced = 0;
 
     assert(args != NULL && PyTuple_Check(args));
-    assert(keywords == NULL || PyDict_Check(keywords));
+    assert(kwargs == NULL || PyDict_Check(kwargs));
     assert(format != NULL);
     assert(kwlist != NULL);
     assert(p_va != NULL);
@@ -1604,15 +1604,15 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     }
 
     nargs = PyTuple_GET_SIZE(args);
-    nkeywords = (keywords == NULL) ? 0 : PyDict_GET_SIZE(keywords);
-    if (nargs + nkeywords > len) {
+    nkwargs = (kwargs == NULL) ? 0 : PyDict_GET_SIZE(kwargs);
+    if (nargs + nkwargs > len) {
         PyErr_Format(PyExc_TypeError,
                      "%s%s takes at most %d argument%s (%zd given)",
                      (fname == NULL) ? "function" : fname,
                      (fname == NULL) ? "" : "()",
                      len,
                      (len == 1) ? "" : "s",
-                     nargs + nkeywords);
+                     nargs + nkwargs);
         return cleanreturn(0, &freelist);
     }
 
@@ -1673,14 +1673,14 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
         }
         if (!skip) {
             current_arg = NULL;
-            if (nkeywords && i >= pos) {
-                current_arg = PyDict_GetItemString(keywords, keyword);
+            if (nkwargs && i >= pos) {
+                current_arg = PyDict_GetItemString(kwargs, keyword);
                 if (!current_arg && PyErr_Occurred()) {
                     return cleanreturn(0, &freelist);
                 }
             }
             if (current_arg) {
-                --nkeywords;
+                --nkwargs;
                 if (i < nargs) {
                     /* arg present in tuple and in dict */
                     PyErr_Format(PyExc_TypeError,
@@ -1724,7 +1724,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
              * fulfilled and no keyword args left, with no further
              * validation. XXX Maybe skip this in debug build ?
              */
-            if (!nkeywords && !skip) {
+            if (!nkwargs && !skip) {
                 return cleanreturn(1, &freelist);
             }
         }
@@ -1756,10 +1756,10 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     }
 
     /* make sure there are no extraneous keyword arguments */
-    if (nkeywords > 0) {
+    if (nkwargs > 0) {
         PyObject *key, *value;
         Py_ssize_t pos = 0;
-        while (PyDict_Next(keywords, &pos, &key, &value)) {
+        while (PyDict_Next(kwargs, &pos, &key, &value)) {
             int match = 0;
             if (!PyUnicode_Check(key)) {
                 PyErr_SetString(PyExc_TypeError,
@@ -1942,7 +1942,7 @@ find_keyword(PyObject *kwnames, PyObject **kwstack, PyObject *key)
 
 static int
 vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
-                          PyObject *keywords, PyObject *kwnames,
+                          PyObject *kwargs, PyObject *kwnames,
                           struct _PyArg_Parser *parser,
                           va_list *p_va, int flags)
 {
@@ -1953,7 +1953,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
     const char *msg;
     PyObject *keyword;
     int i, pos, len;
-    Py_ssize_t nkeywords;
+    Py_ssize_t nkwargs;
     PyObject *current_arg;
     freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
     freelist_t freelist;
@@ -1963,9 +1963,9 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
     freelist.first_available = 0;
     freelist.entries_malloced = 0;
 
-    assert(keywords == NULL || PyDict_Check(keywords));
-    assert((keywords != NULL || kwnames != NULL)
-           || (keywords == NULL && kwnames == NULL));
+    assert(kwargs == NULL || PyDict_Check(kwargs));
+    assert((kwargs != NULL || kwnames != NULL)
+           || (kwargs == NULL && kwnames == NULL));
     assert(p_va != NULL);
 
     if (parser == NULL) {
@@ -1995,24 +1995,24 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
         freelist.entries_malloced = 1;
     }
 
-    if (keywords != NULL) {
-        nkeywords = PyDict_GET_SIZE(keywords);
+    if (kwargs != NULL) {
+        nkwargs = PyDict_GET_SIZE(kwargs);
     }
     else if (kwnames != NULL) {
-        nkeywords = PyTuple_GET_SIZE(kwnames);
+        nkwargs = PyTuple_GET_SIZE(kwnames);
         kwstack = args + nargs;
     }
     else {
-        nkeywords = 0;
+        nkwargs = 0;
     }
-    if (nargs + nkeywords > len) {
+    if (nargs + nkwargs > len) {
         PyErr_Format(PyExc_TypeError,
                      "%s%s takes at most %d argument%s (%zd given)",
                      (parser->fname == NULL) ? "function" : parser->fname,
                      (parser->fname == NULL) ? "" : "()",
                      len,
                      (len == 1) ? "" : "s",
-                     nargs + nkeywords);
+                     nargs + nkwargs);
         return cleanreturn(0, &freelist);
     }
     if (parser->max < nargs) {
@@ -2036,9 +2036,9 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
         assert(!IS_END_OF_FORMAT(*format));
 
         current_arg = NULL;
-        if (nkeywords && i >= pos) {
-            if (keywords != NULL) {
-                current_arg = PyDict_GetItem(keywords, keyword);
+        if (nkwargs && i >= pos) {
+            if (kwargs != NULL) {
+                current_arg = PyDict_GetItem(kwargs, keyword);
                 if (!current_arg && PyErr_Occurred()) {
                     return cleanreturn(0, &freelist);
                 }
@@ -2048,7 +2048,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
             }
         }
         if (current_arg) {
-            --nkeywords;
+            --nkwargs;
             if (i < nargs) {
                 /* arg present in tuple and in dict */
                 PyErr_Format(PyExc_TypeError,
@@ -2092,7 +2092,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
          * fulfilled and no keyword args left, with no further
          * validation. XXX Maybe skip this in debug build ?
          */
-        if (!nkeywords) {
+        if (!nkwargs) {
             return cleanreturn(1, &freelist);
         }
 
@@ -2105,11 +2105,11 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
     assert(IS_END_OF_FORMAT(*format) || (*format == '|') || (*format == '$'));
 
     /* make sure there are no extraneous keyword arguments */
-    if (nkeywords > 0) {
-        if (keywords != NULL) {
+    if (nkwargs > 0) {
+        if (kwargs != NULL) {
             PyObject *key, *value;
             Py_ssize_t pos = 0;
-            while (PyDict_Next(keywords, &pos, &key, &value)) {
+            while (PyDict_Next(kwargs, &pos, &key, &value)) {
                 int match;
                 if (!PyUnicode_Check(key)) {
                     PyErr_SetString(PyExc_TypeError,
