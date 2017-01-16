@@ -261,7 +261,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	for mod in $MODS
 	do
 		EXTDECLS="${EXTDECLS}extern void init$mod(void);$NL"
-		INITBITS="${INITBITS}	{\"$mod\", init$mod},$NL"
+		INITBITS="${INITBITS}    {\"$mod\", init$mod},$NL"
 	done
 
 
