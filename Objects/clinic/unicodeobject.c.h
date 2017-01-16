@@ -6,9 +6,9 @@ PyDoc_STRVAR(unicode_title__doc__,
 "title($self, /)\n"
 "--\n"
 "\n"
-"Return a version of the string where each word is capitalized.\n"
+"Return a version of the string where each word is titlecased.\n"
 "\n"
-"More specifically, words start with upper cased characters and all remaining\n"
+"More specifically, words start with uppercased characters and all remaining\n"
 "cased characters have lower case.");
 
 #define UNICODE_TITLE_METHODDEF    \
@@ -48,7 +48,7 @@ PyDoc_STRVAR(unicode_casefold__doc__,
 "casefold($self, /)\n"
 "--\n"
 "\n"
-"Return a version of S suitable for caseless comparisons.");
+"Return a version of the string suitable for caseless comparisons.");
 
 #define UNICODE_CASEFOLD_METHODDEF    \
     {"casefold", (PyCFunction)unicode_casefold, METH_NOARGS, unicode_casefold__doc__},
@@ -97,12 +97,12 @@ PyDoc_STRVAR(unicode_encode__doc__,
 "encode($self, /, encoding=\'utf-8\', errors=\'strict\')\n"
 "--\n"
 "\n"
-"Encode a string using the codec registered for encoding.\n"
+"Encode the string using the codec registered for encoding.\n"
 "\n"
 "  encoding\n"
 "    The encoding in which to encode the string.\n"
 "  errors\n"
-"    The error handling scheme to use for the handling of encoding errors.\n"
+"    The error handling scheme to use for encoding errors.\n"
 "    The default is \'strict\' meaning that encoding errors raise a\n"
 "    UnicodeEncodeError.  Other possible values are \'ignore\', \'replace\' and\n"
 "    \'xmlcharrefreplace\' as well as any other name registered with\n"
@@ -169,7 +169,7 @@ PyDoc_STRVAR(unicode_islower__doc__,
 "islower($self, /)\n"
 "--\n"
 "\n"
-"Return whether the string is a lowercase string; False otherwise.\n"
+"Return True if the string is a lowercase string, False otherwise.\n"
 "\n"
 "A string is lowercase if all cased characters in the string are lowercase and\n"
 "there is at least one cased character in the string.");
@@ -190,7 +190,7 @@ PyDoc_STRVAR(unicode_isupper__doc__,
 "isupper($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is an uppercase string; False otherwise.\n"
+"Return True if the string is an uppercase string, False otherwise.\n"
 "\n"
 "A string is uppercase if all cased characters in the string are uppercase and\n"
 "there is at least one cased character in the string.");
@@ -211,7 +211,7 @@ PyDoc_STRVAR(unicode_istitle__doc__,
 "istitle($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is a title-cased string; False otherwise.\n"
+"Return True if the string is a title-cased string, False otherwise.\n"
 "\n"
 "In a title-cased string, upper- and title-case characters may only\n"
 "follow uncased characters and lowercase characters only cased ones.");
@@ -232,7 +232,7 @@ PyDoc_STRVAR(unicode_isspace__doc__,
 "isspace($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is a whitespace string; False otherwise.\n"
+"Return True if the string is a whitespace string, False otherwise.\n"
 "\n"
 "A string is whitespace if all characters in the string are whitespace and there\n"
 "is at least one character in the string.");
@@ -253,7 +253,7 @@ PyDoc_STRVAR(unicode_isalpha__doc__,
 "isalpha($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is an alphabetic string; False otherwise.\n"
+"Return True if the string is an alphabetic string, False otherwise.\n"
 "\n"
 "A string is alphabetic if all characters in the string are alphabetic and there\n"
 "is at least one character in the string.");
@@ -274,7 +274,7 @@ PyDoc_STRVAR(unicode_isalnum__doc__,
 "isalnum($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is an alpha-numeric string; False otherwise.\n"
+"Return True if the string is an alpha-numeric string, False otherwise.\n"
 "\n"
 "A string is alpha-numeric if all characters in the string are alpha-numeric and\n"
 "there is at least one character in the string.");
@@ -295,9 +295,9 @@ PyDoc_STRVAR(unicode_isdecimal__doc__,
 "isdecimal($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is a decimal string; False otherwise.\n"
+"Return True if the string is a decimal string, False otherwise.\n"
 "\n"
-"A string is a digit string if all characters in the string are decimal and\n"
+"A string is a decimal string if all characters in the string are decimal and\n"
 "there is at least one character in the string.");
 
 #define UNICODE_ISDECIMAL_METHODDEF    \
@@ -316,7 +316,7 @@ PyDoc_STRVAR(unicode_isdigit__doc__,
 "isdigit($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is a digit string; False otherwise.\n"
+"Return True if the string is a digit string, False otherwise.\n"
 "\n"
 "A string is a digit string if all characters in the string are digits and there\n"
 "is at least one character in the string.");
@@ -337,7 +337,7 @@ PyDoc_STRVAR(unicode_isnumeric__doc__,
 "isnumeric($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is an numeric string; False otherwise.\n"
+"Return True if the string is a numeric string, False otherwise.\n"
 "\n"
 "A string is numeric if all characters in the string are numeric and there is at\n"
 "least one character in the string.");
@@ -358,7 +358,7 @@ PyDoc_STRVAR(unicode_isidentifier__doc__,
 "isidentifier($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is a valid Python identifier; False otherwise.\n"
+"Return True if the string is a valid Python identifier, False otherwise.\n"
 "\n"
 "Use keyword.iskeyword() to test for reserved identifiers such as \"def\" and\n"
 "\"class\".");
@@ -379,7 +379,7 @@ PyDoc_STRVAR(unicode_isprintable__doc__,
 "isprintable($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is printable; False otherwise.\n"
+"Return True if the string is printable, False otherwise.\n"
 "\n"
 "A string is printable if all of its characters are considered printable in\n"
 "repr() or if it is empty.");
@@ -402,9 +402,7 @@ PyDoc_STRVAR(unicode_join__doc__,
 "\n"
 "Concatenate any number of strings.\n"
 "\n"
-"The string whose method is called is inserted in between each pair of given\n"
-"strings.\n"
-"\n"
+"The string whose method is called is inserted in between each given strings.\n"
 "The result is returned as a new string.\n"
 "\n"
 "Example: \'.\'.join([\'ab\', \'pq\', \'rs\']) -> \'ab.pq.rs\'");
@@ -865,7 +863,7 @@ PyDoc_STRVAR(unicode_zfill__doc__,
 "\n"
 "Pad a numeric string with zeros on the left, to fill a field of the given width.\n"
 "\n"
-"The original string is never truncated.");
+"The string is never truncated.");
 
 #define UNICODE_ZFILL_METHODDEF    \
     {"zfill", (PyCFunction)unicode_zfill, METH_O, unicode_zfill__doc__},
@@ -892,7 +890,7 @@ PyDoc_STRVAR(unicode___format____doc__,
 "__format__($self, format_spec, /)\n"
 "--\n"
 "\n"
-"Return a formatted version of S as described by format_spec.");
+"Return a formatted version of the string as described by format_spec.");
 
 #define UNICODE___FORMAT___METHODDEF    \
     {"__format__", (PyCFunction)unicode___format__, METH_O, unicode___format____doc__},
@@ -932,4 +930,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=11b54b7b810af538 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3b9b1e1f71ba3b00 input=a9049054013a1b77]*/
