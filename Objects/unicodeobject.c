@@ -49,7 +49,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 /*[clinic input]
-class str "PyUnicodeObject *" "&PyUnicode_Type"
+class str "PyObject *" "&PyUnicode_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=4884c934de622cf6]*/
 
@@ -10737,7 +10737,7 @@ cased characters have lower case.
 
 static PyObject *
 unicode_title_impl(PyObject *self)
-/*[clinic end generated code: output=c75ae03809574902 input=4eb12c1bb8642cb9]*/
+/*[clinic end generated code: output=c75ae03809574902 input=fa945d669b26e683]*/
 {
     if (PyUnicode_READY(self) == -1)
         return NULL;
@@ -10772,7 +10772,7 @@ Return a version of the string suitable for caseless comparisons.
 
 static PyObject *
 unicode_casefold_impl(PyObject *self)
-/*[clinic end generated code: output=0120daf657ca40af input=a96f2b0d3daabd94]*/
+/*[clinic end generated code: output=0120daf657ca40af input=384d66cc2ae30daf]*/
 {
     if (PyUnicode_READY(self) == -1)
         return NULL;
@@ -11510,7 +11510,7 @@ Encode the string using the codec registered for encoding.
 
 static PyObject *
 unicode_encode_impl(PyObject *self, const char *encoding, const char *errors)
-/*[clinic end generated code: output=bf78b6e2a9470e3c input=12fcb2e5798e96dc]*/
+/*[clinic end generated code: output=bf78b6e2a9470e3c input=f0a9eb293d08fe02]*/
 {
     return PyUnicode_AsEncodedString(self, encoding, errors);
 }
@@ -11730,7 +11730,7 @@ there is at least one cased character in the string.
 
 static PyObject *
 unicode_islower_impl(PyObject *self)
-/*[clinic end generated code: output=dbd41995bd005b81 input=46eeb20d935af050]*/
+/*[clinic end generated code: output=dbd41995bd005b81 input=acec65ac6821ae47]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -11775,7 +11775,7 @@ there is at least one cased character in the string.
 
 static PyObject *
 unicode_isupper_impl(PyObject *self)
-/*[clinic end generated code: output=049209c8e7f15f59 input=dd0a595fc871eee0]*/
+/*[clinic end generated code: output=049209c8e7f15f59 input=e9b1feda5d17f2d3]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -11820,7 +11820,7 @@ follow uncased characters and lowercase characters only cased ones.
 
 static PyObject *
 unicode_istitle_impl(PyObject *self)
-/*[clinic end generated code: output=e9bf6eb91f5d3f0e input=2c56883d113d644d]*/
+/*[clinic end generated code: output=e9bf6eb91f5d3f0e input=98d32bd2e1f06f8c]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -11878,7 +11878,7 @@ is at least one character in the string.
 
 static PyObject *
 unicode_isspace_impl(PyObject *self)
-/*[clinic end generated code: output=163a63bfa08ac2b9 input=b9506a23e312d203]*/
+/*[clinic end generated code: output=163a63bfa08ac2b9 input=fe462cb74f8437d8]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -11918,7 +11918,7 @@ is at least one character in the string.
 
 static PyObject *
 unicode_isalpha_impl(PyObject *self)
-/*[clinic end generated code: output=cc81b9ac3883ec4f input=17e3788814472079]*/
+/*[clinic end generated code: output=cc81b9ac3883ec4f input=d0fd18a96cbca5eb]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -11957,7 +11957,7 @@ there is at least one character in the string.
 
 static PyObject *
 unicode_isalnum_impl(PyObject *self)
-/*[clinic end generated code: output=a5a23490ffc3660c input=d350c4f7c59b4758]*/
+/*[clinic end generated code: output=a5a23490ffc3660c input=5c6579bf2e04758c]*/
 {
     int kind;
     void *data;
@@ -11999,7 +11999,7 @@ there is at least one character in the string.
 
 static PyObject *
 unicode_isdecimal_impl(PyObject *self)
-/*[clinic end generated code: output=fb2dcdb62d3fc548 input=40536fb80e5f1dc1]*/
+/*[clinic end generated code: output=fb2dcdb62d3fc548 input=336bc97ab4c8268f]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -12038,7 +12038,7 @@ is at least one character in the string.
 
 static PyObject *
 unicode_isdigit_impl(PyObject *self)
-/*[clinic end generated code: output=10a6985311da6858 input=c6a222be1aaec2af]*/
+/*[clinic end generated code: output=10a6985311da6858 input=901116c31deeea4c]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -12078,7 +12078,7 @@ least one character in the string.
 
 static PyObject *
 unicode_isnumeric_impl(PyObject *self)
-/*[clinic end generated code: output=9172a32d9013051a input=e3b37b2cc8854f35]*/
+/*[clinic end generated code: output=9172a32d9013051a input=722507db976f826c]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -12154,7 +12154,7 @@ Use keyword.iskeyword() to test for reserved identifiers such as "def" and
 
 static PyObject *
 unicode_isidentifier_impl(PyObject *self)
-/*[clinic end generated code: output=fe585a9666572905 input=95eebe40d6d91234]*/
+/*[clinic end generated code: output=fe585a9666572905 input=916b0a3c9f57e919]*/
 {
     return PyBool_FromLong(PyUnicode_IsIdentifier(self));
 }
@@ -12170,7 +12170,7 @@ repr() or if it is empty.
 
 static PyObject *
 unicode_isprintable_impl(PyObject *self)
-/*[clinic end generated code: output=3ab9626cd32dd1a0 input=20c53134171af84e]*/
+/*[clinic end generated code: output=3ab9626cd32dd1a0 input=98a0e1c2c1813209]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -12211,7 +12211,7 @@ Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
 
 static PyObject *
 unicode_join(PyObject *self, PyObject *iterable)
-/*[clinic end generated code: output=6857e7cecfe7bf98 input=465f62626109db6b]*/
+/*[clinic end generated code: output=6857e7cecfe7bf98 input=d8311e5ccbafbeb6]*/
 {
     return PyUnicode_Join(self, iterable);
 }
@@ -13309,7 +13309,7 @@ The string is never truncated.
 
 static PyObject *
 unicode_zfill_impl(PyObject *self, Py_ssize_t width)
-/*[clinic end generated code: output=e13fb6bdf8e3b9df input=3559257ab7bfed6e]*/
+/*[clinic end generated code: output=e13fb6bdf8e3b9df input=c6b2f772c6f27799]*/
 {
     Py_ssize_t fill;
     PyObject *u;
@@ -13814,7 +13814,7 @@ Return a formatted version of the string as described by format_spec.
 
 static PyObject *
 unicode___format___impl(PyObject *self, PyObject *format_spec)
-/*[clinic end generated code: output=45fceaca6d2ba4c8 input=1f0623ca7b7c5981]*/
+/*[clinic end generated code: output=45fceaca6d2ba4c8 input=5e135645d167a214]*/
 {
     _PyUnicodeWriter writer;
     int ret;
