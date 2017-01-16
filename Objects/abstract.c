@@ -2274,7 +2274,30 @@ _PyStack_AsTuple(PyObject **stack, Py_ssize_t nargs)
         Py_INCREF(item);
         PyTuple_SET_ITEM(args, i, item);
     }
+    return args;
+}
 
+PyObject*
+_PyStack_AsTupleSlice(PyObject **stack, Py_ssize_t nargs,
+                      Py_ssize_t start, Py_ssize_t end)
+{
+    PyObject *args;
+    Py_ssize_t i;
+
+    assert(0 <= start);
+    assert(end <= nargs);
+    assert(start <= end);
+
+    args = PyTuple_New(end - start);
+    if (args == NULL) {
+        return NULL;
+    }
+
+    for (i=start; i < end; i++) {
+        PyObject *item = stack[i];
+        Py_INCREF(item);
+        PyTuple_SET_ITEM(args, i - start, item);
+    }
     return args;
 }
 
