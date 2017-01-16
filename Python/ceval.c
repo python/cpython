@@ -3236,81 +3236,73 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
             int meth_found = _PyObject_GetMethod(obj, name, &meth);
 
-            SET_TOP(meth);  /* Replace `obj` on top; OK if NULL. */
             if (meth == NULL) {
                 /* Most likely attribute wasn't found. */
-                Py_DECREF(obj);
                 goto error;
             }
 
             if (meth_found) {
-                /* The method object is now on top of the stack.
-                   Push `obj` back to the stack, so that the stack
-                   layout would be:
-
-                       method | obj | arg1 | ... | argN
-                */
-                PUSH(obj);
+                /* We can bypass temporary bound method object.
+                   meth is unbound method and obj is self.
+                  
+                   meth | self | arg1 | ... | argN
+                 */
+                SET_TOP(meth);
+                PUSH(obj);  // self
             }
             else {
-                /* Not a method (but a regular attr, or something
-                   was returned by a descriptor protocol).  Push
-                   NULL to the top of the stack, to signal
+                /* meth is not an unbound method (but a regular attr, or
+                   something was returned by a descriptor protocol).  Set
+                   the second element of the stack to NULL, to signal
                    CALL_METHOD that it's not a method call.
+
+                   NULL | meth | arg1 | ... | argN
                 */
+                SET_TOP(NULL);
                 Py_DECREF(obj);
-                PUSH(NULL);
+                PUSH(meth);
             }
             DISPATCH();
         }
 
         TARGET(CALL_METHOD) {
             /* Designed to work in tamdem with LOAD_METHOD. */
-            PyObject **sp, *res, *obj;
+            PyObject **sp, *res, *meth;
 
             sp = stack_pointer;
 
-            obj = PEEK(oparg + 1);
-            if (obj == NULL) {
-                /* `obj` is NULL when LOAD_METHOD thinks that it's not
-                   a method call.  Swap the NULL and callable.
+            meth = PEEK(oparg + 2);
+            if (meth == NULL) {
+                /* `meth` is NULL when LOAD_METHOD thinks that it's not
+                   a method call.
 
                    Stack layout:
 
-                       ... | callable | NULL | arg1 | ... | argN
-                                                           ^- TOP()
-                                              ^- (-oparg)
-                                       ^- (-oparg-1)
-                              ^- (-oparg-2)
+                       ... | NULL | callable | arg1 | ... | argN
+                                                            ^- TOP()
+                                               ^- (-oparg)
+                                    ^- (-oparg-1)
+                             ^- (-oparg-2)
 
-                   after the next line it will be:
-
-                       ... | callable | callable | arg1 | ... | argN
-                                                                ^- TOP()
-                                                   ^- (-oparg)
-                                        ^- (-oparg-1)
-                              ^- (-oparg-2)
-
-                   Right side `callable` will be POPed by call_funtion.
-                   Left side `callable` will be POPed manually later
-                   (one of "callbale" refs on the stack is borrowed.)
+                   `callable` will be POPed by call_funtion.
+                   NULL will will be POPed manually later.
                 */
-                SET_VALUE(oparg + 1, PEEK(oparg + 2));
                 res = call_function(&sp, oparg, NULL);
                 stack_pointer = sp;
-                (void)POP(); /* POP the left side callable. */
+                (void)POP(); /* POP the NULL. */
             }
             else {
                 /* This is a method call.  Stack layout:
 
-                     ... | method | obj | arg1 | ... | argN
+                     ... | method | self | arg1 | ... | argN
                                                         ^- TOP()
                                            ^- (-oparg)
-                                     ^- (-oparg-1)
+                                    ^- (-oparg-1)
+                           ^- (-oparg-2)
 
-                  `obj` and `method` will be POPed by call_function.
+                  `self` and `method` will be POPed by call_function.
                   We'll be passing `oparg + 1` to call_function, to
-                  make it accept the `obj` as a first argument.
+                  make it accept the `self` as a first argument.
                 */
                 res = call_function(&sp, oparg + 1, NULL);
                 stack_pointer = sp;

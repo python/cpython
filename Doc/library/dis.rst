@@ -957,6 +957,28 @@ All of the following opcodes use their arguments.
    value.
 
 
+.. opcode:: LOAD_METHOD (namei)
+
+   Loads a method named ``co_names[namei]`` from TOS object. TOS is popped and
+   method and TOS are pushed when interpreter can call unbound method directly.
+   TOS will be uesd as the first argument (``self``) by :opcode:`CALL_METHOD`.
+   Otherwise, ``NULL`` and  method is pushed (method is bound method or
+   something else).
+
+   .. versionadded:: 3.7
+
+
+.. opcode:: CALL_METHOD (argc)
+
+   Calls a method.  *argc* is number of positional arguments.
+   Keyword arguments are not supported.  This opcode is designed to be used
+   with :opcode:`LOAD_METHOD`.  Positional arguments are on top of the stack.
+   Below them, two items described in :opcode:`LOAD_METHOD` on the stack.
+   All of them are popped and return value is pushed.
+
+   .. versionadded:: 3.7
+
+
 .. opcode:: MAKE_FUNCTION (argc)
 
    Pushes a new function object on the stack.  From bottom to top, the consumed
