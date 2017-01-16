@@ -160,6 +160,12 @@ PyAPI_FUNC(PyObject*) _PyStack_AsTuple(
     PyObject **stack,
     Py_ssize_t nargs);
 
+PyAPI_FUNC(PyObject*) _PyStack_AsTupleSlice(
+    PyObject **stack,
+    Py_ssize_t nargs,
+    Py_ssize_t start,
+    Py_ssize_t end);
+
 /* Convert keyword arguments from the (stack, kwnames) format to a Python
    dictionary.
 
