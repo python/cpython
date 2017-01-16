@@ -52,51 +52,45 @@ _Py_IDENTIFIER(stderr);
 
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
-builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
+builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
+                        PyObject *kwnames)
 {
     PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns;
     PyObject *cls = NULL, *cell = NULL;
-    Py_ssize_t nargs;
     int isclass = 0;   /* initialize to prevent gcc warning */
 
-    assert(args != NULL);
-    if (!PyTuple_Check(args)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "__build_class__: args is not a tuple");
-        return NULL;
-    }
-    nargs = PyTuple_GET_SIZE(args);
     if (nargs < 2) {
         PyErr_SetString(PyExc_TypeError,
                         "__build_class__: not enough arguments");
         return NULL;
     }
-    func = PyTuple_GET_ITEM(args, 0); /* Better be callable */
+    func = args[0];   /* Better be callable */
     if (!PyFunction_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                         "__build_class__: func must be a function");
         return NULL;
     }
-    name = PyTuple_GET_ITEM(args, 1);
+    name = args[1];
     if (!PyUnicode_Check(name)) {
         PyErr_SetString(PyExc_TypeError,
                         "__build_class__: name is not a string");
         return NULL;
     }
-    bases = PyTuple_GetSlice(args, 2, nargs);
+    bases = _PyStack_AsTupleSlice(args, nargs, 2, nargs);
     if (bases == NULL)
         return NULL;
 
-    if (kwds == NULL) {
+    if (kwnames == NULL) {
         meta = NULL;
         mkw = NULL;
     }
     else {
-        mkw = PyDict_Copy(kwds); /* Don't modify kwds passed in! */
+        mkw = _PyStack_AsDict(args + nargs, kwnames);
         if (mkw == NULL) {
             Py_DECREF(bases);
             return NULL;
         }
+
         meta = _PyDict_GetItemId(mkw, &PyId_metaclass);
         if (meta != NULL) {
             Py_INCREF(meta);
@@ -2612,7 +2606,7 @@ PyTypeObject PyZip_Type = {
 
 static PyMethodDef builtin_methods[] = {
     {"__build_class__", (PyCFunction)builtin___build_class__,
-     METH_VARARGS | METH_KEYWORDS, build_class_doc},
+     METH_FASTCALL, build_class_doc},
     {"__import__",      (PyCFunction)builtin___import__, METH_VARARGS | METH_KEYWORDS, import_doc},
     BUILTIN_ABS_METHODDEF
     BUILTIN_ALL_METHODDEF
