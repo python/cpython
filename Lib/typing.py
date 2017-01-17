@@ -59,6 +59,7 @@ __all__ = [
     'SupportsRound',
 
     # Concrete collection types.
+    'Deque',
     'Dict',
     'DefaultDict',
     'List',
@@ -1771,6 +1772,15 @@ class List(list, MutableSequence[T], extra=list):
                             "use list() instead")
         return _generic_new(list, cls, *args, **kwds)
 
+class Deque(collections.deque, MutableSequence[T], extra=collections.deque):
+
+    __slots__ = ()
+
+    def __new__(cls, *args, **kwds):
+        if _geqv(cls, Deque):
+            raise TypeError("Type Deque cannot be instantiated; "
+                            "use deque() instead")
+        return _generic_new(collections.deque, cls, *args, **kwds)
 
 class Set(set, MutableSet[T], extra=set):
 
