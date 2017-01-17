@@ -336,20 +336,24 @@ PyDoc_STRVAR(_io_TextIOWrapper_truncate__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)_io_TextIOWrapper_truncate, METH_VARARGS, _io_TextIOWrapper_truncate__doc__},
+    {"truncate", (PyCFunction)_io_TextIOWrapper_truncate, METH_FASTCALL, _io_TextIOWrapper_truncate__doc__},
 
 static PyObject *
 _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos);
 
 static PyObject *
-_io_TextIOWrapper_truncate(textio *self, PyObject *args)
+_io_TextIOWrapper_truncate(textio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *pos = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "truncate",
+    if (!_PyArg_UnpackStack(args, nargs, "truncate",
         0, 1,
         &pos)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
         goto exit;
     }
     return_value = _io_TextIOWrapper_truncate_impl(self, pos);
@@ -476,4 +480,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=1f8367c7a3301670 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=67eba50449900a96 input=a9049054013a1b77]*/

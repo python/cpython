@@ -12453,14 +12453,14 @@ str.strip as unicode_strip
     chars: object = None
     /
 
-Return a copy of the string with leading and trailing whitespace removed.
+Return a copy of the string with leading and trailing whitespace remove.
 
 If chars is given and not None, remove characters in chars instead.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_strip_impl(PyObject *self, PyObject *chars)
-/*[clinic end generated code: output=ca19018454345d57 input=385289c6f423b954]*/
+/*[clinic end generated code: output=ca19018454345d57 input=eefe24a1059c352b]*/
 {
     return do_argstrip(self, BOTHSTRIP, chars);
 }

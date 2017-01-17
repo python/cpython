@@ -471,25 +471,29 @@ PyDoc_STRVAR(unicode_strip__doc__,
 "strip($self, chars=None, /)\n"
 "--\n"
 "\n"
-"Return a copy of the string with leading and trailing whitespace removed.\n"
+"Return a copy of the string with leading and trailing whitespace remove.\n"
 "\n"
 "If chars is given and not None, remove characters in chars instead.");
 
 #define UNICODE_STRIP_METHODDEF    \
-    {"strip", (PyCFunction)unicode_strip, METH_VARARGS, unicode_strip__doc__},
+    {"strip", (PyCFunction)unicode_strip, METH_FASTCALL, unicode_strip__doc__},
 
 static PyObject *
 unicode_strip_impl(PyObject *self, PyObject *chars);
 
 static PyObject *
-unicode_strip(PyObject *self, PyObject *args)
+unicode_strip(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *chars = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "strip",
+    if (!_PyArg_UnpackStack(args, nargs, "strip",
         0, 1,
         &chars)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("strip", kwnames)) {
         goto exit;
     }
     return_value = unicode_strip_impl(self, chars);
@@ -507,20 +511,24 @@ PyDoc_STRVAR(unicode_lstrip__doc__,
 "If chars is given and not None, remove characters in chars instead.");
 
 #define UNICODE_LSTRIP_METHODDEF    \
-    {"lstrip", (PyCFunction)unicode_lstrip, METH_VARARGS, unicode_lstrip__doc__},
+    {"lstrip", (PyCFunction)unicode_lstrip, METH_FASTCALL, unicode_lstrip__doc__},
 
 static PyObject *
 unicode_lstrip_impl(PyObject *self, PyObject *chars);
 
 static PyObject *
-unicode_lstrip(PyObject *self, PyObject *args)
+unicode_lstrip(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
 
-    if (!PyArg_UnpackTuple(args, "lstrip",
+    if (!_PyArg_UnpackStack(args, nargs, "lstrip",
         0, 1,
         &chars)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("lstrip", kwnames)) {
         goto exit;
     }
     return_value = unicode_lstrip_impl(self, chars);
@@ -538,20 +546,24 @@ PyDoc_STRVAR(unicode_rstrip__doc__,
 "If chars is given and not None, remove characters in chars instead.");
 
 #define UNICODE_RSTRIP_METHODDEF    \
-    {"rstrip", (PyCFunction)unicode_rstrip, METH_VARARGS, unicode_rstrip__doc__},
+    {"rstrip", (PyCFunction)unicode_rstrip, METH_FASTCALL, unicode_rstrip__doc__},
 
 static PyObject *
 unicode_rstrip_impl(PyObject *self, PyObject *chars);
 
 static PyObject *
-unicode_rstrip(PyObject *self, PyObject *args)
+unicode_rstrip(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
 
-    if (!PyArg_UnpackTuple(args, "rstrip",
+    if (!_PyArg_UnpackStack(args, nargs, "rstrip",
         0, 1,
         &chars)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("rstrip", kwnames)) {
         goto exit;
     }
     return_value = unicode_rstrip_impl(self, chars);
@@ -950,4 +962,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=eb6a3ae361a1a379 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3d73f3dfd6ec7d83 input=a9049054013a1b77]*/
