@@ -2429,16 +2429,33 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
  * not empty, returns 1 otherwise
  */
 int
-_PyArg_NoKeywords(const char *funcname, PyObject *kw)
+_PyArg_NoKeywords(const char *funcname, PyObject *kwargs)
 {
-    if (kw == NULL)
+    if (kwargs == NULL)
         return 1;
-    if (!PyDict_CheckExact(kw)) {
+    if (!PyDict_CheckExact(kwargs)) {
         PyErr_BadInternalCall();
         return 0;
     }
-    if (PyDict_GET_SIZE(kw) == 0)
+    if (PyDict_GET_SIZE(kwargs) == 0) {
         return 1;
+    }
+
+    PyErr_Format(PyExc_TypeError, "%s does not take keyword arguments",
+                    funcname);
+    return 0;
+}
+
+
+int
+_PyArg_NoStackKeywords(const char *funcname, PyObject *kwnames)
+{
+    if (kwnames == NULL)
+        return 1;
+    assert(PyTuple_CheckExact(kwnames));
+    if (PyTuple_GET_SIZE(kwnames) == 0) {
+        return 1;
+    }
 
     PyErr_Format(PyExc_TypeError, "%s does not take keyword arguments",
                     funcname);
