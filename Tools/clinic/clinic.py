@@ -825,16 +825,32 @@ class CLanguage(Language):
             # and nothing but normal objects:
             # PyArg_UnpackTuple!
 
-            flags = "METH_VARARGS"
-            parser_prototype = parser_prototype_varargs
+            if not new_or_init:
+                flags = "METH_FASTCALL"
+                parser_prototype = parser_prototype_fastcall
 
-            parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                if (!PyArg_UnpackTuple(args, "{name}",
-                    {unpack_min}, {unpack_max},
-                    {parse_arguments})) {{
-                    goto exit;
-                }}
-                """, indent=4))
+                parser_definition = parser_body(parser_prototype, normalize_snippet("""
+                    if (!_PyArg_UnpackStack(args, nargs, "{name}",
+                        {unpack_min}, {unpack_max},
+                        {parse_arguments})) {{
+                        goto exit;
+                    }}
+
+                    if ({self_type_check}!_PyArg_NoStackKeywords("{name}", kwnames)) {{
+                        goto exit;
+                    }}
+                    """, indent=4))
+            else:
+                flags = "METH_VARARGS"
+                parser_prototype = parser_prototype_varargs
+
+                parser_definition = parser_body(parser_prototype, normalize_snippet("""
+                    if (!PyArg_UnpackTuple(args, "{name}",
+                        {unpack_min}, {unpack_max},
+                        {parse_arguments})) {{
+                        goto exit;
+                    }}
+                    """, indent=4))
 
         elif positional:
             if not new_or_init:
