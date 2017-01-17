@@ -1572,6 +1572,9 @@ class CollectionsAbcTests(BaseTestCase):
     def test_list(self):
         self.assertIsSubclass(list, typing.List)
 
+    def test_deque(self):
+        self.assertIsSubclass(collections.deque, typing.Deque)
+
     def test_set(self):
         self.assertIsSubclass(set, typing.Set)
         self.assertNotIsSubclass(frozenset, typing.Set)
@@ -1641,6 +1644,14 @@ class CollectionsAbcTests(BaseTestCase):
 
         self.assertIsSubclass(MyDefDict, collections.defaultdict)
         self.assertNotIsSubclass(collections.defaultdict, MyDefDict)
+
+    def test_no_deque_instantiation(self):
+        with self.assertRaises(TypeError):
+            typing.Deque()
+        with self.assertRaises(TypeError):
+            typing.Deque[T]()
+        with self.assertRaises(TypeError):
+            typing.Deque[int]()
 
     def test_no_set_instantiation(self):
         with self.assertRaises(TypeError):
