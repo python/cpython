@@ -33,7 +33,7 @@ _hashlib_scrypt(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     long maxmem = 0;
     long dklen = 64;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &password, &salt, &PyLong_Type, &n_obj, &PyLong_Type, &r_obj, &PyLong_Type, &p_obj, &maxmem, &dklen)) {
         goto exit;
     }

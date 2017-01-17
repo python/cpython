@@ -249,7 +249,7 @@ pyexpat_ParserCreate(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObje
     const char *namespace_separator = NULL;
     PyObject *intern = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &encoding, &namespace_separator, &intern)) {
         goto exit;
     }

@@ -30,7 +30,7 @@ _multibytecodec_MultibyteCodec_encode(MultibyteCodecObject *self, PyObject **arg
     PyObject *input;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &input, &errors)) {
         goto exit;
     }
@@ -68,7 +68,7 @@ _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject **arg
     Py_buffer input = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &input, &errors)) {
         goto exit;
     }
@@ -105,7 +105,7 @@ _multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderOb
     PyObject *input;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &input, &final)) {
         goto exit;
     }
@@ -154,7 +154,7 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderOb
     Py_buffer input = {NULL, NULL};
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &input, &final)) {
         goto exit;
     }

@@ -27,7 +27,7 @@ datetime_datetime_now(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyO
     static _PyArg_Parser _parser = {"|O:now", _keywords, 0};
     PyObject *tz = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &tz)) {
         goto exit;
     }

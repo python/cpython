@@ -168,7 +168,7 @@ builtin_compile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     int dont_inherit = 0;
     int optimize = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &source, PyUnicode_FSDecoder, &filename, &mode, &flags, &dont_inherit, &optimize)) {
         goto exit;
     }

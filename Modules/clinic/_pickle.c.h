@@ -401,7 +401,7 @@ _pickle_dump(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &obj, &file, &protocol, &fix_imports)) {
         goto exit;
     }
@@ -446,7 +446,7 @@ _pickle_dumps(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &obj, &protocol, &fix_imports)) {
         goto exit;
     }
@@ -503,7 +503,7 @@ _pickle_load(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &file, &fix_imports, &encoding, &errors)) {
         goto exit;
     }
@@ -551,7 +551,7 @@ _pickle_loads(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &data, &fix_imports, &encoding, &errors)) {
         goto exit;
     }

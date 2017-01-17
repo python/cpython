@@ -42,7 +42,7 @@ os_stat(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, FSTATAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks)) {
         goto exit;
     }
@@ -79,7 +79,7 @@ os_lstat(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     path_t path = PATH_T_INITIALIZE("lstat", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, FSTATAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -144,7 +144,7 @@ os_access(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     int follow_symlinks = 1;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, &mode, FACCESSAT_DIR_FD_CONVERTER, &dir_fd, &effective_ids, &follow_symlinks)) {
         goto exit;
     }
@@ -246,7 +246,7 @@ os_chdir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     static _PyArg_Parser _parser = {"O&:chdir", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("chdir", "path", 0, PATH_HAVE_FCHDIR);
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path)) {
         goto exit;
     }
@@ -284,7 +284,7 @@ os_fchdir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     static _PyArg_Parser _parser = {"O&:fchdir", _keywords, 0};
     int fd;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         fildes_converter, &fd)) {
         goto exit;
     }
@@ -340,7 +340,7 @@ os_chmod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, &mode, FCHMODAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks)) {
         goto exit;
     }
@@ -378,7 +378,7 @@ os_fchmod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     int fd;
     int mode;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &fd, &mode)) {
         goto exit;
     }
@@ -416,7 +416,7 @@ os_lchmod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     path_t path = PATH_T_INITIALIZE("lchmod", "path", 0, 0);
     int mode;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, &mode)) {
         goto exit;
     }
@@ -462,7 +462,7 @@ os_chflags(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     unsigned long flags;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, &flags, &follow_symlinks)) {
         goto exit;
     }
@@ -503,7 +503,7 @@ os_lchflags(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     path_t path = PATH_T_INITIALIZE("lchflags", "path", 0, 0);
     unsigned long flags;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, &flags)) {
         goto exit;
     }
@@ -540,7 +540,7 @@ os_chroot(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     static _PyArg_Parser _parser = {"O&:chroot", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("chroot", "path", 0, 0);
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path)) {
         goto exit;
     }
@@ -577,7 +577,7 @@ os_fsync(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     static _PyArg_Parser _parser = {"O&:fsync", _keywords, 0};
     int fd;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         fildes_converter, &fd)) {
         goto exit;
     }
@@ -633,7 +633,7 @@ os_fdatasync(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     static _PyArg_Parser _parser = {"O&:fdatasync", _keywords, 0};
     int fd;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         fildes_converter, &fd)) {
         goto exit;
     }
@@ -696,7 +696,7 @@ os_chown(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, _Py_Uid_Converter, &uid, _Py_Gid_Converter, &gid, FCHOWNAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks)) {
         goto exit;
     }
@@ -737,7 +737,7 @@ os_fchown(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     uid_t uid;
     gid_t gid;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &fd, _Py_Uid_Converter, &uid, _Py_Gid_Converter, &gid)) {
         goto exit;
     }
@@ -776,7 +776,7 @@ os_lchown(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     uid_t uid;
     gid_t gid;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, _Py_Uid_Converter, &uid, _Py_Gid_Converter, &gid)) {
         goto exit;
     }
@@ -865,7 +865,7 @@ os_link(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     int dst_dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &src, path_converter, &dst, dir_fd_converter, &src_dir_fd, dir_fd_converter, &dst_dir_fd, &follow_symlinks)) {
         goto exit;
     }
@@ -913,7 +913,7 @@ os_listdir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     static _PyArg_Parser _parser = {"|O&:listdir", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("listdir", "path", 1, PATH_HAVE_FDOPENDIR);
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path)) {
         goto exit;
     }
@@ -1046,7 +1046,7 @@ os__getvolumepathname(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObj
     static _PyArg_Parser _parser = {"U:_getvolumepathname", _keywords, 0};
     PyObject *path;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &path)) {
         goto exit;
     }
@@ -1087,7 +1087,7 @@ os_mkdir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     int mode = 511;
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, &mode, MKDIRAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -1154,7 +1154,7 @@ os_getpriority(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     int which;
     int who;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &which, &who)) {
         goto exit;
     }
@@ -1190,7 +1190,7 @@ os_setpriority(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     int who;
     int priority;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &which, &who, &priority)) {
         goto exit;
     }
@@ -1232,7 +1232,7 @@ os_rename(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     int src_dir_fd = DEFAULT_DIR_FD;
     int dst_dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &src, path_converter, &dst, dir_fd_converter, &src_dir_fd, dir_fd_converter, &dst_dir_fd)) {
         goto exit;
     }
@@ -1277,7 +1277,7 @@ os_replace(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     int src_dir_fd = DEFAULT_DIR_FD;
     int dst_dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &src, path_converter, &dst, dir_fd_converter, &src_dir_fd, dir_fd_converter, &dst_dir_fd)) {
         goto exit;
     }
@@ -1318,7 +1318,7 @@ os_rmdir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     path_t path = PATH_T_INITIALIZE("rmdir", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, UNLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -1354,7 +1354,7 @@ os_system(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     Py_UNICODE *command;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &command)) {
         goto exit;
     }
@@ -1393,7 +1393,7 @@ os_system(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     PyObject *command = NULL;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         PyUnicode_FSConverter, &command)) {
         goto exit;
     }
@@ -1465,7 +1465,7 @@ os_unlink(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     path_t path = PATH_T_INITIALIZE("unlink", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, UNLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -1504,7 +1504,7 @@ os_remove(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     path_t path = PATH_T_INITIALIZE("remove", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, UNLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -1590,7 +1590,7 @@ os_utime(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, &times, &ns, FUTIMENSAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks)) {
         goto exit;
     }
@@ -1623,7 +1623,7 @@ os__exit(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     static _PyArg_Parser _parser = {"i:_exit", _keywords, 0};
     int status;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &status)) {
         goto exit;
     }
@@ -1705,7 +1705,7 @@ os_execve(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     PyObject *argv;
     PyObject *env;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, &argv, &env)) {
         goto exit;
     }
@@ -1882,7 +1882,7 @@ os_sched_get_priority_max(PyObject *module, PyObject **args, Py_ssize_t nargs, P
     static _PyArg_Parser _parser = {"i:sched_get_priority_max", _keywords, 0};
     int policy;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &policy)) {
         goto exit;
     }
@@ -1916,7 +1916,7 @@ os_sched_get_priority_min(PyObject *module, PyObject **args, Py_ssize_t nargs, P
     static _PyArg_Parser _parser = {"i:sched_get_priority_min", _keywords, 0};
     int policy;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &policy)) {
         goto exit;
     }
@@ -2416,7 +2416,7 @@ os_getpgid(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     static _PyArg_Parser _parser = {"" _Py_PARSE_PID ":getpgid", _keywords, 0};
     pid_t pid;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &pid)) {
         goto exit;
     }
@@ -2866,7 +2866,7 @@ os_wait3(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     static _PyArg_Parser _parser = {"i:wait3", _keywords, 0};
     int options;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &options)) {
         goto exit;
     }
@@ -2904,7 +2904,7 @@ os_wait4(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     pid_t pid;
     int options;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &pid, &options)) {
         goto exit;
     }
@@ -3098,7 +3098,7 @@ os_symlink(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     int target_is_directory = 0;
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &src, path_converter, &dst, &target_is_directory, SYMLINKAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -3320,7 +3320,7 @@ os_open(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     int dir_fd = DEFAULT_DIR_FD;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, &flags, &mode, OPENAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -3357,7 +3357,7 @@ os_close(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     static _PyArg_Parser _parser = {"i:close", _keywords, 0};
     int fd;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &fd)) {
         goto exit;
     }
@@ -3450,7 +3450,7 @@ os_dup2(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     int fd2;
     int inheritable = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &fd, &fd2, &inheritable)) {
         goto exit;
     }
@@ -3713,7 +3713,7 @@ os_fstat(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     static _PyArg_Parser _parser = {"i:fstat", _keywords, 0};
     int fd;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &fd)) {
         goto exit;
     }
@@ -3938,7 +3938,7 @@ os_mkfifo(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     int mode = 438;
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, &mode, MKFIFOAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -3991,7 +3991,7 @@ os_mknod(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     dev_t device = 0;
     int dir_fd = DEFAULT_DIR_FD;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, &mode, _Py_Dev_Converter, &device, MKNODAT_DIR_FD_CONVERTER, &dir_fd)) {
         goto exit;
     }
@@ -4175,7 +4175,7 @@ os_truncate(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     path_t path = PATH_T_INITIALIZE("truncate", "path", 0, PATH_HAVE_FTRUNCATE);
     Py_off_t length;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, Py_off_t_converter, &length)) {
         goto exit;
     }
@@ -4466,7 +4466,7 @@ os_WIFCONTINUED(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &status)) {
         goto exit;
     }
@@ -4505,7 +4505,7 @@ os_WIFSTOPPED(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &status)) {
         goto exit;
     }
@@ -4544,7 +4544,7 @@ os_WIFSIGNALED(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &status)) {
         goto exit;
     }
@@ -4583,7 +4583,7 @@ os_WIFEXITED(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &status)) {
         goto exit;
     }
@@ -4622,7 +4622,7 @@ os_WEXITSTATUS(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &status)) {
         goto exit;
     }
@@ -4661,7 +4661,7 @@ os_WTERMSIG(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &status)) {
         goto exit;
     }
@@ -4700,7 +4700,7 @@ os_WSTOPSIG(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     int status;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &status)) {
         goto exit;
     }
@@ -4775,7 +4775,7 @@ os_statvfs(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     static _PyArg_Parser _parser = {"O&:statvfs", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("statvfs", "path", 0, PATH_HAVE_FSTATVFS);
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path)) {
         goto exit;
     }
@@ -4812,7 +4812,7 @@ os__getdiskusage(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     static _PyArg_Parser _parser = {"u:_getdiskusage", _keywords, 0};
     Py_UNICODE *path;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &path)) {
         goto exit;
     }
@@ -4892,7 +4892,7 @@ os_pathconf(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     int name;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, conv_path_confname, &name)) {
         goto exit;
     }
@@ -5039,7 +5039,7 @@ os_startfile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     path_t filepath = PATH_T_INITIALIZE("startfile", "filepath", 0, 0);
     Py_UNICODE *operation = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &filepath, &operation)) {
         goto exit;
     }
@@ -5103,7 +5103,7 @@ os_device_encoding(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     static _PyArg_Parser _parser = {"i:device_encoding", _keywords, 0};
     int fd;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &fd)) {
         goto exit;
     }
@@ -5255,7 +5255,7 @@ os_getxattr(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     path_t attribute = PATH_T_INITIALIZE("getxattr", "attribute", 0, 0);
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, path_converter, &attribute, &follow_symlinks)) {
         goto exit;
     }
@@ -5305,7 +5305,7 @@ os_setxattr(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     int flags = 0;
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, path_converter, &attribute, &value, &flags, &follow_symlinks)) {
         goto exit;
     }
@@ -5356,7 +5356,7 @@ os_removexattr(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     path_t attribute = PATH_T_INITIALIZE("removexattr", "attribute", 0, 0);
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, path_converter, &attribute, &follow_symlinks)) {
         goto exit;
     }
@@ -5402,7 +5402,7 @@ os_listxattr(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     path_t path = PATH_T_INITIALIZE("listxattr", "path", 1, 1);
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path, &follow_symlinks)) {
         goto exit;
     }
@@ -5645,7 +5645,7 @@ os_DirEntry_stat(DirEntry *self, PyObject **args, Py_ssize_t nargs, PyObject *kw
     static _PyArg_Parser _parser = {"|$p:stat", _keywords, 0};
     int follow_symlinks = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &follow_symlinks)) {
         goto exit;
     }
@@ -5676,7 +5676,7 @@ os_DirEntry_is_dir(DirEntry *self, PyObject **args, Py_ssize_t nargs, PyObject *
     int follow_symlinks = 1;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &follow_symlinks)) {
         goto exit;
     }
@@ -5711,7 +5711,7 @@ os_DirEntry_is_file(DirEntry *self, PyObject **args, Py_ssize_t nargs, PyObject 
     int follow_symlinks = 1;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &follow_symlinks)) {
         goto exit;
     }
@@ -5787,7 +5787,7 @@ os_scandir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     static _PyArg_Parser _parser = {"|O&:scandir", _keywords, 0};
     path_t path = PATH_T_INITIALIZE("scandir", "path", 1, 0);
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path)) {
         goto exit;
     }
@@ -5824,7 +5824,7 @@ os_fspath(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     static _PyArg_Parser _parser = {"O:fspath", _keywords, 0};
     PyObject *path;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &path)) {
         goto exit;
     }
@@ -5857,7 +5857,7 @@ os_getrandom(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     Py_ssize_t size;
     int flags = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &size, &flags)) {
         goto exit;
     }

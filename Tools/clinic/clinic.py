@@ -856,7 +856,7 @@ class CLanguage(Language):
             parser_prototype = parser_prototype_fastcall
 
             body = normalize_snippet("""
-                if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+                if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
                     {parse_arguments})) {{
                     goto exit;
                 }}

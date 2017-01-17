@@ -149,7 +149,7 @@ _io_open(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     int closefd = 1;
     PyObject *opener = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &file, &mode, &buffering, &encoding, &errors, &newline, &closefd, &opener)) {
         goto exit;
     }

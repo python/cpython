@@ -93,7 +93,7 @@ winreg_HKEYType___exit__(PyHKEYObject *self, PyObject **args, Py_ssize_t nargs, 
     PyObject *exc_value;
     PyObject *traceback;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &exc_type, &exc_value, &traceback)) {
         goto exit;
     }
@@ -253,7 +253,7 @@ winreg_CreateKeyEx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     REGSAM access = KEY_WRITE;
     HKEY _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         clinic_HKEY_converter, &key, &sub_key, &reserved, &access)) {
         goto exit;
     }
@@ -351,7 +351,7 @@ winreg_DeleteKeyEx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     REGSAM access = KEY_WOW64_64KEY;
     int reserved = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         clinic_HKEY_converter, &key, &sub_key, &access, &reserved)) {
         goto exit;
     }
@@ -638,7 +638,7 @@ winreg_OpenKey(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     REGSAM access = KEY_READ;
     HKEY _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         clinic_HKEY_converter, &key, &sub_key, &reserved, &access)) {
         goto exit;
     }
@@ -690,7 +690,7 @@ winreg_OpenKeyEx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     REGSAM access = KEY_READ;
     HKEY _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         clinic_HKEY_converter, &key, &sub_key, &reserved, &access)) {
         goto exit;
     }

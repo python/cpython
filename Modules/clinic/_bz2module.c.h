@@ -130,7 +130,7 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject **args, Py_ssize
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &data, &max_length)) {
         goto exit;
     }
