@@ -1303,13 +1303,19 @@ PyTypeObject PyMap_Type = {
 
 /* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
-builtin_next(PyObject *self, PyObject *args)
+builtin_next(PyObject *self, PyObject **args, Py_ssize_t nargs,
+             PyObject *kwnames)
 {
     PyObject *it, *res;
     PyObject *def = NULL;
 
-    if (!PyArg_UnpackTuple(args, "next", 1, 2, &it, &def))
+    if (!_PyArg_UnpackStack(args, nargs, "next", 1, 2, &it, &def))
         return NULL;
+
+    if (!_PyArg_NoStackKeywords("next", kwnames)) {
+        return NULL;
+    }
+
     if (!PyIter_Check(it)) {
         PyErr_Format(PyExc_TypeError,
             "'%.200s' object is not an iterator",
@@ -2641,7 +2647,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_LOCALS_METHODDEF
     {"max",             (PyCFunction)builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
     {"min",             (PyCFunction)builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
-    {"next",            (PyCFunction)builtin_next,       METH_VARARGS, next_doc},
+    {"next",            (PyCFunction)builtin_next,       METH_FASTCALL, next_doc},
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
