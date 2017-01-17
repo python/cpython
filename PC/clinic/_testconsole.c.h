@@ -26,7 +26,7 @@ _testconsole_write_input(PyObject *module, PyObject **args, Py_ssize_t nargs, Py
     PyObject *file;
     PyBytesObject *s;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &file, &s)) {
         goto exit;
     }
@@ -60,7 +60,7 @@ _testconsole_read_output(PyObject *module, PyObject **args, Py_ssize_t nargs, Py
     static _PyArg_Parser _parser = {"O:read_output", _keywords, 0};
     PyObject *file;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &file)) {
         goto exit;
     }

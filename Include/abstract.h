@@ -171,7 +171,7 @@ PyAPI_FUNC(PyObject*) _PyStack_AsTupleSlice(
 
    kwnames must only contains str strings, no subclass, and all keys must be
    unique. kwnames is not checked, usually these checks are done before or
-   later calling _PyStack_AsDict(). For example, _PyArg_ParseStack() raises an
+   later calling _PyStack_AsDict(). For example, _PyArg_ParseStackAndKeywords() raises an
    error if a key is not a string. */
 PyAPI_FUNC(PyObject *) _PyStack_AsDict(
     PyObject **values,
@@ -185,7 +185,7 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
    The stack uses borrowed references.
 
    The type of keyword keys is not checked, these checks should be done
-   later (ex: _PyArg_ParseStack). */
+   later (ex: _PyArg_ParseStackAndKeywords). */
 PyAPI_FUNC(PyObject **) _PyStack_UnpackDict(
     PyObject **args,
     Py_ssize_t nargs,

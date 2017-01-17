@@ -869,7 +869,7 @@ cmath_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     double abs_tol = 0.0;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &a, &b, &rel_tol, &abs_tol)) {
         goto exit;
     }

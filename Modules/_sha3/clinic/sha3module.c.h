@@ -112,7 +112,7 @@ _sha3_shake_128_digest(SHA3object *self, PyObject **args, Py_ssize_t nargs, PyOb
     static _PyArg_Parser _parser = {"k:digest", _keywords, 0};
     unsigned long length;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &length)) {
         goto exit;
     }
@@ -142,7 +142,7 @@ _sha3_shake_128_hexdigest(SHA3object *self, PyObject **args, Py_ssize_t nargs, P
     static _PyArg_Parser _parser = {"k:hexdigest", _keywords, 0};
     unsigned long length;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &length)) {
         goto exit;
     }

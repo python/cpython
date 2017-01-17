@@ -31,7 +31,7 @@ bytes_split(PyBytesObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kw
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &sep, &maxsplit)) {
         goto exit;
     }
@@ -150,7 +150,7 @@ bytes_rsplit(PyBytesObject *self, PyObject **args, Py_ssize_t nargs, PyObject *k
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &sep, &maxsplit)) {
         goto exit;
     }
@@ -296,7 +296,7 @@ bytes_translate(PyBytesObject *self, PyObject **args, Py_ssize_t nargs, PyObject
     PyObject *table;
     PyObject *deletechars = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &table, &deletechars)) {
         goto exit;
     }
@@ -427,7 +427,7 @@ bytes_decode(PyBytesObject *self, PyObject **args, Py_ssize_t nargs, PyObject *k
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &encoding, &errors)) {
         goto exit;
     }
@@ -460,7 +460,7 @@ bytes_splitlines(PyBytesObject *self, PyObject **args, Py_ssize_t nargs, PyObjec
     static _PyArg_Parser _parser = {"|i:splitlines", _keywords, 0};
     int keepends = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &keepends)) {
         goto exit;
     }

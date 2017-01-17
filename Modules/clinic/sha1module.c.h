@@ -85,7 +85,7 @@ _sha1_sha1(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     static _PyArg_Parser _parser = {"|O:sha1", _keywords, 0};
     PyObject *string = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &string)) {
         goto exit;
     }

@@ -61,7 +61,7 @@ _io_IncrementalNewlineDecoder_decode(nldecoder_object *self, PyObject **args, Py
     PyObject *input;
     int final = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &input, &final)) {
         goto exit;
     }
