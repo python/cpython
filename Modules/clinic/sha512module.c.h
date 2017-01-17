@@ -124,4 +124,4 @@ _sha512_sha384(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=18f15598c3487045 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7bb7a49159e9b469 input=a9049054013a1b77]*/

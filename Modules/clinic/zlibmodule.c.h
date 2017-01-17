@@ -290,19 +290,23 @@ PyDoc_STRVAR(zlib_Compress_flush__doc__,
 "    can still be compressed.");
 
 #define ZLIB_COMPRESS_FLUSH_METHODDEF    \
-    {"flush", (PyCFunction)zlib_Compress_flush, METH_VARARGS, zlib_Compress_flush__doc__},
+    {"flush", (PyCFunction)zlib_Compress_flush, METH_FASTCALL, zlib_Compress_flush__doc__},
 
 static PyObject *
 zlib_Compress_flush_impl(compobject *self, int mode);
 
 static PyObject *
-zlib_Compress_flush(compobject *self, PyObject *args)
+zlib_Compress_flush(compobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int mode = Z_FINISH;
 
-    if (!PyArg_ParseTuple(args, "|i:flush",
+    if (!_PyArg_ParseStack(args, nargs, "|i:flush",
         &mode)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("flush", kwnames)) {
         goto exit;
     }
     return_value = zlib_Compress_flush_impl(self, mode);
@@ -365,19 +369,23 @@ PyDoc_STRVAR(zlib_Decompress_flush__doc__,
 "    the initial size of the output buffer.");
 
 #define ZLIB_DECOMPRESS_FLUSH_METHODDEF    \
-    {"flush", (PyCFunction)zlib_Decompress_flush, METH_VARARGS, zlib_Decompress_flush__doc__},
+    {"flush", (PyCFunction)zlib_Decompress_flush, METH_FASTCALL, zlib_Decompress_flush__doc__},
 
 static PyObject *
 zlib_Decompress_flush_impl(compobject *self, Py_ssize_t length);
 
 static PyObject *
-zlib_Decompress_flush(compobject *self, PyObject *args)
+zlib_Decompress_flush(compobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_ssize_t length = DEF_BUF_SIZE;
 
-    if (!PyArg_ParseTuple(args, "|O&:flush",
+    if (!_PyArg_ParseStack(args, nargs, "|O&:flush",
         ssize_t_converter, &length)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("flush", kwnames)) {
         goto exit;
     }
     return_value = zlib_Decompress_flush_impl(self, length);
@@ -398,20 +406,24 @@ PyDoc_STRVAR(zlib_adler32__doc__,
 "The returned checksum is an integer.");
 
 #define ZLIB_ADLER32_METHODDEF    \
-    {"adler32", (PyCFunction)zlib_adler32, METH_VARARGS, zlib_adler32__doc__},
+    {"adler32", (PyCFunction)zlib_adler32, METH_FASTCALL, zlib_adler32__doc__},
 
 static PyObject *
 zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value);
 
 static PyObject *
-zlib_adler32(PyObject *module, PyObject *args)
+zlib_adler32(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     unsigned int value = 1;
 
-    if (!PyArg_ParseTuple(args, "y*|I:adler32",
+    if (!_PyArg_ParseStack(args, nargs, "y*|I:adler32",
         &data, &value)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("adler32", kwnames)) {
         goto exit;
     }
     return_value = zlib_adler32_impl(module, &data, value);
@@ -437,20 +449,24 @@ PyDoc_STRVAR(zlib_crc32__doc__,
 "The returned checksum is an integer.");
 
 #define ZLIB_CRC32_METHODDEF    \
-    {"crc32", (PyCFunction)zlib_crc32, METH_VARARGS, zlib_crc32__doc__},
+    {"crc32", (PyCFunction)zlib_crc32, METH_FASTCALL, zlib_crc32__doc__},
 
 static PyObject *
 zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value);
 
 static PyObject *
-zlib_crc32(PyObject *module, PyObject *args)
+zlib_crc32(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     unsigned int value = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|I:crc32",
+    if (!_PyArg_ParseStack(args, nargs, "y*|I:crc32",
         &data, &value)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("crc32", kwnames)) {
         goto exit;
     }
     return_value = zlib_crc32_impl(module, &data, value);
@@ -467,4 +483,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=3a4e2bfe750423a3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fa1b5f4a6208c342 input=a9049054013a1b77]*/

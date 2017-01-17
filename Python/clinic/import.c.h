@@ -75,21 +75,25 @@ PyDoc_STRVAR(_imp__fix_co_filename__doc__,
 "    File path to use.");
 
 #define _IMP__FIX_CO_FILENAME_METHODDEF    \
-    {"_fix_co_filename", (PyCFunction)_imp__fix_co_filename, METH_VARARGS, _imp__fix_co_filename__doc__},
+    {"_fix_co_filename", (PyCFunction)_imp__fix_co_filename, METH_FASTCALL, _imp__fix_co_filename__doc__},
 
 static PyObject *
 _imp__fix_co_filename_impl(PyObject *module, PyCodeObject *code,
                            PyObject *path);
 
 static PyObject *
-_imp__fix_co_filename(PyObject *module, PyObject *args)
+_imp__fix_co_filename(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyCodeObject *code;
     PyObject *path;
 
-    if (!PyArg_ParseTuple(args, "O!U:_fix_co_filename",
+    if (!_PyArg_ParseStack(args, nargs, "O!U:_fix_co_filename",
         &PyCode_Type, &code, &path)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("_fix_co_filename", kwnames)) {
         goto exit;
     }
     return_value = _imp__fix_co_filename_impl(module, code, path);
@@ -361,4 +365,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=d24d7f73702a907f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a3f012344950548 input=a9049054013a1b77]*/

@@ -231,21 +231,25 @@ PyDoc_STRVAR(dbmopen__doc__,
 "when the database has to be created.  It defaults to octal 0o666.");
 
 #define DBMOPEN_METHODDEF    \
-    {"open", (PyCFunction)dbmopen, METH_VARARGS, dbmopen__doc__},
+    {"open", (PyCFunction)dbmopen, METH_FASTCALL, dbmopen__doc__},
 
 static PyObject *
 dbmopen_impl(PyObject *module, const char *name, const char *flags, int mode);
 
 static PyObject *
-dbmopen(PyObject *module, PyObject *args)
+dbmopen(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     const char *name;
     const char *flags = "r";
     int mode = 438;
 
-    if (!PyArg_ParseTuple(args, "s|si:open",
+    if (!_PyArg_ParseStack(args, nargs, "s|si:open",
         &name, &flags, &mode)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("open", kwnames)) {
         goto exit;
     }
     return_value = dbmopen_impl(module, name, flags, mode);
@@ -253,4 +257,4 @@ dbmopen(PyObject *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ed0f5d4e3d79b80c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e47d62a35eeba8b input=a9049054013a1b77]*/

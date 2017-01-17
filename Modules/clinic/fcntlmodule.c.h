@@ -19,21 +19,25 @@ PyDoc_STRVAR(fcntl_fcntl__doc__,
 "corresponding to the return value of the fcntl call in the C code.");
 
 #define FCNTL_FCNTL_METHODDEF    \
-    {"fcntl", (PyCFunction)fcntl_fcntl, METH_VARARGS, fcntl_fcntl__doc__},
+    {"fcntl", (PyCFunction)fcntl_fcntl, METH_FASTCALL, fcntl_fcntl__doc__},
 
 static PyObject *
 fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg);
 
 static PyObject *
-fcntl_fcntl(PyObject *module, PyObject *args)
+fcntl_fcntl(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int fd;
     int code;
     PyObject *arg = NULL;
 
-    if (!PyArg_ParseTuple(args, "O&i|O:fcntl",
+    if (!_PyArg_ParseStack(args, nargs, "O&i|O:fcntl",
         conv_descriptor, &fd, &code, &arg)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("fcntl", kwnames)) {
         goto exit;
     }
     return_value = fcntl_fcntl_impl(module, fd, code, arg);
@@ -76,14 +80,14 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
 "code.");
 
 #define FCNTL_IOCTL_METHODDEF    \
-    {"ioctl", (PyCFunction)fcntl_ioctl, METH_VARARGS, fcntl_ioctl__doc__},
+    {"ioctl", (PyCFunction)fcntl_ioctl, METH_FASTCALL, fcntl_ioctl__doc__},
 
 static PyObject *
 fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
                  PyObject *ob_arg, int mutate_arg);
 
 static PyObject *
-fcntl_ioctl(PyObject *module, PyObject *args)
+fcntl_ioctl(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -91,8 +95,12 @@ fcntl_ioctl(PyObject *module, PyObject *args)
     PyObject *ob_arg = NULL;
     int mutate_arg = 1;
 
-    if (!PyArg_ParseTuple(args, "O&I|Op:ioctl",
+    if (!_PyArg_ParseStack(args, nargs, "O&I|Op:ioctl",
         conv_descriptor, &fd, &code, &ob_arg, &mutate_arg)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("ioctl", kwnames)) {
         goto exit;
     }
     return_value = fcntl_ioctl_impl(module, fd, code, ob_arg, mutate_arg);
@@ -111,20 +119,24 @@ PyDoc_STRVAR(fcntl_flock__doc__,
 "function is emulated using fcntl()).");
 
 #define FCNTL_FLOCK_METHODDEF    \
-    {"flock", (PyCFunction)fcntl_flock, METH_VARARGS, fcntl_flock__doc__},
+    {"flock", (PyCFunction)fcntl_flock, METH_FASTCALL, fcntl_flock__doc__},
 
 static PyObject *
 fcntl_flock_impl(PyObject *module, int fd, int code);
 
 static PyObject *
-fcntl_flock(PyObject *module, PyObject *args)
+fcntl_flock(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int fd;
     int code;
 
-    if (!PyArg_ParseTuple(args, "O&i:flock",
+    if (!_PyArg_ParseStack(args, nargs, "O&i:flock",
         conv_descriptor, &fd, &code)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("flock", kwnames)) {
         goto exit;
     }
     return_value = fcntl_flock_impl(module, fd, code);
@@ -161,14 +173,14 @@ PyDoc_STRVAR(fcntl_lockf__doc__,
 "    2 - relative to the end of the file (SEEK_END)");
 
 #define FCNTL_LOCKF_METHODDEF    \
-    {"lockf", (PyCFunction)fcntl_lockf, METH_VARARGS, fcntl_lockf__doc__},
+    {"lockf", (PyCFunction)fcntl_lockf, METH_FASTCALL, fcntl_lockf__doc__},
 
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                  PyObject *startobj, int whence);
 
 static PyObject *
-fcntl_lockf(PyObject *module, PyObject *args)
+fcntl_lockf(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -177,8 +189,12 @@ fcntl_lockf(PyObject *module, PyObject *args)
     PyObject *startobj = NULL;
     int whence = 0;
 
-    if (!PyArg_ParseTuple(args, "O&i|OOi:lockf",
+    if (!_PyArg_ParseStack(args, nargs, "O&i|OOi:lockf",
         conv_descriptor, &fd, &code, &lenobj, &startobj, &whence)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("lockf", kwnames)) {
         goto exit;
     }
     return_value = fcntl_lockf_impl(module, fd, code, lenobj, startobj, whence);
@@ -186,4 +202,4 @@ fcntl_lockf(PyObject *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=36cff76a8fb2c9a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b67e9579722e6d4f input=a9049054013a1b77]*/

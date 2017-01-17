@@ -153,21 +153,25 @@ PyDoc_STRVAR(_codecs_escape_decode__doc__,
 "\n");
 
 #define _CODECS_ESCAPE_DECODE_METHODDEF    \
-    {"escape_decode", (PyCFunction)_codecs_escape_decode, METH_VARARGS, _codecs_escape_decode__doc__},
+    {"escape_decode", (PyCFunction)_codecs_escape_decode, METH_FASTCALL, _codecs_escape_decode__doc__},
 
 static PyObject *
 _codecs_escape_decode_impl(PyObject *module, Py_buffer *data,
                            const char *errors);
 
 static PyObject *
-_codecs_escape_decode(PyObject *module, PyObject *args)
+_codecs_escape_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "s*|z:escape_decode",
+    if (!_PyArg_ParseStack(args, nargs, "s*|z:escape_decode",
         &data, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("escape_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_escape_decode_impl(module, &data, errors);
@@ -187,21 +191,25 @@ PyDoc_STRVAR(_codecs_escape_encode__doc__,
 "\n");
 
 #define _CODECS_ESCAPE_ENCODE_METHODDEF    \
-    {"escape_encode", (PyCFunction)_codecs_escape_encode, METH_VARARGS, _codecs_escape_encode__doc__},
+    {"escape_encode", (PyCFunction)_codecs_escape_encode, METH_FASTCALL, _codecs_escape_encode__doc__},
 
 static PyObject *
 _codecs_escape_encode_impl(PyObject *module, PyObject *data,
                            const char *errors);
 
 static PyObject *
-_codecs_escape_encode(PyObject *module, PyObject *args)
+_codecs_escape_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *data;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "O!|z:escape_encode",
+    if (!_PyArg_ParseStack(args, nargs, "O!|z:escape_encode",
         &PyBytes_Type, &data, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("escape_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_escape_encode_impl(module, data, errors);
@@ -216,21 +224,25 @@ PyDoc_STRVAR(_codecs_unicode_internal_decode__doc__,
 "\n");
 
 #define _CODECS_UNICODE_INTERNAL_DECODE_METHODDEF    \
-    {"unicode_internal_decode", (PyCFunction)_codecs_unicode_internal_decode, METH_VARARGS, _codecs_unicode_internal_decode__doc__},
+    {"unicode_internal_decode", (PyCFunction)_codecs_unicode_internal_decode, METH_FASTCALL, _codecs_unicode_internal_decode__doc__},
 
 static PyObject *
 _codecs_unicode_internal_decode_impl(PyObject *module, PyObject *obj,
                                      const char *errors);
 
 static PyObject *
-_codecs_unicode_internal_decode(PyObject *module, PyObject *args)
+_codecs_unicode_internal_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *obj;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "O|z:unicode_internal_decode",
+    if (!_PyArg_ParseStack(args, nargs, "O|z:unicode_internal_decode",
         &obj, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("unicode_internal_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_unicode_internal_decode_impl(module, obj, errors);
@@ -245,22 +257,26 @@ PyDoc_STRVAR(_codecs_utf_7_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_7_DECODE_METHODDEF    \
-    {"utf_7_decode", (PyCFunction)_codecs_utf_7_decode, METH_VARARGS, _codecs_utf_7_decode__doc__},
+    {"utf_7_decode", (PyCFunction)_codecs_utf_7_decode, METH_FASTCALL, _codecs_utf_7_decode__doc__},
 
 static PyObject *
 _codecs_utf_7_decode_impl(PyObject *module, Py_buffer *data,
                           const char *errors, int final);
 
 static PyObject *
-_codecs_utf_7_decode(PyObject *module, PyObject *args)
+_codecs_utf_7_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|zi:utf_7_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_7_decode",
         &data, &errors, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_7_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_7_decode_impl(module, &data, errors, final);
@@ -280,22 +296,26 @@ PyDoc_STRVAR(_codecs_utf_8_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_8_DECODE_METHODDEF    \
-    {"utf_8_decode", (PyCFunction)_codecs_utf_8_decode, METH_VARARGS, _codecs_utf_8_decode__doc__},
+    {"utf_8_decode", (PyCFunction)_codecs_utf_8_decode, METH_FASTCALL, _codecs_utf_8_decode__doc__},
 
 static PyObject *
 _codecs_utf_8_decode_impl(PyObject *module, Py_buffer *data,
                           const char *errors, int final);
 
 static PyObject *
-_codecs_utf_8_decode(PyObject *module, PyObject *args)
+_codecs_utf_8_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|zi:utf_8_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_8_decode",
         &data, &errors, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_8_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_8_decode_impl(module, &data, errors, final);
@@ -315,22 +335,26 @@ PyDoc_STRVAR(_codecs_utf_16_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_DECODE_METHODDEF    \
-    {"utf_16_decode", (PyCFunction)_codecs_utf_16_decode, METH_VARARGS, _codecs_utf_16_decode__doc__},
+    {"utf_16_decode", (PyCFunction)_codecs_utf_16_decode, METH_FASTCALL, _codecs_utf_16_decode__doc__},
 
 static PyObject *
 _codecs_utf_16_decode_impl(PyObject *module, Py_buffer *data,
                            const char *errors, int final);
 
 static PyObject *
-_codecs_utf_16_decode(PyObject *module, PyObject *args)
+_codecs_utf_16_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|zi:utf_16_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_16_decode",
         &data, &errors, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_16_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_16_decode_impl(module, &data, errors, final);
@@ -350,22 +374,26 @@ PyDoc_STRVAR(_codecs_utf_16_le_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_LE_DECODE_METHODDEF    \
-    {"utf_16_le_decode", (PyCFunction)_codecs_utf_16_le_decode, METH_VARARGS, _codecs_utf_16_le_decode__doc__},
+    {"utf_16_le_decode", (PyCFunction)_codecs_utf_16_le_decode, METH_FASTCALL, _codecs_utf_16_le_decode__doc__},
 
 static PyObject *
 _codecs_utf_16_le_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final);
 
 static PyObject *
-_codecs_utf_16_le_decode(PyObject *module, PyObject *args)
+_codecs_utf_16_le_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|zi:utf_16_le_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_16_le_decode",
         &data, &errors, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_16_le_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_16_le_decode_impl(module, &data, errors, final);
@@ -385,22 +413,26 @@ PyDoc_STRVAR(_codecs_utf_16_be_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_BE_DECODE_METHODDEF    \
-    {"utf_16_be_decode", (PyCFunction)_codecs_utf_16_be_decode, METH_VARARGS, _codecs_utf_16_be_decode__doc__},
+    {"utf_16_be_decode", (PyCFunction)_codecs_utf_16_be_decode, METH_FASTCALL, _codecs_utf_16_be_decode__doc__},
 
 static PyObject *
 _codecs_utf_16_be_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final);
 
 static PyObject *
-_codecs_utf_16_be_decode(PyObject *module, PyObject *args)
+_codecs_utf_16_be_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|zi:utf_16_be_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_16_be_decode",
         &data, &errors, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_16_be_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_16_be_decode_impl(module, &data, errors, final);
@@ -421,14 +453,14 @@ PyDoc_STRVAR(_codecs_utf_16_ex_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_EX_DECODE_METHODDEF    \
-    {"utf_16_ex_decode", (PyCFunction)_codecs_utf_16_ex_decode, METH_VARARGS, _codecs_utf_16_ex_decode__doc__},
+    {"utf_16_ex_decode", (PyCFunction)_codecs_utf_16_ex_decode, METH_FASTCALL, _codecs_utf_16_ex_decode__doc__},
 
 static PyObject *
 _codecs_utf_16_ex_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int byteorder, int final);
 
 static PyObject *
-_codecs_utf_16_ex_decode(PyObject *module, PyObject *args)
+_codecs_utf_16_ex_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -436,8 +468,12 @@ _codecs_utf_16_ex_decode(PyObject *module, PyObject *args)
     int byteorder = 0;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|zii:utf_16_ex_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zii:utf_16_ex_decode",
         &data, &errors, &byteorder, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_16_ex_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_16_ex_decode_impl(module, &data, errors, byteorder, final);
@@ -457,22 +493,26 @@ PyDoc_STRVAR(_codecs_utf_32_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_DECODE_METHODDEF    \
-    {"utf_32_decode", (PyCFunction)_codecs_utf_32_decode, METH_VARARGS, _codecs_utf_32_decode__doc__},
+    {"utf_32_decode", (PyCFunction)_codecs_utf_32_decode, METH_FASTCALL, _codecs_utf_32_decode__doc__},
 
 static PyObject *
 _codecs_utf_32_decode_impl(PyObject *module, Py_buffer *data,
                            const char *errors, int final);
 
 static PyObject *
-_codecs_utf_32_decode(PyObject *module, PyObject *args)
+_codecs_utf_32_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|zi:utf_32_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_32_decode",
         &data, &errors, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_32_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_32_decode_impl(module, &data, errors, final);
@@ -492,22 +532,26 @@ PyDoc_STRVAR(_codecs_utf_32_le_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_LE_DECODE_METHODDEF    \
-    {"utf_32_le_decode", (PyCFunction)_codecs_utf_32_le_decode, METH_VARARGS, _codecs_utf_32_le_decode__doc__},
+    {"utf_32_le_decode", (PyCFunction)_codecs_utf_32_le_decode, METH_FASTCALL, _codecs_utf_32_le_decode__doc__},
 
 static PyObject *
 _codecs_utf_32_le_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final);
 
 static PyObject *
-_codecs_utf_32_le_decode(PyObject *module, PyObject *args)
+_codecs_utf_32_le_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|zi:utf_32_le_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_32_le_decode",
         &data, &errors, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_32_le_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_32_le_decode_impl(module, &data, errors, final);
@@ -527,22 +571,26 @@ PyDoc_STRVAR(_codecs_utf_32_be_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_BE_DECODE_METHODDEF    \
-    {"utf_32_be_decode", (PyCFunction)_codecs_utf_32_be_decode, METH_VARARGS, _codecs_utf_32_be_decode__doc__},
+    {"utf_32_be_decode", (PyCFunction)_codecs_utf_32_be_decode, METH_FASTCALL, _codecs_utf_32_be_decode__doc__},
 
 static PyObject *
 _codecs_utf_32_be_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int final);
 
 static PyObject *
-_codecs_utf_32_be_decode(PyObject *module, PyObject *args)
+_codecs_utf_32_be_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|zi:utf_32_be_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zi:utf_32_be_decode",
         &data, &errors, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_32_be_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_32_be_decode_impl(module, &data, errors, final);
@@ -563,14 +611,14 @@ PyDoc_STRVAR(_codecs_utf_32_ex_decode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_EX_DECODE_METHODDEF    \
-    {"utf_32_ex_decode", (PyCFunction)_codecs_utf_32_ex_decode, METH_VARARGS, _codecs_utf_32_ex_decode__doc__},
+    {"utf_32_ex_decode", (PyCFunction)_codecs_utf_32_ex_decode, METH_FASTCALL, _codecs_utf_32_ex_decode__doc__},
 
 static PyObject *
 _codecs_utf_32_ex_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int byteorder, int final);
 
 static PyObject *
-_codecs_utf_32_ex_decode(PyObject *module, PyObject *args)
+_codecs_utf_32_ex_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -578,8 +626,12 @@ _codecs_utf_32_ex_decode(PyObject *module, PyObject *args)
     int byteorder = 0;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|zii:utf_32_ex_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zii:utf_32_ex_decode",
         &data, &errors, &byteorder, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_32_ex_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_32_ex_decode_impl(module, &data, errors, byteorder, final);
@@ -599,21 +651,25 @@ PyDoc_STRVAR(_codecs_unicode_escape_decode__doc__,
 "\n");
 
 #define _CODECS_UNICODE_ESCAPE_DECODE_METHODDEF    \
-    {"unicode_escape_decode", (PyCFunction)_codecs_unicode_escape_decode, METH_VARARGS, _codecs_unicode_escape_decode__doc__},
+    {"unicode_escape_decode", (PyCFunction)_codecs_unicode_escape_decode, METH_FASTCALL, _codecs_unicode_escape_decode__doc__},
 
 static PyObject *
 _codecs_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
                                    const char *errors);
 
 static PyObject *
-_codecs_unicode_escape_decode(PyObject *module, PyObject *args)
+_codecs_unicode_escape_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "s*|z:unicode_escape_decode",
+    if (!_PyArg_ParseStack(args, nargs, "s*|z:unicode_escape_decode",
         &data, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("unicode_escape_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_unicode_escape_decode_impl(module, &data, errors);
@@ -633,21 +689,25 @@ PyDoc_STRVAR(_codecs_raw_unicode_escape_decode__doc__,
 "\n");
 
 #define _CODECS_RAW_UNICODE_ESCAPE_DECODE_METHODDEF    \
-    {"raw_unicode_escape_decode", (PyCFunction)_codecs_raw_unicode_escape_decode, METH_VARARGS, _codecs_raw_unicode_escape_decode__doc__},
+    {"raw_unicode_escape_decode", (PyCFunction)_codecs_raw_unicode_escape_decode, METH_FASTCALL, _codecs_raw_unicode_escape_decode__doc__},
 
 static PyObject *
 _codecs_raw_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
                                        const char *errors);
 
 static PyObject *
-_codecs_raw_unicode_escape_decode(PyObject *module, PyObject *args)
+_codecs_raw_unicode_escape_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "s*|z:raw_unicode_escape_decode",
+    if (!_PyArg_ParseStack(args, nargs, "s*|z:raw_unicode_escape_decode",
         &data, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("raw_unicode_escape_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_raw_unicode_escape_decode_impl(module, &data, errors);
@@ -667,21 +727,25 @@ PyDoc_STRVAR(_codecs_latin_1_decode__doc__,
 "\n");
 
 #define _CODECS_LATIN_1_DECODE_METHODDEF    \
-    {"latin_1_decode", (PyCFunction)_codecs_latin_1_decode, METH_VARARGS, _codecs_latin_1_decode__doc__},
+    {"latin_1_decode", (PyCFunction)_codecs_latin_1_decode, METH_FASTCALL, _codecs_latin_1_decode__doc__},
 
 static PyObject *
 _codecs_latin_1_decode_impl(PyObject *module, Py_buffer *data,
                             const char *errors);
 
 static PyObject *
-_codecs_latin_1_decode(PyObject *module, PyObject *args)
+_codecs_latin_1_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "y*|z:latin_1_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|z:latin_1_decode",
         &data, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("latin_1_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_latin_1_decode_impl(module, &data, errors);
@@ -701,21 +765,25 @@ PyDoc_STRVAR(_codecs_ascii_decode__doc__,
 "\n");
 
 #define _CODECS_ASCII_DECODE_METHODDEF    \
-    {"ascii_decode", (PyCFunction)_codecs_ascii_decode, METH_VARARGS, _codecs_ascii_decode__doc__},
+    {"ascii_decode", (PyCFunction)_codecs_ascii_decode, METH_FASTCALL, _codecs_ascii_decode__doc__},
 
 static PyObject *
 _codecs_ascii_decode_impl(PyObject *module, Py_buffer *data,
                           const char *errors);
 
 static PyObject *
-_codecs_ascii_decode(PyObject *module, PyObject *args)
+_codecs_ascii_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "y*|z:ascii_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|z:ascii_decode",
         &data, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("ascii_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_ascii_decode_impl(module, &data, errors);
@@ -735,22 +803,26 @@ PyDoc_STRVAR(_codecs_charmap_decode__doc__,
 "\n");
 
 #define _CODECS_CHARMAP_DECODE_METHODDEF    \
-    {"charmap_decode", (PyCFunction)_codecs_charmap_decode, METH_VARARGS, _codecs_charmap_decode__doc__},
+    {"charmap_decode", (PyCFunction)_codecs_charmap_decode, METH_FASTCALL, _codecs_charmap_decode__doc__},
 
 static PyObject *
 _codecs_charmap_decode_impl(PyObject *module, Py_buffer *data,
                             const char *errors, PyObject *mapping);
 
 static PyObject *
-_codecs_charmap_decode(PyObject *module, PyObject *args)
+_codecs_charmap_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     PyObject *mapping = NULL;
 
-    if (!PyArg_ParseTuple(args, "y*|zO:charmap_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zO:charmap_decode",
         &data, &errors, &mapping)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("charmap_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_charmap_decode_impl(module, &data, errors, mapping);
@@ -772,22 +844,26 @@ PyDoc_STRVAR(_codecs_mbcs_decode__doc__,
 "\n");
 
 #define _CODECS_MBCS_DECODE_METHODDEF    \
-    {"mbcs_decode", (PyCFunction)_codecs_mbcs_decode, METH_VARARGS, _codecs_mbcs_decode__doc__},
+    {"mbcs_decode", (PyCFunction)_codecs_mbcs_decode, METH_FASTCALL, _codecs_mbcs_decode__doc__},
 
 static PyObject *
 _codecs_mbcs_decode_impl(PyObject *module, Py_buffer *data,
                          const char *errors, int final);
 
 static PyObject *
-_codecs_mbcs_decode(PyObject *module, PyObject *args)
+_codecs_mbcs_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|zi:mbcs_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zi:mbcs_decode",
         &data, &errors, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("mbcs_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_mbcs_decode_impl(module, &data, errors, final);
@@ -811,22 +887,26 @@ PyDoc_STRVAR(_codecs_oem_decode__doc__,
 "\n");
 
 #define _CODECS_OEM_DECODE_METHODDEF    \
-    {"oem_decode", (PyCFunction)_codecs_oem_decode, METH_VARARGS, _codecs_oem_decode__doc__},
+    {"oem_decode", (PyCFunction)_codecs_oem_decode, METH_FASTCALL, _codecs_oem_decode__doc__},
 
 static PyObject *
 _codecs_oem_decode_impl(PyObject *module, Py_buffer *data,
                         const char *errors, int final);
 
 static PyObject *
-_codecs_oem_decode(PyObject *module, PyObject *args)
+_codecs_oem_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "y*|zi:oem_decode",
+    if (!_PyArg_ParseStack(args, nargs, "y*|zi:oem_decode",
         &data, &errors, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("oem_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_oem_decode_impl(module, &data, errors, final);
@@ -850,14 +930,14 @@ PyDoc_STRVAR(_codecs_code_page_decode__doc__,
 "\n");
 
 #define _CODECS_CODE_PAGE_DECODE_METHODDEF    \
-    {"code_page_decode", (PyCFunction)_codecs_code_page_decode, METH_VARARGS, _codecs_code_page_decode__doc__},
+    {"code_page_decode", (PyCFunction)_codecs_code_page_decode, METH_FASTCALL, _codecs_code_page_decode__doc__},
 
 static PyObject *
 _codecs_code_page_decode_impl(PyObject *module, int codepage,
                               Py_buffer *data, const char *errors, int final);
 
 static PyObject *
-_codecs_code_page_decode(PyObject *module, PyObject *args)
+_codecs_code_page_decode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int codepage;
@@ -865,8 +945,12 @@ _codecs_code_page_decode(PyObject *module, PyObject *args)
     const char *errors = NULL;
     int final = 0;
 
-    if (!PyArg_ParseTuple(args, "iy*|zi:code_page_decode",
+    if (!_PyArg_ParseStack(args, nargs, "iy*|zi:code_page_decode",
         &codepage, &data, &errors, &final)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("code_page_decode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_code_page_decode_impl(module, codepage, &data, errors, final);
@@ -888,21 +972,25 @@ PyDoc_STRVAR(_codecs_readbuffer_encode__doc__,
 "\n");
 
 #define _CODECS_READBUFFER_ENCODE_METHODDEF    \
-    {"readbuffer_encode", (PyCFunction)_codecs_readbuffer_encode, METH_VARARGS, _codecs_readbuffer_encode__doc__},
+    {"readbuffer_encode", (PyCFunction)_codecs_readbuffer_encode, METH_FASTCALL, _codecs_readbuffer_encode__doc__},
 
 static PyObject *
 _codecs_readbuffer_encode_impl(PyObject *module, Py_buffer *data,
                                const char *errors);
 
 static PyObject *
-_codecs_readbuffer_encode(PyObject *module, PyObject *args)
+_codecs_readbuffer_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "s*|z:readbuffer_encode",
+    if (!_PyArg_ParseStack(args, nargs, "s*|z:readbuffer_encode",
         &data, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("readbuffer_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_readbuffer_encode_impl(module, &data, errors);
@@ -922,21 +1010,25 @@ PyDoc_STRVAR(_codecs_unicode_internal_encode__doc__,
 "\n");
 
 #define _CODECS_UNICODE_INTERNAL_ENCODE_METHODDEF    \
-    {"unicode_internal_encode", (PyCFunction)_codecs_unicode_internal_encode, METH_VARARGS, _codecs_unicode_internal_encode__doc__},
+    {"unicode_internal_encode", (PyCFunction)_codecs_unicode_internal_encode, METH_FASTCALL, _codecs_unicode_internal_encode__doc__},
 
 static PyObject *
 _codecs_unicode_internal_encode_impl(PyObject *module, PyObject *obj,
                                      const char *errors);
 
 static PyObject *
-_codecs_unicode_internal_encode(PyObject *module, PyObject *args)
+_codecs_unicode_internal_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *obj;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "O|z:unicode_internal_encode",
+    if (!_PyArg_ParseStack(args, nargs, "O|z:unicode_internal_encode",
         &obj, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("unicode_internal_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_unicode_internal_encode_impl(module, obj, errors);
@@ -951,21 +1043,25 @@ PyDoc_STRVAR(_codecs_utf_7_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_7_ENCODE_METHODDEF    \
-    {"utf_7_encode", (PyCFunction)_codecs_utf_7_encode, METH_VARARGS, _codecs_utf_7_encode__doc__},
+    {"utf_7_encode", (PyCFunction)_codecs_utf_7_encode, METH_FASTCALL, _codecs_utf_7_encode__doc__},
 
 static PyObject *
 _codecs_utf_7_encode_impl(PyObject *module, PyObject *str,
                           const char *errors);
 
 static PyObject *
-_codecs_utf_7_encode(PyObject *module, PyObject *args)
+_codecs_utf_7_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:utf_7_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|z:utf_7_encode",
         &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_7_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_7_encode_impl(module, str, errors);
@@ -980,21 +1076,25 @@ PyDoc_STRVAR(_codecs_utf_8_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_8_ENCODE_METHODDEF    \
-    {"utf_8_encode", (PyCFunction)_codecs_utf_8_encode, METH_VARARGS, _codecs_utf_8_encode__doc__},
+    {"utf_8_encode", (PyCFunction)_codecs_utf_8_encode, METH_FASTCALL, _codecs_utf_8_encode__doc__},
 
 static PyObject *
 _codecs_utf_8_encode_impl(PyObject *module, PyObject *str,
                           const char *errors);
 
 static PyObject *
-_codecs_utf_8_encode(PyObject *module, PyObject *args)
+_codecs_utf_8_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:utf_8_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|z:utf_8_encode",
         &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_8_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_8_encode_impl(module, str, errors);
@@ -1009,22 +1109,26 @@ PyDoc_STRVAR(_codecs_utf_16_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_ENCODE_METHODDEF    \
-    {"utf_16_encode", (PyCFunction)_codecs_utf_16_encode, METH_VARARGS, _codecs_utf_16_encode__doc__},
+    {"utf_16_encode", (PyCFunction)_codecs_utf_16_encode, METH_FASTCALL, _codecs_utf_16_encode__doc__},
 
 static PyObject *
 _codecs_utf_16_encode_impl(PyObject *module, PyObject *str,
                            const char *errors, int byteorder);
 
 static PyObject *
-_codecs_utf_16_encode(PyObject *module, PyObject *args)
+_codecs_utf_16_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
     int byteorder = 0;
 
-    if (!PyArg_ParseTuple(args, "U|zi:utf_16_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|zi:utf_16_encode",
         &str, &errors, &byteorder)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_16_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_16_encode_impl(module, str, errors, byteorder);
@@ -1039,21 +1143,25 @@ PyDoc_STRVAR(_codecs_utf_16_le_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_LE_ENCODE_METHODDEF    \
-    {"utf_16_le_encode", (PyCFunction)_codecs_utf_16_le_encode, METH_VARARGS, _codecs_utf_16_le_encode__doc__},
+    {"utf_16_le_encode", (PyCFunction)_codecs_utf_16_le_encode, METH_FASTCALL, _codecs_utf_16_le_encode__doc__},
 
 static PyObject *
 _codecs_utf_16_le_encode_impl(PyObject *module, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_utf_16_le_encode(PyObject *module, PyObject *args)
+_codecs_utf_16_le_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:utf_16_le_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|z:utf_16_le_encode",
         &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_16_le_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_16_le_encode_impl(module, str, errors);
@@ -1068,21 +1176,25 @@ PyDoc_STRVAR(_codecs_utf_16_be_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_16_BE_ENCODE_METHODDEF    \
-    {"utf_16_be_encode", (PyCFunction)_codecs_utf_16_be_encode, METH_VARARGS, _codecs_utf_16_be_encode__doc__},
+    {"utf_16_be_encode", (PyCFunction)_codecs_utf_16_be_encode, METH_FASTCALL, _codecs_utf_16_be_encode__doc__},
 
 static PyObject *
 _codecs_utf_16_be_encode_impl(PyObject *module, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_utf_16_be_encode(PyObject *module, PyObject *args)
+_codecs_utf_16_be_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:utf_16_be_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|z:utf_16_be_encode",
         &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_16_be_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_16_be_encode_impl(module, str, errors);
@@ -1097,22 +1209,26 @@ PyDoc_STRVAR(_codecs_utf_32_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_ENCODE_METHODDEF    \
-    {"utf_32_encode", (PyCFunction)_codecs_utf_32_encode, METH_VARARGS, _codecs_utf_32_encode__doc__},
+    {"utf_32_encode", (PyCFunction)_codecs_utf_32_encode, METH_FASTCALL, _codecs_utf_32_encode__doc__},
 
 static PyObject *
 _codecs_utf_32_encode_impl(PyObject *module, PyObject *str,
                            const char *errors, int byteorder);
 
 static PyObject *
-_codecs_utf_32_encode(PyObject *module, PyObject *args)
+_codecs_utf_32_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
     int byteorder = 0;
 
-    if (!PyArg_ParseTuple(args, "U|zi:utf_32_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|zi:utf_32_encode",
         &str, &errors, &byteorder)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_32_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_32_encode_impl(module, str, errors, byteorder);
@@ -1127,21 +1243,25 @@ PyDoc_STRVAR(_codecs_utf_32_le_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_LE_ENCODE_METHODDEF    \
-    {"utf_32_le_encode", (PyCFunction)_codecs_utf_32_le_encode, METH_VARARGS, _codecs_utf_32_le_encode__doc__},
+    {"utf_32_le_encode", (PyCFunction)_codecs_utf_32_le_encode, METH_FASTCALL, _codecs_utf_32_le_encode__doc__},
 
 static PyObject *
 _codecs_utf_32_le_encode_impl(PyObject *module, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_utf_32_le_encode(PyObject *module, PyObject *args)
+_codecs_utf_32_le_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:utf_32_le_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|z:utf_32_le_encode",
         &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_32_le_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_32_le_encode_impl(module, str, errors);
@@ -1156,21 +1276,25 @@ PyDoc_STRVAR(_codecs_utf_32_be_encode__doc__,
 "\n");
 
 #define _CODECS_UTF_32_BE_ENCODE_METHODDEF    \
-    {"utf_32_be_encode", (PyCFunction)_codecs_utf_32_be_encode, METH_VARARGS, _codecs_utf_32_be_encode__doc__},
+    {"utf_32_be_encode", (PyCFunction)_codecs_utf_32_be_encode, METH_FASTCALL, _codecs_utf_32_be_encode__doc__},
 
 static PyObject *
 _codecs_utf_32_be_encode_impl(PyObject *module, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_utf_32_be_encode(PyObject *module, PyObject *args)
+_codecs_utf_32_be_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:utf_32_be_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|z:utf_32_be_encode",
         &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("utf_32_be_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_utf_32_be_encode_impl(module, str, errors);
@@ -1185,21 +1309,25 @@ PyDoc_STRVAR(_codecs_unicode_escape_encode__doc__,
 "\n");
 
 #define _CODECS_UNICODE_ESCAPE_ENCODE_METHODDEF    \
-    {"unicode_escape_encode", (PyCFunction)_codecs_unicode_escape_encode, METH_VARARGS, _codecs_unicode_escape_encode__doc__},
+    {"unicode_escape_encode", (PyCFunction)_codecs_unicode_escape_encode, METH_FASTCALL, _codecs_unicode_escape_encode__doc__},
 
 static PyObject *
 _codecs_unicode_escape_encode_impl(PyObject *module, PyObject *str,
                                    const char *errors);
 
 static PyObject *
-_codecs_unicode_escape_encode(PyObject *module, PyObject *args)
+_codecs_unicode_escape_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:unicode_escape_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|z:unicode_escape_encode",
         &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("unicode_escape_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_unicode_escape_encode_impl(module, str, errors);
@@ -1214,21 +1342,25 @@ PyDoc_STRVAR(_codecs_raw_unicode_escape_encode__doc__,
 "\n");
 
 #define _CODECS_RAW_UNICODE_ESCAPE_ENCODE_METHODDEF    \
-    {"raw_unicode_escape_encode", (PyCFunction)_codecs_raw_unicode_escape_encode, METH_VARARGS, _codecs_raw_unicode_escape_encode__doc__},
+    {"raw_unicode_escape_encode", (PyCFunction)_codecs_raw_unicode_escape_encode, METH_FASTCALL, _codecs_raw_unicode_escape_encode__doc__},
 
 static PyObject *
 _codecs_raw_unicode_escape_encode_impl(PyObject *module, PyObject *str,
                                        const char *errors);
 
 static PyObject *
-_codecs_raw_unicode_escape_encode(PyObject *module, PyObject *args)
+_codecs_raw_unicode_escape_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:raw_unicode_escape_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|z:raw_unicode_escape_encode",
         &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("raw_unicode_escape_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_raw_unicode_escape_encode_impl(module, str, errors);
@@ -1243,21 +1375,25 @@ PyDoc_STRVAR(_codecs_latin_1_encode__doc__,
 "\n");
 
 #define _CODECS_LATIN_1_ENCODE_METHODDEF    \
-    {"latin_1_encode", (PyCFunction)_codecs_latin_1_encode, METH_VARARGS, _codecs_latin_1_encode__doc__},
+    {"latin_1_encode", (PyCFunction)_codecs_latin_1_encode, METH_FASTCALL, _codecs_latin_1_encode__doc__},
 
 static PyObject *
 _codecs_latin_1_encode_impl(PyObject *module, PyObject *str,
                             const char *errors);
 
 static PyObject *
-_codecs_latin_1_encode(PyObject *module, PyObject *args)
+_codecs_latin_1_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:latin_1_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|z:latin_1_encode",
         &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("latin_1_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_latin_1_encode_impl(module, str, errors);
@@ -1272,21 +1408,25 @@ PyDoc_STRVAR(_codecs_ascii_encode__doc__,
 "\n");
 
 #define _CODECS_ASCII_ENCODE_METHODDEF    \
-    {"ascii_encode", (PyCFunction)_codecs_ascii_encode, METH_VARARGS, _codecs_ascii_encode__doc__},
+    {"ascii_encode", (PyCFunction)_codecs_ascii_encode, METH_FASTCALL, _codecs_ascii_encode__doc__},
 
 static PyObject *
 _codecs_ascii_encode_impl(PyObject *module, PyObject *str,
                           const char *errors);
 
 static PyObject *
-_codecs_ascii_encode(PyObject *module, PyObject *args)
+_codecs_ascii_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:ascii_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|z:ascii_encode",
         &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("ascii_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_ascii_encode_impl(module, str, errors);
@@ -1301,22 +1441,26 @@ PyDoc_STRVAR(_codecs_charmap_encode__doc__,
 "\n");
 
 #define _CODECS_CHARMAP_ENCODE_METHODDEF    \
-    {"charmap_encode", (PyCFunction)_codecs_charmap_encode, METH_VARARGS, _codecs_charmap_encode__doc__},
+    {"charmap_encode", (PyCFunction)_codecs_charmap_encode, METH_FASTCALL, _codecs_charmap_encode__doc__},
 
 static PyObject *
 _codecs_charmap_encode_impl(PyObject *module, PyObject *str,
                             const char *errors, PyObject *mapping);
 
 static PyObject *
-_codecs_charmap_encode(PyObject *module, PyObject *args)
+_codecs_charmap_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
     PyObject *mapping = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|zO:charmap_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|zO:charmap_encode",
         &str, &errors, &mapping)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("charmap_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_charmap_encode_impl(module, str, errors, mapping);
@@ -1359,20 +1503,24 @@ PyDoc_STRVAR(_codecs_mbcs_encode__doc__,
 "\n");
 
 #define _CODECS_MBCS_ENCODE_METHODDEF    \
-    {"mbcs_encode", (PyCFunction)_codecs_mbcs_encode, METH_VARARGS, _codecs_mbcs_encode__doc__},
+    {"mbcs_encode", (PyCFunction)_codecs_mbcs_encode, METH_FASTCALL, _codecs_mbcs_encode__doc__},
 
 static PyObject *
 _codecs_mbcs_encode_impl(PyObject *module, PyObject *str, const char *errors);
 
 static PyObject *
-_codecs_mbcs_encode(PyObject *module, PyObject *args)
+_codecs_mbcs_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:mbcs_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|z:mbcs_encode",
         &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("mbcs_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_mbcs_encode_impl(module, str, errors);
@@ -1391,20 +1539,24 @@ PyDoc_STRVAR(_codecs_oem_encode__doc__,
 "\n");
 
 #define _CODECS_OEM_ENCODE_METHODDEF    \
-    {"oem_encode", (PyCFunction)_codecs_oem_encode, METH_VARARGS, _codecs_oem_encode__doc__},
+    {"oem_encode", (PyCFunction)_codecs_oem_encode, METH_FASTCALL, _codecs_oem_encode__doc__},
 
 static PyObject *
 _codecs_oem_encode_impl(PyObject *module, PyObject *str, const char *errors);
 
 static PyObject *
-_codecs_oem_encode(PyObject *module, PyObject *args)
+_codecs_oem_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:oem_encode",
+    if (!_PyArg_ParseStack(args, nargs, "U|z:oem_encode",
         &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("oem_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_oem_encode_impl(module, str, errors);
@@ -1423,22 +1575,26 @@ PyDoc_STRVAR(_codecs_code_page_encode__doc__,
 "\n");
 
 #define _CODECS_CODE_PAGE_ENCODE_METHODDEF    \
-    {"code_page_encode", (PyCFunction)_codecs_code_page_encode, METH_VARARGS, _codecs_code_page_encode__doc__},
+    {"code_page_encode", (PyCFunction)_codecs_code_page_encode, METH_FASTCALL, _codecs_code_page_encode__doc__},
 
 static PyObject *
 _codecs_code_page_encode_impl(PyObject *module, int code_page, PyObject *str,
                               const char *errors);
 
 static PyObject *
-_codecs_code_page_encode(PyObject *module, PyObject *args)
+_codecs_code_page_encode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int code_page;
     PyObject *str;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "iU|z:code_page_encode",
+    if (!_PyArg_ParseStack(args, nargs, "iU|z:code_page_encode",
         &code_page, &str, &errors)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("code_page_encode", kwnames)) {
         goto exit;
     }
     return_value = _codecs_code_page_encode_impl(module, code_page, str, errors);
@@ -1460,21 +1616,25 @@ PyDoc_STRVAR(_codecs_register_error__doc__,
 "error and must return a (replacement, new position) tuple.");
 
 #define _CODECS_REGISTER_ERROR_METHODDEF    \
-    {"register_error", (PyCFunction)_codecs_register_error, METH_VARARGS, _codecs_register_error__doc__},
+    {"register_error", (PyCFunction)_codecs_register_error, METH_FASTCALL, _codecs_register_error__doc__},
 
 static PyObject *
 _codecs_register_error_impl(PyObject *module, const char *errors,
                             PyObject *handler);
 
 static PyObject *
-_codecs_register_error(PyObject *module, PyObject *args)
+_codecs_register_error(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     const char *errors;
     PyObject *handler;
 
-    if (!PyArg_ParseTuple(args, "sO:register_error",
+    if (!_PyArg_ParseStack(args, nargs, "sO:register_error",
         &errors, &handler)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("register_error", kwnames)) {
         goto exit;
     }
     return_value = _codecs_register_error_impl(module, errors, handler);
@@ -1536,4 +1696,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=6d6afcabde10ed79 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=36fb42f450a3b4dc input=a9049054013a1b77]*/

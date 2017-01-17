@@ -124,4 +124,4 @@ _sha256_sha224(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=19439d70db7ead5c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7ef4927ee2a3aac4 input=a9049054013a1b77]*/

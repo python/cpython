@@ -151,4 +151,4 @@ _sha3_shake_128_hexdigest(SHA3object *self, PyObject **args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9888beab45136a56 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f2278bf0852a7850 input=a9049054013a1b77]*/

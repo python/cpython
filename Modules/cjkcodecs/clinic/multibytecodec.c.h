@@ -330,4 +330,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=134b9e36cb985939 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d6a05b0a581fd17 input=a9049054013a1b77]*/

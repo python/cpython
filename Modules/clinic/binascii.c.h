@@ -266,21 +266,25 @@ PyDoc_STRVAR(binascii_crc_hqx__doc__,
 "Compute CRC-CCITT incrementally.");
 
 #define BINASCII_CRC_HQX_METHODDEF    \
-    {"crc_hqx", (PyCFunction)binascii_crc_hqx, METH_VARARGS, binascii_crc_hqx__doc__},
+    {"crc_hqx", (PyCFunction)binascii_crc_hqx, METH_FASTCALL, binascii_crc_hqx__doc__},
 
 static unsigned int
 binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc);
 
 static PyObject *
-binascii_crc_hqx(PyObject *module, PyObject *args)
+binascii_crc_hqx(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     unsigned int crc;
     unsigned int _return_value;
 
-    if (!PyArg_ParseTuple(args, "y*I:crc_hqx",
+    if (!_PyArg_ParseStack(args, nargs, "y*I:crc_hqx",
         &data, &crc)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("crc_hqx", kwnames)) {
         goto exit;
     }
     _return_value = binascii_crc_hqx_impl(module, &data, crc);
@@ -305,21 +309,25 @@ PyDoc_STRVAR(binascii_crc32__doc__,
 "Compute CRC-32 incrementally.");
 
 #define BINASCII_CRC32_METHODDEF    \
-    {"crc32", (PyCFunction)binascii_crc32, METH_VARARGS, binascii_crc32__doc__},
+    {"crc32", (PyCFunction)binascii_crc32, METH_FASTCALL, binascii_crc32__doc__},
 
 static unsigned int
 binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc);
 
 static PyObject *
-binascii_crc32(PyObject *module, PyObject *args)
+binascii_crc32(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     unsigned int crc = 0;
     unsigned int _return_value;
 
-    if (!PyArg_ParseTuple(args, "y*|I:crc32",
+    if (!_PyArg_ParseStack(args, nargs, "y*|I:crc32",
         &data, &crc)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("crc32", kwnames)) {
         goto exit;
     }
     _return_value = binascii_crc32_impl(module, &data, crc);
@@ -550,4 +558,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=458eb09731cb7877 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a418f883ccc79fe input=a9049054013a1b77]*/

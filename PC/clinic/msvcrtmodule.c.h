@@ -37,21 +37,25 @@ PyDoc_STRVAR(msvcrt_locking__doc__,
 "individually.");
 
 #define MSVCRT_LOCKING_METHODDEF    \
-    {"locking", (PyCFunction)msvcrt_locking, METH_VARARGS, msvcrt_locking__doc__},
+    {"locking", (PyCFunction)msvcrt_locking, METH_FASTCALL, msvcrt_locking__doc__},
 
 static PyObject *
 msvcrt_locking_impl(PyObject *module, int fd, int mode, long nbytes);
 
 static PyObject *
-msvcrt_locking(PyObject *module, PyObject *args)
+msvcrt_locking(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int fd;
     int mode;
     long nbytes;
 
-    if (!PyArg_ParseTuple(args, "iil:locking",
+    if (!_PyArg_ParseStack(args, nargs, "iil:locking",
         &fd, &mode, &nbytes)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("locking", kwnames)) {
         goto exit;
     }
     return_value = msvcrt_locking_impl(module, fd, mode, nbytes);
@@ -72,21 +76,25 @@ PyDoc_STRVAR(msvcrt_setmode__doc__,
 "Return value is the previous mode.");
 
 #define MSVCRT_SETMODE_METHODDEF    \
-    {"setmode", (PyCFunction)msvcrt_setmode, METH_VARARGS, msvcrt_setmode__doc__},
+    {"setmode", (PyCFunction)msvcrt_setmode, METH_FASTCALL, msvcrt_setmode__doc__},
 
 static long
 msvcrt_setmode_impl(PyObject *module, int fd, int flags);
 
 static PyObject *
-msvcrt_setmode(PyObject *module, PyObject *args)
+msvcrt_setmode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int fd;
     int flags;
     long _return_value;
 
-    if (!PyArg_ParseTuple(args, "ii:setmode",
+    if (!_PyArg_ParseStack(args, nargs, "ii:setmode",
         &fd, &flags)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("setmode", kwnames)) {
         goto exit;
     }
     _return_value = msvcrt_setmode_impl(module, fd, flags);
@@ -110,21 +118,25 @@ PyDoc_STRVAR(msvcrt_open_osfhandle__doc__,
 "to os.fdopen() to create a file object.");
 
 #define MSVCRT_OPEN_OSFHANDLE_METHODDEF    \
-    {"open_osfhandle", (PyCFunction)msvcrt_open_osfhandle, METH_VARARGS, msvcrt_open_osfhandle__doc__},
+    {"open_osfhandle", (PyCFunction)msvcrt_open_osfhandle, METH_FASTCALL, msvcrt_open_osfhandle__doc__},
 
 static long
 msvcrt_open_osfhandle_impl(PyObject *module, intptr_t handle, int flags);
 
 static PyObject *
-msvcrt_open_osfhandle(PyObject *module, PyObject *args)
+msvcrt_open_osfhandle(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     intptr_t handle;
     int flags;
     long _return_value;
 
-    if (!PyArg_ParseTuple(args, ""_Py_PARSE_INTPTR"i:open_osfhandle",
+    if (!_PyArg_ParseStack(args, nargs, ""_Py_PARSE_INTPTR"i:open_osfhandle",
         &handle, &flags)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("open_osfhandle", kwnames)) {
         goto exit;
     }
     _return_value = msvcrt_open_osfhandle_impl(module, handle, flags);
@@ -424,21 +436,25 @@ PyDoc_STRVAR(msvcrt_CrtSetReportFile__doc__,
 "Only available on Debug builds.");
 
 #define MSVCRT_CRTSETREPORTFILE_METHODDEF    \
-    {"CrtSetReportFile", (PyCFunction)msvcrt_CrtSetReportFile, METH_VARARGS, msvcrt_CrtSetReportFile__doc__},
+    {"CrtSetReportFile", (PyCFunction)msvcrt_CrtSetReportFile, METH_FASTCALL, msvcrt_CrtSetReportFile__doc__},
 
 static long
 msvcrt_CrtSetReportFile_impl(PyObject *module, int type, int file);
 
 static PyObject *
-msvcrt_CrtSetReportFile(PyObject *module, PyObject *args)
+msvcrt_CrtSetReportFile(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int type;
     int file;
     long _return_value;
 
-    if (!PyArg_ParseTuple(args, "ii:CrtSetReportFile",
+    if (!_PyArg_ParseStack(args, nargs, "ii:CrtSetReportFile",
         &type, &file)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("CrtSetReportFile", kwnames)) {
         goto exit;
     }
     _return_value = msvcrt_CrtSetReportFile_impl(module, type, file);
@@ -464,21 +480,25 @@ PyDoc_STRVAR(msvcrt_CrtSetReportMode__doc__,
 "Only available on Debug builds.");
 
 #define MSVCRT_CRTSETREPORTMODE_METHODDEF    \
-    {"CrtSetReportMode", (PyCFunction)msvcrt_CrtSetReportMode, METH_VARARGS, msvcrt_CrtSetReportMode__doc__},
+    {"CrtSetReportMode", (PyCFunction)msvcrt_CrtSetReportMode, METH_FASTCALL, msvcrt_CrtSetReportMode__doc__},
 
 static long
 msvcrt_CrtSetReportMode_impl(PyObject *module, int type, int mode);
 
 static PyObject *
-msvcrt_CrtSetReportMode(PyObject *module, PyObject *args)
+msvcrt_CrtSetReportMode(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int type;
     int mode;
     long _return_value;
 
-    if (!PyArg_ParseTuple(args, "ii:CrtSetReportMode",
+    if (!_PyArg_ParseStack(args, nargs, "ii:CrtSetReportMode",
         &type, &mode)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("CrtSetReportMode", kwnames)) {
         goto exit;
     }
     _return_value = msvcrt_CrtSetReportMode_impl(module, type, mode);
@@ -569,4 +589,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=ae04e2b50eef8b63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=36f1e78ca8bd3944 input=a9049054013a1b77]*/
