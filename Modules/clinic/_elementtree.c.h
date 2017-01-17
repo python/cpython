@@ -151,7 +151,7 @@ _elementtree_Element_find(ElementObject *self, PyObject **args, Py_ssize_t nargs
     PyObject *path;
     PyObject *namespaces = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &path, &namespaces)) {
         goto exit;
     }
@@ -184,7 +184,7 @@ _elementtree_Element_findtext(ElementObject *self, PyObject **args, Py_ssize_t n
     PyObject *default_value = Py_None;
     PyObject *namespaces = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &path, &default_value, &namespaces)) {
         goto exit;
     }
@@ -215,7 +215,7 @@ _elementtree_Element_findall(ElementObject *self, PyObject **args, Py_ssize_t na
     PyObject *path;
     PyObject *namespaces = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &path, &namespaces)) {
         goto exit;
     }
@@ -246,7 +246,7 @@ _elementtree_Element_iterfind(ElementObject *self, PyObject **args, Py_ssize_t n
     PyObject *path;
     PyObject *namespaces = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &path, &namespaces)) {
         goto exit;
     }
@@ -277,7 +277,7 @@ _elementtree_Element_get(ElementObject *self, PyObject **args, Py_ssize_t nargs,
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &key, &default_value)) {
         goto exit;
     }
@@ -323,7 +323,7 @@ _elementtree_Element_iter(ElementObject *self, PyObject **args, Py_ssize_t nargs
     static _PyArg_Parser _parser = {"|O:iter", _keywords, 0};
     PyObject *tag = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &tag)) {
         goto exit;
     }

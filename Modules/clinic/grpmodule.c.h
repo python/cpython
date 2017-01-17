@@ -24,7 +24,7 @@ grp_getgrgid(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     static _PyArg_Parser _parser = {"O:getgrgid", _keywords, 0};
     PyObject *id;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &id)) {
         goto exit;
     }
@@ -56,7 +56,7 @@ grp_getgrnam(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     static _PyArg_Parser _parser = {"U:getgrnam", _keywords, 0};
     PyObject *name;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &name)) {
         goto exit;
     }

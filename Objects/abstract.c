@@ -2485,7 +2485,7 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t narg
 
     /* kwnames must only contains str strings, no subclass, and all keys must
        be unique: these checks are implemented in Python/ceval.c and
-       _PyArg_ParseStack(). */
+       _PyArg_ParseStackAndKeywords(). */
 
     if (PyFunction_Check(callable)) {
         return _PyFunction_FastCallKeywords(callable, stack, nargs, kwnames);

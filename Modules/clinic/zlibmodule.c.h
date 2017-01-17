@@ -28,7 +28,7 @@ zlib_compress(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     Py_buffer data = {NULL, NULL};
     int level = Z_DEFAULT_COMPRESSION;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &data, &level)) {
         goto exit;
     }
@@ -73,7 +73,7 @@ zlib_decompress(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     int wbits = MAX_WBITS;
     Py_ssize_t bufsize = DEF_BUF_SIZE;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &data, &wbits, ssize_t_converter, &bufsize)) {
         goto exit;
     }
@@ -138,7 +138,7 @@ zlib_compressobj(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *
     int strategy = Z_DEFAULT_STRATEGY;
     Py_buffer zdict = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &level, &method, &wbits, &memLevel, &strategy, &zdict)) {
         goto exit;
     }
@@ -180,7 +180,7 @@ zlib_decompressobj(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     int wbits = MAX_WBITS;
     PyObject *zdict = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &wbits, &zdict)) {
         goto exit;
     }
@@ -262,7 +262,7 @@ zlib_Decompress_decompress(compobject *self, PyObject **args, Py_ssize_t nargs, 
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &data, ssize_t_converter, &max_length)) {
         goto exit;
     }

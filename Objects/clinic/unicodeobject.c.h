@@ -123,7 +123,7 @@ unicode_encode(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &encoding, &errors)) {
         goto exit;
     }
@@ -155,7 +155,7 @@ unicode_expandtabs(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *
     static _PyArg_Parser _parser = {"|i:expandtabs", _keywords, 0};
     int tabsize = 8;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &tabsize)) {
         goto exit;
     }
@@ -650,7 +650,7 @@ unicode_split(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &sep, &maxsplit)) {
         goto exit;
     }
@@ -723,7 +723,7 @@ unicode_rsplit(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &sep, &maxsplit)) {
         goto exit;
     }
@@ -756,7 +756,7 @@ unicode_splitlines(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *
     static _PyArg_Parser _parser = {"|i:splitlines", _keywords, 0};
     int keepends = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &keepends)) {
         goto exit;
     }

@@ -28,7 +28,7 @@ winsound_PlaySound(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject
     PyObject *sound;
     int flags;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &sound, &flags)) {
         goto exit;
     }
@@ -65,7 +65,7 @@ winsound_Beep(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     int frequency;
     int duration;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &frequency, &duration)) {
         goto exit;
     }
@@ -97,7 +97,7 @@ winsound_MessageBeep(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObje
     static _PyArg_Parser _parser = {"|i:MessageBeep", _keywords, 0};
     int type = MB_OK;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &type)) {
         goto exit;
     }

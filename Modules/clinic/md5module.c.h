@@ -85,7 +85,7 @@ _md5_md5(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     static _PyArg_Parser _parser = {"|O:md5", _keywords, 0};
     PyObject *string = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &string)) {
         goto exit;
     }

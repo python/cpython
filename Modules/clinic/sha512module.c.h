@@ -85,7 +85,7 @@ _sha512_sha512(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     static _PyArg_Parser _parser = {"|O:sha512", _keywords, 0};
     PyObject *string = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &string)) {
         goto exit;
     }
@@ -115,7 +115,7 @@ _sha512_sha384(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kw
     static _PyArg_Parser _parser = {"|O:sha384", _keywords, 0};
     PyObject *string = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &string)) {
         goto exit;
     }

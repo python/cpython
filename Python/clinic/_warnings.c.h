@@ -26,7 +26,7 @@ warnings_warn(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
     Py_ssize_t stacklevel = 1;
     PyObject *source = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &message, &category, &stacklevel, &source)) {
         goto exit;
     }

@@ -117,7 +117,7 @@ binascii_b2a_base64(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObjec
     Py_buffer data = {NULL, NULL};
     int newline = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &data, &newline)) {
         goto exit;
     }
@@ -494,7 +494,7 @@ binascii_a2b_qp(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     Py_buffer data = {NULL, NULL};
     int header = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         ascii_buffer_converter, &data, &header)) {
         goto exit;
     }
@@ -536,7 +536,7 @@ binascii_b2a_qp(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *k
     int istext = 1;
     int header = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &data, &quotetabs, &istext, &header)) {
         goto exit;
     }
