@@ -993,13 +993,18 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
 
 /* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
-builtin_getattr(PyObject *self, PyObject *args)
+builtin_getattr(PyObject *self, PyObject **args, Py_ssize_t nargs,
+                PyObject *kwnames)
 {
     PyObject *v, *result, *dflt = NULL;
     PyObject *name;
 
-    if (!PyArg_UnpackTuple(args, "getattr", 2, 3, &v, &name, &dflt))
+    if (!_PyArg_UnpackStack(args, nargs, "getattr", 2, 3, &v, &name, &dflt))
         return NULL;
+
+    if (!_PyArg_NoStackKeywords("getattr", kwnames)) {
+        return NULL;
+    }
 
     if (!PyUnicode_Check(name)) {
         PyErr_SetString(PyExc_TypeError,
@@ -2622,7 +2627,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_EVAL_METHODDEF
     BUILTIN_EXEC_METHODDEF
     BUILTIN_FORMAT_METHODDEF
-    {"getattr",         builtin_getattr,    METH_VARARGS, getattr_doc},
+    {"getattr",         (PyCFunction)builtin_getattr, METH_FASTCALL, getattr_doc},
     BUILTIN_GLOBALS_METHODDEF
     BUILTIN_HASATTR_METHODDEF
     BUILTIN_HASH_METHODDEF
