@@ -905,13 +905,17 @@ generate_hash_name_list(void)
  */
 #define GEN_CONSTRUCTOR(NAME)  \
     static PyObject * \
-    EVP_new_ ## NAME (PyObject *self, PyObject *args) \
+    EVP_new_ ## NAME (PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames) \
     { \
         PyObject *data_obj = NULL; \
         Py_buffer view = { 0 }; \
         PyObject *ret_obj; \
      \
-        if (!PyArg_ParseTuple(args, "|O:" #NAME , &data_obj)) { \
+        if (!_PyArg_ParseStack(args, nargs, "|O:" #NAME , &data_obj)) { \
+            return NULL; \
+        } \
+     \
+        if (!_PyArg_NoStackKeywords(#NAME, kwnames)) { \
             return NULL; \
         } \
      \
@@ -932,7 +936,7 @@ generate_hash_name_list(void)
 
 /* a PyMethodDef structure for the constructor */
 #define CONSTRUCTOR_METH_DEF(NAME)  \
-    {"openssl_" #NAME, (PyCFunction)EVP_new_ ## NAME, METH_VARARGS, \
+    {"openssl_" #NAME, (PyCFunction)EVP_new_ ## NAME, METH_FASTCALL, \
         PyDoc_STR("Returns a " #NAME \
                   " hash object; optionally initialized with a string") \
     }
