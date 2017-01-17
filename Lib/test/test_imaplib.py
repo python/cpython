@@ -477,7 +477,7 @@ class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
 
 @unittest.skipUnless(ssl, "SSL not available")
 class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
-    imap_class = imaplib.IMAP4_SSL
+    imap_class = IMAP4_SSL
     server_class = SecureTCPServer
 
     def test_ssl_raises(self):

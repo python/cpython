@@ -32,8 +32,8 @@ sending a graphics file.
 
 .. function:: encode(input, output, quotetabs, header=False)
 
-   Encode the contents of the *input* file and write the resulting quoted-
-   printable data to the *output* file. *input* and *output* must be
+   Encode the contents of the *input* file and write the resulting quoted-printable
+   data to the *output* file. *input* and *output* must be
    :term:`binary file objects <file object>`. *quotetabs*, a flag which controls
    whether to encode embedded spaces and tabs must be provideda and when true it
    encodes such embedded whitespace, and when false it leaves them unencoded.
