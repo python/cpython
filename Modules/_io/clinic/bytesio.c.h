@@ -158,20 +158,24 @@ PyDoc_STRVAR(_io_BytesIO_read__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_READ_METHODDEF    \
-    {"read", (PyCFunction)_io_BytesIO_read, METH_VARARGS, _io_BytesIO_read__doc__},
+    {"read", (PyCFunction)_io_BytesIO_read, METH_FASTCALL, _io_BytesIO_read__doc__},
 
 static PyObject *
 _io_BytesIO_read_impl(bytesio *self, PyObject *arg);
 
 static PyObject *
-_io_BytesIO_read(bytesio *self, PyObject *args)
+_io_BytesIO_read(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *arg = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "read",
+    if (!_PyArg_UnpackStack(args, nargs, "read",
         0, 1,
         &arg)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("read", kwnames)) {
         goto exit;
     }
     return_value = _io_BytesIO_read_impl(self, arg);
@@ -190,20 +194,24 @@ PyDoc_STRVAR(_io_BytesIO_read1__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_READ1_METHODDEF    \
-    {"read1", (PyCFunction)_io_BytesIO_read1, METH_VARARGS, _io_BytesIO_read1__doc__},
+    {"read1", (PyCFunction)_io_BytesIO_read1, METH_FASTCALL, _io_BytesIO_read1__doc__},
 
 static PyObject *
 _io_BytesIO_read1_impl(bytesio *self, PyObject *size);
 
 static PyObject *
-_io_BytesIO_read1(bytesio *self, PyObject *args)
+_io_BytesIO_read1(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *size = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "read1",
+    if (!_PyArg_UnpackStack(args, nargs, "read1",
         0, 1,
         &size)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("read1", kwnames)) {
         goto exit;
     }
     return_value = _io_BytesIO_read1_impl(self, size);
@@ -223,20 +231,24 @@ PyDoc_STRVAR(_io_BytesIO_readline__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_READLINE_METHODDEF    \
-    {"readline", (PyCFunction)_io_BytesIO_readline, METH_VARARGS, _io_BytesIO_readline__doc__},
+    {"readline", (PyCFunction)_io_BytesIO_readline, METH_FASTCALL, _io_BytesIO_readline__doc__},
 
 static PyObject *
 _io_BytesIO_readline_impl(bytesio *self, PyObject *arg);
 
 static PyObject *
-_io_BytesIO_readline(bytesio *self, PyObject *args)
+_io_BytesIO_readline(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *arg = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "readline",
+    if (!_PyArg_UnpackStack(args, nargs, "readline",
         0, 1,
         &arg)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("readline", kwnames)) {
         goto exit;
     }
     return_value = _io_BytesIO_readline_impl(self, arg);
@@ -256,20 +268,24 @@ PyDoc_STRVAR(_io_BytesIO_readlines__doc__,
 "total number of bytes in the lines returned.");
 
 #define _IO_BYTESIO_READLINES_METHODDEF    \
-    {"readlines", (PyCFunction)_io_BytesIO_readlines, METH_VARARGS, _io_BytesIO_readlines__doc__},
+    {"readlines", (PyCFunction)_io_BytesIO_readlines, METH_FASTCALL, _io_BytesIO_readlines__doc__},
 
 static PyObject *
 _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg);
 
 static PyObject *
-_io_BytesIO_readlines(bytesio *self, PyObject *args)
+_io_BytesIO_readlines(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *arg = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "readlines",
+    if (!_PyArg_UnpackStack(args, nargs, "readlines",
         0, 1,
         &arg)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("readlines", kwnames)) {
         goto exit;
     }
     return_value = _io_BytesIO_readlines_impl(self, arg);
@@ -323,20 +339,24 @@ PyDoc_STRVAR(_io_BytesIO_truncate__doc__,
 "The current file position is unchanged.  Returns the new size.");
 
 #define _IO_BYTESIO_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)_io_BytesIO_truncate, METH_VARARGS, _io_BytesIO_truncate__doc__},
+    {"truncate", (PyCFunction)_io_BytesIO_truncate, METH_FASTCALL, _io_BytesIO_truncate__doc__},
 
 static PyObject *
 _io_BytesIO_truncate_impl(bytesio *self, PyObject *arg);
 
 static PyObject *
-_io_BytesIO_truncate(bytesio *self, PyObject *args)
+_io_BytesIO_truncate(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *arg = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "truncate",
+    if (!_PyArg_UnpackStack(args, nargs, "truncate",
         0, 1,
         &arg)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
         goto exit;
     }
     return_value = _io_BytesIO_truncate_impl(self, arg);
@@ -452,4 +472,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=056f24eece495a8f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=138ee6ad6951bc84 input=a9049054013a1b77]*/

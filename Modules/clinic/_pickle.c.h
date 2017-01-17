@@ -199,7 +199,7 @@ PyDoc_STRVAR(_pickle_Unpickler_find_class__doc__,
 "needed.  Both arguments passed are str objects.");
 
 #define _PICKLE_UNPICKLER_FIND_CLASS_METHODDEF    \
-    {"find_class", (PyCFunction)_pickle_Unpickler_find_class, METH_VARARGS, _pickle_Unpickler_find_class__doc__},
+    {"find_class", (PyCFunction)_pickle_Unpickler_find_class, METH_FASTCALL, _pickle_Unpickler_find_class__doc__},
 
 static PyObject *
 _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
@@ -207,15 +207,19 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
                                   PyObject *global_name);
 
 static PyObject *
-_pickle_Unpickler_find_class(UnpicklerObject *self, PyObject *args)
+_pickle_Unpickler_find_class(UnpicklerObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *module_name;
     PyObject *global_name;
 
-    if (!PyArg_UnpackTuple(args, "find_class",
+    if (!_PyArg_UnpackStack(args, nargs, "find_class",
         2, 2,
         &module_name, &global_name)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("find_class", kwnames)) {
         goto exit;
     }
     return_value = _pickle_Unpickler_find_class_impl(self, module_name, global_name);
@@ -560,4 +564,4 @@ _pickle_loads(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d7222d1219039fbd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b921d325b2f7a096 input=a9049054013a1b77]*/

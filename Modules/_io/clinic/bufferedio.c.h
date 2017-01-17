@@ -309,20 +309,24 @@ PyDoc_STRVAR(_io__Buffered_truncate__doc__,
 "\n");
 
 #define _IO__BUFFERED_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)_io__Buffered_truncate, METH_VARARGS, _io__Buffered_truncate__doc__},
+    {"truncate", (PyCFunction)_io__Buffered_truncate, METH_FASTCALL, _io__Buffered_truncate__doc__},
 
 static PyObject *
 _io__Buffered_truncate_impl(buffered *self, PyObject *pos);
 
 static PyObject *
-_io__Buffered_truncate(buffered *self, PyObject *args)
+_io__Buffered_truncate(buffered *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *pos = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "truncate",
+    if (!_PyArg_UnpackStack(args, nargs, "truncate",
         0, 1,
         &pos)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
         goto exit;
     }
     return_value = _io__Buffered_truncate_impl(self, pos);
@@ -496,4 +500,4 @@ _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e6e584216a10d67e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e37b969b1acaa09c input=a9049054013a1b77]*/

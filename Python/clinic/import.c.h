@@ -273,21 +273,25 @@ PyDoc_STRVAR(_imp_create_dynamic__doc__,
 "Create an extension module.");
 
 #define _IMP_CREATE_DYNAMIC_METHODDEF    \
-    {"create_dynamic", (PyCFunction)_imp_create_dynamic, METH_VARARGS, _imp_create_dynamic__doc__},
+    {"create_dynamic", (PyCFunction)_imp_create_dynamic, METH_FASTCALL, _imp_create_dynamic__doc__},
 
 static PyObject *
 _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file);
 
 static PyObject *
-_imp_create_dynamic(PyObject *module, PyObject *args)
+_imp_create_dynamic(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *spec;
     PyObject *file = NULL;
 
-    if (!PyArg_UnpackTuple(args, "create_dynamic",
+    if (!_PyArg_UnpackStack(args, nargs, "create_dynamic",
         1, 2,
         &spec, &file)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("create_dynamic", kwnames)) {
         goto exit;
     }
     return_value = _imp_create_dynamic_impl(module, spec, file);
@@ -365,4 +369,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=5a3f012344950548 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1d0e65d04114958 input=a9049054013a1b77]*/

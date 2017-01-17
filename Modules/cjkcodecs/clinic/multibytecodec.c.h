@@ -192,21 +192,25 @@ PyDoc_STRVAR(_multibytecodec_MultibyteStreamReader_read__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMREADER_READ_METHODDEF    \
-    {"read", (PyCFunction)_multibytecodec_MultibyteStreamReader_read, METH_VARARGS, _multibytecodec_MultibyteStreamReader_read__doc__},
+    {"read", (PyCFunction)_multibytecodec_MultibyteStreamReader_read, METH_FASTCALL, _multibytecodec_MultibyteStreamReader_read__doc__},
 
 static PyObject *
 _multibytecodec_MultibyteStreamReader_read_impl(MultibyteStreamReaderObject *self,
                                                 PyObject *sizeobj);
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_read(MultibyteStreamReaderObject *self, PyObject *args)
+_multibytecodec_MultibyteStreamReader_read(MultibyteStreamReaderObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *sizeobj = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "read",
+    if (!_PyArg_UnpackStack(args, nargs, "read",
         0, 1,
         &sizeobj)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("read", kwnames)) {
         goto exit;
     }
     return_value = _multibytecodec_MultibyteStreamReader_read_impl(self, sizeobj);
@@ -221,21 +225,25 @@ PyDoc_STRVAR(_multibytecodec_MultibyteStreamReader_readline__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMREADER_READLINE_METHODDEF    \
-    {"readline", (PyCFunction)_multibytecodec_MultibyteStreamReader_readline, METH_VARARGS, _multibytecodec_MultibyteStreamReader_readline__doc__},
+    {"readline", (PyCFunction)_multibytecodec_MultibyteStreamReader_readline, METH_FASTCALL, _multibytecodec_MultibyteStreamReader_readline__doc__},
 
 static PyObject *
 _multibytecodec_MultibyteStreamReader_readline_impl(MultibyteStreamReaderObject *self,
                                                     PyObject *sizeobj);
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_readline(MultibyteStreamReaderObject *self, PyObject *args)
+_multibytecodec_MultibyteStreamReader_readline(MultibyteStreamReaderObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *sizeobj = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "readline",
+    if (!_PyArg_UnpackStack(args, nargs, "readline",
         0, 1,
         &sizeobj)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("readline", kwnames)) {
         goto exit;
     }
     return_value = _multibytecodec_MultibyteStreamReader_readline_impl(self, sizeobj);
@@ -250,21 +258,25 @@ PyDoc_STRVAR(_multibytecodec_MultibyteStreamReader_readlines__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMREADER_READLINES_METHODDEF    \
-    {"readlines", (PyCFunction)_multibytecodec_MultibyteStreamReader_readlines, METH_VARARGS, _multibytecodec_MultibyteStreamReader_readlines__doc__},
+    {"readlines", (PyCFunction)_multibytecodec_MultibyteStreamReader_readlines, METH_FASTCALL, _multibytecodec_MultibyteStreamReader_readlines__doc__},
 
 static PyObject *
 _multibytecodec_MultibyteStreamReader_readlines_impl(MultibyteStreamReaderObject *self,
                                                      PyObject *sizehintobj);
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_readlines(MultibyteStreamReaderObject *self, PyObject *args)
+_multibytecodec_MultibyteStreamReader_readlines(MultibyteStreamReaderObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *sizehintobj = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "readlines",
+    if (!_PyArg_UnpackStack(args, nargs, "readlines",
         0, 1,
         &sizehintobj)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("readlines", kwnames)) {
         goto exit;
     }
     return_value = _multibytecodec_MultibyteStreamReader_readlines_impl(self, sizehintobj);
@@ -330,4 +342,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=7d6a05b0a581fd17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=26710ffd4b3c7d7e input=a9049054013a1b77]*/
