@@ -2,6 +2,18 @@
 Python News
 +++++++++++
 
+What's New in Python 3.5.4?
+===========================
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Issue #29011:  Fix an important omission by adding Deque to the typing module.
+
+
 What's New in Python 3.5.3?
 ===========================
 
@@ -528,17 +540,17 @@ Library
 
 - Issue #27972: Prohibit Tasks to await on themselves.
 
-- Issue #26923: Fix asyncio.Gather to refuse being cancelled once all 
+- Issue #26923: Fix asyncio.Gather to refuse being cancelled once all
   children are done.
   Patch by Johannes Ebke.
 
-- Issue #26796: Don't configure the number of workers for default 
+- Issue #26796: Don't configure the number of workers for default
   threadpool executor.
   Initial patch by Hans Lawrenz.
 
 - Issue #28600: Optimize loop.call_soon().
 
-- Issue #28613: Fix get_event_loop() return the current loop if 
+- Issue #28613: Fix get_event_loop() return the current loop if
   called from coroutines/callbacks.
 
 - Issue #28639: Fix inspect.isawaitable to always return bool
@@ -553,7 +565,7 @@ Library
 - Issue #24142: Reading a corrupt config file left the parser in an
   invalid state.  Original patch by Florian Höch.
 
-- Issue #28990: Fix SSL hanging if connection is closed before handshake 
+- Issue #28990: Fix SSL hanging if connection is closed before handshake
   completed.
   (Patch by HoHo-Ho)
 
