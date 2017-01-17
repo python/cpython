@@ -11,21 +11,25 @@ PyDoc_STRVAR(pyexpat_xmlparser_Parse__doc__,
 "`isfinal\' should be true at end of input.");
 
 #define PYEXPAT_XMLPARSER_PARSE_METHODDEF    \
-    {"Parse", (PyCFunction)pyexpat_xmlparser_Parse, METH_VARARGS, pyexpat_xmlparser_Parse__doc__},
+    {"Parse", (PyCFunction)pyexpat_xmlparser_Parse, METH_FASTCALL, pyexpat_xmlparser_Parse__doc__},
 
 static PyObject *
 pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
                              int isfinal);
 
 static PyObject *
-pyexpat_xmlparser_Parse(xmlparseobject *self, PyObject *args)
+pyexpat_xmlparser_Parse(xmlparseobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *data;
     int isfinal = 0;
 
-    if (!PyArg_ParseTuple(args, "O|i:Parse",
+    if (!_PyArg_ParseStack(args, nargs, "O|i:Parse",
         &data, &isfinal)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("Parse", kwnames)) {
         goto exit;
     }
     return_value = pyexpat_xmlparser_Parse_impl(self, data, isfinal);
@@ -116,7 +120,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_ExternalEntityParserCreate__doc__,
 "Create a parser for parsing an external entity based on the information passed to the ExternalEntityRefHandler.");
 
 #define PYEXPAT_XMLPARSER_EXTERNALENTITYPARSERCREATE_METHODDEF    \
-    {"ExternalEntityParserCreate", (PyCFunction)pyexpat_xmlparser_ExternalEntityParserCreate, METH_VARARGS, pyexpat_xmlparser_ExternalEntityParserCreate__doc__},
+    {"ExternalEntityParserCreate", (PyCFunction)pyexpat_xmlparser_ExternalEntityParserCreate, METH_FASTCALL, pyexpat_xmlparser_ExternalEntityParserCreate__doc__},
 
 static PyObject *
 pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
@@ -124,14 +128,18 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
                                                   const char *encoding);
 
 static PyObject *
-pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
+pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     const char *context;
     const char *encoding = NULL;
 
-    if (!PyArg_ParseTuple(args, "z|s:ExternalEntityParserCreate",
+    if (!_PyArg_ParseStack(args, nargs, "z|s:ExternalEntityParserCreate",
         &context, &encoding)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("ExternalEntityParserCreate", kwnames)) {
         goto exit;
     }
     return_value = pyexpat_xmlparser_ExternalEntityParserCreate_impl(self, context, encoding);
@@ -185,19 +193,23 @@ PyDoc_STRVAR(pyexpat_xmlparser_UseForeignDTD__doc__,
 "information to the parser. \'flag\' defaults to True if not provided.");
 
 #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF    \
-    {"UseForeignDTD", (PyCFunction)pyexpat_xmlparser_UseForeignDTD, METH_VARARGS, pyexpat_xmlparser_UseForeignDTD__doc__},
+    {"UseForeignDTD", (PyCFunction)pyexpat_xmlparser_UseForeignDTD, METH_FASTCALL, pyexpat_xmlparser_UseForeignDTD__doc__},
 
 static PyObject *
 pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, int flag);
 
 static PyObject *
-pyexpat_xmlparser_UseForeignDTD(xmlparseobject *self, PyObject *args)
+pyexpat_xmlparser_UseForeignDTD(xmlparseobject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!PyArg_ParseTuple(args, "|p:UseForeignDTD",
+    if (!_PyArg_ParseStack(args, nargs, "|p:UseForeignDTD",
         &flag)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("UseForeignDTD", kwnames)) {
         goto exit;
     }
     return_value = pyexpat_xmlparser_UseForeignDTD_impl(self, flag);
@@ -289,4 +301,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=e889f7c6af6cc42f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0548a6b12157e29b input=a9049054013a1b77]*/

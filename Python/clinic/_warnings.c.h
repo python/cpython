@@ -35,4 +35,4 @@ warnings_warn(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b3c5297c2c55778c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=acadf1788059034c input=a9049054013a1b77]*/

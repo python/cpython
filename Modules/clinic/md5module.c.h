@@ -94,4 +94,4 @@ _md5_md5(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=54cd50db050f2589 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0a975e22cf33f833 input=a9049054013a1b77]*/

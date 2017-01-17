@@ -256,21 +256,25 @@ PyDoc_STRVAR(_tkinter_tkapp_createcommand__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_CREATECOMMAND_METHODDEF    \
-    {"createcommand", (PyCFunction)_tkinter_tkapp_createcommand, METH_VARARGS, _tkinter_tkapp_createcommand__doc__},
+    {"createcommand", (PyCFunction)_tkinter_tkapp_createcommand, METH_FASTCALL, _tkinter_tkapp_createcommand__doc__},
 
 static PyObject *
 _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
                                   PyObject *func);
 
 static PyObject *
-_tkinter_tkapp_createcommand(TkappObject *self, PyObject *args)
+_tkinter_tkapp_createcommand(TkappObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     const char *name;
     PyObject *func;
 
-    if (!PyArg_ParseTuple(args, "sO:createcommand",
+    if (!_PyArg_ParseStack(args, nargs, "sO:createcommand",
         &name, &func)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("createcommand", kwnames)) {
         goto exit;
     }
     return_value = _tkinter_tkapp_createcommand_impl(self, name, func);
@@ -313,22 +317,26 @@ PyDoc_STRVAR(_tkinter_tkapp_createfilehandler__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF    \
-    {"createfilehandler", (PyCFunction)_tkinter_tkapp_createfilehandler, METH_VARARGS, _tkinter_tkapp_createfilehandler__doc__},
+    {"createfilehandler", (PyCFunction)_tkinter_tkapp_createfilehandler, METH_FASTCALL, _tkinter_tkapp_createfilehandler__doc__},
 
 static PyObject *
 _tkinter_tkapp_createfilehandler_impl(TkappObject *self, PyObject *file,
                                       int mask, PyObject *func);
 
 static PyObject *
-_tkinter_tkapp_createfilehandler(TkappObject *self, PyObject *args)
+_tkinter_tkapp_createfilehandler(TkappObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *file;
     int mask;
     PyObject *func;
 
-    if (!PyArg_ParseTuple(args, "OiO:createfilehandler",
+    if (!_PyArg_ParseStack(args, nargs, "OiO:createfilehandler",
         &file, &mask, &func)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("createfilehandler", kwnames)) {
         goto exit;
     }
     return_value = _tkinter_tkapp_createfilehandler_impl(self, file, mask, func);
@@ -374,21 +382,25 @@ PyDoc_STRVAR(_tkinter_tkapp_createtimerhandler__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_CREATETIMERHANDLER_METHODDEF    \
-    {"createtimerhandler", (PyCFunction)_tkinter_tkapp_createtimerhandler, METH_VARARGS, _tkinter_tkapp_createtimerhandler__doc__},
+    {"createtimerhandler", (PyCFunction)_tkinter_tkapp_createtimerhandler, METH_FASTCALL, _tkinter_tkapp_createtimerhandler__doc__},
 
 static PyObject *
 _tkinter_tkapp_createtimerhandler_impl(TkappObject *self, int milliseconds,
                                        PyObject *func);
 
 static PyObject *
-_tkinter_tkapp_createtimerhandler(TkappObject *self, PyObject *args)
+_tkinter_tkapp_createtimerhandler(TkappObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int milliseconds;
     PyObject *func;
 
-    if (!PyArg_ParseTuple(args, "iO:createtimerhandler",
+    if (!_PyArg_ParseStack(args, nargs, "iO:createtimerhandler",
         &milliseconds, &func)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("createtimerhandler", kwnames)) {
         goto exit;
     }
     return_value = _tkinter_tkapp_createtimerhandler_impl(self, milliseconds, func);
@@ -403,19 +415,23 @@ PyDoc_STRVAR(_tkinter_tkapp_mainloop__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_MAINLOOP_METHODDEF    \
-    {"mainloop", (PyCFunction)_tkinter_tkapp_mainloop, METH_VARARGS, _tkinter_tkapp_mainloop__doc__},
+    {"mainloop", (PyCFunction)_tkinter_tkapp_mainloop, METH_FASTCALL, _tkinter_tkapp_mainloop__doc__},
 
 static PyObject *
 _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold);
 
 static PyObject *
-_tkinter_tkapp_mainloop(TkappObject *self, PyObject *args)
+_tkinter_tkapp_mainloop(TkappObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int threshold = 0;
 
-    if (!PyArg_ParseTuple(args, "|i:mainloop",
+    if (!_PyArg_ParseStack(args, nargs, "|i:mainloop",
         &threshold)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("mainloop", kwnames)) {
         goto exit;
     }
     return_value = _tkinter_tkapp_mainloop_impl(self, threshold);
@@ -430,19 +446,23 @@ PyDoc_STRVAR(_tkinter_tkapp_dooneevent__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_DOONEEVENT_METHODDEF    \
-    {"dooneevent", (PyCFunction)_tkinter_tkapp_dooneevent, METH_VARARGS, _tkinter_tkapp_dooneevent__doc__},
+    {"dooneevent", (PyCFunction)_tkinter_tkapp_dooneevent, METH_FASTCALL, _tkinter_tkapp_dooneevent__doc__},
 
 static PyObject *
 _tkinter_tkapp_dooneevent_impl(TkappObject *self, int flags);
 
 static PyObject *
-_tkinter_tkapp_dooneevent(TkappObject *self, PyObject *args)
+_tkinter_tkapp_dooneevent(TkappObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int flags = 0;
 
-    if (!PyArg_ParseTuple(args, "|i:dooneevent",
+    if (!_PyArg_ParseStack(args, nargs, "|i:dooneevent",
         &flags)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("dooneevent", kwnames)) {
         goto exit;
     }
     return_value = _tkinter_tkapp_dooneevent_impl(self, flags);
@@ -543,7 +563,7 @@ PyDoc_STRVAR(_tkinter_create__doc__,
 "    if not None, then pass -use to wish");
 
 #define _TKINTER_CREATE_METHODDEF    \
-    {"create", (PyCFunction)_tkinter_create, METH_VARARGS, _tkinter_create__doc__},
+    {"create", (PyCFunction)_tkinter_create, METH_FASTCALL, _tkinter_create__doc__},
 
 static PyObject *
 _tkinter_create_impl(PyObject *module, const char *screenName,
@@ -552,7 +572,7 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
                      const char *use);
 
 static PyObject *
-_tkinter_create(PyObject *module, PyObject *args)
+_tkinter_create(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     const char *screenName = NULL;
@@ -564,8 +584,12 @@ _tkinter_create(PyObject *module, PyObject *args)
     int sync = 0;
     const char *use = NULL;
 
-    if (!PyArg_ParseTuple(args, "|zssiiiiz:create",
+    if (!_PyArg_ParseStack(args, nargs, "|zssiiiiz:create",
         &screenName, &baseName, &className, &interactive, &wantobjects, &wantTk, &sync, &use)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("create", kwnames)) {
         goto exit;
     }
     return_value = _tkinter_create_impl(module, screenName, baseName, className, interactive, wantobjects, wantTk, sync, use);
@@ -638,4 +662,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=836c578b71d69097 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=328e29a146c4a63b input=a9049054013a1b77]*/

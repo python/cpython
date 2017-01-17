@@ -106,4 +106,4 @@ winsound_MessageBeep(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObje
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bfe16b2b8b490cb1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=102a556c665a277d input=a9049054013a1b77]*/

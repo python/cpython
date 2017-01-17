@@ -80,20 +80,24 @@ PyDoc_STRVAR(builtin_format__doc__,
 "format_spec defaults to the empty string");
 
 #define BUILTIN_FORMAT_METHODDEF    \
-    {"format", (PyCFunction)builtin_format, METH_VARARGS, builtin_format__doc__},
+    {"format", (PyCFunction)builtin_format, METH_FASTCALL, builtin_format__doc__},
 
 static PyObject *
 builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec);
 
 static PyObject *
-builtin_format(PyObject *module, PyObject *args)
+builtin_format(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *value;
     PyObject *format_spec = NULL;
 
-    if (!PyArg_ParseTuple(args, "O|U:format",
+    if (!_PyArg_ParseStack(args, nargs, "O|U:format",
         &value, &format_spec)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("format", kwnames)) {
         goto exit;
     }
     return_value = builtin_format_impl(module, value, format_spec);
@@ -674,4 +678,4 @@ builtin_issubclass(PyObject *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=63483deb75805f7c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=66818a69d6d23181 input=a9049054013a1b77]*/

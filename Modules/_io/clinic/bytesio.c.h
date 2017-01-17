@@ -358,20 +358,24 @@ PyDoc_STRVAR(_io_BytesIO_seek__doc__,
 "Returns the new absolute position.");
 
 #define _IO_BYTESIO_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)_io_BytesIO_seek, METH_VARARGS, _io_BytesIO_seek__doc__},
+    {"seek", (PyCFunction)_io_BytesIO_seek, METH_FASTCALL, _io_BytesIO_seek__doc__},
 
 static PyObject *
 _io_BytesIO_seek_impl(bytesio *self, Py_ssize_t pos, int whence);
 
 static PyObject *
-_io_BytesIO_seek(bytesio *self, PyObject *args)
+_io_BytesIO_seek(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_ssize_t pos;
     int whence = 0;
 
-    if (!PyArg_ParseTuple(args, "n|i:seek",
+    if (!_PyArg_ParseStack(args, nargs, "n|i:seek",
         &pos, &whence)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("seek", kwnames)) {
         goto exit;
     }
     return_value = _io_BytesIO_seek_impl(self, pos, whence);
@@ -448,4 +452,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8f469431da1b3857 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=056f24eece495a8f input=a9049054013a1b77]*/

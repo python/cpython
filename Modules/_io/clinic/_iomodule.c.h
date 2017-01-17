@@ -158,4 +158,4 @@ _io_open(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c5b8fc8b83102bbf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=79fd04d9c9d8f28f input=a9049054013a1b77]*/
