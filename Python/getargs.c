@@ -26,6 +26,8 @@ int _PyArg_VaParseTupleAndKeywordsFast(PyObject *, PyObject *,
 #ifdef HAVE_DECLSPEC_DLL
 /* Export functions */
 PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, const char *, ...);
+PyAPI_FUNC(int) _PyArg_ParseStack_SizeT(PyObject **args, Py_ssize_t nargs,
+                                        const char *format, ...);
 PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords_SizeT(PyObject **args, Py_ssize_t nargs, PyObject *kwnames,
                                         struct _PyArg_Parser *parser, ...);
 PyAPI_FUNC(int) _PyArg_ParseTuple_SizeT(PyObject *, const char *, ...);
@@ -66,6 +68,8 @@ typedef struct {
 #define STATIC_FREELIST_ENTRIES 8
 
 /* Forward */
+static int vgetargs1_impl(PyObject *args, PyObject **stack, Py_ssize_t nargs,
+                          const char *format, va_list *p_va, int flags);
 static int vgetargs1(PyObject *, const char *, va_list *, int);
 static void seterror(Py_ssize_t, const char *, int *, const char *, const char *);
 static const char *convertitem(PyObject *, const char **, va_list *, int, int *,
@@ -132,6 +136,31 @@ _PyArg_ParseTuple_SizeT(PyObject *args, const char *format, ...)
 
     va_start(va, format);
     retval = vgetargs1(args, format, &va, FLAG_SIZE_T);
+    va_end(va);
+    return retval;
+}
+
+
+int
+_PyArg_ParseStack(PyObject **args, Py_ssize_t nargs, const char *format, ...)
+{
+    int retval;
+    va_list va;
+
+    va_start(va, format);
+    retval = vgetargs1_impl(NULL, args, nargs, format, &va, 0);
+    va_end(va);
+    return retval;
+}
+
+int
+_PyArg_ParseStack_SizeT(PyObject **args, Py_ssize_t nargs, const char *format, ...)
+{
+    int retval;
+    va_list va;
+
+    va_start(va, format);
+    retval = vgetargs1_impl(NULL, args, nargs, format, &va, FLAG_SIZE_T);
     va_end(va);
     return retval;
 }
@@ -220,7 +249,8 @@ cleanreturn(int retval, freelist_t *freelist)
 
 
 static int
-vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
+vgetargs1_impl(PyObject *compat_args, PyObject **stack, Py_ssize_t nargs, const char *format,
+               va_list *p_va, int flags)
 {
     char msgbuf[256];
     int levels[32];
@@ -231,17 +261,18 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
     int level = 0;
     int endfmt = 0;
     const char *formatsave = format;
-    Py_ssize_t i, len;
+    Py_ssize_t i;
     const char *msg;
     int compat = flags & FLAG_COMPAT;
     freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
     freelist_t freelist;
 
+    assert(nargs == 0 || stack != NULL);
+
     freelist.entries = static_entries;
     freelist.first_available = 0;
     freelist.entries_malloced = 0;
 
-    assert(compat || (args != (PyObject*)NULL));
     flags = flags & ~FLAG_COMPAT;
 
     while (endfmt == 0) {
@@ -305,7 +336,7 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
 
     if (compat) {
         if (max == 0) {
-            if (args == NULL)
+            if (compat_args == NULL)
                 return 1;
             PyErr_Format(PyExc_TypeError,
                          "%.200s%s takes no arguments",
@@ -314,14 +345,14 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
             return cleanreturn(0, &freelist);
         }
         else if (min == 1 && max == 1) {
-            if (args == NULL) {
+            if (compat_args == NULL) {
                 PyErr_Format(PyExc_TypeError,
                              "%.200s%s takes at least one argument",
                              fname==NULL ? "function" : fname,
                              fname==NULL ? "" : "()");
                 return cleanreturn(0, &freelist);
             }
-            msg = convertitem(args, &format, p_va, flags, levels,
+            msg = convertitem(compat_args, &format, p_va, flags, levels,
                               msgbuf, sizeof(msgbuf), &freelist);
             if (msg == NULL)
                 return cleanreturn(1, &freelist);
@@ -335,34 +366,26 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
         }
     }
 
-    if (!PyTuple_Check(args)) {
-        PyErr_SetString(PyExc_SystemError,
-            "new style getargs format but argument is not a tuple");
-        return cleanreturn(0, &freelist);
-    }
-
-    len = PyTuple_GET_SIZE(args);
-
-    if (len < min || max < len) {
+    if (nargs < min || max < nargs) {
         if (message == NULL)
             PyErr_Format(PyExc_TypeError,
                          "%.150s%s takes %s %d argument%s (%ld given)",
                          fname==NULL ? "function" : fname,
                          fname==NULL ? "" : "()",
                          min==max ? "exactly"
-                         : len < min ? "at least" : "at most",
-                         len < min ? min : max,
-                         (len < min ? min : max) == 1 ? "" : "s",
-                         Py_SAFE_DOWNCAST(len, Py_ssize_t, long));
+                         : nargs < min ? "at least" : "at most",
+                         nargs < min ? min : max,
+                         (nargs < min ? min : max) == 1 ? "" : "s",
+                         Py_SAFE_DOWNCAST(nargs, Py_ssize_t, long));
         else
             PyErr_SetString(PyExc_TypeError, message);
         return cleanreturn(0, &freelist);
     }
 
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < nargs; i++) {
         if (*format == '|')
             format++;
-        msg = convertitem(PyTuple_GET_ITEM(args, i), &format, p_va,
+        msg = convertitem(stack[i], &format, p_va,
                           flags, levels, msgbuf,
                           sizeof(msgbuf), &freelist);
         if (msg) {
@@ -382,6 +405,31 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
     return cleanreturn(1, &freelist);
 }
 
+static int
+vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
+{
+    PyObject **stack;
+    Py_ssize_t nargs;
+
+    if (!(flags & FLAG_COMPAT)) {
+        assert(args != NULL);
+
+        if (!PyTuple_Check(args)) {
+            PyErr_SetString(PyExc_SystemError,
+                "new style getargs format but argument is not a tuple");
+            return 0;
+        }
+
+        stack = &PyTuple_GET_ITEM(args, 0);
+        nargs = PyTuple_GET_SIZE(args);
+    }
+    else {
+        stack = NULL;
+        nargs = 0;
+    }
+
+    return vgetargs1_impl(args, stack, nargs, format, p_va, flags);
+}
 
 
 static void
