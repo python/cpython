@@ -563,6 +563,10 @@ The module defines the following classes, functions and decorators:
    As a shorthand for this type, :class:`bytes` can be used to
    annotate arguments of any of the types mentioned above.
 
+.. class:: Deque(deque, MutableSequence[T])
+
+   A generic version of :class:`collections.deque`.
+
 .. class:: List(list, MutableSequence[T])
 
    Generic version of :class:`list`.
