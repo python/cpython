@@ -423,22 +423,26 @@ PyDoc_STRVAR(_elementtree_Element_makeelement__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_MAKEELEMENT_METHODDEF    \
-    {"makeelement", (PyCFunction)_elementtree_Element_makeelement, METH_VARARGS, _elementtree_Element_makeelement__doc__},
+    {"makeelement", (PyCFunction)_elementtree_Element_makeelement, METH_FASTCALL, _elementtree_Element_makeelement__doc__},
 
 static PyObject *
 _elementtree_Element_makeelement_impl(ElementObject *self, PyObject *tag,
                                       PyObject *attrib);
 
 static PyObject *
-_elementtree_Element_makeelement(ElementObject *self, PyObject *args)
+_elementtree_Element_makeelement(ElementObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *tag;
     PyObject *attrib;
 
-    if (!PyArg_UnpackTuple(args, "makeelement",
+    if (!_PyArg_UnpackStack(args, nargs, "makeelement",
         2, 2,
         &tag, &attrib)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("makeelement", kwnames)) {
         goto exit;
     }
     return_value = _elementtree_Element_makeelement_impl(self, tag, attrib);
@@ -479,22 +483,26 @@ PyDoc_STRVAR(_elementtree_Element_set__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_SET_METHODDEF    \
-    {"set", (PyCFunction)_elementtree_Element_set, METH_VARARGS, _elementtree_Element_set__doc__},
+    {"set", (PyCFunction)_elementtree_Element_set, METH_FASTCALL, _elementtree_Element_set__doc__},
 
 static PyObject *
 _elementtree_Element_set_impl(ElementObject *self, PyObject *key,
                               PyObject *value);
 
 static PyObject *
-_elementtree_Element_set(ElementObject *self, PyObject *args)
+_elementtree_Element_set(ElementObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *key;
     PyObject *value;
 
-    if (!PyArg_UnpackTuple(args, "set",
+    if (!_PyArg_UnpackStack(args, nargs, "set",
         2, 2,
         &key, &value)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("set", kwnames)) {
         goto exit;
     }
     return_value = _elementtree_Element_set_impl(self, key, value);
@@ -564,22 +572,26 @@ PyDoc_STRVAR(_elementtree_TreeBuilder_start__doc__,
 "\n");
 
 #define _ELEMENTTREE_TREEBUILDER_START_METHODDEF    \
-    {"start", (PyCFunction)_elementtree_TreeBuilder_start, METH_VARARGS, _elementtree_TreeBuilder_start__doc__},
+    {"start", (PyCFunction)_elementtree_TreeBuilder_start, METH_FASTCALL, _elementtree_TreeBuilder_start__doc__},
 
 static PyObject *
 _elementtree_TreeBuilder_start_impl(TreeBuilderObject *self, PyObject *tag,
                                     PyObject *attrs);
 
 static PyObject *
-_elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject *args)
+_elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *tag;
     PyObject *attrs = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "start",
+    if (!_PyArg_UnpackStack(args, nargs, "start",
         1, 2,
         &tag, &attrs)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("start", kwnames)) {
         goto exit;
     }
     return_value = _elementtree_TreeBuilder_start_impl(self, tag, attrs);
@@ -651,23 +663,27 @@ PyDoc_STRVAR(_elementtree_XMLParser_doctype__doc__,
 "\n");
 
 #define _ELEMENTTREE_XMLPARSER_DOCTYPE_METHODDEF    \
-    {"doctype", (PyCFunction)_elementtree_XMLParser_doctype, METH_VARARGS, _elementtree_XMLParser_doctype__doc__},
+    {"doctype", (PyCFunction)_elementtree_XMLParser_doctype, METH_FASTCALL, _elementtree_XMLParser_doctype__doc__},
 
 static PyObject *
 _elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
                                     PyObject *pubid, PyObject *system);
 
 static PyObject *
-_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject *args)
+_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *name;
     PyObject *pubid;
     PyObject *system;
 
-    if (!PyArg_UnpackTuple(args, "doctype",
+    if (!_PyArg_UnpackStack(args, nargs, "doctype",
         3, 3,
         &name, &pubid, &system)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("doctype", kwnames)) {
         goto exit;
     }
     return_value = _elementtree_XMLParser_doctype_impl(self, name, pubid, system);
@@ -682,7 +698,7 @@ PyDoc_STRVAR(_elementtree_XMLParser__setevents__doc__,
 "\n");
 
 #define _ELEMENTTREE_XMLPARSER__SETEVENTS_METHODDEF    \
-    {"_setevents", (PyCFunction)_elementtree_XMLParser__setevents, METH_VARARGS, _elementtree_XMLParser__setevents__doc__},
+    {"_setevents", (PyCFunction)_elementtree_XMLParser__setevents, METH_FASTCALL, _elementtree_XMLParser__setevents__doc__},
 
 static PyObject *
 _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
@@ -690,15 +706,19 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
                                        PyObject *events_to_report);
 
 static PyObject *
-_elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *args)
+_elementtree_XMLParser__setevents(XMLParserObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *events_queue;
     PyObject *events_to_report = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "_setevents",
+    if (!_PyArg_UnpackStack(args, nargs, "_setevents",
         1, 2,
         &events_queue, &events_to_report)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("_setevents", kwnames)) {
         goto exit;
     }
     return_value = _elementtree_XMLParser__setevents_impl(self, events_queue, events_to_report);
@@ -706,4 +726,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4e3d22c6f6d832b2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b69fa98c40917f58 input=a9049054013a1b77]*/

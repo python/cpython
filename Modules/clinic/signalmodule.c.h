@@ -353,22 +353,26 @@ PyDoc_STRVAR(signal_sigtimedwait__doc__,
 "The timeout is specified in seconds, with floating point numbers allowed.");
 
 #define SIGNAL_SIGTIMEDWAIT_METHODDEF    \
-    {"sigtimedwait", (PyCFunction)signal_sigtimedwait, METH_VARARGS, signal_sigtimedwait__doc__},
+    {"sigtimedwait", (PyCFunction)signal_sigtimedwait, METH_FASTCALL, signal_sigtimedwait__doc__},
 
 static PyObject *
 signal_sigtimedwait_impl(PyObject *module, PyObject *sigset,
                          PyObject *timeout_obj);
 
 static PyObject *
-signal_sigtimedwait(PyObject *module, PyObject *args)
+signal_sigtimedwait(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *sigset;
     PyObject *timeout_obj;
 
-    if (!PyArg_UnpackTuple(args, "sigtimedwait",
+    if (!_PyArg_UnpackStack(args, nargs, "sigtimedwait",
         2, 2,
         &sigset, &timeout_obj)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("sigtimedwait", kwnames)) {
         goto exit;
     }
     return_value = signal_sigtimedwait_impl(module, sigset, timeout_obj);
@@ -459,4 +463,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=b49f7bfff44d1256 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fab3dba32c058588 input=a9049054013a1b77]*/

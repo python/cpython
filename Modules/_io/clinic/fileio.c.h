@@ -336,20 +336,24 @@ PyDoc_STRVAR(_io_FileIO_truncate__doc__,
 "The current file position is changed to the value of size.");
 
 #define _IO_FILEIO_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)_io_FileIO_truncate, METH_VARARGS, _io_FileIO_truncate__doc__},
+    {"truncate", (PyCFunction)_io_FileIO_truncate, METH_FASTCALL, _io_FileIO_truncate__doc__},
 
 static PyObject *
 _io_FileIO_truncate_impl(fileio *self, PyObject *posobj);
 
 static PyObject *
-_io_FileIO_truncate(fileio *self, PyObject *args)
+_io_FileIO_truncate(fileio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *posobj = NULL;
 
-    if (!PyArg_UnpackTuple(args, "truncate",
+    if (!_PyArg_UnpackStack(args, nargs, "truncate",
         0, 1,
         &posobj)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("truncate", kwnames)) {
         goto exit;
     }
     return_value = _io_FileIO_truncate_impl(self, posobj);
@@ -381,4 +385,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=5c2a0b493c0af58b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=034d782a0daa82bd input=a9049054013a1b77]*/

@@ -551,21 +551,25 @@ PyDoc_STRVAR(_sre_SRE_Match_start__doc__,
 "Return index of the start of the substring matched by group.");
 
 #define _SRE_SRE_MATCH_START_METHODDEF    \
-    {"start", (PyCFunction)_sre_SRE_Match_start, METH_VARARGS, _sre_SRE_Match_start__doc__},
+    {"start", (PyCFunction)_sre_SRE_Match_start, METH_FASTCALL, _sre_SRE_Match_start__doc__},
 
 static Py_ssize_t
 _sre_SRE_Match_start_impl(MatchObject *self, PyObject *group);
 
 static PyObject *
-_sre_SRE_Match_start(MatchObject *self, PyObject *args)
+_sre_SRE_Match_start(MatchObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *group = NULL;
     Py_ssize_t _return_value;
 
-    if (!PyArg_UnpackTuple(args, "start",
+    if (!_PyArg_UnpackStack(args, nargs, "start",
         0, 1,
         &group)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("start", kwnames)) {
         goto exit;
     }
     _return_value = _sre_SRE_Match_start_impl(self, group);
@@ -585,21 +589,25 @@ PyDoc_STRVAR(_sre_SRE_Match_end__doc__,
 "Return index of the end of the substring matched by group.");
 
 #define _SRE_SRE_MATCH_END_METHODDEF    \
-    {"end", (PyCFunction)_sre_SRE_Match_end, METH_VARARGS, _sre_SRE_Match_end__doc__},
+    {"end", (PyCFunction)_sre_SRE_Match_end, METH_FASTCALL, _sre_SRE_Match_end__doc__},
 
 static Py_ssize_t
 _sre_SRE_Match_end_impl(MatchObject *self, PyObject *group);
 
 static PyObject *
-_sre_SRE_Match_end(MatchObject *self, PyObject *args)
+_sre_SRE_Match_end(MatchObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *group = NULL;
     Py_ssize_t _return_value;
 
-    if (!PyArg_UnpackTuple(args, "end",
+    if (!_PyArg_UnpackStack(args, nargs, "end",
         0, 1,
         &group)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("end", kwnames)) {
         goto exit;
     }
     _return_value = _sre_SRE_Match_end_impl(self, group);
@@ -619,20 +627,24 @@ PyDoc_STRVAR(_sre_SRE_Match_span__doc__,
 "For MatchObject m, return the 2-tuple (m.start(group), m.end(group)).");
 
 #define _SRE_SRE_MATCH_SPAN_METHODDEF    \
-    {"span", (PyCFunction)_sre_SRE_Match_span, METH_VARARGS, _sre_SRE_Match_span__doc__},
+    {"span", (PyCFunction)_sre_SRE_Match_span, METH_FASTCALL, _sre_SRE_Match_span__doc__},
 
 static PyObject *
 _sre_SRE_Match_span_impl(MatchObject *self, PyObject *group);
 
 static PyObject *
-_sre_SRE_Match_span(MatchObject *self, PyObject *args)
+_sre_SRE_Match_span(MatchObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *group = NULL;
 
-    if (!PyArg_UnpackTuple(args, "span",
+    if (!_PyArg_UnpackStack(args, nargs, "span",
         0, 1,
         &group)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("span", kwnames)) {
         goto exit;
     }
     return_value = _sre_SRE_Match_span_impl(self, group);
@@ -720,4 +732,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=3dff18d3b6110b86 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5df18da8e2dc762c input=a9049054013a1b77]*/

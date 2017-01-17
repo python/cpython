@@ -463,20 +463,24 @@ PyDoc_STRVAR(bytearray_strip__doc__,
 "If the argument is omitted or None, strip leading and trailing ASCII whitespace.");
 
 #define BYTEARRAY_STRIP_METHODDEF    \
-    {"strip", (PyCFunction)bytearray_strip, METH_VARARGS, bytearray_strip__doc__},
+    {"strip", (PyCFunction)bytearray_strip, METH_FASTCALL, bytearray_strip__doc__},
 
 static PyObject *
 bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes);
 
 static PyObject *
-bytearray_strip(PyByteArrayObject *self, PyObject *args)
+bytearray_strip(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "strip",
+    if (!_PyArg_UnpackStack(args, nargs, "strip",
         0, 1,
         &bytes)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("strip", kwnames)) {
         goto exit;
     }
     return_value = bytearray_strip_impl(self, bytes);
@@ -494,20 +498,24 @@ PyDoc_STRVAR(bytearray_lstrip__doc__,
 "If the argument is omitted or None, strip leading ASCII whitespace.");
 
 #define BYTEARRAY_LSTRIP_METHODDEF    \
-    {"lstrip", (PyCFunction)bytearray_lstrip, METH_VARARGS, bytearray_lstrip__doc__},
+    {"lstrip", (PyCFunction)bytearray_lstrip, METH_FASTCALL, bytearray_lstrip__doc__},
 
 static PyObject *
 bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes);
 
 static PyObject *
-bytearray_lstrip(PyByteArrayObject *self, PyObject *args)
+bytearray_lstrip(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "lstrip",
+    if (!_PyArg_UnpackStack(args, nargs, "lstrip",
         0, 1,
         &bytes)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("lstrip", kwnames)) {
         goto exit;
     }
     return_value = bytearray_lstrip_impl(self, bytes);
@@ -525,20 +533,24 @@ PyDoc_STRVAR(bytearray_rstrip__doc__,
 "If the argument is omitted or None, strip trailing ASCII whitespace.");
 
 #define BYTEARRAY_RSTRIP_METHODDEF    \
-    {"rstrip", (PyCFunction)bytearray_rstrip, METH_VARARGS, bytearray_rstrip__doc__},
+    {"rstrip", (PyCFunction)bytearray_rstrip, METH_FASTCALL, bytearray_rstrip__doc__},
 
 static PyObject *
 bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes);
 
 static PyObject *
-bytearray_rstrip(PyByteArrayObject *self, PyObject *args)
+bytearray_rstrip(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!PyArg_UnpackTuple(args, "rstrip",
+    if (!_PyArg_UnpackStack(args, nargs, "rstrip",
         0, 1,
         &bytes)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("rstrip", kwnames)) {
         goto exit;
     }
     return_value = bytearray_rstrip_impl(self, bytes);
@@ -731,4 +743,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=e6c057d1cd7c2496 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f5c364927425fae8 input=a9049054013a1b77]*/
