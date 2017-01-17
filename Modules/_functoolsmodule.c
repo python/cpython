@@ -864,42 +864,56 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     }
     if (self->full && self->root.next != &self->root) {
         /* Use the oldest item to store the new key and result. */
-        PyObject *oldkey, *oldresult;
+        PyObject *oldkey, *oldresult, *popresult;
         /* Extricate the oldest item. */
         link = self->root.next;
         lru_cache_extricate_link(link);
         /* Remove it from the cache.
            The cache dict holds one reference to the link,
            and the linked list holds yet one reference to it. */
-        if (_PyDict_DelItem_KnownHash(self->cache, link->key,
-                                      link->hash) < 0) {
+        popresult = _PyDict_Pop_KnownHash((PyDictObject *)self->cache,
+                                          link->key, link->hash,
+                                          Py_None);
+        if (popresult == Py_None) {
+            /* Getting here means that this same key was added to the
+               cache while the lock was released.  Since the link
+               update is already done, we need only return the
+               computed result and update the count of misses. */
+            Py_DECREF(popresult);
+            Py_DECREF(link);
+            Py_DECREF(key);
+        }
+        else if (popresult == NULL) {
             lru_cache_append_link(self, link);
             Py_DECREF(key);
             Py_DECREF(result);
             return NULL;
         }
-        /* Keep a reference to the old key and old result to
-           prevent their ref counts from going to zero during the
-           update. That will prevent potentially arbitrary object
-           clean-up code (i.e. __del__) from running while we're
-           still adjusting the links. */
-        oldkey = link->key;
-        oldresult = link->result;
+        else {
+            Py_DECREF(popresult);
+            /* Keep a reference to the old key and old result to
+               prevent their ref counts from going to zero during the
+               update. That will prevent potentially arbitrary object
+               clean-up code (i.e. __del__) from running while we're
+               still adjusting the links. */
+            oldkey = link->key;
+            oldresult = link->result;
 
-        link->hash = hash;
-        link->key = key;
-        link->result = result;
-        if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
-                                      hash) < 0) {
-            Py_DECREF(link);
+            link->hash = hash;
+            link->key = key;
+            link->result = result;
+            if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
+                                          hash) < 0) {
+                Py_DECREF(link);
+                Py_DECREF(oldkey);
+                Py_DECREF(oldresult);
+                return NULL;
+            }
+            lru_cache_append_link(self, link);
+            Py_INCREF(result); /* for return */
             Py_DECREF(oldkey);
             Py_DECREF(oldresult);
-            return NULL;
         }
-        lru_cache_append_link(self, link);
-        Py_INCREF(result); /* for return */
-        Py_DECREF(oldkey);
-        Py_DECREF(oldresult);
     } else {
         /* Put result in a new link at the front of the queue. */
         link = (lru_list_elem *)PyObject_GC_New(lru_list_elem,
