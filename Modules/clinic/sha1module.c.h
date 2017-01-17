@@ -94,4 +94,4 @@ _sha1_sha1(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1430450f3f806895 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8e6b04c7e0407be2 input=a9049054013a1b77]*/

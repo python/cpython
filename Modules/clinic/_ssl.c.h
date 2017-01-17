@@ -60,19 +60,23 @@ PyDoc_STRVAR(_ssl__SSLSocket_peer_certificate__doc__,
 "return the certificate even if it wasn\'t validated.");
 
 #define _SSL__SSLSOCKET_PEER_CERTIFICATE_METHODDEF    \
-    {"peer_certificate", (PyCFunction)_ssl__SSLSocket_peer_certificate, METH_VARARGS, _ssl__SSLSocket_peer_certificate__doc__},
+    {"peer_certificate", (PyCFunction)_ssl__SSLSocket_peer_certificate, METH_FASTCALL, _ssl__SSLSocket_peer_certificate__doc__},
 
 static PyObject *
 _ssl__SSLSocket_peer_certificate_impl(PySSLSocket *self, int binary_mode);
 
 static PyObject *
-_ssl__SSLSocket_peer_certificate(PySSLSocket *self, PyObject *args)
+_ssl__SSLSocket_peer_certificate(PySSLSocket *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int binary_mode = 0;
 
-    if (!PyArg_ParseTuple(args, "|p:peer_certificate",
+    if (!_PyArg_ParseStack(args, nargs, "|p:peer_certificate",
         &binary_mode)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("peer_certificate", kwnames)) {
         goto exit;
     }
     return_value = _ssl__SSLSocket_peer_certificate_impl(self, binary_mode);
@@ -757,19 +761,23 @@ PyDoc_STRVAR(_ssl_MemoryBIO_read__doc__,
 "distinguish between the two.");
 
 #define _SSL_MEMORYBIO_READ_METHODDEF    \
-    {"read", (PyCFunction)_ssl_MemoryBIO_read, METH_VARARGS, _ssl_MemoryBIO_read__doc__},
+    {"read", (PyCFunction)_ssl_MemoryBIO_read, METH_FASTCALL, _ssl_MemoryBIO_read__doc__},
 
 static PyObject *
 _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len);
 
 static PyObject *
-_ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject *args)
+_ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int len = -1;
 
-    if (!PyArg_ParseTuple(args, "|i:read",
+    if (!_PyArg_ParseStack(args, nargs, "|i:read",
         &len)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("read", kwnames)) {
         goto exit;
     }
     return_value = _ssl_MemoryBIO_read_impl(self, len);
@@ -842,20 +850,24 @@ PyDoc_STRVAR(_ssl_RAND_add__doc__,
 "string.  See RFC 1750.");
 
 #define _SSL_RAND_ADD_METHODDEF    \
-    {"RAND_add", (PyCFunction)_ssl_RAND_add, METH_VARARGS, _ssl_RAND_add__doc__},
+    {"RAND_add", (PyCFunction)_ssl_RAND_add, METH_FASTCALL, _ssl_RAND_add__doc__},
 
 static PyObject *
 _ssl_RAND_add_impl(PyObject *module, Py_buffer *view, double entropy);
 
 static PyObject *
-_ssl_RAND_add(PyObject *module, PyObject *args)
+_ssl_RAND_add(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer view = {NULL, NULL};
     double entropy;
 
-    if (!PyArg_ParseTuple(args, "s*d:RAND_add",
+    if (!_PyArg_ParseStack(args, nargs, "s*d:RAND_add",
         &view, &entropy)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("RAND_add", kwnames)) {
         goto exit;
     }
     return_value = _ssl_RAND_add_impl(module, &view, entropy);
@@ -1168,4 +1180,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=a859b21fe68a6115 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=53cd9100580b45a2 input=a9049054013a1b77]*/

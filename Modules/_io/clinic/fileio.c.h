@@ -202,19 +202,23 @@ PyDoc_STRVAR(_io_FileIO_read__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_FILEIO_READ_METHODDEF    \
-    {"read", (PyCFunction)_io_FileIO_read, METH_VARARGS, _io_FileIO_read__doc__},
+    {"read", (PyCFunction)_io_FileIO_read, METH_FASTCALL, _io_FileIO_read__doc__},
 
 static PyObject *
 _io_FileIO_read_impl(fileio *self, Py_ssize_t size);
 
 static PyObject *
-_io_FileIO_read(fileio *self, PyObject *args)
+_io_FileIO_read(fileio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!PyArg_ParseTuple(args, "|O&:read",
+    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
         _PyIO_ConvertSsize_t, &size)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("read", kwnames)) {
         goto exit;
     }
     return_value = _io_FileIO_read_impl(self, size);
@@ -274,20 +278,24 @@ PyDoc_STRVAR(_io_FileIO_seek__doc__,
 "Note that not all file objects are seekable.");
 
 #define _IO_FILEIO_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)_io_FileIO_seek, METH_VARARGS, _io_FileIO_seek__doc__},
+    {"seek", (PyCFunction)_io_FileIO_seek, METH_FASTCALL, _io_FileIO_seek__doc__},
 
 static PyObject *
 _io_FileIO_seek_impl(fileio *self, PyObject *pos, int whence);
 
 static PyObject *
-_io_FileIO_seek(fileio *self, PyObject *args)
+_io_FileIO_seek(fileio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *pos;
     int whence = 0;
 
-    if (!PyArg_ParseTuple(args, "O|i:seek",
+    if (!_PyArg_ParseStack(args, nargs, "O|i:seek",
         &pos, &whence)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("seek", kwnames)) {
         goto exit;
     }
     return_value = _io_FileIO_seek_impl(self, pos, whence);
@@ -373,4 +381,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=51924bc0ee11d58e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c2a0b493c0af58b input=a9049054013a1b77]*/

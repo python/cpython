@@ -318,20 +318,24 @@ PyDoc_STRVAR(bytes_maketrans__doc__,
 "The bytes objects frm and to must be of the same length.");
 
 #define BYTES_MAKETRANS_METHODDEF    \
-    {"maketrans", (PyCFunction)bytes_maketrans, METH_VARARGS|METH_STATIC, bytes_maketrans__doc__},
+    {"maketrans", (PyCFunction)bytes_maketrans, METH_FASTCALL|METH_STATIC, bytes_maketrans__doc__},
 
 static PyObject *
 bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to);
 
 static PyObject *
-bytes_maketrans(void *null, PyObject *args)
+bytes_maketrans(void *null, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer frm = {NULL, NULL};
     Py_buffer to = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args, "y*y*:maketrans",
+    if (!_PyArg_ParseStack(args, nargs, "y*y*:maketrans",
         &frm, &to)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("maketrans", kwnames)) {
         goto exit;
     }
     return_value = bytes_maketrans_impl(&frm, &to);
@@ -363,22 +367,26 @@ PyDoc_STRVAR(bytes_replace__doc__,
 "replaced.");
 
 #define BYTES_REPLACE_METHODDEF    \
-    {"replace", (PyCFunction)bytes_replace, METH_VARARGS, bytes_replace__doc__},
+    {"replace", (PyCFunction)bytes_replace, METH_FASTCALL, bytes_replace__doc__},
 
 static PyObject *
 bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
                    Py_ssize_t count);
 
 static PyObject *
-bytes_replace(PyBytesObject *self, PyObject *args)
+bytes_replace(PyBytesObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer old = {NULL, NULL};
     Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
 
-    if (!PyArg_ParseTuple(args, "y*y*|n:replace",
+    if (!_PyArg_ParseStack(args, nargs, "y*y*|n:replace",
         &old, &new, &count)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("replace", kwnames)) {
         goto exit;
     }
     return_value = bytes_replace_impl(self, &old, &new, count);
@@ -499,4 +507,4 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2dc3c93cfd2dc440 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2b8d3cff7e11045e input=a9049054013a1b77]*/

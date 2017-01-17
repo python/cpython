@@ -560,4 +560,4 @@ _pickle_loads(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=82be137b3c09cb9f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7222d1219039fbd input=a9049054013a1b77]*/

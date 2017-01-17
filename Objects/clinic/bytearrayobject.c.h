@@ -88,20 +88,24 @@ PyDoc_STRVAR(bytearray_maketrans__doc__,
 "The bytes objects frm and to must be of the same length.");
 
 #define BYTEARRAY_MAKETRANS_METHODDEF    \
-    {"maketrans", (PyCFunction)bytearray_maketrans, METH_VARARGS|METH_STATIC, bytearray_maketrans__doc__},
+    {"maketrans", (PyCFunction)bytearray_maketrans, METH_FASTCALL|METH_STATIC, bytearray_maketrans__doc__},
 
 static PyObject *
 bytearray_maketrans_impl(Py_buffer *frm, Py_buffer *to);
 
 static PyObject *
-bytearray_maketrans(void *null, PyObject *args)
+bytearray_maketrans(void *null, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer frm = {NULL, NULL};
     Py_buffer to = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args, "y*y*:maketrans",
+    if (!_PyArg_ParseStack(args, nargs, "y*y*:maketrans",
         &frm, &to)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("maketrans", kwnames)) {
         goto exit;
     }
     return_value = bytearray_maketrans_impl(&frm, &to);
@@ -133,22 +137,26 @@ PyDoc_STRVAR(bytearray_replace__doc__,
 "replaced.");
 
 #define BYTEARRAY_REPLACE_METHODDEF    \
-    {"replace", (PyCFunction)bytearray_replace, METH_VARARGS, bytearray_replace__doc__},
+    {"replace", (PyCFunction)bytearray_replace, METH_FASTCALL, bytearray_replace__doc__},
 
 static PyObject *
 bytearray_replace_impl(PyByteArrayObject *self, Py_buffer *old,
                        Py_buffer *new, Py_ssize_t count);
 
 static PyObject *
-bytearray_replace(PyByteArrayObject *self, PyObject *args)
+bytearray_replace(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_buffer old = {NULL, NULL};
     Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
 
-    if (!PyArg_ParseTuple(args, "y*y*|n:replace",
+    if (!_PyArg_ParseStack(args, nargs, "y*y*|n:replace",
         &old, &new, &count)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("replace", kwnames)) {
         goto exit;
     }
     return_value = bytearray_replace_impl(self, &old, &new, count);
@@ -310,20 +318,24 @@ PyDoc_STRVAR(bytearray_insert__doc__,
 "    The item to be inserted.");
 
 #define BYTEARRAY_INSERT_METHODDEF    \
-    {"insert", (PyCFunction)bytearray_insert, METH_VARARGS, bytearray_insert__doc__},
+    {"insert", (PyCFunction)bytearray_insert, METH_FASTCALL, bytearray_insert__doc__},
 
 static PyObject *
 bytearray_insert_impl(PyByteArrayObject *self, Py_ssize_t index, int item);
 
 static PyObject *
-bytearray_insert(PyByteArrayObject *self, PyObject *args)
+bytearray_insert(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index;
     int item;
 
-    if (!PyArg_ParseTuple(args, "nO&:insert",
+    if (!_PyArg_ParseStack(args, nargs, "nO&:insert",
         &index, _getbytevalue, &item)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("insert", kwnames)) {
         goto exit;
     }
     return_value = bytearray_insert_impl(self, index, item);
@@ -387,19 +399,23 @@ PyDoc_STRVAR(bytearray_pop__doc__,
 "If no index argument is given, will pop the last item.");
 
 #define BYTEARRAY_POP_METHODDEF    \
-    {"pop", (PyCFunction)bytearray_pop, METH_VARARGS, bytearray_pop__doc__},
+    {"pop", (PyCFunction)bytearray_pop, METH_FASTCALL, bytearray_pop__doc__},
 
 static PyObject *
 bytearray_pop_impl(PyByteArrayObject *self, Py_ssize_t index);
 
 static PyObject *
-bytearray_pop(PyByteArrayObject *self, PyObject *args)
+bytearray_pop(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index = -1;
 
-    if (!PyArg_ParseTuple(args, "|n:pop",
+    if (!_PyArg_ParseStack(args, nargs, "|n:pop",
         &index)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("pop", kwnames)) {
         goto exit;
     }
     return_value = bytearray_pop_impl(self, index);
@@ -673,19 +689,23 @@ PyDoc_STRVAR(bytearray_reduce_ex__doc__,
 "Return state information for pickling.");
 
 #define BYTEARRAY_REDUCE_EX_METHODDEF    \
-    {"__reduce_ex__", (PyCFunction)bytearray_reduce_ex, METH_VARARGS, bytearray_reduce_ex__doc__},
+    {"__reduce_ex__", (PyCFunction)bytearray_reduce_ex, METH_FASTCALL, bytearray_reduce_ex__doc__},
 
 static PyObject *
 bytearray_reduce_ex_impl(PyByteArrayObject *self, int proto);
 
 static PyObject *
-bytearray_reduce_ex(PyByteArrayObject *self, PyObject *args)
+bytearray_reduce_ex(PyByteArrayObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int proto = 0;
 
-    if (!PyArg_ParseTuple(args, "|i:__reduce_ex__",
+    if (!_PyArg_ParseStack(args, nargs, "|i:__reduce_ex__",
         &proto)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("__reduce_ex__", kwnames)) {
         goto exit;
     }
     return_value = bytearray_reduce_ex_impl(self, proto);
@@ -711,4 +731,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=225342a680391b9c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6c057d1cd7c2496 input=a9049054013a1b77]*/

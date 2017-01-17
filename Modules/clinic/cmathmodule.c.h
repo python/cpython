@@ -641,20 +641,24 @@ PyDoc_STRVAR(cmath_log__doc__,
 "If the base not specified, returns the natural logarithm (base e) of z.");
 
 #define CMATH_LOG_METHODDEF    \
-    {"log", (PyCFunction)cmath_log, METH_VARARGS, cmath_log__doc__},
+    {"log", (PyCFunction)cmath_log, METH_FASTCALL, cmath_log__doc__},
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj);
 
 static PyObject *
-cmath_log(PyObject *module, PyObject *args)
+cmath_log(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_complex x;
     PyObject *y_obj = NULL;
 
-    if (!PyArg_ParseTuple(args, "D|O:log",
+    if (!_PyArg_ParseStack(args, nargs, "D|O:log",
         &x, &y_obj)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("log", kwnames)) {
         goto exit;
     }
     return_value = cmath_log_impl(module, x, y_obj);
@@ -726,20 +730,24 @@ PyDoc_STRVAR(cmath_rect__doc__,
 "Convert from polar coordinates to rectangular coordinates.");
 
 #define CMATH_RECT_METHODDEF    \
-    {"rect", (PyCFunction)cmath_rect, METH_VARARGS, cmath_rect__doc__},
+    {"rect", (PyCFunction)cmath_rect, METH_FASTCALL, cmath_rect__doc__},
 
 static PyObject *
 cmath_rect_impl(PyObject *module, double r, double phi);
 
 static PyObject *
-cmath_rect(PyObject *module, PyObject *args)
+cmath_rect(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     double r;
     double phi;
 
-    if (!PyArg_ParseTuple(args, "dd:rect",
+    if (!_PyArg_ParseStack(args, nargs, "dd:rect",
         &r, &phi)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("rect", kwnames)) {
         goto exit;
     }
     return_value = cmath_rect_impl(module, r, phi);
@@ -882,4 +890,4 @@ cmath_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwn
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=978f59702b41655f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=93eff5d4c242ee57 input=a9049054013a1b77]*/

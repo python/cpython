@@ -36,4 +36,4 @@ datetime_datetime_now(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8aaac0705add61ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ff78f2f51687e9a9 input=a9049054013a1b77]*/

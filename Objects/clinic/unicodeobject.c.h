@@ -71,20 +71,24 @@ PyDoc_STRVAR(unicode_center__doc__,
 "Padding is done using the specified fill character (default is a space).");
 
 #define UNICODE_CENTER_METHODDEF    \
-    {"center", (PyCFunction)unicode_center, METH_VARARGS, unicode_center__doc__},
+    {"center", (PyCFunction)unicode_center, METH_FASTCALL, unicode_center__doc__},
 
 static PyObject *
 unicode_center_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
 
 static PyObject *
-unicode_center(PyObject *self, PyObject *args)
+unicode_center(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (!PyArg_ParseTuple(args, "n|O&:center",
+    if (!_PyArg_ParseStack(args, nargs, "n|O&:center",
         &width, convert_uc, &fillchar)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("center", kwnames)) {
         goto exit;
     }
     return_value = unicode_center_impl(self, width, fillchar);
@@ -419,20 +423,24 @@ PyDoc_STRVAR(unicode_ljust__doc__,
 "Padding is done using the specified fill character (default is a space).");
 
 #define UNICODE_LJUST_METHODDEF    \
-    {"ljust", (PyCFunction)unicode_ljust, METH_VARARGS, unicode_ljust__doc__},
+    {"ljust", (PyCFunction)unicode_ljust, METH_FASTCALL, unicode_ljust__doc__},
 
 static PyObject *
 unicode_ljust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
 
 static PyObject *
-unicode_ljust(PyObject *self, PyObject *args)
+unicode_ljust(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (!PyArg_ParseTuple(args, "n|O&:ljust",
+    if (!_PyArg_ParseStack(args, nargs, "n|O&:ljust",
         &width, convert_uc, &fillchar)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("ljust", kwnames)) {
         goto exit;
     }
     return_value = unicode_ljust_impl(self, width, fillchar);
@@ -566,22 +574,26 @@ PyDoc_STRVAR(unicode_replace__doc__,
 "replaced.");
 
 #define UNICODE_REPLACE_METHODDEF    \
-    {"replace", (PyCFunction)unicode_replace, METH_VARARGS, unicode_replace__doc__},
+    {"replace", (PyCFunction)unicode_replace, METH_FASTCALL, unicode_replace__doc__},
 
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count);
 
 static PyObject *
-unicode_replace(PyObject *self, PyObject *args)
+unicode_replace(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *old;
     PyObject *new;
     Py_ssize_t count = -1;
 
-    if (!PyArg_ParseTuple(args, "UU|n:replace",
+    if (!_PyArg_ParseStack(args, nargs, "UU|n:replace",
         &old, &new, &count)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("replace", kwnames)) {
         goto exit;
     }
     return_value = unicode_replace_impl(self, old, new, count);
@@ -599,20 +611,24 @@ PyDoc_STRVAR(unicode_rjust__doc__,
 "Padding is done using the specified fill character (default is a space).");
 
 #define UNICODE_RJUST_METHODDEF    \
-    {"rjust", (PyCFunction)unicode_rjust, METH_VARARGS, unicode_rjust__doc__},
+    {"rjust", (PyCFunction)unicode_rjust, METH_FASTCALL, unicode_rjust__doc__},
 
 static PyObject *
 unicode_rjust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
 
 static PyObject *
-unicode_rjust(PyObject *self, PyObject *args)
+unicode_rjust(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (!PyArg_ParseTuple(args, "n|O&:rjust",
+    if (!_PyArg_ParseStack(args, nargs, "n|O&:rjust",
         &width, convert_uc, &fillchar)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("rjust", kwnames)) {
         goto exit;
     }
     return_value = unicode_rjust_impl(self, width, fillchar);
@@ -799,21 +815,25 @@ PyDoc_STRVAR(unicode_maketrans__doc__,
 "must be a string, whose characters will be mapped to None in the result.");
 
 #define UNICODE_MAKETRANS_METHODDEF    \
-    {"maketrans", (PyCFunction)unicode_maketrans, METH_VARARGS|METH_STATIC, unicode_maketrans__doc__},
+    {"maketrans", (PyCFunction)unicode_maketrans, METH_FASTCALL|METH_STATIC, unicode_maketrans__doc__},
 
 static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z);
 
 static PyObject *
-unicode_maketrans(void *null, PyObject *args)
+unicode_maketrans(void *null, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *x;
     PyObject *y = NULL;
     PyObject *z = NULL;
 
-    if (!PyArg_ParseTuple(args, "O|UU:maketrans",
+    if (!_PyArg_ParseStack(args, nargs, "O|UU:maketrans",
         &x, &y, &z)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("maketrans", kwnames)) {
         goto exit;
     }
     return_value = unicode_maketrans_impl(x, y, z);
@@ -930,4 +950,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=3b9b1e1f71ba3b00 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb6a3ae361a1a379 input=a9049054013a1b77]*/

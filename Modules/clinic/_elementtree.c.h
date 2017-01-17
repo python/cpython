@@ -356,21 +356,25 @@ PyDoc_STRVAR(_elementtree_Element_insert__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_INSERT_METHODDEF    \
-    {"insert", (PyCFunction)_elementtree_Element_insert, METH_VARARGS, _elementtree_Element_insert__doc__},
+    {"insert", (PyCFunction)_elementtree_Element_insert, METH_FASTCALL, _elementtree_Element_insert__doc__},
 
 static PyObject *
 _elementtree_Element_insert_impl(ElementObject *self, Py_ssize_t index,
                                  PyObject *subelement);
 
 static PyObject *
-_elementtree_Element_insert(ElementObject *self, PyObject *args)
+_elementtree_Element_insert(ElementObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index;
     PyObject *subelement;
 
-    if (!PyArg_ParseTuple(args, "nO!:insert",
+    if (!_PyArg_ParseStack(args, nargs, "nO!:insert",
         &index, &Element_Type, &subelement)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("insert", kwnames)) {
         goto exit;
     }
     return_value = _elementtree_Element_insert_impl(self, index, subelement);
@@ -702,4 +706,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b4a571a98ced3163 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4e3d22c6f6d832b2 input=a9049054013a1b77]*/
