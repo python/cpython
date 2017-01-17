@@ -1548,9 +1548,9 @@ memo_put(PicklerObject *self, PyObject *obj)
 }
 
 static PyObject *
-get_dotted_path(PyObject *obj, PyObject *name) {
+get_dotted_path(PyObject *obj, PyObject *name)
+{
     _Py_static_string(PyId_dot, ".");
-    _Py_static_string(PyId_locals, "<locals>");
     PyObject *dotted_path;
     Py_ssize_t i, n;
 
@@ -1561,12 +1561,7 @@ get_dotted_path(PyObject *obj, PyObject *name) {
     assert(n >= 1);
     for (i = 0; i < n; i++) {
         PyObject *subpath = PyList_GET_ITEM(dotted_path, i);
-        PyObject *result = PyUnicode_RichCompare(
-            subpath, _PyUnicode_FromId(&PyId_locals), Py_EQ);
-        int is_equal = (result == Py_True);
-        assert(PyBool_Check(result));
-        Py_DECREF(result);
-        if (is_equal) {
+        if (_PyUnicode_EqualToASCIIString(subpath, "<locals>")) {
             if (obj == NULL)
                 PyErr_Format(PyExc_AttributeError,
                              "Can't pickle local object %R", name);
@@ -3537,13 +3532,12 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         else if (PyUnicode_Check(name)) {
             if (self->proto >= 4) {
                 _Py_IDENTIFIER(__newobj_ex__);
-                use_newobj_ex = PyUnicode_Compare(
-                        name, _PyUnicode_FromId(&PyId___newobj_ex__)) == 0;
+                use_newobj_ex = _PyUnicode_EqualToASCIIId(
+                        name, &PyId___newobj_ex__);
             }
             if (!use_newobj_ex) {
                 _Py_IDENTIFIER(__newobj__);
-                use_newobj = PyUnicode_Compare(
-                        name, _PyUnicode_FromId(&PyId___newobj__)) == 0;
+                use_newobj = _PyUnicode_EqualToASCIIId(name, &PyId___newobj__);
             }
         }
         Py_XDECREF(name);

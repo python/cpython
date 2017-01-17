@@ -159,8 +159,8 @@ precede any statement that will result in bytecodes being produced.
 PEP 207: Rich Comparisons
 =========================
 
-In earlier versions, Python's support for implementing comparisons on user-
-defined classes and extension types was quite simple. Classes could implement a
+In earlier versions, Python's support for implementing comparisons on user-defined
+classes and extension types was quite simple. Classes could implement a
 :meth:`__cmp__` method that was given two instances of a class, and could only
 return 0 if they were equal or +1 or -1 if they weren't; the method couldn't
 raise an exception or return anything other than a Boolean value.  Users of
@@ -465,11 +465,11 @@ Windows being the primary examples; on these systems, it's impossible to
 distinguish the filenames ``FILE.PY`` and ``file.py``, even though they do store
 the file's name  in its original case (they're case-preserving, too).
 
-In Python 2.1, the :keyword:`import` statement will work to simulate case-
-sensitivity on case-insensitive platforms.  Python will now search for the first
+In Python 2.1, the :keyword:`import` statement will work to simulate case-sensitivity
+on case-insensitive platforms.  Python will now search for the first
 case-sensitive match by default, raising an :exc:`ImportError` if no such file
-is found, so ``import file`` will not import a module named ``FILE.PY``.  Case-
-insensitive matching can be requested by setting the :envvar:`PYTHONCASEOK`
+is found, so ``import file`` will not import a module named ``FILE.PY``.
+Case-insensitive matching can be requested by setting the :envvar:`PYTHONCASEOK`
 environment variable before starting the Python interpreter.
 
 .. ======================================================================
@@ -481,8 +481,8 @@ PEP 217: Interactive Display Hook
 When using the Python interpreter interactively, the output of commands is
 displayed using the built-in :func:`repr` function. In Python 2.1, the variable
 :func:`sys.displayhook` can be set to a callable object which will be called
-instead of :func:`repr`. For example, you can set it to a special pretty-
-printing function::
+instead of :func:`repr`. For example, you can set it to a special
+pretty-printing function::
 
    >>> # Create a recursive data structure
    ... L = [1,2,3]

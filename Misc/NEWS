@@ -13,6 +13,19 @@ Core and Builtins
 Library
 -------
 
+- Issue #29011:  Fix an important omission by adding Deque to the typing module.
+
+- Issue #29219: Fixed infinite recursion in the repr of uninitialized
+  ctypes.CDLL instances.
+
+- Issue #28969: Fixed race condition in C implementation of functools.lru_cache.
+  KeyError could be raised when cached function with full cache was
+  simultaneously called from differen threads with the same uncached arguments.
+
+- Issue #29142: In urllib.request, suffixes in no_proxy environment variable with
+  leading dots could match related hostnames again (e.g. .b.c matches a.b.c).
+  Patch by Milan Oberkirch.
+
 
 What's New in Python 3.5.3?
 ===========================
@@ -526,17 +539,17 @@ Library
 
 - Issue #27972: Prohibit Tasks to await on themselves.
 
-- Issue #26923: Fix asyncio.Gather to refuse being cancelled once all 
+- Issue #26923: Fix asyncio.Gather to refuse being cancelled once all
   children are done.
   Patch by Johannes Ebke.
 
-- Issue #26796: Don't configure the number of workers for default 
+- Issue #26796: Don't configure the number of workers for default
   threadpool executor.
   Initial patch by Hans Lawrenz.
 
 - Issue #28600: Optimize loop.call_soon().
 
-- Issue #28613: Fix get_event_loop() return the current loop if 
+- Issue #28613: Fix get_event_loop() return the current loop if
   called from coroutines/callbacks.
 
 - Issue #28639: Fix inspect.isawaitable to always return bool
@@ -551,7 +564,7 @@ Library
 - Issue #24142: Reading a corrupt config file left the parser in an
   invalid state.  Original patch by Florian Höch.
 
-- Issue #28990: Fix SSL hanging if connection is closed before handshake 
+- Issue #28990: Fix SSL hanging if connection is closed before handshake
   completed.
   (Patch by HoHo-Ho)
 

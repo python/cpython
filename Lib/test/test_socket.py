@@ -4719,14 +4719,10 @@ def isTipcAvailable():
         return False
     try:
         f = open("/proc/modules")
-    except IOError as e:
+    except (FileNotFoundError, IsADirectoryError, PermissionError):
         # It's ok if the file does not exist, is a directory or if we
-        # have not the permission to read it. In any other case it's a
-        # real error, so raise it again.
-        if e.errno in (errno.ENOENT, errno.EISDIR, errno.EACCES):
-            return False
-        else:
-            raise
+        # have not the permission to read it.
+        return False
     with f:
         for line in f:
             if line.startswith("tipc "):
