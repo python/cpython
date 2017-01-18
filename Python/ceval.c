@@ -1046,7 +1046,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
 #ifdef Py_DEBUG
     /* PyEval_EvalFrameEx() must not be called with an exception set,
-       because it may clear it (directly or indirectly) and so the
+       because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
 #endif
@@ -3244,7 +3244,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             if (meth_found) {
                 /* We can bypass temporary bound method object.
                    meth is unbound method and obj is self.
-                  
+
                    meth | self | arg1 | ... | argN
                  */
                 SET_TOP(meth);

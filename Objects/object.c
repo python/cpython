@@ -477,7 +477,7 @@ PyObject_Repr(PyObject *v)
 
 #ifdef Py_DEBUG
     /* PyObject_Repr() must not be called with an exception set,
-       because it may clear it (directly or indirectly) and so the
+       because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
 #endif
@@ -526,7 +526,7 @@ PyObject_Str(PyObject *v)
 
 #ifdef Py_DEBUG
     /* PyObject_Str() must not be called with an exception set,
-       because it may clear it (directly or indirectly) and so the
+       because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
 #endif
