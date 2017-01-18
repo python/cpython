@@ -1497,15 +1497,17 @@ class Frame(object):
             return 'Garbage-collecting'
 
         # Detect invocations of PyCFunction instances:
-        older = self.older()
-        if not older:
-            return False
-
-        caller = older._gdbframe.name()
+        frame = self._gdbframe
+        caller = frame.name()
         if not caller:
             return False
 
-        if caller == 'PyCFunction_Call':
+        if caller in ('_PyCFunction_FastCallDict',
+                      '_PyCFunction_FastCallKeywords'):
+            if caller == '_PyCFunction_FastCallKeywords':
+                arg_name = 'func_obj'
+            else:
+                arg_name = 'func'
             # Within that frame:
             #   "func" is the local containing the PyObject* of the
             # PyCFunctionObject instance
@@ -1513,18 +1515,10 @@ class Frame(object):
             #   "self" is the (PyObject*) of the 'self'
             try:
                 # Use the prettyprinter for the func:
-                func = older._gdbframe.read_var('func')
+                func = frame.read_var(arg_name)
                 return str(func)
             except RuntimeError:
-                return 'PyCFunction invocation (unable to read "func")'
-
-        elif caller in ('_PyCFunction_FastCallDict',
-                        '_PyCFunction_FastCallKeywords'):
-            try:
-                func = older._gdbframe.read_var('func_obj')
-                return str(func)
-            except RuntimeError:
-                return 'PyCFunction invocation (unable to read "func_obj")'
+                return 'PyCFunction invocation (unable to read %s)' % arg_name
 
         # This frame isn't worth reporting:
         return False

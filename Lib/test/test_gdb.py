@@ -845,7 +845,7 @@ id(42)
                                           breakpoint='time_gmtime',
                                           cmds_after_breakpoint=['py-bt-full'],
                                           )
-        self.assertIn('#0 <built-in method gmtime', gdb_output)
+        self.assertIn('#1 <built-in method gmtime', gdb_output)
 
 
 class PyPrintTests(DebuggerTests):
