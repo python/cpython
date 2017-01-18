@@ -46,7 +46,7 @@ class TestLoader(object):
     _top_level_dir = None
 
     def loadTestsFromTestCase(self, testCaseClass):
-        """Return a suite of all tests cases contained in testCaseClass"""
+        """Return a suite of all test cases contained in testCaseClass"""
         if issubclass(testCaseClass, suite.TestSuite):
             raise TypeError("Test cases should not be derived from TestSuite." \
                                 " Maybe you meant to derive from TestCase?")
@@ -57,7 +57,7 @@ class TestLoader(object):
         return loaded_suite
 
     def loadTestsFromModule(self, module, use_load_tests=True):
-        """Return a suite of all tests cases contained in the given module"""
+        """Return a suite of all test cases contained in the given module"""
         tests = []
         for name in dir(module):
             obj = getattr(module, name)
@@ -75,7 +75,7 @@ class TestLoader(object):
         return tests
 
     def loadTestsFromName(self, name, module=None):
-        """Return a suite of all tests cases given a string specifier.
+        """Return a suite of all test cases given a string specifier.
 
         The name may resolve either to a module, a test case class, a
         test method within a test case class, or a callable object which
@@ -124,7 +124,7 @@ class TestLoader(object):
             raise TypeError("don't know how to make test from: %s" % obj)
 
     def loadTestsFromNames(self, names, module=None):
-        """Return a suite of all tests cases found using the given sequence
+        """Return a suite of all test cases found using the given sequence
         of string specifiers. See 'loadTestsFromName()'.
         """
         suites = [self.loadTestsFromName(name, module) for name in names]
