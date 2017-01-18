@@ -3863,11 +3863,15 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
     arglen = PyTuple_Size(args);
     switch (arglen) {
         case 2:
-            PyArg_ParseTuple(args, "y*O:sendto", &pbuf, &addro);
+            if (!PyArg_ParseTuple(args, "y*O:sendto", &pbuf, &addro)) {
+                return NULL;
+            }
             break;
         case 3:
-            PyArg_ParseTuple(args, "y*iO:sendto",
-                             &pbuf, &flags, &addro);
+            if (!PyArg_ParseTuple(args, "y*iO:sendto",
+                                  &pbuf, &flags, &addro)) {
+                return NULL;
+            }
             break;
         default:
             PyErr_Format(PyExc_TypeError,
@@ -3875,8 +3879,6 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
                          arglen);
             return NULL;
     }
-    if (PyErr_Occurred())
-        return NULL;
 
     if (!IS_SELECTABLE(s)) {
         PyBuffer_Release(&pbuf);
