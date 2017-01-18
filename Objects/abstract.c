@@ -2399,10 +2399,12 @@ _PyObject_Call_Prepend(PyObject *callable,
 PyObject *
 _PyStack_AsDict(PyObject **values, PyObject *kwnames)
 {
-    Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwnames);
+    Py_ssize_t nkwargs;
     PyObject *kwdict;
     Py_ssize_t i;
 
+    assert(kwnames != NULL);
+    nkwargs = PyTuple_GET_SIZE(kwnames);
     kwdict = _PyDict_NewPresized(nkwargs);
     if (kwdict == NULL) {
         return NULL;
