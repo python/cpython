@@ -78,77 +78,12 @@ PyCFunction_GetFlags(PyObject *op)
 }
 
 PyObject *
-PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwds)
+PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwargs)
 {
-    PyCFunctionObject* f = (PyCFunctionObject*)func;
-    PyCFunction meth = PyCFunction_GET_FUNCTION(func);
-    PyObject *self = PyCFunction_GET_SELF(func);
-    PyObject *arg, *res;
-    Py_ssize_t size;
-    int flags;
-
-    assert(kwds == NULL || PyDict_Check(kwds));
-    /* PyCFunction_Call() must not be called with an exception set,
-       because it can clear it (directly or indirectly) and so the
-       caller loses its exception */
-    assert(!PyErr_Occurred());
-
-    flags = PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC | METH_COEXIST);
-
-    if (flags == (METH_VARARGS | METH_KEYWORDS)) {
-        res = (*(PyCFunctionWithKeywords)meth)(self, args, kwds);
-    }
-    else if (flags == METH_FASTCALL) {
-        PyObject **stack = &PyTuple_GET_ITEM(args, 0);
-        Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-        res = _PyCFunction_FastCallDict(func, stack, nargs, kwds);
-    }
-    else {
-        if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
-            PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
-                         f->m_ml->ml_name);
-            return NULL;
-        }
-
-        switch (flags) {
-        case METH_VARARGS:
-            res = (*meth)(self, args);
-            break;
-
-        case METH_NOARGS:
-            size = PyTuple_GET_SIZE(args);
-            if (size != 0) {
-                PyErr_Format(PyExc_TypeError,
-                    "%.200s() takes no arguments (%zd given)",
-                    f->m_ml->ml_name, size);
-                return NULL;
-            }
-
-            res = (*meth)(self, NULL);
-            break;
-
-        case METH_O:
-            size = PyTuple_GET_SIZE(args);
-            if (size != 1) {
-                PyErr_Format(PyExc_TypeError,
-                    "%.200s() takes exactly one argument (%zd given)",
-                    f->m_ml->ml_name, size);
-                return NULL;
-            }
-
-            arg = PyTuple_GET_ITEM(args, 0);
-            res = (*meth)(self, arg);
-            break;
-
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                            "Bad call flags in PyCFunction_Call. "
-                            "METH_OLDARGS is no longer supported!");
-            return NULL;
-        }
-    }
-
-    return _Py_CheckFunctionResult(func, res, NULL);
+    return _PyCFunction_FastCallDict(func,
+                                     &PyTuple_GET_ITEM(args, 0),
+                                     PyTuple_GET_SIZE(args),
+                                     kwargs);
 }
 
 PyObject *
