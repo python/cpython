@@ -12,7 +12,7 @@ from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional
 from typing import Tuple, List, MutableMapping
 from typing import Callable
-from typing import Generic, ClassVar
+from typing import Generic, ClassVar, GenericMeta
 from typing import cast
 from typing import get_type_hints
 from typing import no_type_check, no_type_check_decorator
@@ -23,6 +23,7 @@ from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
 import abc
 import typing
+import weakref
 try:
     import collections.abc as collections_abc
 except ImportError:
@@ -280,6 +281,15 @@ class UnionTests(BaseTestCase):
         self.assertFalse(Union[str, typing.Iterable[int]] == str)
         self.assertFalse(Union[str, typing.Iterable[int]] == typing.Iterable[int])
         self.assertTrue(Union[str, typing.Iterable] == typing.Iterable)
+
+    def test_union_compare_other(self):
+        self.assertNotEqual(Union, object)
+        self.assertNotEqual(Union, Any)
+        self.assertNotEqual(ClassVar, Union)
+        self.assertNotEqual(Optional, Union)
+        self.assertNotEqual([None], Optional)
+        self.assertNotEqual(Optional, typing.Mapping)
+        self.assertNotEqual(Optional[typing.MutableMapping], Union)
 
     def test_optional(self):
         o = Optional[int]
@@ -718,6 +728,12 @@ class GenericTests(BaseTestCase):
         self.assertEqual(C.__orig_bases__, (List[T][U][V],))
         self.assertEqual(D.__orig_bases__, (C, List[T][U][V]))
 
+    def test_subscript_meta(self):
+        T = TypeVar('T')
+        self.assertEqual(Type[GenericMeta], Type[GenericMeta])
+        self.assertEqual(Union[T, int][GenericMeta], Union[GenericMeta, int])
+        self.assertEqual(Callable[..., GenericMeta].__args__, (Ellipsis, GenericMeta))
+
     def test_extended_generic_rules_eq(self):
         T = TypeVar('T')
         U = TypeVar('U')
@@ -895,6 +911,14 @@ class GenericTests(BaseTestCase):
         for t in things + [Any]:
             self.assertEqual(t, copy(t))
             self.assertEqual(t, deepcopy(t))
+
+    def test_weakref_all(self):
+        T = TypeVar('T')
+        things = [Any, Union[T, int], Callable[..., T], Tuple[Any, Any],
+                  Optional[List[int]], typing.Mapping[int, str],
+                  typing.re.Match[bytes], typing.Iterable['whatever']]
+        for t in things:
+            self.assertEqual(weakref.ref(t)(), t)
 
     def test_parameterized_slots(self):
         T = TypeVar('T')
@@ -1918,7 +1942,9 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(jim.id, 1)
         self.assertEqual(Emp.__name__, 'Emp')
         self.assertEqual(Emp._fields, ('name', 'id'))
-        self.assertEqual(Emp._field_types, dict(name=str, id=int))
+        self.assertEqual(Emp.__annotations__,
+                         collections.OrderedDict([('name', str), ('id', int)]))
+        self.assertIs(Emp._field_types, Emp.__annotations__)
 
     @skipUnless(PY36, 'Python 3.6 required')
     def test_annotation_usage(self):
@@ -1929,7 +1955,9 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(tim.cool, 9000)
         self.assertEqual(CoolEmployee.__name__, 'CoolEmployee')
         self.assertEqual(CoolEmployee._fields, ('name', 'cool'))
-        self.assertEqual(CoolEmployee._field_types, dict(name=str, cool=int))
+        self.assertEqual(CoolEmployee.__annotations__,
+                         collections.OrderedDict(name=str, cool=int))
+        self.assertIs(CoolEmployee._field_types, CoolEmployee.__annotations__)
 
     @skipUnless(PY36, 'Python 3.6 required')
     def test_namedtuple_keyword_usage(self):
@@ -1939,7 +1967,8 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(nick.name, 'Nick')
         self.assertEqual(LocalEmployee.__name__, 'LocalEmployee')
         self.assertEqual(LocalEmployee._fields, ('name', 'age'))
-        self.assertEqual(LocalEmployee._field_types, dict(name=str, age=int))
+        self.assertEqual(LocalEmployee.__annotations__, dict(name=str, age=int))
+        self.assertIs(LocalEmployee._field_types, LocalEmployee.__annotations__)
         with self.assertRaises(TypeError):
             NamedTuple('Name', [('x', int)], y=str)
         with self.assertRaises(TypeError):
