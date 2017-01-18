@@ -152,17 +152,14 @@ PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwds)
 }
 
 PyObject *
-_PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
-                          PyObject *kwargs)
+_PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **args,
+                             Py_ssize_t nargs, PyObject *kwargs)
 {
-    PyCFunctionObject *func;
     PyCFunction meth;
-    PyObject *self;
     PyObject *result;
     int flags;
 
-    assert(func_obj != NULL);
-    assert(PyCFunction_Check(func_obj));
+    assert(method != NULL);
     assert(nargs >= 0);
     assert(nargs == 0 || args != NULL);
     assert(kwargs == NULL || PyDict_Check(kwargs));
@@ -172,10 +169,8 @@ _PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
        caller loses its exception */
     assert(!PyErr_Occurred());
 
-    func = (PyCFunctionObject*)func_obj;
-    meth = PyCFunction_GET_FUNCTION(func);
-    self = PyCFunction_GET_SELF(func);
-    flags = PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC | METH_COEXIST);
+    meth = method->ml_meth;
+    flags = method->ml_flags & ~(METH_CLASS | METH_STATIC | METH_COEXIST);
 
     switch (flags)
     {
@@ -186,7 +181,7 @@ _PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
 
         if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
             PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
-                         func->m_ml->ml_name);
+                         method->ml_name);
             return NULL;
         }
 
@@ -197,7 +192,7 @@ _PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
         if (nargs != 1) {
             PyErr_Format(PyExc_TypeError,
                 "%.200s() takes exactly one argument (%zd given)",
-                func->m_ml->ml_name, nargs);
+                method->ml_name, nargs);
             return NULL;
         }
 
@@ -259,15 +254,29 @@ _PyCFunction_FastCallDict(PyObject *func_obj, PyObject **args, Py_ssize_t nargs,
         return NULL;
     }
 
-    result = _Py_CheckFunctionResult(func_obj, result, NULL);
-
     return result;
 
 no_keyword_error:
     PyErr_Format(PyExc_TypeError,
             "%.200s() takes no arguments (%zd given)",
-            func->m_ml->ml_name, nargs);
+            method->ml_name, nargs);
     return NULL;
+}
+
+PyObject *
+_PyCFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
+                          PyObject *kwargs)
+{
+    PyObject *result;
+
+    assert(func != NULL);
+    assert(PyCFunction_Check(func));
+
+    result = _PyMethodDef_RawFastCallDict(((PyCFunctionObject*)func)->m_ml,
+                                          PyCFunction_GET_SELF(func),
+                                          args, nargs, kwargs);
+    result = _Py_CheckFunctionResult(func, result, NULL);
+    return result;
 }
 
 PyObject *

@@ -210,15 +210,15 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
 }
 
 static PyObject *
-methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwds)
+methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
 {
-    Py_ssize_t argc;
-    PyObject *self, *func, *result, **stack;
+    Py_ssize_t nargs;
+    PyObject *self, *result;
 
     /* Make sure that the first argument is acceptable as 'self' */
     assert(PyTuple_Check(args));
-    argc = PyTuple_GET_SIZE(args);
-    if (argc < 1) {
+    nargs = PyTuple_GET_SIZE(args);
+    if (nargs < 1) {
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%V' of '%.100s' "
                      "object needs an argument",
@@ -239,12 +239,10 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    func = PyCFunction_NewEx(descr->d_method, self, NULL);
-    if (func == NULL)
-        return NULL;
-    stack = &PyTuple_GET_ITEM(args, 1);
-    result = _PyObject_FastCallDict(func, stack, argc - 1, kwds);
-    Py_DECREF(func);
+    result = _PyMethodDef_RawFastCallDict(descr->d_method, self,
+                                          &PyTuple_GET_ITEM(args, 1), nargs - 1,
+                                          kwargs);
+    result = _Py_CheckFunctionResult((PyObject *)descr, result, NULL);
     return result;
 }
 
