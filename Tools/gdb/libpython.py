@@ -1518,8 +1518,8 @@ class Frame(object):
             except RuntimeError:
                 return 'PyCFunction invocation (unable to read "func")'
 
-        elif caller in {'_PyCFunction_FastCallDict',
-                        '_PyCFunction_FastCallKeywords'}:
+        elif caller in ('_PyCFunction_FastCallDict',
+                        '_PyCFunction_FastCallKeywords'):
             try:
                 func = older._gdbframe.read_var('func_obj')
                 return str(func)
