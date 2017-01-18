@@ -2423,7 +2423,7 @@ _PyStack_AsDict(PyObject **values, PyObject *kwnames)
 
 int
 _PyStack_UnpackDict(PyObject **args, Py_ssize_t nargs, PyObject *kwargs,
-                    PyObject ***p_stack, PyObject **p_kwnames, PyObject *func)
+                    PyObject ***p_stack, PyObject **p_kwnames)
 {
     PyObject **stack, **kwstack;
     Py_ssize_t nkwargs;
