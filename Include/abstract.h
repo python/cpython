@@ -193,8 +193,7 @@ PyAPI_FUNC(int) _PyStack_UnpackDict(
     Py_ssize_t nargs,
     PyObject *kwargs,
     PyObject ***p_stack,
-    PyObject **p_kwnames,
-    PyObject *func);
+    PyObject **p_kwnames);
 
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
