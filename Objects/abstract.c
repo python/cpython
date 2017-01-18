@@ -2233,7 +2233,7 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
     PyObject *result;
 
     /* PyObject_Call() must not be called with an exception set,
-       because it may clear it (directly or indirectly) and so the
+       because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
     assert(PyTuple_Check(args));
@@ -2309,7 +2309,7 @@ _PyObject_FastCallDict(PyObject *callable, PyObject **args, Py_ssize_t nargs,
     PyObject *result = NULL;
 
     /* _PyObject_FastCallDict() must not be called with an exception set,
-       because it may clear it (directly or indirectly) and so the
+       because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
 
