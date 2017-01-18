@@ -27,6 +27,8 @@ __all__ = [
 
     # ABCs (from collections.abc).
     'AbstractSet',  # collections.abc.Set.
+    'GenericMeta',  # subclass of abc.ABCMeta and a metaclass
+                    # for 'Generic' and ABCs below.
     'ByteString',
     'Container',
     'Hashable',
@@ -145,7 +147,7 @@ class TypingMeta(type):
 class _TypingBase(metaclass=TypingMeta, _root=True):
     """Internal indicator of special typing constructs."""
 
-    __slots__ = ()
+    __slots__ = ('__weakref__',)
 
     def __init__(self, *args, **kwds):
         pass
@@ -514,13 +516,23 @@ def _replace_arg(arg, tvars, args):
 
     if tvars is None:
         tvars = []
-    if hasattr(arg, '_subs_tree'):
+    if hasattr(arg, '_subs_tree') and isinstance(arg, (GenericMeta, _TypingBase)):
         return arg._subs_tree(tvars, args)
     if isinstance(arg, TypeVar):
         for i, tvar in enumerate(tvars):
             if arg == tvar:
                 return args[i]
     return arg
+
+
+# Special typing constructs Union, Optional, Generic, Callable and Tuple
+# use three special attributes for internal bookkeeping of generic types:
+# * __parameters__ is a tuple of unique free type parameters of a generic
+#   type, for example, Dict[T, T].__parameters__ == (T,);
+# * __origin__ keeps a reference to a type that was subscripted,
+#   e.g., Union[T, int].__origin__ == Union;
+# * __args__ is a tuple of all arguments used in subscripting,
+#   e.g., Dict[T, int].__args__ == (T, int).
 
 
 def _subs_tree(cls, tvars=None, args=None):
@@ -757,9 +769,12 @@ class _Union(_FinalTypingBase, _root=True):
         return (Union,) + tree_args
 
     def __eq__(self, other):
-        if not isinstance(other, _Union):
+        if isinstance(other, _Union):
+            return self.__tree_hash__ == other.__tree_hash__
+        elif self is not Union:
             return self._subs_tree() == other
-        return self.__tree_hash__ == other.__tree_hash__
+        else:
+            return self is other
 
     def __hash__(self):
         return self.__tree_hash__
@@ -883,10 +898,26 @@ def _no_slots_copy(dct):
 
 
 class GenericMeta(TypingMeta, abc.ABCMeta):
-    """Metaclass for generic types."""
+    """Metaclass for generic types.
+
+    This is a metaclass for typing.Generic and generic ABCs defined in
+    typing module. User defined subclasses of GenericMeta can override
+    __new__ and invoke super().__new__. Note that GenericMeta.__new__
+    has strict rules on what is allowed in its bases argument:
+    * plain Generic is disallowed in bases;
+    * Generic[...] should appear in bases at most once;
+    * if Generic[...] is present, then it should list all type variables
+      that appear in other bases.
+    In addition, type of all generic bases is erased, e.g., C[int] is
+    stripped to plain C.
+    """
 
     def __new__(cls, name, bases, namespace,
                 tvars=None, args=None, origin=None, extra=None, orig_bases=None):
+        """Create a new generic class. GenericMeta.__new__ accepts
+        keyword arguments that are used for internal bookkeeping, therefore
+        an override should pass unused keyword arguments to super().
+        """
         if tvars is not None:
             # Called from __getitem__() below.
             assert origin is not None
@@ -1906,7 +1937,9 @@ def _make_nmtuple(name, types):
     msg = "NamedTuple('Name', [(f0, t0), (f1, t1), ...]); each t must be a type"
     types = [(n, _type_check(t, msg)) for n, t in types]
     nm_tpl = collections.namedtuple(name, [n for n, t in types])
-    nm_tpl._field_types = dict(types)
+    # Prior to PEP 526, only _field_types attribute was assigned.
+    # Now, both __annotations__ and _field_types are used to maintain compatibility.
+    nm_tpl.__annotations__ = nm_tpl._field_types = collections.OrderedDict(types)
     try:
         nm_tpl.__module__ = sys._getframe(2).f_globals.get('__name__', '__main__')
     except (AttributeError, ValueError):
@@ -1941,8 +1974,10 @@ class NamedTuple(metaclass=NamedTupleMeta):
 
         Employee = collections.namedtuple('Employee', ['name', 'id'])
 
-    The resulting class has one extra attribute: _field_types,
-    giving a dict mapping field names to types.  (The field names
+    The resulting class has extra __annotations__ and _field_types
+    attributes, giving an ordered dict mapping field names to types.
+    __annotations__ should be preferred, while _field_types
+    is kept to maintain pre PEP 526 compatibility. (The field names
     are in the _fields attribute, which is part of the namedtuple
     API.) Alternative equivalent keyword syntax is also accepted::
 
