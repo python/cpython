@@ -46,7 +46,7 @@ PyDoc_STRVAR(OrderedDict_setdefault__doc__,
 
 static PyObject *
 OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
-                            PyObject *failobj);
+                            PyObject *default_value);
 
 static PyObject *
 OrderedDict_setdefault(PyODictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
@@ -55,13 +55,13 @@ OrderedDict_setdefault(PyODictObject *self, PyObject **args, Py_ssize_t nargs, P
     static const char * const _keywords[] = {"key", "default", NULL};
     static _PyArg_Parser _parser = {"O|O:setdefault", _keywords, 0};
     PyObject *key;
-    PyObject *failobj = Py_None;
+    PyObject *default_value = Py_None;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &key, &failobj)) {
+        &key, &default_value)) {
         goto exit;
     }
-    return_value = OrderedDict_setdefault_impl(self, key, failobj);
+    return_value = OrderedDict_setdefault_impl(self, key, default_value);
 
 exit:
     return return_value;
@@ -132,4 +132,4 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject **args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f2641e1277045b59 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=84ef19e7b5db0086 input=a9049054013a1b77]*/

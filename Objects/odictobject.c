@@ -1012,15 +1012,15 @@ Done:
 OrderedDict.setdefault
 
     key: object
-    default as failobj: object = None
+    default: object = None
 
 od.get(k,d), also set od[k]=d if k not in od.
 [clinic start generated code]*/
 
 static PyObject *
 OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
-                            PyObject *failobj)
-/*[clinic end generated code: output=605d0f6f61ccb0a6 input=4ee5006f32f5691b]*/
+                            PyObject *default_value)
+/*[clinic end generated code: output=97537cb7c28464b6 input=d5e940fcea7a5a67]*/
 {
     PyObject *result = NULL;
 
@@ -1030,9 +1030,9 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
             if (PyErr_Occurred())
                 return NULL;
             assert(_odict_find_node(self, key) == NULL);
-            if (PyODict_SetItem((PyObject *)self, key, failobj) >= 0) {
-                result = failobj;
-                Py_INCREF(failobj);
+            if (PyODict_SetItem((PyObject *)self, key, default_value) >= 0) {
+                result = default_value;
+                Py_INCREF(result);
             }
         }
         else {
@@ -1047,9 +1047,9 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
         else if (exists) {
             result = PyObject_GetItem((PyObject *)self, key);
         }
-        else if (PyObject_SetItem((PyObject *)self, key, failobj) >= 0) {
-            result = failobj;
-            Py_INCREF(failobj);
+        else if (PyObject_SetItem((PyObject *)self, key, default_value) >= 0) {
+            result = default_value;
+            Py_INCREF(result);
         }
     }
 
