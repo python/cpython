@@ -2,6 +2,14 @@
 
 #include "Python.h"
 
+#include "clinic/enumobject.c.h"
+
+/*[clinic input]
+class enumerate "enumobject *" "&PyEnum_Type"
+class reversed "reversedobject *" "&PyReversed_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d2dfdf1a88c88975]*/
+
 typedef struct {
     PyObject_HEAD
     Py_ssize_t en_index;           /* current index of enumeration */
@@ -10,17 +18,29 @@ typedef struct {
     PyObject* en_longindex;        /* index for sequences >= PY_SSIZE_T_MAX */
 } enumobject;
 
+
+/*[clinic input]
+@classmethod
+enumerate.__new__ as enum_new
+
+    iterable: object
+        an object supporting iteration
+    start: object = 0
+
+Return an enumerate object.
+
+The enumerate object yields pairs containing a count (from start, which
+defaults to zero) and a value yielded by the iterable argument.
+
+enumerate is useful for obtaining an indexed list:
+    (0, seq[0]), (1, seq[1]), (2, seq[2]), ...
+[clinic start generated code]*/
+
 static PyObject *
-enum_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
+/*[clinic end generated code: output=e95e6e439f812c10 input=782e4911efcb8acf]*/
 {
     enumobject *en;
-    PyObject *seq = NULL;
-    PyObject *start = NULL;
-    static char *kwlist[] = {"iterable", "start", 0};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:enumerate", kwlist,
-                                     &seq, &start))
-        return NULL;
 
     en = (enumobject *)type->tp_alloc(type, 0);
     if (en == NULL)
@@ -45,7 +65,7 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         en->en_index = 0;
         en->en_longindex = NULL;
     }
-    en->en_sit = PyObject_GetIter(seq);
+    en->en_sit = PyObject_GetIter(iterable);
     if (en->en_sit == NULL) {
         Py_DECREF(en);
         return NULL;
@@ -174,15 +194,6 @@ static PyMethodDef enum_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-PyDoc_STRVAR(enum_doc,
-"enumerate(iterable[, start]) -> iterator for index, value of iterable\n"
-"\n"
-"Return an enumerate object.  iterable must be another object that supports\n"
-"iteration.  The enumerate object yields pairs containing a count (from\n"
-"start, which defaults to zero) and a value yielded by the iterable argument.\n"
-"enumerate is useful for obtaining an indexed list:\n"
-"    (0, seq[0]), (1, seq[1]), (2, seq[2]), ...");
-
 PyTypeObject PyEnum_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "enumerate",                    /* tp_name */
@@ -205,13 +216,13 @@ PyTypeObject PyEnum_Type = {
     0,                              /* tp_setattro */
     0,                              /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,    /* tp_flags */
-    enum_doc,                       /* tp_doc */
+        Py_TPFLAGS_BASETYPE,        /* tp_flags */
+    enum_new__doc__,                /* tp_doc */
     (traverseproc)enum_traverse,    /* tp_traverse */
     0,                              /* tp_clear */
     0,                              /* tp_richcompare */
     0,                              /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
+    PyObject_SelfIter,              /* tp_iter */
     (iternextfunc)enum_next,        /* tp_iternext */
     enum_methods,                   /* tp_methods */
     0,                              /* tp_members */
@@ -235,19 +246,24 @@ typedef struct {
     PyObject* seq;
 } reversedobject;
 
+/*[clinic input]
+@classmethod
+reversed.__new__ as reversed_new
+
+    sequence as seq: object
+    /
+
+Return a reverse iterator over the values of the given sequence.
+[clinic start generated code]*/
+
 static PyObject *
-reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+reversed_new_impl(PyTypeObject *type, PyObject *seq)
+/*[clinic end generated code: output=f7854cc1df26f570 input=aeb720361e5e3f1d]*/
 {
     Py_ssize_t n;
-    PyObject *seq, *reversed_meth;
+    PyObject *reversed_meth;
     reversedobject *ro;
     _Py_IDENTIFIER(__reversed__);
-
-    if (type == &PyReversed_Type && !_PyArg_NoKeywords("reversed()", kwds))
-        return NULL;
-
-    if (!PyArg_UnpackTuple(args, "reversed", 1, 1, &seq) )
-        return NULL;
 
     reversed_meth = _PyObject_LookupSpecial(seq, &PyId___reversed__);
     if (reversed_meth == Py_None) {
@@ -322,11 +338,6 @@ reversed_next(reversedobject *ro)
     return NULL;
 }
 
-PyDoc_STRVAR(reversed_doc,
-"reversed(sequence) -> reverse iterator over values of the sequence\n"
-"\n"
-"Return a reverse iterator");
-
 static PyObject *
 reversed_len(reversedobject *ro)
 {
@@ -393,7 +404,7 @@ PyTypeObject PyReversed_Type = {
     0,                              /* tp_reserved */
     0,                              /* tp_repr */
     0,                              /* tp_as_number */
-    0,                                  /* tp_as_sequence */
+    0,                              /* tp_as_sequence */
     0,                              /* tp_as_mapping */
     0,                              /* tp_hash */
     0,                              /* tp_call */
@@ -402,15 +413,15 @@ PyTypeObject PyReversed_Type = {
     0,                              /* tp_setattro */
     0,                              /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,    /* tp_flags */
-    reversed_doc,                   /* tp_doc */
+        Py_TPFLAGS_BASETYPE,        /* tp_flags */
+    reversed_new__doc__,            /* tp_doc */
     (traverseproc)reversed_traverse,/* tp_traverse */
     0,                              /* tp_clear */
     0,                              /* tp_richcompare */
     0,                              /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
+    PyObject_SelfIter,              /* tp_iter */
     (iternextfunc)reversed_next,    /* tp_iternext */
-    reversediter_methods,               /* tp_methods */
+    reversediter_methods,           /* tp_methods */
     0,                              /* tp_members */
     0,                              /* tp_getset */
     0,                              /* tp_base */
