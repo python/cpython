@@ -1747,18 +1747,19 @@ builtin_pow_impl(PyObject *module, PyObject *x, PyObject *y, PyObject *z)
 
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
-builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
+builtin_print(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    static char *kwlist[] = {"sep", "end", "file", "flush", 0};
-    static PyObject *dummy_args;
+    static const char * const _keywords[] = {"sep", "end", "file", "flush", 0};
+    static struct _PyArg_Parser _parser = {"|OOOO:print", _keywords, 0};
     PyObject *sep = NULL, *end = NULL, *file = NULL, *flush = NULL;
     int i, err;
 
-    if (dummy_args == NULL && !(dummy_args = PyTuple_New(0)))
+    if (kwnames != NULL &&
+            !_PyArg_ParseStackAndKeywords(args + nargs, 0, kwnames, &_parser,
+                                          &sep, &end, &file, &flush)) {
         return NULL;
-    if (!PyArg_ParseTupleAndKeywords(dummy_args, kwds, "|OOOO:print",
-                                     kwlist, &sep, &end, &file, &flush))
-        return NULL;
+    }
+
     if (file == NULL || file == Py_None) {
         file = _PySys_GetObjectId(&PyId_stdout);
         if (file == NULL) {
@@ -1790,7 +1791,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    for (i = 0; i < PyTuple_Size(args); i++) {
+    for (i = 0; i < nargs; i++) {
         if (i > 0) {
             if (sep == NULL)
                 err = PyFile_WriteString(" ", file);
@@ -1800,8 +1801,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
             if (err)
                 return NULL;
         }
-        err = PyFile_WriteObject(PyTuple_GetItem(args, i), file,
-                                 Py_PRINT_RAW);
+        err = PyFile_WriteObject(args[i], file, Py_PRINT_RAW);
         if (err)
             return NULL;
     }
@@ -2649,7 +2649,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
-    {"print",           (PyCFunction)builtin_print,      METH_VARARGS | METH_KEYWORDS, print_doc},
+    {"print",           (PyCFunction)builtin_print,      METH_FASTCALL, print_doc},
     BUILTIN_REPR_METHODDEF
     {"round",           (PyCFunction)builtin_round,      METH_VARARGS | METH_KEYWORDS, round_doc},
     BUILTIN_SETATTR_METHODDEF
