@@ -55,25 +55,25 @@ PyDoc_STRVAR(dict_get__doc__,
     {"get", (PyCFunction)dict_get, METH_FASTCALL, dict_get__doc__},
 
 static PyObject *
-dict_get_impl(PyDictObject *self, PyObject *key, PyObject *failobj);
+dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value);
 
 static PyObject *
 dict_get(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *key;
-    PyObject *failobj = Py_None;
+    PyObject *default_value = Py_None;
 
     if (!_PyArg_UnpackStack(args, nargs, "get",
         1, 2,
-        &key, &failobj)) {
+        &key, &default_value)) {
         goto exit;
     }
 
     if (!_PyArg_NoStackKeywords("get", kwnames)) {
         goto exit;
     }
-    return_value = dict_get_impl(self, key, failobj);
+    return_value = dict_get_impl(self, key, default_value);
 
 exit:
     return return_value;
@@ -89,27 +89,28 @@ PyDoc_STRVAR(dict_setdefault__doc__,
     {"setdefault", (PyCFunction)dict_setdefault, METH_FASTCALL, dict_setdefault__doc__},
 
 static PyObject *
-dict_setdefault_impl(PyDictObject *self, PyObject *key, PyObject *defaultobj);
+dict_setdefault_impl(PyDictObject *self, PyObject *key,
+                     PyObject *default_value);
 
 static PyObject *
 dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *key;
-    PyObject *defaultobj = Py_None;
+    PyObject *default_value = Py_None;
 
     if (!_PyArg_UnpackStack(args, nargs, "setdefault",
         1, 2,
-        &key, &defaultobj)) {
+        &key, &default_value)) {
         goto exit;
     }
 
     if (!_PyArg_NoStackKeywords("setdefault", kwnames)) {
         goto exit;
     }
-    return_value = dict_setdefault_impl(self, key, defaultobj);
+    return_value = dict_setdefault_impl(self, key, default_value);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1b0cea84b4b6989e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6e9d917602373072 input=a9049054013a1b77]*/
