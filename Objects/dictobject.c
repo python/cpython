@@ -2794,15 +2794,15 @@ dict___contains__(PyDictObject *self, PyObject *key)
 dict.get
 
     key: object
-    default as failobj: object = None
+    default: object = None
     /
 
 D.get(key[, default]) -> D[key] if key in D, else default.
 [clinic start generated code]*/
 
 static PyObject *
-dict_get_impl(PyDictObject *self, PyObject *key, PyObject *failobj)
-/*[clinic end generated code: output=c4a84a7ddbca9b7b input=7c976a78f258e915]*/
+dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
+/*[clinic end generated code: output=bba707729dee05bf input=e73ab0f028f4b2be]*/
 {
     PyObject *val = NULL;
     Py_hash_t hash;
@@ -2818,7 +2818,7 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *failobj)
     if (ix == DKIX_ERROR)
         return NULL;
     if (ix == DKIX_EMPTY || val == NULL) {
-        val = failobj;
+        val = default_value;
     }
     Py_INCREF(val);
     return val;
@@ -2912,19 +2912,20 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
 dict.setdefault
 
     key: object
-    default as defaultobj: object = None
+    default: object = None
     /
 
 D.get(key,default), also set D[key]=default if key not in D.
 [clinic start generated code]*/
 
 static PyObject *
-dict_setdefault_impl(PyDictObject *self, PyObject *key, PyObject *defaultobj)
-/*[clinic end generated code: output=692f85384b0b292e input=178f0c81d496d5cd]*/
+dict_setdefault_impl(PyDictObject *self, PyObject *key,
+                     PyObject *default_value)
+/*[clinic end generated code: output=f8c1101ebf69e220 input=b2826255bacd845a]*/
 {
     PyObject *val;
 
-    val = PyDict_SetDefault((PyObject *)self, key, defaultobj);
+    val = PyDict_SetDefault((PyObject *)self, key, default_value);
     Py_XINCREF(val);
     return val;
 }
