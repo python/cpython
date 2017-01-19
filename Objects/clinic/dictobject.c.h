@@ -44,4 +44,72 @@ PyDoc_STRVAR(dict___contains____doc__,
 
 #define DICT___CONTAINS___METHODDEF    \
     {"__contains__", (PyCFunction)dict___contains__, METH_O|METH_COEXIST, dict___contains____doc__},
-/*[clinic end generated code: output=69f3d767ed44e8ec input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(dict_get__doc__,
+"get($self, key, default=None, /)\n"
+"--\n"
+"\n"
+"D.get(key[, default]) -> D[key] if key in D, else default.");
+
+#define DICT_GET_METHODDEF    \
+    {"get", (PyCFunction)dict_get, METH_FASTCALL, dict_get__doc__},
+
+static PyObject *
+dict_get_impl(PyDictObject *self, PyObject *key, PyObject *failobj);
+
+static PyObject *
+dict_get(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    PyObject *key;
+    PyObject *failobj = Py_None;
+
+    if (!_PyArg_UnpackStack(args, nargs, "get",
+        1, 2,
+        &key, &failobj)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("get", kwnames)) {
+        goto exit;
+    }
+    return_value = dict_get_impl(self, key, failobj);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(dict_setdefault__doc__,
+"setdefault($self, key, default=None, /)\n"
+"--\n"
+"\n"
+"D.get(key,default), also set D[key]=default if key not in D.");
+
+#define DICT_SETDEFAULT_METHODDEF    \
+    {"setdefault", (PyCFunction)dict_setdefault, METH_FASTCALL, dict_setdefault__doc__},
+
+static PyObject *
+dict_setdefault_impl(PyDictObject *self, PyObject *key, PyObject *defaultobj);
+
+static PyObject *
+dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    PyObject *key;
+    PyObject *defaultobj = Py_None;
+
+    if (!_PyArg_UnpackStack(args, nargs, "setdefault",
+        1, 2,
+        &key, &defaultobj)) {
+        goto exit;
+    }
+
+    if (!_PyArg_NoStackKeywords("setdefault", kwnames)) {
+        goto exit;
+    }
+    return_value = dict_setdefault_impl(self, key, defaultobj);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=1b0cea84b4b6989e input=a9049054013a1b77]*/

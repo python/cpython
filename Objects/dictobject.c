@@ -2787,17 +2787,23 @@ dict___contains__(PyDictObject *self, PyObject *key)
     Py_RETURN_TRUE;
 }
 
+/*[clinic input]
+dict.get
+
+    key: object
+    default as failobj: object = None
+    /
+
+D.get(key[, default]) -> D[key] if key in D, else default.
+[clinic start generated code]*/
+
 static PyObject *
-dict_get(PyDictObject *mp, PyObject *args)
+dict_get_impl(PyDictObject *self, PyObject *key, PyObject *failobj)
+/*[clinic end generated code: output=c4a84a7ddbca9b7b input=7c976a78f258e915]*/
 {
-    PyObject *key;
-    PyObject *failobj = Py_None;
     PyObject *val = NULL;
     Py_hash_t hash;
     Py_ssize_t ix;
-
-    if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &failobj))
-        return NULL;
 
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1) {
@@ -2805,7 +2811,7 @@ dict_get(PyDictObject *mp, PyObject *args)
         if (hash == -1)
             return NULL;
     }
-    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &val, NULL);
+    ix = (self->ma_keys->dk_lookup) (self, key, hash, &val, NULL);
     if (ix == DKIX_ERROR)
         return NULL;
     if (ix == DKIX_EMPTY || val == NULL) {
@@ -2899,16 +2905,23 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
     return value;
 }
 
+/*[clinic input]
+dict.setdefault
+
+    key: object
+    default as defaultobj: object = None
+    /
+
+D.get(key,default), also set D[key]=default if key not in D.
+[clinic start generated code]*/
+
 static PyObject *
-dict_setdefault(PyDictObject *mp, PyObject *args)
+dict_setdefault_impl(PyDictObject *self, PyObject *key, PyObject *defaultobj)
+/*[clinic end generated code: output=692f85384b0b292e input=178f0c81d496d5cd]*/
 {
-    PyObject *key, *val;
-    PyObject *defaultobj = Py_None;
+    PyObject *val;
 
-    if (!PyArg_UnpackTuple(args, "setdefault", 1, 2, &key, &defaultobj))
-        return NULL;
-
-    val = PyDict_SetDefault((PyObject *)mp, key, defaultobj);
+    val = PyDict_SetDefault((PyObject *)self, key, defaultobj);
     Py_XINCREF(val);
     return val;
 }
@@ -3072,12 +3085,6 @@ PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
 PyDoc_STRVAR(sizeof__doc__,
 "D.__sizeof__() -> size of D in memory, in bytes");
 
-PyDoc_STRVAR(get__doc__,
-"D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None.");
-
-PyDoc_STRVAR(setdefault_doc__,
-"D.setdefault(k[,d]) -> D.get(k,d), also set D[k]=d if k not in D");
-
 PyDoc_STRVAR(pop__doc__,
 "D.pop(k[,d]) -> v, remove specified key and return the corresponding value.\n\
 If key is not found, d is returned if given, otherwise KeyError is raised");
@@ -3116,10 +3123,8 @@ static PyMethodDef mapp_methods[] = {
      getitem__doc__},
     {"__sizeof__",      (PyCFunction)dict_sizeof,       METH_NOARGS,
      sizeof__doc__},
-    {"get",         (PyCFunction)dict_get,          METH_VARARGS,
-     get__doc__},
-    {"setdefault",  (PyCFunction)dict_setdefault,   METH_VARARGS,
-     setdefault_doc__},
+    DICT_GET_METHODDEF
+    DICT_SETDEFAULT_METHODDEF
     {"pop",         (PyCFunction)dict_pop,          METH_VARARGS,
      pop__doc__},
     {"popitem",         (PyCFunction)dict_popitem,      METH_NOARGS,
