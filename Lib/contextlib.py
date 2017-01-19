@@ -54,8 +54,9 @@ class ContextDecorator(object):
         return inner
 
 
-class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
-    """Helper for @contextmanager decorator."""
+class _GeneratorContextManagerBase(ContextDecorator):
+    """Shared functionality for the @contextmanager and @asynccontextmanager
+    implementations."""
 
     def __init__(self, func, args, kwds):
         self.gen = func(*args, **kwds)
@@ -76,6 +77,10 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
         # CM must be recreated each time a decorated function is
         # called
         return self.__class__(self.func, self.args, self.kwds)
+
+
+class _GeneratorContextManager(_GeneratorContextManagerBase, AbstractContextManager):
+    """Helper for @contextmanager decorator."""
 
     def __enter__(self):
         try:
@@ -126,6 +131,44 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                     raise
 
 
+class _AsyncGeneratorContextManager(_GeneratorContextManagerBase):
+    """Helper for @asynccontextmanager."""
+
+    async def __aenter__(self):
+        try:
+            return await self.gen.__anext__()
+        except StopAsyncIteration:
+            raise RuntimeError("generator didn't yield") from None
+
+    async def __aexit__(self, type, value, traceback):
+        if type is None:
+            try:
+                await self.gen.__anext__()
+            except StopAsyncIteration:
+                return
+            else:
+                raise RuntimeError("generator didn't stop")
+        else:
+            if value is None:
+                value = type()
+            # See _GeneratorContextManager.__exit__ for comments on subtleties
+            # in this implementation
+            try:
+                await self.gen.athrow(type, value, traceback)
+                raise RuntimeError("generator didn't stop after throw()")
+            except StopAsyncIteration as exc:
+                return exc is not value
+            except RuntimeError as exc:
+                if exc is value:
+                    return False
+                if exc.__cause__ is value:
+                    return False
+                raise
+            except:
+                if sys.exc_info()[1] is not value:
+                    raise
+
+
 def contextmanager(func):
     """@contextmanager decorator.
 
@@ -157,6 +200,40 @@ def contextmanager(func):
     @wraps(func)
     def helper(*args, **kwds):
         return _GeneratorContextManager(func, args, kwds)
+    return helper
+
+
+def asynccontextmanager(func):
+    """@contextmanager decorator.
+
+    Typical usage:
+
+        @asynccontextmanager
+        async def some_async_generator(<arguments>):
+            <setup>
+            try:
+                yield <value>
+            finally:
+                <cleanup>
+
+    This makes this:
+
+        async with some_async_generator(<arguments>) as <variable>:
+            <body>
+
+    equivalent to this:
+
+        <setup>
+        try:
+            <variable> = <value>
+            <body>
+        finally:
+            <cleanup>
+
+    """
+    @wraps(func)
+    def helper(*args, **kwds):
+        return _AsyncGeneratorContextManager(func, args, kwds)
     return helper
 
 
