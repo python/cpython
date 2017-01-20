@@ -8,6 +8,13 @@
 
 **Source code:** :source:`Lib/typing.py`
 
+.. note::
+
+   The typing module has been included in the standard library on a
+   :term:`provisional basis <provisional api>`. New features might
+   be added and API may change even between minor releases if deemed
+   necessary by the core developers.
+
 --------------
 
 This module supports type hints as specified by :pep:`484` and :pep:`526`.
