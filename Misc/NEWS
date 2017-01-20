@@ -10,6 +10,9 @@ What's New in Python 3.6.1 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #29327: Fixed a crash when pass the iterable keyword argument to
+  sorted().
+
 - Issue #29034: Fix memory leak and use-after-free in os module (path_converter).
 
 - Issue #29159: Fix regression in bytes(x) when x.__index__() raises Exception.
