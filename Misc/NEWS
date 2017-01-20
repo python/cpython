@@ -47,6 +47,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #29316: Restore the provisional status of typing module, add
+  corresponding note to documentation. Patch by Ivan L.
+
 - Issue #29219: Fixed infinite recursion in the repr of uninitialized
   ctypes.CDLL instances.
 
