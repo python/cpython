@@ -278,6 +278,11 @@ Basic Usage
    If the data being deserialized is not a valid JSON document, a
    :exc:`JSONDecodeError` will be raised.
 
+   .. versionchanged:: 3.6
+      *s* can now be of type :class:`bytes` or :class:`bytearray`. The
+      input encoding should be UTF-8, UTF-16 or UTF-32.
+
+
 Encoders and Decoders
 ---------------------
 
