@@ -120,7 +120,7 @@ Significant improvements in the standard library:
   :ref:`Local Time Disambiguation <whatsnew36-pep495>`.
 
 * The :mod:`typing` module received a number of
-  :ref:`improvements <whatsnew36-typing>` and is no longer provisional.
+  :ref:`improvements <whatsnew36-typing>`.
 
 * The :mod:`tracemalloc` module has been significantly reworked
   and is now used to provide better output for :exc:`ResourceWarning`
@@ -1544,11 +1544,8 @@ to filter block traces by their address space (domain).
 typing
 ------
 
-Starting with Python 3.6 the :mod:`typing` module is no longer provisional
-and its API is considered stable.
-
-Since the :mod:`typing` module was :term:`provisional <provisional api>`
-in Python 3.5, all changes introduced in Python 3.6 have also been
+Since the :mod:`typing` module is :term:`provisional <provisional api>`,
+all changes introduced in Python 3.6 have also been
 backported to Python 3.5.x.
 
 The :mod:`typing` module has a much improved support for generic type
