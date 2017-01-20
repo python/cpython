@@ -1627,6 +1627,16 @@ class TestSorted(unittest.TestCase):
         self.assertEqual(data, sorted(copy, reverse=1))
         self.assertNotEqual(data, copy)
 
+    def test_bad_arguments(self):
+        # Issue #29327: The first argument is positional-only.
+        sorted([])
+        with self.assertRaises(TypeError):
+            sorted(iterable=[])
+        # Other arguments are keyword-only
+        sorted([], key=None)
+        with self.assertRaises(TypeError):
+            sorted([], None)
+
     def test_inputtypes(self):
         s = 'abracadabra'
         types = [list, tuple, str]
