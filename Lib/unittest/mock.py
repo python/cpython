@@ -1769,14 +1769,18 @@ def _get_eq(self):
         ret_val = self.__eq__._mock_return_value
         if ret_val is not DEFAULT:
             return ret_val
-        return self is other
+        if self is other:
+            return True
+        return NotImplemented
     return __eq__
 
 def _get_ne(self):
     def __ne__(other):
         if self.__ne__._mock_return_value is not DEFAULT:
             return DEFAULT
-        return self is not other
+        if self is other:
+            return False
+        return NotImplemented
     return __ne__
 
 def _get_iter(self):
