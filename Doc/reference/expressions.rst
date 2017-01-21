@@ -1058,10 +1058,6 @@ must be plain or long integers.  The arguments are converted to a common type.
 
 
 .. _comparisons:
-.. _is:
-.. _is not:
-.. _in:
-.. _not in:
 
 Comparisons
 ===========
@@ -1101,39 +1097,98 @@ The forms ``<>`` and ``!=`` are equivalent; for consistency with C, ``!=`` is
 preferred; where ``!=`` is mentioned below ``<>`` is also accepted.  The ``<>``
 spelling is considered obsolescent.
 
+Value comparisons
+-----------------
+
 The operators ``<``, ``>``, ``==``, ``>=``, ``<=``, and ``!=`` compare the
-values of two objects.  The objects need not have the same type. If both are
-numbers, they are converted to a common type.  Otherwise, objects of different
-types *always* compare unequal, and are ordered consistently but arbitrarily.
-You can control comparison behavior of objects of non-built-in types by defining
-a ``__cmp__`` method or rich comparison methods like ``__gt__``, described in
-section :ref:`specialnames`.
+values of two objects.  The objects do not need to have the same type.
+
+Chapter :ref:`objects` states that objects have a value (in addition to type
+and identity).  The value of an object is a rather abstract notion in Python:
+For example, there is no canonical access method for an object's value.  Also,
+there is no requirement that the value of an object should be constructed in a
+particular way, e.g. comprised of all its data attributes. Comparison operators
+implement a particular notion of what the value of an object is.  One can think
+of them as defining the value of an object indirectly, by means of their
+comparison implementation.
+
+Types can customize their comparison behavior by implementing
+a :meth:`__cmp__` method or
+:dfn:`rich comparison methods` like :meth:`__lt__`, described in
+:ref:`customization`.
+
+The default behavior for equality comparison (``==`` and ``!=``) is based on
+the identity of the objects.  Hence, equality comparison of instances with the
+same identity results in equality, and equality comparison of instances with
+different identities results in inequality.  A motivation for this default
+behavior is the desire that all objects should be reflexive (i.e. ``x is y``
+implies ``x == y``).
+
+The default order comparison (``<``, ``>``, ``<=``, and ``>=``) gives a
+consistent but arbitrary order.
 
 (This unusual definition of comparison was used to simplify the definition of
 operations like sorting and the :keyword:`in` and :keyword:`not in` operators.
 In the future, the comparison rules for objects of different types are likely to
 change.)
 
-Comparison of objects of the same type depends on the type:
+The behavior of the default equality comparison, that instances with different
+identities are always unequal, may be in contrast to what types will need that
+have a sensible definition of object value and value-based equality.  Such
+types will need to customize their comparison behavior, and in fact, a number
+of built-in types have done that.
 
-* Numbers are compared arithmetically.
+The following list describes the comparison behavior of the most important
+built-in types.
 
-* Strings are compared lexicographically using the numeric equivalents (the
-  result of the built-in function :func:`ord`) of their characters.  Unicode and
-  8-bit strings are fully interoperable in this behavior. [#]_
+* Numbers of built-in numeric types (:ref:`typesnumeric`) and of the standard
+  library types :class:`fractions.Fraction` and :class:`decimal.Decimal` can be
+  compared within and across their types, with the restriction that complex
+  numbers do not support order comparison.  Within the limits of the types
+  involved, they compare mathematically (algorithmically) correct without loss
+  of precision.
 
-* Tuples and lists are compared lexicographically using comparison of
-  corresponding elements.  This means that to compare equal, each element must
-  compare equal and the two sequences must be of the same type and have the same
-  length.
+* Strings (instances of :class:`str` or :class:`unicode`)
+  compare lexicographically using the numeric equivalents (the
+  result of the built-in function :func:`ord`) of their characters. [#]_
+  When comparing an 8-bit string and a Unicode string, the 8-bit string
+  is converted to Unicode.  If the conversion fails, the strings
+  are considered unequal.
 
-  If not equal, the sequences are ordered the same as their first differing
-  elements.  For example, ``cmp([1,2,x], [1,2,y])`` returns the same as
-  ``cmp(x,y)``.  If the corresponding element does not exist, the shorter sequence
-  is ordered first (for example, ``[1,2] < [1,2,3]``).
+* Instances of :class:`tuple` or :class:`list` can be compared only
+  within each of their types.  Equality comparison across these types
+  results in unequality, and ordering comparison across these types
+  gives an arbitrary order.
 
-* Mappings (dictionaries) compare equal if and only if their sorted (key, value)
-  lists compare equal. [#]_ Outcomes other than equality are resolved
+  These sequences compare lexicographically using comparison of corresponding
+  elements, whereby reflexivity of the elements is enforced.
+
+  In enforcing reflexivity of elements, the comparison of collections assumes
+  that for a collection element ``x``, ``x == x`` is always true.  Based on
+  that assumption, element identity is compared first, and element comparison
+  is performed only for distinct elements.  This approach yields the same
+  result as a strict element comparison would, if the compared elements are
+  reflexive.  For non-reflexive elements, the result is different than for
+  strict element comparison.
+
+  Lexicographical comparison between built-in collections works as follows:
+
+  - For two collections to compare equal, they must be of the same type, have
+    the same length, and each pair of corresponding elements must compare
+    equal (for example, ``[1,2] == (1,2)`` is false because the type is not the
+    same).
+
+  - Collections are ordered the same as their
+    first unequal elements (for example, ``cmp([1,2,x], [1,2,y])`` returns the
+    same as ``cmp(x,y)``).  If a corresponding element does not exist, the
+    shorter collection is ordered first (for example, ``[1,2] < [1,2,3]`` is
+    true).
+
+* Mappings (instances of :class:`dict`) compare equal if and only if they have
+  equal `(key, value)` pairs. Equality comparison of the keys and elements
+  enforces reflexivity.
+
+  Outcomes other than equality are resolved
   consistently, but are not otherwise defined. [#]_
 
 * Most other objects of built-in types compare unequal unless they are the same
@@ -1141,7 +1196,58 @@ Comparison of objects of the same type depends on the type:
   another one is made arbitrarily but consistently within one execution of a
   program.
 
+User-defined classes that customize their comparison behavior should follow
+some consistency rules, if possible:
+
+* Equality comparison should be reflexive.
+  In other words, identical objects should compare equal:
+
+    ``x is y`` implies ``x == y``
+
+* Comparison should be symmetric.
+  In other words, the following expressions should have the same result:
+
+    ``x == y`` and ``y == x``
+
+    ``x != y`` and ``y != x``
+
+    ``x < y`` and ``y > x``
+
+    ``x <= y`` and ``y >= x``
+
+* Comparison should be transitive.
+  The following (non-exhaustive) examples illustrate that:
+
+    ``x > y and y > z`` implies ``x > z``
+
+    ``x < y and y <= z`` implies ``x < z``
+
+* Inverse comparison should result in the boolean negation.
+  In other words, the following expressions should have the same result:
+
+    ``x == y`` and ``not x != y``
+
+    ``x < y`` and ``not x >= y`` (for total ordering)
+
+    ``x > y`` and ``not x <= y`` (for total ordering)
+
+  The last two expressions apply to totally ordered collections (e.g. to
+  sequences, but not to sets or mappings). See also the
+  :func:`~functools.total_ordering` decorator.
+
+* The :func:`hash` result should be consistent with equality.
+  Objects that are equal should either have the same hash value,
+  or be marked as unhashable.
+
+Python does not enforce these consistency rules.
+
+
+.. _in:
+.. _not in:
 .. _membership-test-details:
+
+Membership test operations
+--------------------------
 
 The operators :keyword:`in` and :keyword:`not in` test for collection
 membership.  ``x in s`` evaluates to true if *x* is a member of the collection
@@ -1191,6 +1297,13 @@ The operator :keyword:`not in` is defined to have the inverse true value of
    operator: is
    operator: is not
    pair: identity; test
+
+
+.. _is:
+.. _is not:
+
+Identity comparisons
+--------------------
 
 The operators :keyword:`is` and :keyword:`is not` test for object identity: ``x
 is y`` is true if and only if *x* and *y* are the same object.  ``x is not y``
@@ -1418,15 +1531,24 @@ groups from right to left).
    cases, Python returns the latter result, in order to preserve that
    ``divmod(x,y)[0] * y + x % y`` be very close to ``x``.
 
-.. [#] While comparisons between unicode strings make sense at the byte
-   level, they may be counter-intuitive to users. For example, the
-   strings ``u"\u00C7"`` and ``u"\u0043\u0327"`` compare differently,
-   even though they both represent the same unicode character (LATIN
-   CAPITAL LETTER C WITH CEDILLA). To compare strings in a human
-   recognizable way, compare using :func:`unicodedata.normalize`.
+.. [#] The Unicode standard distinguishes between :dfn:`code points`
+   (e.g. U+0041) and :dfn:`abstract characters` (e.g. "LATIN CAPITAL LETTER A").
+   While most abstract characters in Unicode are only represented using one
+   code point, there is a number of abstract characters that can in addition be
+   represented using a sequence of more than one code point.  For example, the
+   abstract character "LATIN CAPITAL LETTER C WITH CEDILLA" can be represented
+   as a single :dfn:`precomposed character` at code position U+00C7, or as a
+   sequence of a :dfn:`base character` at code position U+0043 (LATIN CAPITAL
+   LETTER C), followed by a :dfn:`combining character` at code position U+0327
+   (COMBINING CEDILLA).
 
-.. [#] The implementation computes this efficiently, without constructing lists or
-   sorting.
+   The comparison operators on unicode strings compare at the level of Unicode code
+   points. This may be counter-intuitive to humans.  For example,
+   ``u"\u00C7" == u"\u0043\u0327"`` is ``False``, even though both strings
+   represent the same abstract character "LATIN CAPITAL LETTER C WITH CEDILLA".
+
+   To compare strings at the level of abstract characters (that is, in a way
+   intuitive to humans), use :func:`unicodedata.normalize`.
 
 .. [#] Earlier versions of Python used lexicographic comparison of the sorted (key,
    value) lists, but this was very expensive for the common case of comparing for
