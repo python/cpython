@@ -100,6 +100,15 @@ The :const:`~unittest.mock.sentinel` attributes now preserve their identity
 when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`.
 (Contributed by Serhiy Storchaka in :issue:`20804`.)
 
+math module
+-----------
+
+A new function :func:`~math.fma` for fused multiply-add operations has been
+added. This function computes ``x * y + z`` with only a single round, and so
+avoids any intermediate loss of precision. It wraps the ``fma`` function
+provided by C99, and follows the specification of the IEEE 754-2008
+"fusedMultiplyAdd" operation for special cases.
+
 
 Optimizations
 =============
