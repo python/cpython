@@ -1912,7 +1912,7 @@ reverse_sortslice(sortslice *s, Py_ssize_t n)
  * duplicated).
  */
 static PyObject *
-listsort(PyListObject *self, PyObject *args, PyObject *kwds)
+listsort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
 {
     MergeState ms;
     Py_ssize_t nremaining;
@@ -1922,24 +1922,11 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
     PyObject **saved_ob_item;
     PyObject **final_ob_item;
     PyObject *result = NULL;            /* guilty until proved innocent */
-    int reverse = 0;
-    PyObject *keyfunc = NULL;
     Py_ssize_t i;
-    static char *kwlist[] = {"key", "reverse", 0};
     PyObject **keys;
 
     assert(self != NULL);
     assert (PyList_Check(self));
-    if (args != NULL) {
-        if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oi:sort",
-            kwlist, &keyfunc, &reverse))
-            return NULL;
-        if (Py_SIZE(args) > 0) {
-            PyErr_SetString(PyExc_TypeError,
-                "must use keyword argument for key function");
-            return NULL;
-        }
-    }
     if (keyfunc == Py_None)
         keyfunc = NULL;
 
@@ -2088,6 +2075,19 @@ keyfunc_fail:
 #undef IFLT
 #undef ISLT
 
+static PyObject *
+listsort(PyListObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"key", "reverse", 0};
+    PyObject *keyfunc = NULL;
+    int reverse = 0;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|$Oi:sort",
+        kwlist, &keyfunc, &reverse))
+        return NULL;
+    return listsort_impl(self, keyfunc, reverse);
+}
+
 int
 PyList_Sort(PyObject *v)
 {
@@ -2095,7 +2095,7 @@ PyList_Sort(PyObject *v)
         PyErr_BadInternalCall();
         return -1;
     }
-    v = listsort((PyListObject *)v, (PyObject *)NULL, (PyObject *)NULL);
+    v = listsort_impl((PyListObject *)v, NULL, 0);
     if (v == NULL)
         return -1;
     Py_DECREF(v);
