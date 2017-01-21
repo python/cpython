@@ -2126,15 +2126,11 @@ PyDoc_STRVAR(builtin_sorted__doc__,
 static PyObject *
 builtin_sorted(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *newlist, *v, *seq, *keyfunc=NULL;
-    PyObject *callable;
-    static const char * const kwlist[] = {"", "key", "reverse", 0};
-    /* args 1-3 should match listsort in Objects/listobject.c */
-    static _PyArg_Parser parser = {"O|Oi:sorted", kwlist, 0};
-    int reverse;
+    PyObject *newlist, *v, *seq, *callable;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &parser,
-                                      &seq, &keyfunc, &reverse))
+    /* Keyword arguments are passed through list.sort() which will check
+       them. */
+    if (!_PyArg_UnpackStack(args, nargs, "sorted", 1, 1, &seq))
         return NULL;
 
     newlist = PySequence_List(seq);
