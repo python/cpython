@@ -215,9 +215,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #29282: Added new math.fma function, wrapping C99's fma
-  operation.
-
 - Issue #29197: Removed deprecated function ntpath.splitunc().
 
 - Issue #29210: Removed support of deprecated argument "exclude" in
