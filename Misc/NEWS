@@ -47,6 +47,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #28735: Fixed the comparison of mock.MagickMock with mock.ANY.
+
 - Issue #29316: Restore the provisional status of typing module, add
   corresponding note to documentation. Patch by Ivan L.
 
