@@ -1135,7 +1135,7 @@ PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
 */
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(char *) PyUnicode_AsUTF8AndSize(
+PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(
     PyObject *unicode,
     Py_ssize_t *size);
 #define _PyUnicode_AsStringAndSize PyUnicode_AsUTF8AndSize
@@ -1162,7 +1162,7 @@ PyAPI_FUNC(char *) PyUnicode_AsUTF8AndSize(
 */
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(char *) PyUnicode_AsUTF8(PyObject *unicode);
+PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);
 #define _PyUnicode_AsString PyUnicode_AsUTF8
 #endif
 

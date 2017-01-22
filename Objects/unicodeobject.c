@@ -3972,7 +3972,7 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
 }
 
 
-char*
+const char *
 PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
 {
     PyObject *bytes;
@@ -4007,7 +4007,7 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
     return PyUnicode_UTF8(unicode);
 }
 
-char*
+const char *
 PyUnicode_AsUTF8(PyObject *unicode)
 {
     return PyUnicode_AsUTF8AndSize(unicode, NULL);
