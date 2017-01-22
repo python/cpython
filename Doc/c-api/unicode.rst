@@ -1038,7 +1038,7 @@ These are the UTF-8 codec APIs:
    raised by the codec.
 
 
-.. c:function:: char* PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *size)
+.. c:function:: const char* PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *size)
 
    Return a pointer to the UTF-8 encoding of the Unicode object, and
    store the size of the encoded representation (in bytes) in *size*.  The
@@ -1055,12 +1055,18 @@ These are the UTF-8 codec APIs:
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.7
+      The return type is now ``const char *`` rather of ``char *``.
 
-.. c:function:: char* PyUnicode_AsUTF8(PyObject *unicode)
+
+.. c:function:: const char* PyUnicode_AsUTF8(PyObject *unicode)
 
    As :c:func:`PyUnicode_AsUTF8AndSize`, but does not store the size.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.7
+      The return type is now ``const char *`` rather of ``char *``.
 
 
 .. c:function:: PyObject* PyUnicode_EncodeUTF8(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
