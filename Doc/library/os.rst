@@ -2068,7 +2068,7 @@ features:
 
    Get the status of a file or a file descriptor. Perform the equivalent of a
    :c:func:`stat` system call on the given path. *path* may be specified as
-   either a string or as an open file descriptor. Return a :class:`stat_result`
+   either a string, a bytes or as an open file descriptor. Return a :class:`stat_result`
    object.
 
    This function normally follows symlinks; to stat a symlink add the argument
