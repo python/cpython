@@ -124,6 +124,10 @@ Build and C API Changes
   and :c:type:`wrapperbase` are now of type ``const char *`` rather of
   ``char *``.  (Contributed by Serhiy Storchaka in :issue:`28761`.)
 
+* The result of :c:func:`PyUnicode_AsUTF8AndSize` and :c:func:`PyUnicode_AsUTF8`
+  is now of type ``const char *`` rather of ``char *``.
+  (Contributed by Serhiy Storchaka in :issue:`28769`.)
+
 
 Deprecated
 ==========
