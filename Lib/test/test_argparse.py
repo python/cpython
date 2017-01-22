@@ -1943,6 +1943,23 @@ class TestAddSubparsers(TestCase):
               ++foo       foo help
             '''))
 
+    def test_help_non_breaking_spaces(self):
+        parser = ErrorRaisingArgumentParser(
+            prog='PROG', description='main description')
+        parser.add_argument(
+            "--non-breaking", action='store_false',
+            help='help message containing non-breaking spaces shall not '
+            'wrap\N{NO-BREAK SPACE}at non-breaking spaces')
+        self.assertEqual(parser.format_help(), textwrap.dedent('''\
+            usage: PROG [-h] [--non-breaking]
+
+            main description
+
+            optional arguments:
+              -h, --help      show this help message and exit
+              --non-breaking  help message containing non-breaking spaces shall not
+                              wrap\N{NO-BREAK SPACE}at non-breaking spaces
+        '''))
 
     def test_help_alternate_prefix_chars(self):
         parser = self._get_parser(prefix_chars='+:/')

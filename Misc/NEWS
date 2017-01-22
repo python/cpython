@@ -13,9 +13,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #29290: Fix a regression in argparse that help messages would wrap at
+  non-breaking spaces.
+
 - Issue #28735: Fixed the comparison of mock.MagickMock with mock.ANY.
 
-- Issue #29011:  Fix an important omission by adding Deque to the typing module.
+- Issue #29011: Fix an important omission by adding Deque to the typing module.
 
 - Issue #29219: Fixed infinite recursion in the repr of uninitialized
   ctypes.CDLL instances.
