@@ -9,7 +9,8 @@ PyDoc_STRVAR(os_stat__doc__,
 "Perform a stat system call on the given path.\n"
 "\n"
 "  path\n"
-"    Path to be examined; can be string, bytes, or open-file-descriptor int.\n"
+"    Path to be examined; can be string, bytes, path-like object or\n"
+"    open-file-descriptor int.\n"
 "  dir_fd\n"
 "    If not None, it should be a file descriptor open to a directory,\n"
 "    and path should be a relative string; path will then be relative to\n"
@@ -6492,4 +6493,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=30cdd28fc524f2fb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a0be969e3f71660 input=a9049054013a1b77]*/
