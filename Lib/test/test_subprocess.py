@@ -2489,7 +2489,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
     _libc_file_extensions = {
       'Linux': 'so.6',
-      'Darwin': '.dylib',
+      'Darwin': 'dylib',
     }
     @unittest.skipIf(platform.uname()[0] not in _libc_file_extensions,
                      'Test requires a libc this code can load with ctypes.')
