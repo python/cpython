@@ -154,19 +154,16 @@ static PyObject *PyCurses_ ## X (PyObject *self) \
 { \
   PyCursesInitialised \
   if (X () == FALSE) { \
-    Py_INCREF(Py_False); \
-    return Py_False; \
+    Py_RETURN_FALSE; \
   } \
-  Py_INCREF(Py_True); \
-  return Py_True; }
+  Py_RETURN_TRUE; }
 
 #define NoArgNoReturnVoidFunction(X) \
 static PyObject *PyCurses_ ## X (PyObject *self) \
 { \
   PyCursesInitialised \
   X(); \
-  Py_INCREF(Py_None); \
-  return Py_None; }
+  Py_RETURN_NONE; }
 
 #ifdef __cplusplus
 }

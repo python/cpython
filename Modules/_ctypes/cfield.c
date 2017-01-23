@@ -498,7 +498,7 @@ get_ulonglong(PyObject *v, unsigned long long *p)
 #ifdef _CTYPES_DEBUG_KEEP
 #define _RET(x) Py_INCREF(x); return x
 #else
-#define _RET(X) Py_INCREF(Py_None); return Py_None
+#define _RET(X) Py_RETURN_NONE
 #endif
 
 /*****************************************************************

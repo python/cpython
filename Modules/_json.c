@@ -1108,17 +1108,15 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
         case 'n':
             /* null */
             if ((idx + 3 < length) && PyUnicode_READ(kind, str, idx + 1) == 'u' && PyUnicode_READ(kind, str, idx + 2) == 'l' && PyUnicode_READ(kind, str, idx + 3) == 'l') {
-                Py_INCREF(Py_None);
                 *next_idx_ptr = idx + 4;
-                return Py_None;
+                Py_RETURN_NONE;
             }
             break;
         case 't':
             /* true */
             if ((idx + 3 < length) && PyUnicode_READ(kind, str, idx + 1) == 'r' && PyUnicode_READ(kind, str, idx + 2) == 'u' && PyUnicode_READ(kind, str, idx + 3) == 'e') {
-                Py_INCREF(Py_True);
                 *next_idx_ptr = idx + 4;
-                return Py_True;
+                Py_RETURN_TRUE;
             }
             break;
         case 'f':
@@ -1127,9 +1125,8 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
                 PyUnicode_READ(kind, str, idx + 2) == 'l' &&
                 PyUnicode_READ(kind, str, idx + 3) == 's' &&
                 PyUnicode_READ(kind, str, idx + 4) == 'e') {
-                Py_INCREF(Py_False);
                 *next_idx_ptr = idx + 5;
-                return Py_False;
+                Py_RETURN_FALSE;
             }
             break;
         case 'N':
