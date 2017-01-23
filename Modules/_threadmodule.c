@@ -180,8 +180,7 @@ lock_PyThread_release_lock(lockobject *self)
 
     PyThread_release_lock(self->lock_lock);
     self->locked = 0;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(release_doc,
@@ -1111,8 +1110,7 @@ static PyObject *
 thread_PyThread_interrupt_main(PyObject * self)
 {
     PyErr_SetInterrupt();
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(interrupt_doc,

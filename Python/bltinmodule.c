@@ -1369,8 +1369,7 @@ builtin_setattr_impl(PyObject *module, PyObject *obj, PyObject *name,
 {
     if (PyObject_SetAttr(obj, name, value) != 0)
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 
@@ -1392,8 +1391,7 @@ builtin_delattr_impl(PyObject *module, PyObject *obj, PyObject *name)
 {
     if (PyObject_SetAttr(obj, name, (PyObject *)NULL) != 0)
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 

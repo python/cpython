@@ -140,8 +140,7 @@ _PyType_GetDocFromInternalDoc(const char *name, const char *internal_doc)
     const char *doc = _PyType_DocWithoutSignature(name, internal_doc);
 
     if (!doc || *doc == '\0') {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 
     return PyUnicode_FromString(doc);
@@ -158,8 +157,7 @@ _PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_d
     else
         end = NULL;
     if (!end) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 
     /* back "end" up until it points just past the final ')' */
@@ -761,8 +759,7 @@ static PyObject *
 type_dict(PyTypeObject *type, void *context)
 {
     if (type->tp_dict == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     return PyDictProxy_New(type->tp_dict);
 }
@@ -5330,8 +5327,7 @@ wrap_sq_setitem(PyObject *self, PyObject *args, void *wrapped)
     res = (*func)(self, i, value);
     if (res == -1 && PyErr_Occurred())
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -5351,8 +5347,7 @@ wrap_sq_delitem(PyObject *self, PyObject *args, void *wrapped)
     res = (*func)(self, i, NULL);
     if (res == -1 && PyErr_Occurred())
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /* XXX objobjproc is a misnomer; should be objargpred */
@@ -5385,8 +5380,7 @@ wrap_objobjargproc(PyObject *self, PyObject *args, void *wrapped)
     res = (*func)(self, key, value);
     if (res == -1 && PyErr_Occurred())
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -5402,8 +5396,7 @@ wrap_delitem(PyObject *self, PyObject *args, void *wrapped)
     res = (*func)(self, key, NULL);
     if (res == -1 && PyErr_Occurred())
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /* Helper to check for object.__setattr__ or __delattr__ applied to a type.
@@ -5440,8 +5433,7 @@ wrap_setattr(PyObject *self, PyObject *args, void *wrapped)
     res = (*func)(self, name, value);
     if (res < 0)
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -5459,8 +5451,7 @@ wrap_delattr(PyObject *self, PyObject *args, void *wrapped)
     res = (*func)(self, name, NULL);
     if (res < 0)
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -5571,8 +5562,7 @@ wrap_descr_set(PyObject *self, PyObject *args, void *wrapped)
     ret = (*func)(self, obj, value);
     if (ret < 0)
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -5588,8 +5578,7 @@ wrap_descr_delete(PyObject *self, PyObject *args, void *wrapped)
     ret = (*func)(self, obj, NULL);
     if (ret < 0)
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -5599,8 +5588,7 @@ wrap_init(PyObject *self, PyObject *args, void *wrapped, PyObject *kwds)
 
     if (func(self, args, kwds) < 0)
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *

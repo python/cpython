@@ -402,8 +402,7 @@ gen_close(PyGenObject *gen, PyObject *args)
     if (PyErr_ExceptionMatches(PyExc_StopIteration)
         || PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
         PyErr_Clear();          /* ignore these errors */
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     return NULL;
 }

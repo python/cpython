@@ -8254,9 +8254,7 @@ charmapencode_lookup(Py_UCS4 c, PyObject *mapping)
         if (PyErr_ExceptionMatches(PyExc_LookupError)) {
             /* No mapping found means: mapping is undefined. */
             PyErr_Clear();
-            x = Py_None;
-            Py_INCREF(x);
-            return x;
+            Py_RETURN_NONE;
         } else
             return NULL;
     }

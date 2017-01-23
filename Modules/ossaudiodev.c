@@ -307,8 +307,7 @@ _do_ioctl_0(int fd, PyObject *args, char *fname, int cmd)
 
     if (rv == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 
@@ -326,8 +325,7 @@ oss_nonblock(oss_audio_t *self, PyObject *unused)
        mode once we're in non-blocking mode! */
     if (ioctl(self->fd, SNDCTL_DSP_NONBLOCK, NULL) == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -514,8 +512,7 @@ oss_writeall(oss_audio_t *self, PyObject *args)
         cp += rv;
     }
     PyBuffer_Release(&data);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -527,8 +524,7 @@ oss_close(oss_audio_t *self, PyObject *unused)
         Py_END_ALLOW_THREADS
         self->fd = -1;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -747,8 +743,7 @@ oss_mixer_close(oss_mixer_t *self, PyObject *unused)
         close(self->fd);
         self->fd = -1;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *

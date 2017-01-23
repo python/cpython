@@ -677,8 +677,7 @@ zipimporter_get_source(PyObject *obj, PyObject *args)
     }
 
     /* we have the module, but no source */
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(doc_find_module,
@@ -1284,8 +1283,7 @@ unmarshal_code(PyObject *pathname, PyObject *data, time_t mtime)
             PySys_FormatStderr("# %R has bad magic\n",
                                pathname);
         }
-        Py_INCREF(Py_None);
-        return Py_None;  /* signal caller to try alternative */
+        Py_RETURN_NONE;  /* signal caller to try alternative */
     }
 
     if (mtime != 0 && !eq_mtime(get_uint32(buf + 4), mtime)) {
@@ -1293,8 +1291,7 @@ unmarshal_code(PyObject *pathname, PyObject *data, time_t mtime)
             PySys_FormatStderr("# %R has bad mtime\n",
                                pathname);
         }
-        Py_INCREF(Py_None);
-        return Py_None;  /* signal caller to try alternative */
+        Py_RETURN_NONE;  /* signal caller to try alternative */
     }
 
     /* XXX the pyc's size field is ignored; timestamp collisions are probably
