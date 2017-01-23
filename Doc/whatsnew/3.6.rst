@@ -1371,6 +1371,9 @@ The socket module now supports the address family
 (Contributed by Christian Heimes in :issue:`27744` with support from
 Victor Stinner.)
 
+New Linux constants ``TCP_USER_TIMEOUT`` and ``TCP_CONGESTION`` were added.
+(Contributed by Omar Sandoval, issue:`26273`).
+
 
 socketserver
 ------------

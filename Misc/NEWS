@@ -256,6 +256,10 @@ Library
   may be revisited again after the Python 2.7 branch is no longer officially
   supported.
 
+- Issue #26273: Add new :data:`socket.TCP_CONGESTION` (Linux 2.6.13) and
+  :data:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37) constants. Patch written by
+  Omar Sandoval.
+
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
 
@@ -322,10 +326,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #26273: Add new :data:`socket.TCP_CONGESTION` (Linux 2.6.13) and
-  :data:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37) constants. Patch written by
-  Omar Sandoval.
 
 - Issue #28752: Restored the __reduce__() methods of datetime objects.
 
