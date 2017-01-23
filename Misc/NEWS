@@ -215,6 +215,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #29338: The help of a builtin or extension class now includes the
+  constructor signature if __text_signature__ is provided for the class.
+
 - Issue #29335: Fix subprocess.Popen.wait() when the child process has
   exited to a stopped instead of terminated state (ex: when under ptrace).
 
