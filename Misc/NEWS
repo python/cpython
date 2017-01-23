@@ -23,6 +23,9 @@ Extension Modules
 Library
 -------
 
+- Issue #29335: Fix subprocess.Popen.wait() when the child process has
+  exited to a stopped instead of terminated state (ex: when under ptrace).
+
 - Issue #29219: Fixed infinite recursion in the repr of uninitialized
   ctypes.CDLL instances.
 
