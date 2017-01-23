@@ -909,7 +909,21 @@ class HTMLDoc(Doc):
             for base in bases:
                 parents.append(self.classlink(base, object.__module__))
             title = title + '(%s)' % ', '.join(parents)
-        doc = self.markup(getdoc(object), self.preformat, funcs, classes, mdict)
+
+        decl = ''
+        try:
+            signature = inspect.signature(object)
+        except (ValueError, TypeError):
+            signature = None
+        if signature:
+            argspec = str(signature)
+            if argspec:
+                decl = name + self.escape(argspec) + '\n\n'
+
+        doc = getdoc(object)
+        if decl:
+            doc = decl + (doc or '')
+        doc = self.markup(doc, self.preformat, funcs, classes, mdict)
         doc = doc and '<tt>%s<br>&nbsp;</tt>' % doc
 
         return self.section(title, '#000000', '#ffc8d8', contents, 3, doc)
@@ -1213,9 +1227,21 @@ location listed above.
             parents = map(makename, bases)
             title = title + '(%s)' % ', '.join(parents)
 
-        doc = getdoc(object)
-        contents = doc and [doc + '\n'] or []
+        contents = []
         push = contents.append
+
+        try:
+            signature = inspect.signature(object)
+        except (ValueError, TypeError):
+            signature = None
+        if signature:
+            argspec = str(signature)
+            if argspec:
+                push(name + argspec + '\n')
+
+        doc = getdoc(object)
+        if doc:
+            push(doc + '\n')
 
         # List the mro, if non-trivial.
         mro = deque(inspect.getmro(object))
