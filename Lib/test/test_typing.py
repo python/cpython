@@ -701,7 +701,7 @@ class GenericTests(BaseTestCase):
         self.assertFalse(naive_generic_check(Node[str](), Node[int]))
         self.assertFalse(naive_generic_check(Node[str](), List))
         with self.assertRaises(NotImplementedError):
-            naive_generic_check([1,2,3], Node[int])
+            naive_generic_check([1, 2, 3], Node[int])
 
         def naive_list_base_check(obj, tp):
             # Check if list conforms to a List subclass
@@ -773,7 +773,10 @@ class GenericTests(BaseTestCase):
     def test_generic_forward_ref(self):
         def foobar(x: List[List['CC']]): ...
         class CC: ...
-        self.assertEqual(get_type_hints(foobar, globals(), locals()), {'x': List[List[CC]]})
+        self.assertEqual(
+            get_type_hints(foobar, globals(), locals()),
+            {'x': List[List[CC]]}
+        )
         T = TypeVar('T')
         AT = Tuple[T, ...]
         def barfoo(x: AT): ...
@@ -1094,6 +1097,7 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(Exception):
             D[T]
 
+
 class ClassVarTests(BaseTestCase):
 
     def test_basics(self):
@@ -1316,9 +1320,6 @@ class ForwardRefTests(BaseTestCase):
 
 class OverloadTests(BaseTestCase):
 
-    def test_overload_exists(self):
-        from typing import overload
-
     def test_overload_fails(self):
         from typing import overload
 
@@ -1381,6 +1382,10 @@ if ASYNCIO:
         exec(ASYNCIO_TESTS)
     except ImportError:
         ASYNCIO = False
+else:
+    # fake names for the sake of static analysis
+    asyncio = None
+    AwaitableWrapper = AsyncIteratorWrapper = object
 
 PY36 = sys.version_info[:2] >= (3, 6)
 
@@ -1408,8 +1413,13 @@ class CoolEmployeeWithDefault(NamedTuple):
 
 if PY36:
     exec(PY36_TESTS)
+else:
+    # fake names for the sake of static analysis
+    ann_module = ann_module2 = ann_module3 = None
+    A = B = CSub = G = CoolEmployee = CoolEmployeeWithDefault = object
 
 gth = get_type_hints
+
 
 class GetTypeHintTests(BaseTestCase):
     def test_get_type_hints_from_various_objects(self):
@@ -1423,7 +1433,8 @@ class GetTypeHintTests(BaseTestCase):
 
     @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_modules(self):
-        self.assertEqual(gth(ann_module), {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str})
+        ann_module_type_hints = {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str}
+        self.assertEqual(gth(ann_module), ann_module_type_hints)
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
 
@@ -1926,7 +1937,7 @@ class TypeTests(BaseTestCase):
         def new_user(user_class: Type[User]) -> User:
             return user_class()
 
-        joe = new_user(BasicUser)
+        new_user(BasicUser)
 
     def test_type_typevar(self):
 
@@ -1939,7 +1950,7 @@ class TypeTests(BaseTestCase):
         def new_user(user_class: Type[U]) -> U:
             return user_class()
 
-        joe = new_user(BasicUser)
+        new_user(BasicUser)
 
     def test_type_optional(self):
         A = Optional[Type[BaseException]]
@@ -2102,8 +2113,8 @@ class RETests(BaseTestCase):
         self.assertIsInstance(mat, Match)
 
         # these should just work
-        p = Pattern[Union[str, bytes]]
-        m = Match[Union[bytes, str]]
+        Pattern[Union[str, bytes]]
+        Match[Union[bytes, str]]
 
     def test_errors(self):
         with self.assertRaises(TypeError):
