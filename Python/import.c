@@ -260,8 +260,7 @@ _imp_acquire_lock_impl(PyObject *module)
 #ifdef WITH_THREAD
     _PyImport_AcquireLock();
 #endif
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -283,8 +282,7 @@ _imp_release_lock_impl(PyObject *module)
         return NULL;
     }
 #endif
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 void
@@ -1853,8 +1851,7 @@ _imp_init_frozen_impl(PyObject *module, PyObject *name)
     if (ret < 0)
         return NULL;
     if (ret == 0) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     m = PyImport_AddModuleObject(name);
     Py_XINCREF(m);

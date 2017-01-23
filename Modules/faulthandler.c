@@ -521,12 +521,10 @@ static PyObject*
 faulthandler_disable_py(PyObject *self)
 {
     if (!fatal_error.enabled) {
-        Py_INCREF(Py_False);
-        return Py_False;
+        Py_RETURN_FALSE;
     }
     faulthandler_disable();
-    Py_INCREF(Py_True);
-    return Py_True;
+    Py_RETURN_TRUE;
 }
 
 static PyObject*

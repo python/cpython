@@ -416,8 +416,7 @@ MD5Type_update(MD5object *self, PyObject *obj)
     md5_process(&self->hash_state, buf.buf, buf.len);
 
     PyBuffer_Release(&buf);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef MD5_methods[] = {

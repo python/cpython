@@ -481,8 +481,7 @@ state_getslice(SRE_STATE* state, Py_ssize_t index, PyObject* string, int empty)
             /* want empty string */
             i = j = 0;
         else {
-            Py_INCREF(Py_None);
-            return Py_None;
+            Py_RETURN_NONE;
         }
     } else {
         i = STATE_OFFSET(state, state->mark[index]);
@@ -2368,8 +2367,7 @@ match_lastindex_get(MatchObject *self)
 {
     if (self->lastindex >= 0)
         return PyLong_FromSsize_t(self->lastindex);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2383,8 +2381,7 @@ match_lastgroup_get(MatchObject *self)
             return result;
         PyErr_Clear();
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2466,8 +2463,7 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state, Py_ssize_t status)
     } else if (status == 0) {
 
         /* no match */
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
 
     }
 

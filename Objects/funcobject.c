@@ -322,8 +322,7 @@ static PyObject *
 func_get_defaults(PyFunctionObject *op)
 {
     if (op->func_defaults == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     Py_INCREF(op->func_defaults);
     return op->func_defaults;
@@ -350,8 +349,7 @@ static PyObject *
 func_get_kwdefaults(PyFunctionObject *op)
 {
     if (op->func_kwdefaults == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     Py_INCREF(op->func_kwdefaults);
     return op->func_kwdefaults;

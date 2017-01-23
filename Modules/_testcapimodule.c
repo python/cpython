@@ -64,8 +64,7 @@ test_config(PyObject *self)
 
 #undef CHECK_SIZEOF
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject*
@@ -169,8 +168,7 @@ test_list_api(PyObject *self)
     Py_DECREF(list);
 #undef NLIST
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static int
@@ -234,8 +232,7 @@ test_dict_iteration(PyObject* self)
         }
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject*
@@ -614,8 +611,7 @@ test_long_and_overflow(PyObject *self)
         return raiseTestError("test_long_and_overflow",
             "overflow was not cleared");
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /* Test the PyLong_AsLongLongAndOverflow API. General conversion to
@@ -779,8 +775,7 @@ test_long_long_and_overflow(PyObject *self)
         return raiseTestError("test_long_long_and_overflow",
             "overflow was not cleared");
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /* Test the PyLong_As{Size,Ssize}_t API. At present this just tests that
@@ -887,8 +882,7 @@ test_L_code(PyObject *self)
             "L code returned wrong value for int 42");
 
     Py_DECREF(tuple);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -1224,8 +1218,7 @@ test_k_code(PyObject *self)
             "k code returned wrong value for long -0xFFF..000042");
 
     Py_DECREF(tuple);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -1672,8 +1665,7 @@ test_u_code(PyObject *self)
             "u# code returned wrong values for u'test'");
 
     Py_DECREF(tuple);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /* Test Z and Z# codes for PyArg_ParseTuple */
@@ -2118,8 +2110,7 @@ test_long_numbits(PyObject *self)
             return raiseTestError("test_long_numbits",
                             "wrong result for _PyLong_Sign");
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /* Example passing NULLs to PyObject_Str(NULL). */
@@ -2336,11 +2327,9 @@ PyObject *pending_threadfunc(PyObject *self, PyObject *arg)
 
     if (r<0) {
         Py_DECREF(callable); /* unsuccessful add, destroy the extra reference */
-        Py_INCREF(Py_False);
-        return Py_False;
+        Py_RETURN_FALSE;
     }
-    Py_INCREF(Py_True);
-    return Py_True;
+    Py_RETURN_TRUE;
 }
 #endif
 
@@ -2726,8 +2715,7 @@ profile_int(PyObject *self, PyObject* args)
     Py_DECREF(op1);
     print_delta(7, &start, &stop);
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 #endif
 

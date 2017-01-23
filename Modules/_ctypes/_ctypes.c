@@ -156,8 +156,7 @@ _DictRemover_call(PyObject *myself, PyObject *args, PyObject *kw)
         Py_CLEAR(self->key);
         Py_CLEAR(self->dict);
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyTypeObject DictRemover_Type = {
@@ -979,8 +978,7 @@ PyCPointerType_set_type(PyTypeObject *self, PyObject *type)
     if (-1 == PyDict_SetItemString((PyObject *)dict, "_type_", type))
         return NULL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *_byref(PyObject *);
@@ -1496,8 +1494,7 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
     PyObject *as_parameter;
     int res;
     if (value == Py_None) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     if (PyUnicode_Check(value)) {
         PyCArgObject *parg;
@@ -1561,8 +1558,7 @@ c_char_p_from_param(PyObject *type, PyObject *value)
     PyObject *as_parameter;
     int res;
     if (value == Py_None) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     if (PyBytes_Check(value)) {
         PyCArgObject *parg;
@@ -1629,8 +1625,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 
 /* None */
     if (value == Py_None) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     /* Should probably allow buffer interface as well */
 /* int, long */
@@ -2602,8 +2597,7 @@ PyCData_setstate(PyObject *myself, PyObject *args)
     Py_DECREF(mydict);
     if (res == -1)
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /*
@@ -2825,8 +2819,7 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
             return result;
         } else if (value == Py_None && PyCPointerTypeObject_Check(type)) {
             *(void **)ptr = NULL;
-            Py_INCREF(Py_None);
-            return Py_None;
+            Py_RETURN_NONE;
         } else {
             PyErr_Format(PyExc_TypeError,
                          "expected %s instance, got %s",
@@ -2980,8 +2973,7 @@ PyCFuncPtr_get_errcheck(PyCFuncPtrObject *self)
         Py_INCREF(self->errcheck);
         return self->errcheck;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static int
@@ -3019,8 +3011,7 @@ PyCFuncPtr_get_restype(PyCFuncPtrObject *self)
         Py_INCREF(dict->restype);
         return dict->restype;
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 
@@ -3057,8 +3048,7 @@ PyCFuncPtr_get_argtypes(PyCFuncPtrObject *self)
         Py_INCREF(dict->argtypes);
         return dict->argtypes;
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 

@@ -431,8 +431,7 @@ poll_register(pollObject *self, PyObject *args)
 
     self->ufd_uptodate = 0;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(poll_modify_doc,
@@ -479,8 +478,7 @@ poll_modify(pollObject *self, PyObject *args)
 
     self->ufd_uptodate = 0;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 
@@ -513,8 +511,7 @@ poll_unregister(pollObject *self, PyObject *o)
     Py_DECREF(key);
     self->ufd_uptodate = 0;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(poll_poll_doc,

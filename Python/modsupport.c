@@ -514,8 +514,7 @@ va_build_value(const char *format, va_list va, int flags)
     if (n < 0)
         return NULL;
     if (n == 0) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     va_copy(lva, va);
     if (n == 1) {

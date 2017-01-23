@@ -892,8 +892,7 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
         return PyLong_FromLong(*(int *)result);
 
     if (restype == Py_None) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 
     dict = PyType_stgdict(restype);
@@ -1263,8 +1262,7 @@ static PyObject *free_library(PyObject *self, PyObject *args)
         return NULL;
     if (!FreeLibrary((HMODULE)hMod))
         return PyErr_SetFromWindowsErr(GetLastError());
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static const char copy_com_pointer_doc[] =
@@ -1349,8 +1347,7 @@ static PyObject *py_dl_close(PyObject *self, PyObject *args)
                                ctypes_dlerror());
         return NULL;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *py_dl_sym(PyObject *self, PyObject *args)
@@ -1624,8 +1621,7 @@ resize(PyObject *self, PyObject *args)
         obj->b_size = size;
     }
   done:
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *

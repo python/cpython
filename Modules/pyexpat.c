@@ -161,8 +161,7 @@ conv_string_to_unicode(const XML_Char *str)
        and hence in UTF-8.  */
     /* UTF-8 from Expat, Unicode desired */
     if (str == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     return PyUnicode_DecodeUTF8(str, strlen(str), "strict");
 }
@@ -174,8 +173,7 @@ conv_string_len_to_unicode(const XML_Char *str, int len)
        and hence in UTF-8.  */
     /* UTF-8 from Expat, Unicode desired */
     if (str == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     return PyUnicode_DecodeUTF8((const char *)str, len, "strict");
 }
@@ -1030,8 +1028,7 @@ pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, int flag)
     if (rc != XML_ERROR_NONE) {
         return set_error(self, rc);
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 #endif
 
@@ -1322,8 +1319,7 @@ xmlparse_getattro(xmlparseobject *self, PyObject *nameobj)
         return get_pybool((long) self->specified_attributes);
     if (_PyUnicode_EqualToASCIIString(nameobj, "intern")) {
         if (self->intern == NULL) {
-            Py_INCREF(Py_None);
-            return Py_None;
+            Py_RETURN_NONE;
         }
         else {
             Py_INCREF(self->intern);

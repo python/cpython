@@ -59,8 +59,7 @@ static PyObject *
 PyCursesCheckERR(int code, const char *fname)
 {
     if (code != ERR) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     } else {
         if (fname == NULL) {
             PyErr_SetString(_curses_panelstate_global->PyCursesError, catchall_ERR);
@@ -177,8 +176,8 @@ static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self) \
 #define Panel_NoArgTrueFalseFunction(X) \
 static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self) \
 { \
-  if (X (self->pan) == FALSE) { Py_INCREF(Py_False); return Py_False; } \
-  else { Py_INCREF(Py_True); return Py_True; } }
+  if (X (self->pan) == FALSE) { Py_RETURN_FALSE; } \
+  else { Py_RETURN_TRUE; } }
 
 #define Panel_TwoArgNoReturnFunction(X, TYPE, PARSESTR) \
 static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self, PyObject *args) \
@@ -245,8 +244,7 @@ PyCursesPanel_above(PyCursesPanelObject *self)
 
     if (pan == NULL) {          /* valid output, it means the calling panel
                                    is on top of the stack */
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     po = find_po(pan);
     if (po == NULL) {
@@ -270,8 +268,7 @@ PyCursesPanel_below(PyCursesPanelObject *self)
 
     if (pan == NULL) {          /* valid output, it means the calling panel
                                    is on the bottom of the stack */
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     po = find_po(pan);
     if (po == NULL) {
@@ -319,8 +316,7 @@ PyCursesPanel_replace_panel(PyCursesPanelObject *self, PyObject *args)
     }
     Py_INCREF(temp);
     Py_SETREF(po->wo, temp);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -406,8 +402,7 @@ PyCurses_bottom_panel(PyObject *self)
 
     if (pan == NULL) {          /* valid output, it means
                                    there's no panel at all */
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     po = find_po(pan);
     if (po == NULL) {
@@ -452,8 +447,7 @@ PyCurses_top_panel(PyObject *self)
 
     if (pan == NULL) {          /* valid output, it means
                                    there's no panel at all */
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     po = find_po(pan);
     if (po == NULL) {
@@ -469,8 +463,7 @@ static PyObject *PyCurses_update_panels(PyObject *self)
 {
     PyCursesInitialised;
     update_panels();
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 

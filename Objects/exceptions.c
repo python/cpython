@@ -184,8 +184,7 @@ static PyObject *
 BaseException_get_args(PyBaseExceptionObject *self)
 {
     if (self->args == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     Py_INCREF(self->args);
     return self->args;
@@ -210,8 +209,7 @@ static PyObject *
 BaseException_get_tb(PyBaseExceptionObject *self)
 {
     if (self->traceback == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     Py_INCREF(self->traceback);
     return self->traceback;

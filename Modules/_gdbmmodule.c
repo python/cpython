@@ -255,8 +255,7 @@ _gdbm_gdbm_close_impl(dbmobject *self)
     if (self->di_dbm)
         gdbm_close(self->di_dbm);
     self->di_dbm = NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /* XXX Should return a set or a set view */
@@ -375,8 +374,7 @@ _gdbm_gdbm_firstkey_impl(dbmobject *self)
         return v;
     }
     else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 
@@ -415,8 +413,7 @@ _gdbm_gdbm_nextkey_impl(dbmobject *self, const char *key,
         return v;
     }
     else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 
@@ -445,8 +442,7 @@ _gdbm_gdbm_reorganize_impl(dbmobject *self)
             PyErr_SetString(DbmError, gdbm_strerror(gdbm_errno));
         return NULL;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -464,8 +460,7 @@ _gdbm_gdbm_sync_impl(dbmobject *self)
 {
     check_dbmobject_open(self);
     gdbm_sync(self->di_dbm);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
