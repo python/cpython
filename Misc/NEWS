@@ -215,6 +215,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #29335: Fix subprocess.Popen.wait() when the child process has
+  exited to a stopped instead of terminated state (ex: when under ptrace).
+
 - Issue #29290: Fix a regression in argparse that help messages would wrap at
   non-breaking spaces.
 
