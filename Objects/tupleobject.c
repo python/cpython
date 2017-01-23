@@ -631,12 +631,10 @@ tuplerichcompare(PyObject *v, PyObject *w, int op)
 
     /* We have an item that differs -- shortcuts for EQ/NE */
     if (op == Py_EQ) {
-        Py_INCREF(Py_False);
-        return Py_False;
+        Py_RETURN_FALSE;
     }
     if (op == Py_NE) {
-        Py_INCREF(Py_True);
-        return Py_True;
+        Py_RETURN_TRUE;
     }
 
     /* Compare the final item again using the proper operator */

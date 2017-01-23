@@ -234,8 +234,7 @@ time_sleep(PyObject *self, PyObject *obj)
     }
     if (pysleep(secs) != 0)
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(sleep_doc,
@@ -879,8 +878,7 @@ time_tzset(PyObject *self, PyObject *unused)
     if (PyErr_Occurred())
         return NULL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(tzset_doc,

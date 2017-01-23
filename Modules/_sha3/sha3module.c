@@ -403,8 +403,7 @@ _sha3_sha3_224_update(SHA3object *self, PyObject *obj)
     }
 
     PyBuffer_Release(&buf);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 

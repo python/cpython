@@ -400,8 +400,7 @@ error:
     if (PyErr_Occurred()) {
         return NULL;
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 
@@ -443,8 +442,7 @@ error:
     if (PyErr_Occurred()) {
         return NULL;
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 
@@ -487,8 +485,7 @@ error:
     if (PyErr_Occurred()) {
         return NULL;
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 

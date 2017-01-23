@@ -456,8 +456,7 @@ static PyMethodDef stdprinter_methods[] = {
 static PyObject *
 get_closed(PyStdPrinter_Object *self, void *closure)
 {
-    Py_INCREF(Py_False);
-    return Py_False;
+    Py_RETURN_FALSE;
 }
 
 static PyObject *

@@ -755,8 +755,7 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     PySSL_END_ALLOW_THREADS
     self->handshake_done = 1;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 
 error:
     Py_XDECREF(sock);
@@ -4500,8 +4499,7 @@ _ssl_RAND_add_impl(PyObject *module, Py_buffer *view, double entropy)
         buf += written;
         len -= written;
     } while (len);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *

@@ -310,8 +310,7 @@ _blake2s_blake2s_update(BLAKE2sObject *self, PyObject *obj)
 #endif /* !WITH_THREAD */
     PyBuffer_Release(&buf);
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]

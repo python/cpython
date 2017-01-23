@@ -548,8 +548,7 @@ SHA512Type_update(SHAobject *self, PyObject *obj)
     sha512_update(self, buf.buf, buf.len);
 
     PyBuffer_Release(&buf);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 /*[clinic input]
 dump buffer

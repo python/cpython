@@ -36,8 +36,7 @@ Example_demo(ExampleObject *self, PyObject *args)
         Py_INCREF(o);
         return o;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 

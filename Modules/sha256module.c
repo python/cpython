@@ -483,8 +483,7 @@ SHA256Type_update(SHAobject *self, PyObject *obj)
     sha_update(self, buf.buf, buf.len);
 
     PyBuffer_Release(&buf);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef SHA_methods[] = {

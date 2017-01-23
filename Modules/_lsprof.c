@@ -692,8 +692,7 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     PyEval_SetProfile(profiler_callback, (PyObject*)self);
     self->flags |= POF_ENABLED;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static void
@@ -726,8 +725,7 @@ profiler_disable(ProfilerObject *self, PyObject* noarg)
     flush_unmatched(self);
     if (pending_exception(self))
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(clear_doc, "\
@@ -740,8 +738,7 @@ static PyObject*
 profiler_clear(ProfilerObject *pObj, PyObject* noarg)
 {
     clearEntries(pObj);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static void

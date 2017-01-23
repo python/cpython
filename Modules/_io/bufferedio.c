@@ -1689,8 +1689,7 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
                 return res;
             }
             Py_DECREF(res);
-            Py_INCREF(Py_None);
-            return Py_None;
+            Py_RETURN_NONE;
         }
         remaining -= r;
         written += r;
@@ -1714,8 +1713,7 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
                 return res;
             }
             Py_DECREF(res);
-            Py_INCREF(Py_None);
-            return Py_None;
+            Py_RETURN_NONE;
         }
         if (remaining > r) {
             memcpy(out + written, self->buffer + self->pos, r);

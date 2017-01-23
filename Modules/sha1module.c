@@ -393,8 +393,7 @@ SHA1Type_update(SHA1object *self, PyObject *obj)
     sha1_process(&self->hash_state, buf.buf, buf.len);
 
     PyBuffer_Release(&buf);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef SHA1_methods[] = {

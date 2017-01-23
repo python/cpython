@@ -91,8 +91,7 @@ node2tuple(node *n,                     /* node to convert               */
     PyObject *result = NULL, *w;
 
     if (n == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 
     if (ISNONTERMINAL(TYPE(n))) {

@@ -1164,8 +1164,7 @@ static PyObject *
 gc_enable(PyObject *self, PyObject *noargs)
 {
     enabled = 1;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(gc_disable__doc__,
@@ -1177,8 +1176,7 @@ static PyObject *
 gc_disable(PyObject *self, PyObject *noargs)
 {
     enabled = 0;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(gc_isenabled__doc__,
@@ -1246,8 +1244,7 @@ gc_set_debug(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:set_debug", &debug))
         return NULL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(gc_get_debug__doc__,
@@ -1281,8 +1278,7 @@ gc_set_thresh(PyObject *self, PyObject *args)
         generations[i].threshold = generations[2].threshold;
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(gc_get_thresh__doc__,

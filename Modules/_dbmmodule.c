@@ -187,8 +187,7 @@ _dbm_dbm_close_impl(dbmobject *self)
     if (self->di_dbm)
         dbm_close(self->di_dbm);
     self->di_dbm = NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]

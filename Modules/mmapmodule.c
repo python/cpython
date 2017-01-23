@@ -181,8 +181,7 @@ mmap_close_method(mmap_object *self, PyObject *unused)
     }
 #endif
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 #ifdef MS_WINDOWS
@@ -415,8 +414,7 @@ mmap_write_byte_method(mmap_object *self,
 
     if (self->pos < self->size) {
         self->data[self->pos++] = value;
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     else {
         PyErr_SetString(PyExc_ValueError, "write byte out of range");
@@ -524,8 +522,7 @@ mmap_resize_method(mmap_object *self,
                                                 new_size);
             if (self->data != NULL) {
                 self->size = new_size;
-                Py_INCREF(Py_None);
-                return Py_None;
+                Py_RETURN_NONE;
             } else {
                 dwErrCode = GetLastError();
                 CloseHandle(self->map_handle);
@@ -567,8 +564,7 @@ mmap_resize_method(mmap_object *self,
         }
         self->data = newmap;
         self->size = new_size;
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
 #endif /* HAVE_MREMAP */
 #endif /* UNIX */
     }
@@ -644,8 +640,7 @@ mmap_seek_method(mmap_object *self, PyObject *args)
         if (where > self->size || where < 0)
             goto onoutofrange;
         self->pos = where;
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 
   onoutofrange:
@@ -670,8 +665,7 @@ mmap_move_method(mmap_object *self, PyObject *args)
 
         memmove(&self->data[dest], &self->data[src], cnt);
 
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
 
       bounds:
         PyErr_SetString(PyExc_ValueError,
