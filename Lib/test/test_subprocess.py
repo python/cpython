@@ -4,7 +4,6 @@ from test import support
 import subprocess
 import sys
 import platform
-import ctypes
 import signal
 import io
 import os
@@ -17,6 +16,11 @@ import select
 import shutil
 import gc
 import textwrap
+
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
 
 try:
     import threading
@@ -2491,6 +2495,7 @@ class POSIXProcessTestCase(BaseTestCase):
       'Linux': 'so.6',
       'Darwin': 'dylib',
     }
+    @unittest.skipIf(not ctypes, 'ctypes module required.')
     @unittest.skipIf(platform.uname()[0] not in _libc_file_extensions,
                      'Test requires a libc this code can load with ctypes.')
     @unittest.skipIf(not sys.executable, 'Test requires sys.executable.')
