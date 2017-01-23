@@ -2000,6 +2000,10 @@ class NamedTupleMeta(type):
                                         default_names=', '.join(defaults_dict.keys())))
         nm_tpl.__new__.__defaults__ = tuple(defaults)
         nm_tpl._field_defaults = defaults_dict
+        # update from user namespace without overriding special namedtuple attributes
+        for key in ns:
+            if not hasattr(nm_tpl, key):
+                setattr(nm_tpl, key, ns[key])
         return nm_tpl
 
 
