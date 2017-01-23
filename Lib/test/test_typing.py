@@ -612,8 +612,10 @@ class GenericTests(BaseTestCase):
         self.assertEqual(repr(typing.Mapping[T, TS][TS, T]), 'typing.Mapping[~TS, ~T]')
         self.assertEqual(repr(List[Tuple[T, TS]][int, T]),
                          'typing.List[typing.Tuple[int, ~T]]')
-        self.assertEqual(repr(List[Tuple[T, T]][List[int]]),
-                 'typing.List[typing.Tuple[typing.List[int], typing.List[int]]]')
+        self.assertEqual(
+            repr(List[Tuple[T, T]][List[int]]),
+            'typing.List[typing.Tuple[typing.List[int], typing.List[int]]]'
+        )
 
     def test_new_repr_bare(self):
         T = TypeVar('T')
@@ -684,8 +686,10 @@ class GenericTests(BaseTestCase):
                 raise NotImplementedError
             if tp.__args__:
                 KT, VT = tp.__args__
-                return all(isinstance(k, KT) and isinstance(v, VT)
-                   for k, v in obj.items())
+                return all(
+                    isinstance(k, KT) and isinstance(v, VT)
+                    for k, v in obj.items()
+                )
         self.assertTrue(naive_dict_check({'x': 1}, typing.Dict[str, int]))
         self.assertFalse(naive_dict_check({1: 'x'}, typing.Dict[str, int]))
         with self.assertRaises(NotImplementedError):
@@ -1409,6 +1413,16 @@ class CoolEmployee(NamedTuple):
 class CoolEmployeeWithDefault(NamedTuple):
     name: str
     cool: int = 0
+
+class XMeth(NamedTuple):
+    x: int
+    def double(self):
+        return 2 * self.x
+
+class XMethBad(NamedTuple):
+    x: int
+    def _fields(self):
+        return 'no chance for this'
 """
 
 if PY36:
@@ -1417,6 +1431,7 @@ else:
     # fake names for the sake of static analysis
     ann_module = ann_module2 = ann_module3 = None
     A = B = CSub = G = CoolEmployee = CoolEmployeeWithDefault = object
+    XMeth = XMethBad = object
 
 gth = get_type_hints
 
@@ -1750,7 +1765,7 @@ class CollectionsAbcTests(BaseTestCase):
     def test_async_generator(self):
         ns = {}
         exec("async def f():\n"
-            "    yield 42\n", globals(), ns)
+             "    yield 42\n", globals(), ns)
         g = ns['f']()
         self.assertIsSubclass(type(g), typing.AsyncGenerator)
 
@@ -2037,6 +2052,13 @@ class NonDefaultAfterDefault(NamedTuple):
     x: int = 3
     y: int
 """)
+
+    @skipUnless(PY36, 'Python 3.6 required')
+    def test_annotation_usage_with_methods(self):
+        self.assertEquals(XMeth(1).double(), 2)
+        self.assertEquals(XMeth(42).x, XMeth(42)[0])
+        self.assertEquals(XMethBad(1)._fields, ('x',))
+        self.assertEquals(XMethBad(1).__annotations__, {'x': int})
 
     @skipUnless(PY36, 'Python 3.6 required')
     def test_namedtuple_keyword_usage(self):
