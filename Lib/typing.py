@@ -97,8 +97,8 @@ def _qualname(x):
 
 
 def _trim_name(nm):
-    if nm.startswith('_') and nm not in ('_TypeAlias',
-                    '_ForwardRef', '_TypingBase', '_FinalTypingBase'):
+    whitelist = ('_TypeAlias', '_ForwardRef', '_TypingBase', '_FinalTypingBase')
+    if nm.startswith('_') and nm not in whitelist:
         nm = nm[1:]
     return nm
 
@@ -355,13 +355,17 @@ def _type_check(arg, msg):
         return type(None)
     if isinstance(arg, str):
         arg = _ForwardRef(arg)
-    if (isinstance(arg, _TypingBase) and type(arg).__name__ == '_ClassVar' or
-        not isinstance(arg, (type, _TypingBase)) and not callable(arg)):
+    if (
+        isinstance(arg, _TypingBase) and type(arg).__name__ == '_ClassVar' or
+        not isinstance(arg, (type, _TypingBase)) and not callable(arg)
+    ):
         raise TypeError(msg + " Got %.100r." % (arg,))
     # Bare Union etc. are not valid as type arguments
-    if (type(arg).__name__ in ('_Union', '_Optional')
-        and not getattr(arg, '__origin__', None)
-        or isinstance(arg, TypingMeta) and _gorg(arg) in (Generic, _Protocol)):
+    if (
+        type(arg).__name__ in ('_Union', '_Optional') and
+        not getattr(arg, '__origin__', None) or
+        isinstance(arg, TypingMeta) and _gorg(arg) in (Generic, _Protocol)
+    ):
         raise TypeError("Plain %s is not valid as type argument" % arg)
     return arg
 
@@ -455,7 +459,7 @@ class TypeVar(_TypingBase, _root=True):
                  '__covariant__', '__contravariant__')
 
     def __init__(self, name, *constraints, bound=None,
-                covariant=False, contravariant=False):
+                 covariant=False, contravariant=False):
         super().__init__(name, *constraints, bound=bound,
                          covariant=covariant, contravariant=contravariant)
         self.__name__ = name
@@ -563,7 +567,7 @@ def _subs_tree(cls, tvars=None, args=None):
     # ... then continue replacing down the origin chain.
     for ocls in orig_chain:
         new_tree_args = []
-        for i, arg in enumerate(ocls.__args__):
+        for arg in ocls.__args__:
             new_tree_args.append(_replace_arg(arg, ocls.__parameters__, tree_args))
         tree_args = new_tree_args
     return tree_args
@@ -631,6 +635,7 @@ def _tp_cache(func):
 
     cached = functools.lru_cache()(func)
     _cleanups.append(cached.cache_clear)
+
     @functools.wraps(func)
     def inner(*args, **kwds):
         try:
@@ -840,7 +845,7 @@ def _next_in_mro(cls):
     # Look for the last occurrence of Generic or Generic[...].
     for i, c in enumerate(cls.__mro__[:-1]):
         if isinstance(c, GenericMeta) and _gorg(c) is Generic:
-            next_in_mro = cls.__mro__[i+1]
+            next_in_mro = cls.__mro__[i + 1]
     return next_in_mro
 
 
@@ -849,8 +854,10 @@ def _valid_for_check(cls):
     if cls is Generic:
         raise TypeError("Class %r cannot be used with class "
                         "or instance checks" % cls)
-    if (cls.__origin__ is not None and
-        sys._getframe(3).f_globals['__name__'] not in ['abc', 'functools']):
+    if (
+        cls.__origin__ is not None and
+        sys._getframe(3).f_globals['__name__'] not in ['abc', 'functools']
+    ):
         raise TypeError("Parameterized generics cannot be used with class "
                         "or instance checks")
 
@@ -986,9 +993,12 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
         # This allows unparameterized generic collections to be used
         # with issubclass() and isinstance() in the same way as their
         # collections.abc counterparts (e.g., isinstance([], Iterable)).
-        if ('__subclasshook__' not in namespace and extra  # allow overriding
-            or hasattr(self.__subclasshook__, '__name__') and
-            self.__subclasshook__.__name__ == '__extrahook__'):
+        if (
+            # allow overriding
+            '__subclasshook__' not in namespace and extra or
+            hasattr(self.__subclasshook__, '__name__') and
+            self.__subclasshook__.__name__ == '__extrahook__'
+        ):
             self.__subclasshook__ = _make_subclasshook(self)
         if isinstance(extra, abc.ABCMeta):
             self._abc_registry = extra._abc_registry
@@ -1192,13 +1202,13 @@ class TupleMeta(GenericMeta):
         return super().__getitem__(parameters)
 
     def __instancecheck__(self, obj):
-        if self.__args__ == None:
+        if self.__args__ is None:
             return isinstance(obj, tuple)
         raise TypeError("Parameterized Tuple cannot be used "
                         "with isinstance().")
 
     def __subclasscheck__(self, cls):
-        if self.__args__ == None:
+        if self.__args__ is None:
             return issubclass(cls, tuple)
         raise TypeError("Parameterized Tuple cannot be used "
                         "with issubclass().")
@@ -1252,7 +1262,7 @@ class CallableMeta(GenericMeta):
         with hashable arguments to improve speed.
         """
 
-        if  self.__origin__ is not None or not _geqv(self, Callable):
+        if self.__origin__ is not None or not _geqv(self, Callable):
             return super().__getitem__(parameters)
         if not isinstance(parameters, tuple) or len(parameters) != 2:
             raise TypeError("Callable must be used as "
@@ -1280,7 +1290,7 @@ class CallableMeta(GenericMeta):
         return super().__getitem__(parameters)
 
 
-class Callable(extra=collections_abc.Callable, metaclass = CallableMeta):
+class Callable(extra=collections_abc.Callable, metaclass=CallableMeta):
     """Callable type; Callable[[int], str] is a function of (int) -> str.
 
     The subscription syntax must always be used with exactly two
@@ -1442,10 +1452,12 @@ def get_type_hints(obj, globalns=None, localns=None):
     hints = getattr(obj, '__annotations__', None)
     if hints is None:
         # Return empty annotations for something that _could_ have them.
-        if (isinstance(obj, types.FunctionType) or
+        if (
+            isinstance(obj, types.FunctionType) or
             isinstance(obj, types.BuiltinFunctionType) or
             isinstance(obj, types.MethodType) or
-            isinstance(obj, types.ModuleType)):
+            isinstance(obj, types.ModuleType)
+        ):
             return {}
         else:
             raise TypeError('{!r} is not a module, class, method, '
@@ -1485,7 +1497,7 @@ def no_type_check(arg):
                 no_type_check(obj)
     try:
         arg.__no_type_check__ = True
-    except TypeError: # built-in classes
+    except TypeError:  # built-in classes
         pass
     return arg
 
@@ -1771,14 +1783,15 @@ else:
 class MutableMapping(Mapping[KT, VT], extra=collections_abc.MutableMapping):
     __slots__ = ()
 
+
 if hasattr(collections_abc, 'Reversible'):
     if hasattr(collections_abc, 'Collection'):
         class Sequence(Reversible[T_co], Collection[T_co],
-                   extra=collections_abc.Sequence):
+                       extra=collections_abc.Sequence):
             __slots__ = ()
     else:
         class Sequence(Sized, Reversible[T_co], Container[T_co],
-                   extra=collections_abc.Sequence):
+                       extra=collections_abc.Sequence):
             __slots__ = ()
 else:
     class Sequence(Sized, Iterable[T_co], Container[T_co],
@@ -1804,6 +1817,7 @@ class List(list, MutableSequence[T], extra=list):
                             "use list() instead")
         return _generic_new(list, cls, *args, **kwds)
 
+
 class Deque(collections.deque, MutableSequence[T], extra=collections.deque):
 
     __slots__ = ()
@@ -1813,6 +1827,7 @@ class Deque(collections.deque, MutableSequence[T], extra=collections.deque):
             raise TypeError("Type Deque cannot be instantiated; "
                             "use deque() instead")
         return _generic_new(collections.deque, cls, *args, **kwds)
+
 
 class Set(set, MutableSet[T], extra=set):
 
@@ -1871,6 +1886,7 @@ class Dict(dict, MutableMapping[KT, VT], extra=dict):
                             "use dict() instead")
         return _generic_new(dict, cls, *args, **kwds)
 
+
 class DefaultDict(collections.defaultdict, MutableMapping[KT, VT],
                   extra=collections.defaultdict):
 
@@ -1881,6 +1897,7 @@ class DefaultDict(collections.defaultdict, MutableMapping[KT, VT],
             raise TypeError("Type DefaultDict cannot be instantiated; "
                             "use collections.defaultdict() instead")
         return _generic_new(collections.defaultdict, cls, *args, **kwds)
+
 
 # Determine what base class to use for Generator.
 if hasattr(collections_abc, 'Generator'):
@@ -1900,6 +1917,7 @@ class Generator(Iterator[T_co], Generic[T_co, T_contra, V_co],
             raise TypeError("Type Generator cannot be instantiated; "
                             "create a subclass instead")
         return _generic_new(_G_base, cls, *args, **kwds)
+
 
 if hasattr(collections_abc, 'AsyncGenerator'):
     class AsyncGenerator(AsyncIterator[T_co], Generic[T_co, T_contra],
@@ -1976,13 +1994,14 @@ class NamedTupleMeta(type):
                 defaults.append(default_value)
                 defaults_dict[field_name] = default_value
             elif defaults:
-                raise TypeError("Non-default namedtuple field {field_name} cannot follow default"
-                                " field(s) {default_names}"
+                raise TypeError("Non-default namedtuple field {field_name} cannot "
+                                "follow default field(s) {default_names}"
                                 .format(field_name=field_name,
                                         default_names=', '.join(defaults_dict.keys())))
         nm_tpl.__new__.__defaults__ = tuple(defaults)
         nm_tpl._field_defaults = defaults_dict
         return nm_tpl
+
 
 class NamedTuple(metaclass=NamedTupleMeta):
     """Typed version of namedtuple.
@@ -2207,6 +2226,7 @@ class io:
     TextIO = TextIO
     BinaryIO = BinaryIO
 
+
 io.__name__ = __name__ + '.io'
 sys.modules[io.__name__] = io
 
@@ -2223,6 +2243,7 @@ class re:
     __all__ = ['Pattern', 'Match']
     Pattern = Pattern
     Match = Match
+
 
 re.__name__ = __name__ + '.re'
 sys.modules[re.__name__] = re
