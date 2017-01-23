@@ -70,17 +70,6 @@ class AllTest(unittest.TestCase):
             # than an AttributeError somewhere deep in CGIHTTPServer.
             import _socket
 
-        # rlcompleter needs special consideration; it import readline which
-        # initializes GNU readline which calls setlocale(LC_CTYPE, "")... :-(
-        import locale
-        locale_tuple = locale.getlocale(locale.LC_CTYPE)
-        try:
-            import rlcompleter
-        except ImportError:
-            pass
-        finally:
-            locale.setlocale(locale.LC_CTYPE, locale_tuple)
-
         ignored = []
         failed_imports = []
         lib_dir = os.path.dirname(os.path.dirname(__file__))
