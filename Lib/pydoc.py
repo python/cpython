@@ -917,7 +917,7 @@ class HTMLDoc(Doc):
             signature = None
         if signature:
             argspec = str(signature)
-            if argspec:
+            if argspec and argspec != '()':
                 decl = name + self.escape(argspec) + '\n\n'
 
         doc = getdoc(object)
@@ -1236,7 +1236,7 @@ location listed above.
             signature = None
         if signature:
             argspec = str(signature)
-            if argspec:
+            if argspec and argspec != '()':
                 push(name + argspec + '\n')
 
         doc = getdoc(object)
