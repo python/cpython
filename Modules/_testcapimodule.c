@@ -117,8 +117,7 @@ test_sizeof_c_types(PyObject *self)
     CHECK_SIZEOF(intptr_t, sizeof(void *));
     CHECK_SIGNNESS(intptr_t, 1);
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 
 #undef IS_SIGNED
 #undef CHECK_SIGNESS
