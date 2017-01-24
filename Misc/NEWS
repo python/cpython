@@ -37,6 +37,15 @@ Library
   leading dots could match related hostnames again (e.g. .b.c matches a.b.c).
   Patch by Milan Oberkirch.
 
+C API
+-----
+
+- Issue #29083: Fixed the declaration of some public API functions.
+  PyArg_VaParse() and PyArg_VaParseTupleAndKeywords() were not available in
+  limited API.  PyArg_ValidateKeywordArguments(), PyArg_UnpackTuple() and
+  Py_BuildValue() were not available in limited API of version < 3.3 when
+  PY_SSIZE_T_CLEAN is defined.
+
 
 What's New in Python 3.5.3?
 ===========================
