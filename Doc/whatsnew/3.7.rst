@@ -179,5 +179,5 @@ Changes in the Python API
 CPython bytecode changes
 ------------------------
 
-* Added two new opcodes: :opcode:`LOAD_METHOD`` and :opcode:`CALL_METHOD`.
+* Added two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`CALL_METHOD`.
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)

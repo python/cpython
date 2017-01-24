@@ -12201,7 +12201,7 @@ str.join as unicode_join
 
 Concatenate any number of strings.
 
-The string whose method is called is inserted in between each given strings.
+The string whose method is called is inserted in between each given string.
 The result is returned as a new string.
 
 Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
@@ -12209,7 +12209,7 @@ Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
 
 static PyObject *
 unicode_join(PyObject *self, PyObject *iterable)
-/*[clinic end generated code: output=6857e7cecfe7bf98 input=d8311e5ccbafbeb6]*/
+/*[clinic end generated code: output=6857e7cecfe7bf98 input=2f70422bfb8fa189]*/
 {
     return PyUnicode_Join(self, iterable);
 }
