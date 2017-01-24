@@ -15,10 +15,8 @@ extern "C" {
 #define PyArg_Parse                     _PyArg_Parse_SizeT
 #define PyArg_ParseTuple                _PyArg_ParseTuple_SizeT
 #define PyArg_ParseTupleAndKeywords     _PyArg_ParseTupleAndKeywords_SizeT
-#ifndef Py_LIMITED_API
 #define PyArg_VaParse                   _PyArg_VaParse_SizeT
 #define PyArg_VaParseTupleAndKeywords   _PyArg_VaParseTupleAndKeywords_SizeT
-#endif /* !Py_LIMITED_API */
 #define Py_BuildValue                   _Py_BuildValue_SizeT
 #define Py_VaBuildValue                 _Py_VaBuildValue_SizeT
 #ifndef Py_LIMITED_API
@@ -42,11 +40,15 @@ PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
                                                   const char *, char **, ...);
+PyAPI_FUNC(int) PyArg_VaParse(PyObject *, const char *, va_list);
+PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
+                                                  const char *, char **, va_list);
+#endif
 PyAPI_FUNC(int) PyArg_ValidateKeywordArguments(PyObject *);
 PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, Py_ssize_t, Py_ssize_t, ...);
 PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
-#endif
+
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyArg_UnpackStack(
@@ -60,10 +62,6 @@ PyAPI_FUNC(int) _PyArg_UnpackStack(
 PyAPI_FUNC(int) _PyArg_NoKeywords(const char *funcname, PyObject *kwargs);
 PyAPI_FUNC(int) _PyArg_NoStackKeywords(const char *funcname, PyObject *kwnames);
 PyAPI_FUNC(int) _PyArg_NoPositional(const char *funcname, PyObject *args);
-
-PyAPI_FUNC(int) PyArg_VaParse(PyObject *, const char *, va_list);
-PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
-                                                  const char *, char **, va_list);
 #endif
 
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
