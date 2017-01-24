@@ -2325,6 +2325,8 @@ expected_help_output_with_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
+ |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1)
+ |\x20\x20
  |  An enumeration.
  |\x20\x20
  |  Method resolution order:
@@ -2362,6 +2364,8 @@ expected_help_output_without_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
+ |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1)
+ |\x20\x20
  |  Method resolution order:
  |      Color
  |      enum.Enum
