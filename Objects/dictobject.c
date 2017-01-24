@@ -2311,12 +2311,12 @@ dict.fromkeys
     value: object=None
     /
 
-Returns a new dict with keys from iterable and values equal to value.
+Create a new dictionary with keys from iterable and values set to value.
 [clinic start generated code]*/
 
 static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
-/*[clinic end generated code: output=8fb98e4b10384999 input=b85a667f9bf4669d]*/
+/*[clinic end generated code: output=8fb98e4b10384999 input=382ba4855d0f74c3]*/
 {
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
@@ -2764,12 +2764,12 @@ dict.__contains__
   key: object
   /
 
-True if D has a key k, else False.
+True if the dictionary has the specified key, else False.
 [clinic start generated code]*/
 
 static PyObject *
 dict___contains__(PyDictObject *self, PyObject *key)
-/*[clinic end generated code: output=a3d03db709ed6e6b input=b852b2a19b51ab24]*/
+/*[clinic end generated code: output=a3d03db709ed6e6b input=f39613886bf975b7]*/
 {
     register PyDictObject *mp = self;
     Py_hash_t hash;
@@ -2797,12 +2797,12 @@ dict.get
     default: object = None
     /
 
-D.get(key[, default]) -> D[key] if key in D, else default.
+Return the value for key if key is in the dictionary, else default.
 [clinic start generated code]*/
 
 static PyObject *
 dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=bba707729dee05bf input=e73ab0f028f4b2be]*/
+/*[clinic end generated code: output=bba707729dee05bf input=279ddb5790b6b107]*/
 {
     PyObject *val = NULL;
     Py_hash_t hash;
@@ -2915,13 +2915,15 @@ dict.setdefault
     default: object = None
     /
 
-D.get(key,default), also set D[key]=default if key not in D.
+Insert key with a value of default if key is not in the dictionary.
+
+Return the value for key if key is in the dictionary, else default.
 [clinic start generated code]*/
 
 static PyObject *
 dict_setdefault_impl(PyDictObject *self, PyObject *key,
                      PyObject *default_value)
-/*[clinic end generated code: output=f8c1101ebf69e220 input=b2826255bacd845a]*/
+/*[clinic end generated code: output=f8c1101ebf69e220 input=0f063756e815fd9d]*/
 {
     PyObject *val;
 

@@ -6,9 +6,7 @@ PyDoc_STRVAR(OrderedDict_fromkeys__doc__,
 "fromkeys($type, /, iterable, value=None)\n"
 "--\n"
 "\n"
-"New ordered dictionary with keys from S.\n"
-"\n"
-"If not specified, the value defaults to None.");
+"Create a new ordered dictionary with keys from iterable and values set to value.");
 
 #define ORDEREDDICT_FROMKEYS_METHODDEF    \
     {"fromkeys", (PyCFunction)OrderedDict_fromkeys, METH_FASTCALL|METH_CLASS, OrderedDict_fromkeys__doc__},
@@ -39,7 +37,9 @@ PyDoc_STRVAR(OrderedDict_setdefault__doc__,
 "setdefault($self, /, key, default=None)\n"
 "--\n"
 "\n"
-"od.get(k,d), also set od[k]=d if k not in od.");
+"Insert key with a value of default if key is not in the dictionary.\n"
+"\n"
+"Return the value for key if key is in the dictionary, else default.");
 
 #define ORDEREDDICT_SETDEFAULT_METHODDEF    \
     {"setdefault", (PyCFunction)OrderedDict_setdefault, METH_FASTCALL, OrderedDict_setdefault__doc__},
@@ -71,7 +71,7 @@ PyDoc_STRVAR(OrderedDict_popitem__doc__,
 "popitem($self, /, last=True)\n"
 "--\n"
 "\n"
-"Return (k, v) and remove a (key, value) pair.\n"
+"Remove and return a (key, value) pair from the dictionary.\n"
 "\n"
 "Pairs are returned in LIFO order if last is true or FIFO order if false.");
 
@@ -103,10 +103,9 @@ PyDoc_STRVAR(OrderedDict_move_to_end__doc__,
 "move_to_end($self, /, key, last=True)\n"
 "--\n"
 "\n"
-"\"Move an existing element to the end (or beginning if last==False).\n"
+"Move an existing element to the end (or beginning if last is false).\n"
 "\n"
-"    Raises KeyError if the element does not exist.\n"
-"    When last=True, acts like a fast version of self[key]=self.pop(key).");
+"Raise KeyError if the element does not exist.");
 
 #define ORDEREDDICT_MOVE_TO_END_METHODDEF    \
     {"move_to_end", (PyCFunction)OrderedDict_move_to_end, METH_FASTCALL, OrderedDict_move_to_end__doc__},
@@ -132,4 +131,4 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject **args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=84ef19e7b5db0086 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a19a24ac37b42e5e input=a9049054013a1b77]*/
