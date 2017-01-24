@@ -166,13 +166,16 @@ PyAPI_FUNC(PyObject*) _PyStack_AsTupleSlice(
     Py_ssize_t start,
     Py_ssize_t end);
 
-/* Convert keyword arguments from the (stack, kwnames) format to a Python
-   dictionary.
+/* Convert keyword arguments from the FASTCALL (stack: C array, kwnames: tuple)
+   format to a Python dictionary ("kwargs" dict).
 
-   kwnames must only contains str strings, no subclass, and all keys must be
-   unique. kwnames is not checked, usually these checks are done before or
-   later calling _PyStack_AsDict(). For example, _PyArg_ParseStackAndKeywords() raises an
-   error if a key is not a string. */
+   The type of kwnames keys is not checked. The final function getting
+   arguments is reponsible to check if all keys are strings, for example using
+   PyArg_ParseTupleAndKeywords() or PyArg_ValidateKeywordArguments().
+
+   Duplicate keys are merged using the last value. If duplicate keys must raise
+   an exception, the caller is responsible to implement an explicit keys on
+   kwnames. */
 PyAPI_FUNC(PyObject *) _PyStack_AsDict(
     PyObject **values,
     PyObject *kwnames);

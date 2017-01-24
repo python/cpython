@@ -2413,8 +2413,7 @@ _PyStack_AsDict(PyObject **values, PyObject *kwnames)
     for (i = 0; i < nkwargs; i++) {
         PyObject *key = PyTuple_GET_ITEM(kwnames, i);
         PyObject *value = *values++;
-        assert(PyUnicode_CheckExact(key));
-        assert(PyDict_GetItem(kwdict, key) == NULL);
+        /* If key already exists, replace it with the new value */
         if (PyDict_SetItem(kwdict, key, value)) {
             Py_DECREF(kwdict);
             return NULL;
