@@ -630,6 +630,7 @@ if 1:
             f1 = ns['f1']
             f2 = ns['f2']
             self.assertIsNot(f1.__code__, f2.__code__)
+            self.assertNotEqual(f1.__code__, f2.__code__)
             self.check_constant(f1, const1)
             self.check_constant(f2, const2)
             self.assertEqual(repr(f1()), repr(const1))
@@ -638,6 +639,8 @@ if 1:
         check_different_constants(0, 0.0)
         check_different_constants(+0.0, -0.0)
         check_different_constants((0,), (0.0,))
+        check_different_constants('a', b'a')
+        check_different_constants(('a',), (b'a',))
 
         # check_different_constants() cannot be used because repr(-0j) is
         # '(-0-0j)', but when '(-0-0j)' is evaluated to 0j: we loose the sign.
