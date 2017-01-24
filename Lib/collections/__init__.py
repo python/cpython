@@ -157,9 +157,9 @@ class OrderedDict(dict):
         dict.clear(self)
 
     def popitem(self, last=True):
-        '''od.popitem() -> (k, v), return and remove a (key, value) pair.
-        Pairs are returned in LIFO order if last is true or FIFO order if false.
+        '''Remove and return a (key, value) pair from the dictionary.
 
+        Pairs are returned in LIFO order if last is true or FIFO order if false.
         '''
         if not self:
             raise KeyError('dictionary is empty')
@@ -180,11 +180,9 @@ class OrderedDict(dict):
         return key, value
 
     def move_to_end(self, key, last=True):
-        '''Move an existing element to the end (or beginning if last==False).
+        '''Move an existing element to the end (or beginning if last is false).
 
-        Raises KeyError if the element does not exist.
-        When last=True, acts like a fast version of self[key]=self.pop(key).
-
+        Raise KeyError if the element does not exist.
         '''
         link = self.__map[key]
         link_prev = link.prev
@@ -248,7 +246,10 @@ class OrderedDict(dict):
         return default
 
     def setdefault(self, key, default=None):
-        'od.setdefault(k[,d]) -> od.get(k,d), also set od[k]=d if k not in od'
+        '''Insert key with a value of default if key is not in the dictionary.
+
+        Return the value for key if key is in the dictionary, else default.
+        '''
         if key in self:
             return self[key]
         self[key] = default
@@ -274,9 +275,7 @@ class OrderedDict(dict):
 
     @classmethod
     def fromkeys(cls, iterable, value=None):
-        '''OD.fromkeys(S[, v]) -> New ordered dictionary with keys from S.
-        If not specified, the value defaults to None.
-
+        '''Create a new ordered dictionary with keys from iterable and values set to value.
         '''
         self = cls()
         for key in iterable:
