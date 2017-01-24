@@ -10,6 +10,9 @@ What's New in Python 3.6.1 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #29337: Fixed possible BytesWarning when compare the code objects.
+  Warnings could be emitted at compile time.
+
 - Issue #29327: Fixed a crash when pass the iterable keyword argument to
   sorted().
 
