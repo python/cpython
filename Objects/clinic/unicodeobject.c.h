@@ -406,7 +406,7 @@ PyDoc_STRVAR(unicode_join__doc__,
 "\n"
 "Concatenate any number of strings.\n"
 "\n"
-"The string whose method is called is inserted in between each given strings.\n"
+"The string whose method is called is inserted in between each given string.\n"
 "The result is returned as a new string.\n"
 "\n"
 "Example: \'.\'.join([\'ab\', \'pq\', \'rs\']) -> \'ab.pq.rs\'");
@@ -962,4 +962,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=3d73f3dfd6ec7d83 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=88b06f61edd282f9 input=a9049054013a1b77]*/
