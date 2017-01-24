@@ -521,7 +521,7 @@ _PyCode_ConstantKey(PyObject *op)
             PyTuple_SET_ITEM(tuple, i, item_key);
         }
 
-        key = PyTuple_Pack(3, Py_TYPE(op), op, tuple);
+        key = PyTuple_Pack(2, tuple, op);
         Py_DECREF(tuple);
     }
     else if (PyFrozenSet_CheckExact(op)) {
@@ -555,7 +555,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (set == NULL)
             return NULL;
 
-        key = PyTuple_Pack(3, Py_TYPE(op), op, set);
+        key = PyTuple_Pack(2, set, op);
         Py_DECREF(set);
         return key;
     }
@@ -566,7 +566,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (obj_id == NULL)
             return NULL;
 
-        key = PyTuple_Pack(3, Py_TYPE(op), op, obj_id);
+        key = PyTuple_Pack(2, obj_id, op);
         Py_DECREF(obj_id);
     }
     return key;
