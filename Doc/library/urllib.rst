@@ -295,15 +295,15 @@ Utility functions
    If both lowercase and uppercase environment variables exist (and disagree),
    lowercase is preferred.
 
-    .. note::
+   .. note::
 
-        If the environment variable ``REQUEST_METHOD`` is set, which usually
-        indicates your script is running in a CGI environment, the environment
-        variable ``HTTP_PROXY`` (uppercase ``_PROXY``) will be ignored. This is
-        because that variable can be injected by a client using the "Proxy:"
-        HTTP header. If you need to use an HTTP proxy in a CGI environment,
-        either use ``ProxyHandler`` explicitly, or make sure the variable name
-        is in lowercase (or at least the ``_proxy`` suffix).
+      If the environment variable ``REQUEST_METHOD`` is set, which usually
+      indicates your script is running in a CGI environment, the environment
+      variable ``HTTP_PROXY`` (uppercase ``_PROXY``) will be ignored. This is
+      because that variable can be injected by a client using the "Proxy:" HTTP
+      header. If you need to use an HTTP proxy in a CGI environment, either use
+      ``ProxyHandler`` explicitly, or make sure the variable name is in
+      lowercase (or at least the ``_proxy`` suffix).
 
 .. note::
     urllib also exposes certain utility functions like splittype, splithost and
@@ -344,47 +344,47 @@ URL Opener objects
    :class:`URLopener` objects will raise an :exc:`IOError` exception if the server
    returns an error code.
 
-    .. method:: open(fullurl[, data])
+   .. method:: open(fullurl[, data])
 
-       Open *fullurl* using the appropriate protocol.  This method sets up cache and
-       proxy information, then calls the appropriate open method with its input
-       arguments.  If the scheme is not recognized, :meth:`open_unknown` is called.
-       The *data* argument has the same meaning as the *data* argument of
-       :func:`urlopen`.
-
-
-    .. method:: open_unknown(fullurl[, data])
-
-       Overridable interface to open unknown URL types.
+      Open *fullurl* using the appropriate protocol.  This method sets up cache and
+      proxy information, then calls the appropriate open method with its input
+      arguments.  If the scheme is not recognized, :meth:`open_unknown` is called.
+      The *data* argument has the same meaning as the *data* argument of
+      :func:`urlopen`.
 
 
-    .. method:: retrieve(url[, filename[, reporthook[, data]]])
+   .. method:: open_unknown(fullurl[, data])
 
-       Retrieves the contents of *url* and places it in *filename*.  The return value
-       is a tuple consisting of a local filename and either a
-       :class:`mimetools.Message` object containing the response headers (for remote
-       URLs) or ``None`` (for local URLs).  The caller must then open and read the
-       contents of *filename*.  If *filename* is not given and the URL refers to a
-       local file, the input filename is returned.  If the URL is non-local and
-       *filename* is not given, the filename is the output of :func:`tempfile.mktemp`
-       with a suffix that matches the suffix of the last path component of the input
-       URL.  If *reporthook* is given, it must be a function accepting three numeric
-       parameters.  It will be called after each chunk of data is read from the
-       network.  *reporthook* is ignored for local URLs.
-
-       If the *url* uses the :file:`http:` scheme identifier, the optional *data*
-       argument may be given to specify a ``POST`` request (normally the request type
-       is ``GET``).  The *data* argument must in standard
-       :mimetype:`application/x-www-form-urlencoded` format; see the :func:`urlencode`
-       function below.
+      Overridable interface to open unknown URL types.
 
 
-    .. attribute:: version
+   .. method:: retrieve(url[, filename[, reporthook[, data]]])
 
-       Variable that specifies the user agent of the opener object.  To get
-       :mod:`urllib` to tell servers that it is a particular user agent, set this in a
-       subclass as a class variable or in the constructor before calling the base
-       constructor.
+      Retrieves the contents of *url* and places it in *filename*.  The return value
+      is a tuple consisting of a local filename and either a
+      :class:`mimetools.Message` object containing the response headers (for remote
+      URLs) or ``None`` (for local URLs).  The caller must then open and read the
+      contents of *filename*.  If *filename* is not given and the URL refers to a
+      local file, the input filename is returned.  If the URL is non-local and
+      *filename* is not given, the filename is the output of :func:`tempfile.mktemp`
+      with a suffix that matches the suffix of the last path component of the input
+      URL.  If *reporthook* is given, it must be a function accepting three numeric
+      parameters.  It will be called after each chunk of data is read from the
+      network.  *reporthook* is ignored for local URLs.
+
+      If the *url* uses the :file:`http:` scheme identifier, the optional *data*
+      argument may be given to specify a ``POST`` request (normally the request type
+      is ``GET``).  The *data* argument must in standard
+      :mimetype:`application/x-www-form-urlencoded` format; see the :func:`urlencode`
+      function below.
+
+
+   .. attribute:: version
+
+      Variable that specifies the user agent of the opener object.  To get
+      :mod:`urllib` to tell servers that it is a particular user agent, set this in a
+      subclass as a class variable or in the constructor before calling the base
+      constructor.
 
 
 .. class:: FancyURLopener(...)
