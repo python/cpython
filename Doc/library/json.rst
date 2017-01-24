@@ -487,27 +487,27 @@ Exceptions
 
 .. exception:: JSONDecodeError(msg, doc, pos, end=None)
 
-    Subclass of :exc:`ValueError` with the following additional attributes:
+   Subclass of :exc:`ValueError` with the following additional attributes:
 
-    .. attribute:: msg
+   .. attribute:: msg
 
-        The unformatted error message.
+      The unformatted error message.
 
-    .. attribute:: doc
+   .. attribute:: doc
 
-        The JSON document being parsed.
+      The JSON document being parsed.
 
-    .. attribute:: pos
+   .. attribute:: pos
 
-        The start index of *doc* where parsing failed.
+      The start index of *doc* where parsing failed.
 
-    .. attribute:: lineno
+   .. attribute:: lineno
 
-        The line corresponding to *pos*.
+      The line corresponding to *pos*.
 
-    .. attribute:: colno
+   .. attribute:: colno
 
-        The column corresponding to *pos*.
+      The column corresponding to *pos*.
 
    .. versionadded:: 3.5
 
