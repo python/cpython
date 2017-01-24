@@ -143,6 +143,12 @@ Windows
 C API
 -----
 
+- Issue #29083: Fixed the declaration of some public API functions.
+  PyArg_VaParse() and PyArg_VaParseTupleAndKeywords() were not available in
+  limited API.  PyArg_ValidateKeywordArguments(), PyArg_UnpackTuple() and
+  Py_BuildValue() were not available in limited API of version < 3.3 when
+  PY_SSIZE_T_CLEAN is defined.
+
 - Issue #29058: All stable API extensions added after Python 3.2 are now
   available only when Py_LIMITED_API is set to the PY_VERSION_HEX value of
   the minimum Python version supporting this API.
