@@ -690,7 +690,9 @@ class Flag(Enum):
             pseudo_member = object.__new__(cls)
             pseudo_member._name_ = None
             pseudo_member._value_ = value
-            cls._value2member_map_[value] = pseudo_member
+            # use setdefault in case another thread already created a composite
+            # with this value
+            pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
         return pseudo_member
 
     def __contains__(self, other):
@@ -785,7 +787,9 @@ class IntFlag(int, Flag):
                 pseudo_member = int.__new__(cls, value)
                 pseudo_member._name_ = None
                 pseudo_member._value_ = value
-                cls._value2member_map_[value] = pseudo_member
+                # use setdefault in case another thread already created a composite
+                # with this value
+                pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
         return pseudo_member
 
     def __or__(self, other):
@@ -835,18 +839,21 @@ def _decompose(flag, value):
     # _decompose is only called if the value is not named
     not_covered = value
     negative = value < 0
+    # issue29167: wrap accesses to _value2member_map_ in a list to avoid race
+    #             conditions between iterating over it and having more psuedo-
+    #             members added to it
     if negative:
         # only check for named flags
         flags_to_check = [
                 (m, v)
-                for v, m in flag._value2member_map_.items()
+                for v, m in list(flag._value2member_map_.items())
                 if m.name is not None
                 ]
     else:
         # check for named flags and powers-of-two flags
         flags_to_check = [
                 (m, v)
-                for v, m in flag._value2member_map_.items()
+                for v, m in list(flag._value2member_map_.items())
                 if m.name is not None or _power_of_two(v)
                 ]
     members = []
