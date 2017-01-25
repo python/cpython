@@ -531,10 +531,12 @@ EXPORTS
   PySet_Pop=python37.PySet_Pop
   PySet_Size=python37.PySet_Size
   PySet_Type=python37.PySet_Type DATA
+  PySlice_AdjustIndices=python37.PySlice_AdjustIndices
   PySlice_GetIndices=python37.PySlice_GetIndices
   PySlice_GetIndicesEx=python37.PySlice_GetIndicesEx
   PySlice_New=python37.PySlice_New
   PySlice_Type=python37.PySlice_Type DATA
+  PySlice_Unpack=python37.PySlice_Unpack
   PySortWrapper_Type=python37.PySortWrapper_Type DATA
   PyState_AddModule=python37.PyState_AddModule
   PyState_FindModule=python37.PyState_FindModule
