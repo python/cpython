@@ -136,17 +136,12 @@ some Unices may not have the :program:`env` command, so you may need to hardcode
 To use shell commands in your Python scripts, look at the :mod:`subprocess` module.
 
 
-Editors
-=======
+Editors and IDEs
+================
 
-Vim and Emacs are excellent editors which support Python very well.  For more
-information on how to code in Python in these editors, look at:
+There are a number of IDEs that support Python programming language.
+Many editors and IDEs provide syntax highlighting, debugging tools, and PEP-8 checks.
 
-* http://www.vim.org/scripts/script.php?script_id=790
-* https://sourceforge.net/projects/python-mode
-
-Geany is an excellent IDE with support for a lot of languages. For more
-information, read: https://www.geany.org/
-
-Komodo edit is another extremely good IDE.  It also has support for a lot of
-languages. For more information, read https://komodoide.com/.
+Please go to `Python Editors <https://wiki.python.org/moin/PythonEditors>`_ and
+`Integrated Development Environments <https://wiki.python.org/moin/IntegratedDevelopmentEnvironments>`_
+for a comprehensive list.
