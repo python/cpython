@@ -623,6 +623,11 @@ Windows
 C API
 -----
 
+- Issue #27867: Function PySlice_GetIndicesEx() is deprecated and replaced with
+  a macro if Py_LIMITED_API is not set or set to the value between 0x03050400
+  and 0x03060000 (not including) or 0x03060100 or higher.  Added functions
+  PySlice_Unpack() and PySlice_AdjustIndices().
+
 - Issue #29083: Fixed the declaration of some public API functions.
   PyArg_VaParse() and PyArg_VaParseTupleAndKeywords() were not available in
   limited API.  PyArg_ValidateKeywordArguments(), PyArg_UnpackTuple() and
