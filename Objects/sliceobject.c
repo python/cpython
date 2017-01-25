@@ -131,12 +131,11 @@ PySlice_GetIndices(PySliceObject *r, Py_ssize_t length,
 }
 
 int
-PySlice_GetIndicesEx(PySliceObject *r, Py_ssize_t length,
-                     Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slicelength)
+_PySlice_Unpack(PyObject *_r,
+                Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step)
 {
+    PySliceObject *r = (PySliceObject *)_r;
     /* this is harder to get right than you might think */
-
-    Py_ssize_t defstart, defstop;
 
     if (r->step == Py_None) {
         *step = 1;
@@ -150,42 +149,75 @@ PySlice_GetIndicesEx(PySliceObject *r, Py_ssize_t length,
         }
     }
 
-    defstart = *step < 0 ? length-1 : 0;
-    defstop = *step < 0 ? -1 : length;
-
     if (r->start == Py_None) {
-        *start = defstart;
+        *start = *step < 0 ? PY_SSIZE_T_MAX-1 : 0;;
     }
     else {
         if (!_PyEval_SliceIndex(r->start, start)) return -1;
-        if (*start < 0) *start += length;
-        if (*start < 0) *start = (*step < 0) ? -1 : 0;
-        if (*start >= length)
-            *start = (*step < 0) ? length - 1 : length;
     }
 
     if (r->stop == Py_None) {
-        *stop = defstop;
+        *stop = *step < 0 ? -PY_SSIZE_T_MAX : PY_SSIZE_T_MAX;
     }
     else {
         if (!_PyEval_SliceIndex(r->stop, stop)) return -1;
-        if (*stop < 0) *stop += length;
-        if (*stop < 0) *stop = (*step < 0) ? -1 : 0;
-        if (*stop >= length)
-            *stop = (*step < 0) ? length - 1 : length;
     }
 
-    if ((*step < 0 && *stop >= *start)
-        || (*step > 0 && *start >= *stop)) {
-        *slicelength = 0;
+    return 0;
+}
+
+Py_ssize_t
+_PySlice_AdjustIndices(Py_ssize_t length,
+                       Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t step)
+{
+    /* this is harder to get right than you might think */
+
+    assert(step != 0);
+    assert(step >= -PY_SSIZE_T_MAX);
+
+    if (*start < 0) {
+        *start += length;
+        if (*start < 0) {
+            *start = (step < 0) ? -1 : 0;
+        }
     }
-    else if (*step < 0) {
-        *slicelength = (*stop-*start+1)/(*step)+1;
+    else if (*start >= length) {
+        *start = (step < 0) ? length - 1 : length;
+    }
+
+    if (*stop < 0) {
+        *stop += length;
+        if (*stop < 0) {
+            *stop = (step < 0) ? -1 : 0;
+        }
+    }
+    else  if (*stop >= length) {
+        *stop = (step < 0) ? length - 1 : length;
+    }
+
+    if (step < 0) {
+        if (*stop < *start) {
+            return (*start - *stop - 1) / (-step) + 1;
+        }
     }
     else {
-        *slicelength = (*stop-*start-1)/(*step)+1;
+        if (*start < *stop) {
+            return (*stop - *start - 1) / step + 1;
+        }
     }
+    return 0;
+}
 
+#undef PySlice_GetIndicesEx
+
+int
+PySlice_GetIndicesEx(PySliceObject *r, Py_ssize_t length,
+                     Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step,
+                     Py_ssize_t *slicelength)
+{
+    if (_PySlice_Unpack((PyObject *)r, start, stop, step) < 0)
+        return -1;
+    *slicelength = _PySlice_AdjustIndices(length, start, stop, *step);
     return 0;
 }
 

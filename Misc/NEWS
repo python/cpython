@@ -68,6 +68,11 @@ Library
 - Issue #28925: cPickle now correctly propagates errors when unpickle instances
   of old-style classes.
 
+C API
+-----
+
+- Issue #27867: Function PySlice_GetIndicesEx() is replaced with a macro.
+
 Build
 -----
 
