@@ -121,6 +121,22 @@ skip_signature(const char *doc)
     return NULL;
 }
 
+#ifdef Py_DEBUG
+static int
+_PyType_CheckConsistency(PyTypeObject *type)
+{
+    if (!(type->tp_flags & Py_TPFLAGS_READY)) {
+        /* don't check types before PyType_Ready() */
+        return 1;
+    }
+
+    assert(!(type->tp_flags & Py_TPFLAGS_READYING));
+    assert(type->tp_mro != NULL && PyTuple_Check(type->tp_mro));
+    assert(type->tp_dict != NULL);
+    return 1;
+}
+#endif
+
 static const char *
 _PyType_DocWithoutSignature(const char *name, const char *internal_doc)
 {
@@ -719,6 +735,7 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
     Py_DECREF(old_bases);
     Py_DECREF(old_base);
 
+    assert(_PyType_CheckConsistency(type));
     return res;
 
   undo:
@@ -752,6 +769,7 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
         Py_DECREF(old_base);
     }
 
+    assert(_PyType_CheckConsistency(type));
     return -1;
 }
 
@@ -3034,6 +3052,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
 static int
 type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 {
+    int res;
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         PyErr_Format(
             PyExc_TypeError,
@@ -3043,7 +3062,9 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     }
     if (_PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL) < 0)
         return -1;
-    return update_slot(type, name);
+    res = update_slot(type, name);
+    assert(_PyType_CheckConsistency(type));
+    return res;
 }
 
 extern void
@@ -4851,7 +4872,7 @@ PyType_Ready(PyTypeObject *type)
     Py_ssize_t i, n;
 
     if (type->tp_flags & Py_TPFLAGS_READY) {
-        assert(type->tp_dict != NULL);
+        assert(_PyType_CheckConsistency(type));
         return 0;
     }
     assert((type->tp_flags & Py_TPFLAGS_READYING) == 0);
@@ -5045,9 +5066,9 @@ PyType_Ready(PyTypeObject *type)
     }
 
     /* All done -- set the ready flag */
-    assert(type->tp_dict != NULL);
     type->tp_flags =
         (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
+    assert(_PyType_CheckConsistency(type));
     return 0;
 
   error:
