@@ -411,4 +411,6 @@ which characters constitute punctuation. For example::
       >>> list(s)
       ['~/a', '&&', 'b-c', '--color=auto', '||', 'd', '*.py?']
 
-
+For best effect, ``punctuation_chars`` should be set in conjunction with
+``posix=True``. (Note that ``posix=False`` is the default for
+:class:`~shlex.shlex`.)
