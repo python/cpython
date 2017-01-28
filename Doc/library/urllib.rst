@@ -26,11 +26,16 @@ reading, and no seek operations are available.
 
 .. seealso::
 
-    The `Requests package <http://requests.readthedocs.org/>`_
+    The `Requests package <http://docs.python-requests.org/>`_
     is recommended for a higher-level HTTP client interface.
 
-.. warning:: When opening HTTPS URLs, it does not attempt to validate the
-   server certificate.  Use at your own risk!
+.. versionchanged:: 2.7.9
+
+    For HTTPS URIs, :mod:`urllib` performs all the neccessary certificate and hostname checks by default.
+
+.. warning::
+
+    For Python versions earlier than 2.7.9, urllib does not attempt to validate the server certificates of HTTPS URIs. Use at your own risk!
 
 
 High-level interface
@@ -142,7 +147,7 @@ High-level interface
       :envvar:`no_proxy` environment variable.
 
    .. versionchanged:: 2.7.9
-      The *context* parameter was added.
+      The *context* parameter was added. All the neccessary certificate and hostname checks are done by default.
 
    .. deprecated:: 2.6
       The :func:`urlopen` function has been removed in Python 3 in favor
