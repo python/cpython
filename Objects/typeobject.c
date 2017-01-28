@@ -4539,6 +4539,7 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
     for (; meth->ml_name != NULL; meth++) {
         PyObject *descr;
         int err;
+        int isdescr = 1;
         if (PyDict_GetItemString(dict, meth->ml_name) &&
             !(meth->ml_flags & METH_COEXIST))
                 continue;
@@ -4555,6 +4556,7 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
             if (cfunc == NULL)
                 return -1;
             descr = PyStaticMethod_New(cfunc);
+            isdescr = 0;  // PyStaticMethod is not PyDescrObject
             Py_DECREF(cfunc);
         }
         else {
@@ -4562,7 +4564,12 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
         }
         if (descr == NULL)
             return -1;
-        err = PyDict_SetItemString(dict, meth->ml_name, descr);
+        if (isdescr) {
+            err = PyDict_SetItem(dict, PyDescr_NAME(descr), descr);
+        }
+        else {
+            err = PyDict_SetItemString(dict, meth->ml_name, descr);
+        }
         Py_DECREF(descr);
         if (err < 0)
             return -1;
@@ -4582,7 +4589,7 @@ add_members(PyTypeObject *type, PyMemberDef *memb)
         descr = PyDescr_NewMember(type, memb);
         if (descr == NULL)
             return -1;
-        if (PyDict_SetItemString(dict, memb->name, descr) < 0) {
+        if (PyDict_SetItem(dict, PyDescr_NAME(descr), descr) < 0) {
             Py_DECREF(descr);
             return -1;
         }
@@ -4604,7 +4611,7 @@ add_getset(PyTypeObject *type, PyGetSetDef *gsp)
 
         if (descr == NULL)
             return -1;
-        if (PyDict_SetItemString(dict, gsp->name, descr) < 0) {
+        if (PyDict_SetItem(dict, PyDescr_NAME(descr), descr) < 0) {
             Py_DECREF(descr);
             return -1;
         }
