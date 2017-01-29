@@ -675,6 +675,8 @@ Documentation
 Build
 -----
 
+- Issue #29384: Remove old Be OS helper scripts.
+
 - Issue #26851: Set Android compilation and link flags.
 
 - Issue #28768: Fix implicit declaration of function _setmode. Patch by
