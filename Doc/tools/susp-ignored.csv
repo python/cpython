@@ -325,3 +325,4 @@ whatsnew/3.5,,:root,ERROR:root:exception
 whatsnew/3.5,,:exception,ERROR:root:exception
 whatsnew/changelog,,:version,import sys; I = version[:version.index(' ')]
 whatsnew/changelog,,`,"for readability (was ""`"")."
+whatsnew/changelog,,:end,str[start:end]
