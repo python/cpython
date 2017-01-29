@@ -22,15 +22,12 @@ def get_header_version_info(srcdir):
     rx = re.compile(r'\s*#define\s+([a-zA-Z][a-zA-Z_0-9]*)\s+([a-zA-Z_0-9]+)')
 
     d = {}
-    f = open(patchlevel_h)
-    try:
+    with open(patchlevel_h) as f:
         for line in f:
             m = rx.match(line)
             if m is not None:
                 name, value = m.group(1, 2)
                 d[name] = value
-    finally:
-        f.close()
 
     release = version = '%s.%s' % (d['PY_MAJOR_VERSION'], d['PY_MINOR_VERSION'])
     micro = int(d['PY_MICRO_VERSION'])
