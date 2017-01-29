@@ -1255,6 +1255,10 @@ some consistency rules, if possible:
   sequences, but not to sets or mappings). See also the
   :func:`~functools.total_ordering` decorator.
 
+* The :func:`hash` result should be consistent with equality.
+  Objects that are equal should either have the same hash value,
+  or be marked as unhashable.
+
 Python does not enforce these consistency rules. In fact, the not-a-number
 values are an example for not following these rules.
 
