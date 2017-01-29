@@ -641,7 +641,7 @@ C API
   available only when Py_LIMITED_API is set to the PY_VERSION_HEX value of
   the minimum Python version supporting this API.
 
-- Issue #28822: The indices parameters *start* and *end* of PyUnicode_FindChar()
+- Issue #28822: The index parameters *start* and *end* of PyUnicode_FindChar()
   are now adjusted to behave like ``str[start:end]``.
 
 - Issue #28808: PyUnicode_CompareWithASCIIString() now never raises exceptions.
