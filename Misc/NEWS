@@ -847,6 +847,11 @@ Windows
 
 - Issue #28896: Deprecate WindowsRegistryFinder and disable it by default.
 
+Documentation
+-------------
+
+- Issue #29349: Fix Python 2 syntax in code for building the documentation.
+
 Tests
 -----
 
