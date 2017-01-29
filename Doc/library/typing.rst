@@ -735,10 +735,21 @@ The module defines the following classes, functions and decorators:
 
        Employee = collections.namedtuple('Employee', ['name', 'id'])
 
-   The resulting class has one extra attribute: ``_field_types``,
-   giving a dict mapping field names to types.  (The field names
-   are in the ``_fields`` attribute, which is part of the namedtuple
-   API.)
+   To give a field a default value, you can assign to it in the class body::
+
+      class Employee(NamedTuple):
+          name: str
+          id: int = 3
+
+      employee = Employee('Guido')
+      assert employee.id == 3
+
+   Fields with a default value must come after any fields without a default.
+
+   The resulting class has two extra attributes: ``_field_types``,
+   giving a dict mapping field names to types, and ``field_defaults``, a dict
+   mapping field names to default values.  (The field names are in the
+   ``_fields`` attribute, which is part of the namedtuple API.)
 
    Backward-compatible usage::
 
@@ -746,6 +757,9 @@ The module defines the following classes, functions and decorators:
 
    .. versionchanged:: 3.6
       Added support for :pep:`526` variable annotation syntax.
+
+   .. versionchanged:: 3.6.1
+      Added support for default values.
 
 .. function:: NewType(typ)
 
