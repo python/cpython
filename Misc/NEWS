@@ -50,6 +50,11 @@ C API
   Py_BuildValue() were not available in limited API of version < 3.3 when
   PY_SSIZE_T_CLEAN is defined.
 
+Documentation
+-------------
+
+- Issue #29349: Fix Python 2 syntax in code for building the documentation.
+
 
 What's New in Python 3.5.3?
 ===========================
