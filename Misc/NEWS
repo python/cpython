@@ -13,6 +13,11 @@ Core and Builtins
 - Issue #29337: Fixed possible BytesWarning when compare the code objects.
   Warnings could be emitted at compile time.
 
+Extension Modules
+-----------------
+
+- Issue #29169: Update zlib to 1.2.10.
+
 Library
 -------
 
