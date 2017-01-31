@@ -215,6 +215,11 @@ Core and Builtins
 - Issue #26110: Speed-up method calls: add LOAD_METHOD and CALL_METHOD
   opcodes.
 
+Extension Modules
+-----------------
+
+- Issue #29169: Update zlib to 1.2.10.
+
 Library
 -------
 
