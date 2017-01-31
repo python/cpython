@@ -1,6 +1,10 @@
 
                 ChangeLog file for zlib
 
+Changes in 1.2.11 (15 Jan 2017)
+- Fix deflate stored bug when pulling last block from window
+- Permit immediate deflateParams changes before any deflate input
+
 Changes in 1.2.10 (2 Jan 2017)
 - Avoid warnings on snprintf() return value
 - Fix bug in deflate_stored() for zero-length input
