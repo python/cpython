@@ -40,6 +40,9 @@ Lib/venv/scripts/nt/* = BIN
 
 Lib/test/coding20731.py = BIN
 
+# Windows only zlib upstream file
+Modules/zlib/zlib.map = CRLF
+
 # Windows batch files work best with CRLF, there can be subtle problems with LF
 **.bat = CRLF
 
