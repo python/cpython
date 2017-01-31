@@ -47,6 +47,11 @@ Core and Builtins
 - Issue #28731: Optimize _PyDict_NewPresized() to create correct size dict.
   Improve speed of dict literal with constant keys up to 30%.
 
+Extension Modules
+-----------------
+
+- Issue #29169: Update zlib to 1.2.10.
+
 Library
 -------
 
