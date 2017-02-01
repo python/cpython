@@ -2352,8 +2352,8 @@ err:
 
 
 static int
-PyArg_UnpackStack_impl(PyObject **args, Py_ssize_t l, const char *name,
-                       Py_ssize_t min, Py_ssize_t max, va_list vargs)
+unpack_stack(PyObject **args, Py_ssize_t nargs, const char *name,
+             Py_ssize_t min, Py_ssize_t max, va_list vargs)
 {
     Py_ssize_t i;
     PyObject **o;
@@ -2361,41 +2361,41 @@ PyArg_UnpackStack_impl(PyObject **args, Py_ssize_t l, const char *name,
     assert(min >= 0);
     assert(min <= max);
 
-    if (l < min) {
+    if (nargs < min) {
         if (name != NULL)
             PyErr_Format(
                 PyExc_TypeError,
                 "%s expected %s%zd arguments, got %zd",
-                name, (min == max ? "" : "at least "), min, l);
+                name, (min == max ? "" : "at least "), min, nargs);
         else
             PyErr_Format(
                 PyExc_TypeError,
                 "unpacked tuple should have %s%zd elements,"
                 " but has %zd",
-                (min == max ? "" : "at least "), min, l);
+                (min == max ? "" : "at least "), min, nargs);
         return 0;
     }
 
-    if (l == 0) {
+    if (nargs == 0) {
         return 1;
     }
 
-    if (l > max) {
+    if (nargs > max) {
         if (name != NULL)
             PyErr_Format(
                 PyExc_TypeError,
                 "%s expected %s%zd arguments, got %zd",
-                name, (min == max ? "" : "at most "), max, l);
+                name, (min == max ? "" : "at most "), max, nargs);
         else
             PyErr_Format(
                 PyExc_TypeError,
                 "unpacked tuple should have %s%zd elements,"
                 " but has %zd",
-                (min == max ? "" : "at most "), max, l);
+                (min == max ? "" : "at most "), max, nargs);
         return 0;
     }
 
-    for (i = 0; i < l; i++) {
+    for (i = 0; i < nargs; i++) {
         o = va_arg(vargs, PyObject **);
         *o = args[i];
     }
@@ -2423,7 +2423,7 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
 #else
     va_start(vargs);
 #endif
-    retval = PyArg_UnpackStack_impl(stack, nargs, name, min, max, vargs);
+    retval = unpack_stack(stack, nargs, name, min, max, vargs);
     va_end(vargs);
     return retval;
 }
@@ -2440,7 +2440,7 @@ _PyArg_UnpackStack(PyObject **args, Py_ssize_t nargs, const char *name,
 #else
     va_start(vargs);
 #endif
-    retval = PyArg_UnpackStack_impl(args, nargs, name, min, max, vargs);
+    retval = unpack_stack(args, nargs, name, min, max, vargs);
     va_end(vargs);
     return retval;
 }
