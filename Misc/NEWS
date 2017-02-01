@@ -223,6 +223,9 @@ Extension Modules
 Library
 -------
 
+- Issue #29218: Unused install_misc command is now removed.  It has been
+  documented as unused since 2000.  Patch by Eric N. Vander Weele.
+
 - Issue #29338: The help of a builtin or extension class now includes the
   constructor signature if __text_signature__ is provided for the class.
 
