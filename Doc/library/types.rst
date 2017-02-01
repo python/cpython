@@ -132,6 +132,29 @@ Standard names are defined for the following types:
    C".)
 
 
+.. data:: SlotWrapperType
+
+   The type of methods of some built-in data types and base classes such as
+   :meth:`object.__init__` or :meth:`object.__lt__`.
+
+   .. versionadded:: 3.7
+
+
+.. data:: MethodWrapperType
+
+   The type of *bound* methods of some built-in data types and base classes.
+   For example it is the type of :code:`object().__str__`.
+
+   .. versionadded:: 3.7
+
+
+.. data:: MethodDescriptorType
+
+   The type of methods of some built-in data types such as :meth:`str.join`.
+
+   .. versionadded:: 3.7
+
+
 .. class:: ModuleType(name, doc=None)
 
    The type of :term:`modules <module>`. Constructor takes the name of the
