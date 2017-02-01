@@ -223,6 +223,10 @@ Extension Modules
 Library
 -------
 
+- Issue #29377: Add SlotWrapperType, MethodWrapperType, and
+  MethodDescriptorType built-in types to types module.
+  Original patch by Manuel Krebber.
+
 - Issue #29218: Unused install_misc command is now removed.  It has been
   documented as unused since 2000.  Patch by Eric N. Vander Weele.
 
