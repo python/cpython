@@ -746,6 +746,9 @@ Build
 Tools/Demos
 -----------
 
+- Issue #29367: python-gdb.py now supports also ``method-wrapper``
+  (``wrapperobject``) objects.
+
 - Issue #28023: Fix python-gdb.py didn't support new dict implementation.
 
 - Issue #15369: The pybench and pystone microbenchmark have been removed from

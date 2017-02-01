@@ -3,13 +3,14 @@
 # The code for testing gdb was adapted from similar work in Unladen Swallow's
 # Lib/test/test_jit_gdb.py
 
+import locale
 import os
 import re
 import subprocess
 import sys
 import sysconfig
+import textwrap
 import unittest
-import locale
 
 # Is this Python configured to support threads?
 try:
@@ -846,6 +847,24 @@ id(42)
                                           cmds_after_breakpoint=['py-bt-full'],
                                           )
         self.assertIn('#1 <built-in method gmtime', gdb_output)
+
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
+    def test_wrapper_call(self):
+        cmd = textwrap.dedent('''
+            class MyList(list):
+                def __init__(self):
+                    super().__init__()   # wrapper_call()
+
+            l = MyList()
+        ''')
+        # Verify with "py-bt":
+        gdb_output = self.get_stack_trace(cmd,
+                                          breakpoint='wrapper_call',
+                                          cmds_after_breakpoint=['py-bt'],
+                                          )
+        self.assertIn("<method-wrapper '__init__' of MyList object at ",
+                      gdb_output)
 
 
 class PyPrintTests(DebuggerTests):
