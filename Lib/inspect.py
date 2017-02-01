@@ -769,8 +769,11 @@ def getargs(co):
                     if opname in ('UNPACK_TUPLE', 'UNPACK_SEQUENCE'):
                         remain.append(value)
                         count.append(value)
-                    elif opname == 'STORE_FAST':
-                        stack.append(names[value])
+                    elif opname in ('STORE_FAST', 'STORE_DEREF'):
+                        if opname == 'STORE_FAST':
+                            stack.append(names[value])
+                        else:
+                            stack.append(co.co_cellvars[value])
 
                         # Special case for sublists of length 1: def foo((bar))
                         # doesn't generate the UNPACK_TUPLE bytecode, so if

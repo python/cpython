@@ -26,6 +26,9 @@ Extension Modules
 Library
 -------
 
+- Issue #29354: Fixed inspect.getargs() for parameters which are cell
+  variables.
+
 - Issue #29335: Fix subprocess.Popen.wait() when the child process has
   exited to a stopped instead of terminated state (ex: when under ptrace).
 
