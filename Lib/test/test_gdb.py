@@ -862,8 +862,8 @@ id(42)
         # Verify with "py-bt":
         gdb_output = self.get_stack_trace(cmd,
                                           cmds_after_breakpoint=['break wrapper_call', 'continue', 'py-bt'])
-        self.assertIn("<method-wrapper '__init__' of MyList object at ",
-                      gdb_output)
+        self.assertRegex(gdb_output,
+                         r"<method-wrapper u?'__init__' of MyList object at ")
 
 
 class PyPrintTests(DebuggerTests):
