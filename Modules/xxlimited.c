@@ -31,7 +31,7 @@ static XxoObject *
 newXxoObject(PyObject *arg)
 {
     XxoObject *self;
-    self = PyObject_New(XxoObject, (PyTypeObject*)Xxo_Type);
+    self = PyObject_GC_New(XxoObject, (PyTypeObject*)Xxo_Type);
     if (self == NULL)
         return NULL;
     self->x_attr = NULL;
