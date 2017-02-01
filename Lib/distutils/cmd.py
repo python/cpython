@@ -401,34 +401,3 @@ class Command:
         # Otherwise, print the "skip" message
         else:
             log.debug(skip_msg)
-
-# XXX 'install_misc' class not currently used -- it was the base class for
-# both 'install_scripts' and 'install_data', but they outgrew it.  It might
-# still be useful for 'install_headers', though, so I'm keeping it around
-# for the time being.
-
-class install_misc(Command):
-    """Common base class for installing some files in a subdirectory.
-    Currently used by install_data and install_scripts.
-    """
-
-    user_options = [('install-dir=', 'd', "directory to install the files to")]
-
-    def initialize_options (self):
-        self.install_dir = None
-        self.outfiles = []
-
-    def _install_dir_from(self, dirname):
-        self.set_undefined_options('install', (dirname, 'install_dir'))
-
-    def _copy_files(self, filelist):
-        self.outfiles = []
-        if not filelist:
-            return
-        self.mkpath(self.install_dir)
-        for f in filelist:
-            self.copy_file(f, self.install_dir)
-            self.outfiles.append(os.path.join(self.install_dir, f))
-
-    def get_outputs(self):
-        return self.outfiles
