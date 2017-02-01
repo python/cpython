@@ -9,6 +9,12 @@
 #include <ctype.h>
 #include <stddef.h>
 
+#include "clinic/longobject.c.h"
+/*[clinic input]
+class int "PyObject *" "&PyLong_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
+
 #ifndef NSMALLPOSINTS
 #define NSMALLPOSINTS           257
 #endif
@@ -4863,10 +4869,15 @@ long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)newobj;
 }
 
+/*[clinic input]
+int.__getnewargs__
+[clinic start generated code]*/
+
 static PyObject *
-long_getnewargs(PyLongObject *v)
+int___getnewargs___impl(PyObject *self)
+/*[clinic end generated code: output=839a49de3f00b61b input=5904770ab1fb8c75]*/
 {
-    return Py_BuildValue("(N)", _PyLong_Copy(v));
+    return Py_BuildValue("(N)", _PyLong_Copy((PyLongObject *)self));
 }
 
 static PyObject *
@@ -4879,15 +4890,19 @@ long_get1(PyLongObject *v, void *context) {
     return PyLong_FromLong(1L);
 }
 
+/*[clinic input]
+int.__format__
+
+    format_spec: unicode
+    /
+[clinic start generated code]*/
+
 static PyObject *
-long__format__(PyObject *self, PyObject *args)
+int___format___impl(PyObject *self, PyObject *format_spec)
+/*[clinic end generated code: output=b4929dee9ae18689 input=e31944a9b3e428b7]*/
 {
-    PyObject *format_spec;
     _PyUnicodeWriter writer;
     int ret;
-
-    if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
-        return NULL;
 
     _PyUnicodeWriter_Init(&writer);
     ret = _PyLong_FormatAdvancedWriter(
@@ -5066,31 +5081,50 @@ long_round(PyObject *self, PyObject *args)
     return result;
 }
 
-static PyObject *
-long_sizeof(PyLongObject *v)
+/*[clinic input]
+int.__sizeof__ -> Py_ssize_t
+
+Returns size in memory, in bytes.
+[clinic start generated code]*/
+
+static Py_ssize_t
+int___sizeof___impl(PyObject *self)
+/*[clinic end generated code: output=3303f008eaa6a0a5 input=9b51620c76fc4507]*/
 {
     Py_ssize_t res;
 
-    res = offsetof(PyLongObject, ob_digit) + Py_ABS(Py_SIZE(v))*sizeof(digit);
-    return PyLong_FromSsize_t(res);
+    res = offsetof(PyLongObject, ob_digit) + Py_ABS(Py_SIZE(self))*sizeof(digit);
+    return res;
 }
 
+/*[clinic input]
+int.bit_length
+
+Number of bits necessary to represent self in binary.
+
+>>> bin(37)
+'0b100101'
+>>> (37).bit_length()
+6
+[clinic start generated code]*/
+
 static PyObject *
-long_bit_length(PyLongObject *v)
+int_bit_length_impl(PyObject *self)
+/*[clinic end generated code: output=fc1977c9353d6a59 input=e4eb7a587e849a32]*/
 {
     PyLongObject *result, *x, *y;
     Py_ssize_t ndigits;
     int msd_bits;
     digit msd;
 
-    assert(v != NULL);
-    assert(PyLong_Check(v));
+    assert(self != NULL);
+    assert(PyLong_Check(self));
 
-    ndigits = Py_ABS(Py_SIZE(v));
+    ndigits = Py_ABS(Py_SIZE(self));
     if (ndigits == 0)
         return PyLong_FromLong(0);
 
-    msd = v->ob_digit[ndigits-1];
+    msd = ((PyLongObject *)self)->ob_digit[ndigits-1];
     msd_bits = bits_in_digit(msd);
 
     if (ndigits <= PY_SSIZE_T_MAX/PyLong_SHIFT)
@@ -5127,15 +5161,6 @@ long_bit_length(PyLongObject *v)
     return NULL;
 }
 
-PyDoc_STRVAR(long_bit_length_doc,
-"int.bit_length() -> int\n\
-\n\
-Number of bits necessary to represent self in binary.\n\
->>> bin(37)\n\
-'0b100101'\n\
->>> (37).bit_length()\n\
-6");
-
 #if 0
 static PyObject *
 long_is_finite(PyObject *v)
@@ -5144,49 +5169,43 @@ long_is_finite(PyObject *v)
 }
 #endif
 
+/*[clinic input]
+int.to_bytes
+
+    length: Py_ssize_t
+        Length of bytes object to use.  An OverflowError is raised if the
+        integer is not representable with the given number of bytes.
+    byteorder: unicode
+        The byte order used to represent the integer.  If byteorder is 'big',
+        the most significant byte is at the beginning of the byte array.  If
+        byteorder is 'little', the most significant byte is at the end of the
+        byte array.  To request the native byte order of the host system, use
+        `sys.byteorder' as the byte order value.
+    *
+    signed as is_signed: bool = False
+        Determines whether two's complement is used to represent the integer.
+        If signed is False and a negative integer is given, an OverflowError
+        is raised.
+
+Return an array of bytes representing an integer.
+[clinic start generated code]*/
 
 static PyObject *
-long_to_bytes(PyLongObject *v, PyObject *args, PyObject *kwds)
+int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
+                  int is_signed)
+/*[clinic end generated code: output=89c801df114050a3 input=ddac63f4c7bf414c]*/
 {
-    PyObject *byteorder_str;
-    PyObject *is_signed_obj = NULL;
-    Py_ssize_t length;
     int little_endian;
-    int is_signed;
     PyObject *bytes;
-    static char *kwlist[] = {"length", "byteorder", "signed", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "nU|O:to_bytes", kwlist,
-                                     &length, &byteorder_str,
-                                     &is_signed_obj))
-        return NULL;
-
-    if (args != NULL && Py_SIZE(args) > 2) {
-        PyErr_SetString(PyExc_TypeError,
-            "'signed' is a keyword-only argument");
-        return NULL;
-    }
-
-    if (_PyUnicode_EqualToASCIIString(byteorder_str, "little"))
+    if (_PyUnicode_EqualToASCIIString(byteorder, "little"))
         little_endian = 1;
-    else if (_PyUnicode_EqualToASCIIString(byteorder_str, "big"))
+    else if (_PyUnicode_EqualToASCIIString(byteorder, "big"))
         little_endian = 0;
     else {
         PyErr_SetString(PyExc_ValueError,
             "byteorder must be either 'little' or 'big'");
         return NULL;
-    }
-
-    if (is_signed_obj != NULL) {
-        int cmp = PyObject_IsTrue(is_signed_obj);
-        if (cmp < 0)
-            return NULL;
-        is_signed = cmp ? 1 : 0;
-    }
-    else {
-        /* If the signed argument was omitted, use False as the
-           default. */
-        is_signed = 0;
     }
 
     if (length < 0) {
@@ -5199,7 +5218,8 @@ long_to_bytes(PyLongObject *v, PyObject *args, PyObject *kwds)
     if (bytes == NULL)
         return NULL;
 
-    if (_PyLong_AsByteArray(v, (unsigned char *)PyBytes_AS_STRING(bytes),
+    if (_PyLong_AsByteArray((PyLongObject *)self,
+                            (unsigned char *)PyBytes_AS_STRING(bytes),
                             length, little_endian, is_signed) < 0) {
         Py_DECREF(bytes);
         return NULL;
@@ -5208,51 +5228,39 @@ long_to_bytes(PyLongObject *v, PyObject *args, PyObject *kwds)
     return bytes;
 }
 
-PyDoc_STRVAR(long_to_bytes_doc,
-"int.to_bytes(length, byteorder, *, signed=False) -> bytes\n\
-\n\
-Return an array of bytes representing an integer.\n\
-\n\
-The integer is represented using length bytes.  An OverflowError is\n\
-raised if the integer is not representable with the given number of\n\
-bytes.\n\
-\n\
-The byteorder argument determines the byte order used to represent the\n\
-integer.  If byteorder is 'big', the most significant byte is at the\n\
-beginning of the byte array.  If byteorder is 'little', the most\n\
-significant byte is at the end of the byte array.  To request the native\n\
-byte order of the host system, use `sys.byteorder' as the byte order value.\n\
-\n\
-The signed keyword-only argument determines whether two's complement is\n\
-used to represent the integer.  If signed is False and a negative integer\n\
-is given, an OverflowError is raised.");
+/*[clinic input]
+@classmethod
+int.from_bytes
+
+    bytes as bytes_obj: object
+        Holds the array of bytes to convert.  The argument must either
+        support the buffer protocol or be an iterable object producing bytes.
+        Bytes and bytearray are examples of built-in objects that support the
+        buffer protocol.
+    byteorder: unicode
+        The byte order used to represent the integer.  If byteorder is 'big',
+        the most significant byte is at the beginning of the byte array.  If
+        byteorder is 'little', the most significant byte is at the end of the
+        byte array.  To request the native byte order of the host system, use
+        `sys.byteorder' as the byte order value.
+    *
+    signed as is_signed: bool = False
+        Indicates whether two's complement is used to represent the integer.
+
+Return the integer represented by the given array of bytes.
+[clinic start generated code]*/
 
 static PyObject *
-long_from_bytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
+int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
+                    PyObject *byteorder, int is_signed)
+/*[clinic end generated code: output=efc5d68e31f9314f input=cdf98332b6a821b0]*/
 {
-    PyObject *byteorder_str;
-    PyObject *is_signed_obj = NULL;
     int little_endian;
-    int is_signed;
-    PyObject *obj;
-    PyObject *bytes;
-    PyObject *long_obj;
-    static char *kwlist[] = {"bytes", "byteorder", "signed", NULL};
+    PyObject *long_obj, *bytes;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OU|O:from_bytes", kwlist,
-                                     &obj, &byteorder_str,
-                                     &is_signed_obj))
-        return NULL;
-
-    if (args != NULL && Py_SIZE(args) > 2) {
-        PyErr_SetString(PyExc_TypeError,
-            "'signed' is a keyword-only argument");
-        return NULL;
-    }
-
-    if (_PyUnicode_EqualToASCIIString(byteorder_str, "little"))
+    if (_PyUnicode_EqualToASCIIString(byteorder, "little"))
         little_endian = 1;
-    else if (_PyUnicode_EqualToASCIIString(byteorder_str, "big"))
+    else if (_PyUnicode_EqualToASCIIString(byteorder, "big"))
         little_endian = 0;
     else {
         PyErr_SetString(PyExc_ValueError,
@@ -5260,19 +5268,7 @@ long_from_bytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (is_signed_obj != NULL) {
-        int cmp = PyObject_IsTrue(is_signed_obj);
-        if (cmp < 0)
-            return NULL;
-        is_signed = cmp ? 1 : 0;
-    }
-    else {
-        /* If the signed argument was omitted, use False as the
-           default. */
-        is_signed = 0;
-    }
-
-    bytes = PyObject_Bytes(obj);
+    bytes = PyObject_Bytes(bytes_obj);
     if (bytes == NULL)
         return NULL;
 
@@ -5289,35 +5285,16 @@ long_from_bytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return long_obj;
 }
 
-PyDoc_STRVAR(long_from_bytes_doc,
-"int.from_bytes(bytes, byteorder, *, signed=False) -> int\n\
-\n\
-Return the integer represented by the given array of bytes.\n\
-\n\
-The bytes argument must be a bytes-like object (e.g. bytes or bytearray).\n\
-\n\
-The byteorder argument determines the byte order used to represent the\n\
-integer.  If byteorder is 'big', the most significant byte is at the\n\
-beginning of the byte array.  If byteorder is 'little', the most\n\
-significant byte is at the end of the byte array.  To request the native\n\
-byte order of the host system, use `sys.byteorder' as the byte order value.\n\
-\n\
-The signed keyword-only argument indicates whether two's complement is\n\
-used to represent the integer.");
-
 static PyMethodDef long_methods[] = {
     {"conjugate",       (PyCFunction)long_long, METH_NOARGS,
      "Returns self, the complex conjugate of any int."},
-    {"bit_length",      (PyCFunction)long_bit_length, METH_NOARGS,
-     long_bit_length_doc},
+    INT_BIT_LENGTH_METHODDEF
 #if 0
     {"is_finite",       (PyCFunction)long_is_finite,    METH_NOARGS,
      "Returns always True."},
 #endif
-    {"to_bytes",        (PyCFunction)long_to_bytes,
-     METH_VARARGS|METH_KEYWORDS, long_to_bytes_doc},
-    {"from_bytes",      (PyCFunction)long_from_bytes,
-     METH_VARARGS|METH_KEYWORDS|METH_CLASS, long_from_bytes_doc},
+    INT_TO_BYTES_METHODDEF
+    INT_FROM_BYTES_METHODDEF
     {"__trunc__",       (PyCFunction)long_long, METH_NOARGS,
      "Truncating an Integral returns itself."},
     {"__floor__",       (PyCFunction)long_long, METH_NOARGS,
@@ -5327,10 +5304,9 @@ static PyMethodDef long_methods[] = {
     {"__round__",       (PyCFunction)long_round, METH_VARARGS,
      "Rounding an Integral returns itself.\n"
      "Rounding with an ndigits argument also returns an integer."},
-    {"__getnewargs__",          (PyCFunction)long_getnewargs,   METH_NOARGS},
-    {"__format__", (PyCFunction)long__format__, METH_VARARGS},
-    {"__sizeof__",      (PyCFunction)long_sizeof, METH_NOARGS,
-     "Returns size in memory, in bytes"},
+    INT___GETNEWARGS___METHODDEF
+    INT___FORMAT___METHODDEF
+    INT___SIZEOF___METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
