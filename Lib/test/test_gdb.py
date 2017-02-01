@@ -856,13 +856,12 @@ id(42)
                 def __init__(self):
                     super().__init__()   # wrapper_call()
 
+            id("first break point")
             l = MyList()
         ''')
         # Verify with "py-bt":
         gdb_output = self.get_stack_trace(cmd,
-                                          breakpoint='wrapper_call',
-                                          cmds_after_breakpoint=['py-bt'],
-                                          )
+                                          cmds_after_breakpoint=['break wrapper_call', 'continue', 'py-bt'])
         self.assertIn("<method-wrapper '__init__' of MyList object at ",
                       gdb_output)
 
