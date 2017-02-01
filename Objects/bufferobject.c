@@ -462,17 +462,23 @@ buffer_repeat(PyBufferObject *self, Py_ssize_t count)
 }
 
 static PyObject *
+buffer_item_impl(void *ptr, Py_ssize_t size, Py_ssize_t idx)
+{
+    if ( idx < 0 || idx >= size ) {
+        PyErr_SetString(PyExc_IndexError, "buffer index out of range");
+        return NULL;
+    }
+    return PyString_FromStringAndSize((char *)ptr + idx, 1);
+}
+
+static PyObject *
 buffer_item(PyBufferObject *self, Py_ssize_t idx)
 {
     void *ptr;
     Py_ssize_t size;
     if (!get_buf(self, &ptr, &size, ANY_BUFFER))
         return NULL;
-    if ( idx < 0 || idx >= size ) {
-        PyErr_SetString(PyExc_IndexError, "buffer index out of range");
-        return NULL;
-    }
-    return PyString_FromStringAndSize((char *)ptr + idx, 1);
+    return buffer_item_impl(ptr, size, idx);
 }
 
 static PyObject *
@@ -500,24 +506,27 @@ buffer_subscript(PyBufferObject *self, PyObject *item)
     void *p;
     Py_ssize_t size;
 
-    if (!get_buf(self, &p, &size, ANY_BUFFER))
-        return NULL;
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;
-        if (i < 0)
+        if (!get_buf(self, &p, &size, ANY_BUFFER))
+            return NULL;
+
+        if (i < 0) {
             i += size;
-        return buffer_item(self, i);
+        }
+        return buffer_item_impl(p, size, i);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength, cur, i;
 
-        if (PySlice_GetIndicesEx((PySliceObject*)item, size,
-                         &start, &stop, &step, &slicelength) < 0) {
+        if (_PySlice_Unpack(item, &start, &stop, &step) < 0)
             return NULL;
-        }
+        if (!get_buf(self, &p, &size, ANY_BUFFER))
+            return NULL;
 
+        slicelength = _PySlice_AdjustIndices(size, &start, &stop, step);
         if (slicelength <= 0)
             return PyString_FromStringAndSize("", 0);
         else if (step == 1)
@@ -550,21 +559,11 @@ buffer_subscript(PyBufferObject *self, PyObject *item)
 }
 
 static int
-buffer_ass_item(PyBufferObject *self, Py_ssize_t idx, PyObject *other)
+buffer_ass_item_impl(void *ptr1, Py_ssize_t size, Py_ssize_t idx, PyObject *other)
 {
     PyBufferProcs *pb;
-    void *ptr1, *ptr2;
-    Py_ssize_t size;
+    void *ptr2;
     Py_ssize_t count;
-
-    if ( self->b_readonly ) {
-        PyErr_SetString(PyExc_TypeError,
-                        "buffer is read-only");
-        return -1;
-    }
-
-    if (!get_buf(self, &ptr1, &size, ANY_BUFFER))
-        return -1;
 
     if (idx < 0 || idx >= size) {
         PyErr_SetString(PyExc_IndexError,
@@ -598,6 +597,23 @@ buffer_ass_item(PyBufferObject *self, Py_ssize_t idx, PyObject *other)
 
     ((char *)ptr1)[idx] = *(char *)ptr2;
     return 0;
+}
+
+static int
+buffer_ass_item(PyBufferObject *self, Py_ssize_t idx, PyObject *other)
+{
+    void *ptr1;
+    Py_ssize_t size;
+
+    if ( self->b_readonly ) {
+        PyErr_SetString(PyExc_TypeError,
+                        "buffer is read-only");
+        return -1;
+    }
+
+    if (!get_buf(self, &ptr1, &size, ANY_BUFFER))
+        return -1;
+    return buffer_ass_item_impl(ptr1, size, idx, other);
 }
 
 static int
@@ -687,23 +703,26 @@ buffer_ass_subscript(PyBufferObject *self, PyObject *item, PyObject *value)
                         "single-segment buffer object expected");
         return -1;
     }
-    if (!get_buf(self, &ptr1, &selfsize, ANY_BUFFER))
-        return -1;
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return -1;
+        if (!get_buf(self, &ptr1, &selfsize, ANY_BUFFER))
+            return -1;
+
         if (i < 0)
             i += selfsize;
-        return buffer_ass_item(self, i, value);
+        return buffer_ass_item_impl(ptr1, selfsize, i, value);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength;
 
-        if (PySlice_GetIndicesEx((PySliceObject *)item, selfsize,
-                        &start, &stop, &step, &slicelength) < 0)
+        if (_PySlice_Unpack(item, &start, &stop, &step) < 0)
+            return -1;
+        if (!get_buf(self, &ptr1, &selfsize, ANY_BUFFER))
             return -1;
 
+        slicelength = _PySlice_AdjustIndices(selfsize, &start, &stop, step);
         if ((othersize = (*pb->bf_getreadbuffer)(value, 0, &ptr2)) < 0)
             return -1;
 

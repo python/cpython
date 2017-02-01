@@ -10,6 +10,9 @@ What's New in Python 2.7.14?
 Core and Builtins
 -----------------
 
+- Issue #29028: Fixed possible use-after-free bugs in the subscription of the
+  buffer object with custom index object.
+
 - Issue #29145: Fix overflow checks in string, bytearray and unicode.
   Patch by jan matejek and Xiang Zhang.
 
