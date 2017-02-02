@@ -1540,10 +1540,7 @@ class Frame(object):
 
         if caller in ('_PyCFunction_FastCallDict',
                       '_PyCFunction_FastCallKeywords'):
-            if caller == '_PyCFunction_FastCallKeywords':
-                arg_name = 'func_obj'
-            else:
-                arg_name = 'func'
+            arg_name = 'func'
             # Within that frame:
             #   "func" is the local containing the PyObject* of the
             # PyCFunctionObject instance
