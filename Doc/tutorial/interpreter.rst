@@ -138,25 +138,24 @@ should follow.  To display all these characters properly, your editor must
 recognize that the file is UTF-8, and it must use a font that supports all the
 characters in the file.
 
-It is also possible to specify a different encoding for source files.  In order
-to do this, put one more special comment line right after the ``#!`` line to
-define the source file encoding::
+To declare an encoding other than the default one, a special comment line
+should be added as the *first* line of the file.  The syntax is as follows::
 
    # -*- coding: encoding -*-
 
-With that declaration, everything in the source file will be treated as having
-the encoding *encoding* instead of UTF-8.  The list of possible encodings can be
-found in the Python Library Reference, in the section on :mod:`codecs`.
+where *encoding* is one of the valid :mod:`codecs` supported by Python.
 
-For example, if your editor of choice does not support UTF-8 encoded files and
-insists on using some other encoding, say Windows-1252, you can write::
+For example, to declare that Windows-1252 encoding is to be used, the first
+line of your source code file should be::
 
    # -*- coding: cp-1252 -*-
 
-and still use all characters in the Windows-1252 character set in the source
-files.  The special encoding comment must be in the *first or second* line
-within the file.
+One exception to the *first line* rule is when the source code starts with a
+:ref:`UNIX "shebang" line <tut-scripts>`.  In this case, the encoding
+declaration should be added as the second line of the file.  For example::
 
+   #!/usr/bin/env python3
+   # -*- coding: cp-1252 -*-
 
 .. rubric:: Footnotes
 
