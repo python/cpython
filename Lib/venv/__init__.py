@@ -339,19 +339,17 @@ class EnvBuilder:
                 dstfile = os.path.join(dstdir, f)
                 with open(srcfile, 'rb') as f:
                     data = f.read()
-                if srcfile.endswith('.exe'):
-                    mode = 'wb'
-                else:
-                    mode = 'w'
+                if not srcfile.endswith('.exe'):
                     try:
                         data = data.decode('utf-8')
                         data = self.replace_variables(data, context)
-                    except UnicodeDecodeError as e:
+                        data = data.encode('utf-8')
+                    except UnicodeError as e:
                         data = None
                         logger.warning('unable to copy script %r, '
                                        'may be binary: %s', srcfile, e)
                 if data is not None:
-                    with open(dstfile, mode) as f:
+                    with open(dstfile, 'wb') as f:
                         f.write(data)
                     shutil.copymode(srcfile, dstfile)
 
