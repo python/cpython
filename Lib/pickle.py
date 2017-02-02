@@ -1464,12 +1464,19 @@ class _Unpickler:
     def load_appends(self):
         items = self.pop_mark()
         list_obj = self.stack[-1]
-        if isinstance(list_obj, list):
-            list_obj.extend(items)
+        try:
+            extend = list_obj.extend
+        except AttributeError:
+            pass
         else:
-            append = list_obj.append
-            for item in items:
-                append(item)
+            extend(items)
+            return
+        # Even if the PEP 307 requires extend() and append() methods,
+        # fall back on append() if the object has no extend() method
+        # for backward compatibility.
+        append = list_obj.append
+        for item in items:
+            append(item)
     dispatch[APPENDS[0]] = load_appends
 
     def load_setitem(self):
