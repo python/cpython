@@ -48,40 +48,40 @@ The module defines the following exception and functions:
    is wrong.
 
 
-.. function:: pack(fmt, v1, v2, ...)
+.. function:: pack(format, v1, v2, ...)
 
    Return a bytes object containing the values *v1*, *v2*, ... packed according
-   to the format string *fmt*.  The arguments must match the values required by
+   to the format string *format*.  The arguments must match the values required by
    the format exactly.
 
 
-.. function:: pack_into(fmt, buffer, offset, v1, v2, ...)
+.. function:: pack_into(format, buffer, offset, v1, v2, ...)
 
-   Pack the values *v1*, *v2*, ... according to the format string *fmt* and
+   Pack the values *v1*, *v2*, ... according to the format string *format* and
    write the packed bytes into the writable buffer *buffer* starting at
    position *offset*.  Note that *offset* is a required argument.
 
 
-.. function:: unpack(fmt, buffer)
+.. function:: unpack(format, buffer)
 
-   Unpack from the buffer *buffer* (presumably packed by ``pack(fmt, ...)``)
-   according to the format string *fmt*.  The result is a tuple even if it
+   Unpack from the buffer *buffer* (presumably packed by ``pack(format, ...)``)
+   according to the format string *format*.  The result is a tuple even if it
    contains exactly one item.  The buffer's size in bytes must match the
    size required by the format, as reflected by :func:`calcsize`.
 
 
-.. function:: unpack_from(fmt, buffer, offset=0)
+.. function:: unpack_from(format, buffer, offset=0)
 
    Unpack from *buffer* starting at position *offset*, according to the format
-   string *fmt*.  The result is a tuple even if it contains exactly one
+   string *format*.  The result is a tuple even if it contains exactly one
    item.  The buffer's size in bytes, minus *offset*, must be at least
    the size required by the format, as reflected by :func:`calcsize`.
 
 
-.. function:: iter_unpack(fmt, buffer)
+.. function:: iter_unpack(format, buffer)
 
    Iteratively unpack from the buffer *buffer* according to the format
-   string *fmt*.  This function returns an iterator which will read
+   string *format*.  This function returns an iterator which will read
    equally-sized chunks from the buffer until all its contents have been
    consumed.  The buffer's size in bytes must be a multiple of the size
    required by the format, as reflected by :func:`calcsize`.
@@ -91,10 +91,11 @@ The module defines the following exception and functions:
    .. versionadded:: 3.4
 
 
-.. function:: calcsize(fmt)
+.. function:: calcsize(format)
 
    Return the size of the struct (and hence of the bytes object produced by
-   ``pack(fmt, ...)``) corresponding to the format string *fmt*.
+   ``pack(format, ...)``) corresponding to the format string *format*.
+
 
 .. _struct-format-strings:
 
