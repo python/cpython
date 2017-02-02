@@ -246,6 +246,44 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
     return result;
 }
 
+// same to methoddescr_call(), but use FASTCALL convention.
+PyObject *
+_PyMethodDescr_FastCallKeywords(PyObject *descrobj,
+                                PyObject **args, Py_ssize_t nargs,
+                                PyObject *kwnames)
+{
+    assert(Py_TYPE(descrobj) == &PyMethodDescr_Type);
+    PyMethodDescrObject *descr = (PyMethodDescrObject *)descrobj;
+    PyObject *self, *result;
+
+    /* Make sure that the first argument is acceptable as 'self' */
+    if (nargs < 1) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' of '%.100s' "
+                     "object needs an argument",
+                     descr_name((PyDescrObject *)descr), "?",
+                     PyDescr_TYPE(descr)->tp_name);
+        return NULL;
+    }
+    self = args[0];
+    if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
+                                  (PyObject *)PyDescr_TYPE(descr))) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' "
+                     "requires a '%.100s' object "
+                     "but received a '%.100s'",
+                     descr_name((PyDescrObject *)descr), "?",
+                     PyDescr_TYPE(descr)->tp_name,
+                     self->ob_type->tp_name);
+        return NULL;
+    }
+
+    result = _PyMethodDef_RawFastCallKeywords(descr->d_method, self,
+                                              args+1, nargs-1, kwnames);
+    result = _Py_CheckFunctionResult((PyObject *)descr, result, NULL);
+    return result;
+}
+
 static PyObject *
 classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
                       PyObject *kwds)

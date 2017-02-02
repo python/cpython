@@ -102,6 +102,13 @@ PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallDict(
     PyObject **args,
     Py_ssize_t nargs,
     PyObject *kwargs);
+
+PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallKeywords(
+    PyMethodDef *method,
+    PyObject *self,
+    PyObject **args,
+    Py_ssize_t nargs,
+    PyObject *kwnames);
 #endif
 
 PyAPI_FUNC(int) PyCFunction_ClearFreeList(void);
