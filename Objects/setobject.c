@@ -296,8 +296,6 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 {
     Py_ssize_t newsize;
     setentry *oldtable, *newtable, *entry;
-    Py_ssize_t oldfill = so->fill;
-    Py_ssize_t oldused = so->used;
     Py_ssize_t oldmask = so->mask;
     size_t newmask;
     int is_oldtable_malloced;
@@ -352,21 +350,20 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     /* Make the set empty, using the new table. */
     assert(newtable != oldtable);
     memset(newtable, 0, sizeof(setentry) * newsize);
-    so->fill = oldused;
-    so->used = oldused;
     so->mask = newsize - 1;
     so->table = newtable;
 
     /* Copy the data over; this is refcount-neutral for active entries;
        dummy entries aren't copied over, of course */
     newmask = (size_t)so->mask;
-    if (oldfill == oldused) {
+    if (so->fill == so->used) {
         for (entry = oldtable; entry <= oldtable + oldmask; entry++) {
             if (entry->key != NULL) {
                 set_insert_clean(newtable, newmask, entry->key, entry->hash);
             }
         }
     } else {
+        so->fill = so->used;
         for (entry = oldtable; entry <= oldtable + oldmask; entry++) {
             if (entry->key != NULL && entry->key != dummy) {
                 set_insert_clean(newtable, newmask, entry->key, entry->hash);
