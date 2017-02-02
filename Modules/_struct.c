@@ -2162,7 +2162,7 @@ pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 unpack
 
     format: object
-    inputstr: object
+    buffer: Py_buffer
     /
 
 Return a tuple containing values unpacked according to the format string.
@@ -2173,8 +2173,8 @@ See help(struct) for more on format strings.
 [clinic start generated code]*/
 
 static PyObject *
-unpack_impl(PyObject *module, PyObject *format, PyObject *inputstr)
-/*[clinic end generated code: output=06951d66eae6d63b input=4b81d54988890f5e]*/
+unpack_impl(PyObject *module, PyObject *format, Py_buffer *buffer)
+/*[clinic end generated code: output=f75ada02aaa33b3b input=654078e6660c2df0]*/
 {
     PyStructObject *s_object;
     PyObject *result;
@@ -2182,7 +2182,7 @@ unpack_impl(PyObject *module, PyObject *format, PyObject *inputstr)
     s_object = cache_struct(format);
     if (s_object == NULL)
         return NULL;
-    result = Struct_unpack(s_object, inputstr);
+    result = Struct_unpack_impl(s_object, buffer);
     Py_DECREF(s_object);
     return result;
 }
