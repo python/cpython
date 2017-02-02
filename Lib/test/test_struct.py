@@ -428,6 +428,10 @@ class StructTest(unittest.TestCase):
             for i in range(6, len(test_string) + 1):
                 self.assertRaises(struct.error, struct.unpack_from, fmt, data, i)
 
+        # keyword arguments
+        self.assertEqual(s.unpack_from(buffer=test_string, offset=2),
+                         (b'cd01',))
+
     def test_pack_into(self):
         test_string = b'Reykjavik rocks, eow!'
         writable_buf = array.array('b', b' '*100)
