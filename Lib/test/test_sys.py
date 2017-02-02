@@ -164,6 +164,17 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+        # test that the exit machinery handles long exit codes
+        rc, out, err = assert_python_failure('-c', 'raise SystemExit(47L)')
+        self.assertEqual(rc, 47)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+        rc, out, err = assert_python_ok('-c', 'raise SystemExit(0L)')
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
         def check_exit_message(code, expected, **env_vars):
             rc, out, err = assert_python_failure('-c', code, **env_vars)
             self.assertEqual(rc, 1)
