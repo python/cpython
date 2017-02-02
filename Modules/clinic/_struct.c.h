@@ -156,7 +156,7 @@ PyDoc_STRVAR(calcsize__doc__,
     {"calcsize", (PyCFunction)calcsize, METH_O, calcsize__doc__},
 
 PyDoc_STRVAR(unpack__doc__,
-"unpack($module, format, inputstr, /)\n"
+"unpack($module, format, buffer, /)\n"
 "--\n"
 "\n"
 "Return a tuple containing values unpacked according to the format string.\n"
@@ -169,27 +169,31 @@ PyDoc_STRVAR(unpack__doc__,
     {"unpack", (PyCFunction)unpack, METH_FASTCALL, unpack__doc__},
 
 static PyObject *
-unpack_impl(PyObject *module, PyObject *format, PyObject *inputstr);
+unpack_impl(PyObject *module, PyObject *format, Py_buffer *buffer);
 
 static PyObject *
 unpack(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     PyObject *format;
-    PyObject *inputstr;
+    Py_buffer buffer = {NULL, NULL};
 
-    if (!_PyArg_UnpackStack(args, nargs, "unpack",
-        2, 2,
-        &format, &inputstr)) {
+    if (!_PyArg_ParseStack(args, nargs, "Oy*:unpack",
+        &format, &buffer)) {
         goto exit;
     }
 
     if (!_PyArg_NoStackKeywords("unpack", kwnames)) {
         goto exit;
     }
-    return_value = unpack_impl(module, format, inputstr);
+    return_value = unpack_impl(module, format, &buffer);
 
 exit:
+    /* Cleanup for buffer */
+    if (buffer.obj) {
+       PyBuffer_Release(&buffer);
+    }
+
     return return_value;
 }
 
@@ -273,4 +277,4 @@ iter_unpack(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=db8152ad222fa3d0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0714090a5d0ea8ce input=a9049054013a1b77]*/
