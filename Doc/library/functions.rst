@@ -617,7 +617,7 @@ section.
       '0x1L'
 
    If x is not a Python :class:`int` or :class:`long` object, it has to
-   define an __index__() method that returns an integer.
+   define a __hex__() method that returns a string.
 
    See also :func:`int` for converting a hexadecimal string to an
    integer using a base of 16.
