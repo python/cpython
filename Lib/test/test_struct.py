@@ -530,13 +530,13 @@ class StructTest(unittest.TestCase):
 
         # format lists containing only count spec should result in an error
         self.assertRaises(struct.error, struct.pack, '12345')
-        self.assertRaises(struct.error, struct.unpack, '12345', '')
+        self.assertRaises(struct.error, struct.unpack, '12345', b'')
         self.assertRaises(struct.error, struct.pack_into, '12345', store, 0)
         self.assertRaises(struct.error, struct.unpack_from, '12345', store, 0)
 
         # Format lists with trailing count spec should result in an error
         self.assertRaises(struct.error, struct.pack, 'c12345', 'x')
-        self.assertRaises(struct.error, struct.unpack, 'c12345', 'x')
+        self.assertRaises(struct.error, struct.unpack, 'c12345', b'x')
         self.assertRaises(struct.error, struct.pack_into, 'c12345', store, 0,
                            'x')
         self.assertRaises(struct.error, struct.unpack_from, 'c12345', store,
@@ -545,7 +545,7 @@ class StructTest(unittest.TestCase):
         # Mixed format tests
         self.assertRaises(struct.error, struct.pack, '14s42', 'spam and eggs')
         self.assertRaises(struct.error, struct.unpack, '14s42',
-                          'spam and eggs')
+                          b'spam and eggs')
         self.assertRaises(struct.error, struct.pack_into, '14s42', store, 0,
                           'spam and eggs')
         self.assertRaises(struct.error, struct.unpack_from, '14s42', store, 0)
