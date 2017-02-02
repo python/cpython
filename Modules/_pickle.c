@@ -5807,7 +5807,9 @@ static int
 do_append(UnpicklerObject *self, Py_ssize_t x)
 {
     PyObject *value;
+    PyObject *slice;
     PyObject *list;
+    PyObject *result;
     Py_ssize_t len, i;
 
     len = Py_SIZE(self->stack);
@@ -5818,8 +5820,7 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
 
     list = self->stack->data[x - 1];
 
-    if (PyList_Check(list)) {
-        PyObject *slice;
+    if (PyList_CheckExact(list)) {
         Py_ssize_t list_len;
         int ret;
 
@@ -5832,27 +5833,48 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
         return ret;
     }
     else {
-        PyObject *append_func;
-        _Py_IDENTIFIER(append);
+        PyObject *extend_func;
+        _Py_IDENTIFIER(extend);
 
-        append_func = _PyObject_GetAttrId(list, &PyId_append);
-        if (append_func == NULL)
-            return -1;
-        for (i = x; i < len; i++) {
-            PyObject *result;
-
-            value = self->stack->data[i];
-            result = _Pickle_FastCall(append_func, value);
-            if (result == NULL) {
-                Pdata_clear(self->stack, i + 1);
-                Py_SIZE(self->stack) = x;
-                Py_DECREF(append_func);
+        extend_func = _PyObject_GetAttrId(list, &PyId_extend);
+        if (extend_func != NULL) {
+            slice = Pdata_poplist(self->stack, x);
+            if (!slice) {
+                Py_DECREF(extend_func);
                 return -1;
             }
+            result = _Pickle_FastCall(extend_func, slice);
+            Py_DECREF(slice);
+            Py_DECREF(extend_func);
+            if (result == NULL)
+                return -1;
             Py_DECREF(result);
         }
-        Py_SIZE(self->stack) = x;
-        Py_DECREF(append_func);
+        else {
+            PyObject *append_func;
+            _Py_IDENTIFIER(append);
+
+            /* Even if the PEP 307 requires extend() and append() methods,
+               fall back on append() if the object has no extend() method
+               for backward compatibility. */
+            PyErr_Clear();
+            append_func = _PyObject_GetAttrId(list, &PyId_append);
+            if (append_func == NULL)
+                return -1;
+            for (i = x; i < len; i++) {
+                value = self->stack->data[i];
+                result = _Pickle_FastCall(append_func, value);
+                if (result == NULL) {
+                    Pdata_clear(self->stack, i + 1);
+                    Py_SIZE(self->stack) = x;
+                    Py_DECREF(append_func);
+                    return -1;
+                }
+                Py_DECREF(result);
+            }
+            Py_SIZE(self->stack) = x;
+            Py_DECREF(append_func);
+        }
     }
 
     return 0;
