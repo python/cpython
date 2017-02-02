@@ -5844,7 +5844,6 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
                 return -1;
             }
             result = _Pickle_FastCall(extend_func, slice);
-            Py_DECREF(slice);
             Py_DECREF(extend_func);
             if (result == NULL)
                 return -1;
