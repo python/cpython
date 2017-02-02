@@ -22,6 +22,9 @@ class int "PyObject *" "&PyLong_Type"
 #define NSMALLNEGINTS           5
 #endif
 
+_Py_IDENTIFIER(little);
+_Py_IDENTIFIER(big);
+
 /* convert a PyLong of size 1, 0 or -1 to an sdigit */
 #define MEDIUM_VALUE(x) (assert(-1 <= Py_SIZE(x) && Py_SIZE(x) <= 1),   \
          Py_SIZE(x) < 0 ? -(sdigit)(x)->ob_digit[0] :   \
@@ -5198,9 +5201,9 @@ int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
     int little_endian;
     PyObject *bytes;
 
-    if (_PyUnicode_EqualToASCIIString(byteorder, "little"))
+    if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_little))
         little_endian = 1;
-    else if (_PyUnicode_EqualToASCIIString(byteorder, "big"))
+    else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_big))
         little_endian = 0;
     else {
         PyErr_SetString(PyExc_ValueError,
@@ -5258,9 +5261,9 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     int little_endian;
     PyObject *long_obj, *bytes;
 
-    if (_PyUnicode_EqualToASCIIString(byteorder, "little"))
+    if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_little))
         little_endian = 1;
-    else if (_PyUnicode_EqualToASCIIString(byteorder, "big"))
+    else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_big))
         little_endian = 0;
     else {
         PyErr_SetString(PyExc_ValueError,
