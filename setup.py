@@ -2064,7 +2064,7 @@ class PyBuildExt(build_ext):
                                                          'Modules',
                                                          '_decimal',
                                                          'libmpdec'))]
-            libraries = []
+            libraries = self.detect_math_libs()
             sources = [
               '_decimal/_decimal.c',
               '_decimal/libmpdec/basearith.c',
