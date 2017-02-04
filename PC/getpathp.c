@@ -560,7 +560,7 @@ read_pth_file(const wchar_t *path, wchar_t *prefix, int *isolated, int *nosite)
         char *p = fgets(line, MAXPATHLEN + 1, sp_file);
         if (!p)
             break;
-        if (*p == '\0' || *p == '#')
+        if (*p == '\0' || *p == '\r' || *p == '\n' || *p == '#')
             continue;
         while (*++p) {
             if (*p == '\r' || *p == '\n') {
