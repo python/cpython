@@ -1,9 +1,11 @@
 '''Tests for WindowsConsoleIO
 '''
 
+import os
 import io
-import unittest
 import sys
+import unittest
+import tempfile
 
 if sys.platform != 'win32':
     raise unittest.SkipTest("test only relevant on win32")
@@ -19,6 +21,16 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertFalse(issubclass(ConIO, io.TextIOBase))
 
     def test_open_fd(self):
+        self.assertRaisesRegex(ValueError,
+            "negative file descriptor", ConIO, -1)
+
+        fd, _ = tempfile.mkstemp()
+        try:
+            self.assertRaisesRegex(ValueError,
+                "Cannot open non-console file", ConIO, fd)
+        finally:
+            os.close(fd)
+
         try:
             f = ConIO(0)
         except ValueError:
@@ -56,6 +68,20 @@ class WindowsConsoleIOTests(unittest.TestCase):
             f.close()
 
     def test_open_name(self):
+        self.assertRaises(ValueError, ConIO, sys.executable)
+
+        f = open('C:/con', 'rb', buffering=0)
+        self.assertIsInstance(f, ConIO)
+        f.close()
+
+        f = open(r'\\.\conin$', 'rb', buffering=0)
+        self.assertIsInstance(f, ConIO)
+        f.close()
+
+        f = open('//?/conout$', 'wb', buffering=0)
+        self.assertIsInstance(f, ConIO)
+        f.close()
+
         f = ConIO("CON")
         self.assertTrue(f.readable())
         self.assertFalse(f.writable())
