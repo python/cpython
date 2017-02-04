@@ -47,6 +47,11 @@ Library
   leading dots could match related hostnames again (e.g. .b.c matches a.b.c).
   Patch by Milan Oberkirch.
 
+Windows
+-------
+
+- Issue #29392: Prevent crash when passing invalid arguments into msvcrt module.
+
 C API
 -----
 
