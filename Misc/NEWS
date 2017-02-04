@@ -871,6 +871,10 @@ Library
 Windows
 -------
 
+- Issue #28164: Correctly handle special console filenames (patch by Eryk Sun)
+
+- Issue #29409: Implement PEP 529 for io.FileIO (Patch by Eryk Sun)
+
 - Issue #29392: Prevent crash when passing invalid arguments into msvcrt module.
 
 - Issue #25778: winreg does not truncate string correctly (Patch by Eryk Sun)
