@@ -146,6 +146,8 @@ Library
 Windows
 -------
 
+- Issue #29392: Prevent crash when passing invalid arguments into msvcrt module.
+
 - Issue #25778: winreg does not truncate string correctly (Patch by Eryk Sun)
 
 - Issue #28896: Deprecate WindowsRegistryFinder and disable it by default.
