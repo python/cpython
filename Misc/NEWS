@@ -10,6 +10,8 @@ What's New in Python 3.6.1 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
+
 - Issue #29337: Fixed possible BytesWarning when compare the code objects.
   Warnings could be emitted at compile time.
 
