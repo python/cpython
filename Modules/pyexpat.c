@@ -1980,8 +1980,3 @@ static struct HandlerInfo handler_info[] = {
 
     {NULL, NULL, NULL} /* sentinel */
 };
-
-/*[clinic input]
-dump buffer
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=524ce2e021e4eba6]*/
