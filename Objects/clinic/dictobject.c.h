@@ -40,7 +40,7 @@ PyDoc_STRVAR(dict___contains____doc__,
 "__contains__($self, key, /)\n"
 "--\n"
 "\n"
-"True if the dictionary has a specified key, else False.");
+"True if the dictionary has the specified key, else False.");
 
 #define DICT___CONTAINS___METHODDEF    \
     {"__contains__", (PyCFunction)dict___contains__, METH_O|METH_COEXIST, dict___contains____doc__},
@@ -115,4 +115,4 @@ dict_setdefault(PyDictObject *self, PyObject **args, Py_ssize_t nargs, PyObject 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=91aa6a9f3c402b1b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d57df133cf66e53 input=a9049054013a1b77]*/
