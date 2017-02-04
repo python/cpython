@@ -28,6 +28,11 @@
 #include "pydtrace.h"
 #include "pytime.h"             /* for _PyTime_GetMonotonicClock() */
 
+/*[clinic input]
+module gc
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b5c9690ecc842d79]*/
+
 /* Get an object's GC head */
 #define AS_GC(o) ((PyGC_Head *)(o)-1)
 
@@ -43,6 +48,8 @@ struct gc_generation {
                   generations */
 };
 
+/* If we change this, we need to change the default value in the signature of
+   gc.collect. */
 #define NUM_GENERATIONS 3
 #define GEN_HEAD(n) (&generations[n].head)
 
@@ -1155,107 +1162,123 @@ collect_generations(void)
     return n;
 }
 
-PyDoc_STRVAR(gc_enable__doc__,
-"enable() -> None\n"
-"\n"
-"Enable automatic garbage collection.\n");
+#include "clinic/gcmodule.c.h"
+
+/*[clinic input]
+gc.enable
+
+Enable automatic garbage collection.
+[clinic start generated code]*/
 
 static PyObject *
-gc_enable(PyObject *self, PyObject *noargs)
+gc_enable_impl(PyObject *module)
+/*[clinic end generated code: output=45a427e9dce9155c input=81ac4940ca579707]*/
 {
     enabled = 1;
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(gc_disable__doc__,
-"disable() -> None\n"
-"\n"
-"Disable automatic garbage collection.\n");
+/*[clinic input]
+gc.disable
+
+Disable automatic garbage collection.
+[clinic start generated code]*/
 
 static PyObject *
-gc_disable(PyObject *self, PyObject *noargs)
+gc_disable_impl(PyObject *module)
+/*[clinic end generated code: output=97d1030f7aa9d279 input=8c2e5a14e800d83b]*/
 {
     enabled = 0;
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(gc_isenabled__doc__,
-"isenabled() -> status\n"
-"\n"
-"Returns true if automatic garbage collection is enabled.\n");
+/*[clinic input]
+gc.isenabled -> bool
 
-static PyObject *
-gc_isenabled(PyObject *self, PyObject *noargs)
+Returns true if automatic garbage collection is enabled.
+[clinic start generated code]*/
+
+static int
+gc_isenabled_impl(PyObject *module)
+/*[clinic end generated code: output=1874298331c49130 input=30005e0422373b31]*/
 {
-    return PyBool_FromLong((long)enabled);
+    return enabled;
 }
 
-PyDoc_STRVAR(gc_collect__doc__,
-"collect([generation]) -> n\n"
-"\n"
-"With no arguments, run a full collection.  The optional argument\n"
-"may be an integer specifying which generation to collect.  A ValueError\n"
-"is raised if the generation number is invalid.\n\n"
-"The number of unreachable objects is returned.\n");
+/*[clinic input]
+gc.collect -> Py_ssize_t
 
-static PyObject *
-gc_collect(PyObject *self, PyObject *args, PyObject *kws)
+    generation: int(c_default="NUM_GENERATIONS - 1") = 2
+
+Run the garbage collector.
+
+With no arguments, run a full collection.  The optional argument
+may be an integer specifying which generation to collect.  A ValueError
+is raised if the generation number is invalid.
+
+The number of unreachable objects is returned.
+[clinic start generated code]*/
+
+static Py_ssize_t
+gc_collect_impl(PyObject *module, int generation)
+/*[clinic end generated code: output=b697e633043233c7 input=40720128b682d879]*/
 {
-    static char *keywords[] = {"generation", NULL};
-    int genarg = NUM_GENERATIONS - 1;
     Py_ssize_t n;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kws, "|i", keywords, &genarg))
-        return NULL;
-
-    else if (genarg < 0 || genarg >= NUM_GENERATIONS) {
+    if (generation < 0 || generation >= NUM_GENERATIONS) {
         PyErr_SetString(PyExc_ValueError, "invalid generation");
-        return NULL;
+        return -1;
     }
 
     if (collecting)
         n = 0; /* already collecting, don't do anything */
     else {
         collecting = 1;
-        n = collect_with_callback(genarg);
+        n = collect_with_callback(generation);
         collecting = 0;
     }
 
-    return PyLong_FromSsize_t(n);
+    return n;
 }
 
-PyDoc_STRVAR(gc_set_debug__doc__,
-"set_debug(flags) -> None\n"
-"\n"
-"Set the garbage collection debugging flags. Debugging information is\n"
-"written to sys.stderr.\n"
-"\n"
-"flags is an integer and can have the following bits turned on:\n"
-"\n"
-"  DEBUG_STATS - Print statistics during collection.\n"
-"  DEBUG_COLLECTABLE - Print collectable objects found.\n"
-"  DEBUG_UNCOLLECTABLE - Print unreachable but uncollectable objects found.\n"
-"  DEBUG_SAVEALL - Save objects to gc.garbage rather than freeing them.\n"
-"  DEBUG_LEAK - Debug leaking programs (everything but STATS).\n");
+/*[clinic input]
+gc.set_debug
+
+    flags: int
+        An integer that can have the following bits turned on:
+          DEBUG_STATS - Print statistics during collection.
+          DEBUG_COLLECTABLE - Print collectable objects found.
+          DEBUG_UNCOLLECTABLE - Print unreachable but uncollectable objects
+            found.
+          DEBUG_SAVEALL - Save objects to gc.garbage rather than freeing them.
+          DEBUG_LEAK - Debug leaking programs (everything but STATS).
+    /
+
+Set the garbage collection debugging flags.
+
+Debugging information is written to sys.stderr.
+[clinic start generated code]*/
 
 static PyObject *
-gc_set_debug(PyObject *self, PyObject *args)
+gc_set_debug_impl(PyObject *module, int flags)
+/*[clinic end generated code: output=7c8366575486b228 input=5e5ce15e84fbed15]*/
 {
-    if (!PyArg_ParseTuple(args, "i:set_debug", &debug))
-        return NULL;
+    debug = flags;
 
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(gc_get_debug__doc__,
-"get_debug() -> flags\n"
-"\n"
-"Get the garbage collection debugging flags.\n");
+/*[clinic input]
+gc.get_debug -> int
 
-static PyObject *
-gc_get_debug(PyObject *self, PyObject *noargs)
+Get the garbage collection debugging flags.
+[clinic start generated code]*/
+
+static int
+gc_get_debug_impl(PyObject *module)
+/*[clinic end generated code: output=91242f3506cd1e50 input=91a101e1c3b98366]*/
 {
-    return Py_BuildValue("i", debug);
+    return debug;
 }
 
 PyDoc_STRVAR(gc_set_thresh__doc__,
@@ -1281,13 +1304,15 @@ gc_set_thresh(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(gc_get_thresh__doc__,
-"get_threshold() -> (threshold0, threshold1, threshold2)\n"
-"\n"
-"Return the current collection thresholds\n");
+/*[clinic input]
+gc.get_threshold
+
+Return the current collection thresholds.
+[clinic start generated code]*/
 
 static PyObject *
-gc_get_thresh(PyObject *self, PyObject *noargs)
+gc_get_threshold_impl(PyObject *module)
+/*[clinic end generated code: output=7902bc9f41ecbbd8 input=286d79918034d6e6]*/
 {
     return Py_BuildValue("(iii)",
                          generations[0].threshold,
@@ -1295,13 +1320,15 @@ gc_get_thresh(PyObject *self, PyObject *noargs)
                          generations[2].threshold);
 }
 
-PyDoc_STRVAR(gc_get_count__doc__,
-"get_count() -> (count0, count1, count2)\n"
-"\n"
-"Return the current collection counts\n");
+/*[clinic input]
+gc.get_count
+
+Return a three-tuple of the current collection counts.
+[clinic start generated code]*/
 
 static PyObject *
-gc_get_count(PyObject *self, PyObject *noargs)
+gc_get_count_impl(PyObject *module)
+/*[clinic end generated code: output=354012e67b16398f input=a392794a08251751]*/
 {
     return Py_BuildValue("(iii)",
                          generations[0].count,
@@ -1395,14 +1422,15 @@ gc_get_referents(PyObject *self, PyObject *args)
     return result;
 }
 
-PyDoc_STRVAR(gc_get_objects__doc__,
-"get_objects() -> [...]\n"
-"\n"
-"Return a list of objects tracked by the collector (excluding the list\n"
-"returned).\n");
+/*[clinic input]
+gc.get_objects
+
+Return a list of objects tracked by the collector (excluding the list returned).
+[clinic start generated code]*/
 
 static PyObject *
-gc_get_objects(PyObject *self, PyObject *noargs)
+gc_get_objects_impl(PyObject *module)
+/*[clinic end generated code: output=fcb95d2e23e1f750 input=9439fe8170bf35d8]*/
 {
     int i;
     PyObject* result;
@@ -1419,13 +1447,15 @@ gc_get_objects(PyObject *self, PyObject *noargs)
     return result;
 }
 
-PyDoc_STRVAR(gc_get_stats__doc__,
-"get_stats() -> [...]\n"
-"\n"
-"Return a list of dictionaries containing per-generation statistics.\n");
+/*[clinic input]
+gc.get_stats
+
+Return a list of dictionaries containing per-generation statistics.
+[clinic start generated code]*/
 
 static PyObject *
-gc_get_stats(PyObject *self, PyObject *noargs)
+gc_get_stats_impl(PyObject *module)
+/*[clinic end generated code: output=a8ab1d8a5d26f3ab input=1ef4ed9d17b1a470]*/
 {
     int i;
     PyObject *result;
@@ -1465,15 +1495,20 @@ error:
 }
 
 
-PyDoc_STRVAR(gc_is_tracked__doc__,
-"is_tracked(obj) -> bool\n"
-"\n"
-"Returns true if the object is tracked by the garbage collector.\n"
-"Simple atomic objects will return false.\n"
-);
+/*[clinic input]
+gc.is_tracked
+
+    obj: object
+    /
+
+Returns true if the object is tracked by the garbage collector.
+
+Simple atomic objects will return false.
+[clinic start generated code]*/
 
 static PyObject *
-gc_is_tracked(PyObject *self, PyObject *obj)
+gc_is_tracked(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=14f0103423b28e31 input=d83057f170ea2723]*/
 {
     PyObject *result;
 
@@ -1505,19 +1540,18 @@ PyDoc_STRVAR(gc__doc__,
 "get_referents() -- Return the list of objects that an object refers to.\n");
 
 static PyMethodDef GcMethods[] = {
-    {"enable",             gc_enable,     METH_NOARGS,  gc_enable__doc__},
-    {"disable",            gc_disable,    METH_NOARGS,  gc_disable__doc__},
-    {"isenabled",          gc_isenabled,  METH_NOARGS,  gc_isenabled__doc__},
-    {"set_debug",          gc_set_debug,  METH_VARARGS, gc_set_debug__doc__},
-    {"get_debug",          gc_get_debug,  METH_NOARGS,  gc_get_debug__doc__},
-    {"get_count",          gc_get_count,  METH_NOARGS,  gc_get_count__doc__},
+    GC_ENABLE_METHODDEF
+    GC_DISABLE_METHODDEF
+    GC_ISENABLED_METHODDEF
+    GC_SET_DEBUG_METHODDEF
+    GC_GET_DEBUG_METHODDEF
+    GC_GET_COUNT_METHODDEF
     {"set_threshold",  gc_set_thresh, METH_VARARGS, gc_set_thresh__doc__},
-    {"get_threshold",  gc_get_thresh, METH_NOARGS,  gc_get_thresh__doc__},
-    {"collect",            (PyCFunction)gc_collect,
-        METH_VARARGS | METH_KEYWORDS,           gc_collect__doc__},
-    {"get_objects",    gc_get_objects,METH_NOARGS,  gc_get_objects__doc__},
-    {"get_stats",      gc_get_stats, METH_NOARGS, gc_get_stats__doc__},
-    {"is_tracked",     gc_is_tracked, METH_O,       gc_is_tracked__doc__},
+    GC_GET_THRESHOLD_METHODDEF
+    GC_COLLECT_METHODDEF
+    GC_GET_OBJECTS_METHODDEF
+    GC_GET_STATS_METHODDEF
+    GC_IS_TRACKED_METHODDEF
     {"get_referrers",  gc_get_referrers, METH_VARARGS,
         gc_get_referrers__doc__},
     {"get_referents",  gc_get_referents, METH_VARARGS,
