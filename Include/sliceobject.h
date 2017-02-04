@@ -39,8 +39,9 @@ PyAPI_FUNC(int) PySlice_GetIndicesEx(PySliceObject *r, Py_ssize_t length,
 				    Py_ssize_t *step, Py_ssize_t *slicelength);
 
 #define PySlice_GetIndicesEx(slice, length, start, stop, step, slicelen) (  \
-    _PySlice_Unpack((PyObject *)(slice), (start), (stop), (step)) < 0 ? -1 :  \
-    ((*slicelen = _PySlice_AdjustIndices((length), (start), (stop), *(step))), \
+    _PySlice_Unpack((PyObject *)(slice), (start), (stop), (step)) < 0 ?     \
+    ((*(slicelen) = 0), -1) :                                               \
+    ((*(slicelen) = PySlice_AdjustIndices((length), (start), (stop), *(step))), \
      0))
 PyAPI_FUNC(int) _PySlice_Unpack(PyObject *slice,
                                 Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step);
