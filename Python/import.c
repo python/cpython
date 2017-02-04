@@ -2042,11 +2042,6 @@ _imp_exec_builtin_impl(PyObject *module, PyObject *mod)
     return exec_builtin_or_dynamic(mod);
 }
 
-/*[clinic input]
-dump buffer
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=524ce2e021e4eba6]*/
-
 
 PyDoc_STRVAR(doc_imp,
 "(Extremely) low-level import machinery bits as used by importlib and imp.");
