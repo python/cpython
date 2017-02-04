@@ -46,8 +46,9 @@ PyAPI_FUNC(int) PySlice_GetIndicesEx(PyObject *r, Py_ssize_t length,
 
 #if !defined(Py_LIMITED_API) || (Py_LIMITED_API+0 >= 0x03050400 && Py_LIMITED_API+0 < 0x03060000) || Py_LIMITED_API+0 >= 0x03060100
 #define PySlice_GetIndicesEx(slice, length, start, stop, step, slicelen) (  \
-    PySlice_Unpack((slice), (start), (stop), (step)) < 0 ? -1 :             \
-    ((*slicelen = PySlice_AdjustIndices((length), (start), (stop), *(step))), \
+    PySlice_Unpack((slice), (start), (stop), (step)) < 0 ?                  \
+    ((*(slicelen) = 0), -1) :                                               \
+    ((*(slicelen) = PySlice_AdjustIndices((length), (start), (stop), *(step))), \
      0))
 PyAPI_FUNC(int) PySlice_Unpack(PyObject *slice,
                                Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step);
