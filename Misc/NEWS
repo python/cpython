@@ -146,6 +146,8 @@ Library
 Windows
 -------
 
+- Issue #29326: Ignores blank lines in ._pth files (Patch by Alexey Izbyshev)
+
 - Issue #28164: Correctly handle special console filenames (patch by Eryk Sun)
 
 - Issue #29409: Implement PEP 529 for io.FileIO (Patch by Eryk Sun)
