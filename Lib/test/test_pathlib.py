@@ -1727,6 +1727,17 @@ class _BasePathTest(object):
         self.assertTrue(p.exists())
         self.assertEqual(p.stat().st_ctime, st_ctime_first)
 
+    @only_nt    # XXX: not sure how to test this on POSIX
+    def test_mkdir_with_unknown_drive(self):
+        for d in 'ZYXWVUTSRQPONMLKJIHGFEDCBA':
+            p = self.cls(d + ':\\')
+            if not p.is_dir():
+                break
+        else:
+            self.skipTest("cannot find a drive that doesn't exist")
+        with self.assertRaises(OSError):
+            (p / 'child' / 'path').mkdir(parents=True)
+
     def test_mkdir_with_child_file(self):
         p = self.cls(BASE, 'dirB', 'fileB')
         self.assertTrue(p.exists())

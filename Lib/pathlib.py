@@ -1222,7 +1222,7 @@ class Path(PurePath):
                 if not exist_ok or not self.is_dir():
                     raise
             except OSError as e:
-                if e.errno != ENOENT:
+                if e.errno != ENOENT or self.parent == self:
                     raise
                 self.parent.mkdir(parents=True)
                 self._accessor.mkdir(self, mode)
