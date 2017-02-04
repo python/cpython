@@ -223,6 +223,9 @@ Extension Modules
 Library
 -------
 
+- Issue #29444: Fixed out-of-bounds buffer access in the group() method of
+  the match object.  Based on patch by WGH.
+
 - Issue #29377: Add SlotWrapperType, MethodWrapperType, and
   MethodDescriptorType built-in types to types module.
   Original patch by Manuel Krebber.

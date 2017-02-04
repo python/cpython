@@ -1945,6 +1945,7 @@ match_getslice_by_index(MatchObject* self, Py_ssize_t index, PyObject* def)
     Py_buffer view;
     PyObject *result;
     void* ptr;
+    Py_ssize_t i, j;
 
     if (index < 0 || index >= self->groups) {
         /* raise IndexError if we were given a bad group number */
@@ -1966,8 +1967,12 @@ match_getslice_by_index(MatchObject* self, Py_ssize_t index, PyObject* def)
     ptr = getstring(self->string, &length, &isbytes, &charsize, &view);
     if (ptr == NULL)
         return NULL;
-    result = getslice(isbytes, ptr,
-                      self->string, self->mark[index], self->mark[index+1]);
+
+    i = self->mark[index];
+    j = self->mark[index+1];
+    i = Py_MIN(i, length);
+    j = Py_MIN(j, length);
+    result = getslice(isbytes, ptr, self->string, i, j);
     if (isbytes && view.buf != NULL)
         PyBuffer_Release(&view);
     return result;
