@@ -111,7 +111,9 @@ msvcrt_locking_impl(PyObject *module, int fd, int mode, long nbytes)
     int err;
 
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     err = _locking(fd, mode, nbytes);
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     if (err != 0)
         return PyErr_SetFromErrno(PyExc_IOError);
@@ -138,7 +140,9 @@ static long
 msvcrt_setmode_impl(PyObject *module, int fd, int flags)
 /*[clinic end generated code: output=24a9be5ea07ccb9b input=76e7c01f6b137f75]*/
 {
+    _Py_BEGIN_SUPPRESS_IPH
     flags = _setmode(fd, flags);
+    _Py_END_SUPPRESS_IPH
     if (flags == -1)
         PyErr_SetFromErrno(PyExc_IOError);
 
@@ -165,7 +169,9 @@ msvcrt_open_osfhandle_impl(PyObject *module, Py_intptr_t handle, int flags)
 {
     int fd;
 
+    _Py_BEGIN_SUPPRESS_IPH
     fd = _open_osfhandle(handle, flags);
+    _Py_END_SUPPRESS_IPH
     if (fd == -1)
         PyErr_SetFromErrno(PyExc_IOError);
 
@@ -189,16 +195,11 @@ msvcrt_get_osfhandle_impl(PyObject *module, int fd)
 {
     Py_intptr_t handle = -1;
 
-    if (!_PyVerify_fd(fd)) {
-        PyErr_SetFromErrno(PyExc_IOError);
-    }
-    else {
     _Py_BEGIN_SUPPRESS_IPH
-        handle = _get_osfhandle(fd);
+    handle = _get_osfhandle(fd);
     _Py_END_SUPPRESS_IPH
-        if (handle == -1)
-            PyErr_SetFromErrno(PyExc_IOError);
-    }
+    if (handle == -1)
+        PyErr_SetFromErrno(PyExc_IOError);
 
     return handle;
 }
@@ -308,7 +309,9 @@ static PyObject *
 msvcrt_putch_impl(PyObject *module, char char_value)
 /*[clinic end generated code: output=92ec9b81012d8f60 input=ec078dd10cb054d6]*/
 {
+    _Py_BEGIN_SUPPRESS_IPH
     _putch(char_value);
+    _Py_END_SUPPRESS_IPH
     Py_RETURN_NONE;
 }
 
@@ -325,7 +328,9 @@ static PyObject *
 msvcrt_putwch_impl(PyObject *module, int unicode_char)
 /*[clinic end generated code: output=a3bd1a8951d28eee input=996ccd0bbcbac4c3]*/
 {
+    _Py_BEGIN_SUPPRESS_IPH
     _putwch(unicode_char);
+    _Py_END_SUPPRESS_IPH
     Py_RETURN_NONE;
 
 }
@@ -347,7 +352,13 @@ static PyObject *
 msvcrt_ungetch_impl(PyObject *module, char char_value)
 /*[clinic end generated code: output=c6942a0efa119000 input=22f07ee9001bbf0f]*/
 {
-    if (_ungetch(char_value) == EOF)
+    int res;
+    
+    _Py_BEGIN_SUPPRESS_IPH
+    res = _ungetch(char_value);
+    _Py_END_SUPPRESS_IPH
+
+    if (res == EOF)
         return PyErr_SetFromErrno(PyExc_IOError);
     Py_RETURN_NONE;
 }
@@ -365,7 +376,13 @@ static PyObject *
 msvcrt_ungetwch_impl(PyObject *module, int unicode_char)
 /*[clinic end generated code: output=e63af05438b8ba3d input=83ec0492be04d564]*/
 {
-    if (_ungetwch(unicode_char) == WEOF)
+    int res;
+
+    _Py_BEGIN_SUPPRESS_IPH
+    res = _ungetwch(unicode_char);
+    _Py_END_SUPPRESS_IPH
+
+    if (res == WEOF)
         return PyErr_SetFromErrno(PyExc_IOError);
     Py_RETURN_NONE;
 }
@@ -387,7 +404,13 @@ static long
 msvcrt_CrtSetReportFile_impl(PyObject *module, int type, int file)
 /*[clinic end generated code: output=df291c7fe032eb68 input=bb8f721a604fcc45]*/
 {
-    return (long)_CrtSetReportFile(type, (_HFILE)file);
+    long res;
+
+    _Py_BEGIN_SUPPRESS_IPH
+    res = (long)_CrtSetReportFile(type, (_HFILE)file);
+    _Py_END_SUPPRESS_IPH
+
+    return res;
 }
 
 /*[clinic input]
@@ -408,7 +431,9 @@ msvcrt_CrtSetReportMode_impl(PyObject *module, int type, int mode)
 {
     int res;
 
+    _Py_BEGIN_SUPPRESS_IPH
     res = _CrtSetReportMode(type, mode);
+    _Py_END_SUPPRESS_IPH
     if (res == -1)
         PyErr_SetFromErrno(PyExc_IOError);
     return res;
@@ -429,7 +454,13 @@ static long
 msvcrt_set_error_mode_impl(PyObject *module, int mode)
 /*[clinic end generated code: output=ac4a09040d8ac4e3 input=046fca59c0f20872]*/
 {
-    return _set_error_mode(mode);
+    long res;
+
+    _Py_BEGIN_SUPPRESS_IPH
+    res = _set_error_mode(mode);
+    _Py_END_SUPPRESS_IPH
+
+    return res;
 }
 #endif /* _DEBUG */
 
@@ -448,7 +479,10 @@ msvcrt_SetErrorMode_impl(PyObject *module, unsigned int mode)
 {
     unsigned int res;
 
+    _Py_BEGIN_SUPPRESS_IPH
     res = SetErrorMode(mode);
+    _Py_END_SUPPRESS_IPH
+
     return PyLong_FromUnsignedLong(res);
 }
 
