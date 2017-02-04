@@ -60,50 +60,67 @@ char _get_console_type(HANDLE handle) {
 }
 
 char _PyIO_get_console_type(PyObject *path_or_fd) {
-    int fd;
-
-    fd = PyLong_AsLong(path_or_fd);
+    int fd = PyLong_AsLong(path_or_fd);
     PyErr_Clear();
     if (fd >= 0) {
         HANDLE handle;
         _Py_BEGIN_SUPPRESS_IPH
         handle = (HANDLE)_get_osfhandle(fd);
         _Py_END_SUPPRESS_IPH
-        if (!handle)
+        if (handle == INVALID_HANDLE_VALUE)
             return '\0';
         return _get_console_type(handle);
     }
 
-    PyObject *decoded, *decoded_upper;
+    PyObject *decoded;
+    wchar_t *decoded_wstr;
 
-    int d = PyUnicode_FSDecoder(path_or_fd, &decoded);
-    if (!d) {
+    if (!PyUnicode_FSDecoder(path_or_fd, &decoded)) {
         PyErr_Clear();
         return '\0';
     }
-    if (!PyUnicode_Check(decoded)) {
-        Py_CLEAR(decoded);
-        return '\0';
-    }
-    decoded_upper = PyObject_CallMethod(decoded, "upper", NULL);
+    decoded_wstr = PyUnicode_AsWideCharString(decoded, NULL);
     Py_CLEAR(decoded);
-    if (!decoded_upper) {
+    if (!decoded_wstr) {
         PyErr_Clear();
         return '\0';
     }
+
+    DWORD length;
+    wchar_t name_buf[MAX_PATH], *pname_buf = name_buf;
+    
+    length = GetFullPathNameW(decoded_wstr, MAX_PATH, pname_buf, NULL);
+    if (length > MAX_PATH) {
+        pname_buf = PyMem_New(wchar_t, length);
+        if (pname_buf)
+            length = GetFullPathNameW(decoded_wstr, length, pname_buf, NULL);
+        else
+            length = 0;
+    }
+    PyMem_Free(decoded_wstr);
 
     char m = '\0';
-    if (_PyUnicode_EqualToASCIIString(decoded_upper, "CONIN$")) {
-        m = 'r';
-    } else if (_PyUnicode_EqualToASCIIString(decoded_upper, "CONOUT$")) {
-        m = 'w';
-    } else if (_PyUnicode_EqualToASCIIString(decoded_upper, "CON")) {
-        m = 'x';
+    if (length) {
+        wchar_t *name = pname_buf;
+        if (length >= 4 && name[3] == L'\\' &&
+            (name[2] == L'.' || name[2] == L'?') &&
+            name[1] == L'\\' && name[0] == L'\\') {
+            name += 4;
+        }
+        if (!_wcsicmp(name, L"CONIN$")) {
+            m = 'r';
+        } else if (!_wcsicmp(name, L"CONOUT$")) {
+            m = 'w';
+        } else if (!_wcsicmp(name, L"CON")) {
+            m = 'x';
+        }
     }
 
-    Py_CLEAR(decoded_upper);
+    if (pname_buf != name_buf)
+        PyMem_Free(pname_buf);
     return m;
 }
+
 
 /*[clinic input]
 module _io
