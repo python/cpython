@@ -230,12 +230,13 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                          int closefd, PyObject *opener)
 /*[clinic end generated code: output=23413f68e6484bbd input=193164e293d6c097]*/
 {
-    const char *name = NULL;
-    PyObject *stringobj = NULL;
-    const char *s;
 #ifdef MS_WINDOWS
     Py_UNICODE *widename = NULL;
+#else
+    const char *name = NULL;
 #endif
+    PyObject *stringobj = NULL;
+    const char *s;
     int ret = 0;
     int rwa = 0, plus = 0;
     int flags = 0;
@@ -277,24 +278,21 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         PyErr_Clear();
     }
 
+    if (fd < 0) {
 #ifdef MS_WINDOWS
-    if (PyUnicode_Check(nameobj)) {
         Py_ssize_t length;
-        widename = PyUnicode_AsUnicodeAndSize(nameobj, &length);
-        if (widename == NULL)
-            return -1;
-        if (wcslen(widename) != length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
+        if (!PyUnicode_FSDecoder(nameobj, &stringobj)) {
             return -1;
         }
-    } else
-#endif
-    if (fd < 0)
-    {
+        widename = PyUnicode_AsUnicodeAndSize(stringobj, &length);
+        if (widename == NULL)
+            return -1;
+#else
         if (!PyUnicode_FSConverter(nameobj, &stringobj)) {
             return -1;
         }
         name = PyBytes_AS_STRING(stringobj);
+#endif
     }
 
     s = mode;
@@ -386,11 +384,10 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             do {
                 Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
-                if (widename != NULL)
-                    self->fd = _wopen(widename, flags, 0666);
-                else
+                self->fd = _wopen(widename, flags, 0666);
+#else
+                self->fd = open(name, flags, 0666);
 #endif
-                    self->fd = open(name, flags, 0666);
                 Py_END_ALLOW_THREADS
             } while (self->fd < 0 && errno == EINTR &&
                      !(async_err = PyErr_CheckSignals()));
