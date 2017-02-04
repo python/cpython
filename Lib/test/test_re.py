@@ -1679,6 +1679,16 @@ SUBPATTERN None
         self.checkPatternError(r'(?<>)', 'unknown extension ?<>', 1)
         self.checkPatternError(r'(?', 'unexpected end of pattern', 2)
 
+    def test_bug_29444(self):
+        s = bytearray(b'abcdefgh')
+        m = re.search(b'[a-h]+', s)
+        m2 = re.search(b'[e-h]+', s)
+        self.assertEqual(m.group(), b'abcdefgh')
+        self.assertEqual(m2.group(), b'efgh')
+        s[:] = b'xyz'
+        self.assertEqual(m.group(), b'xyz')
+        self.assertEqual(m2.group(), b'')
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):

@@ -21,6 +21,9 @@ Extension Modules
 Library
 -------
 
+- Issue #29444: Fixed out-of-bounds buffer access in the group() method of
+  the match object.  Based on patch by WGH.
+
 - Issue #29335: Fix subprocess.Popen.wait() when the child process has
   exited to a stopped instead of terminated state (ex: when under ptrace).
 
