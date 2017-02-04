@@ -2769,7 +2769,7 @@ True if the dictionary has the specified key, else False.
 
 static PyObject *
 dict___contains__(PyDictObject *self, PyObject *key)
-/*[clinic end generated code: output=a3d03db709ed6e6b input=f39613886bf975b7]*/
+/*[clinic end generated code: output=a3d03db709ed6e6b input=fe1cb42ad831e820]*/
 {
     register PyDictObject *mp = self;
     Py_hash_t hash;
