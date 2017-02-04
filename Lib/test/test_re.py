@@ -1824,6 +1824,16 @@ SUBPATTERN None 0 0
             warnings.simplefilter('error', BytesWarning)
             self.assertNotEqual(pattern3, pattern1)
 
+    def test_bug_29444(self):
+        s = bytearray(b'abcdefgh')
+        m = re.search(b'[a-h]+', s)
+        m2 = re.search(b'[e-h]+', s)
+        self.assertEqual(m.group(), b'abcdefgh')
+        self.assertEqual(m2.group(), b'efgh')
+        s[:] = b'xyz'
+        self.assertEqual(m.group(), b'xyz')
+        self.assertEqual(m2.group(), b'')
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
