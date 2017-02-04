@@ -85,6 +85,19 @@ typedef struct { char c; long long x; } s_long_long;
 #pragma options align=reset
 #endif
 
+/*[python input]
+class cache_struct_converter(CConverter):
+    type = 'PyStructObject *'
+    converter = 'cache_struct_converter'
+    c_default = "NULL"
+
+    def cleanup(self):
+        return "Py_XDECREF(%s);\n" % self.name
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=49957cca130ffb63]*/
+
+static int cache_struct_converter(PyObject *, PyObject **);
+
 #include "clinic/_struct.c.h"
 
 /* Helper for integer format codes: converts an arbitrary Python object to a
@@ -2037,21 +2050,27 @@ PyTypeObject PyStructType = {
 #define MAXCACHE 100
 static PyObject *cache = NULL;
 
-static PyStructObject *
-cache_struct(PyObject *fmt)
+static int
+cache_struct_converter(PyObject *fmt, PyObject **ptr)
 {
     PyObject * s_object;
+
+    if (fmt == NULL) {
+        Py_DECREF(*ptr);
+        return 1;
+    }
 
     if (cache == NULL) {
         cache = PyDict_New();
         if (cache == NULL)
-            return NULL;
+            return 0;
     }
 
     s_object = PyDict_GetItem(cache, fmt);
     if (s_object != NULL) {
         Py_INCREF(s_object);
-        return (PyStructObject *)s_object;
+        *ptr = s_object;
+        return Py_CLEANUP_SUPPORTED;
     }
 
     s_object = PyObject_CallFunctionObjArgs((PyObject *)(&PyStructType), fmt, NULL);
@@ -2061,8 +2080,10 @@ cache_struct(PyObject *fmt)
         /* Attempt to cache the result */
         if (PyDict_SetItem(cache, fmt, s_object) == -1)
             PyErr_Clear();
+        *ptr = s_object;
+        return Py_CLEANUP_SUPPORTED;
     }
-    return (PyStructObject *)s_object;
+    return 0;
 }
 
 /*[clinic input]
@@ -2081,25 +2102,19 @@ _clearcache_impl(PyObject *module)
 
 
 /*[clinic input]
-calcsize
+calcsize -> Py_ssize_t
 
-    format: object
+    format as s_object: cache_struct
     /
 
 Return size in bytes of the struct described by the format string.
 [clinic start generated code]*/
 
-static PyObject *
-calcsize(PyObject *module, PyObject *format)
-/*[clinic end generated code: output=90fbcf191fe9470a input=55488303a06777fa]*/
+static Py_ssize_t
+calcsize_impl(PyObject *module, PyStructObject *s_object)
+/*[clinic end generated code: output=db7d23d09c6932c4 input=96a6a590c7717ecd]*/
 {
-    Py_ssize_t n;
-    PyStructObject *s_object = cache_struct(format);
-    if (s_object == NULL)
-        return NULL;
-    n = s_object->s_size;
-    Py_DECREF(s_object);
-    return PyLong_FromSsize_t(n);
+    return s_object->s_size;
 }
 
 PyDoc_STRVAR(pack_doc,
@@ -2111,7 +2126,7 @@ to the format string.  See help(struct) for more on format strings.");
 static PyObject *
 pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyStructObject *s_object;
+    PyObject *s_object = NULL;
     PyObject *format, *result;
 
     if (nargs == 0) {
@@ -2120,11 +2135,10 @@ pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     }
     format = args[0];
 
-    s_object = cache_struct(format);
-    if (s_object == NULL) {
+    if (!cache_struct_converter(format, &s_object)) {
         return NULL;
     }
-    result = s_pack((PyObject *)s_object, args + 1, nargs - 1, kwnames);
+    result = s_pack(s_object, args + 1, nargs - 1, kwnames);
     Py_DECREF(s_object);
     return result;
 }
@@ -2140,7 +2154,7 @@ on format strings.");
 static PyObject *
 pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyStructObject *s_object;
+    PyObject *s_object = NULL;
     PyObject *format, *result;
 
     if (nargs == 0) {
@@ -2149,11 +2163,10 @@ pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     }
     format = args[0];
 
-    s_object = cache_struct(format);
-    if (s_object == NULL) {
+    if (!cache_struct_converter(format, &s_object)) {
         return NULL;
     }
-    result = s_pack_into((PyObject *)s_object, args + 1, nargs - 1, kwnames);
+    result = s_pack_into(s_object, args + 1, nargs - 1, kwnames);
     Py_DECREF(s_object);
     return result;
 }
@@ -2161,7 +2174,7 @@ pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 /*[clinic input]
 unpack
 
-    format: object
+    format as s_object: cache_struct
     buffer: Py_buffer
     /
 
@@ -2173,24 +2186,16 @@ See help(struct) for more on format strings.
 [clinic start generated code]*/
 
 static PyObject *
-unpack_impl(PyObject *module, PyObject *format, Py_buffer *buffer)
-/*[clinic end generated code: output=f75ada02aaa33b3b input=654078e6660c2df0]*/
+unpack_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer)
+/*[clinic end generated code: output=48ddd4d88eca8551 input=05fa3b91678da727]*/
 {
-    PyStructObject *s_object;
-    PyObject *result;
-
-    s_object = cache_struct(format);
-    if (s_object == NULL)
-        return NULL;
-    result = Struct_unpack_impl(s_object, buffer);
-    Py_DECREF(s_object);
-    return result;
+    return Struct_unpack_impl(s_object, buffer);
 }
 
 /*[clinic input]
 unpack_from
 
-    format: object
+    format as s_object: cache_struct
     /
     buffer: Py_buffer
     offset: Py_ssize_t = 0
@@ -2203,27 +2208,17 @@ See help(struct) for more on format strings.
 [clinic start generated code]*/
 
 static PyObject *
-unpack_from_impl(PyObject *module, PyObject *format, Py_buffer *buffer,
-                 Py_ssize_t offset)
-/*[clinic end generated code: output=2492f0c3a0b82577 input=9ead76c6ac7164f7]*/
+unpack_from_impl(PyObject *module, PyStructObject *s_object,
+                 Py_buffer *buffer, Py_ssize_t offset)
+/*[clinic end generated code: output=1042631674c6e0d3 input=6e80a5398e985025]*/
 {
-    PyStructObject *s_object;
-    PyObject *result;
-
-    s_object = cache_struct(format);
-    if (s_object == NULL) {
-        return NULL;
-    }
-    result = Struct_unpack_from_impl(s_object, buffer, offset);
-
-    Py_DECREF(s_object);
-    return result;
+    return Struct_unpack_from_impl(s_object, buffer, offset);
 }
 
 /*[clinic input]
 iter_unpack
 
-    format: object
+    format as s_object: cache_struct
     buffer: object
     /
 
@@ -2236,19 +2231,11 @@ Requires that the bytes length be a multiple of the format struct size.
 [clinic start generated code]*/
 
 static PyObject *
-iter_unpack_impl(PyObject *module, PyObject *format, PyObject *buffer)
-/*[clinic end generated code: output=b1291e97a6d4cf3c input=8674dfd2f0dae416]*/
+iter_unpack_impl(PyObject *module, PyStructObject *s_object,
+                 PyObject *buffer)
+/*[clinic end generated code: output=0ae50e250d20e74d input=b214a58869a3c98d]*/
 {
-    PyStructObject *s_object;
-    PyObject *result;
-
-    s_object = cache_struct(format);
-    if (s_object == NULL)
-        return NULL;
-
-    result = Struct_iter_unpack(s_object, buffer);
-    Py_DECREF(s_object);
-    return result;
+    return Struct_iter_unpack(s_object, buffer);
 }
 
 static struct PyMethodDef module_functions[] = {

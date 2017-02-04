@@ -155,6 +155,32 @@ PyDoc_STRVAR(calcsize__doc__,
 #define CALCSIZE_METHODDEF    \
     {"calcsize", (PyCFunction)calcsize, METH_O, calcsize__doc__},
 
+static Py_ssize_t
+calcsize_impl(PyObject *module, PyStructObject *s_object);
+
+static PyObject *
+calcsize(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyStructObject *s_object = NULL;
+    Py_ssize_t _return_value;
+
+    if (!PyArg_Parse(arg, "O&:calcsize", cache_struct_converter, &s_object)) {
+        goto exit;
+    }
+    _return_value = calcsize_impl(module, s_object);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    /* Cleanup for s_object */
+    Py_XDECREF(s_object);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(unpack__doc__,
 "unpack($module, format, buffer, /)\n"
 "--\n"
@@ -169,26 +195,28 @@ PyDoc_STRVAR(unpack__doc__,
     {"unpack", (PyCFunction)unpack, METH_FASTCALL, unpack__doc__},
 
 static PyObject *
-unpack_impl(PyObject *module, PyObject *format, Py_buffer *buffer);
+unpack_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer);
 
 static PyObject *
 unpack(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    PyObject *format;
+    PyStructObject *s_object = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "Oy*:unpack",
-        &format, &buffer)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&y*:unpack",
+        cache_struct_converter, &s_object, &buffer)) {
         goto exit;
     }
 
     if (!_PyArg_NoStackKeywords("unpack", kwnames)) {
         goto exit;
     }
-    return_value = unpack_impl(module, format, &buffer);
+    return_value = unpack_impl(module, s_object, &buffer);
 
 exit:
+    /* Cleanup for s_object */
+    Py_XDECREF(s_object);
     /* Cleanup for buffer */
     if (buffer.obj) {
        PyBuffer_Release(&buffer);
@@ -211,26 +239,28 @@ PyDoc_STRVAR(unpack_from__doc__,
     {"unpack_from", (PyCFunction)unpack_from, METH_FASTCALL, unpack_from__doc__},
 
 static PyObject *
-unpack_from_impl(PyObject *module, PyObject *format, Py_buffer *buffer,
-                 Py_ssize_t offset);
+unpack_from_impl(PyObject *module, PyStructObject *s_object,
+                 Py_buffer *buffer, Py_ssize_t offset);
 
 static PyObject *
 unpack_from(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {"Oy*|n:unpack_from", _keywords, 0};
-    PyObject *format;
+    static _PyArg_Parser _parser = {"O&y*|n:unpack_from", _keywords, 0};
+    PyStructObject *s_object = NULL;
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &format, &buffer, &offset)) {
+        cache_struct_converter, &s_object, &buffer, &offset)) {
         goto exit;
     }
-    return_value = unpack_from_impl(module, format, &buffer, offset);
+    return_value = unpack_from_impl(module, s_object, &buffer, offset);
 
 exit:
+    /* Cleanup for s_object */
+    Py_XDECREF(s_object);
     /* Cleanup for buffer */
     if (buffer.obj) {
        PyBuffer_Release(&buffer);
@@ -254,27 +284,30 @@ PyDoc_STRVAR(iter_unpack__doc__,
     {"iter_unpack", (PyCFunction)iter_unpack, METH_FASTCALL, iter_unpack__doc__},
 
 static PyObject *
-iter_unpack_impl(PyObject *module, PyObject *format, PyObject *buffer);
+iter_unpack_impl(PyObject *module, PyStructObject *s_object,
+                 PyObject *buffer);
 
 static PyObject *
 iter_unpack(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    PyObject *format;
+    PyStructObject *s_object = NULL;
     PyObject *buffer;
 
-    if (!_PyArg_UnpackStack(args, nargs, "iter_unpack",
-        2, 2,
-        &format, &buffer)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&O:iter_unpack",
+        cache_struct_converter, &s_object, &buffer)) {
         goto exit;
     }
 
     if (!_PyArg_NoStackKeywords("iter_unpack", kwnames)) {
         goto exit;
     }
-    return_value = iter_unpack_impl(module, format, buffer);
+    return_value = iter_unpack_impl(module, s_object, buffer);
 
 exit:
+    /* Cleanup for s_object */
+    Py_XDECREF(s_object);
+
     return return_value;
 }
-/*[clinic end generated code: output=0714090a5d0ea8ce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=03e0d193ab1983f9 input=a9049054013a1b77]*/
