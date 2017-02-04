@@ -299,7 +299,7 @@ comparable for equality.
 
 
 The :data:`Any` type
----------------------
+--------------------
 
 A special kind of type is :data:`Any`. A static type checker will treat
 every type as being compatible with :data:`Any` and :data:`Any` as being
@@ -625,7 +625,7 @@ The module defines the following classes, functions and decorators:
 
 .. class:: AsyncIterator(AsyncIterable[T_co])
 
-  A generic version of :class:`collections.abc.AsyncIterator`.
+   A generic version of :class:`collections.abc.AsyncIterator`.
 
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
