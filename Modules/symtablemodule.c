@@ -4,20 +4,33 @@
 #include "Python-ast.h"
 #include "symtable.h"
 
+#include "clinic/symtablemodule.c.h"
+/*[clinic input]
+module _symtable
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f4685845a7100605]*/
+
+
+/*[clinic input]
+_symtable.symtable
+
+    str:       str
+    filename:  object(converter='PyUnicode_FSDecoder')
+    startstr:  str
+    /
+
+Return symbol and scope dictionaries used internally by compiler.
+[clinic start generated code]*/
+
 static PyObject *
-symtable_symtable(PyObject *self, PyObject *args)
+_symtable_symtable_impl(PyObject *module, const char *str,
+                        PyObject *filename, const char *startstr)
+/*[clinic end generated code: output=914b369c9b785956 input=6c615e84d5f408e3]*/
 {
     struct symtable *st;
     PyObject *t;
-
-    char *str;
-    PyObject *filename;
-    char *startstr;
     int start;
 
-    if (!PyArg_ParseTuple(args, "sO&s:symtable",
-                          &str, PyUnicode_FSDecoder, &filename, &startstr))
-        return NULL;
     if (strcmp(startstr, "exec") == 0)
         start = Py_file_input;
     else if (strcmp(startstr, "eval") == 0)
@@ -42,9 +55,7 @@ symtable_symtable(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef symtable_methods[] = {
-    {"symtable",        symtable_symtable,      METH_VARARGS,
-     PyDoc_STR("Return symbol and scope dictionaries"
-               " used internally by compiler.")},
+    _SYMTABLE_SYMTABLE_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
