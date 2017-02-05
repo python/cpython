@@ -1508,7 +1508,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     /* Identifier (most frequent token!) */
     nonascii = 0;
     if (is_potential_identifier_start(c)) {
-        /* Process b"", r"", u"", br"" and rb"" */
+        /* Process the various legal combinations of b"", r"", u"", and f"". */
         int saw_b = 0, saw_r = 0, saw_u = 0, saw_f = 0;
         while (1) {
             if (!(saw_b || saw_u || saw_f) && (c == 'b' || c == 'B'))
