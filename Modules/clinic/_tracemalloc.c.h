@@ -6,7 +6,7 @@ PyDoc_STRVAR(_tracemalloc_is_tracing__doc__,
 "is_tracing($module, /)\n"
 "--\n"
 "\n"
-"True if the tracemalloc module is tracing Python memory allocations, False otherwise.");
+"Return True if the tracemalloc module is tracing Python memory allocations.");
 
 #define _TRACEMALLOC_IS_TRACING_METHODDEF    \
     {"is_tracing", (PyCFunction)_tracemalloc_is_tracing, METH_NOARGS, _tracemalloc_is_tracing__doc__},
@@ -189,4 +189,4 @@ _tracemalloc_get_traced_memory(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_get_traced_memory_impl(module);
 }
-/*[clinic end generated code: output=1e059f24619e23f9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=159ce5d627964f09 input=a9049054013a1b77]*/

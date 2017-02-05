@@ -1177,7 +1177,7 @@ Return True if the tracemalloc module is tracing Python memory allocations.
 
 static PyObject *
 _tracemalloc_is_tracing_impl(PyObject *module)
-/*[clinic end generated code: output=2d763b42601cd3ef input=8beb4fb5446813be]*/
+/*[clinic end generated code: output=2d763b42601cd3ef input=af104b0a00192f63]*/
 {
     return PyBool_FromLong(tracemalloc_config.tracing);
 }
