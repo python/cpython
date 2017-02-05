@@ -1,11 +1,11 @@
 '''Tests for WindowsConsoleIO
 '''
 
-import os
 import io
+import os
 import sys
-import unittest
 import tempfile
+import unittest
 
 if sys.platform != 'win32':
     raise unittest.SkipTest("test only relevant on win32")
@@ -26,8 +26,10 @@ class WindowsConsoleIOTests(unittest.TestCase):
 
         fd, _ = tempfile.mkstemp()
         try:
+            # Windows 10: "Cannot open non-console file"
+            # Earlier: "Cannot open console output buffer for reading"
             self.assertRaisesRegex(ValueError,
-                "Cannot open non-console file", ConIO, fd)
+                "Cannot open (console|non-console file)", ConIO, fd)
         finally:
             os.close(fd)
 
@@ -70,18 +72,6 @@ class WindowsConsoleIOTests(unittest.TestCase):
     def test_open_name(self):
         self.assertRaises(ValueError, ConIO, sys.executable)
 
-        f = open('C:/con', 'rb', buffering=0)
-        self.assertIsInstance(f, ConIO)
-        f.close()
-
-        f = open(r'\\.\conin$', 'rb', buffering=0)
-        self.assertIsInstance(f, ConIO)
-        f.close()
-
-        f = open('//?/conout$', 'wb', buffering=0)
-        self.assertIsInstance(f, ConIO)
-        f.close()
-
         f = ConIO("CON")
         self.assertTrue(f.readable())
         self.assertFalse(f.writable())
@@ -102,6 +92,28 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertIsNotNone(f.fileno())
         f.close()
         f.close()
+
+        f = open('C:/con', 'rb', buffering=0)
+        self.assertIsInstance(f, ConIO)
+        f.close()
+
+        try:
+            f = open(r'\\.\conin$', 'rb', buffering=0)
+        except FileNotFoundError:
+            # If we cannot find the file, this part should be skipped
+            print('\\\\.\\conin$ was not found on this OS')
+        else:
+            self.assertIsInstance(f, ConIO)
+            f.close()
+
+        try:
+            f = open('//?/conout$', 'wb', buffering=0)
+        except FileNotFoundError:
+            # If we cannot find the file, this part should be skipped
+            print('//?/conout$ was not found on this OS')
+        else:
+            self.assertIsInstance(f, ConIO)
+            f.close()
 
     def assertStdinRoundTrip(self, text):
         stdin = open('CONIN$', 'r')
