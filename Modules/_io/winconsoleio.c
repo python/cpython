@@ -86,6 +86,19 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
         return '\0';
     }
 
+    char m = '\0';
+    if (!_wcsicmp(decoded_wstr, L"CONIN$")) {
+        m = 'r';
+    } else if (!_wcsicmp(decoded_wstr, L"CONOUT$")) {
+        m = 'w';
+    } else if (!_wcsicmp(decoded_wstr, L"CON")) {
+        m = 'x';
+    }
+    if (m) {
+        PyMem_Free(decoded_wstr);
+        return m;
+    }
+
     DWORD length;
     wchar_t name_buf[MAX_PATH], *pname_buf = name_buf;
     
@@ -99,7 +112,6 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
     }
     PyMem_Free(decoded_wstr);
 
-    char m = '\0';
     if (length) {
         wchar_t *name = pname_buf;
         if (length >= 4 && name[3] == L'\\' &&
