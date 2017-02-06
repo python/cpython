@@ -1465,7 +1465,7 @@ successive matches::
             elif kind == 'SKIP':
                 pass
             elif kind == 'MISMATCH':
-                raise RuntimeError('%r unexpected on line %d' % (value, line_num))
+                raise RuntimeError(f'{value!r} unexpected on line {line_num}')
             else:
                 if kind == 'ID' and value in keywords:
                     kind = value
