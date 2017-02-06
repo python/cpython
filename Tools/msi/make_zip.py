@@ -28,12 +28,15 @@ DEBUG_FILES = {
 
 EXCLUDE_FROM_LIBRARY = {
     '__pycache__',
-    'ensurepip',
     'idlelib',
     'pydoc_data',
     'site-packages',
     'tkinter',
     'turtledemo',
+}
+
+EXCLUDE_FROM_EMBEDDABLE_LIBRARY = {
+    'ensurepip',
     'venv',
 }
 
@@ -78,6 +81,12 @@ def include_in_lib(p):
     suffix = p.suffix.lower()
     return suffix not in {'.pyc', '.pyo', '.exe'}
 
+def include_in_embeddable_lib(p):
+    if p.is_dir() and p.name.lower() in EXCLUDE_FROM_EMBEDDABLE_LIBRARY:
+        return False
+
+    return include_in_lib(p)
+
 def include_in_libs(p):
     if not is_not_debug(p):
         return False
@@ -108,7 +117,7 @@ EMBED_LAYOUT = [
     ('/', '$build', 'python*.exe', is_not_debug),
     ('/', '$build', '*.pyd', is_not_debug),
     ('/', '$build', '*.dll', is_not_debug),
-    ('python{0.major}{0.minor}.zip'.format(sys.version_info), 'Lib', '**/*', include_in_lib),
+    ('python{0.major}{0.minor}.zip'.format(sys.version_info), 'Lib', '**/*', include_in_embeddable_lib),
 ]
 
 if os.getenv('DOC_FILENAME'):
