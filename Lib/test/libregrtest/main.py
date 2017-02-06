@@ -107,7 +107,7 @@ class Regrtest:
             self.test_times.append((test_time, test))
         if ok == PASSED:
             self.good.append(test)
-        elif ok == FAILED:
+        elif ok in (FAILED, CHILD_ERROR):
             self.bad.append(test)
         elif ok == ENV_CHANGED:
             self.environment_changed.append(test)
