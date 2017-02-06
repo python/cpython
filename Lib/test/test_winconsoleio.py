@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import unittest
+from test import support
 
 if sys.platform != 'win32':
     raise unittest.SkipTest("test only relevant on win32")
@@ -97,23 +98,28 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertIsInstance(f, ConIO)
         f.close()
 
-        try:
-            f = open(r'\\.\conin$', 'rb', buffering=0)
-        except FileNotFoundError:
-            # If we cannot find the file, this part should be skipped
-            print('\\\\.\\conin$ was not found on this OS')
-        else:
-            self.assertIsInstance(f, ConIO)
-            f.close()
+    @unittest.skipIf(sys.getwindowsversion()[:2] <= (6, 1),
+        "test does not work on Windows 7 and earlier")
+    def test_conin_conout_names(self):
+        f = open(r'\\.\conin$', 'rb', buffering=0)
+        self.assertIsInstance(f, ConIO)
+        f.close()
 
-        try:
-            f = open('//?/conout$', 'wb', buffering=0)
-        except FileNotFoundError:
-            # If we cannot find the file, this part should be skipped
-            print('//?/conout$ was not found on this OS')
-        else:
-            self.assertIsInstance(f, ConIO)
-            f.close()
+        f = open('//?/conout$', 'wb', buffering=0)
+        self.assertIsInstance(f, ConIO)
+        f.close()
+
+    def test_conout_path(self):
+        temp_path = tempfile.mkdtemp()
+        self.addCleanup(support.rmtree, temp_path)
+
+        conout_path = os.path.join(temp_path, 'CONOUT$')
+
+        with open(conout_path, 'wb', buffering=0) as f:
+            if sys.getwindowsversion()[:2] > (6, 1):
+                self.assertIsInstance(f, ConIO)
+            else:
+                self.assertNotIsInstance(f, ConIO)
 
     def assertStdinRoundTrip(self, text):
         stdin = open('CONIN$', 'r')
