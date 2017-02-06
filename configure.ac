@@ -1689,6 +1689,26 @@ yes)
     fi
     AC_MSG_RESULT($ac_cv_enable_unreachable_code_warning)
 
+    AC_MSG_CHECKING(if we can make implicit function declaration an error in $CC)
+     ac_save_cc="$CC"
+     CC="$CC -Werror=implicit-function-declaration"
+     AC_CACHE_VAL(ac_cv_enable_implicit_function_declaration_error,
+       AC_COMPILE_IFELSE(
+         [
+	   AC_LANG_PROGRAM([[]], [[]])
+	 ],[
+           ac_cv_enable_implicit_function_declaration_error=yes
+	 ],[
+           ac_cv_enable_implicit_function_declaration_error=no
+	 ]))
+     CC="$ac_save_cc"
+    AC_MSG_RESULT($ac_cv_enable_implicit_function_declaration_error)
+
+    if test $ac_cv_enable_implicit_function_declaration_error = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
+    fi
+
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
     # the standard.
