@@ -2446,6 +2446,10 @@ _PyArg_UnpackStack(PyObject **args, Py_ssize_t nargs, const char *name,
 }
 
 
+#undef _PyArg_NoKeywords
+#undef _PyArg_NoStackKeywords
+#undef _PyArg_NoPositional
+
 /* For type constructors that don't take keyword args
  *
  * Sets a TypeError and returns 0 if the args/kwargs is
