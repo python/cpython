@@ -908,12 +908,18 @@ done:
 }
 
 static PyObject *
-deque_rotate(dequeobject *deque, PyObject *args)
+deque_rotate(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
+             PyObject *kwnames)
 {
     Py_ssize_t n=1;
 
-    if (!PyArg_ParseTuple(args, "|n:rotate", &n))
+    if (!_PyArg_NoStackKeywords("rotate", kwnames)) {
         return NULL;
+    }
+    if (!_PyArg_ParseStack(args, nargs, "|n:rotate", &n)) {
+        return NULL;
+    }
+
     if (!_deque_rotate(deque, n))
         Py_RETURN_NONE;
     return NULL;
@@ -1042,7 +1048,8 @@ deque_len(dequeobject *deque)
 }
 
 static PyObject *
-deque_index(dequeobject *deque, PyObject *args)
+deque_index(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
+            PyObject *kwnames)
 {
     Py_ssize_t i, n, start=0, stop=Py_SIZE(deque);
     PyObject *v, *item;
@@ -1051,10 +1058,15 @@ deque_index(dequeobject *deque, PyObject *args)
     size_t start_state = deque->state;
     int cmp;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:index", &v,
-                                _PyEval_SliceIndex, &start,
-                                _PyEval_SliceIndex, &stop))
+    if (!_PyArg_NoStackKeywords("index", kwnames)) {
         return NULL;
+    }
+    if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index", &v,
+                           _PyEval_SliceIndex, &start,
+                           _PyEval_SliceIndex, &stop)) {
+        return NULL;
+    }
+
     if (start < 0) {
         start += Py_SIZE(deque);
         if (start < 0)
@@ -1117,15 +1129,21 @@ PyDoc_STRVAR(index_doc,
 */
 
 static PyObject *
-deque_insert(dequeobject *deque, PyObject *args)
+deque_insert(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
+             PyObject *kwnames)
 {
     Py_ssize_t index;
     Py_ssize_t n = Py_SIZE(deque);
     PyObject *value;
     PyObject *rv;
 
-    if (!PyArg_ParseTuple(args, "nO:insert", &index, &value))
+    if (!_PyArg_NoStackKeywords("insert", kwnames)) {
         return NULL;
+    }
+    if (!_PyArg_ParseStack(args, nargs, "nO:insert", &index, &value)) {
+        return NULL;
+    }
+
     if (deque->maxlen == Py_SIZE(deque)) {
         PyErr_SetString(PyExc_IndexError, "deque already at its maximum size");
         return NULL;
@@ -1595,9 +1613,9 @@ static PyMethodDef deque_methods[] = {
     {"extendleft",              (PyCFunction)deque_extendleft,
         METH_O,                  extendleft_doc},
     {"index",                   (PyCFunction)deque_index,
-        METH_VARARGS,            index_doc},
+        METH_FASTCALL,            index_doc},
     {"insert",                  (PyCFunction)deque_insert,
-        METH_VARARGS,            insert_doc},
+        METH_FASTCALL,            insert_doc},
     {"pop",                     (PyCFunction)deque_pop,
         METH_NOARGS,             pop_doc},
     {"popleft",                 (PyCFunction)deque_popleft,
@@ -1611,7 +1629,7 @@ static PyMethodDef deque_methods[] = {
     {"reverse",                 (PyCFunction)deque_reverse,
         METH_NOARGS,             reverse_doc},
     {"rotate",                  (PyCFunction)deque_rotate,
-        METH_VARARGS,            rotate_doc},
+        METH_FASTCALL,            rotate_doc},
     {"__sizeof__",              (PyCFunction)deque_sizeof,
         METH_NOARGS,             sizeof_doc},
     {NULL,              NULL}   /* sentinel */
