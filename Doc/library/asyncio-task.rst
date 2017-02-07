@@ -136,17 +136,6 @@ using the :meth:`sleep` function::
     loop.run_until_complete(display_date(loop))
     loop.close()
 
-The same coroutine implemented using a generator::
-
-    @asyncio.coroutine
-    def display_date(loop):
-        end_time = loop.time() + 5.0
-        while True:
-            print(datetime.datetime.now())
-            if (loop.time() + 1.0) >= end_time:
-                break
-            yield from asyncio.sleep(1)
-
 .. seealso::
 
    The :ref:`display the current date with call_later()
@@ -309,9 +298,8 @@ Example combining a :class:`Future` and a :ref:`coroutine function
 
     import asyncio
 
-    @asyncio.coroutine
-    def slow_operation(future):
-        yield from asyncio.sleep(1)
+    async def slow_operation(future):
+        await asyncio.sleep(1)
         future.set_result('Future is done!')
 
     loop = asyncio.get_event_loop()
@@ -341,9 +329,8 @@ flow::
 
     import asyncio
 
-    @asyncio.coroutine
-    def slow_operation(future):
-        yield from asyncio.sleep(1)
+    async def slow_operation(future):
+        await asyncio.sleep(1)
         future.set_result('Future is done!')
 
     def got_result(future):
