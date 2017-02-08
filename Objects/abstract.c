@@ -2350,14 +2350,15 @@ _PyObject_FastCallDict(PyObject *callable, PyObject **args, Py_ssize_t nargs,
         }
 
         if (Py_EnterRecursiveCall(" while calling a Python object")) {
+            Py_DECREF(argstuple);
             return NULL;
         }
 
         result = (*call)(callable, argstuple, kwargs);
 
         Py_LeaveRecursiveCall();
-
         Py_DECREF(argstuple);
+
         result = _Py_CheckFunctionResult(callable, result, NULL);
         return result;
     }
@@ -2544,6 +2545,8 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t narg
         }
 
         if (Py_EnterRecursiveCall(" while calling a Python object")) {
+            Py_DECREF(argstuple);
+            Py_XDECREF(kwdict);
             return NULL;
         }
 
