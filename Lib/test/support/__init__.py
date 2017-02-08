@@ -985,7 +985,7 @@ def change_cwd(path, quiet=False):
     except OSError as exc:
         if not quiet:
             raise
-        warnings.warn(f'tests may fail, unable to change current working '
+        warnings.warn(f'tests may fail, unable to change the current working '
                       f'directory to {path}: {exc}',
                       RuntimeWarning, stacklevel=3)
     try:
