@@ -958,7 +958,7 @@ def temp_dir(path=None, quiet=False):
             if not quiet:
                 raise
             warnings.warn(f'tests may fail, unable to create '
-                          f'temporary directory {path}: {exc}',
+                          f'temporary directory {path!r}: {exc}',
                           RuntimeWarning, stacklevel=3)
     try:
         yield path
@@ -986,7 +986,7 @@ def change_cwd(path, quiet=False):
         if not quiet:
             raise
         warnings.warn(f'tests may fail, unable to change the current working '
-                      f'directory to {path}: {exc}',
+                      f'directory to {path!r}: {exc}',
                       RuntimeWarning, stacklevel=3)
     try:
         yield os.getcwd()
