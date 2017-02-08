@@ -84,7 +84,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         indirect_test()
         alloc_after, rc_after, fd_after = dash_R_cleanup(fs, ps, pic, zdc,
                                                          abcs)
-        print('.', end='', flush=True)
+        print('.', end='', file=sys.stderr, flush=True)
         if i >= nwarmup:
             rc_deltas[i] = rc_after - rc_before
             alloc_deltas[i] = alloc_after - alloc_before
