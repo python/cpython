@@ -2239,21 +2239,32 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
     assert(PyTuple_Check(args));
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
-    call = callable->ob_type->tp_call;
-    if (call == NULL) {
-        PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                     callable->ob_type->tp_name);
-        return NULL;
+    if (PyFunction_Check(callable)) {
+        return _PyFunction_FastCallDict(callable,
+                                        &PyTuple_GET_ITEM(args, 0),
+                                        PyTuple_GET_SIZE(args),
+                                        kwargs);
     }
+    else if (PyCFunction_Check(callable)) {
+        return PyCFunction_Call(callable, args, kwargs);
+    }
+    else {
+        call = callable->ob_type->tp_call;
+        if (call == NULL) {
+            PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
+                         callable->ob_type->tp_name);
+            return NULL;
+        }
 
-    if (Py_EnterRecursiveCall(" while calling a Python object"))
-        return NULL;
+        if (Py_EnterRecursiveCall(" while calling a Python object"))
+            return NULL;
 
-    result = (*call)(callable, args, kwargs);
+        result = (*call)(callable, args, kwargs);
 
-    Py_LeaveRecursiveCall();
+        Py_LeaveRecursiveCall();
 
-    return _Py_CheckFunctionResult(callable, result, NULL);
+        return _Py_CheckFunctionResult(callable, result, NULL);
+    }
 }
 
 /* Issue #29234: Inlining _PyStack_AsTuple() into callers increases their
@@ -2305,9 +2316,6 @@ PyObject *
 _PyObject_FastCallDict(PyObject *callable, PyObject **args, Py_ssize_t nargs,
                        PyObject *kwargs)
 {
-    ternaryfunc call;
-    PyObject *result = NULL;
-
     /* _PyObject_FastCallDict() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
@@ -2318,42 +2326,41 @@ _PyObject_FastCallDict(PyObject *callable, PyObject **args, Py_ssize_t nargs,
     assert(nargs == 0 || args != NULL);
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
-    if (Py_EnterRecursiveCall(" while calling a Python object")) {
-        return NULL;
-    }
-
     if (PyFunction_Check(callable)) {
-        result = _PyFunction_FastCallDict(callable, args, nargs, kwargs);
+        return _PyFunction_FastCallDict(callable, args, nargs, kwargs);
     }
     else if (PyCFunction_Check(callable)) {
-        result = _PyCFunction_FastCallDict(callable, args, nargs, kwargs);
+        return _PyCFunction_FastCallDict(callable, args, nargs, kwargs);
     }
     else {
-        PyObject *tuple;
+        PyObject *argstuple, *result;
+        ternaryfunc call;
 
         /* Slow-path: build a temporary tuple */
         call = callable->ob_type->tp_call;
         if (call == NULL) {
             PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
                          callable->ob_type->tp_name);
-            goto exit;
+            return NULL;
         }
 
-        tuple = _PyStack_AsTuple(args, nargs);
-        if (tuple == NULL) {
-            goto exit;
+        argstuple = _PyStack_AsTuple(args, nargs);
+        if (argstuple == NULL) {
+            return NULL;
         }
 
-        result = (*call)(callable, tuple, kwargs);
-        Py_DECREF(tuple);
+        if (Py_EnterRecursiveCall(" while calling a Python object")) {
+            return NULL;
+        }
 
+        result = (*call)(callable, argstuple, kwargs);
+
+        Py_LeaveRecursiveCall();
+
+        Py_DECREF(argstuple);
         result = _Py_CheckFunctionResult(callable, result, NULL);
+        return result;
     }
-
-exit:
-    Py_LeaveRecursiveCall();
-
-    return result;
 }
 
 /* Positional arguments are obj followed by args:
@@ -2506,49 +2513,48 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t narg
            temporary dictionary for keyword arguments (if any) */
 
         ternaryfunc call;
-        PyObject *argtuple;
+        PyObject *argstuple;
         PyObject *kwdict, *result;
         Py_ssize_t nkwargs;
 
-        result = NULL;
         nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
         assert((nargs == 0 && nkwargs == 0) || stack != NULL);
-
-        if (Py_EnterRecursiveCall(" while calling a Python object")) {
-            return NULL;
-        }
 
         call = callable->ob_type->tp_call;
         if (call == NULL) {
             PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
                          callable->ob_type->tp_name);
-            goto exit;
+            return NULL;
         }
 
-        argtuple = _PyStack_AsTuple(stack, nargs);
-        if (argtuple == NULL) {
-            goto exit;
+        argstuple = _PyStack_AsTuple(stack, nargs);
+        if (argstuple == NULL) {
+            return NULL;
         }
 
         if (nkwargs > 0) {
             kwdict = _PyStack_AsDict(stack + nargs, kwnames);
             if (kwdict == NULL) {
-                Py_DECREF(argtuple);
-                goto exit;
+                Py_DECREF(argstuple);
+                return NULL;
             }
         }
         else {
             kwdict = NULL;
         }
 
-        result = (*call)(callable, argtuple, kwdict);
-        Py_DECREF(argtuple);
+        if (Py_EnterRecursiveCall(" while calling a Python object")) {
+            return NULL;
+        }
+
+        result = (*call)(callable, argstuple, kwdict);
+
+        Py_LeaveRecursiveCall();
+
+        Py_DECREF(argstuple);
         Py_XDECREF(kwdict);
 
         result = _Py_CheckFunctionResult(callable, result, NULL);
-
-    exit:
-        Py_LeaveRecursiveCall();
         return result;
     }
 }
