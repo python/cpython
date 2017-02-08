@@ -158,7 +158,7 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(len(warnings), 1, warnings)
         warn = warnings[0]
         self.assertTrue(warn.startswith(f'tests may fail, unable to create '
-                                        f'temporary directory {path}: '),
+                                        f'temporary directory {path!r}: '),
                         warn)
 
     # Tests for change_cwd()
@@ -204,7 +204,7 @@ class TestSupport(unittest.TestCase):
         warn = warnings[0]
         self.assertTrue(warn.startswith(f'tests may fail, unable to change '
                                         f'the current working directory '
-                                        f'to {bad_dir}: '),
+                                        f'to {bad_dir!r}: '),
                         warn)
 
     # Tests for change_cwd()
@@ -221,7 +221,7 @@ class TestSupport(unittest.TestCase):
         msg = messages[0]
         self.assertTrue(msg.startswith(f'tests may fail, unable to change '
                                        f'the current working directory '
-                                       f'to {path}: '),
+                                       f'to {path!r}: '),
                         msg)
 
     # Tests for temp_cwd()
