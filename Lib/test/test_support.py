@@ -155,8 +155,11 @@ class TestSupport(unittest.TestCase):
         finally:
             shutil.rmtree(path)
 
-        expected = ['tests may fail, unable to create temp dir: ' + path]
-        self.assertEqual(warnings, expected)
+        self.assertEqual(len(warnings), 1, warnings)
+        warn = warnings[0]
+        self.assertTrue(warn.startswith(f'tests may fail, unable to create '
+                                        f'temporary directory {path}: '),
+                        warn)
 
     # Tests for change_cwd()
 
@@ -197,8 +200,12 @@ class TestSupport(unittest.TestCase):
                     self.assertEqual(os.getcwd(), new_cwd)
                 warnings = [str(w.message) for w in recorder.warnings]
 
-        expected = ['tests may fail, unable to change CWD to: ' + bad_dir]
-        self.assertEqual(warnings, expected)
+        self.assertEqual(len(warnings), 1, warnings)
+        warn = warnings[0]
+        self.assertTrue(warn.startswith(f'tests may fail, unable to change '
+                                        f'the current working directory '
+                                        f'to {bad_dir}: '),
+                        warn)
 
     # Tests for change_cwd()
 
@@ -209,7 +216,13 @@ class TestSupport(unittest.TestCase):
             with support.change_cwd(path=path, quiet=True):
                 pass
             messages = [str(w.message) for w in recorder.warnings]
-        self.assertEqual(messages, ['tests may fail, unable to change CWD to: ' + path])
+
+        self.assertEqual(len(messages), 1, messages)
+        msg = messages[0]
+        self.assertTrue(msg.startswith(f'tests may fail, unable to change '
+                                       f'the current working directory '
+                                       f'to {path}: '),
+                        msg)
 
     # Tests for temp_cwd()
 
