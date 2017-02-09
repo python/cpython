@@ -11865,7 +11865,6 @@ ScandirIterator_finalize(ScandirIterator *iterator)
         }
     }
 
-    Py_CLEAR(iterator->path.object);
     path_cleanup(&iterator->path);
 
     /* Restore the saved exception. */
@@ -11968,12 +11967,6 @@ posix_scandir(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&:scandir", keywords,
                                      path_converter, &iterator->path))
         goto error;
-
-    /* path_converter doesn't keep path.object around, so do it
-       manually for the lifetime of the iterator here (the refcount
-       is decremented in ScandirIterator_dealloc)
-    */
-    Py_XINCREF(iterator->path.object);
 
 #ifdef MS_WINDOWS
     iterator->first_time = 1;
