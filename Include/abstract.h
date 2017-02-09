@@ -257,6 +257,12 @@ PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(
     PyObject *args,
     PyObject *kwargs);
 
+PyAPI_FUNC(PyObject *) _PyObject_FastCall_Prepend(
+    PyObject *callable,
+    PyObject *obj,
+    PyObject **args,
+    Py_ssize_t nargs);
+
 PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *callable,
                                                PyObject *result,
                                                const char *where);
