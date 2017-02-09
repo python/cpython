@@ -77,13 +77,59 @@ PyCFunction_GetFlags(PyObject *op)
     return PyCFunction_GET_FLAGS(op);
 }
 
+static PyObject *
+cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
+{
+    assert(!PyErr_Occurred());
+
+    PyCFunction meth = PyCFunction_GET_FUNCTION(func);
+    PyObject *self = PyCFunction_GET_SELF(func);
+    PyObject *result;
+
+    if (PyCFunction_GET_FLAGS(func) & METH_KEYWORDS) {
+        if (Py_EnterRecursiveCall(" while calling a Python object")) {
+            return NULL;
+        }
+
+        result = (*(PyCFunctionWithKeywords)meth)(self, args, kwargs);
+
+        Py_LeaveRecursiveCall();
+    }
+    else {
+        if (kwargs != NULL && PyDict_Size(kwargs) != 0) {
+            PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
+                         ((PyCFunctionObject*)func)->m_ml->ml_name);
+            return NULL;
+        }
+
+        if (Py_EnterRecursiveCall(" while calling a Python object")) {
+            return NULL;
+        }
+
+        result = (*meth)(self, args);
+
+        Py_LeaveRecursiveCall();
+    }
+
+    return _Py_CheckFunctionResult(func, result, NULL);
+}
+
+
 PyObject *
 PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwargs)
 {
-    return _PyCFunction_FastCallDict(func,
-                                     &PyTuple_GET_ITEM(args, 0),
-                                     PyTuple_GET_SIZE(args),
-                                     kwargs);
+    /* first try METH_VARARGS to pass directly args tuple unchanged.
+       _PyMethodDef_RawFastCallDict() creates a new temporary tuple
+       for METH_VARARGS. */
+    if (PyCFunction_GET_FLAGS(func) & METH_VARARGS) {
+        return cfunction_call_varargs(func, args, kwargs);
+    }
+    else {
+        return _PyCFunction_FastCallDict(func,
+                                         &PyTuple_GET_ITEM(args, 0),
+                                         PyTuple_GET_SIZE(args),
+                                         kwargs);
+    }
 }
 
 PyObject *
