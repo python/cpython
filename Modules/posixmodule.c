@@ -11856,7 +11856,6 @@ ScandirIterator_finalize(ScandirIterator *iterator)
         }
     }
 
-    Py_CLEAR(iterator->path.object);
     path_cleanup(&iterator->path);
 
     /* Restore the saved exception. */
@@ -11968,12 +11967,9 @@ os_scandir_impl(PyObject *module, path_t *path)
 #endif
 
     memcpy(&iterator->path, path, sizeof(path_t));
-    /* path_converter doesn't keep path.object around, so do it
-       manually for the lifetime of the iterator here (the refcount
-       is decremented in ScandirIterator_dealloc)
-    */
-    Py_XINCREF(iterator->path.object);
-    Py_XINCREF(iterator->path.cleanup);
+    /* Move the ownership to iterator->path */
+    path->object = NULL;
+    path->cleanup = NULL;
 
 #ifdef MS_WINDOWS
     iterator->first_time = 1;
