@@ -2616,10 +2616,12 @@ _PyObject_CallFunctionVa(PyObject *callable, const char *format,
     }
 
     if (is_size_t) {
-        stack = _Py_VaBuildStack(small_stack, small_stack_len, format, va, &nargs);
+        stack = _Py_VaBuildStack_SizeT(small_stack, small_stack_len,
+                                       format, va, &nargs);
     }
     else {
-        stack = _Py_VaBuildStack_SizeT(small_stack, small_stack_len, format, va, &nargs);
+        stack = _Py_VaBuildStack(small_stack, small_stack_len,
+                                 format, va, &nargs);
     }
     if (stack == NULL) {
         return NULL;
