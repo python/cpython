@@ -1023,27 +1023,20 @@ class ExceptionTests(unittest.TestCase):
                 # The following line is included in the traceback report:
                 raise exc
 
-        class BrokenRepr(BrokenDel):
-            def __repr__(self):
-                raise AttributeError("repr() is broken")
-
         class BrokenExceptionDel:
             def __del__(self):
                 exc = BrokenStrException()
                 # The following line is included in the traceback report:
                 raise exc
 
-        for test_class in (BrokenDel, BrokenRepr, BrokenExceptionDel):
+        for test_class in (BrokenDel, BrokenExceptionDel):
             with self.subTest(test_class):
                 obj = test_class()
                 with captured_stderr() as stderr:
                     del obj
                 report = stderr.getvalue()
                 self.assertIn("Exception ignored", report)
-                if test_class is BrokenRepr:
-                    self.assertIn("<object repr() failed>", report)
-                else:
-                    self.assertIn(test_class.__del__.__qualname__, report)
+                self.assertIn(test_class.__del__.__qualname__, report)
                 self.assertIn("test_exceptions.py", report)
                 self.assertIn("raise exc", report)
                 if test_class is BrokenExceptionDel:
