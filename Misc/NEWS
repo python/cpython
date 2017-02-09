@@ -85,6 +85,9 @@ C API
 Documentation
 -------------
 
+- Issue #26355: Add canonical header link on each page to corresponding major
+  version of the documentation. Patch by Matthias Bussonnier.
+
 - Issue #12067: Rewrite Comparisons section in the Expressions chapter of the
   language reference. Some of the details of comparing mixed types were
   incorrect or ambiguous. Added default behaviour and consistency suggestions
