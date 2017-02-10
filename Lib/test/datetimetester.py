@@ -1993,9 +1993,13 @@ class TestDateTime(TestDate):
         # minimum timestamp
         min_dt = self.theclass.min.replace(tzinfo=timezone.utc)
         min_ts = min_dt.timestamp()
-        # date 0001-01-01 00:00:00+00:00: timestamp=-62135596800
-        self.assertEqual(self.theclass.fromtimestamp(min_ts, tz=timezone.utc),
-                         min_dt)
+        try:
+            # date 0001-01-01 00:00:00+00:00: timestamp=-62135596800
+            self.assertEqual(self.theclass.fromtimestamp(min_ts, tz=timezone.utc),
+                             min_dt)
+        except OverflowError as exc:
+            # the date 0001-01-01 doesn't fit into 32-bit time_t
+            self.skipTest(str(exc))
 
         # maximum timestamp: set seconds to zero to avoid rounding issues
         max_dt = self.theclass.max.replace(tzinfo=timezone.utc,
