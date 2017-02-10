@@ -1,4 +1,4 @@
-# Copyright (C) 2001,2002 Python Software Foundation
+# Copyright (C) 2001,2017 Python Software Foundation
 # csv package unit tests
 
 import copy

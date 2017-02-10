@@ -12,7 +12,7 @@
  *
  * (c) 2000 Peter Bosch.  All Rights Reserved.
  * (c) 2002 Gregory P. Ward.  All Rights Reserved.
- * (c) 2002 Python Software Foundation.  All Rights Reserved.
+ * (c) 2017 Python Software Foundation.  All Rights Reserved.
  *
  * XXX need a license statement
  *

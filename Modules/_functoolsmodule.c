@@ -5,7 +5,7 @@
 /* _functools module written and maintained
    by Hye-Shik Chang <perky@FreeBSD.org>
    with adaptations by Raymond Hettinger <python@rcn.com>
-   Copyright (c) 2004, 2005, 2006 Python Software Foundation.
+   Copyright (c) 2004, 2005, 2017 Python Software Foundation.
    All rights reserved.
 */
 

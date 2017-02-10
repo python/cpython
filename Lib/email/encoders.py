@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2006 Python Software Foundation
+# Copyright (C) 2001-2017 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
