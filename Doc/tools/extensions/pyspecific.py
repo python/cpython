@@ -34,7 +34,7 @@ import suspicious
 
 
 ISSUE_URI = 'https://bugs.python.org/issue%s'
-SOURCE_URI = 'https://github.com/python/cpython/tree/3.6/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/master/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -253,7 +253,7 @@ class MiscNews(Directive):
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
             return [node]
-        content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/\1>`__',
+        content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/issue\1>`__',
                                content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
