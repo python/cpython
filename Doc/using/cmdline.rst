@@ -396,21 +396,23 @@ Miscellaneous options
    defines the following possible values:
 
    * ``-X faulthandler`` to enable :mod:`faulthandler`;
-   * ``-X showrefcount`` to enable the output of the total reference count
-     and memory blocks (only works on debug builds);
+   * ``-X showrefcount`` to output the total reference count and number of used
+     memory blocks when the program finishes or after each statement in the
+     interactive interpreter. This only works on debug builds.
    * ``-X tracemalloc`` to start tracing Python memory allocations using the
      :mod:`tracemalloc` module. By default, only the most recent frame is
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
-   * ``-X showalloccount`` to enable the output of the total count of allocated
-     objects for each type (only works when built with ``COUNT_ALLOCS`` defined);
+   * ``-X showalloccount`` to output the total count of allocated objects for
+     each type when the program finishes. This only works when Python was built with
+     ``COUNT_ALLOCS`` defined.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
    .. versionchanged:: 3.2
-      It is now allowed to pass :option:`-X` with CPython.
+      The :option:`-X` option was added.
 
    .. versionadded:: 3.3
       The ``-X faulthandler`` option.
