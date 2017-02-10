@@ -166,7 +166,8 @@ library which are implemented in C; each one builds a DLL (renamed to
 The following Python-controlled sub-projects wrap external projects.
 Note that these external libraries are not necessary for a working
 interpreter, but they do implement several major features.  See the
-*Getting External Sources* section below for additional information
+`Getting External Sources <https://github.com/python/cpython/blob/master/PCbuild/README.rst#getting-external-sources>`_
+section below for additional information
 about getting the source for building these libraries.  The sub-projects
 are:
 
@@ -247,7 +248,7 @@ painless as possible, called "get_externals.bat" and located in this
 directory.  This script extracts all the external sub-projects from
 http://svn.python.org/projects/external
 via Subversion (so you'll need ``svn.exe`` on your PATH) and places them
-in ..\externals (relative to this directory).
+in ``..\externals`` (relative to this directory).
 
 It is also possible to download sources from each project's homepage,
 though you may have to change folder names or pass the names to MSBuild
