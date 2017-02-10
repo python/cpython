@@ -33,7 +33,7 @@ use ``make frameworkinstall`` to do the installation.  Note that this installs t
 Python executable in a place that is not normally on your ``PATH``, you may want to
 set up a symlink in ``/usr/local/bin``.
 
-On Windows, see `PCbuild/readme.txt <https://github.com/python/cpython/blob/master/PCbuild/readme.txt>`_.
+On Windows, see `PCbuild/README.rst <https://github.com/python/cpython/blob/master/PCbuild/README.rst>`_.
 
 If you wish, you can create a subdirectory and invoke ``configure`` from there.
 For example::
@@ -92,7 +92,9 @@ What's New
 We have a comprehensive overview of the changes in the `What's New in
 Python 3.7 document <https://docs.python.org/3.7/whatsnew/3.7.html>`_.
 
-For a more detailed change log, read ``Misc/NEWS`` (though this file, too,
+For a more detailed change log, read 
+`Misc/NEWS <https://github.com/python/cpython/blob/master/Misc/NEWS>`_ 
+(though this file, too,
 is incomplete, and also doesn't list anything merged in from the 2.7
 release under development).
 
