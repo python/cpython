@@ -225,6 +225,9 @@ Extension Modules
 Library
 -------
 
+- Issue #29100: Fix datetime.fromtimestamp() regression introduced in Python
+  3.6.0: check minimum and maximum years.
+
 - Issue #29416: Prevent infinite loop in pathlib.Path.mkdir
 
 - Issue #29444: Fixed out-of-bounds buffer access in the group() method of

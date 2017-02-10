@@ -1989,6 +1989,42 @@ class TestDateTime(TestDate):
             self.assertEqual(t.second, 0)
             self.assertEqual(t.microsecond, 7812)
 
+    def test_timestamp_limits(self):
+        # minimum timestamp
+        min_dt = self.theclass.min.replace(tzinfo=timezone.utc)
+        min_ts = min_dt.timestamp()
+        # date 0001-01-01 00:00:00+00:00: timestamp=-62135596800
+        self.assertEqual(self.theclass.fromtimestamp(min_ts, tz=timezone.utc),
+                         min_dt)
+
+        # maximum timestamp: set seconds to zero to avoid rounding issues
+        max_dt = self.theclass.max.replace(tzinfo=timezone.utc,
+                                           second=0, microsecond=0)
+        max_ts = max_dt.timestamp()
+        # date 9999-12-31 23:59:00+00:00: timestamp 253402300740
+        self.assertEqual(self.theclass.fromtimestamp(max_ts, tz=timezone.utc),
+                         max_dt)
+
+        # number of seconds greater than 1 year: make sure that the new date
+        # is not valid in datetime.datetime limits
+        delta = 3600 * 24 * 400
+
+        # too small
+        ts = min_ts - delta
+        # converting a Python int to C time_t can raise a OverflowError,
+        # especially on 32-bit platforms.
+        with self.assertRaises((ValueError, OverflowError)):
+            self.theclass.fromtimestamp(ts)
+        with self.assertRaises((ValueError, OverflowError)):
+            self.theclass.utcfromtimestamp(ts)
+
+        # too big
+        ts = max_dt.timestamp() + delta
+        with self.assertRaises((ValueError, OverflowError)):
+            self.theclass.fromtimestamp(ts)
+        with self.assertRaises((ValueError, OverflowError)):
+            self.theclass.utcfromtimestamp(ts)
+
     def test_insane_fromtimestamp(self):
         # It's possible that some platform maps time_t to double,
         # and that this test will fail there.  This test should
