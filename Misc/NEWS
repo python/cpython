@@ -57,6 +57,9 @@ Extension Modules
 Library
 -------
 
+- Issue #29519: Fix weakref spewing exceptions during interpreter shutdown
+  when used with a rare combination of multiprocessing and custom codecs.
+
 - Issue #29416: Prevent infinite loop in pathlib.Path.mkdir
 
 - Issue #29444: Fixed out-of-bounds buffer access in the group() method of
