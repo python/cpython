@@ -104,130 +104,136 @@ categories:
 
 The following sub-projects represent the bare minimum required to build
 a functioning CPython interpreter.  If nothing else builds but these,
-you'll have a very limited but usable python.exe:
-pythoncore
-    .dll and .lib
-python
-    .exe
+you'll have a very limited but usable ``python.exe``:
+
+- pythoncore: ``.dll`` and ``.lib``
+- ``python.exe``
 
 These sub-projects provide extra executables that are useful for running
 CPython in different ways:
-pythonw
-    pythonw.exe, a variant of python.exe that doesn't open a Command
-    Prompt window
-pylauncher
-    py.exe, the Python Launcher for Windows, see
-        http://docs.python.org/3/using/windows.html#launcher
-pywlauncher
-    pyw.exe, a variant of py.exe that doesn't open a Command Prompt
-    window
-_testembed
-    _testembed.exe, a small program that embeds Python for testing
-    purposes, used by test_capi.py
+
+- pythonw:
+  pythonw.exe, a variant of python.exe that doesn't open a Command
+  Prompt window
+  
+- pylauncher
+  py.exe, the Python Launcher for Windows, see
+  http://docs.python.org/3/using/windows.html#launcher
+
+- pywlauncher:
+  pyw.exe, a variant of py.exe that doesn't open a Command Prompt
+  window
+
+- _testembed:
+  ``_testembed.exe``, a small program that embeds Python for testing
+  purposes, used by ``test_capi.py``
 
 These are miscellaneous sub-projects that don't really fit the other
 categories:
-_freeze_importlib
-    _freeze_importlib.exe, used to regenerate Python\importlib.h after
-    changes have been made to Lib\importlib\_bootstrap.py
-python3dll
-    python3.dll, the PEP 384 Stable ABI dll
-xxlimited
-    builds an example module that makes use of the PEP 384 Stable ABI,
-    see Modules\xxlimited.c
+
+- _freeze_importlib:
+  ``_freeze_importlib.exe``, used to regenerate ``Python\importlib.h`` after
+  changes have been made to ``Lib\importlib\_bootstrap.py``
+
+- python3dll:
+  ``python3.dll``, the PEP 384 Stable ABI dll
+
+- xxlimited:
+  builds an example module that makes use of the PEP 384 Stable ABI,
+  see ``Modules\xxlimited.c``
 
 The following sub-projects are for individual modules of the standard
 library which are implemented in C; each one builds a DLL (renamed to
-.pyd) of the same name as the project:
-_ctypes
-_ctypes_test
-_decimal
-_elementtree
-_hashlib
-_msi
-_multiprocessing
-_overlapped
-_socket
-_testcapi
-_testbuffer
-_testimportmultiple
-pyexpat
-select
-unicodedata
-winsound
+``.pyd``) of the same name as the project:
+
+- _ctypes
+- _ctypes_test
+- _decimal
+- _elementtree
+- _hashlib
+- _msi
+- _multiprocessing
+- _overlapped
+- _socket
+- _testcapi
+- _testbuffer
+- _testimportmultiple
+- pyexpat
+- select
+- unicodedata
+- winsound
 
 The following Python-controlled sub-projects wrap external projects.
 Note that these external libraries are not necessary for a working
 interpreter, but they do implement several major features.  See the
-"Getting External Sources" section below for additional information
+*Getting External Sources* section below for additional information
 about getting the source for building these libraries.  The sub-projects
 are:
-_bz2
-    Python wrapper for version 1.0.6 of the libbzip2 compression library
-    Homepage:
-        http://www.bzip.org/
-_lzma
-    Python wrapper for the liblzma compression library, using pre-built
-    binaries of XZ Utils version 5.0.5
-    Homepage:
-        http://tukaani.org/xz/
-_ssl
-    Python wrapper for version 1.0.2j of the OpenSSL secure sockets
-    library, which is built by ssl.vcxproj
-    Homepage:
-        http://www.openssl.org/
 
-    Building OpenSSL requires nasm.exe (the Netwide Assembler), version
-    2.10 or newer from
-        http://www.nasm.us/
-    to be somewhere on your PATH.  More recent versions of OpenSSL may
-    need a later version of NASM. If OpenSSL's self tests don't pass,
-    you should first try to update NASM and do a full rebuild of
-    OpenSSL.  If you use the PCbuild\get_externals.bat method
-    for getting sources, it also downloads a version of NASM which the
-    libeay/ssleay sub-projects use.
+- _bz2
+  Python wrapper for version 1.0.6 of the libbzip2 compression library.
+  Homepage: http://www.bzip.org/
 
-    The libeay/ssleay sub-projects expect your OpenSSL sources to have
-    already been configured and be ready to build.  If you get your sources
-    from svn.python.org as suggested in the "Getting External Sources"
-    section below, the OpenSSL source will already be ready to go.  If
-    you want to build a different version, you will need to run
+- _lzma:
+  Python wrapper for the liblzma compression library, using pre-built
+  binaries of XZ Utils version 5.0.5.
+  Homepage: http://tukaani.org/xz/
+
+- _ssl:
+  Python wrapper for version 1.0.2j of the OpenSSL secure sockets
+  library, which is built by ``ssl.vcxproj``.
+  Homepage: http://www.openssl.org/
+
+  Building OpenSSL requires nasm.exe (the Netwide Assembler), version
+  2.10 or newer from `here <http://www.nasm.us/>`_
+  to be somewhere on your PATH.  More recent versions of OpenSSL may
+  need a later version of NASM. If OpenSSL's self tests don't pass,
+  you should first try to update NASM and do a full rebuild of
+  OpenSSL.  If you use the ``PCbuild\get_externals.bat`` method
+  for getting sources, it also downloads a version of NASM which the
+  libeay/ssleay sub-projects use.
+
+  The libeay/ssleay sub-projects expect your OpenSSL sources to have
+  already been configured and be ready to build.  If you get your sources
+  from svn.python.org as suggested in the *Getting External Sources*
+  section below, the OpenSSL source will already be ready to go.  If
+  you want to build a different version, you will need to run::
 
        PCbuild\prepare_ssl.py path\to\openssl-source-dir
 
-    That script will prepare your OpenSSL sources in the same way that
-    those available on svn.python.org have been prepared.  Note that
-    Perl must be installed and available on your PATH to configure
-    OpenSSL.  ActivePerl is recommended and is available from
-        http://www.activestate.com/activeperl/
+  That script will prepare your OpenSSL sources in the same way that
+  those available on svn.python.org have been prepared.  Note that
+  Perl must be installed and available on your PATH to configure
+  OpenSSL.  ActivePerl is recommended and is available from
+  `here <http://www.activestate.com/activeperl/>`_.
 
-    The libeay and ssleay sub-projects will build the modules of OpenSSL
-    required by _ssl and _hashlib and may need to be manually updated when
-    upgrading to a newer version of OpenSSL or when adding new
-    functionality to _ssl or _hashlib. They will not clean up their output
-    with the normal Clean target; CleanAll should be used instead.
-_sqlite3
-    Wraps SQLite 3.14.2.0, which is itself built by sqlite3.vcxproj
-    Homepage:
-        http://www.sqlite.org/
-_tkinter
-    Wraps version 8.6.6 of the Tk windowing system.
-    Homepage:
-        http://www.tcl.tk/
+  The libeay and ssleay sub-projects will build the modules of OpenSSL
+  required by _ssl and _hashlib and may need to be manually updated when
+  upgrading to a newer version of OpenSSL or when adding new
+  functionality to _ssl or _hashlib. They will not clean up their output
+  with the normal *Clean* target; *CleanAll* should be used instead.
+  
+- _sqlite3:
+  Wraps SQLite 3.14.2.0, which is itself built by ``sqlite3.vcxproj``.
+  Homepage: http://www.sqlite.org/
 
-    Tkinter's dependencies are built by the tcl.vcxproj and tk.vcxproj
-    projects.  The tix.vcxproj project also builds the Tix extended
-    widget set for use with Tkinter.
+- _tkinter:
+  Wraps version 8.6.6 of the Tk windowing system.
+  Homepage: http://www.tcl.tk/
 
-    Those three projects install their respective components in a
-    directory alongside the source directories called "tcltk" on
-    Win32 and "tcltk64" on x64.  They also copy the Tcl and Tk DLLs
-    into the current output directory, which should ensure that Tkinter
-    is able to load Tcl/Tk without having to change your PATH.
+  Tkinter's dependencies are built by the ``tcl.vcxproj`` and ``tk.vcxproj``
+  projects.  The ``tix.vcxproj`` project also builds the Tix extended
+  widget set for use with Tkinter.
 
-    The tcl, tk, and tix sub-projects do not clean their builds with
-    the normal Clean target; if you need to rebuild, you should use the
-    CleanAll target or manually delete their builds.
+  Those three projects install their respective components in a
+  directory alongside the source directories called *tcltk* on
+  Win32 and *tcltk64* on x64.  They also copy the Tcl and Tk DLLs
+  into the current output directory, which should ensure that Tkinter
+  is able to load Tcl/Tk without having to change your PATH.
+
+  The tcl, tk, and tix sub-projects do not clean their builds with
+  the normal *Clean* target; if you need to rebuild, you should use the
+  *CleanAll* target or manually delete their builds.
 
 
 Getting External Sources
