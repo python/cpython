@@ -2,9 +2,9 @@ Quick Start Guide
 -----------------
 
 1.  Install Microsoft Visual Studio 2015, any edition.
-2.  Install Subversion, and make sure 'svn.exe' is on your PATH.
-3.  Run "build.bat -e" to build Python in 32-bit Release configuration.
-4.  (Optional, but recommended) Run the test suite with "rt.bat -q".
+2.  Install Subversion, and make sure ``svn.exe`` is on your PATH.
+3.  Run ``build.bat -e`` to build Python in 32-bit Release configuration.
+4.  (Optional, but recommended) Run the test suite with ``rt.bat -q``.
 
 
 Building Python using Microsoft Visual C++
@@ -16,24 +16,24 @@ bit platforms.  Using this directory requires an installation of
 Microsoft Visual C++ 2015 (MSVC 14.0) of any edition.  The specific
 requirements are as follows:
 
-Visual Studio Express 2015 for Desktop
-Visual Studio Professional 2015
-    Either edition is sufficient for building all configurations except
+- Visual Studio Express 2015 for Desktop
+- Visual Studio Professional 2015
+
+  - Either edition is sufficient for building all configurations except
     for Profile Guided Optimization.
-    The Python build solution pcbuild.sln makes use of Solution Folders,
+  - The Python build solution pcbuild.sln makes use of Solution Folders,
     which this edition does not support.  Any time pcbuild.sln is opened
     or reloaded by Visual Studio, a warning about Solution Folders will
-    be displayed, which can be safely dismissed with no impact on your
-    ability to build Python.
-    Required for building 64-bit Debug and Release configuration builds
-Visual Studio Premium 2015
-    Required for building Release configuration builds that make use of
-    Profile Guided Optimization (PGO), on either platform.
+    be displayed, which can be safely dismissed with no impact on your ability to build Python.
+  - Required for building 64-bit Debug and Release configuration builds
+  
+- Visual Studio Premium 2015
+    - Required for building Release configuration builds that make use of Profile Guided Optimization (PGO), on either platform.
 
-All you need to do to build is open the solution "pcbuild.sln" in Visual
+All you need to do to build is open the solution ``pcbuild.sln`` in Visual
 Studio, select the desired combination of configuration and platform,
-then build with "Build Solution".  You can also build from the command
-line using the "build.bat" script in this directory; see below for
+then build with *Build Solution*.  You can also build from the command
+line using the ``build.bat`` script in this directory; see below for
 details.  The solution is configured to build the projects in the correct
 order.
 
@@ -44,58 +44,61 @@ win32 sub-directory.  The x64 platform is used for building 64-bit AMD64
 The Itanium (IA-64) platform is no longer supported.
 
 Four configuration options are supported by the solution:
-Debug
-    Used to build Python with extra debugging capabilities, equivalent
-    to using ./configure --with-pydebug on UNIX.  All binaries built
-    using this configuration have "_d" added to their name:
-    python37_d.dll, python_d.exe, parser_d.pyd, and so on.  Both the
-    build and rt (run test) batch files in this directory accept a -d
-    option for debug builds.  If you are building Python to help with
-    development of CPython, you will most likely use this configuration.
-PGInstrument, PGUpdate
-    Used to build Python in Release configuration using PGO, which
-    requires Premium Edition of Visual Studio.  See the "Profile
-    Guided Optimization" section below for more information.  Build
-    output from each of these configurations lands in its own
-    sub-directory of this directory.  The official Python releases may
-    be built using these configurations.
-Release
-    Used to build Python as it is meant to be used in production
-    settings, though without PGO.
+
+- Debug:
+  Used to build Python with extra debugging capabilities, equivalent
+  to using ``./configure --with-pydebug`` on UNIX.  All binaries built
+  using this configuration have ``_d`` added to their name:
+  ``python37_d.dll``, ``python_d.exe``, ``parser_d.pyd``, and so on.  Both the
+  build and rt (run test) batch files in this directory accept a ``-d``
+  option for debug builds.  If you are building Python to help with
+  development of CPython, you will most likely use this configuration.
+    
+- PGInstrument, PGUpdate:
+  Used to build Python in Release configuration using PGO, which
+  requires Premium Edition of Visual Studio.  See the *Profile
+  Guided Optimization* section below for more information.  Build
+  output from each of these configurations lands in its own
+  sub-directory of this directory.  The official Python releases may
+  be built using these configurations.
+  
+- Release:
+  Used to build Python as it is meant to be used in production
+  settings, though without PGO.
 
 
 Building Python using the build.bat script
 ----------------------------------------------
 
-In this directory you can find build.bat, a script designed to make
-building Python on Windows simpler.  This script will use the env.bat
+In this directory you can find ``build.bat``, a script designed to make
+building Python on Windows simpler.  This script will use the ``env.bat``
 script to detect one of Visual Studio 2015, 2013, 2012, or 2010, any of
 which may be used to build Python, though only Visual Studio 2015 is
 officially supported.
 
-By default, build.bat will build Python in Release configuration for
+By default, ``build.bat`` will build Python in Release configuration for
 the 32-bit Win32 platform.  It accepts several arguments to change
-this behavior, try `build.bat -h` to learn more.
+this behavior, try ``build.bat -h`` to learn more.
 
 
 C Runtime
 ---------
 
-Visual Studio 2015 uses version 14 of the C runtime (MSVCRT14).  The
-executables no longer use the "Side by Side" assemblies used in previous
+Visual Studio 2015 uses version 14 of the C runtime (*MSVCRT14*).  The
+executables no longer use the *Side by Side* assemblies used in previous
 versions of the compiler.  This simplifies distribution of applications.
 
-The run time libraries are available under the VC/Redist folder of your
+The run time libraries are available under the ``VC/Redist`` folder of your
 Visual Studio distribution. For more info, see the Readme in the
-VC/Redist folder.
+``VC/Redist`` folder.
 
 
 Sub-Projects
 ------------
 
 The CPython project is split up into several smaller sub-projects which
-are managed by the pcbuild.sln solution file.  Each sub-project is
-represented by a .vcxproj and a .vcxproj.filters file starting with the
+are managed by the ``pcbuild.sln`` solution file.  Each sub-project is
+represented by a ``.vcxproj`` and a ``.vcxproj.filters`` file starting with the
 name of the sub-project.  These sub-projects fall into a few general
 categories:
 
