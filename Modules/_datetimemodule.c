@@ -120,6 +120,8 @@ static PyTypeObject PyDateTime_TimeType;
 static PyTypeObject PyDateTime_TZInfoType;
 static PyTypeObject PyDateTime_TimeZoneType;
 
+static int check_tzinfo_subclass(PyObject *p);
+
 _Py_IDENTIFIER(as_integer_ratio);
 _Py_IDENTIFIER(fromutc);
 _Py_IDENTIFIER(isoformat);
@@ -400,8 +402,7 @@ check_date_args(int year, int month, int day)
 {
 
     if (year < MINYEAR || year > MAXYEAR) {
-        PyErr_SetString(PyExc_ValueError,
-                        "year is out of range");
+        PyErr_Format(PyExc_ValueError, "year %i is out of range", year);
         return -1;
     }
     if (month < 1 || month > 12) {
@@ -672,6 +673,10 @@ new_date_ex(int year, int month, int day, PyTypeObject *type)
 {
     PyDateTime_Date *self;
 
+    if (check_date_args(year, month, day) < 0) {
+        return NULL;
+    }
+
     self = (PyDateTime_Date *) (type->tp_alloc(type, 0));
     if (self != NULL)
         set_date_fields(self, year, month, day);
@@ -688,6 +693,16 @@ new_datetime_ex2(int year, int month, int day, int hour, int minute,
 {
     PyDateTime_DateTime *self;
     char aware = tzinfo != Py_None;
+
+    if (check_date_args(year, month, day) < 0) {
+        return NULL;
+    }
+    if (check_time_args(hour, minute, second, usecond, fold) < 0) {
+        return NULL;
+    }
+    if (check_tzinfo_subclass(tzinfo) < 0) {
+        return NULL;
+    }
 
     self = (PyDateTime_DateTime *) (type->tp_alloc(type, aware));
     if (self != NULL) {
@@ -725,6 +740,13 @@ new_time_ex2(int hour, int minute, int second, int usecond,
 {
     PyDateTime_Time *self;
     char aware = tzinfo != Py_None;
+
+    if (check_time_args(hour, minute, second, usecond, fold) < 0) {
+        return NULL;
+    }
+    if (check_tzinfo_subclass(tzinfo) < 0) {
+        return NULL;
+    }
 
     self = (PyDateTime_Time *) (type->tp_alloc(type, aware));
     if (self != NULL) {
@@ -2500,8 +2522,6 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     if (PyArg_ParseTupleAndKeywords(args, kw, "iii", date_kws,
                                     &year, &month, &day)) {
-        if (check_date_args(year, month, day) < 0)
-            return NULL;
         self = new_date_ex(year, month, day, type);
     }
     return self;
@@ -3586,10 +3606,6 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i", time_kws,
                                     &hour, &minute, &second, &usecond,
                                     &tzinfo, &fold)) {
-        if (check_time_args(hour, minute, second, usecond, fold) < 0)
-            return NULL;
-        if (check_tzinfo_subclass(tzinfo) < 0)
-            return NULL;
         self = new_time_ex2(hour, minute, second, usecond, tzinfo, fold,
                             type);
     }
@@ -4176,12 +4192,6 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO$i", datetime_kws,
                                     &year, &month, &day, &hour, &minute,
                                     &second, &usecond, &tzinfo, &fold)) {
-        if (check_date_args(year, month, day) < 0)
-            return NULL;
-        if (check_time_args(hour, minute, second, usecond, fold) < 0)
-            return NULL;
-        if (check_tzinfo_subclass(tzinfo) < 0)
-            return NULL;
         self = new_datetime_ex2(year, month, day,
                                 hour, minute, second, usecond,
                                 tzinfo, fold, type);
@@ -4203,7 +4213,15 @@ static long long
 utc_to_seconds(int year, int month, int day,
                int hour, int minute, int second)
 {
-    long long ordinal = ymd_to_ord(year, month, day);
+    long long ordinal;
+
+    /* ymd_to_ord() doesn't support year <= 0 */
+    if (year < MINYEAR || year > MAXYEAR) {
+        PyErr_Format(PyExc_ValueError, "year %i is out of range", year);
+        return -1;
+    }
+
+    ordinal = ymd_to_ord(year, month, day);
     return ((ordinal * 24 + hour) * 60 + minute) * 60 + second;
 }
 
@@ -4219,7 +4237,6 @@ local(long long u)
         "timestamp out of range for platform time_t");
         return -1;
     }
-    /* XXX: add bounds checking */
     if (_PyTime_localtime(t, &local_time) != 0)
         return -1;
     return utc_to_seconds(local_time.tm_year + 1900,
@@ -4257,6 +4274,7 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
      */
     second = Py_MIN(59, tm.tm_sec);
 
+    /* local timezone requires to compute fold */
     if (tzinfo == Py_None && f == _PyTime_localtime) {
         long long probe_seconds, result_seconds, transition;
 
@@ -4516,12 +4534,13 @@ add_datetime_timedelta(PyDateTime_DateTime *date, PyDateTime_Delta *delta,
 
     assert(factor == 1 || factor == -1);
     if (normalize_datetime(&year, &month, &day,
-                           &hour, &minute, &second, &microsecond) < 0)
+                           &hour, &minute, &second, &microsecond) < 0) {
         return NULL;
-    else
-        return new_datetime(year, month, day,
-                            hour, minute, second, microsecond,
-                            HASTZINFO(date) ? date->tzinfo : Py_None, 0);
+    }
+
+    return new_datetime(year, month, day,
+                        hour, minute, second, microsecond,
+                        HASTZINFO(date) ? date->tzinfo : Py_None, 0);
 }
 
 static PyObject *
