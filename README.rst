@@ -33,7 +33,7 @@ use ``make frameworkinstall`` to do the installation.  Note that this installs t
 Python executable in a place that is not normally on your ``PATH``, you may want to
 set up a symlink in ``/usr/local/bin``.
 
-On Windows, see *PCbuild/readme.txt*.
+On Windows, see `PCbuild/readme.txt <https://github.com/python/cpython/blob/master/PCbuild/readme.txt>`_.
 
 If you wish, you can create a subdirectory and invoke ``configure`` from there.
 For example::
@@ -113,7 +113,8 @@ formatting requirements.
 If you would like to contribute to the development of Python, relevant
 documentation is available at the `devguide <https://docs.python.org/devguide/>`_.
 
-For information about building Python's documentation, refer to *Doc/README.txt*.
+For information about building Python's documentation, refer to
+`Doc/README.txt <https://github.com/python/cpython/blob/master/Doc/README.txt>`_.
 
 
 Converting From Python 2.x to 3.x
@@ -210,7 +211,8 @@ rights reserved.
 
 Copyright (c) 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
 
-See the file *LICENSE* for information on the history of this software,
+See the file `LICENSE <https://github.com/python/cpython/blob/master/LICENSE>`_ for
+information on the history of this software,
 terms & conditions for usage, and a DISCLAIMER OF ALL WARRANTIES.
 
 This Python distribution contains *no* GNU General Public License (GPL) code,
