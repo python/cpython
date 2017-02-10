@@ -99,7 +99,8 @@ is incomplete, and also doesn't list anything merged in from the 2.7
 release under development).
 
 If you want to install multiple versions of Python see the section below
-entitled *Installing multiple versions*.
+entitled 
+`Installing multiple versions <https://github.com/python/cpython/blob/master/README.rst#installing-multiple-versions>`_.
 
 
 Documentation
