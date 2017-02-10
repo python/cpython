@@ -245,8 +245,8 @@ order to download the relevant source files for each project before they
 can be built.  However, a simple script is provided to make this as
 painless as possible, called "get_externals.bat" and located in this
 directory.  This script extracts all the external sub-projects from
-    http://svn.python.org/projects/external
-via Subversion (so you'll need svn.exe on your PATH) and places them
+http://svn.python.org/projects/external
+via Subversion (so you'll need ``svn.exe`` on your PATH) and places them
 in ..\externals (relative to this directory).
 
 It is also possible to download sources from each project's homepage,
@@ -255,25 +255,24 @@ as the values of certain properties in order for the build solution to
 find them.  This is an advanced topic and not necessarily fully
 supported.
 
-The get_externals.bat script is called automatically by build.bat when
-you pass the '-e' option to it.
+The ``get_externals.bat`` script is called automatically by ``build.bat`` when
+you pass the ``-e`` option to it.
 
 
 Profile Guided Optimization
 ---------------------------
 
-The solution has two configurations for PGO. The PGInstrument
-configuration must be built first. The PGInstrument binaries are linked
+The solution has two configurations for PGO. The *PGInstrument*
+configuration must be built first. The *PGInstrument* binaries are linked
 against a profiling library and contain extra debug information. The
-PGUpdate configuration takes the profiling data and generates optimized
+*PGUpdate* configuration takes the profiling data and generates optimized
 binaries.
 
-The build_pgo.bat script automates the creation of optimized binaries.
+The ``build_pgo.bat`` script automates the creation of optimized binaries.
 It creates the PGI files, runs the unit test suite or PyBench with the
 PGI python, and finally creates the optimized files.
 
-See
-    http://msdn.microsoft.com/en-us/library/e7k32f4k(VS.140).aspx
+See `MSDN <http://msdn.microsoft.com/en-us/library/e7k32f4k(VS.140).aspx>`_
 for more on this topic.
 
 
@@ -282,25 +281,26 @@ Static library
 
 The solution has no configuration for static libraries. However it is
 easy to build a static library instead of a DLL. You simply have to set
-the "Configuration Type" to "Static Library (.lib)" and alter the
-preprocessor macro "Py_ENABLE_SHARED" to "Py_NO_ENABLE_SHARED". You may
-also have to change the "Runtime Library" from "Multi-threaded DLL
-(/MD)" to "Multi-threaded (/MT)".
+the *Configuration Type* to *Static Library (.lib)* and alter the
+preprocessor macro *Py_ENABLE_SHARED* to *Py_NO_ENABLE_SHARED*. You may
+also have to change the *Runtime Library* from *Multi-threaded DLL
+(/MD)* to *Multi-threaded (/MT)*.
 
 
 Visual Studio properties
 ------------------------
 
-The PCbuild solution makes use of Visual Studio property files (*.props)
-to simplify each project. The properties can be viewed in the Property
-Manager (View -> Other Windows -> Property Manager) but should be
+The *PCbuild* solution makes use of Visual Studio property files (``*.props``)
+to simplify each project. The properties can be viewed in the *Property
+Manager* (*View -> Other Windows -> Property Manager*) but should be
 carefully modified by hand.
 
 The property files used are:
- * python (versions, directories and build names)
- * pyproject (base settings for all projects)
- * openssl (used by libeay and ssleay projects)
- * tcltk (used by _tkinter, tcl, tk and tix projects)
+
+- python (versions, directories and build names)
+- pyproject (base settings for all projects)
+- openssl (used by libeay and ssleay projects)
+- tcltk (used by _tkinter, tcl, tk and tix projects)
 
 The pyproject property file defines all of the build settings for each
 project, with some projects overriding certain specific values. The GUI
