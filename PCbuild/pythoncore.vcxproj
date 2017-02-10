@@ -294,10 +294,9 @@
     <ClCompile Include="..\Objects\abstract.c" />
     <ClCompile Include="..\Objects\accu.c" />
     <ClCompile Include="..\Objects\boolobject.c" />
-    <ClCompile Include="..\Objects\bytearrayobject.c" />
     <ClCompile Include="..\Objects\bytes_methods.c" />
+    <ClCompile Include="..\Objects\bytearrayobject.c" />
     <ClCompile Include="..\Objects\bytesobject.c" />
-    <ClCompile Include="..\Objects\call.c" />
     <ClCompile Include="..\Objects\capsule.c" />
     <ClCompile Include="..\Objects\cellobject.c" />
     <ClCompile Include="..\Objects\classobject.c" />

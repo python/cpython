@@ -409,7 +409,6 @@ OBJECT_OBJS=	\
 		Objects/bytes_methods.o \
 		Objects/bytearrayobject.o \
 		Objects/bytesobject.o \
-		Objects/call.o \
 		Objects/cellobject.o \
 		Objects/classobject.o \
 		Objects/codeobject.o \

@@ -37,6 +37,7 @@ typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
 Py_LOCAL_INLINE(PyObject *) call_function(PyObject ***, Py_ssize_t, PyObject *);
+static PyObject * fast_function(PyObject *, PyObject **, Py_ssize_t, PyObject *);
 static PyObject * do_call_core(PyObject *, PyObject *, PyObject *);
 
 #ifdef LLTRACE
@@ -3894,7 +3895,7 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
    PyEval_EvalFrame() and PyEval_EvalCodeEx() you will need to adjust
    the test in the if statements in Misc/gdbinit (pystack and pystackv). */
 
-PyObject *
+static PyObject *
 _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
            PyObject **args, Py_ssize_t argcount,
            PyObject **kwnames, PyObject **kwargs,
@@ -4731,6 +4732,39 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 }
 
 
+/* External interface to call any callable object.
+   The arg must be a tuple or NULL.  The kw must be a dict or NULL. */
+
+PyObject *
+PyEval_CallObjectWithKeywords(PyObject *callable,
+                              PyObject *args, PyObject *kwargs)
+{
+#ifdef Py_DEBUG
+    /* PyEval_CallObjectWithKeywords() must not be called with an exception
+       set. It raises a new exception if parameters are invalid or if
+       PyTuple_New() fails, and so the original exception is lost. */
+    assert(!PyErr_Occurred());
+#endif
+
+    if (args == NULL) {
+        return _PyObject_FastCallDict(callable, NULL, 0, kwargs);
+    }
+
+    if (!PyTuple_Check(args)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "argument list must be a tuple");
+        return NULL;
+    }
+
+    if (kwargs != NULL && !PyDict_Check(kwargs)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "keyword list must be a dictionary");
+        return NULL;
+    }
+
+    return PyObject_Call(callable, args, kwargs);
+}
+
 const char *
 PyEval_GetFuncName(PyObject *func)
 {
@@ -4831,7 +4865,7 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
         }
 
         if (PyFunction_Check(func)) {
-            x = _PyFunction_FastCallKeywords(func, stack, nargs, kwnames);
+            x = fast_function(func, stack, nargs, kwnames);
         }
         else {
             x = _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
@@ -4841,13 +4875,215 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
 
     assert((x != NULL) ^ (PyErr_Occurred() != NULL));
 
-    /* Clear the stack of the function object. */
+    /* Clear the stack of the function object.  Also removes
+       the arguments in case they weren't consumed already
+       (fast_function() and err_args() leave them on the stack).
+     */
     while ((*pp_stack) > pfunc) {
         w = EXT_POP(*pp_stack);
         Py_DECREF(w);
     }
 
     return x;
+}
+
+/* The fast_function() function optimize calls for which no argument
+   tuple is necessary; the objects are passed directly from the stack.
+   For the simplest case -- a function that takes only positional
+   arguments and is called with only positional arguments -- it
+   inlines the most primitive frame setup code from
+   PyEval_EvalCodeEx(), which vastly reduces the checks that must be
+   done before evaluating the frame.
+*/
+
+static PyObject* _Py_HOT_FUNCTION
+_PyFunction_FastCall(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
+                     PyObject *globals)
+{
+    PyFrameObject *f;
+    PyThreadState *tstate = PyThreadState_GET();
+    PyObject **fastlocals;
+    Py_ssize_t i;
+    PyObject *result;
+
+    assert(globals != NULL);
+    /* XXX Perhaps we should create a specialized
+       _PyFrame_New_NoTrack() that doesn't take locals, but does
+       take builtins without sanity checking them.
+       */
+    assert(tstate != NULL);
+    f = _PyFrame_New_NoTrack(tstate, co, globals, NULL);
+    if (f == NULL) {
+        return NULL;
+    }
+
+    fastlocals = f->f_localsplus;
+
+    for (i = 0; i < nargs; i++) {
+        Py_INCREF(*args);
+        fastlocals[i] = *args++;
+    }
+    result = PyEval_EvalFrameEx(f,0);
+
+    if (Py_REFCNT(f) > 1) {
+        Py_DECREF(f);
+        _PyObject_GC_TRACK(f);
+    }
+    else {
+        ++tstate->recursion_depth;
+        Py_DECREF(f);
+        --tstate->recursion_depth;
+    }
+    return result;
+}
+
+static PyObject *
+fast_function(PyObject *func, PyObject **stack,
+              Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
+    PyObject *globals = PyFunction_GET_GLOBALS(func);
+    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
+    PyObject *kwdefs, *closure, *name, *qualname;
+    PyObject **d;
+    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+    Py_ssize_t nd;
+
+    assert(PyFunction_Check(func));
+    assert(nargs >= 0);
+    assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
+    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
+    /* kwnames must only contains str strings, no subclass, and all keys must
+       be unique */
+
+    if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
+        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
+    {
+        if (argdefs == NULL && co->co_argcount == nargs) {
+            return _PyFunction_FastCall(co, stack, nargs, globals);
+        }
+        else if (nargs == 0 && argdefs != NULL
+                 && co->co_argcount == Py_SIZE(argdefs)) {
+            /* function called with no arguments, but all parameters have
+               a default value: use default values as arguments .*/
+            stack = &PyTuple_GET_ITEM(argdefs, 0);
+            return _PyFunction_FastCall(co, stack, Py_SIZE(argdefs), globals);
+        }
+    }
+
+    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
+    closure = PyFunction_GET_CLOSURE(func);
+    name = ((PyFunctionObject *)func) -> func_name;
+    qualname = ((PyFunctionObject *)func) -> func_qualname;
+
+    if (argdefs != NULL) {
+        d = &PyTuple_GET_ITEM(argdefs, 0);
+        nd = Py_SIZE(argdefs);
+    }
+    else {
+        d = NULL;
+        nd = 0;
+    }
+    return _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
+                                    stack, nargs,
+                                    nkwargs ? &PyTuple_GET_ITEM(kwnames, 0) : NULL,
+                                    stack + nargs,
+                                    nkwargs, 1,
+                                    d, (int)nd, kwdefs,
+                                    closure, name, qualname);
+}
+
+PyObject *
+_PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
+                             Py_ssize_t nargs, PyObject *kwnames)
+{
+    return fast_function(func, stack, nargs, kwnames);
+}
+
+PyObject *
+_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
+                         PyObject *kwargs)
+{
+    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
+    PyObject *globals = PyFunction_GET_GLOBALS(func);
+    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
+    PyObject *kwdefs, *closure, *name, *qualname;
+    PyObject *kwtuple, **k;
+    PyObject **d;
+    Py_ssize_t nd, nk;
+    PyObject *result;
+
+    assert(func != NULL);
+    assert(nargs >= 0);
+    assert(nargs == 0 || args != NULL);
+    assert(kwargs == NULL || PyDict_Check(kwargs));
+
+    if (co->co_kwonlyargcount == 0 &&
+        (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) &&
+        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
+    {
+        /* Fast paths */
+        if (argdefs == NULL && co->co_argcount == nargs) {
+            return _PyFunction_FastCall(co, args, nargs, globals);
+        }
+        else if (nargs == 0 && argdefs != NULL
+                 && co->co_argcount == Py_SIZE(argdefs)) {
+            /* function called with no arguments, but all parameters have
+               a default value: use default values as arguments .*/
+            args = &PyTuple_GET_ITEM(argdefs, 0);
+            return _PyFunction_FastCall(co, args, Py_SIZE(argdefs), globals);
+        }
+    }
+
+    nk = (kwargs != NULL) ? PyDict_GET_SIZE(kwargs) : 0;
+    if (nk != 0) {
+        Py_ssize_t pos, i;
+
+        /* Issue #29318: Caller and callee functions must not share the
+           dictionary: kwargs must be copied. */
+        kwtuple = PyTuple_New(2 * nk);
+        if (kwtuple == NULL) {
+            return NULL;
+        }
+
+        k = &PyTuple_GET_ITEM(kwtuple, 0);
+        pos = i = 0;
+        while (PyDict_Next(kwargs, &pos, &k[i], &k[i+1])) {
+            /* We must hold strong references because keyword arguments can be
+               indirectly modified while the function is called:
+               see issue #2016 and test_extcall */
+            Py_INCREF(k[i]);
+            Py_INCREF(k[i+1]);
+            i += 2;
+        }
+        nk = i / 2;
+    }
+    else {
+        kwtuple = NULL;
+        k = NULL;
+    }
+
+    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
+    closure = PyFunction_GET_CLOSURE(func);
+    name = ((PyFunctionObject *)func) -> func_name;
+    qualname = ((PyFunctionObject *)func) -> func_qualname;
+
+    if (argdefs != NULL) {
+        d = &PyTuple_GET_ITEM(argdefs, 0);
+        nd = Py_SIZE(argdefs);
+    }
+    else {
+        d = NULL;
+        nd = 0;
+    }
+
+    result = _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
+                                      args, nargs,
+                                      k, k + 1, nk, 2,
+                                      d, nd, kwdefs,
+                                      closure, name, qualname);
+    Py_XDECREF(kwtuple);
+    return result;
 }
 
 static PyObject *
