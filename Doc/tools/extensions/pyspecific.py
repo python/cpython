@@ -225,7 +225,7 @@ class DeprecatedRemoved(Directive):
 
 # Support for including Misc/NEWS
 
-issue_re = re.compile('([Ii]ssue #|bpo-)([0-9]+)')
+issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)')
 whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
 
 
@@ -253,7 +253,7 @@ class MiscNews(Directive):
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
             return [node]
-        content = issue_re.sub(r'`\bpo-\2 <https://bugs.python.org/\2>`__',
+        content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/\1>`__',
                                content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
