@@ -57,6 +57,9 @@ Extension Modules
 Library
 -------
 
+- Issue #29100: Fix datetime.fromtimestamp() regression introduced in Python
+  3.6.0: check minimum and maximum years.
+
 - Issue #29519: Fix weakref spewing exceptions during interpreter shutdown
   when used with a rare combination of multiprocessing and custom codecs.
 
