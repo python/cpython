@@ -115,7 +115,7 @@ If you would like to contribute to the development of Python, relevant
 documentation is available at: `Python Developer's Guide
 <https://docs.python.org/devguide/>`_.
 
-For information about building Python's documentation, refer to Doc/README.txt.
+For information about building Python's documentation, refer to Doc/README.rst.
 
 
 Converting From Python 2.x to 3.x
