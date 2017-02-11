@@ -189,8 +189,8 @@ than needed.
       magic" (as a side effect of garbage collection).
 
 :class:`WeakValueDictionary` objects have the following additional methods.
-These method have the same issues as the :meth:`iterkeyrefs` and :meth:`keyrefs`
-methods of :class:`WeakKeyDictionary` objects.
+These methods have the same issues as the :meth:`iterkeyrefs` and
+:meth:`keyrefs` methods of :class:`WeakKeyDictionary` objects.
 
 
 .. method:: WeakValueDictionary.itervaluerefs()
