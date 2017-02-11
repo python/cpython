@@ -33,7 +33,7 @@ matrix:
         - cd Doc
         - make venv PYTHON=python3
       script:
-        - make html SPHINXBUILD="./venv/bin/python3 -m sphinx" SPHINXOPTS="-nW -q -b linkcheck"
+        - make html SPHINXBUILD="./venv/bin/python3 -m sphinx" SPHINXOPTS="-n -q -b linkcheck"
     - os: linux
       language: c
       compiler: clang
