@@ -189,7 +189,7 @@ Issue Tracker and Mailing List
 
 Bug reports are welcome!  You can use the `issue tracker
 <https://bugs.python.org>`_ to report bugs, and/or submit pull requests `on
-Github <https://github.com/python/cpython>`_.
+GitHub <https://github.com/python/cpython>`_.
 
 You can also follow development discussion on the `python-dev mailing list
 <https://mail.python.org/mailman/listinfo/python-dev/>`_.
