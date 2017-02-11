@@ -661,7 +661,7 @@ C API
   PY_SSIZE_T_CLEAN is defined.
 
 - Issue #28769: The result of PyUnicode_AsUTF8AndSize() and PyUnicode_AsUTF8()
-  is now of type "const char *" rather of "char *".
+  is now of type ``const char *`` rather of ``char *``.
 
 - Issue #29058: All stable API extensions added after Python 3.2 are now
   available only when Py_LIMITED_API is set to the PY_VERSION_HEX value of
