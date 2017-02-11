@@ -197,7 +197,7 @@ SUBDIRSTOO=	Include Lib Misc
 
 # Files and directories to be distributed
 CONFIGFILES=	configure configure.ac acconfig.h pyconfig.h.in Makefile.pre.in
-DISTFILES=	README ChangeLog $(CONFIGFILES)
+DISTFILES=	README.rst ChangeLog $(CONFIGFILES)
 DISTDIRS=	$(SUBDIRS) $(SUBDIRSTOO) Ext-dummy
 DIST=		$(DISTFILES) $(DISTDIRS)
 
