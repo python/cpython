@@ -155,14 +155,13 @@ something is wrong.
 By default, tests are prevented from overusing resources like disk space and
 memory.  To enable these tests, run ``make testall``.
 
-IMPORTANT: If the tests fail and you decide to file a bug report, *don't*
-include the output of ``make test``.  It is useless.  Run the failing test
-manually, as follows::
+If any tests fail, you can re-run the failing test(s) in verbose mode::
 
-    ./python -m test -v test_whatever
+    make test TESTOPTS="-v test_that_failed"
 
-(substituting the top of the source tree for '.' if you built in a different
-directory).  This runs only the failing test in verbose mode.
+If the failure persists and appears to be a problem with Python rather than
+your environment, you can `file a bug report <https://bugs.python.org>`_ and
+include relevant output from that command to show the issue.
 
 
 Installing multiple versions
