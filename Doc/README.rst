@@ -43,14 +43,14 @@ the SPHINXBUILD variable.
 
 Available make targets are:
 
-* "clean", which removes all build files.
+* *clean*, which removes all build files.
 
-* "html", which builds standalone HTML files for offline viewing.
+* *html*, which builds standalone HTML files for offline viewing.
 
-* "htmlview", which re-uses the "html" builder, but then opens the main page
+* *htmlview*, which re-uses the "html" builder, but then opens the main page
   in your default web browser.
 
-* "htmlhelp", which builds HTML files and a HTML Help project file usable to
+* *htmlhelp*, which builds HTML files and a HTML Help project file usable to
   convert them into a single Compiled HTML (.chm) file -- these are popular
   under Microsoft Windows, but very handy on every platform.
 
@@ -58,37 +58,37 @@ Available make targets are:
   over the generated project (.hhp) file.  The make.bat script does this for
   you on Windows.
 
-* "latex", which builds LaTeX source files as input to "pdflatex" to produce
+* *latex*, which builds LaTeX source files as input to "pdflatex" to produce
   PDF documents.
 
-* "text", which builds a plain text file for each source file.
+* *text*, which builds a plain text file for each source file.
 
-* "epub", which builds an EPUB document, suitable to be viewed on e-book
+* *epub*, which builds an EPUB document, suitable to be viewed on e-book
   readers.
 
-* "linkcheck", which checks all external references to see whether they are
+* *linkcheck*, which checks all external references to see whether they are
   broken, redirected or malformed, and outputs this information to stdout as
   well as a plain-text (.txt) file.
 
-* "changes", which builds an overview over all versionadded/versionchanged/
+* *changes*, which builds an overview over all versionadded/versionchanged/
   deprecated items in the current version. This is meant as a help for the
   writer of the "What's New" document.
 
-* "coverage", which builds a coverage overview for standard library modules and
+* *coverage*, which builds a coverage overview for standard library modules and
   C API.
 
-* "pydoc-topics", which builds a Python module containing a dictionary with
+* *pydoc-topics*, which builds a Python module containing a dictionary with
   plain text documentation for the labels defined in
   `tools/pyspecific.py` -- pydoc needs these to show topic and keyword help.
 
-* "suspicious", which checks the parsed markup for text that looks like
+* *suspicious*, which checks the parsed markup for text that looks like
   malformed and thus unconverted reST.
 
-* "check", which checks for frequent markup errors.
+* *check*, which checks for frequent markup errors.
 
-* "serve", which serves the build/html directory on port 8000.
+* *serve*, which serves the build/html directory on port 8000.
 
-* "dist", (Unix only) which creates distributable archives of HTML, text,
+* *dist*, (Unix only) which creates distributable archives of HTML, text,
   PDF, and EPUB builds.
 
 

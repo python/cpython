@@ -1,9 +1,9 @@
 This is Python version 3.7.0 alpha 1
 ====================================
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+*Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
 2012, 2013, 2014, 2015, 2016, 2017 Python Software Foundation.  All rights
-reserved.
+reserved.*
 
 Python 3.x is a new version of the language, which is incompatible with the
 2.x line of releases.  The language is mostly the same, but many details,
@@ -15,28 +15,28 @@ been removed.
 Build Instructions
 ------------------
 
-On Unix, Linux, BSD, OSX, and Cygwin:
+On Unix, Linux, BSD, OSX, and Cygwin::
 
     ./configure
     make
     make test
     sudo make install
 
-This will install Python as python3.
+This will install Python as ``python3``.
 
-You can pass many options to the configure script; run "./configure --help" to
-find out more.  On OSX and Cygwin, the executable is called python.exe;
-elsewhere it's just python.
+You can pass many options to the configure script; run ``./configure --help`` to
+find out more.  On OSX and Cygwin, the executable is called ``python.exe``;
+elsewhere it's just ``python``.
 
-On Mac OS X, if you have configured Python with --enable-framework, you should
-use "make frameworkinstall" to do the installation.  Note that this installs the
-Python executable in a place that is not normally on your PATH, you may want to
-set up a symlink in /usr/local/bin.
+On Mac OS X, if you have configured Python with ``--enable-framework``, you should
+use ``make frameworkinstall`` to do the installation.  Note that this installs the
+Python executable in a place that is not normally on your ``PATH``, you may want to
+set up a symlink in ``/usr/local/bin``.
 
-On Windows, see PCbuild/readme.txt.
+On Windows, see `PCbuild/README.rst <https://github.com/python/cpython/blob/master/PCbuild/README.rst>`_.
 
-If you wish, you can create a subdirectory and invoke configure from there.
-For example:
+If you wish, you can create a subdirectory and invoke ``configure`` from there.
+For example::
 
     mkdir debug
     cd debug
@@ -45,9 +45,9 @@ For example:
     make test
 
 (This will fail if you *also* built at the top-level directory.
-You should do a "make clean" at the toplevel first.)
+You should do a ``make clean`` at the toplevel first.)
 
-To get an optimized build of Python, "configure --enable-optimizations" before
+To get an optimized build of Python, ``./configure --enable-optimizations`` before
 you run make.  This sets the default make targets up to enable Profile Guided
 Optimization (PGO) and may be used to auto-enable Link Time Optimization (LTO)
 on some platforms.  For more details, see the sections bellow.
@@ -57,7 +57,7 @@ Profile Guided Optimization
 ---------------------------
 
 PGO takes advantage of recent versions of the GCC or Clang compilers.
-If ran, "make profile-opt" will do several steps.
+If ran, ``make profile-opt`` will do several steps.
 
 First, the entire Python directory is cleaned of temporary files that
 may have resulted in a previous compilation.
@@ -80,8 +80,8 @@ that is optimized and suitable for distribution or production installation.
 Link Time Optimization
 ----------------------
 
-Enabled via configure's --with-lto flag.  LTO takes advantages of recent
-compiler toolchains ability to optimize across the otherwise arbitrary .o file
+Enabled via configure's ``--with-lto`` flag.  LTO takes advantages of recent
+compiler toolchains ability to optimize across the otherwise arbitrary *.o* file
 boundary when building final executables or shared libraries for additional
 performance gains.
 
@@ -89,25 +89,24 @@ performance gains.
 What's New
 ----------
 
-We have a comprehensive overview of the changes in the "What's New in
-Python 3.7" document, found at
+We have a comprehensive overview of the changes in the `What's New in
+Python 3.7 document <https://docs.python.org/3.7/whatsnew/3.7.html>`_.
 
-    https://docs.python.org/3.7/whatsnew/3.7.html
-
-For a more detailed change log, read Misc/NEWS (though this file, too,
+For a more detailed change log, read 
+`Misc/NEWS <https://github.com/python/cpython/blob/master/Misc/NEWS>`_ 
+(though this file, too,
 is incomplete, and also doesn't list anything merged in from the 2.7
 release under development).
 
 If you want to install multiple versions of Python see the section below
-entitled "Installing multiple versions".
+entitled 
+`Installing multiple versions <https://github.com/python/cpython/blob/master/README.rst#installing-multiple-versions>`_.
 
 
 Documentation
 -------------
 
-Documentation for Python 3.7 is online, updated daily:
-
-    https://docs.python.org/3.7/
+Documentation for Python 3.7 is `online <https://docs.python.org/>`_, updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
 is downloadable in HTML, PDF, and reStructuredText formats; the latter version
@@ -115,11 +114,10 @@ is primarily for documentation authors, translators, and people with special
 formatting requirements.
 
 If you would like to contribute to the development of Python, relevant
-documentation is available at:
+documentation is available at the `devguide <https://docs.python.org/devguide/>`_.
 
-    https://docs.python.org/devguide/
-
-For information about building Python's documentation, refer to Doc/README.txt.
+For information about building Python's documentation, refer to
+`Doc/README.rst <https://github.com/python/cpython/blob/master/Doc/README.rst>`_.
 
 
 Converting From Python 2.x to 3.x
@@ -129,16 +127,16 @@ Python starting with 2.6 contains features to help locating code that needs to
 be changed, such as optional warnings when deprecated features are used, and
 backported versions of certain key Python 3.x features.
 
-A source-to-source translation tool, "2to3", can take care of the mundane task
+A source-to-source translation tool, *2to3*, can take care of the mundane task
 of converting large amounts of source code.  It is not a complete solution but
 is complemented by the deprecation warnings in 2.6.  See
-https://docs.python.org/3.7/library/2to3.html for more information.
+`the documentation <https://docs.python.org/3.7/library/2to3.html>`_ for more information.
 
 
 Testing
 -------
 
-To test the interpreter, type "make test" in the top-level directory.
+To test the interpreter, type ``make test`` in the top-level directory.
 The test set produces some output.  You can generally ignore the messages
 about skipped tests due to optional features which can't be imported.
 If a message is printed about a failed test or a traceback or core dump
@@ -147,13 +145,13 @@ is produced, something is wrong.
 By default, tests are prevented from overusing resources like disk space and
 memory.  To enable these tests, run "make testall".
 
-IMPORTANT: If the tests fail and you decide to mail a bug report, *don't*
-include the output of "make test".  It is useless.  Run the failing test
-manually, as follows:
+**IMPORTANT:** If the tests fail and you decide to mail a bug report, *don't*
+include the output of ``make test``.  It is useless.  Run the failing test
+manually, as follows::
 
         ./python -m test -v test_whatever
 
-(substituting the top of the source tree for '.' if you built in a different
+(substituting the top of the source tree for ``.`` if you built in a different
 directory).  This runs the test in verbose mode.
 
 
@@ -161,37 +159,30 @@ Installing multiple versions
 ----------------------------
 
 On Unix and Mac systems if you intend to install multiple versions of Python
-using the same installation prefix (--prefix argument to the configure script)
+using the same installation prefix (``--prefix`` argument to the configure script)
 you must take care that your primary python executable is not overwritten by the
 installation of a different version.  All files and directories installed using
-"make altinstall" contain the major and minor version and can thus live
-side-by-side.  "make install" also creates ${prefix}/bin/python3 which refers to
-${prefix}/bin/pythonX.Y.  If you intend to install multiple versions using the
+``make altinstall`` contain the major and minor version and can thus live
+side-by-side.  ``make install`` also creates ``${prefix}/bin/python3`` which refers to
+``${prefix}/bin/pythonX.Y``.  If you intend to install multiple versions using the
 same prefix you must decide which version (if any) is your "primary" version.
-Install that version using "make install".  Install all other versions using
-"make altinstall".
+Install that version using ``make install``.  Install all other versions using
+``make altinstall``.
 
 For example, if you want to install Python 2.7, 3.6, and 3.7 with 3.7 being the
-primary version, you would execute "make install" in your 3.7 build directory
-and "make altinstall" in the others.
+primary version, you would execute ``make install`` in your 3.7 build directory
+and ``make altinstall`` in the others.
 
 
 Issue Tracker and Mailing List
 ------------------------------
 
 We're soliciting bug reports about all aspects of the language.  Fixes are also
-welcome, preferably in unified diff format.  Please use the issue tracker:
+welcome, preferably in unified diff format.
+Please use the `issue tracker <https://bugs.python.org/>`_ If you're not sure whether
+you're dealing with a bug or a feature, use the `mailing list <mailto:python-dev@python.org>`_:
 
-    https://bugs.python.org/
-
-If you're not sure whether you're dealing with a bug or a feature, use the
-mailing list:
-
-    python-dev@python.org
-
-To subscribe to the list, use the mailman form:
-
-    https://mail.python.org/mailman/listinfo/python-dev/
+To subscribe to the list, use the `mailman form <https://mail.python.org/mailman/listinfo/python-dev/>`_.
 
 
 Proposals for enhancement
@@ -201,13 +192,13 @@ If you have a proposal to change Python, you may want to send an email to the
 comp.lang.python or python-ideas mailing lists for initial feedback.  A Python
 Enhancement Proposal (PEP) may be submitted if your idea gains ground.  All
 current PEPs, as well as guidelines for submitting a new PEP, are listed at
-https://www.python.org/dev/peps/.
+`https://www.python.org/dev/peps/ <https://www.python.org/dev/peps/>`_.
 
 
 Release Schedule
 ----------------
 
-See PEP 494 for release details: https://www.python.org/dev/peps/pep-0494/
+See `PEP 494 <https://www.python.org/dev/peps/pep-0494/>`_ for release details.
 
 
 Copyright and License Information
@@ -223,7 +214,8 @@ rights reserved.
 
 Copyright (c) 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
 
-See the file "LICENSE" for information on the history of this software,
+See the file `LICENSE <https://github.com/python/cpython/blob/master/LICENSE>`_ for
+information on the history of this software,
 terms & conditions for usage, and a DISCLAIMER OF ALL WARRANTIES.
 
 This Python distribution contains *no* GNU General Public License (GPL) code,
@@ -231,4 +223,3 @@ so it may be used in proprietary projects.  There are interfaces to some GNU
 code but these are entirely optional.
 
 All trademarks referenced herein are property of their respective holders.
-
