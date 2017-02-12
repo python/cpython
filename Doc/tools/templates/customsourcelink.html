@@ -4,10 +4,7 @@
     <ul class="this-page-menu">
       <li><a href="{{ pathto('bugs') }}">{% trans %}Report a Bug{% endtrans %}</a></li>
       <li>
-        {% if version == "3.7" %}
-          {% set version = 'master' %}
-        {% endif %}
-        <a href="https://github.com/python/cpython/blob/{{ version }}/Doc/{{ sourcename|replace('txt', 'rst') }}"
+        <a href="https://github.com/python/cpython/blob/master/Doc/{{ sourcename|replace('txt', 'rst') }}"
             rel="nofollow">{{ _('Show Source') }}
         </a>
       </li>
