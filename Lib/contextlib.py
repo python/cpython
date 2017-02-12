@@ -105,7 +105,7 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 # raised inside the "with" statement from being suppressed.
                 return exc is not value
             except RuntimeError as exc:
-                # Don't re-raise the passed in exception. (issue27112)
+                # Don't re-raise the passed in exception. (issue27122)
                 if exc is value:
                     return False
                 # Likewise, avoid suppressing if a StopIteration exception
