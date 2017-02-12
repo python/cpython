@@ -95,10 +95,10 @@ optimized and suitable for distribution or production installation.
 Link Time Optimization
 ----------------------
 
-Enabled via configure's ``--with-lto`` flag.  LTO takes advantages of recent
-compiler toolchains' ability to optimize across the otherwise arbitrary ``.o``
-file boundary when building final executables or shared libraries for
-additional performance gains.
+Enabled via configure's ``--with-lto`` flag.  LTO takes advantage of the
+ability of recent compiler toolchains to optimize across the otherwise
+arbitrary ``.o`` file boundary when building final executables or shared
+libraries for additional performance gains.
 
 
 What's New
