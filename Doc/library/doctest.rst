@@ -276,8 +276,9 @@ sections.
 Which Docstrings Are Examined?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The module docstring, and all function, class and method docstrings are
-searched.  Objects imported into the module are not searched.
+The docstring for the module, and the docstrings for all functions, 
+classes, and methods in that module, are searched.  
+Objects imported into the module are not searched.
 
 In addition, if ``M.__test__`` exists and "is true", it must be a dict, and each
 entry maps a (string) name to a function object, class object, or string.
@@ -300,33 +301,49 @@ their contained methods and nested classes.
 How are Docstring Examples Recognized?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The :mod:`doctest` module treats any line beginning with ``>>>`` as an 
+example to be tested. 
+Following lines which begin with ``...`` continue the example. 
+Subsequent non-blank lines, if any, form an expected output string. 
+A blank (all-whitespace) line, or a line with ``>>>`` (beginning the 
+next example), ends the expected output string.
+
 In most cases a copy-and-paste of an interactive console session works fine,
 but doctest isn't trying to do an exact emulation of any specific Python shell.
 
 ::
 
    >>> # comments are ignored
-   >>> x = 12
-   >>> x
-   12
-   >>> if x == 13:
-   ...     print("yes")
+   ... 
+   >>> import math
+   >>> x = factorial(10); math.ceil(math.log10(x))
+   7
+   >>> if x == factorial(9)*10:
+   ...     print("same:\n{0}".format(x))
    ... else:
-   ...     print("no")
-   ...     print("NO")
-   ...     print("NO!!!")
+   ...     print("differ:\n{0}\n{1}".format(x, factorial(9)*10))
    ...
-   no
-   NO
-   NO!!!
+   same:
+   3628800
    >>>
-
-Any expected output must immediately follow the final ``'>>> '`` or ``'... '``
-line containing the code, and the expected output (if any) extends to the next
-``'>>> '`` or all-whitespace line.
 
 The fine print:
 
+* The ``>>>`` string tells the module to look for an interactive statement:
+  that is, a statement list ending with a newline, or a 
+  :ref:`compound statement <compound>`. 
+  The ``...`` string tells the module that the line continues a compound
+  statement. (Actually, doctest gets these strings from the PS1 and PS2 
+  values of the :mod:`sys` module.)
+  
+* The expected output can be absent. This indicates that the example generates
+  no output when run. If the example does generate output, the module reports
+  it as a failure.
+
+* The expected output can contain multiple lines. These lines become a 
+  string, which is compared to the string of actual output from 
+  testing the example.
+  
 * Expected output cannot contain an all-whitespace line, since such a line is
   taken to signal the end of expected output.  If expected output does contain a
   blank line, put ``<BLANKLINE>`` in your doctest example each place a blank line
@@ -381,12 +398,20 @@ The fine print:
 What's the Execution Context?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, each time :mod:`doctest` finds a docstring to test, it uses a
-*shallow copy* of :mod:`M`'s globals, so that running tests doesn't change the
-module's real globals, and so that one test in :mod:`M` can't leave behind
-crumbs that accidentally allow another test to work.  This means examples can
-freely use any names defined at top-level in :mod:`M`, and names defined earlier
-in the docstring being run. Examples cannot see names defined in other
+Within a docstring, later examples can use names defined by earlier
+examples. It's fine for an example to set up state, and
+have no output. 
+
+For each docstring, :mod:`doctest` makes (by default) a 
+*shallow copy* of :mod:`M`'s globals.
+This means examples can freely use any names defined at the top level of 
+:mod:`M`. 
+When doctest tests examples, it doesn't change the module's real globals.
+
+This shallow copy of globals is discarded at the end of each docstring,
+and copied afresh for the next docstring. Thus, examples in one docstring
+in :mod:`M` can't leave behind crumbs that accidentally allow an example
+in another docstring to work.  Examples cannot see names defined in other
 docstrings.
 
 You can force use of your own dict as the execution context by passing
