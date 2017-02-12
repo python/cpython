@@ -45,8 +45,9 @@
 <h3>{{ _('This Page') }}</h3>
 <ul class="this-page-menu">
   <li><a href="{{ pathto('bugs') }}">{% trans %}Report a Bug{% endtrans %}</a></li>
-  <li><a href="{{ pathto('_sources/' + sourcename, true)|e }}"
-         rel="nofollow">{% trans %}Show Source{% endtrans %}</a></li>
+  <li><a href="https://github.com/python/cpython/blob/{{ version }}/Doc/{{ sourcename|replace('txt', 'rst') }}"
+         rel="nofollow">{% trans %}Show Source{% endtrans %}</a>
+  </li>
 </ul>
 {%- endif %}
 {% endblock %}
