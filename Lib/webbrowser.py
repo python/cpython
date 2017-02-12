@@ -13,13 +13,18 @@ __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 class Error(Exception):
     pass
 
-_browsers = {}          # Dictionary of available browser controllers
-_tryorder = []          # Preference order of available browsers
+_browsers = {}                  # Dictionary of available browser controllers
+_tryorder = []                  # Preference order of available browsers
+_os_preferred_browser = None    # The preferred browser
 
 def register(name, klass, instance=None, *, preferred=False):
     """Register a browser connector."""
     _browsers[name.lower()] = [klass, instance]
-    if preferred:
+
+    # Preferred browsers go to the front of the list.
+    # Need to match to the default browser returned by xdg-settings, which
+    # may be of the form e.g. "firefox.desktop".
+    if preferred or (_os_preferred_browser and name in _os_preferred_browser):
         _tryorder.insert(0, name)
     else:
         _tryorder.append(name)
@@ -484,6 +489,14 @@ def register_X_browsers():
 
 # Prefer X browsers if present
 if os.environ.get("DISPLAY"):
+    try:
+        cmd = "xdg-settings get default-web-browser".split()
+        result = subprocess.check_output(cmd).decode().strip()
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        pass
+    else:
+        _os_preferred_browser = result
+
     register_X_browsers()
 
 # Also try console browsers

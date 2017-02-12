@@ -433,6 +433,11 @@ Library
 - Issue #23262: The webbrowser module now supports Firefox 36+ and derived
   browsers.  Based on patch by Oleg Broytman.
 
+- Issue #24241: The webbrowser in an X environment now prefers using the
+  default browser directly. Also, the webbrowser register() function now has
+  a documented 'preferred' argument, to specify browsers to be returned by
+  get() with no arguments. Patch by David Steele
+
 - Issue #27939: Fixed bugs in tkinter.ttk.LabeledScale and tkinter.Scale caused
   by representing the scale as float value internally in Tk.  tkinter.IntVar
   now works if float value is set to underlying Tk variable.
