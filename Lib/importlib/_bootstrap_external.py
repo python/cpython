@@ -248,6 +248,21 @@ _code_type = type(_write_atomic.__code__)
 #
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
+#
+# In general, the MAGIC_NUMBER should not change for maintenance releases
+# although this may be required under exceptional circumstances. When
+# each release reaches candidate status, an entry in EXPECTED_MAGIC_NUMBERS
+# should be added for this release. This value is tested against the actual
+# MAGIC_NUMBER to ensure that if a change is required within a minor
+# release, the exception is first discussed with python-dev and relevant
+# community stakeholders such as OS distribution package maintainers
+# are properly informed of the change.
+
+EXPECTED_MAGIC_NUMBERS = {
+    (2, 7): 62211,
+    (3, 5): 3350,
+    (3, 6): 3379
+}
 
 MAGIC_NUMBER = (3390).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
