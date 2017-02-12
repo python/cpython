@@ -15,7 +15,7 @@ been removed.
 Build Instructions
 ------------------
 
-On Unix, Linux, BSD, OSX, and Cygwin::
+On Unix, Linux, BSD, macOS, and Cygwin::
 
     ./configure
     make
@@ -25,10 +25,10 @@ On Unix, Linux, BSD, OSX, and Cygwin::
 This will install Python as python3.
 
 You can pass many options to the configure script; run ``./configure --help`` to
-find out more.  On OSX and Cygwin, the executable is called ``python.exe``;
+find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
 elsewhere it's just ``python``.
 
-On Mac OS X, if you have configured Python with ``--enable-framework``, you should
+On macOS, if you have configured Python with ``--enable-framework``, you should
 use ``make frameworkinstall`` to do the installation.  Note that this installs the
 Python executable in a place that is not normally on your PATH, you may want to
 set up a symlink in ``/usr/local/bin``.
