@@ -1715,30 +1715,91 @@ PyCursesWindow_Overwrite(PyCursesWindowObject *self, PyObject *args)
     }
 }
 
+static void
+close_temporary_file(PyObject *tmpfile)
+{
+    PyObject *exc, *val, *tb, *res;
+
+    PyErr_Fetch(&exc, &val, &tb);
+
+    res = PyObject_CallMethod(tmpfile, "close", NULL);
+    if (res) {
+        Py_DECREF(res);
+    }
+    else {
+        PyErr_WriteUnraisable(tmpfile);
+    }
+
+    PyErr_Restore(exc, val, tb);
+}
+
+static PyObject*
+temporary_file(FILE **fp)
+{
+    PyObject *module, *tmpfile, *fileno;
+    int fd, fd2;
+
+    module = PyImport_ImportModuleNoBlock("tempfile");
+    if (module == NULL) {
+        return NULL;
+    }
+
+    tmpfile = PyObject_CallMethod(module, "TemporaryFile", NULL);
+    Py_DECREF(module);
+    if (tmpfile == NULL) {
+        return NULL;
+    }
+
+    fileno = PyObject_CallMethod(tmpfile, "fileno", NULL);
+    if (fileno == NULL) {
+        goto error;
+    }
+    fd = _PyLong_AsInt(fileno);
+    Py_DECREF(fileno);
+    if (fd < 0 && PyErr_Occurred()) {
+        goto error;
+    }
+
+    /* Duplicate the file descriptor to be able call tmpfile.close()
+       and fclose(fp). curses requires a FILE* object, whereas Python requires
+       to call the close() method to remove the temporary file. */
+    fd2 = _Py_dup(fd);
+    if (fd2 < 0) {
+        goto error;
+    }
+
+    *fp = fdopen(fd2, "wb+");
+    if (*fp == NULL) {
+        close(fd2);
+        goto error;
+    }
+    return tmpfile;
+
+error:
+    close_temporary_file(tmpfile);
+    Py_DECREF(tmpfile);
+    return NULL;
+}
+
 static PyObject *
 PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
 {
     /* We have to simulate this by writing to a temporary FILE*,
        then reading back, then writing to the argument stream. */
-    char fn[100];
-    int fd = -1;
-    FILE *fp = NULL;
+    PyObject *tmpfile;
+    FILE *fp;
     PyObject *res = NULL;
 
-    strcpy(fn, "/tmp/py.curses.putwin.XXXXXX");
-    fd = mkstemp(fn);
-    if (fd < 0)
-        return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-    if (_Py_set_inheritable(fd, 0, NULL) < 0)
-        goto exit;
-    fp = fdopen(fd, "wb+");
-    if (fp == NULL) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+    tmpfile = temporary_file(&fp);
+    if (tmpfile == NULL) {
+        return NULL;
+    }
+
+    res = PyCursesCheckERR(putwin(self->win, fp), "putwin");
+    if (res == NULL) {
         goto exit;
     }
-    res = PyCursesCheckERR(putwin(self->win, fp), "putwin");
-    if (res == NULL)
-        goto exit;
+
     fseek(fp, 0, 0);
     while (1) {
         char buf[BUFSIZ];
@@ -1754,11 +1815,13 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
     }
 
 exit:
-    if (fp != NULL)
+    if (fp) {
         fclose(fp);
-    else if (fd != -1)
-        close(fd);
-    remove(fn);
+    }
+    if (tmpfile) {
+        close_temporary_file(tmpfile);
+        Py_DECREF(tmpfile);
+    }
     return res;
 }
 
@@ -2278,9 +2341,8 @@ PyCurses_UngetMouse(PyObject *self, PyObject *args)
 static PyObject *
 PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
 {
-    char fn[100];
-    int fd = -1;
-    FILE *fp = NULL;
+    PyObject *tmpfile;
+    FILE *fp;
     PyObject *data;
     size_t datalen;
     WINDOW *win;
@@ -2289,16 +2351,9 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
 
     PyCursesInitialised;
 
-    strcpy(fn, "/tmp/py.curses.getwin.XXXXXX");
-    fd = mkstemp(fn);
-    if (fd < 0)
-        return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-    if (_Py_set_inheritable(fd, 0, NULL) < 0)
-        goto error;
-    fp = fdopen(fd, "wb+");
-    if (fp == NULL) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-        goto error;
+    tmpfile = temporary_file(&fp);
+    if (tmpfile == NULL) {
+        return NULL;
     }
 
     data = _PyObject_CallMethodId(stream, &PyId_read, NULL);
@@ -2314,7 +2369,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     datalen = PyBytes_GET_SIZE(data);
     if (fwrite(PyBytes_AS_STRING(data), 1, datalen, fp) != datalen) {
         Py_DECREF(data);
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+        PyErr_SetFromErrno(PyExc_OSError);
         goto error;
     }
     Py_DECREF(data);
@@ -2328,11 +2383,13 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     res = PyCursesWindow_New(win, NULL);
 
 error:
-    if (fp != NULL)
+    if (fp) {
         fclose(fp);
-    else if (fd != -1)
-        close(fd);
-    remove(fn);
+    }
+    if (tmpfile) {
+        close_temporary_file(tmpfile);
+        Py_DECREF(tmpfile);
+    }
     return res;
 }
 

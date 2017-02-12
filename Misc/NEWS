@@ -227,6 +227,10 @@ Extension Modules
 Library
 -------
 
+- bpo-29176: getwin() and putwin() functions of the curses module now use
+  :class:`tempfile.TemporaryFile` instead of calling the C ``mkstemp()``
+  function to create a temporary file in a more portable and safer manner.
+
 - Issue #29100: Fix datetime.fromtimestamp() regression introduced in Python
   3.6.0: check minimum and maximum years.
 
