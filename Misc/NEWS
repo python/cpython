@@ -10,6 +10,8 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #28598: Support __rmod__ for subclasses of str being called before str.__mod__.
+
 - bpo-29438: Fixed use-after-free problem in key sharing dict.
 
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
