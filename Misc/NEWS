@@ -19,6 +19,10 @@ Core and Builtins
 
 - bpo-29347: Fixed possibly dereferencing undefined pointers
   when creating weakref objects.
+- bpo-29463: Add ``docstring`` field to Module, ClassDef, FunctionDef,
+  and AsyncFunctionDef ast nodes.  docstring is not first stmt in their body
+  anymore.  It affects ``co_firstlineno`` and ``co_lnotab`` of code object
+  for module and class.
 
 - bpo-29438: Fixed use-after-free problem in key sharing dict.
 
