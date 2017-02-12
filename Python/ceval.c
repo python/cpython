@@ -1356,8 +1356,8 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *res;
-            if (PyUnicode_CheckExact(dividend) && !(
-                  PyUnicode_Check(divisor) && !PyUnicode_CheckExact(divisor))) {
+            if (PyUnicode_CheckExact(dividend) && (
+                  !PyUnicode_Check(divisor) || PyUnicode_CheckExact(divisor))) {
               // fast path; string formatting, but not if the RHS is a str subclass
               // (see issue28598)
               res = PyUnicode_Format(dividend, divisor);
