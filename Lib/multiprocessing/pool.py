@@ -220,19 +220,31 @@ class Pool(object):
         """Bring the number of pool processes up to the specified number,
         for use after reaping workers which have exited.
         """
-        for i in range(self._processes - len(self._pool)):
-            w = self.Process(target=worker,
-                             args=(self._inqueue, self._outqueue,
-                                   self._initializer,
-                                   self._initargs, self._maxtasksperchild,
-                                   self._wrap_exception)
-                            )
-            self._pool.append(w)
-            w.name = w.name.replace('Process', 'PoolWorker')
-            w.daemon = True
-            w.start()
-            util.debug('added worker')
+        try:
+            for i in range(self._processes - len(self._pool)):
+                w = self.Process(target=worker,
+                                 args=(self._inqueue, self._outqueue,
+                                       self._initializer,
+                                       self._initargs, self._maxtasksperchild)
+                                )
+                self._pool.append(w)
+                w.name = w.name.replace('Process', 'PoolWorker')
+                w.daemon = True
+                w.start()
+                util.debug('added worker')
+        except:
+            util.debug("Process creation error. Cleaning-up (%d) workers." % (len(self._pool)))
 
+            for process in self._pool:
+                if process.is_alive() is False:
+                    continue
+
+                process.terminate()
+                process.join()
+
+            util.debug("Processing cleaning-up. Bubbling error.")
+            raise
+ 
     def _maintain_pool(self):
         """Clean up any exited workers and start replacements for them.
         """
