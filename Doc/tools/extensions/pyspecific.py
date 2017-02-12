@@ -58,7 +58,7 @@ LaTeXTranslator.depart_literal_block = new_depart_literal_block
 
 def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     issue = utils.unescape(text)
-    text = 'bpo- ' + issue
+    text = 'bpo-'+ issue
     refnode = nodes.reference(text, text, refuri=ISSUE_URI % issue)
     return [refnode], []
 
