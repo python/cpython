@@ -1,7 +1,7 @@
 codecov:
   notify:
     require_ci_to_pass: true
-comment: false
+comment: off
 coverage:
   precision: 2
   range:
@@ -9,14 +9,15 @@ coverage:
   - 100.0
   round: down
   status:
-    changes: false
+    changes: off
+    project: off
     patch:
-      only_pulls: true
-      paths:
-        - Lib/*
-        - Modules/*
-      threshold: 0.01
-    project: false
+      default:
+        target: 75%
+        only_pulls: true
+        paths:
+          - Lib/**/*
+        threshold: 0.01
 parsers:
   gcov:
     branch_detection:
