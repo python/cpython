@@ -11,6 +11,7 @@ especially how built-in objects like dictionaries and strings work,
 have changed considerably, and a lot of deprecated features have finally
 been removed.
 
+.. contents::
 
 Build Instructions
 ------------------
@@ -54,7 +55,7 @@ on some platforms.  For more details, see the sections bellow.
 
 
 Profile Guided Optimization
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 PGO takes advantage of recent versions of the GCC or Clang compilers.
 If ran, ``make profile-opt`` will do several steps.
@@ -78,7 +79,7 @@ that is optimized and suitable for distribution or production installation.
 
 
 Link Time Optimization
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 Enabled via configure's ``--with-lto`` flag.  LTO takes advantages of recent
 compiler toolchains ability to optimize across the otherwise arbitrary ``.o`` file
@@ -224,4 +225,3 @@ so it may be used in proprietary projects.  There are interfaces to some GNU
 code but these are entirely optional.
 
 All trademarks referenced herein are property of their respective holders.
-
