@@ -43,7 +43,7 @@ Encoding basic Python object hierarchies::
 Compact encoding::
 
     >>> import json
-    >>> json.dumps([1,2,3,{'4': 5, '6': 7}], separators=(',', ':'))
+    >>> json.dumps([1,2,3,{'4': 5, '6': 7}], separators=json.COMPACT)
     '[1,2,3,{"4":5,"6":7}]'
 
 Pretty printing::
@@ -175,6 +175,9 @@ Basic Usage
    .. versionchanged:: 3.4
       Use ``(',', ': ')`` as default if *indent* is not ``None``.
 
+   .. versionchanged:: 3.7
+      Instead of ``(',', ':')`` constant :data:`json.COMPACT` can be used.
+
    If specified, *default* should be a function that gets called for objects that
    can't otherwise be serialized.  It should return a JSON encodable version of
    the object or raise a :exc:`TypeError`.  If not specified, :exc:`TypeError`
@@ -281,6 +284,16 @@ Basic Usage
    .. versionchanged:: 3.6
       *s* can now be of type :class:`bytes` or :class:`bytearray`. The
       input encoding should be UTF-8, UTF-16 or UTF-32.
+
+
+Constants
+^^^^^^^^^
+
+.. data:: compact
+
+   A constant that can be used as the *separators* argument to emit a compact serialization.
+
+   .. versionadded:: 3.7
 
 
 Encoders and Decoders
