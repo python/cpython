@@ -15,8 +15,7 @@ coverage:
       paths:
         - Lib/*
         - Modules/*
-      default:
-        threshold: 0.01
+      threshold: 0.01
 parsers:
   gcov:
     branch_detection:
