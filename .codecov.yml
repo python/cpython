@@ -1,10 +1,7 @@
 codecov:
   notify:
     require_ci_to_pass: true
-comment:
-  behavior: once
-  layout: diff
-  require_changes: true
+comment: false
 coverage:
   precision: 2
   range:
@@ -19,7 +16,7 @@ coverage:
         - Lib/*
         - Modules/*
       default:
-        threshold: 0.01  
+        threshold: 0.01
 parsers:
   gcov:
     branch_detection:
