@@ -559,7 +559,7 @@ review:
   longer used) and :mod:`md5` (replaced by :mod:`hashlib`), were
   already deprecated by :pep:`4`.  Others were removed as a result
   of the removal of support for various platforms such as Irix, BeOS
-  and macOS 9 (see :pep:`11`).  Some modules were also selected for
+  and Mac OS 9 (see :pep:`11`).  Some modules were also selected for
   removal in Python 3.0 due to lack of use or because a better
   replacement exists.  See :pep:`3108` for an exhaustive list.
 
@@ -855,7 +855,7 @@ Due to time constraints, here is a *very* incomplete list of changes
 to the C API.
 
 * Support for several platforms was dropped, including but not limited
-  to macOS 9, BeOS, RISCOS, Irix, and Tru64.
+  to Mac OS 9, BeOS, RISCOS, Irix, and Tru64.
 
 * :pep:`3118`: New Buffer API.
 
