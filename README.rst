@@ -19,6 +19,14 @@ especially how built-in objects like dictionaries and strings work,
 have changed considerably, and a lot of deprecated features have finally
 been removed.
 
+Using Python
+------------
+
+Installable Python kits, and information about using Python, are available at
+`python.org`_.
+
+.. _python.org: https://www.python.org/
+
 
 Build Instructions
 ------------------
@@ -156,7 +164,7 @@ IMPORTANT: If the tests fail and you decide to mail a bug report, *don't*
 include the output of ``make test``.  It is useless.  Run the failing test
 manually, as follows::
 
-        ./python -m test -v test_whatever
+    ./python -m test -v test_whatever
 
 (substituting the top of the source tree for '.' if you built in a different
 directory).  This runs the test in verbose mode.
@@ -197,13 +205,12 @@ Proposals for enhancement
 -------------------------
 
 If you have a proposal to change Python, you may want to send an email to the
-comp.lang.python or
-`python-ideas <https://mail.python.org/mailman/listinfo/python-ideas/>`_
-mailing lists for initial feedback.  A Python
+comp.lang.python or `python-ideas`_ mailing lists for initial feedback.  A Python
 Enhancement Proposal (PEP) may be submitted if your idea gains ground.  All
 current PEPs, as well as guidelines for submitting a new PEP, are listed at
 `python.org/dev/peps/ <https://www.python.org/dev/peps/>`_.
 
+.. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
 
 Release Schedule
 ----------------
@@ -232,4 +239,3 @@ so it may be used in proprietary projects.  There are interfaces to some GNU
 code but these are entirely optional.
 
 All trademarks referenced herein are property of their respective holders.
-
