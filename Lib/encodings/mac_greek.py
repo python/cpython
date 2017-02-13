@@ -201,7 +201,7 @@ decoding_table = (
     '\xf4'     #  0x99 -> LATIN SMALL LETTER O WITH CIRCUMFLEX
     '\xf6'     #  0x9A -> LATIN SMALL LETTER O WITH DIAERESIS
     '\xa6'     #  0x9B -> BROKEN BAR
-    '\u20ac'   #  0x9C -> EURO SIGN # before macOS 9.2.2, was SOFT HYPHEN
+    '\u20ac'   #  0x9C -> EURO SIGN # before Mac OS 9.2.2, was SOFT HYPHEN
     '\xf9'     #  0x9D -> LATIN SMALL LETTER U WITH GRAVE
     '\xfb'     #  0x9E -> LATIN SMALL LETTER U WITH CIRCUMFLEX
     '\xfc'     #  0x9F -> LATIN SMALL LETTER U WITH DIAERESIS
@@ -300,7 +300,7 @@ decoding_table = (
     '\u03cb'   #  0xFC -> GREEK SMALL LETTER UPSILON WITH DIALYTIKA
     '\u0390'   #  0xFD -> GREEK SMALL LETTER IOTA WITH DIALYTIKA AND TONOS
     '\u03b0'   #  0xFE -> GREEK SMALL LETTER UPSILON WITH DIALYTIKA AND TONOS
-    '\xad'     #  0xFF -> SOFT HYPHEN # before macOS 9.2.2, was undefined
+    '\xad'     #  0xFF -> SOFT HYPHEN # before Mac OS 9.2.2, was undefined
 )
 
 ### Encoding table
