@@ -227,6 +227,10 @@ Extension Modules
 Library
 -------
 
+- Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
+  improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
+  Manuel Krebber, and Łukasz Langa.
+
 - Issue #29100: Fix datetime.fromtimestamp() regression introduced in Python
   3.6.0: check minimum and maximum years.
 
