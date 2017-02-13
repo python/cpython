@@ -116,7 +116,7 @@ configuration. See :ref:`asyncio delayed calls <asyncio-delayed-calls>`.
 
 
 macOS
-^^^^^^^^
+^^^^^
 
 Character devices like PTY are only well supported since Mavericks (macOS
 10.9). They are not supported at all on macOS 10.5 and older.
