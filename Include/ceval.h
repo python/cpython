@@ -7,6 +7,12 @@ extern "C" {
 
 /* Interface to random parts in ceval.c */
 
+/* PyEval_CallObjectWithKeywords(), PyEval_CallObject(), PyEval_CallFunction
+ * and PyEval_CallMethod are kept for backward compatibility: PyObject_Call(),
+ * PyObject_CallFunction() and PyObject_CallMethod() are recommended to call
+ * a callable object.
+ */
+
 PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
     PyObject *callable,
     PyObject *args,
