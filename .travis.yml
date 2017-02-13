@@ -31,7 +31,7 @@ matrix:
         - TESTING=docs
       before_script:
         - |
-            if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '^Doc/'
+            if git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '^Doc/'
             then
               echo "Docs weren't updated, stopping build process."
               exit
