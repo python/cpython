@@ -109,10 +109,10 @@ Contributing
 ============
 
 Bugs in the content should be reported to the Python bug tracker at
-https://bugs.python.org.
+<https://bugs.python.org>.
 
 Bugs in the toolset should be reported in the Sphinx bug tracker at
-https://www.bitbucket.org/birkenfeld/sphinx/issues/.
+<https://www.bitbucket.org/birkenfeld/sphinx/issues/>.
 
 You can also send a mail to the Python Documentation Team at docs@python.org,
 and we will process your request as soon as possible.
