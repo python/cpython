@@ -6,12 +6,6 @@ Build Status
 
 - master
 
-  + .. image:: https://travis-ci.org/python/cpython.svg?branch=master
-       :target: https://travis-ci.org/python/cpython
-  
-  + .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
-       :target: https://codecov.io/gh/python/cpython
-
   + `Stable buildbots <http://buildbot.python.org/3.x.stable/>`_
 
 - 3.6
