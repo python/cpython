@@ -774,7 +774,7 @@ of the more notable changes are:
 * The size of the Unicode character database was shrunk by another 340K thanks
   to Fredrik Lundh.
 
-* Some new ports were contributed: MacOS X (by Steven Majewski), Cygwin (by
+* Some new ports were contributed: macOS (by Steven Majewski), Cygwin (by
   Jason Tishler); RISCOS (by Dietmar Schwertberger); Unixware 7  (by Billy G.
   Allie).
 

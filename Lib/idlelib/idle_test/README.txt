@@ -92,7 +92,7 @@ these conditions are met:
 
  - The tests are being run on Linux and X Windows is not available.
 
- - The tests are being run on Mac OSX in a process that cannot make a
+ - The tests are being run on macOS in a process that cannot make a
    window manager connection.
 
  - tkinter.Tk cannot be successfully instantiated for some reason.

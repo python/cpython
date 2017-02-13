@@ -934,7 +934,7 @@ class ThreadingExceptionTests(BaseTestCase):
         # Issue 9670
         # test that excessive recursion within a non-main thread causes
         # an exception rather than crashing the interpreter on platforms
-        # like Mac OS X or FreeBSD which have small default stack sizes
+        # like macOS or FreeBSD which have small default stack sizes
         # for threads
         script = """if True:
             import threading

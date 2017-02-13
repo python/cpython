@@ -754,7 +754,7 @@ Common commands: (see '--help-commands' for more)
         self.cmdclass, but not a standard command).  The descriptions come
         from the command class attribute 'description'.
         """
-        # Currently this is only used on Mac OS, for the Mac-only GUI
+        # Currently this is only used on macOS, for the Mac-only GUI
         # Distutils interface (by Jack Jansen)
         import distutils.command
         std_commands = distutils.command.__all__

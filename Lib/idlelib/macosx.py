@@ -1,5 +1,5 @@
 """
-A number of functions that enhance IDLE on Mac OSX.
+A number of functions that enhance IDLE on macOS.
 """
 from sys import platform  # Used in _init_tk_type, changed by test.
 
@@ -13,7 +13,7 @@ _tk_type = None
 
 def _init_tk_type():
     """
-    Initializes OS X Tk variant values for
+    Initializes macOS Tk variant values for
     isAquaTk(), isCarbonTk(), isCocoaTk(), and isXQuartz().
     """
     global _tk_type
@@ -34,7 +34,7 @@ def _init_tk_type():
 
 def isAquaTk():
     """
-    Returns True if IDLE is using a native OS X Tk (Cocoa or Carbon).
+    Returns True if IDLE is using a native macOS Tk (Cocoa or Carbon).
     """
     if not _tk_type:
         _init_tk_type()
@@ -59,7 +59,7 @@ def isCocoaTk():
 
 def isXQuartz():
     """
-    Returns True if IDLE is using an OS X X11 Tk.
+    Returns True if IDLE is using an macOS X11 Tk.
     """
     if not _tk_type:
         _init_tk_type()
@@ -70,8 +70,8 @@ def tkVersionWarning(root):
     """
     Returns a string warning message if the Tk version in use appears to
     be one known to cause problems with IDLE.
-    1. Apple Cocoa-based Tk 8.5.7 shipped with Mac OS X 10.6 is unusable.
-    2. Apple Cocoa-based Tk 8.5.9 in OS X 10.7 and 10.8 is better but
+    1. Apple Cocoa-based Tk 8.5.7 shipped with macOS 10.6 is unusable.
+    2. Apple Cocoa-based Tk 8.5.9 in macOS 10.7 and 10.8 is better but
         can still crash unexpectedly.
     """
 
@@ -192,7 +192,7 @@ def overrideRootMenu(root, flist):
         root.bind('<<close-all-windows>>', flist.close_all_callback)
 
         # The binding above doesn't reliably work on all versions of Tk
-        # on MacOSX. Adding command definition below does seem to do the
+        # on macOS. Adding command definition below does seem to do the
         # right thing for now.
         root.createcommand('exit', flist.close_all_callback)
 
@@ -226,11 +226,11 @@ def fixb2context(root):
 
 def setupApp(root, flist):
     """
-    Perform initial OS X customizations if needed.
+    Perform initial macOS customizations if needed.
     Called from pyshell.main() after initial calls to Tk()
 
-    There are currently three major versions of Tk in use on OS X:
-        1. Aqua Cocoa Tk (native default since OS X 10.6)
+    There are currently three major versions of Tk in use on macOS:
+        1. Aqua Cocoa Tk (native default since macOS 10.6)
         2. Aqua Carbon Tk (original native, 32-bit only, deprecated)
         3. X11 (supported by some third-party distributors, deprecated)
     There are various differences among the three that affect IDLE

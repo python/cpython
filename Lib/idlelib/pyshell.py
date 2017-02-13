@@ -1519,7 +1519,7 @@ def main():
             shell.interp.execfile(script)
     elif shell:
         # If there is a shell window and no cmd or script in progress,
-        # check for problematic OS X Tk versions and print a warning
+        # check for problematic macOS Tk versions and print a warning
         # message in the IDLE shell window; this is less intrusive
         # than always opening a separate window.
         tkversionwarning = macosx.tkVersionWarning(root)

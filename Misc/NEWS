@@ -104,7 +104,7 @@ Core and Builtins
 - Issue #26920: Fix not getting the locale's charset upon initializing the
   interpreter, on platforms that do not have langinfo.
 
-- Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on Mac OS X
+- Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on macOS
   when decode astral characters.  Patch by Xiang Zhang.
 
 - Issue #28665: Improve speed of the STORE_DEREF opcode by 40%.
@@ -463,7 +463,7 @@ Library
   later. See `setuptools 100
   <https://github.com/pypa/setuptools/issues/100>`_ for rationale.
 
-- Issue #24452: Make webbrowser support Chrome on Mac OS X. Patch by
+- Issue #24452: Make webbrowser support Chrome on macOS. Patch by
   Ned Batchelder.
 
 - Issue #20766: Fix references leaked by pdb in the handling of SIGINT
@@ -745,9 +745,9 @@ Build
 
 - Issue #28444: Fix missing extensions modules when cross compiling.
 
-- Issue #28208: Update Windows build and OS X installers to use SQLite 3.14.2.
+- Issue #28208: Update Windows build and macOS installers to use SQLite 3.14.2.
 
-- Issue #28248: Update Windows build and OS X installers to use OpenSSL 1.0.2j.
+- Issue #28248: Update Windows build and macOS installers to use OpenSSL 1.0.2j.
 
 - Issue #21124: Fix building the _struct module on Cygwin by passing ``NULL``
   instead of ``&PyType_Type`` to PyVarObject_HEAD_INIT.  Patch by Masayuki
@@ -1056,7 +1056,7 @@ Core and Builtins
 - Issue #26920: Fix not getting the locale's charset upon initializing the
   interpreter, on platforms that do not have langinfo.
 
-- Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on Mac OS X
+- Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on macOS
   when decode astral characters.  Patch by Xiang Zhang.
 
 - Issue #19398: Extra slash no longer added to sys.path components in case of
@@ -1237,7 +1237,7 @@ Library
 - Issue #28480: Fix error building socket module when multithreading is
   disabled.
 
-- Issue #24452: Make webbrowser support Chrome on Mac OS X.
+- Issue #24452: Make webbrowser support Chrome on macOS.
 
 - Issue #20766: Fix references leaked by pdb in the handling of SIGINT
   handlers.
@@ -1266,9 +1266,9 @@ Build
 
 - Issue #28444: Fix missing extensions modules when cross compiling.
 
-- Issue #28208: Update Windows build and OS X installers to use SQLite 3.14.2.
+- Issue #28208: Update Windows build and macOS installers to use SQLite 3.14.2.
 
-- Issue #28248: Update Windows build and OS X installers to use OpenSSL 1.0.2j.
+- Issue #28248: Update Windows build and macOS installers to use OpenSSL 1.0.2j.
 
 Tests
 -----
@@ -1893,7 +1893,7 @@ Library
 - Issue #27861: Fixed a crash in sqlite3.Connection.cursor() when a factory
   creates not a cursor.  Patch by Xiang Zhang.
 
-- Issue #19884: Avoid spurious output on OS X with Gnu Readline.
+- Issue #19884: Avoid spurious output on macOS with Gnu Readline.
 
 - Issue #27706: Restore deterministic behavior of random.Random().seed()
   for string seeds using seeding version 1.  Allows sequences of calls
@@ -1981,7 +1981,7 @@ Tests
 
 - Issue #27427: Additional tests for the math module. Patch by Francisco Couzo.
 
-- Issue #27953: Skip math and cmath tests that fail on OS X 10.4 due to a
+- Issue #27953: Skip math and cmath tests that fail on macOS 10.4 due to a
   poor libm implementation of tan.
 
 - Issue #26040: Improve test_math and test_cmath coverage and rigour. Patch by
@@ -2017,11 +2017,11 @@ Build
 - Issue #25825: Update references to the $(LIBPL) installation path on AIX.
   This path was changed in 3.2a4.
 
-- Update OS X installer to use SQLite 3.14.1 and XZ 5.2.2.
+- Update macOS installer to use SQLite 3.14.1 and XZ 5.2.2.
 
-- Issue #21122: Fix LTO builds on OS X.
+- Issue #21122: Fix LTO builds on macOS.
 
-- Issue #17128: Build OS X installer with a private copy of OpenSSL.
+- Issue #17128: Build macOS installer with a private copy of OpenSSL.
   Also provide a sample Install Certificates command script to install a
   set of root certificates from the third-party certifi module.
 
@@ -2229,7 +2229,7 @@ IDLE
 
 - Issue #27621: Put query response validation error messages in the query
   box itself instead of in a separate massagebox.  Redo tests to match.
-  Add Mac OSX refinements.  Original patch by Mark Roseman.
+  Add macOS refinements.  Original patch by Mark Roseman.
 
 - Issue #27620: Escape key now closes Query box as cancelled.
 
@@ -2295,7 +2295,7 @@ Build
 - Issue #26662: Set PYTHON_FOR_GEN in configure as the Python program to be
   used for file generation during the build.
 
-- Issue #10910: Avoid C++ compilation errors on FreeBSD and OS X.
+- Issue #10910: Avoid C++ compilation errors on FreeBSD and macOS.
   Also update FreedBSD version checks for the original ctype UTF-8 workaround.
 
 
@@ -2452,7 +2452,7 @@ IDLE
   disabled.  Fix code and tests that fail with this restriction.  Fix htests to
   not create a second and redundant root and mainloop.
 
-- Issue #27310: Fix IDLE.app failure to launch on OS X due to vestigial import.
+- Issue #27310: Fix IDLE.app failure to launch on macOS due to vestigial import.
 
 C API
 -----
@@ -2781,7 +2781,7 @@ Build
 - Issue #27229: Fix the cross-compiling pgen rule for in-tree builds.  Patch
   by Xavier de Gaye.
 
-- Issue #26930: Update OS X 10.5+ 32-bit-only installer to build
+- Issue #26930: Update macOS 10.5+ 32-bit-only installer to build
   and link with OpenSSL 1.0.2h.
 
 Misc
@@ -3792,7 +3792,7 @@ Library
   Patch by Марк Коренберг.
 
 - Issue #25924: Avoid unnecessary serialization of getaddrinfo(3) calls on
-  OS X versions 10.5 or higher.  Original patch by A. Jesse Jiryu Davis.
+  macOS versions 10.5 or higher.  Original patch by A. Jesse Jiryu Davis.
 
 - Issue #26406: Avoid unnecessary serialization of getaddrinfo(3) calls on
   current versions of OpenBSD and NetBSD.  Patch by A. Jesse Jiryu Davis.
@@ -3879,7 +3879,7 @@ IDLE
   Patch by Mark Roseman.
 
 - Issue #25173: Associate tkinter messageboxes with a specific widget.
-  For Mac OSX, make them a 'sheet'.  Patch by Mark Roseman.
+  For macOS, make them a 'sheet'.  Patch by Mark Roseman.
 
 - Issue #25198: Enhance the initial html viewer now used for Idle Help.
   * Properly indent fixed-pitch text (patch by Mark Roseman).
@@ -3992,7 +3992,7 @@ Build
   Patch by Xavier de Gaye.
 
 - Issue #21668: Link audioop, _datetime, _ctypes_test modules to libm,
-  except on Mac OS X. Patch written by Chi Hsuan Yen.
+  except on macOS. Patch written by Chi Hsuan Yen.
 
 - Issue #25702: A --with-lto configure option has been added that will
   enable link time optimizations at build time during a make profile-opt.
@@ -4027,7 +4027,7 @@ Build
   Previously it could fail to compile properly if the math and cmath builds
   were concurrent.
 
-- Issue #26465: Update OS X 10.5+ 32-bit-only installer to build
+- Issue #26465: Update macOS 10.5+ 32-bit-only installer to build
   and link with OpenSSL 1.0.2g.
 
 - Issue #26268: Update Windows builds to use OpenSSL 1.0.2f.
@@ -4125,7 +4125,7 @@ Core and Builtins
 - Issue #28991:  functools.lru_cache() was susceptible to an obscure reentrancy
   bug caused by a monkey-patched len() function.
 
-- Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on Mac OS X
+- Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on macOS
   when decode astral characters.  Patch by Xiang Zhang.
 
 - Issue #19398: Extra slash no longer added to sys.path components in case of
@@ -4316,7 +4316,7 @@ Library
 
 - Issue #28488: shutil.make_archive() no longer add entry "./" to ZIP archive.
 
-- Issue #24452: Make webbrowser support Chrome on Mac OS X.
+- Issue #24452: Make webbrowser support Chrome on macOS.
 
 - Issue #20766: Fix references leaked by pdb in the handling of SIGINT
   handlers.
@@ -4440,7 +4440,7 @@ Library
 - Issue #27861: Fixed a crash in sqlite3.Connection.cursor() when a factory
   creates not a cursor.  Patch by Xiang Zhang.
 
-- Issue #19884: Avoid spurious output on OS X with Gnu Readline.
+- Issue #19884: Avoid spurious output on macOS with Gnu Readline.
 
 - Issue #27706: Restore deterministic behavior of random.Random().seed()
   for string seeds using seeding version 1.  Allows sequences of calls
@@ -4733,7 +4733,7 @@ Build
 
 - Issue #28444: Fix missing extensions modules when cross compiling.
 
-- Issue #28248: Update Windows build and OS X installers to use OpenSSL 1.0.2j.
+- Issue #28248: Update Windows build and macOS installers to use OpenSSL 1.0.2j.
 
 - Issue #28258: Fixed build with Estonian locale (python-config and distclean
   targets in Makefile).  Patch by Arfrever Frehtes Taifersar Arahesis.
@@ -4777,7 +4777,7 @@ Build
 - Issue #26662: Set PYTHON_FOR_GEN in configure as the Python program to be
   used for file generation during the build.
 
-- Issue #10910: Avoid C++ compilation errors on FreeBSD and OS X.
+- Issue #10910: Avoid C++ compilation errors on FreeBSD and macOS.
   Also update FreedBSD version checks for the original ctype UTF-8 workaround.
 
 - Issue #28676: Prevent missing 'getentropy' declaration warning on macOS.
@@ -5323,7 +5323,7 @@ Library
   Patch by Марк Коренберг.
 
 - Issue #25924: Avoid unnecessary serialization of getaddrinfo(3) calls on
-  OS X versions 10.5 or higher.  Original patch by A. Jesse Jiryu Davis.
+  macOS versions 10.5 or higher.  Original patch by A. Jesse Jiryu Davis.
 
 - Issue #26406: Avoid unnecessary serialization of getaddrinfo(3) calls on
   current versions of OpenBSD and NetBSD.  Patch by A. Jesse Jiryu Davis.
@@ -5456,7 +5456,7 @@ Build
   by Xavier de Gaye.
 
 - Issue #21668: Link audioop, _datetime, _ctypes_test modules to libm,
-  except on Mac OS X. Patch written by Xavier de Gaye.
+  except on macOS. Patch written by Xavier de Gaye.
 
 - Issue #25702: A --with-lto configure option has been added that will
   enable link time optimizations at build time during a make profile-opt.
@@ -5489,7 +5489,7 @@ Build
 
 - Issue #25696: Fix installation of Python on UNIX with make -j9.
 
-- Issue #26930: Update OS X 10.5+ 32-bit-only installer to build
+- Issue #26930: Update macOS 10.5+ 32-bit-only installer to build
   and link with OpenSSL 1.0.2h.
 
 - Issue #26268: Update Windows builds to use OpenSSL 1.0.2f.
@@ -5921,7 +5921,7 @@ IDLE
   Patch by Mark Roseman.
 
 - Issue #25173: Associate tkinter messageboxes with a specific widget.
-  For Mac OSX, make them a 'sheet'.  Patch by Mark Roseman.
+  For macOS, make them a 'sheet'.  Patch by Mark Roseman.
 
 - Issue #25198: Enhance the initial html viewer now used for Idle Help.
   * Properly indent fixed-pitch text (patch by Mark Roseman).
@@ -6187,7 +6187,7 @@ Library
 - Issue #23254: Document how to close the TCPServer listening socket.
   Patch from Martin Panter.
 
-- Issue #19450: Update Windows and OS X installer builds to use SQLite 3.8.11.
+- Issue #19450: Update Windows and macOS installer builds to use SQLite 3.8.11.
 
 - Issue #17527: Add PATCH to wsgiref.validator. Patch from Luca Sbardella.
 
@@ -6315,7 +6315,7 @@ Library
 Build
 -----
 
-- Issue #24603: Update Windows builds and OS X 10.5 installer to use OpenSSL
+- Issue #24603: Update Windows builds and macOS 10.5 installer to use OpenSSL
   1.0.2d.
 
 
@@ -6420,7 +6420,7 @@ Documentation
 Build
 -----
 
-- Issue #24432: Update Windows builds and OS X 10.5 installer to use OpenSSL
+- Issue #24432: Update Windows builds and macOS 10.5 installer to use OpenSSL
   1.0.2c.
 
 
@@ -6749,7 +6749,7 @@ Core and Builtins
 
 - Issue #22980: Under Linux, GNU/KFreeBSD and the Hurd, C extensions now include
   the architecture triplet in the extension name, to make it easy to test builds
-  for different ABIs in the same working tree.  Under OS X, the extension name
+  for different ABIs in the same working tree.  Under macOS, the extension name
   now includes PEP 3149-style information.
 
 - Issue #22631: Added Linux-specific socket constant CAN_RAW_FD_FRAMES.
@@ -7226,7 +7226,7 @@ Library
   flush() was not called in close() if closefd=False.
 
 - Issue #23374: Fixed pydoc failure with non-ASCII files when stdout encoding
-  differs from file system encoding (e.g. on Mac OS).
+  differs from file system encoding (e.g. on macOS).
 
 - Issue #23481: Remove RC4 from the SSL module's default cipher list.
 
@@ -7278,7 +7278,7 @@ Build
 - Issue #23445: pydebug builds now use "gcc -Og" where possible, to make
   the resulting executable faster.
 
-- Issue #23686: Update OS X 10.5 installer build to use OpenSSL 1.0.2a.
+- Issue #23686: Update macOS 10.5 installer build to use OpenSSL 1.0.2a.
 
 C API
 -----
@@ -7993,7 +7993,7 @@ Library
 - Issue #22384: An exception in Tkinter callback no longer crashes the program
   when it is run with pythonw.exe.
 
-- Issue #22168: Prevent turtle AttributeError with non-default Canvas on OS X.
+- Issue #22168: Prevent turtle AttributeError with non-default Canvas on macOS.
 
 - Issue #21147: sqlite3 now raises an exception if the request contains a null
   character instead of truncating it.  Based on patch by Victor Stinner.
@@ -8173,7 +8173,7 @@ Library
   and set the blocking mode of a file descriptor (False if the O_NONBLOCK flag
   is set, True otherwise). These functions are not available on Windows.
 
-- Issue #17172: Make turtledemo start as active on OS X even when run with
+- Issue #17172: Make turtledemo start as active on macOS even when run with
   subprocess.  Patch by Lita Cho.
 
 - Issue #21704: Fix build error for _multiprocessing when semaphores
@@ -8522,7 +8522,7 @@ Library
 - Issue #21222: Passing name keyword argument to mock.create_autospec now
   works.
 
-- Issue #21197: Add lib64 -> lib symlink in venvs on 64-bit non-OS X POSIX.
+- Issue #21197: Add lib64 -> lib symlink in venvs on 64-bit non-macOS POSIX.
 
 - Issue #17498: Some SMTP servers disconnect after certain errors, violating
   strict RFC conformance.  Instead of losing the error code when we issue the
@@ -8700,7 +8700,7 @@ Library
   configurations.  Patch by John Szakmeister.
 
 - Issue #11571: Ensure that the turtle window becomes the topmost window
-  when launched on OS X.
+  when launched on macOS.
 
 - Issue #21801: Validate that __signature__ is None or an instance of Signature.
 
@@ -8790,7 +8790,7 @@ IDLE
 
 - Issue #21284: Paragraph reformat test passes after user changes reformat width.
 
-- Issue #17654: Ensure IDLE menus are customized properly on OS X for
+- Issue #17654: Ensure IDLE menus are customized properly on macOS for
   non-framework builds and for all variants of Tk.
 
 - Issue #23180: Rename IDLE "Windows" menu item to "Window".
@@ -8850,17 +8850,17 @@ Build
 - Issue #17861: Tools/scripts/generate_opcode_h.py automatically regenerates
   Include/opcode.h from Lib/opcode.py if the latter gets any change.
 
-- Issue #20644: OS X installer build support for documentation build changes
+- Issue #20644: macOS installer build support for documentation build changes
   in 3.4.1: assume externally supplied sphinx-build is available in /usr/bin.
 
-- Issue #20022: Eliminate use of deprecated bundlebuilder in OS X builds.
+- Issue #20022: Eliminate use of deprecated bundlebuilder in macOS builds.
 
 - Issue #15968: Incorporated Tcl, Tk, and Tix builds into the Windows build
   solution.
 
 - Issue #17095: Fix Modules/Setup *shared* support.
 
-- Issue #21811: Anticipated fixes to support OS X versions > 10.9.
+- Issue #21811: Anticipated fixes to support macOS versions > 10.9.
 
 - Issue #21166: Prevent possible segfaults and other random failures of
   python --generate-posix-vars in pybuilddir.txt build target.
@@ -8874,7 +8874,7 @@ Build
 
 - Issue #21236: Build _msi.pyd with cabinet.lib instead of fci.lib
 
-- Issue #17128: Use private version of OpenSSL for OS X 10.5+ installer.
+- Issue #17128: Use private version of OpenSSL for macOS 10.5+ installer.
 
 C API
 -----
@@ -9041,12 +9041,12 @@ Tests
 - Issue #20668: asyncio tests no longer rely on tests.txt file.
   (Patch by Vajrasky Kok)
 
-- Issue #21093: Prevent failures of ctypes test_macholib on OS X if a
+- Issue #21093: Prevent failures of ctypes test_macholib on macOS if a
   copy of libz exists in $HOME/lib or /usr/local/lib.
 
-- Issue #22770: Prevent some Tk segfaults on OS X when running gui tests.
+- Issue #22770: Prevent some Tk segfaults on macOS when running gui tests.
 
-- Issue #23211: Workaround test_logging failure on some OS X 10.6 systems.
+- Issue #23211: Workaround test_logging failure on some macOS 10.6 systems.
 
 - Issue #23345: Prevent test_ssl failures with large OpenSSL patch level
   values (like 0.9.8zc).

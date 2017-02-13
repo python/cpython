@@ -1,4 +1,4 @@
-Issue #19373: Patch to Tk 8.5.15 to correct refresh problem on OS x 10.9.
+Issue #19373: Patch to Tk 8.5.15 to correct refresh problem on macOS 10.9.
 From upstream checkin https://core.tcl.tk/tk/info/5a5abf71f9
 
 --- tk8.5.15/macosx/tkMacOSXDraw.c	2013-09-16 09:41:21.000000000 -0700

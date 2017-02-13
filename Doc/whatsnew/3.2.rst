@@ -2439,7 +2439,7 @@ decoding, and ``'strict'`` and ``'replace'`` for encoding.
 To emulate Python3.1 MBCS encoding, select the ``'ignore'`` handler for decoding
 and the ``'replace'`` handler for encoding.
 
-On Mac OS X, Python decodes command line arguments with ``'utf-8'`` rather than
+On macOS, Python decodes command line arguments with ``'utf-8'`` rather than
 the locale encoding.
 
 By default, :mod:`tarfile` uses ``'utf-8'`` encoding on Windows (instead of
@@ -2493,7 +2493,7 @@ IDLE
 
   (Contributed by Raymond Hettinger; :issue:`5150`.)
 
-* IDLE on Mac OS X now works with both Carbon AquaTk and Cocoa AquaTk.
+* IDLE on macOS now works with both Carbon AquaTk and Cocoa AquaTk.
 
   (Contributed by Kevin Walzer, Ned Deily, and Ronald Oussoren; :issue:`6075`.)
 
@@ -2588,9 +2588,9 @@ Changes to Python's build process and to the C API include:
 There were a number of other small changes to the C-API.  See the
 :source:`Misc/NEWS` file for a complete list.
 
-Also, there were a number of updates to the Mac OS X build, see
+Also, there were a number of updates to the macOS build, see
 :source:`Mac/BuildScript/README.txt` for details.  For users running a 32/64-bit
-build, there is a known problem with the default Tcl/Tk on Mac OS X 10.6.
+build, there is a known problem with the default Tcl/Tk on macOS 10.6.
 Accordingly, we recommend installing an updated alternative such as
 `ActiveState Tcl/Tk 8.5.9 <https://www.activestate.com/activetcl/downloads>`_\.
 See https://www.python.org/download/mac/tcltk/ for additional details.

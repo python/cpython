@@ -9,7 +9,7 @@
 --------------
 
 This module is the Mac OS 9 (and earlier) implementation of the :mod:`os.path`
-module. It can be used to manipulate old-style Macintosh pathnames on Mac OS X
+module. It can be used to manipulate old-style Macintosh pathnames on macOS
 (or any other platform).
 
 The following functions are available in this module: :func:`normcase`,

@@ -12,7 +12,7 @@ from platform import uname
 if uname().system == "Darwin":
     maj, min, mic = [int(part) for part in uname().release.split(".")]
     if (maj, min, mic) < (8, 0, 0):
-        raise unittest.SkipTest("locale support broken for OS X < 10.4")
+        raise unittest.SkipTest("locale support broken for macOS < 10.4")
 
 candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'et_EE', 'es_PY', 'no_NO', 'nl_NL', 'lv_LV', 'el_GR', 'be_BY', 'fr_BE',
@@ -173,7 +173,7 @@ class _LocaleTests(unittest.TestCase):
             except Error:
                 continue
 
-            # Ignore buggy locale databases. (Mac OS 10.4 and some other BSDs)
+            # Ignore buggy locale databases. (macOS 10.4 and some other BSDs)
             if loc == 'eu_ES' and localeconv()['decimal_point'] == "' ":
                 continue
 

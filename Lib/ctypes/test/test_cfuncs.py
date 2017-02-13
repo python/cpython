@@ -1,4 +1,4 @@
-# A lot of failures in these tests on Mac OS X.
+# A lot of failures in these tests on macOS.
 # Byte order related?
 
 import unittest

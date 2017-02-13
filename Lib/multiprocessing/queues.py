@@ -113,7 +113,7 @@ class Queue(object):
         return _ForkingPickler.loads(res)
 
     def qsize(self):
-        # Raises NotImplementedError on Mac OSX because of broken sem_getvalue()
+        # Raises NotImplementedError on macOS because of broken sem_getvalue()
         return self._maxsize - self._sem._semlock._get_value()
 
     def empty(self):

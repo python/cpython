@@ -72,7 +72,7 @@ int (*ctypes_dlclose)(void * handle);
 int (*ctypes_dladdr)(const void *, Dl_info *);
 
 #if MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_3
-/* Mac OS X 10.3+ has dlopen, so strip all this dead code to avoid warnings */
+/* macOS 10.3+ has dlopen, so strip all this dead code to avoid warnings */
 
 static void *dlsymIntern(void *handle, const char *symbol);
 

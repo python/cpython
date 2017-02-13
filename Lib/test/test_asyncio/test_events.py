@@ -49,7 +49,7 @@ def data_file(filename):
 
 
 def osx_tiger():
-    """Return True if the platform is Mac OS 10.4 or older."""
+    """Return True if the platform is macOS 10.4 or older."""
     if sys.platform != 'darwin':
         return False
     version = platform.mac_ver()[0]
@@ -574,7 +574,7 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_unix_connection(self):
-        # Issue #20682: On Mac OS X Tiger, getsockname() returns a
+        # Issue #20682: On macOS Tiger, getsockname() returns a
         # zero-length address for UNIX socket.
         check_sockname = not osx_tiger()
 
@@ -709,7 +709,7 @@ class EventLoopTestsMixin:
     @unittest.skipIf(ssl is None, 'No ssl module')
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_ssl_unix_connection(self):
-        # Issue #20682: On Mac OS X Tiger, getsockname() returns a
+        # Issue #20682: On macOS Tiger, getsockname() returns a
         # zero-length address for UNIX socket.
         check_sockname = not osx_tiger()
 
@@ -1491,7 +1491,7 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
-    # select, poll and kqueue don't support character devices (PTY) on Mac OS X
+    # select, poll and kqueue don't support character devices (PTY) on macOS
     # older than 10.6 (Snow Leopard)
     @support.requires_mac_ver(10, 6)
     # Issue #20495: The test hangs on FreeBSD 7.2 but pass on FreeBSD 9
@@ -1593,7 +1593,7 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
-    # select, poll and kqueue don't support character devices (PTY) on Mac OS X
+    # select, poll and kqueue don't support character devices (PTY) on macOS
     # older than 10.6 (Snow Leopard)
     @support.requires_mac_ver(10, 6)
     def test_write_pty(self):
@@ -1637,7 +1637,7 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
-    # select, poll and kqueue don't support character devices (PTY) on Mac OS X
+    # select, poll and kqueue don't support character devices (PTY) on macOS
     # older than 10.6 (Snow Leopard)
     @support.requires_mac_ver(10, 6)
     def test_bidirectional_pty(self):
@@ -2190,7 +2190,7 @@ else:
                 return asyncio.SelectorEventLoop(
                     selectors.KqueueSelector())
 
-            # kqueue doesn't support character devices (PTY) on Mac OS X older
+            # kqueue doesn't support character devices (PTY) on macOS older
             # than 10.9 (Maverick)
             @support.requires_mac_ver(10, 9)
             # Issue #20667: KqueueEventLoopTests.test_read_pty_output()
@@ -2200,7 +2200,7 @@ else:
             def test_read_pty_output(self):
                 super().test_read_pty_output()
 
-            # kqueue doesn't support character devices (PTY) on Mac OS X older
+            # kqueue doesn't support character devices (PTY) on macOS older
             # than 10.9 (Maverick)
             @support.requires_mac_ver(10, 9)
             def test_write_pty(self):

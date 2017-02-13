@@ -254,7 +254,7 @@ def _queue_management_worker(executor_reference,
         # Release the queue's resources as soon as possible.
         call_queue.close()
         # If .join() is not called on the created processes then
-        # some multiprocessing.Queue methods may deadlock on Mac OS X.
+        # some multiprocessing.Queue methods may deadlock on macOS.
         for p in processes.values():
             p.join()
 

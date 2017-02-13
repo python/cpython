@@ -2359,7 +2359,7 @@ Port-Specific Changes: Windows
 
 .. ======================================================================
 
-Port-Specific Changes: Mac OS X
+Port-Specific Changes: macOS
 -----------------------------------
 
 * The path ``/Library/Python/2.7/site-packages`` is now appended to

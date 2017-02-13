@@ -25,7 +25,7 @@ What's New in IDLE 3.6.0?
 
 - Issue #27621: Put query response validation error messages in the query
   box itself instead of in a separate massagebox.  Redo tests to match.
-  Add Mac OSX refinements.  Original patch by Mark Roseman.
+  Add macOS refinements.  Original patch by Mark Roseman.
 
 - Issue #27620: Escape key now closes Query box as cancelled.
 
@@ -75,7 +75,7 @@ What's New in IDLE 3.6.0?
   Fix code and tests that fail with this restriction.
   Fix htests to not create a second and redundant root and mainloop.
 
-- Issue #27310: Fix IDLE.app failure to launch on OS X due to vestigial import.
+- Issue #27310: Fix IDLE.app failure to launch on macOS due to vestigial import.
 
 - Issue #5124: Paste with text selected now replaces the selection on X11.
   This matches how paste works on Windows, Mac, most modern Linux apps,
@@ -214,7 +214,7 @@ What's New in IDLE 3.6.0?
   Patch by Mark Roseman.
 
 - Issue #25173: Associate tkinter messageboxes with a specific widget.
-  For Mac OSX, make them a 'sheet'.  Patch by Mark Roseman.
+  For macOS, make them a 'sheet'.  Patch by Mark Roseman.
 
 - Issue #25198: Enhance the initial html viewer now used for Idle Help.
   * Properly indent fixed-pitch text (patch by Mark Roseman).
@@ -343,7 +343,7 @@ What's New in IDLE 3.5.0?
 
 - Issue #21284: Paragraph reformat test passes after user changes reformat width.
 
-- Issue #17654: Ensure IDLE menus are customized properly on OS X for
+- Issue #17654: Ensure IDLE menus are customized properly on macOS for
   non-framework builds and for all variants of Tk.
 
 
@@ -361,7 +361,7 @@ What's New in IDLE 3.4.0?
 - Issue #16226: Fix IDLE Path Browser crash.
   (Patch by Roger Serwy)
 
-- Issue #15853: Prevent IDLE crash on OS X when opening Preferences menu
+- Issue #15853: Prevent IDLE crash on macOS when opening Preferences menu
   with certain versions of Tk 8.5.  Initial patch by Kevin Walzer.
 
 
@@ -376,7 +376,7 @@ What's New in IDLE 3.3.0?
 - Issue #15318: Prevent writing to sys.stdin.
 
 - Issue #4832: Modify IDLE to save files with .py extension by
-  default on Windows and OS X (Tk 8.5) as it already does with X11 Tk.
+  default on Windows and macOS (Tk 8.5) as it already does with X11 Tk.
 
 - Issue #13532, #15319: Check that arguments to sys.stdout.write are strings.
 
@@ -404,8 +404,8 @@ What's New in IDLE 3.3.0?
 - Issue #3573: IDLE hangs when passing invalid command line args
   (directory(ies) instead of file(s)).
 
-- Issue #14018: Update checks for unstable system Tcl/Tk versions on OS X
-  to include versions shipped with OS X 10.7 and 10.8 in addition to 10.6.
+- Issue #14018: Update checks for unstable system Tcl/Tk versions on macOS
+  to include versions shipped with macOS 10.7 and 10.8 in addition to 10.6.
 
 
 What's New in IDLE 3.2.1?

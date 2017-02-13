@@ -114,7 +114,7 @@ class ScriptBinding:
 
     def run_module_event(self, event):
         if macosx.isCocoaTk():
-            # Tk-Cocoa in MacOSX is broken until at least
+            # Tk-Cocoa in macOS is broken until at least
             # Tk 8.5.9, and without this rather
             # crude workaround IDLE would hang when a user
             # tries to run a module using the keyboard shortcut

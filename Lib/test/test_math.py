@@ -805,7 +805,7 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.log2(NAN)))
 
     @requires_IEEE_754
-    # log2() is not accurate enough on Mac OS X Tiger (10.4)
+    # log2() is not accurate enough on macOS Tiger (10.4)
     @support.requires_mac_ver(10, 5)
     def testLog2Exact(self):
         # Check that we get exact equality for log2 of powers of 2.
@@ -1164,7 +1164,7 @@ class MathTests(unittest.TestCase):
 
     @requires_IEEE_754
     def test_testfile(self):
-        # Some tests need to be skipped on ancient OS X versions.
+        # Some tests need to be skipped on ancient macOS versions.
         # See issue #27953.
         SKIP_ON_TIGER = {'tan0064'}
 
@@ -1186,7 +1186,7 @@ class MathTests(unittest.TestCase):
             if fn in ['rect', 'polar']:
                 # no real versions of rect, polar
                 continue
-            # Skip certain tests on OS X 10.4.
+            # Skip certain tests on macOS 10.4.
             if osx_version is not None and osx_version < (10, 5):
                 if id in SKIP_ON_TIGER:
                     continue

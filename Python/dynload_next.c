@@ -1,5 +1,5 @@
 
-/* Support for dynamic loading of extension modules on Mac OS X
+/* Support for dynamic loading of extension modules on macOS
 ** All references to "NeXT" are for historical reasons.
 */
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """
-This script is used to build "official" universal installers on Mac OS X.
-It requires at least Mac OS X 10.5, Xcode 3, and the 10.4u SDK for
+This script is used to build "official" universal installers on macOS.
+It requires at least macOS 10.5, Xcode 3, and the 10.4u SDK for
 32-bit builds.  64-bit or four-way universal builds require at least
-OS X 10.5 and the 10.5 SDK.
+macOS 10.5 and the 10.5 SDK.
 
 Please ensure that this script keeps working with Python 2.5, to avoid
 bootstrap issues (/usr/bin/python is Python 2.5 on OSX 10.5).  Sphinx,
@@ -12,16 +12,16 @@ Python 2.4.  However, as of Python 3.4.1, Doc builds require an external
 sphinx-build and the current versions of Sphinx now require at least
 Python 2.6.
 
-In addition to what is supplied with OS X 10.5+ and Xcode 3+, the script
+In addition to what is supplied with macOS 10.5+ and Xcode 3+, the script
 requires an installed version of hg and a third-party version of
-Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets) or Tcl/TK 8.5
+Tcl/Tk 8.4 (for macOS 10.4 and 10.5 deployment targets) or Tcl/TK 8.5
 (for 10.6 or later) installed in /Library/Frameworks.  When installed,
 the Python built by this script will attempt to dynamically link first to
 Tcl and Tk frameworks in /Library/Frameworks if available otherwise fall
 back to the ones in /System/Library/Framework.  For the build, we recommend
 installing the most recent ActiveTcl 8.4 or 8.5 version.
 
-32-bit-only installer builds are still possible on OS X 10.4 with Xcode 2.5
+32-bit-only installer builds are still possible on macOS 10.4 with Xcode 2.5
 and the installation of additional components, such as a newer Python
 (2.5 is needed for Python parser updates), hg, and for the documentation
 build either svn (pre-3.4.1) or sphinx-build (3.4.1 and later).
@@ -153,7 +153,7 @@ SRCDIR = os.path.dirname(
                 os.path.abspath(__file__
         ))))
 
-# $MACOSX_DEPLOYMENT_TARGET -> minimum OS X level
+# $MACOSX_DEPLOYMENT_TARGET -> minimum macOS level
 DEPTARGET = '10.3'
 
 def getDeptargetTuple():
@@ -182,7 +182,7 @@ USAGE = textwrap.dedent("""\
     --third-party=DIR:   Store third-party sources here (default: %(DEPSRC)r)
     --sdk-path=DIR:      Location of the SDK (default: %(SDKPATH)r)
     --src-dir=DIR:       Location of the Python sources (default: %(SRCDIR)r)
-    --dep-target=10.n    OS X deployment target (default: %(DEPTARGET)r)
+    --dep-target=10.n    macOS deployment target (default: %(DEPTARGET)r)
     --universal-archs=x  universal architectures (options: %(UNIVERSALOPTS)r, default: %(UNIVERSALARCHS)r)
 """)% globals()
 
@@ -208,7 +208,7 @@ def library_recipes():
     LT_10_5 = bool(getDeptargetTuple() < (10, 5))
 
     # Since Apple removed the header files for the deprecated system
-    # OpenSSL as of the Xcode 7 release (for OS X 10.10+), we do not
+    # OpenSSL as of the Xcode 7 release (for macOS 10.10+), we do not
     # have much choice but to build our own copy here, too.
 
     result.extend([
@@ -406,7 +406,7 @@ def pkg_recipes():
             readme="""\
                 This package installs Python.framework, that is the python
                 interpreter and the standard library. This also includes Python
-                wrappers for lots of Mac OS X API's.
+                wrappers for lots of macOS API's.
             """,
             postflight="scripts/postflight.framework",
             selected='selected',
@@ -490,7 +490,7 @@ def pkg_recipes():
                 long_name="Fix system Python",
                 readme="""\
                     This package updates the system python installation on
-                    Mac OS X 10.3 to ensure that you can build new python extensions
+                    macOS 10.3 to ensure that you can build new python extensions
                     using that copy of python after installing this version.
                     """,
                 postflight="../Tools/fixapplepython23.py",
@@ -569,10 +569,10 @@ def checkEnvironment():
         fatal("This script must be run with Python 2.4 or later")
 
     if platform.system() != 'Darwin':
-        fatal("This script should be run on a Mac OS X 10.4 (or later) system")
+        fatal("This script should be run on a macOS 10.4 (or later) system")
 
     if int(platform.release().split('.')[0]) < 8:
-        fatal("This script should be run on a Mac OS X 10.4 (or later) system")
+        fatal("This script should be run on a macOS 10.4 (or later) system")
 
     if not os.path.exists(SDKPATH):
         fatal("Please install the latest version of Xcode and the %s SDK"%(
@@ -628,7 +628,7 @@ def checkEnvironment():
     base_path = '/bin:/sbin:/usr/bin:/usr/sbin'
     if 'SDK_TOOLS_BIN' in os.environ:
         base_path = os.environ['SDK_TOOLS_BIN'] + ':' + base_path
-    # Xcode 2.5 on OS X 10.4 does not include SetFile in its usr/bin;
+    # Xcode 2.5 on macOS 10.4 does not include SetFile in its usr/bin;
     # add its fixed location here if it exists
     OLD_DEVELOPER_TOOLS = '/Developer/Tools'
     if os.path.isdir(OLD_DEVELOPER_TOOLS):
@@ -819,11 +819,11 @@ def build_universal_openssl(basedir, archList):
     Special case build recipe for universal build of openssl.
 
     The upstream OpenSSL build system does not directly support
-    OS X universal builds.  We need to build each architecture
+    macOS universal builds.  We need to build each architecture
     separately then lipo them together into fat libraries.
     """
 
-    # OpenSSL fails to build with Xcode 2.5 (on OS X 10.4).
+    # OpenSSL fails to build with Xcode 2.5 (on macOS 10.4).
     # If we are building on a 10.4.x or earlier system,
     # unilaterally disable assembly code building to avoid the problem.
     no_asm = int(platform.release().split(".")[0]) < 9

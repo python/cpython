@@ -500,7 +500,7 @@ class CmdLineTest(unittest.TestCase):
             self.assertTrue(text[3].startswith('NameError'))
 
     def test_non_ascii(self):
-        # Mac OS X denies the creation of a file with an invalid UTF-8 name.
+        # macOS denies the creation of a file with an invalid UTF-8 name.
         # Windows allows creating a name with an arbitrary bytes name, but
         # Python cannot a undecodable bytes argument to a subprocess.
         if (support.TESTFN_UNDECODABLE

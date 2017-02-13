@@ -800,7 +800,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         value_str = value.decode(sys.getfilesystemencoding(), 'surrogateescape')
         self.assertEqual(os.environ['bytes'], value_str)
 
-    # On FreeBSD < 7 and OS X < 10.6, unsetenv() doesn't return a value (issue
+    # On FreeBSD < 7 and macOS < 10.6, unsetenv() doesn't return a value (issue
     # #13415).
     @support.requires_freebsd_version(7)
     @support.requires_mac_ver(10, 6)
@@ -1368,7 +1368,7 @@ class URandomFDTests(unittest.TestCase):
         # Check urandom() failing when it is not able to open /dev/random.
         # We spawn a new process to make the test more robust (if getrlimit()
         # failed to restore the file descriptor limit after this, the whole
-        # test suite would crash; this actually happened on the OS X Tiger
+        # test suite would crash; this actually happened on the macOS Tiger
         # buildbot).
         code = """if 1:
             import errno

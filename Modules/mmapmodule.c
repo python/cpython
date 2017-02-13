@@ -1133,7 +1133,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     }
 
 #ifdef __APPLE__
-    /* Issue #11277: fsync(2) is not enough on OS X - a special, OS X specific
+    /* Issue #11277: fsync(2) is not enough on macOS - a special, macOS specific
        fcntl(2) is necessary to force DISKSYNC and get around mmap(2) bug */
     if (fd != -1)
         (void)fcntl(fd, F_FULLFSYNC);

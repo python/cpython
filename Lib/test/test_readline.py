@@ -229,8 +229,8 @@ def run_pty(script, input=b"dummy input\r"):
         cleanup.callback(terminate, proc)
         cleanup.callback(os.close, master)
         # Avoid using DefaultSelector and PollSelector. Kqueue() does not
-        # work with pseudo-terminals on OS X < 10.9 (Issue 20365) and Open
-        # BSD (Issue 20667). Poll() does not work with OS X 10.6 or 10.4
+        # work with pseudo-terminals on macOS < 10.9 (Issue 20365) and Open
+        # BSD (Issue 20667). Poll() does not work with macOS 10.6 or 10.4
         # either (Issue 20472). Hopefully the file descriptor is low enough
         # to use with select().
         sel = cleanup.enter_context(selectors.SelectSelector())

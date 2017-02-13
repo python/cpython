@@ -190,7 +190,7 @@ def fixup_build_ext(cmd):
         support.fixup_build_ext(cmd)
         cmd.ensure_finalized()
 
-    Unlike most other Unix platforms, Mac OS X embeds absolute paths
+    Unlike most other Unix platforms, macOS embeds absolute paths
     to shared libraries into executables, so the fixup is not needed there.
     """
     if os.name == 'nt':

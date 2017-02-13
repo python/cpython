@@ -112,7 +112,7 @@ Changes in 1.2.7 (2 May 2012)
 - Test for existence of strerror
 - Restore gzgetc_ for backward compatibility with 1.2.6
 - Fix build with non-GNU make on Solaris
-- Require gcc 4.0 or later on Mac OS X to use the hidden attribute
+- Require gcc 4.0 or later on macOS to use the hidden attribute
 - Include unistd.h for Watcom C
 - Use __WATCOMC__ instead of __WATCOM__
 - Do not use the visibility attribute if NO_VIZ defined
@@ -152,7 +152,7 @@ Changes in 1.2.7 (2 May 2012)
 - Fix type mismatch between get_crc_table() and crc_table
 - Fix parsing of version with "-" in CMakeLists.txt [Snider, Ziegler]
 - Fix the path to zlib.map in CMakeLists.txt
-- Force the native libtool in Mac OS X to avoid GNU libtool [Beebe]
+- Force the native libtool in macOS to avoid GNU libtool [Beebe]
 - Add instructions to win32/Makefile.gcc for shared install [Torri]
 
 Changes in 1.2.6.1 (12 Feb 2012)
@@ -305,7 +305,7 @@ Changes in 1.2.5.1 (10 Sep 2011)
 - Delete line in configure that adds -L. libz.a to LDFLAGS [Weigelt]
 - Add debug records in assmebler code [Londer]
 - Update RFC references to use http://tools.ietf.org/html/... [Li]
-- Add --archs option, use of libtool to configure for Mac OS X [Borstel]
+- Add --archs option, use of libtool to configure for macOS [Borstel]
 
 Changes in 1.2.5 (19 Apr 2010)
 - Disable visibility attribute in win32/Makefile.gcc [Bar-Lev]
@@ -828,9 +828,9 @@ Changes in 1.2.0.7 (21 September 2003)
 - Update contrib/untgz to 0.2 with various fixes [Truta]
 - Add build support for Amiga [Nikl]
 - Remove some directories in old that have been updated to 1.2
-- Add dylib building for Mac OS X in configure and Makefile.in
+- Add dylib building for macOS in configure and Makefile.in
 - Remove old distribution stuff from Makefile
-- Update README to point to DLL_FAQ.txt, and add comment on Mac OS X
+- Update README to point to DLL_FAQ.txt, and add comment on macOS
 - Update links in README
 
 Changes in 1.2.0.6 (13 September 2003)

@@ -126,7 +126,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
     @unittest.skipIf(sysconfig.get_config_var('CUSTOMIZED_OSX_COMPILER'),
                      'compiler flags customized')
     def test_sysconfig_compiler_vars(self):
-        # On OS X, binary installers support extension module building on
+        # On macOS, binary installers support extension module building on
         # various levels of the operating system with differing Xcode
         # configurations.  This requires customization of some of the
         # compiler configuration directives to suit the environment on

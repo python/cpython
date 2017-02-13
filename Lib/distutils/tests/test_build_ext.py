@@ -402,21 +402,21 @@ class BuildExtTestCase(TempdirManager,
         self.assertEqual(wanted, path)
 
 
-    @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for MacOSX')
+    @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for macOS')
     def test_deployment_target_default(self):
         # Issue 9516: Test that, in the absence of the environment variable,
         # an extension module is compiled with the same deployment target as
         #  the interpreter.
         self._try_compile_deployment_target('==', None)
 
-    @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for MacOSX')
+    @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for macOS')
     def test_deployment_target_too_low(self):
         # Issue 9516: Test that an extension module is not allowed to be
         # compiled with a deployment target less than that of the interpreter.
         self.assertRaises(DistutilsPlatformError,
             self._try_compile_deployment_target, '>', '10.1')
 
-    @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for MacOSX')
+    @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for macOS')
     def test_deployment_target_higher_ok(self):
         # Issue 9516: Test that an extension module can be compiled with a
         # deployment target higher than that of the interpreter: the ext

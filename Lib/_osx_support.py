@@ -1,4 +1,4 @@
-"""Shared OS X support functions."""
+"""Shared macOS support functions."""
 
 import os
 import re
@@ -81,7 +81,7 @@ def _find_build_tool(toolname):
 _SYSTEM_VERSION = None
 
 def _get_system_version():
-    """Return the OS X system version as a string"""
+    """Return the macOS system version as a string"""
     # Reading this plist is a documented way to get the system
     # version (see the documentation for the Gestalt Manager)
     # We avoid using platform.mac_ver to avoid possible bootstrap issues during
@@ -391,7 +391,7 @@ def customize_config_vars(_config_vars):
     """
 
     if not _supports_universal_builds():
-        # On Mac OS X before 10.4, check if -arch and -isysroot
+        # On macOS before 10.4, check if -arch and -isysroot
         # are in CFLAGS or LDFLAGS and remove them if they are.
         # This is needed when building extensions on a 10.3 system
         # using a universal build of python.

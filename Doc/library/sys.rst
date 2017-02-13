@@ -449,7 +449,7 @@ always available.
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
 
-   * On Mac OS X, the encoding is ``'utf-8'``.
+   * On macOS, the encoding is ``'utf-8'``.
 
    * On Unix, the encoding is the locale encoding.
 
@@ -928,7 +928,7 @@ always available.
    Linux            ``'linux'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
-   Mac OS X         ``'darwin'``
+   macOS            ``'darwin'``
    ================ ===========================
 
    .. versionchanged:: 3.3

@@ -994,7 +994,7 @@ class TurtleScreen(TurtleScreenBase):
         self._keys = []
         self.clear()
         if sys.platform == 'darwin':
-            # Force Turtle window to the front on OS X. This is needed because
+            # Force Turtle window to the front on macOS. This is needed because
             # the Turtle window will show behind the Terminal window when you
             # start the demo from the command line.
             rootwindow = cv.winfo_toplevel()

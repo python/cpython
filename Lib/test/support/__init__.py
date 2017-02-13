@@ -471,7 +471,7 @@ def _is_gui_available():
         if not bool(uof.dwFlags & WSF_VISIBLE):
             reason = "gui not available (WSF_VISIBLE flag not set)"
     elif sys.platform == 'darwin':
-        # The Aqua Tk implementations on OS X can abort the process if
+        # The Aqua Tk implementations on macOS can abort the process if
         # being called in an environment where a window server connection
         # cannot be made, for instance when invoked by a buildbot or ssh
         # process not running under the same user id as the current console
@@ -483,7 +483,7 @@ def _is_gui_available():
         app_services = cdll.LoadLibrary(find_library("ApplicationServices"))
 
         if app_services.CGMainDisplayID() == 0:
-            reason = "gui tests cannot run without OS X window manager"
+            reason = "gui tests cannot run without macOS window manager"
         else:
             class ProcessSerialNumber(Structure):
                 _fields_ = [("highLongOfPSN", c_int),
@@ -492,7 +492,7 @@ def _is_gui_available():
             psn_p = pointer(psn)
             if (  (app_services.GetCurrentProcess(psn_p) < 0) or
                   (app_services.SetFrontProcess(psn_p) < 0) ):
-                reason = "cannot run without OS X gui process"
+                reason = "cannot run without macOS gui process"
 
     # check on every platform whether tkinter can actually do anything
     if not reason:
@@ -577,10 +577,10 @@ def requires_linux_version(*min_version):
     return _requires_unix_version('Linux', min_version)
 
 def requires_mac_ver(*min_version):
-    """Decorator raising SkipTest if the OS is Mac OS X and the OS X
+    """Decorator raising SkipTest if the OS is macOS and the macOS
     version if less than min_version.
 
-    For example, @requires_mac_ver(10, 5) raises SkipTest if the OS X version
+    For example, @requires_mac_ver(10, 5) raises SkipTest if the macOS version
     is lesser than 10.5.
     """
     def decorator(func):
@@ -596,7 +596,7 @@ def requires_mac_ver(*min_version):
                     if version < min_version:
                         min_version_txt = '.'.join(map(str, min_version))
                         raise unittest.SkipTest(
-                            "Mac OS X %s or higher required, not %s"
+                            "macOS %s or higher required, not %s"
                             % (min_version_txt, version_txt))
             return func(*args, **kw)
         wrapper.min_version = min_version
@@ -849,7 +849,7 @@ for character in (
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN + "-\xe0\xf2\u0258\u0141\u011f"
 if sys.platform == 'darwin':
-    # In Mac OS X's VFS API file names are, by definition, canonically
+    # In macOS's VFS API file names are, by definition, canonically
     # decomposed Unicode, encoded using UTF-8. See QA1173:
     # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
     import unicodedata
@@ -875,7 +875,7 @@ if os.name == 'nt':
                   'Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
             TESTFN_UNENCODABLE = None
-# Mac OS X denies unencodable filenames (invalid utf-8)
+# macOS denies unencodable filenames (invalid utf-8)
 elif sys.platform != 'darwin':
     try:
         # ascii and utf-8 cannot encode the byte 0xff
@@ -907,7 +907,7 @@ for name in (
     # undecodable from iso8859-3, iso8859-6, iso8859-7, cp424, iso8859-8, cp856
     # and cp857
     b'\xae\xd5'
-    # undecodable from UTF-8 (UNIX and Mac OS X)
+    # undecodable from UTF-8 (UNIX and macOS)
     b'\xed\xb2\x80', b'\xed\xb4\x80',
     # undecodable from shift_jis, cp869, cp874, cp932, cp1250, cp1251, cp1252,
     # cp1253, cp1254, cp1255, cp1257, cp1258

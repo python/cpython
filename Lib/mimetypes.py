@@ -41,7 +41,7 @@ __all__ = [
 
 knownfiles = [
     "/etc/mime.types",
-    "/etc/httpd/mime.types",                    # Mac OS X
+    "/etc/httpd/mime.types",                    # macOS
     "/etc/httpd/conf/mime.types",               # Apache
     "/etc/apache/mime.types",                   # Apache 1
     "/etc/apache2/mime.types",                  # Apache 2

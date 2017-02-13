@@ -1337,7 +1337,7 @@ class GeneralModuleTests(unittest.TestCase):
         # Issue #6697.
         self.assertRaises(UnicodeEncodeError, socket.getaddrinfo, 'localhost', '\uD800')
 
-        # Issue 17269: test workaround for OS X platform bug segfault
+        # Issue 17269: test workaround for macOS platform bug segfault
         if hasattr(socket, 'AI_NUMERICSERV'):
             try:
                 # The arguments here are undefined and the call may succeed
@@ -1886,7 +1886,7 @@ class BasicTCPTest(SocketConnectedTest):
         # Testing shutdown()
         msg = self.cli_conn.recv(1024)
         self.assertEqual(msg, MSG)
-        # wait for _testShutdown to finish: on OS X, when the server
+        # wait for _testShutdown to finish: on macOS, when the server
         # closes the connection the client also becomes disconnected,
         # and the client's shutdown call will fail. (Issue #4397.)
         self.done.wait()
@@ -3804,7 +3804,7 @@ class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
                 self.setAlarm(self.alarm_time)
                 func(*args, **kwargs)
 
-    # Issue #12958: The following tests have problems on OS X prior to 10.7
+    # Issue #12958: The following tests have problems on macOS prior to 10.7
     @support.requires_mac_ver(10, 7)
     def testInterruptedSendTimeout(self):
         self.checkInterruptedSend(self.serv_conn.send, b"a"*512)

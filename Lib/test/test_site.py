@@ -236,7 +236,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
         if (sys.platform == "darwin" and
             sysconfig.get_config_var("PYTHONFRAMEWORK")):
-            # OS X framework builds
+            # macOS framework builds
             site.PREFIXES = ['Python.framework']
             dirs = site.getsitepackages()
             self.assertEqual(len(dirs), 2)
@@ -246,7 +246,7 @@ class HelperFunctionsTests(unittest.TestCase):
                                   'site-packages')
             self.assertEqual(dirs[1], wanted)
         elif os.sep == '/':
-            # OS X non-framwework builds, Linux, FreeBSD, etc
+            # macOS non-framwework builds, Linux, FreeBSD, etc
             self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'lib',
                                   'python%d.%d' % sys.version_info[:2],

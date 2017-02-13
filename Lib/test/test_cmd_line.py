@@ -168,7 +168,7 @@ class CmdLineTest(unittest.TestCase):
         elif p.returncode == 0:
             # _Py_char2wchar() decoded b'\xff' as '\xff' even if the locale is
             # C and the locale encoding is ASCII. It occurs on FreeBSD, Solaris
-            # and Mac OS X.
+            # and macOS.
             pattern = b"'\\xff' "
             # The output is followed by the encoding name, an alias to ASCII.
             # Examples: "US-ASCII" or "646" (ISO 646, on Solaris).
@@ -178,7 +178,7 @@ class CmdLineTest(unittest.TestCase):
             raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
 
     @unittest.skipUnless((sys.platform == 'darwin' or
-                is_android), 'test specific to Mac OS X and Android')
+                is_android), 'test specific to macOS and Android')
     def test_osx_android_utf8(self):
         def check_output(text):
             decoded = text.decode('utf-8', 'surrogateescape')
@@ -186,7 +186,7 @@ class CmdLineTest(unittest.TestCase):
 
             env = os.environ.copy()
             # C locale gives ASCII locale encoding, but Python uses UTF-8
-            # to parse the command line arguments on Mac OS X and Android.
+            # to parse the command line arguments on macOS and Android.
             env['LC_ALL'] = 'C'
 
             p = subprocess.Popen(

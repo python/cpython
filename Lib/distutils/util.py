@@ -59,7 +59,7 @@ def get_platform ():
 
     if os.name != "posix" or not hasattr(os, 'uname'):
         # XXX what about the architecture? NT is Intel or Alpha,
-        # Mac OS is M68k or PPC, etc.
+        # macOS is M68k or PPC, etc.
         return sys.platform
 
     # Try to distinguish various flavours of Unix
@@ -140,7 +140,7 @@ def change_root (new_root, pathname):
     """Return 'pathname' with 'new_root' prepended.  If 'pathname' is
     relative, this is equivalent to "os.path.join(new_root,pathname)".
     Otherwise, it requires making 'pathname' relative and then joining the
-    two, which is tricky on DOS/Windows and Mac OS.
+    two, which is tricky on DOS/Windows and macOS.
     """
     if os.name == 'posix':
         if not os.path.isabs(pathname):

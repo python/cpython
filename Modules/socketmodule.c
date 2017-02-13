@@ -85,7 +85,7 @@ Local naming conventions:
 
 #ifdef __APPLE__
 #include <AvailabilityMacros.h>
-/* for getaddrinfo thread safety test on old versions of OS X */
+/* for getaddrinfo thread safety test on old versions of macOS */
 #ifndef MAC_OS_X_VERSION_10_5
 #define MAC_OS_X_VERSION_10_5 1050
 #endif
@@ -197,7 +197,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 /* On systems on which getaddrinfo() is believed to not be thread-safe,
    (this includes the getaddrinfo emulation) protect access with a lock.
 
-   getaddrinfo is thread-safe on Mac OS X 10.5 and later. Originally it was
+   getaddrinfo is thread-safe on macOS 10.5 and later. Originally it was
    a mix of code including an unsafe implementation from an old BSD's
    libresolv. In 10.5 Apple reimplemented it as a safe IPC call to the
    mDNSResponder process. 10.5 is the first be UNIX '03 certified, which
@@ -377,7 +377,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #endif
 
 #ifdef __APPLE__
-/* On OS X, getaddrinfo returns no error indication of lookup
+/* On macOS, getaddrinfo returns no error indication of lookup
    failure, so we must use the emulation instead of the libinfo
    implementation. Unfortunately, performing an autoconf test
    for this bug would require DNS access for the machine performing
@@ -2241,7 +2241,7 @@ cmsg_min_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t space)
     if (cmsgh == NULL || msg->msg_control == NULL)
         return 0;
     /* Note that POSIX allows msg_controllen to be of a signed type. This is
-       annoying under OS X as it's unsigned there and so it triggers a
+       annoying under macOS as it's unsigned there and so it triggers a
        tautological comparison warning under Clang when compared against 0.
        Since the check is valid on other platforms, silence the warning under
        Clang. */

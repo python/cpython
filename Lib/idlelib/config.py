@@ -558,12 +558,12 @@ class IdleConf:
         result = self.GetKeySet(self.CurrentKeys())
 
         if sys.platform == "darwin":
-            # OS X Tk variants do not support the "Alt" keyboard modifier.
+            # macOS Tk variants do not support the "Alt" keyboard modifier.
             # So replace all keybingings that use "Alt" with ones that
             # use the "Option" keyboard modifier.
             # TODO (Ned?): the "Option" modifier does not work properly for
             #        Cocoa Tk and XQuartz Tk so we should not use it
-            #        in default OS X KeySets.
+            #        in default macOS KeySets.
             for k, v in result.items():
                 v2 = [ x.replace('<Alt-', '<Option-') for x in v ]
                 if v != v2:

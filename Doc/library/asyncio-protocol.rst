@@ -462,7 +462,7 @@ buffer size reaches the low-water mark.
    mark is zero.
 
 .. note::
-   On BSD systems (OS X, FreeBSD, etc.) flow control is not supported
+   On BSD systems (macOS, FreeBSD, etc.) flow control is not supported
    for :class:`DatagramProtocol`, because send failures caused by
    writing too many packets cannot be detected easily.  The socket
    always appears 'ready' and excess packets are dropped; an

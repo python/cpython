@@ -93,7 +93,7 @@ def find_file(filename, std_dirs, paths):
         found in one of them, the resulting list will contain the directory.
     """
     if host_platform == 'darwin':
-        # Honor the MacOSX SDK setting when one was specified.
+        # Honor the macOS SDK setting when one was specified.
         # An SDK is a directory with the same structure as a real
         # system, but with only header files and libraries.
         sysroot = macosx_sdk_root()
@@ -340,7 +340,7 @@ class PyBuildExt(build_ext):
                 ext.name, level=1)
             return
 
-        # Workaround for Mac OS X: The Carbon-based modules cannot be
+        # Workaround for macOS: The Carbon-based modules cannot be
         # reliably imported into a command-line Python
         if 'Carbon' in ext.extra_link_args:
             self.announce(
@@ -481,7 +481,7 @@ class PyBuildExt(build_ext):
             os.unlink(tmpfile)
 
     def detect_math_libs(self):
-        # Check for MacOS X, which doesn't need libm.a at all
+        # Check for macOS, which doesn't need libm.a at all
         if host_platform == 'darwin':
             return []
         else:
@@ -504,7 +504,7 @@ class PyBuildExt(build_ext):
         # We must get the values from the Makefile and not the environment
         # directly since an inconsistently reproducible issue comes up where
         # the environment variable is not set even though the value were passed
-        # into configure and stored in the Makefile (issue found on OS X 10.3).
+        # into configure and stored in the Makefile (issue found on macOS 10.3).
         for env_var, arg_name, dir_list in (
                 ('LDFLAGS', '-R', self.compiler.runtime_library_dirs),
                 ('LDFLAGS', '-L', self.compiler.library_dirs),
@@ -762,7 +762,7 @@ class PyBuildExt(build_ext):
                         < (10, 5) ) ):
                 os_release = 8
             if os_release < 9:
-                # MacOSX 10.4 has a broken readline. Don't try to build
+                # macOS 10.4 has a broken readline. Don't try to build
                 # the readline module unless the user has installed a fixed
                 # readline package
                 if find_file('readline/rlconf.h', inc_dirs, []) is None:
@@ -1357,11 +1357,11 @@ class PyBuildExt(build_ext):
             # _curses_panel.so must link with panelw.
             panel_library = 'panelw'
             if host_platform == 'darwin':
-                # On OS X, there is no separate /usr/lib/libncursesw nor
+                # On macOS, there is no separate /usr/lib/libncursesw nor
                 # libpanelw.  If we are here, we found a locally-supplied
                 # version of libncursesw.  There should be also be a
                 # libpanelw.  _XOPEN_SOURCE defines are usually excluded
-                # for OS X but we need _XOPEN_SOURCE_EXTENDED here for
+                # for macOS but we need _XOPEN_SOURCE_EXTENDED here for
                 # ncurses wide char support
                 curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
         elif host_platform == 'darwin' and curses_library == 'ncurses':
@@ -1561,7 +1561,7 @@ class PyBuildExt(build_ext):
             macros = dict()
             libraries = ['ws2_32']
 
-        elif host_platform == 'darwin':     # Mac OSX
+        elif host_platform == 'darwin':     # macOS
             macros = dict()
             libraries = []
 
@@ -1885,7 +1885,7 @@ class PyBuildExt(build_ext):
         #       -lGL -lGLU -lXext -lXmu \
 
     def configure_ctypes_darwin(self, ext):
-        # Darwin (OS X) uses preconfigured files, in
+        # Darwin (macOS) uses preconfigured files, in
         # the Modules/_ctypes/libffi_osx directory.
         srcdir = sysconfig.get_config_var('srcdir')
         ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
@@ -1970,7 +1970,7 @@ class PyBuildExt(build_ext):
         if host_platform == 'darwin':
             if '--with-system-ffi' not in sysconfig.get_config_var("CONFIG_ARGS"):
                 return
-            # OS X 10.5 comes with libffi.dylib; the include files are
+            # macOS 10.5 comes with libffi.dylib; the include files are
             # in /usr/include/ffi
             inc_dirs.append('/usr/include/ffi')
 

@@ -334,7 +334,7 @@ class CMathTests(unittest.TestCase):
 
     @requires_IEEE_754
     def test_specific_values(self):
-        # Some tests need to be skipped on ancient OS X versions.
+        # Some tests need to be skipped on ancient macOS versions.
         # See issue #27953.
         SKIP_ON_TIGER = {'tan0064'}
 
@@ -360,7 +360,7 @@ class CMathTests(unittest.TestCase):
             arg = complex(ar, ai)
             expected = complex(er, ei)
 
-            # Skip certain tests on OS X 10.4.
+            # Skip certain tests on macOS 10.4.
             if osx_version is not None and osx_version < (10, 5):
                 if id in SKIP_ON_TIGER:
                     continue

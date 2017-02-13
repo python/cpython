@@ -409,7 +409,7 @@ class BaseSelectorTestCase(unittest.TestCase):
 
 class ScalableSelectorMixIn:
 
-    # see issue #18963 for why it's skipped on older OS X versions
+    # see issue #18963 for why it's skipped on older macOS versions
     @support.requires_mac_ver(10, 5)
     @unittest.skipUnless(resource, "Test needs resource module")
     def test_above_fd_setsize(self):

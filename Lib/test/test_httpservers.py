@@ -381,7 +381,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             f.write(support.TESTFN_UNDECODABLE)
         response = self.request(self.base_url + '/')
         if sys.platform == 'darwin':
-            # On Mac OS the HFS+ filesystem replaces bytes that aren't valid
+            # On macOS the HFS+ filesystem replaces bytes that aren't valid
             # UTF-8 into a percent-encoded value.
             for name in os.listdir(self.tempdir):
                 if name != 'test': # Ignore a filename created in setUp().

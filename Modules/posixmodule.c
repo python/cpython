@@ -1209,7 +1209,7 @@ win32_get_reparse_tag(HANDLE reparse_point_handle, ULONG *reparse_tag)
 
 /* Return a dictionary corresponding to the POSIX environment table */
 #if defined(WITH_NEXT_FRAMEWORK) || (defined(__APPLE__) && defined(Py_ENABLE_SHARED))
-/* On Darwin/MacOSX a shared library or framework has no access to
+/* On Darwin/macOS a shared library or framework has no access to
 ** environ directly, we must obtain it with _NSGetEnviron(). See also
 ** man environ(7).
 */
@@ -3079,7 +3079,7 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
 
 #ifdef __APPLE__
     /*
-     * This is for Mac OS X 10.3, which doesn't have lchown.
+     * This is for macOS 10.3, which doesn't have lchown.
      * (But we still have an lchown symbol because of weak-linking.)
      * It doesn't have fchownat either.  So there's no possibility
      * of a graceful failover.
@@ -6067,7 +6067,7 @@ os_getgroups_impl(PyObject *module)
 #endif
     gid_t grouplist[MAX_GROUPS];
 
-    /* On MacOSX getgroups(2) can return more than MAX_GROUPS results
+    /* On macOS getgroups(2) can return more than MAX_GROUPS results
      * This is a helper variable to store the intermediate result when
      * that happens.
      *
@@ -6079,8 +6079,8 @@ os_getgroups_impl(PyObject *module)
     int n;
 
 #ifdef __APPLE__
-    /* Issue #17557: As of OS X 10.8, getgroups(2) no longer raises EINVAL if
-     * there are more groups than can fit in grouplist.  Therefore, on OS X
+    /* Issue #17557: As of macOS 10.8, getgroups(2) no longer raises EINVAL if
+     * there are more groups than can fit in grouplist.  Therefore, on macOS
      * always first call getgroups with length 0 to get the actual number
      * of groups.
      */
@@ -9236,7 +9236,7 @@ os_statvfs_impl(PyObject *module, path_t *path)
 #ifdef HAVE_FSTATVFS
     if (path->fd != -1) {
 #ifdef __APPLE__
-        /* handle weak-linking on Mac OS X 10.3 */
+        /* handle weak-linking on macOS 10.3 */
         if (fstatvfs == NULL) {
             fd_specified("statvfs", path->fd);
             return NULL;
@@ -13039,7 +13039,7 @@ INITFUNC(void)
 
 #ifdef __APPLE__
     /*
-     * Step 2 of weak-linking support on Mac OS X.
+     * Step 2 of weak-linking support on macOS.
      *
      * The code below removes functions that are not available on the
      * currently active platform.

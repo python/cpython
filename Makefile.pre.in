@@ -148,11 +148,11 @@ BLDSHARED=	@BLDSHARED@ $(PY_LDFLAGS)
 LDCXXSHARED=	@LDCXXSHARED@
 DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
-# Executable suffix (.exe on Windows and Mac OS X)
+# Executable suffix (.exe on Windows and macOS)
 EXE=		@EXEEXT@
 BUILDEXE=	@BUILDEXEEXT@
 
-# Short name and location for Mac OS X Python framework
+# Short name and location for macOS Python framework
 UNIVERSALSDK=@UNIVERSALSDK@
 PYTHONFRAMEWORK=	@PYTHONFRAMEWORK@
 PYTHONFRAMEWORKDIR=	@PYTHONFRAMEWORKDIR@
@@ -170,7 +170,7 @@ STRIPFLAG=-s
 # Flags to lipo to produce a 32-bit-only universal executable
 LIPO_32BIT_FLAGS=@LIPO_32BIT_FLAGS@
 
-# Options to enable prebinding (for fast startup prior to Mac OS X 10.3)
+# Options to enable prebinding (for fast startup prior to macOS 10.3)
 OTHER_LIBTOOL_OPT=@OTHER_LIBTOOL_OPT@
 
 # Environment to run shared python without installed libraries
@@ -651,7 +651,7 @@ SRC_GDB_HOOKS=$(srcdir)/Tools/gdb/libpython.py
 $(BUILDPYTHON)-gdb.py: $(SRC_GDB_HOOKS)
 	$(INSTALL_DATA) $(SRC_GDB_HOOKS) $(BUILDPYTHON)-gdb.py
 
-# This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
+# This rule is here for OPENSTEP/Rhapsody/macOS. It builds a temporary
 # minimal framework (not including the Lib directory and such) in the current
 # directory.
 RESSRCDIR=Mac/Resources/framework
@@ -1440,7 +1440,7 @@ sharedinstall: sharedmods
 	-rm $(DESTDIR)$(DESTSHARED)/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py
 	-rm -r $(DESTDIR)$(DESTSHARED)/__pycache__
 
-# Here are a couple of targets for MacOSX again, to install a full
+# Here are a couple of targets for macOS again, to install a full
 # framework-based Python. frameworkinstall installs everything, the
 # subtargets install specific parts. Much of the actual work is offloaded to
 # the Makefile in Mac
@@ -1496,7 +1496,7 @@ frameworkinstallapps:
 
 # Build the bootstrap executable that will spawn the interpreter inside
 # an app bundle within the framework.  This allows the interpreter to
-# run OS X GUI APIs.
+# run macOS GUI APIs.
 frameworkpythonw:
 	cd Mac && $(MAKE) pythonw
 

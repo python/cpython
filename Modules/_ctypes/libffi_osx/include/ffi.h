@@ -62,7 +62,7 @@ extern "C" {
 #	elif defined(__ppc__) || defined(__ppc64__)
 #		define POWERPC_DARWIN
 #	else
-#	error "Unsupported MacOS X CPU type"
+#	error "Unsupported macOS CPU type"
 #	endif
 #else
 #error "Unsupported OS type"

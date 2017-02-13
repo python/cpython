@@ -131,7 +131,7 @@ class FaultHandlerTests(unittest.TestCase):
                 faulthandler._read_null()
                 """,
                 3,
-                # Issue #12700: Read NULL raises SIGILL on Mac OS X Lion
+                # Issue #12700: Read NULL raises SIGILL on macOS Lion
                 '(?:Segmentation fault'
                     '|Bus error'
                     '|Illegal instruction)')

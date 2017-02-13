@@ -574,7 +574,7 @@ Py_Main(int argc, wchar_t **argv)
         setlocale(LC_ALL, "");
         for (p = strtok(buf, ","); p != NULL; p = strtok(NULL, ",")) {
 #ifdef __APPLE__
-            /* Use utf-8 on Mac OS X */
+            /* Use utf-8 on macOS */
             unicode = PyUnicode_FromString(p);
 #else
             unicode = PyUnicode_DecodeLocale(p, "surrogateescape");
@@ -640,7 +640,7 @@ Py_Main(int argc, wchar_t **argv)
     }
 
 #ifdef __APPLE__
-    /* On MacOS X, when the Python interpreter is embedded in an
+    /* On macOS, when the Python interpreter is embedded in an
        application bundle, it gets executed by a bootstrapping script
        that does os.execve() with an argv[0] that's different from the
        actual Python executable. This is needed to keep the Finder happy,

@@ -21,9 +21,9 @@ if _os.name == "nt":
 
 DEFAULT_MODE = RTLD_LOCAL
 if _os.name == "posix" and _sys.platform == "darwin":
-    # On OS X 10.3, we use RTLD_GLOBAL as default mode
+    # On macOS 10.3, we use RTLD_GLOBAL as default mode
     # because RTLD_LOCAL does not work at least on some
-    # libraries.  OS X 10.3 is Darwin 7, so we check for
+    # libraries.  macOS 10.3 is Darwin 7, so we check for
     # that.
 
     if int(_os.uname().release.split('.')[0]) < 8:

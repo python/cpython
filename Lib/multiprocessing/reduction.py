@@ -135,7 +135,7 @@ else:
     __all__ += ['DupFd', 'sendfds', 'recvfds']
     import array
 
-    # On MacOSX we should acknowledge receipt of fds -- see Issue14669
+    # On macOS we should acknowledge receipt of fds -- see Issue14669
     ACKNOWLEDGE = sys.platform == 'darwin'
 
     def sendfds(sock, fds):

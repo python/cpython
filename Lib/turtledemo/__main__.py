@@ -134,7 +134,7 @@ class DemoWindow(object):
 
         if darwin:
             import subprocess
-            # Make sure we are the currently activated OS X application
+            # Make sure we are the currently activated macOS application
             # so that our menu bar appears.
             p = subprocess.Popen(
                     [

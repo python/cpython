@@ -140,7 +140,7 @@ class ImportTests(unittest.TestCase):
 
         if sys.platform == 'darwin':
             self.assertEqual(fs_encoding, 'utf-8')
-            # Mac OS X uses the Normal Form D decomposition
+            # macOS uses the Normal Form D decomposition
             # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
             special_char = b'a\xcc\x88'
         else:

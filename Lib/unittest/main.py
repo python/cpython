@@ -26,7 +26,7 @@ Examples:
 """
 
 def _convert_name(name):
-    # on Linux / Mac OS X 'foo.PY' is not importable, but on
+    # on Linux / macOS 'foo.PY' is not importable, but on
     # Windows it is. Simpler to do a case insensitive match
     # a better check would be to check that the name is a
     # valid Python module name.
