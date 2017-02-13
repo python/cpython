@@ -2,9 +2,9 @@ codecov:
   notify:
     require_ci_to_pass: true
 comment:
-  behavior: new
-  layout: header, diff
-  require_changes: false
+  behavior: once
+  layout: diff
+  require_changes: true
 coverage:
   precision: 2
   range:
@@ -13,8 +13,12 @@ coverage:
   round: down
   status:
     changes: false
-    patch: true
-    project: true
+    patch:
+      only_pulls: true
+      paths:
+        - Lib/*
+        - Modules/*
+    project: false
 parsers:
   gcov:
     branch_detection:
