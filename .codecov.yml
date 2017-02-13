@@ -13,8 +13,12 @@ coverage:
   round: down
   status:
     changes: false
-    patch: true
-    project: true
+    patch:
+      default:
+        threshold: 0.01
+    project:
+      default:
+        threshold: 0.01
 parsers:
   gcov:
     branch_detection:
