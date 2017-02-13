@@ -265,9 +265,12 @@ class TraceTestCase(unittest.TestCase):
                 "\n".join(difflib.ndiff([str(x) for x in expected_events],
                                         [str(x) for x in events])))
 
-    def run_and_compare(self, func, events):
+    def run_and_compare(self, func, events, **kwargs):
         tracer = Tracer()
-        sys.settrace(tracer.trace)
+        if kwargs:
+            sys.settracestate(tracer.trace, **kwargs)
+        else: # test the older settrace function if no flags are specified.
+            sys.settrace(tracer.trace)
         func()
         sys.settrace(None)
         self.compare_events(func.__code__.co_firstlineno,
@@ -396,6 +399,68 @@ class TraceTestCase(unittest.TestCase):
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line')])
+
+    def test_18_settracestate_kwargs(self):
+        def tracer(frame, event, arg):
+            pass
+        # 'tracefunc' parameter is mandatory.
+        self.assertRaises(TypeError, sys.settracestate)
+        # 'trace_instructions' is a keyword-only parameter.
+        self.assertRaises(TypeError, sys.settracestate, tracer, True)
+
+    def test_18_settrace_gettracestate(self):
+        def tracer(frame, event, arg):
+            pass
+        sys.settrace(tracer)
+        state = sys.gettracestate()
+        exp_state = {
+            'trace_func': tracer,
+            'trace_instructions': False }
+        self.assertDictEqual(exp_state, state)
+
+    def test_19_settracestate_gettracestate(self):
+        def tracer(frame, event, arg):
+            pass
+        exp_state = {
+            'trace_func': tracer,
+            'trace_instructions': True }
+        sys.settracestate(**exp_state)
+        state = sys.gettracestate()
+        self.assertDictEqual(exp_state, state)
+
+    def test_20_settracestate_gettrace_raises(self):
+        def tracer(frame, event, arg):
+            pass
+        sys.settracestate(tracer, trace_instructions=False)
+        self.assertEqual(tracer, sys.gettrace())
+        # gettrace raises whenever the exteneded state is out of defaults;
+        # this protects against the old save/restore idiom whenever it does not
+        # capture the full state.
+        sys.settracestate(tracer, trace_instructions=True)
+        self.assertRaises(ValueError, sys.gettrace)
+
+    def test_21_trace_instructions(self):
+        def func():
+            cond = True
+            if cond: x = 1
+            else: x = 2
+            return x
+        # TODO: we could define an InstTracer that captures instruction/offset.
+        # This would show exactly what is being traced, but makes the test more
+        # dependent on bytecode internals. Opinions?
+        events = [
+            (0, 'call'),
+            (1, 'line'),
+            (1, 'instruction'),
+            (2, 'line'),
+            (2, 'instruction'),
+            (2, 'instruction'),
+            (2, 'instruction'),
+            (2, 'instruction'),
+            (4, 'line'),
+            (4, 'instruction'),
+            (4, 'return')]
+        self.run_and_compare(func, events, trace_instructions=True)
 
 
 class RaisingTraceFuncTestCase(unittest.TestCase):
