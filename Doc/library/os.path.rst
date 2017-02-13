@@ -312,7 +312,7 @@ the :mod:`glob` module.)
 
 .. function:: normcase(path)
 
-   Normalize the case of a pathname.  On Unix and Mac OS X, this returns the
+   Normalize the case of a pathname.  On Unix and macOS, this returns the
    path unchanged; on case-insensitive filesystems, it converts the path to
    lowercase.  On Windows, it also converts forward slashes to backward slashes.
    Raise a TypeError if the type of *path* is not ``str`` or ``bytes`` (directly

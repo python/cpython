@@ -105,7 +105,7 @@ What's New in IDLE 2.6
 
 - Clean up EditorWindow close.
 
-- Patch 1693258: Fix for duplicate "preferences" menu-OS X. Backport of r56204.
+- Patch 1693258: Fix for duplicate "preferences" menu-macOS. Backport of r56204.
 
 - OSX: Avoid crash for those versions of Tcl/Tk which don't have a console
 
@@ -169,10 +169,10 @@ What's New in IDLE 1.2?
 
 - Bug #1525817: Don't truncate short lines in IDLE's tool tips.
 
-- Bug #1517990: IDLE keybindings on MacOS X now work correctly
+- Bug #1517990: IDLE keybindings on macOS now work correctly
 
 - Bug #1517996: IDLE now longer shows the default Tk menu when a
-  path browser, class browser or debugger is the frontmost window on MacOS X
+  path browser, class browser or debugger is the frontmost window on macOS
 
 - EditorWindow.test() was failing.  Bug 1417598
 

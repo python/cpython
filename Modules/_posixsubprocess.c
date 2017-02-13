@@ -88,7 +88,7 @@ _pos_int_from_ascii(const char *name)
 /* When /dev/fd isn't mounted it is often a static directory populated
  * with 0 1 2 or entries for 0 .. 63 on FreeBSD, NetBSD and OpenBSD.
  * NetBSD and OpenBSD have a /proc fs available (though not necessarily
- * mounted) and do not have fdescfs for /dev/fd.  MacOS X has a devfs
+ * mounted) and do not have fdescfs for /dev/fd.  macOS has a devfs
  * that properly supports /dev/fd.
  */
 static int

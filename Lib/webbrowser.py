@@ -539,7 +539,7 @@ if sys.platform[:3] == "win":
 if sys.platform == 'darwin':
     # Adapted from patch submitted to SourceForge by Steven J. Burr
     class MacOSX(BaseBrowser):
-        """Launcher class for Aqua browsers on Mac OS X
+        """Launcher class for Aqua browsers on macOS
 
         Optionally specify a browser name on instantiation.  Note that this
         will not work for Aqua browsers if the user has moved the application
@@ -608,8 +608,8 @@ if sys.platform == 'darwin':
             return not rc
 
 
-    # Don't clear _tryorder or _browsers since OS X can use above Unix support
-    # (but we prefer using the OS X specific stuff)
+    # Don't clear _tryorder or _browsers since macOS can use above Unix support
+    # (but we prefer using the macOS specific stuff)
     register("safari", None, MacOSXOSAScript('safari'), -1)
     register("firefox", None, MacOSXOSAScript('firefox'), -1)
     register("chrome", None, MacOSXOSAScript('chrome'), -1)

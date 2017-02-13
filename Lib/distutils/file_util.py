@@ -83,7 +83,7 @@ def copy_file(src, dst, preserve_mode=1, preserve_times=1, update=0,
     linking is available. If hardlink fails, falls back to
     _copy_file_contents().
 
-    Under Mac OS, uses the native file copy function in macostools; on
+    Under macOS, uses the native file copy function in macostools; on
     other systems, uses '_copy_file_contents()' to copy file contents.
 
     Return a tuple (dest_name, copied): 'dest_name' is the actual name of

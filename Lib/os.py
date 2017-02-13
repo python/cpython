@@ -135,7 +135,7 @@ if _exists("_have_functions"):
     _add("HAVE_FUTIMENS",   "utime")
     _add("HAVE_FUTIMES",    "utime")
     _add("HAVE_FPATHCONF",  "pathconf")
-    if _exists("statvfs") and _exists("fstatvfs"): # mac os x10.3
+    if _exists("statvfs") and _exists("fstatvfs"): # macOS 10.3
         _add("HAVE_FSTATVFS", "statvfs")
     supports_fd = _set
 
@@ -166,7 +166,7 @@ if _exists("_have_functions"):
     _add("HAVE_FSTATAT",    "stat")
     _add("HAVE_LCHFLAGS",   "chflags")
     _add("HAVE_LCHMOD",     "chmod")
-    if _exists("lchown"): # mac os x10.3
+    if _exists("lchown"): # macOS 10.3
         _add("HAVE_LCHOWN", "chown")
     _add("HAVE_LINKAT",     "link")
     _add("HAVE_LUTIMES",    "utime")

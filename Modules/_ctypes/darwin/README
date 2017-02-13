@@ -73,7 +73,7 @@ Notes
 If you are writing new software and plan to have Mac OX X compatibility you
 should look at the dyld api's in /usr/include/mach-o/dyld.h, rather than
 using dlcompat, using the native api's is the supported method of loading
-dynamically on Mac OS X, if you want an small example, look at dlfcn_simple.c,
+dynamically on macOS, if you want an small example, look at dlfcn_simple.c,
 which should help get you started.
 
 Also note that the functions in dlcompat are not thread safe, and while it is not

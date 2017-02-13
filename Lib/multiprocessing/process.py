@@ -301,7 +301,7 @@ class _MainProcess(BaseProcess):
         # semaphores to have names of up to 14 characters.  Therefore
         # we choose a short prefix.
         #
-        # On MacOSX in a sandbox it may be necessary to use a
+        # On macOS in a sandbox it may be necessary to use a
         # different prefix -- see #19478.
         #
         # Everything in self._config will be inherited by descendant

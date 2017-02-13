@@ -147,7 +147,7 @@ AC_DEFINE(__BSD_VISIBLE, 1, [Define on FreeBSD to activate all library features]
 AC_DEFINE(_BSD_TYPES, 1, [Define on Irix to enable u_int])
 
 # The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
-# certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
+# certain features on macOS, so we need _DARWIN_C_SOURCE to re-enable
 # them.
 AC_DEFINE(_DARWIN_C_SOURCE, 1, [Define on Darwin to activate all library features])
 
@@ -160,7 +160,7 @@ CONFIG_ARGS="$ac_configure_args"
 
 AC_MSG_CHECKING([for --enable-universalsdk])
 AC_ARG_ENABLE(universalsdk,
-	AS_HELP_STRING([--enable-universalsdk@<:@=SDKDIR@:>@], [Build fat binary against Mac OS X SDK]),
+	AS_HELP_STRING([--enable-universalsdk@<:@=SDKDIR@:>@], [Build fat binary against macOS SDK]),
 [
 	case $enableval in
 	yes)
@@ -495,12 +495,12 @@ case $ac_sys_system/$ac_sys_release in
   # with _XOPEN_SOURCE and __BSD_VISIBLE does not re-enable them.
   FreeBSD/4.*)
     define_xopen_source=no;;
-  # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
+  # On macOS 10.2, a bug in ncurses.h means that it craps out if
   # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
   # identifies itself as Darwin/7.*
-  # On Mac OS X 10.4, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
+  # On macOS 10.4, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
   # disables platform specific features beyond repair.
-  # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
+  # On macOS 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
   # has no effect, don't bother defining them
   Darwin/@<:@6789@:>@.*)
     define_xopen_source=no;;
@@ -640,7 +640,7 @@ fi
 
 if test "$ac_sys_system" = "Darwin"
 then
-	# Compiler selection on MacOSX is more complicated than
+	# Compiler selection on macOS is more complicated than
 	# AC_PROG_CC can handle, see Mac/README.txt for more
 	# information
 	if test -z "${CC}"
@@ -1002,7 +1002,7 @@ AC_MSG_RESULT($LIBRARY)
 
 # LDLIBRARY is the name of the library to link against (as opposed to the
 # name of the library into which to insert object files). BLDLIBRARY is also
-# the library to link against, usually. On Mac OS X frameworks, BLDLIBRARY
+# the library to link against, usually. On macOS frameworks, BLDLIBRARY
 # is blank as the main program is not linked directly against LDLIBRARY.
 # LDLIBRARYDIR is the path to LDLIBRARY, which is made in a subdirectory. On
 # systems without shared libraries, LDLIBRARY is the same as LIBRARY
@@ -1122,12 +1122,12 @@ fi
 
 AC_MSG_CHECKING(LDLIBRARY)
 
-# MacOSX framework builds need more magic. LDLIBRARY is the dynamic
+# macOS framework builds need more magic. LDLIBRARY is the dynamic
 # library that we build, but we do not want to link against it (we
 # will find it with a -framework option). For this reason there is an
 # extra variable BLDLIBRARY against which Python and the extension
 # modules are linked, BLDLIBRARY. This is normally the same as
-# LDLIBRARY, but empty for MacOSX framework builds.
+# LDLIBRARY, but empty for macOS framework builds.
 if test "$enable_framework"
 then
   LDLIBRARY='$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
@@ -1676,7 +1676,7 @@ yes)
     # results in non-standard code paths.
     # Issue #24324: Unfortunately, the unreachable code warning does not work
     # correctly on gcc and has been silently removed from the compiler.
-    # It is supported on clang but on OS X systems gcc may be an alias
+    # It is supported on clang but on macOS systems gcc may be an alias
     # for clang.  Try to determine if the compiler is not really gcc and,
     # if so, only then enable the warning.
     if test $ac_cv_enable_unreachable_code_warning = yes && \
@@ -1797,9 +1797,9 @@ yes)
         # Use the value from:
         # 1. the MACOSX_DEPLOYMENT_TARGET environment variable if specified
         # 2. the operating system version of the build machine if >= 10.6
-        # 3. If running on OS X 10.3 through 10.5, use the legacy tests
+        # 3. If running on macOS 10.3 through 10.5, use the legacy tests
         #       below to pick either 10.3, 10.4, or 10.5 as the target.
-        # 4. If we are running on OS X 10.2 or earlier, good luck!
+        # 4. If we are running on macOS 10.2 or earlier, good luck!
 
         AC_MSG_CHECKING(which MACOSX_DEPLOYMENT_TARGET to use)
         cur_target_major=`sw_vers -productVersion | \
@@ -1811,7 +1811,7 @@ yes)
            test ${cur_target_minor} -ge 3 && \
            test ${cur_target_minor} -le 5
         then
-            # OS X 10.3 through 10.5
+            # macOS 10.3 through 10.5
             cur_target=10.3
             if test ${enable_universalsdk}
             then
@@ -1876,8 +1876,8 @@ then
 fi
 
 # On some compilers, pthreads are available without further options
-# (e.g. MacOS X). On some of these systems, the compiler will not
-# complain if unaccepted options are passed (e.g. gcc on Mac OS X).
+# (e.g. macOS). On some of these systems, the compiler will not
+# complain if unaccepted options are passed (e.g. gcc on macOS).
 # So we have to see first whether pthreads are available without
 # options before we can check whether -Kpthread improves anything.
 AC_MSG_CHECKING(whether pthreads are available without options)
@@ -2067,7 +2067,7 @@ CFLAGS="-std=c99 $CFLAGS"
 AC_CHECK_HEADERS(bluetooth/bluetooth.h)
 CFLAGS=$SAVE_CFLAGS
 
-# On Darwin (OS X) net/if.h requires sys/socket.h to be imported first.
+# On Darwin (macOS) net/if.h requires sys/socket.h to be imported first.
 AC_CHECK_HEADERS([net/if.h], [], [],
 [#include <stdio.h>
 #ifdef STDC_HEADERS
@@ -2477,7 +2477,7 @@ then
 		if test ${dep_target_major} -eq 10 && \
 		   test ${dep_target_minor} -le 2
 		then
-			# building for OS X 10.0 through 10.2
+			# building for macOS 10.0 through 10.2
 			LDSHARED='$(CC) -bundle'
 			LDCXXSHARED='$(CXX) -bundle'
 			if test "$enable_framework" ; then
@@ -2492,7 +2492,7 @@ then
 				LDCXXSHARED="$LDCXXSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 			fi
 		else
-			# building for OS X 10.3 and later
+			# building for macOS 10.3 and later
 			LDSHARED='$(CC) -bundle -undefined dynamic_lookup'
 			LDCXXSHARED='$(CXX) -bundle -undefined dynamic_lookup'
 			BLDSHARED="$LDSHARED"
@@ -3340,7 +3340,7 @@ then
     AC_DEFINE(WITH_DTRACE, 1, [Define if you want to compile in DTrace support])
     DTRACE_HEADERS="Include/pydtrace_probes.h"
 
-    # On OS X, DTrace providers do not need to be explicitly compiled and
+    # On macOS, DTrace providers do not need to be explicitly compiled and
     # linked into the binary. Correspondingly, dtrace(1) is missing the ELF
     # generation flag '-G'. We check for presence of this flag, rather than
     # hardcoding support by OS, in the interest of robustness.

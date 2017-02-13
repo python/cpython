@@ -2252,7 +2252,7 @@ loaded):
   * If built in debug mode, ``<debug>`` will be ``_d``,
     otherwise it will be blank.
 
-* On OS X platforms, extension module filenames now end with ``-darwin.so``.
+* On macOS platforms, extension module filenames now end with ``-darwin.so``.
 
 * On all other platforms, extension module filenames are the same as they were
   with Python 3.4.

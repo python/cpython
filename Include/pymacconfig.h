@@ -2,7 +2,7 @@
 #define PYMACCONFIG_H
      /*
       * This file moves some of the autoconf magic to compile-time
-      * when building on MacOSX. This is needed for building 4-way
+      * when building on macOS. This is needed for building 4-way
       * universal binaries and for 64-bit universal binaries because
       * the values redefined below aren't configure-time constant but
       * only compile-time constant in these scenarios.
@@ -61,7 +61,7 @@
 #    endif
 
 #    if defined(__LP64__)
-     /* MacOSX 10.4 (the first release to support 64-bit code
+     /* macOS 10.4 (the first release to support 64-bit code
       * at all) only supports 64-bit in the UNIX layer.
       * Therefore suppress the toolbox-glue in 64-bit mode.
       */

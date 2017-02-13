@@ -265,7 +265,7 @@ boolean = Boolean = bool
 
 # Issue #13305: different format codes across platforms
 _day0 = datetime(1, 1, 1)
-if _day0.strftime('%Y') == '0001':      # Mac OS X
+if _day0.strftime('%Y') == '0001':      # macOS
     def _iso8601_format(value):
         return value.strftime("%Y%m%dT%H:%M:%S")
 elif _day0.strftime('%4Y') == '0001':   # Linux

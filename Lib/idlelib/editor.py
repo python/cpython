@@ -132,7 +132,7 @@ class EditorWindow(object):
         if macosx.isAquaTk():
             # Command-W on editorwindows doesn't work without this.
             text.bind('<<close-window>>', self.close_event)
-            # Some OS X systems have only one mouse button, so use
+            # Some macOS systems have only one mouse button, so use
             # control-click for popup context menus there. For two
             # buttons, AquaTk defines <2> as the right button, not <3>.
             text.bind("<Control-Button-1>",self.right_menu_event)
@@ -1589,7 +1589,7 @@ keynames = {
 
 def get_accelerator(keydefs, eventname):
     keylist = keydefs.get(eventname)
-    # issue10940: temporary workaround to prevent hang with OS X Cocoa Tk 8.5
+    # issue10940: temporary workaround to prevent hang with macOS Cocoa Tk 8.5
     # if not keylist:
     if (not keylist) or (macosx.isCocoaTk() and eventname in {
                             "<<open-module>>",

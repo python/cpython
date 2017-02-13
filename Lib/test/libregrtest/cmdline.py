@@ -52,7 +52,7 @@ lines beginning with '#' are ignored.  This is especially useful for
 whittling down failures involving interactions among tests.
 
 -L causes the leaks(1) command to be run just before exit if it exists.
-leaks(1) is available on Mac OS X and presumably on some other
+leaks(1) is available on macOS and presumably on some other
 FreeBSD-derived systems.
 
 -R runs each test several times and examines sys.gettotalrefcount() to

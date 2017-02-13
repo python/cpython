@@ -380,7 +380,7 @@ def _generate_posix_vars():
     if _PYTHON_BUILD:
         vars['BLDSHARED'] = vars['LDSHARED']
 
-    # There's a chicken-and-egg situation on OS X with regards to the
+    # There's a chicken-and-egg situation on macOS with regards to the
     # _sysconfigdata module after the changes introduced by #15298:
     # get_config_vars() is called by get_platform() as part of the
     # `make pybuilddir.txt` target -- which is a precursor to the
@@ -574,7 +574,7 @@ def get_config_vars(*args):
                 srcdir = os.path.dirname(get_makefile_filename())
         _CONFIG_VARS['srcdir'] = _safe_realpath(srcdir)
 
-        # OS X platforms require special customization to handle
+        # macOS platforms require special customization to handle
         # multi-architecture, multi-os-version installers
         if sys.platform == 'darwin':
             import _osx_support

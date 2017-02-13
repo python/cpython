@@ -183,7 +183,7 @@ class FileList:
         are not quite the same as implemented by the 'fnmatch' module: '*'
         and '?'  match non-special characters, where "special" is platform-
         dependent: slash on Unix; colon, slash, and backslash on
-        DOS/Windows; and colon on Mac OS.
+        DOS/Windows; and colon on macOS.
 
         If 'anchor' is true (the default), then the pattern match is more
         stringent: "*.py" will match "foo.py" but not "foo/bar.py".  If

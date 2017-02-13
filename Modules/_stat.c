@@ -466,8 +466,8 @@ UF_IMMUTABLE: file may not be changed\n\
 UF_APPEND: file may only be appended to\n\
 UF_OPAQUE: directory is opaque when viewed through a union stack\n\
 UF_NOUNLINK: file may not be renamed or deleted\n\
-UF_COMPRESSED: OS X: file is hfs-compressed\n\
-UF_HIDDEN: OS X: file should not be displayed\n\
+UF_COMPRESSED: macOS: file is hfs-compressed\n\
+UF_HIDDEN: macOS: file should not be displayed\n\
 SF_ARCHIVED: file may be archived\n\
 SF_IMMUTABLE: file may not be changed\n\
 SF_APPEND: file may only be appended to\n\

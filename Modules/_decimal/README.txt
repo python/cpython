@@ -27,7 +27,7 @@ level directory. setup.py autodetects the following build configurations:
 
    6) ansi-legacy - 32-bit Python, compiler without uint64_t
 
-   7) universal   - Mac OS only (multi-arch)
+   7) universal   - macOS only (multi-arch)
 
 
 It is possible to override autodetection by exporting:

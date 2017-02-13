@@ -5,7 +5,7 @@
 ****************************************************************
 
 This will append site-specific paths to the module search path.  On
-Unix (including Mac OSX), it starts with sys.prefix and
+Unix (including macOS), it starts with sys.prefix and
 sys.exec_prefix (if different) and appends
 lib/python<version>/site-packages.
 On other platforms (such as Windows), it tries each of the
@@ -402,7 +402,7 @@ def enablerlcompleter():
         except OSError:
             # An OSError here could have many causes, but the most likely one
             # is that there's no .inputrc file (or .editrc file in the case of
-            # Mac OS X + libedit) in the expected location.  In that case, we
+            # macOS + libedit) in the expected location.  In that case, we
             # want to ignore the exception.
             pass
 

@@ -481,7 +481,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
 
         # On AIX, the reader trick (to be notified when the read end of the
         # socket is closed) only works for sockets. On other platforms it
-        # works for pipes and sockets. (Exception: OS X 10.4?  Issue #19294.)
+        # works for pipes and sockets. (Exception: macOS 10.4?  Issue #19294.)
         if is_socket or (is_fifo and not sys.platform.startswith("aix")):
             # only start reading when connection_made() has been called
             self._loop.call_soon(self._loop._add_reader,

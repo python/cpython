@@ -159,7 +159,7 @@ def customize_compiler(compiler):
     if compiler.compiler_type == "unix":
         if sys.platform == "darwin":
             # Perform first-time customization of compiler-related
-            # config vars on OS X now that we know we need a compiler.
+            # config vars on macOS now that we know we need a compiler.
             # This is primarily to support Pythons from binary
             # installers.  The kind and paths to build tools on
             # the user system may vary significantly from the system
@@ -182,7 +182,7 @@ def customize_compiler(compiler):
             if (sys.platform == 'darwin'
                     and 'LDSHARED' not in os.environ
                     and ldshared.startswith(cc)):
-                # On OS X, if CC is overridden, use that as the default
+                # On macOS, if CC is overridden, use that as the default
                 #       command for LDSHARED as well
                 ldshared = newcc + ldshared[len(cc):]
             cc = newcc
@@ -510,7 +510,7 @@ def get_config_vars(*args):
                 srcdir = os.path.join(base, _config_vars['srcdir'])
                 _config_vars['srcdir'] = os.path.normpath(srcdir)
 
-        # OS X platforms require special customization to handle
+        # macOS platforms require special customization to handle
         # multi-architecture, multi-os-version installers
         if sys.platform == 'darwin':
             import _osx_support

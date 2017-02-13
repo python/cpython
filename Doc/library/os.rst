@@ -37,7 +37,7 @@ Notes on the availability of these functions:
   operating system.
 
 * If not separately noted, all functions that claim "Availability: Unix" are
-  supported on Mac OS X, which builds on a Unix core.
+  supported on macOS, which builds on a Unix core.
 
 .. Availability notes get their own line and occur at the end of the function
 .. documentation.
@@ -134,7 +134,7 @@ process and user.
 
    .. note::
 
-      On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
+      On some platforms, including FreeBSD and macOS, setting ``environ`` may
       cause memory leaks.  Refer to the system documentation for
       :c:func:`putenv`.
 
@@ -307,7 +307,7 @@ process and user.
 
    .. note::
 
-      On Mac OS X, :func:`getgroups` behavior differs somewhat from
+      On macOS, :func:`getgroups` behavior differs somewhat from
       other Unix platforms. If the Python interpreter was built with a
       deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
       the list of effective group ids associated with the current user process;
@@ -450,7 +450,7 @@ process and user.
 
    .. note::
 
-      On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
+      On some platforms, including FreeBSD and macOS, setting ``environ`` may
       cause memory leaks. Refer to the system documentation for putenv.
 
    When :func:`putenv` is supported, assignments to items in ``os.environ`` are
@@ -488,7 +488,7 @@ process and user.
 
    Availability: Unix.
 
-   .. note:: On Mac OS X, the length of *groups* may not exceed the
+   .. note:: On macOS, the length of *groups* may not exceed the
       system-defined maximum number of effective group ids, typically 16.
       See the documentation for :func:`getgroups` for cases where it may not
       return the same group list set by calling setgroups().
@@ -1130,11 +1130,11 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    On Linux, if *offset* is given as ``None``, the bytes are read from the
    current position of *in* and the position of *in* is updated.
 
-   The second case may be used on Mac OS X and FreeBSD where *headers* and
+   The second case may be used on macOS and FreeBSD where *headers* and
    *trailers* are arbitrary sequences of buffers that are written before and
    after the data from *in* is written. It returns the same as the first case.
 
-   On Mac OS X and FreeBSD, a value of 0 for *count* specifies to send until
+   On macOS and FreeBSD, a value of 0 for *count* specifies to send until
    the end of *in* is reached.
 
    All platforms support sockets as *out* file descriptor, and some platforms
@@ -2372,7 +2372,7 @@ features:
 
       Time of file creation.
 
-   On Mac OS systems, the following attributes may also be available:
+   On macOS systems, the following attributes may also be available:
 
    .. attribute:: st_rsize
 

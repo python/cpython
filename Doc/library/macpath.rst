@@ -1,15 +1,15 @@
-:mod:`macpath` --- Mac OS 9 path manipulation functions
+:mod:`macpath` --- macOS 9 path manipulation functions
 =======================================================
 
 .. module:: macpath
-   :synopsis: Mac OS 9 path manipulation functions.
+   :synopsis: macOS 9 path manipulation functions.
 
 **Source code:** :source:`Lib/macpath.py`
 
 --------------
 
-This module is the Mac OS 9 (and earlier) implementation of the :mod:`os.path`
-module. It can be used to manipulate old-style Macintosh pathnames on Mac OS X
+This module is the macOS 9 (and earlier) implementation of the :mod:`os.path`
+module. It can be used to manipulate old-style Macintosh pathnames on macOS
 (or any other platform).
 
 The following functions are available in this module: :func:`normcase`,

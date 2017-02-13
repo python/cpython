@@ -1,8 +1,8 @@
-:mod:`plistlib` --- Generate and parse Mac OS X ``.plist`` files
+:mod:`plistlib` --- Generate and parse macOS ``.plist`` files
 ================================================================
 
 .. module:: plistlib
-   :synopsis: Generate and parse Mac OS X plist files.
+   :synopsis: Generate and parse macOS plist files.
 
 .. moduleauthor:: Jack Jansen
 .. sectionauthor:: Georg Brandl <georg@python.org>
@@ -17,7 +17,7 @@
 --------------
 
 This module provides an interface for reading and writing the "property list"
-files used mainly by Mac OS X and supports both binary and XML plist files.
+files used mainly by macOS and supports both binary and XML plist files.
 
 The property list (``.plist``) file format is a simple serialization supporting
 basic object types, like dictionaries, lists, numbers and strings.  Usually the

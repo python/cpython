@@ -465,7 +465,7 @@ try:
     import sys
 
     # The uuid_generate_* routines are provided by libuuid on at least
-    # Linux and FreeBSD, and provided by libc on Mac OS X.
+    # Linux and FreeBSD, and provided by libc on macOS.
     _libnames = ['uuid']
     if not sys.platform.startswith('win'):
         _libnames.append('c')
@@ -479,7 +479,7 @@ try:
             break
     del _libnames
 
-    # The uuid_generate_* functions are broken on MacOS X 10.5, as noted
+    # The uuid_generate_* functions are broken on macOS 10.5, as noted
     # in issue #8621 the function generates the same sequence of values
     # in the parent process and all children created using fork (unless
     # those children use exec as well).

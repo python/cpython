@@ -23,7 +23,7 @@ Release date: 2017-01-02
 Core and Builtins
 -----------------
 
-- Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on Mac OS X
+- Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on macOS
   when decode astral characters.  Patch by Xiang Zhang.
 
 - Issue #28426: Fixed potential crash in PyUnicode_AsDecodedObject() in debug
@@ -445,7 +445,7 @@ Library
 - Issue #23254: Document how to close the TCPServer listening socket.
   Patch from Martin Panter.
 
-- Issue #19450: Update Windows and OS X installer builds to use SQLite 3.8.11.
+- Issue #19450: Update Windows and macOS installer builds to use SQLite 3.8.11.
 
 - Issue #23441: rcompleter now prints a tab character instead of displaying
   possible completions for an empty word.  Initial patch by Martin Sekera.
@@ -697,7 +697,7 @@ Library
   flush() was not called in close() if closefd=False.
 
 - Issue #23374: Fixed pydoc failure with non-ASCII files when stdout encoding
-  differs from file system encoding (e.g. on Mac OS).
+  differs from file system encoding (e.g. on macOS).
 
 - Issue #23481: Remove RC4 from the SSL module's default cipher list.
 
@@ -797,7 +797,7 @@ IDLE
   Patch by Mark Roseman.
 
 - Issue #25173: Associate tkinter messageboxes with a specific widget.
-  For Mac OSX, make them a 'sheet'.  Patch by Mark Roseman.
+  For macOS, make them a 'sheet'.  Patch by Mark Roseman.
 
 - Issue #25198: Enhance the initial html viewer now used for Idle Help.
   * Properly indent fixed-pitch text (patch by Mark Roseman).
@@ -879,7 +879,7 @@ Build
   the resulting executable faster.
 
 - Issue #24603: Update Windows builds to use OpenSSL1.0.2d
-  and OS X 10.5 installer to use OpenSSL 1.0.2e.
+  and macOS 10.5 installer to use OpenSSL 1.0.2e.
 
 C API
 -----
@@ -1285,9 +1285,9 @@ Tests
 - Issue #21456: Skip two tests in test_urllib2net.py if _ssl module not
   present. Patch by Remi Pointel.
 
-- Issue #22770: Prevent some Tk segfaults on OS X when running gui tests.
+- Issue #22770: Prevent some Tk segfaults on macOS when running gui tests.
 
-- Issue #23211: Workaround test_logging failure on some OS X 10.6 systems.
+- Issue #23211: Workaround test_logging failure on some macOS 10.6 systems.
 
 - Issue #23345: Prevent test_ssl failures with large OpenSSL patch level
   values (like 0.9.8zc).
@@ -1310,7 +1310,7 @@ Build
 
 - Issue #17219: Add library build dir for Python extension cross-builds.
 
-- Issue #17128: Use private version of OpenSSL for 3.4.3 OS X 10.5+ installer.
+- Issue #17128: Use private version of OpenSSL for 3.4.3 macOS 10.5+ installer.
 
 C API
 -----
@@ -1435,7 +1435,7 @@ Library
 - Issue #22384: An exception in Tkinter callback no longer crashes the program
   when it is run with pythonw.exe.
 
-- Issue #22168: Prevent turtle AttributeError with non-default Canvas on OS X.
+- Issue #22168: Prevent turtle AttributeError with non-default Canvas on macOS.
 
 - Issue #21147: sqlite3 now raises an exception if the request contains a null
   character instead of truncate it.  Based on patch by Victor Stinner.
@@ -1519,7 +1519,7 @@ Library
 - Issue #21580: Now Tkinter correctly handles bytes arguments passed to Tk.
   In particular this allows to initialize images from binary data.
 
-- Issue #17172: Make turtledemo start as active on OS X even when run with
+- Issue #17172: Make turtledemo start as active on macOS even when run with
   subprocess.  Patch by Lita Cho.
 
 - Issue #21704: Fix build error for _multiprocessing when semaphores
@@ -1691,7 +1691,7 @@ Extension Modules
 Build
 -----
 
-- Issue #15661: python.org OS X installers are now distributed as signed
+- Issue #15661: python.org macOS installers are now distributed as signed
   installer packages compatible with the Gatekeeper security feature.
 
 - Issue #21958: Define HAVE_ROUND when building with Visual Studio 2013 and
@@ -1702,7 +1702,7 @@ Build
 
 - Issue #17095: Fix Modules/Setup *shared* support.
 
-- Issue #21811: Anticipated fixes to support OS X versions > 10.9.
+- Issue #21811: Anticipated fixes to support macOS versions > 10.9.
 
 - Issue #21166: Prevent possible segfaults and other random failures of
   python --generate-posix-vars in pybuilddir.txt build target.
@@ -1958,7 +1958,7 @@ Library
 - Issue #21222: Passing name keyword argument to mock.create_autospec now
   works.
 
-- Issue #21197: Add lib64 -> lib symlink in venvs on 64-bit non-OS X POSIX.
+- Issue #21197: Add lib64 -> lib symlink in venvs on 64-bit non-macOS POSIX.
 
 - Issue #17498: Some SMTP servers disconnect after certain errors, violating
   strict RFC conformance.  Instead of losing the error code when we issue the
@@ -2085,7 +2085,7 @@ Library
   configurations.  Patch by John Szakmeister.
 
 - Issue #11571: Ensure that the turtle window becomes the topmost window
-  when launched on OS X.
+  when launched on macOS.
 
 Extension Modules
 -----------------
@@ -2102,7 +2102,7 @@ IDLE
 
 - Issue #21284: Paragraph reformat test passes after user changes reformat width.
 
-- Issue #17654: Ensure IDLE menus are customized properly on OS X for
+- Issue #17654: Ensure IDLE menus are customized properly on macOS for
   non-framework builds and for all variants of Tk.
 
 Build
@@ -2117,7 +2117,7 @@ Build
   include directories if they aren't already being searched. This avoids
   an explicit runtime library dependency.
 
-- Issue #20644: OS X installer build support for documentation build changes
+- Issue #20644: macOS installer build support for documentation build changes
   in 3.4.1: assume externally supplied sphinx-build is available in /usr/bin.
 
 C API
@@ -2174,7 +2174,7 @@ Tests
 - Issue #20668: asyncio tests no longer rely on tests.txt file.
   (Patch by Vajrasky Kok)
 
-- Issue #21093: Prevent failures of ctypes test_macholib on OS X if a
+- Issue #21093: Prevent failures of ctypes test_macholib on macOS if a
   copy of libz exists in $HOME/lib or /usr/local/lib.
 
 Tools/Demos
@@ -2243,7 +2243,7 @@ Build
   uninstalling pip (rather than failing) if the user has updated pip to a
   different version from the one bundled with ensurepip.
 
-- Issue #20465: Update OS X and Windows installer builds to use
+- Issue #20465: Update macOS and Windows installer builds to use
   SQLite 3.8.3.1.
 
 
@@ -2532,7 +2532,7 @@ Tests
 - Issue #19990: Added tests for the imghdr module.  Based on patch by
   Claudiu Popa.
 
-- Issue #20474: Fix test_socket "unexpected success" failures on OS X 10.7+.
+- Issue #20474: Fix test_socket "unexpected success" failures on macOS 10.7+.
 
 Tools/Demos
 -----------
@@ -2569,7 +2569,7 @@ Tools/Demos
 Build
 -----
 
-- Issue #20465: Update SQLite shipped with OS X installer to 3.8.3.
+- Issue #20465: Update SQLite shipped with macOS installer to 3.8.3.
 
 C-API
 -----
@@ -2825,7 +2825,7 @@ Tools/Demos
 Build
 -----
 
-- Issue #12837: Silence a tautological comparison warning on OS X under Clang in
+- Issue #12837: Silence a tautological comparison warning on macOS under Clang in
   socketmodule.c.
 
 
@@ -3011,7 +3011,7 @@ Library
   patch by Koobs.
 
 - Issue #19929: Call os.read with 32768 within subprocess.Popen.communicate
-  rather than 4096 for efficiency.  A microbenchmark shows Linux and OS X
+  rather than 4096 for efficiency.  A microbenchmark shows Linux and macOS
   both using ~50% less cpu time this way.
 
 - Issue #19506: Use a memoryview to avoid a data copy when piping data
@@ -3121,7 +3121,7 @@ IDLE
 
 - Issue #19481: print() of string subclass instance in IDLE no longer hangs.
 
-- Issue #18270: Prevent possible IDLE AttributeError on OS X when no initial
+- Issue #18270: Prevent possible IDLE AttributeError on macOS when no initial
   shell window is present.
 
 Tests
@@ -3637,10 +3637,10 @@ Build
 
 - Issue #15792: Correct build options on Win64. Patch by Jeremy Kloth.
 
-- Issue #19373: Apply upstream change to Tk 8.5.15 fixing OS X 10.9
-  screen refresh problem for OS X installer build.
+- Issue #19373: Apply upstream change to Tk 8.5.15 fixing macOS 10.9
+  screen refresh problem for macOS installer build.
 
-- Issue #19649: On OS X, the same set of file names are now installed
+- Issue #19649: On macOS, the same set of file names are now installed
   in bin directories for all configurations: non-framework vs framework,
   and single arch vs universal builds.  pythonx.y-32 is now always
   installed for 64-bit/32-bit universal builds.  The obsolete and
@@ -3652,12 +3652,12 @@ Build
   available to override the default ensurepip "--upgrade" option.  The option
   can also be set with "make [alt]install ENSUREPIP=[upgrade|install|no]".
 
-- Issue #19551: PEP 453 - the OS X installer now installs pip by default.
+- Issue #19551: PEP 453 - the macOS installer now installs pip by default.
 
-- Update third-party libraries for OS X installers: xz 5.0.3 -> 5.0.5,
+- Update third-party libraries for macOS installers: xz 5.0.3 -> 5.0.5,
   SQLite 3.7.13 -> 3.8.1
 
-- Issue #15663: Revert OS X installer built-in Tcl/Tk support for 3.4.0b1.
+- Issue #15663: Revert macOS installer built-in Tcl/Tk support for 3.4.0b1.
   Some third-party projects, such as Matplotlib and PIL/Pillow,
   depended on being able to build with Tcl and Tk frameworks in
   /Library/Frameworks.
@@ -3892,15 +3892,15 @@ Build
 
 - Issue #19130: Correct PCbuild/readme.txt, Python 3.3 and 3.4 require VS 2010.
 
-- Issue #15663: Update OS X 10.6+ installer to use Tcl/Tk 8.5.15.
+- Issue #15663: Update macOS 10.6+ installer to use Tcl/Tk 8.5.15.
 
-- Issue #14499: Fix several problems with OS X universal build support:
+- Issue #14499: Fix several problems with macOS universal build support:
     1. ppc arch detection for extension module builds broke with Xcode 5
-    2. ppc arch detection in configure did not work on OS X 10.4
+    2. ppc arch detection in configure did not work on macOS 10.4
     3. -sysroot and -arch flags were unnecessarily duplicated
     4. there was no obvious way to configure an intel-32 only build.
 
-- Issue #19019: Change the OS X installer build script to use CFLAGS instead
+- Issue #19019: Change the macOS installer build script to use CFLAGS instead
   of OPT for special build options.  By setting OPT, some compiler-specific
   options like -fwrapv were overridden and thus not used, which could result
   in broken interpreters when building with clang.
@@ -4279,10 +4279,10 @@ Build
 - Issue #1584: Provide configure options to override default search paths for
   Tcl and Tk when building _tkinter.
 
-- Issue #15663: Tcl/Tk 8.5.14 is now included with the OS X 10.6+ 64-/32-bit
+- Issue #15663: Tcl/Tk 8.5.14 is now included with the macOS 10.6+ 64-/32-bit
   installer.  It is no longer necessary to install a third-party version of
   Tcl/Tk 8.5 to work around the problems in the Apple-supplied Tcl/Tk 8.5
-  shipped in OS X 10.6 and later releases.
+  shipped in macOS 10.6 and later releases.
 
 Tools/Demos
 -----------
@@ -4435,7 +4435,7 @@ Core and Builtins
 - Issue #18698: Ensure importlib.reload() returns the module out of sys.modules.
 
 - Issue #17857: Prevent build failures with pre-3.5.0 versions of sqlite3,
-  such as was shipped with Centos 5 and Mac OS X 10.4.
+  such as was shipped with Centos 5 and macOS 10.4.
 
 - Issue #17413: sys.settrace callbacks were being passed a string instead of an
   exception instance for the 'value' element of the arg tuple if the exception
@@ -4608,7 +4608,7 @@ Core and Builtins
 - Issue #16290: A float return value from the __complex__ special method is no
   longer accepted in the complex() constructor.
 
-- Issue #16416: On Mac OS X, operating system data are now always
+- Issue #16416: On macOS, operating system data are now always
   encoded/decoded to/from UTF-8/surrogateescape, instead of the locale encoding
   (which may be ASCII if no locale environment variable is set), to avoid
   inconsistencies with os.fsencode() and os.fsdecode() functions which are
@@ -4726,7 +4726,7 @@ Library
 - Issue #17998: Fix an internal error in regular expression engine.
 
 - Issue #17557: Fix os.getgroups() to work with the modified behavior of
-  getgroups(2) on OS X 10.8.  Original patch by Mateusz Lenik.
+  getgroups(2) on macOS 10.8.  Original patch by Mateusz Lenik.
 
 - Issue #18608: Avoid keeping a strong reference to the locale module
   inside the _io module.
@@ -4765,7 +4765,7 @@ Library
 - Issue #9177: Calling read() or write() now raises ValueError, not
   AttributeError, on a closed SSL socket.  Patch by Senko Rasic.
 
-- Issue #18513: Fix behaviour of cmath.rect w.r.t. signed zeros on OS X 10.8 +
+- Issue #18513: Fix behaviour of cmath.rect w.r.t. signed zeros on macOS 10.8 +
   gcc.
 
 - Issue #18479: Changed venv Activate.ps1 to make deactivate a function, and
@@ -4939,7 +4939,7 @@ Library
 - Issue #8240: Set the SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER flag on SSL
   sockets.
 
-- Issue #17269: Workaround for socket.getaddrinfo crash on MacOS X
+- Issue #17269: Workaround for socket.getaddrinfo crash on macOS
   with port None or "0" and flags AI_NUMERICSERV.
 
 - Issue #16986: ElementTree now correctly works with string input when the
@@ -5134,7 +5134,7 @@ Library
 - Issue #17032: The "global" in the "NameError: global name 'x' is not defined"
   error message has been removed.  Patch by Ram Rachum.
 
-- Issue #18080: When building a C extension module on OS X, if the compiler
+- Issue #18080: When building a C extension module on macOS, if the compiler
   is overriden with the CC environment variable, use the new compiler as
   the default for linking if LDSHARED is not also overriden.  This restores
   Distutils behavior introduced in 3.2.3 and inadvertently dropped in 3.3.0.
@@ -5422,7 +5422,7 @@ Library
 - Issue #16972: Have site.addpackage() consider already known paths even when
   none are explicitly passed in. Bug report and fix by Kirill.
 
-- Issue #1602133: on Mac OS X a shared library build (``--enable-shared``)
+- Issue #1602133: on macOS a shared library build (``--enable-shared``)
   now fills the ``os.environ`` variable correctly.
 
 - Issue #15505: `unittest.installHandler` no longer assumes SIGINT handler is
@@ -5514,7 +5514,7 @@ Library
   clears previous values stored in the default section. Same goes for
   ``parser.update({'DEFAULT': {}})``.
 
-- Issue #9586: Redefine SEM_FAILED on MacOSX to keep compiler happy.
+- Issue #9586: Redefine SEM_FAILED on macOS to keep compiler happy.
 
 - Issue #16787: Increase asyncore and asynchat default output buffers size, to
   decrease CPU usage and increase throughput.
@@ -5909,7 +5909,7 @@ IDLE
 
 - Issue #14735: Update IDLE docs to omit "Control-z on Windows".
 
-- Issue #17532: Always include Options menu for IDLE on OS X.
+- Issue #17532: Always include Options menu for IDLE on macOS.
   Patch by Guilherme Simões.
 
 - Issue #17585: Fixed IDLE regression. Now closes when using exit() or quit().
@@ -6180,7 +6180,7 @@ Tests
 - Issue #15557: Added a test suite for the webbrowser module, thanks to Anton
   Barkovsky.
 
-- Issue #16698: Skip posix test_getgroups when built with OS X
+- Issue #16698: Skip posix test_getgroups when built with macOS
   deployment target prior to 10.6.
 
 Build
@@ -6273,7 +6273,7 @@ Build
   source directory.  (Somewhat related to issue #9860.)
 
 - Issue #15587: Enable Tk high-resolution text rendering on Macs with
-  Retina displays.  Applies to Tkinter apps, such as IDLE, on OS X
+  Retina displays.  Applies to Tkinter apps, such as IDLE, on macOS
   framework builds linked with Cocoa Tk 8.5.
 
 - Issue #17161: make install now also installs a python3 man page.
@@ -6625,7 +6625,7 @@ Core and Builtins
   problem because these was no regression test. A test has been added as part of
   this patch)
 
-- Issue #15761: Fix crash when ``PYTHONEXECUTABLE`` is set on Mac OS X.
+- Issue #15761: Fix crash when ``PYTHONEXECUTABLE`` is set on macOS.
 
 - Issue #15726: Fix incorrect bounds checking in PyState_FindModule.  Patch by
   Robin Schreiber.
@@ -6639,7 +6639,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #13370: Ensure that ctypes works on Mac OS X when Python is compiled
+- Issue #13370: Ensure that ctypes works on macOS when Python is compiled
   using the clang compiler.
 
 - Issue #13072: The array module's 'u' format code is now deprecated and will be
@@ -6674,9 +6674,9 @@ Library
 - Issue #15715: `importlib.__import__()` will silence an ImportError when the
   use of fromlist leads to a failed import.
 
-- Issue #14669: Fix pickling of connections and sockets on Mac OS X by
+- Issue #14669: Fix pickling of connections and sockets on macOS by
   sending/receiving an acknowledgment after file descriptor transfer.
-  TestPicklingConnection has been reenabled for Mac OS X.
+  TestPicklingConnection has been reenabled for macOS.
 
 - Issue #11062: Fix adding a message from file to Babyl mailbox.
 
@@ -6686,7 +6686,7 @@ Library
 IDLE
 ----
 
-- Issue #15678: Fix IDLE menus when started from OS X command line (3.3.0b2
+- Issue #15678: Fix IDLE menus when started from macOS command line (3.3.0b2
   regression).
 
 Documentation
@@ -6827,7 +6827,7 @@ Core and Builtins
   calling str() on them.
 
 - Issue #15307: Virtual environments now use symlinks with framework builds on
-  Mac OS X, like other POSIX builds.
+  macOS, like other POSIX builds.
 
 Library
 -------
@@ -6981,8 +6981,8 @@ Library
 - Issue #10924: Fixed `crypt.mksalt()` to use a RNG that is suitable for
   cryptographic purpose.
 
-- Issue #15184: Ensure consistent results of OS X configuration tailoring for
-  universal builds by factoring out common OS X-specific customizations from
+- Issue #15184: Ensure consistent results of macOS configuration tailoring for
+  universal builds by factoring out common macOS-specific customizations from
   sysconfig, distutils.sysconfig, distutils.util, and distutils.unixccompiler
   into a new module _osx_support.
 
@@ -7090,25 +7090,25 @@ Build
 - Issue #11715: Fix multiarch detection without having Debian development tools
   (dpkg-dev) installed.
 
-- Issue #15037: Build OS X installers with local copy of ncurses 5.9 libraries
+- Issue #15037: Build macOS installers with local copy of ncurses 5.9 libraries
   to avoid curses.unget_wch bug present in older versions of ncurses such as
-  those shipped with OS X.
+  those shipped with macOS.
 
-- Issue #15560: Fix building _sqlite3 extension on OS X with an SDK.  Also, for
-  OS X installers, ensure consistent sqlite3 behavior and feature availability
+- Issue #15560: Fix building _sqlite3 extension on macOS with an SDK.  Also, for
+  macOS installers, ensure consistent sqlite3 behavior and feature availability
   by building a local copy of libsqlite3 rather than depending on the wide range
-  of versions supplied with various OS X releases.
+  of versions supplied with various macOS releases.
 
 - Issue #8847: Disable COMDAT folding in Windows PGO builds.
 
-- Issue #14018: Fix OS X Tcl/Tk framework checking when using OS X SDKs.
+- Issue #14018: Fix macOS Tcl/Tk framework checking when using macOS SDKs.
 
-- Issue #16256: OS X installer now sets correct permissions for doc directory.
+- Issue #16256: macOS installer now sets correct permissions for doc directory.
 
 - Issue #15431: Add _freeze_importlib project to regenerate importlib.h on
   Windows. Patch by Kristján Valur Jónsson.
 
-- Issue #14197: For OS X framework builds, ensure links to the shared library
+- Issue #14197: For macOS framework builds, ensure links to the shared library
   are created with the proper ABI suffix.
 
 - Issue #14330: For cross builds, don't use host python, use host search paths
@@ -7427,7 +7427,7 @@ Tests
 Build
 -----
 
-- Issue #13590: Improve support for OS X Xcode 4:
+- Issue #13590: Improve support for macOS Xcode 4:
     * Try to avoid building Python or extension modules with problematic
       llvm-gcc compiler.
     * Since Xcode 4 removes ppc support, extension module builds now
@@ -7442,7 +7442,7 @@ Build
       SDK and --with-universal-archs now defaults to "intel" if ppc
       not available.
 
-- Issue #14225: Fix Unicode support for curses (#12567) on OS X
+- Issue #14225: Fix Unicode support for curses (#12567) on macOS
 
 - Issue #14928: Fix importlib bootstrap issues by using a custom executable
   (Modules/_freeze_importlib) to build Python/importlib.h.
@@ -7456,7 +7456,7 @@ What's New in Python 3.3.0 Alpha 4?
 Core and Builtins
 -----------------
 
-- Issue #14835: Make plistlib output empty arrays & dicts like OS X.
+- Issue #14835: Make plistlib output empty arrays & dicts like macOS.
   Patch by Sidney San Martín.
 
 - Issue #14744: Use the new _PyUnicodeWriter internal API to speed up
@@ -7637,7 +7637,7 @@ Library
   OPTIMIZED_BYTECODE_SUFFIXES, BYTECODE_SUFFIXES, and EXTENSION_SUFFIXES. This
   led to an indirect deprecation of inspect.getmoduleinfo().
 
-- Issue #14662: Prevent shutil failures on OS X when destination does not
+- Issue #14662: Prevent shutil failures on macOS when destination does not
   support chflag operations.  Patch by Hynek Schlawack.
 
 - Issue #14157: Fix time.strptime failing without a year on February 29th.
@@ -8102,7 +8102,7 @@ Library
 - Issue #2843: Add new Tk API to Tkinter.
 
 - Issue #14184: Increase the default stack size for secondary threads on
-  Mac OS X to avoid interpreter crashes when using threads on 10.7.
+  macOS to avoid interpreter crashes when using threads on 10.7.
 
 - Issue #14180: datetime.date.fromtimestamp(),
   datetime.datetime.fromtimestamp() and datetime.datetime.utcfromtimestamp()
@@ -8123,7 +8123,7 @@ Library
   Tkinter.Variables; harmonize exceptions to ValueError; only delete variables
   that have not been deleted; assert that variable names are strings.
 
-- Issue #14104: Implement time.monotonic() on Mac OS X, patch written by
+- Issue #14104: Implement time.monotonic() on macOS, patch written by
   Nicholas Riley.
 
 - Issue #13394: the aifc module now uses warnings.warn() to signal warnings.
@@ -8545,7 +8545,7 @@ Core and Builtins
   into a Try node.
 
 - Issue #9670: Increase the default stack size for secondary threads on
-  Mac OS X and FreeBSD to reduce the chances of a crash instead of a
+  macOS and FreeBSD to reduce the chances of a crash instead of a
   "maximum recursion depth" RuntimeError exception.
   (patch by Ronald Oussoren)
 
@@ -8612,7 +8612,7 @@ Core and Builtins
   seconds, the `subprocess.TimeoutExpired` exception is raised.
 
 - Issue #11650: PyOS_StdioReadline() retries fgets() if it was interrupted
-  (EINTR), for example if the program is stopped with CTRL+z on Mac OS X. Patch
+  (EINTR), for example if the program is stopped with CTRL+z on macOS. Patch
   written by Charles-Francois Natali.
 
 - Issue #9319: Include the filename in "Non-UTF8 code ..." syntax error.
@@ -8744,7 +8744,7 @@ Library
 
 - Issue #13014: Fix a possible reference leak in SSLSocket.getpeercert().
 
-- Issue #13777: Add PF_SYSTEM sockets on OS X.
+- Issue #13777: Add PF_SYSTEM sockets on macOS.
   Patch by Michael Goderbauer.
 
 - Issue #13015: Fix a possible reference leak in defaultdict.__repr__.
@@ -8773,7 +8773,7 @@ Library
   authenticating (since the result may change, according to RFC 4643).
   Patch by Hynek Schlawack.
 
-- Issue #13590: On OS X 10.7 and 10.6 with Xcode 4.2, building
+- Issue #13590: On macOS 10.7 and 10.6 with Xcode 4.2, building
   Distutils-based packages with C extension modules may fail because
   Apple has removed gcc-4.2, the version used to build python.org
   64-bit/32-bit Pythons.  If the user does not explicitly override
@@ -8781,7 +8781,7 @@ Library
   Distutils will now attempt to compile extension modules with clang
   if gcc-4.2 is required but not found. Also as a convenience, if
   the user does explicitly set CC, substitute its value as the default
-  compiler in the Distutils LDSHARED configuration variable for OS X.
+  compiler in the Distutils LDSHARED configuration variable for macOS.
   (Note, the python.org 32-bit-only Pythons use gcc-4.0 and the 10.4u
   SDK, neither of which are available in Xcode 4.  This change does not
   attempt to override settings to support their use with Xcode 4.)
@@ -9448,7 +9448,7 @@ Library
 - Issue #12451: distutils now opens the setup script in binary mode to read the
   encoding cookie, instead of opening it in UTF-8.
 
-- Issue #9516: On Mac OS X, change Distutils to no longer globally attempt to
+- Issue #9516: On macOS, change Distutils to no longer globally attempt to
   check or set the MACOSX_DEPLOYMENT_TARGET environment variable for the
   interpreter process.  This could cause failures in non-Distutils subprocesses
   and was unreliable since tests or user programs could modify the interpreter
@@ -9683,7 +9683,7 @@ Library
 
 - Issue #12002: ftplib's abort() method raises TypeError.
 
-- Issue #11916: Add a number of MacOSX specific definitions to the errno module.
+- Issue #11916: Add a number of macOS specific definitions to the errno module.
   Patch by Pierre Carrier.
 
 - Issue #11999: fixed sporadic sync failure mailbox.Maildir due to its trying to
@@ -9722,7 +9722,7 @@ Library
 
 - functools.cmp_to_key() now works with collections.Hashable().
 
-- Issue #11277: mmap.mmap() calls fcntl(fd, F_FULLFSYNC) on Mac OS X to get
+- Issue #11277: mmap.mmap() calls fcntl(fd, F_FULLFSYNC) on macOS to get
   around a mmap bug with sparse files. Patch written by Steffen Daode Nurpmeso.
 
 - Issue #8407: Add signal.pthread_sigmask() function to fetch and/or change the
@@ -9954,7 +9954,7 @@ Library
 
 - Issue #11569: use absolute path to the sysctl command in multiprocessing to
   ensure that it will be found regardless of the shell PATH. This ensures
-  that multiprocessing.cpu_count works on default installs of MacOSX.
+  that multiprocessing.cpu_count works on default installs of macOS.
 
 - Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
   not installed. Instead, the zipfile.ZIP_STORED compression is used to create
@@ -9969,7 +9969,7 @@ Library
 - Issue #11407: `TestCase.run` returns the result object used or created.
   Contributed by Janathan Hartley.
 
-- Issue #11500: Fixed a bug in the OS X proxy bypass code for fully qualified
+- Issue #11500: Fixed a bug in the macOS proxy bypass code for fully qualified
   IP addresses in the proxy exception list.
 
 - Issue #11491: dbm.error is no longer raised when dbm.open is called with
@@ -10118,7 +10118,7 @@ Build
 
 - Issue #8746: Correct faulty configure checks so that os.chflags() and
   os.lchflags() are once again built on systems that support these
-  functions (BSD and OS X).  Also add new stat file flags for OS X
+  functions (BSD and macOS).  Also add new stat file flags for macOS
   (UF_HIDDEN and UF_COMPRESSED).
 
 - Issue #10645: Installing Python no longer creates a
@@ -10127,7 +10127,7 @@ Build
 - Do not accidentally include the directory containing sqlite.h twice when
   building sqlite3.
 
-- Issue #11217: For 64-bit/32-bit Mac OS X universal framework builds,
+- Issue #11217: For 64-bit/32-bit macOS universal framework builds,
   ensure "make install" creates symlinks in --prefix bin for the "-32"
   files in the framework bin directory like the installer does.
 
@@ -10135,7 +10135,7 @@ Build
 
 - Issue #11411: Fix 'make DESTDIR=' with a relative destination.
 
-- Issue #11268: Prevent Mac OS X Installer failure if Documentation
+- Issue #11268: Prevent macOS Installer failure if Documentation
   package had previously been installed.
 
 - Issue #11495: OSF support is eliminated. It was deprecated in Python 3.2.
@@ -10188,7 +10188,7 @@ IDLE
 - Issue #12590: IDLE editor window now always displays the first line
   when opening a long file.  With Tk 8.5, the first line was hidden.
 
-- Issue #11088: don't crash when using F5 to run a script in IDLE on MacOSX
+- Issue #11088: don't crash when using F5 to run a script in IDLE on macOS
   with Tk 8.5.
 
 - Issue #1028: Tk returns invalid Unicode null in %A: UnicodeDecodeError.
@@ -10296,9 +10296,9 @@ Tests
 - Issue #13447: Add a test file to host regression tests for bugs in the
   scripts found in the Tools directory.
 
-- Issue #10881: Fix test_site failure with OS X framework builds.
+- Issue #10881: Fix test_site failure with macOS framework builds.
 
-- Issue #13901: Prevent test_distutils failures on OS X with --enable-shared.
+- Issue #13901: Prevent test_distutils failures on macOS with --enable-shared.
 
 - Issue #13862: Fix spurious failure in test_zlib due to runtime/compile time
   minor versions not matching.
@@ -10367,7 +10367,7 @@ Tests
 
 - Issue #12573: Add resource checks for dangling Thread and Process objects.
 
-- Issue #12549: Correct test_platform to not fail when OS X returns 'x86_64'
+- Issue #12549: Correct test_platform to not fail when macOS returns 'x86_64'
   as the processor type on some Mac systems.
 
 - Skip network tests when getaddrinfo() returns EAI_AGAIN, meaning a temporary
@@ -10421,7 +10421,7 @@ Tests
   Patch by Garrett Cooper.
 
 - Issue #10736: Fix test_ttk test_widgets failures with Cocoa Tk 8.5.9
-  2.8 +  on Mac OS X.  (Patch by Ronald Oussoren)
+  2.8 +  on macOS.  (Patch by Ronald Oussoren)
 
 - Issue #12057: Add tests for ISO 2022 codecs (iso2022_jp, iso2022_jp_2,
   iso2022_kr).
@@ -10584,7 +10584,7 @@ Documentation
 
 - Issue #13402: Document absoluteness of sys.executable.
 
-- Issue #13883: PYTHONCASEOK also works on OS X.
+- Issue #13883: PYTHONCASEOK also works on macOS.
 
 - Issue #9021: Add an introduction to the copy module documentation.
 
@@ -10620,7 +10620,7 @@ Core and Builtins
 Build
 -----
 
-- Issue #11222: Fix non-framework shared library build on Mac OS X.
+- Issue #11222: Fix non-framework shared library build on macOS.
 
 - Issue #11184: Fix large-file support on AIX.
 
@@ -10666,7 +10666,7 @@ Library
 Build
 -----
 
-- Issue #11079: The /Applications/Python x.x folder created by the Mac OS X
+- Issue #11079: The /Applications/Python x.x folder created by the macOS
   installers now includes a link to the installed documentation and no longer
   includes an Extras directory.  The Tools directory is now installed in the
   framework under share/doc.
@@ -10706,14 +10706,14 @@ Library
 
 - Issue #11045: Protect logging call against None argument.
 
-- Issue #11052: Correct IDLE menu accelerators on Mac OS X for Save
+- Issue #11052: Correct IDLE menu accelerators on macOS for Save
   commands.
 
 - Issue #11053: Fix IDLE "Syntax Error" windows to behave as in 2.x,
-  preventing a confusing hung appearance on OS X with the windows
+  preventing a confusing hung appearance on macOS with the windows
   obscured.
 
-- Issue #10940: Workaround an IDLE hang on Mac OS X 10.6 when using the
+- Issue #10940: Workaround an IDLE hang on macOS 10.6 when using the
   menu accelerators for Open Module, Go to Line, and New Indent Width.
   The accelerators still work but no longer appear in the menu items.
 
@@ -10775,7 +10775,7 @@ Library
 Build
 -----
 
-- Issue #11054: Allow Mac OS X installer builds to again work on 10.5 with
+- Issue #11054: Allow macOS installer builds to again work on 10.5 with
   the system-provided Python.
 
 
@@ -10833,9 +10833,9 @@ Library
   (IndexError is raised instead).  Patch by Ross Lagerwall.
 
 - Issue #10154, #10090: change the normalization of UTF-8 to "UTF-8" instead
-  of "UTF8" in the locale module as the latter is not supported MacOSX and OpenBSD.
+  of "UTF8" in the locale module as the latter is not supported macOS and OpenBSD.
 
-- Issue #10907: Warn OS X 10.6 IDLE users to use ActiveState Tcl/Tk 8.5, rather
+- Issue #10907: Warn macOS 10.6 IDLE users to use ActiveState Tcl/Tk 8.5, rather
   than the currently problematic Apple-supplied one, when running with the
   64-/32-bit installer variant.
 
@@ -11003,11 +11003,11 @@ C-API
 Build
 -----
 
-- Issue #10843: Update third-party library versions used in OS X 32-bit
+- Issue #10843: Update third-party library versions used in macOS 32-bit
   installer builds: bzip2 1.0.6, readline 6.1.2, SQLite 3.7.4 (with FTS3/FTS4
   and RTREE enabled), and ncursesw 5.5 (wide-char support enabled).
 
-- Issue #10820: Fix OS X framework installs to support version-specific
+- Issue #10820: Fix macOS framework installs to support version-specific
   scripts (#10679).
 
 - Issue #7716: Under Solaris, don't assume existence of /usr/xpg4/bin/grep in
@@ -11022,15 +11022,15 @@ Build
 - Issue #10655: Fix the build on PowerPC on Linux with GCC when building with
   timestamp profiling (--with-tsc): the preprocessor test for the PowerPC
   support now looks for "__powerpc__" as well as "__ppc__": the latter seems to
-  only be present on OS X; the former is the correct one for Linux with GCC.
+  only be present on macOS; the former is the correct one for Linux with GCC.
 
-- Issue #1099: Fix the build on MacOSX when building a framework with pydebug
+- Issue #1099: Fix the build on macOS when building a framework with pydebug
   using GCC 4.0.
 
 Tools/Demos
 -----------
 
-- Issue #10843: Install the Tools directory on OS X in the applications Extras
+- Issue #10843: Install the Tools directory on macOS in the applications Extras
   (/Applications/Python 3.n/Extras/) where the Demo directory had previous been
   installed.
 
@@ -11159,7 +11159,7 @@ Tests
 Tools/Demos
 -----------
 
-- Issue #6075: IDLE on Mac OS X now works with both Carbon AquaTk and
+- Issue #6075: IDLE on macOS now works with both Carbon AquaTk and
   Cocoa AquaTk.
 
 - Issue #10710: ``Misc/setuid-prog.c`` is removed from the source tree.
@@ -11517,7 +11517,7 @@ Core and Builtins
 - Issue #10089: Add support for arbitrary -X options on the command line.  They
   can be retrieved through a new attribute ``sys._xoptions``.
 
-- Issue #4388: On Mac OS X, decode command line arguments from UTF-8, instead of
+- Issue #4388: On macOS, decode command line arguments from UTF-8, instead of
   the locale encoding.  If the LANG (and LC_ALL and LC_CTYPE) environment
   variable is not set, the locale encoding is ISO-8859-1, whereas most programs
   (including Python) expect UTF-8.  Python already uses UTF-8 for the filesystem
@@ -12077,7 +12077,7 @@ Library
 
 - logging: Enhanced HTTPHandler with secure and credentials initializers.
 
-- Issue #767645: Set os.path.supports_unicode_filenames to True on Mac OS X.
+- Issue #767645: Set os.path.supports_unicode_filenames to True on macOS.
 
 - Issue #9837: The read() method of ZipExtFile objects (as returned by
   ZipFile.open()) could return more bytes than requested.
@@ -12209,7 +12209,7 @@ Tests
 - Issue #9323: Make test.regrtest.__file__ absolute, this was not always the
   case when running profile or trace, for example.
 
-- Issue #9568: Fix test_urllib2_localnet on OS X 10.3.
+- Issue #9568: Fix test_urllib2_localnet on macOS 10.3.
 
 Build
 -----
@@ -12241,7 +12241,7 @@ Build
 - Issue #4026: Make the fcntl extension build under AIX.  Patch by Sébastien
   Sablé.
 
-- Issue #9701: The MacOSX installer can patch the shell profile to ensure that
+- Issue #9701: The macOS installer can patch the shell profile to ensure that
   the "bin" directory inside the framework is on the shell's search path. This
   feature now also supports the ZSH shell.
 
@@ -12937,7 +12937,7 @@ Core and Builtins
 - Issue #6077: On Windows, files opened with tempfile.TemporaryFile in "wt+"
   mode would appear truncated on the first '0x1a' byte (aka. Ctrl+Z).
 
-- Issue #7085: Fix crash when importing some extensions in a thread on MacOSX
+- Issue #7085: Fix crash when importing some extensions in a thread on macOS
   10.6.
 
 - Issue #1757126: Fix the cyrillic-asian alias for the ptcp154 encoding.
@@ -13050,10 +13050,10 @@ Core and Builtins
 
 - Code objects now support weak references.
 
-- Issue #7072: isspace(0xa0) is true on Mac OS X.
+- Issue #7072: isspace(0xa0) is true on macOS.
 
 - Issue #8084: PEP 370 now conforms to system conventions for framework builds
-  on MacOS X. That is, "python setup.py install --user" will install into
+  on macOS. That is, "python setup.py install --user" will install into
   "~/Library/Python/2.7" instead of "~/.local".
 
 C-API
@@ -13449,7 +13449,7 @@ Library
 - Issue #7755: Use an unencumbered audio file for tests.
 
 - Issue #8621: uuid.uuid4() returned the same sequence of values in the parent
-  and any children created using ``os.fork`` on MacOS X 10.6.
+  and any children created using ``os.fork`` on macOS 10.6.
 
 - Issue #8567: Fix precedence of signals in Decimal module: when a Decimal
   operation raises multiple signals and more than one of those signals is
@@ -13467,7 +13467,7 @@ Library
 - Issue #8354: The siginterrupt setting is now preserved for all signals, not
   just SIGCHLD.
 
-- Issue #7192: webbrowser.get("firefox") now works on Mac OS X, as does
+- Issue #7192: webbrowser.get("firefox") now works on macOS, as does
   webbrowser.get("safari").
 
 - Issue #8464: tarfile no longer creates files with execute permissions set when
@@ -14174,11 +14174,11 @@ Extension Modules
 
 - Issue #9422: Fix memory leak when re-initializing a struct.Struct object.
 
-- Issue #7900: The getgroups(2) system call on MacOSX behaves rather oddly
+- Issue #7900: The getgroups(2) system call on macOS behaves rather oddly
   compared to other unix systems. In particular, os.getgroups() does not reflect
   any changes made using os.setgroups() but basically always returns the same
   information as the id command. os.getgroups() can now return more than 16
-  groups on MacOSX.
+  groups on macOS.
 
 - Issue #6095: Make directory argument to os.listdir optional.
 
@@ -14280,7 +14280,7 @@ Extension Modules
 - Issue #6877: It is now possible to link the readline extension to the libedit
   readline emulation on OSX 10.5 or later.
 
-- Issue #6848: Fix curses module build failure on OS X 10.6.
+- Issue #6848: Fix curses module build failure on macOS 10.6.
 
 - Fix a segfault that could be triggered by expat with specially formed input.
 
@@ -14301,7 +14301,7 @@ Extension Modules
   import lock is now reinitialized after fork.
 
 - Issue #7999: os.setreuid() and os.setregid() would refuse to accept a -1
-  parameter on some platforms such as OS X.
+  parameter on some platforms such as macOS.
 
 - Build the ossaudio extension on GNU/kFreeBSD.
 
@@ -14334,7 +14334,7 @@ Build
   default CFLAGS produced by AC_PROG_CC for gcc.)
 
 - Issue #3646: It is now easily possible to install a Python framework into your
-  home directory on MacOSX, see Mac/README for more information.
+  home directory on macOS, see Mac/README for more information.
 
 - Issue #3928: os.mknod() now available in Solaris, also.
 
@@ -14375,7 +14375,7 @@ Build
   correctly under gcc on x86-64.  This fixes a reported problem with the
   --with-tsc build on x86-64.
 
-- Issue #6802: Fix build issues on MacOSX 10.6.
+- Issue #6802: Fix build issues on macOS 10.6.
 
 - Issue #6244: Allow detect_tkinter to look for Tcl/Tk 8.6.
 
@@ -14463,7 +14463,7 @@ Tests
 - Issue #8263: Now regrtest.py will report a failure if it receives a
   KeyboardInterrupt (SIGINT).
 
-- Issue #8180 and #8207: Fix test_pep277 on OS X and add more tests for special
+- Issue #8180 and #8207: Fix test_pep277 on macOS and add more tests for special
   Unicode normalization cases.
 
 - Issue #7783: test.support.open_urlresource invalidates the outdated files from
@@ -14548,7 +14548,7 @@ Tests
   runtest_inner in regrtest, with warnings if the called test modifies them, and
   a new section in the summary report at the end.
 
-- Issue #7042: Fix test_signal (test_itimer_virtual) failure on OS X 10.6.
+- Issue #7042: Fix test_signal (test_itimer_virtual) failure on macOS 10.6.
 
 - Fixed tests in importlib.test.source.test_abc_loader that were masking the
   proper exceptions that should be raised for missing or improper code object
@@ -14679,7 +14679,7 @@ Build
 -----
 
 - Issue #6154: Make sure the intl library is added to LIBS if needed. Also
-  added LIBS to OS X framework builds.
+  added LIBS to macOS framework builds.
 
 - Issue #5809: Specifying both --enable-framework and --enable-shared is
   an error. Configure now explicitly tells you about this.
@@ -15101,7 +15101,7 @@ Core and Builtins
 
 - Issue #5126: str.isprintable() returned False for space characters.
 
-- Issue #4865: On MacOSX /Library/Python/2.7/site-packages is added to
+- Issue #4865: On macOS /Library/Python/2.7/site-packages is added to
   the end sys.path, for compatibility with the system install of Python.
 
 - Issue #4688: Add a heuristic so that tuples and dicts containing only
@@ -15348,7 +15348,7 @@ Core and Builtins
 
 - Issue #2173: When getting device encoding, check that return value of
   nl_langinfo is not the empty string.  This was causing silent build
-  failures on OS X.
+  failures on macOS.
 
 - Issue #4597: Fixed several opcodes that weren't always propagating
   exceptions.
@@ -15499,7 +15499,7 @@ Library
 
 - Issue #5795: Fixed test_distutils failure on Debian ppc.
 
-- Issue #5607: fixed Distutils test_get_platform for Mac OS X fat binaries.
+- Issue #5607: fixed Distutils test_get_platform for macOS fat binaries.
 
 - Issue #5741: don't disallow "%%" (which is an escape for "%") when setting
   a value in SafeConfigParser.
@@ -15954,7 +15954,7 @@ Extension Modules
   supporting objects as input no matter how it was compiled (built in
   implementations or external openssl library).
 
-- Issue #4397: Fix occasional test_socket failure on OS X.
+- Issue #4397: Fix occasional test_socket failure on macOS.
 
 - Issue #4279: Fix build of parsermodule under Cygwin.
 
@@ -17611,7 +17611,7 @@ Core and builtins
   new ``sys._current_frames()`` returns a dictionary with one entry,
   mapping the faux "thread id" 0 to the current frame.
 
-- Bug #1525447: build on MacOS X on a case-sensitive filesystem.
+- Bug #1525447: build on macOS on a case-sensitive filesystem.
 
 
 Library
@@ -17685,10 +17685,10 @@ Library
   Also, whereas % values were decoded in all parameter continuations, they are
   now only decoded in encoded parameter parts.
 
-- Bug #1517990: IDLE keybindings on MacOS X now work correctly
+- Bug #1517990: IDLE keybindings on macOS now work correctly
 
 - Bug #1517996: IDLE now longer shows the default Tk menu when a
-  path browser, class browser or debugger is the frontmost window on MacOS X
+  path browser, class browser or debugger is the frontmost window on macOS
 
 - Patch #1520294: Support for getset and member descriptors in types.py,
   inspect.py, and pydoc.py.  Specifically, this allows for querying the type
@@ -17722,7 +17722,7 @@ Extension Modules
   run with root privileges, it could overwrite or delete
   /dev/null in certain cases; this is now fixed.
 
-- Bug #1467450: On Mac OS X 10.3, RTLD_GLOBAL is now used as the
+- Bug #1467450: On macOS 10.3, RTLD_GLOBAL is now used as the
   default mode for loading shared libraries in ctypes.
 
 - Because of a misspelled preprocessor symbol, ctypes was always
@@ -18271,7 +18271,7 @@ Core and builtins
   was always usable as a hash value before this patch.  That's no longer
   necessarily so.
 
-- Python on OS X 10.3 and above now uses dlopen() (via dynload_shlib.c)
+- Python on macOS 10.3 and above now uses dlopen() (via dynload_shlib.c)
   to load extension modules and now provides the dl module. As a result,
   sys.setdlopenflags() now works correctly on these systems. (SF patch
   #1454844)
@@ -18573,10 +18573,10 @@ Core and builtins
 - Replaced most Unicode charmap codecs with new ones using the
   new Unicode translate string feature in the built-in charmap
   codec; the codecs were created from the mapping tables available
-  at ftp.unicode.org and contain a few updates (e.g. the Mac OS
+  at ftp.unicode.org and contain a few updates (e.g. the macOS
   encodings now include a mapping for the Apple logo)
 
-- Added a few more codecs for Mac OS encodings
+- Added a few more codecs for macOS encodings
 
 - Sped up some Unicode operations.
 
@@ -18603,7 +18603,7 @@ Core and builtins
 - On 64-bit platforms, when __len__() returns a value that cannot be
   represented as a C int, raise OverflowError.
 
-- test__locale is skipped on OS X < 10.4 (only partial locale support is
+- test__locale is skipped on macOS < 10.4 (only partial locale support is
   present).
 
 - SF bug #893549: parsing keyword arguments was broken with a few format
@@ -19419,7 +19419,7 @@ Build
 - Bug #1158607: Build with --disable-unicode again.
 
 - spwdmodule.c is built only if either HAVE_GETSPNAM or HAVE_HAVE_GETSPENT is
-  defined.  Discovered as a result of not being able to build on OS X.
+  defined.  Discovered as a result of not being able to build on macOS.
 
 - setup.py now uses the directories specified in LDFLAGS using the -L option
   and in CPPFLAGS using the -I option for adding library and include
@@ -19498,7 +19498,7 @@ Documentation
   Closes bug #1166582.
 
 - Remove all latent references for "Macintosh" that referred to semantics for
-  Mac OS 9 and change to reflect the state for OS X.
+  macOS 9 and change to reflect the state for macOS.
   Closes patch #1095802.  Thanks Jack Jansen.
 
 Mac
@@ -19584,7 +19584,7 @@ Build
 -----
 
 - Bug 1034277 / Patch 1035255: Remove compilation of core against CoreServices
-  and CoreFoundation on OS X.  Involved removing PyMac_GetAppletScriptFile()
+  and CoreFoundation on macOS.  Involved removing PyMac_GetAppletScriptFile()
   which has no known users.  Thanks Bob Ippolito.
 
 C API
@@ -20693,7 +20693,7 @@ Extension modules
 
 - curses module now supports use_default_colors().  [patch #739124]
 
-- Bug #811028: ncurses.h breakage on FreeBSD/MacOS X
+- Bug #811028: ncurses.h breakage on FreeBSD/macOS
 
 - Bug #814613: INET_ADDRSTRLEN fix needed for all compilers on SGI
 
@@ -20941,7 +20941,7 @@ Build
 -----
 
 - Bug #978645: Modules/getpath.c now builds properly in --disable-framework
-  build under OS X.
+  build under macOS.
 
 - Profiling using gprof is now available if Python is configured with
   --enable-profiling.
@@ -21094,7 +21094,7 @@ IDLE
 Build
 -----
 
-- For MacOSX, added -mno-fused-madd to BASECFLAGS to fix test_coercion
+- For macOS, added -mno-fused-madd to BASECFLAGS to fix test_coercion
   on Panther (OSX 10.3).
 
 C API
@@ -21310,7 +21310,7 @@ Mac
   specify the CFBundleIdentifier and using the --python option to set
   the executable in the bundle.
 
-- Fixed two bugs in MacOSX framework handling.
+- Fixed two bugs in macOS framework handling.
 
 - pythonw did not allow user interaction in 2.3rc1, this has been fixed.
 
@@ -21864,7 +21864,7 @@ Windows
 Mac
 ---
 
-- os.listdir() now returns Unicode strings on MacOS X when called with
+- os.listdir() now returns Unicode strings on macOS when called with
   a Unicode argument. See the general news item under "Library".
 
 - A new method MacOS.WMAvailable() returns true if it is safe to access
@@ -22217,11 +22217,11 @@ Build
   debug-related flags like "-g" and "-O3".  BASECFLAGS is meant to carry
   compiler flags that are required to get a clean compile.  On some
   platforms (many Linux flavors in particular) BASECFLAGS will be empty by
-  default.  On others, such as Mac OS X and SCO, it will contain required
+  default.  On others, such as macOS and SCO, it will contain required
   flags.  This change allows people building Python to override OPT without
   fear of clobbering compiler flags which are required to get a clean build.
 
-- On Darwin/Mac OS X platforms, /sw/lib and /sw/include are added to the
+- On Darwin/macOS platforms, /sw/lib and /sw/include are added to the
   relevant search lists in setup.py.  This allows users building Python to
   take advantage of the many packages available from the fink project
   <http://fink.sf.net/>.
@@ -23350,8 +23350,8 @@ Mac
   files are run with a window-aware pythonw interpreter without a Terminal
   window, but all this can be customized.
 
-- MacPython-OS9 is now Carbon-only, so it runs on Mac OS 9 or Mac OS X and
-  possibly on Mac OS 8.6 with the right CarbonLib installed, but not on earlier
+- MacPython-OS9 is now Carbon-only, so it runs on macOS 9 or macOS and
+  possibly on macOS 8.6 with the right CarbonLib installed, but not on earlier
   releases.
 
 - Many tools such as BuildApplet.py and gensuitemodule.py now support a command
@@ -23369,7 +23369,7 @@ Mac
 
 - Pathname handling should now be fully consistent: MacPython-OSX always uses
   unix pathnames and MacPython-OS9 always uses colon-separated Mac pathnames
-  (also when running on Mac OS X).
+  (also when running on macOS).
 
 - New Carbon modules Help and AH give access to the Carbon Help Manager.
   There are hooks in the IDE to allow accessing the Python documentation
@@ -23466,7 +23466,7 @@ Mac
 
 - The Carbon toolbox modules have been upgraded to Universal Headers
   3.4, and experimental CoreGraphics and CarbonEvents modules have
-  been added.  All only for framework-enabled MacOSX.
+  been added.  All only for framework-enabled macOS.
 
 
 What's New in Python 2.2c1?
@@ -23580,7 +23580,7 @@ Build
   other platforms should do likewise.
 
 - It is no longer necessary to use --with-suffix when building on a
-  case-insensitive file system (such as Mac OS X HFS+). In the build
+  case-insensitive file system (such as macOS HFS+). In the build
   directory an extension is used, but not in the installed python.
 
 C API
@@ -23609,10 +23609,10 @@ Windows
 Mac
 ----
 
-- In unix-Python on Mac OS X (and darwin) sys.platform is now "darwin",
+- In unix-Python on macOS (and darwin) sys.platform is now "darwin",
   without any trailing digits.
 
-- Changed logic for finding python home in Mac OS X framework Pythons.
+- Changed logic for finding python home in macOS framework Pythons.
   Now sys.executable points to the executable again, in stead of to
   the shared library. The latter is used only for locating the python
   home.
@@ -24369,7 +24369,7 @@ Tools
 Build
 -----
 
-- If you are an adventurous person using Mac OS X you may want to look at
+- If you are an adventurous person using macOS you may want to look at
   Mac/OSX. There is a Makefile there that will build Python as a real Mac
   application, which can be used for experimenting with Carbon or Cocoa.
   Discussion of this on pythonmac-sig, please.
@@ -24453,7 +24453,7 @@ Build
   ucs2 and ucs4 (new in 2.2a1). With --disable-unicode, the Unicode
   type and supporting code is completely removed from the interpreter.
 
-- A new configure option --enable-framework builds a Mac OS X framework,
+- A new configure option --enable-framework builds a macOS framework,
   which "make frameworkinstall" will install. This provides a starting
   point for more mac-like functionality, join pythonmac-sig@python.org
   if you are interested in helping.
@@ -25256,7 +25256,7 @@ Windows changes
 
 New platforms
 
-- 2.1 should compile and run out of the box under MacOS X, even using HFS+.
+- 2.1 should compile and run out of the box under macOS, even using HFS+.
   Thanks to Steven Majewski!
 
 - 2.1 should compile and run out of the box on Cygwin.  Thanks to Jason
@@ -25887,7 +25887,7 @@ Internals
 Build issues
 
 - configure now accepts a --with-suffix option that specifies the
-  executable suffix.  This is useful for builds on Cygwin and Mac OS
+  executable suffix.  This is useful for builds on Cygwin and macOS
   X, for example.
 
 - The mmap.PAGESIZE constant is now initialized using sysconf when
@@ -25898,7 +25898,7 @@ Build issues
 - The select module now compiles on platforms that do not define
   POLLRDNORM and related constants.
 
-- Darwin (Mac OS X):  Initial support for static builds on this
+- Darwin (macOS):  Initial support for static builds on this
   platform.
 
 - BeOS: A number of changes were made to the build and installation

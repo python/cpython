@@ -1,4 +1,4 @@
-Building a Python Mac OS X distribution
+Building a Python macOS distribution
 =======================================
 
 The ``build-install.py`` script creates Python distributions, including
@@ -12,7 +12,7 @@ For Python 3.4.0, PSF practice is to build two installer variants
 for each release.
 
 1.  32-bit-only, i386 and PPC universal, capable on running on all machines
-    supported by Mac OS X 10.5 through (at least) 10.9::
+    supported by macOS 10.5 through (at least) 10.9::
 
         /path/to/bootstrap/python2.7 build-installer.py \
             --sdk-path=/Developer/SDKs/MacOSX10.5.sdk \
@@ -33,7 +33,7 @@ for each release.
 
     - recommended build environment:
 
-        * Mac OS X 10.5.8 Intel or PPC
+        * macOS 10.5.8 Intel or PPC
         * Xcode 3.1.4
         * ``MacOSX10.5`` SDK
         * ``MACOSX_DEPLOYMENT_TARGET=10.5``
@@ -43,11 +43,11 @@ for each release.
 
     - alternate build environments:
 
-        * Mac OS X 10.6.8 with Xcode 3.2.6
+        * macOS 10.6.8 with Xcode 3.2.6
             - need to change ``/System/Library/Frameworks/{Tcl,Tk}.framework/Version/Current`` to ``8.4``
         * Note Xcode 4.* does not support building for PPC so cannot be used for this build
 
-2.  64-bit / 32-bit, x86_64 and i386 universal, for OS X 10.6 (and later)::
+2.  64-bit / 32-bit, x86_64 and i386 universal, for macOS 10.6 (and later)::
 
         /path/to/bootstrap/python2.7 build-installer.py \
             --sdk-path=/Developer/SDKs/MacOSX10.6.sdk \
@@ -68,7 +68,7 @@ for each release.
 
     - recommended build environment:
 
-        * Mac OS X 10.6.8 (or later)
+        * macOS 10.6.8 (or later)
         * Xcode 3.2.6
         * ``MacOSX10.6`` SDK
         * ``MACOSX_DEPLOYMENT_TARGET=10.6``
@@ -91,8 +91,8 @@ for each release.
 
 
 *   For Python 2.7.x and 3.2.x, the 32-bit-only installer was configured to
-    support Mac OS X 10.3.9 through (at least) 10.6.  Because it is
-    believed that there are few systems still running OS X 10.3 or 10.4
+    support macOS 10.3.9 through (at least) 10.6.  Because it is
+    believed that there are few systems still running macOS 10.3 or 10.4
     and because it has become increasingly difficult to test and
     support the differences in these earlier systems, as of Python 3.3.0 the PSF
     32-bit installer no longer supports them.  For reference in building such
@@ -117,7 +117,7 @@ for each release.
 
     - recommended build environment:
 
-        * Mac OS X 10.5.8 PPC or Intel
+        * macOS 10.5.8 PPC or Intel
         * Xcode 3.1.4 (or later)
         * ``MacOSX10.4u`` SDK (later SDKs do not support PPC G3 processors)
         * ``MACOSX_DEPLOYMENT_TARGET=10.3``
@@ -126,7 +126,7 @@ for each release.
 
     - alternate build environments:
 
-        * Mac OS X 10.6.8 with Xcode 3.2.6
+        * macOS 10.6.8 with Xcode 3.2.6
             - need to change ``/System/Library/Frameworks/{Tcl,Tk}.framework/Version/Current`` to ``8.4``
 
 
@@ -144,7 +144,7 @@ General Prerequisites
   ``Sphinx`` and its dependencies.  Beginning with 3.4.1, the ``Doc/Makefile``
   assumes there is an externally-provided ``sphinx-build`` and requires at
   least Python 2.6 to run.  Because of this, it is no longer possible to
-  build a 3.4.1 or later installer on OS X 10.5 using the Apple-supplied
+  build a 3.4.1 or later installer on macOS 10.5 using the Apple-supplied
   Python 2.5.
 
 * It is safest to start each variant build with an empty source directory
@@ -175,7 +175,7 @@ Building other universal installers
 ...................................
 
 It is also possible to build a 4-way universal installer that runs on
-OS X 10.5 Leopard or later::
+macOS 10.5 Leopard or later::
 
     /usr/bin/python /build-installer.py \
         --dep-target=10.5
@@ -183,12 +183,12 @@ OS X 10.5 Leopard or later::
         --sdk-path=/Developer/SDKs/MacOSX10.5.sdk
 
 This requires that the deployment target is 10.5, and hence
-also that you are building on at least OS X 10.5.  4-way includes
+also that you are building on at least macOS 10.5.  4-way includes
 ``i386``, ``x86_64``, ``ppc``, and ``ppc64`` (G5).  ``ppc64`` executable
 variants can only be run on G5 machines running 10.5.  Note that,
-while OS X 10.6 is only supported on Intel-based machines, it is possible
+while macOS 10.6 is only supported on Intel-based machines, it is possible
 to run ``ppc`` (32-bit) executables unmodified thanks to the Rosetta ppc
-emulation in OS X 10.5 and 10.6.  The 4-way installer variant must be
+emulation in macOS 10.5 and 10.6.  The 4-way installer variant must be
 built with Xcode 3.  It is not regularly built or tested.
 
 Other ``--universal-archs`` options are ``64-bit`` (``x86_64``, ``ppc64``),
@@ -200,9 +200,9 @@ Testing
 -------
 
 Ideally, the resulting binaries should be installed and the test suite run
-on all supported OS X releases and architectures.  As a practical matter,
+on all supported macOS releases and architectures.  As a practical matter,
 that is generally not possible.  At a minimum, variant 1 should be run on
-a PPC G4 system with OS X 10.5 and at least one Intel system running OS X
+a PPC G4 system with macOS 10.5 and at least one Intel system running macOS
 10.9, 10.8, 10.7, 10.6, or 10.5.  Variant 2 should be run on 10.9, 10.8,
 10.7, and 10.6 systems in both 32-bit and 64-bit modes.::
 

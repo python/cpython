@@ -644,7 +644,7 @@ def system_alias(system, release, version):
     if system == 'Rhapsody':
         # Apple's BSD derivative
         # XXX How can we determine the marketing release number ?
-        return 'MacOS X Server', system+release, version
+        return 'macOS Server', system+release, version
 
     elif system == 'SunOS':
         # Sun's OS

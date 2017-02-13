@@ -1,5 +1,5 @@
 """
-Test suite for _osx_support: shared OS X support functions.
+Test suite for _osx_support: shared macOS support functions.
 """
 
 import os
@@ -12,7 +12,7 @@ import test.support
 
 import _osx_support
 
-@unittest.skipUnless(sys.platform.startswith("darwin"), "requires OS X")
+@unittest.skipUnless(sys.platform.startswith("darwin"), "requires macOS")
 class Test_OSXSupport(unittest.TestCase):
 
     def setUp(self):

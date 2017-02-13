@@ -2206,10 +2206,10 @@ Changes to Python's build process and to the C API include:
 Port-Specific Changes
 ---------------------
 
-* MacOS X (10.3 and higher): dynamic loading of modules now uses the
+* macOS (10.3 and higher): dynamic loading of modules now uses the
   :c:func:`dlopen` function instead of MacOS-specific functions.
 
-* MacOS X: an :option:`!--enable-universalsdk` switch was added to the
+* macOS: an :option:`!--enable-universalsdk` switch was added to the
   :program:`configure` script that compiles the interpreter as a universal binary
   able to run on both PowerPC and Intel processors. (Contributed by Ronald
   Oussoren; :issue:`2573`.)

@@ -212,7 +212,7 @@ class PlatformTest(unittest.TestCase):
         res = platform.mac_ver()
 
         if platform.uname().system == 'Darwin':
-            # We're on a MacOSX system, check that
+            # We're on a macOS system, check that
             # the right version information is returned
             fd = os.popen('sw_vers', 'r')
             real_ver = None

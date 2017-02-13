@@ -4,14 +4,14 @@
 
 #ifdef __APPLE__
 /*
-** On Mac OS X 10.2 [n]curses.h and stdlib.h use different guards
+** On macOS 10.2 [n]curses.h and stdlib.h use different guards
 ** against multiple definition of wchar_t.
 */
 #ifdef	_BSD_WCHAR_T_DEFINED_
 #define _WCHAR_T
 #endif
 
-/* the following define is necessary for OS X 10.6; without it, the
+/* the following define is necessary for macOS 10.6; without it, the
    Apple-supplied ncurses.h sets NCURSES_OPAQUE to 1, and then Python
    can't get at the WINDOW flags field. */
 #define NCURSES_OPAQUE 0

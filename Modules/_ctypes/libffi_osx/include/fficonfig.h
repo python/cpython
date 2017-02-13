@@ -7,7 +7,7 @@
 */
 
 #ifndef MACOSX
-#error "This file is only supported on Mac OS X"
+#error "This file is only supported on macOS"
 #endif
 
 #if defined(__i386__)

@@ -13,7 +13,7 @@ from importlib.util import find_spec
 from idlelib.config import idleConf
 
 #   Warning: menudefs is altered in macosx.overrideRootMenu()
-#   after it is determined that an OS X Aqua Tk is in use,
+#   after it is determined that an macOS Aqua Tk is in use,
 #   which cannot be done until after Tk() is first called.
 #   Do not alter the 'file', 'options', or 'help' cascades here
 #   without altering overrideRootMenu() as well.

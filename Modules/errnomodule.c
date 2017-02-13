@@ -111,8 +111,8 @@ PyInit_errno(void)
      * The names and comments are borrowed from linux/include/errno.h,
      * which should be pretty all-inclusive.  However, the Solaris specific
      * names and comments are borrowed from sys/errno.h in Solaris.
-     * MacOSX specific names and comments are borrowed from sys/errno.h in
-     * MacOSX.
+     * macOS specific names and comments are borrowed from sys/errno.h in
+     * macOS.
      */
 
 #ifdef ENODEV
@@ -877,7 +877,7 @@ PyInit_errno(void)
     inscode(d, ds, de, "ENOTACTIVE", ENOTACTIVE, "Facility is not active");
 #endif
 
-    /* MacOSX specific errnos */
+    /* macOS specific errnos */
 #ifdef EAUTH
     inscode(d, ds, de, "EAUTH", EAUTH, "Authentication error");
 #endif

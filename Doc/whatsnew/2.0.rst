@@ -574,7 +574,7 @@ mostly by Trent Mick of ActiveState.  (Confusingly, ``sys.platform`` is still
 treats code as 32 bit on Itanium.) PythonWin also supports Windows CE; see the
 Python CE page at http://pythonce.sourceforge.net/ for more information.
 
-Another new platform is Darwin/MacOS X; initial support for it is in Python 2.0.
+Another new platform is Darwin/macOS; initial support for it is in Python 2.0.
 Dynamic loading works, if you specify "configure --with-dyld --with-suffix=.x".
 Consult the README in the Python source distribution for more instructions.
 

@@ -78,7 +78,7 @@ LCFI0:
 	stg		r30,MODE_CHOICE(-8,-16)(r8)
 	stg		r31,MODE_CHOICE(-4,-8)(r8)
 	stg		r9,SF_RETURN(r8)			/* return address */
-#if !defined(POWERPC_DARWIN)			/* TOC unused in OS X */
+#if !defined(POWERPC_DARWIN)			/* TOC unused in macOS */
 	stg		r2,MODE_CHOICE(20,40)(r1)
 #endif
 
@@ -98,7 +98,7 @@ LCFI2:
 	li		r9,0
 	mtctr	r12 /* r12 holds address of _ffi_prep_args.  */
 	bctrl
-#if !defined(POWERPC_DARWIN)			/* TOC unused in OS X */
+#if !defined(POWERPC_DARWIN)			/* TOC unused in macOS */
 	lg		r2,MODE_CHOICE(20,40)(r1)
 #endif
 

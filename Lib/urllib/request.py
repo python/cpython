@@ -2595,7 +2595,7 @@ if sys.platform == 'darwin':
     def getproxies_macosx_sysconf():
         """Return a dictionary of scheme -> proxy server URL mappings.
 
-        This function uses the MacOSX framework SystemConfiguration
+        This function uses the macOS framework SystemConfiguration
         to fetch the proxy information.
         """
         return _get_proxies()
@@ -2606,7 +2606,7 @@ if sys.platform == 'darwin':
         """Return True, if host should be bypassed.
 
         Checks proxy settings gathered from the environment, if specified,
-        or from the MacOSX framework SystemConfiguration.
+        or from the macOS framework SystemConfiguration.
 
         """
         proxies = getproxies_environment()

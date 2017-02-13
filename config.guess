@@ -1273,9 +1273,9 @@ EOF
 		fi
 	    fi
 	elif test "$UNAME_PROCESSOR" = i386 ; then
-	    # Avoid executing cc on OS X 10.9, as it ships with a stub
+	    # Avoid executing cc on macOS 10.9, as it ships with a stub
 	    # that puts up a graphical alert prompting to install
-	    # developer tools.  Any system running Mac OS X 10.7 or
+	    # developer tools.  Any system running macOS 10.7 or
 	    # later (Darwin 11 and later) is required to have a 64-bit
 	    # processor. This is not true of the ARM version of Darwin
 	    # that Apple uses in portable devices.

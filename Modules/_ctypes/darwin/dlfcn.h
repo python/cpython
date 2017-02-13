@@ -73,7 +73,7 @@ extern int dladdr(const void *, Dl_info *);
 #define RTLD_NOLOAD	0x10
 #define RTLD_NODELETE	0x80
 
-/* These are from the Mac OS X 10.4 headers */
+/* These are from the macOS 10.4 headers */
 #define RTLD_NEXT       ((void *) -1)   /* Search subsequent objects. */
 #define RTLD_DEFAULT    ((void *) -2)   /* Use default search algorithm. */
 

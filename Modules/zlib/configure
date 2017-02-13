@@ -607,7 +607,7 @@ OBJC='$(OBJZ)'
 PIC_OBJC='$(PIC_OBJZ)'
 fi
 
-# if code coverage testing was requested, use older gcc if defined, e.g. "gcc-4.2" on Mac OS X
+# if code coverage testing was requested, use older gcc if defined, e.g. "gcc-4.2" on macOS
 if test $cover -eq 1; then
   CFLAGS="${CFLAGS} -fprofile-arcs -ftest-coverage"
   if test -n "$GCC_CLASSIC"; then

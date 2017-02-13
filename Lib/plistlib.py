@@ -1,4 +1,4 @@
-r"""plistlib.py -- a tool to generate and parse MacOSX .plist files.
+r"""plistlib.py -- a tool to generate and parse macOS .plist files.
 
 The property list (.plist) file format is a simple XML pickle supporting
 basic object types, like dictionaries, lists, numbers and strings.
@@ -684,7 +684,7 @@ class _BinaryPlistParser:
         elif token == 0x33:  # date
             f = struct.unpack('>d', self._fp.read(8))[0]
             # timestamp 0 of binary plists corresponds to 1/1/2001
-            # (year of Mac OS X 10.0), instead of 1/1/1970.
+            # (year of macOS 10.0), instead of 1/1/1970.
             return datetime.datetime(2001, 1, 1) + datetime.timedelta(seconds=f)
 
         elif tokenH == 0x40:  # data

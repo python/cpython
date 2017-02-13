@@ -16,7 +16,7 @@ http://creativecommons.org/publicdomain/zero/1.0/
 #ifndef _align_h_
 #define _align_h_
 
-/* on Mac OS-X and possibly others, ALIGN(x) is defined in param.h, and -Werror chokes on the redef. */
+/* on macOS and possibly others, ALIGN(x) is defined in param.h, and -Werror chokes on the redef. */
 
 #ifdef ALIGN
 #undef ALIGN

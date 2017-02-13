@@ -21,7 +21,7 @@ function.
 
   The underlying Readline library API may be implemented by
   the ``libedit`` library instead of GNU readline.
-  On MacOS X the :mod:`readline` module detects which library is being used
+  On macOS the :mod:`readline` module detects which library is being used
   at run time.
 
   The configuration file for ``libedit`` is different from that

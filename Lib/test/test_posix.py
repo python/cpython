@@ -809,7 +809,7 @@ class PosixTester(unittest.TestCase):
         if ret is not None or not idg_groups:
             raise unittest.SkipTest("need working 'id -G'")
 
-        # Issues 16698: OS X ABIs prior to 10.6 have limits on getgroups()
+        # Issues 16698: macOS ABIs prior to 10.6 have limits on getgroups()
         if sys.platform == 'darwin':
             import sysconfig
             dt = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') or '10.0'

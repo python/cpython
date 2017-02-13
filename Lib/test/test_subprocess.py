@@ -630,7 +630,7 @@ class ProcessTestCase(BaseTestCase):
             stdout, stderr = p.communicate()
             self.assertIn(stdout.strip(),
                 (b"[]",
-                 # Mac OS X adds __CF_USER_TEXT_ENCODING variable to an empty
+                 # macOS adds __CF_USER_TEXT_ENCODING variable to an empty
                  # environment
                  b"['__CF_USER_TEXT_ENCODING']"))
 
@@ -1574,7 +1574,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 gc.disable()
 
     @unittest.skipIf(
-        sys.platform == 'darwin', 'setrlimit() seems to fail on OS X')
+        sys.platform == 'darwin', 'setrlimit() seems to fail on macOS')
     def test_preexec_fork_failure(self):
         # The internal code did not preserve the previous exception when
         # re-enabling garbage collection
@@ -2205,7 +2205,7 @@ class POSIXProcessTestCase(BaseTestCase):
                          msg="Some fds were left open.")
 
 
-    # Mac OS X Tiger (10.4) has a kernel bug: sometimes, the file
+    # macOS Tiger (10.4) has a kernel bug: sometimes, the file
     # descriptor of a pipe closed in the parent process is valid in the
     # child process according to fstat(), but the mode of the file
     # descriptor is invalid, and read or write raise an error.

@@ -515,7 +515,7 @@ calculate_path(void)
     if (wcschr(prog, SEP))
         wcsncpy(progpath, prog, MAXPATHLEN);
 #ifdef __APPLE__
-     /* On Mac OS X, if a script uses an interpreter of the form
+     /* On macOS, if a script uses an interpreter of the form
       * "#!/opt/python2.3/bin/python", the kernel only passes "python"
       * as argv[0], which falls through to the $PATH search below.
       * If /opt/python2.3/bin isn't in your path, or is near the end,
@@ -567,7 +567,7 @@ calculate_path(void)
     argv0_path[MAXPATHLEN] = '\0';
 
 #ifdef WITH_NEXT_FRAMEWORK
-    /* On Mac OS X we have a special case if we're running from a framework.
+    /* On macOS we have a special case if we're running from a framework.
     ** This is because the python home should be set relative to the library,
     ** which is in the framework, not relative to the executable, which may
     ** be outside of the framework. Except when we're in the build directory...

@@ -225,7 +225,7 @@ class UnixCCompiler(CCompiler):
         # we use this hack.
         compiler = os.path.basename(sysconfig.get_config_var("CC"))
         if sys.platform[:6] == "darwin":
-            # MacOSX's linker doesn't understand the -R flag at all
+            # macOS's linker doesn't understand the -R flag at all
             return "-L" + dir
         elif sys.platform[:7] == "freebsd":
             return "-Wl,-rpath=" + dir

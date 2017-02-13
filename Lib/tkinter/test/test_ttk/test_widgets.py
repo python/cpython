@@ -887,7 +887,7 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
 
 
 @unittest.skipIf(sys.platform == 'darwin',
-                 'ttk.Scrollbar is special on MacOSX')
+                 'ttk.Scrollbar is special on macOS')
 @add_standard_options(StandardTtkOptionsTests)
 class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (

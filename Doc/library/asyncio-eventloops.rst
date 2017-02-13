@@ -115,18 +115,18 @@ configuration. See :ref:`asyncio delayed calls <asyncio-delayed-calls>`.
    :class:`ProactorEventLoop` now supports SSL.
 
 
-Mac OS X
+macOS
 ^^^^^^^^
 
-Character devices like PTY are only well supported since Mavericks (Mac OS
-10.9). They are not supported at all on Mac OS 10.5 and older.
+Character devices like PTY are only well supported since Mavericks (macOS
+10.9). They are not supported at all on macOS 10.5 and older.
 
-On Mac OS 10.6, 10.7 and 10.8, the default event loop is
+On macOS 10.6, 10.7 and 10.8, the default event loop is
 :class:`SelectorEventLoop` which uses :class:`selectors.KqueueSelector`.
 :class:`selectors.KqueueSelector` does not support character devices on these
 versions.  The :class:`SelectorEventLoop` can be used with
 :class:`~selectors.SelectSelector` or :class:`~selectors.PollSelector` to
-support character devices on these versions of Mac OS X. Example::
+support character devices on these versions of macOS. Example::
 
     import asyncio
     import selectors
