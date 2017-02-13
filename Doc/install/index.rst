@@ -655,7 +655,7 @@ bear a strong resemblance to environment variables. In fact, you can use
 environment variables in config files on platforms that have such a notion but
 the Distutils additionally define a few extra variables that may not be in your
 environment, such as ``$PLAT``.  (And of course, on systems that don't have
-environment variables, such as macOS 9, the configuration variables supplied by
+environment variables, such as Mac OS 9, the configuration variables supplied by
 the Distutils are the only ones you can use.) See section :ref:`inst-config-files`
 for details.
 
