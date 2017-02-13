@@ -301,20 +301,19 @@ their contained methods and nested classes.
 How are Docstring Examples Recognized?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :mod:`doctest` module treats any line beginning with ``>>>`` as an 
-example to be tested. 
-Following lines which begin with ``...`` continue the example. 
-Subsequent non-blank lines, if any, form an expected output string. 
-A blank (all-whitespace) line, or a line with ``>>>`` (beginning the 
-next example), ends the expected output string.
+A doctest example is composed of one or more tests. An individual test 
+starts with a line that starts with '>>>', has zero or more code 
+continuation lines that start with '...', and ends with zero or more 
+expected output lines. The expected output ends at the first line that 
+starts with '>>>' or is blank. All lines in an example block must have 
+the same indentation level.
 
 In most cases a copy-and-paste of an interactive console session works fine,
-but doctest isn't trying to do an exact emulation of any specific Python shell.
+but doctest isn't trying to do an exact emulation of the Python shell.
 
 ::
 
    >>> # comments are ignored
-   ... 
    >>> import math
    >>> x = factorial(10); math.ceil(math.log10(x))
    7
@@ -329,24 +328,27 @@ but doctest isn't trying to do an exact emulation of any specific Python shell.
 
 The fine print:
 
-* The ``>>>`` string tells the module to look for an interactive statement:
-  that is, a statement list ending with a newline, or a 
-  :ref:`compound statement <compound>`. 
-  The ``...`` string tells the module that the line continues a compound
-  statement. (Actually, doctest gets these strings from the PS1 and PS2 
-  values of the :mod:`sys` module.)
+* The >>> marks the start of an interactive statement: that is, a 
+  statement list ending with a newline, or a :ref:`compound statement <compound>`. 
+  The ... string indicates that the line continues a compound statement.
   
-* The expected output can be absent. This indicates that the example generates
-  no output when run. If the example does generate output, the module reports
+* If the expected output is empty, it indicates that the test generates
+  no output when run. If the test does generate output, the module reports
   it as a failure.
 
 * The expected output can contain multiple lines. These lines become a 
-  string, which is compared to the string of actual output from 
-  testing the example.
+  string containing newlines. The leading indentation of the example 
+  block is stripped when building the string. The resulting string is 
+  compared to the string of actual output from running the test.
+
+* The last code continuation line of an example copied from the 
+  interactive shell (the line starting with "..." that is otherwise 
+  blank in the example above) may be omitted without changing the 
+  meaning of the test.
   
 * Expected output cannot contain an all-whitespace line, since such a line is
   taken to signal the end of expected output.  If expected output does contain a
-  blank line, put ``<BLANKLINE>`` in your doctest example each place a blank line
+  blank line, put ``<BLANKLINE>`` in your doctest test each place a blank line
   is expected.
 
 * All hard tab characters are expanded to spaces, using 8-column tab stops.
@@ -390,7 +392,7 @@ The fine print:
                1
 
   and as many leading whitespace characters are stripped from the expected output
-  as appeared in the initial ``'>>> '`` line that started the example.
+  as appeared in the initial ``'>>> '`` line that started the test.
 
 
 .. _doctest-execution-context:
@@ -398,21 +400,20 @@ The fine print:
 What's the Execution Context?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Within a docstring, later examples can use names defined by earlier
-examples. It's fine for an example to set up state, and
+Within a docstring, later tests can use names defined by earlier
+examples. It's fine for an test to set up state, and
 have no output. 
 
 For each docstring, :mod:`doctest` makes (by default) a 
-*shallow copy* of :mod:`M`'s globals.
-This means examples can freely use any names defined at the top level of 
-:mod:`M`. 
-When doctest tests examples, it doesn't change the module's real globals.
+*shallow copy* of :mod:`M`'s globals. This means tests can freely 
+use any names defined at the top level of :mod:`M`. 
+When doctest performs tests, it doesn't change the module's real globals.
 
-This shallow copy of globals is discarded at the end of each docstring,
-and copied afresh for the next docstring. Thus, examples in one docstring
-in :mod:`M` can't leave behind crumbs that accidentally allow an example
-in another docstring to work.  Examples cannot see names defined in other
-docstrings.
+This shallow copy of globals is discarded after the docstring has been 
+processed, and copied afresh for the next docstring. Thus, tests in one 
+docstring in :mod:`M` can't leave behind crumbs that accidentally allow an 
+test in another docstring to work.  Tests cannot see names defined in 
+other docstrings.
 
 You can force use of your own dict as the execution context by passing
 ``globs=your_dict`` to :func:`testmod` or :func:`testfile` instead.
