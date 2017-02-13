@@ -1,5 +1,5 @@
 :mod:`plistlib` --- Generate and parse macOS ``.plist`` files
-================================================================
+=============================================================
 
 .. module:: plistlib
    :synopsis: Generate and parse macOS plist files.
