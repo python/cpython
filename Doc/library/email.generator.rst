@@ -89,7 +89,7 @@ over channels that are not "8 bit clean".
       needed using an ASCII-compatible :mailheader:`Content-Transfer-Encoding`.
       That is, transform parts with non-ASCII
       :mailheader:`Cotnent-Transfer-Encoding`
-      (:mailheader:`Content-Transfer-Encoding: 8bit`) to an ASCII compatibile
+      (:mailheader:`Content-Transfer-Encoding: 8bit`) to an ASCII compatible
       :mailheader:`Content-Transfer-Encoding`, and encode RFC-invalid non-ASCII
       bytes in headers using the MIME ``unknown-8bit`` character set, thus
       rendering them RFC-compliant.
