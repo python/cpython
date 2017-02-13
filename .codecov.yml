@@ -9,6 +9,7 @@ ignore:
   - "PC/**/*"
   - "PCbuild/**/*"
   - "Tools/**/*"
+  - "Grammar/*"
 coverage:
   precision: 2
   range:
