@@ -2,6 +2,13 @@ codecov:
   notify:
     require_ci_to_pass: true
 comment: off
+ignore:
+  - "Doc/**/*"
+  - "Misc/*"
+  - "Mac/**/*"
+  - "PC/**/*"
+  - "PCbuild/**/*"
+  - "Tools/**/*"
 coverage:
   precision: 2
   range:
@@ -13,11 +20,9 @@ coverage:
     project: off
     patch:
       default:
-        target: 75%
+        target: 100%
         only_pulls: true
-        paths:
-          - Lib/**/*
-        threshold: 0.01
+        threshold: 0.05
 parsers:
   gcov:
     branch_detection:
