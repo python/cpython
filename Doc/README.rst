@@ -2,8 +2,8 @@ Python Documentation README
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This directory contains the reStructuredText (reST) sources to the Python
-documentation.  You don't need to build them yourself, prebuilt versions are
-available at `docs.python.org/dev/download.html <https://docs.python.org/dev/download.html>`_.
+documentation.  You don't need to build them yourself, `prebuilt versions are
+available <https://docs.python.org/dev/download.html>`_.
 
 Documentation on authoring Python documentation, including information about
 both style and markup, is available in the "`Documenting Python <https://docs.python.org/devguide/documenting.html>`_" chapter of the
@@ -15,7 +15,7 @@ Building the docs
 
 You need to have `Sphinx <http://sphinx-doc.org/>`_ installed; it is the toolset
 used to build the docs.  It is not included in this tree, but maintained
-separately and available from `PyPI <https://pypi.python.org/pypi/Sphinx>`_.
+separately and `available from PyPI <https://pypi.python.org/pypi/Sphinx>`_.
 
 
 Using make
@@ -108,11 +108,11 @@ see the make targets above).
 Contributing
 ============
 
-Bugs in the content should be reported to the Python bug tracker at
-`bugs.python.org <https://bugs.python.org>`_.
+Bugs in the content should be reported to the 
+`Python bug tracker <https://bugs.python.org>`_.
 
-Bugs in the toolset should be reported in the Sphinx bug tracker at
-`bitbucket.org/birkenfeld/sphinx/issues/ <https://www.bitbucket.org/birkenfeld/sphinx/issues/>`_.
+Bugs in the toolset should be reported in the 
+`Sphinx bug tracker <https://www.bitbucket.org/birkenfeld/sphinx/issues/>`_.
 
 You can also send a mail to the Python Documentation Team at docs@python.org,
 and we will process your request as soon as possible.
