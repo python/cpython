@@ -401,7 +401,7 @@ What's the Execution Context?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Within a docstring, later tests can use names defined by earlier
-examples. It's fine for an test to set up state, and
+examples. It's fine for a test to set up state, and
 have no output. 
 
 For each docstring, :mod:`doctest` makes (by default) a 
