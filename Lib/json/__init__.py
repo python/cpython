@@ -30,7 +30,7 @@ Compact encoding::
     >>> import json
     >>> from collections import OrderedDict
     >>> mydict = OrderedDict([('4', 5), ('6', 7)])
-    >>> json.dumps([1,2,3,mydict], separators=(',', ':'))
+    >>> json.dumps([1,2,3,mydict], separators=json.COMPACT)
     '[1,2,3,{"4":5,"6":7}]'
 
 Pretty printing::
@@ -99,6 +99,7 @@ __version__ = '2.0.9'
 __all__ = [
     'dump', 'dumps', 'load', 'loads',
     'JSONDecoder', 'JSONDecodeError', 'JSONEncoder',
+    'COMPACT',
 ]
 
 __author__ = 'Bob Ippolito <bob@redivi.com>'
@@ -106,6 +107,8 @@ __author__ = 'Bob Ippolito <bob@redivi.com>'
 from .decoder import JSONDecoder, JSONDecodeError
 from .encoder import JSONEncoder
 import codecs
+
+COMPACT = (',', ':')
 
 _default_encoder = JSONEncoder(
     skipkeys=False,
