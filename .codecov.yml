@@ -16,6 +16,7 @@ coverage:
         - Lib/*
         - Modules/*
       threshold: 0.01
+    project: false
 parsers:
   gcov:
     branch_detection:
