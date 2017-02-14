@@ -10,6 +10,9 @@ What's New in Python 3.6.1 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #28598: Support __rmod__ for subclasses of str being called before
+  str.__mod__. Patch by Martijn Pieters.
+
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
 
 - Issue #29337: Fixed possible BytesWarning when compare the code objects.
