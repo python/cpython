@@ -25,10 +25,6 @@
 #include "malloc.h" /* for alloca */
 #endif
 
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
-#endif
-
 #ifdef MS_WINDOWS
 #undef BYTE
 #include "windows.h"
