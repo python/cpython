@@ -1185,6 +1185,16 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(format(Decimal('100000000.123'), 'n'),
                          '100\u066c000\u066c000\u066b123')
 
+    def test_decimal_from_float_argument_type(self):
+        class A(self.decimal.Decimal):
+            def __init__(self, a):
+                self.a_type = type(a)
+        a = A.from_float(42.5)
+        self.assertEqual(self.decimal.Decimal, a.a_type)
+
+        a = A.from_float(42)
+        self.assertEqual(self.decimal.Decimal, a.a_type)
+
 class CFormatTest(FormatTest):
     decimal = C
 class PyFormatTest(FormatTest):
