@@ -586,57 +586,6 @@ va_build_stack(PyObject **small_stack, Py_ssize_t small_stack_len,
 }
 
 
-PyObject *
-PyEval_CallFunction(PyObject *callable, const char *format, ...)
-{
-    va_list vargs;
-    PyObject *args;
-    PyObject *res;
-
-    va_start(vargs, format);
-
-    args = Py_VaBuildValue(format, vargs);
-    va_end(vargs);
-
-    if (args == NULL)
-        return NULL;
-
-    res = PyEval_CallObject(callable, args);
-    Py_DECREF(args);
-
-    return res;
-}
-
-
-PyObject *
-PyEval_CallMethod(PyObject *obj, const char *name, const char *format, ...)
-{
-    va_list vargs;
-    PyObject *meth;
-    PyObject *args;
-    PyObject *res;
-
-    meth = PyObject_GetAttrString(obj, name);
-    if (meth == NULL)
-        return NULL;
-
-    va_start(vargs, format);
-
-    args = Py_VaBuildValue(format, vargs);
-    va_end(vargs);
-
-    if (args == NULL) {
-        Py_DECREF(meth);
-        return NULL;
-    }
-
-    res = PyEval_CallObject(meth, args);
-    Py_DECREF(meth);
-    Py_DECREF(args);
-
-    return res;
-}
-
 int
 PyModule_AddObject(PyObject *m, const char *name, PyObject *o)
 {

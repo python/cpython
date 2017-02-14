@@ -197,7 +197,7 @@ SUBDIRSTOO=	Include Lib Misc
 
 # Files and directories to be distributed
 CONFIGFILES=	configure configure.ac acconfig.h pyconfig.h.in Makefile.pre.in
-DISTFILES=	README ChangeLog $(CONFIGFILES)
+DISTFILES=	README.rst ChangeLog $(CONFIGFILES)
 DISTDIRS=	$(SUBDIRS) $(SUBDIRSTOO) Ext-dummy
 DIST=		$(DISTFILES) $(DISTDIRS)
 
@@ -409,6 +409,7 @@ OBJECT_OBJS=	\
 		Objects/bytes_methods.o \
 		Objects/bytearrayobject.o \
 		Objects/bytesobject.o \
+		Objects/call.o \
 		Objects/cellobject.o \
 		Objects/classobject.o \
 		Objects/codeobject.o \

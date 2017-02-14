@@ -4352,15 +4352,19 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
         }
         if (value == NULL) {
             res = PyDict_DelItem(dict, key);
-            if (cached != ((PyDictObject *)dict)->ma_keys) {
+            // Since key sharing dict doesn't allow deletion, PyDict_DelItem()
+            // always converts dict to combined form.
+            if ((cached = CACHED_KEYS(tp)) != NULL) {
                 CACHED_KEYS(tp) = NULL;
                 DK_DECREF(cached);
             }
         }
         else {
-            int was_shared = cached == ((PyDictObject *)dict)->ma_keys;
+            int was_shared = (cached == ((PyDictObject *)dict)->ma_keys);
             res = PyDict_SetItem(dict, key, value);
-            if (was_shared && cached != ((PyDictObject *)dict)->ma_keys) {
+            if (was_shared &&
+                    (cached = CACHED_KEYS(tp)) != NULL &&
+                    cached != ((PyDictObject *)dict)->ma_keys) {
                 /* PyDict_SetItem() may call dictresize and convert split table
                  * into combined table.  In such case, convert it to split
                  * table again and update type's shared key only when this is
