@@ -30,8 +30,14 @@ matrix:
       env:
         - TESTING=docs
       before_script:
-        - cd Doc
-        - make venv PYTHON=python3
+        - |
+            if git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '^Doc/'
+            then
+              echo "Docs weren't updated, stopping build process."
+              exit
+            fi
+            cd Doc
+            make venv PYTHON=python3
       script:
         - make html SPHINXBUILD="./venv/bin/python3 -m sphinx" SPHINXOPTS="-q"
         - python3 tools/rstlint.py -i tools -i venv
@@ -41,11 +47,17 @@ matrix:
       env:
         - TESTING=coverage
       before_script:
-        - ./configure
-        - make -s -j4
-        # Need a venv that can parse covered code.
-        - ./python -m venv venv
-        - ./venv/bin/python -m pip install -U coverage
+        - |
+            if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)/'
+            then
+              echo "Only docs were updated, stopping build process."
+              exit
+            fi
+            ./configure
+            make -s -j4
+            # Need a venv that can parse covered code.
+            ./python -m venv venv
+            ./venv/bin/python -m pip install -U coverage
       script:
         # Skip tests that re-run the entire test suite.
         - ./venv/bin/python -m coverage run --pylib -m test -uall -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn
@@ -65,8 +77,14 @@ matrix:
 
 # Travis provides only 2 cores, so don't overdue the parallelism and waste memory.
 before_script:
-  - ./configure --with-pydebug
-  - make -j4
+  - |
+      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)/'
+      then
+        echo "Only docs were updated, stopping build process."
+        exit
+      fi
+      ./configure --with-pydebug
+      make -j4
 
 script:
   # `-r -w` implicitly provided through `make buildbottest`.
