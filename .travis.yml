@@ -40,7 +40,7 @@ matrix:
             make venv PYTHON=python3
       script:
         - make html SPHINXBUILD="./venv/bin/python3 -m sphinx" SPHINXOPTS="-q"
-        - python3 tools/rstlint.py -i tools -i venv
+        - make check
     - os: linux
       language: c
       compiler: clang
