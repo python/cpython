@@ -37,7 +37,7 @@ matrix:
         - pip install -U Sphinx
       script:
         - make html SPHINXOPTS="-q"
-        - python tools/rstlint.py -i tools -i venv
+        - make check
     - os: linux
       language: cpp
       compiler: clang
