@@ -446,11 +446,12 @@ def cjk_slices(text, index):
         return text[:index], text[index:]
     if cjk_len(text) <= index:
         return text, ''
-    i = 1
-    # <= and i-1 to catch the last double length char of odd line
-    while cjk_len(text[:i]) <= index:
-        i = i + 1
-    return text[:i-1], text[i-1:]
+    width = 0
+    for i, char in enumerate(text):
+        width = width + cjk_wide(char) + 1
+        if width > index:
+            break
+    return text[:i], text[i:]
 
 
 # -- Loosely related functionality -------------------------------------
