@@ -3,6 +3,7 @@
 
 # Copyright (C) 1999-2001 Gregory P. Ward.
 # Copyright (C) 2002, 2003 Python Software Foundation.
+# Copyright (C) 2015-2017 Florent Gallaire <fgallaire@gmail.com>
 # Written by Greg Ward <gward@python.net>
 
 import re, unicodedata
@@ -27,8 +28,6 @@ class TextWrapper:
       width (default: 70)
         the maximum width of wrapped lines (unless break_long_words
         is false)
-      cjk (default: False)
-        Handle double-width CJK chars.
       initial_indent (default: "")
         string that will be prepended to the first line of wrapped
         output.  Counts towards the line's width.
@@ -64,6 +63,8 @@ class TextWrapper:
         Truncate wrapped lines.
       placeholder (default: ' [...]')
         Append to the last line of truncated text.
+      cjk (default: false)
+        Handle double-width CJK chars.
     """
 
     unicode_whitespace_trans = {}
@@ -117,7 +118,6 @@ class TextWrapper:
 
     def __init__(self,
                  width=70,
-                 cjk=False,
                  initial_indent="",
                  subsequent_indent="",
                  expand_tabs=True,
@@ -129,9 +129,9 @@ class TextWrapper:
                  tabsize=8,
                  *,
                  max_lines=None,
-                 placeholder=' [...]'):
+                 placeholder=' [...]',
+                 cjk=False):
         self.width = width
-        self.cjk = cjk
         self.initial_indent = initial_indent
         self.subsequent_indent = subsequent_indent
         self.expand_tabs = expand_tabs
@@ -143,6 +143,7 @@ class TextWrapper:
         self.tabsize = tabsize
         self.max_lines = max_lines
         self.placeholder = placeholder
+        self.cjk = cjk
 
         self.len = cjklen if self.cjk else len
 
