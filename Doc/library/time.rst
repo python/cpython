@@ -479,7 +479,7 @@ The module defines the following functions and data items:
 
    (2)
       The range really is ``0`` to ``61``; value ``60`` is valid in
-      timestamps representing leap seconds and value ``61`` is supported
+      timestamps representing `leap seconds`_ and value ``61`` is supported
       for historical reasons.
 
    (3)
@@ -592,7 +592,7 @@ The module defines the following functions and data items:
    in seconds since the epoch. This is commonly referred to as
    `Unix time <https://en.wikipedia.org/wiki/Unix_time>`_.
    To find out what the epoch is on a given platform, look at
-   ``time.gmtime(0)``.
+   ``gmtime(0)``.
 
    Note that even though the time is always returned as a floating point
    number, not all systems provide time with a better precision than 1 second.
@@ -600,11 +600,11 @@ The module defines the following functions and data items:
    lower value than a previous call if the system clock has been set back
    between the two calls.
 
-   The number returned by :func:`time.time` may be converted into a more common
+   The number returned by :func:`.time` may be converted into a more common
    time format (i.e. year, month, day, hour, etc...) in UTC by passing it to
-   :func:`time.gmtime` function or in local time by passing it to the
-   :func:`time.localtime` function. In both cases a
-   :class:`time.struct_time` object is returned, from which the components
+   :func:`gmtime` function or in local time by passing it to the
+   :func:`localtime` function. In both cases a
+   :class:`struct_time` object is returned, from which the components
    of the calendar date may be accessed as attributes.
 
 .. data:: timezone
