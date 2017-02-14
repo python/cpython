@@ -10,7 +10,7 @@ import re
 import unicodedata
 
 __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent', 'shorten',
-           'cjkwide', 'cjklen', 'cjkslices']
+           'cjk_wide', 'cjk_len', 'cjk_slices']
 
 # Hardcode the recognized whitespace characters to the US-ASCII
 # whitespace characters.  The main reason for doing this is that
@@ -146,7 +146,7 @@ class TextWrapper:
         self.placeholder = placeholder
         self.cjk = cjk
 
-        self._width = cjklen if self.cjk else len
+        self._width = cjk_len if self.cjk else len
 
     # -- Private methods -----------------------------------------------
     # (possibly useful for subclasses to override)
@@ -224,7 +224,7 @@ class TextWrapper:
         # of the next chunk onto the current line as will fit.
         if self.break_long_words:
             if self.cjk:
-                chunk_start, chunk_end = cjkslices(reversed_chunks[-1], space_left)
+                chunk_start, chunk_end = cjk_slices(reversed_chunks[-1], space_left)
                 cur_line.append(chunk_start)
                 reversed_chunks[-1] = chunk_end
             else:
@@ -424,31 +424,31 @@ def shorten(text, width, cjk=False, **kwargs):
 
 # -- CJK support ------------------------------------------------------
 
-def cjkwide(char):
+def cjk_wide(char):
     """Return True if char is Fullwidth or Wide, False otherwise.
     Fullwidth and Wide CJK chars are double-width.
     """
     return unicodedata.east_asian_width(char) in ('F', 'W')
 
 
-def cjklen(text):
+def cjk_len(text):
     """Return the real width of text (its len if not a string).
     """
     if not isinstance(text, str):
         return len(text)
-    return sum(2 if cjkwide(char) else 1 for char in text)
+    return sum(2 if cjk_wide(char) else 1 for char in text)
 
 
-def cjkslices(text, index):
+def cjk_slices(text, index):
     """Return the two slices of text cut to the index.
     """
     if not isinstance(text, str):
         return text[:index], text[index:]
-    if cjklen(text) <= index:
+    if cjk_len(text) <= index:
         return text, ''
     i = 1
     # <= and i-1 to catch the last double length char of odd line
-    while cjklen(text[:i]) <= index:
+    while cjk_len(text[:i]) <= index:
         i = i + 1
     return text[:i-1], text[i-1:]
 
