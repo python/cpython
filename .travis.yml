@@ -27,10 +27,17 @@ matrix:
       env:
         - TESTING=docs
       before_script:
-        - cd Doc
+        - |
+            if git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '^Doc/'
+            then
+              echo "Docs weren't updated, stopping build process."
+              exit
+            fi
+            cd Doc
         - pip install -U Sphinx
       script:
         - make html SPHINXOPTS="-q"
+        - python tools/rstlint.py -i tools -i venv
     - os: linux
       language: cpp
       compiler: clang
@@ -43,8 +50,14 @@ matrix:
 
 # Travis provides only 2 cores, so don't overdue the parallelism and waste memory.
 before_script:
-  - ./configure --with-pydebug
-  - make -j4
+  - |
+      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)/'
+      then
+        echo "Only docs were updated, stopping build process."
+        exit
+      fi
+      ./configure --with-pydebug
+      make -j4
 
 script:
   # `-r -w` implicitly provided through `make buildbottest`.
