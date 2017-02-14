@@ -146,7 +146,7 @@ class TextWrapper:
         self.placeholder = placeholder
         self.cjk = cjk
 
-        self.len = cjklen if self.cjk else len
+        self._width = cjklen if self.cjk else len
 
     # -- Private methods -----------------------------------------------
     # (possibly useful for subclasses to override)
@@ -259,7 +259,7 @@ class TextWrapper:
         lines = []
         if self.width <= 0:
             raise ValueError("invalid width %r (must be > 0)" % self.width)
-        elif self.width == 1 and (sum(self.len(chunk) for chunk in chunks) >
+        elif self.width == 1 and (sum(self._width(chunk) for chunk in chunks) >
                                   sum(len(chunk) for chunk in chunks)):
             raise ValueError("invalid width 1 (must be > 1 when CJK chars)")
         if self.max_lines is not None:
@@ -296,7 +296,7 @@ class TextWrapper:
                 del chunks[-1]
 
             while chunks:
-                l = self.len(chunks[-1])
+                l = self._width(chunks[-1])
 
                 # Can at least squeeze this chunk onto the current line.
                 if cur_len + l <= width:
@@ -309,7 +309,7 @@ class TextWrapper:
 
             # The current line is full, and the next chunk is too big to
             # fit on *any* line (not just this one).
-            if chunks and self.len(chunks[-1]) > width:
+            if chunks and self._width(chunks[-1]) > width:
                 self._handle_long_word(chunks, cur_line, cur_len, width)
                 cur_len = sum(map(len, cur_line))
 
