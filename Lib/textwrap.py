@@ -6,7 +6,8 @@
 # Copyright (C) 2015-2017 Florent Gallaire <fgallaire@gmail.com>
 # Written by Greg Ward <gward@python.net>
 
-import re, unicodedata
+import re
+import unicodedata
 
 __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent', 'shorten',
            'cjkwide', 'cjklen', 'cjkslices']
