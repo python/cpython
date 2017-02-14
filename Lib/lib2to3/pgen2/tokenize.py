@@ -1,4 +1,4 @@
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2017 Python Software Foundation.
+# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Python Software Foundation.
 # All rights reserved.
 
 """Tokenization help for Python programs.

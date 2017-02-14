@@ -3,7 +3,7 @@
  *  upon normal program termination.
  *
  *   Translated from atexit.py by Collin Winter.
- +   Copyright 2017 Python Software Foundation.
+ +   Copyright 2007 Python Software Foundation.
  */
 
 #include "Python.h"

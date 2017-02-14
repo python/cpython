@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Python Software Foundation.
+# Copyright (c) 2004 Python Software Foundation.
 # All rights reserved.
 
 # Written by Eric Price <eprice at tjhsst.edu>

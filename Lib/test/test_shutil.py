@@ -1,4 +1,4 @@
-# Copyright (C) 2017 Python Software Foundation
+# Copyright (C) 2003 Python Software Foundation
 
 import unittest
 import unittest.mock
