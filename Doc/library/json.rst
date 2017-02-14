@@ -170,13 +170,10 @@ Basic Usage
    If specified, *separators* should be an ``(item_separator, key_separator)``
    tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
    ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
-   you should specify ``(',', ':')`` to eliminate whitespace.
+   you should specify :attr:`json.COMPACT` to eliminate whitespace.
 
    .. versionchanged:: 3.4
       Use ``(',', ': ')`` as default if *indent* is not ``None``.
-
-   .. versionchanged:: 3.7
-      Instead of ``(',', ':')`` constant :data:`json.COMPACT` can be used.
 
    If specified, *default* should be a function that gets called for objects that
    can't otherwise be serialized.  It should return a JSON encodable version of
@@ -289,9 +286,10 @@ Basic Usage
 Constants
 ^^^^^^^^^
 
-.. data:: compact
+.. data:: COMPACT
 
-   A constant that can be used as the *separators* argument to emit a compact serialization.
+   A constant that can be used as the *separators* argument
+   to emit a compact serialization.
 
    .. versionadded:: 3.7
 
@@ -461,7 +459,7 @@ Encoders and Decoders
    If specified, *separators* should be an ``(item_separator, key_separator)``
    tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
    ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
-   you should specify ``(',', ':')`` to eliminate whitespace.
+   you should specify :attr:`json.COMPACT` to eliminate whitespace.
 
    .. versionchanged:: 3.4
       Use ``(',', ': ')`` as default if *indent* is not ``None``.
