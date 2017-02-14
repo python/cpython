@@ -10,6 +10,8 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29534: Fixed different behaviour of Decimal.from_float() for _decimal and _pydecimal.
+
 - bpo-29438: Fixed use-after-free problem in key sharing dict.
 
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
