@@ -560,25 +560,36 @@ functools_reduce(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    if ((args = PyTuple_New(2)) == NULL)
+        goto Fail;
+
     for (;;) {
-        PyObject *op2 = PyIter_Next(it);
+        PyObject *op2;
+
+        if (args->ob_refcnt > 1) {
+            Py_DECREF(args);
+            if ((args = PyTuple_New(2)) == NULL)
+                goto Fail;
+        }
+
+        op2 = PyIter_Next(it);
         if (op2 == NULL) {
             if (PyErr_Occurred())
                 goto Fail;
             break;
         }
 
-        if (result == NULL) {
+        if (result == NULL)
             result = op2;
-        }
         else {
-            PyObject *args[] = {result, op2};
-            result = _PyObject_FastCall(func, args, 2);
-            if (result == NULL) {
+            PyTuple_SetItem(args, 0, result);
+            PyTuple_SetItem(args, 1, op2);
+            if ((result = PyEval_CallObject(func, args)) == NULL)
                 goto Fail;
-            }
         }
     }
+
+    Py_DECREF(args);
 
     if (result == NULL)
         PyErr_SetString(PyExc_TypeError,
@@ -588,6 +599,7 @@ functools_reduce(PyObject *self, PyObject *args)
     return result;
 
 Fail:
+    Py_XDECREF(args);
     Py_XDECREF(result);
     Py_DECREF(it);
     return NULL;
