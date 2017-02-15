@@ -396,18 +396,19 @@ class HelpFormatter(object):
                 if actions[start:end] == group._group_actions:
                     for action in group._group_actions:
                         group_actions.add(action)
-                    if not group.required:
-                        if start in inserts:
-                            inserts[start] += ' ['
+                    if not isinstance(group._container, _MutuallyExclusiveGroup):
+                        if not group.required:
+                            if start in inserts:
+                                inserts[start] += ' ['
+                            else:
+                                inserts[start] = '['
+                            inserts[end] = ']'
                         else:
-                            inserts[start] = '['
-                        inserts[end] = ']'
-                    else:
-                        if start in inserts:
-                            inserts[start] += ' ('
-                        else:
-                            inserts[start] = '('
-                        inserts[end] = ')'
+                            if start in inserts:
+                                inserts[start] += ' ('
+                            else:
+                                inserts[start] = '('
+                            inserts[end] = ')'
                     for i in range(start + 1, end):
                         inserts[i] = '|'
 
