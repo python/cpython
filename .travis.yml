@@ -39,7 +39,7 @@ matrix:
         - cd Doc
         - make venv PYTHON=python3
       script:
-        - make check suspicious html PYTHON="./venv/bin/python" SPHINXBUILD="./venv/bin/sphinx-build" SPHINXOPTS="-q"
+        - make check suspicious html PYTHON="./venv/bin/python" SPHINXBUILD="./venv/bin/python -m sphinx" SPHINXOPTS="-q"
     - os: linux
       language: c
       compiler: clang
