@@ -831,29 +831,41 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 Timer Objects
 -------------
 
-This class represents an action that should be run only after a certain amount
-of time has passed --- a timer.  :class:`Timer` is a subclass of :class:`Thread`
+This class represents an action that should be run after a certain amount
+of time has passed --- a timer. It also can run periodically: each run happens
+after specified time that passed since previous run until the action returns True.
+:class:`Timer` is a subclass of :class:`Thread`
 and as such also functions as an example of creating custom threads.
 
 Timers are started, as with threads, by calling their :meth:`~Timer.start`
 method.  The timer can be stopped (before its action has begun) by calling the
-:meth:`~Timer.cancel` method.  The interval the timer will wait before
-executing its action may not be exactly the same as the interval specified by
-the user.
+:meth:`~Timer.cancel` method.  If action has returned True then next run is
+scheduled after the timer interval. The interval the timer will wait before
+executing its action may not be exactly the same as the interval specified
+by the user. 
+
 
 For example::
 
-   def hello():
-       print("hello, world")
+   def star():
+       global cnt
+       print("*")
+       cnt -= 1
+       if cnt > 0:
+           return True
 
-   t = Timer(30.0, hello)
-   t.start()  # after 30 seconds, "hello, world" will be printed
+   cnt = 5
+   t = Timer(1.0, star)
+   t.start()  # it prints five "*" with 1 sec waiting between prints
+
+   
 
 
 .. class:: Timer(interval, function, args=None, kwargs=None)
 
    Create a timer that will run *function* with arguments *args* and  keyword
-   arguments *kwargs*, after *interval* seconds have passed.
+   arguments *kwargs*, after *interval* seconds have passed and continues
+   periodically run *function* until *function* returns True.
    If *args* is ``None`` (the default) then an empty list will be used.
    If *kwargs* is ``None`` (the default) then an empty dict will be used.
 

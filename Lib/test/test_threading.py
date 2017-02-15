@@ -1067,6 +1067,7 @@ class TimerTests(BaseTestCase):
     def setUp(self):
         BaseTestCase.setUp(self)
         self.callback_args = []
+        self.callback_cnt = 3
         self.callback_event = threading.Event()
 
     def test_init_immutable_default_args(self):
@@ -1081,12 +1082,19 @@ class TimerTests(BaseTestCase):
         timer2 = threading.Timer(0.01, self._callback_spy)
         timer2.start()
         self.callback_event.wait()
-        self.assertEqual(len(self.callback_args), 2)
-        self.assertEqual(self.callback_args, [((), {}), ((), {})])
+
+    def test_continuous_execution(self):
+        timer = threading.Timer(0.01, self._callback_cont)
+        self.callback_event.wait(0.1)
+        self.assertEqual(self.callback_cnt, 0)
 
     def _callback_spy(self, *args, **kwargs):
         self.callback_args.append((args[:], kwargs.copy()))
         self.callback_event.set()
+
+    def _callback_cont(self):
+        self.callback_cnt -= 1
+        return self.callback_cnt > 0
 
 class LockTests(lock_tests.LockTests):
     locktype = staticmethod(threading.Lock)
