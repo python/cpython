@@ -4995,7 +4995,7 @@ import_from(PyObject *v, PyObject *name)
 {
     PyObject *x;
     _Py_IDENTIFIER(__name__);
-    PyObject *fullmodname, *pkgname;
+    PyObject *fullmodname, *pkgname, *pkgpath;
 
     x = PyObject_GetAttr(v, name);
     if (x != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -5021,7 +5021,15 @@ import_from(PyObject *v, PyObject *name)
     Py_INCREF(x);
     return x;
  error:
-    PyErr_Format(PyExc_ImportError, "cannot import name %R", name);
+    pkgpath = PyModule_GetFilenameObject(v);
+
+    if (pkgpath == NULL || !PyUnicode_Check(pkgpath)) {
+        PyErr_Clear();
+        PyErr_SetImportError(PyUnicode_FromFormat("cannot import name %R", name), pkgname, NULL);
+    } else {
+        PyErr_SetImportError(PyUnicode_FromFormat("cannot import name %R", name), pkgname, pkgpath);
+    }
+
     return NULL;
 }
 
