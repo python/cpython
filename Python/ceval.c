@@ -4995,7 +4995,7 @@ import_from(PyObject *v, PyObject *name)
 {
     PyObject *x;
     _Py_IDENTIFIER(__name__);
-    PyObject *fullmodname, *pkgname, *pkgpath;
+    PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown;
 
     x = PyObject_GetAttr(v, name);
     if (x != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -5022,12 +5022,23 @@ import_from(PyObject *v, PyObject *name)
     return x;
  error:
     pkgpath = PyModule_GetFilenameObject(v);
+    if (pkgname == NULL) {
+        pkgname_or_unknown = PyUnicode_FromString("<unknown module name>");
+    } else {
+        pkgname_or_unknown = pkgname;
+    }
 
     if (pkgpath == NULL || !PyUnicode_Check(pkgpath)) {
         PyErr_Clear();
-        PyErr_SetImportError(PyUnicode_FromFormat("cannot import name %R", name), pkgname, NULL);
+        PyErr_SetImportError(
+            PyUnicode_FromFormat("cannot import name %R from %R (unknown location)",
+                name, pkgname_or_unknown),
+            pkgname, NULL);
     } else {
-        PyErr_SetImportError(PyUnicode_FromFormat("cannot import name %R", name), pkgname, pkgpath);
+        PyErr_SetImportError(
+            PyUnicode_FromFormat("cannot import name %R from %R (%S)",
+                name, pkgname_or_unknown, pkgpath),
+            pkgname, pkgpath);
     }
 
     return NULL;
