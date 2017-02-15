@@ -6431,7 +6431,6 @@ Tests
 Documentation
 -------------
 
-- bpo
 - Issue #24458: Update documentation to cover multi-phase initialization for
   extension modules (PEP 489). Patch by Petr Viktorin.
 
