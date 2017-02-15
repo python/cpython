@@ -7,7 +7,6 @@
 # Written by Greg Ward <gward@python.net>
 
 import re
-import unicodedata
 
 __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent', 'shorten',
            'cjk_wide', 'cjk_len', 'cjk_slices']
@@ -428,6 +427,7 @@ def cjk_wide(char):
     """Return True if char is Fullwidth or Wide, False otherwise.
     Fullwidth and Wide CJK chars are double-width.
     """
+    import unicodedata
     return unicodedata.east_asian_width(char) in ('F', 'W')
 
 
