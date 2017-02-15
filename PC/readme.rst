@@ -16,23 +16,23 @@ path, start Python and enter "import sys" and "print sys.path".
 
 All PC ports use this scheme to try to set up a module search path:
 
-  1) The script location; the current directory without script.
-  2) The PYTHONPATH variable, if set.
-  3) For Win32 platforms (NT/95), paths specified in the Registry.
-  4) Default directories lib, lib/win, lib/test, lib/tkinter;
-     these are searched relative to the environment variable
-     PYTHONHOME, if set, or relative to the executable and its
-     ancestors, if a landmark file (Lib/string.py) is found ,
-     or the current directory (not useful).
-  5) The directory containing the executable.
+1. The script location; the current directory without script.
+2. The PYTHONPATH variable, if set.
+3. For Win32 platforms (NT/95), paths specified in the Registry.
+4. Default directories lib, lib/win, lib/test, lib/tkinter;
+these are searched relative to the environment variable
+PYTHONHOME, if set, or relative to the executable and its
+ancestors, if a landmark file (Lib/string.py) is found ,
+or the current directory (not useful).
+5. The directory containing the executable.
 
 The best installation strategy is to put the Python executable (and
 DLL, for Win32 platforms) in some convenient directory such as
 C:/python, and copy all library files and subdirectories (using XCOPY)
 to C:/python/lib.  Then you don't need to set PYTHONPATH.  Otherwise,
 set the environment variable PYTHONPATH to your Python search path.
-For example,
-   set PYTHONPATH=.;d:\python\lib;d:\python\lib\win;d:\python\lib\dos-8x3
+For example::
+    set PYTHONPATH=.;d:\python\lib;d:\python\lib\win;d:\python\lib\dos-8x3
 
 There are several add-in modules to build Python programs which use
 the native Windows operating environment.  The ports here just make
@@ -45,31 +45,37 @@ To make a Python port, start the Integrated Development Environment
 (or makefile) provided.  This will enable you to change any source
 files or build settings so you can make custom builds.
 
-pyconfig.h    An important configuration file specific to PC's.
+pyconfig.h
+    An important configuration file specific to PC's.
 
-config.c    The list of C modules to include in the Python PC
-            version.  Manually edit this file to add or
-            remove Python modules.
+config.c    
+    The list of C modules to include in the Python PC
+    version.  Manually edit this file to add or
+    remove Python modules.
 
-testpy.py   A Python test program.  Run this to test your
-            Python port.  It should produce copious output,
-	    ending in a report on how many tests were OK, how many
-	    failed, and how many were skipped.  Don't worry about
-	    skipped tests (these test unavailable optional features).
+testpy.py   
+    A Python test program.  Run this to test your
+    Python port.  It should produce copious output,
+    ending in a report on how many tests were OK, how many
+    failed, and how many were skipped.  Don't worry about
+    skipped tests (these test unavailable optional features).
 
 
 Additional files and subdirectories for 32-bit Windows
 ======================================================
 
-python_nt.rc   Resource compiler input for python15.dll.
+python_nt.rc   
+    Resource compiler input for python15.dll.
 
 dl_nt.c
-               Additional sources used for 32-bit Windows features.
+    Additional sources used for 32-bit Windows features.
 
-getpathp.c     Default sys.path calculations (for all PC platforms).
+getpathp.c     
+    Default sys.path calculations (for all PC platforms).
 
-dllbase_nt.txt A (manually maintained) list of base addresses for
-               various DLLs, to avoid run-time relocation.
+dllbase_nt.txt 
+    A (manually maintained) list of base addresses for
+    various DLLs, to avoid run-time relocation.
 
 
 Note for Windows 3.x and DOS users
