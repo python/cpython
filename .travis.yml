@@ -20,6 +20,7 @@ env:
   - TESTING=cpython
 
 matrix:
+  fast_finish: true
   allow_failures:
     - env:
        - TESTING=coverage
