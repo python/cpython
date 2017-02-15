@@ -104,7 +104,7 @@ categories:
 
 The following sub-projects represent the bare minimum required to build
 a functioning CPython interpreter.  If nothing else builds but these,
-you'll have a very limited but usable ``python.exe``::
+you'll have a very limited but usable ``python.exe``:
 
 pythoncore
     ``.dll`` and ``.lib``
@@ -113,73 +113,75 @@ python
     ``.exe``
 
 These sub-projects provide extra executables that are useful for running
-CPython in different ways::
+CPython in different ways:
 
 pythonw
     ``pythonw.exe``, a variant of python.exe that doesn't open a Command
-    Prompt window
+    Prompt window.
     
 pylauncher
     ``py.exe``, the Python Launcher for Windows, see
-    `<http://docs.python.org/3/using/windows.html#launcher>`_
+    `<http://docs.python.org/3/using/windows.html#launcher>`_.
     
 pywlauncher
     ``pyw.exe``, a variant of py.exe that doesn't open a Command Prompt
-    window
+    window.
     
 _testembed
     ``_testembed.exe``, a small program that embeds Python for testing
-    purposes, used by ``test_capi.py``
+    purposes, used by ``test_capi.py``.
+
 
 These are miscellaneous sub-projects that don't really fit the other
-categories::
+categories:
 
 _freeze_importlib
-    _freeze_importlib.exe, used to regenerate Python\importlib.h after
-    changes have been made to Lib\importlib\_bootstrap.py
+    ``_freeze_importlib.exe``, used to regenerate Python\importlib.h after
+    changes have been made to ``Lib\importlib\_bootstrap.py``.
     
 python3dll
-    python3.dll, the PEP 384 Stable ABI dll
+    ``python3.dll``, the PEP 384 Stable ABI dll.
     
 xxlimited
     builds an example module that makes use of the PEP 384 Stable ABI,
-    see Modules\xxlimited.c
+    see ``Modules\xxlimited.c``.
+
 
 The following sub-projects are for individual modules of the standard
 library which are implemented in C; each one builds a DLL (renamed to
 .pyd) of the same name as the project::
 
-_ctypes
-_ctypes_test
-_decimal
-_elementtree
-_hashlib
-_msi
-_multiprocessing
-_overlapped
-_socket
-_testcapi
-_testbuffer
-_testimportmultiple
-pyexpat
-select
-unicodedata
-winsound
+ _ctypes
+ _ctypes_test
+ _decimal
+ _elementtree
+ _hashlib
+ _msi
+ _multiprocessing
+ _overlapped
+ _socket
+ _testcapi
+ _testbuffer
+ _testimportmultiple
+ pyexpat
+ select
+ unicodedata
+ winsound
 
 The following Python-controlled sub-projects wrap external projects.
 Note that these external libraries are not necessary for a working
-interpreter, but they do implement several major features.  See the
+interpreter, but they do implement several major features. See the
 "Getting External Sources" section below for additional information
-about getting the source for building these libraries.  The sub-projects
-are::
+about getting the source for building these libraries. The sub-projects
+are:
 
 `_bz2 <http://www.bzip.org/>`_
     Python wrapper for version 1.0.6 of the libbzip2 compression library.
-        
+    
 `_lzma <http://tukaani.org/xz/>`_
     Python wrapper for the liblzma compression library, using pre-built
     binaries of XZ Utils version 5.0.5.
-        
+    
 `_ssl <http://www.openssl.org/>`_
     Python wrapper for version 1.0.2j of the OpenSSL secure sockets
     library, which is built by ssl.vcxproj.
@@ -211,10 +213,12 @@ are::
     upgrading to a newer version of OpenSSL or when adding new
     functionality to _ssl or _hashlib. They will not clean up their output
     with the normal Clean target; CleanAll should be used instead.
-    
+
+
 `_sqlite3 <http://www.sqlite.org/>`_
     Wraps SQLite 3.14.2.0, which is itself built by sqlite3.vcxproj.
-        
+
+
 `_tkinter <http://www.tcl.tk/>`_
     Wraps version 8.6.6 of the Tk windowing system.
     
