@@ -6,6 +6,11 @@ group: beta
 # To cache doc-building dependencies.
 cache: pip
 
+branches:
+  only:
+    - master
+    - /^\d\.\d$/
+
 os:
   - linux
   # macOS builds are disabled as the machines are under-provisioned on Travis,
