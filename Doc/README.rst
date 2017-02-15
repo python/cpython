@@ -6,7 +6,8 @@ documentation.  You don't need to build them yourself, `prebuilt versions are
 available <https://docs.python.org/dev/download.html>`_.
 
 Documentation on authoring Python documentation, including information about
-both style and markup, is available in the "`Documenting Python <https://docs.python.org/devguide/documenting.html>`_" chapter of the
+both style and markup, is available in the "`Documenting Python
+<https://docs.python.org/devguide/documenting.html>`_" chapter of the
 developers guide.
 
 
