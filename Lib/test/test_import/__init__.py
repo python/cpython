@@ -80,6 +80,25 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError):
             from importlib import something_that_should_not_exist_anywhere
 
+    def test_from_import_missing_attr_has_name_and_path(self):
+        with self.assertRaises(ImportError) as cm:
+            from os import i_dont_exist
+        self.assertEqual(cm.exception.name, 'os')
+        self.assertEqual(cm.exception.path, os.__file__)
+
+    def test_from_import_missing_attr_has_name(self):
+        with self.assertRaises(ImportError) as cm:
+            # _warning has no path as it's a built-in module.
+            from _warning import i_dont_exist
+        self.assertEqual(cm.exception.name, '_warning')
+        self.assertIsNone(cm.exception.path)
+
+    def test_from_import_missing_attr_path_is_canonical(self):
+        with self.assertRaises(ImportError) as cm:
+            from os.path import i_dont_exist
+        self.assertIn(cm.exception.name, {'posixpath', 'ntpath'})
+        self.assertIsNotNone(cm.exception)
+
     def test_case_sensitivity(self):
         # Brief digression to test that import is case-sensitive:  if we got
         # this far, we know for sure that "random" exists.
