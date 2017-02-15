@@ -37,7 +37,7 @@ matrix:
         - TESTING=docs
       before_script:
         - cd Doc
-        - make venv PYTHON=python3
+        - make venv
       script:
         - make check suspicious html PYTHON="./venv/bin/python" SPHINXBUILD="./venv/bin/python -m sphinx" SPHINXOPTS="-q"
     - os: linux
