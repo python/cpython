@@ -2661,13 +2661,13 @@ static void
 FileHandler(ClientData clientData, int mask)
 {
     FileHandler_ClientData *data = (FileHandler_ClientData *)clientData;
-    PyObject *func, *file, *arg, *res;
+    PyObject *func, *file, *res;
 
     ENTER_PYTHON
     func = data->func;
     file = data->file;
 
-    res = PyObject_CallFunction(func, "Oi", file, (long) mask);
+    res = PyObject_CallFunction(func, "Oi", file, mask);
     if (res == NULL) {
         errorInCmd = 1;
         PyErr_Fetch(&excInCmd, &valInCmd, &trbInCmd);
