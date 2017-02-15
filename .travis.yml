@@ -36,17 +36,10 @@ matrix:
       env:
         - TESTING=docs
       before_script:
-        - |
-            if git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '^Doc/'
-            then
-              echo "Docs weren't updated, stopping build process."
-              exit
-            fi
-            cd Doc
-            make venv PYTHON=python3
+        - cd Doc
+        - make venv PYTHON=python3
       script:
-        - make html SPHINXBUILD="./venv/bin/python3 -m sphinx" SPHINXOPTS="-q"
-        - make check
+        - make check suspicious html PYTHON="./venv/bin/python" SPHINXBUILD="./venv/bin/python -m sphinx" SPHINXOPTS="-q"
     - os: linux
       language: c
       compiler: clang
