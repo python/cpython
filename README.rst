@@ -15,6 +15,12 @@ reserved.
 
 See the end of this file for further copyright and license information.
 
+Contributing to CPython
+-----------------------
+
+For more complete instructions on contributing to CPython development, see the `Developer Guide`_.
+
+.. _Developer Guide: https://docs.python.org/devguide/
 
 Using Python
 ------------
