@@ -573,7 +573,8 @@ functools_reduce(PyObject *self, PyObject *args)
         }
         else {
             PyObject *args[] = {result, op2};
-            if ((result = _PyObject_FastCall(func, args, 2)) == NULL) {
+            result = _PyObject_FastCall(func, args, 2);
+            if (result == NULL) {
                 goto Fail;
             }
         }
