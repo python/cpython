@@ -117,6 +117,28 @@ functions should be good enough; otherwise, you should use an instance of
    .. versionadded:: 3.3
 
 
+.. function:: cjk_wide(char)
+
+   Return ``True`` if *char* is Fullwidth or Wide, ``False`` otherwise.
+   Fullwidth and Wide CJK chars are double-width.
+
+   .. versionadded:: 3.7
+
+
+.. function:: cjk_len(text)
+
+   Return the real width of *text* (its len if not a string).
+
+   .. versionadded:: 3.7
+
+
+.. function:: cjk_slices(text, index)
+
+   Return the two slices of *text* cut to *index*.
+
+   .. versionadded:: 3.7
+
+
 :func:`wrap`, :func:`fill` and :func:`shorten` work by creating a
 :class:`TextWrapper` instance and calling a single method on it.  That
 instance is not reused, so for applications that process many text
@@ -274,6 +296,13 @@ hyphenated words; only then will long words be broken if necessary, unless
       text if it has been truncated.
 
       .. versionadded:: 3.4
+
+
+   .. attribute:: cjk
+
+      (default: ``False``) Handle double-width CJK chars.
+
+      .. versionadded:: 3.7
 
 
    :class:`TextWrapper` also provides some public methods, analogous to the

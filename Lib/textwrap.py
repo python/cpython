@@ -440,7 +440,7 @@ def cjk_len(text):
 
 
 def cjk_slices(text, index):
-    """Return the two slices of text cut to the index.
+    """Return the two slices of text cut to index.
     """
     if not isinstance(text, str):
         return text[:index], text[index:]
