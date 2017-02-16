@@ -19,6 +19,51 @@ class NetrcParseError(Exception):
         return "%s (%s, line %s)" % (self.msg, self.filename, self.lineno)
 
 
+class _netrclex:
+    def __init__(self, fp):
+        self.lineno = 1
+        self.instream = fp
+        self.whitespace = "\n\t\r "
+        self._stack = []
+
+    def _read_char(self):
+        ch = self.instream.read(1)
+        if ch == "\n":
+            self.lineno += 1
+        return ch
+
+    def get_token(self):
+        if self._stack:
+            return self._stack.pop(0)
+        token = ""
+        fiter = iter(self._read_char, "")
+        for ch in fiter:
+            if ch in self.whitespace:
+                continue
+            if ch == "\"":
+                for ch in fiter:
+                    if ch != "\"":
+                        if ch == "\\":
+                            ch = self._read_char()
+                        token += ch
+                        continue
+                    return token
+            else:
+                if ch == "\\":
+                    ch = self._read_char()
+                token += ch
+                for ch in fiter:
+                    if ch not in self.whitespace:
+                        if ch == "\\":
+                            ch = self._read_char()
+                        token += ch
+                        continue
+                    return token
+        return token
+
+    def push_token(self, token):
+        self._stack.append(token)
+
 class netrc:
     def __init__(self, file=None):
         default_netrc = file is None
@@ -33,31 +78,31 @@ class netrc:
             self._parse(file, fp, default_netrc)
 
     def _parse(self, file, fp, default_netrc):
-        lexer = shlex.shlex(fp)
-        lexer.wordchars += r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
-        lexer.commenters = lexer.commenters.replace('#', '')
+        lexer = _netrclex(fp)
         while 1:
             # Look for a machine, default, or macdef top-level keyword
-            saved_lineno = lexer.lineno
-            toplevel = tt = lexer.get_token()
+            prev_lineno = lexer.lineno
+            tt = lexer.get_token()
             if not tt:
                 break
             elif tt[0] == '#':
-                if lexer.lineno == saved_lineno and len(tt) == 1:
+                if prev_lineno == lexer.lineno:
                     lexer.instream.readline()
                 continue
             elif tt == 'machine':
                 entryname = lexer.get_token()
             elif tt == 'default':
                 entryname = 'default'
-            elif tt == 'macdef':                # Just skip to end of macdefs
+            elif tt == 'macdef':
                 entryname = lexer.get_token()
                 self.macros[entryname] = []
-                lexer.whitespace = ' \t'
                 while 1:
                     line = lexer.instream.readline()
-                    if not line or line == '\012':
-                        lexer.whitespace = ' \t\r\n'
+                    if not line:
+                        raise NetrcParseError(
+                            "Macro definition missing null line terminator.",
+                            file, lexer.lineno)
+                    if line == '\n':
                         break
                     self.macros[entryname].append(line)
                 continue
@@ -65,29 +110,29 @@ class netrc:
                 raise NetrcParseError(
                     "bad toplevel token %r" % tt, file, lexer.lineno)
 
+            if not entryname:
+                raise NetrcParseError("missing %r name" % tt, file, lexer.lineno)
+
             # We're looking at start of an entry for a named machine or default.
-            login = ''
-            account = password = None
+            login = account = password = ''
             self.hosts[entryname] = {}
             while 1:
+                prev_lineno = lexer.lineno
                 tt = lexer.get_token()
-                if (tt.startswith('#') or
-                    tt in {'', 'machine', 'default', 'macdef'}):
-                    if password:
-                        self.hosts[entryname] = (login, account, password)
-                        lexer.push_token(tt)
-                        break
-                    else:
-                        raise NetrcParseError(
-                            "malformed %s entry %s terminated by %s"
-                            % (toplevel, entryname, repr(tt)),
-                            file, lexer.lineno)
+                if tt.startswith('#'):
+                    if lexer.lineno == prev_lineno:
+                        lexer.instream.readline()
+                    continue
+                if tt in {'', 'machine', 'default', 'macdef'}:
+                    self.hosts[entryname] = (login, account, password)
+                    lexer.push_token(tt)
+                    break
                 elif tt == 'login' or tt == 'user':
                     login = lexer.get_token()
                 elif tt == 'account':
                     account = lexer.get_token()
                 elif tt == 'password':
-                    if os.name == 'posix' and default_netrc:
+                    if os.name == 'posix' and default_netrc and login != "anonymous":
                         prop = os.fstat(fp.fileno())
                         if prop.st_uid != os.getuid():
                             import pwd
@@ -127,10 +172,10 @@ class netrc:
         rep = ""
         for host in self.hosts.keys():
             attrs = self.hosts[host]
-            rep = rep + "machine "+ host + "\n\tlogin " + repr(attrs[0]) + "\n"
+            rep = rep + "machine "+ host + "\n\tlogin " + attrs[0] + "\n"
             if attrs[1]:
-                rep = rep + "account " + repr(attrs[1])
-            rep = rep + "\tpassword " + repr(attrs[2]) + "\n"
+                rep = rep + "account " + attrs[1]
+            rep = rep + "\tpassword " + attrs[2] + "\n"
         for macro in self.macros.keys():
             rep = rep + "macdef " + macro + "\n"
             for line in self.macros[macro]:
