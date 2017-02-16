@@ -124,7 +124,7 @@ def removeduppaths():
         # if they only differ in case); turn relative paths into absolute
         # paths.
         dir, dircase = makepath(dir)
-        if not dircase in known_paths:
+        if dircase not in known_paths:
             L.append(dir)
             known_paths.add(dircase)
     sys.path[:] = L
@@ -279,9 +279,11 @@ def addusersitepackages(known_paths):
     """
     # get the per user site-package path
     # this call will also make sure USER_BASE and USER_SITE are set
-    user_site = getusersitepackages()
+    if not ENABLE_USER_SITE:
+        return known_paths
 
-    if ENABLE_USER_SITE and os.path.isdir(user_site):
+    user_site = getusersitepackages()
+    if os.path.isdir(user_site):
         addsitedir(user_site, known_paths)
     return known_paths
 
