@@ -957,6 +957,13 @@ class TestNamedTemporaryFile(BaseTestCase):
             tempfile.NamedTemporaryFile(mode=2, dir=dir)
         self.assertEqual(os.listdir(dir), [])
 
+    def test_if_temp_file_already_removed(self):
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(support.rmtree, tmpdir)
+        with tempfile.NamedTemporaryFile(delete=True, dir=tmpdir) as fp:
+            os.system('rm {}'.format(fp.name))
+        self.assertEqual(os.listdir(tmpdir), [])
+
     # How to test the mode and bufsize parameters?
 
 class TestSpooledTemporaryFile(BaseTestCase):

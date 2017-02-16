@@ -442,7 +442,7 @@ class _TemporaryFileCloser:
                 try:
                     self.file.close()
                 finally:
-                    if self.delete:
+                    if self.delete and _os.path.isfile(self.name):
                         unlink(self.name)
 
         # Need to ensure the file is deleted on __del__
