@@ -994,8 +994,7 @@ t_bootstrap(void *boot_raw)
     _PyThreadState_Init(tstate);
     PyEval_AcquireThread(tstate);
     nb_threads++;
-    res = PyEval_CallObjectWithKeywords(
-        boot->func, boot->args, boot->keyw);
+    res = PyObject_Call(boot->func, boot->args, boot->keyw);
     if (res == NULL) {
         if (PyErr_ExceptionMatches(PyExc_SystemExit))
             PyErr_Clear();

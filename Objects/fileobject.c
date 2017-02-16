@@ -49,6 +49,7 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
 PyObject *
 PyFile_GetLine(PyObject *f, int n)
 {
+    _Py_IDENTIFIER(readline);
     PyObject *result;
 
     if (f == NULL) {
@@ -56,32 +57,18 @@ PyFile_GetLine(PyObject *f, int n)
         return NULL;
     }
 
-    {
-        PyObject *reader;
-        PyObject *args;
-        _Py_IDENTIFIER(readline);
-
-        reader = _PyObject_GetAttrId(f, &PyId_readline);
-        if (reader == NULL)
-            return NULL;
-        if (n <= 0)
-            args = PyTuple_New(0);
-        else
-            args = Py_BuildValue("(i)", n);
-        if (args == NULL) {
-            Py_DECREF(reader);
-            return NULL;
-        }
-        result = PyEval_CallObject(reader, args);
-        Py_DECREF(reader);
-        Py_DECREF(args);
-        if (result != NULL && !PyBytes_Check(result) &&
-            !PyUnicode_Check(result)) {
-            Py_DECREF(result);
-            result = NULL;
-            PyErr_SetString(PyExc_TypeError,
-                       "object.readline() returned non-string");
-        }
+    if (n <= 0) {
+        result = _PyObject_CallMethodIdObjArgs(f, &PyId_readline, NULL);
+    }
+    else {
+        result = _PyObject_CallMethodId(f, &PyId_readline, "i", n);
+    }
+    if (result != NULL && !PyBytes_Check(result) &&
+        !PyUnicode_Check(result)) {
+        Py_DECREF(result);
+        result = NULL;
+        PyErr_SetString(PyExc_TypeError,
+                   "object.readline() returned non-string");
     }
 
     if (n < 0 && result != NULL && PyBytes_Check(result)) {
@@ -197,7 +184,7 @@ PyObject_AsFileDescriptor(PyObject *o)
     }
     else if ((meth = _PyObject_GetAttrId(o, &PyId_fileno)) != NULL)
     {
-        PyObject *fno = PyEval_CallObject(meth, NULL);
+        PyObject *fno = _PyObject_CallNoArg(meth);
         Py_DECREF(meth);
         if (fno == NULL)
             return -1;
