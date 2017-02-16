@@ -1,4 +1,4 @@
-# Copyright (C) 2003-2013 Python Software Foundation
+# Copyright (C) 2003-2017 Python Software Foundation
 
 import unittest
 import plistlib
