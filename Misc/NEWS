@@ -700,7 +700,7 @@ C API
 Documentation
 -------------
 
-- bpo-28929: Link the documentation to its source file on GitHub
+- bpo-28929: Link the documentation to its source file on GitHub.
 
 - Issue #26355: Add canonical header link on each page to corresponding major
   version of the documentation. Patch by Matthias Bussonnier.
@@ -910,8 +910,6 @@ Windows
 
 Documentation
 -------------
-
-- bpo-28929: Link the documentation to its source file on GitHub
 
 - Issue #29349: Fix Python 2 syntax in code for building the documentation.
 
@@ -4097,17 +4095,6 @@ C API
 - Issue #26198: ValueError is now raised instead of TypeError on buffer
   overflow in parsing "es#" and "et#" format units.  SystemError is now raised
   instead of TypeError on programmical error in parsing format string.
-
-
-What's New in Python 3.5.4 release candidate 1?
-===============================================
-
-*Release date: XXXX-XX-XX*
-
-Documentation
--------------
-
-- bpo-28929: Link the documentation to its source file on GitHub
 
 
 What's New in Python 3.5.3?
