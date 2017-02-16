@@ -229,6 +229,10 @@ Extension Modules
 Library
 -------
 
+- bpo-22807: Add uuid.SafeUUID and uuid.UUID.is_safe to relay information from
+  the platform about whether generated UUIDs are generated with a
+  multiprocessing safe method.
+
 - bpo-29576: Improve some deprecations in importlib. Some deprecated methods
   now emit DeprecationWarnings and have better descriptive messages.
 
