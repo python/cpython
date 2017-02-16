@@ -70,10 +70,10 @@ static PyObject * special_lookup(PyObject *, _Py_Identifier *);
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
 #define UNBOUNDLOCAL_ERROR_MSG \
-    "local variable '%.200s' referenced before assignment"
+    "local variable '%.200s' referenced before assignment, or got deleted"
 #define UNBOUNDFREE_ERROR_MSG \
     "free variable '%.200s' referenced before assignment" \
-    " in enclosing scope"
+    " in enclosing scope, or got deleted"
 
 /* Dynamic execution profile */
 #ifdef DYNAMIC_EXECUTION_PROFILE
