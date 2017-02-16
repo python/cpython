@@ -1329,7 +1329,7 @@ PyNumber_Long(PyObject *o)
     }
     trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
     if (trunc_func) {
-        result = PyEval_CallObject(trunc_func, NULL);
+        result = _PyObject_CallNoArg(trunc_func);
         Py_DECREF(trunc_func);
         if (result == NULL || PyLong_CheckExact(result)) {
             return result;
