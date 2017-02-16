@@ -487,14 +487,14 @@ try:
     for libname in _libnames:
         try:
             lib = ctypes.CDLL(ctypes.util.find_library(libname))
-        except Exception:
+        except Exception:                           # pragma: nocover
             continue
         # Try to find the safe variety first.
         if hasattr(lib, 'uuid_generate_time_safe'):
             _uuid_generate_time = lib.uuid_generate_time_safe
             # int uuid_generate_time_safe(uuid_t out);
             break
-        elif hasattr(lib, 'uuid_generate_time'):
+        elif hasattr(lib, 'uuid_generate_time'):    # pragma: nocover
             _uuid_generate_time = lib.uuid_generate_time
             # void uuid_generate_time(uuid_t out);
             _uuid_generate_time.restype = None
