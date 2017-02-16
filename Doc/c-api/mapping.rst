@@ -9,7 +9,9 @@ Mapping Protocol
 .. c:function:: int PyMapping_Check(PyObject *o)
 
    Return ``1`` if the object provides mapping protocol, and ``0`` otherwise.  This
-   function always succeeds.
+   function always succeeds.  The C-API mapping protocol is not equivalent to
+   :class:`collections.abc.Mapping`.  In particular, ``PyMapping_Check(list)``
+   returns ``1``.
 
 
 .. c:function:: Py_ssize_t PyMapping_Size(PyObject *o)
