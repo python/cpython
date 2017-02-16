@@ -13,6 +13,7 @@ try:
 except ImportError as exc:
     _frozen_importlib_external = _bootstrap_external
 import abc
+import warnings
 
 
 def _register(abstract_cls, *classes):
@@ -34,6 +35,8 @@ class Finder(metaclass=abc.ABCMeta):
     reimplementations of the import system.  Otherwise, finder
     implementations should derive from the more specific MetaPathFinder
     or PathEntryFinder ABCs.
+
+    Deprecated since Python 3.3
     """
 
     @abc.abstractmethod
@@ -57,11 +60,16 @@ class MetaPathFinder(Finder):
         If no module is found, return None.  The fullname is a str and
         the path is a list of strings or None.
 
-        This method is deprecated in favor of finder.find_spec(). If find_spec()
-        exists then backwards-compatible functionality is provided for this
-        method.
+        This method is deprecated since Python 3.4 in favor of
+        finder.find_spec(). If find_spec() exists then backwards-compatible
+        functionality is provided for this method.
 
         """
+        warnings.warn("MetaPathFinder.find_module() is deprecated since Python "
+                      "3.4 in favor of MetaPathFinder.find_spec()"
+                      "(available since 3.4)",
+                      DeprecationWarning,
+                      stacklevel=2)
         if not hasattr(self, 'find_spec'):
             return None
         found = self.find_spec(fullname, path)
@@ -94,10 +102,15 @@ class PathEntryFinder(Finder):
         The portion will be discarded if another path entry finder
         locates the module as a normal module or package.
 
-        This method is deprecated in favor of finder.find_spec(). If find_spec()
-        is provided than backwards-compatible functionality is provided.
-
+        This method is deprecated since Python 3.4 in favor of
+        finder.find_spec(). If find_spec() is provided than backwards-compatible
+        functionality is provided.
         """
+        warnings.warn("PathEntryFinder.find_loader() is deprecated since Python "
+                      "3.4 in favor of PathEntryFinder.find_spec() "
+                      "(available since 3.4)",
+                      DeprecationWarning,
+                      stacklevel=2)
         if not hasattr(self, 'find_spec'):
             return None, []
         found = self.find_spec(fullname)
