@@ -24,7 +24,7 @@ import importlib
 import os
 from sys import executable, platform  # Platform is set for one test.
 
-from tkinter import Toplevel, StringVar, W, E, N, S
+from tkinter import Toplevel, StringVar, W, E, S
 from tkinter.ttk import Frame, Button, Entry, Label
 from tkinter import filedialog
 from tkinter.font import Font
