@@ -1082,19 +1082,28 @@ class TimerTests(BaseTestCase):
         timer2 = threading.Timer(0.01, self._callback_spy)
         timer2.start()
         self.callback_event.wait()
-
-    def test_continuous_execution(self):
-        timer = threading.Timer(0.01, self._callback_cont)
-        self.callback_event.clear()
-        timer.start()
-        for i in range(3):
-            self.callback_event.wait(1)
-            self.callback_event.clear()
-        self.assertEqual(self.callback_cnt, 0)
+        self.assertEqual(len(self.callback_args), 2)
+        self.assertEqual(self.callback_args, [((), {}), ((), {})])
 
     def _callback_spy(self, *args, **kwargs):
         self.callback_args.append((args[:], kwargs.copy()))
         self.callback_event.set()
+
+    def test_continuous_execution(self):
+        timer1 = threading.Timer(0.01, self._callback_cont)
+        self.callback_event.clear()
+        timer1.start()
+        for i in range(3):
+            self.callback_event.wait(1.0)
+            self.callback_event.clear()
+        self.assertEqual(self.callback_cnt, 0)
+        self.callback_cnt = 3
+        timer2 = threading.Timer(0.5, self._callback_cont)
+        self.callback_event.clear()
+        timer2.start()
+        timer2.cancel()
+        timer2.join(2.0)
+        self.assertEqual(self.callback_cnt, 3)
 
     def _callback_cont(self):
         self.callback_cnt -= 1

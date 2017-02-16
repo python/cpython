@@ -1177,7 +1177,7 @@ class Timer(Thread):
         self.finished.set()
 
     def run(self):
-        """Continue execution after wait until function returns True"""
+        """Continue execution after wait till function returns True"""
         while(not self.finished.wait(self.interval)):
             if not self.function(*self.args, **self.kwargs):
                 break
