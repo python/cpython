@@ -492,8 +492,7 @@ function like this::
        for arg in arguments:
            print(arg)
        print("-" * 40)
-       keys = sorted(keywords.keys())
-       for kw in keys:
+       for kw in keywords:
            print(kw, ":", keywords[kw])
 
 It could be called like this::
@@ -513,13 +512,10 @@ and of course it would print:
    It's very runny, sir.
    It's really very, VERY runny, sir.
    ----------------------------------------
-   client : John Cleese
    shopkeeper : Michael Palin
+   client : John Cleese
    sketch : Cheese Shop Sketch
 
-Note that the list of keyword argument names is created by sorting the result
-of the keywords dictionary's ``keys()`` method before printing its contents;
-if this is not done, the order in which the arguments are printed is undefined.
 
 .. _tut-arbitraryargs:
 
