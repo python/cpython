@@ -124,7 +124,7 @@ def removeduppaths():
         # if they only differ in case); turn relative paths into absolute
         # paths.
         dir, dircase = makepath(dir)
-        if not dircase in known_paths:
+        if dircase not in known_paths:
             L.append(dir)
             known_paths.add(dircase)
     sys.path[:] = L
@@ -234,6 +234,27 @@ def check_enableusersite():
 
     return True
 
+
+def _getuserbase():
+    # Stripped version of sysconfig._getuserbase()
+    env_base = os.environ.get("PYTHONUSERBASE", None)
+    if env_base:
+        return env_base
+
+    def joinuser(*args):
+        return os.path.expanduser(os.path.join(*args))
+
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or "~"
+        return joinuser(base, "Python")
+
+    if sys.platform == "darwin" and sys._framework:
+        return joinuser("~", "Library", sys._framework,
+                        "%d.%d" % sys.version_info[:2])
+
+    return joinuser("~", ".local")
+
+
 def getuserbase():
     """Returns the `user base` directory path.
 
@@ -242,11 +263,23 @@ def getuserbase():
     it.
     """
     global USER_BASE
-    if USER_BASE is not None:
-        return USER_BASE
-    from sysconfig import get_config_var
-    USER_BASE = get_config_var('userbase')
+    if USER_BASE is None:
+        USER_BASE = _getuserbase()
     return USER_BASE
+
+
+def _get_path(userbase):
+    # stripped version of sysconfig.get_path('purelib', os.name + '_user')
+    version = sys.version_info[:2]
+
+    if os.name == 'nt':
+        return f'{userbase}/Python{version[0]}{version[1]}/site-packages'
+
+    if sys.platform == 'darwin' and sys._framework:
+        return f'{userbase}/lib/python/site-packages'
+
+    return f'{userbase}/lib/python{version[0]}.{version[1]}/site-packages'
+
 
 def getusersitepackages():
     """Returns the user-specific site-packages directory path.
@@ -255,20 +288,11 @@ def getusersitepackages():
     function will also set it.
     """
     global USER_SITE
-    user_base = getuserbase() # this will also set USER_BASE
+    userbase = getuserbase() # this will also set USER_BASE
 
-    if USER_SITE is not None:
-        return USER_SITE
+    if USER_SITE is None:
+        USER_SITE = _get_path(userbase)
 
-    from sysconfig import get_path
-
-    if sys.platform == 'darwin':
-        from sysconfig import get_config_var
-        if get_config_var('PYTHONFRAMEWORK'):
-            USER_SITE = get_path('purelib', 'osx_framework_user')
-            return USER_SITE
-
-    USER_SITE = get_path('purelib', '%s_user' % os.name)
     return USER_SITE
 
 def addusersitepackages(known_paths):
