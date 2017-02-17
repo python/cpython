@@ -42,7 +42,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. versionadded:: 3.7
 
-.. class:: UUID(hex=None, bytes=None, bytes_le=None, fields=None, int=None, version=None, is_safe=SafeUUID.unknown)
+.. class:: UUID(hex=None, bytes=None, bytes_le=None, fields=None, int=None, version=None, *, is_safe=SafeUUID.unknown)
 
    Create a UUID from either a string of 32 hexadecimal digits, a string of 16
    bytes as the *bytes* argument, a string of 16 bytes in little-endian order as
