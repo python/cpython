@@ -1088,6 +1088,7 @@ class TimerTests(BaseTestCase):
     def _callback_spy(self, *args, **kwargs):
         self.callback_args.append((args[:], kwargs.copy()))
         self.callback_event.set()
+        self.assertEqual(self.callback_event.is_set(), True)
 
     def test_continuous_execution(self):
         timer1 = threading.Timer(0.01, self._callback_cont)
@@ -1108,6 +1109,7 @@ class TimerTests(BaseTestCase):
     def _callback_cont(self):
         self.callback_cnt -= 1
         self.callback_event.set()
+        self.assertEqual(self.callback_event.is_set(), True)
         return self.callback_cnt > 0
 
 class LockTests(lock_tests.LockTests):
