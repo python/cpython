@@ -81,7 +81,7 @@ def _worker(executor_reference, work_queue):
         _base.LOGGER.critical('Exception in worker', exc_info=True)
 
 class ThreadPoolExecutor(_base.Executor):
-    def __init__(self, max_workers=None, thread_name_prefix=''):
+    def __init__(self, max_workers=None, thread_name_prefix='', max_queue_size=0):
         """Initializes a new ThreadPoolExecutor instance.
 
         Args:
@@ -97,7 +97,7 @@ class ThreadPoolExecutor(_base.Executor):
             raise ValueError("max_workers must be greater than 0")
 
         self._max_workers = max_workers
-        self._work_queue = queue.Queue()
+        self._work_queue = queue.Queue(maxsize=max_queue_size)
         self._threads = set()
         self._shutdown = False
         self._shutdown_lock = threading.Lock()
