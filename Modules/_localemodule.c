@@ -427,6 +427,7 @@ static struct langinfo_constant{
     {0, 0}
 };
 
+#ifdef HAVE_NL_LANGINFO
 PyDoc_STRVAR(nl_langinfo__doc__,
 "nl_langinfo(key) -> string\n"
 "Return the value for the locale information associated with key.");
@@ -451,6 +452,7 @@ PyLocale_nl_langinfo(PyObject* self, PyObject* args)
     PyErr_SetString(PyExc_ValueError, "unsupported langinfo constant");
     return NULL;
 }
+#endif /* HAVE_NL_LANGINFO */
 #endif /* HAVE_LANGINFO_H */
 
 #ifdef HAVE_LIBINTL_H
@@ -583,7 +585,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
 #if defined(MS_WINDOWS)
   {"_getdefaultlocale", (PyCFunction) PyLocale_getdefaultlocale, METH_NOARGS},
 #endif
-#ifdef HAVE_LANGINFO_H
+#if defined(HAVE_NL_LANGINFO)
   {"nl_langinfo", (PyCFunction) PyLocale_nl_langinfo,
    METH_VARARGS, nl_langinfo__doc__},
 #endif

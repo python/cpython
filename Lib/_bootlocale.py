@@ -12,10 +12,10 @@ if sys.platform.startswith("win"):
         return _locale._getdefaultlocale()[1]
 else:
     try:
-        _locale.CODESET
+        _locale.nl_langinfo, _locale.CODESET
     except AttributeError:
         if hasattr(sys, 'getandroidapilevel'):
-            # On Android langinfo.h and CODESET are missing, and UTF-8 is
+            # On Android nl_langinfo() is missing, and UTF-8 is
             # always used in mbstowcs() and wcstombs().
             def getpreferredencoding(do_setlocale=True):
                 return 'UTF-8'

@@ -614,12 +614,12 @@ if sys.platform.startswith("win"):
         import _bootlocale
         return _bootlocale.getpreferredencoding(False)
 else:
-    # On Unix, if CODESET is available, use that.
+    # On Unix, if both nl_langinfo and CODESET are available, use them.
     try:
-        CODESET
+        nl_langinfo, CODESET
     except NameError:
         if hasattr(sys, 'getandroidapilevel'):
-            # On Android langinfo.h and CODESET are missing, and UTF-8 is
+            # On Android nl_langinfo() is missing, and UTF-8 is
             # always used in mbstowcs() and wcstombs().
             def getpreferredencoding(do_setlocale = True):
                 return 'UTF-8'
