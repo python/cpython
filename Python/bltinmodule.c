@@ -11,10 +11,6 @@
 
 #include <ctype.h>
 
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>   /* CODESET */
-#endif
-
 /* The default encoding used by the platform file system APIs
    Can remain NULL for all platforms that don't have such a concept
 

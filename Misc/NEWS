@@ -229,6 +229,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29576: Improve some deprecations in importlib. Some deprecated methods
+  now emit DeprecationWarnings and have better descriptive messages.
+
 - bpo-29534: Fixed different behaviour of Decimal.from_float()
   for _decimal and _pydecimal. Thanks Andrew Nester.
 

@@ -74,7 +74,7 @@ echo.   Provided by this script:
 echo.      clean, check, serve, htmlview
 echo.
 echo.All arguments past the first one are passed through to sphinx-build as
-echo.filenames to build or are ignored.  See README.txt in this directory or
+echo.filenames to build or are ignored.  See README.rst in this directory or
 echo.the documentation for your version of Sphinx for more exhaustive lists
 echo.of available targets and descriptions of each.
 echo.

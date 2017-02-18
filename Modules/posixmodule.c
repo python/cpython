@@ -87,10 +87,6 @@ corresponding Unix manual entries for more information on calls.");
 #include <sys/loadavg.h>
 #endif
 
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
-#endif
-
 #ifdef HAVE_SYS_SENDFILE_H
 #include <sys/sendfile.h>
 #endif
