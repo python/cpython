@@ -111,6 +111,10 @@ class UUID:
 
         version     the UUID version number (1 through 5, meaningful only
                     when the variant is RFC_4122)
+
+        is_safe     An enum indicating whether the UUID has been generated in
+                    a way that is safe for multiprocessing applications, via
+                    uuid_generate_time_safe(3).
     """
 
     def __init__(self, hex=None, bytes=None, bytes_le=None, fields=None,

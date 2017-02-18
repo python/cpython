@@ -340,9 +340,9 @@ class TestUUID(unittest.TestCase):
         equal(((u.clock_seq_hi_variant & 0x3f) << 8) |
                          u.clock_seq_low, 0x3fff)
 
-    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     @unittest.skipUnless(uuid._uuid_generate_time.restype is not None,
                          'requires uuid_generate_time_safe(3)')
+    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_uuid1_safe(self):
         u = uuid.uuid1()
         # uuid_generate_time_safe() may return 0 or -1 but what it returns is
