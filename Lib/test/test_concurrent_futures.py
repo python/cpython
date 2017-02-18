@@ -178,6 +178,25 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, unittest.Tes
             self.assertRegex(t.name, r'^.*ThreadPoolExecutor.*_[0-4]$')
             t.join()
 
+    def test_default_max_queue_size(self):
+        executor = futures.ThreadPoolExecutor()
+        self.assertEqual(executor._work_queue.maxsize, 0)
+
+    def test_custom_max_queue_size(self):
+        for i in range(0, 10):
+            executor = futures.ThreadPoolExecutor(max_queue_size=i)
+            self.assertEqual(executor._work_queue.maxsize, i)
+
+    def test_negative_max_queue_size(self):
+        for i in range(-1, -10):
+            with self.assertRaises(ValueError):
+                futures.ThreadPoolExecutor(max_queue_size=i)
+
+    def test_max_queue_size_not_int(self):
+        for bad_value in [None, "5", False, True, 3.14]:
+            with self.assertRaises(ValueError):
+                futures.ThreadPoolExecutor(max_queue_size=bad_value)
+
 
 class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, unittest.TestCase):
     def _prime_executor(self):

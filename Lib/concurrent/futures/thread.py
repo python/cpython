@@ -88,6 +88,8 @@ class ThreadPoolExecutor(_base.Executor):
             max_workers: The maximum number of threads that can be used to
                 execute the given calls.
             thread_name_prefix: An optional name prefix to give our threads.
+            max_queue_size: The maximum number of work items to buffer before
+                submit() blocks, defaults to 0 (infinite).
         """
         if max_workers is None:
             # Use this number because ThreadPoolExecutor is often
@@ -95,6 +97,10 @@ class ThreadPoolExecutor(_base.Executor):
             max_workers = (os.cpu_count() or 1) * 5
         if max_workers <= 0:
             raise ValueError("max_workers must be greater than 0")
+
+        # check that max_queue_size is a positive integer
+        if type(max_queue_size) is not int or max_queue_size < 0:
+            raise ValueError("max_queue_size must be equal or greater 0")
 
         self._max_workers = max_workers
         self._work_queue = queue.Queue(maxsize=max_queue_size)
