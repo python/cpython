@@ -1720,9 +1720,9 @@ expression support in the :mod:`re` module).
 .. method:: str.join(iterable)
 
    Return a string which is the concatenation of the strings in the
-   :term:`iterable` *iterable*.  A :exc:`TypeError` will be raised if there are
-   any non-string values in *iterable*, including :class:`bytes` objects.  The
-   separator between elements is the string providing this method.
+   :term:`iterable` separated by the string ``str`` provided in this method. A
+   :exc:`TypeError` will be raised if there are any non-string values in
+   *iterable*, including :class:`bytes` objects.
 
 
 .. method:: str.ljust(width[, fillchar])
