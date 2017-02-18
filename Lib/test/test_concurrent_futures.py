@@ -18,6 +18,7 @@ from concurrent import futures
 from concurrent.futures._base import (
     PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future)
 from concurrent.futures.process import BrokenProcessPool
+from multiprocessing import get_context
 
 
 def create_future(state=PENDING, exception=None, result=None):
@@ -76,7 +77,13 @@ class ExecutorMixin:
 
         self.t1 = time.time()
         try:
-            self.executor = self.executor_type(max_workers=self.worker_count)
+            if hasattr(self, "ctx"):
+                self.executor = self.executor_type(
+                    max_workers=self.worker_count,
+                    context=get_context(self.ctx))
+            else:
+                self.executor = self.executor_type(
+                    max_workers=self.worker_count)
         except NotImplementedError as e:
             self.skipTest(str(e))
         self._prime_executor()
@@ -106,8 +113,29 @@ class ThreadPoolMixin(ExecutorMixin):
     executor_type = futures.ThreadPoolExecutor
 
 
-class ProcessPoolMixin(ExecutorMixin):
+class ProcessPoolForkMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
+    ctx = "fork"
+
+    def setUp(self):
+        if sys.platform == "win32":
+            self.skipTest("require unix system")
+        super().setUp()
+
+
+class ProcessPoolSpawnMixin(ExecutorMixin):
+    executor_type = futures.ProcessPoolExecutor
+    ctx = "spawn"
+
+
+class ProcessPoolForkserverMixin(ExecutorMixin):
+    executor_type = futures.ProcessPoolExecutor
+    ctx = "forkserver"
+
+    def setUp(self):
+        if sys.platform == "win32":
+            self.skipTest("require unix system")
+        super().setUp()
 
 
 class ExecutorShutdownTest:
@@ -123,8 +151,9 @@ class ExecutorShutdownTest:
             from concurrent.futures import {executor_type}
             from time import sleep
             from test.test_concurrent_futures import sleep_and_print
-            t = {executor_type}(5)
-            t.submit(sleep_and_print, 1.0, "apple")
+            if __name__ == "__main__":
+                t = {executor_type}(5)
+                t.submit(sleep_and_print, 1.0, "apple")
             """.format(executor_type=self.executor_type.__name__))
         # Errors in atexit hooks don't change the process exit code, check
         # stderr manually.
@@ -193,7 +222,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
             t.join()
 
 
-class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, BaseTestCase):
+class ProcessPoolShutdownTest(ExecutorShutdownTest):
     def _prime_executor(self):
         pass
 
@@ -230,6 +259,22 @@ class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, BaseTestCa
             p.join()
         call_queue.close()
         call_queue.join_thread()
+
+
+class ProcessPoolForkShutdownTest(ProcessPoolForkMixin, BaseTestCase,
+                                  ProcessPoolShutdownTest):
+    pass
+
+
+class ProcessPoolForkserverShutdownTest(ProcessPoolForkserverMixin,
+                                        BaseTestCase,
+                                        ProcessPoolShutdownTest):
+    pass
+
+
+class ProcessPoolSpawnShutdownTest(ProcessPoolSpawnMixin, BaseTestCase,
+                                   ProcessPoolShutdownTest):
+    pass
 
 
 class WaitTests:
@@ -351,7 +396,17 @@ class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, BaseTestCase):
             sys.setswitchinterval(oldswitchinterval)
 
 
-class ProcessPoolWaitTests(ProcessPoolMixin, WaitTests, BaseTestCase):
+class ProcessPoolForkWaitTests(ProcessPoolForkMixin, WaitTests, BaseTestCase):
+    pass
+
+
+class ProcessPoolForkserverWaitTests(ProcessPoolForkserverMixin, WaitTests,
+                                     BaseTestCase):
+    pass
+
+
+class ProcessPoolSpawnWaitTests(ProcessPoolSpawnMixin, BaseTestCase,
+                                WaitTests):
     pass
 
 
@@ -436,7 +491,19 @@ class ThreadPoolAsCompletedTests(ThreadPoolMixin, AsCompletedTests, BaseTestCase
     pass
 
 
-class ProcessPoolAsCompletedTests(ProcessPoolMixin, AsCompletedTests, BaseTestCase):
+class ProcessPoolForkAsCompletedTests(ProcessPoolForkMixin, AsCompletedTests,
+                                      BaseTestCase):
+    pass
+
+
+class ProcessPoolForkserverAsCompletedTests(ProcessPoolForkserverMixin,
+                                            AsCompletedTests,
+                                            BaseTestCase):
+    pass
+
+
+class ProcessPoolSpawnAsCompletedTests(ProcessPoolSpawnMixin, AsCompletedTests,
+                                       BaseTestCase):
     pass
 
 
@@ -536,7 +603,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
                          (os.cpu_count() or 1) * 5)
 
 
-class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, BaseTestCase):
+class ProcessPoolExecutorTest(ExecutorTest):
     def test_killed_child(self):
         # When a child process is abruptly terminated, the whole pool gets
         # "broken".
@@ -590,6 +657,25 @@ class ProcessPoolExecutorTest(ProcessPoolMixin, ExecutorTest, BaseTestCase):
                 sys.excepthook(*sys.exc_info())
         self.assertIn('raise RuntimeError(123) # some comment',
                       f1.getvalue())
+
+
+class ProcessPoolForkExecutorTest(ProcessPoolForkMixin,
+                                  ProcessPoolExecutorTest,
+                                  BaseTestCase):
+    pass
+
+
+class ProcessPoolForkserverExecutorTest(ProcessPoolForkserverMixin,
+                                        ProcessPoolExecutorTest,
+                                        BaseTestCase):
+    pass
+
+
+class ProcessPoolSpawnExecutorTest(ProcessPoolSpawnMixin,
+                                   ProcessPoolExecutorTest,
+                                   BaseTestCase):
+    pass
+
 
 
 class FutureTests(BaseTestCase):
