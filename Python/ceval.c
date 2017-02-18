@@ -5009,7 +5009,6 @@ import_from(PyObject *v, PyObject *name)
         goto error;
     }
     fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
-    Py_DECREF(pkgname);
     if (fullmodname == NULL) {
         return NULL;
     }
@@ -5018,6 +5017,7 @@ import_from(PyObject *v, PyObject *name)
     if (x == NULL) {
         goto error;
     }
+    Py_DECREF(pkgname);
     Py_INCREF(x);
     return x;
  error:
@@ -5041,6 +5041,8 @@ import_from(PyObject *v, PyObject *name)
             pkgname, pkgpath);
     }
 
+    Py_XDECREF(pkgname_or_unknown);
+    Py_XDECREF(pkgpath);
     return NULL;
 }
 
