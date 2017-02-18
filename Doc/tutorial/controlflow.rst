@@ -516,6 +516,9 @@ and of course it would print:
    client : John Cleese
    sketch : Cheese Shop Sketch
 
+Note that the order in which the keyword arguments are printed is guaranteed
+to match the order in which they were provided in the function call.
+
 
 .. _tut-arbitraryargs:
 
