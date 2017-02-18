@@ -2061,6 +2061,17 @@ format codes.
 | ``%%``    | A literal ``'%'`` character.   | %                      |       |
 +-----------+--------------------------------+------------------------+-------+
 
+If you want to use platform-specific format strings, search for ``strftime`` in
+your OS documentation (``man strftime`` on POSIX systems):
+
+* Linux (`kernel.org`_)
+* Mac OS X (`developer.apple.com`_)
+* Windows (`msdn.microsoft.com`_)
+
+.. _kernel.org: http://www.kernel.org/doc/man-pages/online/pages/man3/strftime.3.html
+.. _developer.apple.com: http://developer.apple.com/library/mac/#documentation/Darwin/Reference/ManPages/man3/strftime.3.html
+.. _msdn.microsoft.com: https://msdn.microsoft.com/en-us/library/fe06s4ak.aspx
+
 Several additional directives not required by the C89 standard are included for
 convenience. These parameters all correspond to ISO 8601 date values. These
 may not be available on all platforms when used with the :meth:`strftime`
