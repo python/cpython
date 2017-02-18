@@ -264,7 +264,10 @@ def _queue_management_worker(executor_reference,
         # This is an upper bound
         nb_children_alive = sum(p.is_alive() for p in processes.values())
         for i in range(0, nb_children_alive):
-            call_queue.put_nowait(None)
+            try:
+                call_queue.put_nowait(None)
+            except Full:
+                pass
         # Release the queue's resources as soon as possible.
         call_queue.close()
         # If .join() is not called on the created processes then
