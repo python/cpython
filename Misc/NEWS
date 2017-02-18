@@ -801,6 +801,11 @@ Tools/Demos
 Tests
 -----
 
+- Issue #29571: to match the behaviour of the ``re.LOCALE`` flag,
+  test_re.test_locale_flag now uses ``locale.getpreferredencoding(False)`` to
+  determine the candidate encoding for the test regex (allowing it to correctly
+  skip the test when the default locale encoding is a multi-byte encoding)
+
 - Issue #24932: Use proper command line parsing in _testembed
 
 - Issue #28950: Disallow -j0 to be combined with -T/-l in regrtest
