@@ -156,6 +156,8 @@ Library
 Windows
 -------
 
+- bpo-29579: Removes readme.txt from the installer
+
 - Issue #29326: Ignores blank lines in ._pth files (Patch by Alexey Izbyshev)
 
 - Issue #28164: Correctly handle special console filenames (patch by Eryk Sun)
