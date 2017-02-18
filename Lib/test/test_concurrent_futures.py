@@ -192,7 +192,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, unittest.Tes
             with self.assertRaises(ValueError):
                 futures.ThreadPoolExecutor(max_queue_size=i)
 
-    def test_max_queue_size_not_int(self):
+    def test_invalid_max_queue_size(self):
         for bad_value in [None, "5", False, True, 3.14]:
             with self.assertRaises(ValueError):
                 futures.ThreadPoolExecutor(max_queue_size=bad_value)
