@@ -15,6 +15,13 @@ reserved.
 
 See the end of this file for further copyright and license information.
 
+Contributing to CPython
+-----------------------
+
+For more complete instructions on contributing to CPython development,
+see the `Developer Guide`_.
+
+.. _Developer Guide: https://docs.python.org/devguide/
 
 Using Python
 ------------
@@ -125,10 +132,6 @@ It can also be downloaded in many formats for faster access.  The documentation
 is downloadable in HTML, PDF, and reStructuredText formats; the latter version
 is primarily for documentation authors, translators, and people with special
 formatting requirements.
-
-If you would like to contribute to the development of Python, relevant
-documentation is available in the `Python Developer's Guide
-<https://docs.python.org/devguide/>`_.
 
 For information about building Python's documentation, refer to `Doc/README.rst
 <https://github.com/python/cpython/blob/master/Doc/README.rst>`_.
