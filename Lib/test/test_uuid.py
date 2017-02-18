@@ -340,6 +340,46 @@ class TestUUID(unittest.TestCase):
         equal(((u.clock_seq_hi_variant & 0x3f) << 8) |
                          u.clock_seq_low, 0x3fff)
 
+    @unittest.skipUnless(uuid._uuid_generate_time.restype is not None,
+                         'requires uuid_generate_time_safe(3)')
+    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
+    def test_uuid1_safe(self):
+        u = uuid.uuid1()
+        # uuid_generate_time_safe() may return 0 or -1 but what it returns is
+        # dependent on the underlying platform support.  At least it cannot be
+        # unknown (unless I suppose the platform is buggy).
+        self.assertNotEqual(u.is_safe, uuid.SafeUUID.unknown)
+
+    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
+    def test_uuid1_unknown(self):
+        # Even if the platform has uuid_generate_time_safe(), let's mock it to
+        # be uuid_generate_time() and ensure the safety is unknown.
+        with unittest.mock.patch.object(uuid._uuid_generate_time,
+                                        'restype', None):
+            u = uuid.uuid1()
+            self.assertEqual(u.is_safe, uuid.SafeUUID.unknown)
+
+    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
+    def test_uuid1_is_safe(self):
+        with unittest.mock.patch.object(uuid._uuid_generate_time,
+                                        'restype', lambda x: 0):
+            u = uuid.uuid1()
+            self.assertEqual(u.is_safe, uuid.SafeUUID.safe)
+
+    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
+    def test_uuid1_is_unsafe(self):
+        with unittest.mock.patch.object(uuid._uuid_generate_time,
+                                        'restype', lambda x: -1):
+            u = uuid.uuid1()
+            self.assertEqual(u.is_safe, uuid.SafeUUID.unsafe)
+
+    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
+    def test_uuid1_bogus_return_value(self):
+        with unittest.mock.patch.object(uuid._uuid_generate_time,
+                                        'restype', lambda x: 3):
+            u = uuid.uuid1()
+            self.assertEqual(u.is_safe, uuid.SafeUUID.unknown)
+
     def test_uuid3(self):
         equal = self.assertEqual
 
