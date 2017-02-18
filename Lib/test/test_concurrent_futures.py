@@ -15,6 +15,7 @@ import threading
 import time
 import unittest
 import weakref
+from pickle import PicklingError
 
 from concurrent import futures
 from concurrent.futures._base import (
@@ -369,12 +370,15 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         queue_management_thread = executor._queue_management_thread
         processes = executor._processes
         call_queue = executor._call_queue
+        queue_management_thread = executor._queue_management_thread
         del executor
 
         queue_management_thread.join()
         for p in processes.values():
             p.join()
-        call_queue.close()
+        # Make sure that the queue management thread was properly finished
+        # and the queue was closed by the shutdown process
+        queue_management_thread.join()
         call_queue.join_thread()
 
 
@@ -830,7 +834,6 @@ class TimingWrapper(object):
     """Creates a wrapper for a function which records the time it takes to
     finish
     """
-
     def __init__(self, func):
         self.func = func
         self.elapsed = None
@@ -863,13 +866,18 @@ class ExecutorDeadlockTest:
             faulthandler.dump_traceback(file=f)
             f.seek(0)
             tb = f.read()
-        executor.shutdown(wait=True, kill_workers=True)
+        for p in executor._processes.values():
+            p.terminate()
+        executor.shutdown(wait=True)
         print(f"\nTraceback:\n {tb}", file=sys.__stderr__)
         self.fail(f"Deadlock executor:\n\n{tb}")
 
     def test_crash(self):
         # extensive testing for deadlock caused by crash in a pool
         crash_cases = [
+            # Check problem occuring while pickling a task in
+            # the task_handler thread
+            (id, (ErrorAtPickle(),), PicklingError, "error at task pickle"),
             # Check problem occuring while unpickling a task on workers
             (id, (ExitAtUnpickle(),), BrokenProcessPool,
              "exit at task unpickle"),
@@ -888,10 +896,14 @@ class ExecutorDeadlockTest:
             # on workers
             (_return_instance, (CrashAtPickle,), BrokenProcessPool,
              "crash during result pickle on worker"),
-            (_return_instance, (ExitAtPickle,), BrokenProcessPool,
+            (_return_instance, (ExitAtPickle,), SystemExit,
              "exit during result pickle on worker"),
-            (_return_instance, (ErrorAtPickle,), BrokenProcessPool,
+            (_return_instance, (ErrorAtPickle,), PicklingError,
              "error during result pickle on worker"),
+            # Check problem occuring while unpickling a task in
+            # the result_handler thread
+            (_return_instance, (ErrorAtUnpickle,), BrokenProcessPool,
+             "error during result unpickle in result_handler")
         ]
         for func, args, error, name in crash_cases:
             with self.subTest(name):
@@ -973,7 +985,7 @@ class ExecutorDeadlockTest:
                                 mp_context=get_context(self.ctx)) as executor:
             executor.submit(self._test_kill_worker, ())
             time.sleep(.01)
-            executor.shutdown()
+            executor.shutdown(wait=True)
 
 
 class ProcessPoolForkExecutorDeadlockTest(ProcessPoolForkMixin,
