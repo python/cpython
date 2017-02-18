@@ -74,7 +74,8 @@ source.
 .. cmdoption:: -m <module-name>
 
    Search :data:`sys.path` for the named module and execute its contents as
-   the :mod:`__main__` module.
+   the :mod:`__main__` module. This option only works for `packages` and
+   `leaf-level modules`.
 
    Since the argument is a *module* name, you must not give a file extension
    (``.py``).  The module name should be a valid absolute Python module name, but
