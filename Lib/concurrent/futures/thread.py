@@ -98,10 +98,6 @@ class ThreadPoolExecutor(_base.Executor):
         if max_workers <= 0:
             raise ValueError("max_workers must be greater than 0")
 
-        # check that max_queue_size is a positive integer
-        if type(max_queue_size) is not int or max_queue_size < 0:
-            raise ValueError("max_queue_size must be equal or greater 0")
-
         self._max_workers = max_workers
         self._work_queue = queue.Queue(maxsize=max_queue_size)
         self._threads = set()

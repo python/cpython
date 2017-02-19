@@ -183,19 +183,14 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, unittest.Tes
         self.assertEqual(executor._work_queue.maxsize, 0)
 
     def test_custom_max_queue_size(self):
-        for i in range(0, 10):
+        # test custom valid and invalid values
+        for i in range(-10, 10):
             executor = futures.ThreadPoolExecutor(max_queue_size=i)
             self.assertEqual(executor._work_queue.maxsize, i)
-
-    def test_negative_max_queue_size(self):
-        for i in range(-1, -10):
-            with self.assertRaises(ValueError):
-                futures.ThreadPoolExecutor(max_queue_size=i)
-
-    def test_invalid_max_queue_size(self):
+        # provided value is forwarded without checking it
         for bad_value in [None, "5", False, True, 3.14]:
-            with self.assertRaises(ValueError):
-                futures.ThreadPoolExecutor(max_queue_size=bad_value)
+            executor = futures.ThreadPoolExecutor(max_queue_size=bad_value)
+            self.assertEqual(executor._work_queue.maxsize, bad_value)
 
 
 class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, unittest.TestCase):
