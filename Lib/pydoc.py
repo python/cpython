@@ -1917,11 +1917,30 @@ has the same effect as typing a particular string at the help> prompt.
             return self.input.readline()
 
     def help(self, request):
+        """Help on built-in function help:
+
+help(...)
+Invoke the built-in help system.
+
+    help()
+    The interactive help system starts on the interpreter
+    console.
+
+    help(string)
+    The string is looked up as the name of a module, function, class, method,
+    keyword, or documentation topic, and a  help page is printed on the
+    console.
+
+    help(object)
+    Generates a help page on the given object.
+        """
+        from _sitebuiltins import _Helper
         if type(request) is type(''):
             request = request.strip()
             if request == 'keywords': self.listkeywords()
             elif request == 'symbols': self.listsymbols()
             elif request == 'topics': self.listtopics()
+            elif request == 'help': self.showhelp()
             elif request == 'modules': self.listmodules()
             elif request[:8] == 'modules ':
                 self.listmodules(request.split()[1])
@@ -1934,6 +1953,7 @@ has the same effect as typing a particular string at the help> prompt.
             elif request: doc(request, 'Help on %s:', output=self._output)
             else: doc(str, 'Help on %s:', output=self._output)
         elif isinstance(request, Helper): self()
+        elif isinstance(request, _Helper): self.showhelp()
         else: doc(request, 'Help on %s:', output=self._output)
         self.output.write('\n')
 
@@ -1966,6 +1986,9 @@ or summary contain a given string such as "spam", type "modules spam".
                     if col < columns - 1:
                         self.output.write(' ' + ' ' * (colw - 1 - len(items[i])))
             self.output.write('\n')
+
+    def showhelp(self):
+        self.output.write(self.help.__doc__)
 
     def listkeywords(self):
         self.output.write('''
