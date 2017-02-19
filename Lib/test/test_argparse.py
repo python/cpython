@@ -2725,34 +2725,42 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
           -c          c help
         '''
 
-class TestMutuallyExclusiveNested(TestCase):
-    def test_format_usage(self):
+class TestMutuallyExclusiveNested(MEMixin, TestCase):
+    def get_parser(self, required):
         parser = ErrorRaisingArgumentParser(prog='PROG')
-        group = parser.add_mutually_exclusive_group()
+        group = parser.add_mutually_exclusive_group(required=required)
         group.add_argument('-a')
         group.add_argument('-b')
-        group2 = group.add_mutually_exclusive_group()
+        group2 = group.add_mutually_exclusive_group(required=required)
         group2.add_argument('-c')
         group2.add_argument('-d')
-        group3 = group2.add_mutually_exclusive_group()
+        group3 = group2.add_mutually_exclusive_group(required=required)
         group3.add_argument('-e')
         group3.add_argument('-f')
-        self.assertEqual(parser.format_usage(),
-                         'usage: PROG [-h] [-a A | -b B | [-c C | -d D | [-e E | -f F]]]\n')
+        return parser
 
-    def test_format_usage_required(self):
-        parser = ErrorRaisingArgumentParser(prog='PROG')
-        group = parser.add_mutually_exclusive_group(required=True)
-        group.add_argument('-a')
-        group.add_argument('-b')
-        group2 = group.add_mutually_exclusive_group(required=True)
-        group2.add_argument('-c')
-        group2.add_argument('-d')
-        group3 = group2.add_mutually_exclusive_group(required=True)
-        group3.add_argument('-e')
-        group3.add_argument('-f')
-        self.assertEqual(parser.format_usage(),
-                         'usage: PROG [-h] (-a A | -b B | (-c C | -d D | (-e E | -f F)))\n')
+    failures = []
+    successes = []
+    successes_when_not_required = []
+
+    usage_when_not_required = '''\
+        usage: PROG [-h] [-a A | -b B | [-c C | -d D | [-e E | -f F]]]
+        '''
+    usage_when_required = '''\
+        usage: PROG [-h] (-a A | -b B | (-c C | -d D | (-e E | -f F)))
+        '''
+
+    help = '''\
+
+        optional arguments:
+          -h, --help  show this help message and exit
+          -a A
+          -b B
+          -c C
+          -d D
+          -e E
+          -f F
+        '''
 
 # =================================================
 # Mutually exclusive group in parent parser tests
