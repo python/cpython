@@ -2859,7 +2859,7 @@ These functions are all available on Linux only.
    :ref:`not following symlinks <follow_symlinks>`.
 
    .. versionchanged:: 3.6
-      Accepts a :term:`path-like object` fpr *path* and *attribute*.
+      Accepts a :term:`path-like object` for *path* and *attribute*.
 
 
 .. function:: listxattr(path=None, *, follow_symlinks=True)
