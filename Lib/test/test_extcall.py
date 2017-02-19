@@ -52,15 +52,15 @@ Here we add keyword arguments
     >>> f(1, 2, **{'a': -1, 'b': 5}, **{'a': 4, 'c': 6})
     Traceback (most recent call last):
         ...
-    TypeError: f() got multiple values for keyword argument 'a'
+    TypeError: function got multiple values for keyword argument 'a'
     >>> f(1, 2, **{'a': -1, 'b': 5}, a=4, c=6)
     Traceback (most recent call last):
         ...
-    TypeError: f() got multiple values for keyword argument 'a'
+    TypeError: function got multiple values for keyword argument 'a'
     >>> f(1, 2, a=3, **{'a': 4}, **{'a': 5})
     Traceback (most recent call last):
         ...
-    TypeError: f() got multiple values for keyword argument 'a'
+    TypeError: function got multiple values for keyword argument 'a'
     >>> f(1, 2, 3, *[4, 5], **{'a':6, 'b':7})
     (1, 2, 3, 4, 5) {'a': 6, 'b': 7}
     >>> f(1, 2, 3, x=4, y=5, *(6, 7), **{'a':8, 'b': 9})
