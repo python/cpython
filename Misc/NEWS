@@ -917,6 +917,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #28624: Make the `cwd` argument to `subprocess.Popen` accept a
+  `PathLike`.
+
 - Issue #29085: Allow random.Random.seed() to use high quality OS randomness
   rather than the pid and time.
 
