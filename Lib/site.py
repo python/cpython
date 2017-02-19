@@ -96,6 +96,22 @@ def makepath(*paths):
     return dir, os.path.normcase(dir)
 
 
+def abs_paths():
+    """Set all module __file__ and __cached__ attributes to an absolute path"""
+    for m in set(sys.modules.values()):
+        if (getattr(getattr(m, '__loader__', None), '__module__', None) not in
+                ('_frozen_importlib', '_frozen_importlib_external')):
+            continue   # don't mess with a PEP 302-supplied __file__
+        try:
+            m.__file__ = os.path.abspath(m.__file__)
+        except (AttributeError, OSError):
+            pass
+        try:
+            m.__cached__ = os.path.abspath(m.__cached__)
+        except (AttributeError, OSError):
+            pass
+
+
 def removeduppaths():
     """ Remove duplicate entries from sys.path along with making them
     absolute"""
@@ -506,7 +522,13 @@ def main():
     """
     global ENABLE_USER_SITE
 
+    orig_path = sys.path[:]
     known_paths = removeduppaths()
+    if orig_path != sys.path:
+        # removeduppaths() might make sys.path absolute.
+        # fix __file__ and __cached__ of already imported modules too.
+        abs_paths()
+
     known_paths = venv(known_paths)
     if ENABLE_USER_SITE is None:
         ENABLE_USER_SITE = check_enableusersite()
