@@ -3,8 +3,8 @@
            Copyright (c) 2002  Ranjit Mathew
            Copyright (c) 2002  Bo Thorsen
            Copyright (c) 2002  Roger Sayle
-
-   x86 Foreign Function Interface
+   
+   x86 Foreign Function Interface 
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -62,65 +62,65 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
 
       /* Align if necessary */
       if ((sizeof(void *) - 1) & (size_t) argp)
-    argp = (char *) ALIGN(argp, sizeof(void *));
+	argp = (char *) ALIGN(argp, sizeof(void *));
 
       z = (*p_arg)->size;
       if (z < sizeof(intptr_t))
-    {
-      z = sizeof(intptr_t);
-      switch ((*p_arg)->type)
-        {
-        case FFI_TYPE_SINT8:
-          *(intptr_t *) argp = (intptr_t)*(SINT8 *)(* p_argv);
-          break;
+	{
+	  z = sizeof(intptr_t);
+	  switch ((*p_arg)->type)
+	    {
+	    case FFI_TYPE_SINT8:
+	      *(intptr_t *) argp = (intptr_t)*(SINT8 *)(* p_argv);
+	      break;
 
-        case FFI_TYPE_UINT8:
-          *(uintptr_t *) argp = (uintptr_t)*(UINT8 *)(* p_argv);
-          break;
+	    case FFI_TYPE_UINT8:
+	      *(uintptr_t *) argp = (uintptr_t)*(UINT8 *)(* p_argv);
+	      break;
 
-        case FFI_TYPE_SINT16:
-          *(intptr_t *) argp = (intptr_t)*(SINT16 *)(* p_argv);
-          break;
+	    case FFI_TYPE_SINT16:
+	      *(intptr_t *) argp = (intptr_t)*(SINT16 *)(* p_argv);
+	      break;
 
-        case FFI_TYPE_UINT16:
-          *(uintptr_t *) argp = (uintptr_t)*(UINT16 *)(* p_argv);
-          break;
+	    case FFI_TYPE_UINT16:
+	      *(uintptr_t *) argp = (uintptr_t)*(UINT16 *)(* p_argv);
+	      break;
 
-        case FFI_TYPE_SINT32:
-          *(intptr_t *) argp = (intptr_t)*(SINT32 *)(* p_argv);
-          break;
+	    case FFI_TYPE_SINT32:
+	      *(intptr_t *) argp = (intptr_t)*(SINT32 *)(* p_argv);
+	      break;
 
-        case FFI_TYPE_UINT32:
-          *(uintptr_t *) argp = (uintptr_t)*(UINT32 *)(* p_argv);
-          break;
+	    case FFI_TYPE_UINT32:
+	      *(uintptr_t *) argp = (uintptr_t)*(UINT32 *)(* p_argv);
+	      break;
 
-        case FFI_TYPE_FLOAT:
-          *(uintptr_t *) argp = 0;
-          *(float *) argp = *(float *)(* p_argv);
-          break;
+	    case FFI_TYPE_FLOAT:
+	      *(uintptr_t *) argp = 0;
+	      *(float *) argp = *(float *)(* p_argv);
+	      break;
 
-        // 64-bit value cases should never be used for x86 and AMD64 builds
-        case FFI_TYPE_SINT64:
-          *(intptr_t *) argp = (intptr_t)*(SINT64 *)(* p_argv);
-          break;
+	    // 64-bit value cases should never be used for x86 and AMD64 builds
+	    case FFI_TYPE_SINT64:
+	      *(intptr_t *) argp = (intptr_t)*(SINT64 *)(* p_argv);
+	      break;
 
-        case FFI_TYPE_UINT64:
-          *(uintptr_t *) argp = (uintptr_t)*(UINT64 *)(* p_argv);
-          break;
+	    case FFI_TYPE_UINT64:
+	      *(uintptr_t *) argp = (uintptr_t)*(UINT64 *)(* p_argv);
+	      break;
 
-        case FFI_TYPE_STRUCT:
-          *(uintptr_t *) argp = (uintptr_t)*(UINT32 *)(* p_argv);
-          break;
+	    case FFI_TYPE_STRUCT:
+	      *(uintptr_t *) argp = (uintptr_t)*(UINT32 *)(* p_argv);
+	      break;
 
-        case FFI_TYPE_DOUBLE:
-          *(uintptr_t *) argp = 0;
-          *(double *) argp = *(double *)(* p_argv);
-          break;
+	    case FFI_TYPE_DOUBLE:
+	      *(uintptr_t *) argp = 0;
+	      *(double *) argp = *(double *)(* p_argv);
+	      break;
 
-        default:
-          FFI_ASSERT(0);
-        }
-    }
+	    default:
+	      FFI_ASSERT(0);
+	    }
+	}
 #ifdef _WIN64
       else if (z > 8)
         {
@@ -131,14 +131,14 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
         }
 #endif
       else
-    {
-      memcpy(argp, *p_argv, z);
-    }
+	{
+	  memcpy(argp, *p_argv, z);
+	}
       p_argv++;
       argp += z;
     }
 
-  if (argp >= stack && (unsigned)(argp - stack) > ecif->cif->bytes)
+  if (argp >= stack && (unsigned)(argp - stack) > ecif->cif->bytes) 
     {
       Py_FatalError("FFI BUG: not enough stack space for arguments");
     }
@@ -188,37 +188,37 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
 
 #ifdef _WIN32
 extern int
-ffi_call_x86(void (*)(char *, extended_cif *),
-         /*@out@*/ extended_cif *,
-         unsigned, unsigned,
-         /*@out@*/ unsigned *,
-         void (*fn)());
+ffi_call_x86(void (*)(char *, extended_cif *), 
+	     /*@out@*/ extended_cif *, 
+	     unsigned, unsigned, 
+	     /*@out@*/ unsigned *, 
+	     void (*fn)());
 #endif
 
 #ifdef _WIN64
 extern int
 ffi_call_AMD64(void (*)(char *, extended_cif *),
-         /*@out@*/ extended_cif *,
-         unsigned, unsigned,
-         /*@out@*/ unsigned *,
-         void (*fn)());
+		 /*@out@*/ extended_cif *,
+		 unsigned, unsigned,
+		 /*@out@*/ unsigned *,
+		 void (*fn)());
 #endif
 
 int
-ffi_call(/*@dependent@*/ ffi_cif *cif,
-     void (*fn)(),
-     /*@out@*/ void *rvalue,
-     /*@dependent@*/ void **avalue)
+ffi_call(/*@dependent@*/ ffi_cif *cif, 
+	 void (*fn)(), 
+	 /*@out@*/ void *rvalue, 
+	 /*@dependent@*/ void **avalue)
 {
   extended_cif ecif;
 
   ecif.cif = cif;
   ecif.avalue = avalue;
+  
+  /* If the return value is a struct and we don't have a return	*/
+  /* value address then we need to make one		        */
 
-  /* If the return value is a struct and we don't have a return */
-  /* value address then we need to make one             */
-
-  if ((rvalue == NULL) &&
+  if ((rvalue == NULL) && 
       (cif->rtype->type == FFI_TYPE_STRUCT))
     {
       /*@-sysunrecog@*/
@@ -227,15 +227,15 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
     }
   else
     ecif.rvalue = rvalue;
-
-
-  switch (cif->abi)
+    
+  
+  switch (cif->abi) 
     {
 #if !defined(_WIN64)
     case FFI_SYSV:
     case FFI_STDCALL:
-      return ffi_call_x86(ffi_prep_args, &ecif, cif->bytes,
-              cif->flags, ecif.rvalue, fn);
+      return ffi_call_x86(ffi_prep_args, &ecif, cif->bytes, 
+			  cif->flags, ecif.rvalue, fn);
       break;
 #else
     case FFI_SYSV:
@@ -251,7 +251,7 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
       }
       /*@-usedef@*/
       return ffi_call_AMD64(ffi_prep_args, &ecif, cif->bytes,
-               cif->flags, ecif.rvalue, fn);
+			   cif->flags, ecif.rvalue, fn);
       /*@=usedef@*/
       break;
 #endif
@@ -267,7 +267,7 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
 /** private members **/
 
 static void ffi_prep_incoming_args_SYSV (char *stack, void **ret,
-                      void** args, ffi_cif* cif);
+					  void** args, ffi_cif* cif);
 /* This function is jumped to by the trampoline */
 
 #ifdef _WIN64
@@ -288,16 +288,16 @@ ffi_closure_SYSV (ffi_closure *closure, char *argp)
   void *args = argp + sizeof(void*);
 
   cif         = closure->cif;
-  arg_area    = (void**) alloca (cif->nargs * sizeof (void*));
+  arg_area    = (void**) alloca (cif->nargs * sizeof (void*));  
 
   /* this call will initialize ARG_AREA, such that each
-   * element in that array points to the corresponding
+   * element in that array points to the corresponding 
    * value on the stack; and if the function returns
    * a structure, it will re-set RESP to point to the
    * structure return address.  */
 
   ffi_prep_incoming_args_SYSV(args, (void**)&resp, arg_area, cif);
-
+  
   (closure->fun) (cif, resp, arg_area, closure->user_data);
 
   rtype = cif->flags;
@@ -307,19 +307,19 @@ ffi_closure_SYSV (ffi_closure *closure, char *argp)
   /* now, do a generic return based on the value of rtype */
   if (rtype == FFI_TYPE_INT)
     {
-        _asm mov eax, resp ;
-        _asm mov eax, [eax] ;
+	    _asm mov eax, resp ;
+	    _asm mov eax, [eax] ;
     }
   else if (rtype == FFI_TYPE_FLOAT)
     {
-        _asm mov eax, resp ;
-        _asm fld DWORD PTR [eax] ;
+	    _asm mov eax, resp ;
+	    _asm fld DWORD PTR [eax] ;
 //      asm ("flds (%0)" : : "r" (resp) : "st" );
     }
   else if (rtype == FFI_TYPE_DOUBLE)
     {
-        _asm mov eax, resp ;
-        _asm fld QWORD PTR [eax] ;
+	    _asm mov eax, resp ;
+	    _asm fld QWORD PTR [eax] ;
 //      asm ("fldl (%0)" : : "r" (resp) : "st", "st(1)" );
     }
   else if (rtype == FFI_TYPE_LONGDOUBLE)
@@ -328,13 +328,13 @@ ffi_closure_SYSV (ffi_closure *closure, char *argp)
     }
   else if (rtype == FFI_TYPE_SINT64)
     {
-        _asm mov edx, resp ;
-        _asm mov eax, [edx] ;
-        _asm mov edx, [edx + 4] ;
+	    _asm mov edx, resp ;
+	    _asm mov eax, [edx] ;
+	    _asm mov edx, [edx + 4] ;
 //      asm ("movl 0(%0),%%eax;"
-//     "movl 4(%0),%%edx"
-//     : : "r"(resp)
-//     : "eax", "edx");
+//	   "movl 4(%0),%%edx" 
+//	   : : "r"(resp)
+//	   : "eax", "edx");
     }
 #else
   /* now, do a generic return based on the value of rtype */
@@ -357,9 +357,9 @@ ffi_closure_SYSV (ffi_closure *closure, char *argp)
   else if (rtype == FFI_TYPE_SINT64)
     {
       asm ("movl 0(%0),%%eax;"
-       "movl 4(%0),%%edx"
-       : : "r"(resp)
-       : "eax", "edx");
+	   "movl 4(%0),%%edx" 
+	   : : "r"(resp)
+	   : "eax", "edx");
     }
 #endif
 #endif
@@ -374,9 +374,9 @@ ffi_closure_SYSV (ffi_closure *closure, char *argp)
 }
 
 /*@-exportheader@*/
-static void
+static void 
 ffi_prep_incoming_args_SYSV(char *stack, void **rvalue,
-                void **avalue, ffi_cif *cif)
+			    void **avalue, ffi_cif *cif)
 /*@=exportheader@*/
 {
   register unsigned int i;
@@ -421,7 +421,7 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue,
       p_argv++;
       argp += z;
     }
-
+  
   return;
 }
 
@@ -430,10 +430,10 @@ extern void ffi_closure_OUTER();
 
 ffi_status
 ffi_prep_closure_loc (ffi_closure* closure,
-                      ffi_cif* cif,
-                      void (*fun)(ffi_cif*,void*,void**,void*),
-                      void *user_data,
-                      void *codeloc)
+					  ffi_cif* cif,
+					  void (*fun)(ffi_cif*,void*,void**,void*),
+					  void *user_data,
+					  void *codeloc)
 {
   short bytes;
   char *tramp;
@@ -441,7 +441,7 @@ ffi_prep_closure_loc (ffi_closure* closure,
   int mask = 0;
 #endif
   FFI_ASSERT (cif->abi == FFI_SYSV);
-
+  
   if (cif->abi == FFI_SYSV)
     bytes = 0;
 #if !defined(_WIN64)
@@ -479,7 +479,7 @@ ffi_prep_closure_loc (ffi_closure* closure,
   /* 41 BB ----         mov         r11d,mask */
   BYTES("\x41\xBB"); INT(mask);
 
-  /* 48 B8 --------     mov         rax, closure            */
+  /* 48 B8 --------     mov         rax, closure			*/
   BYTES("\x48\xB8"); POINTER(closure);
 
   /* 49 BA --------     mov         r10, ffi_closure_OUTER */
@@ -502,7 +502,7 @@ ffi_prep_closure_loc (ffi_closure* closure,
   /* ret bytes */
   BYTES("\xc2");
   SHORT(bytes);
-
+  
 #endif
 
   if (tramp - &closure->tramp[0] > FFI_TRAMPOLINE_SIZE)
