@@ -33,8 +33,8 @@ today_fmt = '%B %d, %Y'
 # By default, highlight as Python 3.
 highlight_language = 'python3'
 
-# Require Sphinx 1.2 for build.
-needs_sphinx = '1.2'
+# Require Sphinx 1.3 for build.
+needs_sphinx = '1.3'
 
 # Ignore any .rst files in the venv/ directory.
 exclude_patterns = ['venv/*', 'README.rst']
