@@ -221,6 +221,8 @@ The :mod:`abc` module also provides the following decorators:
       multiple-inheritance.
 
 
+The :mod:`abc` module also support following legacy builtin decorators:
+
 .. decorator:: abstractclassmethod
 
    A subclass of the built-in :func:`classmethod`, indicating an abstract
