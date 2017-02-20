@@ -37,6 +37,8 @@ def main():
                         help='a JSON file to be validated or pretty-printed')
     parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'),
                         help='write the output of infile to outfile')
+    parser.add_argument('--no_escape', action='store_true', default=False,
+                        help='Do not set ensure_ascii to escape non-ASCII characters')
     parser.add_argument('--indent', default='4', type=parse_indent,
                         help='Indent level or str for pretty-printing. '
                              'Use None for the most compact representation. '
@@ -62,6 +64,7 @@ def main():
     with outfile:
         json.dump(obj, outfile,
                   indent=options.indent,
+                  ensure_ascii=not options.no_escape,
                   sort_keys=options.sort_keys,
                   )
         outfile.write('\n')
