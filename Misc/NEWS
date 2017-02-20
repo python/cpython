@@ -232,6 +232,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29532: Altering a kwarg dictionary passed to functools.partial()
+  no longer affects a partial object after creation.
+
 - bpo-22807: Add uuid.SafeUUID and uuid.UUID.is_safe to relay information from
   the platform about whether generated UUIDs are generated with a
   multiprocessing safe method.

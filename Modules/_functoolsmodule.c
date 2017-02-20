@@ -88,9 +88,12 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         if (kw == NULL) {
             pto->kw = PyDict_New();
         }
-        else {
+        else if (Py_REFCNT(kw) == 1) {
             Py_INCREF(kw);
             pto->kw = kw;
+        }
+        else {
+            pto->kw = PyDict_Copy(kw);
         }
     }
     else {
