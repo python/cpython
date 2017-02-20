@@ -10,7 +10,12 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29347: Fixed possibly dereferencing undefined pointers
+  when creating weakref objects.
+
 - bpo-29438: Fixed use-after-free problem in key sharing dict.
+
+- bpo-29546: Set the 'path' and 'name' attribute on ImportError for ``from ... import ...``.
 
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
 
@@ -226,6 +231,23 @@ Extension Modules
 
 Library
 -------
+
+- bpo-29532: Altering a kwarg dictionary passed to functools.partial()
+  no longer affects a partial object after creation.
+
+- bpo-22807: Add uuid.SafeUUID and uuid.UUID.is_safe to relay information from
+  the platform about whether generated UUIDs are generated with a
+  multiprocessing safe method.
+
+- bpo-29576: Improve some deprecations in importlib. Some deprecated methods
+  now emit DeprecationWarnings and have better descriptive messages.
+
+- bpo-29534: Fixed different behaviour of Decimal.from_float()
+  for _decimal and _pydecimal. Thanks Andrew Nester.
+
+- Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
+  improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
+  Manuel Krebber, and Łukasz Langa.
 
 - Issue #29100: Fix datetime.fromtimestamp() regression introduced in Python
   3.6.0: check minimum and maximum years.
@@ -618,6 +640,8 @@ Library
 Windows
 -------
 
+- bpo-29579: Removes readme.txt from the installer.
+
 - Issue #25778: winreg does not truncate string correctly (Patch by Eryk Sun)
 
 - Issue #28896: Deprecate WindowsRegistryFinder and disable it by default
@@ -788,6 +812,11 @@ Tools/Demos
 
 Tests
 -----
+
+- Issue #29571: to match the behaviour of the ``re.LOCALE`` flag,
+  test_re.test_locale_flag now uses ``locale.getpreferredencoding(False)`` to
+  determine the candidate encoding for the test regex (allowing it to correctly
+  skip the test when the default locale encoding is a multi-byte encoding)
 
 - Issue #24932: Use proper command line parsing in _testembed
 

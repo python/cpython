@@ -7238,9 +7238,6 @@ PyInit__socket(void)
 #ifdef  IPPROTO_TP
     PyModule_AddIntMacro(m, IPPROTO_TP);
 #endif
-#ifdef  IPPROTO_IPV6
-    PyModule_AddIntMacro(m, IPPROTO_IPV6);
-#endif
 #ifdef  IPPROTO_ROUTING
     PyModule_AddIntMacro(m, IPPROTO_ROUTING);
 #endif

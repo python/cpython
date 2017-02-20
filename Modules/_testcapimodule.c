@@ -3070,7 +3070,7 @@ slot_tp_del(PyObject *self)
     /* Execute __del__ method, if any. */
     del = _PyObject_LookupSpecial(self, &PyId___tp_del__);
     if (del != NULL) {
-        res = PyEval_CallObject(del, NULL);
+        res = _PyObject_CallNoArg(del);
         if (res == NULL)
             PyErr_WriteUnraisable(del);
         else
