@@ -1232,11 +1232,11 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
         cr.real = PyFloat_AsDouble(tmp);
-        cr.imag = 0.0; /* Shut up compiler warning */
+        cr.imag = 0.0;
         Py_DECREF(tmp);
     }
     if (i == NULL) {
-        ci.real = 0.0;
+        ci.real = cr.imag;
     }
     else if (PyComplex_Check(i)) {
         ci = ((PyComplexObject*)i)->cval;
@@ -1258,7 +1258,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (ci_is_complex) {
         cr.real -= ci.imag;
     }
-    if (cr_is_complex) {
+    if (cr_is_complex && i != NULL) {
         ci.real += cr.imag;
     }
     return complex_subtype_from_doubles(type, cr.real, ci.real);
