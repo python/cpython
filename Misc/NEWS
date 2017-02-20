@@ -10,6 +10,9 @@ What's New in Python 2.7.14?
 Core and Builtins
 -----------------
 
+- bpo-29347: Fixed possibly dereferencing undefined pointers
+  when creating weakref objects.
+
 - Issue #14376: Allow sys.exit to accept longs as well as ints. Patch
   by Gareth Rees.
 
