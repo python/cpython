@@ -11687,7 +11687,23 @@ unicode_hash(PyObject *self)
 PyDoc_STRVAR(index__doc__,
              "S.index(sub[, start[, end]]) -> int\n\
 \n\
-Like S.find() but raise ValueError when the substring is not found.");
+Return the lowest index in B where subsection sub is found, \n\
+such that sub is contained within B[start,end].  Optional\n\
+arguments start and end are interpreted as in slice notation.\n\
+\n\
+Raises ValueError when the subsection is not found.");
+
+/*[clinic input]
+str.index as unicode_index
+
+Return the lowest index in B where subsection sub is found.
+
+Return the lowest index in B where subsection sub is found,
+such that sub is contained within B[start,end].  Optional
+arguments start and end are interpreted as in slice notation.
+
+Raises ValueError when the subsection is not found.
+[clinic start generated code]*/
 
 static PyObject *
 unicode_index(PyObject *self, PyObject *args)
