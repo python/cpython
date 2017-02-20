@@ -26,7 +26,7 @@ static int
 list_resize(PyListObject *self, Py_ssize_t newsize)
 {
     PyObject **items;
-    size_t new_allocated;
+    size_t new_allocated, size;
     Py_ssize_t allocated = self->allocated;
 
     /* Bypass realloc() when a previous overallocation is large enough
@@ -47,22 +47,17 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
      * The growth pattern is:  0, 4, 8, 16, 25, 35, 46, 58, 72, 88, ...
      */
     new_allocated = (newsize >> 3) + (newsize < 9 ? 3 : 6);
-
-    /* check for integer overflow */
-    if (new_allocated > SIZE_MAX - newsize) {
+    /* can't overflow, largest number is PY_SSIZE_T_MAX * (9 / 8) + 6 */
+    new_allocated += (size_t)newsize;
+    if (new_allocated > (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
         PyErr_NoMemory();
         return -1;
-    } else {
-        new_allocated += newsize;
     }
 
     if (newsize == 0)
         new_allocated = 0;
-    items = self->ob_item;
-    if (new_allocated <= (SIZE_MAX / sizeof(PyObject *)))
-        PyMem_RESIZE(items, PyObject *, new_allocated);
-    else
-        items = NULL;
+    size = new_allocated * sizeof(PyObject *);
+    items = (PyObject **)PyMem_Realloc(self->ob_item, size);
     if (items == NULL) {
         PyErr_NoMemory();
         return -1;
