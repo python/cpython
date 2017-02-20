@@ -198,6 +198,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.put(1)
         q.put(2)
         self.assertEqual(q.unfinished(), 2)
+        q.get()
         q.task_done()
         self.assertEqual(q.unfinished(), 1)
 
