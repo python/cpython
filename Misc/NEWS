@@ -10,6 +10,10 @@ What's New in Python 2.7.14?
 Core and Builtins
 -----------------
 
+- bpo-29602: Fix incorrect handling of signed zeros in complex constructor for
+  complex subclasses and for inputs having a __complex__ method. Patch
+  by Serhiy Storchaka.
+
 - bpo-29347: Fixed possibly dereferencing undefined pointers
   when creating weakref objects.
 
