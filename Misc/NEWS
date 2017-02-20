@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29347: Fixed possibly dereferencing undefined pointers
+  when creating weakref objects.
+
 - bpo-29438: Fixed use-after-free problem in key sharing dict.
 
 - bpo-29546: Set the 'path' and 'name' attribute on ImportError for ``from ... import ...``.
