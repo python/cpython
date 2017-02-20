@@ -99,7 +99,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.put(111)
         q.put(333)
         q.put(222)
-        self.assertEqual(q.unfinished(), 3)
         target_order = dict(Queue = [111, 333, 222],
                             LifoQueue = [222, 333, 111],
                             PriorityQueue = [111, 222, 333])
@@ -193,6 +192,14 @@ class BaseQueueTestMixin(BlockingTestMixin):
             pass
         else:
             self.fail("Did not detect task count going negative")
+
+    def test_queue_unfinished(self):
+        q = self.type2test()
+        q.put(1)
+        q.put(2)
+        self.assertEqual(q.unfinished(), 2)
+        q.task_done()
+        self.assertEqual(q.unfinished(), 1)
 
     def test_simple_queue(self):
         # Do it a couple of times on the same queue.
