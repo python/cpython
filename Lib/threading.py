@@ -1177,9 +1177,10 @@ class Timer(Thread):
         self.finished.set()
 
     def run(self):
-        self.finished.wait(self.interval)
-        if not self.finished.is_set():
-            self.function(*self.args, **self.kwargs)
+        """Continue execution after wait till function returns True"""
+        while(not self.finished.wait(self.interval)):
+            if not self.function(*self.args, **self.kwargs):
+                break
         self.finished.set()
 
 # Special thread class to represent the main thread
