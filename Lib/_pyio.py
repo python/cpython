@@ -1923,10 +1923,7 @@ class TextIOWrapper(TextIOBase):
     # so that the signature can match the signature of the C version.
     def __init__(self, buffer, encoding=None, errors=None, newline=None,
                  line_buffering=False, write_through=False):
-        if newline is not None and not isinstance(newline, str):
-            raise TypeError("illegal newline type: %r" % (type(newline),))
-        if newline not in (None, "", "\n", "\r", "\r\n"):
-            raise ValueError("illegal newline value: %r" % (newline,))
+        self._check_newline(newline)
         if encoding is None:
             try:
                 encoding = os.device_encoding(buffer.fileno())
@@ -1956,22 +1953,38 @@ class TextIOWrapper(TextIOBase):
                 raise ValueError("invalid errors: %r" % errors)
 
         self._buffer = buffer
-        self._encoding = encoding
-        self._errors = errors
-        self._readuniversal = not newline
-        self._readtranslate = newline is None
-        self._readnl = newline
-        self._writetranslate = newline != ''
-        self._writenl = newline or os.linesep
-        self._encoder = None
-        self._decoder = None
         self._decoded_chars = ''  # buffer for text returned from decoder
         self._decoded_chars_used = 0  # offset into _decoded_chars for read()
         self._snapshot = None  # info for reconstructing decoder state
         self._seekable = self._telling = self.buffer.seekable()
         self._has_read1 = hasattr(self.buffer, 'read1')
+        self._configure(encoding, errors, newline,
+                        line_buffering, write_through)
+
+    def _check_newline(self, newline):
+        if newline is not None and not isinstance(newline, str):
+            raise TypeError("illegal newline type: %r" % (type(newline),))
+        if newline not in (None, "", "\n", "\r", "\r\n"):
+            raise ValueError("illegal newline value: %r" % (newline,))
+
+    def _configure(self, encoding=None, errors=None, newline=None,
+                   line_buffering=False, write_through=False):
+        self._encoding = encoding
+        self._errors = errors
+        self._encoder = None
+        self._decoder = None
         self._b2cratio = 0.0
 
+        self._readuniversal = not newline
+        self._readtranslate = newline is None
+        self._readnl = newline
+        self._writetranslate = newline != ''
+        self._writenl = newline or os.linesep
+
+        self._line_buffering = line_buffering
+        self._write_through = write_through
+
+        # don't write a BOM in the middle of a file
         if self._seekable and self.writable():
             position = self.buffer.tell()
             if position != 0:
@@ -1980,12 +1993,6 @@ class TextIOWrapper(TextIOBase):
                 except LookupError:
                     # Sometimes the encoder doesn't exist
                     pass
-
-        self._configure(line_buffering, write_through)
-
-    def _configure(self, line_buffering=False, write_through=False):
-        self._line_buffering = line_buffering
-        self._write_through = write_through
 
     # self._snapshot is either None, or a tuple (dec_flags, next_input)
     # where dec_flags is the second (integer) item of the decoder state
@@ -2033,17 +2040,46 @@ class TextIOWrapper(TextIOBase):
     def buffer(self):
         return self._buffer
 
-    def reconfigure(self, *, line_buffering=None, write_through=None):
+    def reconfigure(self, *,
+                    encoding=None, errors=None, newline=Ellipsis,
+                    line_buffering=None, write_through=None):
         """Reconfigure the text stream with new parameters.
 
         This also flushes the stream.
         """
+        if encoding is None:
+            encoding = self._encoding
+        else:
+            if not isinstance(encoding, str):
+                raise TypeError("invalid encoding: %r" % encoding)
+            old_encoding = codecs.lookup(self._encoding).name
+            new_encoding = codecs.lookup(encoding).name
+            if old_encoding == new_encoding:
+                encoding = self._encoding
+
+        if errors is None:
+            errors = self._errors
+        elif not isinstance(errors, str):
+            raise TypeError("invalid errors: %r" % errors)
+
+        if (self._decoder is not None
+                and (encoding != self._encoding or errors != self._errors)):
+            raise UnsupportedOperation(
+                "It is not possible to set the encoding of stream after "
+                "the first read")
+
+        if newline is Ellipsis:
+            newline = self._readnl
+        self._check_newline(newline)
+
         if line_buffering is None:
             line_buffering = self.line_buffering
         if write_through is None:
             write_through = self.write_through
+
         self.flush()
-        self._configure(line_buffering, write_through)
+        self._configure(encoding, errors, newline,
+                        line_buffering, write_through)
 
     def seekable(self):
         if self.closed:
