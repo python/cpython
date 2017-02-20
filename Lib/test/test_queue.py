@@ -99,6 +99,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.put(111)
         q.put(333)
         q.put(222)
+        self.assertEqual(q.unfinished(), 3)
         target_order = dict(Queue = [111, 333, 222],
                             LifoQueue = [222, 333, 111],
                             PriorityQueue = [111, 222, 333])
