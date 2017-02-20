@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29602: complex() on complex-like object no longer loses sign of zero
+  imaginary part.
+
 - bpo-29347: Fixed possibly dereferencing undefined pointers
   when creating weakref objects.
 
