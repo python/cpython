@@ -429,7 +429,7 @@ Christian Tismer.
 lookdict() is general-purpose, and may return NULL if (and only if) a
 comparison raises an exception (this was new in Python 2.5).
 lookdict_unicode() below is specialized to string keys, comparison of which can
-never raise an exception; that function can never return NULL.
+never raise an exception; that function must not return NULL for string key.
 lookdict_unicode_nodummy is further specialized for string keys that cannot be
 the <dummy> value.
 For both, when the key isn't found a PyDictEntry* is returned
