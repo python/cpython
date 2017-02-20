@@ -5024,6 +5024,10 @@ import_from(PyObject *v, PyObject *name)
     pkgpath = PyModule_GetFilenameObject(v);
     if (pkgname == NULL) {
         pkgname_or_unknown = PyUnicode_FromString("<unknown module name>");
+        if (pkgname_or_unknown == NULL) {
+            Py_XDECREF(pkgpath);
+            return NULL;
+        }
     } else {
         pkgname_or_unknown = pkgname;
     }
