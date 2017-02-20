@@ -1045,7 +1045,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case CALL_FUNCTION_KW:
             return -oparg-1;
         case CALL_FUNCTION_EX:
-            return - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0);
+            return -1 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
             return -1 - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
                 ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0);
