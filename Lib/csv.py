@@ -18,8 +18,8 @@ __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
            "Error", "Dialect", "__doc__", "excel", "excel_tab",
            "field_size_limit", "reader", "writer",
            "register_dialect", "get_dialect", "list_dialects", "Sniffer",
-           "unregister_dialect", "__version__", "DictReader", "DictWriter",
-           "unix_dialect"]
+           "unregister_dialect", "__version__", "TableReader", "DictReader",
+           "DictWriter", "unix_dialect"]
 
 class Dialect:
     """Describe a CSV dialect.
@@ -78,7 +78,7 @@ class unix_dialect(Dialect):
 register_dialect("unix", unix_dialect)
 
 
-class DictReader:
+class TableReader:
     def __init__(self, f, fieldnames=None, restkey=None, restval=None,
                  dialect="excel", *args, **kwds):
         self._fieldnames = fieldnames   # list of keys for the dict
@@ -117,7 +117,7 @@ class DictReader:
         # values
         while row == []:
             row = next(self.reader)
-        d = OrderedDict(zip(self.fieldnames, row))
+        d = tuple(zip(self.fieldnames, row))
         lf = len(self.fieldnames)
         lr = len(row)
         if lf < lr:
@@ -126,6 +126,11 @@ class DictReader:
             for key in self.fieldnames[lr:]:
                 d[key] = self.restval
         return d
+
+
+class DictReader(TableReader):
+    def __next__(self):
+        return OrderedDict(super().__next__())
 
 
 class DictWriter:
