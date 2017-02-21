@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX. 
+  Patch by Matthieu Dartiailh.
+
 - bpo-29602: Fix incorrect handling of signed zeros in complex constructor for
   complex subclasses and for inputs having a __complex__ method. Patch
   by Serhiy Storchaka.
