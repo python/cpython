@@ -172,7 +172,7 @@ void
 PyOS_AfterFork(void)
 {
 #ifdef WITH_THREAD
-    PyEval_ReInitThreads();
     PyThread_ReInitTLS();
+    PyEval_ReInitThreads();
 #endif
 }
