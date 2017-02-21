@@ -117,7 +117,7 @@ class TableReader:
         # values
         while row == []:
             row = next(self.reader)
-        d = tuple(zip(self.fieldnames, row))
+        d = list(zip(self.fieldnames, row))
         lf = len(self.fieldnames)
         lr = len(row)
         if lf < lr:
