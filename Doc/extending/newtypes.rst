@@ -80,25 +80,25 @@ Moving on, we come to the crunch --- the type object. ::
 
    static PyTypeObject noddy_NoddyType = {
        PyVarObject_HEAD_INIT(NULL, 0)
-       "noddy.Noddy",             /*tp_name*/
-       sizeof(noddy_NoddyObject), /*tp_basicsize*/
-       0,                         /*tp_itemsize*/
-       0,                         /*tp_dealloc*/
-       0,                         /*tp_print*/
-       0,                         /*tp_getattr*/
-       0,                         /*tp_setattr*/
-       0,                         /*tp_compare*/
-       0,                         /*tp_repr*/
-       0,                         /*tp_as_number*/
-       0,                         /*tp_as_sequence*/
-       0,                         /*tp_as_mapping*/
-       0,                         /*tp_hash */
-       0,                         /*tp_call*/
-       0,                         /*tp_str*/
-       0,                         /*tp_getattro*/
-       0,                         /*tp_setattro*/
-       0,                         /*tp_as_buffer*/
-       Py_TPFLAGS_DEFAULT,        /*tp_flags*/
+       "noddy.Noddy",             /* tp_name */
+       sizeof(noddy_NoddyObject), /* tp_basicsize */
+       0,                         /* tp_itemsize */
+       0,                         /* tp_dealloc */
+       0,                         /* tp_print */
+       0,                         /* tp_getattr */
+       0,                         /* tp_setattr */
+       0,                         /* tp_compare */
+       0,                         /* tp_repr */
+       0,                         /* tp_as_number */
+       0,                         /* tp_as_sequence */
+       0,                         /* tp_as_mapping */
+       0,                         /* tp_hash */
+       0,                         /* tp_call */
+       0,                         /* tp_str */
+       0,                         /* tp_getattro */
+       0,                         /* tp_setattro */
+       0,                         /* tp_as_buffer */
+       Py_TPFLAGS_DEFAULT,        /* tp_flags */
        "Noddy objects",           /* tp_doc */
    };
 
@@ -163,7 +163,7 @@ for now.
 Skipping a number of type methods that we don't provide, we set the class flags
 to :const:`Py_TPFLAGS_DEFAULT`. ::
 
-   Py_TPFLAGS_DEFAULT,        /*tp_flags*/
+   Py_TPFLAGS_DEFAULT,        /* tp_flags */
 
 All types should include this constant in their flags.  It enables all of the
 members defined by the current version of Python.
@@ -236,7 +236,7 @@ doesn't do anything. It can't even be subclassed.
 Adding data and methods to the Basic example
 --------------------------------------------
 
-Let's expend the basic example to add some data and methods.  Let's also make
+Let's extend the basic example to add some data and methods.  Let's also make
 the type usable as a base class. We'll create a new module, :mod:`noddy2` that
 adds these capabilities:
 
@@ -276,7 +276,7 @@ allocation and deallocation.  At a minimum, we need a deallocation method::
    {
        Py_XDECREF(self->first);
        Py_XDECREF(self->last);
-       self->ob_type->tp_free((PyObject*)self);
+       Py_TYPE(self)->tp_free((PyObject*)self);
    }
 
 which is assigned to the :c:member:`~PyTypeObject.tp_dealloc` member::
@@ -489,7 +489,7 @@ concatenation of the first and last names. ::
 The method is implemented as a C function that takes a :class:`Noddy` (or
 :class:`Noddy` subclass) instance as the first argument.  Methods always take an
 instance as the first argument. Methods often take positional and keyword
-arguments as well, but in this cased we don't take any and don't need to accept
+arguments as well, but in this case we don't take any and don't need to accept
 a positional argument tuple or keyword argument dictionary. This method is
 equivalent to the Python method::
 
@@ -798,7 +798,7 @@ decrementing of reference counts.  With :c:func:`Py_CLEAR`, the
 
 Finally, we add the :const:`Py_TPFLAGS_HAVE_GC` flag to the class flags::
 
-   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /*tp_flags*/
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
 
 That's pretty much it.  If we had written custom :c:member:`~PyTypeObject.tp_alloc` or
 :c:member:`~PyTypeObject.tp_free` slots, we'd need to modify them for cyclic-garbage collection.
@@ -957,14 +957,15 @@ Finalization and De-allocation
 
 This function is called when the reference count of the instance of your type is
 reduced to zero and the Python interpreter wants to reclaim it.  If your type
-has memory to free or other clean-up to perform, put it here.  The object itself
-needs to be freed here as well.  Here is an example of this function::
+has memory to free or other clean-up to perform, you can put it here.  The
+object itself needs to be freed here as well.  Here is an example of this
+function::
 
    static void
    newdatatype_dealloc(newdatatypeobject * obj)
    {
        free(obj->obj_UnderlyingDatatypePtr);
-       obj->ob_type->tp_free(obj);
+       Py_TYPE(obj)->tp_free(obj);
    }
 
 .. index::
@@ -1007,7 +1008,7 @@ done.  This can be done using the :c:func:`PyErr_Fetch` and
 
            Py_DECREF(self->my_callback);
        }
-       obj->ob_type->tp_free((PyObject*)self);
+       Py_TYPE(obj)->tp_free((PyObject*)self);
    }
 
 
