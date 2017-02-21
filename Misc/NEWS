@@ -677,6 +677,9 @@ Library
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
 
+- bpo-29613: http.cookies.Morsel now supports SameSite cookies.
+  Patch by Akash Shende.
+
 Windows
 -------
 
