@@ -13,7 +13,7 @@ Noddy_dealloc(Noddy* self)
 {
     Py_XDECREF(self->first);
     Py_XDECREF(self->last);
-    self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static PyObject *
@@ -24,18 +24,16 @@ Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = (Noddy *)type->tp_alloc(type, 0);
     if (self != NULL) {
         self->first = PyString_FromString("");
-        if (self->first == NULL)
-          {
+        if (self->first == NULL) {
             Py_DECREF(self);
             return NULL;
-          }
-        
+        }
+
         self->last = PyString_FromString("");
-        if (self->last == NULL)
-          {
+        if (self->last == NULL) {
             Py_DECREF(self);
             return NULL;
-          }
+        }
 
         self->number = 0;
     }
@@ -50,10 +48,10 @@ Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
 
     static char *kwlist[] = {"first", "last", "number", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist, 
-                                      &first, &last, 
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist,
+                                      &first, &last,
                                       &self->number))
-        return -1; 
+        return -1;
 
     if (first) {
         tmp = self->first;
@@ -111,7 +109,7 @@ Noddy_name(Noddy* self)
 
     result = PyString_Format(format, args);
     Py_DECREF(args);
-    
+
     return result;
 }
 
@@ -123,34 +121,34 @@ static PyMethodDef Noddy_methods[] = {
 };
 
 static PyTypeObject NoddyType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
-    "noddy.Noddy",             /*tp_name*/
-    sizeof(Noddy),             /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    (destructor)Noddy_dealloc, /*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    0,                         /*tp_str*/
-    0,                         /*tp_getattro*/
-    0,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "noddy.Noddy",             /* tp_name */
+    sizeof(Noddy),             /* tp_basicsize */
+    0,                         /* tp_itemsize */
+    (destructor)Noddy_dealloc, /* tp_dealloc */
+    0,                         /* tp_print */
+    0,                         /* tp_getattr */
+    0,                         /* tp_setattr */
+    0,                         /* tp_compare */
+    0,                         /* tp_repr */
+    0,                         /* tp_as_number */
+    0,                         /* tp_as_sequence */
+    0,                         /* tp_as_mapping */
+    0,                         /* tp_hash */
+    0,                         /* tp_call */
+    0,                         /* tp_str */
+    0,                         /* tp_getattro */
+    0,                         /* tp_setattro */
+    0,                         /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT |
+        Py_TPFLAGS_BASETYPE,   /* tp_flags */
     "Noddy objects",           /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    0,		               /* tp_iter */
-    0,		               /* tp_iternext */
+    0,                         /* tp_traverse */
+    0,                         /* tp_clear */
+    0,                         /* tp_richcompare */
+    0,                         /* tp_weaklistoffset */
+    0,                         /* tp_iter */
+    0,                         /* tp_iternext */
     Noddy_methods,             /* tp_methods */
     Noddy_members,             /* tp_members */
     0,                         /* tp_getset */
@@ -172,7 +170,7 @@ static PyMethodDef module_methods[] = {
 #define PyMODINIT_FUNC void
 #endif
 PyMODINIT_FUNC
-initnoddy2(void) 
+initnoddy2(void)
 {
     PyObject* m;
 
@@ -183,7 +181,7 @@ initnoddy2(void)
                        "Example module that creates an extension type.");
 
     if (m == NULL)
-      return;
+        return;
 
     Py_INCREF(&NoddyType);
     PyModule_AddObject(m, "Noddy", (PyObject *)&NoddyType);

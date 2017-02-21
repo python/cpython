@@ -31,8 +31,7 @@ Shoddy_init(Shoddy *self, PyObject *args, PyObject *kwds)
 
 
 static PyTypeObject ShoddyType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                       /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "shoddy.Shoddy",         /* tp_name */
     sizeof(Shoddy),          /* tp_basicsize */
     0,                       /* tp_itemsize */
@@ -52,7 +51,7 @@ static PyTypeObject ShoddyType = {
     0,                       /* tp_setattro */
     0,                       /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
-      Py_TPFLAGS_BASETYPE,   /* tp_flags */
+        Py_TPFLAGS_BASETYPE, /* tp_flags */
     0,                       /* tp_doc */
     0,                       /* tp_traverse */
     0,                       /* tp_clear */
