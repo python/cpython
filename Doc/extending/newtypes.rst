@@ -79,8 +79,7 @@ Python integers::
 Moving on, we come to the crunch --- the type object. ::
 
    static PyTypeObject noddy_NoddyType = {
-       PyObject_HEAD_INIT(NULL)
-       0,                         /*ob_size*/
+       PyVarObject_HEAD_INIT(NULL, 0)
        "noddy.Noddy",             /*tp_name*/
        sizeof(noddy_NoddyObject), /*tp_basicsize*/
        0,                         /*tp_itemsize*/
@@ -111,22 +110,15 @@ it's common practice to not specify them explicitly unless you need them.
 This is so important that we're going to pick the top of it apart still
 further::
 
-   PyObject_HEAD_INIT(NULL)
+   PyVarObject_HEAD_INIT(NULL, 0)
 
 This line is a bit of a wart; what we'd like to write is::
 
-   PyObject_HEAD_INIT(&PyType_Type)
+   PyVarObject_HEAD_INIT(&PyType_Type, 0)
 
 as the type of a type object is "type", but this isn't strictly conforming C and
 some compilers complain.  Fortunately, this member will be filled in for us by
 :c:func:`PyType_Ready`. ::
-
-   0,                          /* ob_size */
-
-The :attr:`ob_size` field of the header is not used; its presence in the type
-structure is a historical artifact that is maintained for binary compatibility
-with extension modules compiled for older versions of Python.  Always set this
-field to zero. ::
 
    "noddy.Noddy",              /* tp_name */
 
