@@ -121,7 +121,7 @@ class TableReader:
         lf = len(self.fieldnames)
         lr = len(row)
         if lf < lr:
-            d.extend((self.restkey, entry) for entry in row[lf:])
+            d.append((self.restkey, row[lf:]))
         elif lf > lr:
             for key in self.fieldnames[lr:]:
                 d.append((key, self.restval))
