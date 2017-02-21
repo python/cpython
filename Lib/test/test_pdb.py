@@ -1,6 +1,8 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
+import dis
 import doctest
+import inspect
 import os
 import pdb
 import sys
@@ -1109,6 +1111,44 @@ class PdbTestCase(unittest.TestCase):
         finally:
             if save_home is not None:
                 os.environ['HOME'] = save_home
+
+    def test_find_function_with_invalid_filename(self):
+        self.assertIsNone(pdb.find_function('foo', 'invalid filename'))
+
+    def test_getsourcelines(self):
+        def foo():
+            pass  # pragma: no cover
+        lines, lineno = inspect.findsource(foo)
+        expected_lines = inspect.getblock(lines[lineno:])
+        expected_lineno = lineno + 1
+        actual_lines, actual_lineno = pdb.getsourcelines(foo)
+        self.assertEqual(actual_lines, expected_lines)
+        self.assertEqual(actual_lineno, expected_lineno)
+
+    def test_getsourcelines_with_module_frame_obj(self):
+        for frame, *unused in inspect.getouterframes(inspect.currentframe()):
+            if frame.f_globals is frame.f_locals:
+                module_frame = frame
+                break
+        expected_lines = inspect.findsource(module_frame)[0]
+        lines, lineno = pdb.getsourcelines(module_frame)
+        self.assertEqual(lines, expected_lines)
+        self.assertEqual(lineno, 1)
+
+    def test_getsourcelines_with_module_obj(self):
+        module = inspect.getmodule(inspect.currentframe())
+        expected_lines = inspect.findsource(module)[0]
+        lines, lineno = pdb.getsourcelines(module)
+        self.assertEqual(lines, expected_lines)
+        self.assertEqual(lineno, 1)
+
+    def test_lasti2lineno(self):
+        code_obj = inspect.currentframe().f_code
+        max_offset, max_lineno = max(dis.findlinestarts(code_obj))
+        min_offset, min_lineno = min(dis.findlinestarts(code_obj))
+        self.assertEqual(pdb.lasti2lineno(code_obj, max_offset), max_lineno)
+        self.assertEqual(pdb.lasti2lineno(code_obj, max_offset+1), max_lineno)
+        self.assertEqual(pdb.lasti2lineno(code_obj, min_offset-1), 0)
 
     def tearDown(self):
         support.unlink(support.TESTFN)
