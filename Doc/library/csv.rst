@@ -402,9 +402,9 @@ Reader objects (:class:`DictReader` instances and objects returned by the
 .. method:: csvreader.__next__()
 
    Return the next row of the reader's iterable object as a list (if the object
-   was returned from ``reader()``) or a dict (if it is a ``DictReader``), parsed
-   according to the current dialect. Usually you should call this as
-   ``next(reader)``.
+   was returned from :func:`reader`) or a dict (if it is a :class:`DictReader`
+   instance), parsed according to the current dialect.  Usually you should call
+   this as ``next(reader)``.
 
 
 Reader objects have the following public attributes:
