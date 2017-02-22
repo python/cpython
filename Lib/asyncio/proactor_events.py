@@ -86,15 +86,11 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._read_fut.cancel()
             self._read_fut = None
 
-    # On Python 3.3 and older, objects with a destructor part of a reference
-    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
-    # to the PEP 442.
-    if compat.PY34:
-        def __del__(self):
-            if self._sock is not None:
-                warnings.warn("unclosed transport %r" % self, ResourceWarning,
-                              source=self)
-                self.close()
+    def __del__(self):
+        if self._sock is not None:
+            warnings.warn("unclosed transport %r" % self, ResourceWarning,
+                          source=self)
+            self.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         if isinstance(exc, base_events._FATAL_ERROR_IGNORE):

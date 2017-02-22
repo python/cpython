@@ -76,20 +76,16 @@ class Task(futures.Future):
         self._loop.call_soon(self._step)
         self.__class__._all_tasks.add(self)
 
-    # On Python 3.3 or older, objects with a destructor that are part of a
-    # reference cycle are never destroyed. That's not the case any more on
-    # Python 3.4 thanks to the PEP 442.
-    if compat.PY34:
-        def __del__(self):
-            if self._state == futures._PENDING and self._log_destroy_pending:
-                context = {
-                    'task': self,
-                    'message': 'Task was destroyed but it is pending!',
-                }
-                if self._source_traceback:
-                    context['source_traceback'] = self._source_traceback
-                self._loop.call_exception_handler(context)
-            futures.Future.__del__(self)
+    def __del__(self):
+        if self._state == futures._PENDING and self._log_destroy_pending:
+            context = {
+                'task': self,
+                'message': 'Task was destroyed but it is pending!',
+            }
+            if self._source_traceback:
+                context['source_traceback'] = self._source_traceback
+            self._loop.call_exception_handler(context)
+        futures.Future.__del__(self)
 
     def _repr_info(self):
         return base_tasks._task_repr_info(self)

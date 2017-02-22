@@ -462,16 +462,6 @@ class TestCase(unittest.TestCase):
         # in an except block of a generator
         self.assertEqual(sys.exc_info(), (None, None, None))
 
-    if not compat.PY34:
-        # Python 3.3 compatibility
-        def subTest(self, *args, **kwargs):
-            class EmptyCM:
-                def __enter__(self):
-                    pass
-                def __exit__(self, *exc):
-                    pass
-            return EmptyCM()
-
 
 @contextlib.contextmanager
 def disable_logger():

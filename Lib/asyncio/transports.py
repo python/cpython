@@ -104,7 +104,7 @@ class WriteTransport(BaseTransport):
         The default implementation concatenates the arguments and
         calls write() on the result.
         """
-        data = compat.flatten_list_bytes(list_of_data)
+        data = b''.join(list_of_data)
         self.write(data)
 
     def write_eof(self):
