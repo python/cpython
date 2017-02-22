@@ -83,6 +83,9 @@ Other Language Changes
   whitespace, not only spaces.
   (Contributed by Robert Xiao in :issue:`28927`.)
 
+* :exc:`ImportError` now displays module name and module ``__file__`` path when
+  ``from ... import ...`` fails. :issue:`29546`.
+
 
 New Modules
 ===========
