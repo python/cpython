@@ -22,12 +22,13 @@ from asyncio import compat
 
 
 def _get_function_source(func):
-    if hasattr(func, '__wrapped__'):
-        func = func.__wrapped__
+    func = inspect.unwrap(func)
     if inspect.isfunction(func):
         code = func.__code__
         return (code.co_filename, code.co_firstlineno)
     if isinstance(func, functools.partial):
+        return _get_function_source(func.func)
+    if isinstance(func, functools.partialmethod):
         return _get_function_source(func.func)
     return None
 
