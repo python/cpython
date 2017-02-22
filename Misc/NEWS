@@ -32,6 +32,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29110: Fix file object leak in aifc.open() when file is given as a
+  filesystem path and is not in valid AIFF format. Patch by Anthony Zhang.
+
 - bpo-29532: Altering a kwarg dictionary passed to functools.partial()
   no longer affects a partial object after creation.
 
