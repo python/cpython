@@ -785,6 +785,15 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.6
 
 
+.. opcode:: BUILD_TUPLE_UNPACK_WITH_CALL (count)
+
+   This is similar to :opcode:`BUILD_TUPLE_UNPACK`,
+   but is used for ``f(*x, *y, *z)`` call syntax. The stack item at position
+   ``count + 1`` should be the corresponding callable ``f``.
+
+   .. versionadded:: 3.6
+
+
 .. opcode:: BUILD_STRING (count)
 
    Concatenates *count* strings from the stack and pushes the resulting string
