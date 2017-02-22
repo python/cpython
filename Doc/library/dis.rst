@@ -772,7 +772,7 @@ All of the following opcodes use their arguments.
 
 .. opcode:: BUILD_MAP (count)
 
-   Pushes a new dictionary object onto the stack.  Pops *2 \* count* items
+   Pushes a new dictionary object onto the stack.  Pops ``2 * count`` items
    so that the dictionary holds *count* entries:
    ``{..., TOS3: TOS2, TOS1: TOS}``.
 
