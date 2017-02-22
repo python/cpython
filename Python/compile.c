@@ -1325,18 +1325,6 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 }
 
 static int
-compiler_isdocstring(stmt_ty s)
-{
-    if (s->kind != Expr_kind)
-        return 0;
-    if (s->v.Expr.value->kind == Str_kind)
-        return 1;
-    if (s->v.Expr.value->kind == Constant_kind)
-        return PyUnicode_CheckExact(s->v.Expr.value->v.Constant.value);
-    return 0;
-}
-
-static int
 is_const(expr_ty e)
 {
     switch (e->kind) {
@@ -1435,36 +1423,27 @@ find_ann(asdl_seq *stmts)
    and for annotations. */
 
 static int
-compiler_body(struct compiler *c, asdl_seq *stmts)
+compiler_body(struct compiler *c, asdl_seq *stmts, string docstring)
 {
-    int i = 0;
-    stmt_ty st;
-
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
        coincide with the line number of first "real" statement in module.
        If body is empy, then lineno will be set later in assemble. */
     if (c->u->u_scope_type == COMPILER_SCOPE_MODULE &&
         !c->u->u_lineno && asdl_seq_LEN(stmts)) {
-        st = (stmt_ty)asdl_seq_GET(stmts, 0);
+        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
         c->u->u_lineno = st->lineno;
     }
     /* Every annotated class and module should have __annotations__. */
     if (find_ann(stmts)) {
         ADDOP(c, SETUP_ANNOTATIONS);
     }
-    if (!asdl_seq_LEN(stmts))
-        return 1;
-    st = (stmt_ty)asdl_seq_GET(stmts, 0);
-    if (compiler_isdocstring(st) && c->c_optimize < 2) {
-        /* don't generate docstrings if -OO */
-        i = 1;
-        VISIT(c, expr, st->v.Expr.value);
-        if (!compiler_nameop(c, __doc__, Store))
-            return 0;
+    /* if not -OO mode, set docstring */
+    if (c->c_optimize < 2 && docstring) {
+        ADDOP_O(c, LOAD_CONST, docstring, consts);
+        ADDOP_NAME(c, STORE_NAME, __doc__, names);
     }
-    for (; i < asdl_seq_LEN(stmts); i++)
-        VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
+    VISIT_SEQ(c, stmt, stmts);
     return 1;
 }
 
@@ -1484,7 +1463,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
         return NULL;
     switch (mod->kind) {
     case Module_kind:
-        if (!compiler_body(c, mod->v.Module.body)) {
+        if (!compiler_body(c, mod->v.Module.body, mod->v.Module.docstring)) {
             compiler_exit_scope(c);
             return 0;
         }
@@ -1812,15 +1791,13 @@ static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
-    PyObject *qualname, *first_const = Py_None;
+    PyObject *qualname, *docstring = Py_None;
     arguments_ty args;
     expr_ty returns;
     identifier name;
     asdl_seq* decos;
     asdl_seq *body;
-    stmt_ty st;
-    Py_ssize_t i, n, funcflags;
-    int docstring;
+    Py_ssize_t i, funcflags;
     int annotations;
     int scope_type;
 
@@ -1866,27 +1843,18 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
-    st = (stmt_ty)asdl_seq_GET(body, 0);
-    docstring = compiler_isdocstring(st);
-    if (docstring && c->c_optimize < 2) {
-        if (st->v.Expr.value->kind == Constant_kind)
-            first_const = st->v.Expr.value->v.Constant.value;
-        else
-            first_const = st->v.Expr.value->v.Str.s;
-    }
-    if (compiler_add_o(c, c->u->u_consts, first_const) < 0)      {
+    /* if not -OO mode, add docstring */
+    if (c->c_optimize < 2 && s->v.FunctionDef.docstring)
+        docstring = s->v.FunctionDef.docstring;
+    if (compiler_add_o(c, c->u->u_consts, docstring) < 0) {
         compiler_exit_scope(c);
         return 0;
     }
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
-    n = asdl_seq_LEN(body);
     /* if there was a docstring, we need to skip the first statement */
-    for (i = docstring; i < n; i++) {
-        st = (stmt_ty)asdl_seq_GET(body, i);
-        VISIT_IN_SCOPE(c, stmt, st);
-    }
+    VISIT_SEQ_IN_SCOPE(c, stmt, body);
     co = assemble(c, 1);
     qualname = c->u->u_qualname;
     Py_INCREF(qualname);
@@ -1967,7 +1935,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         Py_DECREF(str);
         /* compile the body proper */
-        if (!compiler_body(c, s->v.ClassDef.body)) {
+        if (!compiler_body(c, s->v.ClassDef.body, s->v.ClassDef.docstring)) {
             compiler_exit_scope(c);
             return 0;
         }
