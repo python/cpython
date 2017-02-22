@@ -10,7 +10,6 @@ import socket
 import warnings
 
 from . import base_events
-from . import compat
 from . import constants
 from . import futures
 from . import sslproto

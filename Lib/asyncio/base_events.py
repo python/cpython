@@ -28,7 +28,6 @@ import sys
 import warnings
 import weakref
 
-from . import compat
 from . import coroutines
 from . import events
 from . import futures

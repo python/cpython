@@ -6,7 +6,6 @@ except ImportError:  # pragma: no cover
     ssl = None
 
 from . import base_events
-from . import compat
 from . import protocols
 from . import transports
 from .log import logger

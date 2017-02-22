@@ -18,8 +18,6 @@ import sys
 import threading
 import traceback
 
-from asyncio import compat
-
 
 def _get_function_source(func):
     func = inspect.unwrap(func)

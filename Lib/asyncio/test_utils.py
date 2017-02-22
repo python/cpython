@@ -26,7 +26,6 @@ except ImportError:  # pragma: no cover
     ssl = None
 
 from . import base_events
-from . import compat
 from . import events
 from . import futures
 from . import selectors

@@ -2,7 +2,6 @@ import collections
 import subprocess
 import warnings
 
-from . import compat
 from . import protocols
 from . import transports
 from .coroutines import coroutine
