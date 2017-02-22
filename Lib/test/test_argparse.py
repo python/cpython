@@ -2362,6 +2362,26 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
               '''
         self.assertEqual(parser.format_help(), textwrap.dedent(expected))
 
+    def test_help_required(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        group1 = parser.add_mutually_exclusive_group(required=True)
+        group1.add_argument('--foo', action='store_true')
+        group1.add_argument('--bar', action='store_false')
+        group2 = parser.add_mutually_exclusive_group(required=True)
+        group2.add_argument('--soup', action='store_true')
+        group2.add_argument('--nuts', action='store_false')
+        expected = '''\
+            usage: PROG [-h] (--foo | --bar) (--soup | --nuts)
+
+            optional arguments:
+              -h, --help  show this help message and exit
+              --foo
+              --bar
+              --soup
+              --nuts
+              '''
+        self.assertEqual(parser.format_help(), textwrap.dedent(expected))
+
 class MEMixin(object):
 
     def test_failures_when_not_required(self):
