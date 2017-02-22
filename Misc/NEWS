@@ -32,6 +32,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29532: Altering a kwarg dictionary passed to functools.partial()
+  no longer affects a partial object after creation.
+
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
   Manuel Krebber, and Łukasz Langa.
