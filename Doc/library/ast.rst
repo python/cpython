@@ -139,7 +139,7 @@ and classes for traversing abstract syntax trees:
    :func:`inspect.cleandoc`.
 
    .. versionchanged:: 3.5
-      :class:``AsyncFunctionDef`` is added.
+      :class:`AsyncFunctionDef` is added.
 
    .. versionchanged:: 3.7
       The docstring is exported from attribute of the node, instead of first
