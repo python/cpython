@@ -245,6 +245,9 @@ Extension Modules
 Library
 -------
 
+- bpo-28518: Start a transaction implicitly before a DML statement.
+  Patch by Aviv Palivoda.
+
 - bpo-29532: Altering a kwarg dictionary passed to functools.partial()
   no longer affects a partial object after creation.
 
