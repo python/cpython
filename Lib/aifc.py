@@ -344,9 +344,15 @@ class Aifc_read:
 
     def __init__(self, f):
         if isinstance(f, str):
-            f = builtins.open(f, 'rb')
-        # else, assume it is an open file object already
-        self.initfp(f)
+            file_object = builtins.open(f, 'rb')
+            try:
+                self.initfp(file_object)
+            except:
+                file_object.close()
+                raise
+        else:
+            # assume it is an open file object already
+            self.initfp(f)
 
     def __enter__(self):
         return self
@@ -543,16 +549,19 @@ class Aifc_write:
 
     def __init__(self, f):
         if isinstance(f, str):
-            filename = f
-            f = builtins.open(f, 'wb')
+            file_object = builtins.open(f, 'wb')
+            try:
+                self.initfp(file_object)
+            except:
+                file_object.close()
+                raise
+
+            # treat .aiff file extensions as non-compressed audio
+            if f.endswith('.aiff'):
+                self._aifc = 0
         else:
-            # else, assume it is an open file object already
-            filename = '???'
-        self.initfp(f)
-        if filename[-5:] == '.aiff':
-            self._aifc = 0
-        else:
-            self._aifc = 1
+            # assume it is an open file object already
+            self.initfp(f)
 
     def initfp(self, file):
         self._file = file
