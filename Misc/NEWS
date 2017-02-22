@@ -24,6 +24,8 @@ Core and Builtins
 
 - bpo-29546: Set the 'path' and 'name' attribute on ImportError for ``from ... import ...``.
 
+- bpo-29546: Improve from-import error message with location
+
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
 
 - Issue #29337: Fixed possible BytesWarning when compare the code objects.
