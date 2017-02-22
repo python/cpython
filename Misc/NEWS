@@ -239,6 +239,8 @@ Extension Modules
 Library
 -------
 
+- bpo-29376: Fix assertion error in threading._DummyThread.is_alive().
+
 - bpo-29532: Altering a kwarg dictionary passed to functools.partial()
   no longer affects a partial object after creation.
 
