@@ -100,6 +100,14 @@ The :const:`~unittest.mock.sentinel` attributes now preserve their identity
 when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`.
 (Contributed by Serhiy Storchaka in :issue:`20804`.)
 
+xmlrpc.server
+-------------
+
+:meth:`xmlrpc.server.SimpleXMLRPCServer.register_function()` and
+:meth:`xmlrpc.server.CGIXMLRPCRequestHandler.register_function()` can now be
+used as a decorator.
+(Contributed by Xiang Zhang in :issue:`7769`.)
+
 
 Optimizations
 =============
