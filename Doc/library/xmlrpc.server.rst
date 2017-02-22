@@ -79,13 +79,21 @@ The :class:`SimpleXMLRPCServer` class is based on
 alone XML-RPC servers.
 
 
-.. method:: SimpleXMLRPCServer.register_function(function, name=None)
+.. method:: SimpleXMLRPCServer.register_function(function=None, name=None)
 
    Register a function that can respond to XML-RPC requests.  If *name* is given,
    it will be the method name associated with *function*, otherwise
    ``function.__name__`` will be used.  *name* can be either a normal or Unicode
    string, and may contain characters not legal in Python identifiers, including
    the period character.
+
+   From version 3.7, this method can also be used as a decorator.  When used as
+   a decorator, *name* can be given as a keyword-only argument to register
+   *function* under *name*.  If no *name* is given, ``function.__name__`` will be
+   used.
+
+   .. versionadded:: 3.7
+      :meth:`register_function` can be used as a decorator.
 
 
 .. method:: SimpleXMLRPCServer.register_instance(instance, allow_dotted_names=False)
@@ -185,6 +193,37 @@ server::
    # Print list of available methods
    print(s.system.listMethods())
 
+Since version 3.7, :meth:`register_function` can also be used as a decorator. The
+previous server example can register functions in a decorator way::
+
+   from xmlrpc.server import SimpleXMLRPCServer
+   from xmlrpc.server import SimpleXMLRPCRequestHandler
+
+   class RequestHandler(SimpleXMLRPCRequestHandler):
+       rpc_paths = ('/RPC2',)
+
+   with SimpleXMLRPCServer(("localhost", 8000),
+                           requestHandler=RequestHandler) as server:
+       server.register_introspection_functions()
+
+       # Register pow() function; this will use the value of
+       # pow.__name__ as the name, which is just 'pow'.
+       server.register_function(pow)
+
+       # Register a function under a different name, using
+       # register_function as a decorator. *name* can only be given
+       # as a keyword argument.
+       @server.register_function(name='add')
+       def adder_function(x,y):
+           return x + y
+
+       # Register a function under function.__name__.
+       @server.register_function
+       def mul(x, y):
+           return x * y
+
+       server.serve_forever()
+
 The following example included in the :file:`Lib/xmlrpc/server.py` module shows
 a server allowing dotted names and registering a multicall function.
 
@@ -252,17 +291,25 @@ This client which interacts with the demo XMLRPC server can be invoked as::
 CGIXMLRPCRequestHandler
 -----------------------
 
-The :class:`CGIXMLRPCRequestHandler` class can be used to  handle XML-RPC
+The :class:`CGIXMLRPCRequestHandler` class can be used to handle XML-RPC
 requests sent to Python CGI scripts.
 
 
-.. method:: CGIXMLRPCRequestHandler.register_function(function, name=None)
+.. method:: CGIXMLRPCRequestHandler.register_function(function=None, name=None)
 
-   Register a function that can respond to XML-RPC requests. If  *name* is given,
-   it will be the method name associated with  function, otherwise
-   *function.__name__* will be used. *name* can be either a normal or Unicode
-   string, and may contain  characters not legal in Python identifiers, including
+   Register a function that can respond to XML-RPC requests.  If *name* is given,
+   it will be the method name associated with *function*, otherwise
+   ``function.__name__`` will be used.  *name* can be either a normal or Unicode
+   string, and may contain characters not legal in Python identifiers, including
    the period character.
+
+   From version 3.7, this method can also be used as a decorator.  When used as
+   a decorator, *name* can be given as a keyword-only argument to register
+   *function* under *name*.  If no *name* is given, ``function.__name__`` will be
+   used.
+
+   .. versionadded:: 3.7
+      :meth:`register_function` can be used as a decorator.
 
 
 .. method:: CGIXMLRPCRequestHandler.register_instance(instance)
