@@ -828,7 +828,7 @@ All of the following opcodes use their arguments.
 .. opcode:: BUILD_MAP_UNPACK (count)
 
    Pops *count* mappings from the stack, merges them in a single dictionary,
-   and pushes the result.  This bytecode is used for implementing iterable
+   and pushes the result.  This bytecode is used for implementing dictionary
    unpacking in dictionary displays ``{**x, **y, **z}``.
 
    .. versionadded:: 3.5
