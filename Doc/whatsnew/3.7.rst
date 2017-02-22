@@ -196,6 +196,12 @@ Changes in the Python API
   Use the :meth:`~http.cookies.Morsel.set` method for setting them.
   (Contributed by Serhiy Storchaka in :issue:`29192`.)
 
+* ``Module``, ``FunctionDef``, ``AsyncFunctionDef``, and
+  ``ClassDef`` AST nodes now have a new ``docstring`` field.
+  The first statement in their body is not considered as a docstring
+  anymore.  ``co_firstlineno`` and ``co_lnotab`` of code object for class
+  and module are affected by this change.
+  (Contributed by INADA Naoki and Eugene Toder in :issue:`29463`.)
 
 CPython bytecode changes
 ------------------------
