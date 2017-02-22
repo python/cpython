@@ -801,7 +801,7 @@ All of the following opcodes use their arguments.
 .. opcode:: BUILD_TUPLE_UNPACK (count)
 
    Pops ``count`` iterables from the stack, joins them in a single tuple,
-   and pushes the result. This bytecode is used for implementing iterable
+   and pushes the result.  This bytecode is used for implementing iterable
    unpacking in tuple displays ``(*x, *y, *z)``.
 
    .. versionadded:: 3.5
@@ -834,7 +834,7 @@ All of the following opcodes use their arguments.
 .. opcode:: BUILD_MAP_UNPACK_WITH_CALL (oparg)
 
    This is similar to :opcode:`BUILD_MAP_UNPACK`,
-   but is used for ``f(**x, **y, **z)`` call syntax. The lowest byte of
+   but is used for ``f(**x, **y, **z)`` call syntax.  The lowest byte of
    ``oparg`` is the count of mappings, the relative position of the
    corresponding callable ``f`` is encoded in the second byte of ``oparg``.
 
