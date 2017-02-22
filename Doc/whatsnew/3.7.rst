@@ -103,9 +103,8 @@ when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`.
 xmlrpc.server
 -------------
 
-:meth:`xmlrpc.server.SimpleXMLRPCServer.register_function()` and
-:meth:`xmlrpc.server.CGIXMLRPCRequestHandler.register_function()` can now be
-used as a decorator.
+:meth:`register_function` of :class:`xmlrpc.server.SimpleXMLRPCDispatcher` and
+its subclasses can be used as a decorator.
 (Contributed by Xiang Zhang in :issue:`7769`.)
 
 
