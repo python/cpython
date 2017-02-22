@@ -723,6 +723,47 @@ All of the following opcodes use their arguments.
    are put onto the stack right-to-left.
 
 
+.. opcode:: BUILD_TUPLE_UNPACK (count)
+
+   Pops ``count`` iterables from the stack, joins them in a single tuple,
+   and pushes the result.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BUILD_LIST_UNPACK (count)
+
+   This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a list
+   instead of tuple.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BUILD_SET_UNPACK (count)
+
+   This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a set
+   instead of tuple.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BUILD_MAP_UNPACK (count)
+
+   Pops ``count`` mappings from the stack, joins them in a single dictionary,
+   and pushes the result.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BUILD_MAP_UNPACK_WITH_CALL (count)
+
+   This is similar to :opcode:`BUILD_MAP_UNPACK`,
+   but is used for ``f(**x, **y, **z)`` call syntax. The stack item at position
+   ``count + 2`` should be the corresponding callable ``f``.
+
+   .. versionadded:: 3.5
+
+
 .. opcode:: STORE_ATTR (namei)
 
    Implements ``TOS.name = TOS1``, where *namei* is the index of name in
@@ -772,8 +813,11 @@ All of the following opcodes use their arguments.
 
 .. opcode:: BUILD_MAP (count)
 
-   Pushes a new dictionary object onto the stack.  The dictionary is pre-sized
-   to hold *count* entries.
+   Pushes a new dictionary object onto the stack. Pops ``2 * count`` items
+   so that the dictionary holds ``count`` entries:
+   ``{..., TOS3: TOS2, TOS1: TOS}``.
+
+   .. versionchanged:: 3.5
 
 
 .. opcode:: BUILD_CONST_KEY_MAP (count)
