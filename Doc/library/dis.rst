@@ -772,13 +772,13 @@ All of the following opcodes use their arguments.
 
 .. opcode:: BUILD_MAP (count)
 
-   Pushes a new dictionary object onto the stack.  Pops ``2 * count`` items
-   so that the dictionary holds ``count`` entries:
+   Pushes a new dictionary object onto the stack.  Pops *2 \* count* items
+   so that the dictionary holds *count* entries:
    ``{..., TOS3: TOS2, TOS1: TOS}``.
 
    .. versionchanged:: 3.5
       The dictionary is created from stack items instead of creating an
-      empty dictionary pre-sized to hold ``count`` items.
+      empty dictionary pre-sized to hold *count* items.
 
 
 .. opcode:: BUILD_CONST_KEY_MAP (count)
@@ -800,7 +800,7 @@ All of the following opcodes use their arguments.
 
 .. opcode:: BUILD_TUPLE_UNPACK (count)
 
-   Pops ``count`` iterables from the stack, joins them in a single tuple,
+   Pops *count* iterables from the stack, joins them in a single tuple,
    and pushes the result.  This bytecode is used for implementing iterable
    unpacking in tuple displays ``(*x, *y, *z)``.
 
@@ -810,7 +810,8 @@ All of the following opcodes use their arguments.
 .. opcode:: BUILD_LIST_UNPACK (count)
 
    This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a list
-   instead of tuple.
+   instead of tuple.  This bytecode is used for implementing iterable
+   unpacking in list displays ``[*x, *y, *z]``.
 
    .. versionadded:: 3.5
 
@@ -818,15 +819,17 @@ All of the following opcodes use their arguments.
 .. opcode:: BUILD_SET_UNPACK (count)
 
    This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a set
-   instead of tuple.
+   instead of tuple.  This bytecode is used for implementing iterable
+   unpacking in set displays ``{*x, *y, *z}``.
 
    .. versionadded:: 3.5
 
 
 .. opcode:: BUILD_MAP_UNPACK (count)
 
-   Pops ``count`` mappings from the stack, joins them in a single dictionary,
-   and pushes the result.
+   Pops *count* mappings from the stack, merges them in a single dictionary,
+   and pushes the result.  This bytecode is used for implementing iterable
+   unpacking in dictionary displays ``{**x, **y, **z}``.
 
    .. versionadded:: 3.5
 
@@ -835,8 +838,8 @@ All of the following opcodes use their arguments.
 
    This is similar to :opcode:`BUILD_MAP_UNPACK`,
    but is used for ``f(**x, **y, **z)`` call syntax.  The lowest byte of
-   ``oparg`` is the count of mappings, the relative position of the
-   corresponding callable ``f`` is encoded in the second byte of ``oparg``.
+   *oparg* is the count of mappings, the relative position of the
+   corresponding callable ``f`` is encoded in the second byte of *oparg*.
 
    .. versionadded:: 3.5
 
