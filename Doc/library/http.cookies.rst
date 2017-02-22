@@ -143,12 +143,12 @@ Morsel Objects
    in HTTP requests, and is not accessible through JavaScript. This is intended
    to mitigate some forms of cross-site scripting.
 
+   The attribute :attr:`samesite` specifies that browser is not allowed to send the
+   cookie along with cross-site requests. This help to mitigate CSRF attacks. Valid
+   values for this attribute are "Strict" and "Lax".
+
    .. versionchanged:: 3.7
       Added support for :attr:`samesite` attribute.
-
-      The attribute :attr:`samesite` specifies that browser is not allowed to send the
-      cookie along with cross-site requests. This help to mitigate CSRF attacks. Valid
-      values for this attribute are "Strict" and "Lax".
 
    The keys are case-insensitive and their default value is ``''``.
 
