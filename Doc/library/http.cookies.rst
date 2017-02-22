@@ -147,8 +147,6 @@ Morsel Objects
    cookie along with cross-site requests. This help to mitigate CSRF attacks. Valid
    values for this attribute are "Strict" and "Lax".
 
-   .. versionchanged:: 3.7
-      Added support for :attr:`samesite` attribute.
 
    The keys are case-insensitive and their default value is ``''``.
 
@@ -160,6 +158,9 @@ Morsel Objects
       Attributes :attr:`~Morsel.key`, :attr:`~Morsel.value` and
       :attr:`~Morsel.coded_value` are read-only.  Use :meth:`~Morsel.set` for
       setting them.
+
+   .. versionchanged:: 3.7
+      Added support for :attr:`samesite` attribute.
 
 
 .. attribute:: Morsel.value
