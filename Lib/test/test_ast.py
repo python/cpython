@@ -373,12 +373,8 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.right, 3)
         self.assertEqual(x.lineno, 0)
 
-        # node raises exception when not given enough arguments
-        self.assertRaises(TypeError, ast.BinOp, 1, 2)
         # node raises exception when given too many arguments
         self.assertRaises(TypeError, ast.BinOp, 1, 2, 3, 4)
-        # node raises exception when not given enough arguments
-        self.assertRaises(TypeError, ast.BinOp, 1, 2, lineno=0)
         # node raises exception when given too many arguments
         self.assertRaises(TypeError, ast.BinOp, 1, 2, 3, 4, lineno=0)
 
