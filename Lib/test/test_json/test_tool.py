@@ -11,7 +11,7 @@ class TestTool(unittest.TestCase):
     data = """
 
         [["blorpie"],[ "whoops" ] , [
-                                 ],\t"d-shtaeou",\r"d-nthiouh",
+                                 ],\t"d-shtaeou",\r"🐍 and δ",
         "i-vhbjkhnth", {"nifty":87}, {"morefield" :\tfalse,"field"
             :"yes"}  ]
            """
@@ -26,7 +26,7 @@ class TestTool(unittest.TestCase):
         ],
         [],
         "d-shtaeou",
-        "d-nthiouh",
+        "🐍 and δ",
         "i-vhbjkhnth",
         {
             "nifty": 87
@@ -48,7 +48,7 @@ class TestTool(unittest.TestCase):
         ],
         [],
         "d-shtaeou",
-        "d-nthiouh",
+        "🐍 and δ",
         "i-vhbjkhnth",
         {
             "nifty": 87
@@ -68,22 +68,22 @@ class TestTool(unittest.TestCase):
         self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
         self.assertEqual(err, None)
 
-    def _create_infile(self, text):
+    def _create_infile(self):
         infile = support.TESTFN
         with open(infile, "w") as fp:
             self.addCleanup(os.remove, infile)
-            fp.write(text)
+            fp.write(self.data)
         return infile
 
     def test_infile_stdout(self):
-        infile = self._create_infile(self.data)
+        infile = self._create_infile()
         rc, out, err = assert_python_ok('-m', 'json.tool', infile)
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
         self.assertEqual(err, b'')
 
     def test_infile_outfile(self):
-        infile = self._create_infile(self.data)
+        infile = self._create_infile()
         outfile = support.TESTFN + '.out'
         rc, out, err = assert_python_ok('-m', 'json.tool', infile, outfile)
         self.addCleanup(os.remove, outfile)
@@ -100,22 +100,17 @@ class TestTool(unittest.TestCase):
         self.assertEqual(err, b'')
 
     def test_sort_keys_flag(self):
-        infile = self._create_infile(self.data)
+        infile = self._create_infile()
         rc, out, err = assert_python_ok('-m', 'json.tool', '--sort-keys', infile)
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(),
                          self.expect_without_sort_keys.encode().splitlines())
         self.assertEqual(err, b'')
 
-    def test_no_ascii_flag(self):
-        data = '{"json": "🐍 and δ"}'
-        expect = textwrap.dedent('''\
-        {
-            "json": "🐍 and δ"
-        }
-        ''')
-        infile = self._create_infile(data)
+    def test_no_ensure_ascii_flag(self):
+        infile = self._create_infile()
         rc, out, err = assert_python_ok('-m', 'json.tool', '--no-ensure-ascii', infile)
         self.assertEqual(rc, 0)
-        self.assertEqual(out.splitlines(), expect.encode().splitlines())
+        self.assertEqual(out.splitlines(),
+                         self.expect_without_sort_keys.encode().splitlines())
         self.assertEqual(err, b'')
