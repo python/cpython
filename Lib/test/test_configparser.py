@@ -721,7 +721,7 @@ boolean {0[0]} NO
         parsed_files = cf.read(file1)
         self.assertEqual(parsed_files, [file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
-        # check when we pass only a Path object
+        # check when we pass only a Path object:
         cf = self.newconfig()
         parsed_files = cf.read(pathlib.Path(file1))
         self.assertEqual(parsed_files, [pathlib.Path(file1)])
