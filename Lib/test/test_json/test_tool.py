@@ -11,7 +11,7 @@ class TestTool(unittest.TestCase):
     data = """
 
         [["blorpie"],[ "whoops" ] , [
-                                 ],\t"d-shtaeou",\r"🐍 and δ",
+                         ],\t"d-shtaeou",\r"\N{snake} \u03B4 and \U0001D037",
         "i-vhbjkhnth", {"nifty":87}, {"morefield" :\tfalse,"field"
             :"yes"}  ]
            """
@@ -26,7 +26,7 @@ class TestTool(unittest.TestCase):
         ],
         [],
         "d-shtaeou",
-        "🐍 and δ",
+        "\N{snake} \u03B4 and \U0001D037",
         "i-vhbjkhnth",
         {
             "nifty": 87
@@ -48,7 +48,7 @@ class TestTool(unittest.TestCase):
         ],
         [],
         "d-shtaeou",
-        "🐍 and δ",
+        "\N{snake} \u03B4 and \U0001D037",
         "i-vhbjkhnth",
         {
             "nifty": 87
