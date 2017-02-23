@@ -115,7 +115,7 @@ class TestTool(unittest.TestCase):
         }
         ''')
         infile = self._create_infile(data)
-        rc, out, err = assert_python_ok('-m', 'json.tool', '--no_ascii', infile)
+        rc, out, err = assert_python_ok('-m', 'json.tool', '--no-ensure-ascii', infile)
         self.assertEqual(rc, 0)
-        self.assertEqual(out.splitlines(), expect.splitlines())
+        self.assertEqual(out.splitlines(), expect.encode().splitlines())
         self.assertEqual(err, b'')
