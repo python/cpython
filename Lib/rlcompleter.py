@@ -32,6 +32,7 @@ Notes:
 import atexit
 import builtins
 import __main__
+from inspect import getattr_static
 
 __all__ = ["Completer"]
 
@@ -170,7 +171,7 @@ class Completer:
                     not (noprefix and word[:n+1] == noprefix)):
                     match = "%s.%s" % (expr, word)
                     try:
-                        val = getattr(thisobject, word)
+                        val = getattr_static_prop(thisobject, word)
                     except Exception:
                         pass  # Include even if attribute not set
                     else:
@@ -191,6 +192,12 @@ def get_class_members(klass):
         for base in klass.__bases__:
             ret = ret + get_class_members(base)
     return ret
+
+def getattr_static_prop(obj, attr):
+    val = getattr_static(obj, attr)
+    if isinstance(val, property):
+        return val
+    return getattr(obj, attr)
 
 try:
     import readline

@@ -80,8 +80,8 @@ class TestRlcompleter(unittest.TestCase):
                              ['egg.{}('.format(x) for x in dir(str)
                               if x.startswith('s')])
 
-    def test_excessive_getattr(self):
-        # Ensure getattr() is invoked no more than once per attribute
+    def test_no_code_execution_triggered(self):
+        # Ensure running the completer won't invoke property getters
         class Foo:
             calls = 0
             @property
@@ -91,7 +91,7 @@ class TestRlcompleter(unittest.TestCase):
         f = Foo()
         completer = rlcompleter.Completer(dict(f=f))
         self.assertEqual(completer.complete('f.b', 0), 'f.bar')
-        self.assertEqual(f.calls, 1)
+        self.assertEqual(f.calls, 0)
 
     def test_uncreated_attr(self):
         # Attributes like properties and slots should be completed even when
