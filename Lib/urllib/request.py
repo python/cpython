@@ -2674,6 +2674,9 @@ elif os.name == 'nt':
         """
         return getproxies_environment() or getproxies_registry()
 
+    # Undocumented feature: set this to True to check if IP and FQDN of the host
+    # match one of the registry values.
+    smart_proxy_bypass = False
     def proxy_bypass_registry(host):
         try:
             import winreg
@@ -2692,21 +2695,22 @@ elif os.name == 'nt':
             return 0
         if not proxyEnable or not proxyOverride:
             return 0
-        # try to make a host list from name and IP address.
         rawHost, port = splitport(host)
         host = [rawHost]
-        try:
-            addr = socket.gethostbyname(rawHost)
-            if addr != rawHost:
-                host.append(addr)
-        except OSError:
-            pass
-        try:
-            fqdn = socket.getfqdn(rawHost)
-            if fqdn != rawHost:
-                host.append(fqdn)
-        except OSError:
-            pass
+        if smart_proxy_bypass:
+            # try to add IP and FQDN to the host list.
+            try:
+                addr = socket.gethostbyname(rawHost)
+                if addr != rawHost:
+                    host.append(addr)
+            except OSError:
+                pass
+            try:
+                fqdn = socket.getfqdn(rawHost)
+                if fqdn != rawHost:
+                    host.append(fqdn)
+            except OSError:
+                pass
         # make a check value list from the registry entry: replace the
         # '<local>' string by the localhost entry and the corresponding
         # canonical entry.
