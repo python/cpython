@@ -1354,9 +1354,15 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(BINARY_MODULO) {
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
-            PyObject *res = PyUnicode_CheckExact(dividend) ?
-                PyUnicode_Format(dividend, divisor) :
-                PyNumber_Remainder(dividend, divisor);
+            PyObject *res;
+            if (PyUnicode_CheckExact(dividend) && (
+                  !PyUnicode_Check(divisor) || PyUnicode_CheckExact(divisor))) {
+              // fast path; string formatting, but not if the RHS is a str subclass
+              // (see issue28598)
+              res = PyUnicode_Format(dividend, divisor);
+            } else {
+              res = PyNumber_Remainder(dividend, divisor);
+            }
             Py_DECREF(divisor);
             Py_DECREF(dividend);
             SET_TOP(res);
