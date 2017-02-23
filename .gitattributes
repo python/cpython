@@ -1,0 +1,10 @@
+Misc/NEWS   merge=union
+
+*.pck binary
+Lib/test/cjkencodings/* binary
+Lib/test/decimaltestdata/*.decTest binary
+Lib/test/sndhdrdata/sndhdr.* binary
+Lib/test/test_email/data/msg_26.txt binary
+Lib/test/xmltestdata/* binary
+Lib/venv/scripts/nt/* binary
+Lib/test/coding20731.py binary
