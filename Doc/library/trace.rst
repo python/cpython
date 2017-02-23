@@ -13,6 +13,10 @@ annotated statement coverage listings, print caller/callee relationships and
 list functions executed during a program run.  It can be used in another program
 or from the command line.
 
+.. seealso:: `Coverage.py <https://coverage.readthedocs.io/>`_, which is one
+   of the most popular third-party coverage tools. It provides very nice HTML
+   output along with advanced features such as branch coverage.
+
 .. _trace-cli:
 
 Command-Line Usage
