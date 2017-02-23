@@ -343,6 +343,24 @@ class XMLRPCTestCase(unittest.TestCase):
             self.assertEqual(p.method(), 5)
             self.assertEqual(p.method(), 5)
 
+    def test_simple_xml_rpc_dispatcher_using_dispatch_func(self):
+        exp_method = 'method'
+        exp_params = 1, 2, 3
+        dispatched = False
+
+        class TestInstance:
+            @staticmethod
+            def _dispatch(method, params):
+                nonlocal dispatched
+                self.assertEqual(method, exp_method)
+                self.assertEqual(params, exp_params)
+                dispatched = True
+
+        dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
+        dispatcher.register_instance(TestInstance())
+        dispatcher._dispatch(method=exp_method, params=exp_params)
+        self.assertTrue(dispatched)
+
 class HelperTestCase(unittest.TestCase):
     def test_escape(self):
         self.assertEqual(xmlrpclib.escape("a&b"), "a&amp;b")
