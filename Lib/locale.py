@@ -17,6 +17,7 @@ import re
 import collections
 from builtins import str as _builtin_str
 import functools
+import warnings
 
 # Try importing the _locale module.
 #
@@ -181,17 +182,14 @@ _percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
                          r'(?P<modifiers>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
 
 def format(percent, value, grouping=False, monetary=False, *additional):
-    """Returns the locale-aware substitution of a %? specifier
-    (percent).
+    """Deprecated, use format_string instead."""
+    warnings.warn(
+        "This method will be removed in future versions.  "
+        "Use 'locale.format_string()' instead.",
+        DeprecationWarning, stacklevel=2
+    )
 
-    additional is for format strings which contain one or more
-    '*' modifiers."""
-    # this is only for one-percent-specifier strings and this should be checked
-    match = _percent_re.match(percent)
-    if not match or len(match.group())!= len(percent):
-        raise ValueError(("format() must be given exactly one %%char "
-                         "format specifier, %s not valid") % repr(percent))
-    return _format(percent, value, grouping, monetary, *additional)
+    return format_string(percent, value, grouping)
 
 def _format(percent, value, grouping=False, monetary=False, *additional):
     if additional:
