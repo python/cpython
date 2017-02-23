@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-28598: Support __rmod__ for subclasses of str being called before
+  str.__mod__.  Patch by Martijn Pieters.
+
 - bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX. 
   Patch by Matthieu Dartiailh.
 
@@ -19,6 +22,7 @@ Core and Builtins
 
 - bpo-29347: Fixed possibly dereferencing undefined pointers
   when creating weakref objects.
+
 - bpo-29463: Add ``docstring`` field to Module, ClassDef, FunctionDef,
   and AsyncFunctionDef ast nodes.  docstring is not first stmt in their body
   anymore.  It affects ``co_firstlineno`` and ``co_lnotab`` of code object
