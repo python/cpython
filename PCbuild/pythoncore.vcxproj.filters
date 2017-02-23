@@ -686,6 +686,9 @@
     <ClCompile Include="..\Objects\bytesobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\call.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\capsule.c">
       <Filter>Objects</Filter>
     </ClCompile>

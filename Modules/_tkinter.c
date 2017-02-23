@@ -2417,7 +2417,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *argv[
         }
         PyTuple_SET_ITEM(arg, i, s);
     }
-    res = PyEval_CallObject(func, arg);
+    res = PyObject_Call(func, arg, NULL);
     Py_DECREF(arg);
 
     if (res == NULL)
@@ -2661,16 +2661,13 @@ static void
 FileHandler(ClientData clientData, int mask)
 {
     FileHandler_ClientData *data = (FileHandler_ClientData *)clientData;
-    PyObject *func, *file, *arg, *res;
+    PyObject *func, *file, *res;
 
     ENTER_PYTHON
     func = data->func;
     file = data->file;
 
-    arg = Py_BuildValue("(Oi)", file, (long) mask);
-    res = PyEval_CallObject(func, arg);
-    Py_DECREF(arg);
-
+    res = PyObject_CallFunction(func, "Oi", file, mask);
     if (res == NULL) {
         errorInCmd = 1;
         PyErr_Fetch(&excInCmd, &valInCmd, &trbInCmd);
@@ -2840,7 +2837,7 @@ TimerHandler(ClientData clientData)
 
     ENTER_PYTHON
 
-    res  = PyEval_CallObject(func, NULL);
+    res = _PyObject_CallNoArg(func);
     Py_DECREF(func);
     Py_DECREF(v); /* See Tktt_New() */
 

@@ -74,7 +74,7 @@ echo.   Provided by this script:
 echo.      clean, check, serve, htmlview
 echo.
 echo.All arguments past the first one are passed through to sphinx-build as
-echo.filenames to build or are ignored.  See README.txt in this directory or
+echo.filenames to build or are ignored.  See README.rst in this directory or
 echo.the documentation for your version of Sphinx for more exhaustive lists
 echo.of available targets and descriptions of each.
 echo.
@@ -86,7 +86,7 @@ goto end
 
 :build
 if NOT "%PAPER%" == "" (
-    set SPHINXOPTS=-D latex_paper_size=%PAPER% %SPHINXOPTS%
+    set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
 )
 cmd /C %SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . %BUILDDIR%\%*
 
