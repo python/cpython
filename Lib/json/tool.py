@@ -16,18 +16,6 @@ import json
 import sys
 
 
-def parse_indent(indent):
-    """Parse the argparse indent argument."""
-    if indent == 'None':
-        return None
-    if indent == r'\t':
-        return '\t'
-    try:
-        return int(indent)
-    except ValueError:
-        return indent
-
-
 def main():
     prog = 'python -m json.tool'
     description = ('A simple command line interface for json module '
@@ -39,10 +27,11 @@ def main():
                         help='write the output of infile to outfile')
     parser.add_argument('--no-ensure-ascii', action='store_true', default=False,
                         help='Do not set ensure_ascii to escape non-ASCII characters')
-    parser.add_argument('--indent', default='4', type=parse_indent,
-                        help='Indent level or str for pretty-printing. '
-                             'Use None for the most compact representation. '
-                             r'Use "\t" for tab indentation.')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--indent', default=4, type=int,
+                       help='Indent level for pretty-printing.')
+    group.add_argument('--no-indent', action='store_true', default=False,
+                       help='Use compact mode.')
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
     options = parser.parse_args()
@@ -63,7 +52,7 @@ def main():
     outfile = options.outfile or sys.stdout
     with outfile:
         json.dump(obj, outfile,
-                  indent=options.indent,
+                  indent=None if options.no_indent else options.indent,
                   ensure_ascii=not options.no_ensure_ascii,
                   sort_keys=options.sort_keys,
                   )
