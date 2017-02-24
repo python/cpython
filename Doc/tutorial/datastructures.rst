@@ -22,11 +22,11 @@ objects:
    Add an item to the end of the list.  Equivalent to ``a[len(a):] = [x]``.
 
 
-.. method:: list.extend(L)
+.. method:: list.extend(iterable)
    :noindex:
 
-   Extend the list by appending all the items from the iterable *L*.  Equivalent to
-   ``a[len(a):] = L``.
+   Extend the list by appending all the items from the iterable.  Equivalent to
+   ``a[len(a):] = iterable``.
 
 
 .. method:: list.insert(i, x)
