@@ -735,6 +735,9 @@ C API
 Documentation
 -------------
 
+- bpo-25008: Document smtpd.py as effectively deprecated and add a pointer to
+  aiosmtpd, a third-party asyncio-based replacement.
+
 - Issue #26355: Add canonical header link on each page to corresponding major
   version of the documentation. Patch by Matthias Bussonnier.
 
