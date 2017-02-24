@@ -375,8 +375,7 @@ The :mod:`locale` module defines the following exception and functions:
    locale settings into account.
 
    .. versionchanged:: 3.7
-   Added *monetary*, if  true the conversion uses monetary thousands separator and
-   grouping strings.
+   The *monetary* keyword parameter was added.
    Replaces :meth:`format`.
 
 

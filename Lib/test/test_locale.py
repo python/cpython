@@ -201,11 +201,9 @@ class EnUSNumberFormatting(BaseFormattingTest):
     def test_format_deprecation(self):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always", DeprecationWarning)
-            locale.format("%.0f KB", 100, grouping=True)
+            locale.format("%-10.f", 4200, grouping=True)
         for warning in w:
             self.assertTrue(warning.category is DeprecationWarning)
-        self.assertEqual(
-            locale.format("%.0f KB", 100, grouping=True), "100 KB")
 
     def test_complex_formatting(self):
         # Spaces in formatting string
@@ -238,13 +236,13 @@ class TestFormatPatternArg(unittest.TestCase):
 
     def test_onlyOnePattern(self):
         # Issue 2522: accept exactly one % pattern, and no extra chars.
-        self.assertRaises(TypeError, locale.format, "%f\n", 'foo')
-        self.assertRaises(TypeError, locale.format, "%f\r", 'foo')
-        self.assertRaises(TypeError, locale.format, "%f\r\n", 'foo')
-        self.assertRaises(TypeError, locale.format, " %f", 'foo')
-        self.assertRaises(TypeError, locale.format, "%fg", 'foo')
-        self.assertRaises(TypeError, locale.format, "%^g", 'foo')
-        self.assertRaises(TypeError, locale.format, "%f%%", 'foo')
+        self.assertRaises(ValueError, locale.format, "%f\n", 'foo')
+        self.assertRaises(ValueError, locale.format, "%f\r", 'foo')
+        self.assertRaises(ValueError, locale.format, "%f\r\n", 'foo')
+        self.assertRaises(ValueError, locale.format, " %f", 'foo')
+        self.assertRaises(ValueError, locale.format, "%fg", 'foo')
+        self.assertRaises(ValueError, locale.format, "%^g", 'foo')
+        self.assertRaises(ValueError, locale.format, "%f%%", 'foo')
 
 
 class TestLocaleFormatString(unittest.TestCase):
