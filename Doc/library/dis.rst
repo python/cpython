@@ -801,8 +801,8 @@ All of the following opcodes use their arguments.
 .. opcode:: BUILD_TUPLE_UNPACK (count)
 
    Pops *count* iterables from the stack, joins them in a single tuple,
-   and pushes the result.  This bytecode is used for implementing iterable
-   unpacking in tuple displays ``(*x, *y, *z)``.
+   and pushes the result.  Implements iterable unpacking in tuple
+   displays ``(*x, *y, *z)``.
 
    .. versionadded:: 3.5
 
@@ -810,8 +810,8 @@ All of the following opcodes use their arguments.
 .. opcode:: BUILD_LIST_UNPACK (count)
 
    This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a list
-   instead of tuple.  This bytecode is used for implementing iterable
-   unpacking in list displays ``[*x, *y, *z]``.
+   instead of tuple.  Implements iterable unpacking in list
+   displays ``[*x, *y, *z]``.
 
    .. versionadded:: 3.5
 
@@ -819,8 +819,8 @@ All of the following opcodes use their arguments.
 .. opcode:: BUILD_SET_UNPACK (count)
 
    This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a set
-   instead of tuple.  This bytecode is used for implementing iterable
-   unpacking in set displays ``{*x, *y, *z}``.
+   instead of tuple.  Implements iterable unpacking in set
+   displays ``{*x, *y, *z}``.
 
    .. versionadded:: 3.5
 
@@ -828,8 +828,8 @@ All of the following opcodes use their arguments.
 .. opcode:: BUILD_MAP_UNPACK (count)
 
    Pops *count* mappings from the stack, merges them in a single dictionary,
-   and pushes the result.  This bytecode is used for implementing dictionary
-   unpacking in dictionary displays ``{**x, **y, **z}``.
+   and pushes the result.  Implements dictionary unpacking in dictionary
+   displays ``{**x, **y, **z}``.
 
    .. versionadded:: 3.5
 
