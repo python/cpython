@@ -194,11 +194,14 @@ def get_docstring(node, clean=True):
     Return the docstring for the given node or None if no docstring can
     be found.  If the node provided does not have docstrings a TypeError
     will be raised.
+
+    If *clean* is `True`, all tabs are expanded to spaces and any whitespace
+    that can be uniformly removed from the second line onwards is removed.
     """
     if not isinstance(node, (AsyncFunctionDef, FunctionDef, ClassDef, Module)):
         raise TypeError("%r can't have docstrings" % node.__class__.__name__)
     text = node.docstring
-    if clean:
+    if clean and text:
         import inspect
         text = inspect.cleandoc(text)
     return text
