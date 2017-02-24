@@ -1674,7 +1674,8 @@ Loading and running tests
       the import failure is due to :exc:`SkipTest` being raised, it will be
       recorded as a skip instead of an error.
 
-      If a package (a directory containing a file named :file:`__init__.py`) is
+      If a package (a directory containing a file named :file:`__init__.py` or
+      a :term:`namespace package <namespace package>`) is
       found, the package will be checked for a ``load_tests`` function. If this
       exists then it will be called
       ``package.load_tests(loader, tests, pattern)``. Test discovery takes care

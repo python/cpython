@@ -241,7 +241,7 @@ class TestLoader(object):
         If the start directory is not the top level directory then the top
         level directory must be specified separately.
 
-        If a test package name (directory with '__init__.py') matches the
+        If a test package name (directory with or w/o '__init__.py') matches the
         pattern then the package will be checked for a 'load_tests' function. If
         this exists then it will be called with (loader, tests, pattern) unless
         the package has already had load_tests called from the same discovery
@@ -282,8 +282,6 @@ class TestLoader(object):
         tests = []
         if os.path.isdir(os.path.abspath(start_dir)):
             start_dir = os.path.abspath(start_dir)
-            if start_dir != top_level_dir:
-                is_not_importable = not os.path.isfile(os.path.join(start_dir, '__init__.py'))
         else:
             # support for discovery from dotted module names
             try:
@@ -451,12 +449,6 @@ class TestLoader(object):
                         msg % (mod_name, module_dir, expected_dir))
                 return self.loadTestsFromModule(module, pattern=pattern), False
         elif os.path.isdir(full_path):
-            if (not namespace and
-                not os.path.isfile(os.path.join(full_path, '__init__.py'))):
-                return None, False
-
-            load_tests = None
-            tests = None
             name = self._get_name_from_path(full_path)
             try:
                 package = self._get_module_from_name(name)
