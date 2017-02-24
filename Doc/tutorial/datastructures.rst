@@ -25,7 +25,7 @@ objects:
 .. method:: list.extend(L)
    :noindex:
 
-   Extend the list by appending all the items in the given list.  Equivalent to
+   Extend the list by appending all the items from the iterable *L*.  Equivalent to
    ``a[len(a):] = L``.
 
 
@@ -68,7 +68,7 @@ objects:
 
    The optional arguments *start* and *end* are interpreted as in the slice
    notation and are used to limit the search to a particular subsequence of
-   *x*.  The returned index is computed relative to the beginning of the full
+   the list.  The returned index is computed relative to the beginning of the full
    sequence rather than the *start* argument.
 
 
