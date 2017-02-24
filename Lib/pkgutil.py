@@ -37,7 +37,10 @@ def read_code(stream):
     import marshal
 
     magic = stream.read(4)
-    if magic != importlib.util.MAGIC_NUMBER:
+    if (magic != importlib.util.MAGIC_NUMBER
+            # Issue #29537: handle issue27286 bytecode incompatibility
+            #   See Lib/importlib/_bootstrap_external.py
+            and magic != importlib.util._BACKCOMPAT_MAGIC_NUMBER):
         return None
 
     stream.read(8) # Skip timestamp and size
