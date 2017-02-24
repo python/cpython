@@ -256,8 +256,8 @@ _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 # since 3.5.3.
 #
 # This is expected to be a one-off change used solely to restore legacy
-# bytecode compatibility within the 3.5.x series, so it relies heavily on
-# hardcoded numeric constants, rather than extracting them as named settings
+# bytecode compatibility within the 3.5.x series, so it avoids any changes
+# that would prompt a rebuild of C extension modules.
 #
 if _RAW_MAGIC_NUMBER != 168627479:
     _msg = 'Magic number mismatch (the issue27286 workaround is for 3.5 only)'
