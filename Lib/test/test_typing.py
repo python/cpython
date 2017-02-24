@@ -701,6 +701,14 @@ class GenericTests(BaseTestCase):
         self.assertEqual(D.x, 'from derived x')
         self.assertEqual(D[str].z, 'from derived z')
 
+    def test_abc_registry_kept(self):
+        T = TypeVar('T')
+        class C(Generic[T]): ...
+        C.register(int)
+        self.assertIsInstance(1, C)
+        C[int]
+        self.assertIsInstance(1, C)
+
     def test_false_subclasses(self):
         class MyMapping(MutableMapping[str, str]): pass
         self.assertNotIsInstance({}, MyMapping)

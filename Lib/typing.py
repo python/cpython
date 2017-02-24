@@ -1160,7 +1160,10 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
 
     def __setattr__(self, attr, value):
         # We consider all the subscripted genrics as proxies for original class
-        if attr.startswith('__') and attr.endswith('__'):
+        if (
+            attr.startswith('__') and attr.endswith('__') or
+            attr.startswith('_abc_')
+        ):
             super(GenericMeta, self).__setattr__(attr, value)
         else:
             super(GenericMeta, _gorg(self)).__setattr__(attr, value)
