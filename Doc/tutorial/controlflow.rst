@@ -142,12 +142,13 @@ the list, thus saving space.
 We say such an object is *iterable*, that is, suitable as a target for
 functions and constructs that expect something from which they can
 obtain successive items until the supply is exhausted. We have seen that
-the :keyword:`for` statement is such an *iterator*. The function :func:`list`
-is another; it creates lists from iterables::
+the :keyword:`for` statement is such a construct, while an example of function
+that takes an iterable is :func:`sum()`:
 
+.. doctest::
 
-   >>> list(range(5))
-   [0, 1, 2, 3, 4]
+    >>> sum(range(4))  # 0 + 1 + 2 + 3
+    6
 
 Later we will see more functions that return iterables and take iterables as argument.
 
