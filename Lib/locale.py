@@ -215,7 +215,7 @@ def _format(percent, value, grouping=False, monetary=False, *additional):
             formatted = _strip_padding(formatted, seps)
     return formatted
 
-def format_string(f, val, grouping=False):
+def format_string(f, val, grouping=False, monetary=False):
     """Formats a string in the same way that the % formatting would use,
     but takes the current locale into account.
     Grouping is applied if the third parameter is true."""
@@ -228,7 +228,7 @@ def format_string(f, val, grouping=False):
             if perc.group()[-1]=='%':
                 new_val.append('%')
             else:
-                new_val.append(format(perc.group(), val, grouping))
+                new_val.append(_format(perc.group(), val, grouping, monetary))
     else:
         if not isinstance(val, tuple):
             val = (val,)
@@ -242,7 +242,7 @@ def format_string(f, val, grouping=False):
                 new_val.append(_format(perc.group(),
                                       val[i],
                                       grouping,
-                                      False,
+                                      monetary,
                                       *val[i+1:i+1+starcount]))
                 i += (1 + starcount)
     val = tuple(new_val)
@@ -260,7 +260,7 @@ def currency(val, symbol=True, grouping=False, international=False):
         raise ValueError("Currency formatting is not possible using "
                          "the 'C' locale.")
 
-    s = format('%%.%if' % digits, abs(val), grouping, monetary=True)
+    s = format_string('%%.%if' % digits, abs(val), grouping, monetary=True)
     # '<' and '>' are markers if the sign must be inserted between symbol and value
     s = '<' + s + '>'
 
@@ -296,7 +296,7 @@ def currency(val, symbol=True, grouping=False, international=False):
 
 def str(val):
     """Convert float to string, taking the locale into account."""
-    return format("%.12g", val)
+    return format_string("%.12g", val)
 
 def delocalize(string):
     "Parses a string as a normalized number according to the locale settings."
@@ -325,7 +325,7 @@ def atoi(string):
 def _test():
     setlocale(LC_ALL, "")
     #do grouping
-    s1 = format("%d", 123456789,1)
+    s1 = format_string("%d", 123456789,1)
     print(s1, "is", atoi(s1))
     #standard formatting
     s1 = str(3.14)
