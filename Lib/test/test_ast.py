@@ -532,6 +532,7 @@ class ASTHelpers_Test(unittest.TestCase):
 
         node = ast.parse('async def foo():\n  """spam\n  ham"""')
         self.assertEqual(ast.get_docstring(node.body[0]), 'spam\nham')
+        self.assertIsNone(ast.get_docstring(ast.parse('')))
 
     def test_literal_eval(self):
         self.assertEqual(ast.literal_eval('[1, 2, 3]'), [1, 2, 3])
