@@ -1523,7 +1523,8 @@ class PyBuildExt(build_ext):
                 '_sqlite/prepare_protocol.c',
                 '_sqlite/row.c',
                 '_sqlite/statement.c',
-                '_sqlite/util.c', ]
+                '_sqlite/util.c',
+                '_sqlite/blob.c' ]
 
             sqlite_defines = []
             if not MS_WINDOWS:

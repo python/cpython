@@ -27,6 +27,7 @@
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
+#include "blob.h"
 #include "prepare_protocol.h"
 #include "util.h"
 
@@ -105,7 +106,8 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     Py_CLEAR(self->statement_cache);
     Py_CLEAR(self->statements);
     Py_CLEAR(self->cursors);
-
+    Py_CLEAR(self->blobs);
+    
     Py_INCREF(Py_None);
     Py_XSETREF(self->row_factory, Py_None);
 
@@ -159,10 +161,11 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     self->created_statements = 0;
     self->created_cursors = 0;
 
-    /* Create lists of weak references to statements/cursors */
+    /* Create lists of weak references to statements/cursors/blobs */
     self->statements = PyList_New(0);
     self->cursors = PyList_New(0);
-    if (!self->statements || !self->cursors) {
+    self->blobs = PyList_New(0);
+    if (!self->statements || !self->cursors || !self->blobs) {
         return -1;
     }
 
@@ -258,6 +261,8 @@ void pysqlite_connection_dealloc(pysqlite_Connection* self)
     Py_XDECREF(self->collations);
     Py_XDECREF(self->statements);
     Py_XDECREF(self->cursors);
+    Py_XDECREF(self->blobs);
+
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -327,6 +332,84 @@ PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, 
     return cursor;
 }
 
+PyObject* pysqlite_connection_blob(pysqlite_Connection *self, PyObject *args,
+                                   PyObject *kwargs)
+{
+    static char *kwlist[] = {"table", "column", "row", "readonly",
+                             "dbname", NULL, NULL};
+    int rc;
+    const char *dbname = "main", *table, *column;
+    long long row;
+    int readonly = 0;
+    sqlite3_blob *blob;
+    pysqlite_Blob *pyblob = NULL;
+    PyObject *weakref;
+
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ssL|ps", kwlist,
+                                     &table, &column, &row, &readonly,
+                                     &dbname)) {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_blob_open(self->db, dbname, table, column, row,
+                           !readonly, &blob);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        _pysqlite_seterror(self->db, NULL);
+        return NULL;
+    }
+
+    pyblob = PyObject_New(pysqlite_Blob, &pysqlite_BlobType);
+    if (!pyblob) {
+        goto error;
+    }
+
+    rc = pysqlite_blob_init(pyblob, self, blob);
+    if (rc) {
+        Py_CLEAR(pyblob);
+        goto error;
+    }
+
+    // Add our blob to connection blobs list
+    weakref = PyWeakref_NewRef((PyObject*)pyblob, NULL);
+    if (!weakref) {
+        Py_CLEAR(pyblob);
+        goto error;
+    }
+    if (PyList_Append(self->blobs, weakref) != 0) {
+        Py_CLEAR(weakref);
+        Py_CLEAR(pyblob);
+        goto error;
+    }
+    Py_DECREF(weakref);
+
+    return (PyObject*)pyblob;
+
+error:
+    Py_BEGIN_ALLOW_THREADS
+    sqlite3_blob_close(blob);
+    Py_END_ALLOW_THREADS
+    return NULL;
+}
+
+static void pysqlite_close_all_blobs(pysqlite_Connection *self)
+{
+    int i;
+    PyObject *weakref;
+    PyObject *blob;
+
+    for (i = 0; i < PyList_GET_SIZE(self->blobs); i++) {
+        weakref = PyList_GET_ITEM(self->blobs, i);
+        blob = PyWeakref_GetObject(weakref);
+        if (blob != Py_None) {
+            pysqlite_blob_close((pysqlite_Blob*)blob);
+        }
+    }
+}
+
 PyObject* pysqlite_connection_close(pysqlite_Connection* self, PyObject* args)
 {
     int rc;
@@ -336,6 +419,8 @@ PyObject* pysqlite_connection_close(pysqlite_Connection* self, PyObject* args)
     }
 
     pysqlite_do_all_statements(self, ACTION_FINALIZE, 1);
+
+    pysqlite_close_all_blobs(self);
 
     if (self->db) {
         rc = SQLITE3_CLOSE(self->db);
@@ -1768,6 +1853,8 @@ static PyGetSetDef connection_getset[] = {
 static PyMethodDef connection_methods[] = {
     {"cursor", (PyCFunction)(void(*)(void))pysqlite_connection_cursor, METH_VARARGS|METH_KEYWORDS,
         PyDoc_STR("Return a cursor for the connection.")},
+    {"open_blob", (PyCFunction)pysqlite_connection_blob, METH_VARARGS|METH_KEYWORDS,
+        PyDoc_STR("return a blob object")},
     {"close", (PyCFunction)pysqlite_connection_close, METH_NOARGS,
         PyDoc_STR("Closes the connection.")},
     {"commit", (PyCFunction)pysqlite_connection_commit, METH_NOARGS,

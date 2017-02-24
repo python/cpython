@@ -28,6 +28,7 @@
 #include "prepare_protocol.h"
 #include "microprotocols.h"
 #include "row.h"
+#include "blob.h"
 
 #if SQLITE_VERSION_NUMBER >= 3003003
 #define HAVE_SHARED_CACHE
@@ -368,7 +369,8 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         (pysqlite_connection_setup_types() < 0) ||
         (pysqlite_cache_setup_types() < 0) ||
         (pysqlite_statement_setup_types() < 0) ||
-        (pysqlite_prepare_protocol_setup_types() < 0)
+        (pysqlite_prepare_protocol_setup_types() < 0) ||
+        (pysqlite_blob_setup_types() < 0)
        ) {
         Py_XDECREF(module);
         return NULL;

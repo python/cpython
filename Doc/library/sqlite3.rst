@@ -301,6 +301,16 @@ Connection Objects
       supplied, this must be a callable returning an instance of :class:`Cursor`
       or its subclasses.
 
+   .. method:: open_blob(table, column, row, readonly=False, dbname="main")
+
+      On success a :class:`Blob` handle to the
+      :abbr:`BLOB (Binary Large OBject)` located in row *row*,
+      column *column*, table *table* in database *dbname* will be returned.
+      When *readonly* is :const:`True` the BLOB is opened with read
+      permissions. Otherwise the BLOB has read and write permissions.
+
+      .. versionadded:: 3.7
+
    .. method:: commit()
 
       This method commits the current transaction. If you don't call this method,
@@ -851,6 +861,63 @@ Exceptions
    supported by the database, e.g. calling the :meth:`~Connection.rollback`
    method on a connection that does not support transaction or has
    transactions turned off.  It is a subclass of :exc:`DatabaseError`.
+
+
+.. _sqlite3-blob-objects:
+
+Blob Objects
+------------
+
+.. versionadded:: 3.7
+
+.. class:: Blob
+
+   A :class:`Blob` instance can read and write the data in the
+   :abbr:`BLOB (Binary Large OBject)`.
+
+   .. method:: Blob.close()
+
+      Close the BLOB now (rather than whenever __del__ is called).
+
+      The BLOB will be unusable from this point forward; an
+      :class:`~sqlite3.Error` (or subclass) exception will be
+      raised if any operation is attempted with the BLOB.
+
+   .. method:: Blob.__len__()
+
+      Return the BLOB size.
+
+   .. method:: Blob.read([size])
+
+      Read *size* bytes of data from the BLOB at the current offset position.
+      If the end of the BLOB is reached we will return the data up to end of
+      file. When *size* is not specified or negative we will read up to end
+      of BLOB.
+
+   .. method:: Blob.write(data)
+
+      Write *data* to the BLOB at the current offset. This function cannot
+      changed BLOB length. If data write will result in writing to more
+      then BLOB current size an error will be raised.
+
+   .. method:: Blob.tell()
+
+      Return the current offset of the BLOB.
+
+   .. method:: Blob.seek(offset, [whence])
+
+      Set the BLOB offset. The *whence* argument is optional and defaults to
+      :data:`os.SEEK_SET` or 0 (absolute BLOB positioning); other values
+      are :data:`os.SEEK_CUR` or 1 (seek relative to the current position) and
+      :data:`os.SEEK_END` or 2 (seek relative to the BLOB’s end).
+
+   :class:`Blob` example:
+
+      .. literalinclude:: ../includes/sqlite3/blob.py
+
+   A :class:`Blob` can also be used with :term:`context manager`:
+
+      .. literalinclude:: ../includes/sqlite3/blob_with.py
 
 
 .. _sqlite3-types:
