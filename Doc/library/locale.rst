@@ -374,6 +374,11 @@ The :mod:`locale` module defines the following exception and functions:
    Processes formatting specifiers as in ``format % val``, but takes the current
    locale settings into account.
 
+   .. versionchanged:: 3.7
+   Added *monetary*, if  true the conversion uses monetary thousands separator and
+   grouping strings.
+   Replaces :meth:`format`.
+
 
 .. function:: currency(val, symbol=True, grouping=False, international=False)
 
