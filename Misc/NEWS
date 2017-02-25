@@ -10,9 +10,29 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-28598: Support __rmod__ for subclasses of str being called before
+  str.__mod__.  Patch by Martijn Pieters.
+
+- bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX. 
+  Patch by Matthieu Dartiailh.
+
+- bpo-29602: Fix incorrect handling of signed zeros in complex constructor for
+  complex subclasses and for inputs having a __complex__ method. Patch
+  by Serhiy Storchaka.
+
+- bpo-29347: Fixed possibly dereferencing undefined pointers
+  when creating weakref objects.
+
+- bpo-29463: Add ``docstring`` field to Module, ClassDef, FunctionDef,
+  and AsyncFunctionDef ast nodes.  docstring is not first stmt in their body
+  anymore.  It affects ``co_firstlineno`` and ``co_lnotab`` of code object
+  for module and class.
+
 - bpo-29438: Fixed use-after-free problem in key sharing dict.
 
 - bpo-29546: Set the 'path' and 'name' attribute on ImportError for ``from ... import ...``.
+
+- bpo-29546: Improve from-import error message with location
 
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
 
@@ -228,6 +248,19 @@ Extension Modules
 
 Library
 -------
+
+- bpo-29532: Altering a kwarg dictionary passed to functools.partial()
+  no longer affects a partial object after creation.
+
+- bpo-29110: Fix file object leak in aifc.open() when file is given as a
+  filesystem path and is not in valid AIFF format. Patch by Anthony Zhang.
+
+- bpo-22807: Add uuid.SafeUUID and uuid.UUID.is_safe to relay information from
+  the platform about whether generated UUIDs are generated with a
+  multiprocessing safe method.
+
+- bpo-29576: Improve some deprecations in importlib. Some deprecated methods
+  now emit DeprecationWarnings and have better descriptive messages.
 
 - bpo-29534: Fixed different behaviour of Decimal.from_float()
   for _decimal and _pydecimal. Thanks Andrew Nester.
@@ -627,6 +660,8 @@ Library
 Windows
 -------
 
+- bpo-29579: Removes readme.txt from the installer.
+
 - Issue #25778: winreg does not truncate string correctly (Patch by Eryk Sun)
 
 - Issue #28896: Deprecate WindowsRegistryFinder and disable it by default
@@ -701,6 +736,9 @@ Documentation
 -------------
 
 - bpo-28929: Link the documentation to its source file on GitHub.
+
+- bpo-25008: Document smtpd.py as effectively deprecated and add a pointer to
+  aiosmtpd, a third-party asyncio-based replacement.
 
 - Issue #26355: Add canonical header link on each page to corresponding major
   version of the documentation. Patch by Matthias Bussonnier.
@@ -799,6 +837,11 @@ Tools/Demos
 
 Tests
 -----
+
+- Issue #29571: to match the behaviour of the ``re.LOCALE`` flag,
+  test_re.test_locale_flag now uses ``locale.getpreferredencoding(False)`` to
+  determine the candidate encoding for the test regex (allowing it to correctly
+  skip the test when the default locale encoding is a multi-byte encoding)
 
 - Issue #24932: Use proper command line parsing in _testembed
 

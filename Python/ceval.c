@@ -1354,9 +1354,15 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(BINARY_MODULO) {
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
-            PyObject *res = PyUnicode_CheckExact(dividend) ?
-                PyUnicode_Format(dividend, divisor) :
-                PyNumber_Remainder(dividend, divisor);
+            PyObject *res;
+            if (PyUnicode_CheckExact(dividend) && (
+                  !PyUnicode_Check(divisor) || PyUnicode_CheckExact(divisor))) {
+              // fast path; string formatting, but not if the RHS is a str subclass
+              // (see issue28598)
+              res = PyUnicode_Format(dividend, divisor);
+            } else {
+              res = PyNumber_Remainder(dividend, divisor);
+            }
             Py_DECREF(divisor);
             Py_DECREF(dividend);
             SET_TOP(res);
@@ -4995,7 +5001,7 @@ import_from(PyObject *v, PyObject *name)
 {
     PyObject *x;
     _Py_IDENTIFIER(__name__);
-    PyObject *fullmodname, *pkgname, *pkgpath;
+    PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown;
 
     x = PyObject_GetAttr(v, name);
     if (x != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -5009,7 +5015,6 @@ import_from(PyObject *v, PyObject *name)
         goto error;
     }
     fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
-    Py_DECREF(pkgname);
     if (fullmodname == NULL) {
         return NULL;
     }
@@ -5018,18 +5023,36 @@ import_from(PyObject *v, PyObject *name)
     if (x == NULL) {
         goto error;
     }
+    Py_DECREF(pkgname);
     Py_INCREF(x);
     return x;
  error:
     pkgpath = PyModule_GetFilenameObject(v);
+    if (pkgname == NULL) {
+        pkgname_or_unknown = PyUnicode_FromString("<unknown module name>");
+        if (pkgname_or_unknown == NULL) {
+            Py_XDECREF(pkgpath);
+            return NULL;
+        }
+    } else {
+        pkgname_or_unknown = pkgname;
+    }
 
     if (pkgpath == NULL || !PyUnicode_Check(pkgpath)) {
         PyErr_Clear();
-        PyErr_SetImportError(PyUnicode_FromFormat("cannot import name %R", name), pkgname, NULL);
+        PyErr_SetImportError(
+            PyUnicode_FromFormat("cannot import name %R from %R (unknown location)",
+                name, pkgname_or_unknown),
+            pkgname, NULL);
     } else {
-        PyErr_SetImportError(PyUnicode_FromFormat("cannot import name %R", name), pkgname, pkgpath);
+        PyErr_SetImportError(
+            PyUnicode_FromFormat("cannot import name %R from %R (%S)",
+                name, pkgname_or_unknown, pkgpath),
+            pkgname, pkgpath);
     }
 
+    Py_XDECREF(pkgname_or_unknown);
+    Py_XDECREF(pkgpath);
     return NULL;
 }
 

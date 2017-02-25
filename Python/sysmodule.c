@@ -33,10 +33,6 @@ extern void *PyWin_DLLhModule;
 extern const char *PyWin_DLLVersionString;
 #endif
 
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
-#endif
-
 _Py_IDENTIFIER(_);
 _Py_IDENTIFIER(__sizeof__);
 _Py_IDENTIFIER(buffer);

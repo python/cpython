@@ -98,6 +98,37 @@ typedef int socklen_t;
 #include <sys/kern_control.h>
 #endif
 
+#ifdef HAVE_SOCKADDR_ALG
+#include <linux/if_alg.h>
+#ifndef AF_ALG
+#define AF_ALG 38
+#endif
+#ifndef SOL_ALG
+#define SOL_ALG 279
+#endif
+
+/* Linux 3.19 */
+#ifndef ALG_SET_AEAD_ASSOCLEN
+#define ALG_SET_AEAD_ASSOCLEN           4
+#endif
+#ifndef ALG_SET_AEAD_AUTHSIZE
+#define ALG_SET_AEAD_AUTHSIZE           5
+#endif
+/* Linux 4.8 */
+#ifndef ALG_SET_PUBKEY
+#define ALG_SET_PUBKEY                  6
+#endif
+
+#ifndef ALG_OP_SIGN
+#define ALG_OP_SIGN                     2
+#endif
+#ifndef ALG_OP_VERIFY
+#define ALG_OP_VERIFY                   3
+#endif
+
+#endif /* HAVE_SOCKADDR_ALG */
+
+
 #ifndef Py__SOCKET_H
 #define Py__SOCKET_H
 #ifdef __cplusplus
@@ -158,6 +189,9 @@ typedef union sock_addr {
 #endif
 #ifdef HAVE_SYS_KERN_CONTROL_H
     struct sockaddr_ctl ctl;
+#endif
+#ifdef HAVE_SOCKADDR_ALG
+    struct sockaddr_alg alg;
 #endif
 } sock_addr_t;
 

@@ -159,7 +159,7 @@ How do I obtain a copy of the Python source?
 
 The latest Python source distribution is always available from python.org, at
 https://www.python.org/downloads/.  The latest development sources can be obtained
-via anonymous Mercurial access at https://hg.python.org/cpython.
+at https://github.com/python/cpython/.
 
 The source distribution is a gzipped tar file containing the complete C source,
 Sphinx-formatted documentation, Python library modules, example programs, and
@@ -222,8 +222,8 @@ releases are announced on the comp.lang.python and comp.lang.python.announce
 newsgroups and on the Python home page at https://www.python.org/; an RSS feed of
 news is available.
 
-You can also access the development version of Python through Mercurial.  See
-https://docs.python.org/devguide/faq.html for details.
+You can also access the development version of Python through Git.  See
+`The Python Developer's Guide <https://docs.python.org/devguide/>`_ for details.
 
 
 How do I submit bug reports and patches for Python?
