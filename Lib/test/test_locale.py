@@ -199,11 +199,8 @@ class EnUSNumberFormatting(BaseFormattingTest):
         self._test_format("%-10.f", 4200, grouping=0, out='4200'.ljust(10))
 
     def test_format_deprecation(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", DeprecationWarning)
+        with self.assertWarns(DeprecationWarning):
             locale.format("%-10.f", 4200, grouping=True)
-        for warning in w:
-            self.assertTrue(warning.category is DeprecationWarning)
 
     def test_complex_formatting(self):
         # Spaces in formatting string

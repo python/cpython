@@ -371,12 +371,19 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: format_string(format, val, grouping=False, monetary=False)
 
+   Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
+   The format follows the conventions of the ``%`` operator.  For floating point
+   values, the decimal point is modified if appropriate.  If *grouping* is true,
+   also takes the grouping into account.
+
+   If *monetary* is true, the conversion uses monetary thousands separator and
+   grouping strings.
+
    Processes formatting specifiers as in ``format % val``, but takes the current
    locale settings into account.
 
    .. versionchanged:: 3.7
    The *monetary* keyword parameter was added.
-   Replaces :meth:`format`.
 
 
 .. function:: currency(val, symbol=True, grouping=False, international=False)

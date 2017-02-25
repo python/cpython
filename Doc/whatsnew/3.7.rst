@@ -158,6 +158,11 @@ API and Feature Removals
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
   function instead.
 
+* Deprecated :meth:`format` from :mod:`locale`, use the :meth:`format_string`
+  instead. Added another argument *monetary* in :meth:`format_string` of
+  :mod:`locale`.
+   (Contributed by Garvit in :issue:`10379`.)
+
 
 Porting to Python 3.7
 =====================
