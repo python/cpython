@@ -557,9 +557,9 @@ def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
             if variable == 'LANGUAGE':
                 localename = localename.split(':')[0]
             break
-    else:
-        localename = 'C'
-    return _parse_localename(localename)
+        else:
+            localename = 'C'
+        return _parse_localename(localename)
 
 
 def getlocale(category=LC_CTYPE):
