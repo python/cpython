@@ -50,6 +50,32 @@ typedef struct {
 #define PyStruct_CheckExact(op) (Py_TYPE(op) == &PyStructType)
 
 
+/*
+ * Struct Error String with offset
+ *
+ * This is a wrapper for PyErr_SetString and PyErr_Format, it will
+ * append the information of which offset value raise the error.
+ *
+ * For example:
+ *     >>> struct.pack('hh', , 0x7FFFF, 0x8FFFF)
+ *     struct.error: Raise at offset 2, 'h' format requires -32768 <= number <= 32767
+ */
+
+/* Global offset value */
+Py_ssize_t g_offset = 0;
+
+#define PyStructErr_BufferLength (128)
+#define PyStructErr_SetString(type, string) \
+    PyErr_Format(type, "Raise at offset %ld, %s", g_offset, string)
+#define PyStructErr_Format(type, format, ...) \
+    do { \
+        static char buf[PyStructErr_BufferLength]; \
+        sprintf(buf, format, __VA_ARGS__); \
+        PyErr_Format(type, "Raise at offset %zd, %s", \
+            g_offset, buf);  \
+    } while (0)
+
+
 /* Exception */
 
 static PyObject *StructError;
@@ -115,8 +141,8 @@ get_pylong(PyObject *v)
                 return NULL;
         }
         else {
-            PyErr_SetString(StructError,
-                            "required argument is not an integer");
+            PyStructErr_SetString(StructError,
+                                  "required argument is not an integer");
             return NULL;
         }
     }
@@ -143,8 +169,8 @@ get_long(PyObject *v, long *p)
     Py_DECREF(v);
     if (x == (long)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(StructError,
-                            "argument out of range");
+            PyStructErr_SetString(StructError,
+                                  "argument out of range");
         return -1;
     }
     *p = x;
@@ -167,8 +193,8 @@ get_ulong(PyObject *v, unsigned long *p)
     Py_DECREF(v);
     if (x == (unsigned long)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(StructError,
-                            "argument out of range");
+            PyStructErr_SetString(StructError,
+                                  "argument out of range");
         return -1;
     }
     *p = x;
@@ -190,8 +216,8 @@ get_longlong(PyObject *v, long long *p)
     Py_DECREF(v);
     if (x == (long long)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(StructError,
-                            "argument out of range");
+            PyStructErr_SetString(StructError,
+                                  "argument out of range");
         return -1;
     }
     *p = x;
@@ -213,8 +239,8 @@ get_ulonglong(PyObject *v, unsigned long long *p)
     Py_DECREF(v);
     if (x == (unsigned long long)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(StructError,
-                            "argument out of range");
+            PyStructErr_SetString(StructError,
+                                  "argument out of range");
         return -1;
     }
     *p = x;
@@ -236,8 +262,8 @@ get_ssize_t(PyObject *v, Py_ssize_t *p)
     Py_DECREF(v);
     if (x == (Py_ssize_t)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(StructError,
-                            "argument out of range");
+            PyStructErr_SetString(StructError,
+                                  "argument out of range");
         return -1;
     }
     *p = x;
@@ -259,8 +285,8 @@ get_size_t(PyObject *v, size_t *p)
     Py_DECREF(v);
     if (x == (size_t)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(StructError,
-                            "argument out of range");
+            PyStructErr_SetString(StructError,
+                                  "argument out of range");
         return -1;
     }
     *p = x;
@@ -293,8 +319,8 @@ pack_halffloat(char *p,      /* start of 2-byte string */
 {
     double x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
-                        "required argument is not a float");
+        PyStructErr_SetString(StructError,
+                              "required argument is not a float");
         return -1;
     }
     return _PyFloat_Pack2(x, (unsigned char *)p, le);
@@ -339,13 +365,13 @@ _range_error(const formatdef *f, int is_unsigned)
     const size_t ulargest = (size_t)-1 >> ((SIZEOF_SIZE_T - f->size)*8);
     assert(f->size >= 1 && f->size <= SIZEOF_SIZE_T);
     if (is_unsigned)
-        PyErr_Format(StructError,
+        PyStructErr_Format(StructError,
             "'%c' format requires 0 <= number <= %zu",
             f->format,
             ulargest);
     else {
         const Py_ssize_t largest = (Py_ssize_t)(ulargest >> 1);
-        PyErr_Format(StructError,
+        PyStructErr_Format(StructError,
             "'%c' format requires %zd <= number <= %zd",
             f->format,
             ~ largest,
@@ -540,8 +566,8 @@ np_byte(char *p, PyObject *v, const formatdef *f)
     if (get_long(v, &x) < 0)
         return -1;
     if (x < -128 || x > 127){
-        PyErr_SetString(StructError,
-                        "byte format requires -128 <= number <= 127");
+        PyStructErr_SetString(StructError,
+                              "byte format requires -128 <= number <= 127");
         return -1;
     }
     *p = (char)x;
@@ -555,8 +581,8 @@ np_ubyte(char *p, PyObject *v, const formatdef *f)
     if (get_long(v, &x) < 0)
         return -1;
     if (x < 0 || x > 255){
-        PyErr_SetString(StructError,
-                        "ubyte format requires 0 <= number <= 255");
+        PyStructErr_SetString(StructError,
+                              "ubyte format requires 0 <= number <= 255");
         return -1;
     }
     *p = (char)x;
@@ -567,8 +593,8 @@ static int
 np_char(char *p, PyObject *v, const formatdef *f)
 {
     if (!PyBytes_Check(v) || PyBytes_Size(v) != 1) {
-        PyErr_SetString(StructError,
-                        "char format requires a bytes object of length 1");
+        PyStructErr_SetString(StructError,
+                              "char format requires a bytes object of length 1");
         return -1;
     }
     *p = *PyBytes_AsString(v);
@@ -583,7 +609,7 @@ np_short(char *p, PyObject *v, const formatdef *f)
     if (get_long(v, &x) < 0)
         return -1;
     if (x < SHRT_MIN || x > SHRT_MAX){
-        PyErr_SetString(StructError,
+        PyStructErr_SetString(StructError,
                         "short format requires " Py_STRINGIFY(SHRT_MIN)
                         " <= number <= " Py_STRINGIFY(SHRT_MAX));
         return -1;
@@ -601,9 +627,9 @@ np_ushort(char *p, PyObject *v, const formatdef *f)
     if (get_long(v, &x) < 0)
         return -1;
     if (x < 0 || x > USHRT_MAX){
-        PyErr_SetString(StructError,
-                        "ushort format requires 0 <= number <= "
-                        Py_STRINGIFY(USHRT_MAX));
+        PyStructErr_SetString(StructError,
+                              "ushort format requires 0 <= number <= "
+                              Py_STRINGIFY(USHRT_MAX));
         return -1;
     }
     y = (unsigned short)x;
@@ -732,8 +758,8 @@ np_float(char *p, PyObject *v, const formatdef *f)
 {
     float x = (float)PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
-                        "required argument is not a float");
+        PyStructErr_SetString(StructError,
+                              "required argument is not a float");
         return -1;
     }
     memcpy(p, (char *)&x, sizeof x);
@@ -745,8 +771,8 @@ np_double(char *p, PyObject *v, const formatdef *f)
 {
     double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
-                        "required argument is not a float");
+        PyStructErr_SetString(StructError,
+                              "required argument is not a float");
         return -1;
     }
     memcpy(p, (char *)&x, sizeof(double));
@@ -970,8 +996,8 @@ bp_float(char *p, PyObject *v, const formatdef *f)
 {
     double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
-                        "required argument is not a float");
+        PyStructErr_SetString(StructError,
+                              "required argument is not a float");
         return -1;
     }
     return _PyFloat_Pack4(x, (unsigned char *)p, 0);
@@ -982,8 +1008,8 @@ bp_double(char *p, PyObject *v, const formatdef *f)
 {
     double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
-                        "required argument is not a float");
+        PyStructErr_SetString(StructError,
+                              "required argument is not a float");
         return -1;
     }
     return _PyFloat_Pack8(x, (unsigned char *)p, 0);
@@ -1189,8 +1215,8 @@ lp_float(char *p, PyObject *v, const formatdef *f)
 {
     double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
-                        "required argument is not a float");
+        PyStructErr_SetString(StructError,
+                              "required argument is not a float");
         return -1;
     }
     return _PyFloat_Pack4(x, (unsigned char *)p, 1);
@@ -1201,8 +1227,8 @@ lp_double(char *p, PyObject *v, const formatdef *f)
 {
     double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
-                        "required argument is not a float");
+        PyStructErr_SetString(StructError,
+                              "required argument is not a float");
         return -1;
     }
     return _PyFloat_Pack8(x, (unsigned char *)p, 1);
@@ -1763,23 +1789,22 @@ s_pack_internal(PyStructObject *soself, PyObject **args, int offset, char* buf)
     formatcode *code;
     /* XXX(nnorwitz): why does i need to be a local?  can we use
        the offset parameter or do we need the wider width? */
-    Py_ssize_t i;
 
     memset(buf, '\0', soself->s_size);
-    i = offset;
+    g_offset = offset;
     for (code = soself->s_codes; code->fmtdef != NULL; code++) {
         const formatdef *e = code->fmtdef;
         char *res = buf + code->offset;
         Py_ssize_t j = code->repeat;
         while (j--) {
-            PyObject *v = args[i++];
+            PyObject *v = args[g_offset++];
             if (e->format == 's') {
                 Py_ssize_t n;
                 int isstring;
                 void *p;
                 isstring = PyBytes_Check(v);
                 if (!isstring && !PyByteArray_Check(v)) {
-                    PyErr_SetString(StructError,
+                    PyStructErr_SetString(StructError,
                                     "argument for 's' must be a bytes object");
                     return -1;
                 }
@@ -1801,7 +1826,7 @@ s_pack_internal(PyStructObject *soself, PyObject **args, int offset, char* buf)
                 void *p;
                 isstring = PyBytes_Check(v);
                 if (!isstring && !PyByteArray_Check(v)) {
-                    PyErr_SetString(StructError,
+                    PyStructErr_SetString(StructError,
                                     "argument for 'p' must be a bytes object");
                     return -1;
                 }
@@ -1823,8 +1848,8 @@ s_pack_internal(PyStructObject *soself, PyObject **args, int offset, char* buf)
             } else {
                 if (e->pack(res, v, e) < 0) {
                     if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
-                        PyErr_SetString(StructError,
-                                        "int too large to convert");
+                        PyStructErr_SetString(StructError,
+                                              "int too large to convert");
                     return -1;
                 }
             }
