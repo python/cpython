@@ -491,7 +491,8 @@ def register_X_browsers():
 if os.environ.get("DISPLAY"):
     try:
         cmd = "xdg-settings get default-web-browser".split()
-        result = subprocess.check_output(cmd).decode().strip()
+        raw_result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
+        result = raw_result.decode().strip()
     except (FileNotFoundError, subprocess.CalledProcessError):
         pass
     else:
