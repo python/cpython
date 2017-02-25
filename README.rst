@@ -15,6 +15,22 @@ reserved.
 
 See the end of this file for further copyright and license information.
 
+General Information
+-------------------
+
+- Website: https://www.python.org
+- Source code: https://github.com/python/cpython
+- Issue tracker: https://bugs.python.org
+- Documentation: https://docs.python.org
+- Developer's Guide: https://docs.python.org/devguide/
+
+Contributing to CPython
+-----------------------
+
+For more complete instructions on contributing to CPython development,
+see the `Developer Guide`_.
+
+.. _Developer Guide: https://docs.python.org/devguide/
 
 Using Python
 ------------
@@ -28,7 +44,7 @@ Installable Python kits, and information about using Python, are available at
 Build Instructions
 ------------------
 
-On Unix, Linux, BSD, OSX, and Cygwin::
+On Unix, Linux, BSD, macOS, and Cygwin::
 
     ./configure
     make
@@ -38,10 +54,10 @@ On Unix, Linux, BSD, OSX, and Cygwin::
 This will install Python as python3.
 
 You can pass many options to the configure script; run ``./configure --help``
-to find out more.  On OSX and Cygwin, the executable is called ``python.exe``;
+to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
 elsewhere it's just ``python``.
 
-On Mac OS X, if you have configured Python with ``--enable-framework``, you
+On macOS, if you have configured Python with ``--enable-framework``, you
 should use ``make frameworkinstall`` to do the installation.  Note that this
 installs the Python executable in a place that is not normally on your PATH,
 you may want to set up a symlink in ``/usr/local/bin``.
@@ -126,12 +142,8 @@ is downloadable in HTML, PDF, and reStructuredText formats; the latter version
 is primarily for documentation authors, translators, and people with special
 formatting requirements.
 
-If you would like to contribute to the development of Python, relevant
-documentation is available in the `Python Developer's Guide
-<https://docs.python.org/devguide/>`_.
-
-For information about building Python's documentation, refer to `Doc/README.txt
-<https://github.com/python/cpython/blob/3.6/Doc/README.txt>`_.
+For information about building Python's documentation, refer to `Doc/README.rst
+<https://github.com/python/cpython/blob/3.6/Doc/README.rst>`_.
 
 
 Converting From Python 2.x to 3.x
