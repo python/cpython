@@ -13,7 +13,7 @@ Core and Builtins
 - bpo-28598: Support __rmod__ for subclasses of str being called before
   str.__mod__.  Patch by Martijn Pieters.
 
-- bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX. 
+- bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX.
   Patch by Matthieu Dartiailh.
 
 - bpo-29602: Fix incorrect handling of signed zeros in complex constructor for
@@ -1242,6 +1242,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #26128: Added keyword-only arguments support for
+  subprocess.STARTUPINFO
 
 - Issue #27517: LZMA compressor and decompressor no longer raise exceptions if
   given empty data twice.  Patch by Benjamin Fogle.
