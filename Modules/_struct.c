@@ -54,25 +54,24 @@ typedef struct {
  * Struct Error String with offset
  *
  * This is a wrapper for PyErr_SetString and PyErr_Format, it will
- * append the information of which offset value raise the error.
+ * append the index of which value raise the error.
  *
  * For example:
  *     >>> struct.pack('hh', , 0x7FFFF, 0x8FFFF)
- *     struct.error: Raise at offset 2, 'h' format requires -32768 <= number <= 32767
+ *     struct.error: 'h' format requires -32768 <= number <= 32767, got bad value at item 2
  */
 
 /* Global offset value */
-Py_ssize_t g_offset = 0;
+static Py_ssize_t g_offset = 0;
 
 #define PyStructErr_BufferLength (128)
 #define PyStructErr_SetString(type, string) \
-    PyErr_Format(type, "Raise at offset %ld, %s", g_offset, string)
+    PyErr_Format(type, "%s, got bad value at item %ld", string, g_offset)
 #define PyStructErr_Format(type, format, ...) \
     do { \
         static char buf[PyStructErr_BufferLength]; \
-        sprintf(buf, format, __VA_ARGS__); \
-        PyErr_Format(type, "Raise at offset %zd, %s", \
-            g_offset, buf);  \
+        snprintf(buf, PyStructErr_BufferLength, format, __VA_ARGS__); \
+        PyErr_Format(type, "%s, got bad value at item %ld", buf, g_offset);  \
     } while (0)
 
 
