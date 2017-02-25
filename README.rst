@@ -22,7 +22,7 @@ General Information
 - Source code: https://github.com/python/cpython
 - Issue tracker: https://bugs.python.org
 - Documentation: https://docs.python.org
-- Developer's Guide: https://cpython-devguide.readthedocs.io
+- Developer's Guide: https://docs.python.org/devguide/
 
 Contributing to CPython
 -----------------------
