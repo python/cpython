@@ -746,7 +746,8 @@ on Windows.
 
    Partial support of the Windows
    `STARTUPINFO <https://msdn.microsoft.com/en-us/library/ms686331(v=vs.85).aspx>`__
-   structure is used for :class:`Popen` creation.
+   structure is used for :class:`Popen` creation. The following attributes can be set
+   by passing them as keyword-only arguments.
 
    .. attribute:: dwFlags
 
@@ -788,6 +789,8 @@ on Windows.
       :data:`SW_HIDE` is provided for this attribute. It is used when
       :class:`Popen` is called with ``shell=True``.
 
+   .. versionchanged:: 3.7
+      *Keyword-only argument* support was added.
 
 Constants
 ^^^^^^^^^
