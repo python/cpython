@@ -127,11 +127,13 @@ if _mswindows:
     import msvcrt
     import _winapi
     class STARTUPINFO:
-        dwFlags = 0
-        hStdInput = None
-        hStdOutput = None
-        hStdError = None
-        wShowWindow = 0
+        def __init__(self, *, dwFlags=0, hStdInput=None, hStdOutput=None,
+                     hStdError=None, wShowWindow=0):
+            self.dwFlags = dwFlags
+            self.hStdInput = hStdInput
+            self.hStdOutput = hStdOutput
+            self.hStdError = hStdError
+            self.wShowWindow = wShowWindow
 else:
     import _posixsubprocess
     import select
