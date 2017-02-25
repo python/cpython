@@ -13,16 +13,21 @@ __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 class Error(Exception):
     pass
 
-_browsers = {}          # Dictionary of available browser controllers
-_tryorder = []          # Preference order of available browsers
+_browsers = {}                  # Dictionary of available browser controllers
+_tryorder = []                  # Preference order of available browsers
+_os_preferred_browser = None    # The preferred browser
 
-def register(name, klass, instance=None, update_tryorder=1):
-    """Register a browser connector and, optionally, connection."""
+def register(name, klass, instance=None, *, preferred=False):
+    """Register a browser connector."""
     _browsers[name.lower()] = [klass, instance]
-    if update_tryorder > 0:
-        _tryorder.append(name)
-    elif update_tryorder < 0:
+
+    # Preferred browsers go to the front of the list.
+    # Need to match to the default browser returned by xdg-settings, which
+    # may be of the form e.g. "firefox.desktop".
+    if preferred or (_os_preferred_browser and name in _os_preferred_browser):
         _tryorder.insert(0, name)
+    else:
+        _tryorder.append(name)
 
 def get(using=None):
     """Return a browser launcher instance appropriate for the environment."""
@@ -484,6 +489,14 @@ def register_X_browsers():
 
 # Prefer X browsers if present
 if os.environ.get("DISPLAY"):
+    try:
+        cmd = "xdg-settings get default-web-browser".split()
+        result = subprocess.check_output(cmd).decode().strip()
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        pass
+    else:
+        _os_preferred_browser = result
+
     register_X_browsers()
 
 # Also try console browsers
@@ -610,10 +623,10 @@ if sys.platform == 'darwin':
 
     # Don't clear _tryorder or _browsers since OS X can use above Unix support
     # (but we prefer using the OS X specific stuff)
-    register("safari", None, MacOSXOSAScript('safari'), -1)
-    register("firefox", None, MacOSXOSAScript('firefox'), -1)
-    register("chrome", None, MacOSXOSAScript('chrome'), -1)
-    register("MacOSX", None, MacOSXOSAScript('default'), -1)
+    register("safari", None, MacOSXOSAScript('safari'), preferred=True)
+    register("firefox", None, MacOSXOSAScript('firefox'), preferred=True)
+    register("chrome", None, MacOSXOSAScript('chrome'), preferred=True)
+    register("MacOSX", None, MacOSXOSAScript('default'), preferred=True)
 
 
 # OK, now that we know what the default preference orders for each
@@ -628,7 +641,7 @@ if "BROWSER" in os.environ:
         if cmdline != '':
             cmd = _synthesize(cmdline, -1)
             if cmd[1] is None:
-                register(cmdline, None, GenericBrowser(cmdline), -1)
+                register(cmdline, None, GenericBrowser(cmdline), preferred=True)
     cmdline = None # to make del work if _userchoices was empty
     del cmdline
     del _userchoices
