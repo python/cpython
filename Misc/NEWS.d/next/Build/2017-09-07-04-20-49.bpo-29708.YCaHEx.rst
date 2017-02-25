@@ -1,0 +1,2 @@
+If the SOURCE_DATE_EPOCH environment variable is set,
+py_compile will use it to override the timestamps it puts into .pyc files.

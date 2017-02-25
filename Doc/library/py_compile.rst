@@ -57,6 +57,10 @@ byte-code cache files in the directory containing the source code.
    enum and controls how the generated ``.pyc`` files are invalidated at
    runtime.
 
+   If the SOURCE_DATE_EPOCH environment variable is set, the timestamp entry in
+   the .pyc file header, will be limited to this value.
+   See https://reproducible-builds.org/specs/source-date-epoch/ for more info.
+
    .. versionchanged:: 3.2
       Changed default value of *cfile* to be :PEP:`3147`-compliant.  Previous
       default was *file* + ``'c'`` (``'o'`` if optimization was enabled).
