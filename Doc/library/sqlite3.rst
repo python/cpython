@@ -309,6 +309,11 @@ Connection Objects
       When *readonly* is :const:`True` the BLOB is opened with read
       permissions. Otherwise the BLOB has read and write permissions.
 
+      .. note::
+
+         The BLOB size cannot be changed using the :class:`Blob` class. Use
+         `zeroblob` to create the blob in the wanted size in advance.
+
       .. versionadded:: 3.7
 
    .. method:: commit()
