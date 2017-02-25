@@ -8,6 +8,7 @@ __all__ = ["run", "runctx", "Profile"]
 
 import _lsprof
 import profile as _pyprofile
+import contextlib
 
 # ____________________________________________________________
 # Simple interface
@@ -19,8 +20,17 @@ def runctx(statement, globals, locals, filename=None, sort=-1):
     return _pyprofile._Utils(Profile).runctx(statement, globals, locals,
                                              filename, sort)
 
+def runcall(func, *args, filename=None, sort=-1):
+    return _pyprofile._Utils(Profile).runcall(func, *args, filename=filename,
+                                              sort=sort)
+
+def runblock(filename=None, sort=-1):
+    return _pyprofile._Utils(Profile).runblock(filename, sort)
+
 run.__doc__ = _pyprofile.run.__doc__
 runctx.__doc__ = _pyprofile.runctx.__doc__
+runcall.__doc__ = _pyprofile.runcall.__doc__
+runblock.__doc__ = _pyprofile.runblock.__doc__
 
 # ____________________________________________________________
 
@@ -36,6 +46,12 @@ class Profile(_lsprof.Profiler):
 
     # Most of the functionality is in the base class.
     # This subclass only adds convenient and backward-compatible methods.
+
+    def __enter__(self):
+        self.enable()
+
+    def __exit__(self, *args):
+        self.disable()
 
     def print_stats(self, sort=-1):
         import pstats
@@ -107,6 +123,14 @@ class Profile(_lsprof.Profiler):
         self.enable()
         try:
             return func(*args, **kw)
+        finally:
+            self.disable()
+
+    @contextlib.contextmanager
+    def runblock(self):
+        self.enable()
+        try:
+            yield self
         finally:
             self.disable()
 

@@ -93,6 +93,43 @@ class ProfileTest(unittest.TestCase):
                                   filename=TESTFN)
         self.assertTrue(os.path.exists(TESTFN))
 
+    def test_runcall(self):
+        flag = []
+        with silent():
+            self.profilermodule.runcall(flag.append, 1)
+        self.assertEqual(flag, [1])
+        self.profilermodule.runcall(flag.append, 2, filename=TESTFN)
+        self.assertEqual(flag, [1, 2])
+        self.assertTrue(os.path.exists(TESTFN))
+
+    def test_runblock_ctx_manager(self):
+        flag = []
+        with silent():
+            with self.profilermodule.runblock():
+                flag.append(1)
+        self.assertEqual(flag, [1])
+        with self.profilermodule.runblock(filename=TESTFN):
+            flag.append(2)
+        self.assertEqual(flag, [1, 2])
+        self.assertTrue(os.path.exists(TESTFN))
+
+    def test_runblock_decorator(self):
+        flag = []
+
+        @self.profilermodule.runblock()
+        def foo():
+            flag.append(1)
+        with silent():
+            foo()
+        self.assertEqual(flag, [1])
+
+        @self.profilermodule.runblock(filename=TESTFN)
+        def foo():
+            flag.append(1)
+        with silent():
+            foo()
+        self.assertEqual(flag, [1, 1])
+        self.assertTrue(os.path.exists(TESTFN))
 
 def regenerate_expected_output(filename, cls):
     filename = filename.rstrip('co')

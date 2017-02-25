@@ -28,9 +28,11 @@ import sys
 import os
 import time
 import marshal
+import contextlib
 from optparse import OptionParser
 
 __all__ = ["run", "runctx", "Profile"]
+
 
 # Sample timer for use with
 #i_count = 0
@@ -67,6 +69,29 @@ class _Utils:
         finally:
             self._show(prof, filename, sort)
 
+    def runcall(self, func, *args, filename=None, sort=-1):
+        prof = self.profiler()
+        try:
+            prof.runcall(func, *args)
+        except SystemExit:
+            pass
+        finally:
+           self._show(prof, filename, sort)
+
+    @contextlib.contextmanager
+    def runblock(self, filename=None, sort=-1):
+        prof = self.profiler()
+        try:
+            with prof.runblock():
+                yield
+        except SystemExit:
+            pass
+        finally:
+            if filename is not None:
+                prof.dump_stats(filename)
+            else:
+                prof.print_stats(sort)
+
     def _show(self, prof, filename, sort):
         if filename is not None:
             prof.dump_stats(filename)
@@ -99,6 +124,28 @@ def runctx(statement, globals, locals, filename=None, sort=-1):
     statement and filename have the same semantics as profile.run
     """
     return _Utils(Profile).runctx(statement, globals, locals, filename, sort)
+
+def runcall(func, *args, filename=None, sort=-1):
+    """Run func(*args) under profiler, optionally saving results in
+    filename.
+    """
+    return _Utils(Profile).runcall(func, *args, filename=filename, sort=sort)
+
+def runblock(filename=None, sort=-1):
+    """Function that runs a block of code under profile, and can be
+    used as a context manager or a decorator.
+    Example:
+
+    >>> with runblock():
+    ...     pass
+    ...
+    >>> @runblock()
+    ... def foo():
+    ...     pass
+    ...
+    >>>
+    """
+    return _Utils(Profile).runblock(filename, sort)
 
 
 class Profile:
@@ -290,7 +337,10 @@ class Profile:
 
     def trace_dispatch_return(self, frame, t):
         if frame is not self.cur[-2]:
-            assert frame is self.cur[-2].f_back, ("Bad return", self.cur[-3])
+            if frame is not self.cur[-2].f_back:
+                if self.cur[-3] != ('profile', 0, ''):
+                    raise AssertionError("Bad return", self.cur[-3])
+                return 1
             self.trace_dispatch_return(self.cur[-2], 0)
 
         # Prefix "r" means part of the Returning or exiting frame.
@@ -435,6 +485,14 @@ class Profile:
         finally:
             sys.setprofile(None)
 
+    @contextlib.contextmanager
+    def runblock(self):
+        self.set_cmd('')
+        sys.setprofile(self.dispatcher)
+        try:
+            yield self
+        finally:
+            sys.setprofile(None)
 
     #******************************************************************
     # The following calculates the overhead for using a profiler.  The
