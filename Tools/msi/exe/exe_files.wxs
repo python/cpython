@@ -8,9 +8,6 @@
             <Component Id="NEWS.txt" Directory="InstallDirectory" Guid="*">
                 <File Name="NEWS.txt" Source="!(bindpath.src)Misc\NEWS" KeyPath="yes" />
             </Component>
-            <Component Id="README.txt" Directory="InstallDirectory" Guid="*">
-                <File Name="README.txt" Source="!(bindpath.src)README" KeyPath="yes" />
-            </Component>
         </ComponentGroup>
     </Fragment>
 
