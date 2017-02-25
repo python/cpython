@@ -15,6 +15,15 @@ reserved.
 
 See the end of this file for further copyright and license information.
 
+General Information
+-------------------
+
+- Website: https://www.python.org
+- Source code: https://github.com/python/cpython
+- Issue tracker: https://bugs.python.org
+- Documentation: https://docs.python.org
+- Developer's Guide: https://cpython-devguide.readthedocs.io
+
 Contributing to CPython
 -----------------------
 
