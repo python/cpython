@@ -150,7 +150,7 @@ that takes an iterable is :func:`sum()`:
     >>> sum(range(4))  # 0 + 1 + 2 + 3
     6
 
-Later we will see more functions that return iterables and take iterables as argument.
+Later we will see more functions that return iterables and take iterables as arguments.
 
 
 .. _tut-break:
