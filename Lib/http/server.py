@@ -100,6 +100,7 @@ import socket # For gethostbyaddr()
 import socketserver
 import sys
 import time
+import datetime
 import urllib.parse
 import copy
 import argparse
@@ -687,6 +688,21 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
             return None
         try:
+            # Use browser cache if possible
+            if "If-Modified-Since" in self.headers:
+                # compare If-Modified-Since and date of last file modification
+                fs = os.stat(path)
+                ims = email.utils.parsedate(self.headers["If-Modified-Since"])
+                if ims is not None:
+                    ims_datetime = datetime.datetime(*ims[:7])
+                    ims_dtstring = ims_datetime.strftime("%d %b %Y %H:%M:%S")
+                    last_modif = datetime.datetime.utcfromtimestamp(
+                        fs.st_mtime).strftime("%d %b %Y %H:%M:%S")
+                    if last_modif <= ims_dtstring:
+                        self.send_response(HTTPStatus.NOT_MODIFIED)
+                        self.end_headers()
+                        f.close()
+                        return
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", ctype)
             fs = os.fstat(f.fileno())
@@ -1212,3 +1228,5 @@ if __name__ == '__main__':
     else:
         handler_class = SimpleHTTPRequestHandler
     test(HandlerClass=handler_class, port=args.port, bind=args.bind)
+
+

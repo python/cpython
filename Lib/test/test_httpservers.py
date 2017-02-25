@@ -444,6 +444,20 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.assertEqual(response.getheader('content-type'),
                          'application/octet-stream')
 
+    def test_browser_cache(self):
+        #constructs the path relative to the root directory of the HTTPServer
+        response = self.request(self.base_url + '/test')
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+        # get Last-Modified response heaer
+        last_modif = response.headers['Last-modified']
+        # send new request to the same url with request header 
+        # If-Modified-Since
+        from email.message import Message
+        headers = Message()
+        headers['If-Modified-Since'] = last_modif
+        response = self.request(self.base_url + '/test', headers=headers)
+        self.check_status_and_reason(response, HTTPStatus.NOT_MODIFIED)
+
     def test_invalid_requests(self):
         response = self.request('/', method='FOO')
         self.check_status_and_reason(response, HTTPStatus.NOT_IMPLEMENTED)
