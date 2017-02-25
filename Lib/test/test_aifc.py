@@ -1,5 +1,6 @@
 from test.support import check_no_resource_warning, findfile, TESTFN, unlink
 import unittest
+from unittest import mock
 from test import audiotests
 from audioop import byteswap
 import io
@@ -155,7 +156,14 @@ class AifcMiscTest(audiotests.AudioTests, unittest.TestCase):
             with self.assertRaises(aifc.Error):
                 # Try opening a non-AIFC file, with the expectation that
                 # `aifc.open` will fail (without raising a ResourceWarning)
-                f = self.f = aifc.open(non_aifc_file, 'rb')
+                self.f = aifc.open(non_aifc_file, 'rb')
+
+            # Aifc_write.initfp() won't raise in normal case.  But some errors
+            # (e.g. MemoryError, KeyboardInterrupt, etc..) can happen.
+            with mock.patch.object(aifc.Aifc_write, 'initfp',
+                                   side_effect=RuntimeError):
+                with self.assertRaises(RuntimeError):
+                    self.fout = aifc.open(TESTFN, 'wb')
 
     def test_params_added(self):
         f = self.f = aifc.open(TESTFN, 'wb')

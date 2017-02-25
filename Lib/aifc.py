@@ -371,7 +371,7 @@ class Aifc_read:
         self._soundpos = 0
 
     def close(self):
-        file = self._file
+        file = getattr(self, '_file')
         if file is not None:
             self._file = None
             file.close()
@@ -730,7 +730,7 @@ class Aifc_write:
             self._patchheader()
 
     def close(self):
-        if self._file is None:
+        if getattr(self, '_file', None) is None:
             return
         try:
             self._ensure_header_written(0)
