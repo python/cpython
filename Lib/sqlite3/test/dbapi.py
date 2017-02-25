@@ -546,22 +546,12 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(self.blob.tell(), 90)
 
     def CheckBlobSeekOverBlobSize(self):
-        try:
+        with self.assertRaises(ValueError):
             self.blob.seek(1000)
-            self.fail("should have raised a ValueError")
-        except ValueError:
-            pass
-        except Exception:
-            self.fail("should have raised a ValueError")
 
     def CheckBlobSeekUnderBlobSize(self):
-        try:
+        with self.assertRaises(ValueError):
             self.blob.seek(-10)
-            self.fail("should have raised a ValueError")
-        except ValueError:
-            pass
-        except Exception:
-            self.fail("should have raised a ValueError")
 
     def CheckBlobRead(self):
         self.assertEqual(self.blob.read(), self.blob_data)
@@ -594,81 +584,41 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(self.blob.tell(), 50)
 
     def CheckBlobWriteMoreThenBlobSize(self):
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             self.blob.write(b"a" * 1000)
-            self.fail("should have raised a sqlite.OperationalError")
-        except sqlite.OperationalError:
-            pass
-        except Exception:
-            self.fail("should have raised a sqlite.OperationalError")
 
     def CheckBlobReadAfterRowChange(self):
         self.cx.execute("UPDATE test SET blob_col='aaaa' where id=1")
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             self.blob.read()
-            self.fail("should have raised a sqlite.OperationalError")
-        except sqlite.OperationalError:
-            pass
-        except Exception:
-            self.fail("should have raised a sqlite.OperationalError")
 
     def CheckBlobWriteAfterRowChange(self):
         self.cx.execute("UPDATE test SET blob_col='aaaa' where id=1")
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             self.blob.write(b"aaa")
-            self.fail("should have raised a sqlite.OperationalError")
-        except sqlite.OperationalError:
-            pass
-        except Exception:
-            self.fail("should have raised a sqlite.OperationalError")
 
     def CheckBlobWriteWhenReadOnly(self):
         read_only_blob = \
             self.cx.open_blob("test", "blob_col", 1, readonly=True)
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             read_only_blob.write(b"aaa")
-            self.fail("should have raised a sqlite.OperationalError")
-        except sqlite.OperationalError:
-            pass
-        except Exception:
-            self.fail("should have raised a sqlite.OperationalError")
         read_only_blob.close()
 
     def CheckBlobOpenWithBadDb(self):
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             self.cx.open_blob("test", "blob_col", 1, dbname="notexisintg")
-            self.fail("should have raised a sqlite.OperationalError")
-        except sqlite.OperationalError:
-            pass
-        except Exception:
-            self.fail("should have raised a sqlite.OperationalError")
 
     def CheckBlobOpenWithBadTable(self):
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             self.cx.open_blob("notexisintg", "blob_col", 1)
-            self.fail("should have raised a sqlite.OperationalError")
-        except sqlite.OperationalError:
-            pass
-        except Exception:
-            self.fail("should have raised a sqlite.OperationalError")
 
     def CheckBlobOpenWithBadColumn(self):
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             self.cx.open_blob("test", "notexisting", 1)
-            self.fail("should have raised a sqlite.OperationalError")
-        except sqlite.OperationalError:
-            pass
-        except Exception:
-            self.fail("should have raised a sqlite.OperationalError")
 
     def CheckBlobOpenWithBadRow(self):
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             self.cx.open_blob("test", "blob_col", 2)
-            self.fail("should have raised a sqlite.OperationalError")
-        except sqlite.OperationalError:
-            pass
-        except Exception:
-            self.fail("should have raised a sqlite.OperationalError")
 
 
 @unittest.skipUnless(threading, 'This test requires threading.')
@@ -935,13 +885,8 @@ class ClosedConTests(unittest.TestCase):
         con.execute("insert into test(blob_col) values (zeroblob(100))")
         blob = con.open_blob("test", "blob_col", 1)
         con.close()
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             blob.read()
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedCreateFunction(self):
         con = sqlite.connect(":memory:")
@@ -1109,57 +1054,32 @@ class ClosedBlobTests(unittest.TestCase):
     def CheckClosedRead(self):
         self.blob = self.cx.open_blob("test", "blob_col", 1)
         self.blob.close()
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             self.blob.read()
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except Exception:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedWrite(self):
         self.blob = self.cx.open_blob("test", "blob_col", 1)
         self.blob.close()
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             self.blob.write(b"aaaaaaaaa")
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except Exception:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedSeek(self):
         self.blob = self.cx.open_blob("test", "blob_col", 1)
         self.blob.close()
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             self.blob.seek(10)
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except Exception:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedTell(self):
         self.blob = self.cx.open_blob("test", "blob_col", 1)
         self.blob.close()
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             self.blob.tell()
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except Exception:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedClose(self):
         self.blob = self.cx.open_blob("test", "blob_col", 1)
         self.blob.close()
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             self.blob.close()
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except Exception:
-            self.fail("Should have raised a ProgrammingError")
 
 
 class BlobContextManagerTests(unittest.TestCase):
@@ -1180,13 +1100,8 @@ class BlobContextManagerTests(unittest.TestCase):
     def CheckContextCloseBlob(self):
         with self.cx.open_blob("test", "blob_col", 1) as blob:
             blob.seek(10)
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             blob.close()
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except Exception:
-            self.fail("Should have raised a ProgrammingError")
 
 
 def suite():
