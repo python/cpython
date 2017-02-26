@@ -937,6 +937,9 @@ Otherwise leave it at its default, which will result in a plain "BEGIN"
 statement, or set it to one of SQLite's supported isolation levels: "DEFERRED",
 "IMMEDIATE" or "EXCLUSIVE".
 
+The current transaction state is exposed through the
+:attr:`Connection.in_transaction` attribute of the connection object.
+
 .. versionchanged:: 3.6
    :mod:`sqlite3` used to implicitly commit an open transaction before DDL
    statements.  This is no longer the case.
