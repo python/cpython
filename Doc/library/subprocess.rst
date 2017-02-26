@@ -466,9 +466,13 @@ functions.
       The *pass_fds* parameter was added.
 
    If *cwd* is not ``None``, the function changes the working directory to
-   *cwd* before executing the child.  In particular, the function looks for
-   *executable* (or for the first item in *args*) relative to *cwd* if the
-   executable path is a relative path.
+   *cwd* before executing the child.  *cwd* can be a :class:`str` and
+   :term:`path-like <path-like object>` object.  In particular, the function
+   looks for *executable* (or for the first item in *args*) relative to *cwd*
+   if the executable path is a relative path.
+
+   .. versionchanged:: 3.6
+      *cwd* parameter accepts a :term:`path-like object`.
 
    If *restore_signals* is true (the default) all signals that Python has set to
    SIG_IGN are restored to SIG_DFL in the child process before the exec.
