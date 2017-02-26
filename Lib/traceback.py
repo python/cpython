@@ -80,7 +80,8 @@ _context_message = (
     "another exception occurred:\n\n")
 
 
-def print_exception(etype, value, tb, limit=None, file=None, chain=True):
+def print_exception(etype=None, value=None, tb=None, limit=None, file=None,
+                    chain=True, *, exc=None):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
 
     This differs from print_tb() in the following ways: (1) if
@@ -90,7 +91,20 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
     appropriate format, it prints the line where the syntax error
     occurred with a caret on the next line indicating the approximate
     position of the error.
+
+    The *etype* parameter is ignored since python 3.5 and get inferred from
+    *value*.
+
+    Since python 3.7, instead of passing *etype*, *value* and *tb* separately,
+    it is recommended to use the *exc* keyword argument which will infer all the
+    required values.
     """
+    if exc and (etype or value or tb):
+        raise ValueError("Only one of `exc` or `(etype, value, tb)` can be set")
+    elif exc:
+        value = exc
+        tb = exc.__traceback__
+    
     # format_exception has ignored etype for some time, and code such as cgitb
     # passes in bogus values as a result. For compatibility with such code we
     # ignore it here (rather than in the new TracebackException API).
@@ -101,7 +115,8 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
         print(line, file=file, end="")
 
 
-def format_exception(etype, value, tb, limit=None, chain=True):
+def format_exception(etype=None, value=None, tb=None, limit=None, chain=True,
+                     *, exc=None):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
@@ -109,7 +124,18 @@ def format_exception(etype, value, tb, limit=None, chain=True):
     ending in a newline and some containing internal newlines.  When
     these lines are concatenated and printed, exactly the same text is
     printed as does print_exception().
+
+    The *etype* parameter is ignored since python 3.5 and inferred from *value*.
+
+    Since python 3.7, instead of passing *etype*, *value* and *tb* separately,
+    it is recommended to use the *exc* keyword argument which will infer all the
+    required values.
     """
+    if exc and (etype or value or tb):
+        raise ValueError("Only one of `exc` or `(etype, value, tb)` can be set")
+    elif exc:
+        value = exc
+        tb = exc.__traceback__
     # format_exception has ignored etype for some time, and code such as cgitb
     # passes in bogus values as a result. For compatibility with such code we
     # ignore it here (rather than in the new TracebackException API).
@@ -117,7 +143,7 @@ def format_exception(etype, value, tb, limit=None, chain=True):
         type(value), value, tb, limit=limit).format(chain=chain))
 
 
-def format_exception_only(etype, value):
+def format_exception_only(etype=None, value=None, *, exc=None):
     """Format the exception part of a traceback.
 
     The arguments are the exception type and value such as given by
@@ -132,7 +158,16 @@ def format_exception_only(etype, value):
     The message indicating which exception occurred is always the last
     string in the list.
 
+    Since python 3.7, instead of passing *etype* and *value* separately, it is
+    recommended to use the *exc* keyword argument which will infer all the
+    required values.
     """
+    if exc and (etype or value):
+        raise ValueError("Only one of `exc` or `(etype, value, tb)` can be set")
+    elif exc:
+        value = exc
+        tb = exc.__traceback__
+        etype = type(value)
     return list(TracebackException(etype, value, None).format_exception_only())
 
 
