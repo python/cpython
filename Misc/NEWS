@@ -92,6 +92,8 @@ C API
 Documentation
 -------------
 
+- bpo-28929: Link the documentation to its source file on GitHub.
+
 - Issue #26355: Add canonical header link on each page to corresponding major
   version of the documentation. Patch by Matthias Bussonnier.
 
