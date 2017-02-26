@@ -355,6 +355,10 @@ class CompletedProcess(object):
         self.stdout = stdout
         self.stderr = stderr
 
+    def __bool__(self):
+        """ Returns True if the exit code is zero; otherwise False."""
+        return self.returncode == 0
+
     def __repr__(self):
         args = ['args={!r}'.format(self.args),
                 'returncode={!r}'.format(self.returncode)]
