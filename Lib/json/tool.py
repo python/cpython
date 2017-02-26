@@ -30,8 +30,8 @@ def main():
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--indent', default=4, type=int,
                        help='Indent level for pretty-printing.')
-    group.add_argument('--no-indent', action='store_true', default=False,
-                       help='Use compact mode.')
+    group.add_argument('--no-indent', action='store_const', dest='indent',
+                       const=None, help='Use compact mode.')
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
     options = parser.parse_args()
@@ -52,7 +52,7 @@ def main():
     outfile = options.outfile or sys.stdout
     with outfile:
         json.dump(obj, outfile,
-                  indent=None if options.no_indent else options.indent,
+                  indent=options.indent,
                   ensure_ascii=not options.no_ensure_ascii,
                   sort_keys=options.sort_keys,
                   )
