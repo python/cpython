@@ -293,6 +293,8 @@ Library
 - Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
   '~' in the set of characters that is not quoted by default. Patch by
   Christian Theune and Ratnadeep Debnath.
+- bpo 29623: Allow use of path-like object as a single argument in
+  ConfigParser.read().  Patch by David Ellis.
 
 - bpo-29532: Altering a kwarg dictionary passed to functools.partial()
   no longer affects a partial object after creation.
