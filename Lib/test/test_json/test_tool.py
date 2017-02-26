@@ -11,12 +11,12 @@ class TestTool(unittest.TestCase):
     data = """
 
         [["blorpie"],[ "whoops" ] , [
-                      ],\t"d-shtaeou",\r"\xA7 \N{snake} \u03B4 and \U0001D037",
+                                 ],\t"d-shtaeou",\r"d-nthiouh",
         "i-vhbjkhnth", {"nifty":87}, {"morefield" :\tfalse,"field"
             :"yes"}  ]
            """
 
-    expect_without_sort_keys = textwrap.dedent(r"""\
+    expect_without_sort_keys = textwrap.dedent("""\
     [
         [
             "blorpie"
@@ -26,7 +26,7 @@ class TestTool(unittest.TestCase):
         ],
         [],
         "d-shtaeou",
-        "\u00a7 \ud83d\udc0d \u03b4 and \ud834\udc3",
+        "d-nthiouh",
         "i-vhbjkhnth",
         {
             "nifty": 87
@@ -38,7 +38,7 @@ class TestTool(unittest.TestCase):
     ]
     """)
 
-    expect = textwrap.dedent(r"""\
+    expect = textwrap.dedent("""\
     [
         [
             "blorpie"
@@ -48,7 +48,7 @@ class TestTool(unittest.TestCase):
         ],
         [],
         "d-shtaeou",
-        "\u00a7 \ud83d\udc0d \u03b4 and \ud834\udc37",
+        "d-nthiouh",
         "i-vhbjkhnth",
         {
             "nifty": 87
@@ -106,22 +106,14 @@ class TestTool(unittest.TestCase):
                          self.expect_without_sort_keys.encode().splitlines())
         self.assertEqual(err, b'')
 
-    def test_no_ensure_ascii_flag(self):
-        infile = self._create_infile()
-        rc, out, err = assert_python_ok('-m', 'json.tool', '--no-ensure-ascii', infile)
-        self.assertEqual(rc, 0)
-        self.assertEqual(out.splitlines(),
-                         self.expect_without_sort_keys.encode().splitlines())
-        self.assertEqual(err, b'')
-
     def test_indent(self):
         json_stdin = b'[1, 2]'
-        expect = textwrap.dedent(b'''\
+        expect = textwrap.dedent('''\
         [
           1,
           2
         ]
-        ''')
+        ''').encode()
         args = sys.executable, '-m', 'json.tool', '--indent', '2'
         with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
             json_stdout, err = proc.communicate(json_stdin)
@@ -133,5 +125,22 @@ class TestTool(unittest.TestCase):
         args = sys.executable, '-m', 'json.tool', '--no-indent'
         with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
             json_stdout, err = proc.communicate(json_stdin)
-        self.assertEqual(json_stdin, json_stdout)
+        self.assertEqual(json_stdin.splitlines(), json_stdout.splitlines())
+        self.assertEqual(err, b'')
+
+    def test_ensure_ascii(self):
+        json_stdin = '"\xA7 \N{snake} \u03B4 \U0001D037"'.encode()
+        expect = b'"\\u00a7 \\ud83d\\udc0d \\u03b4 \\ud834\\udc37"\n'
+        args = sys.executable, '-m', 'json.tool'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+            json_stdout, err = proc.communicate(json_stdin)
+        self.assertEqual(expect.splitlines(), json_stdout.splitlines())
+        self.assertEqual(err, b'')
+
+    def test_no_ensure_ascii(self):
+        json_stdin = '"\xA7 \N{snake} \u03B4 \U0001D037"'.encode()
+        args = sys.executable, '-m', 'json.tool', '--no-ensure-ascii'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+            json_stdout, err = proc.communicate(json_stdin)
+        self.assertEqual(json_stdin.splitlines(), json_stdout.splitlines())
         self.assertEqual(err, b'')
