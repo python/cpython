@@ -692,19 +692,19 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             
         try:
             # Use browser cache if possible
-            if "If-Modified-Since" in self.headers \
-                    and not "If-None-Match" in self.headers:
-                # compare If-Modified-Since and date of last file modification
-                ims = email.utils.parsedate(self.headers["If-Modified-Since"])
-                if ims is not None:
-                    # If-Modified-Since is UTC, rounded to the second
-                    tzinfo = datetime.timezone(datetime.timedelta(hours=0))
-                    ims_datetime = datetime.datetime(*ims[:7], tzinfo=tzinfo)
-                    # compare to UTC datetime of last modification, also 
+            if ("If-Modified-Since" in self.headers
+                    and "If-None-Match" not in self.headers):
+                # compare If-Modified-Since and time of last file modification
+                ims = email.utils.parsedate_to_datetime(
+                    self.headers["If-Modified-Since"])
+                if (ims is not None and
+                        ims.tzinfo is datetime.timezone.utc):
+                    # compare to UTC datetime of last modification, 
                     # rounded to the second
                     mtime = int(fs.st_mtime)
-                    last_modif = datetime.datetime.fromtimestamp(mtime, tzinfo)
-                    if last_modif <= ims_datetime:
+                    last_modif = datetime.datetime.fromtimestamp(mtime, 
+                        ims.tzinfo)
+                    if last_modif <= ims:
                         self.send_response(HTTPStatus.NOT_MODIFIED)
                         self.end_headers()
                         f.close()
