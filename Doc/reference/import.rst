@@ -468,7 +468,7 @@ import machinery will create the new module itself.
 
 .. versionchanged:: 3.6
    An :exc:`ImportError` is raised when ``exec_module()`` is defined but
-   ``create_module`` is not.
+   ``create_module()`` is not.
 
 Submodules
 ----------
