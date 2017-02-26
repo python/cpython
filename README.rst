@@ -5,6 +5,11 @@ This is Python version 3.7.0 alpha 1
    :alt: CPython build status on Travis CI
    :target: https://travis-ci.org/python/cpython
 
+.. XXX Placeholder!  Replace with real badge for python/cpython before merge
+.. image:: https://ci.appveyor.com/api/projects/status/a5qxbg7239a2rjhx?svg=true
+   :alt: CPython build status on Appveyor
+   :target: https://ci.appveyor.com/project/zware/cpython
+
 .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
