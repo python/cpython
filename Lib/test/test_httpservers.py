@@ -475,7 +475,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         response = self.request(self.base_url + '/test', headers=headers)
         self.check_status_and_reason(response, HTTPStatus.OK)
 
-        # build datetime object : one hours after last modification
+        # build datetime object : one hour after last modification
         new_dt = [dt[0]] + [dt[1] + 1] + list(dt[2:7])
         new_dt = datetime.datetime(*new_dt)
         headers = Message()
