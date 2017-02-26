@@ -133,6 +133,12 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
    .. versionadded:: 3.5
 
+   .. method:: __bool__()
+
+      Returns True if :attr:`returncode` is zero, otherwise False.
+
+   .. versionadded:: 3.7
+
 .. data:: DEVNULL
 
    Special value that can be used as the *stdin*, *stdout* or *stderr* argument
