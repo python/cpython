@@ -687,25 +687,30 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         except OSError:
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
             return None
+
+        fs = os.fstat(f.fileno())
+            
         try:
             # Use browser cache if possible
-            if "If-Modified-Since" in self.headers:
+            if "If-Modified-Since" in self.headers \
+                    and not "If-None-Match" in self.headers:
                 # compare If-Modified-Since and date of last file modification
-                fs = os.stat(path)
                 ims = email.utils.parsedate(self.headers["If-Modified-Since"])
                 if ims is not None:
-                    ims_datetime = datetime.datetime(*ims[:7])
-                    ims_dtstring = ims_datetime.strftime("%d %b %Y %H:%M:%S")
-                    last_modif = datetime.datetime.utcfromtimestamp(
-                        fs.st_mtime).strftime("%d %b %Y %H:%M:%S")
-                    if last_modif <= ims_dtstring:
+                    # If-Modified-Since is UTC, rounded to the second
+                    tzinfo = datetime.timezone(datetime.timedelta(hours=0))
+                    ims_datetime = datetime.datetime(*ims[:7], tzinfo=tzinfo)
+                    # compare to UTC datetime of last modification, also 
+                    # rounded to the second
+                    mtime = int(fs.st_mtime)
+                    last_modif = datetime.datetime.fromtimestamp(mtime, tzinfo)
+                    if last_modif <= ims_datetime:
                         self.send_response(HTTPStatus.NOT_MODIFIED)
                         self.end_headers()
                         f.close()
                         return
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", ctype)
-            fs = os.fstat(f.fileno())
             self.send_header("Content-Length", str(fs[6]))
             self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
             self.end_headers()
@@ -1228,5 +1233,4 @@ if __name__ == '__main__':
     else:
         handler_class = SimpleHTTPRequestHandler
     test(HandlerClass=handler_class, port=args.port, bind=args.bind)
-
 
