@@ -2,7 +2,7 @@ import os
 import sys
 import textwrap
 import unittest
-import subprocess
+from subprocess import Popen, PIPE
 from test import support
 from test.support.script_helper import assert_python_ok
 
@@ -61,12 +61,11 @@ class TestTool(unittest.TestCase):
     """)
 
     def test_stdin_stdout(self):
-        with subprocess.Popen(
-                (sys.executable, '-m', 'json.tool'),
-                stdin=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+        args = sys.executable, '-m', 'json.tool'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
             out, err = proc.communicate(self.data.encode())
         self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
-        self.assertEqual(err, None)
+        self.assertEqual(err, b'')
 
     def _create_infile(self):
         infile = support.TESTFN
@@ -113,4 +112,26 @@ class TestTool(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(),
                          self.expect_without_sort_keys.encode().splitlines())
+        self.assertEqual(err, b'')
+
+    def test_indent(self):
+        json_stdin = b'[1, 2]'
+        expect = textwrap.dedent(b'''\
+        [
+          1,
+          2
+        ]
+        ''')
+        args = sys.executable, '-m', 'json.tool', '--indent', '2'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+            json_stdout, err = proc.communicate(json_stdin)
+        self.assertEqual(expect.splitlines(), json_stdout.splitlines())
+        self.assertEqual(err, b'')
+
+    def test_no_indent(self):
+        json_stdin = b'[1, 2]'
+        args = sys.executable, '-m', 'json.tool', '--no-indent'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+            json_stdout, err = proc.communicate(json_stdin)
+        self.assertEqual(json_stdin, json_stdout)
         self.assertEqual(err, b'')
