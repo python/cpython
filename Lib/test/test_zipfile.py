@@ -2,6 +2,7 @@ import contextlib
 import io
 import os
 import importlib.util
+import pathlib
 import posixpath
 import time
 import struct
@@ -147,6 +148,12 @@ class AbstractTestsWithSourceFile:
     def test_open(self):
         for f in get_files(self):
             self.zip_open_test(f, self.compression)
+
+    def test_open_with_pathlike(self):
+        path = pathlib.Path(TESTFN2)
+        self.zip_open_test(path, self.compression)
+        with zipfile.ZipFile(path, "r", self.compression) as zipfp:
+            self.assertIsInstance(zipfp.filename, str)
 
     def zip_random_open_test(self, f, compression):
         self.make_test_archive(f, compression)

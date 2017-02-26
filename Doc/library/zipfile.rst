@@ -132,8 +132,9 @@ ZipFile Objects
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True)
 
-   Open a ZIP file, where *file* can be either a path to a file (a string) or a
-   file-like object.  The *mode* parameter should be ``'r'`` to read an existing
+   Open a ZIP file, where *file* can be a path to a file (a string), a
+   file-like object or a :term:`path-like object`.
+   The *mode* parameter should be ``'r'`` to read an existing
    file, ``'w'`` to truncate and write a new file, ``'a'`` to append to an
    existing file, or ``'x'`` to exclusively create and write a new file.
    If *mode* is ``'x'`` and *file* refers to an existing file,
@@ -182,6 +183,9 @@ ZipFile Objects
    .. versionchanged:: 3.6
       Previously, a plain :exc:`RuntimeError` was raised for unrecognized
       compression values.
+
+   .. versionchanged:: 3.6.1
+      The *file* parameter accepts a :term:`path-like object`.
 
 
 .. method:: ZipFile.close()
@@ -403,6 +407,9 @@ ZipFile Objects
 
 The following data attributes are also available:
 
+.. attribute:: ZipFile.filename
+
+   Name of the ZIP file.
 
 .. attribute:: ZipFile.debug
 

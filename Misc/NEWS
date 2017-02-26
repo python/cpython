@@ -249,6 +249,9 @@ Extension Modules
 Library
 -------
 
+- bpo-28231: Make file parameter of ZipFile accept PathLike objects.
+  Initial patch by Ethan Furman.
+
 - bpo-28518: Start a transaction implicitly before a DML statement.
   Patch by Aviv Palivoda.
 
