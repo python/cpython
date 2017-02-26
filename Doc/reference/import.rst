@@ -431,7 +431,7 @@ on the module object.  If the method returns ``None``, the
 import machinery will create the new module itself.
 
 .. versionadded:: 3.4
-   The create_module() method of loaders.
+   The :meth:`~importlib.abc.Loader.create_module` method of loaders.
 
 .. versionchanged:: 3.4
    The :meth:`~importlib.abc.Loader.load_module` method was replaced by
