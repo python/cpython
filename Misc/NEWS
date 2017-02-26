@@ -249,6 +249,9 @@ Extension Modules
 Library
 -------
 
+- bpo-28624: Add a test that checks that cwd parameter of Popen() accepts
+  PathLike objects.  Patch by Sayan Chowdhury.
+
 - Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
   '~' in the set of characters that is not quoted by default. Patch by
   Christian Theune and Ratnadeep Debnath.
@@ -916,9 +919,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #28624: Make the `cwd` argument to `subprocess.Popen` accept a
-  `PathLike`.
 
 - Issue #29085: Allow random.Random.seed() to use high quality OS randomness
   rather than the pid and time.
