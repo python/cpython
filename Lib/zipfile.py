@@ -1069,10 +1069,10 @@ class ZipFile:
         self._comment = b''
 
         # Check if we were passed a file-like object
-        if isinstance(file, str):
+        if isinstance(file, (str, os.PathLike)):
             # No, it's a filename
             self._filePassed = 0
-            self.filename = file
+            self.filename = os.fspath(file)
             modeDict = {'r' : 'rb', 'w': 'w+b', 'x': 'x+b', 'a' : 'r+b',
                         'r+b': 'w+b', 'w+b': 'wb', 'x+b': 'xb'}
             filemode = modeDict[mode]
