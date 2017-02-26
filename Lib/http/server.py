@@ -699,11 +699,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     self.headers["If-Modified-Since"])
                 if (ims is not None and
                         ims.tzinfo is datetime.timezone.utc):
-                    # compare to UTC datetime of last modification, 
-                    # rounded to the second
-                    mtime = int(fs.st_mtime)
-                    last_modif = datetime.datetime.fromtimestamp(mtime, 
+                    # compare to UTC datetime of last modification
+                    last_modif = datetime.datetime.fromtimestamp(fs.st_mtime, 
                         ims.tzinfo)
+                    # remove microseconds, like in If-Modified-Since
+                    last_modif = last_modif.replace(microsecond=0)
                     if last_modif <= ims:
                         self.send_response(HTTPStatus.NOT_MODIFIED)
                         self.end_headers()
