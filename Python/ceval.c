@@ -2810,13 +2810,16 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         TARGET(IMPORT_STAR) {
             PyObject *from = POP(), *locals;
             int err;
-            if (PyFrame_FastToLocalsWithError(f) < 0)
+            if (PyFrame_FastToLocalsWithError(f) < 0) {
+                Py_DECREF(from);
                 goto error;
+            }
 
             locals = f->f_locals;
             if (locals == NULL) {
                 PyErr_SetString(PyExc_SystemError,
                     "no locals found during 'import *'");
+                Py_DECREF(from);
                 goto error;
             }
             err = import_all_from(locals, from);
