@@ -449,7 +449,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         response = self.request(self.base_url + '/test')
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
         last_modif = response.headers['Last-modified']
-
+        
         # send new request to the same url with request header 
         # If-Modified-Since set to Last-Modified : must return 304
         from email.message import Message
@@ -466,23 +466,22 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         # with If-Modified-Since earlier than Last-Modified, must return 200
         import datetime
         import email.utils
-        dt = email.utils.parsedate(last_modif)
-        # build datetime object : one year before last modification
-        old_dt = [dt[0] - 1] + list(dt[1:7])
-        old_dt = datetime.datetime(*old_dt)
+        dt = email.utils.parsedate_to_datetime(last_modif)
+        # build datetime object : 365 days before last modification
+        old_dt = dt - datetime.timedelta(days=365)
         headers = Message()
-        headers['If-Modified-Since'] = email.utils.format_datetime(old_dt)
+        headers['If-Modified-Since'] = email.utils.format_datetime(old_dt,
+            usegmt=True)
         response = self.request(self.base_url + '/test', headers=headers)
         self.check_status_and_reason(response, HTTPStatus.OK)
 
-        # build datetime object : one hour after last modification
-        new_dt = [dt[0]] + [dt[1] + 1] + list(dt[2:7])
-        new_dt = datetime.datetime(*new_dt)
+        # one hour after last modification : must return 304
+        new_dt = dt + datetime.timedelta(hours=1)
         headers = Message()
-        headers['If-Modified-Since'] = email.utils.format_datetime(new_dt)
+        headers['If-Modified-Since'] = email.utils.format_datetime(new_dt,
+            usegmt=True)
         response = self.request(self.base_url + '/test', headers=headers)
-        self.check_status_and_reason(response, HTTPStatus.NOT_MODIFIED)
-        
+        self.check_status_and_reason(response, HTTPStatus.NOT_MODIFIED)        
 
     def test_invalid_requests(self):
         response = self.request('/', method='FOO')
