@@ -16,7 +16,7 @@ class TestTool(unittest.TestCase):
             :"yes"}  ]
            """
 
-    expect_without_sort_keys = textwrap.dedent("""\
+    expect_without_sort_keys = textwrap.dedent(r"""\
     [
         [
             "blorpie"
@@ -26,7 +26,7 @@ class TestTool(unittest.TestCase):
         ],
         [],
         "d-shtaeou",
-        "\xA7 \N{snake} \u03B4 and \U0001D037",
+        "\u00a7 \ud83d\udc0d \u03b4 and \ud834\udc3",
         "i-vhbjkhnth",
         {
             "nifty": 87
@@ -38,7 +38,7 @@ class TestTool(unittest.TestCase):
     ]
     """)
 
-    expect = textwrap.dedent("""\
+    expect = textwrap.dedent(r"""\
     [
         [
             "blorpie"
@@ -48,7 +48,7 @@ class TestTool(unittest.TestCase):
         ],
         [],
         "d-shtaeou",
-        "\xA7 \N{snake} \u03B4 and \U0001D037",
+        "\u00a7 \ud83d\udc0d \u03b4 and \ud834\udc37",
         "i-vhbjkhnth",
         {
             "nifty": 87
