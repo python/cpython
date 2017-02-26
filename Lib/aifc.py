@@ -303,6 +303,8 @@ class Aifc_read:
     # _ssnd_chunk -- instantiation of a chunk class for the SSND chunk
     # _framesize -- size of one frame in the file
 
+    _file = None
+
     def initfp(self, file):
         self._version = 0
         self._convert = None
@@ -371,7 +373,7 @@ class Aifc_read:
         self._soundpos = 0
 
     def close(self):
-        file = getattr(self, '_file')
+        file = self._file
         if file is not None:
             self._file = None
             file.close()
@@ -546,6 +548,8 @@ class Aifc_write:
     # _nframeswritten -- the number of audio frames actually written
     # _datalength -- the size of the audio samples written to the header
     # _datawritten -- the size of the audio samples actually written
+
+    _file = None
 
     def __init__(self, f):
         if isinstance(f, str):
@@ -730,7 +734,7 @@ class Aifc_write:
             self._patchheader()
 
     def close(self):
-        if getattr(self, '_file', None) is None:
+        if self._file is None:
             return
         try:
             self._ensure_header_written(0)
