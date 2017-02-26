@@ -464,8 +464,11 @@ import machinery will create the new module itself.
 
 .. versionchanged:: 3.5
    A :exc:`DeprecationWarning` is raised when ``exec_module()`` is defined but
-   ``create_module()`` is not. Starting in Python 3.6 it will be an error to not
-   define ``create_module()`` on a loader attached to a ModuleSpec.
+   ``create_module()`` is not.
+
+.. versionchanged:: 3.6
+   An :exc:`ImportError` is raised when ``exec_module()`` is defined but
+   ``create_module`` is not.
 
 Submodules
 ----------
