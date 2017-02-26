@@ -2641,6 +2641,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             if ((x = f->f_locals) == NULL) {
                 PyErr_SetString(PyExc_SystemError,
                     "no locals found during 'import *'");
+                Py_DECREF(v);
                 break;
             }
             READ_TIMESTAMP(intr0);
