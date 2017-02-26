@@ -26,10 +26,11 @@ def main():
     parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'),
                         help='write the output of infile to outfile')
     parser.add_argument('--no-ensure-ascii', action='store_true', default=False,
-                        help='Do not set ensure_ascii to escape non-ASCII characters')
+                        help='Do not escape non-ASCII characters in output.')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--indent', default=4, type=int,
-                       help='Indent level for pretty-printing.')
+                       help='Indent level (number of spaces) for '
+                       'pretty-printing. Defaults to 4.')
     group.add_argument('--no-indent', action='store_const', dest='indent',
                        const=None, help='Use compact mode.')
     parser.add_argument('--sort-keys', action='store_true', default=False,
