@@ -110,6 +110,12 @@ urllib.parse
 adding `~` to the set of characters that is never quoted by default.
 (Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
 
+http.server
+-----------
+:class:`SimpleHTTPRequestHandler` supports the HTTP If-Modified-Since header.
+The server returns the 304 response status if the target file was not
+modified after the datetime specified in the header.
+(Contributed by Pierre Quentel in :issue:`29654`.)
 
 Optimizations
 =============
