@@ -303,7 +303,7 @@ class Aifc_read:
     # _ssnd_chunk -- instantiation of a chunk class for the SSND chunk
     # _framesize -- size of one frame in the file
 
-    _file = None
+    _file = None  # Set here since __del__ checks it
 
     def initfp(self, file):
         self._version = 0
@@ -549,7 +549,7 @@ class Aifc_write:
     # _datalength -- the size of the audio samples written to the header
     # _datawritten -- the size of the audio samples actually written
 
-    _file = None
+    _file = None  # Set here since __del__ checks it
 
     def __init__(self, f):
         if isinstance(f, str):
