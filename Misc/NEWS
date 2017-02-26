@@ -252,6 +252,9 @@ Library
 - bpo-28624: Add a test that checks that cwd parameter of Popen() accepts
   PathLike objects.  Patch by Sayan Chowdhury.
 
+- bpo-28518: Start a transaction implicitly before a DML statement.
+  Patch by Aviv Palivoda.
+
 - Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
   '~' in the set of characters that is not quoted by default. Patch by
   Christian Theune and Ratnadeep Debnath.
