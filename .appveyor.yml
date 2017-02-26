@@ -1,4 +1,5 @@
 version: 3.7.0a0.{build}
+clone_depth: 5
 build_script:
 - cmd: PCbuild\build.bat -e
 test_script:
