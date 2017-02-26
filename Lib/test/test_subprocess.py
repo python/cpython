@@ -2550,6 +2550,22 @@ class Win32ProcessTestCase(BaseTestCase):
         subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
                         startupinfo=startupinfo)
 
+    def test_startupinfo_keywords(self):
+        # startupinfo argument
+        # We use hardcoded constants, because we do not want to
+        # depend on win32all.
+        STARTF_USERSHOWWINDOW = 1
+        SW_MAXIMIZE = 3
+        startupinfo = subprocess.STARTUPINFO(
+            dwFlags=STARTF_USERSHOWWINDOW,
+            wShowWindow=SW_MAXIMIZE
+        )
+        # Since Python is a console process, it won't be affected
+        # by wShowWindow, but the argument should be silently
+        # ignored
+        subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
+                        startupinfo=startupinfo)
+
     def test_creationflags(self):
         # creationflags argument
         CREATE_NEW_CONSOLE = 16

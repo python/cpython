@@ -373,12 +373,8 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.right, 3)
         self.assertEqual(x.lineno, 0)
 
-        # node raises exception when not given enough arguments
-        self.assertRaises(TypeError, ast.BinOp, 1, 2)
         # node raises exception when given too many arguments
         self.assertRaises(TypeError, ast.BinOp, 1, 2, 3, 4)
-        # node raises exception when not given enough arguments
-        self.assertRaises(TypeError, ast.BinOp, 1, 2, lineno=0)
         # node raises exception when given too many arguments
         self.assertRaises(TypeError, ast.BinOp, 1, 2, 3, 4, lineno=0)
 
@@ -536,6 +532,7 @@ class ASTHelpers_Test(unittest.TestCase):
 
         node = ast.parse('async def foo():\n  """spam\n  ham"""')
         self.assertEqual(ast.get_docstring(node.body[0]), 'spam\nham')
+        self.assertIsNone(ast.get_docstring(ast.parse('')))
 
     def test_literal_eval(self):
         self.assertEqual(ast.literal_eval('[1, 2, 3]'), [1, 2, 3])

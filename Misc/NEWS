@@ -10,7 +10,10 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
-- bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX. 
+- bpo-28598: Support __rmod__ for subclasses of str being called before
+  str.__mod__.  Patch by Martijn Pieters.
+
+- bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX.
   Patch by Matthieu Dartiailh.
 
 - bpo-29602: Fix incorrect handling of signed zeros in complex constructor for
@@ -19,6 +22,7 @@ Core and Builtins
 
 - bpo-29347: Fixed possibly dereferencing undefined pointers
   when creating weakref objects.
+
 - bpo-29463: Add ``docstring`` field to Module, ClassDef, FunctionDef,
   and AsyncFunctionDef ast nodes.  docstring is not first stmt in their body
   anymore.  It affects ``co_firstlineno`` and ``co_lnotab`` of code object
@@ -248,6 +252,10 @@ Library
 - bpo-28518: Start a transaction implicitly before a DML statement.
   Patch by Aviv Palivoda.
 
+- Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
+  '~' in the set of characters that is not quoted by default. Patch by
+  Christian Theune and Ratnadeep Debnath.
+
 - bpo-29532: Altering a kwarg dictionary passed to functools.partial()
   no longer affects a partial object after creation.
 
@@ -431,6 +439,11 @@ Library
 
 - Issue #23262: The webbrowser module now supports Firefox 36+ and derived
   browsers.  Based on patch by Oleg Broytman.
+
+- Issue #24241: The webbrowser in an X environment now prefers using the
+  default browser directly. Also, the webbrowser register() function now has
+  a documented 'preferred' argument, to specify browsers to be returned by
+  get() with no arguments. Patch by David Steele
 
 - Issue #27939: Fixed bugs in tkinter.ttk.LabeledScale and tkinter.Scale caused
   by representing the scale as float value internally in Tk.  tkinter.IntVar
@@ -733,6 +746,11 @@ C API
 
 Documentation
 -------------
+
+- bpo-28929: Link the documentation to its source file on GitHub.
+
+- bpo-25008: Document smtpd.py as effectively deprecated and add a pointer to
+  aiosmtpd, a third-party asyncio-based replacement.
 
 - Issue #26355: Add canonical header link on each page to corresponding major
   version of the documentation. Patch by Matthias Bussonnier.
@@ -1227,6 +1245,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #26128: Added keyword-only arguments support for
+  subprocess.STARTUPINFO
 
 - Issue #27517: LZMA compressor and decompressor no longer raise exceptions if
   given empty data twice.  Patch by Benjamin Fogle.

@@ -451,12 +451,16 @@ task isn't already covered by the URL parsing functions above.
 .. function:: quote(string, safe='/', encoding=None, errors=None)
 
    Replace special characters in *string* using the ``%xx`` escape. Letters,
-   digits, and the characters ``'_.-'`` are never quoted. By default, this
+   digits, and the characters ``'_.-~'`` are never quoted. By default, this
    function is intended for quoting the path section of URL. The optional *safe*
    parameter specifies additional ASCII characters that should not be quoted
    --- its default value is ``'/'``.
 
    *string* may be either a :class:`str` or a :class:`bytes`.
+
+   .. versionchanged:: 3.7
+      Moved from RFC 2396 to RFC 3986 for quoting URL strings. "~" is now
+      included in the set of reserved characters.
 
    The optional *encoding* and *errors* parameters specify how to deal with
    non-ASCII characters, as accepted by the :meth:`str.encode` method.

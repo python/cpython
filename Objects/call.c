@@ -317,8 +317,8 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
     if (nk != 0) {
         Py_ssize_t pos, i;
 
-        /* Issue #29318: Caller and callee functions must not share the
-           dictionary: kwargs must be copied. */
+        /* bpo-29318, bpo-27840: Caller and callee functions must not share
+           the dictionary: kwargs must be copied. */
         kwtuple = PyTuple_New(2 * nk);
         if (kwtuple == NULL) {
             return NULL;
