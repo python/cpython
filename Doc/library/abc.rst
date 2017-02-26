@@ -221,9 +221,14 @@ The :mod:`abc` module also provides the following decorators:
       multiple-inheritance.
 
 
-The :mod:`abc` module also support following legacy builtin decorators:
+The :mod:`abc` module also supports the following legacy builtin decorators:
 
 .. decorator:: abstractclassmethod
+
+   .. versionadded:: 3.2
+   .. deprecated:: 3.3
+       It is now possible to use :class:`classmethod` with
+       :func:`abstractmethod`, making this decorator redundant.
 
    A subclass of the built-in :func:`classmethod`, indicating an abstract
    classmethod. Otherwise it is similar to :func:`abstractmethod`.
@@ -238,13 +243,13 @@ The :mod:`abc` module also support following legacy builtin decorators:
           def my_abstract_classmethod(cls, ...):
               ...
 
-   .. versionadded:: 3.2
-   .. deprecated:: 3.3
-       It is now possible to use :class:`classmethod` with
-       :func:`abstractmethod`, making this decorator redundant.
-
 
 .. decorator:: abstractstaticmethod
+
+   .. versionadded:: 3.2
+   .. deprecated:: 3.3
+       It is now possible to use :class:`staticmethod` with
+       :func:`abstractmethod`, making this decorator redundant.
 
    A subclass of the built-in :func:`staticmethod`, indicating an abstract
    staticmethod. Otherwise it is similar to :func:`abstractmethod`.
@@ -259,13 +264,13 @@ The :mod:`abc` module also support following legacy builtin decorators:
           def my_abstract_staticmethod(...):
               ...
 
-   .. versionadded:: 3.2
-   .. deprecated:: 3.3
-       It is now possible to use :class:`staticmethod` with
-       :func:`abstractmethod`, making this decorator redundant.
-
 
 .. decorator:: abstractproperty(fget=None, fset=None, fdel=None, doc=None)
+
+   .. deprecated:: 3.3
+       It is now possible to use :class:`property`, :meth:`property.getter`,
+       :meth:`property.setter` and :meth:`property.deleter` with
+       :func:`abstractmethod`, making this decorator redundant.
 
    A subclass of the built-in :func:`property`, indicating an abstract
    property.
@@ -307,12 +312,6 @@ The :mod:`abc` module also support following legacy builtin decorators:
           @C.x.setter
           def x(self, val):
               ...
-
-
-   .. deprecated:: 3.3
-       It is now possible to use :class:`property`, :meth:`property.getter`,
-       :meth:`property.setter` and :meth:`property.deleter` with
-       :func:`abstractmethod`, making this decorator redundant.
 
 
 The :mod:`abc` module also provides the following functions:
