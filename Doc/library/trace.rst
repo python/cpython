@@ -16,7 +16,7 @@ or from the command line.
 .. seealso::
 
    `Coverage.py <https://coverage.readthedocs.io/>`_
-      A popular third-party coverage tools that provides very nice HTML
+      A popular third-party coverage tool that provides HTML
       output along with advanced features such as branch coverage.
 
 .. _trace-cli:
