@@ -3417,7 +3417,7 @@ fi
 AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  clock confstr ctermid dup3 execv faccessat fchmod fchmodat fchown fchownat \
  fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
- futimens futimes gai_strerror getentropy \
+ futimens futimes gai_strerror \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
  initgroups kill killpg lchmod lchown linkat lstat lutimes mmap \
@@ -3732,26 +3732,48 @@ AC_CHECK_FUNCS(gettimeofday,
     ])
 )
 
-AC_CHECK_FUNCS(clock_gettime, [], [
-    AC_CHECK_LIB(rt, clock_gettime, [
-        LIBS="$LIBS -lrt"
-        AC_DEFINE(HAVE_CLOCK_GETTIME, 1)
-        AC_DEFINE(TIMEMODULE_LIB, [rt],
-                  [Library needed by timemodule.c: librt may be needed for clock_gettime()])
-    ])
-])
+AC_MSG_CHECKING([for macOS SDK pre-Sierra])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef __APPLE__
+#  include <AvailabilityMacros.h>
+#  ifndef MAC_OS_X_VERSION_10_12
+#    define MAC_OS_X_VERSION_10_12 101200
+#  endif
+#  if defined(MAC_OS_X_VERSION_MIN_REQUIRED)
+#    if MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_12
+#      error "pre-Sierra"
+#    endif
+#  endif
+#endif
+]], [[]])],
+   [on_macos_pre_sierra=no ; AC_MSG_RESULT([no])],
+   [on_macos_pre_sierra=yes; AC_MSG_RESULT([yes])])
 
-AC_CHECK_FUNCS(clock_getres, [], [
-    AC_CHECK_LIB(rt, clock_getres, [
-        AC_DEFINE(HAVE_CLOCK_GETRES, 1)
-    ])
-])
 
-AC_CHECK_FUNCS(clock_settime, [], [
-    AC_CHECK_LIB(rt, clock_settime, [
-        AC_DEFINE(HAVE_CLOCK_SETTIME, 1)
+if test "$on_macos_pre_sierra" = "no"; then
+    AC_CHECK_FUNCS(getentropy)
+
+    AC_CHECK_FUNCS(clock_gettime, [], [
+        AC_CHECK_LIB(rt, clock_gettime, [
+            LIBS="$LIBS -lrt"
+            AC_DEFINE(HAVE_CLOCK_GETTIME, 1)
+            AC_DEFINE(TIMEMODULE_LIB, [rt],
+                      [Library needed by timemodule.c: librt may be needed for clock_gettime()])
+        ])
     ])
-])
+
+    AC_CHECK_FUNCS(clock_getres, [], [
+        AC_CHECK_LIB(rt, clock_getres, [
+            AC_DEFINE(HAVE_CLOCK_GETRES, 1)
+        ])
+    ])
+
+    AC_CHECK_FUNCS(clock_settime, [], [
+        AC_CHECK_LIB(rt, clock_settime, [
+            AC_DEFINE(HAVE_CLOCK_SETTIME, 1)
+        ])
+    ])
+fi
 
 AC_MSG_CHECKING(for major, minor, and makedev)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[

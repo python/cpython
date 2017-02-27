@@ -11256,7 +11256,7 @@ fi
 for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  clock confstr ctermid dup3 execv faccessat fchmod fchmodat fchown fchownat \
  fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
- futimens futimes gai_strerror getentropy \
+ futimens futimes gai_strerror \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
  initgroups kill killpg lchmod lchown linkat lstat lutimes mmap \
@@ -12488,7 +12488,55 @@ fi
 done
 
 
-for ac_func in clock_gettime
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for macOS SDK pre-Sierra" >&5
+$as_echo_n "checking for macOS SDK pre-Sierra... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#ifdef __APPLE__
+#  include <AvailabilityMacros.h>
+#  ifndef MAC_OS_X_VERSION_10_12
+#    define MAC_OS_X_VERSION_10_12 101200
+#  endif
+#  if defined(MAC_OS_X_VERSION_MIN_REQUIRED)
+#    if MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_12
+#      error "pre-Sierra"
+#    endif
+#  endif
+#endif
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  on_macos_pre_sierra=no ; { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+else
+  on_macos_pre_sierra=yes; { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+
+if test "$on_macos_pre_sierra" = "no"; then
+    for ac_func in getentropy
+do :
+  ac_fn_c_check_func "$LINENO" "getentropy" "ac_cv_func_getentropy"
+if test "x$ac_cv_func_getentropy" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_GETENTROPY 1
+_ACEOF
+
+fi
+done
+
+
+    for ac_func in clock_gettime
 do :
   ac_fn_c_check_func "$LINENO" "clock_gettime" "ac_cv_func_clock_gettime"
 if test "x$ac_cv_func_clock_gettime" = xyes; then :
@@ -12498,7 +12546,7 @@ _ACEOF
 
 else
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clock_gettime in -lrt" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clock_gettime in -lrt" >&5
 $as_echo_n "checking for clock_gettime in -lrt... " >&6; }
 if ${ac_cv_lib_rt_clock_gettime+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -12536,8 +12584,8 @@ fi
 $as_echo "$ac_cv_lib_rt_clock_gettime" >&6; }
 if test "x$ac_cv_lib_rt_clock_gettime" = xyes; then :
 
-        LIBS="$LIBS -lrt"
-        $as_echo "#define HAVE_CLOCK_GETTIME 1" >>confdefs.h
+            LIBS="$LIBS -lrt"
+            $as_echo "#define HAVE_CLOCK_GETTIME 1" >>confdefs.h
 
 
 $as_echo "#define TIMEMODULE_LIB rt" >>confdefs.h
@@ -12550,7 +12598,7 @@ fi
 done
 
 
-for ac_func in clock_getres
+    for ac_func in clock_getres
 do :
   ac_fn_c_check_func "$LINENO" "clock_getres" "ac_cv_func_clock_getres"
 if test "x$ac_cv_func_clock_getres" = xyes; then :
@@ -12560,7 +12608,7 @@ _ACEOF
 
 else
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clock_getres in -lrt" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clock_getres in -lrt" >&5
 $as_echo_n "checking for clock_getres in -lrt... " >&6; }
 if ${ac_cv_lib_rt_clock_getres+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -12598,7 +12646,7 @@ fi
 $as_echo "$ac_cv_lib_rt_clock_getres" >&6; }
 if test "x$ac_cv_lib_rt_clock_getres" = xyes; then :
 
-        $as_echo "#define HAVE_CLOCK_GETRES 1" >>confdefs.h
+            $as_echo "#define HAVE_CLOCK_GETRES 1" >>confdefs.h
 
 
 fi
@@ -12608,7 +12656,7 @@ fi
 done
 
 
-for ac_func in clock_settime
+    for ac_func in clock_settime
 do :
   ac_fn_c_check_func "$LINENO" "clock_settime" "ac_cv_func_clock_settime"
 if test "x$ac_cv_func_clock_settime" = xyes; then :
@@ -12618,7 +12666,7 @@ _ACEOF
 
 else
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clock_settime in -lrt" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clock_settime in -lrt" >&5
 $as_echo_n "checking for clock_settime in -lrt... " >&6; }
 if ${ac_cv_lib_rt_clock_settime+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -12656,7 +12704,7 @@ fi
 $as_echo "$ac_cv_lib_rt_clock_settime" >&6; }
 if test "x$ac_cv_lib_rt_clock_settime" = xyes; then :
 
-        $as_echo "#define HAVE_CLOCK_SETTIME 1" >>confdefs.h
+            $as_echo "#define HAVE_CLOCK_SETTIME 1" >>confdefs.h
 
 
 fi
@@ -12665,6 +12713,7 @@ fi
 fi
 done
 
+fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for major" >&5
 $as_echo_n "checking for major... " >&6; }
