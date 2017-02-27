@@ -86,7 +86,7 @@ goto end
 
 :build
 if NOT "%PAPER%" == "" (
-    set SPHINXOPTS=-D latex_paper_size=%PAPER% %SPHINXOPTS%
+    set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
 )
 cmd /C %SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . %BUILDDIR%\%*
 
