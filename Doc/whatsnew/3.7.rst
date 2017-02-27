@@ -96,9 +96,13 @@ New Modules
 Improved Modules
 ================
 
-* Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
-  (Contributed by Garvit in :issue:`10379`.)
+locale
+------
 
+Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
+If *monetary* is true, the conversion uses monetary thousands separator and
+grouping strings.
+(Contributed by Garvit in :issue:`10379`.)
 
 unittest.mock
 -------------
