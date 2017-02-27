@@ -354,9 +354,6 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: format(format, val, grouping=False, monetary=False)
 
-   .. deprecated:: 3.7
-      Use `format_string` instead
-
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
    The format follows the conventions of the ``%`` operator.  For floating point
    values, the decimal point is modified if appropriate.  If *grouping* is true,
@@ -367,6 +364,9 @@ The :mod:`locale` module defines the following exception and functions:
 
    Please note that this function will only work for exactly one %char specifier.
    For whole format strings, use :func:`format_string`.
+
+   .. deprecated:: 3.7
+      Use :meth:`format_string` instead
 
 
 .. function:: format_string(format, val, grouping=False, monetary=False)
