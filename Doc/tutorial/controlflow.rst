@@ -143,12 +143,13 @@ We say such an object is :term:`iterable`, that is, suitable as a target for
 functions and constructs that expect something from which they can
 obtain successive items until the supply is exhausted. We have seen that
 the :keyword:`for` statement is such a construct, while an example of function
-that takes an iterable is :func:`sum`:
+that takes an iterable is :func:`sum`::
 
     >>> sum(range(4))  # 0 + 1 + 2 + 3
     6
 
-Later we will see more functions that return iterables and take iterables as arguments.
+Later we will see more functions that return iterables and take iterables as
+arguments.
 
 
 .. _tut-break:
