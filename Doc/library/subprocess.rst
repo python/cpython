@@ -466,9 +466,13 @@ functions.
       The *pass_fds* parameter was added.
 
    If *cwd* is not ``None``, the function changes the working directory to
-   *cwd* before executing the child.  In particular, the function looks for
-   *executable* (or for the first item in *args*) relative to *cwd* if the
-   executable path is a relative path.
+   *cwd* before executing the child.  *cwd* can be a :class:`str` and
+   :term:`path-like <path-like object>` object.  In particular, the function
+   looks for *executable* (or for the first item in *args*) relative to *cwd*
+   if the executable path is a relative path.
+
+   .. versionchanged:: 3.6
+      *cwd* parameter accepts a :term:`path-like object`.
 
    If *restore_signals* is true (the default) all signals that Python has set to
    SIG_IGN are restored to SIG_DFL in the child process before the exec.
@@ -746,7 +750,8 @@ on Windows.
 
    Partial support of the Windows
    `STARTUPINFO <https://msdn.microsoft.com/en-us/library/ms686331(v=vs.85).aspx>`__
-   structure is used for :class:`Popen` creation.
+   structure is used for :class:`Popen` creation. The following attributes can be set
+   by passing them as keyword-only arguments.
 
    .. attribute:: dwFlags
 
@@ -788,6 +793,8 @@ on Windows.
       :data:`SW_HIDE` is provided for this attribute. It is used when
       :class:`Popen` is called with ``shell=True``.
 
+   .. versionchanged:: 3.7
+      *Keyword-only argument* support was added.
 
 Constants
 ^^^^^^^^^
