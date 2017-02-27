@@ -300,9 +300,10 @@ this respect, and is easily configured to use spaces: Take :menuselection:`Tools
 --> Options --> Tabs`, and for file type "Default" set "Tab size" and "Indent
 size" to 4, and select the "Insert spaces" radio button.
 
-If you suspect mixed tabs and spaces are causing problems in leading whitespace,
-run Python with the :option:`-t` switch or run ``Tools/Scripts/tabnanny.py`` to
-check a directory tree in batch mode.
+Python raises :exc:`IndentationError` or :exc:`TabError` if mixed tabs
+and spaces are causing problems in leading whitespace.
+You may also run the :mod:`tabnanny` module to check a directory tree
+in batch mode.
 
 
 How do I check for a keypress without blocking?
