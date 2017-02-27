@@ -90,6 +90,15 @@ class TestPartial:
         p(b=7)
         self.assertEqual(d, {'a':3})
 
+    def test_kwargs_copy(self):
+        # Issue #29532: Altering a kwarg dictionary passed to a constructor
+        # should not affect a partial object after creation
+        d = {'a': 3}
+        p = self.partial(capture, **d)
+        self.assertEqual(p(), ((), {'a': 3}))
+        d['a'] = 5
+        self.assertEqual(p(), ((), {'a': 3}))
+
     def test_arg_combinations(self):
         # exercise special code paths for zero args in either partial
         # object or the caller

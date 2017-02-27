@@ -4348,7 +4348,7 @@ _common_reduce(PyObject *self, int proto)
     if (!copyreg)
         return NULL;
 
-    res = PyEval_CallMethod(copyreg, "_reduce_ex", "(Oi)", self, proto);
+    res = PyObject_CallMethod(copyreg, "_reduce_ex", "Oi", self, proto);
     Py_DECREF(copyreg);
 
     return res;

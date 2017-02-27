@@ -83,6 +83,9 @@ Other Language Changes
   whitespace, not only spaces.
   (Contributed by Robert Xiao in :issue:`28927`.)
 
+* :exc:`ImportError` now displays module name and module ``__file__`` path when
+  ``from ... import ...`` fails. :issue:`29546`.
+
 
 New Modules
 ===========
@@ -103,6 +106,13 @@ unittest.mock
 The :const:`~unittest.mock.sentinel` attributes now preserve their identity
 when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`.
 (Contributed by Serhiy Storchaka in :issue:`20804`.)
+
+urllib.parse
+------------
+
+:func:`urllib.parse.quote` has been updated to from RFC 2396 to RFC 3986,
+adding `~` to the set of characters that is never quoted by default.
+(Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
 
 
 Optimizations
@@ -147,6 +157,17 @@ Deprecated
 - Deprecated :meth:`format` from :mod:`locale`, use the :meth:`format_string`
   instead. (Contributed by Garvit in :issue:`10379`.)
 
+- Methods
+  :meth:`MetaPathFinder.find_module() <importlib.abc.MetaPathFinder.find_module>`
+  (replaced by
+  :meth:`MetaPathFinder.find_spec() <importlib.abc.MetaPathFinder.find_spec>`
+  ) and
+  :meth:`PathEntryFinder.find_loader() <importlib.abc.PathEntryFinder.find_loader>`
+  (replaced by
+  :meth:`PathEntryFinder.find_spec() <importlib.abc.PathEntryFinder.find_spec>`)
+  both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`. (Contributed
+  by Matthias Bussonnier in :issue:`29576`)
+
 
 Removed
 =======
@@ -189,6 +210,12 @@ Changes in the Python API
   Use the :meth:`~http.cookies.Morsel.set` method for setting them.
   (Contributed by Serhiy Storchaka in :issue:`29192`.)
 
+* ``Module``, ``FunctionDef``, ``AsyncFunctionDef``, and
+  ``ClassDef`` AST nodes now have a new ``docstring`` field.
+  The first statement in their body is not considered as a docstring
+  anymore.  ``co_firstlineno`` and ``co_lnotab`` of code object for class
+  and module are affected by this change.
+  (Contributed by INADA Naoki and Eugene Toder in :issue:`29463`.)
 
 CPython bytecode changes
 ------------------------

@@ -5487,7 +5487,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             self.assertEqual(len(dec), msglen * multiplier)
             self.assertEqual(dec, msg * multiplier)
 
-    @support.requires_linux_version(4, 3)  # see test_aes_cbc
+    @support.requires_linux_version(4, 9)  # see issue29324
     def test_aead_aes_gcm(self):
         key = bytes.fromhex('c939cc13397c1d37de6ae0e1cb7c423c')
         iv = bytes.fromhex('b3d8cc017cbb89b39e0f67e2')
@@ -5510,8 +5510,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                 op.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, iv=iv,
                                  assoclen=assoclen, flags=socket.MSG_MORE)
                 op.sendall(assoc, socket.MSG_MORE)
-                op.sendall(plain, socket.MSG_MORE)
-                op.sendall(b'\x00' * taglen)
+                op.sendall(plain)
                 res = op.recv(assoclen + len(plain) + taglen)
                 self.assertEqual(expected_ct, res[assoclen:-taglen])
                 self.assertEqual(expected_tag, res[-taglen:])
@@ -5519,7 +5518,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             # now with msg
             op, _ = algo.accept()
             with op:
-                msg = assoc + plain + b'\x00' * taglen
+                msg = assoc + plain
                 op.sendmsg_afalg([msg], op=socket.ALG_OP_ENCRYPT, iv=iv,
                                  assoclen=assoclen)
                 res = op.recv(assoclen + len(plain) + taglen)
@@ -5530,7 +5529,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             pack_uint32 = struct.Struct('I').pack
             op, _ = algo.accept()
             with op:
-                msg = assoc + plain + b'\x00' * taglen
+                msg = assoc + plain
                 op.sendmsg(
                     [msg],
                     ([socket.SOL_ALG, socket.ALG_SET_OP, pack_uint32(socket.ALG_OP_ENCRYPT)],
@@ -5538,7 +5537,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                      [socket.SOL_ALG, socket.ALG_SET_AEAD_ASSOCLEN, pack_uint32(assoclen)],
                     )
                 )
-                res = op.recv(len(msg))
+                res = op.recv(len(msg) + taglen)
                 self.assertEqual(expected_ct, res[assoclen:-taglen])
                 self.assertEqual(expected_tag, res[-taglen:])
 
@@ -5548,8 +5547,8 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                 msg = assoc + expected_ct + expected_tag
                 op.sendmsg_afalg([msg], op=socket.ALG_OP_DECRYPT, iv=iv,
                                  assoclen=assoclen)
-                res = op.recv(len(msg))
-                self.assertEqual(plain, res[assoclen:-taglen])
+                res = op.recv(len(msg) - taglen)
+                self.assertEqual(plain, res[assoclen:])
 
     @support.requires_linux_version(4, 3)  # see test_aes_cbc
     def test_drbg_pr_sha256(self):

@@ -163,6 +163,9 @@ class MetaPathFinderDefaultsTests(ABCTestHarness):
         # Calling the method is a no-op.
         self.ins.invalidate_caches()
 
+    def test_find_module_warns(self):
+        with self.assertWarns(DeprecationWarning):
+            self.ins.find_module('something', None)
 
 (Frozen_MPFDefaultTests,
  Source_MPFDefaultTests
@@ -189,6 +192,9 @@ class PathEntryFinderDefaultsTests(ABCTestHarness):
         # Should be a no-op.
         self.ins.invalidate_caches()
 
+    def test_find_loader_warns(self):
+        with self.assertWarns(DeprecationWarning):
+            self.ins.find_loader('something')
 
 (Frozen_PEFDefaultTests,
  Source_PEFDefaultTests

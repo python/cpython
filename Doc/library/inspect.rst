@@ -905,10 +905,8 @@ Classes and functions
    are the names of the ``*`` and ``**`` arguments or ``None``.  *locals* is the
    locals dictionary of the given frame.
 
-   .. deprecated:: 3.5
-      Use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      better introspecting API for callables.
+   .. note::
+      This function was inadvertently marked as deprecated in Python 3.5.
 
 
 .. function:: formatargspec(args[, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations[, formatarg, formatvarargs, formatvarkw, formatvalue, formatreturns, formatannotations]])
@@ -944,10 +942,8 @@ Classes and functions
    :func:`getargvalues`.  The format\* arguments are the corresponding optional
    formatting functions that are called to turn names and values into strings.
 
-   .. deprecated:: 3.5
-      Use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      better introspecting API for callables.
+   .. note::
+      This function was inadvertently marked as deprecated in Python 3.5.
 
 
 .. function:: getmro(cls)

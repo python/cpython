@@ -88,9 +88,12 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         if (kw == NULL) {
             pto->kw = PyDict_New();
         }
-        else {
+        else if (Py_REFCNT(kw) == 1) {
             Py_INCREF(kw);
             pto->kw = kw;
+        }
+        else {
+            pto->kw = PyDict_Copy(kw);
         }
     }
     else {
@@ -160,6 +163,9 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kw)
         Py_XINCREF(kwappl);
     }
     else {
+        /* bpo-27840, bpo-29318: dictionary of keyword parameters must be
+           copied, because a function using "**kwargs" can modify the
+           dictionary. */
         kwappl = PyDict_Copy(pto->kw);
         if (kwappl == NULL) {
             Py_XDECREF(argappl);

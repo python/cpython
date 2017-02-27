@@ -574,6 +574,8 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.deque`.
 
+   .. versionadded:: 3.6.1
+
 .. class:: List(list, MutableSequence[T])
 
    Generic version of :class:`list`.
