@@ -18,7 +18,7 @@ from pickle import PicklingError
 from concurrent import futures
 from concurrent.futures._base import (
     PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future)
-from concurrent.futures.process import BrokenProcessPool
+from concurrent.futures.process import BrokenProcessPool, ShutdownExecutorError
 from multiprocessing import get_context
 
 
@@ -50,6 +50,11 @@ def sleep_and_print(t, msg):
     time.sleep(t)
     print(msg)
     sys.stdout.flush()
+
+
+def sleep_and_return(t, x):
+    time.sleep(t)
+    return x
 
 
 class MyObject(object):
@@ -230,6 +235,27 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
 class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, BaseTestCase):
     def _prime_executor(self):
         pass
+
+    @staticmethod
+    def _id(x):
+        return x
+
+    def test_shutdown(self):
+        processes = [p for p in self.executor._processes.values()]
+        self.assertEqual(self.executor.submit(self._id, 42).result(), 42)
+        self.executor.shutdown(wait=True)
+
+        self.assertListEqual([p.exitcode for p in processes],
+                             [0 for _ in processes])
+
+    def test_shutdown_wait(self):
+        processes = [p for p in self.executor._processes.values()]
+        f = self.executor.submit(sleep_and_return, .5, 42)
+        self.executor.shutdown(wait=True)
+        self.assertEqual(f.result(), 42)
+
+        self.assertListEqual([p.exitcode for p in processes],
+                             [0 for _ in processes])
 
     def test_processes_terminate(self):
         self.executor.submit(mul, 21, 2)
@@ -769,11 +795,6 @@ class ExecutorDeadlockTest:
     # faulthandler will print the traceback and exit.
     TIMEOUT = 15
 
-    @classmethod
-    def _sleep_id(cls, x, delay):
-        time.sleep(delay)
-        return x
-
     def _fail_on_deadlock(self, executor):
         # If we did not recover before TIMEOUT seconds,
         # consider that the executor is in a deadlock state
@@ -783,9 +804,7 @@ class ExecutorDeadlockTest:
             faulthandler.dump_traceback(file=f)
             f.seek(0)
             tb = f.read()
-        for p in executor._processes.values():
-            p.terminate()
-        executor.shutdown(wait=True)
+        executor.shutdown(wait=True, kill_workers=False)
         print(f"\nTraceback:\n {tb}", file=sys.__stderr__)
         self.fail(f"Deadlock executor:\n\n{tb}")
 
@@ -882,8 +901,9 @@ class ExecutorDeadlockTest:
                             self._test_getpid, [None] * n_proc)]
                 assert None not in pids
                 res = self.executor.map(
-                    self._sleep_id, repeat(True, 2 * n_proc),
+                    sleep_and_return,
                     [.001 * (j // 2) for j in range(2 * n_proc)],
+                    repeat(True, 2 * n_proc),
                     chunksize=1)
                 assert all(res)
                 res = executor.map(self._test_kill_worker, pids[::-1],
@@ -906,6 +926,25 @@ class ExecutorDeadlockTest:
             executor.submit(self._test_kill_worker, ())
             time.sleep(.01)
             executor.shutdown()
+
+    def test_shutdown_kill(self):
+        """ProcessPoolExecutor does not wait job end and shutdowm with
+        kill_worker flag set to True. Ensure that the future returns
+        ShutdownExecutorError.
+        """
+        from itertools import repeat
+        executor = self.executor_type(max_workers=2,
+                                      ctx=get_context(self.ctx))
+        res1 = executor.map(sleep_and_return, repeat(.001), range(50))
+        res2 = executor.map(sleep_and_return, repeat(.1), range(50))
+        assert list(res1) == list(range(50))
+        # We should get an error as the executor shutdowned before we fetched
+        # the results from the operation.
+        shutdown = TimingWrapper(executor.shutdown)
+        shutdown(wait=True, kill_workers=True)
+        assert shutdown.elapsed < .5
+        with self.assertRaises(ShutdownExecutorError):
+            list(res2)
 
 
 class ProcessPoolForkExecutorDeadlockTest(ProcessPoolForkMixin,
