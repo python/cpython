@@ -947,7 +947,8 @@ SSL Sockets
    the specification of normal, OS-level sockets.  See especially the
    :ref:`notes on non-blocking sockets <ssl-nonblocking>`.
 
-   Usually, :class:`SSLSocket` are not created directly, but using the :meth:`SSLContext.wrap_socket` method.
+   Usually, :class:`SSLSocket` are not created directly, but using the
+   :meth:`SSLContext.wrap_socket` method.
 
    .. versionchanged:: 3.5
       The :meth:`sendfile` method was added.
