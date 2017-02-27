@@ -83,16 +83,6 @@ Library
 - bpo-29110: Fix file object leak in aifc.open() when file is given as a
   filesystem path and is not in valid AIFF format. Patch by Anthony Zhang.
 
-- bpo-22807: Add uuid.SafeUUID and uuid.UUID.is_safe to relay information from
-  the platform about whether generated UUIDs are generated with a
-  multiprocessing safe method.
-
-- bpo-29576: Improve some deprecations in importlib. Some deprecated methods
-  now emit DeprecationWarnings and have better descriptive messages.
-
-- bpo-29534: Fixed different behaviour of Decimal.from_float()
-  for _decimal and _pydecimal. Thanks Andrew Nester.
-
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
   Manuel Krebber, and Łukasz Langa.
