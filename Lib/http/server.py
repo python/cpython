@@ -697,7 +697,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 try:
                     ims = email.utils.parsedate_to_datetime(
                         self.headers["If-Modified-Since"])
-                except:
+                except (TypeError, IndexError, OverflowError, ValueError):
                     # ignore ill-formed values
                     ims = None
                 if ims is not None:
