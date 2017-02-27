@@ -1548,8 +1548,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             PyObject *res;
             if (PyUnicode_CheckExact(dividend) && (
                   !PyUnicode_Check(divisor) || PyUnicode_CheckExact(divisor))) {
-              // fast path; string formatting, but not if the RHS is a str subclass
-              // (see issue28598)
+              /* fast path; string formatting, but not if the RHS is a str subclass
+                 (see issue28598) */
               res = PyUnicode_Format(dividend, divisor);
             } else {
               res = PyNumber_Remainder(dividend, divisor);
