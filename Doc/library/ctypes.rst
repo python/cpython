@@ -1408,8 +1408,6 @@ accessing the function through an attribute caches the result and therefore
 accessing it repeatedly returns the same object each time.  On the other hand,
 accessing it through an index returns a new object each time:
 
-.. doctest::
-
    >>> from ctypes import CDLL
    >>> libc = CDLL("libc.so.6")  # On Linux
    >>> libc.time == libc.time

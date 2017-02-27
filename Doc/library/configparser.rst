@@ -44,7 +44,7 @@ can be customized by end users easily.
 
 .. testsetup::
 
-    import configparser
+   import configparser
 
 
 Quick Start
