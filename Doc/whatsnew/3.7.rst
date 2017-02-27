@@ -93,6 +93,10 @@ New Modules
 Improved Modules
 ================
 
+* Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
+  (Contributed by Garvit in :issue:`10379`.)
+
+
 unittest.mock
 -------------
 
@@ -140,6 +144,9 @@ Deprecated
   ``0x03050400`` and ``0x03060000`` (not including) or ``0x03060100`` or
   higher.  (Contributed by Serhiy Storchaka in :issue:`27867`.)
 
+- Deprecated :meth:`format` from :mod:`locale`, use the :meth:`format_string`
+  instead. (Contributed by Garvit in :issue:`10379`.)
+
 
 Removed
 =======
@@ -157,11 +164,6 @@ API and Feature Removals
 * The ``splitunc()`` function in the :mod:`ntpath` module was deprecated in
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
   function instead.
-
-* Deprecated :meth:`format` from :mod:`locale`, use the :meth:`format_string`
-  instead. Added another argument *monetary* in :meth:`format_string` of
-  :mod:`locale`.
-   (Contributed by Garvit in :issue:`10379`.)
 
 
 Porting to Python 3.7

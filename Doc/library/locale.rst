@@ -383,7 +383,7 @@ The :mod:`locale` module defines the following exception and functions:
    locale settings into account.
 
    .. versionchanged:: 3.7
-   The *monetary* keyword parameter was added.
+      The *monetary* keyword parameter was added.
 
 
 .. function:: currency(val, symbol=True, grouping=False, international=False)
