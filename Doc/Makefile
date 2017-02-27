@@ -4,13 +4,13 @@
 #
 
 # You can set these variables from the command line.
-PYTHON       = python
+PYTHON       = python3
 SPHINXBUILD  = sphinx-build
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
+ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_elements.papersize=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help build html htmlhelp latex text changes linkcheck \
@@ -153,7 +153,7 @@ dist:
 	cp -pPR build/epub/Python.epub dist/python-$(DISTVERSION)-docs.epub
 
 check:
-	$(PYTHON) tools/rstlint.py -i tools -i venv
+	$(PYTHON) tools/rstlint.py -i tools -i venv -i README.rst
 
 serve:
 	../Tools/scripts/serve.py build/html

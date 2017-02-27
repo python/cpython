@@ -48,11 +48,14 @@ class Stats:
     printed.
 
     The sort_stats() method now processes some additional options (i.e., in
-    addition to the old -1, 0, 1, or 2).  It takes an arbitrary number of
-    quoted strings to select the sort order.  For example sort_stats('time',
-    'name') sorts on the major key of 'internal function time', and on the
-    minor key of 'the name of the function'.  Look at the two tables in
-    sort_stats() and get_sort_arg_defs(self) for more examples.
+    addition to the old -1, 0, 1, or 2 that are respectively interpreted as
+    'stdname', 'calls', 'time', and 'cumulative').  It takes an arbitrary number
+    of quoted strings to select the sort order.
+
+    For example sort_stats('time', 'name') sorts on the major key of 'internal
+    function time', and on the minor key of 'the name of the function'.  Look at
+    the two tables in sort_stats() and get_sort_arg_defs(self) for more
+    examples.
 
     All methods return self, so you can string together commands like:
         Stats('foo', 'goo').strip_dirs().sort_stats('calls').\

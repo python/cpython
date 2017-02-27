@@ -2327,11 +2327,12 @@ The :func:`inspect.getargspec` function is deprecated and scheduled to be
 removed in Python 3.6.  (See :issue:`20438` for details.)
 
 The :mod:`inspect` :func:`~inspect.getfullargspec`,
-:func:`~inspect.getargvalues`, :func:`~inspect.getcallargs`,
-:func:`~inspect.getargvalues`, :func:`~inspect.formatargspec`, and
-:func:`~inspect.formatargvalues` functions are deprecated in favor of
-the :func:`inspect.signature` API.
-(Contributed by Yury Selivanov in :issue:`20438`.)
+:func:`~inspect.getcallargs`, and :func:`~inspect.formatargspec` functions are
+deprecated in favor of the :func:`inspect.signature` API. (Contributed by Yury
+Selivanov in :issue:`20438`.)
+
+:func:`~inspect.getargvalues` and :func:`~inspect.formatargvalues` functions
+were inadvertently marked as deprecated with the release of Python 3.5.0.
 
 Use of :const:`re.LOCALE` flag with str patterns or :const:`re.ASCII` is now
 deprecated.  (Contributed by Serhiy Storchaka in :issue:`22407`.)
