@@ -73,8 +73,13 @@ class RegistryError(Exception):
     and unpacking registries fails"""
 
 
-def copyfileobj(fsrc, fdst, length=16*1024):
-    """copy data from file-like object fsrc to file-like object fdst"""
+def copyfileobj(fsrc, fdst, length=None):
+    """Copy data from file-like object `fsrc` to file-like object `fdst`.
+
+    An in-memory buffer size can be set with `length`; the default is 16 KB.
+    """
+    if not length:
+        length = 16*1024
     while 1:
         buf = fsrc.read(length)
         if not buf:
@@ -93,11 +98,13 @@ def _samefile(src, dst):
     return (os.path.normcase(os.path.abspath(src)) ==
             os.path.normcase(os.path.abspath(dst)))
 
-def copyfile(src, dst, *, follow_symlinks=True):
+def copyfile(src, dst, *, follow_symlinks=True, length=None):
     """Copy data from src to dst.
 
     If follow_symlinks is not set and src is a symbolic link, a new
     symlink will be created instead of copying the file it points to.
+
+    An in memory buffer size can be set with `length`; the default is 16 kB.
 
     """
     if _samefile(src, dst):
@@ -119,7 +126,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
     else:
         with open(src, 'rb') as fsrc:
             with open(dst, 'wb') as fdst:
-                copyfileobj(fsrc, fdst)
+                copyfileobj(fsrc, fdst, length=length)
     return dst
 
 def copymode(src, dst, *, follow_symlinks=True):
@@ -224,7 +231,7 @@ def copystat(src, dst, *, follow_symlinks=True):
                 raise
     _copyxattr(src, dst, follow_symlinks=follow)
 
-def copy(src, dst, *, follow_symlinks=True):
+def copy(src, dst, *, follow_symlinks=True, length=None):
     """Copy data and mode bits ("cp src dst"). Return the file's destination.
 
     The destination may be a directory.
@@ -238,11 +245,11 @@ def copy(src, dst, *, follow_symlinks=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-    copyfile(src, dst, follow_symlinks=follow_symlinks)
+    copyfile(src, dst, follow_symlinks=follow_symlinks, length=length)
     copymode(src, dst, follow_symlinks=follow_symlinks)
     return dst
 
-def copy2(src, dst, *, follow_symlinks=True):
+def copy2(src, dst, *, follow_symlinks=True, length=None):
     """Copy data and all stat info ("cp -p src dst"). Return the file's
     destination."
 
@@ -254,7 +261,7 @@ def copy2(src, dst, *, follow_symlinks=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-    copyfile(src, dst, follow_symlinks=follow_symlinks)
+    copyfile(src, dst, follow_symlinks=follow_symlinks, length=length)
     copystat(src, dst, follow_symlinks=follow_symlinks)
     return dst
 
