@@ -469,12 +469,14 @@ class FTP:
         """
         self.voidcmd('TYPE I')
         conn = self.transfercmd(cmd, rest)
-        while 1:
-            buf = fp.read(blocksize)
-            if not buf: break
-            conn.sendall(buf)
-            if callback: callback(buf)
-        conn.close()
+        try:
+            while 1:
+                buf = fp.read(blocksize)
+                if not buf: break
+                conn.sendall(buf)
+                if callback: callback(buf)
+        finally:
+            conn.close()
         return self.voidresp()
 
     def storlines(self, cmd, fp, callback=None):
