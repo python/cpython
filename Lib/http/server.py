@@ -699,8 +699,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                         self.headers["If-Modified-Since"])
                 except (TypeError, IndexError, OverflowError, ValueError):
                     # ignore ill-formed values
-                    ims = None
-                if ims is not None:
+                    pass
+                else:
                     if ims.tzinfo is None:
                         # obsolete format with no timezone, cf.
                         # https://tools.ietf.org/html/rfc7231#section-7.1.1.1
@@ -1243,4 +1243,3 @@ if __name__ == '__main__':
     else:
         handler_class = SimpleHTTPRequestHandler
     test(HandlerClass=handler_class, port=args.port, bind=args.bind)
-
