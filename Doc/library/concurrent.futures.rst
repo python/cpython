@@ -142,7 +142,7 @@ And::
       The *thread_name_prefix* argument was added to allow users to
       control the threading.Thread names for worker threads created by
       the pool for easier debugging.
-      
+
    .. versionadded:: 3.7
       The *max_queue_size* argument was added to allow users to control
       the maximum queue size to not accidentally run out of memory when
