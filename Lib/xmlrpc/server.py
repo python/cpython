@@ -103,7 +103,7 @@ server.handle_request()
 
 # Written by Brian Quinlan (brian@sweetapp.com).
 # Based on code written by Fredrik Lundh.
-
+import functools
 from xmlrpc.client import Fault, dumps, loads, gzip_encode, gzip_decode
 from http.server import BaseHTTPRequestHandler
 import http.server
@@ -407,8 +407,9 @@ class SimpleXMLRPCDispatcher:
                 # _dispatch method found, but it accepts params as a single arg; let's change that
                 dispatch_func = func
 
+                @functools.wraps(dispatch_func)
                 def func(*params):
-                    return dispatch_func(method=method, params=params)
+                    return dispatch_func(method, params)
 
         return func(*params)
 
