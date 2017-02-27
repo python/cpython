@@ -523,7 +523,7 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
             PyOS_snprintf(buffer, sizeof(buffer), "cp%u", cp);
             encoding = buffer;
         }
-#elif defined(CODESET)
+#elif defined(HAVE_NL_LANGINFO) && defined(CODESET)
         const char *codeset = nl_langinfo(CODESET);
         if (codeset != NULL && codeset[0] != 0)
             encoding = codeset;

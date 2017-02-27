@@ -60,7 +60,7 @@ _Py_device_encoding(int fd)
        has no console */
     if (cp != 0)
         return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
-#elif defined(CODESET)
+#elif defined(HAVE_NL_LANGINFO) && defined(CODESET)
     {
         char *codeset = nl_langinfo(CODESET);
         if (codeset != NULL && codeset[0] != 0)
@@ -102,7 +102,7 @@ static int
 check_force_ascii(void)
 {
     char *loc;
-#if defined(HAVE_LANGINFO_H) && defined(CODESET)
+#if defined(HAVE_NL_LANGINFO) && defined(CODESET)
     char *codeset, **alias;
     char encoding[20];   /* longest name: "iso_646.irv_1991\0" */
     int is_ascii;
@@ -134,7 +134,7 @@ check_force_ascii(void)
         return 0;
     }
 
-#if defined(HAVE_LANGINFO_H) && defined(CODESET)
+#if defined(HAVE_NL_LANGINFO) && defined(CODESET)
     codeset = nl_langinfo(CODESET);
     if (!codeset || codeset[0] == '\0') {
         /* CODESET is not set or empty */
