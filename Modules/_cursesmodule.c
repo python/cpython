@@ -1720,22 +1720,18 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
 {
     /* We have to simulate this by writing to a temporary FILE*,
        then reading back, then writing to the argument stream. */
-    char fn[100];
-    int fd = -1;
-    FILE *fp = NULL;
+    FILE *fp;
     PyObject *res = NULL;
 
-    strcpy(fn, "/tmp/py.curses.putwin.XXXXXX");
-    fd = mkstemp(fn);
-    if (fd < 0)
-        return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-    if (_Py_set_inheritable(fd, 0, NULL) < 0)
-        goto exit;
-    fp = fdopen(fd, "wb+");
+    fp = tmpfile();
     if (fp == NULL) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0) {
         goto exit;
     }
+
     res = PyCursesCheckERR(putwin(self->win, fp), "putwin");
     if (res == NULL)
         goto exit;
@@ -1754,11 +1750,7 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
     }
 
 exit:
-    if (fp != NULL)
-        fclose(fp);
-    else if (fd != -1)
-        close(fd);
-    remove(fn);
+    fclose(fp);
     return res;
 }
 
@@ -2278,9 +2270,7 @@ PyCurses_UngetMouse(PyObject *self, PyObject *args)
 static PyObject *
 PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
 {
-    char fn[100];
-    int fd = -1;
-    FILE *fp = NULL;
+    FILE *fp;
     PyObject *data;
     size_t datalen;
     WINDOW *win;
@@ -2289,15 +2279,12 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
 
     PyCursesInitialised;
 
-    strcpy(fn, "/tmp/py.curses.getwin.XXXXXX");
-    fd = mkstemp(fn);
-    if (fd < 0)
-        return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
-    if (_Py_set_inheritable(fd, 0, NULL) < 0)
-        goto error;
-    fp = fdopen(fd, "wb+");
+    fp = tmpfile();
     if (fp == NULL) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0) {
         goto error;
     }
 
@@ -2314,7 +2301,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     datalen = PyBytes_GET_SIZE(data);
     if (fwrite(PyBytes_AS_STRING(data), 1, datalen, fp) != datalen) {
         Py_DECREF(data);
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+        PyErr_SetFromErrno(PyExc_OSError);
         goto error;
     }
     Py_DECREF(data);
@@ -2328,11 +2315,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     res = PyCursesWindow_New(win, NULL);
 
 error:
-    if (fp != NULL)
-        fclose(fp);
-    else if (fd != -1)
-        close(fd);
-    remove(fn);
+    fclose(fp);
     return res;
 }
 
