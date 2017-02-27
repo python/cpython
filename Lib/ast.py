@@ -52,6 +52,8 @@ def literal_eval(node_or_string):
                 return node.value
         elif isinstance(node, Num):
             return node.n
+        elif isinstance(node, AST):
+            raise ValueError('%s not allowed in literal' % type(node).__name__)
         raise ValueError('malformed node or string: ' + repr(node))
     def _convert_signed_num(node):
         if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
