@@ -345,57 +345,44 @@ class XMLRPCTestCase(unittest.TestCase):
 
 
 class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
+    class DispatchExc(Exception):
+        """Raised inside the dispatched functions when checking for chained exceptions"""
+
     def test_call_registered_func(self):
         """Attempts to resolve an explicitly registered function and call it, making sure any exception raised
         inside the function has no other exception chained to it"""
 
         exp_params = 1, 2, 3
-        dispatched = False
-
-        class DispatchExc(Exception):
-            """Raised inside the dispatched func"""
 
         def dispatched_func(*params):
-            nonlocal dispatched
-            dispatched = True
             self.assertEqual(params, exp_params)
-            raise DispatchExc()
+            raise SimpleXMLRPCDispatcherTestCase.DispatchExc()
 
         dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
         dispatcher.register_function(dispatched_func)
-        try:
+        with self.assertRaises(SimpleXMLRPCDispatcherTestCase.DispatchExc) as exc_ctx:
             dispatcher._dispatch(method='dispatched_func', params=exp_params)
-        except DispatchExc as e:
-            self.assertFalse(e.__cause__)
-            self.assertFalse(e.__context__)
-        self.assertTrue(dispatched)
+        self.assertFalse(exc_ctx.exception.__cause__)
+        self.assertFalse(exc_ctx.exception.__context__)
 
     def test_call_instance_func(self):
         """Attempts to resolve a function by accessing a registered instance attribute and call it, making sure any
         exception raised inside the function has no other exception chained to it"""
 
         exp_params = 1, 2, 3
-        dispatched = False
-
-        class DispatchExc(Exception):
-            """Raised inside the dispatched func"""
 
         class DispatchedClass:
             @staticmethod
             def dispatched_func(*params):
-                nonlocal dispatched
-                dispatched = True
                 self.assertEqual(params, exp_params)
-                raise DispatchExc()
+                raise SimpleXMLRPCDispatcherTestCase.DispatchExc()
 
         dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
         dispatcher.register_instance(DispatchedClass())
-        try:
+        with self.assertRaises(SimpleXMLRPCDispatcherTestCase.DispatchExc) as exc_ctx:
             dispatcher._dispatch(method='dispatched_func', params=exp_params)
-        except DispatchExc as e:
-            self.assertFalse(e.__cause__)
-            self.assertFalse(e.__context__)
-        self.assertTrue(dispatched)
+        self.assertFalse(exc_ctx.exception.__cause__)
+        self.assertFalse(exc_ctx.exception.__context__)
 
     def test_call_dispatch_func(self):
         """Attempts to resolve a function by accessing the `_dispatch` function on the registered instance and
@@ -403,28 +390,20 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
 
         exp_method = 'method'
         exp_params = 1, 2, 3
-        dispatched = False
-
-        class DispatchExc(Exception):
-            """Raised inside the `_dispatch` func"""
 
         class TestInstance:
             @staticmethod
             def _dispatch(method, params):
-                nonlocal dispatched
                 self.assertEqual(method, exp_method)
                 self.assertEqual(params, exp_params)
-                dispatched = True
-                raise DispatchExc()
+                raise SimpleXMLRPCDispatcherTestCase.DispatchExc()
 
         dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
         dispatcher.register_instance(TestInstance())
-        try:
+        with self.assertRaises(SimpleXMLRPCDispatcherTestCase.DispatchExc) as exc_ctx:
             dispatcher._dispatch(method=exp_method, params=exp_params)
-        except DispatchExc as e:
-            self.assertFalse(e.__cause__)
-            self.assertFalse(e.__context__)
-        self.assertTrue(dispatched)
+        self.assertFalse(exc_ctx.exception.__cause__)
+        self.assertFalse(exc_ctx.exception.__context__)
 
 
 class HelperTestCase(unittest.TestCase):
