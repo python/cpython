@@ -303,14 +303,14 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_called_once_with(*args, **kwargs)
 
-       Assert that the mock was called exactly once and with the specified
-       arguments.
+       Assert that the mock was called exactly once and that that call was
+       with the specified arguments.
 
             >>> mock = Mock(return_value=None)
             >>> mock('foo', bar='baz')
             >>> mock.assert_called_once_with('foo', bar='baz')
-            >>> mock('foo', bar='baz')
-            >>> mock.assert_called_once_with('foo', bar='baz')
+            >>> mock('other', bar='values')
+            >>> mock.assert_called_once_with('other', bar='values')
             Traceback (most recent call last):
               ...
             AssertionError: Expected 'mock' to be called once. Called 2 times.
@@ -322,7 +322,8 @@ the *new_callable* argument to :func:`patch`.
 
         The assert passes if the mock has *ever* been called, unlike
         :meth:`assert_called_with` and :meth:`assert_called_once_with` that
-        only pass if the call is the most recent one.
+        only pass if the call is the most recent one, and in the case of
+        :meth:`assert_called_once_with` it must also be the only call.
 
             >>> mock = Mock(return_value=None)
             >>> mock(1, 2, arg='thing')
