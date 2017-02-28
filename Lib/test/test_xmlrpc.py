@@ -343,10 +343,13 @@ class XMLRPCTestCase(unittest.TestCase):
             self.assertEqual(p.method(), 5)
             self.assertEqual(p.method(), 5)
 
-    def test_simple_xml_rpc_dispatcher_using_dispatch_func(self):
+    def test_simple_xml_rpc_dispatcher_using_dispatch_func_does_not_chain_exc(self):
         exp_method = 'method'
         exp_params = 1, 2, 3
         dispatched = False
+
+        class DispatchExc(Exception):
+            """Raised inside the `_dispatch` func"""
 
         class TestInstance:
             @staticmethod
@@ -355,10 +358,15 @@ class XMLRPCTestCase(unittest.TestCase):
                 self.assertEqual(method, exp_method)
                 self.assertEqual(params, exp_params)
                 dispatched = True
+                raise DispatchExc()
 
         dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
         dispatcher.register_instance(TestInstance())
-        dispatcher._dispatch(method=exp_method, params=exp_params)
+        try:
+            dispatcher._dispatch(method=exp_method, params=exp_params)
+        except DispatchExc as e:
+            self.assertFalse(e.__cause__)
+            self.assertFalse(e.__context__)
         self.assertTrue(dispatched)
 
 class HelperTestCase(unittest.TestCase):
