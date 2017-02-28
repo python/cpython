@@ -86,10 +86,9 @@ alone XML-RPC servers.
    ``function.__name__`` will be used.  *name* is a string, and may contain
    characters not legal in Python identifiers, including the period character.
 
-   From version 3.7, this method can also be used as a decorator.  When used as
-   a decorator, *name* can be given as a keyword-only argument to register
-   *function* under *name*.  If no *name* is given, ``function.__name__`` will be
-   used.
+   This method can also be used as a decorator.  When used as a decorator,
+   *name* can be given as a keyword-only argument to register *function* under
+   *name*.  If no *name* is given, ``function.__name__`` will be used.
 
    .. versionchanged:: 3.7
       :meth:`register_function` can be used as a decorator.
@@ -155,7 +154,7 @@ Server code::
        rpc_paths = ('/RPC2',)
 
    # Create server
-   with SimpleXMLRPCServer(("localhost", 8000),
+   with SimpleXMLRPCServer(('localhost', 8000),
                            requestHandler=RequestHandler) as server:
        server.register_introspection_functions()
 
@@ -164,7 +163,7 @@ Server code::
        server.register_function(pow)
 
        # Register a function under a different name
-       def adder_function(x,y):
+       def adder_function(x, y):
            return x + y
        server.register_function(adder_function, 'add')
 
@@ -192,8 +191,8 @@ server::
    # Print list of available methods
    print(s.system.listMethods())
 
-Since version 3.7, :meth:`register_function` can also be used as a decorator. The
-previous server example can register functions in a decorator way::
+:meth:`register_function` can also be used as a decorator. The previous server
+example can register functions in a decorator way::
 
    from xmlrpc.server import SimpleXMLRPCServer
    from xmlrpc.server import SimpleXMLRPCRequestHandler
@@ -201,7 +200,7 @@ previous server example can register functions in a decorator way::
    class RequestHandler(SimpleXMLRPCRequestHandler):
        rpc_paths = ('/RPC2',)
 
-   with SimpleXMLRPCServer(("localhost", 8000),
+   with SimpleXMLRPCServer(('localhost', 8000),
                            requestHandler=RequestHandler) as server:
        server.register_introspection_functions()
 
@@ -213,7 +212,7 @@ previous server example can register functions in a decorator way::
        # register_function as a decorator. *name* can only be given
        # as a keyword argument.
        @server.register_function(name='add')
-       def adder_function(x,y):
+       def adder_function(x, y):
            return x + y
 
        # Register a function under function.__name__.
@@ -301,10 +300,9 @@ requests sent to Python CGI scripts.
    ``function.__name__`` will be used.  *name* is a string, and may contain
    characters not legal in Python identifiers, including the period character.
 
-   From version 3.7, this method can also be used as a decorator.  When used as
-   a decorator, *name* can be given as a keyword-only argument to register
-   *function* under *name*.  If no *name* is given, ``function.__name__`` will be
-   used.
+   This method can also be used as a decorator.  When used as a decorator,
+   *name* can be given as a keyword-only argument to register *function* under
+   *name*.  If no *name* is given, ``function.__name__`` will be used.
 
    .. versionchanged:: 3.7
       :meth:`register_function` can be used as a decorator.
