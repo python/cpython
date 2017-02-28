@@ -38,7 +38,7 @@ help:
 	@echo "  serve      to serve the documentation on the localhost (8000)"
 
 build:
-	$(SPHINXBUILD) $(ALLSPHINXOPTS)
+	(. venv/bin/activate && $(SPHINXBUILD) $(ALLSPHINXOPTS))
 	@echo
 
 html: BUILDER = html
