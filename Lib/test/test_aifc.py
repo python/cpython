@@ -129,6 +129,18 @@ class AifcMiscTest(audiotests.AudioTests, unittest.TestCase):
         #This file contains chunk types aifc doesn't recognize.
         self.f = aifc.open(findfile('Sine-1000Hz-300ms.aif'))
 
+    def test_close_opened_files_on_error(self):
+        non_aifc_file = findfile('pluck-pcm8.wav', subdir='audiodata')
+
+        class Aifc(aifc.Aifc_read):
+            def __init__(self):
+                pass
+
+        a = Aifc()
+        with self.assertRaises(aifc.Error):
+            aifc.Aifc_read.__init__(a, non_aifc_file)
+        self.assertTrue(a._file.closed)
+
     def test_write_markers_values(self):
         fout = aifc.open(io.BytesIO(), 'wb')
         self.assertEqual(fout.getmarkers(), None)

@@ -36,6 +36,10 @@ Extension Modules
 Library
 -------
 
+- bpo-29110: Fix file object leak in aifc.open() when file is given as a
+  filesystem path and is not in valid AIFF format.
+  Original patch by Anthony Zhang.
+
 - Issue #29354: Fixed inspect.getargs() for parameters which are cell
   variables.
 
