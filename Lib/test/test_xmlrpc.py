@@ -343,7 +343,12 @@ class XMLRPCTestCase(unittest.TestCase):
             self.assertEqual(p.method(), 5)
             self.assertEqual(p.method(), 5)
 
-    def test_simple_xml_rpc_dispatcher_resolves_registered_func_and_does_not_chain_excs_when_calling_it(self):
+
+class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
+    def test_call_registered_func(self):
+        """Attempts to resolve an explicitly registered function and call it, making sure any exception raised
+        inside the function has no other exception chained to it"""
+
         exp_params = 1, 2, 3
         dispatched = False
 
@@ -365,7 +370,10 @@ class XMLRPCTestCase(unittest.TestCase):
             self.assertFalse(e.__context__)
         self.assertTrue(dispatched)
 
-    def test_simple_xml_rpc_dispatcher_resolves_instance_func_and_does_not_chain_excs_when_calling_it(self):
+    def test_call_instance_func(self):
+        """Attempts to resolve a function by accessing a registered instance attribute and call it, making sure any
+        exception raised inside the function has no other exception chained to it"""
+
         exp_params = 1, 2, 3
         dispatched = False
 
@@ -389,7 +397,10 @@ class XMLRPCTestCase(unittest.TestCase):
             self.assertFalse(e.__context__)
         self.assertTrue(dispatched)
 
-    def test_simple_xml_rpc_dispatcher_resolves_dispatch_func_and_does_not_chain_excs_when_calling_it(self):
+    def test_call_dispatch_func(self):
+        """Attempts to resolve a function by accessing the `_dispatch` function on the registered instance and
+        call it, making sure any exception raised inside the function has no other exception chained to it"""
+
         exp_method = 'method'
         exp_params = 1, 2, 3
         dispatched = False
@@ -414,6 +425,7 @@ class XMLRPCTestCase(unittest.TestCase):
             self.assertFalse(e.__cause__)
             self.assertFalse(e.__context__)
         self.assertTrue(dispatched)
+
 
 class HelperTestCase(unittest.TestCase):
     def test_escape(self):
@@ -1379,7 +1391,7 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
 
 @support.reap_threads
 def test_main():
-    support.run_unittest(XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
+    support.run_unittest(XMLRPCTestCase, SimpleXMLRPCDispatcherTestCase, HelperTestCase, DateTimeTestCase,
             BinaryTestCase, FaultTestCase, UseBuiltinTypesTestCase,
             SimpleServerTestCase, SimpleServerEncodingTestCase,
             KeepaliveServerTestCase1, KeepaliveServerTestCase2,
