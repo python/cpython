@@ -108,6 +108,7 @@ clean:
 venv:
 	$(PYTHON) -m venv venv
 	./venv/bin/python3 -m pip install -U Sphinx
+	./venv/bin/python3 -m pip install -U reno
 
 dist:
 	rm -rf dist
