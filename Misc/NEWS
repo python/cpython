@@ -10,7 +10,10 @@ What's New in Python 3.6.1 release candidate 1?
 Core and Builtins
 -----------------
 
-- bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX. 
+- Issue #28598: Support __rmod__ for subclasses of str being called before
+  str.__mod__.  Patch by Martijn Pieters.
+
+- bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX.
   Patch by Matthieu Dartiailh.
 
 - bpo-29602: Fix incorrect handling of signed zeros in complex constructor for
@@ -69,18 +72,19 @@ Extension Modules
 Library
 -------
 
+- bpo-29376: Fix assertion error in threading._DummyThread.is_alive().
+
+- bpo-28624: Add a test that checks that cwd parameter of Popen() accepts
+  PathLike objects.  Patch by Sayan Chowdhury.
+
+- bpo-28518: Start a transaction implicitly before a DML statement.
+  Patch by Aviv Palivoda.
+
 - bpo-29532: Altering a kwarg dictionary passed to functools.partial()
   no longer affects a partial object after creation.
 
-- bpo-22807: Add uuid.SafeUUID and uuid.UUID.is_safe to relay information from
-  the platform about whether generated UUIDs are generated with a
-  multiprocessing safe method.
-
-- bpo-29576: Improve some deprecations in importlib. Some deprecated methods
-  now emit DeprecationWarnings and have better descriptive messages.
-
-- bpo-29534: Fixed different behaviour of Decimal.from_float()
-  for _decimal and _pydecimal. Thanks Andrew Nester.
+- bpo-29110: Fix file object leak in aifc.open() when file is given as a
+  filesystem path and is not in valid AIFF format. Patch by Anthony Zhang.
 
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
@@ -216,6 +220,11 @@ C API
 
 Documentation
 -------------
+
+- bpo-28929: Link the documentation to its source file on GitHub.
+
+- bpo-25008: Document smtpd.py as effectively deprecated and add a pointer to
+  aiosmtpd, a third-party asyncio-based replacement.
 
 - Issue #26355: Add canonical header link on each page to corresponding major
   version of the documentation. Patch by Matthias Bussonnier.

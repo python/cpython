@@ -359,7 +359,7 @@ The built-in function :func:`len` returns the length of a string::
       Information about string formatting with :meth:`str.format`.
 
    :ref:`old-string-formatting`
-      The old formatting operations invoked when strings and Unicode strings are
+      The old formatting operations invoked when strings are
       the left operand of the ``%`` operator are described in more detail here.
 
 

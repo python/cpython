@@ -1217,6 +1217,10 @@ class _DummyThread(Thread):
     def _stop(self):
         pass
 
+    def is_alive(self):
+        assert not self._is_stopped and self._started.is_set()
+        return True
+
     def join(self, timeout=None):
         assert False, "cannot join a dummy thread"
 
