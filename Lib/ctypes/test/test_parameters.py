@@ -177,8 +177,8 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRaises(TypeError, Structure.from_param, 42)
         self.assertRaises(TypeError, Union.from_param, 42)
         self.assertRaises(TypeError, _CFuncPtr.from_param, 42)
-        #self.assertRaises(TypeError, _Pointer.from_param, 42)
-        #self.assertRaises(TypeError, _SimpleCData.from_param, 42)
+        self.assertRaises(TypeError, _Pointer.from_param, 42)
+        self.assertRaises(TypeError, _SimpleCData.from_param, 42)
 
 ################################################################
 
