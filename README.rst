@@ -15,6 +15,8 @@ reserved.
 
 See the end of this file for further copyright and license information.
 
+.. contents::
+
 General Information
 -------------------
 
@@ -39,7 +41,6 @@ Installable Python kits, and information about using Python, are available at
 `python.org`_.
 
 .. _python.org: https://www.python.org/
-
 
 Build Instructions
 ------------------
@@ -85,7 +86,7 @@ below.
 
 
 Profile Guided Optimization
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 PGO takes advantage of recent versions of the GCC or Clang compilers.  If ran,
 ``make profile-opt`` will do several steps.
@@ -109,7 +110,7 @@ optimized and suitable for distribution or production installation.
 
 
 Link Time Optimization
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 Enabled via configure's ``--with-lto`` flag.  LTO takes advantage of the
 ability of recent compiler toolchains to optimize across the otherwise
