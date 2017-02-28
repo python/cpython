@@ -402,26 +402,23 @@ class SimpleXMLRPCDispatcher:
                 raise Exception('method "%s" is not supported' % method)
             return func(*params)
 
-        if self.instance is None:
-            raise Exception('method "%s" is not supported' % method)
+        if self.instance is not None:
+            if hasattr(self.instance, '_dispatch'):
+                # call the `_dispatch` method on the instance
+                return self.instance._dispatch(method, params)
 
-        if hasattr(self.instance, '_dispatch'):
-            # call the `_dispatch` method on the instance
-            return self.instance._dispatch(method, params)
-
-        # call the instance's method directly
-        try:
-            func = resolve_dotted_attribute(
-                self.instance,
-                method,
-                self.allow_dotted_names
-            )
-        except AttributeError:
-            pass
-        else:
-            if func is None:
-                raise Exception('method "%s" is not supported' % method)
-            return func(*params)
+            # call the instance's method directly
+            try:
+                func = resolve_dotted_attribute(
+                    self.instance,
+                    method,
+                    self.allow_dotted_names
+                )
+            except AttributeError:
+                pass
+            else:
+                if func is not None:
+                    return func(*params)
 
         raise Exception('method "%s" is not supported' % method)
 
