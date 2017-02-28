@@ -4,9 +4,9 @@ import sys
 from collections import deque
 from functools import wraps
 
-__all__ = ["contextmanager", "closing", "AbstractContextManager",
-           "ContextDecorator", "ExitStack", "redirect_stdout",
-           "redirect_stderr", "suppress"]
+__all__ = ["asynccontextmanager", "contextmanager", "closing",
+           "AbstractContextManager", "ContextDecorator", "ExitStack",
+           "redirect_stdout", "redirect_stderr", "suppress"]
 
 
 class AbstractContextManager(abc.ABC):
