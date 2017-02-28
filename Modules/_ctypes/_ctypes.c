@@ -924,6 +924,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (proto) {
         StgDictObject *itemdict = PyType_stgdict(proto);
         const char *current_format;
+        /* PyCPointerType_SetProto has verified proto has a stgdict. */
         assert(itemdict);
         /* If itemdict->format is NULL, then this is a pointer to an
            incomplete type.  We create a generic format string
