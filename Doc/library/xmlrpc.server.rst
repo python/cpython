@@ -92,7 +92,7 @@ alone XML-RPC servers.
    *function* under *name*.  If no *name* is given, ``function.__name__`` will be
    used.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       :meth:`register_function` can be used as a decorator.
 
 
@@ -308,7 +308,7 @@ requests sent to Python CGI scripts.
    *function* under *name*.  If no *name* is given, ``function.__name__`` will be
    used.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       :meth:`register_function` can be used as a decorator.
 
 
