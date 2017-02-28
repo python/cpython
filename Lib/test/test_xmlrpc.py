@@ -377,8 +377,7 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         exp_params = 1, 2, 3
 
         class DispatchedClass:
-            @staticmethod
-            def dispatched_func(*params):
+            def dispatched_func(self, *params):
                 raise SimpleXMLRPCDispatcherTestCase.DispatchExc(params=params)
 
         dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
@@ -397,8 +396,7 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         exp_params = 1, 2, 3
 
         class TestInstance:
-            @staticmethod
-            def _dispatch(method, params):
+            def _dispatch(self, method, params):
                 raise SimpleXMLRPCDispatcherTestCase.DispatchExc(method=method, params=params)
 
         dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
