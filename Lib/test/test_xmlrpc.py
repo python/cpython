@@ -343,7 +343,53 @@ class XMLRPCTestCase(unittest.TestCase):
             self.assertEqual(p.method(), 5)
             self.assertEqual(p.method(), 5)
 
-    def test_simple_xml_rpc_dispatcher_using_dispatch_func_does_not_chain_exc(self):
+    def test_simple_xml_rpc_dispatcher_resolves_registered_func_and_does_not_chain_excs_when_calling_it(self):
+        exp_params = 1, 2, 3
+        dispatched = False
+
+        class DispatchExc(Exception):
+            """Raised inside the dispatched func"""
+
+        def dispatched_func(*params):
+            nonlocal dispatched
+            dispatched = True
+            self.assertEqual(params, exp_params)
+            raise DispatchExc()
+
+        dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
+        dispatcher.register_function(dispatched_func)
+        try:
+            dispatcher._dispatch(method='dispatched_func', params=exp_params)
+        except DispatchExc as e:
+            self.assertFalse(e.__cause__)
+            self.assertFalse(e.__context__)
+        self.assertTrue(dispatched)
+
+    def test_simple_xml_rpc_dispatcher_resolves_instance_func_and_does_not_chain_excs_when_calling_it(self):
+        exp_params = 1, 2, 3
+        dispatched = False
+
+        class DispatchExc(Exception):
+            """Raised inside the dispatched func"""
+
+        class DispatchedClass:
+            @staticmethod
+            def dispatched_func(*params):
+                nonlocal dispatched
+                dispatched = True
+                self.assertEqual(params, exp_params)
+                raise DispatchExc()
+
+        dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
+        dispatcher.register_instance(DispatchedClass())
+        try:
+            dispatcher._dispatch(method='dispatched_func', params=exp_params)
+        except DispatchExc as e:
+            self.assertFalse(e.__cause__)
+            self.assertFalse(e.__context__)
+        self.assertTrue(dispatched)
+
+    def test_simple_xml_rpc_dispatcher_resolves_dispatch_func_and_does_not_chain_excs_when_calling_it(self):
         exp_method = 'method'
         exp_params = 1, 2, 3
         dispatched = False
