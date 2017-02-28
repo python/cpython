@@ -249,6 +249,9 @@ Extension Modules
 Library
 -------
 
+- bpo-7769: Method register_function() of xmlrpc.server.SimpleXMLRPCDispatcher
+  and its subclasses can now be used as a decorator.
+
 - bpo-29376: Fix assertion error in threading._DummyThread.is_alive().
 
 - bpo-28624: Add a test that checks that cwd parameter of Popen() accepts
