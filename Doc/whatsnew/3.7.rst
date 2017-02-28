@@ -117,6 +117,7 @@ urllib.parse
 adding `~` to the set of characters that is never quoted by default.
 (Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
 
+
 Optimizations
 =============
 
