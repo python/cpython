@@ -209,8 +209,7 @@ example can register functions in a decorator way::
        server.register_function(pow)
 
        # Register a function under a different name, using
-       # register_function as a decorator. *name* can only be given
-       # as a keyword argument.
+       # register_function as a decorator. *name* is keyword-only.
        @server.register_function(name='add')
        def adder_function(x, y):
            return x + y
