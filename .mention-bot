@@ -1,0 +1,12 @@
+{
+  "maxReviewers": 5,
+  "numFilesToCheck": 10,
+  "findPotentialReviewers": true,
+  "fileBlacklist": [
+    "Misc/ACKS",
+    "Misc/NEWS"
+  ],
+  "userBlacklist": [],
+  "userBlacklistForPR": [],
+  "requiredOrgs": ["python"],
+}
