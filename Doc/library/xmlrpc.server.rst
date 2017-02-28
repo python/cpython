@@ -83,9 +83,8 @@ alone XML-RPC servers.
 
    Register a function that can respond to XML-RPC requests.  If *name* is given,
    it will be the method name associated with *function*, otherwise
-   ``function.__name__`` will be used.  *name* can be either a normal or Unicode
-   string, and may contain characters not legal in Python identifiers, including
-   the period character.
+   ``function.__name__`` will be used.  *name* is a string, and may contain
+   characters not legal in Python identifiers, including the period character.
 
    From version 3.7, this method can also be used as a decorator.  When used as
    a decorator, *name* can be given as a keyword-only argument to register
@@ -299,9 +298,8 @@ requests sent to Python CGI scripts.
 
    Register a function that can respond to XML-RPC requests.  If *name* is given,
    it will be the method name associated with *function*, otherwise
-   ``function.__name__`` will be used.  *name* can be either a normal or Unicode
-   string, and may contain characters not legal in Python identifiers, including
-   the period character.
+   ``function.__name__`` will be used.  *name* is a string, and may contain
+   characters not legal in Python identifiers, including the period character.
 
    From version 3.7, this method can also be used as a decorator.  When used as
    a decorator, *name* can be given as a keyword-only argument to register
