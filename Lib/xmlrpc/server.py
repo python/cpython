@@ -386,29 +386,25 @@ class SimpleXMLRPCDispatcher:
         not be called.
         """
 
-        func = None
-
         try:
-            # check to see if a matching function has been registered
+            # call the matching registered function
             func = self.funcs[method]
         except KeyError:
             pass
-
-        if func is not None:
+        else:
+            if func is None:
+                raise Exception('method "%s" is not supported' % method)
             return func(*params)
 
-        if self.instance is not None:
-            try:
-                # check for a _dispatch method on the instance
-                func = self.instance._dispatch
-            except AttributeError:
-                pass
+        if self.instance is None:
+            raise Exception('method "%s" is not supported' % method)
 
-            if func is not None:
-                return func(method, params)
-
+        if hasattr(self.instance, '_dispatch'):
+            # call the `_dispatch` method on the instance
+            return self.instance._dispatch(method, params)
+        else:
+            # call the instance's method directly
             try:
-                # access the instance's method directly
                 func = resolve_dotted_attribute(
                     self.instance,
                     method,
@@ -416,8 +412,9 @@ class SimpleXMLRPCDispatcher:
                 )
             except AttributeError:
                 pass
-
-            if func is not None:
+            else:
+                if func is None:
+                    raise Exception('method "%s" is not supported' % method)
                 return func(*params)
 
         raise Exception('method "%s" is not supported' % method)
