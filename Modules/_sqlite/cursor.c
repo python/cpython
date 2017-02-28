@@ -706,7 +706,7 @@ PyObject* pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
 
     while (1) {
         Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_prepare(self->connection->db,
+        rc = SQLITE3_PREPARE(self->connection->db,
                              script_cstr,
                              -1,
                              &statement,
