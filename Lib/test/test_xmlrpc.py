@@ -362,8 +362,8 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         dispatcher.register_function(dispatched_func)
         with self.assertRaises(SimpleXMLRPCDispatcherTestCase.DispatchExc) as exc_ctx:
             dispatcher._dispatch(method='dispatched_func', params=exp_params)
-        self.assertFalse(exc_ctx.exception.__cause__)
-        self.assertFalse(exc_ctx.exception.__context__)
+        self.assertIsNone(exc_ctx.exception.__cause__)
+        self.assertIsNone(exc_ctx.exception.__context__)
 
     def test_call_instance_func(self):
         """Attempts to resolve a function by accessing a registered instance attribute and call it, making sure any
@@ -381,8 +381,8 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         dispatcher.register_instance(DispatchedClass())
         with self.assertRaises(SimpleXMLRPCDispatcherTestCase.DispatchExc) as exc_ctx:
             dispatcher._dispatch(method='dispatched_func', params=exp_params)
-        self.assertFalse(exc_ctx.exception.__cause__)
-        self.assertFalse(exc_ctx.exception.__context__)
+        self.assertIsNone(exc_ctx.exception.__cause__)
+        self.assertIsNone(exc_ctx.exception.__context__)
 
     def test_call_dispatch_func(self):
         """Attempts to resolve a function by accessing the `_dispatch` function on the registered instance and
@@ -402,8 +402,8 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         dispatcher.register_instance(TestInstance())
         with self.assertRaises(SimpleXMLRPCDispatcherTestCase.DispatchExc) as exc_ctx:
             dispatcher._dispatch(method=exp_method, params=exp_params)
-        self.assertFalse(exc_ctx.exception.__cause__)
-        self.assertFalse(exc_ctx.exception.__context__)
+        self.assertIsNone(exc_ctx.exception.__cause__)
+        self.assertIsNone(exc_ctx.exception.__context__)
 
 
 class HelperTestCase(unittest.TestCase):
