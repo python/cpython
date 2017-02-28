@@ -384,7 +384,7 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
         dispatcher.register_instance(DispatchedClass())
         with self.assertRaises(SimpleXMLRPCDispatcherTestCase.DispatchExc) as exc_ctx:
-            dispatcher._dispatch(method='dispatched_func', params=exp_params)
+            dispatcher._dispatch('dispatched_func', exp_params)
         self.assertEqual(exc_ctx.exception.params, exp_params)
         self.assertIsNone(exc_ctx.exception.__cause__)
         self.assertIsNone(exc_ctx.exception.__context__)
@@ -404,7 +404,7 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
         dispatcher.register_instance(TestInstance())
         with self.assertRaises(SimpleXMLRPCDispatcherTestCase.DispatchExc) as exc_ctx:
-            dispatcher._dispatch(method=exp_method, params=exp_params)
+            dispatcher._dispatch(exp_method, exp_params)
         self.assertEqual(exc_ctx.exception.method, exp_method)
         self.assertEqual(exc_ctx.exception.params, exp_params)
         self.assertIsNone(exc_ctx.exception.__cause__)
