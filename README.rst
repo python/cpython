@@ -15,6 +15,8 @@ reserved.
 
 See the end of this file for further copyright and license information.
 
+.. contents::
+
 General Information
 -------------------
 
@@ -39,8 +41,6 @@ Installable Python kits, and information about using Python, are available at
 `python.org`_.
 
 .. _python.org: https://www.python.org/
-
-.. contents::
 
 Build Instructions
 ------------------
