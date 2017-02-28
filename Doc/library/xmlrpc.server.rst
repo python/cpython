@@ -87,7 +87,7 @@ alone XML-RPC servers.
    characters not legal in Python identifiers, including the period character.
 
    This method can also be used as a decorator.  When used as a decorator,
-   *name* can be given as a keyword-only argument to register *function* under
+   *name* can only be given as a keyword argument to register *function* under
    *name*.  If no *name* is given, ``function.__name__`` will be used.
 
    .. versionchanged:: 3.7
@@ -209,7 +209,8 @@ example can register functions in a decorator way::
        server.register_function(pow)
 
        # Register a function under a different name, using
-       # register_function as a decorator. *name* is keyword-only.
+       # register_function as a decorator. *name* can only be given
+       # as a keyword argument.
        @server.register_function(name='add')
        def adder_function(x, y):
            return x + y
@@ -300,7 +301,7 @@ requests sent to Python CGI scripts.
    characters not legal in Python identifiers, including the period character.
 
    This method can also be used as a decorator.  When used as a decorator,
-   *name* can be given as a keyword-only argument to register *function* under
+   *name* can only be given as a keyword argument to register *function* under
    *name*.  If no *name* is given, ``function.__name__`` will be used.
 
    .. versionchanged:: 3.7
