@@ -88,12 +88,12 @@ class ImportTests(unittest.TestCase):
         self.assertRegex(str(cm.exception), "cannot import name 'i_dont_exist' from 'os' \(.*os.py\)")
 
     def test_from_import_missing_attr_has_name_and_so_path(self):
-        import _opcode
+        import select
         with self.assertRaises(ImportError) as cm:
-            from _opcode import i_dont_exist
-        self.assertEqual(cm.exception.name, '_opcode')
-        self.assertEqual(cm.exception.path, _opcode.__file__)
-        self.assertRegex(str(cm.exception), "cannot import name 'i_dont_exist' from '_opcode' \(.*\.(so|dll)\)")
+            from select import i_dont_exist
+        self.assertEqual(cm.exception.name, 'select')
+        self.assertEqual(cm.exception.path, select.__file__)
+        self.assertRegex(str(cm.exception), "cannot import name 'i_dont_exist' from 'select' \(.*\.(so|pyd)\)")
 
     def test_from_import_missing_attr_has_name(self):
         with self.assertRaises(ImportError) as cm:
