@@ -657,7 +657,7 @@ call fails (for example because the path doesn't exist):
    Return an absolute version of this path.  This function works
    even if the path doesn't point to anything.
 
-   No normalization is done, i.e all '.' and '..' will be kept along.
+   No normalization is done, i.e all ``'.'`` and ``'..'`` will be kept along.
    Use :meth:`Path.resolve` to get the canonical path to a file.
 
       >>> p = Path('pathlib')
