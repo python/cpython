@@ -1502,15 +1502,23 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args)
         pages = -1;
     }
 
+    Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_open(filename, &bckconn);
+    Py_END_ALLOW_THREADS
+
     if (rc != SQLITE_OK) {
         goto finally;
     }
 
+    Py_BEGIN_ALLOW_THREADS
     bckhandle = sqlite3_backup_init(bckconn, "main", self->db, "main");
+    Py_END_ALLOW_THREADS
+
     if (bckhandle) {
         do {
+            Py_BEGIN_ALLOW_THREADS
             rc = sqlite3_backup_step(bckhandle, pages);
+            Py_END_ALLOW_THREADS
 
             if (progress != Py_None) {
                 if (!PyObject_CallFunction(progress, "ii",
@@ -1524,18 +1532,24 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args)
 
             /* Sleep for 250ms if there are still further pages to copy */
             if (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
+                Py_BEGIN_ALLOW_THREADS
                 sqlite3_sleep(250);
+                Py_END_ALLOW_THREADS
             }
         } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);
 
+        Py_BEGIN_ALLOW_THREADS
         sqlite3_backup_finish(bckhandle);
+        Py_END_ALLOW_THREADS
     }
 
     if (rc != -1) {
         rc = _pysqlite_seterror(bckconn, NULL);
     }
 
+    Py_BEGIN_ALLOW_THREADS
     sqlite3_close(bckconn);
+    Py_END_ALLOW_THREADS
 
     if (rc == SQLITE_OK) {
         Py_INCREF(Py_None);
