@@ -54,7 +54,7 @@ class ContextDecorator(object):
         return inner
 
 
-class _GeneratorContextManagerBase(ContextDecorator):
+class _GeneratorContextManagerBase:
     """Shared functionality for the @contextmanager and @asynccontextmanager
     implementations."""
 
@@ -72,15 +72,17 @@ class _GeneratorContextManagerBase(ContextDecorator):
         # for the class instead.
         # See http://bugs.python.org/issue19404 for more details.
 
+
+class _GeneratorContextManager(_GeneratorContextManagerBase,
+                               AbstractContextManager,
+                               ContextDecorator):
+    """Helper for @contextmanager decorator."""
+
     def _recreate_cm(self):
         # _GCM instances are one-shot context managers, so the
         # CM must be recreated each time a decorated function is
         # called
         return self.__class__(self.func, self.args, self.kwds)
-
-
-class _GeneratorContextManager(_GeneratorContextManagerBase, AbstractContextManager):
-    """Helper for @contextmanager decorator."""
 
     def __enter__(self):
         try:
@@ -204,7 +206,7 @@ def contextmanager(func):
 
 
 def asynccontextmanager(func):
-    """@contextmanager decorator.
+    """@asynccontextmanager decorator.
 
     Typical usage:
 
