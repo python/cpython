@@ -350,10 +350,9 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         chained exceptions"""
 
     def test_call_registered_func(self):
-        """Calls explicitly registered function
-
-        Makes sure any exception raised inside the function has no other
-        exception chained to it"""
+        """Calls explicitly registered function"""
+        # Makes sure any exception raised inside the function has no other
+        # exception chained to it"""
 
         exp_params = 1, 2, 3
 
@@ -369,10 +368,9 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         self.assertIsNone(exc_ctx.exception.__context__)
 
     def test_call_instance_func(self):
-        """Calls a registered instance attribute as a function
-
-        Makes sure any exception raised inside the function has no other
-        exception chained to it"""
+        """Calls a registered instance attribute as a function"""
+        # Makes sure any exception raised inside the function has no other
+        # exception chained to it"""
 
         exp_params = 1, 2, 3
 
@@ -389,10 +387,9 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         self.assertIsNone(exc_ctx.exception.__context__)
 
     def test_call_dispatch_func(self):
-        """Calls the registered instance's `_dispatch` function
-
-        Makes sure any exception raised inside the function has no other
-        exception chained to it"""
+        """Calls the registered instance's `_dispatch` function"""
+        # Makes sure any exception raised inside the function has no other
+        # exception chained to it"""
 
         exp_method = 'method'
         exp_params = 1, 2, 3
