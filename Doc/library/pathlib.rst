@@ -658,7 +658,7 @@ call fails (for example because the path doesn't exist):
    directory.  This function works even if the path doesn't exist.
 
    No normalization is done, i.e all ``'.'`` and ``'..'`` will not be
-   normalized. Use :meth:`Path.resolve` to get the canonical path to a file.
+   normalized.  Use :meth:`Path.resolve` to get the canonical path to a file.
 
       >>> p = Path('pathlib')
       >>> p.absolute()
