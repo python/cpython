@@ -37,7 +37,7 @@ generating a serialized version of the mssage, and for recursively walking over
 the object tree.  Note that duplicate headers are supported but special methods
 must be used to access them.
 
-The :class:`Message` psuedo-dictionary is indexed by the header names, which
+The :class:`Message` pseudo-dictionary is indexed by the header names, which
 must be ASCII values.  The values of the dictionary are strings that are
 supposed to contain only ASCII characters; there is some special handling for
 non-ASCII input, but it doesn't always produce the correct results.  Headers
@@ -181,7 +181,7 @@ Here are the methods of the :class:`Message` class:
       This is a legacy method.  On the
       :class:`~email.emailmessage.EmailMessage` class its functionality is
       replaced by :meth:`~email.message.EmailMessage.set_content` and the
-      realted ``make`` and ``add`` methods.
+      related ``make`` and ``add`` methods.
 
 
    .. method:: get_payload(i=None, decode=False)
