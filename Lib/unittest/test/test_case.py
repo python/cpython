@@ -572,7 +572,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
 
     def testShortDescriptionWithoutDocstring(self):
-        self.assertIsNone(self.shortDescription())
+        self.assertFalse(self.shortDescription())
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
