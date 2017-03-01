@@ -6,7 +6,7 @@
     "Misc/ACKS",
     "Misc/NEWS"
   ],
-  "userBlacklist": [],
+  "userBlacklist": ["gvanrossum"],
   "userBlacklistForPR": ["benjaminp"],
   "requiredOrgs": ["python"]
 }
