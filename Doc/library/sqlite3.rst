@@ -521,7 +521,7 @@ Connection Objects
                  f.write('%s\n' % line)
 
 
-   .. method:: backup(filename[, pages, progress])
+   .. method:: backup(filename, *, pages=0, progress=None)
 
       This method exposes the `API`__ that allows to make a backup of a SQLite
       database into the mandatory argument *filename*, even while it's being accessed

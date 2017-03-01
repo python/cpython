@@ -30,7 +30,7 @@ class BackupTests(unittest.TestCase):
             journal.append(remaining)
 
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
-            self.cx.backup(bckfn.name, 1, progress)
+            self.cx.backup(bckfn.name, pages=1, progress=progress)
             self.testBackup(bckfn.name)
 
         self.assertEqual(len(journal), 2)
@@ -44,7 +44,7 @@ class BackupTests(unittest.TestCase):
             journal.append(remaining)
 
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
-            self.cx.backup(bckfn.name, 0, progress)
+            self.cx.backup(bckfn.name, progress=progress)
             self.testBackup(bckfn.name)
 
         self.assertEqual(len(journal), 1)
@@ -57,7 +57,7 @@ class BackupTests(unittest.TestCase):
             journal.append(remaining)
 
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
-            self.cx.backup(bckfn.name, -1, progress)
+            self.cx.backup(bckfn.name, pages=-1, progress=progress)
             self.testBackup(bckfn.name)
 
         self.assertEqual(len(journal), 1)
@@ -66,7 +66,7 @@ class BackupTests(unittest.TestCase):
     def CheckNonCallableProgress(self):
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
             with self.assertRaises(TypeError) as cm:
-                self.cx.backup(bckfn.name, 1, 'bar')
+                self.cx.backup(bckfn.name, pages=1, progress='bar')
             self.assertEqual(str(cm.exception), 'progress argument must be a callable')
 
     def CheckModifyingProgress(self):
@@ -79,7 +79,7 @@ class BackupTests(unittest.TestCase):
             journal.append(remaining)
 
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
-            self.cx.backup(bckfn.name, 1, progress)
+            self.cx.backup(bckfn.name, pages=1, progress=progress)
             self.testBackup(bckfn.name)
 
             cx = sqlite.connect(bckfn.name)
