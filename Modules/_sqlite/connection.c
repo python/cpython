@@ -1478,7 +1478,7 @@ finally:
 }
 
 static PyObject *
-pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args)
+pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* kwds)
 {
     char* filename;
     int pages = -1;
@@ -1487,9 +1487,10 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args)
     int rc;
     sqlite3 *bckconn;
     sqlite3_backup *bckhandle;
+    static char *keywords[] = {"filename", "pages", "progress", NULL};
 
-    if (!PyArg_ParseTuple(args, "s|iO:backup(filename, pages, progress)",
-                          &filename, &pages, &progress)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|$iO:backup", keywords,
+                                     &filename, &pages, &progress)) {
         goto finally;
     }
 
@@ -1734,8 +1735,8 @@ static PyMethodDef connection_methods[] = {
         PyDoc_STR("Abort any pending database operation. Non-standard.")},
     {"iterdump", (PyCFunction)pysqlite_connection_iterdump, METH_NOARGS,
         PyDoc_STR("Returns iterator to the dump of the database in an SQL text format. Non-standard.")},
-    {"backup", (PyCFunction)pysqlite_connection_backup, METH_VARARGS,
-        PyDoc_STR("Execute a backup of the database. Non-standard.")},
+    {"backup", (PyCFunction)pysqlite_connection_backup, METH_VARARGS | METH_KEYWORDS,
+        PyDoc_STR("Makes a backup of the database. Non-standard.")},
     {"__enter__", (PyCFunction)pysqlite_connection_enter, METH_NOARGS,
         PyDoc_STR("For context manager. Non-standard.")},
     {"__exit__", (PyCFunction)pysqlite_connection_exit, METH_VARARGS,
