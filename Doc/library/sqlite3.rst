@@ -541,7 +541,7 @@ Connection Objects
          import sqlite3
 
          def progress(remaining, total):
-             print("Copied %d of %d pages..." % (total-remaining, total))
+             print(f"Copied {total-remaining} of {total} pages...")
 
          con = sqlite3.connect('existing_db.db')
          con.backup('copy_of_existing_db.db', 1, progress)
