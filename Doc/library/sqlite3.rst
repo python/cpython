@@ -546,6 +546,7 @@ Connection Objects
          con = sqlite3.connect('existing_db.db')
          con.backup('copy_of_existing_db.db', 1, progress)
 
+      .. versionadded:: 3.7
 
 
 .. _sqlite3-cursor-objects:
