@@ -10,6 +10,8 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-27645: sqlite3.Connection now exposes a backup() method.
+
 - bpo-28598: Support __rmod__ for subclasses of str being called before
   str.__mod__.  Patch by Martijn Pieters.
 
@@ -33,6 +35,9 @@ Core and Builtins
 - bpo-29546: Set the 'path' and 'name' attribute on ImportError for ``from ... import ...``.
 
 - bpo-29546: Improve from-import error message with location
+
+- Issue #7063: Remove dead code from the "array" module's slice handling.
+  Patch by Chuck.
 
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
 
