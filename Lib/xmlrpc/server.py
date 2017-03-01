@@ -398,9 +398,9 @@ class SimpleXMLRPCDispatcher:
         except KeyError:
             pass
         else:
-            if func is None:
-                raise Exception('method "%s" is not supported' % method)
-            return func(*params)
+            if func is not None:
+                return func(*params)
+            raise Exception('method "%s" is not supported' % method)
 
         if self.instance is not None:
             if hasattr(self.instance, '_dispatch'):
