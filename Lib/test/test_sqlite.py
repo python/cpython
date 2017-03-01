@@ -18,7 +18,8 @@ def load_tests(*args):
                                userfunctions.suite(),
                                factory.suite(), transactions.suite(),
                                hooks.suite(), regression.suite(),
-                               dump.suite(), backup.suite()])
+                               dump.suite(),
+                               backup.suite()])
 
 if __name__ == "__main__":
     unittest.main()
