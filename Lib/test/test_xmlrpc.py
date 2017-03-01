@@ -1395,14 +1395,13 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
 
 @support.reap_threads
 def test_main():
-    support.run_unittest(XMLRPCTestCase, SimpleXMLRPCDispatcherTestCase,
-            HelperTestCase, DateTimeTestCase, BinaryTestCase, FaultTestCase,
-            UseBuiltinTypesTestCase, SimpleServerTestCase,
-            SimpleServerEncodingTestCase, KeepaliveServerTestCase1,
-            KeepaliveServerTestCase2,
+    support.run_unittest(XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
+            BinaryTestCase, FaultTestCase, UseBuiltinTypesTestCase,
+            SimpleServerTestCase, SimpleServerEncodingTestCase,
+            KeepaliveServerTestCase1, KeepaliveServerTestCase2,
             GzipServerTestCase, GzipUtilTestCase,
             MultiPathServerTestCase, ServerProxyTestCase, FailingServerTestCase,
-            CGIHandlerTestCase)
+            CGIHandlerTestCase, SimpleXMLRPCDispatcherTestCase)
 
 
 if __name__ == "__main__":
