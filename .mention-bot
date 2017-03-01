@@ -7,6 +7,6 @@
     "Misc/NEWS"
   ],
   "userBlacklist": [],
-  "userBlacklistForPR": [],
+  "userBlacklistForPR": ["benjaminp"],
   "requiredOrgs": ["python"]
 }
