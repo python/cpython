@@ -245,7 +245,7 @@ The legacy interface:
 
 .. function:: decodestring(s)
 
-   Deprecated alias of :func:`decodebytes`
+   Deprecated alias of :func:`decodebytes`.
 
    .. deprecated:: 3.1
 
@@ -271,7 +271,7 @@ The legacy interface:
 
 .. function:: encodestring(s)
 
-   Deprecated alias of :func:`encodebytes`
+   Deprecated alias of :func:`encodebytes`.
 
    .. deprecated:: 3.1
 
