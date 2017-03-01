@@ -84,7 +84,6 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     int uri = 0;
     double timeout = 5.0;
     int rc;
-    int flags = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|diOiOip", kwlist,
                                      &database, &timeout, &detect_types,
@@ -108,20 +107,19 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     Py_INCREF(&PyUnicode_Type);
     self->text_factory = (PyObject*)&PyUnicode_Type;
 
-#if SQLITE_VERSION_NUMBER >= 3005000
-#ifndef SQLITE_OPEN_URI
+#ifdef SQLITE_OPEN_URI
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_open_v2(database, &self->db,
+                         SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
+                         (uri ? SQLITE_OPEN_URI : 0), NULL);
+#else
     if (uri) {
         PyErr_SetString(pysqlite_NotSupportedError, "URIs not supported");
         return -1;
     }
-#else
-    flags |= (uri ? SQLITE_OPEN_URI : 0);
-#endif
-    flags |= SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_open_v2(database, &self->db, flags, NULL);
-#else
-    Py_BEGIN_ALLOW_THREADS
+    /* No need to use sqlite3_open_v2 as sqlite3_open(filename, db) is the
+       same as sqlite3_open_v2(filename, db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL)*/
     rc = sqlite3_open(database, &self->db);
 #endif
     Py_END_ALLOW_THREADS
