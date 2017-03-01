@@ -10,6 +10,9 @@ What's New in Python 3.6.1 release candidate 1?
 Core and Builtins
 -----------------
 
+- bpo-29683: Fixes to memory allocation in _PyCode_SetExtra.  Patch by
+  Brian Coleman.
+
 - bpo-29438: Fixed use-after-free problem in key sharing dict.
 
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
