@@ -346,65 +346,67 @@ class XMLRPCTestCase(unittest.TestCase):
 
 class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
     class DispatchExc(Exception):
-        """Raised inside the dispatched functions when checking for chained exceptions"""
-
-        def __init__(self, *args, method=None, params=None, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.method = method
-            self.params = params
+        """Raised inside the dispatched functions when checking for
+        chained exceptions"""
 
     def test_call_registered_func(self):
-        """Attempts to resolve an explicitly registered function and call it, making sure any exception raised
-        inside the function has no other exception chained to it"""
+        """Calls explicitly registered function
+
+        Makes sure any exception raised inside the function has no other
+        exception chained to it"""
 
         exp_params = 1, 2, 3
 
         def dispatched_func(*params):
-            raise SimpleXMLRPCDispatcherTestCase.DispatchExc(params=params)
+            raise self.DispatchExc(params)
 
         dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
         dispatcher.register_function(dispatched_func)
-        with self.assertRaises(SimpleXMLRPCDispatcherTestCase.DispatchExc) as exc_ctx:
+        with self.assertRaises(self.DispatchExc) as exc_ctx:
             dispatcher._dispatch('dispatched_func', exp_params)
-        self.assertEqual(exc_ctx.exception.params, exp_params)
+        self.assertEqual(exc_ctx.exception.args, (exp_params,))
         self.assertIsNone(exc_ctx.exception.__cause__)
         self.assertIsNone(exc_ctx.exception.__context__)
 
     def test_call_instance_func(self):
-        """Attempts to resolve a function by accessing a registered instance attribute and call it, making sure any
-        exception raised inside the function has no other exception chained to it"""
+        """Calls a registered instance attribute as a function
+
+        Makes sure any exception raised inside the function has no other
+        exception chained to it"""
 
         exp_params = 1, 2, 3
 
         class DispatchedClass:
             def dispatched_func(self, *params):
-                raise SimpleXMLRPCDispatcherTestCase.DispatchExc(params=params)
+                raise SimpleXMLRPCDispatcherTestCase.DispatchExc(params)
 
         dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
         dispatcher.register_instance(DispatchedClass())
-        with self.assertRaises(SimpleXMLRPCDispatcherTestCase.DispatchExc) as exc_ctx:
+        with self.assertRaises(self.DispatchExc) as exc_ctx:
             dispatcher._dispatch('dispatched_func', exp_params)
-        self.assertEqual(exc_ctx.exception.params, exp_params)
+        self.assertEqual(exc_ctx.exception.args, (exp_params,))
         self.assertIsNone(exc_ctx.exception.__cause__)
         self.assertIsNone(exc_ctx.exception.__context__)
 
     def test_call_dispatch_func(self):
-        """Attempts to resolve a function by accessing the `_dispatch` function on the registered instance and
-        call it, making sure any exception raised inside the function has no other exception chained to it"""
+        """Calls the registered instance's `_dispatch` function
+
+        Makes sure any exception raised inside the function has no other
+        exception chained to it"""
 
         exp_method = 'method'
         exp_params = 1, 2, 3
 
         class TestInstance:
             def _dispatch(self, method, params):
-                raise SimpleXMLRPCDispatcherTestCase.DispatchExc(method=method, params=params)
+                raise SimpleXMLRPCDispatcherTestCase.DispatchExc(
+                    method, params)
 
         dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
         dispatcher.register_instance(TestInstance())
-        with self.assertRaises(SimpleXMLRPCDispatcherTestCase.DispatchExc) as exc_ctx:
+        with self.assertRaises(self.DispatchExc) as exc_ctx:
             dispatcher._dispatch(exp_method, exp_params)
-        self.assertEqual(exc_ctx.exception.method, exp_method)
-        self.assertEqual(exc_ctx.exception.params, exp_params)
+        self.assertEqual(exc_ctx.exception.args, (exp_method, exp_params))
         self.assertIsNone(exc_ctx.exception.__cause__)
         self.assertIsNone(exc_ctx.exception.__context__)
 
@@ -1373,10 +1375,11 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
 
 @support.reap_threads
 def test_main():
-    support.run_unittest(XMLRPCTestCase, SimpleXMLRPCDispatcherTestCase, HelperTestCase, DateTimeTestCase,
-            BinaryTestCase, FaultTestCase, UseBuiltinTypesTestCase,
-            SimpleServerTestCase, SimpleServerEncodingTestCase,
-            KeepaliveServerTestCase1, KeepaliveServerTestCase2,
+    support.run_unittest(XMLRPCTestCase, SimpleXMLRPCDispatcherTestCase,
+            HelperTestCase, DateTimeTestCase, BinaryTestCase, FaultTestCase,
+            UseBuiltinTypesTestCase, SimpleServerTestCase,
+            SimpleServerEncodingTestCase, KeepaliveServerTestCase1,
+            KeepaliveServerTestCase2,
             GzipServerTestCase, GzipUtilTestCase,
             MultiPathServerTestCase, ServerProxyTestCase, FailingServerTestCase,
             CGIHandlerTestCase)
