@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29684: Fix minor regression of PyEval_CallObjectWithKeywords.
+  It should raise TypeError when kwargs is not a dict.  But it might
+  cause segv when args=NULL and kwargs is not a dict.
+
 - bpo-28598: Support __rmod__ for subclasses of str being called before
   str.__mod__.  Patch by Martijn Pieters.
 
