@@ -8,5 +8,5 @@
   ],
   "userBlacklist": [],
   "userBlacklistForPR": [],
-  "requiredOrgs": ["python"],
+  "requiredOrgs": ["python"]
 }
