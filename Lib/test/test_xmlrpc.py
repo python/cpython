@@ -418,6 +418,14 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         with self.assertRaises(Exception, expected_regex='method'):
             dispatcher._dispatch('method', ('param',))
 
+    def test_instance_has_no_func(self):
+        """Attempts to call nonexistent function on a registered instance"""
+
+        dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
+        dispatcher.register_instance(object())
+        with self.assertRaises(Exception, expected_regex='method'):
+            dispatcher._dispatch('method', ('param',))
+
     def test_cannot_locate_func(self):
         """Calls a function that the dispatcher cannot locate"""
 
