@@ -975,7 +975,7 @@ PyCPointerType_set_type(PyTypeObject *self, PyObject *type)
         PyErr_SetString(PyExc_TypeError,
                         "abstract class");
         return NULL;
-    }    
+    }
 
     if (-1 == PyCPointerType_SetProto(dict, type))
         return NULL;
