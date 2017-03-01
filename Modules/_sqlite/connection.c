@@ -1483,18 +1483,19 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args)
     char* filename;
     int pages = -1;
     PyObject* progress = Py_None;
+    PyObject* retval = NULL;
     int rc;
     sqlite3 *bckconn;
     sqlite3_backup *bckhandle;
 
     if (!PyArg_ParseTuple(args, "s|iO:backup(filename, pages, progress)",
                           &filename, &pages, &progress)) {
-        return NULL;
+        goto finally;
     }
 
     if (progress != Py_None && !PyCallable_Check(progress)) {
         PyErr_SetString(PyExc_TypeError, "progress argument must be a callable");
-        return NULL;
+        goto finally;
     }
 
     if (pages == 0) {
@@ -1502,44 +1503,49 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args)
     }
 
     rc = sqlite3_open(filename, &bckconn);
-    if (rc == SQLITE_OK) {
-        bckhandle = sqlite3_backup_init(bckconn, "main", self->db, "main");
-        if (bckhandle) {
-            do {
-                rc = sqlite3_backup_step(bckhandle, pages);
+    if (rc != SQLITE_OK) {
+        goto finally;
+    }
 
-                if (progress != Py_None) {
-                    if (!PyObject_CallFunction(progress, "ii",
-                                               sqlite3_backup_remaining(bckhandle),
-                                               sqlite3_backup_pagecount(bckhandle))) {
-                        /* User's callback raised an error: interrupt the loop and
-                           propagate it. */
-                        rc = -1;
-                    }
+    bckhandle = sqlite3_backup_init(bckconn, "main", self->db, "main");
+    if (bckhandle) {
+        do {
+            rc = sqlite3_backup_step(bckhandle, pages);
+
+            if (progress != Py_None) {
+                if (!PyObject_CallFunction(progress, "ii",
+                                           sqlite3_backup_remaining(bckhandle),
+                                           sqlite3_backup_pagecount(bckhandle))) {
+                    /* User's callback raised an error: interrupt the loop and
+                       propagate it. */
+                    rc = -1;
                 }
+            }
 
-                /* Sleep for 250ms if there are still further pages to copy */
-                if (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
-                    sqlite3_sleep(250);
-                }
-            } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);
+            /* Sleep for 250ms if there are still further pages to copy */
+            if (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
+                sqlite3_sleep(250);
+            }
+        } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);
 
-            sqlite3_backup_finish(bckhandle);
-        }
+        sqlite3_backup_finish(bckhandle);
+    }
 
-        if (rc != -1) {
-            rc = _pysqlite_seterror(bckconn, NULL);
-        }
+    if (rc != -1) {
+        rc = _pysqlite_seterror(bckconn, NULL);
     }
 
     sqlite3_close(bckconn);
 
-    if (rc != 0) {
-        /* TODO: should the (probably incomplete/invalid) backup be removed here? */
-        return NULL;
+    if (rc == SQLITE_OK) {
+        Py_INCREF(Py_None);
+        retval = Py_None;
     } else {
-        Py_RETURN_NONE;
+        /* TODO: should the (probably incomplete/invalid) backup be removed here? */
     }
+
+finally:
+    return retval;
 }
 
 static PyObject *
