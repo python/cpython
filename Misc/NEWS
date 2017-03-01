@@ -249,6 +249,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29654: Support If-Modified-Since HTTP header (browser cache).  Patch
+  by Pierre Quentel.
+
 - Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
   '~' in the set of characters that is not quoted by default. Patch by
   Christian Theune and Ratnadeep Debnath.
@@ -665,9 +668,6 @@ Library
 
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
-
-- bpo-29654 : Support If-Modified-Since HTTP header (browser cache). Patch
-  by Pierre Quentel.
 
 Windows
 -------

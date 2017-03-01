@@ -98,9 +98,9 @@ Improved Modules
 
 http.server
 -----------
-:class:`SimpleHTTPRequestHandler` supports the HTTP If-Modified-Since header.
-The server returns the 304 response status if the target file was not
-modified after the datetime specified in the header.
+:class:`~http.server.SimpleHTTPRequestHandler` supports the HTTP
+If-Modified-Since header. The server returns the 304 response status if the
+target file was not modified after the datetime specified in the header.
 (Contributed by Pierre Quentel in :issue:`29654`.)
 
 unittest.mock
