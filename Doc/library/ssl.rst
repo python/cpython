@@ -616,7 +616,7 @@ Constants
 
 .. data:: PROTOCOL_TLS_CLIENT
 
-   Auto-negotiate the the highest protocol version like :data:`PROTOCOL_SSLv23`,
+   Auto-negotiate the highest protocol version like :data:`PROTOCOL_SSLv23`,
    but only support client-side :class:`SSLSocket` connections. The protocol
    enables :data:`CERT_REQUIRED` and :attr:`~SSLContext.check_hostname` by
    default.
@@ -625,7 +625,7 @@ Constants
 
 .. data:: PROTOCOL_TLS_SERVER
 
-   Auto-negotiate the the highest protocol version like :data:`PROTOCOL_SSLv23`,
+   Auto-negotiate the highest protocol version like :data:`PROTOCOL_SSLv23`,
    but only support server-side :class:`SSLSocket` connections.
 
    .. versionadded:: 3.6
@@ -948,7 +948,7 @@ SSL Sockets
    :ref:`notes on non-blocking sockets <ssl-nonblocking>`.
 
    Usually, :class:`SSLSocket` are not created directly, but using the
-   the :meth:`SSLContext.wrap_socket` method.
+   :meth:`SSLContext.wrap_socket` method.
 
    .. versionchanged:: 3.5
       The :meth:`sendfile` method was added.
