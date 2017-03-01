@@ -898,15 +898,6 @@
 /* Define to 1 if you have the <spawn.h> header file. */
 #undef HAVE_SPAWN_H
 
-/* Define if the sqlite3 library has sqlite3_close_v2 */
-#undef HAVE_SQLITE3_CLOSE_V2
-
-/* Define if the sqlite3 library has sqlite3_open_v2 */
-#undef HAVE_SQLITE3_OPEN_V2
-
-/* Define if the sqlite3 library has sqlite3_prepare_v2 */
-#undef HAVE_SQLITE3_PREPARE_V2
-
 /* Define if your compiler provides ssize_t */
 #undef HAVE_SSIZE_T
 

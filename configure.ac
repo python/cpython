@@ -2854,14 +2854,6 @@ AC_ARG_ENABLE(loadable-sqlite-extensions,
 
 AC_MSG_RESULT($enable_loadable_sqlite_extensions)
 
-# Check for support of sqlite3 _v2 interface
-AC_CHECK_LIB(sqlite3, sqlite3_prepare_v2,
-             AC_DEFINE(HAVE_SQLITE3_PREPARE_V2, 1, [Define if the sqlite3 library has sqlite3_prepare_v2]))
-AC_CHECK_LIB(sqlite3, sqlite3_open_v2,
-             AC_DEFINE(HAVE_SQLITE3_OPEN_V2, 1, [Define if the sqlite3 library has sqlite3_open_v2]))
-AC_CHECK_LIB(sqlite3, sqlite3_close_v2,
-             AC_DEFINE(HAVE_SQLITE3_CLOSE_V2, 1, [Define if the sqlite3 library has sqlite3_close_v2]))
-
 # Check for --with-tcltk-includes=path and --with-tcltk-libs=path
 AC_SUBST(TCLTK_INCLUDES)
 AC_SUBST(TCLTK_LIBS)
