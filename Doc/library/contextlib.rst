@@ -80,6 +80,35 @@ Functions and classes provided:
       Use of :class:`ContextDecorator`.
 
 
+.. decorator:: asynccontextmanager
+
+   Similar to :func:`~contextlib.contextmanager`, but works with
+   :term:`coroutines <coroutine>`.
+
+   This function is a :term:`decorator` that can be used to define a factory
+   function for :keyword:`async with` statement asynchronous context managers,
+   without needing to create a class or separate :meth:`__aenter__` and
+   :meth:`__aexit__` methods.
+
+   A simple example::
+
+      from contextlib import asynccontextmanager
+
+      @asynccontextmanager
+      async def get_connection():
+          conn = await acquire_db_connection()
+          try:
+              yield
+          finally:
+              await release_db_connection(conn)
+
+      async def get_all_users():
+          async with get_connection() as conn:
+              return conn.query('SELECT ...')
+
+   .. versionadded:: 3.7
+
+
 .. function:: closing(thing)
 
    Return a context manager that closes *thing* upon completion of the block.  This
