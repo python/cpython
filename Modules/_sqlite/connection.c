@@ -1478,6 +1478,92 @@ finally:
 }
 
 static PyObject *
+pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* kwds)
+{
+    char* filename;
+    int pages = -1;
+    PyObject* progress = Py_None;
+    PyObject* retval = NULL;
+    int rc;
+    sqlite3 *bckconn;
+    sqlite3_backup *bckhandle;
+    static char *keywords[] = {"filename", "pages", "progress", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|$iO:backup", keywords,
+                                     &filename, &pages, &progress)) {
+        goto finally;
+    }
+
+    if (progress != Py_None && !PyCallable_Check(progress)) {
+        PyErr_SetString(PyExc_TypeError, "progress argument must be a callable");
+        goto finally;
+    }
+
+    if (pages == 0) {
+        pages = -1;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_open(filename, &bckconn);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        goto finally;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    bckhandle = sqlite3_backup_init(bckconn, "main", self->db, "main");
+    Py_END_ALLOW_THREADS
+
+    if (bckhandle) {
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            rc = sqlite3_backup_step(bckhandle, pages);
+            Py_END_ALLOW_THREADS
+
+            if (progress != Py_None) {
+                if (!PyObject_CallFunction(progress, "ii",
+                                           sqlite3_backup_remaining(bckhandle),
+                                           sqlite3_backup_pagecount(bckhandle))) {
+                    /* User's callback raised an error: interrupt the loop and
+                       propagate it. */
+                    rc = -1;
+                }
+            }
+
+            /* Sleep for 250ms if there are still further pages to copy */
+            if (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
+                Py_BEGIN_ALLOW_THREADS
+                sqlite3_sleep(250);
+                Py_END_ALLOW_THREADS
+            }
+        } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);
+
+        Py_BEGIN_ALLOW_THREADS
+        sqlite3_backup_finish(bckhandle);
+        Py_END_ALLOW_THREADS
+    }
+
+    if (rc != -1) {
+        rc = _pysqlite_seterror(bckconn, NULL);
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    sqlite3_close(bckconn);
+    Py_END_ALLOW_THREADS
+
+    if (rc == SQLITE_OK) {
+        Py_INCREF(Py_None);
+        retval = Py_None;
+    } else {
+        /* TODO: should the (probably incomplete/invalid) backup be removed here? */
+    }
+
+finally:
+    return retval;
+}
+
+static PyObject *
 pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
 {
     PyObject* callable;
@@ -1649,6 +1735,8 @@ static PyMethodDef connection_methods[] = {
         PyDoc_STR("Abort any pending database operation. Non-standard.")},
     {"iterdump", (PyCFunction)pysqlite_connection_iterdump, METH_NOARGS,
         PyDoc_STR("Returns iterator to the dump of the database in an SQL text format. Non-standard.")},
+    {"backup", (PyCFunction)pysqlite_connection_backup, METH_VARARGS | METH_KEYWORDS,
+        PyDoc_STR("Makes a backup of the database. Non-standard.")},
     {"__enter__", (PyCFunction)pysqlite_connection_enter, METH_NOARGS,
         PyDoc_STR("For context manager. Non-standard.")},
     {"__exit__", (PyCFunction)pysqlite_connection_exit, METH_VARARGS,
