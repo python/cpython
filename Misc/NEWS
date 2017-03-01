@@ -253,6 +253,10 @@ Extension Modules
 Library
 -------
 
+- bpo-29615: SimpleXMLRPCDispatcher no longer chains KeyError (or any other
+  exception) to exception(s) raised in the dispatched methods.
+  Patch by Petr Motejlek.
+
 - bpo-7769: Method register_function() of xmlrpc.server.SimpleXMLRPCDispatcher
   and its subclasses can now be used as a decorator.
 
