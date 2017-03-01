@@ -410,6 +410,14 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         self.assertIsNone(exc_ctx.exception.__cause__)
         self.assertIsNone(exc_ctx.exception.__context__)
 
+    def test_registered_func_is_none(self):
+        """Calls explicitly registered function which is None"""
+
+        dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
+        dispatcher.register_function(None, name='method')
+        with self.assertRaises(Exception, expected_regex='method'):
+            dispatcher._dispatch('method', ('param',))
+
     def test_cannot_locate_func(self):
         """Calls a function that the dispatcher cannot locate"""
 
