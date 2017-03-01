@@ -654,7 +654,7 @@ call fails (for example because the path doesn't exist):
 
 .. method:: Path.absolute()
 
-   Return an absolute version of this path. This function works
+   Return an absolute version of this path.  This function works
    even if the path doesn't point to anything.
 
    No normalization is done, i.e all '.' and '..' will be kept along.
