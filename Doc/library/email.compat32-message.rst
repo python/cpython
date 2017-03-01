@@ -33,7 +33,7 @@ having a MIME type such as :mimetype:`multipart/\*` or
 The conceptual model provided by a :class:`Message` object is that of an
 ordered dictionary of headers with additional methods for accessing both
 specialized information from the headers, for accessing the payload, for
-generating a serialized version of the mssage, and for recursively walking over
+generating a serialized version of the message, and for recursively walking over
 the object tree.  Note that duplicate headers are supported but special methods
 must be used to access them.
 
