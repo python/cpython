@@ -10,6 +10,9 @@ What's New in Python 2.7.14?
 Core and Builtins
 -----------------
 
+- bpo-28598: Support __rmod__ for subclasses of str being called before
+  str.__mod__.  Patch by Martijn Pieters.
+
 - bpo-29602: Fix incorrect handling of signed zeros in complex constructor for
   complex subclasses and for inputs having a __complex__ method. Patch
   by Serhiy Storchaka.

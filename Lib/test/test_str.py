@@ -465,6 +465,15 @@ class StrTest(
             self.assertIn('str', exc)
             self.assertIn('tuple', exc)
 
+    def test_issue28598_strsubclass_rhs(self):
+        # A subclass of str with an __rmod__ method should be able to hook
+        # into the % operator
+        class SubclassedStr(str):
+            def __rmod__(self, other):
+                return 'Success, self.__rmod__({!r}) was called'.format(other)
+        self.assertEqual('lhs %% %r' % SubclassedStr('rhs'),
+                         "Success, self.__rmod__('lhs %% %r') was called")
+
 def test_main():
     test_support.run_unittest(StrTest)
 
