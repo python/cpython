@@ -363,7 +363,7 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         dispatcher.register_function(dispatched_func)
         with self.assertRaises(self.DispatchExc) as exc_ctx:
             dispatcher._dispatch('dispatched_func', exp_params)
-        self.assertTupleEqual(exc_ctx.exception.args, (exp_params,))
+        self.assertEqual(exc_ctx.exception.args, (exp_params,))
         self.assertIsNone(exc_ctx.exception.__cause__)
         self.assertIsNone(exc_ctx.exception.__context__)
 
@@ -382,7 +382,7 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         dispatcher.register_instance(DispatchedClass())
         with self.assertRaises(self.DispatchExc) as exc_ctx:
             dispatcher._dispatch('dispatched_func', exp_params)
-        self.assertTupleEqual(exc_ctx.exception.args, (exp_params,))
+        self.assertEqual(exc_ctx.exception.args, (exp_params,))
         self.assertIsNone(exc_ctx.exception.__cause__)
         self.assertIsNone(exc_ctx.exception.__context__)
 
@@ -403,7 +403,7 @@ class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
         dispatcher.register_instance(TestInstance())
         with self.assertRaises(self.DispatchExc) as exc_ctx:
             dispatcher._dispatch(exp_method, exp_params)
-        self.assertTupleEqual(exc_ctx.exception.args, (exp_method, exp_params))
+        self.assertEqual(exc_ctx.exception.args, (exp_method, exp_params))
         self.assertIsNone(exc_ctx.exception.__cause__)
         self.assertIsNone(exc_ctx.exception.__context__)
 
