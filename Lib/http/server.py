@@ -80,13 +80,16 @@ XXX To do:
 # (Actually, the latter is only true if you know the server configuration
 # at the time the request was made!)
 
-__version__ = "0.6"
+__version__ = "0.7"
 
 __all__ = [
     "HTTPServer", "BaseHTTPRequestHandler",
     "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler",
 ]
 
+import argparse
+import copy
+import datetime
 import email.utils
 import html
 import http.client
@@ -100,10 +103,7 @@ import socket # For gethostbyaddr()
 import socketserver
 import sys
 import time
-import datetime
 import urllib.parse
-import copy
-import argparse
 
 from http import HTTPStatus
 
