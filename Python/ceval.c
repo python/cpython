@@ -1446,10 +1446,14 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         {
             w = POP();
             v = TOP();
-            if (PyString_CheckExact(v))
+            if (PyString_CheckExact(v)
+                && (!PyString_Check(w) || PyString_CheckExact(w))) {
+                /* fast path; string formatting, but not if the RHS is a str subclass
+                   (see issue28598) */
                 x = PyString_Format(v, w);
-            else
+            } else {
                 x = PyNumber_Remainder(v, w);
+            }
             Py_DECREF(v);
             Py_DECREF(w);
             SET_TOP(x);
