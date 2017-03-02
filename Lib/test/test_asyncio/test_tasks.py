@@ -1464,8 +1464,8 @@ class BaseTaskTests:
             # See http://bugs.python.org/issue29271 for details:
             asyncio.set_event_loop(loop)
             try:
-                self.assertTrue(Task.current_task(None) is task)
-                self.assertTrue(Task.current_task() is task)
+                self.assertIs(Task.current_task(None), task)
+                self.assertIs(Task.current_task(), task)
             finally:
                 asyncio.set_event_loop(None)
 
