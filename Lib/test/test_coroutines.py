@@ -1680,6 +1680,44 @@ class CoroutineTest(unittest.TestCase):
                 warnings.simplefilter("error")
                 run_async(foo())
 
+    def test_for_11(self):
+        class F:
+            def __aiter__(self):
+                return self
+            def __anext__(self):
+                return self
+            def __await__(self):
+                1 / 0
+
+        async def main():
+            async for _ in F():
+                pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'an invalid object from __anext__') as c:
+            main().send(None)
+
+        err = c.exception
+        self.assertIsInstance(err.__cause__, ZeroDivisionError)
+
+    def test_for_12(self):
+        class F:
+            def __aiter__(self):
+                return self
+            def __await__(self):
+                1 / 0
+
+        async def main():
+            async for _ in F():
+                pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'an invalid object from __aiter__') as c:
+            main().send(None)
+
+        err = c.exception
+        self.assertIsInstance(err.__cause__, ZeroDivisionError)
+
     def test_for_tuple(self):
         class Done(Exception): pass
 
