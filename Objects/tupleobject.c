@@ -648,11 +648,12 @@ static PyObject *
 tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *arg = NULL;
-    static char *kwlist[] = {"sequence", 0};
+    static const char * const kwlist[] = {"sequence", 0};
+    static _PyArg_Parser parser = {"|O:tuple", kwlist, 0};
 
     if (type != &PyTuple_Type)
         return tuple_subtype_new(type, args, kwds);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:tuple", kwlist, &arg))
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwds, &parser, &arg))
         return NULL;
     if (arg != NULL && PyTuple_GET_SIZE(args) == 0) {
         if (PyErr_Warn(PyExc_DeprecationWarning,

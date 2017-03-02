@@ -15001,14 +15001,15 @@ static PyObject *
 unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *x = NULL;
-    static char *kwlist[] = {"object", "encoding", "errors", 0};
+    static const char * const kwlist[] = {"object", "encoding", "errors", 0};
+    static _PyArg_Parser parser = {"|Oss:str", kwlist, 0};
     char *encoding = NULL;
     char *errors = NULL;
 
     if (type != &PyUnicode_Type)
         return unicode_subtype_new(type, args, kwds);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:str",
-                                     kwlist, &x, &encoding, &errors))
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwds, &parser,
+                                          &x, &encoding, &errors))
         return NULL;
     if (x == NULL)
         _Py_RETURN_UNICODE_EMPTY();

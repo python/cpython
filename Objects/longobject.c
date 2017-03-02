@@ -4796,12 +4796,12 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *obase = NULL, *x = NULL;
     Py_ssize_t base;
-    static char *kwlist[] = {"x", "base", 0};
+    static const char * const kwlist[] = {"x", "base", 0};
+    static _PyArg_Parser parser = {"|OO:int", kwlist, 0};
 
     if (type != &PyLong_Type)
         return long_subtype_new(type, args, kwds); /* Wimp out */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:int", kwlist,
-                                     &x, &obase))
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwds, &parser, &x, &obase))
         return NULL;
     if (x == NULL) {
         if (obase != NULL) {
