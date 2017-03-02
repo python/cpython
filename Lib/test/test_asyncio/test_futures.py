@@ -569,6 +569,35 @@ class BaseFutureDoneCallbackTests():
         self.assertEqual(bag, [2])
         self.assertEqual(f.result(), 'foo')
 
+    def test_remove_done_callbacks_list_mutation(self):
+        # see http://bugs.python.org/issue28963 for details
+
+        fut = self._new_future()
+        fut.add_done_callback(str)
+
+        for _ in range(63):
+            fut.add_done_callback(id)
+
+        class evil:
+            def __eq__(self, other):
+                fut.remove_done_callback(id)
+                return False
+
+        fut.remove_done_callback(evil())
+
+    def test_schedule_callbacks_list_mutation(self):
+        # see http://bugs.python.org/issue28963 for details
+
+        def mut(f):
+            f.remove_done_callback(str)
+
+        fut = self._new_future()
+        fut.add_done_callback(mut)
+        fut.add_done_callback(str)
+        fut.add_done_callback(str)
+        fut.set_result(1)
+        test_utils.run_briefly(self.loop)
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
