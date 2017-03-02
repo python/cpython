@@ -483,6 +483,14 @@ class Message:
         """
         self._headers.append((name, value))
 
+    def group_headers(self):
+        """Check if there are headers with same name and groups them"""
+        headers = {}
+        for name, value in self._headers:
+            headers.setdefault(name, []).append(value.strip(';'))
+
+        self._headers = [(name, '; '.join(value)) for name, value in headers.items()]
+
     def raw_items(self):
         """Return the (name, value) header pairs without modification.
 
