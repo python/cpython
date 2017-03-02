@@ -988,7 +988,7 @@ class Popen(object):
                                          int(not close_fds),
                                          creationflags,
                                          env,
-                                         cwd,
+                                         os.fspath(cwd),
                                          startupinfo)
             finally:
                 # Child is launched. Close the parent's copy of those pipe
