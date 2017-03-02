@@ -57,7 +57,6 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
     }
 #endif
 
-
     errorcode = sqlite3_errcode(db);
 
     switch (errorcode)

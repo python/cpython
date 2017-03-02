@@ -119,7 +119,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     }
     Py_BEGIN_ALLOW_THREADS
     /* No need to use sqlite3_open_v2 as sqlite3_open(filename, db) is the
-       same as sqlite3_open_v2(filename, db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL)*/
+       same as sqlite3_open_v2(filename, db, SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, NULL). */
     rc = sqlite3_open(database, &self->db);
 #endif
     Py_END_ALLOW_THREADS
