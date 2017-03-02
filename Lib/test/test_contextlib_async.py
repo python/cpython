@@ -7,7 +7,7 @@ import unittest
 def _async_test(func):
     """Decorator to turn an async function into a test case."""
     def wrapper(*args, **kwargs):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         coro = func(*args, **kwargs)
         return loop.run_until_complete(coro)
     return wrapper
