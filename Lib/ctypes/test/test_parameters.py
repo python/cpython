@@ -169,6 +169,16 @@ class SimpleTypesTestCase(unittest.TestCase):
         # ArgumentError: argument 1: ValueError: 99
         self.assertRaises(ArgumentError, func, 99)
 
+    def test_abstract(self):
+        from ctypes import (Array, Structure, Union, _Pointer,
+                            _SimpleCData, _CFuncPtr)
+
+        self.assertRaises(TypeError, Array.from_param, 42)
+        self.assertRaises(TypeError, Structure.from_param, 42)
+        self.assertRaises(TypeError, Union.from_param, 42)
+        self.assertRaises(TypeError, _CFuncPtr.from_param, 42)
+        self.assertRaises(TypeError, _Pointer.from_param, 42)
+        self.assertRaises(TypeError, _SimpleCData.from_param, 42)
 
 ################################################################
 

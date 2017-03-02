@@ -715,7 +715,7 @@ class PyDictObjectPtr(PyObjectPtr):
         try:
             # <= Python 3.5
             return keys['dk_entries'], dk_size
-        except gdb.error:
+        except RuntimeError:
             # >= Python 3.6
             pass
 

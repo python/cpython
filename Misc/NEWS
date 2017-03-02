@@ -10,6 +10,13 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29683: Fixes to memory allocation in _PyCode_SetExtra.  Patch by
+  Brian Coleman.
+
+- bpo-29684: Fix minor regression of PyEval_CallObjectWithKeywords.
+  It should raise TypeError when kwargs is not a dict.  But it might
+  cause segv when args=NULL and kwargs is not a dict.
+
 - bpo-28598: Support __rmod__ for subclasses of str being called before
   str.__mod__.  Patch by Martijn Pieters.
 
@@ -250,6 +257,10 @@ Library
 -------
 
 - bpo-9303: Migrate sqlite3 module to _v2 API.  Patch by Aviv Palivoda.
+
+- bpo-29615: SimpleXMLRPCDispatcher no longer chains KeyError (or any other
+  exception) to exception(s) raised in the dispatched methods.
+  Patch by Petr Motejlek.
 
 - bpo-7769: Method register_function() of xmlrpc.server.SimpleXMLRPCDispatcher
   and its subclasses can now be used as a decorator.
