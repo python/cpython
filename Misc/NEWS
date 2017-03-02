@@ -688,6 +688,9 @@ Library
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
 
+- Issue #29271: Fix Task.current_task and Task.all_tasks to accept
+  None argument.
+
 Windows
 -------
 
