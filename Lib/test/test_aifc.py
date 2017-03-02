@@ -1,5 +1,6 @@
-from test.support import findfile, TESTFN, unlink
+from test.support import check_no_resource_warning, findfile, TESTFN, unlink
 import unittest
+from unittest import mock
 from test import audiotests
 from audioop import byteswap
 import os
@@ -149,6 +150,21 @@ class AifcMiscTest(audiotests.AudioTests, unittest.TestCase):
         #Issue 2245
         #This file contains chunk types aifc doesn't recognize.
         self.f = aifc.open(findfile('Sine-1000Hz-300ms.aif'))
+
+    def test_close_opened_files_on_error(self):
+        non_aifc_file = findfile('pluck-pcm8.wav', subdir='audiodata')
+        with check_no_resource_warning(self):
+            with self.assertRaises(aifc.Error):
+                # Try opening a non-AIFC file, with the expectation that
+                # `aifc.open` will fail (without raising a ResourceWarning)
+                self.f = aifc.open(non_aifc_file, 'rb')
+
+            # Aifc_write.initfp() won't raise in normal case.  But some errors
+            # (e.g. MemoryError, KeyboardInterrupt, etc..) can happen.
+            with mock.patch.object(aifc.Aifc_write, 'initfp',
+                                   side_effect=RuntimeError):
+                with self.assertRaises(RuntimeError):
+                    self.fout = aifc.open(TESTFN, 'wb')
 
     def test_params_added(self):
         f = self.f = aifc.open(TESTFN, 'wb')
