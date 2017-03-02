@@ -207,7 +207,7 @@ PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
     char *ptr;
     if (!CDataObject_Check(inst)) {
         PyErr_SetString(PyExc_TypeError,
-                        "not a ctype instance");
+                        "not a ctypes instance");
         return -1;
     }
     dst = (CDataObject *)inst;
@@ -231,7 +231,7 @@ PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
     }
     if (!CDataObject_Check(inst)) {
         PyErr_SetString(PyExc_TypeError,
-                        "not a ctype instance");
+                        "not a ctypes instance");
         return NULL;
     }
     src = (CDataObject *)inst;
