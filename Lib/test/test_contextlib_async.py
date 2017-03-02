@@ -139,6 +139,26 @@ class AsyncContextManagerTestCase(unittest.TestCase):
                 else:
                     self.fail(f'{stop_exc} was suppressed')
 
+    @_async_test
+    async def test_contextmanager_wrap_runtimeerror(self):
+        @asynccontextmanager
+        async def woohoo():
+            try:
+                yield
+            except Exception as exc:
+                raise RuntimeError(f'caught {exc}') from exc
+
+        with self.assertRaises(RuntimeError):
+            async with woohoo():
+                1 / 0
+
+        # If the context manager wrapped StopAsyncIteration in a RuntimeError,
+        # we also unwrap it, because we can't tell whether the wrapping was
+        # done by the generator machinery or by the generator itself.
+        with self.assertRaises(StopAsyncIteration):
+            async with woohoo():
+                raise StopAsyncIteration
+
     def _create_contextmanager_attribs(self):
         def attribs(**kw):
             def decorate(func):
