@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29683: Fixes to memory allocation in _PyCode_SetExtra.  Patch by
+  Brian Coleman.
+
 - bpo-29684: Fix minor regression of PyEval_CallObjectWithKeywords.
   It should raise TypeError when kwargs is not a dict.  But it might
   cause segv when args=NULL and kwargs is not a dict.
