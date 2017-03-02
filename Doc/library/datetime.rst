@@ -1808,18 +1808,18 @@ begins.  For example, at the Spring forward transition of 2016, we get
 
 .. doctest::
 
-    >>> from datetime import datetime, timezone
-    >>> from tzinfo_examples import HOUR, Eastern
-    >>> u0 = datetime(2016, 3, 13, 5, tzinfo=timezone.utc)
-    >>> for i in range(4):
-    ...     u = u0 + i*HOUR
-    ...     t = u.astimezone(Eastern)
-    ...     print(u.time(), 'UTC =', t.time(), t.tzname())
-    ...
-    05:00:00 UTC = 00:00:00 EST
-    06:00:00 UTC = 01:00:00 EST
-    07:00:00 UTC = 03:00:00 EDT
-    08:00:00 UTC = 04:00:00 EDT
+   >>> from datetime import datetime, timezone
+   >>> from tzinfo_examples import HOUR, Eastern
+   >>> u0 = datetime(2016, 3, 13, 5, tzinfo=timezone.utc)
+   >>> for i in range(4):
+   ...     u = u0 + i*HOUR
+   ...     t = u.astimezone(Eastern)
+   ...     print(u.time(), 'UTC =', t.time(), t.tzname())
+   ...
+   05:00:00 UTC = 00:00:00 EST
+   06:00:00 UTC = 01:00:00 EST
+   07:00:00 UTC = 03:00:00 EDT
+   08:00:00 UTC = 04:00:00 EDT
 
 
 When DST ends (the "end" line), there's a potentially worse problem: there's an
@@ -1832,18 +1832,19 @@ hours into the same local hour then.  In the Eastern example, UTC times of the
 form 5:MM and 6:MM both map to 1:MM when converted to Eastern, but earlier times
 have the :attr:`~datetime.fold` attribute set to 0 and the later times have it set to 1.
 For example, at the Fall back transition of 2016, we get
+
 .. doctest::
 
-    >>> u0 = datetime(2016, 11, 6, 4, tzinfo=timezone.utc)
-    >>> for i in range(4):
-    ...     u = u0 + i*HOUR
-    ...     t = u.astimezone(Eastern)
-    ...     print(u.time(), 'UTC =', t.time(), t.tzname(), t.fold)
-    ...
-    04:00:00 UTC = 00:00:00 EDT 0
-    05:00:00 UTC = 01:00:00 EDT 0
-    06:00:00 UTC = 01:00:00 EST 1
-    07:00:00 UTC = 02:00:00 EST 0
+   >>> u0 = datetime(2016, 11, 6, 4, tzinfo=timezone.utc)
+   >>> for i in range(4):
+   ...     u = u0 + i*HOUR
+   ...     t = u.astimezone(Eastern)
+   ...     print(u.time(), 'UTC =', t.time(), t.tzname(), t.fold)
+   ...
+   04:00:00 UTC = 00:00:00 EDT 0
+   05:00:00 UTC = 01:00:00 EDT 0
+   06:00:00 UTC = 01:00:00 EST 1
+   07:00:00 UTC = 02:00:00 EST 0
 
 Note that the :class:`datetime` instances that differ only by the value of the
 :attr:`~datetime.fold` attribute are considered equal in comparisons.
