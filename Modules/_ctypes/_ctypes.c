@@ -2016,6 +2016,11 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
         sw_dict = PyType_stgdict(swapped);
+        if (sw_dict == NULL) {
+            Py_DECREF(result);
+            Py_DECREF(swapped);
+            return NULL;
+        }
 #ifdef WORDS_BIGENDIAN
         PyObject_SetAttrString((PyObject *)result, "__ctype_le__", swapped);
         PyObject_SetAttrString((PyObject *)result, "__ctype_be__", (PyObject *)result);
@@ -4054,6 +4059,8 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
     }
 
     dict = PyType_stgdict((PyObject *)type);
+    if (dict == NULL)
+        return -1;
     fields = PyDict_GetItemString((PyObject *)dict, "_fields_");
     if (fields == NULL)
         return index;
