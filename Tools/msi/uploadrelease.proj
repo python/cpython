@@ -9,6 +9,7 @@
         <DownloadUrlBase Condition="'$(DownloadUrlBase)' == ''">/srv/www.python.org/ftp/python</DownloadUrlBase>
         <IncludeDoc Condition="'$(IncludeDoc)' == ''">true</IncludeDoc>
         <DryRun Condition="'$(DryRun)' == ''">false</DryRun>
+        <Purge Condition="'$(Purge)' == ''">false</Purge>
     </PropertyGroup>
 
     <Import Project="msi.props" />
@@ -64,7 +65,36 @@ echo.
 echo." />
     </Target>
     
-    <Target Name="Upload" DependsOnTargets="_ValidateProperties;_RunGpg;_PrintNames;_Upload" />
+    <Target Name="_Purge" Condition="$(Purge) and !$(DryRun)">
+        <Error Condition="!Exists('$(PythonExe)')" Text="No Python executable available at $(PythonExe)" />
+        <Exec Command="&quot;$(PythonExe)&quot; purge.py $(PythonVersion)" />
+    </Target>
+    
+    <Target Name="_TestLayout">
+        <ItemGroup>
+            <WebInstaller Include="$(OutputPath)\*-webinstall.exe" />
+            <WebInstaller>
+                <SourceDir>$(TEMP)\%(Filename)_source</SourceDir>
+                <SourceExe>$(TEMP)\%(Filename)_source\%(Filename)%(Extension)</SourceExe>
+                <LayoutDir>$(TEMP)\%(Filename)_layout</LayoutDir>
+                <LogDir>$(OutputPath)\%(Filename)_layoutlog</LogDir>
+                <LogFile>$(OutputPath)\%(Filename)_layoutlog\%(Filename).log</LogFile>
+            </WebInstaller>
+        </ItemGroup>
+        <RemoveDir Directories="%(WebInstaller.SourceDir)" Condition="Exists('%(WebInstaller.SourceDir)')" />
+        <RemoveDir Directories="%(WebInstaller.LayoutDir)" Condition="Exists('%(WebInstaller.LayoutDir)')" />
+        <RemoveDir Directories="%(WebInstaller.LogDir)" Condition="Exists('%(WebInstaller.LogDir)')" />
+        <MakeDir Directories="%(WebInstaller.SourceDir)" />
+        <Copy SourceFiles="@(WebInstaller)" DestinationFiles="%(WebInstaller.SourceExe)" />
+        <Exec Command="start &quot;Install test&quot; /wait &quot;%(WebInstaller.SourceExe)&quot; /layout &quot;%(WebInstaller.LayoutDir)&quot; /passive /log &quot;%(WebInstaller.LogFile)&quot;"
+              IgnoreExitCode="false" />
+        <RemoveDir Directories="%(WebInstaller.LayoutDir)" />
+        <RemoveDir Directories="%(WebInstaller.SourceDir)" />
+        <RemoveDir Directories="%(WebInstaller.LogDir)" />
+    </Target>
+    
+    <Target Name="Upload" DependsOnTargets="_ValidateProperties;_RunGpg;_PrintNames;_Upload;_Purge" />
+    <Target Name="Test" DependsOnTargets="_TestLayout" />
     
     <Target Name="ShowHashes">
         <ItemGroup>
