@@ -1781,7 +1781,7 @@ There is one more :class:`tzinfo` method that a subclass may wish to override:
           else:
               return dt
 
-In the following :download:`tzinfo_example.py
+In the following :download:`tzinfo_examples.py
 <../includes/tzinfo_examples.py>` file there are some examples of
 :class:`tzinfo` classes:
 
