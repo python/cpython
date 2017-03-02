@@ -1,5 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
+import functools
 from test import support
 import unittest
 
@@ -7,9 +8,14 @@ import unittest
 def _async_test(func):
     """Decorator to turn an async function into a test case."""
     def wrapper(*args, **kwargs):
-        loop = asyncio.new_event_loop()
         coro = func(*args, **kwargs)
-        return loop.run_until_complete(coro)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(coro)
+        finally:
+            loop.close()
+            asyncio.set_event_loop(None)
     return wrapper
 
 

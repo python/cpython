@@ -82,8 +82,8 @@ Functions and classes provided:
 
 .. decorator:: asynccontextmanager
 
-   Similar to :func:`~contextlib.contextmanager`, but works with
-   :term:`coroutines <coroutine>`.
+   Similar to :func:`~contextlib.contextmanager`, but creates an
+   :ref:`asynchronous context manager <async-context-managers>`.
 
    This function is a :term:`decorator` that can be used to define a factory
    function for :keyword:`async with` statement asynchronous context managers,

@@ -2566,6 +2566,8 @@ An example of an asynchronous iterable object::
       result in a :exc:`RuntimeError`.
 
 
+.. _async-context-managers:
+
 Asynchronous Context Managers
 -----------------------------
 

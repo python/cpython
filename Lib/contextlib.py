@@ -55,8 +55,7 @@ class ContextDecorator(object):
 
 
 class _GeneratorContextManagerBase:
-    """Shared functionality for the @contextmanager and @asynccontextmanager
-    implementations."""
+    """Shared functionality for @contextmanager and @asynccontextmanager."""
 
     def __init__(self, func, args, kwds):
         self.gen = func(*args, **kwds)
@@ -142,8 +141,8 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase):
         except StopAsyncIteration:
             raise RuntimeError("generator didn't yield") from None
 
-    async def __aexit__(self, type, value, traceback):
-        if type is None:
+    async def __aexit__(self, typ, value, traceback):
+        if typ is None:
             try:
                 await self.gen.__anext__()
             except StopAsyncIteration:
@@ -152,11 +151,11 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase):
                 raise RuntimeError("generator didn't stop")
         else:
             if value is None:
-                value = type()
+                value = typ()
             # See _GeneratorContextManager.__exit__ for comments on subtleties
             # in this implementation
             try:
-                await self.gen.athrow(type, value, traceback)
+                await self.gen.athrow(typ, value, traceback)
                 raise RuntimeError("generator didn't stop after throw()")
             except StopAsyncIteration as exc:
                 return exc is not value
