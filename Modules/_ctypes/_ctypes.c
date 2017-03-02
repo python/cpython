@@ -2915,7 +2915,7 @@ PyCData_set(PyObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
 
     if (!CDataObject_Check(dst)) {
         PyErr_SetString(PyExc_TypeError,
-                        "not a ctypes instance");
+                        "not a ctype instance");
         return -1;
     }
 
