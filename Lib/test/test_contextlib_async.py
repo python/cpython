@@ -125,31 +125,19 @@ class AsyncContextManagerTestCase(unittest.TestCase):
 
     @_async_test
     async def test_contextmanager_except_stopiter(self):
-        stop_exc = StopIteration('spam')
         @asynccontextmanager
         async def woohoo():
             yield
-        try:
-            async with woohoo():
-                raise stop_exc
-        except Exception as ex:
-            self.assertIs(ex, stop_exc)
-        else:
-            self.fail('StopIteration was suppressed')
 
-    @_async_test
-    async def test_contextmanager_except_stopasynciter(self):
-        stop_exc = StopAsyncIteration('spam')
-        @asynccontextmanager
-        async def woohoo():
-            yield
-        try:
-            async with woohoo():
-                raise stop_exc
-        except Exception as ex:
-            self.assertIs(ex, stop_exc)
-        else:
-            self.fail('StopAsyncIteration was suppressed')
+        for stop_exc in (StopIteration('spam'), StopAsyncIteration('ham')):
+            with self.subTest(type=type(stop_exc)):
+                try:
+                    async with woohoo():
+                        raise stop_exc
+                except Exception as ex:
+                    self.assertIs(ex, stop_exc)
+                else:
+                    self.fail(f'{stop_exc} was suppressed')
 
     def _create_contextmanager_attribs(self):
         def attribs(**kw):
