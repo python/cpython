@@ -42,6 +42,11 @@ can be customized by end users easily.
       be used for this purpose.
 
 
+.. testsetup::
+
+   import configparser
+
+
 Quick Start
 -----------
 
@@ -95,7 +100,6 @@ back and explore the data it holds.
 
 .. doctest::
 
-   >>> import configparser
    >>> config = configparser.ConfigParser()
    >>> config.sections()
    []
@@ -116,8 +120,8 @@ back and explore the data it holds.
    'no'
    >>> topsecret['Port']
    '50022'
-   >>> for key in config['bitbucket.org']: print(key)
-   ...
+   >>> for key in config['bitbucket.org']:  # doctest: +SKIP
+   ...     print(key)
    user
    compressionlevel
    serveraliveinterval
@@ -469,9 +473,9 @@ the :meth:`__init__` options:
      ...                                'bar': 'y',
      ...                                'baz': 'z'}
      ... })
-     >>> parser.sections()
+     >>> parser.sections()  # doctest: +SKIP
      ['section3', 'section2', 'section1']
-     >>> [option for option in parser['section3']]
+     >>> [option for option in parser['section3']] # doctest: +SKIP
      ['baz', 'foo', 'bar']
 
   In these operations you need to use an ordered dictionary as well:
@@ -498,11 +502,11 @@ the :meth:`__init__` options:
      ...     ),
      ...   ))
      ... )
-     >>> parser.sections()
+     >>> parser.sections()  # doctest: +SKIP
      ['s1', 's2']
-     >>> [option for option in parser['s1']]
+     >>> [option for option in parser['s1']]  # doctest: +SKIP
      ['1', '3', '5']
-     >>> [option for option in parser['s2'].values()]
+     >>> [option for option in parser['s2'].values()]  # doctest: +SKIP
      ['b', 'd', 'f']
 
 * *allow_no_value*, default value: ``False``
@@ -597,11 +601,11 @@ the :meth:`__init__` options:
     ...   line #3
     ... """)
     >>> print(parser['hashes']['shebang'])
-
+    <BLANKLINE>
     #!/usr/bin/env python
     # -*- coding: utf-8 -*-
     >>> print(parser['hashes']['extensions'])
-
+    <BLANKLINE>
     enabled_extension
     another_extension
     yet_another_extension
@@ -755,6 +759,7 @@ be overridden by subclasses or by attribute assignment.
 
   .. doctest::
 
+     >>> import re
      >>> config = """
      ... [Section 1]
      ... option = value
@@ -762,11 +767,11 @@ be overridden by subclasses or by attribute assignment.
      ... [  Section 2  ]
      ... another = val
      ... """
-     >>> typical = ConfigParser()
+     >>> typical = configparser.ConfigParser()
      >>> typical.read_string(config)
      >>> typical.sections()
      ['Section 1', '  Section 2  ']
-     >>> custom = ConfigParser()
+     >>> custom = configparser.ConfigParser()
      >>> custom.SECTCRE = re.compile(r"\[ *(?P<header>[^]]+?) *\]")
      >>> custom.read_string(config)
      >>> custom.sections()
