@@ -688,6 +688,9 @@ Library
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
 
+- Issue #29703: Fix asyncio to support instantiation of new event loops
+  in child processes.
+
 Windows
 -------
 
