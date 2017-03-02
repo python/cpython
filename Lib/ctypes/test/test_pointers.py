@@ -213,6 +213,11 @@ class PointersTestCase(unittest.TestCase):
         from ctypes import _pointer_type_cache
         del _pointer_type_cache[id(P)]
 
+    def test_abstract(self):
+        from ctypes import _Pointer
+
+        self.assertRaises(TypeError, _Pointer.set_type, 42)
+
 
 if __name__ == '__main__':
     unittest.main()
