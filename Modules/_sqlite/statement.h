@@ -38,7 +38,7 @@ typedef struct
     sqlite3_stmt* st;
     PyObject* sql;
     int in_use;
-    int is_ddl;
+    int is_dml;
     PyObject* in_weakreflist; /* List of weak references */
 } pysqlite_Statement;
 
