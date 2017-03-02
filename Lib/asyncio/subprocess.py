@@ -92,7 +92,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         
         if fd in self._pipe_fds:
             self._pipe_fds.remove(fd)
-        self._maybe_close_transport(fd)
+        self._maybe_close_transport()
 
     def process_exited(self):
         self._process_exited = True
