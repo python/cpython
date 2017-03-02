@@ -54,7 +54,7 @@ class AsyncContextManagerTestCase(unittest.TestCase):
             yield
         ctx = whee()
         await ctx.__aenter__()
-        # Calling __exit__ should not result in an exception
+        # Calling __aexit__ should not result in an exception
         self.assertFalse(await ctx.__aexit__(TypeError, TypeError("foo"), None))
 
     @_async_test
@@ -69,6 +69,41 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         await ctx.__aenter__()
         with self.assertRaises(RuntimeError):
             await ctx.__aexit__(TypeError, TypeError('foo'), None)
+
+    @_async_test
+    async def test_contextmanager_trap_no_yield(self):
+        @asynccontextmanager
+        async def whoo():
+            if False:
+                yield
+        ctx = whoo()
+        with self.assertRaises(RuntimeError):
+            await ctx.__aenter__()
+
+    @_async_test
+    async def test_contextmanager_trap_second_yield(self):
+        @asynccontextmanager
+        async def whoo():
+            yield
+            yield
+        ctx = whoo()
+        await ctx.__aenter__()
+        with self.assertRaises(RuntimeError):
+            await ctx.__aexit__(None, None, None)
+
+    @_async_test
+    async def test_contextmanager_non_normalised(self):
+        @asynccontextmanager
+        async def whoo():
+            try:
+                yield
+            except RuntimeError:
+                raise SyntaxError
+
+        ctx = whoo()
+        await ctx.__aenter__()
+        with self.assertRaises(SyntaxError):
+            await ctx.__aexit__(RuntimeError, None, None)
 
     @_async_test
     async def test_contextmanager_except(self):
