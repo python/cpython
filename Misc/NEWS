@@ -276,6 +276,8 @@ Tests
 Build
 -----
 
+- bpo-29572: Update Windows build and OS X installers to use OpenSSL 1.0.2k.
+
 - Issue #26851: Set Android compilation and link flags.
 
 - Issue #28768: Fix implicit declaration of function _setmode. Patch by
