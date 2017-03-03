@@ -93,6 +93,20 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(journal[1], 1)
         self.assertEqual(journal[2], 0)
 
+    def CheckDatabaseSourceName(self):
+        with NamedTemporaryFile(suffix='.sqlite') as bckfn:
+            self.cx.backup(bckfn.name, name='main')
+            self.cx.backup(bckfn.name, name='temp')
+            with self.assertRaises(sqlite.OperationalError):
+                self.cx.backup(bckfn.name, name='non-existing')
+        self.cx.execute("ATTACH DATABASE ':memory:' AS attached_db")
+        self.cx.execute('CREATE TABLE attached_db.foo (key INTEGER)')
+        self.cx.executemany('INSERT INTO attached_db.foo (key) VALUES (?)', [(3,), (4,)])
+        self.cx.commit()
+        with NamedTemporaryFile(suffix='.sqlite') as bckfn:
+            self.cx.backup(bckfn.name, name='attached_db')
+            self.testBackup(bckfn.name)
+
 def suite():
     return unittest.TestSuite(unittest.makeSuite(BackupTests, "Check"))
 
