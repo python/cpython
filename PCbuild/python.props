@@ -45,7 +45,7 @@
     <sqlite3Dir>$(ExternalsDir)sqlite-3.14.2.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
-    <opensslDir>$(ExternalsDir)openssl-1.0.2j\</opensslDir>
+    <opensslDir>$(ExternalsDir)openssl-1.0.2k\</opensslDir>
     <opensslIncludeDir>$(opensslDir)include32</opensslIncludeDir>
     <opensslIncludeDir Condition="'$(ArchName)' == 'amd64'">$(opensslDir)include64</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
