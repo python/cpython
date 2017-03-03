@@ -259,6 +259,8 @@ Extension Modules
 Library
 -------
 
+- bpo-9303: Migrate sqlite3 module to _v2 API.  Patch by Aviv Palivoda.
+
 - bpo-28963: Fix out of bound iteration in asyncio.Future.remove_done_callback 
   implemented in C.
 
