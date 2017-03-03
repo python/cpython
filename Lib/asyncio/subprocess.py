@@ -89,7 +89,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                 reader.feed_eof()
             else:
                 reader.set_exception(exc)
-        
+
         if fd in self._pipe_fds:
             self._pipe_fds.remove(fd)
         self._maybe_close_transport()
@@ -97,7 +97,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
     def process_exited(self):
         self._process_exited = True
         self._maybe_close_transport()
-        
+
     def _maybe_close_transport(self):
         if len(self._pipe_fds) == 0 and self._process_exited:
             self._transport.close()
