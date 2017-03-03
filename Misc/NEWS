@@ -356,6 +356,10 @@ Library
 - bpo-29743: Closing transport during handshake process leaks open socket.
   Patch by Nikolay Kim
 
+- bpo-29406: asyncio SSL contexts leak sockets after calling close with
+  certain servers.
+  Patch by Nikolay Kim
+
 - bpo-27585: Fix waiter cancellation in asyncio.Lock.
   Patch by Mathieu Sornay.
 
