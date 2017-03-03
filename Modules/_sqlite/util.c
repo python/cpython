@@ -49,7 +49,7 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
 {
     int errorcode;
 
-#if SQLITE_VERSION_NUMBER >= 3003009
+#if SQLITE_VERSION_NUMBER < 3003009
     /* SQLite often doesn't report anything useful, unless you reset the statement first.
        When using sqlite3_prepare_v2 this is not needed. */
     if (st != NULL) {
