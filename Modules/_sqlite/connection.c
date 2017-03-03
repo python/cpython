@@ -41,6 +41,10 @@
 #endif
 #endif
 
+#if SQLITE_VERSION_NUMBER >= 3006011
+#define HAVE_BACKUP_API
+#endif
+
 _Py_IDENTIFIER(cursor);
 
 static const char * const begin_statements[] = {
@@ -1477,6 +1481,7 @@ finally:
     return retval;
 }
 
+#ifdef HAVE_BACKUP_API
 static PyObject *
 pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* kwds)
 {
@@ -1564,6 +1569,7 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
 finally:
     return retval;
 }
+#endif
 
 static PyObject *
 pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
@@ -1737,8 +1743,10 @@ static PyMethodDef connection_methods[] = {
         PyDoc_STR("Abort any pending database operation. Non-standard.")},
     {"iterdump", (PyCFunction)pysqlite_connection_iterdump, METH_NOARGS,
         PyDoc_STR("Returns iterator to the dump of the database in an SQL text format. Non-standard.")},
+    #ifdef HAVE_BACKUP_API
     {"backup", (PyCFunction)pysqlite_connection_backup, METH_VARARGS | METH_KEYWORDS,
         PyDoc_STR("Makes a backup of the database. Non-standard.")},
+    #endif
     {"__enter__", (PyCFunction)pysqlite_connection_enter, METH_NOARGS,
         PyDoc_STR("For context manager. Non-standard.")},
     {"__exit__", (PyCFunction)pysqlite_connection_exit, METH_VARARGS,
