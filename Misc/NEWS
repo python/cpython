@@ -259,6 +259,9 @@ Library
 - bpo-29271: Fix Task.current_task and Task.all_tasks implemented in C
   to accept None argument as their pure Python implementation.
 
+- bpo-29703: Fix asyncio to support instantiation of new event loops
+  in child processes.
+
 - bpo-29615: SimpleXMLRPCDispatcher no longer chains KeyError (or any other
   exception) to exception(s) raised in the dispatched methods.
   Patch by Petr Motejlek.
