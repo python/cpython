@@ -19,6 +19,10 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(result[0][0], 3)
         self.assertEqual(result[1][0], 4)
 
+    def CheckKeywordOnlyArgs(self):
+        with self.assertRaises(TypeError):
+            self.cx.backup('foo', 1)
+
     def CheckSimple(self):
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
             self.cx.backup(bckfn.name)
