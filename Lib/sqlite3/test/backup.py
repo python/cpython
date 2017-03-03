@@ -93,6 +93,15 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(journal[1], 1)
         self.assertEqual(journal[2], 0)
 
+    def CheckFailingProgress(self):
+        def progress(remaining, total):
+            raise SystemError('nearly out of space')
+
+        with NamedTemporaryFile(suffix='.sqlite') as bckfn:
+            with self.assertRaises(SystemError) as err:
+                self.cx.backup(bckfn.name, progress=progress)
+            self.assertEqual(str(err.exception), 'nearly out of space')
+
     def CheckDatabaseSourceName(self):
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
             self.cx.backup(bckfn.name, name='main')
