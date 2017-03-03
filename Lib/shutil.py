@@ -76,10 +76,11 @@ class RegistryError(Exception):
 def copyfileobj(fsrc, fdst, length=None):
     """Copy data from file-like object `fsrc` to file-like object `fdst`.
 
-    An in-memory buffer size can be set with `length`; the default is 16 KB.
+    An in-memory buffer size in bytes can be set with `length`; the default is
+    16 KiB.
     """
     if not length:
-        length = 16*1024
+        length = 16 * 1024
     while 1:
         buf = fsrc.read(length)
         if not buf:
@@ -104,8 +105,8 @@ def copyfile(src, dst, *, follow_symlinks=True, length=None):
     If follow_symlinks is not set and src is a symbolic link, a new
     symlink will be created instead of copying the file it points to.
 
-    An in memory buffer size can be set with `length`; the default is 16 kB.
-
+    An in-memory buffer size in bytes can be set with `length`; the default is
+    16 KiB.
     """
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
@@ -242,6 +243,9 @@ def copy(src, dst, *, follow_symlinks=True, length=None):
     If source and destination are the same file, a SameFileError will be
     raised.
 
+    An in-memory buffer size in bytes can be set with `length`; the default is
+    16 KiB.
+
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
@@ -258,6 +262,8 @@ def copy2(src, dst, *, follow_symlinks=True, length=None):
     If follow_symlinks is false, symlinks won't be followed. This
     resembles GNU's "cp -P src dst".
 
+    An in-memory buffer size in bytes can be set with `length`; the default is
+    16 KiB.
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))

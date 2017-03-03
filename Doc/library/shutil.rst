@@ -39,16 +39,16 @@ Directory and files operations
 
 .. function:: copyfileobj(fsrc, fdst[, length])
 
-   Copy the contents of the file-like object *fsrc* to the file-like object *fdst*.
-   The integer *length*, if given, is the buffer size. In particular, a negative
-   *length* value means to copy the data without looping over the source data in
-   chunks; by default the data is read in chunks to avoid uncontrolled memory
-   consumption. Note that if the current file position of the *fsrc* object is not
-   0, only the contents from the current file position to the end of the file will
-   be copied.
+   Copy the contents of the file-like object *fsrc* to the file-like object
+   *fdst*.  Only the contents from the current file position to the end of
+   the file will be copied.
 
+   The integer *length*, if given, is the buffer size; the default value
+   in bytes is 16 KiB. A negative *length* value means to copy the data without
+   looping over the source data in chunks; by default the data is read in
+   chunks to avoid uncontrolled memory consumption.
 
-.. function:: copyfile(src, dst, *, follow_symlinks=True)
+.. function:: copyfile(src, dst, *, follow_symlinks=True, length=None)
 
    Copy the contents (no metadata) of the file named *src* to a file named
    *dst* and return *dst*.  *src* and *dst* are path names given as strings.
@@ -65,6 +65,9 @@ Directory and files operations
    a new symbolic link will be created instead of copying the
    file *src* points to.
 
+   The integer *length*, if given, is the in-memory buffer size; the default
+   value in bytes is 16 KiB (see :func:`shutil.copyfileobj`).
+
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
       Added *follow_symlinks* argument.
@@ -73,6 +76,9 @@ Directory and files operations
    .. versionchanged:: 3.4
       Raise :exc:`SameFileError` instead of :exc:`Error`.  Since the former is
       a subclass of the latter, this change is backward compatible.
+
+   .. versionchanged:: 3.7
+      Added *length* parameter.
 
 
 .. exception:: SameFileError
@@ -141,7 +147,7 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument and support for Linux extended attributes.
 
-.. function:: copy(src, dst, *, follow_symlinks=True)
+.. function:: copy(src, dst, *, follow_symlinks=True, length=None)
 
    Copies the file *src* to the file or directory *dst*.  *src* and *dst*
    should be strings.  If *dst* specifies a directory, the file will be
@@ -153,6 +159,9 @@ Directory and files operations
    is true and *src* is a symbolic link, *dst* will be a copy of
    the file *src* refers to.
 
+   The integer *length*, if given, is the in-memory buffer size; the default
+   value in bytes is 16 KiB (see :func:`shutil.copyfileobj`).
+
    :func:`~shutil.copy` copies the file data and the file's permission
    mode (see :func:`os.chmod`).  Other metadata, like the
    file's creation and modification times, is not preserved.
@@ -163,7 +172,11 @@ Directory and files operations
       Added *follow_symlinks* argument.
       Now returns path to the newly created file.
 
-.. function:: copy2(src, dst, *, follow_symlinks=True)
+   .. versionchanged:: 3.7
+      Added `length` parameter
+
+
+.. function:: copy2(src, dst, *, follow_symlinks=True, length=None)
 
    Identical to :func:`~shutil.copy` except that :func:`copy2`
    also attempts to preserve all file metadata.
@@ -176,6 +189,9 @@ Directory and files operations
    unavailable, :func:`copy2` will preserve all the metadata
    it can; :func:`copy2` never returns failure.
 
+   The integer *length*, if given, is the in-memory buffer size; the default
+   value in bytes is 16 KiB (see :func:`shutil.copyfileobj`).
+
    :func:`copy2` uses :func:`copystat` to copy the file metadata.
    Please see :func:`copystat` for more information
    about platform support for modifying symbolic link metadata.
@@ -184,6 +200,10 @@ Directory and files operations
       Added *follow_symlinks* argument, try to copy extended
       file system attributes too (currently Linux only).
       Now returns path to the newly created file.
+
+   .. versionchanged:: 3.7
+      Added `length` parameter
+
 
 .. function:: ignore_patterns(\*patterns)
 
