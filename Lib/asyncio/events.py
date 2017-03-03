@@ -624,8 +624,9 @@ def _get_running_loop():
     This is a low-level function intended to be used by event loops.
     This function is thread-specific.
     """
-    if _running_loop._pid == os.getpid():
-        return _running_loop._loop
+    running_loop = _running_loop._loop
+    if running_loop is not None and _running_loop._pid == os.getpid():
+        return running_loop
 
 
 def _set_running_loop(loop):
