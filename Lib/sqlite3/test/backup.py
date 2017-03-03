@@ -65,9 +65,9 @@ class BackupTests(unittest.TestCase):
 
     def CheckNonCallableProgress(self):
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
-            with self.assertRaises(TypeError) as cm:
+            with self.assertRaises(TypeError) as err:
                 self.cx.backup(bckfn.name, pages=1, progress='bar')
-            self.assertEqual(str(cm.exception), 'progress argument must be a callable')
+            self.assertEqual(str(err.exception), 'progress argument must be a callable')
 
     def CheckModifyingProgress(self):
         journal = []
