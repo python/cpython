@@ -7,5 +7,6 @@
     "Misc/NEWS"
   ],
   "userBlacklist": ["gvanrossum"],
-  "userBlacklistForPR": ["benjaminp"]
+  "userBlacklistForPR": ["benjaminp"],
+  "userBlacklistForPR": ["skrah"]
 }
