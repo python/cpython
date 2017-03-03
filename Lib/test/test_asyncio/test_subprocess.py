@@ -459,6 +459,28 @@ class SubprocessMixin:
                     self.loop.run_until_complete(create)
                 self.assertEqual(warns, [])
 
+    def test_read_stdout_after_process_exit(self):
+        @asyncio.coroutine
+        def execute():
+            code = '\n'.join(['import sys',
+                              'for _ in range(64):',
+                              '    sys.stdout.write("x" * 4096)',
+                              'sys.stdout.flush()',
+                              'sys.exit(1)'])
+
+            fut = asyncio.create_subprocess_exec(sys.executable, '-c', code,            
+                                     stdout=asyncio.subprocess.PIPE,
+                                                 loop=self.loop)
+            process = yield from fut
+            while True:
+                data = yield from process.stdout.read(65536)
+                if data:
+                    yield from asyncio.sleep(0.3, loop=self.loop)
+                else:
+                    break
+
+        self.loop.run_until_complete(execute())
+                                                
 
 if sys.platform != 'win32':
     # Unix
