@@ -772,8 +772,13 @@ All of the following opcodes use their arguments.
 
 .. opcode:: BUILD_MAP (count)
 
-   Pushes a new dictionary object onto the stack.  The dictionary is pre-sized
-   to hold *count* entries.
+   Pushes a new dictionary object onto the stack.  Pops ``2 * count`` items
+   so that the dictionary holds *count* entries:
+   ``{..., TOS3: TOS2, TOS1: TOS}``.
+
+   .. versionchanged:: 3.5
+      The dictionary is created from stack items instead of creating an
+      empty dictionary pre-sized to hold *count* items.
 
 
 .. opcode:: BUILD_CONST_KEY_MAP (count)
@@ -791,6 +796,52 @@ All of the following opcodes use their arguments.
    onto the stack.
 
    .. versionadded:: 3.6
+
+
+.. opcode:: BUILD_TUPLE_UNPACK (count)
+
+   Pops *count* iterables from the stack, joins them in a single tuple,
+   and pushes the result.  Implements iterable unpacking in tuple
+   displays ``(*x, *y, *z)``.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BUILD_LIST_UNPACK (count)
+
+   This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a list
+   instead of tuple.  Implements iterable unpacking in list
+   displays ``[*x, *y, *z]``.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BUILD_SET_UNPACK (count)
+
+   This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a set
+   instead of tuple.  Implements iterable unpacking in set
+   displays ``{*x, *y, *z}``.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BUILD_MAP_UNPACK (count)
+
+   Pops *count* mappings from the stack, merges them into a single dictionary,
+   and pushes the result.  Implements dictionary unpacking in dictionary
+   displays ``{**x, **y, **z}``.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BUILD_MAP_UNPACK_WITH_CALL (oparg)
+
+   This is similar to :opcode:`BUILD_MAP_UNPACK`,
+   but is used for ``f(**x, **y, **z)`` call syntax.  The lowest byte of
+   *oparg* is the count of mappings, the relative position of the
+   corresponding callable ``f`` is encoded in the second byte of *oparg*.
+
+   .. versionadded:: 3.5
 
 
 .. opcode:: LOAD_ATTR (namei)
