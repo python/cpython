@@ -9,6 +9,7 @@ What's New in Python 3.7.0 alpha 1?
 
 Core and Builtins
 -----------------
+- bpo-29649: struct.pack_into check boundary error message didn't respect offset.
 
 - bpo-29949: Fix memory usage regression of set and frozenset object.
 

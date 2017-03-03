@@ -1938,7 +1938,7 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
     if (offset < 0 || (buffer.len - offset) < soself->s_size) {
         PyErr_Format(StructError,
                      "pack_into requires a buffer of at least %zd bytes",
-                     soself->s_size);
+                     soself->s_size + (offset > 0 ? offset : 0));
         PyBuffer_Release(&buffer);
         return NULL;
     }
