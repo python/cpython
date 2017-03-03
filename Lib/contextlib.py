@@ -130,8 +130,8 @@ class _GeneratorContextManager(_GeneratorContextManagerBase,
                 #
                 # This cannot use 'except BaseException as exc' (as in the
                 # async implementation) to maintain compatibility with
-                # Python 2, where string exceptions are not caught by
-                # 'except BaseException'.
+                # Python 2, where old-style class exceptions are not caught
+                # by 'except BaseException'.
                 if sys.exc_info()[1] is not value:
                     raise
 
