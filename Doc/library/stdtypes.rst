@@ -113,11 +113,11 @@ Notes:
 
 (1)
    This is a short-circuit operator, so it only evaluates the second
-   argument if the first one is :const:`False`.
+   argument if the first one is false.
 
 (2)
    This is a short-circuit operator, so it only evaluates the second
-   argument if the first one is :const:`True`.
+   argument if the first one is true.
 
 (3)
    ``not`` has a lower priority than non-Boolean operators, so ``not a == b`` is
