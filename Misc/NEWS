@@ -35,6 +35,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29704: asyncio.subprocess.SubprocessStreamProtocol no longer closes before
+  all pipes are closed.
+
 - bpo-29703: Fix asyncio to support instantiation of new event loops
   in child processes.
 
