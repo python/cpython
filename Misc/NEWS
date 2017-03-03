@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-28893: Set correct __cause__ for errors about invalid awaitables
+  returned from __aiter__ and __anext__.
+
 - bpo-29683: Fixes to memory allocation in _PyCode_SetExtra.  Patch by
   Brian Coleman.
 
