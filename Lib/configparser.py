@@ -697,6 +697,8 @@ class RawConfigParser(MutableMapping):
                     self._read(fp, filename)
             except OSError:
                 continue
+            if isinstance(filename, os.PathLike):
+                filename = os.fspath(filename)
             read_ok.append(filename)
         return read_ok
 
