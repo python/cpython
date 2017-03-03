@@ -112,6 +112,12 @@ The :const:`~unittest.mock.sentinel` attributes now preserve their identity
 when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`.
 (Contributed by Serhiy Storchaka in :issue:`20804`.)
 
+xmlrpc.server
+-------------
+
+:meth:`register_function` of :class:`xmlrpc.server.SimpleXMLRPCDispatcher` and
+its subclasses can be used as a decorator.
+(Contributed by Xiang Zhang in :issue:`7769`.)
 
 urllib.parse
 ------------
@@ -119,14 +125,6 @@ urllib.parse
 :func:`urllib.parse.quote` has been updated to from RFC 2396 to RFC 3986,
 adding `~` to the set of characters that is never quoted by default.
 (Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
-
-
-xmlrpc.server
--------------
-
-:meth:`register_function` of :class:`xmlrpc.server.SimpleXMLRPCDispatcher` and
-its subclasses can be used as a decorator.
-(Contributed by Xiang Zhang in :issue:`7769`.)
 
 
 Optimizations
