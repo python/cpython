@@ -579,12 +579,12 @@ class StructTest(unittest.TestCase):
         self.check_sizeof('0c', 0)
 
     def test_boundary_error_message(self):
-        import ctypes
-        byte_list = ctypes.create_string_buffer(1)
-        try:
+        byte_list = bytearray(1)
+        with self.assertRaisesRegex(
+                struct.error,
+                'pack_into requires a buffer of at least 6 '
+                'bytes for packing 1 bytes at offset 5'):
             struct.pack_into('b', byte_list, 5, 1)
-        except struct.error as e:
-            self.assertEqual('pack_into requires a buffer of at least 6 bytes', str(e))
 
 
 class UnpackIteratorTest(unittest.TestCase):
