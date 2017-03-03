@@ -704,7 +704,7 @@ def unquote_plus(string, encoding='utf-8', errors='replace'):
 _ALWAYS_SAFE = frozenset(b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                          b'abcdefghijklmnopqrstuvwxyz'
                          b'0123456789'
-                         b'_.-')
+                         b'_.-~')
 _ALWAYS_SAFE_BYTES = bytes(_ALWAYS_SAFE)
 _safe_quoters = {}
 
@@ -736,14 +736,17 @@ def quote(string, safe='/', encoding=None, errors=None):
     Each part of a URL, e.g. the path info, the query, etc., has a
     different set of reserved characters that must be quoted.
 
-    RFC 2396 Uniform Resource Identifiers (URI): Generic Syntax lists
+    RFC 3986 Uniform Resource Identifiers (URI): Generic Syntax lists
     the following reserved characters.
 
     reserved    = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" |
-                  "$" | ","
+                  "$" | "," | "~"
 
     Each of these characters is reserved in some component of a URL,
     but not necessarily in all of them.
+
+    Python 3.7 updates from using RFC 2396 to RFC 3986 to quote URL strings.
+    Now, "~" is included in the set of reserved characters.
 
     By default, the quote function is intended for quoting the path
     section of a URL.  Thus, it will not encode '/'.  This character

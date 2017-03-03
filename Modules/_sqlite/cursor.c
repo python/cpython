@@ -511,10 +511,9 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     pysqlite_statement_reset(self->statement);
     pysqlite_statement_mark_dirty(self->statement);
 
-    /* For backwards compatibility reasons, do not start a transaction if a
-       DDL statement is encountered.  If anybody wants transactional DDL,
-       they can issue a BEGIN statement manually. */
-    if (self->connection->begin_statement && !sqlite3_stmt_readonly(self->statement->st) && !self->statement->is_ddl) {
+    /* We start a transaction implicitly before a DML statement.
+       SELECT is the only exception. See #9924. */
+    if (self->connection->begin_statement && self->statement->is_dml) {
         if (sqlite3_get_autocommit(self->connection->db)) {
             result = _pysqlite_connection_begin(self->connection);
             if (!result) {
@@ -549,8 +548,10 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
                 /* If it worked, let's get out of the loop */
                 break;
             }
+#if SQLITE_VERSION_NUMBER < 3003009
             /* Something went wrong.  Re-set the statement and try again. */
             rc = pysqlite_statement_reset(self->statement);
+#endif
             if (rc == SQLITE_SCHEMA) {
                 /* If this was a result of the schema changing, let's try
                    again. */
@@ -609,7 +610,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
             }
         }
 
-        if (!sqlite3_stmt_readonly(self->statement->st)) {
+        if (self->statement->is_dml) {
             self->rowcount += (long)sqlite3_changes(self->connection->db);
         } else {
             self->rowcount= -1L;
@@ -707,7 +708,7 @@ PyObject* pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
 
     while (1) {
         Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_prepare(self->connection->db,
+        rc = SQLITE3_PREPARE(self->connection->db,
                              script_cstr,
                              -1,
                              &statement,

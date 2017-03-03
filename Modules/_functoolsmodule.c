@@ -163,6 +163,9 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kw)
         Py_XINCREF(kwappl);
     }
     else {
+        /* bpo-27840, bpo-29318: dictionary of keyword parameters must be
+           copied, because a function using "**kwargs" can modify the
+           dictionary. */
         kwappl = PyDict_Copy(pto->kw);
         if (kwappl == NULL) {
             Py_XDECREF(argappl);

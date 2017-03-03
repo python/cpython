@@ -10,7 +10,20 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
-- bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX. 
+- bpo-28893: Set correct __cause__ for errors about invalid awaitables
+  returned from __aiter__ and __anext__.
+
+- bpo-29683: Fixes to memory allocation in _PyCode_SetExtra.  Patch by
+  Brian Coleman.
+
+- bpo-29684: Fix minor regression of PyEval_CallObjectWithKeywords.
+  It should raise TypeError when kwargs is not a dict.  But it might
+  cause segv when args=NULL and kwargs is not a dict.
+
+- bpo-28598: Support __rmod__ for subclasses of str being called before
+  str.__mod__.  Patch by Martijn Pieters.
+
+- bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX.
   Patch by Matthieu Dartiailh.
 
 - bpo-29602: Fix incorrect handling of signed zeros in complex constructor for
@@ -20,9 +33,16 @@ Core and Builtins
 - bpo-29347: Fixed possibly dereferencing undefined pointers
   when creating weakref objects.
 
+- bpo-29463: Add ``docstring`` field to Module, ClassDef, FunctionDef,
+  and AsyncFunctionDef ast nodes.  docstring is not first stmt in their body
+  anymore.  It affects ``co_firstlineno`` and ``co_lnotab`` of code object
+  for module and class.
+
 - bpo-29438: Fixed use-after-free problem in key sharing dict.
 
 - bpo-29546: Set the 'path' and 'name' attribute on ImportError for ``from ... import ...``.
+
+- bpo-29546: Improve from-import error message with location
 
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
 
@@ -239,6 +259,42 @@ Extension Modules
 Library
 -------
 
+- bpo-29623: Allow use of path-like object as a single argument in
+  ConfigParser.read().  Patch by David Ellis.
+
+- bpo-9303: Migrate sqlite3 module to _v2 API.  Patch by Aviv Palivoda.
+
+- bpo-28963: Fix out of bound iteration in asyncio.Future.remove_done_callback 
+  implemented in C.
+
+- bpo-29704: asyncio.subprocess.SubprocessStreamProtocol no longer closes before
+  all pipes are closed.
+
+- bpo-29271: Fix Task.current_task and Task.all_tasks implemented in C
+  to accept None argument as their pure Python implementation.
+
+- bpo-29703: Fix asyncio to support instantiation of new event loops
+  in child processes.
+
+- bpo-29615: SimpleXMLRPCDispatcher no longer chains KeyError (or any other
+  exception) to exception(s) raised in the dispatched methods.
+  Patch by Petr Motejlek.
+
+- bpo-7769: Method register_function() of xmlrpc.server.SimpleXMLRPCDispatcher
+  and its subclasses can now be used as a decorator.
+
+- bpo-29376: Fix assertion error in threading._DummyThread.is_alive().
+
+- bpo-28624: Add a test that checks that cwd parameter of Popen() accepts
+  PathLike objects.  Patch by Sayan Chowdhury.
+
+- bpo-28518: Start a transaction implicitly before a DML statement.
+  Patch by Aviv Palivoda.
+
+- Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
+  '~' in the set of characters that is not quoted by default. Patch by
+  Christian Theune and Ratnadeep Debnath.
+
 - bpo-29532: Altering a kwarg dictionary passed to functools.partial()
   no longer affects a partial object after creation.
 
@@ -422,6 +478,11 @@ Library
 
 - Issue #23262: The webbrowser module now supports Firefox 36+ and derived
   browsers.  Based on patch by Oleg Broytman.
+
+- Issue #24241: The webbrowser in an X environment now prefers using the
+  default browser directly. Also, the webbrowser register() function now has
+  a documented 'preferred' argument, to specify browsers to be returned by
+  get() with no arguments. Patch by David Steele
 
 - Issue #27939: Fixed bugs in tkinter.ttk.LabeledScale and tkinter.Scale caused
   by representing the scale as float value internally in Tk.  tkinter.IntVar
@@ -724,6 +785,11 @@ C API
 
 Documentation
 -------------
+
+- bpo-28929: Link the documentation to its source file on GitHub.
+
+- bpo-25008: Document smtpd.py as effectively deprecated and add a pointer to
+  aiosmtpd, a third-party asyncio-based replacement.
 
 - Issue #26355: Add canonical header link on each page to corresponding major
   version of the documentation. Patch by Matthias Bussonnier.
@@ -1218,6 +1284,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #26128: Added keyword-only arguments support for
+  subprocess.STARTUPINFO
 
 - Issue #27517: LZMA compressor and decompressor no longer raise exceptions if
   given empty data twice.  Patch by Benjamin Fogle.
