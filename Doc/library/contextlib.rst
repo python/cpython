@@ -88,7 +88,8 @@ Functions and classes provided:
    This function is a :term:`decorator` that can be used to define a factory
    function for :keyword:`async with` statement asynchronous context managers,
    without needing to create a class or separate :meth:`__aenter__` and
-   :meth:`__aexit__` methods.
+   :meth:`__aexit__` methods. It must be applied to an :term:`asynchronous
+   generator` function.
 
    A simple example::
 
