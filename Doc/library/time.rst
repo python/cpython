@@ -17,11 +17,23 @@ semantics of these functions varies among platforms.
 
 An explanation of some terminology and conventions is in order.
 
+.. _epoch:
+
 .. index:: single: epoch
 
-* The :dfn:`epoch` is the point where the time starts.  On January 1st of that
-  year, at 0 hours, the "time since the epoch" is zero.  For Unix, the epoch is
-  1970.  To find out what the epoch is, look at ``gmtime(0)``.
+* The :dfn:`epoch` is the point where the time starts, and is platform
+  dependent.  For Unix, the epoch is January 1, 1970, 00:00:00 (UTC).
+  To find out what the epoch is on a given platform, look at
+  ``time.gmtime(0)``.
+
+.. _leap seconds: https://en.wikipedia.org/wiki/Leap_second
+
+.. index:: seconds since the epoch
+
+* The term :dfn:`seconds since the epoch` refers to the total number
+  of elapsed seconds since the epoch, typically excluding
+  `leap seconds`_.  Leap seconds are excluded from this total on all
+  POSIX-compliant platforms.
 
 .. index:: single: Year 2038
 
@@ -467,7 +479,7 @@ The module defines the following functions and data items:
 
    (2)
       The range really is ``0`` to ``61``; value ``60`` is valid in
-      timestamps representing leap seconds and value ``61`` is supported
+      timestamps representing `leap seconds`_ and value ``61`` is supported
       for historical reasons.
 
    (3)
@@ -572,12 +584,28 @@ The module defines the following functions and data items:
 
 .. function:: time()
 
-   Return the time in seconds since the epoch as a floating point number.
+   Return the time in seconds since the epoch_ as a floating point
+   number. The specific date of the epoch and the handling of
+   `leap seconds`_ is platform dependent.
+   On Windows and most Unix systems, the epoch is January 1, 1970,
+   00:00:00 (UTC) and leap seconds are not counted towards the time
+   in seconds since the epoch. This is commonly referred to as
+   `Unix time <https://en.wikipedia.org/wiki/Unix_time>`_.
+   To find out what the epoch is on a given platform, look at
+   ``gmtime(0)``.
+
    Note that even though the time is always returned as a floating point
    number, not all systems provide time with a better precision than 1 second.
    While this function normally returns non-decreasing values, it can return a
-   lower value than a previous call if the system clock has been set back between
-   the two calls.
+   lower value than a previous call if the system clock has been set back
+   between the two calls.
+
+   The number returned by :func:`.time` may be converted into a more common
+   time format (i.e. year, month, day, hour, etc...) in UTC by passing it to
+   :func:`gmtime` function or in local time by passing it to the
+   :func:`localtime` function. In both cases a
+   :class:`struct_time` object is returned, from which the components
+   of the calendar date may be accessed as attributes.
 
 .. data:: timezone
 
