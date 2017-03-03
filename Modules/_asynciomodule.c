@@ -522,7 +522,7 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
         return NULL;
     }
 
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < PyList_GET_SIZE(self->fut_callbacks); i++) {
         int ret;
         PyObject *item = PyList_GET_ITEM(self->fut_callbacks, i);
 
