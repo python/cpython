@@ -468,9 +468,11 @@ class SubprocessMixin:
                               'sys.stdout.flush()',
                               'sys.exit(1)'])
 
-            fut = asyncio.create_subprocess_exec(sys.executable, '-c', code,            
-                                     stdout=asyncio.subprocess.PIPE,
-                                                 loop=self.loop)
+            fut = asyncio.create_subprocess_exec(
+                sys.executable, '-c', code,
+                stdout=asyncio.subprocess.PIPE,
+                loop=self.loop)
+
             process = yield from fut
             while True:
                 data = yield from process.stdout.read(65536)
@@ -480,7 +482,7 @@ class SubprocessMixin:
                     break
 
         self.loop.run_until_complete(execute())
-                                                
+
 
 if sys.platform != 'win32':
     # Unix
