@@ -548,8 +548,10 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
                 /* If it worked, let's get out of the loop */
                 break;
             }
+#if SQLITE_VERSION_NUMBER < 3003009
             /* Something went wrong.  Re-set the statement and try again. */
             rc = pysqlite_statement_reset(self->statement);
+#endif
             if (rc == SQLITE_SCHEMA) {
                 /* If this was a result of the schema changing, let's try
                    again. */
@@ -706,7 +708,7 @@ PyObject* pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
 
     while (1) {
         Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_prepare(self->connection->db,
+        rc = SQLITE3_PREPARE(self->connection->db,
                              script_cstr,
                              -1,
                              &statement,
