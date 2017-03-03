@@ -259,6 +259,9 @@ Extension Modules
 Library
 -------
 
+- bpo-28963: Fix out of bound iteration in asyncio.Future.remove_done_callback 
+  implemented in C.
+
 - bpo-29704: asyncio.subprocess.SubprocessStreamProtocol no longer closes before
   all pipes are closed.
 
