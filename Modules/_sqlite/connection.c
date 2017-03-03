@@ -1532,8 +1532,9 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
                 }
             }
 
-            /* Sleep for 250ms if there are still further pages to copy */
-            if (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
+            /* Sleep for 250ms if there are still further pages to copy and
+               the engine could not make any progress */
+            if (rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
                 Py_BEGIN_ALLOW_THREADS
                 sqlite3_sleep(250);
                 Py_END_ALLOW_THREADS
