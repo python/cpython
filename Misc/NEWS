@@ -79,6 +79,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29703: Fix asyncio to support instantiation of new event loops
+  in child processes.
+
 - bpo-29376: Fix assertion error in threading._DummyThread.is_alive().
 
 - bpo-28624: Add a test that checks that cwd parameter of Popen() accepts

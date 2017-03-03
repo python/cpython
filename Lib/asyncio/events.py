@@ -11,6 +11,7 @@ __all__ = ['AbstractEventLoopPolicy',
 
 import functools
 import inspect
+import os
 import reprlib
 import socket
 import subprocess
@@ -611,6 +612,9 @@ _lock = threading.Lock()
 # A TLS for the running event loop, used by _get_running_loop.
 class _RunningLoop(threading.local):
     _loop = None
+    _pid = None
+
+
 _running_loop = _RunningLoop()
 
 
@@ -620,7 +624,8 @@ def _get_running_loop():
     This is a low-level function intended to be used by event loops.
     This function is thread-specific.
     """
-    return _running_loop._loop
+    if _running_loop._pid == os.getpid():
+        return _running_loop._loop
 
 
 def _set_running_loop(loop):
@@ -629,6 +634,7 @@ def _set_running_loop(loop):
     This is a low-level function intended to be used by event loops.
     This function is thread-specific.
     """
+    _running_loop._pid = os.getpid()
     _running_loop._loop = loop
 
 
