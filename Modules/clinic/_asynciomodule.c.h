@@ -278,7 +278,7 @@ _asyncio_Task_current_task(PyTypeObject *type, PyObject **args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", NULL};
     static _PyArg_Parser _parser = {"|O:current_task", _keywords, 0};
-    PyObject *loop = NULL;
+    PyObject *loop = Py_None;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &loop)) {
@@ -310,7 +310,7 @@ _asyncio_Task_all_tasks(PyTypeObject *type, PyObject **args, Py_ssize_t nargs, P
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", NULL};
     static _PyArg_Parser _parser = {"|O:all_tasks", _keywords, 0};
-    PyObject *loop = NULL;
+    PyObject *loop = Py_None;
 
     if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
         &loop)) {
@@ -517,4 +517,4 @@ _asyncio_Task__wakeup(TaskObj *self, PyObject **args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8f036321bb083066 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=40ca6c9da517da73 input=a9049054013a1b77]*/
