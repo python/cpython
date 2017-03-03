@@ -551,6 +551,9 @@ Connection Objects
          con = sqlite3.connect('existing_db.db')
          con.backup('copy_of_existing_db.db', 1, progress)
 
+      .. note:: This is available only when the underlying SQLite library is at
+                version 3.6.11 or higher.
+
       .. versionadded:: 3.7
 
 
