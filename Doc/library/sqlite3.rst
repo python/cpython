@@ -521,7 +521,7 @@ Connection Objects
                  f.write('%s\n' % line)
 
 
-   .. method:: backup(filename, *, pages=0, progress=None)
+   .. method:: backup(filename, *, pages=0, progress=None, name="main")
 
       This method makes a backup of a SQLite database into the mandatory argument
       *filename*, even while it's being accessed by other clients, or concurrently by
@@ -534,6 +534,11 @@ Connection Objects
       If *progress* is specified, it must either ``None`` or a callable object that
       will be executed at each iteration with two integer arguments, respectively the
       *remaining* number of pages still to be copied and the *total* number of pages.
+
+      The *name* argument specifies the database name that will be copied: it must be
+      a string containing either ``"main"``, the default, to indicate the main
+      database, ``"temp"`` to indicate the temporary database or the name specified
+      after the ``AS`` keyword in an ``ATTACH`` statement for an attached database.
 
       Example::
 

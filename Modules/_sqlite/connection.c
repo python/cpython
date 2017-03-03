@@ -1483,14 +1483,15 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
     char* filename;
     int pages = -1;
     PyObject* progress = Py_None;
+    char* name = "main";
     PyObject* retval = NULL;
     int rc;
     sqlite3 *bckconn;
     sqlite3_backup *bckhandle;
-    static char *keywords[] = {"filename", "pages", "progress", NULL};
+    static char *keywords[] = {"filename", "pages", "progress", "name", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|$iO:backup", keywords,
-                                     &filename, &pages, &progress)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|$iOs:backup", keywords,
+                                     &filename, &pages, &progress, &name)) {
         goto finally;
     }
 
@@ -1512,7 +1513,7 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
     }
 
     Py_BEGIN_ALLOW_THREADS
-    bckhandle = sqlite3_backup_init(bckconn, "main", self->db, "main");
+    bckhandle = sqlite3_backup_init(bckconn, "main", self->db, name);
     Py_END_ALLOW_THREADS
 
     if (bckhandle) {
