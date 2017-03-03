@@ -248,6 +248,23 @@ class TraceCallbackTests(unittest.TestCase):
                         "Unicode data %s garbled in trace callback: %s"
                         % (ascii(unicode_value), ', '.join(map(ascii, traced_statements))))
 
+    def CheckTraceCallbackContent(self):
+        """
+        Test that the statement are correct. Fix for bpo-26187
+        """
+        con = sqlite.connect(":memory:")
+        traced_statements = []
+        def trace(statement):
+            traced_statements.append(statement)
+        con.set_trace_callback(trace)
+        queries = ["create table foo(x)", "insert into foo(x) values(1)"]
+        for query in queries:
+            con.execute(query)
+            con.commit()
+        queries.insert(1, "BEGIN ")
+        queries.append("COMMIT")
+        self.assertEqual(traced_statements, queries)
+
 
 
 def suite():
