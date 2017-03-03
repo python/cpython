@@ -128,6 +128,10 @@ class _GeneratorContextManager(_GeneratorContextManagerBase,
                 # fixes the impedance mismatch between the throw() protocol
                 # and the __exit__() protocol.
                 #
+                # This cannot use 'except BaseException as exc' (as in the
+                # async implementation) to maintain compatibility with
+                # Python 2, where string exceptions are not caught by
+                # 'except BaseException'.
                 if sys.exc_info()[1] is not value:
                     raise
 
@@ -172,8 +176,8 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase):
                     if exc.__cause__ is value:
                         return False
                 raise
-            except:
-                if sys.exc_info()[1] is not value:
+            except BaseException as exc:
+                if exc is not value:
                     raise
 
 
@@ -203,7 +207,6 @@ def contextmanager(func):
             <body>
         finally:
             <cleanup>
-
     """
     @wraps(func)
     def helper(*args, **kwds):
@@ -237,7 +240,6 @@ def asynccontextmanager(func):
             <body>
         finally:
             <cleanup>
-
     """
     @wraps(func)
     def helper(*args, **kwds):
