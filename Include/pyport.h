@@ -671,7 +671,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #                               define PyMODINIT_FUNC __declspec(dllexport) PyObject*
 #                       endif /* __cplusplus */
 #               endif /* Py_BUILD_CORE */
-#       endif /* HAVE_DECLSPEC */
+#       endif /* HAVE_DECLSPEC_DLL */
 #endif /* Py_ENABLE_SHARED */
 
 /* If no external linkage macros defined by now, create defaults */
