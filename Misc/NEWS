@@ -22,6 +22,11 @@ Core and Builtins
 
 - Issue #28598: Support __rmod__ for subclasses of str being called before
   str.__mod__.  Patch by Martijn Pieters.
+- bpo-27593: sys.version and the platform module python_build(),
+  python_branch(), and python_revision() functions now use
+  git information rather than hg when building from a repo.
+
+- bpo-29572: Update Windows build and OS X installers to use OpenSSL 1.0.2k.
 
 - bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX.
   Patch by Matthieu Dartiailh.
