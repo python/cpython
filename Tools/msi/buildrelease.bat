@@ -65,8 +65,8 @@ if "%1" NEQ "" echo Invalid option: "%1" && exit /B 1
 
 if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
 
-if not exist "%HG%" where hg > "%TEMP%\hg.loc" 2> nul && set /P HG= < "%TEMP%\hg.loc" & del "%TEMP%\hg.loc"
-if not exist "%HG%" echo Cannot find Mercurial on PATH && exit /B 1
+if not exist "%GIT%" where git > "%TEMP%\git.loc" 2> nul && set /P GIT= < "%TEMP%\git.loc" & del "%TEMP%\git.loc"
+if not exist "%GIT%" echo Cannot find Git on PATH && exit /B 1
 
 call "%D%get_externals.bat"
 
