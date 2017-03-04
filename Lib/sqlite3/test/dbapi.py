@@ -620,6 +620,62 @@ class BlobTests(unittest.TestCase):
         with self.assertRaises(sqlite.OperationalError):
             self.cx.open_blob("test", "blob_col", 2)
 
+    def CheckBlobGetItem(self):
+        self.assertEqual(self.blob[5], b"a")
+
+    def CheckBlobGetItemIndexOutOfRange(self):
+        with self.assertRaises(IndexError):
+            self.blob[105]
+        with self.assertRaises(IndexError):
+            self.blob[-105]
+
+    def CheckBlobGetItemNegativeIndex(self):
+        self.assertEqual(self.blob[-5], b"a")
+
+    def CheckBlobGetItemInvalidIndex(self):
+        with self.assertRaises(TypeError):
+            self.blob[b"a"]
+
+    def CheckBlobGetSlice(self):
+        self.assertEqual(self.blob[5:10], b"aaaaa")
+
+    def CheckBlobGetSliceNegativeIndex(self):
+        self.assertEqual(self.blob[5:-5], self.blob_data[5:-5])
+
+    def CheckBlobGetSliceInvalidIndex(self):
+        with self.assertRaises(TypeError):
+            self.blob[5:b"a"]
+
+    def CheckBlobGetSliceWithSkip(self):
+        self.blob.write(b"abcdefghij")
+        self.assertEqual(self.blob[0:10:2], b"acegi")
+
+    def CheckBlobSetItem(self):
+        self.blob[0] = b"b"
+        self.assertEqual(self.cx.execute("select blob_col from test").fetchone()[0], b"b" + self.blob_data[1:])
+
+    def CheckBlobSetSlice(self):
+        self.blob[0:5] = b"bbbbb"
+        self.assertEqual(self.cx.execute("select blob_col from test").fetchone()[0], b"bbbbb" + self.blob_data[5:])
+
+    def CheckBlobSetSliceWithSkip(self):
+        self.blob[0:10:2] = b"bbbbb"
+        self.assertEqual(self.cx.execute("select blob_col from test").fetchone()[0], b"bababababa" + self.blob_data[10:])
+
+    def CheckBlobGetEmptySlice(self):
+        self.assertEqual(self.blob[5:5], b"")
+
+    def CheckBlobSetSliceWrongLength(self):
+        with self.assertRaises(IndexError):
+            self.blob[5:10] = b"a"
+
+    def CheckBlobConcatNotSupported(self):
+        with self.assertRaises(SystemError):
+            self.blob + self.blob
+
+    def CheckBlobRepeateNotSupported(self):
+        with self.assertRaises(SystemError):
+            self.blob * 5
 
 @unittest.skipUnless(threading, 'This test requires threading.')
 class ThreadTests(unittest.TestCase):
