@@ -11,6 +11,10 @@ int pysqlite_blob_init(pysqlite_Blob *self, pysqlite_Connection* connection,
     self->blob = blob;
     self->in_weakreflist = NULL;
 
+    Py_BEGIN_ALLOW_THREADS
+    self->length = sqlite3_blob_bytes(self->blob);
+    Py_END_ALLOW_THREADS
+
     if (!pysqlite_check_thread(self->connection)) {
         return -1;
     }
@@ -94,15 +98,11 @@ PyObject* pysqlite_blob_close(pysqlite_Blob *self)
 
 static Py_ssize_t pysqlite_blob_length(pysqlite_Blob *self)
 {
-    int blob_length;
     if (!pysqlite_check_blob(self)) {
         return -1;
     }
-    Py_BEGIN_ALLOW_THREADS
-    blob_length = sqlite3_blob_bytes(self->blob);
-    Py_END_ALLOW_THREADS
 
-    return blob_length;
+    return self->length;
 };
 
 static PyObject* inner_read(pysqlite_Blob *self, int read_length, int offset)
@@ -140,7 +140,6 @@ static PyObject* inner_read(pysqlite_Blob *self, int read_length, int offset)
 PyObject* pysqlite_blob_read(pysqlite_Blob *self, PyObject *args)
 {
     int read_length = -1;
-    int blob_length = 0;
     PyObject *buffer;
 
     if (!PyArg_ParseTuple(args, "|i", &read_length)) {
@@ -151,20 +150,14 @@ PyObject* pysqlite_blob_read(pysqlite_Blob *self, PyObject *args)
         return NULL;
     }
 
-
-    /* TODO: make this multithreaded and safe! */
-    Py_BEGIN_ALLOW_THREADS
-    blob_length = sqlite3_blob_bytes(self->blob);
-    Py_END_ALLOW_THREADS
-
     if (read_length < 0) {
         /* same as file read. */
-        read_length = blob_length;
+        read_length = self->length;
     }
 
     /* making sure we don't read more then blob size */
-    if (read_length > blob_length - self->offset) {
-        read_length = blob_length - self->offset;
+    if (read_length > self->length - self->offset) {
+        read_length = self->length - self->offset;
     }
 
     buffer = inner_read(self, read_length, self->offset);
@@ -236,7 +229,7 @@ PyObject* pysqlite_blob_write(pysqlite_Blob *self, PyObject *data)
 
 PyObject* pysqlite_blob_seek(pysqlite_Blob *self, PyObject *args)
 {
-    int blob_length, offset, from_what = 0;
+    int offset, from_what = 0;
 
     if (!PyArg_ParseTuple(args, "i|i", &offset, &from_what)) {
         return NULL;
@@ -246,10 +239,6 @@ PyObject* pysqlite_blob_seek(pysqlite_Blob *self, PyObject *args)
     if (!pysqlite_check_blob(self)) {
         return NULL;
     }
-
-    Py_BEGIN_ALLOW_THREADS
-    blob_length = sqlite3_blob_bytes(self->blob);
-    Py_END_ALLOW_THREADS
 
     switch (from_what) {
         case 0:  // relative to blob begin
@@ -261,17 +250,17 @@ PyObject* pysqlite_blob_seek(pysqlite_Blob *self, PyObject *args)
             offset = self->offset + offset;
             break;
         case 2:  // relative to blob end
-            if (offset > INT_MAX - blob_length) {
+            if (offset > INT_MAX - self->length) {
                 goto overflow;
             }
-            offset = blob_length + offset;
+            offset = self->length + offset;
             break;
         default:
             return PyErr_Format(PyExc_ValueError,
                                 "from_what should be 0, 1 or 2");
     }
 
-    if (offset < 0 || offset > blob_length) {
+    if (offset < 0 || offset > self->length) {
         return PyErr_Format(PyExc_ValueError, "offset out of blob range");
     }
 
@@ -340,17 +329,11 @@ static PyObject* pysqlite_blob_repeat(pysqlite_Blob *self, PyObject *args)
 
 static PyObject* pysqlite_blob_item(pysqlite_Blob *self, Py_ssize_t i)
 {
-    int blob_length = 0;
-
     if (!pysqlite_check_blob(self)) {
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    blob_length = sqlite3_blob_bytes(self->blob);
-    Py_END_ALLOW_THREADS
-
-    if (i < 0 || i >= blob_length) {
+    if (i < 0 || i >= self->length) {
         PyErr_SetString(PyExc_IndexError, "Blob index out of range");
         return NULL;
     }
@@ -360,18 +343,13 @@ static PyObject* pysqlite_blob_item(pysqlite_Blob *self, Py_ssize_t i)
 
 static int pysqlite_blob_ass_item(pysqlite_Blob *self, Py_ssize_t i, PyObject *v)
 {
-    int blob_length = 0;
     const char *buf;
 
     if (!pysqlite_check_blob(self)) {
         return -1;
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    blob_length = sqlite3_blob_bytes(self->blob);
-    Py_END_ALLOW_THREADS
-
-    if (i < 0 || i >= blob_length) {
+    if (i < 0 || i >= self->length) {
         PyErr_SetString(PyExc_IndexError, "Blob index out of range");
         return -1;
     }
@@ -393,23 +371,17 @@ static int pysqlite_blob_ass_item(pysqlite_Blob *self, Py_ssize_t i, PyObject *v
 
 static PyObject * pysqlite_blob_subscript(pysqlite_Blob *self, PyObject *item)
 {
-    int blob_length = 0;
-
     if (!pysqlite_check_blob(self)) {
         return NULL;
     }
-
-    Py_BEGIN_ALLOW_THREADS
-    blob_length = sqlite3_blob_bytes(self->blob);
-    Py_END_ALLOW_THREADS
 
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;
         if (i < 0)
-            i += blob_length;
-        if (i < 0 || i >= blob_length) {
+            i += self->length;
+        if (i < 0 || i >= self->length) {
             PyErr_SetString(PyExc_IndexError,
                 "Blob index out of range");
             return NULL;
@@ -420,7 +392,7 @@ static PyObject * pysqlite_blob_subscript(pysqlite_Blob *self, PyObject *item)
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen;
 
-        if (PySlice_GetIndicesEx(item, blob_length,
+        if (PySlice_GetIndicesEx(item, self->length,
                          &start, &stop, &step, &slicelen) < 0) {
             return NULL;
         }
@@ -484,16 +456,11 @@ static PyObject * pysqlite_blob_subscript(pysqlite_Blob *self, PyObject *item)
 
 static int pysqlite_blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyObject *value)
 {
-    int blob_length = 0;
     int rc;
 
     if (!pysqlite_check_blob(self)) {
         return -1;
     }
-
-    Py_BEGIN_ALLOW_THREADS
-    blob_length = sqlite3_blob_bytes(self->blob);
-    Py_END_ALLOW_THREADS
 
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -502,8 +469,8 @@ static int pysqlite_blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyOb
         if (i == -1 && PyErr_Occurred())
             return -1;
         if (i < 0)
-            i += blob_length;
-        if (i < 0 || i >= blob_length) {
+            i += self->length;
+        if (i < 0 || i >= self->length) {
             PyErr_SetString(PyExc_IndexError,
                             "Blob index out of range");
             return -1;
@@ -527,7 +494,7 @@ static int pysqlite_blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyOb
         Py_buffer vbuf;
 
         if (PySlice_GetIndicesEx(item,
-                                 blob_length, &start, &stop,
+                                 self->length, &start, &stop,
                                  &step, &slicelen) < 0) {
             return -1;
         }
