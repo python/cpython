@@ -878,7 +878,9 @@ Blob Objects
 .. class:: Blob
 
    A :class:`Blob` instance can read and write the data in the
-   :abbr:`BLOB (Binary Large OBject)`.
+   :abbr:`BLOB (Binary Large OBject)`. The :class:`Blob` object implement both
+   the file and sequence protocol. For example You can read data from the
+   :class:`Blob` by doing ``obj.read(5)`` or by doing ``obj[:5]``.
 
    .. method:: Blob.close()
 
