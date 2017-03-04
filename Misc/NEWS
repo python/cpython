@@ -127,11 +127,6 @@ Tests
   determine the candidate encoding for the test regex (allowing it to correctly
   skip the test when the default locale encoding is a multi-byte encoding)
 
-Build
------
-
-- bpo-29572: Update Windows build and OS X installers to use OpenSSL 1.0.2k.
-
 
 What's New in Python 3.5.3?
 ===========================
