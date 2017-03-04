@@ -1177,7 +1177,7 @@ get_gmtoff(time_t t, struct tm *p)
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     return p->tm_gmtoff;
 #else
-    return timegm(p) - t;
+-    return timegm(p) - t;
 #endif
 }
 

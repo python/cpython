@@ -358,7 +358,12 @@ PyAPI_FUNC(void) PyErr_SetInterrupt(void);
 
 /* In signalmodule.c */
 #ifndef Py_LIMITED_API
+#ifdef __CYGWIN__
+/* Cygwin Requires this change. */
+PyAPI_FUNC(int) PySignal_SetWakeupFd(int fd);
+#else
 int PySignal_SetWakeupFd(int fd);
+#endif
 #endif
 
 /* Support for adding program text to SyntaxErrors */

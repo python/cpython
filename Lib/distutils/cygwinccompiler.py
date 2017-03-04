@@ -92,9 +92,7 @@ class CygwinCCompiler(UnixCCompiler):
     compiler_type = 'cygwin'
     obj_extension = ".o"
     static_lib_extension = ".a"
-    shared_lib_extension = ".dll"
-    static_lib_format = "lib%s%s"
-    shared_lib_format = "%s%s"
+    shared_lib_extension = ".dll.a"
     exe_extension = ".exe"
 
     def __init__(self, verbose=0, dry_run=0, force=0):

@@ -8,6 +8,9 @@
 #ifdef HAVE_PROCESS_H
 #include <process.h>
 #endif
+#ifdef __CYGWIN__
+#include <stdbool.h>  /* necessary for TSS key */
+#endif
 
 /* options */
 #ifndef _PY_USE_CV_LOCKS
@@ -352,6 +355,131 @@ _pythread_nt_set_stacksize(size_t size)
 #define Py_HAVE_NATIVE_TLS
 
 #ifdef Py_HAVE_NATIVE_TLS
+#ifdef __CYGWIN__
+int
+PyThread_create_key(void)
+{
+    DWORD result = TlsAlloc();
+    if (result == TLS_OUT_OF_INDEXES)
+        return -1;
+    return (int)result;
+}
+
+void
+PyThread_delete_key(int key)
+{
+    TlsFree(key);
+}
+
+int
+PyThread_set_key_value(int key, void *value)
+{
+    BOOL ok = TlsSetValue(key, value);
+    return ok ? 0 : -1;
+}
+
+void *
+PyThread_get_key_value(int key)
+{
+    /* because TLS is used in the Py_END_ALLOW_THREAD macro,
+     * it is necessary to preserve the windows error state, because
+     * it is assumed to be preserved across the call to the macro.
+     * Ideally, the macro should be fixed, but it is simpler to
+     * do it here.
+     */
+    DWORD error = GetLastError();
+    void *result = TlsGetValue(key);
+    SetLastError(error);
+    return result;
+}
+
+void
+PyThread_delete_key_value(int key)
+{
+    /* NULL is used as "key missing", and it is also the default
+     * given by TlsGetValue() if nothing has been set yet.
+     */
+    TlsSetValue(key, NULL);
+}
+
+/* reinitialization of TLS is not necessary after fork when using
+ * the native TLS functions.  And forking isn't supported on Windows either.
+ */
+void
+PyThread_ReInitTLS(void)
+{}
+
+/* Thread Specific Storage (TSS) API */
+int
+PyThread_tss_create(Py_tss_t *key)
+{
+    assert(key != NULL);
+    /* If the key has been created, function is silently skipped. */
+    if (key->_is_initialized)
+        return 0;
+
+    DWORD result = TlsAlloc();
+    if (result == TLS_OUT_OF_INDEXES)
+        return -1;
+    /* In Windows, platform-specific key type is DWORD. */
+    key->_key = result;
+    key->_is_initialized = true;
+    return 0;
+}
+
+void
+PyThread_tss_delete(Py_tss_t *key)
+{
+    assert(key != NULL);
+    /* If the key has not been created, function is silently skipped. */
+    if (!key->_is_initialized)
+        return;
+
+    TlsFree(key->_key);
+    key->_key = TLS_OUT_OF_INDEXES;
+    key->_is_initialized = false;
+}
+
+int
+PyThread_tss_set(Py_tss_t key, void *value)
+{
+    BOOL ok = TlsSetValue(key._key, value);
+    return ok ? 0 : -1;
+}
+
+void *
+PyThread_tss_get(Py_tss_t key)
+{
+    /* because TSS is used in the Py_END_ALLOW_THREAD macro,
+     * it is necessary to preserve the windows error state, because
+     * it is assumed to be preserved across the call to the macro.
+     * Ideally, the macro should be fixed, but it is simpler to
+     * do it here.
+     */
+    DWORD error = GetLastError();
+    void *result = TlsGetValue(key._key);
+    SetLastError(error);
+    return result;
+}
+
+void
+PyThread_tss_delete_value(Py_tss_t key)
+{
+    /* NULL is used as "key missing", and it is also the default
+     * given by TlsGetValue() if nothing has been set yet.
+     */
+    TlsSetValue(key._key, NULL);
+}
+
+
+/* reinitialization of TSS is not necessary after fork when using
+ * the native TSS functions.  And forking isn't supported on Windows either.
+ */
+void
+PyThread_ReInitTSS(void)
+{}
+
+#else /* !CYGWIN */
 int
 PyThread_create_key(void)
 {
@@ -408,5 +536,6 @@ PyThread_delete_key_value(int key)
 void
 PyThread_ReInitTLS(void)
 {}
+#endif /* CYGWIN */
 
 #endif

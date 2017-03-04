@@ -2,6 +2,11 @@
 #ifndef Py_PYTHREAD_H
 #define Py_PYTHREAD_H
 
+#ifdef __CYGWIN__
+/* For Cygwin use TSS instead of TLS. */
+#include <stdbool.h>  /* necessary for TSS key */
+#endif
+
 typedef void *PyThread_type_lock;
 typedef void *PyThread_type_sema;
 
@@ -25,8 +30,8 @@ PyAPI_FUNC(long) PyThread_get_thread_ident(void);
 PyAPI_FUNC(PyThread_type_lock) PyThread_allocate_lock(void);
 PyAPI_FUNC(void) PyThread_free_lock(PyThread_type_lock);
 PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
-#define WAIT_LOCK	1
-#define NOWAIT_LOCK	0
+#define WAIT_LOCK       1
+#define NOWAIT_LOCK     0
 
 /* PY_TIMEOUT_T is the integral type used to specify timeouts when waiting
    on a lock (see PyThread_acquire_lock_timed() below).
@@ -73,6 +78,68 @@ PyAPI_FUNC(int) PyThread_set_stacksize(size_t);
 PyAPI_FUNC(PyObject*) PyThread_GetInfo(void);
 #endif
 
+#ifdef __CYGWIN__
+/* Thread Local Storage (TLS) API
+   TLS API is DEPRECATED.  Use Thread Specific Storage API.
+*/
+PyAPI_FUNC(long) PyThread_create_key(void) Py_DEPRECATED(3.7);
+PyAPI_FUNC(void) PyThread_delete_key(long key) Py_DEPRECATED(3.7);
+PyAPI_FUNC(int) PyThread_set_key_value(long key, void *value) Py_DEPRECATED(3.7);
+PyAPI_FUNC(void *) PyThread_get_key_value(long key) Py_DEPRECATED(3.7);
+PyAPI_FUNC(void) PyThread_delete_key_value(long key) Py_DEPRECATED(3.7);
+
+/* Cleanup after a fork */
+PyAPI_FUNC(void) PyThread_ReInitTLS(void) Py_DEPRECATED(3.7);
+
+/* Thread Specific Storage (TSS) API
+
+   POSIX hasn't defined that pthread_key_t is compatible with int
+   (for details, see PEP 539).  Therefore, TSS API uses opaque type to cover
+   the key details.
+*/
+
+#if defined(_POSIX_THREADS)
+#   define NATIVE_TLS_KEY_T     pthread_key_t
+#elif defined(NT_THREADS)
+#   define NATIVE_TLS_KEY_T     DWORD
+#else  /* For the platform that has not supplied native TLS */
+#   define NATIVE_TLS_KEY_T     int
+#endif
+
+/* Py_tss_t is opaque type and you *must not* directly read and write.
+   When you'd check whether the key is created, use PyThread_tss_is_created.
+*/
+typedef struct {
+    bool _is_initialized;
+    NATIVE_TLS_KEY_T _key;
+} Py_tss_t;
+
+#undef NATIVE_TLS_KEY_T
+
+static inline bool
+PyThread_tss_is_created(Py_tss_t key)
+{
+    return key._is_initialized;
+}
+
+/* Py_tss_NEEDS_INIT is the defined invalid value, and you *must* initialize
+   the Py_tss_t variable by this value to use TSS API.
+
+   For example:
+   static Py_tss_t thekey = Py_tss_NEEDS_INIT;
+   int fail = PyThread_tss_create(&thekey);
+*/
+#define Py_tss_NEEDS_INIT   {._is_initialized = false}
+
+PyAPI_FUNC(int) PyThread_tss_create(Py_tss_t *key);
+PyAPI_FUNC(void) PyThread_tss_delete(Py_tss_t *key);
+PyAPI_FUNC(int) PyThread_tss_set(Py_tss_t key, void *value);
+PyAPI_FUNC(void *) PyThread_tss_get(Py_tss_t key);
+PyAPI_FUNC(void) PyThread_tss_delete_value(Py_tss_t key);
+
+/* Cleanup after a fork */
+PyAPI_FUNC(void) PyThread_ReInitTSS(void);
+#else
 /* Thread Local Storage (TLS) API */
 PyAPI_FUNC(int) PyThread_create_key(void);
 PyAPI_FUNC(void) PyThread_delete_key(int);
@@ -82,6 +149,7 @@ PyAPI_FUNC(void) PyThread_delete_key_value(int key);
 
 /* Cleanup after a fork */
 PyAPI_FUNC(void) PyThread_ReInitTLS(void);
+#endif
 
 #ifdef __cplusplus
 }

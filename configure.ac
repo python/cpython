@@ -2278,6 +2278,25 @@ if test "$have_pthread_t" = yes ; then
 #endif
   ])
 fi
+
+# Issue #25658: POSIX hasn't defined that pthread_key_t is compatible with int.
+# This checking will be unnecessary after removing deprecated TLS API.
+AC_CHECK_SIZEOF(pthread_key_t, [], [[#include <pthread.h>]])
+AC_MSG_CHECKING(whether pthread_key_t is compatible with int)
+if test "$ac_cv_sizeof_pthread_key_t" -eq "$ac_cv_sizeof_int" ; then
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[#include <pthread.h>]], [[pthread_key_t k; k * 1;]])],
+    [ac_pthread_key_t_is_arithmetic_type=yes],
+    [ac_pthread_key_t_is_arithmetic_type=no]
+  )
+  AC_MSG_RESULT($ac_pthread_key_t_is_arithmetic_type)
+  if test "$ac_pthread_key_t_is_arithmetic_type" = yes ; then
+    AC_DEFINE(PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT, 1,
+              [Define if pthread_key_t is compatible with int.])
+  fi
+else
+  AC_MSG_RESULT(no)
+fi
 CC="$ac_save_cc"
 
 AC_SUBST(OTHER_LIBTOOL_OPT)
@@ -4637,7 +4656,7 @@ AC_MSG_RESULT($SOABI)
 
 AC_SUBST(EXT_SUFFIX)
 case $ac_sys_system in
-    Linux*|GNU*|Darwin)
+    Linux*|GNU*|CYGWIN*|Darwin)
 	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
     *)
 	EXT_SUFFIX=${SHLIB_SUFFIX};;

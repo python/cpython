@@ -4,6 +4,16 @@
    have any value except INVALID_SOCKET.
 */
 
+/* Windows #defines FD_SETSIZE to 64 if FD_SETSIZE isn't already defined.
+   64 is too small (too many people have bumped into that limit).
+   Here we boost it.
+   Users who want even more than the boosted limit should #define
+   FD_SETSIZE higher before this; e.g., via compiler /D switch.
+*/
+#if (defined(MS_WINDOWS) || defined(__CYGWIN__)) && !defined(FD_SETSIZE)
+#define FD_SETSIZE 512
+#endif
+
 #if defined(HAVE_POLL_H) && !defined(_GNU_SOURCE)
 #define _GNU_SOURCE
 #endif
@@ -24,16 +34,6 @@
      * to use the same binary on multiple releases of the OS.
      */
 #undef HAVE_BROKEN_POLL
-#endif
-
-/* Windows #defines FD_SETSIZE to 64 if FD_SETSIZE isn't already defined.
-   64 is too small (too many people have bumped into that limit).
-   Here we boost it.
-   Users who want even more than the boosted limit should #define
-   FD_SETSIZE higher before this; e.g., via compiler /D switch.
-*/
-#if defined(MS_WINDOWS) && !defined(FD_SETSIZE)
-#define FD_SETSIZE 512
 #endif
 
 #if defined(HAVE_POLL_H)

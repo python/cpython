@@ -551,6 +551,28 @@ calculate_path(void)
             if (isxfile(progpath))
                 break;
 
+#ifdef __CYGWIN__
+            /*
+             * Cygwin automatically removes the ".exe" extension from argv[0]
+             * to make programs feel like they are in a more Unix-like
+             * environment.  Unfortunately, this can make it problemmatic for
+             * Cygwin to distinguish between a directory and an executable with
+             * the same name excluding the ".exe" extension.  For example, the
+             * Cygwin Python build directory has a "Python" directory and a
+             * "python.exe" executable.  This causes isxfile() to erroneously
+             * return false.  If isdir() returns true and there is enough space
+             * to append the ".exe" extension, then we try again with the
+             * extension appended.
+             */
+#define EXE L".exe"
+            if (isdir(progpath) && wcslen(progpath) + wcslen(EXE) <= MAXPATHLEN)
+            {
+                wcscat(progpath, EXE);
+                if (isxfile(progpath))
+                    break;
+            }
+#endif /* __CYGWIN__ */
+
             if (!delim) {
                 progpath[0] = L'\0';
                 break;

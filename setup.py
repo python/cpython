@@ -1242,7 +1242,7 @@ class PyBuildExt(build_ext):
         dbm_setup_debug = False   # verbose debug prints from this script?
         dbm_order = ['gdbm']
         # The standard Unix dbm module:
-        if host_platform not in ['cygwin']:
+        if host_platform not in ['win32']:
             config_args = [arg.strip("'")
                            for arg in sysconfig.get_config_var("CONFIG_ARGS").split()]
             dbm_args = [arg for arg in config_args
@@ -1272,6 +1272,16 @@ class PyBuildExt(build_ext):
                                                ],
                                            libraries=ndbm_libs)
                         break
+
+                if find_file("ndbm.h", inc_dirs, []) is not None:
+                    if dbm_setup_debug: print("building dbm using gdbm")
+                    dbmext = Extension(
+                        '_dbm', ['_dbmmodule.c'],
+                        define_macros=[
+                            ('HAVE_NDBM_H', None),
+                            ],
+                        libraries = gdbm_libs)
+                    break
 
                 elif cand == "gdbm":
                     if self.compiler.find_library_file(lib_dirs, 'gdbm'):
@@ -1841,12 +1851,6 @@ class PyBuildExt(build_ext):
             include_dirs.append('/usr/X11/include')
             added_lib_dirs.append('/usr/X11/lib')
 
-        # If Cygwin, then verify that X is installed before proceeding
-        if host_platform == 'cygwin':
-            x11_inc = find_file('X11/Xlib.h', [], include_dirs)
-            if x11_inc is None:
-                return
-
         # Check for BLT extension
         if self.compiler.find_library_file(lib_dirs + added_lib_dirs,
                                                'BLT8.0'):
@@ -1864,9 +1868,8 @@ class PyBuildExt(build_ext):
         if host_platform in ['aix3', 'aix4']:
             libs.append('ld')
 
-        # Finally, link with the X11 libraries (not appropriate on cygwin)
-        if host_platform != "cygwin":
-            libs.append('X11')
+        # Finally, link with the X11 libraries
+        libs.append('X11')
 
         ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
                         define_macros=[('WITH_APPINIT', 1)] + defs,

@@ -80,6 +80,25 @@ if os.name == "posix" and sys.platform == "darwin":
                 continue
         return None
 
+elif sys.platform == "cygwin":
+    def find_library(name):
+        for libdir in ['/usr/lib', '/usr/local/lib']:
+            for libext in ['lib%s.dll.a' % name, 'lib%s.a' % name]:
+                implib = os.path.join(libdir, libext)
+                if not os.path.exists(implib):
+                    continue
+                cmd = "dlltool -I " + implib + " 2>/dev/null"
+                f = os.popen(cmd)
+                try:
+                    data = f.read()
+                finally:
+                    f.close()
+                res = data.replace("\n","")
+                if not res:
+                    continue
+                return res
+        return None
+
 elif os.name == "posix":
     # Andreas Degert's find functions, using gcc, /sbin/ldconfig, objdump
     import re, tempfile
@@ -324,6 +343,10 @@ def test():
             print(cdll.LoadLibrary("libcrypto.dylib"))
             print(cdll.LoadLibrary("libSystem.dylib"))
             print(cdll.LoadLibrary("System.framework/System"))
+        elif sys.platform == "cygwin":
+            print(cdll.LoadLibrary("cygbz2-1.dll"))
+            print(cdll.LoadLibrary("cygcrypt-0.dll"))
+            print(find_library("crypt"))
         else:
             print(cdll.LoadLibrary("libm.so"))
             print(cdll.LoadLibrary("libcrypt.so"))

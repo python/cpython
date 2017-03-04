@@ -1,6 +1,9 @@
 
 /* Posix threads interface */
 
+#ifdef __CYGWIN__
+#include <stdbool.h>  /* necessary for TSS key */
+#endif
 #include <stdlib.h>
 #include <string.h>
 #if defined(__APPLE__) || defined(HAVE_PTHREAD_DESTRUCTOR)
@@ -602,6 +605,129 @@ _pythread_pthread_set_stacksize(size_t size)
 #define THREAD_SET_STACKSIZE(x) _pythread_pthread_set_stacksize(x)
 
 #define Py_HAVE_NATIVE_TLS
+#ifdef __CYGWIN__
+/* Thread Local Storage (TLS) API, DEPRECATED since Python 3.7
+
+   Issue #25658: POSIX hasn't defined that pthread_key_t is compatible
+   with int.  Note that if incompatible with int, PyThread_create_key
+   returns immediately a failure status and the other TLS functions
+   all are no-ops.  Moreover, PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT will
+   be unnecessary after removing this API.
+*/
+
+long
+PyThread_create_key(void)
+{
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
+    pthread_key_t key;
+    int fail = pthread_key_create(&key, NULL);
+    if (fail)
+        return -1L;
+    if (key > INT_MAX) {
+        /* Issue #22206: handle integer overflow */
+        pthread_key_delete(key);
+        errno = ENOMEM;
+        return -1L;
+    }
+    return (long)key;
+#else
+    return -1;  /* never return valid key value. */
+#endif
+}
+
+void
+PyThread_delete_key(long key)
+{
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
+    pthread_key_delete(key);
+#endif
+}
+
+void
+PyThread_delete_key_value(long key)
+{
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
+    pthread_setspecific(key, NULL);
+#endif
+}
+
+int
+PyThread_set_key_value(long key, void *value)
+{
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
+    int fail = pthread_setspecific(key, value);
+    return fail ? -1 : 0;
+#else
+    return -1;
+#endif
+}
+
+void *
+PyThread_get_key_value(long key)
+{
+#ifdef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
+    return pthread_getspecific(key);
+#else
+    return NULL;
+#endif
+}
+
+void
+PyThread_ReInitTLS(void)
+{}
+
+/* Thread Specific Storage (TSS) API */
+int
+PyThread_tss_create(Py_tss_t *key)
+{
+    assert(key != NULL);
+    /* If the key has been created, function is silently skipped. */
+    if (key->_is_initialized)
+        return 0;
+
+    int fail = pthread_key_create(&(key->_key), NULL);
+    if (fail)
+        return -1;
+    key->_is_initialized = true;
+    return 0;
+}
+
+void
+PyThread_tss_delete(Py_tss_t *key)
+{
+    assert(key != NULL);
+    /* If the key has not been created, function is silently skipped. */
+    if (!key->_is_initialized)
+        return;
+
+    pthread_key_delete(key->_key);
+    /* pthread has not provided the defined invalid value for the key. */
+    key->_is_initialized = false;
+}
+
+int
+PyThread_tss_set(Py_tss_t key, void *value)
+{
+    int fail = pthread_setspecific(key._key, value);
+    return fail ? -1 : 0;
+}
+
+void *
+PyThread_tss_get(Py_tss_t key)
+{
+    return pthread_getspecific(key._key);
+}
+
+void
+PyThread_tss_delete_value(Py_tss_t key)
+{
+    pthread_setspecific(key._key, NULL);
+}
+
+void
+PyThread_ReInitTSS(void)
+{}
+#else /* !CYGWIN */
 
 int
 PyThread_create_key(void)
@@ -648,3 +774,4 @@ PyThread_get_key_value(int key)
 void
 PyThread_ReInitTLS(void)
 {}
+#endif /* CYGWIN */

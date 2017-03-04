@@ -171,7 +171,11 @@ tracemalloc_error(const char *format, ...)
 #  error "need native thread local storage (TLS)"
 #endif
 
+#ifdef __CYGWIN__
+static Py_tss_t tracemalloc_reentrant_key = Py_tss_NEEDS_INIT;
+#else
 static int tracemalloc_reentrant_key = -1;
+#endif
 
 /* Any non-NULL pointer can be used */
 #define REENTRANT Py_True
@@ -181,8 +185,13 @@ get_reentrant(void)
 {
     void *ptr;
 
+#ifdef __CYGWIN__
+    assert(PyThread_tss_is_created(tracemalloc_reentrant_key));
+    ptr = PyThread_tss_get(tracemalloc_reentrant_key);
+#else
     assert(tracemalloc_reentrant_key != -1);
     ptr = PyThread_get_key_value(tracemalloc_reentrant_key);
+#endif
     if (ptr != NULL) {
         assert(ptr == REENTRANT);
         return 1;
@@ -195,15 +204,27 @@ static void
 set_reentrant(int reentrant)
 {
     assert(reentrant == 0 || reentrant == 1);
+#ifdef __CYGWIN__
+    assert(PyThread_tss_is_created(tracemalloc_reentrant_key));
+#else
     assert(tracemalloc_reentrant_key != -1);
+#endif
 
     if (reentrant) {
         assert(!get_reentrant());
+#ifdef __CYGWIN__
+        PyThread_tss_set(tracemalloc_reentrant_key, REENTRANT);
+#else
         PyThread_set_key_value(tracemalloc_reentrant_key, REENTRANT);
+#endif
     }
     else {
         assert(get_reentrant());
+#ifdef __CYGWIN__
+        PyThread_tss_set(tracemalloc_reentrant_key, NULL);
+#else
         PyThread_set_key_value(tracemalloc_reentrant_key, NULL);
+#endif
     }
 }
 
@@ -993,8 +1014,12 @@ tracemalloc_init(void)
     PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &allocators.raw);
 
 #ifdef REENTRANT_THREADLOCAL
+#ifdef __CYGWIN__
+    if (PyThread_tss_create(&tracemalloc_reentrant_key) != 0) {
+#else
     tracemalloc_reentrant_key = PyThread_create_key();
     if (tracemalloc_reentrant_key == -1) {
+#endif
 #ifdef MS_WINDOWS
         PyErr_SetFromWindowsErr(0);
 #else
@@ -1079,8 +1104,12 @@ tracemalloc_deinit(void)
 #endif
 
 #ifdef REENTRANT_THREADLOCAL
+#ifdef __CYGWIN__
+    PyThread_tss_delete(&tracemalloc_reentrant_key);
+#else
     PyThread_delete_key(tracemalloc_reentrant_key);
     tracemalloc_reentrant_key = -1;
+#endif
 #endif
 
     Py_XDECREF(unknown_filename);

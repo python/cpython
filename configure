@@ -9022,6 +9022,75 @@ _ACEOF
 
 
 fi
+
+# Issue #25658: POSIX hasn't defined that pthread_key_t is compatible with int.
+# This checking will be unnecessary after removing deprecated TLS API.
+# The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of pthread_key_t" >&5
+$as_echo_n "checking size of pthread_key_t... " >&6; }
+if ${ac_cv_sizeof_pthread_key_t+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (pthread_key_t))" "ac_cv_sizeof_pthread_key_t"        "#include <pthread.h>
+"; then :
+
+else
+  if test "$ac_cv_type_pthread_key_t" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute sizeof (pthread_key_t)
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_sizeof_pthread_key_t=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_pthread_key_t" >&5
+$as_echo "$ac_cv_sizeof_pthread_key_t" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_PTHREAD_KEY_T $ac_cv_sizeof_pthread_key_t
+_ACEOF
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pthread_key_t is compatible with int" >&5
+$as_echo_n "checking whether pthread_key_t is compatible with int... " >&6; }
+if test "$ac_cv_sizeof_pthread_key_t" -eq "$ac_cv_sizeof_int" ; then
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <pthread.h>
+int
+main ()
+{
+pthread_key_t k; k * 1;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_pthread_key_t_is_arithmetic_type=yes
+else
+  ac_pthread_key_t_is_arithmetic_type=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pthread_key_t_is_arithmetic_type" >&5
+$as_echo "$ac_pthread_key_t_is_arithmetic_type" >&6; }
+  if test "$ac_pthread_key_t_is_arithmetic_type" = yes ; then
+
+$as_echo "#define PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT 1" >>confdefs.h
+
+  fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
 CC="$ac_save_cc"
 
 

@@ -81,6 +81,7 @@ class UnixCCompiler(CCompiler):
     xcode_stub_lib_format = dylib_lib_format
     if sys.platform == "cygwin":
         exe_extension = ".exe"
+        dylib_lib_extension = ".dll.a"
 
     def preprocess(self, source, output_file=None, macros=None,
                    include_dirs=None, extra_preargs=None, extra_postargs=None):
@@ -224,7 +225,7 @@ class UnixCCompiler(CCompiler):
         # the configuration data stored in the Python installation, so
         # we use this hack.
         compiler = os.path.basename(sysconfig.get_config_var("CC"))
-        if sys.platform[:6] == "darwin":
+        if sys.platform[:6] == "darwin" or sys.platform[:6] == "cygwin":
             # MacOSX's linker doesn't understand the -R flag at all
             return "-L" + dir
         elif sys.platform[:7] == "freebsd":
