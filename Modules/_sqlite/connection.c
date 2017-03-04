@@ -1528,7 +1528,7 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
             Py_END_ALLOW_THREADS
 
             if (progress != Py_None) {
-                if (!PyObject_CallFunction(progress, "ii",
+                if (!PyObject_CallFunction(progress, "iii", rc,
                                            sqlite3_backup_remaining(bckhandle),
                                            sqlite3_backup_pagecount(bckhandle))) {
                     /* User's callback raised an error: interrupt the loop and

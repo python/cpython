@@ -531,9 +531,10 @@ Connection Objects
       database is copied in a single step; otherwise the method performs a loop
       copying up to the specified *pages* at a time.
 
-      If *progress* is specified, it must either ``None`` or a callable object that
-      will be executed at each iteration with two integer arguments, respectively the
-      *remaining* number of pages still to be copied and the *total* number of pages.
+      If *progress* is specified, it must either be ``None`` or a callable object that
+      will be executed at each iteration with three integer arguments, respectively
+      the *status* of the last iteration, the *remaining* number of pages still to be
+      copied and the *total* number of pages.
 
       The *name* argument specifies the database name that will be copied: it must be
       a string containing either ``"main"``, the default, to indicate the main
@@ -545,7 +546,7 @@ Connection Objects
          # Copy an existing database into another file
          import sqlite3
 
-         def progress(remaining, total):
+         def progress(status, remaining, total):
              print(f"Copied {total-remaining} of {total} pages...")
 
          con = sqlite3.connect('existing_db.db')
