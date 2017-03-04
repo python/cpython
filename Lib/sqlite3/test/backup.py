@@ -31,21 +31,21 @@ class BackupTests(unittest.TestCase):
     def CheckProgress(self):
         journal = []
 
-        def progress(remaining, total):
-            journal.append(remaining)
+        def progress(status, remaining, total):
+            journal.append(status)
 
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
             self.cx.backup(bckfn.name, pages=1, progress=progress)
             self.testBackup(bckfn.name)
 
         self.assertEqual(len(journal), 2)
-        self.assertEqual(journal[0], 1)
-        self.assertEqual(journal[1], 0)
+        self.assertEqual(journal[0], sqlite.SQLITE_OK)
+        self.assertEqual(journal[1], sqlite.SQLITE_DONE)
 
     def CheckProgressAllPagesAtOnce_0(self):
         journal = []
 
-        def progress(remaining, total):
+        def progress(status, remaining, total):
             journal.append(remaining)
 
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
@@ -58,7 +58,7 @@ class BackupTests(unittest.TestCase):
     def CheckProgressAllPagesAtOnce_1(self):
         journal = []
 
-        def progress(remaining, total):
+        def progress(status, remaining, total):
             journal.append(remaining)
 
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
@@ -77,7 +77,7 @@ class BackupTests(unittest.TestCase):
     def CheckModifyingProgress(self):
         journal = []
 
-        def progress(remaining, total):
+        def progress(status, remaining, total):
             if not journal:
                 self.cx.execute('INSERT INTO foo (key) VALUES (?)', (remaining+1000,))
                 self.cx.commit()
@@ -99,7 +99,7 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(journal[2], 0)
 
     def CheckFailingProgress(self):
-        def progress(remaining, total):
+        def progress(status, remaining, total):
             raise SystemError('nearly out of space')
 
         with NamedTemporaryFile(suffix='.sqlite') as bckfn:
