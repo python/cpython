@@ -1491,6 +1491,7 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
     char* name = "main";
     PyObject* retval = NULL;
     int rc;
+    int cberr = 0;
     sqlite3 *bckconn;
     sqlite3_backup *bckhandle;
     static char *keywords[] = {"filename", "pages", "progress", "name", NULL};
@@ -1533,6 +1534,7 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
                                            sqlite3_backup_pagecount(bckhandle))) {
                     /* User's callback raised an error: interrupt the loop and
                        propagate it. */
+                    cberr = 1;
                     rc = -1;
                 }
             }
@@ -1547,19 +1549,28 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
         } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);
 
         Py_BEGIN_ALLOW_THREADS
-        sqlite3_backup_finish(bckhandle);
+        rc = sqlite3_backup_finish(bckhandle);
         Py_END_ALLOW_THREADS
+    } else {
+        rc = _pysqlite_seterror(bckconn, NULL);
     }
 
-    if (rc != -1) {
-        rc = _pysqlite_seterror(bckconn, NULL);
+    if (cberr == 0 && rc != SQLITE_OK) {
+        /* We cannot use _pysqlite_seterror() here because the backup APIs do
+           not set the error status on the connection object, but rather on
+           the backup handle. */
+        if (rc == SQLITE_NOMEM) {
+            (void)PyErr_NoMemory();
+        } else {
+            PyErr_SetString(pysqlite_OperationalError, sqlite3_errstr(rc));
+        }
     }
 
     Py_BEGIN_ALLOW_THREADS
     sqlite3_close(bckconn);
     Py_END_ALLOW_THREADS
 
-    if (rc == SQLITE_OK) {
+    if (cberr == 0 && rc == SQLITE_OK) {
         Py_INCREF(Py_None);
         retval = Py_None;
     } else {
