@@ -13,7 +13,7 @@ sphinx-build and the current versions of Sphinx now require at least
 Python 2.6.
 
 In addition to what is supplied with OS X 10.5+ and Xcode 3+, the script
-requires an installed version of hg and a third-party version of
+requires an installed version of git and a third-party version of
 Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets) or Tcl/TK 8.5
 (for 10.6 or later) installed in /Library/Frameworks.  When installed,
 the Python built by this script will attempt to dynamically link first to
@@ -23,7 +23,7 @@ installing the most recent ActiveTcl 8.4 or 8.5 version.
 
 32-bit-only installer builds are still possible on OS X 10.4 with Xcode 2.5
 and the installation of additional components, such as a newer Python
-(2.5 is needed for Python parser updates), hg, and for the documentation
+(2.5 is needed for Python parser updates), git, and for the documentation
 build either svn (pre-3.4.1) or sphinx-build (3.4.1 and later).
 
 Usage: see USAGE variable in the script.
@@ -635,9 +635,9 @@ def checkEnvironment():
         base_path = base_path + ':' + OLD_DEVELOPER_TOOLS
     os.environ['PATH'] = base_path
     print("Setting default PATH: %s"%(os.environ['PATH']))
-    # Ensure ws have access to hg and to sphinx-build.
+    # Ensure ws have access to git and to sphinx-build.
     # You may have to create links in /usr/bin for them.
-    runCommand('hg --version')
+    runCommand('git --version')
     runCommand('sphinx-build --version')
 
 def parseOptions(args=None):
@@ -1142,8 +1142,9 @@ def buildPython():
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
-    print("Running make touch")
-    runCommand("make touch")
+    # bpo-29550: avoid using make touch until it is fixed for git
+    # print("Running make touch")
+    # runCommand("make touch")
 
     print("Running make")
     runCommand("make")
