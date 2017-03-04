@@ -109,14 +109,6 @@ Library
 
 - bpo-29532: Altering a kwarg dictionary passed to functools.partial()
   no longer affects a partial object after creation.
-- bpo-28087: Skip test_asyncore and test_eintr poll failures on macOS.
-  Skip some tests of select.poll when running on macOS due to unresolved
-  issues with the underlying system poll function on some macOS versions.
-
-- Issue #29571: to match the behaviour of the ``re.LOCALE`` flag,
-  test_re.test_locale_flag now uses ``locale.getpreferredencoding(False)`` to
-  determine the candidate encoding for the test regex (allowing it to correctly
-  skip the test when the default locale encoding is a multi-byte encoding)
 
 - bpo-29110: Fix file object leak in aifc.open() when file is given as a
   filesystem path and is not in valid AIFF format. Patch by Anthony Zhang.
@@ -268,6 +260,10 @@ Documentation
 
 Tests
 -----
+
+- bpo-28087: Skip test_asyncore and test_eintr poll failures on macOS.
+  Skip some tests of select.poll when running on macOS due to unresolved
+  issues with the underlying system poll function on some macOS versions.
 
 - Issue #29571: to match the behaviour of the ``re.LOCALE`` flag,
   test_re.test_locale_flag now uses ``locale.getpreferredencoding(False)`` to
