@@ -760,10 +760,10 @@ build_os
 build_vendor
 build_cpu
 build
-HAS_HG
-HGBRANCH
-HGTAG
-HGVERSION
+HAS_GIT
+GITBRANCH
+GITTAG
+GITVERSION
 BASECPPFLAGS
 target_alias
 host_alias
@@ -2698,17 +2698,17 @@ fi
 
 
 
-if test -e $srcdir/.hg/dirstate
+if test -e $srcdir/.git/HEAD
 then
-# Extract the first word of "hg", so it can be a program name with args.
-set dummy hg; ac_word=$2
+# Extract the first word of "git", so it can be a program name with args.
+set dummy git; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_HAS_HG+:} false; then :
+if ${ac_cv_prog_HAS_GIT+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test -n "$HAS_HG"; then
-  ac_cv_prog_HAS_HG="$HAS_HG" # Let the user override the test.
+  if test -n "$HAS_GIT"; then
+  ac_cv_prog_HAS_GIT="$HAS_GIT" # Let the user override the test.
 else
 as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in $PATH
@@ -2717,7 +2717,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_HAS_HG="found"
+    ac_cv_prog_HAS_GIT="found"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -2725,13 +2725,13 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_prog_HAS_HG" && ac_cv_prog_HAS_HG="not-found"
+  test -z "$ac_cv_prog_HAS_GIT" && ac_cv_prog_HAS_GIT="not-found"
 fi
 fi
-HAS_HG=$ac_cv_prog_HAS_HG
-if test -n "$HAS_HG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAS_HG" >&5
-$as_echo "$HAS_HG" >&6; }
+HAS_GIT=$ac_cv_prog_HAS_GIT
+if test -n "$HAS_GIT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAS_GIT" >&5
+$as_echo "$HAS_GIT" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -2739,17 +2739,17 @@ fi
 
 
 else
-HAS_HG=no-repository
+HAS_GIT=no-repository
 fi
-if test $HAS_HG = found
+if test $HAS_GIT = found
 then
-    HGVERSION="hg id -i \$(srcdir)"
-    HGTAG="hg id -t \$(srcdir)"
-    HGBRANCH="hg id -b \$(srcdir)"
+    GITVERSION="git -C \$(srcdir) rev-parse HEAD"
+    GITTAG="git -C \$(srcdir) name-rev --tags --name-only HEAD"
+    GITBRANCH="git -C \$(srcdir) name-rev --name-only HEAD"
 else
-    HGVERSION=""
-    HGTAG=""
-    HGBRANCH=""
+    GITVERSION=""
+    GITTAG=""
+    GITBRANCH=""
 fi
 
 
