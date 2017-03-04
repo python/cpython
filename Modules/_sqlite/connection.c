@@ -21,6 +21,12 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#else
+extern int unlink(const char *);
+#endif
+
 #include "cache.h"
 #include "module.h"
 #include "structmember.h"
@@ -1574,7 +1580,12 @@ pysqlite_connection_backup(pysqlite_Connection* self, PyObject* args, PyObject* 
         Py_INCREF(Py_None);
         retval = Py_None;
     } else {
-        /* TODO: should the (probably incomplete/invalid) backup be removed here? */
+        /* Remove the probably incomplete/invalid backup */
+        if (unlink(filename) < 0) {
+            /* FIXME: this should probably be chained to the outstanding
+               exception */
+            return PyErr_SetFromErrno(PyExc_OSError);
+        }
     }
 
 finally:
