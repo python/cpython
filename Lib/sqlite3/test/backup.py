@@ -1,3 +1,4 @@
+import os
 import sqlite3 as sqlite
 from tempfile import NamedTemporaryFile
 import unittest
@@ -102,17 +103,19 @@ class BackupTests(unittest.TestCase):
         def progress(status, remaining, total):
             raise SystemError('nearly out of space')
 
-        with NamedTemporaryFile(suffix='.sqlite') as bckfn:
+        with NamedTemporaryFile(suffix='.sqlite', delete=False) as bckfn:
             with self.assertRaises(SystemError) as err:
                 self.cx.backup(bckfn.name, progress=progress)
             self.assertEqual(str(err.exception), 'nearly out of space')
+            self.assertFalse(os.path.exists(bckfn.name))
 
     def CheckDatabaseSourceName(self):
-        with NamedTemporaryFile(suffix='.sqlite') as bckfn:
+        with NamedTemporaryFile(suffix='.sqlite', delete=False) as bckfn:
             self.cx.backup(bckfn.name, name='main')
             self.cx.backup(bckfn.name, name='temp')
             with self.assertRaises(sqlite.OperationalError):
                 self.cx.backup(bckfn.name, name='non-existing')
+            self.assertFalse(os.path.exists(bckfn.name))
         self.cx.execute("ATTACH DATABASE ':memory:' AS attached_db")
         self.cx.execute('CREATE TABLE attached_db.foo (key INTEGER)')
         self.cx.executemany('INSERT INTO attached_db.foo (key) VALUES (?)', [(3,), (4,)])
