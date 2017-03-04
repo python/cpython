@@ -391,17 +391,25 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <Target Name="_GetBuildInfo" BeforeTargets="PrepareForBuild">
-    <Exec Command="hg id -b &gt; &quot;$(IntDir)hgbranch.txt&quot;" ContinueOnError="true" />
-    <Exec Command="hg id -i &gt; &quot;$(IntDir)hgversion.txt&quot;" ContinueOnError="true" />
-    <Exec Command="hg id -t &gt; &quot;$(IntDir)hgtag.txt&quot;" ContinueOnError="true" />
     <PropertyGroup>
-      <HgBranch Condition="Exists('$(IntDir)hgbranch.txt')">$([System.IO.File]::ReadAllText('$(IntDir)hgbranch.txt').Trim())</HgBranch>
-      <HgVersion Condition="Exists('$(IntDir)hgversion.txt')">$([System.IO.File]::ReadAllText('$(IntDir)hgversion.txt').Trim())</HgVersion>
-      <HgTag Condition="Exists('$(IntDir)hgtag.txt')">$([System.IO.File]::ReadAllText('$(IntDir)hgtag.txt').Trim())</HgTag>
+      <GIT Condition="$(GIT) == ''">git</GIT>
+      <_GIT>$(GIT)</_GIT>
+      <_GIT Condition="$(GIT.Contains(` `))">"$(GIT)"</_GIT>
     </PropertyGroup>
+    <Message Text="Getting build info from $(_GIT)" Importance="high" />
+    <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
+    <Exec Command="$(_GIT) name-rev --name-only HEAD &gt; &quot;$(IntDir)gitbranch.txt&quot;" ContinueOnError="true" />
+    <Exec Command="$(_GIT) rev-parse HEAD &gt; &quot;$(IntDir)gitversion.txt&quot;" ContinueOnError="true" />
+    <Exec Command="$(_GIT) name-rev --tags --name-only HEAD &gt; &quot;$(IntDir)gittag.txt&quot;" ContinueOnError="true" />
+    <PropertyGroup>
+      <GitBranch Condition="Exists('$(IntDir)gitbranch.txt')">$([System.IO.File]::ReadAllText('$(IntDir)gitbranch.txt').Trim())</GitBranch>
+      <GitVersion Condition="Exists('$(IntDir)gitversion.txt')">$([System.IO.File]::ReadAllText('$(IntDir)gitversion.txt').Trim())</GitVersion>
+      <GitTag Condition="Exists('$(IntDir)gittag.txt')">$([System.IO.File]::ReadAllText('$(IntDir)gittag.txt').Trim())</GitTag>
+    </PropertyGroup>
+    <Message Text="Building $(GitTag):$(GitVersion) $(GitBranch)" Importance="high" />
     <ItemGroup>
       <ClCompile Include="..\Modules\getbuildinfo.c">
-        <PreprocessorDefinitions>HGVERSION="$(HgVersion)";HGTAG="$(HgTag)";HGBRANCH="$(HgBranch)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+        <PreprocessorDefinitions>GITVERSION="$(GitVersion)";GITTAG="$(GitTag)";GITBRANCH="$(GitBranch)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       </ClCompile>
     </ItemGroup>
   </Target>

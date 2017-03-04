@@ -104,6 +104,10 @@ if "%platf%"=="x64" (
     )
 )
 
+if not exist "%GIT%" where git > "%TEMP%\git.loc" 2> nul && set /P GIT= < "%TEMP%\git.loc" & del "%TEMP%\git.loc"
+if exist "%GIT%" set GITProperty=/p:GIT="%GIT%"
+if not exist "%GIT%" echo Cannot find Git on PATH & set GITProperty=
+
 rem Setup the environment
 call "%dir%env.bat" %vs_platf% >nul
 
@@ -140,7 +144,7 @@ msbuild "%dir%pcbuild.proj" /t:%target% %parallel% %verbose%^
  /p:Configuration=%conf% /p:Platform=%platf%^
  /p:IncludeExternals=%IncludeExternals%^
  /p:IncludeSSL=%IncludeSSL% /p:IncludeTkinter=%IncludeTkinter%^
- /p:IncludeBsddb=%IncludeBsddb%^
+ /p:IncludeBsddb=%IncludeBsddb% %GITProperty%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off
