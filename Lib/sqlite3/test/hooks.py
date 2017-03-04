@@ -23,6 +23,7 @@
 
 import unittest
 import sqlite3 as sqlite
+from tempfile import NamedTemporaryFile
 
 class CollationTests(unittest.TestCase):
     def CheckCreateCollationNotString(self):
@@ -247,6 +248,27 @@ class TraceCallbackTests(unittest.TestCase):
         self.assertTrue(any(unicode_value in stmt for stmt in traced_statements),
                         "Unicode data %s garbled in trace callback: %s"
                         % (ascii(unicode_value), ', '.join(map(ascii, traced_statements))))
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 3, 9), "sqlite3_prepare_v2 is not available")
+    def CheckTraceCallbackContent(self):
+        """
+        Test that the statement are correct. Fix for bpo-26187
+        """
+        with NamedTemporaryFile(suffix='.sqlite') as db_path:
+            traced_statements = []
+            def trace(statement):
+                traced_statements.append(statement)
+
+            queries = ["create table foo(x)",
+                       "insert into foo(x) values(1)"]
+            con1 = sqlite.connect(db_path.name, isolation_level=None)
+            con2 = sqlite.connect(db_path.name)
+            con1.set_trace_callback(trace)
+            cur = con1.cursor()
+            cur.execute(queries[0])
+            con2.execute("create table bar(x)")
+            cur.execute(queries[1])
+            self.assertEqual(traced_statements, queries)
 
 
 
