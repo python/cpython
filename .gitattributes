@@ -1,5 +1,3 @@
-Misc/NEWS   merge=union
-
 *.pck binary
 Lib/test/cjkencodings/* binary
 Lib/test/decimaltestdata/*.decTest binary
