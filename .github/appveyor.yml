@@ -3,4 +3,4 @@ clone_depth: 5
 build_script:
 - cmd: PCbuild\build.bat -e
 test_script:
-- cmd: PCbuild\rt.bat -q -uall -rwW --slowest --timeout=1200 -j0
+- cmd: PCbuild\rt.bat -q -uall -rwW --timeout=1200 -j0
