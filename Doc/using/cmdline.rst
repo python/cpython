@@ -713,6 +713,35 @@ conflict.
 
    .. versionadded:: 3.6
 
+
+.. envvar:: PYTHONCOERCECLOCALE
+
+   If set to a non-empty string, causes the main Python command line application
+   to skip coercing the legacy ASCII-based C locale to a more capable UTF-8
+   based alternative. Note that this setting is checked even when the
+   :option:`-E` or :option:`-I` options are used, as it is handled prior to
+   the processing of command line options.
+
+   If this variable is *not* set, and the current locale reported for the
+   ``LC_CTYPE`` category is the default ``C`` locale, then the Python CLI will
+   attempt to configure one of the following locales for the given locale
+   categories before loading the interpreter runtime:
+
+   * ``C.UTF-8` (``LC_ALL``)
+   * ``C.utf8` (``LC_ALL``)
+   * ``UTF-8` (``LC_CTYPE``)
+
+   If setting one of these locale categories succeeds, then the matching
+   environment variables will be set (both ``LC_ALL` and ``LANG`` for the
+   ``LC_ALL`` category, and ``LC_CTYPE`` for the ``LC_CTYPE`` category),
+   and (if not already set to a non-empty string) :envvar:`PYTHONIOENCODING`
+   will be set to ``utf-8:surrogateescape``.
+
+   Availability: \*nix
+
+   .. versionadded:: 3.7
+      See :pep:`538` for more details.
+
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 

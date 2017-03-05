@@ -302,6 +302,21 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
 }
 
 
+static const char *_C_LOCALE_WARNING =
+    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
+    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8 "
+    "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
+    "locales is recommended.\n";
+
+static void
+_emit_stderr_warning_for_c_locale(void)
+{
+    const char *ctype_loc = setlocale(LC_CTYPE, NULL);
+    if (ctype_loc != NULL && strcmp(ctype_loc, "C") == 0) {
+        fprintf(stderr, _C_LOCALE_WARNING);
+    }
+}
+
 void
 _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 {
@@ -321,6 +336,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
        the locale's charset without having to switch
        locales. */
     setlocale(LC_CTYPE, "");
+    _emit_stderr_warning_for_c_locale();
 #endif
 
     if ((p = Py_GETENV("PYTHONDEBUG")) && *p != '\0')
