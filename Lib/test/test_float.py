@@ -208,6 +208,10 @@ class GeneralFloatCases(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertIs(type(FloatSubclass(F())), FloatSubclass)
 
+    def test_keyword_args(self):
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(float(x='3.14'), 3.14)
+
     def test_is_integer(self):
         self.assertFalse((1.1).is_integer())
         self.assertTrue((1.).is_integer())
