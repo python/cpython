@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- bpo-29615: SimpleXMLRPCDispatcher no longer chains KeyError (or any other
+  exception) to exception(s) raised in the dispatched methods.
+  Patch by Petr Motejlek.
+
 
 What's New in Python 3.6.1 release candidate 1
 ==============================================
