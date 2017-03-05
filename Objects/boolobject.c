@@ -48,6 +48,12 @@ bool_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:bool", kwlist, &x))
         return NULL;
+    if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
+        if (PyErr_Warn(PyExc_DeprecationWarning,
+                "Using 'x' as a keyword argument is deprecated; "
+                "specify the value as a positional argument instead") < 0)
+            return NULL;
+    }
     ok = PyObject_IsTrue(x);
     if (ok < 0)
         return NULL;

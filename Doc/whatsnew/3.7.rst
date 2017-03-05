@@ -169,6 +169,11 @@ Deprecated
   both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`. (Contributed
   by Matthias Bussonnier in :issue:`29576`)
 
+- Using *x* as a keyword argument in :func:`int`, :func:`bool` and
+  :func:`float` and using *sequence* as a keyword argument in :func:`list`
+  and :func:`tuple` are deprecated.  Specify the value as a positional argument
+  instead.  (Contributed by Serhiy Storchaka in :issue:`29695`.)
+
 
 Removed
 =======

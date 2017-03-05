@@ -1569,6 +1569,12 @@ float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return float_subtype_new(type, args, kwds); /* Wimp out */
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:float", kwlist, &x))
         return NULL;
+    if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
+        if (PyErr_Warn(PyExc_DeprecationWarning,
+                "Using 'x' as a keyword argument is deprecated; "
+                "specify the value as a positional argument instead") < 0)
+            return NULL;
+    }
     /* If it's a string, but not a string subclass, use
        PyFloat_FromString. */
     if (PyUnicode_CheckExact(x))
