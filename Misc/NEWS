@@ -259,6 +259,10 @@ Extension Modules
 Library
 -------
 
+- bpo-29196: Removed old-deprecated classes Plist, Dict and _InternalDict
+  in the plistlib module.  Dict values in the result of functions
+  readPlist() and readPlistFromBytes() are now exact dicts.
+
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
 

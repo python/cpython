@@ -187,6 +187,11 @@ API and Feature Removals
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
   function instead.
 
+* Removed old-deprecated classes ``Plist``, ``Dict`` and ``_InternalDict``
+  in the :mod:`plistlib` module.  Dict values in the result of functions
+  :func:`~plistlib.readPlist` and :func:`~plistlib.readPlistFromBytes` are
+  now exact dicts.
+
 
 Porting to Python 3.7
 =====================
