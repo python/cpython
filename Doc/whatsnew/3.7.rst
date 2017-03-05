@@ -97,6 +97,12 @@ New Modules
 Improved Modules
 ================
 
+os
+--
+
+Added support for :class:`bytes` paths in :func:`~os.fwalk`.
+(Contributed by Serhiy Storchaka in :issue:`28682`.)
+
 unittest.mock
 -------------
 
