@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29695: Using "x" as a keyword argument in int(), bool() and float() and
+  using "sequence" as a keyword argument in list() and tuple() are deprecated.
+  Specify the value as a positional argument instead.
+
 - bpo-28893: Set correct __cause__ for errors about invalid awaitables
   returned from __aiter__ and __anext__.
 

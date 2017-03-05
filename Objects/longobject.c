@@ -4811,6 +4811,12 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         return PyLong_FromLong(0L);
     }
+    if (PyTuple_GET_SIZE(args) == 0) {
+        if (PyErr_Warn(PyExc_DeprecationWarning,
+                "Using 'x' as a keyword argument is deprecated; "
+                "specify the value as a positional argument instead") < 0)
+            return NULL;
+    }
     if (obase == NULL)
         return PyNumber_Long(x);
 
