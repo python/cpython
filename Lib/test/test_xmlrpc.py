@@ -343,6 +343,94 @@ class XMLRPCTestCase(unittest.TestCase):
             self.assertEqual(p.method(), 5)
             self.assertEqual(p.method(), 5)
 
+
+class SimpleXMLRPCDispatcherTestCase(unittest.TestCase):
+    class DispatchExc(Exception):
+        """Raised inside the dispatched functions when checking for
+        chained exceptions"""
+
+    def test_call_registered_func(self):
+        """Calls explicitly registered function"""
+        # Makes sure any exception raised inside the function has no other
+        # exception chained to it
+
+        exp_params = 1, 2, 3
+
+        def dispatched_func(*params):
+            raise self.DispatchExc(params)
+
+        dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
+        dispatcher.register_function(dispatched_func)
+        with self.assertRaises(self.DispatchExc) as exc_ctx:
+            dispatcher._dispatch('dispatched_func', exp_params)
+        self.assertEqual(exc_ctx.exception.args, (exp_params,))
+        self.assertIsNone(exc_ctx.exception.__cause__)
+        self.assertIsNone(exc_ctx.exception.__context__)
+
+    def test_call_instance_func(self):
+        """Calls a registered instance attribute as a function"""
+        # Makes sure any exception raised inside the function has no other
+        # exception chained to it
+
+        exp_params = 1, 2, 3
+
+        class DispatchedClass:
+            def dispatched_func(self, *params):
+                raise SimpleXMLRPCDispatcherTestCase.DispatchExc(params)
+
+        dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
+        dispatcher.register_instance(DispatchedClass())
+        with self.assertRaises(self.DispatchExc) as exc_ctx:
+            dispatcher._dispatch('dispatched_func', exp_params)
+        self.assertEqual(exc_ctx.exception.args, (exp_params,))
+        self.assertIsNone(exc_ctx.exception.__cause__)
+        self.assertIsNone(exc_ctx.exception.__context__)
+
+    def test_call_dispatch_func(self):
+        """Calls the registered instance's `_dispatch` function"""
+        # Makes sure any exception raised inside the function has no other
+        # exception chained to it
+
+        exp_method = 'method'
+        exp_params = 1, 2, 3
+
+        class TestInstance:
+            def _dispatch(self, method, params):
+                raise SimpleXMLRPCDispatcherTestCase.DispatchExc(
+                    method, params)
+
+        dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
+        dispatcher.register_instance(TestInstance())
+        with self.assertRaises(self.DispatchExc) as exc_ctx:
+            dispatcher._dispatch(exp_method, exp_params)
+        self.assertEqual(exc_ctx.exception.args, (exp_method, exp_params))
+        self.assertIsNone(exc_ctx.exception.__cause__)
+        self.assertIsNone(exc_ctx.exception.__context__)
+
+    def test_registered_func_is_none(self):
+        """Calls explicitly registered function which is None"""
+
+        dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
+        dispatcher.register_function(None, name='method')
+        with self.assertRaisesRegex(Exception, 'method'):
+            dispatcher._dispatch('method', ('param',))
+
+    def test_instance_has_no_func(self):
+        """Attempts to call nonexistent function on a registered instance"""
+
+        dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
+        dispatcher.register_instance(object())
+        with self.assertRaisesRegex(Exception, 'method'):
+            dispatcher._dispatch('method', ('param',))
+
+    def test_cannot_locate_func(self):
+        """Calls a function that the dispatcher cannot locate"""
+
+        dispatcher = xmlrpc.server.SimpleXMLRPCDispatcher()
+        with self.assertRaisesRegex(Exception, 'method'):
+            dispatcher._dispatch('method', ('param',))
+
+
 class HelperTestCase(unittest.TestCase):
     def test_escape(self):
         self.assertEqual(xmlrpclib.escape("a&b"), "a&amp;b")
@@ -505,10 +593,6 @@ def http_server(evt, numrequests, requestHandler=None, encoding=None):
             def getData():
                 return '42'
 
-    def my_function():
-        '''This is my function'''
-        return True
-
     class MyXMLRPCServer(xmlrpc.server.SimpleXMLRPCServer):
         def get_request(self):
             # Ensure the socket is always non-blocking.  On Linux, socket
@@ -535,9 +619,14 @@ def http_server(evt, numrequests, requestHandler=None, encoding=None):
         serv.register_introspection_functions()
         serv.register_multicall_functions()
         serv.register_function(pow)
-        serv.register_function(lambda x,y: x+y, 'add')
         serv.register_function(lambda x: x, 'têšt')
-        serv.register_function(my_function)
+        @serv.register_function
+        def my_function():
+            '''This is my function'''
+            return True
+        @serv.register_function(name='add')
+        def _(x, y):
+            return x + y
         testInstance = TestInstanceClass()
         serv.register_instance(testInstance, allow_dotted_names=True)
         evt.set()
@@ -1312,7 +1401,7 @@ def test_main():
             KeepaliveServerTestCase1, KeepaliveServerTestCase2,
             GzipServerTestCase, GzipUtilTestCase,
             MultiPathServerTestCase, ServerProxyTestCase, FailingServerTestCase,
-            CGIHandlerTestCase)
+            CGIHandlerTestCase, SimpleXMLRPCDispatcherTestCase)
 
 
 if __name__ == "__main__":

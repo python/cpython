@@ -106,6 +106,7 @@ server.handle_request()
 
 from xmlrpc.client import Fault, dumps, loads, gzip_encode, gzip_decode
 from http.server import BaseHTTPRequestHandler
+from functools import partial
 import http.server
 import socketserver
 import sys
@@ -204,16 +205,21 @@ class SimpleXMLRPCDispatcher:
         self.instance = instance
         self.allow_dotted_names = allow_dotted_names
 
-    def register_function(self, function, name=None):
+    def register_function(self, function=None, name=None):
         """Registers a function to respond to XML-RPC requests.
 
         The optional name argument can be used to set a Unicode name
         for the function.
         """
+        # decorator factory
+        if function is None:
+            return partial(self.register_function, name=name)
 
         if name is None:
             name = function.__name__
         self.funcs[name] = function
+
+        return function
 
     def register_introspection_functions(self):
         """Registers the XML-RPC introspection methods in the system
@@ -386,30 +392,35 @@ class SimpleXMLRPCDispatcher:
         not be called.
         """
 
-        func = None
         try:
-            # check to see if a matching function has been registered
+            # call the matching registered function
             func = self.funcs[method]
         except KeyError:
-            if self.instance is not None:
-                # check for a _dispatch method
-                if hasattr(self.instance, '_dispatch'):
-                    return self.instance._dispatch(method, params)
-                else:
-                    # call instance method directly
-                    try:
-                        func = resolve_dotted_attribute(
-                            self.instance,
-                            method,
-                            self.allow_dotted_names
-                            )
-                    except AttributeError:
-                        pass
-
-        if func is not None:
-            return func(*params)
+            pass
         else:
+            if func is not None:
+                return func(*params)
             raise Exception('method "%s" is not supported' % method)
+
+        if self.instance is not None:
+            if hasattr(self.instance, '_dispatch'):
+                # call the `_dispatch` method on the instance
+                return self.instance._dispatch(method, params)
+
+            # call the instance's method directly
+            try:
+                func = resolve_dotted_attribute(
+                    self.instance,
+                    method,
+                    self.allow_dotted_names
+                )
+            except AttributeError:
+                pass
+            else:
+                if func is not None:
+                    return func(*params)
+
+        raise Exception('method "%s" is not supported' % method)
 
 class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
     """Simple XML-RPC request handler class.

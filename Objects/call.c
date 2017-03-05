@@ -317,8 +317,8 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
     if (nk != 0) {
         Py_ssize_t pos, i;
 
-        /* Issue #29318: Caller and callee functions must not share the
-           dictionary: kwargs must be copied. */
+        /* bpo-29318, bpo-27840: Caller and callee functions must not share
+           the dictionary: kwargs must be copied. */
         kwtuple = PyTuple_New(2 * nk);
         if (kwtuple == NULL) {
             return NULL;
@@ -766,11 +766,7 @@ PyEval_CallObjectWithKeywords(PyObject *callable,
     assert(!PyErr_Occurred());
 #endif
 
-    if (args == NULL) {
-        return _PyObject_FastCallDict(callable, NULL, 0, kwargs);
-    }
-
-    if (!PyTuple_Check(args)) {
+    if (args != NULL && !PyTuple_Check(args)) {
         PyErr_SetString(PyExc_TypeError,
                         "argument list must be a tuple");
         return NULL;
@@ -782,7 +778,12 @@ PyEval_CallObjectWithKeywords(PyObject *callable,
         return NULL;
     }
 
-    return PyObject_Call(callable, args, kwargs);
+    if (args == NULL) {
+        return _PyObject_FastCallDict(callable, NULL, 0, kwargs);
+    }
+    else {
+        return PyObject_Call(callable, args, kwargs);
+    }
 }
 
 
