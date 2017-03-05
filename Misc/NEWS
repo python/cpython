@@ -305,7 +305,7 @@ Library
 -------
 
 - bpo-29649: struct.pack_into() check boundary error message
-  didn't respect offset. Patch by Andrew Nester.
+  didn't respect offset.  Patch by Andrew Nester.
 
 - bpo-29654: Support If-Modified-Since HTTP header (browser cache).  Patch
   by Pierre Quentel.
