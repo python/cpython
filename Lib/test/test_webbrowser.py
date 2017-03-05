@@ -266,5 +266,32 @@ class BrowserRegistrationTest(unittest.TestCase):
         self._check_registration(preferred=True)
 
 
+class ImportTest(unittest.TestCase):
+
+    def test_register(self):
+        webbrowser = support.import_fresh_module('webbrowser')
+        self.assertIsNone(webbrowser._tryorder)
+        self.assertFalse(webbrowser._browsers)
+
+        class ExampleBrowser:
+            pass
+        webbrowser.register('Example1', ExampleBrowser)
+        self.assertGreater(len(webbrowser._tryorder), 1)
+        self.assertEqual(webbrowser._tryorder[-1], 'Example1')
+        self.assertGreater(len(webbrowser._browsers), 1)
+        self.assertIn('example1', webbrowser._browsers)
+        self.assertEqual(webbrowser._browsers['example1'], [ExampleBrowser, None])
+
+    def test_get(self):
+        webbrowser = support.import_fresh_module('webbrowser')
+        self.assertIsNone(webbrowser._tryorder)
+        self.assertFalse(webbrowser._browsers)
+
+        with self.assertRaises(webbrowser.Error):
+            webbrowser.get('fakebrowser')
+        self.assertTrue(webbrowser._tryorder)
+        self.assertTrue(webbrowser._browsers)
+
+
 if __name__=='__main__':
     unittest.main()
