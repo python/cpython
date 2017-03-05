@@ -259,9 +259,6 @@ def clear_caches():
     else:
         for f in typing._cleanups:
             f()
-        for obj in [typing.ChainMap, typing.Counter, typing.DefaultDict]:
-            obj._abc_cache.clear()
-            obj._abc_negative_cache.clear()
 
     gc.collect()
 
