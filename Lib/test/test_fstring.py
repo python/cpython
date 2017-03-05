@@ -361,6 +361,18 @@ f'{a * x()}'"""
         self.assertEqual(f'2\x203', '2 3')
         self.assertEqual(f'\x203', ' 3')
 
+        with self.assertWarns(DeprecationWarning):
+            value = eval(r"f'\{6*7}'")
+        self.assertEqual(value, '\\42')
+        self.assertEqual(f'\\{6*7}', '\\42')
+        self.assertEqual(fr'\{6*7}', '\\42')
+
+        AMPERSAND = 123
+        self.assertEqual(f'\N{AMPERSAND}', '&')
+        self.assertEqual(f'\\N{AMPERSAND}', '\\N123')
+        self.assertEqual(fr'\N{AMPERSAND}', '\\N123')
+        self.assertEqual(f'\\\N{AMPERSAND}', '\\&')
+
     def test_misformed_unicode_character_name(self):
         # These test are needed because unicode names are parsed
         # differently inside f-strings.
