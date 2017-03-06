@@ -263,6 +263,9 @@ Extension Modules
 Library
 -------
 
+- bpo-25996: Added support of file descriptors in os.scandir() on Unix.
+  os.fwalk() is sped up by 2 times by using os.scandir().
+
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
 

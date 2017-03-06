@@ -97,6 +97,12 @@ New Modules
 Improved Modules
 ================
 
+os
+--
+
+Added support for :ref:`file descriptors <path_fd>` in :func:`~os.scandir`
+on Unix.  (Contributed by Serhiy Storchaka in :issue:`25996`.)
+
 unittest.mock
 -------------
 
@@ -126,6 +132,10 @@ Optimizations
   instantiation of bound method objects for method calls, which results
   in method calls being faster up to 20%.
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
+
+* The :func:`os.fwalk` function has been sped up by 2 times.  This was done
+  using the :func:`os.scandir` function.
+  (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
 
 Build and C API Changes
