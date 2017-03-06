@@ -619,11 +619,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             Py_ssize_t len;
             char *pos;
 
-            pos = strchr(fmt + 1, '%');
+            pos = (char *)memchr(fmt + 1, '%', fmtcnt);
             if (pos != NULL)
                 len = pos - fmt;
             else
-                len = format_len - (fmt - format);
+                len = fmtcnt + 1;
             assert(len != 0);
 
             memcpy(res, fmt, len);
