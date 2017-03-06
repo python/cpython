@@ -815,8 +815,10 @@ class GeneralModuleTests(unittest.TestCase):
         # These are all malformed IP addresses and expected not to resolve to
         # any result.  But some ISPs, e.g. AWS, may successfully resolve these
         # IPs.
-        explanation = "resolving an invalid IP address did not raise OSError; " \
-                      "can be caused by a broken DNS server"
+        explanation = (
+            "resolving an invalid IP address did not raise OSError; "
+            "can be caused by a broken DNS server"
+        )
         for addr in ['0.1.1.~1', '1+.1.1.1', '::1q', '::1::2',
                      '1:1:1:1:1:1:1:1:1']:
             with self.assertRaises(OSError):
