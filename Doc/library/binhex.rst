@@ -55,5 +55,3 @@ the source for details.
 If you code or decode textfiles on non-Macintosh platforms they will still use
 the old Macintosh newline convention (carriage-return as end of line).
 
-As of this writing, :func:`hexbin` appears to not work in all cases.
-
