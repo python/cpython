@@ -1075,14 +1075,6 @@ class FwalkTests(WalkTests):
 
 class BytesWalkTests(WalkTests):
     """Tests for os.walk() with bytes."""
-    def setUp(self):
-        super().setUp()
-        self.stack = contextlib.ExitStack()
-
-    def tearDown(self):
-        self.stack.close()
-        super().tearDown()
-
     def walk(self, top, **kwargs):
         if 'follow_symlinks' in kwargs:
             kwargs['followlinks'] = kwargs.pop('follow_symlinks')
@@ -1097,14 +1089,6 @@ class BytesWalkTests(WalkTests):
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
 class BytesFwalkTests(FwalkTests):
     """Tests for os.walk() with bytes."""
-    def setUp(self):
-        super().setUp()
-        self.stack = contextlib.ExitStack()
-
-    def tearDown(self):
-        self.stack.close()
-        super().tearDown()
-
     def fwalk(self, top='.', *args, **kwargs):
         for broot, bdirs, bfiles, topfd in os.fwalk(os.fsencode(top), *args, **kwargs):
             root = os.fsdecode(broot)
