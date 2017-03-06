@@ -1928,10 +1928,12 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
 
         stdin_encoding = _PyObject_GetAttrId(fin, &PyId_encoding);
         stdin_errors = _PyObject_GetAttrId(fin, &PyId_errors);
-        if (!stdin_encoding || !stdin_errors)
+        if (!stdin_encoding || !stdin_errors ||
+            !PyUnicode_Check(stdin_encoding) ||
+            !PyUnicode_Check(stdin_errors))
             /* stdin is a text stream, so it must have an
                encoding. */
-            goto _readline_errors;
+            goto fallback;
         stdin_encoding_str = PyUnicode_AsUTF8(stdin_encoding);
         stdin_errors_str = PyUnicode_AsUTF8(stdin_errors);
         if (!stdin_encoding_str || !stdin_errors_str)
@@ -1947,8 +1949,10 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
             PyObject *stringpo;
             stdout_encoding = _PyObject_GetAttrId(fout, &PyId_encoding);
             stdout_errors = _PyObject_GetAttrId(fout, &PyId_errors);
-            if (!stdout_encoding || !stdout_errors)
-                goto _readline_errors;
+            if (!stdout_encoding || !stdout_errors ||
+                !PyUnicode_Check(stdout_encoding) ||
+                !PyUnicode_Check(stdout_errors))
+                goto fallback;
             stdout_encoding_str = PyUnicode_AsUTF8(stdout_encoding);
             stdout_errors_str = PyUnicode_AsUTF8(stdout_errors);
             if (!stdout_encoding_str || !stdout_errors_str)
@@ -2011,7 +2015,9 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         return NULL;
     }
 
+fallback:
     /* Fallback if we're not interactive */
+    PyErr_Clear();
     if (prompt != NULL) {
         if (PyFile_WriteObject(prompt, fout, Py_PRINT_RAW) != 0)
             return NULL;
