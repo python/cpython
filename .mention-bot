@@ -6,6 +6,6 @@
     "Misc/ACKS",
     "Misc/NEWS"
   ],
-  "userBlacklist": ["gvanrossum"],
+  "userBlacklist": ["gvanrossum", "skrah"],
   "userBlacklistForPR": ["benjaminp", "skrah"]
 }
