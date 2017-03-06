@@ -2523,13 +2523,14 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *new = NULL;
     PyObject *func;
     Py_ssize_t size;
-    static char *kwlist[] = {"source", "encoding", "errors", 0};
+    static const char * const kwlist[] = {"source", "encoding", "errors", 0};
+    static _PyArg_Parser parser = {"|Oss:bytes", kwlist, 0};
     _Py_IDENTIFIER(__bytes__);
 
     if (type != &PyBytes_Type)
         return bytes_subtype_new(type, args, kwds);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:bytes", kwlist, &x,
-                                     &encoding, &errors))
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwds, &parser, &x,
+                                          &encoding, &errors))
         return NULL;
     if (x == NULL) {
         if (encoding != NULL || errors != NULL) {

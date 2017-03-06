@@ -921,12 +921,12 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     int own_r = 0;
     int cr_is_complex = 0;
     int ci_is_complex = 0;
-    static char *kwlist[] = {"real", "imag", 0};
+    static const char * const kwlist[] = {"real", "imag", 0};
+    static _PyArg_Parser parser = {"|OO:complex", kwlist, 0};
 
     r = Py_False;
     i = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:complex", kwlist,
-                                     &r, &i))
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwds, &parser, &r, &i))
         return NULL;
 
     /* Special-case for a single argument when type(arg) is complex. */

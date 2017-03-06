@@ -2293,9 +2293,10 @@ static int
 list_init(PyListObject *self, PyObject *args, PyObject *kw)
 {
     PyObject *arg = NULL;
-    static char *kwlist[] = {"sequence", 0};
+    static const char * const kwlist[] = {"sequence", 0};
+    static _PyArg_Parser parser = {"|O:list", kwlist, 0};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:list", kwlist, &arg))
+    if (!_PyArg_ParseTupleAndKeywordsFast(args, kw, &parser, &arg))
         return -1;
     if (arg != NULL && PyTuple_GET_SIZE(args) == 0) {
         if (PyErr_Warn(PyExc_DeprecationWarning,
