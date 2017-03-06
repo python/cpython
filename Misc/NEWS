@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29568: Escaped percent "%%" in the format string for classic string
+  formatting no longer allows any characters between two percents.
+
 - bpo-29714: Fix a regression that bytes format may fail when containing zero
   bytes inside.
 
