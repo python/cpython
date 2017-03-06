@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-28974: `object.__format__(x, '')` is now equivalent to `str(x)` rather of
+  `format(str(self), '')`.
+
 - bpo-29714: Fix a regression that bytes format may fail when containing zero
   bytes inside.
 

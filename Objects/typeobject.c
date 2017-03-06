@@ -4440,8 +4440,6 @@ static PyObject *
 object_format(PyObject *self, PyObject *args)
 {
     PyObject *format_spec;
-    PyObject *self_as_str = NULL;
-    PyObject *result = NULL;
 
     if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
         return NULL;
@@ -4454,12 +4452,7 @@ object_format(PyObject *self, PyObject *args)
                      self->ob_type->tp_name);
         return NULL;
     }
-    self_as_str = PyObject_Str(self);
-    if (self_as_str != NULL) {
-        result = PyObject_Format(self_as_str, format_spec);
-        Py_DECREF(self_as_str);
-    }
-    return result;
+    return PyObject_Str(self);
 }
 
 static PyObject *
