@@ -266,6 +266,9 @@ Extension Modules
 Library
 -------
 
+- bpo-26121: Use C library implementation for math functions:
+  tgamma(), lgamma(), erf() and erfc().
+
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
 
