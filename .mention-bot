@@ -4,7 +4,8 @@
   "findPotentialReviewers": true,
   "fileBlacklist": [
     "Misc/ACKS",
-    "Misc/NEWS"
+    "Misc/NEWS",
+    "Doc/whatsnew/*.rst"
   ],
   "userBlacklist": ["gvanrossum", "skrah"],
   "userBlacklistForPR": ["benjaminp", "skrah"]
