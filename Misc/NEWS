@@ -266,6 +266,8 @@ Extension Modules
 Library
 -------
 
+- bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
+
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
 
