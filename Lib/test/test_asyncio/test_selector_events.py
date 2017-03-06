@@ -831,11 +831,25 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         tr.pause_reading()
         self.assertTrue(tr._paused)
         self.assertFalse(7 in self.loop.readers)
+
+        # pause_reading is idepotent
+        tr.pause_reading()
+
         tr.resume_reading()
         self.assertFalse(tr._paused)
         self.loop.assert_reader(7, tr._read_ready)
-        with self.assertRaises(RuntimeError):
-            tr.resume_reading()
+
+        # resume_reading is idepotent
+        tr.resume_reading()
+        tr.resume_reading()
+
+        # pause/resume reading is no-op on closed transport
+        tr.close()
+        tr.pause_reading()
+        self.assertFalse(tr._paused)
+        tr._paused = True
+        tr.resume_reading()
+        self.assertTrue(tr._paused)
 
     def test_read_ready(self):
         transport = self.socket_transport()
@@ -1229,12 +1243,27 @@ class SelectorSslTransportTests(test_utils.TestCase):
         self.loop.assert_reader(1, tr._read_ready)
         tr.pause_reading()
         self.assertTrue(tr._paused)
+
+        # pause_reading is idepotent
+        tr.pause_reading()
+        tr.pause_reading()
+
         self.assertFalse(1 in self.loop.readers)
         tr.resume_reading()
         self.assertFalse(tr._paused)
         self.loop.assert_reader(1, tr._read_ready)
-        with self.assertRaises(RuntimeError):
-            tr.resume_reading()
+
+        # resume_reading is idepotent
+        tr.resume_reading()
+        tr.resume_reading()
+
+        # pause/resume reading is no-op on closed transport
+        tr.close()
+        tr.pause_reading()
+        self.assertFalse(tr._paused)
+        tr._paused = True
+        tr.resume_reading()
+        self.assertTrue(tr._paused)
 
     def test_write(self):
         transport = self._make_one()

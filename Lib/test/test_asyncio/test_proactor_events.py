@@ -346,14 +346,31 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         for i in range(10):
             self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data2')
+
+        # pause_reading is idepotent
+        tr.pause_reading()
+        tr.pause_reading()
+        self.assertTrue(tr._paused)
+
         tr.resume_reading()
         self.assertFalse(tr._paused)
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data3')
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data4')
+
+        # resume_reading is idepotent
+        tr.resume_reading()
+        tr.resume_reading()
+
         tr.close()
 
+        # pause/resume reading is no-op on closed transport
+        tr.pause_reading()
+        self.assertFalse(tr._paused)
+        tr._paused = True
+        tr.resume_reading()
+        self.assertTrue(tr._paused)
 
     def pause_writing_transport(self, high):
         tr = self.socket_transport()
