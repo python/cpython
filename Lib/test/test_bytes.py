@@ -534,7 +534,7 @@ class BaseBytesTest:
         self.assertIs(type(b), self.type2test)
         # issue 29714
         b = self.type2test(b'hello,\x00%b!')
-        b = b % b'world'
+        b %= b'world'
         self.assertEqual(b, b'hello,\x00world!')
         self.assertIs(type(b), self.type2test)
 
