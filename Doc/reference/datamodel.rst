@@ -1283,8 +1283,9 @@ Basic customization
       if passed any non-empty string.
 
    .. versionchanged:: 3.7
-      ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather of
-      ``format(str(self), '')``.
+      ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather
+      than ``format(str(self), '')``.
+
 
 .. _richcmpfuncs:
 .. method:: object.__lt__(self, other)
