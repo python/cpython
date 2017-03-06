@@ -174,6 +174,10 @@ Deprecated
   and :func:`tuple` are deprecated.  Specify the value as a positional argument
   instead.  (Contributed by Serhiy Storchaka in :issue:`29695`.)
 
+- Using non-integer value for selecting a plural form in :mod:`gettext` is
+  now deprecated.  It never correctly worked.
+  (Contributed by Serhiy Storchaka in :issue:`28692`.)
+
 
 Removed
 =======
