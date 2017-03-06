@@ -404,5 +404,17 @@ class TestABC(unittest.TestCase):
         self.assertEqual(B.counter, 1)
 
 
+class TestABCWithInitSubclass(unittest.TestCase):
+    def test_works_with_init_subclass(self):
+        saved_kwargs = {}
+        class ReceivesClassKwargs:
+            def __init_subclass__(cls, **kwargs):
+                super().__init_subclass__()
+                saved_kwargs.update(kwargs)
+        class Receiver(ReceivesClassKwargs, abc.ABC, x=1, y=2, z=3):
+            pass
+        self.assertEqual(saved_kwargs, dict(x=1, y=2, z=3))
+
+
 if __name__ == "__main__":
     unittest.main()
