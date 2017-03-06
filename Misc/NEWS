@@ -13,9 +13,8 @@ Core and Builtins
 - bpo-29714: Fix a regression that bytes format may fail when containing zero
   bytes inside.
 
-- bpo-29695: Using "x" as a keyword argument in int(), bool() and float() and
-  using "sequence" as a keyword argument in list() and tuple() are deprecated.
-  Specify the value as a positional argument instead.
+- bpo-29695: bool(), float(), list() and tuple() no longer take keyword arguments.
+  The first argument of int() can now be passes only as positional argument.
 
 - bpo-28893: Set correct __cause__ for errors about invalid awaitables
   returned from __aiter__ and __anext__.

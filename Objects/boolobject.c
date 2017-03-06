@@ -42,18 +42,13 @@ PyObject *PyBool_FromLong(long ok)
 static PyObject *
 bool_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"x", 0};
     PyObject *x = Py_False;
     long ok;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:bool", kwlist, &x))
+    if (!_PyArg_NoKeywords("bool()", kwds))
         return NULL;
-    if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
-        if (PyErr_Warn(PyExc_DeprecationWarning,
-                "Using 'x' as a keyword argument is deprecated; "
-                "specify the value as a positional argument instead") < 0)
-            return NULL;
-    }
+    if (!PyArg_UnpackTuple(args, "bool", 0, 1, &x))
+        return NULL;
     ok = PyObject_IsTrue(x);
     if (ok < 0)
         return NULL;

@@ -648,18 +648,13 @@ static PyObject *
 tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *arg = NULL;
-    static char *kwlist[] = {"sequence", 0};
 
     if (type != &PyTuple_Type)
         return tuple_subtype_new(type, args, kwds);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:tuple", kwlist, &arg))
+    if (!_PyArg_NoKeywords("tuple()", kwds))
         return NULL;
-    if (arg != NULL && PyTuple_GET_SIZE(args) == 0) {
-        if (PyErr_Warn(PyExc_DeprecationWarning,
-                "Using 'sequence' as a keyword argument is deprecated; "
-                "specify the value as a positional argument instead") < 0)
-            return NULL;
-    }
+    if (!PyArg_UnpackTuple(args, "tuple", 0, 1, &arg))
+        return NULL;
 
     if (arg == NULL)
         return PyTuple_New(0);

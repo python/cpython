@@ -169,11 +169,6 @@ Deprecated
   both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`. (Contributed
   by Matthias Bussonnier in :issue:`29576`)
 
-- Using *x* as a keyword argument in :func:`int`, :func:`bool` and
-  :func:`float` and using *sequence* as a keyword argument in :func:`list`
-  and :func:`tuple` are deprecated.  Specify the value as a positional argument
-  instead.  (Contributed by Serhiy Storchaka in :issue:`29695`.)
-
 
 Removed
 =======
@@ -191,6 +186,10 @@ API and Feature Removals
 * The ``splitunc()`` function in the :mod:`ntpath` module was deprecated in
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
   function instead.
+
+* Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
+  longer take keyword arguments.  The first argument of :func:`int` can now
+  be passes only as positional argument.
 
 
 Porting to Python 3.7
