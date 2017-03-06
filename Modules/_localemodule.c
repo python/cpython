@@ -283,10 +283,8 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     }
     result = PyUnicode_FromWideChar(buf, n2);
 exit:
-    if (buf)
-        PyMem_Free(buf);
-    if (s)
-        PyMem_Free(s);
+    PyMem_Free(buf);
+    PyMem_Free(s);
     return result;
 }
 #endif
