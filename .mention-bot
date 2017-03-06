@@ -5,7 +5,7 @@
   "fileBlacklist": [
     "Misc/ACKS",
     "Misc/NEWS",
-    "Doc/whatsnew/*.rst",
+    "Doc/whatsnew/*.rst"
   ],
   "userBlacklist": ["gvanrossum"],
   "userBlacklistForPR": ["benjaminp", "skrah"]
