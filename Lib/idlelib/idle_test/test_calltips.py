@@ -81,9 +81,9 @@ class Get_signatureTest(unittest.TestCase):
 
     def test_multiline_docstring(self):
         # Test fewer lines than max.
-        self.assertEqual(signature(int),
-                "int(x=0) -> integer\n"
-                "int(x, base=10) -> integer")
+        self.assertEqual(signature(range),
+                "range(stop) -> range object\n"
+                "range(start, stop[, step]) -> range object")
 
         # Test max lines
         self.assertEqual(signature(bytes), '''\
