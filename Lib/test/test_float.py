@@ -209,8 +209,8 @@ class GeneralFloatCases(unittest.TestCase):
             self.assertIs(type(FloatSubclass(F())), FloatSubclass)
 
     def test_keyword_args(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(float(x='3.14'), 3.14)
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            float(x='3.14')
 
     def test_is_integer(self):
         self.assertFalse((1.1).is_integer())

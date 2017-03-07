@@ -2885,14 +2885,19 @@ order (MRO) for bases """
 
     def test_keywords(self):
         # Testing keyword args to basic type constructors ...
-        self.assertEqual(int(x=1), 1)
-        self.assertEqual(float(x=2), 2.0)
-        self.assertEqual(int(x=3), 3)
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            int(x=1)
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            float(x=2)
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            bool(x=2)
         self.assertEqual(complex(imag=42, real=666), complex(666, 42))
         self.assertEqual(str(object=500), '500')
         self.assertEqual(str(object=b'abc', errors='strict'), 'abc')
-        self.assertEqual(tuple(sequence=range(3)), (0, 1, 2))
-        self.assertEqual(list(sequence=(0, 1, 2)), list(range(3)))
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            tuple(sequence=range(3))
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            list(sequence=(0, 1, 2))
         # note: as of Python 2.3, dict() no longer has an "items" keyword arg
 
         for constructor in (int, float, int, complex, str, str,
@@ -3447,9 +3452,10 @@ order (MRO) for bases """
         # Testing keyword arguments to __init__, __call__...
         def f(a): return a
         self.assertEqual(f.__call__(a=42), 42)
-        a = []
-        list.__init__(a, sequence=[0, 1, 2])
-        self.assertEqual(a, [0, 1, 2])
+        ba = bytearray()
+        bytearray.__init__(ba, 'abc\xbd\u20ac',
+                           encoding='latin1', errors='replace')
+        self.assertEqual(ba, b'abc\xbd?')
 
     def test_recursive_call(self):
         # Testing recursive __call__() by setting to instance of class...

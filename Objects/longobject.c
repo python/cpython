@@ -4796,7 +4796,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *obase = NULL, *x = NULL;
     Py_ssize_t base;
-    static char *kwlist[] = {"x", "base", 0};
+    static char *kwlist[] = {"", "base", 0};
 
     if (type != &PyLong_Type)
         return long_subtype_new(type, args, kwds); /* Wimp out */
@@ -4810,12 +4810,6 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
         return PyLong_FromLong(0L);
-    }
-    if (PyTuple_GET_SIZE(args) == 0) {
-        if (PyErr_Warn(PyExc_DeprecationWarning,
-                "Using 'x' as a keyword argument is deprecated; "
-                "specify the value as a positional argument instead") < 0)
-            return NULL;
     }
     if (obase == NULL)
         return PyNumber_Long(x);

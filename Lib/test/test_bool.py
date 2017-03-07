@@ -171,8 +171,8 @@ class BoolTest(unittest.TestCase):
         self.assertIs(bool(), False)
 
     def test_keyword_args(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertIs(bool(x=10), True)
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            bool(x=10)
 
     def test_format(self):
         self.assertEqual("%d" % False, "0")
