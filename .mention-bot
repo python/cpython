@@ -7,6 +7,6 @@
     "Misc/NEWS",
     "Doc/whatsnew/*.rst"
   ],
-  "userBlacklist": ["gvanrossum", "skrah"],
+  "userBlacklist": ["gvanrossum", "skrah", "haypo"],
   "userBlacklistForPR": ["benjaminp", "skrah"]
 }
