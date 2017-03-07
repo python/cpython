@@ -315,10 +315,12 @@ class FormatTest(unittest.TestCase):
         testcommon(b"%b", b"abc", b"abc")
         testcommon(b"%b", bytearray(b"def"), b"def")
         testcommon(b"%b", fb, b"123")
+        testcommon(b"%b", memoryview(b"abc"), b"abc")
         # # %s is an alias for %b -- should only be used for Py2/3 code
         testcommon(b"%s", b"abc", b"abc")
         testcommon(b"%s", bytearray(b"def"), b"def")
         testcommon(b"%s", fb, b"123")
+        testcommon(b"%s", memoryview(b"abc"), b"abc")
         # %a will give the equivalent of
         # repr(some_obj).encode('ascii', 'backslashreplace')
         testcommon(b"%a", 3.14, b"3.14")
@@ -377,9 +379,11 @@ class FormatTest(unittest.TestCase):
         test_exc(b"%c", 3.14, TypeError,
                 "%c requires an integer in range(256) or a single byte")
         test_exc(b"%b", "Xc", TypeError,
-                "%b requires bytes, or an object that implements __bytes__, not 'str'")
+                "%b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not 'str'")
         test_exc(b"%s", "Wd", TypeError,
-                "%b requires bytes, or an object that implements __bytes__, not 'str'")
+                "%b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not 'str'")
 
         if maxsize == 2**31-1:
             # crashes 2.2.1 and earlier:
