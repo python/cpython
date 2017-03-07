@@ -460,16 +460,19 @@ if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
         try:
             if (follow_symlinks or (st.S_ISDIR(orig_st.st_mode) and
                                     path.samestat(orig_st, stat(topfd)))):
-                yield from _fwalk(topfd, top, topdown, onerror, follow_symlinks)
+                yield from _fwalk(topfd, top, isinstance(top, bytes),
+                                  topdown, onerror, follow_symlinks)
         finally:
             close(topfd)
 
-    def _fwalk(topfd, toppath, topdown, onerror, follow_symlinks):
+    def _fwalk(topfd, toppath, isbytes, topdown, onerror, follow_symlinks):
         # Note: This uses O(depth of the directory tree) file descriptors: if
         # necessary, it can be adapted to only require O(1) FDs, see issue
         # #13734.
 
         names = listdir(topfd)
+        if isbytes:
+            names = map(fsencode, names)
         dirs, nondirs = [], []
         for name in names:
             try:
@@ -504,7 +507,8 @@ if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
             try:
                 if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
                     dirpath = path.join(toppath, name)
-                    yield from _fwalk(dirfd, dirpath, topdown, onerror, follow_symlinks)
+                    yield from _fwalk(dirfd, dirpath, isbytes,
+                                      topdown, onerror, follow_symlinks)
             finally:
                 close(dirfd)
 

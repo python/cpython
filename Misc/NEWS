@@ -265,6 +265,8 @@ Extension Modules
 Library
 -------
 
+- bpo-28682: Added support for bytes paths in os.fwalk().
+
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
 
