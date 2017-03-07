@@ -504,8 +504,11 @@ class IOBase(metaclass=abc.ABCMeta):
                 return 1
         if size is None:
             size = -1
-        elif not isinstance(size, int):
-            raise TypeError("size must be an integer")
+        else:
+            try:
+                size = size.__index__()
+            except AttributeError as err:
+                raise TypeError("an integer is required") from err
         res = bytearray()
         while size < 0 or len(res) < size:
             b = self.read(nreadahead())
@@ -868,6 +871,11 @@ class BytesIO(BufferedIOBase):
             raise ValueError("read from closed file")
         if size is None:
             size = -1
+        else:
+            try:
+                size = size.__index__()
+            except AttributeError as err:
+                raise TypeError("an integer is required") from err
         if size < 0:
             size = len(self._buffer)
         if len(self._buffer) <= self._pos:
@@ -905,7 +913,7 @@ class BytesIO(BufferedIOBase):
         if self.closed:
             raise ValueError("seek on closed file")
         try:
-            pos.__index__
+            pos = pos.__index__()
         except AttributeError as err:
             raise TypeError("an integer is required") from err
         if whence == 0:
@@ -932,7 +940,7 @@ class BytesIO(BufferedIOBase):
             pos = self._pos
         else:
             try:
-                pos.__index__
+                pos = pos.__index__()
             except AttributeError as err:
                 raise TypeError("an integer is required") from err
             if pos < 0:
@@ -2357,11 +2365,12 @@ class TextIOWrapper(TextIOBase):
         self._checkReadable()
         if size is None:
             size = -1
+        else:
+            try:
+                size = size.__index__()
+            except AttributeError as err:
+                raise TypeError("an integer is required") from err
         decoder = self._decoder or self._get_decoder()
-        try:
-            size.__index__
-        except AttributeError as err:
-            raise TypeError("an integer is required") from err
         if size < 0:
             # Read everything.
             result = (self._get_decoded_chars() +
@@ -2392,8 +2401,11 @@ class TextIOWrapper(TextIOBase):
             raise ValueError("read from closed file")
         if size is None:
             size = -1
-        elif not isinstance(size, int):
-            raise TypeError("size must be an integer")
+        else:
+            try:
+                size = size.__index__()
+            except AttributeError as err:
+                raise TypeError("an integer is required") from err
 
         # Grab all the decoded text (we will rewind any extra bits later).
         line = self._get_decoded_chars()
