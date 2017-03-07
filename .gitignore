@@ -62,13 +62,13 @@ Parser/pgen
 Parser/pgen.exe
 __pycache__
 autom4te.cache
-build/
+/build/
 buildno
 config.cache
 config.log
 config.status
 config.status.lineno
-core
+/core
 db_home
 .hg/
 ipch/

@@ -1,0 +1,1 @@
+Fixed infinite recursion in the repr of uninitialized ctypes.CDLL instances.

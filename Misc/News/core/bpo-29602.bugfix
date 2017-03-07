@@ -1,0 +1,3 @@
+Fix incorrect handling of signed zeros in complex constructor for complex
+subclasses and for inputs having a __complex__ method. Patch by Serhiy
+Storchaka.

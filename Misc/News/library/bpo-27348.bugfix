@@ -1,0 +1,2 @@
+In the traceback module, restore the formatting of exception messages like
+"Exception: None".  This fixes a regression introduced in 3.5a2.

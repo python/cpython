@@ -1,0 +1,3 @@
+Modifying the class __dict__ inside the __set_name__ method of a descriptor
+that is used inside that class no longer prevents calling the __set_name__
+method of other descriptors.

@@ -1,0 +1,1 @@
+WindowsConsoleIO readall() fails if first line starts with Ctrl+Z

@@ -1,0 +1,1 @@
+Inspect functools.partial in asyncio.Handle.__repr__. Patch by iceboy.

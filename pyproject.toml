@@ -1,0 +1,71 @@
+[tool.towncrier]
+package = "Python"
+filename = "Misc/NEWS.rst"
+directory = "Misc/News/"
+title_format = """
+What's New in {name} {version}?
+=============================\n
+*Release date: {project_date}*\n
+"""
+template = "Misc/News/template.rst"
+
+  [[tool.towncrier.section]]
+  name = "Core and Builtins"
+  path = "core/"
+
+  [[tool.towncrier.section]]
+  name = "Extension Modules"
+  path = "extensions/"
+
+  [[tool.towncrier.section]]
+  name = "Library"
+  path = "library/"
+
+  [[tool.towncrier.section]]
+  name = "Windows"
+  path = "windows/"
+
+  [[tool.towncrier.section]]
+  name = "C API"
+  path = "c-api/"
+
+  [[tool.towncrier.section]]
+  name = "Documentation"
+  path = "docs/"
+
+  [[tool.towncrier.section]]
+  name = "Build"
+  path = "build/"
+
+  [[tool.towncrier.section]]
+  name = "Tools/Demos"
+  path = "tools/"
+
+  [[tool.towncrier.section]]
+  name = "Tests"
+  path = "tests/"
+
+  [[tool.towncrier.type]]
+  directory = "feature"
+  name = "Features"
+  showcontent = true
+
+  [[tool.towncrier.type]]
+  directory = "removal"
+  name = "Removal"
+  showcontent = true
+
+  [[tool.towncrier.type]]
+  directory = "bugfix"
+  name = "Bug Fixes"
+  showcontent = true
+
+  [[tool.towncrier.type]]
+  directory = "doc"
+  name = "Improved Documentation"
+  showcontent = true
+
+  [[tool.towncrier.type]]
+  directory = "misc"
+  name = "Misc"
+  showcontent = false
