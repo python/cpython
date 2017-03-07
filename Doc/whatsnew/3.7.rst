@@ -87,7 +87,7 @@ Other Language Changes
   ``from ... import ...`` fails.
   (Contributed by Matthias Bussonnier in :issue:`29546`.)
 
-* ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather of
+* ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather than
   ``format(str(self), '')``.
   (Contributed by Serhiy Storchaka in :issue:`28974`.)
 
