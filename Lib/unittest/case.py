@@ -199,11 +199,11 @@ class _AssertRaisesContext(_AssertRaisesBaseContext):
                 self._raiseFailure("{} not raised".format(exc_name))
         else:
             traceback.clear_frames(tb)
+        # store exception, without traceback, for later retrieval
+        self.exception = exc_value.with_traceback(None)
         if not issubclass(exc_type, self.expected):
             # let unexpected exceptions pass through
             return False
-        # store exception, without traceback, for later retrieval
-        self.exception = exc_value.with_traceback(None)
         if self.expected_regex is None:
             return True
 
@@ -212,6 +212,39 @@ class _AssertRaisesContext(_AssertRaisesBaseContext):
             self._raiseFailure('"{}" does not match "{}"'.format(
                      expected_regex.pattern, str(exc_value)))
         return True
+
+
+class _AssertDoesNotRaiseContext(_AssertRaisesBaseContext):
+    """
+    A context manager used to implement TestCase.assertDoesNotRaise*
+    methods.
+    """
+
+    _base_type = BaseException
+    _base_type_str = 'an exception type or tuple of exception types'
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        if exc_type is None:
+            return True
+        self.exception = exc_value.with_traceback(None)
+        if exc_type and issubclass(exc_type, self.expected):
+            try:
+                exc_name = self.expected.__name__
+            except AttributeError:
+                exc_name = str(self.expected)
+            if self.obj_name:
+                self._raiseFailure("{} raised by {}".format(exc_name,
+                                                            self.obj_name))
+            else:
+                self._raiseFailure("{} raised".format(exc_name))
+        else:
+            traceback.clear_frames(tb)
+        if not issubclass(exc_type, self.expected):
+            return False
+        return False
 
 
 class _AssertWarnsContext(_AssertRaisesBaseContext):
@@ -726,6 +759,33 @@ class TestCase(object):
         """
         context = _AssertRaisesContext(expected_exception, self)
         return context.handle('assertRaises', args, kwargs)
+
+    def assertDoesNotRaise(self, expected_exception, *args, **kwargs):
+        """Fail if an exception  other than one of class expected_exception
+           is raised by the callable when invoked with specified positional
+           and keyword arguments. If an exception of class expected_exception
+           is raised, the test fails. If no exception is raised, succeeds.
+
+           If called with the callable and arguments omitted, will return a
+           context object used like this::
+
+                with self.assertDoesNotRaise(SomeException):
+                    do_something()
+
+           An optional keyword argument 'msg' can be provided when
+           assertDoesNotRaise is used as a context object.
+
+           The context manager keeps a reference to the exception as
+           the 'exception' attribute. This allows you to inspect the
+           exception after the assertion::
+
+               with self.assertDoesNotRaise(SomeException) as cm:
+                   do_something()
+               the_exception = cm.exception
+               self.assertEqual(the_exception.error_code, 3)
+        """
+        context = _AssertDoesNotRaiseContext(expected_exception, self)
+        return context.handle('assertDoesNotRaise', args, kwargs)
 
     def assertWarns(self, expected_warning, *args, **kwargs):
         """Fail unless a warning of class warnClass is triggered
