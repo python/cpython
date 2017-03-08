@@ -2360,7 +2360,6 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|$Oi:sort",
         kwlist, &keyfunc, &reverse))
         return NULL;
-
     return listsort_impl(self, keyfunc, reverse);
 }
 
