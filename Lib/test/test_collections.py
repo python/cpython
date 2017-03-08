@@ -1329,7 +1329,6 @@ class TestCollectionABCs(ABCTestCase):
             for elem in container:
                 self.assertIn(elem, container)
         self.assertEqual(seq.index(nan), 0)
-        self.assertNotEqual(seq.index(nan), 1)
         self.assertEqual(seq.index(obj), 1)
         self.assertEqual(seq.count(nan), 2)
         self.assertEqual(seq.count(obj), 1)
