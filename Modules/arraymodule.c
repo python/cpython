@@ -332,34 +332,57 @@ II_getitem(arrayobject *ap, Py_ssize_t i)
 }
 
 static int
-II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
+get_int_unless_float(PyObject **vv)
 {
-    unsigned long x;
-    if (PyLong_Check(v)) {
-        x = PyLong_AsUnsignedLong(v);
-        if (x == (unsigned long) -1 && PyErr_Occurred())
-            return -1;
-    }
-    else {
-        long y;
-        if (!PyArg_Parse(v, "l;array item must be integer", &y))
-            return -1;
-        if (y < 0) {
-            PyErr_SetString(PyExc_OverflowError,
-                "unsigned int is less than minimum");
-            return -1;
-        }
-        x = (unsigned long)y;
+    PyObject *v = *vv;
 
+    if (PyFloat_Check(v)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "array item must be integer");
+        return -1;
     }
-    if (x > UINT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-            "unsigned int is greater than maximum");
+    v = (PyObject *)_PyLong_FromNbInt(v);
+    if (v == NULL) {
         return -1;
     }
 
+    *vv = v;
+    return 0;
+}
+
+static int
+II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
+{
+    unsigned long x;
+    int do_decref = 0; /* if nb_int was called */
+
+    if (!PyLong_Check(v)) {
+        if (-1 == get_int_unless_float(&v)) {
+            return -1;
+        }
+        do_decref = 1;
+    }
+    x = PyLong_AsUnsignedLong(v);
+    if (x == (unsigned long)-1 && PyErr_Occurred()) {
+        if (do_decref) {
+            Py_DECREF(v);
+        }
+        return -1;
+    }
+    if (x > UINT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "unsigned int is greater than maximum");
+        if (do_decref) {
+            Py_DECREF(v);
+        }
+        return -1;
+    }
     if (i >= 0)
         ((unsigned int *)ap->ob_item)[i] = (unsigned int)x;
+
+    if (do_decref) {
+        Py_DECREF(v);
+    }
     return 0;
 }
 
@@ -390,31 +413,27 @@ static int
 LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
     unsigned long x;
-    if (PyLong_Check(v)) {
-        x = PyLong_AsUnsignedLong(v);
-        if (x == (unsigned long) -1 && PyErr_Occurred())
-            return -1;
-    }
-    else {
-        long y;
-        if (!PyArg_Parse(v, "l;array item must be integer", &y))
-            return -1;
-        if (y < 0) {
-            PyErr_SetString(PyExc_OverflowError,
-                "unsigned long is less than minimum");
+    int do_decref = 0; /* if nb_int was called */
+
+    if (!PyLong_Check(v)) {
+        if (-1 == get_int_unless_float(&v)) {
             return -1;
         }
-        x = (unsigned long)y;
-
+        do_decref = 1;
     }
-    if (x > ULONG_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-            "unsigned long is greater than maximum");
+    x = PyLong_AsUnsignedLong(v);
+    if (x == (unsigned long)-1 && PyErr_Occurred()) {
+        if (do_decref) {
+            Py_DECREF(v);
+        }
         return -1;
     }
-
     if (i >= 0)
         ((unsigned long *)ap->ob_item)[i] = x;
+
+    if (do_decref) {
+        Py_DECREF(v);
+    }
     return 0;
 }
 
@@ -446,25 +465,27 @@ static int
 QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
     unsigned long long x;
-    if (PyLong_Check(v)) {
-        x = PyLong_AsUnsignedLongLong(v);
-        if (x == (unsigned long long) -1 && PyErr_Occurred())
-            return -1;
-    }
-    else {
-        long long y;
-        if (!PyArg_Parse(v, "L;array item must be integer", &y))
-            return -1;
-        if (y < 0) {
-            PyErr_SetString(PyExc_OverflowError,
-                "unsigned long long is less than minimum");
+    int do_decref = 0; /* if nb_int was called */
+
+    if (!PyLong_Check(v)) {
+        if (-1 == get_int_unless_float(&v)) {
             return -1;
         }
-        x = (unsigned long long)y;
+        do_decref = 1;
     }
-
+    x = PyLong_AsUnsignedLongLong(v);
+    if (x == (unsigned long long)-1 && PyErr_Occurred()) {
+        if (do_decref) {
+            Py_DECREF(v);
+        }
+        return -1;
+    }
     if (i >= 0)
         ((unsigned long long *)ap->ob_item)[i] = x;
+
+    if (do_decref) {
+        Py_DECREF(v);
+    }
     return 0;
 }
 
