@@ -10,6 +10,16 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #28598: Support __rmod__ for subclasses of str being called before
+  str.__mod__.  Patch by Martijn Pieters.
+
+- bpo-29602: Fix incorrect handling of signed zeros in complex constructor for
+  complex subclasses and for inputs having a __complex__ method. Patch
+  by Serhiy Storchaka.
+
+- bpo-29347: Fixed possibly dereferencing undefined pointers
+  when creating weakref objects.
+
 - bpo-29438: Fixed use-after-free problem in key sharing dict.
 
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
@@ -24,6 +34,27 @@ Extension Modules
 
 Library
 -------
+
+- bpo-29615: SimpleXMLRPCDispatcher no longer chains KeyError (or any other
+  exception) to exception(s) raised in the dispatched methods.
+  Patch by Petr Motejlek.
+
+- bpo-29704: asyncio.subprocess.SubprocessStreamProtocol no longer closes before
+  all pipes are closed.
+
+- bpo-29703: Fix asyncio to support instantiation of new event loops
+  in child processes.
+
+- bpo-29376: Fix assertion error in threading._DummyThread.is_alive().
+
+- bpo-29110: Fix file object leak in aifc.open() when file is given as a
+  filesystem path and is not in valid AIFF format. Patch by Anthony Zhang.
+
+- Issue #28961: Fix unittest.mock._Call helper: don't ignore the name parameter
+  anymore. Patch written by Jiajun Huang.
+
+- bpo-29532: Altering a kwarg dictionary passed to functools.partial()
+  no longer affects a partial object after creation.
 
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
@@ -81,6 +112,11 @@ C API
 
 Documentation
 -------------
+
+- bpo-28929: Link the documentation to its source file on GitHub.
+
+- bpo-25008: Document smtpd.py as effectively deprecated and add a pointer to
+  aiosmtpd, a third-party asyncio-based replacement.
 
 - Issue #26355: Add canonical header link on each page to corresponding major
   version of the documentation. Patch by Matthias Bussonnier.
