@@ -1043,7 +1043,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError as err:
                         raise OSError(err.errno, 'error while attempting '
                                       'to bind on address %r: %s'
-                                      % (sa, err.strerror.lower()))
+                                      % (sa, err.strerror.lower())) from None
                 completed = True
             finally:
                 if not completed:

@@ -336,11 +336,11 @@ class Bdb:
         try:
             number = int(arg)
         except ValueError:
-            raise ValueError('Non-numeric breakpoint number %s' % arg)
+            raise ValueError('Non-numeric breakpoint number %s' % arg) from None
         try:
             bp = Breakpoint.bpbynumber[number]
         except IndexError:
-            raise ValueError('Breakpoint number %d out of range' % number)
+            raise ValueError('Breakpoint number %d out of range' % number) from None
         if bp is None:
             raise ValueError('Breakpoint %d already deleted' % number)
         return bp

@@ -147,7 +147,7 @@ def _subst_vars(s, local_vars):
         try:
             return s.format(**os.environ)
         except KeyError as var:
-            raise AttributeError('{%s}' % var)
+            raise AttributeError('{%s}' % var) from None
 
 def _extend_dict(target_dict, other_dict):
     target_keys = target_dict.keys()

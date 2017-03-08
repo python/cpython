@@ -786,7 +786,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     try:
         format_info = _ARCHIVE_FORMATS[format]
     except KeyError:
-        raise ValueError("unknown archive format '%s'" % format)
+        raise ValueError("unknown archive format '%s'" % format) from None
 
     func = format_info[0]
     for arg, val in format_info[1]:
@@ -962,7 +962,7 @@ def unpack_archive(filename, extract_dir=None, format=None):
         try:
             format_info = _UNPACK_FORMATS[format]
         except KeyError:
-            raise ValueError("Unknown unpack format '{0}'".format(format))
+            raise ValueError("Unknown unpack format '{0}'".format(format)) from None
 
         func = format_info[1]
         func(filename, extract_dir, **dict(format_info[2]))

@@ -40,7 +40,7 @@ def main():
                 obj = json.load(infile,
                                 object_pairs_hook=collections.OrderedDict)
         except ValueError as e:
-            raise SystemExit(e)
+            raise SystemExit(e) from None
     with outfile:
         json.dump(obj, outfile, sort_keys=sort_keys, indent=4)
         outfile.write('\n')

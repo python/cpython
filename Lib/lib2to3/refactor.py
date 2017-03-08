@@ -248,7 +248,7 @@ class RefactoringTool(object):
             try:
                 fix_class = getattr(mod, class_name)
             except AttributeError:
-                raise FixerError("Can't find %s.%s" % (fix_name, class_name))
+                raise FixerError("Can't find %s.%s" % (fix_name, class_name)) from None
             fixer = fix_class(self.options, self.fixer_log)
             if fixer.explicit and self.explicit is not True and \
                     fix_mod_path not in self.explicit:

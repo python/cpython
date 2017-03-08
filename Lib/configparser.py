@@ -1138,7 +1138,7 @@ class RawConfigParser(MutableMapping):
             sectiondict = self._sections[section]
         except KeyError:
             if section != self.default_section:
-                raise NoSectionError(section)
+                raise NoSectionError(section) from None
         # Update with the entry specific variables
         vardict = {}
         if vars:

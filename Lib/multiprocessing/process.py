@@ -199,7 +199,7 @@ class BaseProcess(object):
         try:
             return self._sentinel
         except AttributeError:
-            raise ValueError("process not started")
+            raise ValueError("process not started") from None
 
     def __repr__(self):
         if self is _current_process:
