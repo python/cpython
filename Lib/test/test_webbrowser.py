@@ -275,9 +275,9 @@ class ImportTest(unittest.TestCase):
         class ExampleBrowser:
             pass
         webbrowser.register('Example1', ExampleBrowser)
-        self.assertIsTrue(webbrowser._tryorder)
+        self.assertTrue(webbrowser._tryorder)
         self.assertEqual(webbrowser._tryorder[-1], 'Example1')
-        self.assertIsTrue(webbrowser._browsers)
+        self.assertTrue(webbrowser._browsers)
         self.assertIn('example1', webbrowser._browsers)
         self.assertEqual(webbrowser._browsers['example1'], [ExampleBrowser, None])
 
