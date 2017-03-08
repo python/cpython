@@ -445,17 +445,17 @@ class MiscReadTestBase(CommonReadTest):
         tarname = pathlib.Path(self.tarname)
         with tarfile.open(tarname, mode=self.mode) as tar:
             self.assertIsInstance(tar.name, str)
-            self.assertEqual(tar.name, os.path.abspath(str(tarname)))
+            self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
         with self.taropen(tarname) as tar:
             self.assertIsInstance(tar.name, str)
-            self.assertEqual(tar.name, os.path.abspath(str(tarname)))
+            self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
         with tarfile.TarFile.open(tarname, mode=self.mode) as tar:
             self.assertIsInstance(tar.name, str)
-            self.assertEqual(tar.name, os.path.abspath(str(tarname)))
+            self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
         if self.suffix == '':
             with tarfile.TarFile(tarname, mode='r') as tar:
                 self.assertIsInstance(tar.name, str)
-                self.assertEqual(tar.name, os.path.abspath(str(tarname)))
+                self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
 
     def test_illegal_mode_arg(self):
         with open(tmpname, 'wb'):
@@ -1135,7 +1135,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             with open(path, "wb") as fobj:
                 fobj.write(b"aaa")
             tarinfo = tar.gettarinfo(path)
-            tarinfo2 = tar.gettarinfo(str(path))
+            tarinfo2 = tar.gettarinfo(os.fspath(path))
             self.assertIsInstance(tarinfo.name, str)
             self.assertEqual(tarinfo.name, tarinfo2.name)
             self.assertEqual(tarinfo.size, 3)
