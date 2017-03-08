@@ -146,6 +146,10 @@ Some facts and figures:
    .. versionchanged:: 3.5
       The ``'x'`` (exclusive creation) mode was added.
 
+   .. versionchanged:: 3.6
+      The *name* parameter accepts a :term:`path-like object`.
+
+
 .. class:: TarFile
 
    Class for reading and writing tar archives. Do not use this class directly:
@@ -266,7 +270,8 @@ be finalized; only the internally used file object will be closed. See the
    All following arguments are optional and can be accessed as instance attributes
    as well.
 
-   *name* is the pathname of the archive. It can be omitted if *fileobj* is given.
+   *name* is the pathname of the archive. *name* may be a :term:`path-like object`.
+   It can be omitted if *fileobj* is given.
    In this case, the file object's :attr:`name` attribute is used if it exists.
 
    *mode* is either ``'r'`` to read from an existing archive, ``'a'`` to append
@@ -318,6 +323,10 @@ be finalized; only the internally used file object will be closed. See the
 
    .. versionchanged:: 3.5
       The ``'x'`` (exclusive creation) mode was added.
+
+   .. versionchanged:: 3.6
+      The *name* parameter accepts a :term:`path-like object`.
+
 
 .. classmethod:: TarFile.open(...)
 
@@ -390,14 +399,17 @@ be finalized; only the internally used file object will be closed. See the
    .. versionchanged:: 3.5
       Added the *numeric_owner* parameter.
 
+   .. versionchanged:: 3.6
+      The *path* parameter accepts a :term:`path-like object`.
+
 
 .. method:: TarFile.extract(member, path="", set_attrs=True, *, numeric_owner=False)
 
    Extract a member from the archive to the current working directory, using its
    full name. Its file information is extracted as accurately as possible. *member*
    may be a filename or a :class:`TarInfo` object. You can specify a different
-   directory using *path*. File attributes (owner, mtime, mode) are set unless
-   *set_attrs* is false.
+   directory using *path*. *path* may be a :term:`path-like object`.
+   File attributes (owner, mtime, mode) are set unless *set_attrs* is false.
 
    If *numeric_owner* is :const:`True`, the uid and gid numbers from the tarfile
    are used to set the owner/group for the extracted files. Otherwise, the named
@@ -417,6 +429,10 @@ be finalized; only the internally used file object will be closed. See the
 
    .. versionchanged:: 3.5
       Added the *numeric_owner* parameter.
+
+   .. versionchanged:: 3.6
+      The *path* parameter accepts a :term:`path-like object`.
+
 
 .. method:: TarFile.extractfile(member)
 
@@ -464,7 +480,8 @@ be finalized; only the internally used file object will be closed. See the
 
    Create a :class:`TarInfo` object from the result of :func:`os.stat` or
    equivalent on an existing file.  The file is either named by *name*, or
-   specified as a :term:`file object` *fileobj* with a file descriptor.  If
+   specified as a :term:`file object` *fileobj* with a file descriptor.
+   *name* may be a :term:`path-like object`.  If
    given, *arcname* specifies an alternative name for the file in the
    archive, otherwise, the name is taken from *fileobj*’s
    :attr:`~io.FileIO.name` attribute, or the *name* argument.  The name
@@ -477,6 +494,9 @@ be finalized; only the internally used file object will be closed. See the
    modifying.  This is the case for objects such as :class:`~gzip.GzipFile`.
    The :attr:`~TarInfo.name` may also be modified, in which case *arcname*
    could be a dummy string.
+
+   .. versionchanged:: 3.6
+      The *name* parameter accepts a :term:`path-like object`.
 
 
 .. method:: TarFile.close()
