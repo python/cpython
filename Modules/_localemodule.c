@@ -260,7 +260,12 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
         PyErr_NoMemory();
         goto exit;
     }
+    errno = 0;
     n2 = wcsxfrm(buf, s, n1);
+    if (errno) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto exit;
+    }
     if (n2 >= (size_t)n1) {
         /* more space needed */
         wchar_t * new_buf = PyMem_Realloc(buf, (n2+1)*sizeof(wchar_t));
@@ -269,14 +274,17 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
             goto exit;
         }
         buf = new_buf;
+        errno = 0;
         n2 = wcsxfrm(buf, s, n2+1);
+        if (errno) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            goto exit;
+        }
     }
     result = PyUnicode_FromWideChar(buf, n2);
 exit:
-    if (buf)
-        PyMem_Free(buf);
-    if (s)
-        PyMem_Free(s);
+    PyMem_Free(buf);
+    PyMem_Free(s);
     return result;
 }
 #endif

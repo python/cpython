@@ -2293,16 +2293,11 @@ static int
 list_init(PyListObject *self, PyObject *args, PyObject *kw)
 {
     PyObject *arg = NULL;
-    static char *kwlist[] = {"sequence", 0};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:list", kwlist, &arg))
+    if (!_PyArg_NoKeywords("list()", kw))
         return -1;
-    if (arg != NULL && PyTuple_GET_SIZE(args) == 0) {
-        if (PyErr_Warn(PyExc_DeprecationWarning,
-                "Using 'sequence' as a keyword argument is deprecated; "
-                "specify the value as a positional argument instead") < 0)
-            return -1;
-    }
+    if (!PyArg_UnpackTuple(args, "list", 0, 1, &arg))
+        return -1;
 
     /* Verify list invariants established by PyType_GenericAlloc() */
     assert(0 <= Py_SIZE(self));
