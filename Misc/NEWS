@@ -265,6 +265,9 @@ Extension Modules
 Library
 -------
 
+- bpo-26915: index() and count() methods of collections.abc.Sequence now
+  check identity before checking equality when do comparisons.
+
 - bpo-28682: Added support for bytes paths in os.fwalk().
 
 - bpo-29623: Allow use of path-like object as a single argument in
