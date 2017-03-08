@@ -446,6 +446,10 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
     Py_ssize_t i;
     PyObject **src, **dest;
     PyTupleObject *np;
+    if (Py_SIZE(a) == 0 && PyTuple_CheckExact(bb)) {
+        Py_INCREF(bb);
+        return bb;
+    }
     if (!PyTuple_Check(bb)) {
         PyErr_Format(PyExc_TypeError,
              "can only concatenate tuple (not \"%.200s\") to tuple",
@@ -453,6 +457,10 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         return NULL;
     }
 #define b ((PyTupleObject *)bb)
+    if (Py_SIZE(b) == 0 && PyTuple_CheckExact(a)) {
+        Py_INCREF(a);
+        return (PyObject *)a;
+    }
     if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
         return PyErr_NoMemory();
     size = Py_SIZE(a) + Py_SIZE(b);
@@ -648,11 +656,12 @@ static PyObject *
 tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *arg = NULL;
-    static char *kwlist[] = {"sequence", 0};
 
     if (type != &PyTuple_Type)
         return tuple_subtype_new(type, args, kwds);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:tuple", kwlist, &arg))
+    if (!_PyArg_NoKeywords("tuple()", kwds))
+        return NULL;
+    if (!PyArg_UnpackTuple(args, "tuple", 0, 1, &arg))
         return NULL;
 
     if (arg == NULL)

@@ -316,7 +316,7 @@ PyLong_FromUnsignedLong(unsigned long ival)
     if (ival < PyLong_BASE)
         return PyLong_FromLong(ival);
     /* Count the number of Python digits. */
-    t = (unsigned long)ival;
+    t = ival;
     while (t) {
         ++ndigits;
         t >>= PyLong_SHIFT;
@@ -854,7 +854,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
             /* Because we're going LSB to MSB, thisbyte is
                more significant than what's already in accum,
                so needs to be prepended to accum. */
-            accum |= (twodigits)thisbyte << accumbits;
+            accum |= thisbyte << accumbits;
             accumbits += 8;
             if (accumbits >= PyLong_SHIFT) {
                 /* There's enough to fill a Python digit. */
@@ -1121,7 +1121,7 @@ PyLong_FromUnsignedLongLong(unsigned long long ival)
     if (ival < PyLong_BASE)
         return PyLong_FromLong((long)ival);
     /* Count the number of Python digits. */
-    t = (unsigned long long)ival;
+    t = ival;
     while (t) {
         ++ndigits;
         t >>= PyLong_SHIFT;
@@ -4796,7 +4796,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *obase = NULL, *x = NULL;
     Py_ssize_t base;
-    static char *kwlist[] = {"x", "base", 0};
+    static char *kwlist[] = {"", "base", 0};
 
     if (type != &PyLong_Type)
         return long_subtype_new(type, args, kwds); /* Wimp out */
