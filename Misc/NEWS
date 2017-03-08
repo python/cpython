@@ -270,6 +270,9 @@ Extension Modules
 Library
 -------
 
+- bpo-28231: The zipfile module now accepts path-like objects for external
+  paths.
+
 - bpo-26915: index() and count() methods of collections.abc.Sequence now
   check identity before checking equality when do comparisons.
 
