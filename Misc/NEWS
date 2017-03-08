@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-11913: README.rst is now included in the list of distutils standard
+  READMEs and therefore included in source distributions.
+
 - bpo-29914: Fixed default implementations of __reduce__ and __reduce_ex__().
   object.__reduce__() no longer takes arguments, object.__reduce_ex__() now
   requires one argument.
@@ -310,12 +313,12 @@ Library
 - bpo-29694: Fixed race condition in pathlib mkdir with flags
   parents=True.  Patch by Armin Rigo.
 
-- bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in 
+- bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in
   contextlib.contextmanager.
   Patch by Siddharth Velankar.
 
 - bpo-26187: Test that sqlite3 trace callback is not called multiple
-  times when schema is changing.  Indirectly fixed by switching to 
+  times when schema is changing.  Indirectly fixed by switching to
   use sqlite3_prepare_v2() in bpo-9303.  Patch by Aviv Palivoda.
 
 - bpo-30017: Allowed calling the close() method of the zip entry writer object
