@@ -2672,14 +2672,22 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                         if (PyErr_ExceptionMatches(PyExc_AttributeError) ||
                             !PyMapping_Check(arg)) {
                             int function_location = (oparg>>8) & 0xff;
-                            PyObject *func = (
-                                    PEEK(function_location + num_maps));
-                            PyErr_Format(PyExc_TypeError,
-                                    "%.200s%.200s argument after ** "
-                                    "must be a mapping, not %.200s",
-                                    PyEval_GetFuncName(func),
-                                    PyEval_GetFuncDesc(func),
-                                    arg->ob_type->tp_name);
+                            if (function_location == 1) {
+                                PyObject *func = (
+                                        PEEK(function_location + num_maps));
+                                PyErr_Format(PyExc_TypeError,
+                                        "%.200s%.200s argument after ** "
+                                        "must be a mapping, not %.200s",
+                                        PyEval_GetFuncName(func),
+                                        PyEval_GetFuncDesc(func),
+                                        arg->ob_type->tp_name);
+                            }
+                            else {
+                                PyErr_Format(PyExc_TypeError,
+                                        "argument after ** "
+                                        "must be a mapping, not %.200s",
+                                        arg->ob_type->tp_name);
+                            }
                         }
                         Py_DECREF(sum);
                         goto error;
@@ -2689,21 +2697,34 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                         Py_ssize_t idx = 0;
                         PyObject *key;
                         int function_location = (oparg>>8) & 0xff;
-                        PyObject *func = PEEK(function_location + num_maps);
                         Py_hash_t hash;
                         _PySet_NextEntry(intersection, &idx, &key, &hash);
-                        if (!PyUnicode_Check(key)) {
-                            PyErr_Format(PyExc_TypeError,
-                                    "%.200s%.200s keywords must be strings",
-                                    PyEval_GetFuncName(func),
-                                    PyEval_GetFuncDesc(func));
-                        } else {
-                            PyErr_Format(PyExc_TypeError,
-                                    "%.200s%.200s got multiple "
-                                    "values for keyword argument '%U'",
-                                    PyEval_GetFuncName(func),
-                                    PyEval_GetFuncDesc(func),
-                                    key);
+                        if (function_location == 1) {
+                            PyObject *func = PEEK(function_location + num_maps);
+                            if (!PyUnicode_Check(key)) {
+                                PyErr_Format(PyExc_TypeError,
+                                        "%.200s%.200s keywords must be strings",
+                                        PyEval_GetFuncName(func),
+                                        PyEval_GetFuncDesc(func));
+                            } else {
+                                PyErr_Format(PyExc_TypeError,
+                                        "%.200s%.200s got multiple "
+                                        "values for keyword argument '%U'",
+                                        PyEval_GetFuncName(func),
+                                        PyEval_GetFuncDesc(func),
+                                        key);
+                            }
+                        }
+                        else {
+                            if (!PyUnicode_Check(key)) {
+                                PyErr_SetString(PyExc_TypeError,
+                                        "keywords must be strings");
+                            } else {
+                                PyErr_Format(PyExc_TypeError,
+                                        "function got multiple "
+                                        "values for keyword argument '%U'",
+                                        key);
+                            }
                         }
                         Py_DECREF(intersection);
                         Py_DECREF(sum);
@@ -2716,13 +2737,21 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
                         if (with_call) {
                             int function_location = (oparg>>8) & 0xff;
-                            PyObject *func = PEEK(function_location + num_maps);
-                            PyErr_Format(PyExc_TypeError,
-                                    "%.200s%.200s argument after ** "
-                                    "must be a mapping, not %.200s",
-                                    PyEval_GetFuncName(func),
-                                    PyEval_GetFuncDesc(func),
-                                    arg->ob_type->tp_name);
+                            if (function_location == 1) {
+                                PyObject *func = PEEK(function_location + num_maps);
+                                PyErr_Format(PyExc_TypeError,
+                                        "%.200s%.200s argument after ** "
+                                        "must be a mapping, not %.200s",
+                                        PyEval_GetFuncName(func),
+                                        PyEval_GetFuncDesc(func),
+                                        arg->ob_type->tp_name);
+                            }
+                            else {
+                                PyErr_Format(PyExc_TypeError,
+                                        "argument after ** "
+                                        "must be a mapping, not %.200s",
+                                        arg->ob_type->tp_name);
+                            }
                         }
                         else {
                             PyErr_Format(PyExc_TypeError,
