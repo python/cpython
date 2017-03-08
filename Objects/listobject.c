@@ -2235,7 +2235,7 @@ listsort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
 
 	if (keys_are_in_tuples) {
 	    /* Make sure we're not dealing with tuples of tuples
-             * (remember: here, key_type refers list [key[0] for key in keys]) */
+	     * (remember: here, key_type refers list [key[0] for key in keys]) */
 	    if (key_type == &PyTuple_Type)
 		compare_funcs.tuple_elem_compare = safe_object_compare;
 	    else
