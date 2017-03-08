@@ -1,8 +1,6 @@
 import webbrowser
 import unittest
-import os
 import subprocess
-import sys
 from unittest import mock
 from test import support
 
@@ -269,12 +267,6 @@ class BrowserRegistrationTest(unittest.TestCase):
 
 
 class ImportTest(unittest.TestCase):
-    def setUp(self):
-        self.hasbrowsers = bool(sys.platform == 'darwin' or
-                                sys.platform[:3] == 'win' or
-                                os.environ.get("DISPLAY") or
-                                os.environ.get("TERM"))
-
     def test_register(self):
         webbrowser = support.import_fresh_module('webbrowser')
         self.assertIsNone(webbrowser._tryorder)
@@ -283,9 +275,9 @@ class ImportTest(unittest.TestCase):
         class ExampleBrowser:
             pass
         webbrowser.register('Example1', ExampleBrowser)
-        self.assertGreater(len(webbrowser._tryorder), self.hasbrowsers)
+        self.assertIsTrue(webbrowser._tryorder)
         self.assertEqual(webbrowser._tryorder[-1], 'Example1')
-        self.assertGreater(len(webbrowser._browsers), self.hasbrowsers)
+        self.assertIsTrue(webbrowser._browsers)
         self.assertIn('example1', webbrowser._browsers)
         self.assertEqual(webbrowser._browsers['example1'], [ExampleBrowser, None])
 
@@ -297,9 +289,6 @@ class ImportTest(unittest.TestCase):
         with self.assertRaises(webbrowser.Error):
             webbrowser.get('fakebrowser')
         self.assertIsNotNone(webbrowser._tryorder)
-        if self.hasbrowsers:
-            self.assertTrue(webbrowser._tryorder)
-            self.assertTrue(webbrowser._browsers)
 
 
 if __name__=='__main__':
