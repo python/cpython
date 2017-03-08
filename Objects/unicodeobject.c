@@ -11748,14 +11748,14 @@ unicode_islower_impl(PyObject *self)
 
     /* Special case for empty strings */
     if (length == 0)
-        return PyBool_FromLong(0);
+        Py_RETURN_FALSE;
 
     cased = 0;
     for (i = 0; i < length; i++) {
         const Py_UCS4 ch = PyUnicode_READ(kind, data, i);
 
         if (Py_UNICODE_ISUPPER(ch) || Py_UNICODE_ISTITLE(ch))
-            return PyBool_FromLong(0);
+            Py_RETURN_FALSE;
         else if (!cased && Py_UNICODE_ISLOWER(ch))
             cased = 1;
     }
@@ -11793,14 +11793,14 @@ unicode_isupper_impl(PyObject *self)
 
     /* Special case for empty strings */
     if (length == 0)
-        return PyBool_FromLong(0);
+        Py_RETURN_FALSE;
 
     cased = 0;
     for (i = 0; i < length; i++) {
         const Py_UCS4 ch = PyUnicode_READ(kind, data, i);
 
         if (Py_UNICODE_ISLOWER(ch) || Py_UNICODE_ISTITLE(ch))
-            return PyBool_FromLong(0);
+            Py_RETURN_FALSE;
         else if (!cased && Py_UNICODE_ISUPPER(ch))
             cased = 1;
     }
@@ -11840,7 +11840,7 @@ unicode_istitle_impl(PyObject *self)
 
     /* Special case for empty strings */
     if (length == 0)
-        return PyBool_FromLong(0);
+        Py_RETURN_FALSE;
 
     cased = 0;
     previous_is_cased = 0;
@@ -11849,13 +11849,13 @@ unicode_istitle_impl(PyObject *self)
 
         if (Py_UNICODE_ISUPPER(ch) || Py_UNICODE_ISTITLE(ch)) {
             if (previous_is_cased)
-                return PyBool_FromLong(0);
+                Py_RETURN_FALSE;
             previous_is_cased = 1;
             cased = 1;
         }
         else if (Py_UNICODE_ISLOWER(ch)) {
             if (!previous_is_cased)
-                return PyBool_FromLong(0);
+                Py_RETURN_FALSE;
             previous_is_cased = 1;
             cased = 1;
         }
@@ -11895,14 +11895,14 @@ unicode_isspace_impl(PyObject *self)
 
     /* Special case for empty strings */
     if (length == 0)
-        return PyBool_FromLong(0);
+        Py_RETURN_FALSE;
 
     for (i = 0; i < length; i++) {
         const Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         if (!Py_UNICODE_ISSPACE(ch))
-            return PyBool_FromLong(0);
+            Py_RETURN_FALSE;
     }
-    return PyBool_FromLong(1);
+    Py_RETURN_TRUE;
 }
 
 /*[clinic input]
@@ -11935,13 +11935,13 @@ unicode_isalpha_impl(PyObject *self)
 
     /* Special case for empty strings */
     if (length == 0)
-        return PyBool_FromLong(0);
+        Py_RETURN_FALSE;
 
     for (i = 0; i < length; i++) {
         if (!Py_UNICODE_ISALPHA(PyUnicode_READ(kind, data, i)))
-            return PyBool_FromLong(0);
+            Py_RETURN_FALSE;
     }
-    return PyBool_FromLong(1);
+    Py_RETURN_TRUE;
 }
 
 /*[clinic input]
@@ -11976,14 +11976,14 @@ unicode_isalnum_impl(PyObject *self)
 
     /* Special case for empty strings */
     if (len == 0)
-        return PyBool_FromLong(0);
+        Py_RETURN_FALSE;
 
     for (i = 0; i < len; i++) {
         const Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         if (!Py_UNICODE_ISALNUM(ch))
-            return PyBool_FromLong(0);
+            Py_RETURN_FALSE;
     }
-    return PyBool_FromLong(1);
+    Py_RETURN_TRUE;
 }
 
 /*[clinic input]
@@ -12016,13 +12016,13 @@ unicode_isdecimal_impl(PyObject *self)
 
     /* Special case for empty strings */
     if (length == 0)
-        return PyBool_FromLong(0);
+        Py_RETURN_FALSE;
 
     for (i = 0; i < length; i++) {
         if (!Py_UNICODE_ISDECIMAL(PyUnicode_READ(kind, data, i)))
-            return PyBool_FromLong(0);
+            Py_RETURN_FALSE;
     }
-    return PyBool_FromLong(1);
+    Py_RETURN_TRUE;
 }
 
 /*[clinic input]
@@ -12056,13 +12056,13 @@ unicode_isdigit_impl(PyObject *self)
 
     /* Special case for empty strings */
     if (length == 0)
-        return PyBool_FromLong(0);
+        Py_RETURN_FALSE;
 
     for (i = 0; i < length; i++) {
         if (!Py_UNICODE_ISDIGIT(PyUnicode_READ(kind, data, i)))
-            return PyBool_FromLong(0);
+            Py_RETURN_FALSE;
     }
-    return PyBool_FromLong(1);
+    Py_RETURN_TRUE;
 }
 
 /*[clinic input]
@@ -12095,13 +12095,13 @@ unicode_isnumeric_impl(PyObject *self)
 
     /* Special case for empty strings */
     if (length == 0)
-        return PyBool_FromLong(0);
+        Py_RETURN_FALSE;
 
     for (i = 0; i < length; i++) {
         if (!Py_UNICODE_ISNUMERIC(PyUnicode_READ(kind, data, i)))
-            return PyBool_FromLong(0);
+            Py_RETURN_FALSE;
     }
-    return PyBool_FromLong(1);
+    Py_RETURN_TRUE;
 }
 
 int
