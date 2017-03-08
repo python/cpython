@@ -2101,7 +2101,7 @@ reverse_sortslice(sortslice *s, Py_ssize_t n)
  */
 static PyObject *
 listsort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
-{   
+{
     MergeState ms;
     Py_ssize_t nremaining;
     Py_ssize_t minrun;
