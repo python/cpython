@@ -10,6 +10,17 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29568: Escaped percent "%%" in the format string for classic string
+  formatting no longer allows any characters between two percents.
+
+- bpo-29714: Fix a regression that bytes format may fail when containing zero
+  bytes inside.
+
+- bpo-29695: bool(), float(), list() and tuple() no longer take keyword arguments.
+  The first argument of int() can now be passes only as positional argument.
+
+- bpo-20087: Prefer glibc's list of locale aliases to the X11 ones.
+
 - bpo-28893: Set correct __cause__ for errors about invalid awaitables
   returned from __aiter__ and __anext__.
 
@@ -261,6 +272,17 @@ Library
 
 - bpo-29654: Support If-Modified-Since HTTP header (browser cache).  Patch
   by Pierre Quentel.
+
+- bpo-29645: Speed up importing the webbrowser module.  webbrowser.register()
+  is now thread-safe.
+
+- bpo-28231: The zipfile module now accepts path-like objects for external
+  paths.
+
+- bpo-26915: index() and count() methods of collections.abc.Sequence now
+  check identity before checking equality when do comparisons.
+
+- bpo-28682: Added support for bytes paths in os.fwalk().
 
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
@@ -897,11 +919,6 @@ Tools/Demos
 
 Tests
 -----
-
-- Issue #29571: to match the behaviour of the ``re.LOCALE`` flag,
-  test_re.test_locale_flag now uses ``locale.getpreferredencoding(False)`` to
-  determine the candidate encoding for the test regex (allowing it to correctly
-  skip the test when the default locale encoding is a multi-byte encoding)
 
 - Issue #24932: Use proper command line parsing in _testembed
 
