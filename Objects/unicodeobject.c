@@ -14617,12 +14617,6 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
     if (ctx->fmtcnt == 0)
         ctx->writer.overallocate = 0;
 
-    if (arg->ch == '%') {
-        if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0)
-            return -1;
-        return 1;
-    }
-
     v = unicode_format_getnextarg(ctx);
     if (v == NULL)
         return -1;
@@ -14882,6 +14876,13 @@ unicode_format_arg(struct unicode_formatter_t *ctx)
     int ret;
 
     arg.ch = PyUnicode_READ(ctx->fmtkind, ctx->fmtdata, ctx->fmtpos);
+    if (arg.ch == '%') {
+        ctx->fmtpos++;
+        ctx->fmtcnt--;
+        if (_PyUnicodeWriter_WriteCharInline(&ctx->writer, '%') < 0)
+            return -1;
+        return 0;
+    }
     arg.flags = 0;
     arg.width = -1;
     arg.prec = -1;
@@ -14903,7 +14904,7 @@ unicode_format_arg(struct unicode_formatter_t *ctx)
             return -1;
     }
 
-    if (ctx->dict && (ctx->argidx < ctx->arglen) && arg.ch != '%') {
+    if (ctx->dict && (ctx->argidx < ctx->arglen)) {
         PyErr_SetString(PyExc_TypeError,
                         "not all arguments converted during string formatting");
         return -1;
