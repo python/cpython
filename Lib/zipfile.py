@@ -478,6 +478,8 @@ class ZipInfo (object):
         this will be the same as filename, but without a drive letter and with
         leading path separators removed).
         """
+        if isinstance(filename, os.PathLike):
+            filename = os.fspath(filename)
         st = os.stat(filename)
         isdir = stat.S_ISDIR(st.st_mode)
         mtime = time.localtime(st.st_mtime)
@@ -1069,6 +1071,8 @@ class ZipFile:
         self._comment = b''
 
         # Check if we were passed a file-like object
+        if isinstance(file, os.PathLike):
+            file = os.fspath(file)
         if isinstance(file, str):
             # No, it's a filename
             self._filePassed = 0
@@ -1469,11 +1473,10 @@ class ZipFile:
            as possible. `member' may be a filename or a ZipInfo object. You can
            specify a different directory using `path'.
         """
-        if not isinstance(member, ZipInfo):
-            member = self.getinfo(member)
-
         if path is None:
             path = os.getcwd()
+        else:
+            path = os.fspath(path)
 
         return self._extract_member(member, path, pwd)
 
@@ -1486,8 +1489,13 @@ class ZipFile:
         if members is None:
             members = self.namelist()
 
+        if path is None:
+            path = os.getcwd()
+        else:
+            path = os.fspath(path)
+
         for zipinfo in members:
-            self.extract(zipinfo, path, pwd)
+            self._extract_member(zipinfo, path, pwd)
 
     @classmethod
     def _sanitize_windows_name(cls, arcname, pathsep):
@@ -1508,6 +1516,9 @@ class ZipFile:
         """Extract the ZipInfo object 'member' to a physical
            file on the path targetpath.
         """
+        if not isinstance(member, ZipInfo):
+            member = self.getinfo(member)
+
         # build the destination pathname, replacing
         # forward slashes to platform specific separators.
         arcname = member.filename.replace('/', os.path.sep)
@@ -1800,6 +1811,7 @@ class PyZipFile(ZipFile):
         If filterfunc(pathname) is given, it is called with every argument.
         When it is False, the file or directory is skipped.
         """
+        pathname = os.fspath(pathname)
         if filterfunc and not filterfunc(pathname):
             if self.debug:
                 label = 'path' if os.path.isdir(pathname) else 'file'
