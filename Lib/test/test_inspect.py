@@ -24,8 +24,8 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import (run_unittest, TESTFN, DirsOnSysPath, cpython_only,
-                          MISSING_C_DOCSTRINGS)
+from test.support import run_unittest, TESTFN, DirsOnSysPath, cpython_only
+from test.support import MISSING_C_DOCSTRINGS, cpython_only
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
@@ -384,11 +384,10 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getcomments(self):
         self.assertEqual(inspect.getcomments(mod), '# line 1\n')
         self.assertEqual(inspect.getcomments(mod.StupidGit), '# line 20\n')
-        # If the object source file is not available, return None
-        fn = "_non_existing_filename_used_for_sourcefile_test.py"
-        co = compile("x=1", fn, "exec")
+        # If the object source file is not available, return None.
+        co = compile("x=1", '_non_existing_filename.py', "exec")
         self.assertIsNone(inspect.getcomments(co))
-        # If the object has been defined in C, return None
+        # If the object has been defined in C, return None.
         self.assertIsNone(inspect.getcomments(list))
 
     def test_getmodule(self):
