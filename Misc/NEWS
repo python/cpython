@@ -10,6 +10,25 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29568: Escaped percent "%%" in the format string for classic string
+  formatting no longer allows any characters between two percents.
+
+- bpo-29714: Fix a regression that bytes format may fail when containing zero
+  bytes inside.
+
+- bpo-29695: bool(), float(), list() and tuple() no longer take keyword arguments.
+  The first argument of int() can now be passes only as positional argument.
+
+- bpo-28893: Set correct __cause__ for errors about invalid awaitables
+  returned from __aiter__ and __anext__.
+
+- bpo-29683: Fixes to memory allocation in _PyCode_SetExtra.  Patch by
+  Brian Coleman.
+
+- bpo-29684: Fix minor regression of PyEval_CallObjectWithKeywords.
+  It should raise TypeError when kwargs is not a dict.  But it might
+  cause segv when args=NULL and kwargs is not a dict.
+
 - bpo-28598: Support __rmod__ for subclasses of str being called before
   str.__mod__.  Patch by Martijn Pieters.
 
@@ -248,6 +267,32 @@ Extension Modules
 
 Library
 -------
+
+- bpo-26915: index() and count() methods of collections.abc.Sequence now
+  check identity before checking equality when do comparisons.
+
+- bpo-28682: Added support for bytes paths in os.fwalk().
+
+- bpo-29623: Allow use of path-like object as a single argument in
+  ConfigParser.read().  Patch by David Ellis.
+
+- bpo-9303: Migrate sqlite3 module to _v2 API.  Patch by Aviv Palivoda.
+
+- bpo-28963: Fix out of bound iteration in asyncio.Future.remove_done_callback 
+  implemented in C.
+
+- bpo-29704: asyncio.subprocess.SubprocessStreamProtocol no longer closes before
+  all pipes are closed.
+
+- bpo-29271: Fix Task.current_task and Task.all_tasks implemented in C
+  to accept None argument as their pure Python implementation.
+
+- bpo-29703: Fix asyncio to support instantiation of new event loops
+  in child processes.
+
+- bpo-29615: SimpleXMLRPCDispatcher no longer chains KeyError (or any other
+  exception) to exception(s) raised in the dispatched methods.
+  Patch by Petr Motejlek.
 
 - bpo-7769: Method register_function() of xmlrpc.server.SimpleXMLRPCDispatcher
   and its subclasses can now be used as a decorator.
@@ -775,6 +820,12 @@ Documentation
 Build
 -----
 
+- bpo-27593: sys.version and the platform module python_build(),
+  python_branch(), and python_revision() functions now use
+  git information rather than hg when building from a repo.
+
+- bpo-29572: Update Windows build and OS X installers to use OpenSSL 1.0.2k.
+
 - Issue #27659: Prohibit implicit C function declarations: use
   -Werror=implicit-function-declaration when possible (GCC and Clang, but it
   depends on the compiler version). Patch written by Chi Hsuan Yen.
@@ -857,6 +908,10 @@ Tools/Demos
 
 Tests
 -----
+
+- bpo-28087: Skip test_asyncore and test_eintr poll failures on macOS.
+  Skip some tests of select.poll when running on macOS due to unresolved
+  issues with the underlying system poll function on some macOS versions.
 
 - Issue #29571: to match the behaviour of the ``re.LOCALE`` flag,
   test_re.test_locale_flag now uses ``locale.getpreferredencoding(False)`` to

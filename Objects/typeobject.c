@@ -2478,11 +2478,17 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             }
             PyList_SET_ITEM(newslots, j, tmp);
             if (PyDict_GetItem(dict, tmp)) {
-                PyErr_Format(PyExc_ValueError,
-                             "%R in __slots__ conflicts with class variable",
-                             tmp);
-                Py_DECREF(newslots);
-                goto error;
+                /* CPython inserts __qualname__ and __classcell__ (when needed)
+                   into the namespace when creating a class.  They will be deleted
+                   below so won't act as class variables. */
+                if (!_PyUnicode_EqualToASCIIId(tmp, &PyId___qualname__) &&
+                    !_PyUnicode_EqualToASCIIId(tmp, &PyId___classcell__)) {
+                    PyErr_Format(PyExc_ValueError,
+                                 "%R in __slots__ conflicts with class variable",
+                                 tmp);
+                    Py_DECREF(newslots);
+                    goto error;
+                }
             }
             j++;
         }

@@ -392,30 +392,35 @@ class SimpleXMLRPCDispatcher:
         not be called.
         """
 
-        func = None
         try:
-            # check to see if a matching function has been registered
+            # call the matching registered function
             func = self.funcs[method]
         except KeyError:
-            if self.instance is not None:
-                # check for a _dispatch method
-                if hasattr(self.instance, '_dispatch'):
-                    return self.instance._dispatch(method, params)
-                else:
-                    # call instance method directly
-                    try:
-                        func = resolve_dotted_attribute(
-                            self.instance,
-                            method,
-                            self.allow_dotted_names
-                            )
-                    except AttributeError:
-                        pass
-
-        if func is not None:
-            return func(*params)
+            pass
         else:
+            if func is not None:
+                return func(*params)
             raise Exception('method "%s" is not supported' % method)
+
+        if self.instance is not None:
+            if hasattr(self.instance, '_dispatch'):
+                # call the `_dispatch` method on the instance
+                return self.instance._dispatch(method, params)
+
+            # call the instance's method directly
+            try:
+                func = resolve_dotted_attribute(
+                    self.instance,
+                    method,
+                    self.allow_dotted_names
+                )
+            except AttributeError:
+                pass
+            else:
+                if func is not None:
+                    return func(*params)
+
+        raise Exception('method "%s" is not supported' % method)
 
 class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
     """Simple XML-RPC request handler class.

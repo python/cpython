@@ -4,9 +4,9 @@
   "findPotentialReviewers": true,
   "fileBlacklist": [
     "Misc/ACKS",
-    "Misc/NEWS"
+    "Misc/NEWS",
+    "Doc/whatsnew/*.rst"
   ],
-  "userBlacklist": [],
-  "userBlacklistForPR": [],
-  "requiredOrgs": ["python"],
+  "userBlacklist": ["gvanrossum", "skrah", "haypo"],
+  "userBlacklistForPR": ["benjaminp", "skrah"]
 }
