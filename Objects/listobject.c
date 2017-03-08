@@ -1089,8 +1089,8 @@ unsafe_object_compare(PyObject* v, PyObject* w, CompareFuncs compare_funcs)
   /* Modified from Objects/object.c:PyObject_RichCompareBool, assuming: */
   #ifdef Py_DEBUG
     assert(v->ob_type == w->ob_type &&
-	   v->ob_type->tp_richcompare != NULL &&
-	   v->ob_type->tp_richcompare == compare_funcs.key_richcompare);
+           v->ob_type->tp_richcompare != NULL &&
+           v->ob_type->tp_richcompare == compare_funcs.key_richcompare);
   #endif
 
     PyObject* res = (*compare_funcs.key_richcompare)(v, w, Py_LT);
@@ -1197,8 +1197,8 @@ unsafe_tuple_compare(PyObject* v, PyObject* w, CompareFuncs compare_funcs)
 
     /* Is v[0] < w[0]? */
     int k = (*compare_funcs.tuple_elem_compare)(vt->ob_item[0],
-						wt->ob_item[0],
-						compare_funcs);
+                                                wt->ob_item[0],
+                                                compare_funcs);
     if (k < 0)
         return -1;
     if (k)
@@ -1213,8 +1213,8 @@ unsafe_tuple_compare(PyObject* v, PyObject* w, CompareFuncs compare_funcs)
 
     /* Well, is w[0] < v[0]? */
     k = (*compare_funcs.tuple_elem_compare)(wt->ob_item[0],
-					    vt->ob_item[0],
-					    compare_funcs);
+                                            vt->ob_item[0],
+                                            compare_funcs);
     if (k < 0)
         return -1;
     if (k)
@@ -1381,7 +1381,7 @@ Returns -1 on error.  See listsort.txt for info on the method.
 */
 static Py_ssize_t
 gallop_left(PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_t hint,
-	    CompareFuncs compare_funcs)
+            CompareFuncs compare_funcs)
 {
     Py_ssize_t ofs;
     Py_ssize_t lastofs;
@@ -1473,7 +1473,7 @@ written as one routine with yet another "left or right?" flag.
 */
 static Py_ssize_t
 gallop_right(PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_t hint,
-	     CompareFuncs compare_funcs)
+             CompareFuncs compare_funcs)
 {
     Py_ssize_t ofs;
     Py_ssize_t lastofs;
@@ -2037,8 +2037,8 @@ merge_collapse(MergeState *ms, CompareFuncs compare_funcs)
                 return -1;
         }
         else if (p[n].len <= p[n+1].len) {
-	    if (merge_at(ms, n, compare_funcs) < 0)
-	        return -1;
+            if (merge_at(ms, n, compare_funcs) < 0)
+                return -1;
         }
         else
             break;
@@ -2174,79 +2174,79 @@ listsort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
      * set compare_funcs appropriately. */
     CompareFuncs compare_funcs;
     if (saved_ob_size > 1) {
-	/* Assume the first element is representative of the whole list. */
-	int keys_are_in_tuples = (lo.keys[0]->ob_type == &PyTuple_Type &&
-				  Py_SIZE(lo.keys[0]) > 0);
+        /* Assume the first element is representative of the whole list. */
+        int keys_are_in_tuples = (lo.keys[0]->ob_type == &PyTuple_Type &&
+                                  Py_SIZE(lo.keys[0]) > 0);
 
-	PyTypeObject* key_type = (keys_are_in_tuples ?
-				  PyTuple_GET_ITEM(lo.keys[0],0)->ob_type :
-				  lo.keys[0]->ob_type);
+        PyTypeObject* key_type = (keys_are_in_tuples ?
+                                  PyTuple_GET_ITEM(lo.keys[0],0)->ob_type :
+                                  lo.keys[0]->ob_type);
 
-	int keys_are_all_same_type = 1;
-	int strings_are_latin = 1;
-	int ints_are_bounded = 1;
+        int keys_are_all_same_type = 1;
+        int strings_are_latin = 1;
+        int ints_are_bounded = 1;
 
-	/* Prove that assumption by checking every key. */
-	int i;
-	for (i=0; i< saved_ob_size; i++) {
+        /* Prove that assumption by checking every key. */
+        int i;
+        for (i=0; i< saved_ob_size; i++) {
 
-	    if (keys_are_in_tuples &&
-		(lo.keys[i]->ob_type != &PyTuple_Type || Py_SIZE(lo.keys[i]) == 0)) {
-		keys_are_in_tuples = 0;
-		keys_are_all_same_type = 0;
-		break;
-	    }
+            if (keys_are_in_tuples &&
+                (lo.keys[i]->ob_type != &PyTuple_Type || Py_SIZE(lo.keys[i]) == 0)) {
+                keys_are_in_tuples = 0;
+                keys_are_all_same_type = 0;
+                break;
+            }
 
-	    /* Note: for lists of tuples, key is the first element of the tuple
+            /* Note: for lists of tuples, key is the first element of the tuple
              * lo.keys[i], not lo.keys[i] itself! We verify type-homogeneity 
              * for lists of tuples in the if-statement directly above. */
-	    PyObject* key = (keys_are_in_tuples ?
-			     PyTuple_GET_ITEM(lo.keys[i],0) :
-			     lo.keys[i]);
+            PyObject* key = (keys_are_in_tuples ?
+                             PyTuple_GET_ITEM(lo.keys[i],0) :
+                             lo.keys[i]);
 
-	    if (key->ob_type != key_type) {
-		keys_are_all_same_type = 0;
-		break;
-	    }
+            if (key->ob_type != key_type) {
+                keys_are_all_same_type = 0;
+                break;
+            }
 
-	    else if (key_type == &PyLong_Type && ints_are_bounded &&
-		     Py_ABS(Py_SIZE(key)) > 1)
-		ints_are_bounded = 0;
+            else if (key_type == &PyLong_Type && ints_are_bounded &&
+                     Py_ABS(Py_SIZE(key)) > 1)
+                ints_are_bounded = 0;
 
-	    else if (key_type == &PyUnicode_Type && strings_are_latin &&
-		     PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND)
-		strings_are_latin = 0;
-	}
+            else if (key_type == &PyUnicode_Type && strings_are_latin &&
+                     PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND)
+                strings_are_latin = 0;
+        }
 
-	/* Choose the best compare, given what we now know about the keys. */
-	if (keys_are_all_same_type) {
+        /* Choose the best compare, given what we now know about the keys. */
+        if (keys_are_all_same_type) {
 
-	    if (key_type == &PyUnicode_Type && strings_are_latin)
-		compare_funcs.key_compare = unsafe_latin_compare;
+            if (key_type == &PyUnicode_Type && strings_are_latin)
+                compare_funcs.key_compare = unsafe_latin_compare;
 
-	    else if (key_type == &PyLong_Type && ints_are_bounded)
-		compare_funcs.key_compare = unsafe_long_compare;
+            else if (key_type == &PyLong_Type && ints_are_bounded)
+                compare_funcs.key_compare = unsafe_long_compare;
 
-	    else if (key_type == &PyFloat_Type)
-		compare_funcs.key_compare = unsafe_float_compare;
+            else if (key_type == &PyFloat_Type)
+                compare_funcs.key_compare = unsafe_float_compare;
 
-	    else if ((compare_funcs.key_richcompare = key_type->tp_richcompare) != NULL)
-		compare_funcs.key_compare = unsafe_object_compare;
+            else if ((compare_funcs.key_richcompare = key_type->tp_richcompare) != NULL)
+                compare_funcs.key_compare = unsafe_object_compare;
 
-	} else {
-	    compare_funcs.key_compare = safe_object_compare;
-	}
+        } else {
+            compare_funcs.key_compare = safe_object_compare;
+        }
 
-	if (keys_are_in_tuples) {
-	    /* Make sure we're not dealing with tuples of tuples
-	     * (remember: here, key_type refers list [key[0] for key in keys]) */
-	    if (key_type == &PyTuple_Type)
-		compare_funcs.tuple_elem_compare = safe_object_compare;
-	    else
-		compare_funcs.tuple_elem_compare = compare_funcs.key_compare;
+        if (keys_are_in_tuples) {
+            /* Make sure we're not dealing with tuples of tuples
+             * (remember: here, key_type refers list [key[0] for key in keys]) */
+            if (key_type == &PyTuple_Type)
+                compare_funcs.tuple_elem_compare = safe_object_compare;
+            else
+                compare_funcs.tuple_elem_compare = compare_funcs.key_compare;
 
-	    compare_funcs.key_compare = unsafe_tuple_compare;
-	}
+            compare_funcs.key_compare = unsafe_tuple_compare;
+        }
     }
     /* End of pre-sort check: compare_funcs is now set properly! */
 
