@@ -85,23 +85,23 @@ PyDoc_STRVAR(_io_StringIO_readline__doc__,
     {"readline", (PyCFunction)_io_StringIO_readline, METH_FASTCALL, _io_StringIO_readline__doc__},
 
 static PyObject *
-_io_StringIO_readline_impl(stringio *self, Py_ssize_t limit);
+_io_StringIO_readline_impl(stringio *self, Py_ssize_t size);
 
 static PyObject *
 _io_StringIO_readline(stringio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t limit = -1;
+    Py_ssize_t size = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
-        _PyIO_ConvertSsize_t, &limit)) {
+        _PyIO_ConvertSsize_t, &size)) {
         goto exit;
     }
 
     if (!_PyArg_NoStackKeywords("readline", kwnames)) {
         goto exit;
     }
-    return_value = _io_StringIO_readline_impl(self, limit);
+    return_value = _io_StringIO_readline_impl(self, size);
 
 exit:
     return return_value;
@@ -303,4 +303,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=39fd76198351aab3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=965fe9cb0d11511a input=a9049054013a1b77]*/

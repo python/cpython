@@ -380,7 +380,7 @@ _stringio_readline(stringio *self, Py_ssize_t limit)
 
 /*[clinic input]
 _io.StringIO.readline
-    size as limit: io_ssize_t = -1
+    size: io_ssize_t = -1
     /
 
 Read until newline or EOF.
@@ -389,14 +389,14 @@ Returns an empty string if EOF is hit immediately.
 [clinic start generated code]*/
 
 static PyObject *
-_io_StringIO_readline_impl(stringio *self, Py_ssize_t limit)
-/*[clinic end generated code: output=6be3c36f6a89f7e3 input=a1b64cd6d94f7abd]*/
+_io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
+/*[clinic end generated code: output=cabd6452f1b7e85d input=04de7535f732cb3d]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
     ENSURE_REALIZED(self);
 
-    return _stringio_readline(self, limit);
+    return _stringio_readline(self, size);
 }
 
 static PyObject *
