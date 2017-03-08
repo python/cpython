@@ -1035,6 +1035,7 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
  * listsort_impl to optimize for various special cases.
  * Returns -1 on error, 1 if x < y, 0 if x >= y.
  */
+
 #define ISLT(X, Y) ((*compare_funcs.key_compare)(X, Y, compare_funcs))
 
 /* Compare X to Y via "<".  Goto "fail" if the comparison raises an
