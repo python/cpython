@@ -1046,7 +1046,7 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
            if (k)
 
 /* Here we define custom comparison functions to optimize for the cases one commonly 
- * in practice: homogeneous lists, often of one of the basic types. */
+ * encounters in practice: homogeneous lists, often of one of the basic types. */
 
 /* This struct holds the comparison function and helper functions 
  * selected in the pre-sort check. */
