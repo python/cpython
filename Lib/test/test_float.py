@@ -130,7 +130,7 @@ class GeneralFloatCases(unittest.TestCase):
         check('  123 456  ')
         check(b'  123 456  ')
 
-        # non-ascii digits
+        # non-ascii digits (error came from non-digit '!')
         check('\u0663\u0661\u0664!')
         # embedded NUL
         check('123\x00')
@@ -139,9 +139,7 @@ class GeneralFloatCases(unittest.TestCase):
         # byte string with embedded NUL
         check(b'123\x00')
         # non-UTF-8 byte string
-        check(b'123\xbd')
-        # lone surrogate in Unicode string
-        #check('123\udca0')
+        check(b'123\xa0')
 
     @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):
