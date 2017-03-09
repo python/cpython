@@ -572,6 +572,35 @@ class CmdLineTest(unittest.TestCase):
             self.assertNotIn("\f", text)
             self.assertIn("\n    1 + 1 = 2\n    ^", text)
 
+    def test_issue29723_consistent_sys_path_for_directory_execution(self):
+        # This exercises a code path that is common to all components that
+        # are valid sys.path entries, so it implicitly covers zipfiles as well
+        script = textwrap.dedent("""\
+            import sys
+            for entry in sys.path:
+                print(entry)
+            """)
+        # Always show full path diffs on errors
+        self.maxDiff = None
+        with support.temp_dir() as work_dir, support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, '__main__', script)
+            # Reference output comes from directly executing __main__.py
+            # We omit site.py to align with the isolated mode check later
+            p = spawn_python("-S", script_name, cwd=work_dir)
+            out_by_name = kill_python(p).decode().splitlines()
+            self.assertEqual(out_by_name[0], script_dir)
+            self.assertNotIn(work_dir, out_by_name)
+            # Directory execution should give the same output
+            p = spawn_python("-S", script_dir, cwd=work_dir)
+            out_by_dir = kill_python(p).decode().splitlines()
+            self.assertEqual(out_by_dir, out_by_name)
+            # As should directory execution in isolated mode
+            p = spawn_python("-I", script_dir, cwd=work_dir)
+            out_by_dir_isolated = kill_python(p).decode().splitlines()
+            self.assertEqual(out_by_dir_isolated, out_by_dir, out_by_name)
+
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, '__main__')
 
 def test_main():
     support.run_unittest(CmdLineTest)
