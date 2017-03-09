@@ -438,7 +438,9 @@ class ZipInfo (object):
         unpack = struct.unpack
         while len(extra) >= 4:
             tp, ln = unpack('<HH', extra[:4])
-            if tp == 1:
+            if ln+4 > len(extra):
+                raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
+            if tp == 0x0001:
                 if ln >= 24:
                     counts = unpack('<QQQ', extra[4:28])
                 elif ln == 16:
