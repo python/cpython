@@ -35,6 +35,9 @@ Extension Modules
 Library
 -------
 
+- bpo-28298: Fix a bug that prevented array 'Q', 'L' and 'I' from accepting big
+  intables (objects that have __int__) as elements.  Patch by Oren Milman.
+
 - bpo-29376: Fix assertion error in threading._DummyThread.is_alive().
 
 - bpo-29110: Fix file object leak in aifc.open() when file is given as a
