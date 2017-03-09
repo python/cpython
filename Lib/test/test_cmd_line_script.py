@@ -576,8 +576,8 @@ class CmdLineTest(unittest.TestCase):
         # This test case ensures that the following all give the same
         # sys.path configuration:
         #
-        #    ./python -S script_dir/__main__.py
-        #    ./python -S script_dir
+        #    ./python -s script_dir/__main__.py
+        #    ./python -s script_dir
         #    ./python -I script_dir
         script = textwrap.dedent("""\
             import sys
@@ -589,13 +589,13 @@ class CmdLineTest(unittest.TestCase):
         with support.temp_dir() as work_dir, support.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__', script)
             # Reference output comes from directly executing __main__.py
-            # We omit site.py to align with the isolated mode check later
-            p = spawn_python("-S", script_name, cwd=work_dir)
+            # We omit PYTHONPATH and user site to align with isolated mode
+            p = spawn_python("-Es", script_name, cwd=work_dir)
             out_by_name = kill_python(p).decode().splitlines()
             self.assertEqual(out_by_name[0], script_dir)
             self.assertNotIn(work_dir, out_by_name)
             # Directory execution should give the same output
-            p = spawn_python("-S", script_dir, cwd=work_dir)
+            p = spawn_python("-Es", script_dir, cwd=work_dir)
             out_by_dir = kill_python(p).decode().splitlines()
             self.assertEqual(out_by_dir, out_by_name)
             # As should directory execution in isolated mode
@@ -606,8 +606,8 @@ class CmdLineTest(unittest.TestCase):
     def test_consistent_sys_path_for_module_execution(self):
         # This test case ensures that the following both give the same
         # sys.path configuration:
-        #    ./python -Sm script_pkg.__main__
-        #    ./python -Sm script_pkg
+        #    ./python -sm script_pkg.__main__
+        #    ./python -sm script_pkg
         #
         # And that this fails as unable to find the package:
         #    ./python -Im script_pkg
@@ -623,13 +623,14 @@ class CmdLineTest(unittest.TestCase):
             os.mkdir(script_dir)
             script_name = _make_test_script(script_dir, '__main__', script)
             # Reference output comes from `-m script_pkg.__main__`
-            # We omit site.py as that's independent of __main__ execution
-            p = spawn_python("-Sm", "script_pkg.__main__", cwd=work_dir)
+            # We omit PYTHONPATH and user site to better align with the
+            # direct execution test cases
+            p = spawn_python("-sm", "script_pkg.__main__", cwd=work_dir)
             out_by_module = kill_python(p).decode().splitlines()
             self.assertEqual(out_by_module[0], '')
             self.assertNotIn(script_dir, out_by_module)
             # Package execution should give the same output
-            p = spawn_python("-Sm", "script_pkg", cwd=work_dir)
+            p = spawn_python("-sm", "script_pkg", cwd=work_dir)
             out_by_package = kill_python(p).decode().splitlines()
             self.assertEqual(out_by_package, out_by_module)
             # Isolated mode should fail with an import error
