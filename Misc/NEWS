@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- bpo-28298: Fix a bug that prevented array 'Q', 'L' and 'I' from accepting big
+  intables (objects that have __int__) as elements.  Patch by Oren Milman.
+
 - bpo-28231: The zipfile module now accepts path-like objects for external
   paths.
 
