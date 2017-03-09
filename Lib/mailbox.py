@@ -201,7 +201,7 @@ class Mailbox:
             return message.encode('ascii')
         except UnicodeError:
             raise ValueError("String input must be ASCII-only; "
-                "use bytes or a Message instead") from None
+                "use bytes or a Message instead")
 
     # Whether each message must end in a newline
     _append_newline = False

@@ -134,7 +134,7 @@ def decode_generalized_number(extended, extpos, bias, errors):
             char = ord(extended[extpos])
         except IndexError:
             if errors == "strict":
-                raise UnicodeError("incomplete punicode string") from None
+                raise UnicodeError("incomplete punicode string")
             return extpos + 1, None
         extpos += 1
         if 0x41 <= char <= 0x5A: # A-Z
