@@ -572,9 +572,13 @@ class CmdLineTest(unittest.TestCase):
             self.assertNotIn("\f", text)
             self.assertIn("\n    1 + 1 = 2\n    ^", text)
 
-    def test_issue29723_consistent_sys_path_for_directory_execution(self):
-        # This exercises a code path that is common to all components that
-        # are valid sys.path entries, so it implicitly covers zipfiles as well
+    def test_consistent_sys_path_for_direct_execution(self):
+        # This test case ensures that the following all give the same
+        # sys.path configuration:
+        #
+        #    ./python -S script_dir/__main__.py
+        #    ./python -S script_dir
+        #    ./python -I script_dir
         script = textwrap.dedent("""\
             import sys
             for entry in sys.path:
@@ -599,8 +603,41 @@ class CmdLineTest(unittest.TestCase):
             out_by_dir_isolated = kill_python(p).decode().splitlines()
             self.assertEqual(out_by_dir_isolated, out_by_dir, out_by_name)
 
-        with support.temp_dir() as script_dir:
-            script_name = _make_test_script(script_dir, '__main__')
+    def test_consistent_sys_path_for_module_execution(self):
+        # This test case ensures that the following both give the same
+        # sys.path configuration:
+        #    ./python -Sm script_pkg.__main__
+        #    ./python -Sm script_pkg
+        #
+        # And that this fails as unable to find the package:
+        #    ./python -Im script_pkg
+        script = textwrap.dedent("""\
+            import sys
+            for entry in sys.path:
+                print(entry)
+            """)
+        # Always show full path diffs on errors
+        self.maxDiff = None
+        with support.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+            script_name = _make_test_script(script_dir, '__main__', script)
+            # Reference output comes from `-m script_pkg.__main__`
+            # We omit site.py as that's independent of __main__ execution
+            p = spawn_python("-Sm", "script_pkg.__main__", cwd=work_dir)
+            out_by_module = kill_python(p).decode().splitlines()
+            self.assertEqual(out_by_module[0], '')
+            self.assertNotIn(script_dir, out_by_module)
+            # Package execution should give the same output
+            p = spawn_python("-Sm", "script_pkg", cwd=work_dir)
+            out_by_package = kill_python(p).decode().splitlines()
+            self.assertEqual(out_by_package, out_by_module)
+            # Isolated mode should fail with an import error
+            exitcode, stdout, stderr = assert_python_failure(
+                "-Im", "script_pkg", cwd=work_dir
+            )
+            traceback_lines = stderr.decode().splitlines()
+            self.assertIn("No module named script_pkg", traceback_lines[-1])
 
 def test_main():
     support.run_unittest(CmdLineTest)
