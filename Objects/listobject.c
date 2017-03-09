@@ -1134,8 +1134,8 @@ unsafe_long_compare(PyObject *v, PyObject *w, CompareFuncs compare_funcs)
   #ifdef Py_DEBUG
     assert(v->ob_type == w->ob_type &&
            v->ob_type == &PyLong_Type &&
-           Py_ABS(Py_SIZE(v)) == Py_ABS(Py_SIZE(w)) &&
-           Py_ABS(Py_SIZE(v)) <= 1);
+           Py_ABS(Py_SIZE(v)) <= 1 &&
+           Py_ABS(Py_SIZE(w)) <= 1);
   #endif
 
     PyLongObject *vl, *wl;
