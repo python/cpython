@@ -1165,18 +1165,11 @@ unsafe_float_compare(PyObject *v, PyObject *w, CompareFuncs compare_funcs){
     return PyFloat_AS_DOUBLE(v) < PyFloat_AS_DOUBLE(w);
 }
 
-/* Tuple compare: compare any two non-empty tuples.
- * This is the most complicated special case: since the tuple elements themselves
- * must of course be compared, we can optimize on two levels. Namely, we make
- * the same homogeneity assumptions about the first elements of the tuples in
- * our list as we do about the list elements themselves. We then replace the call to 
- * PyObject_RichCompareBool within the tuple comparison with special case compare, 
- * based on which assumptions the first elements of the tuples satisfy.
- *
- * Note that we must therefore ensure assumptions in both unsafe_tuple_compare and
- * compare_funcs.tuple_elem_compare are satisfied. If the first elements are not all 
- * homogeneous, we can always set 
- * compare_funcs.tuple_elem_compare = safe_object_compare. */
+/* Tuple compare: compare any two non-empty tuples, using 
+ * compare_funcs.tuple_elem_compare to compare the first elements, which is set 
+ * using the same pre-sort check as we use for compare_funcs.key_compare,
+ * but run on the list [x[0] for x in L]. This allows us to optimize compares
+ * on two levels as long as [x[0] for x in L] is type-homogeneous. */
 static int
 unsafe_tuple_compare(PyObject* v, PyObject* w, CompareFuncs compare_funcs)
 {
