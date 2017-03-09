@@ -37,7 +37,7 @@ Used in:  Py_SAFE_DOWNCAST
  * integral synonyms.  Only define the ones we actually need.
  */
 
-// long long is required. Ensure HAVE_LONG_LONG is defined for compatibility.
+/* long long is required. Ensure HAVE_LONG_LONG is defined for compatibility. */
 #ifndef HAVE_LONG_LONG
 #define HAVE_LONG_LONG 1
 #endif
