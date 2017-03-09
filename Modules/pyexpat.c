@@ -1319,7 +1319,7 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
         return NULL;
     }
 
-#if ((XML_MAJOR_VERSION >= 2) && (XML_MINOR_VERSION >= 1)) || defined(XML_HAS_SET_HASH_SALT)
+#if XML_COMBINED_VERSION >= 20100 || defined(XML_HAS_SET_HASH_SALT)
     /* This feature was added upstream in libexpat 2.1.0.  Our expat copy
      * has a backport of this feature where we also define XML_HAS_SET_HASH_SALT
      * to indicate that we can still use it. */
