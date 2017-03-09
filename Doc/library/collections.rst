@@ -200,6 +200,7 @@ counts, but the output will exclude results with counts of zero or less.
       adapted for Python 2.5 and an early `Bag recipe
       <https://code.activestate.com/recipes/259174/>`_ for Python 2.4.
 
+    * `Bag class <https://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
       in Smalltalk.
 
     * Wikipedia entry for `Multisets <https://en.wikipedia.org/wiki/Multiset>`_.
