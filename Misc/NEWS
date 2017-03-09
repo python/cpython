@@ -270,6 +270,9 @@ Extension Modules
 Library
 -------
 
+- bpo-28298: Fix a bug that prevented array 'Q', 'L' and 'I' from accepting big
+  intables (objects that have __int__) as elements.
+
 - bpo-29645: Speed up importing the webbrowser module.  webbrowser.register()
   is now thread-safe.
 
