@@ -1577,18 +1577,15 @@ class LabeledScale(Frame):
         self.label['text'] = newval
         self.after_idle(adjust_label)
 
-
-    def _get_value(self):
+    @property
+    def value(self):
         """Return current scale value."""
         return self._variable.get()
 
-
-    def _set_value(self, val):
+    @value.setter
+    def value(self, val):
         """Set new scale value."""
         self._variable.set(val)
-
-
-    value = property(_get_value, _set_value)
 
 
 class OptionMenu(Menubutton):

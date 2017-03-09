@@ -373,32 +373,38 @@ class Attr(Node):
     def _get_specified(self):
         return self.specified
 
-    def _get_name(self):
+    @property
+    def name(self):
         return self._name
 
-    def _set_name(self, value):
+    @name.setter
+    def name(self, value):
         self._name = value
         if self.ownerElement is not None:
             _clear_id_cache(self.ownerElement)
 
-    nodeName = name = property(_get_name, _set_name)
+    nodeName = name
 
-    def _get_value(self):
+    @property
+    def value(self):
         return self._value
 
-    def _set_value(self, value):
+    @value.setter
+    def value(self, value):
         self._value = value
         self.childNodes[0].data = value
         if self.ownerElement is not None:
             _clear_id_cache(self.ownerElement)
         self.childNodes[0].data = value
 
-    nodeValue = value = property(_get_value, _set_value)
+    nodeValue = value
 
-    def _get_prefix(self):
+    @property
+    def prefix(self):
         return self._prefix
 
-    def _set_prefix(self, prefix):
+    @prefix.setter
+    def prefix(self, prefix):
         nsuri = self.namespaceURI
         if prefix == "xmlns":
             if nsuri and nsuri != XMLNS_NAMESPACE:
@@ -412,8 +418,6 @@ class Attr(Node):
         if self.ownerElement:
             _clear_id_cache(self.ownerElement)
         self.name = newName
-
-    prefix = property(_get_prefix, _set_prefix)
 
     def unlink(self):
         # This implementation does not call the base implementation
@@ -971,18 +975,22 @@ class ProcessingInstruction(Childless, Node):
         self.data = data
 
     # nodeValue is an alias for data
-    def _get_nodeValue(self):
+    @property
+    def nodeValue(self):
         return self.data
-    def _set_nodeValue(self, value):
+
+    @nodeValue.setter
+    def nodeValue(self, value):
         self.data = value
-    nodeValue = property(_get_nodeValue, _set_nodeValue)
 
     # nodeName is an alias for target
-    def _get_nodeName(self):
+    @property
+    def nodeName(self):
         return self.target
-    def _set_nodeName(self, value):
+
+    @nodeName.setter
+    def nodeName(self, value):
         self.target = value
-    nodeName = property(_get_nodeName, _set_nodeName)
 
     def writexml(self, writer, indent="", addindent="", newl=""):
         writer.write("%s<?%s %s?>%s" % (indent,self.target, self.data, newl))
@@ -1001,12 +1009,15 @@ class CharacterData(Childless, Node):
         return len(self.data)
     __len__ = _get_length
 
-    def _get_data(self):
+    @property
+    def data(self):
         return self._data
-    def _set_data(self, data):
+
+    @data.setter
+    def data(self, data):
         self._data = data
 
-    data = nodeValue = property(_get_data, _set_data)
+    nodeValue = data
 
     def __repr__(self):
         data = self.data

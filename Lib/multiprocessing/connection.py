@@ -465,8 +465,13 @@ class Listener(object):
             self._listener = None
             listener.close()
 
-    address = property(lambda self: self._listener._address)
-    last_accepted = property(lambda self: self._listener._last_accepted)
+    @property
+    def address(self):
+        return self._listener._address
+
+    @property
+    def last_accepted(self):
+        return self._listener._last_accepted
 
     def __enter__(self):
         return self

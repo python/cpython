@@ -628,7 +628,9 @@ class BaseManager(object):
         except KeyError:
             pass
 
-    address = property(lambda self: self._address)
+    @property
+    def address(self):
+        return self._address
 
     @classmethod
     def register(cls, typeid, callable=None, proxytype=None, exposed=None,
