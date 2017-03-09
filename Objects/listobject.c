@@ -1169,7 +1169,7 @@ unsafe_float_compare(PyObject *v, PyObject *w, CompareFuncs compare_funcs){
  * compare_funcs.tuple_elem_compare to compare the first elements, which is set 
  * using the same pre-sort check as we use for compare_funcs.key_compare,
  * but run on the list [x[0] for x in L]. This allows us to optimize compares
- * on two levels as long as [x[0] for x in L] is type-homogeneous. */
+ * on two levels (as long as [x[0] for x in L] is type-homogeneous.) */
 static int
 unsafe_tuple_compare(PyObject* v, PyObject* w, CompareFuncs compare_funcs)
 {
