@@ -483,9 +483,17 @@ PyImport_Cleanup(void)
 #undef STORE_MODULE_WEAKREF
 }
 
+/* Issue #29537: handle issue27286 bytecode incompatibility
+ *
+ * In order to avoid forcing recompilation of all extension modules, we export
+ * the legacy 3.5.0 magic number here rather than putting it in a header file.
+ *
+ * See Lib/importlib/_bootstrap_external.py for general discussion
+ */
+PY_UINT32_T _Py_BACKCOMPAT_MAGIC_NUMBER = 168627478;
+PY_UINT32_T _Py_BACKCOMPAT_HALF_MAGIC = 3350;
 
 /* Helper for pythonrun.c -- return magic number and tag. */
-
 long
 PyImport_GetMagicNumber(void)
 {

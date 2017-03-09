@@ -289,7 +289,12 @@ def importfile(path):
     """Import a Python source file or compiled file given its path."""
     magic = importlib.util.MAGIC_NUMBER
     with open(path, 'rb') as file:
-        is_bytecode = magic == file.read(len(magic))
+        first_bytes = file.read(len(magic))
+        is_bytecode = first_bytes in (magic,
+                                      # Issue #29537: handle issue27286
+                                      #               bytecode incompatibility
+                                      # See Lib/importlib/_bootstrap_external.py
+                                      importlib.util._BACKCOMPAT_MAGIC_NUMBER)
     filename = os.path.basename(path)
     name, ext = os.path.splitext(filename)
     if is_bytecode:
