@@ -69,7 +69,7 @@ for %%e in (%libraries%) do (
         echo.%%e already exists, skipping.
     ) else (
         echo.Fetching %%e...
-        svn export %SVNROOT%%%e
+        svn export -q %SVNROOT%%%e
     )
 )
 
