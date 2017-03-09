@@ -270,6 +270,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29619: os.stat() and os.DirEntry.inode() now convert inode (st_ino) using
+  unsigned integers.
+
 - bpo-28298: Fix a bug that prevented array 'Q', 'L' and 'I' from accepting big
   intables (objects that have __int__) as elements.
 
@@ -289,7 +292,7 @@ Library
 
 - bpo-9303: Migrate sqlite3 module to _v2 API.  Patch by Aviv Palivoda.
 
-- bpo-28963: Fix out of bound iteration in asyncio.Future.remove_done_callback 
+- bpo-28963: Fix out of bound iteration in asyncio.Future.remove_done_callback
   implemented in C.
 
 - bpo-29704: asyncio.subprocess.SubprocessStreamProtocol no longer closes before
