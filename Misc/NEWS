@@ -41,6 +41,9 @@ Extension Modules
 Library
 -------
 
+- bpo-28298: Fix a bug that prevented array 'Q', 'L' and 'I' from accepting big
+  intables (objects that have __int__) as elements.  Patch by Oren Milman.
+
 - bpo-29615: SimpleXMLRPCDispatcher no longer chains KeyError (or any other
   exception) to exception(s) raised in the dispatched methods.
   Patch by Petr Motejlek.
