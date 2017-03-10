@@ -1563,11 +1563,12 @@ static PyObject *
 float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *x = Py_False; /* Integer zero */
-    static char *kwlist[] = {"x", 0};
 
     if (type != &PyFloat_Type)
         return float_subtype_new(type, args, kwds); /* Wimp out */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:float", kwlist, &x))
+    if (!_PyArg_NoKeywords("float()", kwds))
+        return NULL;
+    if (!PyArg_UnpackTuple(args, "float", 0, 1, &x))
         return NULL;
     /* If it's a string, but not a string subclass, use
        PyFloat_FromString. */
