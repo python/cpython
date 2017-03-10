@@ -540,6 +540,14 @@ Task functions
 
    .. deprecated:: 3.4.4
 
+.. function:: wrap_future(future, \*, loop=None)
+
+   Wrap a :class:`concurrent.futures.Future` object in a
+   :class:`Future` object.
+
+   When the original :class:`concurrent.futures.Future` is completed
+   so is the wrapping :class:`Future`.
+
 .. function:: gather(\*coros_or_futures, loop=None, return_exceptions=False)
 
    Return a future aggregating results from the given coroutine objects or
