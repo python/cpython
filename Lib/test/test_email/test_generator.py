@@ -162,6 +162,13 @@ class TestGeneratorBase:
                 g.flatten(msg)
                 self.assertEqual(s.getvalue(), self.typ(expected))
 
+    def test_compat32_max_line_length_does_not_fold_when_none(self):
+        msg = self.msgmaker(self.typ(self.refold_long_expected[0]))
+        s = self.ioclass()
+        g = self.genclass(s, policy=policy.compat32.clone(max_line_length=None))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(self.refold_long_expected[0]))
+
 
 class TestGenerator(TestGeneratorBase, TestEmailBase):
 
