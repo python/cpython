@@ -138,6 +138,29 @@ int_bit_length(PyObject *self, PyObject *Py_UNUSED(ignored))
     return int_bit_length_impl(self);
 }
 
+PyDoc_STRVAR(int_bit_count__doc__,
+"bit_count($self, /)\n"
+"--\n"
+"\n"
+"Number of ones in the binary representation of self.\n"
+"\n"
+">>> bin(13)\n"
+"\'0b1101\'\n"
+">>> (13).bit_count()\n"
+"3");
+
+#define INT_BIT_COUNT_METHODDEF    \
+    {"bit_count", (PyCFunction)int_bit_count, METH_NOARGS, int_bit_count__doc__},
+
+static PyObject *
+int_bit_count_impl(PyObject *self);
+
+static PyObject *
+int_bit_count(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return int_bit_count_impl(self);
+}
+
 PyDoc_STRVAR(int_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
@@ -313,4 +336,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=709503897c55bca1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=75f3e3d6b2ef4839 input=a9049054013a1b77]*/
