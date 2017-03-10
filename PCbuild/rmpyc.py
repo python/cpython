@@ -8,13 +8,9 @@ def deltree(root):
     npyc = 0
     for root, dirs, files in os.walk(root):
         for name in files:
-            delete = False
             # to be thorough
             if name.endswith(('.pyc', '.pyo')):
-                delete = True
                 npyc += 1
-
-            if delete:
                 os.remove(join(root, name))
 
     return npyc
