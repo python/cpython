@@ -5334,7 +5334,7 @@ static PyGetSetDef long_getset[] = {
 };
 
 PyDoc_STRVAR(long_doc,
-"int(x=0) -> integer\n\
+"int([x]) -> integer\n\
 int(x, base=10) -> integer\n\
 \n\
 Convert a number or string to an integer, or return 0 if no arguments\n\
