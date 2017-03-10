@@ -1384,7 +1384,7 @@ guaranteed not to block when :func:`select.select` says a pipe is ready
 for writing.
 
 >>> import select
->>> select.PIPE_BUF
+>>> select.PIPE_BUF  # doctest: +SKIP
 512
 
 (Available on Unix systems. Patch by Sébastien Sablé in :issue:`9862`)
