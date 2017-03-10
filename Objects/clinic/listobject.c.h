@@ -230,7 +230,7 @@ PyDoc_STRVAR(list_remove__doc__,
     {"remove", (PyCFunction)list_remove, METH_O, list_remove__doc__},
 
 PyDoc_STRVAR(list___init____doc__,
-"list(sequence=(), /)\n"
+"list(iterable=(), /)\n"
 "--\n"
 "\n"
 "Built-in mutable sequence.\n"
@@ -239,13 +239,13 @@ PyDoc_STRVAR(list___init____doc__,
 "The argument must be an iterable if specified.");
 
 static int
-list___init___impl(PyListObject *self, PyObject *sequence);
+list___init___impl(PyListObject *self, PyObject *iterable);
 
 static int
 list___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    PyObject *sequence = NULL;
+    PyObject *iterable = NULL;
 
     if ((Py_TYPE(self) == &PyList_Type) &&
         !_PyArg_NoKeywords("list", kwargs)) {
@@ -253,10 +253,10 @@ list___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     if (!PyArg_UnpackTuple(args, "list",
         0, 1,
-        &sequence)) {
+        &iterable)) {
         goto exit;
     }
-    return_value = list___init___impl((PyListObject *)self, sequence);
+    return_value = list___init___impl((PyListObject *)self, iterable);
 
 exit:
     return return_value;
@@ -297,4 +297,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=1591d6062298e72b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a3b75efcf858ed5 input=a9049054013a1b77]*/

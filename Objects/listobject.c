@@ -2386,7 +2386,7 @@ list_richcompare(PyObject *v, PyObject *w, int op)
 /*[clinic input]
 list.__init__
 
-    sequence: object(c_default="NULL") = ()
+    iterable: object(c_default="NULL") = ()
     /
 
 Built-in mutable sequence.
@@ -2396,8 +2396,8 @@ The argument must be an iterable if specified.
 [clinic start generated code]*/
 
 static int
-list___init___impl(PyListObject *self, PyObject *sequence)
-/*[clinic end generated code: output=85966707acf8ab90 input=1949138554bda6b3]*/
+list___init___impl(PyListObject *self, PyObject *iterable)
+/*[clinic end generated code: output=0f3c21379d01de48 input=b3f3fe7206af8f6b]*/
 {
     /* Verify list invariants established by PyType_GenericAlloc() */
     assert(0 <= Py_SIZE(self));
@@ -2409,8 +2409,8 @@ list___init___impl(PyListObject *self, PyObject *sequence)
     if (self->ob_item != NULL) {
         (void)_list_clear(self);
     }
-    if (sequence != NULL) {
-        PyObject *rv = list_extend(self, sequence);
+    if (iterable != NULL) {
+        PyObject *rv = list_extend(self, iterable);
         if (rv == NULL)
             return -1;
         Py_DECREF(rv);
