@@ -29,6 +29,8 @@ Library
   exception) to exception(s) raised in the dispatched methods.
   Patch by Petr Motejlek.
 
+- bpo-23894: lib2to3 now parses rb'...' and f'...' strings.
+
 
 What's New in Python 3.6.1 release candidate 1
 ==============================================
