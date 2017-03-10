@@ -888,18 +888,10 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
         parameter.
 
     """
-    if encoding is not None and \
-       'b' not in mode:
-        # Force opening of the file in binary mode
-        mode = mode + 'b'
-    file = builtins.open(filename, mode, buffering)
-    if encoding is None:
-        return file
-    info = lookup(encoding)
-    srw = StreamReaderWriter(file, info.streamreader, info.streamwriter, errors)
-    # Add attributes to simplify introspection
-    srw.encoding = encoding
-    return srw
+    return builtins.open(filename, mode, buffering,
+                         encoding=encoding, errors=errors,
+                         newline='')
+
 
 def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
 
