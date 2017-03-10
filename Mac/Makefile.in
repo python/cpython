@@ -188,7 +188,7 @@ install_Python:
 			case $$i in \
 			*CVS) ;; \
 			*.svn) ;; \
-			*.pyc) ;; \
+			*.py[co]) ;; \
 			*.orig) ;; \
 			*~) ;; \
 			*idx) \
