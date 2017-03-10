@@ -550,7 +550,8 @@ class bdist_rpm(Command):
             ])
 
         if self.doc_files:
-            spec_file.append('%doc ' + ' '.join(self.doc_files))
+            doc_files_seperator = "\n"
+            spec_file.append("%doc\n" + doc_files_seperator.join(self.doc_files))
 
         if self.changelog:
             spec_file.extend([
