@@ -807,6 +807,15 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.5
 
 
+.. opcode:: BUILD_TUPLE_UNPACK_WITH_CALL (count)
+
+   This is similar to :opcode:`BUILD_TUPLE_UNPACK`,
+   but is used for ``f(*x, *y, *z)`` call syntax. The stack item at position
+   ``count + 1`` should be the corresponding callable ``f``.
+
+   .. versionadded:: 3.6
+
+
 .. opcode:: BUILD_LIST_UNPACK (count)
 
    This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a list
@@ -834,14 +843,16 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.5
 
 
-.. opcode:: BUILD_MAP_UNPACK_WITH_CALL (oparg)
+.. opcode:: BUILD_MAP_UNPACK_WITH_CALL (count)
 
    This is similar to :opcode:`BUILD_MAP_UNPACK`,
-   but is used for ``f(**x, **y, **z)`` call syntax.  The lowest byte of
-   *oparg* is the count of mappings, the relative position of the
-   corresponding callable ``f`` is encoded in the second byte of *oparg*.
+   but is used for ``f(**x, **y, **z)`` call syntax.  The stack item at
+   position ``count + 2`` should be the corresponding callable ``f``.
 
    .. versionadded:: 3.5
+   .. versionchanged:: 3.6
+      The position of the callable is determined by adding 2 to the opcode
+      argument instead of encoding it in the second byte of the argument.
 
 
 .. opcode:: LOAD_ATTR (namei)
