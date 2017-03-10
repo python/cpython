@@ -936,7 +936,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     }
 
     /* Check we have been asked for a real text encoding */
-    codec_info = _PyCodec_LookupTextEncoding(encoding, "codecs.open()");
+    codec_info = _PyCodec_LookupTextEncoding(encoding, NULL);
     if (codec_info == NULL) {
         Py_CLEAR(self->encoding);
         goto error;
