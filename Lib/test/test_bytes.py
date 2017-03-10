@@ -17,7 +17,7 @@ import unittest
 import test.support
 import test.string_tests
 import test.list_tests
-from test.support import bigaddrspacetest, MAX_Py_ssize_t
+from test.support import bigaddrspacetest, MAX_Py_ssize_t, cpython_only
 
 
 if sys.flags.bytes_warning:
@@ -103,6 +103,17 @@ class BaseBytesTest:
         self.assertEqual(self.type2test('0', 'ascii'), b'0')
         self.assertEqual(self.type2test(b'0'), b'0')
         self.assertRaises(OverflowError, self.type2test, sys.maxsize + 1)
+
+    @cpython_only
+    def test_from_ssize_c_limits(self):
+        from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
+
+        self.assertRaises(OverflowError, self.type2test, -1 << 1000)
+        self.assertRaises(OverflowError, self.type2test, PY_SSIZE_T_MIN - 1)
+        self.assertRaises(ValueError, self.type2test, PY_SSIZE_T_MIN)
+        self.assertRaises(ValueError, self.type2test, -1)
+        self.assertRaises(OverflowError, self.type2test, PY_SSIZE_T_MAX + 1)
+        self.assertRaises(OverflowError, self.type2test, 1 << 1000)
 
     def test_constructor_type_errors(self):
         self.assertRaises(TypeError, self.type2test, 0.0)
@@ -904,6 +915,16 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
                           PyBytes_FromFormat, b'%c', c_int(-1))
         self.assertRaises(OverflowError,
                           PyBytes_FromFormat, b'%c', c_int(256))
+
+        self.assertRaises(OverflowError, b'%c'.__mod__, -1 << 1000)
+        self.assertRaises(OverflowError, b'%c'.__mod__, 1 << 1000)
+
+        self.assertRaises(OverflowError, b'%c'.__mod__, Indexable(-1 << 1000))
+        self.assertRaises(OverflowError, b'%c'.__mod__, Indexable(-1))
+        self.assertEqual(b'c=%c' % Indexable(0), b'c=\0')
+        self.assertEqual(b'c=%c' % Indexable(255), b'c=\xff')
+        self.assertRaises(OverflowError, b'%c'.__mod__, Indexable(256))
+        self.assertRaises(OverflowError, b'%c'.__mod__, Indexable(1 << 1000))
 
     def test_bytes_blocking(self):
         class IterationBlocked(list):

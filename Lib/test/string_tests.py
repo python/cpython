@@ -1140,6 +1140,23 @@ class MixinStrUnicodeUserStringTest:
         # but either raises a MemoryError, or succeeds (if you have 54TiB)
         #self.checkraises(OverflowError, 10000*'abc', '__mul__', 2000000000)
 
+    @support.cpython_only
+    def test_mul_c_limits(self):
+        from _testcapi import PY_SSIZE_T_MAX, PY_SSIZE_T_MIN
+
+        self.checkraises(OverflowError, '', '__mul__', -1 << 1000)
+        self.checkraises(OverflowError, '', '__mul__', PY_SSIZE_T_MIN - 1)
+        self.checkequal('', 'a', '__mul__', PY_SSIZE_T_MIN)
+        self.checkequal('', '', '__mul__', PY_SSIZE_T_MAX)
+        self.checkraises(OverflowError, '', '__mul__', PY_SSIZE_T_MAX + 1)
+        self.checkraises(OverflowError, '', '__mul__', 1 << 1000)
+
+        # result's length can't be bigger than PY_SSIZE_T_MAX
+        self.checkraises(OverflowError,
+                         'ab', '__mul__', PY_SSIZE_T_MAX // 2 + 1)
+        self.checkraises(OverflowError,
+                         'ab' * 0x1000, '__mul__', PY_SSIZE_T_MAX)
+
     def test_join(self):
         # join now works with any sequence type
         # moved here, because the argument order is
@@ -1237,6 +1254,14 @@ class MixinStrUnicodeUserStringTest:
                          (PY_SSIZE_T_MAX + 1, ''))
         self.checkraises(OverflowError, '%.*f', '__mod__',
                          (INT_MAX + 1, 1. / 7))
+
+        self.checkraises(OverflowError, '%c', '__mod__', -1 << 1000)
+        self.checkraises(OverflowError, '%c', '__mod__', -1)
+        self.checkequal('c=\x00', 'c=%c', '__mod__', 0)
+        self.checkequal('c=\U0010ffff', 'c=%c', '__mod__', 0x10ffff)
+        self.checkraises(OverflowError, '%c', '__mod__', 0x110000)
+        self.checkraises(OverflowError, '%c', '__mod__', 1 << 1000)
+
         # Issue 15989
         self.checkraises(OverflowError, '%*s', '__mod__',
                          (SIZE_MAX + 1, ''))

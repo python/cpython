@@ -1507,6 +1507,27 @@ class ReTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             _sre.compile({}, 0, [], 0, [], [])
 
+    @cpython_only
+    def test_sre_compile_c_limits(self):
+        import _sre
+        # Currently SRE_CODE is an alias for Py_UCS4, which is an
+        # alias for uint32_t.
+
+        with self.assertRaises(OverflowError):
+            _sre.compile("abc", 0, [-1 << 1000], 0, {}, tuple())
+        with self.assertRaises(OverflowError):
+            _sre.compile("abc", 0, [-1], 0, {}, tuple())
+        # verify OverflowError is not raised
+        for in_range_code in [0, (1 << 32) - 1]:
+            try:
+                _sre.compile("abc", 0, [in_range_code], 0, {}, tuple())
+            except RuntimeError:
+                pass
+        with self.assertRaises(OverflowError):
+            _sre.compile("abc", 0, [1 << 32], 0, {}, tuple())
+        with self.assertRaises(OverflowError):
+            _sre.compile("abc", 0, [1 << 1000], 0, {}, tuple())
+
     def test_search_dot_unicode(self):
         self.assertTrue(re.search("123.*-", '123abc-'))
         self.assertTrue(re.search("123.*-", '123\xe9-'))

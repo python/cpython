@@ -798,13 +798,17 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     if (PyIndex_Check(arg)) {
         count = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (count == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError))
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "bytearray: count does not fit in C "
+                                "Py_ssize_t");
                 return -1;
+            }
             PyErr_Clear();  /* fall through */
         }
         else {
             if (count < 0) {
-                PyErr_SetString(PyExc_ValueError, "negative count");
+                PyErr_SetString(PyExc_ValueError, "bytearray: negative count");
                 return -1;
             }
             if (count > 0) {

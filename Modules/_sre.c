@@ -1414,12 +1414,16 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
         self->code[i] = (SRE_CODE) value;
         if ((unsigned long) self->code[i] != value) {
             PyErr_SetString(PyExc_OverflowError,
-                            "regular expression code size limit exceeded");
+                            "regular expression code out of range");
             break;
         }
     }
 
     if (PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "regular expression code out of range");
+        }
         Py_DECREF(self);
         return NULL;
     }

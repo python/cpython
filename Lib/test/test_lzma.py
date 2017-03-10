@@ -7,7 +7,7 @@ import random
 import unittest
 
 from test.support import (
-    _4G, TESTFN, import_module, bigmemtest, run_unittest, unlink
+    _4G, TESTFN, import_module, bigmemtest, run_unittest, unlink, cpython_only
 )
 
 lzma = import_module("lzma")
@@ -57,6 +57,19 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         self.assertRaises(TypeError, lzd.decompress, b"foo", b"bar")
         lzd.decompress(empty)
         self.assertRaises(EOFError, lzd.decompress, b"quux")
+
+    @cpython_only
+    def test_INT_TYPE_CONVERTER_FUNC_macro(self):
+        self.assertRaises(OverflowError, LZMACompressor, preset=-1 << 1000)
+        self.assertRaises(OverflowError, LZMACompressor, preset=-1)
+        self.assertRaises(OverflowError, LZMACompressor, preset=1 << 32)
+        self.assertRaises(OverflowError, LZMACompressor, preset=1 << 1000)
+        # verify OverflowError is not raised.
+        for in_range_preset in [0, (1 << 32) - 1]:
+            try:
+                LZMACompressor(preset=in_range_preset)
+            except LZMAError:
+                pass
 
     def test_bad_filter_spec(self):
         self.assertRaises(TypeError, LZMACompressor, filters=[b"wobsite"])

@@ -1616,13 +1616,10 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     if (num == NULL)
         goto Done;
     Py_INCREF(num);
-    temp = PyLong_AsLong(num);
-    if (temp == -1 && PyErr_Occurred())
-        goto Done;
-    d = (int)temp;
-    if ((long)d != temp) {
-        PyErr_SetString(PyExc_OverflowError, "normalized days too "
-                        "large to fit in a C int");
+    d = _PyLong_AsInt(num);
+    if (d == -1 && PyErr_Occurred()) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "normalized days does not fit in C int");
         goto Done;
     }
     result = new_delta_ex(d, s, us, 0, type);
@@ -2184,7 +2181,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         "minutes", "hours", "weeks", NULL
     };
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "|OOOOOOO:__new__",
+    if (PyArg_ParseTupleAndKeywords(args, kw, "|OOOOOOO:timedelta.__new__",
                                     keywords,
                                     &day, &second, &us,
                                     &ms, &minute, &hour, &week) == 0)
@@ -2531,7 +2528,7 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return (PyObject *)me;
     }
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "iii", date_kws,
+    if (PyArg_ParseTupleAndKeywords(args, kw, "iii:date.__new__", date_kws,
                                     &year, &month, &day)) {
         self = new_date_ex(year, month, day, type);
     }
@@ -3615,7 +3612,8 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return (PyObject *)me;
     }
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i", time_kws,
+    if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i:time.__new__",
+                                    time_kws,
                                     &hour, &minute, &second, &usecond,
                                     &tzinfo, &fold)) {
         self = new_time_ex2(hour, minute, second, usecond, tzinfo, fold,
@@ -4201,7 +4199,8 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return (PyObject *)me;
     }
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO$i", datetime_kws,
+    if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO$i:datetime.__new__",
+                                    datetime_kws,
                                     &year, &month, &day, &hour, &minute,
                                     &second, &usecond, &tzinfo, &fold)) {
         self = new_datetime_ex2(year, month, day,

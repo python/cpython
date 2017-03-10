@@ -1635,7 +1635,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "O&i|II",
+        if (!PyArg_ParseTuple(args, "O&i|II:getsockaddrarg",
                               idna_converter, &host, &port, &flowinfo,
                               &scope_id)) {
             return 0;
@@ -1782,10 +1782,11 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 Py_TYPE(args)->tp_name);
             return 0;
         }
-        if (!PyArg_ParseTuple(args, "si|iiy*", &interfaceName,
+        if (!PyArg_ParseTuple(args, "si|iiy*:getsockaddrarg", &interfaceName,
                               &protoNumber, &pkttype, &hatype,
-                              &haddr))
+                              &haddr)) {
             return 0;
+        }
         strncpy(ifr.ifr_name, interfaceName, sizeof(ifr.ifr_name));
         ifr.ifr_name[(sizeof(ifr.ifr_name))-1] = '\0';
         if (ioctl(s->sock_fd, SIOCGIFINDEX, &ifr) < 0) {
@@ -5514,8 +5515,13 @@ socket_ntohl(PyObject *self, PyObject *arg)
 
     if (PyLong_Check(arg)) {
         x = PyLong_AsUnsignedLong(arg);
-        if (x == (unsigned long) -1 && PyErr_Occurred())
+        if (x == (unsigned long) -1 && PyErr_Occurred()) {
+            assert(PyErr_ExceptionMatches(PyExc_OverflowError));
+            PyErr_SetString(PyExc_OverflowError,
+                            "ntohl: Python int does not fit in C 32-bit "
+                            "unsigned integer");
             return NULL;
+        }
 #if SIZEOF_LONG > 4
         {
             unsigned long y;
@@ -5523,7 +5529,8 @@ socket_ntohl(PyObject *self, PyObject *arg)
             y = x & 0xFFFFFFFFUL;
             if (y ^ x)
                 return PyErr_Format(PyExc_OverflowError,
-                            "int larger than 32 bits");
+                                    "ntohl: Python int too large to convert "
+                                    "to C 32-bit unsigned integer");
             x = y;
         }
 #endif
@@ -5585,8 +5592,13 @@ socket_htonl(PyObject *self, PyObject *arg)
 
     if (PyLong_Check(arg)) {
         x = PyLong_AsUnsignedLong(arg);
-        if (x == (unsigned long) -1 && PyErr_Occurred())
+        if (x == (unsigned long) -1 && PyErr_Occurred()) {
+            assert(PyErr_ExceptionMatches(PyExc_OverflowError));
+            PyErr_SetString(PyExc_OverflowError,
+                            "htonl: Python int does not fit in C 32-bit "
+                            "unsigned integer");
             return NULL;
+        }
 #if SIZEOF_LONG > 4
         {
             unsigned long y;
@@ -5594,7 +5606,8 @@ socket_htonl(PyObject *self, PyObject *arg)
             y = x & 0xFFFFFFFFUL;
             if (y ^ x)
                 return PyErr_Format(PyExc_OverflowError,
-                            "int larger than 32 bits");
+                                    "htonl: Python int too large to convert "
+                                    "to C 32-bit unsigned integer");
             x = y;
         }
 #endif
@@ -5603,7 +5616,7 @@ socket_htonl(PyObject *self, PyObject *arg)
         return PyErr_Format(PyExc_TypeError,
                             "expected int, %s found",
                             Py_TYPE(arg)->tp_name);
-    return PyLong_FromUnsignedLong(htonl((unsigned long)x));
+    return PyLong_FromUnsignedLong(htonl(x));
 }
 
 PyDoc_STRVAR(htonl_doc,
@@ -6082,12 +6095,18 @@ socket_getnameinfo(PyObject *self, PyObject *args)
                         "getnameinfo() argument 1 must be a tuple");
         return NULL;
     }
-    if (!PyArg_ParseTuple(sa, "si|II",
-                          &hostp, &port, &flowinfo, &scope_id))
+    if (!PyArg_ParseTuple(sa, "si|II:getnameinfo",
+                          &hostp, &port, &flowinfo, &scope_id)) {
         return NULL;
+    }
+    if (port < 0 || port > 0xffff) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "getnameinfo: port must be 0-65535.");
+        return NULL;
+    }
     if (flowinfo > 0xfffff) {
         PyErr_SetString(PyExc_OverflowError,
-                        "getsockaddrarg: flowinfo must be 0-1048575.");
+                        "getnameinfo: flowinfo must be 0-1048575.");
         return NULL;
     }
     PyOS_snprintf(pbuf, sizeof(pbuf), "%d", port);

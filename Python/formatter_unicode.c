@@ -860,6 +860,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
     Py_ssize_t prefix = 0;
     NumberFieldWidths spec;
     long x;
+    int overflow;
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
@@ -891,10 +892,11 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
 
         /* taken from unicodeobject.c formatchar() */
         /* Integer input truncated to a character */
-        x = PyLong_AsLong(value);
-        if (x == -1 && PyErr_Occurred())
+        x = PyLong_AsLongAndOverflow(value, &overflow);
+        if (x == -1 && PyErr_Occurred()) {
             goto done;
-        if (x < 0 || x > 0x10ffff) {
+        }
+        if (overflow || x < 0 || x > 0x10ffff) {
             PyErr_SetString(PyExc_OverflowError,
                             "%c arg not in range(0x110000)");
             goto done;

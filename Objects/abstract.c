@@ -936,8 +936,14 @@ sequence_repeat(ssizeargfunc repeatfunc, PyObject *seq, PyObject *n)
     Py_ssize_t count;
     if (PyIndex_Check(n)) {
         count = PyNumber_AsSsize_t(n, PyExc_OverflowError);
-        if (count == -1 && PyErr_Occurred())
+        if (count == -1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "sequence repeat count does not fit in C "
+                                "Py_ssize_t");
+            }
             return NULL;
+        }
     }
     else {
         return type_error("can't multiply sequence by "

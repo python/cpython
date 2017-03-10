@@ -1239,6 +1239,21 @@ class GeneralModuleTests(unittest.TestCase):
         neg_port = port - 65536
         self.assertRaises(OverflowError, sock.bind, (HOST, big_port))
         self.assertRaises(OverflowError, sock.bind, (HOST, neg_port))
+
+        self.assertRaises(OverflowError, sock.bind, (HOST, -1 << 1000))
+        self.assertRaises(OverflowError, sock.bind, (HOST, -1))
+        # verify OverflowError is not raised
+        for in_range_port in [0, 0xffff]:
+            try:
+                sock.bind((HOST, in_range_port))
+            except OSError:
+                pass
+            else:
+                sock = socket.socket()
+                self.addCleanup(sock.close)
+        self.assertRaises(OverflowError, sock.bind, (HOST, 1 << 16))
+        self.assertRaises(OverflowError, sock.bind, (HOST, 1 << 1000))
+
         # Since find_unused_port() is inherently subject to race conditions, we
         # call it a couple times if necessary.
         for i in itertools.count():
@@ -1360,6 +1375,28 @@ class GeneralModuleTests(unittest.TestCase):
     def test_getnameinfo(self):
         # only IP addresses are allowed
         self.assertRaises(OSError, socket.getnameinfo, ('mail.python.org',0), 0)
+
+        # test port boundaries
+        self.assertRaises(OverflowError,
+                          socket.getnameinfo, (HOST, -1 << 1000), 0)
+        self.assertRaises(OverflowError,
+                          socket.getnameinfo, (HOST, -1), 0)
+        # verify OverflowError is not raised
+        socket.getnameinfo((HOST, 0), 0)
+        socket.getnameinfo((HOST, 0xffff), 0)
+        self.assertRaises(OverflowError,
+                          socket.getnameinfo, (HOST, 1 << 16), 0)
+        self.assertRaises(OverflowError,
+                          socket.getnameinfo, (HOST, 1 << 1000), 0)
+
+        # test flowinfo boundaries
+        self.assertRaises(OverflowError,
+                          socket.getnameinfo, (support.HOSTv6, 0, -1), 0)
+        # verify OverflowError is not raised
+        socket.getnameinfo((support.HOSTv6, 0, 0), 0)
+        socket.getnameinfo((support.HOSTv6, 0, (1 << 20) - 1), 0)
+        self.assertRaises(OverflowError,
+                          socket.getnameinfo, (support.HOSTv6, 0, 1 << 20), 0)
 
     @unittest.skipUnless(support.is_resource_enabled('network'),
                          'network is not enabled')

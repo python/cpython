@@ -71,7 +71,8 @@ typedef struct {
 static int vgetargs1_impl(PyObject *args, PyObject **stack, Py_ssize_t nargs,
                           const char *format, va_list *p_va, int flags);
 static int vgetargs1(PyObject *, const char *, va_list *, int);
-static void seterror(Py_ssize_t, const char *, int *, const char *, const char *);
+static void seterror(Py_ssize_t, const char *, int *, const char *,
+                     const char *, const char *);
 static const char *convertitem(PyObject *, const char **, va_list *, int, int *,
                                char *, size_t, freelist_t *);
 static const char *converttuple(PyObject *, const char **, va_list *, int,
@@ -273,6 +274,7 @@ vgetargs1_impl(PyObject *compat_args, PyObject **stack, Py_ssize_t nargs, const 
     freelist.first_available = 0;
     freelist.entries_malloced = 0;
 
+    assert(format != NULL);
     flags = flags & ~FLAG_COMPAT;
 
     while (endfmt == 0) {
@@ -356,7 +358,7 @@ vgetargs1_impl(PyObject *compat_args, PyObject **stack, Py_ssize_t nargs, const 
                               msgbuf, sizeof(msgbuf), &freelist);
             if (msg == NULL)
                 return cleanreturn(1, &freelist);
-            seterror(levels[0], msg, levels+1, fname, message);
+            seterror(levels[0], msg, levels+1, fname, message, format);
             return cleanreturn(0, &freelist);
         }
         else {
@@ -389,7 +391,7 @@ vgetargs1_impl(PyObject *compat_args, PyObject **stack, Py_ssize_t nargs, const 
                           flags, levels, msgbuf,
                           sizeof(msgbuf), &freelist);
         if (msg) {
-            seterror(i+1, msg, levels, fname, message);
+            seterror(i+1, msg, levels, fname, message, format);
             return cleanreturn(0, &freelist);
         }
     }
@@ -434,14 +436,21 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
 
 static void
 seterror(Py_ssize_t iarg, const char *msg, int *levels, const char *fname,
-         const char *message)
+         const char *message, const char *p_format_code)
 {
     char buf[512];
     int i;
     char *p = buf;
 
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
+        assert(p_format_code != NULL);
+        if (PyErr_ExceptionMatches(PyExc_OverflowError) && fname != NULL &&
+            strchr("bhilLn", *p_format_code)) {
+            PyErr_Format(PyExc_OverflowError,
+                         "%.150s() argument out of range", fname);
+        }
         return;
+    }
     else if (message == NULL) {
         if (fname != NULL) {
             PyOS_snprintf(p, sizeof(buf), "%.200s() ", fname);
@@ -646,7 +655,11 @@ float_argument_error(PyObject *arg)
    When failing, an exception may or may not have been raised.
    Don't call if a tuple is expected.
 
-   When you add new format codes, please don't forget poor skipitem() below.
+   When you add new format codes, please don't forget poor skipitem()
+   below.
+   In case the new format code is for a conversion to an integer that
+   might overflow, please don't forget the strchr argument in poor
+   seterror() above.
 */
 
 static const char *
@@ -674,6 +687,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     const char *format = *p_format;
     char c = *format++;
     const char *sarg;
+    int overflow;
 
     switch (c) {
 
@@ -682,17 +696,19 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         long ival;
         if (float_argument_error(arg))
             RETURN_ERR_OCCURRED;
-        ival = PyLong_AsLong(arg);
+        ival = PyLong_AsLongAndOverflow(arg, &overflow);
         if (ival == -1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
-        else if (ival < 0) {
+        else if (overflow == 1 || ival > UCHAR_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-                            "unsigned byte integer is less than minimum");
+                            "Python int too large to convert to C unsigned "
+                            "char");
             RETURN_ERR_OCCURRED;
         }
-        else if (ival > UCHAR_MAX) {
+        else if (overflow == -1 || ival < 0) {
             PyErr_SetString(PyExc_OverflowError,
-                            "unsigned byte integer is greater than maximum");
+                            "can't convert negative Python int to C unsigned "
+                            "char");
             RETURN_ERR_OCCURRED;
         }
         else
@@ -719,17 +735,17 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         long ival;
         if (float_argument_error(arg))
             RETURN_ERR_OCCURRED;
-        ival = PyLong_AsLong(arg);
+        ival = PyLong_AsLongAndOverflow(arg, &overflow);
         if (ival == -1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
-        else if (ival < SHRT_MIN) {
+        else if (overflow == 1 || ival > SHRT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
+                            "Python int too large to convert to C short");
             RETURN_ERR_OCCURRED;
         }
-        else if (ival > SHRT_MAX) {
+        else if (overflow == -1 || ival < SHRT_MIN) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
+                            "Python int too small to convert to C short");
             RETURN_ERR_OCCURRED;
         }
         else
@@ -753,22 +769,12 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
     case 'i': {/* signed int */
         int *p = va_arg(*p_va, int *);
-        long ival;
+        int ival;
         if (float_argument_error(arg))
             RETURN_ERR_OCCURRED;
-        ival = PyLong_AsLong(arg);
+        ival = _PyLong_AsInt(arg);
         if (ival == -1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
-        else if (ival > INT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed integer is greater than maximum");
-            RETURN_ERR_OCCURRED;
-        }
-        else if (ival < INT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed integer is less than minimum");
-            RETURN_ERR_OCCURRED;
-        }
         else
             *p = ival;
         break;
@@ -1735,7 +1741,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                 msg = convertitem(current_arg, &format, p_va, flags,
                     levels, msgbuf, sizeof(msgbuf), &freelist);
                 if (msg) {
-                    seterror(i+1, msg, levels, fname, custom_msg);
+                    seterror(i+1, msg, levels, fname, custom_msg, format);
                     return cleanreturn(0, &freelist);
                 }
                 continue;
@@ -2077,6 +2083,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
     }
 
     format = parser->format;
+    assert(format != NULL);
     /* convert tuple args and keyword args in same loop, using kwtuple to drive process */
     for (i = 0; i < len; i++) {
         if (*format == '|') {
@@ -2104,7 +2111,8 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
             msg = convertitem(current_arg, &format, p_va, flags,
                 levels, msgbuf, sizeof(msgbuf), &freelist);
             if (msg) {
-                seterror(i+1, msg, levels, parser->fname, parser->custom_msg);
+                seterror(i+1, msg, levels, parser->fname, parser->custom_msg,
+                         format);
                 return cleanreturn(0, &freelist);
             }
             continue;

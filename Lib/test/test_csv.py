@@ -834,6 +834,23 @@ class TestDialectValidity(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                          '"quotechar" must be string, not int')
 
+    @support.cpython_only
+    def test_quoting_c_limits(self):
+        from _testcapi import INT_MIN, INT_MAX
+
+        for bad_val in [-1 << 1000, INT_MIN - 1, INT_MAX + 1, 1 << 1000]:
+            class value_error_quoting_dialect(csv.Dialect):
+                quoting = bad_val
+            self.assertRaises(ValueError, value_error_quoting_dialect)
+        # verify ValueError is not raised
+        for in_range_val in [INT_MIN, INT_MAX]:
+            class in_range_qouting_dialect(csv.Dialect):
+                quoting = in_range_val
+            try:
+                in_range_qouting_dialect()
+            except csv.Error:
+                pass
+
     def test_delimiter(self):
         class mydialect(csv.Dialect):
             delimiter = ";"

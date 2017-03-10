@@ -507,13 +507,19 @@ byte_converter(PyObject *arg, char *p)
             if (iobj == NULL) {
                 if (!PyErr_ExceptionMatches(PyExc_TypeError))
                     return 0;
-                goto onError;
+                PyErr_SetString(PyExc_TypeError,
+                                "%c requires an integer in range(256) or a "
+                                "single byte");
+                return 0;
             }
             ival = PyLong_AsLongAndOverflow(iobj, &overflow);
             Py_DECREF(iobj);
         }
-        if (!overflow && ival == -1 && PyErr_Occurred())
-            goto onError;
+        /* If we reached here, PyLong_AsLongAndOverflow was called
+           for an object such that PyLong_Check(object) is true, so
+           it is guaranteed that no error occurred in it. */
+        assert(!(ival == -1 && PyErr_Occurred()));
+
         if (overflow || !(0 <= ival && ival <= 255)) {
             PyErr_SetString(PyExc_OverflowError,
                             "%c arg not in range(256)");
@@ -522,10 +528,6 @@ byte_converter(PyObject *arg, char *p)
         *p = (char)ival;
         return 1;
     }
-  onError:
-    PyErr_SetString(PyExc_TypeError,
-        "%c requires an integer in range(256) or a single byte");
-    return 0;
 }
 
 static PyObject *
@@ -2593,13 +2595,16 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (PyIndex_Check(x)) {
         size = PyNumber_AsSsize_t(x, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError))
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "bytes: count does not fit in C Py_ssize_t");
                 return NULL;
+            }
             PyErr_Clear();  /* fall through */
         }
         else {
             if (size < 0) {
-                PyErr_SetString(PyExc_ValueError, "negative count");
+                PyErr_SetString(PyExc_ValueError, "bytes: negative count");
                 return NULL;
             }
             new = _PyBytes_FromSize(size, 1);

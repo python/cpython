@@ -140,10 +140,12 @@ class Unsigned_TestCase(unittest.TestCase):
             self.assertEqual(1, getargs_b(BadInt2()))
         self.assertEqual(0, getargs_b(BadInt3()))
 
+        self.assertRaises(OverflowError, getargs_b, -1 << 1000)
         self.assertRaises(OverflowError, getargs_b, -1)
         self.assertEqual(0, getargs_b(0))
         self.assertEqual(UCHAR_MAX, getargs_b(UCHAR_MAX))
         self.assertRaises(OverflowError, getargs_b, UCHAR_MAX + 1)
+        self.assertRaises(OverflowError, getargs_b, 1 << 1000)
 
         self.assertEqual(42, getargs_b(42))
         self.assertRaises(OverflowError, getargs_b, VERY_LARGE)
@@ -239,10 +241,12 @@ class Signed_TestCase(unittest.TestCase):
             self.assertEqual(1, getargs_h(BadInt2()))
         self.assertEqual(0, getargs_h(BadInt3()))
 
+        self.assertRaises(OverflowError, getargs_h, -1 << 1000)
         self.assertRaises(OverflowError, getargs_h, SHRT_MIN-1)
         self.assertEqual(SHRT_MIN, getargs_h(SHRT_MIN))
         self.assertEqual(SHRT_MAX, getargs_h(SHRT_MAX))
         self.assertRaises(OverflowError, getargs_h, SHRT_MAX+1)
+        self.assertRaises(OverflowError, getargs_h, 1 << 1000)
 
         self.assertEqual(42, getargs_h(42))
         self.assertRaises(OverflowError, getargs_h, VERY_LARGE)
@@ -258,10 +262,12 @@ class Signed_TestCase(unittest.TestCase):
             self.assertEqual(1, getargs_i(BadInt2()))
         self.assertEqual(0, getargs_i(BadInt3()))
 
+        self.assertRaises(OverflowError, getargs_i, -1 << 1000)
         self.assertRaises(OverflowError, getargs_i, INT_MIN-1)
         self.assertEqual(INT_MIN, getargs_i(INT_MIN))
         self.assertEqual(INT_MAX, getargs_i(INT_MAX))
         self.assertRaises(OverflowError, getargs_i, INT_MAX+1)
+        self.assertRaises(OverflowError, getargs_i, 1 << 1000)
 
         self.assertEqual(42, getargs_i(42))
         self.assertRaises(OverflowError, getargs_i, VERY_LARGE)

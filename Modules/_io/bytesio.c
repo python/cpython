@@ -599,22 +599,30 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *arg)
 
     if (PyLong_Check(arg)) {
         size = PyLong_AsSsize_t(arg);
-        if (size == -1 && PyErr_Occurred())
+        if (size == -1 && PyErr_Occurred()) {
+            /* PyLong_Check(arg) is true, so it must be that
+               PyLong_AsSsize_t raised an OverflowError. */
+            assert(PyErr_ExceptionMatches(PyExc_OverflowError));
+            PyErr_SetString(PyExc_OverflowError,
+                            "truncate: size value does not fit in C "
+                            "Py_ssize_t");
             return NULL;
+        }
     }
     else if (arg == Py_None) {
         /* Truncate to current position if no argument is passed. */
         size = self->pos;
     }
     else {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
+        PyErr_Format(PyExc_TypeError,
+                     "truncate: integer argument expected, got '%s'",
                      Py_TYPE(arg)->tp_name);
         return NULL;
     }
 
     if (size < 0) {
         PyErr_Format(PyExc_ValueError,
-                     "negative size value %zd", size);
+                     "truncate: negative size value %zd", size);
         return NULL;
     }
 

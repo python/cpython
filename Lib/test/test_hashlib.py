@@ -873,6 +873,29 @@ class KDFTests(unittest.TestCase):
     def test_pbkdf2_hmac_c(self):
         self._test_pbkdf2_hmac(c_hashlib.pbkdf2_hmac)
 
+    @unittest.skipUnless(hasattr(c_hashlib, 'pbkdf2_hmac'),
+                     '   test requires OpenSSL > 1.0')
+    @support.cpython_only
+    def test_pbkdf2_hmac_c_limits(self):
+        from _testcapi import LONG_MIN, INT_MAX
+        # test iterations limits
+        self.assertRaises(OverflowError, c_hashlib.pbkdf2_hmac,
+                          'sha1', b'pass', b'salt', -1 << 1000)
+        self.assertRaises(OverflowError, c_hashlib.pbkdf2_hmac,
+                          'sha1', b'pass', b'salt', LONG_MIN - 1)
+        self.assertRaises(ValueError, c_hashlib.pbkdf2_hmac,
+                          'sha1', b'pass', b'salt', LONG_MIN)
+        self.assertRaises(OverflowError, c_hashlib.pbkdf2_hmac,
+                          'sha1', b'pass', b'salt', INT_MAX + 1)
+        self.assertRaises(OverflowError, c_hashlib.pbkdf2_hmac,
+                          'sha1', b'pass', b'salt', 1 << 1000)
+        # test dklen limits
+        self.assertRaises(ValueError, c_hashlib.pbkdf2_hmac,
+                          'sha1', b'pass', b'salt', 1, -1 << 1000)
+        self.assertRaises(OverflowError, c_hashlib.pbkdf2_hmac,
+                          'sha1', b'pass', b'salt', 1, INT_MAX + 1)
+        self.assertRaises(OverflowError, c_hashlib.pbkdf2_hmac,
+                          'sha1', b'pass', b'salt', 1, 1 << 1000)
 
     @unittest.skipUnless(hasattr(c_hashlib, 'scrypt'),
                      '   test requires OpenSSL > 1.1')

@@ -480,11 +480,13 @@ PyLong_AsLong(PyObject *obj)
 {
     int overflow;
     long result = PyLong_AsLongAndOverflow(obj, &overflow);
-    if (overflow) {
-        /* XXX: could be cute and give a different
-           message for overflow == -1 */
+    if (overflow == 1) {
         PyErr_SetString(PyExc_OverflowError,
                         "Python int too large to convert to C long");
+    }
+    else if (overflow == -1) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too small to convert to C long");
     }
     return result;
 }
@@ -497,11 +499,17 @@ _PyLong_AsInt(PyObject *obj)
 {
     int overflow;
     long result = PyLong_AsLongAndOverflow(obj, &overflow);
-    if (overflow || result > INT_MAX || result < INT_MIN) {
-        /* XXX: could be cute and give a different
-           message for overflow == -1 */
+    if (result == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    if (overflow == 1 || result > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "Python int too large to convert to C int");
+        return -1;
+    }
+    else if (overflow == -1 || result < INT_MIN) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too small to convert to C int");
         return -1;
     }
     return (int)result;
@@ -557,8 +565,14 @@ PyLong_AsSsize_t(PyObject *vv) {
     /* else overflow */
 
   overflow:
-    PyErr_SetString(PyExc_OverflowError,
-                    "Python int too large to convert to C ssize_t");
+    if (sign == 1) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large to convert to C Py_ssize_t");
+    }
+    else {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too small to convert to C Py_ssize_t");
+    }
     return -1;
 }
 
@@ -586,7 +600,8 @@ PyLong_AsUnsignedLong(PyObject *vv)
     x = 0;
     if (i < 0) {
         PyErr_SetString(PyExc_OverflowError,
-                        "can't convert negative value to unsigned int");
+                        "can't convert negative Python int to C "
+                        "unsigned long");
         return (unsigned long) -1;
     }
     switch (i) {
@@ -630,7 +645,7 @@ PyLong_AsSize_t(PyObject *vv)
     x = 0;
     if (i < 0) {
         PyErr_SetString(PyExc_OverflowError,
-                   "can't convert negative value to size_t");
+                        "can't convert negative Python int to C size_t");
         return (size_t) -1;
     }
     switch (i) {
@@ -642,7 +657,7 @@ PyLong_AsSize_t(PyObject *vv)
         x = (x << PyLong_SHIFT) | v->ob_digit[i];
         if ((x >> PyLong_SHIFT) != prev) {
             PyErr_SetString(PyExc_OverflowError,
-                "Python int too large to convert to C size_t");
+                            "Python int too large to convert to C size_t");
             return (size_t) -1;
         }
     }
@@ -762,8 +777,9 @@ _PyLong_NumBits(PyObject *vv)
     return result;
 
   Overflow:
-    PyErr_SetString(PyExc_OverflowError, "int has too many bits "
-                    "to express in a platform size_t");
+    PyErr_SetString(PyExc_OverflowError,
+                    "number of bits of Python int too large to express in C "
+                    "size_t");
     return (size_t)-1;
 }
 
@@ -4309,11 +4325,17 @@ long_rshift(PyLongObject *a, PyLongObject *b)
     }
     else {
         shiftby = PyLong_AsSsize_t((PyObject *)b);
-        if (shiftby == -1L && PyErr_Occurred())
+        if (shiftby == -1L && PyErr_Occurred()) {
+            /* PyLong_Check(b) is true, so it must be that
+               PyLong_AsSsize_t raised an OverflowError. */
+            assert(PyErr_ExceptionMatches(PyExc_OverflowError));
+            PyErr_SetString(PyExc_OverflowError,
+                            "shift count does not fit in C Py_ssize_t");
             return NULL;
+        }
         if (shiftby < 0) {
             PyErr_SetString(PyExc_ValueError,
-                            "negative shift count");
+                            "shift count can't be negative");
             return NULL;
         }
         wordshift = shiftby / PyLong_SHIFT;
@@ -4350,10 +4372,16 @@ long_lshift(PyObject *v, PyObject *w)
     CHECK_BINOP(a, b);
 
     shiftby = PyLong_AsSsize_t((PyObject *)b);
-    if (shiftby == -1L && PyErr_Occurred())
+    if (shiftby == -1L && PyErr_Occurred()) {
+        /* PyLong_Check(b) is true, so it must be that
+           PyLong_AsSsize_t raised an OverflowError. */
+        assert(PyErr_ExceptionMatches(PyExc_OverflowError));
+        PyErr_SetString(PyExc_OverflowError,
+                        "shift count does not fit in C Py_ssize_t");
         return NULL;
+    }
     if (shiftby < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative shift count");
+        PyErr_SetString(PyExc_ValueError, "shift count can't be negative");
         return NULL;
     }
 

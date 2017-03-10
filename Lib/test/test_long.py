@@ -712,6 +712,15 @@ class LongTest(unittest.TestCase):
                 self.assertEqual(format(value, format_spec),
                                  format(float(value), format_spec))
 
+    @support.cpython_only
+    def test__format__c_limits(self):
+        self.assertRaises(OverflowError, format, -1 << 1000, 'c')
+        self.assertRaises(OverflowError, format, -1, 'c')
+        self.assertEqual(format(0, 'c'), '\x00')
+        self.assertEqual(format(0x10ffff, 'c'), '\U0010ffff')
+        self.assertRaises(OverflowError, format, 0x110000, 'c')
+        self.assertRaises(OverflowError, format, 1 << 1000, 'c')
+
     def test_nan_inf(self):
         self.assertRaises(OverflowError, int, float('inf'))
         self.assertRaises(OverflowError, int, float('-inf'))
@@ -920,6 +929,26 @@ class LongTest(unittest.TestCase):
         self.assertEqual(0 << sys.maxsize, 0)
         with self.assertRaises(OverflowError):
             0 << (sys.maxsize + 1)
+
+    def test_negative_shift_count(self):
+        with self.assertRaises(ValueError):
+            42 << -3
+        with self.assertRaises(ValueError):
+            42 >> -3
+
+    @support.cpython_only
+    def test_shift_c_limits(self):
+        from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
+
+        for zero_shifter in [(0).__lshift__, (0).__rshift__]:
+            self.assertRaises(OverflowError, zero_shifter, -1 << 1000)
+            self.assertRaises(OverflowError, zero_shifter, PY_SSIZE_T_MIN - 1)
+            self.assertRaises(ValueError, zero_shifter, PY_SSIZE_T_MIN)
+            self.assertRaises(ValueError, zero_shifter, -1)
+            self.assertEqual(zero_shifter(0), 0)
+            self.assertEqual(zero_shifter(PY_SSIZE_T_MAX), 0)
+            self.assertRaises(OverflowError, zero_shifter, PY_SSIZE_T_MAX + 1)
+            self.assertRaises(OverflowError, zero_shifter, 1 << 1000)
 
     def test_small_ints(self):
         for i in range(-5, 257):

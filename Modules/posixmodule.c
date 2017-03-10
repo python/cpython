@@ -5415,20 +5415,21 @@ static PyStructSequence_Desc sched_param_desc = {
 static int
 convert_sched_param(PyObject *param, struct sched_param *res)
 {
-    long priority;
+    int priority;
 
     if (Py_TYPE(param) != &SchedParamType) {
         PyErr_SetString(PyExc_TypeError, "must have a sched_param object");
         return 0;
     }
-    priority = PyLong_AsLong(PyStructSequence_GET_ITEM(param, 0));
-    if (priority == -1 && PyErr_Occurred())
-        return 0;
-    if (priority > INT_MAX || priority < INT_MIN) {
-        PyErr_SetString(PyExc_OverflowError, "sched_priority out of range");
+    priority = _PyLong_AsInt(PyStructSequence_GET_ITEM(param, 0));
+    if (priority == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "sched_priority value does not fit in C int");
+        }
         return 0;
     }
-    res->sched_priority = Py_SAFE_DOWNCAST(priority, long, int);
+    res->sched_priority = priority;
     return 1;
 }
 #endif /* defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM) */
@@ -5584,7 +5585,7 @@ static PyObject *
 os_sched_setaffinity_impl(PyObject *module, pid_t pid, PyObject *mask)
 /*[clinic end generated code: output=882d7dd9a229335b input=a0791a597c7085ba]*/
 {
-    int ncpus;
+    int ncpus, overflow;
     size_t setsize;
     cpu_set_t *cpu_set = NULL;
     PyObject *iterator = NULL, *item;
@@ -5612,15 +5613,17 @@ os_sched_setaffinity_impl(PyObject *module, pid_t pid, PyObject *mask)
             Py_DECREF(item);
             goto error;
         }
-        cpu = PyLong_AsLong(item);
+        cpu = PyLong_AsLongAndOverflow(item, &overflow);
+        /* PyLong_Check(item) is true, so it is guaranteed that
+           no error occurred in PyLong_AsLongAndOverflow. */
+        assert(!(cpu == -1 && PyErr_Occurred()));
         Py_DECREF(item);
-        if (cpu < 0) {
-            if (!PyErr_Occurred())
-                PyErr_SetString(PyExc_ValueError, "negative CPU number");
+        if (overflow == 1 || cpu > INT_MAX - 1) {
+            PyErr_SetString(PyExc_OverflowError, "CPU number too large");
             goto error;
         }
-        if (cpu > INT_MAX - 1) {
-            PyErr_SetString(PyExc_OverflowError, "CPU number too large");
+        if (overflow == -1 || cpu < 0) {
+            PyErr_SetString(PyExc_ValueError, "negative CPU number");
             goto error;
         }
         if (cpu >= ncpus) {

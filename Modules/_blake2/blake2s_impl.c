@@ -159,6 +159,10 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
     if (leaf_size_obj != NULL) {
         leaf_size = PyLong_AsUnsignedLong(leaf_size_obj);
         if (leaf_size == (unsigned long) -1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "leaf_size does not fit in C unsigned long");
+            }
             goto error;
         }
         if (leaf_size > 0xFFFFFFFFU) {

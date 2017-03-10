@@ -151,6 +151,6 @@ _pysqlite_long_as_int64(PyObject * py_val)
         }
     }
     PyErr_SetString(PyExc_OverflowError,
-                    "Python int too large to convert to SQLite INTEGER");
+                    "Python int does not fit in C sqlite_int64");
     return -1;
 }

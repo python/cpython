@@ -270,8 +270,15 @@ mmap_read_method(mmap_object *self,
     PyObject *result;
 
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "|O&:read", mmap_convert_ssize_t, &num_bytes))
+    if (!PyArg_ParseTuple(args, "|O&:read",
+                          mmap_convert_ssize_t, &num_bytes)) {
+        assert(PyErr_Occurred());
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "read count does not fit in C Py_ssize_t");
+        }
         return(NULL);
+    }
 
     /* silently 'adjust' out-of-range requests */
     remaining = (self->pos < self->size) ? self->size - self->pos : 0;
@@ -1083,18 +1090,20 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                                "flags", "prot",
                                "access", "offset", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|iii" _Py_PARSE_OFF_T, keywords,
-                                     &fd, &map_size, &flags, &prot,
-                                     &access, &offset))
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict,
+                                     "in|iii" _Py_PARSE_OFF_T ":mmap",
+                                     keywords, &fd, &map_size, &flags, &prot,
+                                     &access, &offset)) {
         return NULL;
+    }
     if (map_size < 0) {
         PyErr_SetString(PyExc_OverflowError,
-                        "memory mapped length must be postiive");
+                        "memory mapped length must be positive");
         return NULL;
     }
     if (offset < 0) {
         PyErr_SetString(PyExc_OverflowError,
-            "memory mapped offset must be positive");
+                        "memory mapped offset must be positive");
         return NULL;
     }
 
@@ -1243,7 +1252,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                                 "tagname",
                                 "access", "offset", NULL };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|ziL", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|ziL:mmap", keywords,
                                      &fileno, &map_size,
                                      &tagname, &access, &offset)) {
         return NULL;
@@ -1269,12 +1278,12 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 
     if (map_size < 0) {
         PyErr_SetString(PyExc_OverflowError,
-                        "memory mapped length must be postiive");
+                        "memory mapped length must be positive");
         return NULL;
     }
     if (offset < 0) {
         PyErr_SetString(PyExc_OverflowError,
-            "memory mapped offset must be positive");
+                        "memory mapped offset must be positive");
         return NULL;
     }
 

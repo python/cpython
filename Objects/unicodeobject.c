@@ -14373,6 +14373,7 @@ wrongtype:
 static Py_UCS4
 formatchar(PyObject *v)
 {
+    int overflow;
     /* presume that the buffer is at least 3 characters long */
     if (PyUnicode_Check(v)) {
         if (PyUnicode_GET_LENGTH(v) == 1) {
@@ -14389,16 +14390,17 @@ formatchar(PyObject *v)
             if (iobj == NULL) {
                 goto onError;
             }
-            x = PyLong_AsLong(iobj);
+            x = PyLong_AsLongAndOverflow(iobj, &overflow);
             Py_DECREF(iobj);
         }
         else {
-            x = PyLong_AsLong(v);
+            x = PyLong_AsLongAndOverflow(v, &overflow);
         }
-        if (x == -1 && PyErr_Occurred())
-            goto onError;
+        /* either PyLong_Check(v) or PyLong_Check(iobj) is true, so it is
+           guaranteed that no error occurred in PyLong_AsLongAndOverflow. */
+        assert(!(x == -1 && PyErr_Occurred()));
 
-        if (x < 0 || x > MAX_UNICODE) {
+        if (overflow || x < 0 || x > MAX_UNICODE) {
             PyErr_SetString(PyExc_OverflowError,
                             "%c arg not in range(0x110000)");
             return (Py_UCS4) -1;

@@ -251,12 +251,18 @@ _PyLong_AsMode_t(PyObject *op)
     mode_t mode;
 
     value = PyLong_AsUnsignedLong(op);
-    if ((value == (unsigned long)-1) && PyErr_Occurred())
+    if ((value == (unsigned long)-1) && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "Python int does not fit in C mode_t");
+        }
         return (mode_t)-1;
+    }
 
     mode = (mode_t)value;
     if ((unsigned long)mode != value) {
-        PyErr_SetString(PyExc_OverflowError, "mode out of range");
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int does not fit in C mode_t");
         return (mode_t)-1;
     }
     return mode;

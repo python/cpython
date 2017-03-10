@@ -778,6 +778,21 @@ class CBytesIOTest(PyBytesIOTest):
         memio = self.ioclass(ba)
         self.assertEqual(sys.getrefcount(ba), old_rc)
 
+    @support.cpython_only
+    def test_truncate_c_limits(self):
+        from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
+        memio = self.ioclass()
+
+        self.assertRaises(OverflowError, memio.truncate, -1 << 1000)
+        self.assertRaises(OverflowError, memio.truncate, PY_SSIZE_T_MIN - 1)
+        self.assertRaises(ValueError, memio.truncate, PY_SSIZE_T_MIN)
+        self.assertRaises(ValueError, memio.truncate, -1)
+        # verify OverflowError/ValueError is not raised
+        memio.truncate(0)
+        memio.truncate(PY_SSIZE_T_MAX)
+        self.assertRaises(OverflowError, memio.truncate, PY_SSIZE_T_MAX + 1)
+        self.assertRaises(OverflowError, memio.truncate, 1 << 1000)
+
 class CStringIOTest(PyStringIOTest):
     ioclass = io.StringIO
     UnsupportedOperation = io.UnsupportedOperation
@@ -824,6 +839,21 @@ class CStringIOTest(PyStringIOTest):
         self.assertRaises(TypeError, memio.__setstate__, 0)
         memio.close()
         self.assertRaises(ValueError, memio.__setstate__, ("closed", "", 0, None))
+
+    @support.cpython_only
+    def test_truncate_c_limits(self):
+        from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
+        memio = self.ioclass()
+
+        self.assertRaises(OverflowError, memio.truncate, -1 << 1000)
+        self.assertRaises(OverflowError, memio.truncate, PY_SSIZE_T_MIN - 1)
+        self.assertRaises(ValueError, memio.truncate, PY_SSIZE_T_MIN)
+        self.assertRaises(ValueError, memio.truncate, -1)
+        # verify OverflowError/ValueError is not raised
+        memio.truncate(0)
+        memio.truncate(PY_SSIZE_T_MAX)
+        self.assertRaises(OverflowError, memio.truncate, PY_SSIZE_T_MAX + 1)
+        self.assertRaises(OverflowError, memio.truncate, 1 << 1000)
 
 
 class CStringIOPickleTest(PyStringIOPickleTest):

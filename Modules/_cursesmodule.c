@@ -244,6 +244,8 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
     else if (PyLong_CheckExact(obj)) {
         int long_overflow;
         value = PyLong_AsLongAndOverflow(obj, &long_overflow);
+        /* PyLong_Check(obj) is true, so it is guaranteed that
+           no error occurred in PyLong_AsLongAndOverflow. */
         if (long_overflow)
             goto overflow;
     }
@@ -260,7 +262,7 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
 
 overflow:
     PyErr_SetString(PyExc_OverflowError,
-                    "byte doesn't fit in chtype");
+                    "Python object does not fit in C chtype");
     return 0;
 }
 
@@ -309,9 +311,11 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
     else if (PyLong_CheckExact(obj)) {
         int overflow;
         value = PyLong_AsLongAndOverflow(obj, &overflow);
+        /* PyLong_Check(obj) is true, so it is guaranteed that
+           no error occurred in PyLong_AsLongAndOverflow. */
         if (overflow) {
             PyErr_SetString(PyExc_OverflowError,
-                            "int doesn't fit in long");
+                            "Python int does not fit in C chtype");
             return 0;
         }
     }
@@ -325,7 +329,7 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
     *ch = (chtype)value;
     if ((long)*ch != value) {
         PyErr_Format(PyExc_OverflowError,
-                     "byte doesn't fit in chtype");
+                     "Python object does not fit in C chtype");
         return 0;
     }
     return 1;
@@ -1217,10 +1221,12 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
         Py_END_ALLOW_THREADS
         break;
     case 1:
-        if (!PyArg_ParseTuple(args,"i;n", &n))
+        if (!PyArg_ParseTuple(args, "i:getstr", &n)) {
             return NULL;
+        }
         if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
+            PyErr_SetString(PyExc_ValueError,
+                            "getstr: 'n' must be nonnegative");
             return NULL;
         }
         Py_BEGIN_ALLOW_THREADS
@@ -1228,8 +1234,9 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
         Py_END_ALLOW_THREADS
         break;
     case 2:
-        if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
+        if (!PyArg_ParseTuple(args, "ii:getstr", &y, &x)) {
             return NULL;
+        }
         Py_BEGIN_ALLOW_THREADS
 #ifdef STRICT_SYSV_CURSES
         rtn2 = wmove(self->win,y,x)==ERR ? ERR : wgetnstr(self->win, rtn, 1023);
@@ -1239,10 +1246,12 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
         Py_END_ALLOW_THREADS
         break;
     case 3:
-        if (!PyArg_ParseTuple(args,"iii;y,x,n", &y, &x, &n))
+        if (!PyArg_ParseTuple(args, "iii:getstr", &y, &x, &n)) {
             return NULL;
+        }
         if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
+            PyErr_SetString(PyExc_ValueError,
+                            "getstr: 'n' must be nonnegative");
             return NULL;
         }
 #ifdef STRICT_SYSV_CURSES
@@ -1389,24 +1398,29 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
         rtn2 = winnstr(self->win,rtn, 1023);
         break;
     case 1:
-        if (!PyArg_ParseTuple(args,"i;n", &n))
+        if (!PyArg_ParseTuple(args, "i:instr", &n)) {
             return NULL;
+        }
         if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
+            PyErr_SetString(PyExc_ValueError,
+                            "instr: 'n' must be nonnegative");
             return NULL;
         }
         rtn2 = winnstr(self->win, rtn, Py_MIN(n, 1023));
         break;
     case 2:
-        if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
+        if (!PyArg_ParseTuple(args, "ii:instr", &y, &x)) {
             return NULL;
+        }
         rtn2 = mvwinnstr(self->win,y,x,rtn,1023);
         break;
     case 3:
-        if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
+        if (!PyArg_ParseTuple(args, "iii:instr", &y, &x, &n)) {
             return NULL;
+        }
         if (n < 0) {
-            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
+            PyErr_SetString(PyExc_ValueError,
+                            "instr: 'n' must be nonnegative");
             return NULL;
         }
         rtn2 = mvwinnstr(self->win, y, x, rtn, Py_MIN(n,1023));
@@ -2588,10 +2602,13 @@ PyCurses_KeyName(PyObject *self, PyObject *args)
 
     PyCursesInitialised;
 
-    if (!PyArg_ParseTuple(args,"i",&ch)) return NULL;
+    if (!PyArg_ParseTuple(args, "i:keyname" ,&ch)) {
+        return NULL;
+    }
 
     if (ch < 0) {
-        PyErr_SetString(PyExc_ValueError, "invalid key number");
+        PyErr_SetString(PyExc_ValueError,
+                        "keyname: key number must be nonnegative");
         return NULL;
     }
     knp = keyname(ch);
@@ -3089,15 +3106,17 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
         long value;
         int overflow;
         value = PyLong_AsLongAndOverflow(obj, &overflow);
+        /* PyLong_Check(obj) is true, so it is guaranteed that
+           no error occurred in PyLong_AsLongAndOverflow. */
         if (overflow) {
             PyErr_SetString(PyExc_OverflowError,
-                            "int doesn't fit in long");
+                            "Python int does not fit in C wchar_t");
             return 0;
         }
         *wch = (wchar_t)value;
         if ((long)*wch != value) {
             PyErr_Format(PyExc_OverflowError,
-                         "character doesn't fit in wchar_t");
+                         "Python int does not fit in C wchar_t");
             return 0;
         }
         return 1;

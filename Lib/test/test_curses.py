@@ -15,7 +15,7 @@ import sys
 import tempfile
 import unittest
 
-from test.support import requires, import_module, verbose
+from test.support import requires, import_module, verbose, cpython_only
 
 # Optionally test curses module.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
@@ -194,6 +194,24 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(ValueError, stdscr.instr, -2)
         self.assertRaises(ValueError, stdscr.instr, 2, 3, -2)
 
+    @cpython_only
+    def test_getstr_and_instr_c_limits(self):
+        from _testcapi import INT_MIN, INT_MAX
+
+        for meth in [self.stdscr.getstr, self.stdscr.instr]:
+            self.assertRaises(OverflowError, meth, -1 << 1000)
+            self.assertRaises(OverflowError, meth, 1, 1, -1 << 1000)
+            self.assertRaises(OverflowError, meth, INT_MIN - 1)
+            self.assertRaises(OverflowError, meth, 1, 1, INT_MIN - 1)
+            self.assertRaises(ValueError, meth, INT_MIN)
+            self.assertRaises(ValueError, meth, 1, 1, INT_MIN)
+            self.assertRaises(ValueError, meth, -1)
+            self.assertRaises(ValueError, meth, 1, 1, -1)
+            self.assertRaises(OverflowError, meth, INT_MAX + 1)
+            self.assertRaises(OverflowError, meth, 1, 1, INT_MAX + 1)
+            self.assertRaises(OverflowError, meth, 1 << 1000)
+            self.assertRaises(OverflowError, meth, 1, 1, 1 << 1000)
+
 
     def test_module_funcs(self):
         "Test module-level functions"
@@ -258,6 +276,18 @@ class TestCurses(unittest.TestCase):
     @requires_curses_func('keyname')
     def test_keyname(self):
         curses.keyname(13)
+
+    @cpython_only
+    @requires_curses_func('keyname')
+    def test_keyname_c_limits(self):
+        from _testcapi import INT_MIN, INT_MAX
+
+        self.assertRaises(OverflowError, curses.keyname, -1 << 1000)
+        self.assertRaises(OverflowError, curses.keyname, INT_MIN - 1)
+        self.assertRaises(ValueError, curses.keyname, INT_MIN)
+        self.assertRaises(ValueError, curses.keyname, -1)
+        self.assertRaises(OverflowError, curses.keyname, INT_MAX + 1)
+        self.assertRaises(OverflowError, curses.keyname, 1 << 1000)
 
     @requires_curses_func('has_key')
     def test_has_key(self):

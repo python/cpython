@@ -629,6 +629,7 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
     long iterations, dklen;
     int retval;
     const EVP_MD *digest;
+    int overflow = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "sy*y*l|O:pbkdf2_hmac",
                                      kwlist, &name, &password, &salt,
@@ -668,20 +669,20 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
     if (dklen_obj == Py_None) {
         dklen = EVP_MD_size(digest);
     } else {
-        dklen = PyLong_AsLong(dklen_obj);
-        if ((dklen == -1) && PyErr_Occurred()) {
+        dklen = PyLong_AsLongAndOverflow(dklen_obj, &overflow);
+        if (dklen == -1 && PyErr_Occurred()) {
             goto end;
         }
     }
-    if (dklen < 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "key length must be greater than 0.");
-        goto end;
-    }
-    if (dklen > INT_MAX) {
+    if (overflow == 1 || dklen > INT_MAX) {
         /* INT_MAX is always smaller than dkLen max (2^32 - 1) * hLen */
         PyErr_SetString(PyExc_OverflowError,
-                        "key length is too great.");
+                        "key length is too large.");
+        goto end;
+    }
+    if (overflow == -1 || dklen < 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "key length must be greater than 0.");
         goto end;
     }
 

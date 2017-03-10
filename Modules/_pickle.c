@@ -1812,9 +1812,12 @@ save_long(PicklerObject *self, PyObject *obj)
 
     const char long_op = LONG;
 
+    assert(PyLong_CheckExact(obj));
     val= PyLong_AsLong(obj);
     if (val == -1 && PyErr_Occurred()) {
-        /* out of range for int pickling */
+        /* PyLong_Check(obj) is true, so it must be that
+           PyLong_AsLong raised an OverflowError, i.e. obj is out
+           of range for int pickling */
         PyErr_Clear();
     }
     else if (self->bin &&
@@ -1875,8 +1878,12 @@ save_long(PicklerObject *self, PyObject *obj)
             return 0;
         }
         nbits = _PyLong_NumBits(obj);
-        if (nbits == (size_t)-1 && PyErr_Occurred())
+        if (nbits == (size_t)-1 && PyErr_Occurred()) {
+            assert(PyErr_ExceptionMatches(PyExc_OverflowError));
+            PyErr_SetString(PyExc_OverflowError,
+                            "Python int too large to pickle");
             goto error;
+        }
         /* How many bytes do we need?  There are nbits >> 3 full
          * bytes of data, and nbits & 7 leftover bits.  If there
          * are any leftover bits, then we clearly need another
@@ -1894,7 +1901,7 @@ save_long(PicklerObject *self, PyObject *obj)
         nbytes = (nbits >> 3) + 1;
         if (nbytes > 0x7fffffffL) {
             PyErr_SetString(PyExc_OverflowError,
-                            "int too large to pickle");
+                            "Python int too large to pickle");
             goto error;
         }
         repr = PyBytes_FromStringAndSize(NULL, (Py_ssize_t)nbytes);

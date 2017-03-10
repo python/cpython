@@ -1095,6 +1095,23 @@ class PosixTester(unittest.TestCase):
         param = posix.sched_param(sched_priority=-large)
         self.assertRaises(OverflowError, posix.sched_setparam, 0, param)
 
+    @support.cpython_only
+    def test_convert_sched_param_c_limits(self):
+        from _testcapi import INT_MIN, INT_MAX
+        orig_param = posix.sched_getparam(0)
+        self.addCleanup(posix.sched_setparam, 0, orig_param)
+
+        for bad_val in [-1 << 1000, INT_MIN - 1, INT_MAX + 1, 1 << 1000]:
+            bad_param = posix.sched_param(bad_val)
+            self.assertRaises(OverflowError,
+                              posix.sched_setparam, 0, bad_param)
+        # verify OverflowError is not raised
+        for in_range_int in [INT_MIN, INT_MAX]:
+            try:
+                posix.sched_setparam(0, posix.sched_param(in_range_int))
+            except OSError:
+                pass
+
     @unittest.skipUnless(hasattr(posix, "sched_rr_get_interval"), "no function")
     def test_sched_rr_get_interval(self):
         try:
@@ -1130,9 +1147,27 @@ class PosixTester(unittest.TestCase):
         posix.sched_setaffinity(0, mask)
         self.assertEqual(posix.sched_getaffinity(0), mask)
         self.assertRaises(OSError, posix.sched_setaffinity, 0, [])
-        self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-10])
+        self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-1])
+        self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-1 << 1000])
         self.assertRaises(OverflowError, posix.sched_setaffinity, 0, [1<<128])
         self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
+
+    @support.cpython_only
+    @requires_sched_affinity
+    def test_sched_setaffinity_c_limits(self):
+        from _testcapi import INT_MAX
+        orig_mask = posix.sched_getaffinity(0)
+        self.addCleanup(posix.sched_setaffinity, 0, orig_mask)
+
+        # verify OverflowError is not raised
+        try:
+            posix.sched_setaffinity(0, [INT_MAX - 1])
+        except OSError:
+            pass
+        self.assertRaises(OverflowError,
+                          posix.sched_setaffinity, 0, [INT_MAX])
+        self.assertRaises(OverflowError,
+                          posix.sched_setaffinity, 0, [1 << 1000])
 
     def test_rtld_constants(self):
         # check presence of major RTLD_* constants

@@ -1351,7 +1351,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     length = PyLong_AsLongAndOverflow(length_attr, &overflow);
     if (overflow) {
         PyErr_SetString(PyExc_OverflowError,
-                        "The '_length_' attribute is too large");
+                        "The '_length_' attribute does not fit in C long");
         Py_DECREF(length_attr);
         goto error;
     }

@@ -427,11 +427,12 @@ gettmarg(PyObject *args, struct tm *p)
         return 0;
     }
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiii",
+    if (!PyArg_ParseTuple(args, "iiiiiiiii:mktime/asctime/strftime",
                           &y, &p->tm_mon, &p->tm_mday,
                           &p->tm_hour, &p->tm_min, &p->tm_sec,
-                          &p->tm_wday, &p->tm_yday, &p->tm_isdst))
+                          &p->tm_wday, &p->tm_yday, &p->tm_isdst)) {
         return 0;
+    }
     p->tm_year = y - 1900;
     p->tm_mon--;
     p->tm_wday = (p->tm_wday + 1) % 7;

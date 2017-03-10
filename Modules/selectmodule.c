@@ -384,7 +384,7 @@ ushort_converter(PyObject *obj, void *ptr)
         return 0;
     if (uval > USHRT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
-                        "Python int too large for C unsigned short");
+                        "Python int too large to convert to C unsigned short");
         return 0;
     }
 
@@ -407,8 +407,16 @@ poll_register(pollObject *self, PyObject *args)
     unsigned short events = POLLIN | POLLPRI | POLLOUT;
     int err;
 
-    if (!PyArg_ParseTuple(args, "O|O&:register", &o, ushort_converter, &events))
+    if (!PyArg_ParseTuple(args, "O|O&:register",
+                          &o, ushort_converter, &events)) {
+        assert(PyErr_Occurred());
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "register: eventmask value does not fit in C "
+                            "unsigned short");
+        }
         return NULL;
+    }
 
     fd = PyObject_AsFileDescriptor(o);
     if (fd == -1) return NULL;
@@ -449,8 +457,16 @@ poll_modify(pollObject *self, PyObject *args)
     unsigned short events;
     int err;
 
-    if (!PyArg_ParseTuple(args, "OO&:modify", &o, ushort_converter, &events))
+    if (!PyArg_ParseTuple(args, "OO&:modify",
+                          &o, ushort_converter, &events)) {
+        assert(PyErr_Occurred());
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "modify: eventmask value does not fit in C "
+                            "unsigned short");
+        }
         return NULL;
+    }
 
     fd = PyObject_AsFileDescriptor(o);
     if (fd == -1) return NULL;
@@ -787,8 +803,16 @@ internal_devpoll_register(devpollObject *self, PyObject *args, int remove)
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
 
-    if (!PyArg_ParseTuple(args, "O|O&:register", &o, ushort_converter, &events))
+    if (!PyArg_ParseTuple(args, "O|O&:register/modify",
+                          &o, ushort_converter, &events)) {
+        assert(PyErr_Occurred());
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "register/modify: eventmask value does not fit "
+                            "in C unsigned short");
+        }
         return NULL;
+    }
 
     fd = PyObject_AsFileDescriptor(o);
     if (fd == -1) return NULL;

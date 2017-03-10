@@ -166,22 +166,28 @@ grow_buffer(PyObject **buf, Py_ssize_t max_length)
       to be strictly correct, we need to define two separate converters.
  */
 
-#define INT_TYPE_CONVERTER_FUNC(TYPE, FUNCNAME) \
-    static int \
-    FUNCNAME(PyObject *obj, void *ptr) \
-    { \
-        unsigned long long val; \
-        \
-        val = PyLong_AsUnsignedLongLong(obj); \
-        if (PyErr_Occurred()) \
-            return 0; \
-        if ((unsigned long long)(TYPE)val != val) { \
-            PyErr_SetString(PyExc_OverflowError, \
-                            "Value too large for " #TYPE " type"); \
-            return 0; \
-        } \
-        *(TYPE *)ptr = (TYPE)val; \
-        return 1; \
+#define INT_TYPE_CONVERTER_FUNC(TYPE, FUNCNAME)                         \
+    static int                                                          \
+    FUNCNAME(PyObject *obj, void *ptr)                                  \
+    {                                                                   \
+        unsigned long long val;                                         \
+                                                                        \
+        val = PyLong_AsUnsignedLongLong(obj);                           \
+        if (val == (unsigned long long)-1 && PyErr_Occurred()) {        \
+            if (!PyErr_ExceptionMatches(PyExc_OverflowError)) {         \
+                return 0;                                               \
+            }                                                           \
+        }                                                               \
+        else if ((unsigned long long)(TYPE)val == val) {                \
+            *(TYPE *)ptr = (TYPE)val;                                   \
+            return 1;                                                   \
+        }                                                               \
+                                                                        \
+        /* Either PyExc_OverflowError occurred in                       \
+           PyLong_AsUnsignedLongLong, or val didn't fit in TYPE. */     \
+        PyErr_SetString(PyExc_OverflowError,                            \
+                        "Python int does not fit in C " #TYPE);         \
+        return 0;                                                       \
     }
 
 INT_TYPE_CONVERTER_FUNC(uint32_t, uint32_converter)

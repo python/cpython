@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-15988: Make various overflow error messages (in various files) more
+  consistent and helpful.
+
 - bpo-29568: Escaped percent "%%" in the format string for classic string
   formatting no longer allows any characters between two percents.
 
