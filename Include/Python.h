@@ -64,6 +64,7 @@
 #include "pymath.h"
 #include "pytime.h"
 #include "pymem.h"
+#include "pyintrinsics.h"
 
 #include "object.h"
 #include "objimpl.h"
