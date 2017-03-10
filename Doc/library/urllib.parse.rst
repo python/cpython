@@ -64,6 +64,9 @@ or on combining URL components into a URL string.
    input is presumed to be a relative URL and thus to start with
    a path component.
 
+   .. doctest::
+      :options: +NORMALIZE_WHITESPACE
+
        >>> from urllib.parse import urlparse
        >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
        ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
