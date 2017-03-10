@@ -473,10 +473,9 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         # #13734.
 
         scandir_it = scandir(topfd)
-        walk_dirs = dirs = []
+        dirs = []
         nondirs = []
-        if not (topdown or follow_symlinks):
-            walk_dirs = []  # list of entries
+        entries = None if topdown or follow_symlinks else []
         for entry in scandir_it:
             name = entry.name
             if isbytes:
@@ -484,8 +483,8 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             try:
                 if entry.is_dir():
                     dirs.append(name)
-                    if walk_dirs is not dirs:
-                        walk_dirs.append((name, entry))
+                    if entries is not None:
+                        entries.append(entry)
                 else:
                     nondirs.append(name)
             except OSError:
@@ -499,13 +498,13 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         if topdown:
             yield toppath, dirs, nondirs, topfd
 
-        for name in walk_dirs:
+        for name in dirs if entries is None else zip(dirs, entries):
             try:
                 if not follow_symlinks:
                     if topdown:
                         orig_st = stat(name, dir_fd=topfd, follow_symlinks=False)
                     else:
-                        assert walk_dirs is not dirs
+                        assert entries is not None
                         name, entry = name
                         orig_st = entry.stat(follow_symlinks=False)
                 dirfd = open(name, O_RDONLY, dir_fd=topfd)
