@@ -13,6 +13,10 @@ This is Python version 3.7.0 alpha 1
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
 
+This is some bogus text.  I'm going to revert it in a couple minutes, this is
+just to see what AppVeyor does when nothing matches its whitelist.  After
+reversion, this will just get squashed away when the PR is merged.
+
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
 2012, 2013, 2014, 2015, 2016, 2017 Python Software Foundation.  All rights
 reserved.

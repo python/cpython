@@ -7,6 +7,12 @@ Python on Mac OS X README
     Ronald Oussoren (2010-04),
     Ned Deily (2012-06)
 
+This is some bogus text.  I'm going to revert it in a couple minutes, this is
+just to see what AppVeyor does when nothing matches its whitelist.  After
+reversion, this will just get squashed away when the PR is merged.
+
+This -------v looks out of date, though.
+
 :Version: 3.4.0
 
 This document provides a quick overview of some Mac OS X specific features in
