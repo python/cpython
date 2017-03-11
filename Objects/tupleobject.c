@@ -682,7 +682,7 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable);
 
 /*[clinic input]
 @classmethod
-tuple.__new__ as tuple___new__
+tuple.__new__ as tuple_new
     iterable: object(c_default="NULL") = ()
     /
 
@@ -695,8 +695,8 @@ If the argument is a tuple, the return value is the same object.
 [clinic start generated code]*/
 
 static PyObject *
-tuple___new___impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=df1d5f4547e7ca78 input=9807088a3205a85d]*/
+tuple_new_impl(PyTypeObject *type, PyObject *iterable)
+/*[clinic end generated code: output=4546d9f0d469bce7 input=86963bcde633b5a2]*/
 {
     if (type != &PyTuple_Type)
         return tuple_subtype_new(type, iterable);
@@ -714,7 +714,7 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
     Py_ssize_t i, n;
 
     assert(PyType_IsSubtype(type, &PyTuple_Type));
-    tmp = tuple___new___impl(&PyTuple_Type, iterable);
+    tmp = tuple_new_impl(&PyTuple_Type, iterable);
     if (tmp == NULL)
         return NULL;
     assert(PyTuple_Check(tmp));
@@ -845,7 +845,7 @@ PyTypeObject PyTuple_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TUPLE_SUBCLASS, /* tp_flags */
-    tuple___new____doc__,                       /* tp_doc */
+    tuple_new__doc__,                           /* tp_doc */
     (traverseproc)tupletraverse,                /* tp_traverse */
     0,                                          /* tp_clear */
     tuplerichcompare,                           /* tp_richcompare */
@@ -862,7 +862,7 @@ PyTypeObject PyTuple_Type = {
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
-    tuple___new__,                              /* tp_new */
+    tuple_new,                                  /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
 };
 

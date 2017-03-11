@@ -48,7 +48,7 @@ PyDoc_STRVAR(tuple_count__doc__,
 #define TUPLE_COUNT_METHODDEF    \
     {"count", (PyCFunction)tuple_count, METH_O, tuple_count__doc__},
 
-PyDoc_STRVAR(tuple___new____doc__,
+PyDoc_STRVAR(tuple_new__doc__,
 "tuple(iterable=(), /)\n"
 "--\n"
 "\n"
@@ -60,10 +60,10 @@ PyDoc_STRVAR(tuple___new____doc__,
 "If the argument is a tuple, the return value is the same object.");
 
 static PyObject *
-tuple___new___impl(PyTypeObject *type, PyObject *iterable);
+tuple_new_impl(PyTypeObject *type, PyObject *iterable);
 
 static PyObject *
-tuple___new__(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     PyObject *iterable = NULL;
@@ -77,7 +77,7 @@ tuple___new__(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         &iterable)) {
         goto exit;
     }
-    return_value = tuple___new___impl(type, iterable);
+    return_value = tuple_new_impl(type, iterable);
 
 exit:
     return return_value;
@@ -99,4 +99,4 @@ tuple___getnewargs__(PyTupleObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl(self);
 }
-/*[clinic end generated code: output=b90f52646992f6cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=561a3654411d2225 input=a9049054013a1b77]*/
