@@ -47,7 +47,7 @@ matrix:
         - TESTING=coverage
       before_script:
         - |
-            if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)/'
+            if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)|(^Misc)/'
             then
               echo "Only docs were updated, stopping build process."
               exit
@@ -77,7 +77,7 @@ matrix:
 # Travis provides only 2 cores, so don't overdue the parallelism and waste memory.
 before_script:
   - |
-      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)/'
+      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)|(^Misc)/'
       then
         echo "Only docs were updated, stopping build process."
         exit

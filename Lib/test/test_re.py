@@ -1399,7 +1399,7 @@ class ReTests(unittest.TestCase):
 
     def test_locale_flag(self):
         import locale
-        enc = locale.getpreferredencoding(False)
+        _, enc = locale.getlocale(locale.LC_CTYPE)
         # Search non-ASCII letter
         for i in range(128, 256):
             try:
