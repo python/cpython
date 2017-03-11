@@ -12,10 +12,6 @@ document processor specifically written for the Python documentation.
 .. In the online version of these documents, you can submit comments and suggest
    changes directly on the documentation pages.
 
-This is some bogus text.  I'm going to revert it in a couple minutes, this is
-just to see what AppVeyor does when nothing matches its whitelist.  After
-reversion, this will just get squashed away when the PR is merged.
-
 Development of the documentation and its toolchain is an entirely volunteer
 effort, just like Python itself.  If you want to contribute, please take a
 look at the :ref:`reporting-bugs` page for information on how to do so.  New
