@@ -714,7 +714,9 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         # test overflow in timedelta constructor
         self.assertRaises(OverflowError, timedelta, -1 << 1000)
         self.assertRaises(OverflowError, timedelta, -999999999, 0, -1)
-        self.assertEqual(timedelta.min, timedelta(-999999999, 0, 0))
+        # no tests here for getting timedelta.min and timedelta.max from
+        # timedelta constructor, as these are already tested in
+        # test_resolution_info.
         self.assertRaises(OverflowError, timedelta, 1e9)
         self.assertRaises(OverflowError, timedelta, 1 << 1000)
 
