@@ -1322,6 +1322,46 @@ order (MRO) for bases """
         a.foo = 42
         self.assertEqual(a.__dict__, {"foo": 42})
 
+    def test_slots_special2(self):
+        # Testing __qualname__ and __classcell__ in __slots__
+        class Meta(type):
+            def __new__(cls, name, bases, namespace, attr):
+                self.assertIn(attr, namespace)
+                return super().__new__(cls, name, bases, namespace)
+
+        class C1:
+            def __init__(self):
+                self.b = 42
+        class C2(C1, metaclass=Meta, attr="__classcell__"):
+            __slots__ = ["__classcell__"]
+            def __init__(self):
+                super().__init__()
+        self.assertIsInstance(C2.__dict__["__classcell__"],
+                              types.MemberDescriptorType)
+        c = C2()
+        self.assertEqual(c.b, 42)
+        self.assertNotHasAttr(c, "__classcell__")
+        c.__classcell__ = 42
+        self.assertEqual(c.__classcell__, 42)
+        with self.assertRaises(TypeError):
+            class C3:
+                __classcell__ = 42
+                __slots__ = ["__classcell__"]
+
+        class Q1(metaclass=Meta, attr="__qualname__"):
+            __slots__ = ["__qualname__"]
+        self.assertEqual(Q1.__qualname__, C1.__qualname__[:-2] + "Q1")
+        self.assertIsInstance(Q1.__dict__["__qualname__"],
+                              types.MemberDescriptorType)
+        q = Q1()
+        self.assertNotHasAttr(q, "__qualname__")
+        q.__qualname__ = "q"
+        self.assertEqual(q.__qualname__, "q")
+        with self.assertRaises(TypeError):
+            class Q2:
+                __qualname__ = object()
+                __slots__ = ["__qualname__"]
+
     def test_slots_descriptor(self):
         # Issue2115: slot descriptors did not correctly check
         # the type of the given object
