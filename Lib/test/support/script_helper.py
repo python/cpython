@@ -14,6 +14,13 @@ from importlib.util import source_from_cache
 from test.support import make_legacy_pyc, strip_python_stderr
 
 
+RUNTIME_C_LOCALE_WARNING = (
+    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
+    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
+    "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
+    "locales is recommended."
+)
+
 # Cached result of the expensive test performed in the function below.
 __cached_interp_requires_environment = None
 
@@ -55,7 +62,7 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
         """Provide helpful details about failed subcommand runs"""
         # Limit to 80 lines to ASCII characters
         maxlen = 80 * 100
-        out, err = res.out, res.err
+        out, err = self.out, self.err
         if len(out) > maxlen:
             out = b'(... truncated stdout ...)' + out[-maxlen:]
         if len(err) > maxlen:
@@ -74,7 +81,7 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
                              "---\n"
                              "%s\n"
                              "---"
-                             % (res.rc, cmd_line,
+                             % (self.rc, cmd_line,
                                 out,
                                 err))
 

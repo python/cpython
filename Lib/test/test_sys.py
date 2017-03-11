@@ -1,5 +1,8 @@
 import unittest, test.support
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import (
+    assert_python_ok, assert_python_failure,
+    RUNTIME_C_LOCALE_WARNING
+)
 import sys, io, os
 import struct
 import subprocess
@@ -676,10 +679,13 @@ class SysModuleTest(unittest.TestCase):
             expected = None
         self.check_fsencoding(fs_encoding, expected)
 
+    _SKIP_RUNTIME_C_LOCALE_WARNING = len(RUNTIME_C_LOCALE_WARNING + "\n")
+
     def c_locale_get_error_handler(self, isolated=False, encoding=None):
         # Force the POSIX locale
         env = os.environ.copy()
         env["LC_ALL"] = "C"
+        env["PYTHONCOERCECLOCALE"] = "0"
         code = '\n'.join((
             'import sys',
             'def dump(name):',
@@ -702,7 +708,7 @@ class SysModuleTest(unittest.TestCase):
                               env=env,
                               universal_newlines=True)
         stdout, stderr = p.communicate()
-        return stdout
+        return stdout[self._SKIP_RUNTIME_C_LOCALE_WARNING:]
 
     def test_c_locale_surrogateescape(self):
         out = self.c_locale_get_error_handler(isolated=True)

@@ -8,8 +8,10 @@ import sys
 import subprocess
 import tempfile
 from test.support import script_helper, is_android
-from test.support.script_helper import (spawn_python, kill_python, assert_python_ok,
-    assert_python_failure)
+from test.support.script_helper import (
+    spawn_python, kill_python, assert_python_ok, assert_python_failure,
+    RUNTIME_C_LOCALE_WARNING
+)
 
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
@@ -150,6 +152,7 @@ class CmdLineTest(unittest.TestCase):
         env = os.environ.copy()
         # Use C locale to get ascii for the locale encoding
         env['LC_ALL'] = 'C'
+        env['PYTHONCOERCECLOCALE'] = '0'
         code = (
             b'import locale; '
             b'print(ascii("' + undecodable + b'"), '
@@ -159,17 +162,18 @@ class CmdLineTest(unittest.TestCase):
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             env=env)
         stdout, stderr = p.communicate()
+        pattern = RUNTIME_C_LOCALE_WARNING.encode() + b'\n'
         if p.returncode == 1:
             # _Py_char2wchar() decoded b'\xff' as '\udcff' (b'\xff' is not
             # decodable from ASCII) and run_command() failed on
             # PyUnicode_AsUTF8String(). This is the expected behaviour on
             # Linux.
-            pattern = b"Unable to decode the command from the command line:"
+            pattern += b"Unable to decode the command from the command line:"
         elif p.returncode == 0:
             # _Py_char2wchar() decoded b'\xff' as '\xff' even if the locale is
             # C and the locale encoding is ASCII. It occurs on FreeBSD, Solaris
             # and Mac OS X.
-            pattern = b"'\\xff' "
+            pattern += b"'\\xff' "
             # The output is followed by the encoding name, an alias to ASCII.
             # Examples: "US-ASCII" or "646" (ISO 646, on Solaris).
         else:

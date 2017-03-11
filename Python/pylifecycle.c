@@ -304,7 +304,7 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
 
 static const char *_C_LOCALE_WARNING =
     "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
-    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8 "
+    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
     "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
     "locales is recommended.\n";
 
