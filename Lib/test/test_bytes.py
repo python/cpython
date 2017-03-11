@@ -111,7 +111,6 @@ class BaseBytesTest:
         self.assertRaises(OverflowError, self.type2test, -1 << 1000)
         self.assertRaises(OverflowError, self.type2test, PY_SSIZE_T_MIN - 1)
         self.assertRaises(ValueError, self.type2test, PY_SSIZE_T_MIN)
-        self.assertRaises(ValueError, self.type2test, -1)
         self.assertRaises(OverflowError, self.type2test, PY_SSIZE_T_MAX + 1)
         self.assertRaises(OverflowError, self.type2test, 1 << 1000)
 

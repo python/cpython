@@ -1144,6 +1144,7 @@ class MixinStrUnicodeUserStringTest:
     def test_mul_c_limits(self):
         from _testcapi import PY_SSIZE_T_MAX, PY_SSIZE_T_MIN
 
+        # the following tests also test sequence_repeat in Objects/abstract.c
         self.checkraises(OverflowError, '', '__mul__', -1 << 1000)
         self.checkraises(OverflowError, '', '__mul__', PY_SSIZE_T_MIN - 1)
         self.checkequal('', 'a', '__mul__', PY_SSIZE_T_MIN)
