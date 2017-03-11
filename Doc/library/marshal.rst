@@ -57,8 +57,7 @@ The module defines these functions:
 .. function:: dump(value, file[, version])
 
    Write the value on the open file.  The value must be a supported type.  The
-   file must be an open file object opened in binary mode (``'wb'`` or
-   ``'w+b'``).
+   file must be a writeable :term:`binary file`.
 
    If the value has (or contains an object that has) an unsupported type, a
    :exc:`ValueError` exception is raised --- but garbage data will also be written
@@ -73,8 +72,7 @@ The module defines these functions:
    Read one value from the open file and return it.  If no valid value is read
    (e.g. because the data has a different Python version's incompatible marshal
    format), raise :exc:`EOFError`, :exc:`ValueError` or :exc:`TypeError`.  The
-   file must be an open file object opened in binary mode (``'rb'`` or
-   ``'r+b'``).
+   file must be a readable :term:`binary file`.
 
    .. note::
 

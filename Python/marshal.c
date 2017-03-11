@@ -1658,7 +1658,7 @@ PyDoc_STRVAR(dump_doc,
 "dump(value, file[, version])\n\
 \n\
 Write the value on the open file. The value must be a supported type.\n\
-The file must be an open file object opened in binary mode ('wb' or 'w+b').\n\
+The file must be a writeable binary file.\n\
 \n\
 If the value has (or contains an object that has) an unsupported type, a\n\
 ValueError exception is raised - but garbage data will also be written\n\
@@ -1714,8 +1714,7 @@ PyDoc_STRVAR(load_doc,
 Read one value from the open file and return it. If no valid value is\n\
 read (e.g. because the data has a different Python version's\n\
 incompatible marshal format), raise EOFError, ValueError or TypeError.\n\
-The file must be an open file object opened in binary mode ('rb' or\n\
-'r+b').\n\
+The file must be a readable binary file.\n\
 \n\
 Note: If an object containing an unsupported type was marshalled with\n\
 dump(), load() will substitute None for the unmarshallable type.");
@@ -1809,7 +1808,7 @@ Functions:\n\
 \n\
 dump() -- write value to a file\n\
 load() -- read value from a file\n\
-dumps() -- write value to a bytes object\n\
+dumps() -- marshal value as a bytes object\n\
 loads() -- read value from a bytes-like object");
 
 
