@@ -46,7 +46,7 @@ Pure paths are useful in some special cases; for example:
 Basic use
 ---------
 
-Importing the main class::
+Importing the main class:
 
    >>> from pathlib import Path
 
@@ -270,6 +270,10 @@ property:
 
 Methods and properties
 ^^^^^^^^^^^^^^^^^^^^^^
+
+.. testsetup::
+
+   from pathlib import PurePosixPath, PureWindowsPath
 
 Pure paths provide the following methods and properties:
 
@@ -655,7 +659,7 @@ call fails (for example because the path doesn't exist):
 .. method:: Path.stat()
 
    Return information about this path (similarly to :func:`os.stat`).
-   The result is looked up at each call to this method.
+   The result is looked up at each call to this method. ::
 
       >>> p = Path('setup.py')
       >>> p.stat().st_size
@@ -948,7 +952,7 @@ call fails (for example because the path doesn't exist):
 .. method:: Path.rglob(pattern)
 
    This is like calling :meth:`Path.glob` with "``**``" added in front of the
-   given *pattern*:
+   given *pattern*::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),
@@ -970,7 +974,7 @@ call fails (for example because the path doesn't exist):
    to :func:`os.path.samefile` and :func:`os.path.samestat`.
 
    An :exc:`OSError` can be raised if either file cannot be accessed for some
-   reason.
+   reason. ::
 
       >>> p = Path('spam')
       >>> q = Path('eggs')
@@ -986,7 +990,7 @@ call fails (for example because the path doesn't exist):
 
    Make this path a symbolic link to *target*.  Under Windows,
    *target_is_directory* must be true (default ``False``) if the link's target
-   is a directory.  Under POSIX, *target_is_directory*'s value is ignored.
+   is a directory.  Under POSIX, *target_is_directory*'s value is ignored. ::
 
       >>> p = Path('mylink')
       >>> p.symlink_to('setup.py')
