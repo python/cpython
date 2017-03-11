@@ -650,6 +650,12 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 #endif
 
             fmt++;
+            if (*fmt == '%') {
+                *res++ = '%';
+                fmt++;
+                fmtcnt--;
+                continue;
+            }
             if (*fmt == '(') {
                 const char *keystart;
                 Py_ssize_t keylen;
@@ -794,11 +800,9 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                                 "incomplete format");
                 goto error;
             }
-            if (c != '%') {
-                v = getnextarg(args, arglen, &argidx);
-                if (v == NULL)
-                    goto error;
-            }
+            v = getnextarg(args, arglen, &argidx);
+            if (v == NULL)
+                goto error;
 
             if (fmtcnt < 0) {
                 /* last writer: disable writer overallocation */
@@ -808,10 +812,6 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             sign = 0;
             fill = ' ';
             switch (c) {
-            case '%':
-                *res++ = '%';
-                continue;
-
             case 'r':
                 // %r is only for 2/3 code; 3 only code should use %a
             case 'a':
@@ -1017,7 +1017,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 res += (width - len);
             }
 
-            if (dict && (argidx < arglen) && c != '%') {
+            if (dict && (argidx < arglen)) {
                 PyErr_SetString(PyExc_TypeError,
                            "not all arguments converted during bytes formatting");
                 Py_XDECREF(temp);
