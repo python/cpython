@@ -43,15 +43,16 @@ The :mod:`shlex` module defines the following functions:
    string that can safely be used as one token in a shell command line, for
    cases where you cannot use a list.
 
-   This idiom would be unsafe::
+   This idiom would be unsafe:
 
       >>> filename = 'somefile; rm -rf ~'
       >>> command = 'ls -l {}'.format(filename)
       >>> print(command)  # executed by a shell: boom!
       ls -l somefile; rm -rf ~
 
-   :func:`quote` lets you plug the security hole::
+   :func:`quote` lets you plug the security hole:
 
+      >>> from shlex import quote
       >>> command = 'ls -l {}'.format(quote(filename))
       >>> print(command)
       ls -l 'somefile; rm -rf ~'
@@ -61,6 +62,7 @@ The :mod:`shlex` module defines the following functions:
 
    The quoting is compatible with UNIX shells and with :func:`split`:
 
+      >>> from shlex import split
       >>> remote_command = split(remote_command)
       >>> remote_command
       ['ssh', 'home', "ls -l 'somefile; rm -rf ~'"]
