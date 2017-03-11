@@ -660,8 +660,12 @@ Here are the methods of the :class:`Message` class:
 
       .. testsetup::
 
+         import email
          from email import message_from_binary_file
-         with open('../Lib/test/test_email/data/msg_16.txt', 'rb') as f:
+         from os.path import join, dirname
+         lib_dir = dirname(email.__file__).rstrip('/email')
+         file_path = join(lib_dir, 'test/test_email/data/msg_16.txt')
+         with open(file_path, 'rb') as f:
              msg = message_from_binary_file(f)
          from email.iterators import _structure
 
