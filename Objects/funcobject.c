@@ -416,16 +416,15 @@ static PyGetSetDef func_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
-PyDoc_STRVAR(func_doc,
-"function(code, globals[, name[, argdefs[, closure]]])\n\
-\n\
-Create a function object from a code object and a dictionary.\n\
-The optional name string overrides the name from the code object.\n\
-The optional argdefs tuple specifies the default argument values.\n\
-The optional closure tuple supplies the bindings for free variables.");
+/*[clinic input]
+class function "PyFunctionObject *" "&PyFunction_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=70af9c90aa2e71b0]*/
 
-/* func_new() maintains the following invariants for closures.  The
-   closure must correspond to the free variables of the code object.
+#include "clinic/funcobject.c.h"
+
+/* function.__new__() maintains the following invariants for closures.
+   The closure must correspond to the free variables of the code object.
 
    if len(code.co_freevars) == 0:
        closure = NULL
@@ -434,25 +433,31 @@ The optional closure tuple supplies the bindings for free variables.");
    for every elt in closure, type(elt) == cell
 */
 
+/*[clinic input]
+@classmethod
+function.__new__ as func_new
+    code: object(type="PyCodeObject *", subclass_of="&PyCode_Type")
+        a code object
+    globals: object(subclass_of="&PyDict_Type")
+        the globals dictionary
+    name: object = None
+        a string that overrides the name from the code object
+    argdefs as defaults: object = None
+        a tuple that specifies the default argument values
+    closure: object = None
+        a tuple that supplies the bindings for free variables
+
+Create a function object.
+[clinic start generated code]*/
+
 static PyObject *
-func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
+func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
+              PyObject *name, PyObject *defaults, PyObject *closure)
+/*[clinic end generated code: output=99c6d9da3a24e3be input=93611752fc2daf11]*/
 {
-    PyCodeObject *code;
-    PyObject *globals;
-    PyObject *name = Py_None;
-    PyObject *defaults = Py_None;
-    PyObject *closure = Py_None;
     PyFunctionObject *newfunc;
     Py_ssize_t nfree, nclosure;
-    static char *kwlist[] = {"code", "globals", "name",
-                             "argdefs", "closure", 0};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O!O!|OOO:function",
-                          kwlist,
-                          &PyCode_Type, &code,
-                          &PyDict_Type, &globals,
-                          &name, &defaults, &closure))
-        return NULL;
     if (name != Py_None && !PyUnicode_Check(name)) {
         PyErr_SetString(PyExc_TypeError,
                         "arg 3 (name) must be None or string");
@@ -602,8 +607,8 @@ PyTypeObject PyFunction_Type = {
     0,                                          /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
-    func_doc,                                   /* tp_doc */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    func_new__doc__,                            /* tp_doc */
     (traverseproc)func_traverse,                /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */

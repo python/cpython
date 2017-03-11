@@ -158,6 +158,36 @@ float_as_integer_ratio(PyObject *self, PyObject *Py_UNUSED(ignored))
     return float_as_integer_ratio_impl(self);
 }
 
+PyDoc_STRVAR(float_new__doc__,
+"float(x=0, /)\n"
+"--\n"
+"\n"
+"Convert a string or number to a floating point number, if possible.");
+
+static PyObject *
+float_new_impl(PyTypeObject *type, PyObject *x);
+
+static PyObject *
+float_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x = Py_False;
+
+    if ((type == &PyFloat_Type) &&
+        !_PyArg_NoKeywords("float", kwargs)) {
+        goto exit;
+    }
+    if (!PyArg_UnpackTuple(args, "float",
+        0, 1,
+        &x)) {
+        goto exit;
+    }
+    return_value = float_new_impl(type, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(float___getnewargs____doc__,
 "__getnewargs__($self, /)\n"
 "--\n"
@@ -283,4 +313,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9257442b321d6a8b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a3dafb0f6c6f1514 input=a9049054013a1b77]*/
