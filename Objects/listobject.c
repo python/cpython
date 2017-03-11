@@ -1092,7 +1092,8 @@ unsafe_object_compare(PyObject* v, PyObject* w, CompareFuncs compare_funcs)
            v->ob_type->tp_richcompare != NULL &&
            v->ob_type->tp_richcompare == compare_funcs.key_richcompare);
   #endif
-
+    if (v == w) return 1;
+    
     PyObject* res = (*compare_funcs.key_richcompare)(v, w, Py_LT);
     if (res == NULL)
         return -1;
@@ -1117,7 +1118,8 @@ unsafe_latin_compare(PyObject* v, PyObject* w, CompareFuncs compare_funcs){
            PyUnicode_KIND(v) == PyUnicode_KIND(w) &&
            PyUnicode_KIND(v) == PyUnicode_1BYTE_KIND);
   #endif
-
+    if (v == w) return 1;
+    
     int len = Py_MIN(PyUnicode_GET_LENGTH(v), PyUnicode_GET_LENGTH(w));
     int res = memcmp(PyUnicode_DATA(v), PyUnicode_DATA(w), len);
 
@@ -1137,7 +1139,8 @@ unsafe_long_compare(PyObject *v, PyObject *w, CompareFuncs compare_funcs)
            Py_ABS(Py_SIZE(v)) <= 1 &&
            Py_ABS(Py_SIZE(w)) <= 1);
   #endif
-
+    if (v == w) return 1;
+    
     PyLongObject *vl, *wl;
     vl = (PyLongObject*)v;
     wl = (PyLongObject*)w;
@@ -1161,7 +1164,8 @@ unsafe_float_compare(PyObject *v, PyObject *w, CompareFuncs compare_funcs){
     assert(v->ob_type == w->ob_type &&
            v->ob_type == &PyFloat_Type);
   #endif
-
+    if (v == w) return 1;
+    
     return PyFloat_AS_DOUBLE(v) < PyFloat_AS_DOUBLE(w);
 }
 
@@ -1180,7 +1184,8 @@ unsafe_tuple_compare(PyObject* v, PyObject* w, CompareFuncs compare_funcs)
            Py_SIZE(v) > 0 &&
            Py_SIZE(w) > 0);
   #endif
-
+    if (v == w) return 1;
+    
     PyTupleObject *vt, *wt;
     Py_ssize_t i;
     Py_ssize_t vlen, wlen;
@@ -1215,7 +1220,7 @@ unsafe_tuple_compare(PyObject* v, PyObject* w, CompareFuncs compare_funcs)
 
     /* Out of options: v[0] == w[0]! We need to look at v[1:] and w[1:].
      * We can use code copied straight from tupleobject.c:tuplerichcompare: */
-    for (i = 0; i < vlen && i < wlen; i++) {
+    for (i = 1; i < vlen && i < wlen; i++) {
         k = PyObject_RichCompareBool(vt->ob_item[i],
                                      wt->ob_item[i],
                                      Py_EQ);
