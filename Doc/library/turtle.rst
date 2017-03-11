@@ -936,10 +936,9 @@ Color control
        >>> turtle.fillcolor("violet")
        >>> turtle.fillcolor()
        'violet'
-       >>> col = turtle.pencolor()
-       >>> col
+       >>> turtle.pencolor()
        (50.0, 193.0, 143.0)
-       >>> turtle.fillcolor(col)
+       >>> turtle.fillcolor((50, 193, 143))  # Integers, not floats
        >>> turtle.fillcolor()
        (50.0, 193.0, 143.0)
        >>> turtle.fillcolor('#ffffff')
