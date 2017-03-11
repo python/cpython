@@ -17,6 +17,13 @@ class _io.StringIO "stringio *" "&PyStringIO_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=c17bc0f42165cd7d]*/
 
+/*[python input]
+class io_ssize_t_converter(CConverter):
+    type = 'Py_ssize_t'
+    converter = '_PyIO_ConvertSsize_t'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=d0a811d3cbfd1b33]*/
+
 typedef struct {
     PyObject_HEAD
     Py_UCS4 *buf;
@@ -301,7 +308,7 @@ _io_StringIO_tell_impl(stringio *self)
 
 /*[clinic input]
 _io.StringIO.read
-    size as arg: object = None
+    size: io_ssize_t = -1
     /
 
 Read at most size characters, returned as a string.
@@ -311,29 +318,14 @@ is reached. Return an empty string at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io_StringIO_read_impl(stringio *self, PyObject *arg)
-/*[clinic end generated code: output=3676864773746f68 input=9a319015f6f3965c]*/
+_io_StringIO_read_impl(stringio *self, Py_ssize_t size)
+/*[clinic end generated code: output=ae8cf6002f71626c input=bbd84248eb4ab957]*/
 {
-    Py_ssize_t size, n;
+    Py_ssize_t n;
     Py_UCS4 *output;
 
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
-
-    if (PyNumber_Check(arg)) {
-        size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
-        if (size == -1 && PyErr_Occurred())
-            return NULL;
-    }
-    else if (arg == Py_None) {
-        /* Read until EOF is reached, by default. */
-        size = -1;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
-        return NULL;
-    }
 
     /* adjust invalid sizes */
     n = self->string_size - self->pos;
@@ -388,7 +380,7 @@ _stringio_readline(stringio *self, Py_ssize_t limit)
 
 /*[clinic input]
 _io.StringIO.readline
-    size as arg: object = None
+    size: io_ssize_t = -1
     /
 
 Read until newline or EOF.
@@ -397,26 +389,14 @@ Returns an empty string if EOF is hit immediately.
 [clinic start generated code]*/
 
 static PyObject *
-_io_StringIO_readline_impl(stringio *self, PyObject *arg)
-/*[clinic end generated code: output=99fdcac03a3dee81 input=e0e0ed4042040176]*/
+_io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
+/*[clinic end generated code: output=cabd6452f1b7e85d input=04de7535f732cb3d]*/
 {
-    Py_ssize_t limit = -1;
-
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
     ENSURE_REALIZED(self);
 
-    if (PyNumber_Check(arg)) {
-        limit = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
-        if (limit == -1 && PyErr_Occurred())
-            return NULL;
-    }
-    else if (arg != Py_None) {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
-        return NULL;
-    }
-    return _stringio_readline(self, limit);
+    return _stringio_readline(self, size);
 }
 
 static PyObject *
