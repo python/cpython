@@ -74,6 +74,17 @@ static const double pi = 3.141592653589793238462643383279502884197;
 static const double sqrtpi = 1.772453850905516027298167483341145182798;
 static const double logpi = 1.144729885849400174143427351353058711647;
 
+#ifndef __APPLE__
+#  ifdef HAVE_TGAMMA
+#    define USE_TGAMMA
+#  endif
+#  ifdef HAVE_LGAMMA
+#    define USE_LGAMMA
+#  endif
+#endif
+
+#if !defined(USE_TGAMMA) || !defined(USE_LGAMMA)
+
 static double
 sinpi(double x)
 {
@@ -230,6 +241,7 @@ lanczos_sum(double x)
     }
     return num/den;
 }
+#endif /* !defined(USE_TGAMMA) || !defined(USE_LGAMMA) */
 
 /* Constant for +infinity, generated in the same way as float('inf'). */
 
@@ -263,6 +275,14 @@ m_nan(void)
 static double
 m_tgamma(double x)
 {
+#ifdef USE_TGAMMA
+    if (x == 0.0) {
+        errno = EDOM;
+        /* tgamma(+-0.0) = +-inf, divide-by-zero */
+        return copysign(Py_HUGE_VAL, x);
+    }
+    return tgamma(x);
+#else
     double absx, r, y, z, sqrtpow;
 
     /* special cases */
@@ -354,6 +374,7 @@ m_tgamma(double x)
     if (Py_IS_INFINITY(r))
         errno = ERANGE;
     return r;
+#endif
 }
 
 /*
@@ -364,7 +385,17 @@ m_tgamma(double x)
 static double
 m_lgamma(double x)
 {
-    double r, absx;
+    double r;
+
+#ifdef USE_LGAMMA
+    r = lgamma(x);
+    if (errno == ERANGE && x == floor(x) && x <= 0.0) {
+        errno = EDOM;           /* lgamma(n) = inf, divide-by-zero for */
+        return Py_HUGE_VAL;     /* integers n <= 0 */
+    }
+    return r;
+#else
+    double absx;
 
     /* special cases */
     if (!Py_IS_FINITE(x)) {
@@ -402,7 +433,10 @@ m_lgamma(double x)
     if (Py_IS_INFINITY(r))
         errno = ERANGE;
     return r;
+#endif
 }
+
+#if !defined(HAVE_ERF) || !defined(HAVE_ERFC)
 
 /*
    Implementations of the error function erf(x) and the complementary error
@@ -513,11 +547,16 @@ m_erfc_contfrac(double x)
     return result;
 }
 
+#endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
+
 /* Error function erf(x), for general x */
 
 static double
 m_erf(double x)
 {
+#ifdef HAVE_ERF
+    return erf(x);
+#else
     double absx, cf;
 
     if (Py_IS_NAN(x))
@@ -529,6 +568,7 @@ m_erf(double x)
         cf = m_erfc_contfrac(absx);
         return x > 0.0 ? 1.0 - cf : cf - 1.0;
     }
+#endif
 }
 
 /* Complementary error function erfc(x), for general x. */
@@ -536,6 +576,9 @@ m_erf(double x)
 static double
 m_erfc(double x)
 {
+#ifdef HAVE_ERFC
+    return erfc(x);
+#else
     double absx, cf;
 
     if (Py_IS_NAN(x))
@@ -547,6 +590,7 @@ m_erfc(double x)
         cf = m_erfc_contfrac(absx);
         return x > 0.0 ? cf : 2.0 - cf;
     }
+#endif
 }
 
 /*

@@ -270,6 +270,9 @@ Extension Modules
 Library
 -------
 
+- bpo-26121: Use C library implementation for math functions:
+  tgamma(), lgamma(), erf() and erfc().
+
 - bpo-29619: os.stat() and os.DirEntry.inode() now convert inode (st_ino) using
   unsigned integers.
 
