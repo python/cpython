@@ -369,6 +369,10 @@ Random generation
 Certificate handling
 ^^^^^^^^^^^^^^^^^^^^
 
+.. testsetup::
+
+   import ssl
+
 .. function:: match_hostname(cert, hostname)
 
    Verify that *cert* (in decoded format as returned by
@@ -1378,6 +1382,7 @@ to speed up repeated connections from the same clients.
          'strength_bits': 128}]
 
    On OpenSSL 1.1 and newer the cipher dict contains additional fields::
+
        >>> ctx.get_ciphers()  # OpenSSL 1.1+
        [{'aead': True,
          'alg_bits': 256,
@@ -1638,7 +1643,7 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       :attr:`SSLContext.options` returns :class:`Options` flags:
 
-         >>> ssl.create_default_context().options
+         >>> ssl.create_default_context().options  # doctest: +SKIP
          <Options.OP_ALL|OP_NO_SSLv3|OP_NO_SSLv2|OP_NO_COMPRESSION: 2197947391>
 
 .. attribute:: SSLContext.protocol
@@ -1658,7 +1663,7 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       :attr:`SSLContext.verify_flags` returns :class:`VerifyFlags` flags:
 
-         >>> ssl.create_default_context().verify_flags
+         >>> ssl.create_default_context().verify_flags  # doctest: +SKIP
          <VerifyFlags.VERIFY_X509_TRUSTED_FIRST: 32768>
 
 .. attribute:: SSLContext.verify_mode
