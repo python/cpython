@@ -1935,9 +1935,8 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
          /* Check that negative offset is low enough to fit data */
         if (offset + soself->s_size > 0) {
             PyErr_Format(StructError,
-                         "pack_into requires negative offset not higher "
-                         "than %zd (actual offset is %zd)",
-                         -soself->s_size,
+                         "No space to pack %zd bytes at offset %zd",
+                         soself->s_size,
                          offset);
             PyBuffer_Release(&buffer);
             return NULL;
@@ -1946,10 +1945,9 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
         /* Check that negative offset is not crossing buffer boundary */
         if (offset + buffer.len < 0) {
             PyErr_Format(StructError,
-                         "pack_into requires negative offset not lower "
-                         "than %zd (actual offset is %zd)",
-                         -buffer.len,
-                         offset);
+                         "Offset %zd out of range for %zd-byte buffer",
+                         offset,
+                         buffer.len);
             PyBuffer_Release(&buffer);
             return NULL;
         }
