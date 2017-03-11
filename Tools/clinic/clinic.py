@@ -2042,7 +2042,6 @@ __rmatmul__
 __rmod__
 __rmul__
 __ror__
-__round__
 __rpow__
 __rrshift__
 __rshift__

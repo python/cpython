@@ -97,6 +97,12 @@ New Modules
 Improved Modules
 ================
 
+os
+--
+
+Added support for :class:`bytes` paths in :func:`~os.fwalk`.
+(Contributed by Serhiy Storchaka in :issue:`28682`.)
+
 unittest.mock
 -------------
 
@@ -186,6 +192,10 @@ API and Feature Removals
 * The ``splitunc()`` function in the :mod:`ntpath` module was deprecated in
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
   function instead.
+
+* Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
+  longer take keyword arguments.  The first argument of :func:`int` can now
+  be passes only as positional argument.
 
 
 Porting to Python 3.7
