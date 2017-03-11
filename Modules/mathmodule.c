@@ -74,7 +74,16 @@ static const double pi = 3.141592653589793238462643383279502884197;
 static const double sqrtpi = 1.772453850905516027298167483341145182798;
 static const double logpi = 1.144729885849400174143427351353058711647;
 
-#if !defined(HAVE_TGAMMA) || !defined(HAVE_LGAMMA)
+#ifndef __APPLE__
+#  ifdef HAVE_TGAMMA
+#    define USE_TGAMMA
+#  endif
+#  ifdef HAVE_LGAMMA
+#    define USE_LGAMMA
+#  endif
+#endif
+
+#if !defined(USE_TGAMMA) || !defined(USE_LGAMMA)
 
 static double
 sinpi(double x)
@@ -232,7 +241,7 @@ lanczos_sum(double x)
     }
     return num/den;
 }
-#endif /* !defined(HAVE_TGAMMA) || !defined(HAVE_LGAMMA) */
+#endif /* !defined(USE_TGAMMA) || !defined(USE_LGAMMA) */
 
 /* Constant for +infinity, generated in the same way as float('inf'). */
 
@@ -266,7 +275,7 @@ m_nan(void)
 static double
 m_tgamma(double x)
 {
-#ifdef HAVE_TGAMMA
+#ifdef USE_TGAMMA
     if (x == 0.0) {
         errno = EDOM;
         /* tgamma(+-0.0) = +-inf, divide-by-zero */
@@ -378,7 +387,7 @@ m_lgamma(double x)
 {
     double r;
 
-#ifdef HAVE_LGAMMA
+#ifdef USE_LGAMMA
     r = lgamma(x);
     if (errno == ERANGE && x == floor(x) && x <= 0.0) {
         errno = EDOM;           /* lgamma(n) = inf, divide-by-zero for */
