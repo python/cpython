@@ -62,6 +62,25 @@ objects.
    variable that might be traversed during garbage collection.
 
 
+.. c:function:: void Py_SETREF(PyObject *op, PyObject *op2)
+
+   Replace *op* with *op2*. This macro will decrement the reference count for
+   the original *op* after the replacement and the reference count for *op2*
+   is unchanged.
+
+   .. versionadded:: 3.5
+
+
+.. c:function:: void Py_XSETREF(PyObject *op, PyObject *op2)
+
+   Replace *op* with *op2*. This macro will decrement the reference count for
+   the original *op* after the replacement and the reference count for *op2*
+   is unchanged. *op* may be *NULL*, otherwise it is identical to
+   :c:func:`Py_SETREF`.
+
+   .. versionadded:: 3.5
+
+
 The following functions are for runtime dynamic embedding of Python:
 ``Py_IncRef(PyObject *o)``, ``Py_DecRef(PyObject *o)``. They are
 simply exported function versions of :c:func:`Py_XINCREF` and
