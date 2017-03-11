@@ -696,6 +696,17 @@ a temporary variable.
    >>> f"newline: {newline}"
    'newline: 10'
 
+Formatted string literals cannot be used as docstrings, even if they do not
+include expressions.
+
+::
+
+   >>> def foo():
+   ...     f"Not a docstring"
+   ...
+   >>> foo.__doc__ is None
+   True
+
 See also :pep:`498` for the proposal that added formatted string literals,
 and :meth:`str.format`, which uses a related format string mechanism.
 
