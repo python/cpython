@@ -2,6 +2,42 @@
 Python News
 +++++++++++
 
+What's New in Python 3.6.1 final?
+=================================
+
+*Release date: XXXX-XX-XX*
+
+Core and Builtins
+-----------------
+
+- bpo-29723: The ``sys.path[0]`` initialization change for bpo-29139 caused a
+  regression by revealing an inconsistency in how sys.path is initialized when
+  executing ``__main__`` from a zipfile, directory, or other import location.
+  The interpreter now consistently avoids ever adding the import location's
+  parent directory to ``sys.path``, and ensures no other ``sys.path`` entries
+  are inadvertently modified when inserting the import location named on the
+  command line.
+
+- bpo-29714: Fix a regression that bytes format may fail when containing zero
+  bytes inside.
+
+Library
+-------
+
+- bpo-28298: Fix a bug that prevented array 'Q', 'L' and 'I' from accepting big
+  intables (objects that have __int__) as elements.  Patch by Oren Milman.
+
+- bpo-28231: The zipfile module now accepts path-like objects for external
+  paths.
+
+- bpo-26915: index() and count() methods of collections.abc.Sequence now
+  check identity before checking equality when do comparisons.
+
+- bpo-29615: SimpleXMLRPCDispatcher no longer chains KeyError (or any other
+  exception) to exception(s) raised in the dispatched methods.
+  Patch by Petr Motejlek.
+
+
 What's New in Python 3.6.1 release candidate 1
 ==============================================
 
