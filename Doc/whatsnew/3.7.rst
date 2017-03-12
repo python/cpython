@@ -180,6 +180,10 @@ Deprecated
   both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`. (Contributed
   by Matthias Bussonnier in :issue:`29576`)
 
+- Using non-integer value for selecting a plural form in :mod:`gettext` is
+  now deprecated.  It never correctly worked.
+  (Contributed by Serhiy Storchaka in :issue:`28692`.)
+
 
 Removed
 =======
