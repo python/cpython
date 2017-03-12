@@ -2293,7 +2293,7 @@ bytes_decode_impl(PyBytesObject *self, const char *encoding,
 /*[clinic input]
 bytes.splitlines
 
-    keepends: int(c_default="0") = False
+    keepends: bool(accept={int}) = False
 
 Return a list of the lines in the bytes, breaking at line boundaries.
 
@@ -2303,7 +2303,7 @@ true.
 
 static PyObject *
 bytes_splitlines_impl(PyBytesObject *self, int keepends)
-/*[clinic end generated code: output=3484149a5d880ffb input=7f4aac67144f9944]*/
+/*[clinic end generated code: output=3484149a5d880ffb input=a8b32eb01ff5a5ed]*/
 {
     return stringlib_splitlines(
         (PyObject*) self, PyBytes_AS_STRING(self),

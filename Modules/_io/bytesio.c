@@ -8,6 +8,13 @@ class _io.BytesIO "bytesio *" "&PyBytesIO_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=7f50ec034f5c0b26]*/
 
+/*[python input]
+class io_ssize_t_converter(CConverter):
+    type = 'Py_ssize_t'
+    converter = '_PyIO_ConvertSsize_t'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=d0a811d3cbfd1b33]*/
+
 typedef struct {
     PyObject_HEAD
     PyObject *buf;
@@ -374,7 +381,7 @@ read_bytes(bytesio *self, Py_ssize_t size)
 
 /*[clinic input]
 _io.BytesIO.read
-    size as arg: object = None
+    size: io_ssize_t = -1
     /
 
 Read at most size bytes, returned as a bytes object.
@@ -384,27 +391,12 @@ Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_read_impl(bytesio *self, PyObject *arg)
-/*[clinic end generated code: output=85dacb535c1e1781 input=cc7ba4a797bb1555]*/
+_io_BytesIO_read_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=9cc025f21c75bdd2 input=c81ec53b8f2cc3cf]*/
 {
-    Py_ssize_t size, n;
+    Py_ssize_t n;
 
     CHECK_CLOSED(self);
-
-    if (PyLong_Check(arg)) {
-        size = PyLong_AsSsize_t(arg);
-        if (size == -1 && PyErr_Occurred())
-            return NULL;
-    }
-    else if (arg == Py_None) {
-        /* Read until EOF is reached, by default. */
-        size = -1;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
-        return NULL;
-    }
 
     /* adjust invalid sizes */
     n = self->string_size - self->pos;
@@ -420,7 +412,7 @@ _io_BytesIO_read_impl(bytesio *self, PyObject *arg)
 
 /*[clinic input]
 _io.BytesIO.read1
-    size: object(c_default="Py_None") = -1
+    size: io_ssize_t = -1
     /
 
 Read at most size bytes, returned as a bytes object.
@@ -430,15 +422,15 @@ Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_read1_impl(bytesio *self, PyObject *size)
-/*[clinic end generated code: output=a60d80c84c81a6b8 input=0951874bafee8e80]*/
+_io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=d0f843285aa95f1c input=67cf18b142111664]*/
 {
     return _io_BytesIO_read_impl(self, size);
 }
 
 /*[clinic input]
 _io.BytesIO.readline
-    size as arg: object = None
+    size: io_ssize_t = -1
     /
 
 Next line from the file, as a bytes object.
@@ -449,27 +441,12 @@ Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_readline_impl(bytesio *self, PyObject *arg)
-/*[clinic end generated code: output=1c2115534a4f9276 input=ca31f06de6eab257]*/
+_io_BytesIO_readline_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=4bff3c251df8ffcd input=7c95bd3f9e9d1646]*/
 {
-    Py_ssize_t size, n;
+    Py_ssize_t n;
 
     CHECK_CLOSED(self);
-
-    if (PyLong_Check(arg)) {
-        size = PyLong_AsSsize_t(arg);
-        if (size == -1 && PyErr_Occurred())
-            return NULL;
-    }
-    else if (arg == Py_None) {
-        /* No size limit, by default. */
-        size = -1;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
-        return NULL;
-    }
 
     n = scan_eol(self, size);
 
@@ -597,19 +574,15 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *arg)
     CHECK_CLOSED(self);
     CHECK_EXPORTS(self);
 
-    if (PyLong_Check(arg)) {
-        size = PyLong_AsSsize_t(arg);
-        if (size == -1 && PyErr_Occurred())
-            return NULL;
-    }
-    else if (arg == Py_None) {
+    if (arg == Py_None) {
         /* Truncate to current position if no argument is passed. */
         size = self->pos;
     }
     else {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
-        return NULL;
+        size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
+        if (size == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
     }
 
     if (size < 0) {

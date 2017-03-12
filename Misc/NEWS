@@ -272,6 +272,9 @@ Library
 
 - bpo-10030: Sped up reading encrypted ZIP files by 2 times.
 
+- bpo-26121: Use C library implementation for math functions:
+  tgamma(), lgamma(), erf() and erfc().
+
 - bpo-29619: os.stat() and os.DirEntry.inode() now convert inode (st_ino) using
   unsigned integers.
 
@@ -908,6 +911,10 @@ Build
 
 Tools/Demos
 -----------
+
+- bpo-24037: Argument Clinic now uses the converter `bool(accept={int})` rather
+  than `int` for semantical booleans.  This avoids repeating the default
+  value for Python and C and will help in converting to `bool` in future.
 
 - Issue #29367: python-gdb.py now supports also ``method-wrapper``
   (``wrapperobject``) objects.

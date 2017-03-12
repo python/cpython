@@ -387,13 +387,13 @@ _winapi_CloseHandle_impl(PyObject *module, HANDLE handle)
 _winapi.ConnectNamedPipe
 
     handle: HANDLE
-    overlapped as use_overlapped: int(c_default='0') = False
+    overlapped as use_overlapped: bool(accept={int}) = False
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
                               int use_overlapped)
-/*[clinic end generated code: output=335a0e7086800671 input=edc83da007ebf3be]*/
+/*[clinic end generated code: output=335a0e7086800671 input=34f937c1c86e5e68]*/
 {
     BOOL success;
     OverlappedObject *overlapped = NULL;
@@ -1161,13 +1161,13 @@ _winapi.ReadFile
 
     handle: HANDLE
     size: int
-    overlapped as use_overlapped: int(c_default='0') = False
+    overlapped as use_overlapped: bool(accept={int}) = False
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
                       int use_overlapped)
-/*[clinic end generated code: output=492029ca98161d84 input=8dd810194e86ac7d]*/
+/*[clinic end generated code: output=492029ca98161d84 input=3f0fde92f74de59a]*/
 {
     DWORD nread;
     PyObject *buf;
@@ -1413,13 +1413,13 @@ _winapi.WriteFile
 
     handle: HANDLE
     buffer: object
-    overlapped as use_overlapped: int(c_default='0') = False
+    overlapped as use_overlapped: bool(accept={int}) = False
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
                        int use_overlapped)
-/*[clinic end generated code: output=2ca80f6bf3fa92e3 input=51846a5af52053fd]*/
+/*[clinic end generated code: output=2ca80f6bf3fa92e3 input=11eae2a03aa32731]*/
 {
     Py_buffer _buf, *buf;
     DWORD len, written;
