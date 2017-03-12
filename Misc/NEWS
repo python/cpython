@@ -910,6 +910,10 @@ Build
 Tools/Demos
 -----------
 
+- bpo-24037: Argument Clinic now uses the converter `bool(accept={int})` rather
+  than `int` for semantical booleans.  This avoids repeating the default
+  value for Python and C and will help in converting to `bool` in future.
+
 - Issue #29367: python-gdb.py now supports also ``method-wrapper``
   (``wrapperobject``) objects.
 
