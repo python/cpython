@@ -1488,6 +1488,9 @@ class URLopener_Tests(unittest.TestCase):
 class RequestTests(unittest.TestCase):
     """Unit tests for urllib.request.Request."""
 
+    """def setUp(self):
+        self.Request = urllib.request.Request"""
+
     def test_default_values(self):
         Request = urllib.request.Request
         request = Request("http://www.python.org")
@@ -1507,7 +1510,7 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(request.get_method(), 'GET')
         request.method = 'HEAD'
         self.assertEqual(request.get_method(), 'HEAD')
-        headers = {
+        """headers = {
             'User-agent':  ('Mozilla/5.0 (X11; Linux i686; rv:10.0) '
                             'Gecko/20100101 Firefox/10.0')
         }
@@ -1517,6 +1520,16 @@ class RequestTests(unittest.TestCase):
             request.get_header('User-agent'),
             headers['User-agent']
         )
+        self.assertFalse(request.has_header('Content-type'))
+        self.assertEqual(request.get_header('Content-type'), None)
+
+        request.add_header('Content-type', 'text/html; charset=utf-8')
+
+        self.assertTrue(request.has_header('Content-type'))
+        self.assertEqual(
+            request.get_header('User-agent'),
+            headers['User-agent']
+        )"""
 
 
 class URL2PathNameTests(unittest.TestCase):
