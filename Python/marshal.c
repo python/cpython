@@ -549,7 +549,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_lnotab, p);
     }
     else if (PyObject_CheckBuffer(v)) {
-        /* Write unknown bytes-like objects as a byte string */
+        /* Write unknown bytes-like objects as a bytes object */
         Py_buffer view;
         if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) != 0) {
             w_byte(TYPE_UNKNOWN, p);
@@ -1086,7 +1086,7 @@ r_object(RFILE *p)
             if (PyErr_Occurred())
                 break;
             if (n < 0 || n > SIZE32_MAX) {
-                PyErr_SetString(PyExc_ValueError, "bad marshal data (string size out of range)");
+                PyErr_SetString(PyExc_ValueError, "bad marshal data (bytes object size out of range)");
                 break;
             }
             v = PyBytes_FromStringAndSize((char *)NULL, n);
@@ -1110,7 +1110,7 @@ r_object(RFILE *p)
         if (PyErr_Occurred())
             break;
         if (n < 0 || n > SIZE32_MAX) {
-            PyErr_SetString(PyExc_ValueError, "bad marshal data (unicode size out of range)");
+            PyErr_SetString(PyExc_ValueError, "bad marshal data (string size out of range)");
             break;
         }
         goto _read_ascii;
@@ -1150,7 +1150,7 @@ r_object(RFILE *p)
         if (PyErr_Occurred())
             break;
         if (n < 0 || n > SIZE32_MAX) {
-            PyErr_SetString(PyExc_ValueError, "bad marshal data (unicode size out of range)");
+            PyErr_SetString(PyExc_ValueError, "bad marshal data (string size out of range)");
             break;
         }
         if (n != 0) {
@@ -1612,7 +1612,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
         if (wf.ptr - base > PY_SSIZE_T_MAX) {
             Py_DECREF(wf.str);
             PyErr_SetString(PyExc_OverflowError,
-                            "too much marshal data for a string");
+                            "too much marshal data for a bytes object");
             return NULL;
         }
         if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
@@ -1658,8 +1658,7 @@ PyDoc_STRVAR(dump_doc,
 "dump(value, file[, version])\n\
 \n\
 Write the value on the open file. The value must be a supported type.\n\
-The file must be an open file object such as sys.stdout or returned by\n\
-open() or os.popen(). It must be opened in binary mode ('wb' or 'w+b').\n\
+The file must be a writeable binary file.\n\
 \n\
 If the value has (or contains an object that has) an unsupported type, a\n\
 ValueError exception is raised - but garbage data will also be written\n\
@@ -1715,8 +1714,7 @@ PyDoc_STRVAR(load_doc,
 Read one value from the open file and return it. If no valid value is\n\
 read (e.g. because the data has a different Python version's\n\
 incompatible marshal format), raise EOFError, ValueError or TypeError.\n\
-The file must be an open file object opened in binary mode ('rb' or\n\
-'r+b').\n\
+The file must be a readable binary file.\n\
 \n\
 Note: If an object containing an unsupported type was marshalled with\n\
 dump(), load() will substitute None for the unmarshallable type.");
@@ -1735,7 +1733,7 @@ marshal_dumps(PyObject *self, PyObject *args)
 PyDoc_STRVAR(dumps_doc,
 "dumps(value[, version])\n\
 \n\
-Return the string that would be written to a file by dump(value, file).\n\
+Return the bytes object that would be written to a file by dump(value, file).\n\
 The value must be a supported type. Raise a ValueError exception if\n\
 value has (or contains an object that has) an unsupported type.\n\
 \n\
@@ -1771,8 +1769,8 @@ marshal_loads(PyObject *self, PyObject *args)
 PyDoc_STRVAR(loads_doc,
 "loads(bytes)\n\
 \n\
-Convert the bytes object to a value. If no valid value is found, raise\n\
-EOFError, ValueError or TypeError. Extra characters in the input are\n\
+Convert the bytes-like object to a value. If no valid value is found,\n\
+raise EOFError, ValueError or TypeError. Extra bytes in the input are\n\
 ignored.");
 
 static PyMethodDef marshal_methods[] = {
@@ -1810,8 +1808,8 @@ Functions:\n\
 \n\
 dump() -- write value to a file\n\
 load() -- read value from a file\n\
-dumps() -- write value to a string\n\
-loads() -- read value from a string");
+dumps() -- marshal value as a bytes object\n\
+loads() -- read value from a bytes-like object");
 
 
 
