@@ -12,7 +12,6 @@ import untabify
 
 SRCDIR = sysconfig.get_config_var('srcdir')
 
-
 def n_files_str(count):
     """Return 'N file(s)' with the proper plurality on 'file'."""
     return "{} file{}".format(count, "s" if count != 1 else "")
@@ -50,32 +49,86 @@ def mq_patches_applied():
         st.stderr.close()
 
 
+def get_git_branch():
+    """Get the symbolic name for the current git branch"""
+    cmd = "git rev-parse --abbrev-ref HEAD".split()
+    try:
+        return subprocess.check_output(cmd, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError:
+        return None
+
+
+def get_git_upstream_remote():
+    """Get the remote name to use for upstream branches
+
+    Uses "upstream" if it exists, "origin" otherwise
+    """
+    cmd = "git remote get-url upstream".split()
+    try:
+        subprocess.check_output(cmd, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError:
+        return "origin"
+    return "upstream"
+
+
+@status("Getting base branch for PR",
+        info=lambda x: x if x is not None else "not a PR branch")
+def get_base_branch():
+    if not os.path.isdir(os.path.join(SRCDIR, '.git')):
+        # Not a git checkout, so there's no base branch
+        return None
+    version = sys.version_info
+    if version.releaselevel == 'alpha':
+        base_branch = "master"
+    else:
+        base_branch = "{0.major}.{0.minor}".format(version)
+    this_branch = get_git_branch()
+    if this_branch is None or this_branch == base_branch:
+        # Not on a git PR branch, so there's no base branch
+        return None
+    upstream_remote = get_git_upstream_remote()
+    return upstream_remote + "/" + base_branch
+
+
 @status("Getting the list of files that have been added/changed",
         info=lambda x: n_files_str(len(x)))
-def changed_files():
-    """Get the list of changed or added files from the VCS."""
+def changed_files(base_branch=None):
+    """Get the list of changed or added files from Mercurial or git."""
     if os.path.isdir(os.path.join(SRCDIR, '.hg')):
-        vcs = 'hg'
+        if base_branch is not None:
+            sys.exit('need a git checkout to check PR status')
         cmd = 'hg status --added --modified --no-status'
         if mq_patches_applied():
             cmd += ' --rev qparent'
-    elif os.path.isdir('.svn'):
-        vcs = 'svn'
-        cmd = 'svn status --quiet --non-interactive --ignore-externals'
+        st = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+        try:
+            return [x.decode().rstrip() for x in st.stdout]
+        finally:
+            st.stdout.close()
+    elif os.path.isdir(os.path.join(SRCDIR, '.git')):
+        if base_branch:
+            cmd = 'git diff --name-status ' + base_branch
+        else:
+            cmd = 'git status --porcelain'
+        filenames = []
+        st = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+        try:
+            for line in st.stdout:
+                line = line.decode().rstrip()
+                status_text, filename = line.split(None, 1)
+                status = set(status_text)
+                # modified, added or unmerged files
+                if not status.intersection('MAU'):
+                    continue
+                if ' -> ' in filename:
+                    # file is renamed
+                    filename = filename.split(' -> ', 2)[1].strip()
+                filenames.append(filename)
+        finally:
+            st.stdout.close()
+        return filenames
     else:
         sys.exit('need a checkout to get modified files')
-
-    st = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-    try:
-        st.wait()
-        if vcs == 'hg':
-            return [x.decode().rstrip() for x in st.stdout]
-        else:
-            output = (x.decode().rstrip().rsplit(None, 1)[-1]
-                      for x in st.stdout if x[0] in 'AM')
-        return set(path for path in output if os.path.isfile(path))
-    finally:
-        st.stdout.close()
 
 
 def report_modified_files(file_paths):
@@ -154,7 +207,8 @@ def reported_news(file_paths):
 
 
 def main():
-    file_paths = changed_files()
+    base_branch = get_base_branch()
+    file_paths = changed_files(base_branch)
     python_files = [fn for fn in file_paths if fn.endswith('.py')]
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
