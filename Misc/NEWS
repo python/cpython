@@ -335,6 +335,9 @@ Library
 - bpo-28518: Start a transaction implicitly before a DML statement.
   Patch by Aviv Palivoda.
 
+- bpo-29742: get_extra_info() raises exception if get called on closed ssl transport.
+  Patch by Nikolay Kim.
+
 - Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
   '~' in the set of characters that is not quoted by default. Patch by
   Christian Theune and Ratnadeep Debnath.
