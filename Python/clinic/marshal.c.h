@@ -11,8 +11,7 @@ PyDoc_STRVAR(marshal_dump__doc__,
 "  value\n"
 "    Must be a supported type.\n"
 "  file\n"
-"    Must be an open file object such as sys.stdout or returned by open()\n"
-"    or os.popen().  It must be opened in binary mode (\'wb\' or \'w+b\').\n"
+"    Must be a writeable binary file.\n"
 "  version\n"
 "    Indicates the data format that dump should use.\n"
 "\n"
@@ -56,7 +55,7 @@ PyDoc_STRVAR(marshal_load__doc__,
 "Read one value from the open file and return it.\n"
 "\n"
 "  file\n"
-"    Must be an open file object opened in binary mode (\'rb\' or \'r+b\')\n"
+"    Must be readable binary file.\n"
 "\n"
 "If no valid value is read (e.g. because the data has a different Python\n"
 "version\'s incompatible marshal format), raise EOFError, ValueError or\n"
@@ -72,7 +71,7 @@ PyDoc_STRVAR(marshal_dumps__doc__,
 "dumps($module, value, version=version, /)\n"
 "--\n"
 "\n"
-"Return the string that would be written to a file by dump(value, file).\n"
+"Return the bytes object that would be written to a file by dump(value, file).\n"
 "\n"
 "  value\n"
 "    Must be a supported type.\n"
@@ -113,10 +112,10 @@ PyDoc_STRVAR(marshal_loads__doc__,
 "loads($module, bytes, /)\n"
 "--\n"
 "\n"
-"Convert the bytes object to a value.\n"
+"Convert the bytes-like object to a value.\n"
 "\n"
 "If no valid value is found, raise EOFError, ValueError or TypeError.  Extra\n"
-"characters in the input are ignored.");
+"bytes in the input are ignored.");
 
 #define MARSHAL_LOADS_METHODDEF    \
     {"loads", (PyCFunction)marshal_loads, METH_O, marshal_loads__doc__},
@@ -143,4 +142,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=c9a4fdb39afcd0c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9dec2158b8c5d975 input=a9049054013a1b77]*/
