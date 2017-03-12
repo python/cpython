@@ -105,7 +105,10 @@ def changed_files(base_branch=None):
             return [x.decode().rstrip() for x in st.stdout]
         finally:
             st.stdout.close()
-    elif os.path.isdir(os.path.join(SRCDIR, '.git')):
+    elif os.path.exists(os.path.join(SRCDIR, '.git')):
+        # We just use an existence check here as:
+        #  directory = normal git checkout/clone
+        #  file = git worktree directory
         if base_branch:
             cmd = 'git diff --name-status ' + base_branch
         else:
