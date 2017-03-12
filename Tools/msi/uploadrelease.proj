@@ -8,6 +8,7 @@
         <DownloadUrlBase Condition="'$(DownloadUrlBase)' == ''">$(TARGET)</DownloadUrlBase>
         <DownloadUrlBase Condition="'$(DownloadUrlBase)' == ''">/srv/www.python.org/ftp/python</DownloadUrlBase>
         <IncludeDoc Condition="'$(IncludeDoc)' == ''">true</IncludeDoc>
+        <BuildForRelease Condition="'$(BuildForRelease)' == ''">true</BuildForRelease>
         <DryRun Condition="'$(DryRun)' == ''">false</DryRun>
         <Purge Condition="'$(Purge)' == ''">false</Purge>
     </PropertyGroup>
@@ -91,6 +92,7 @@ echo." />
         <RemoveDir Directories="%(WebInstaller.LayoutDir)" />
         <RemoveDir Directories="%(WebInstaller.SourceDir)" />
         <RemoveDir Directories="%(WebInstaller.LogDir)" />
+        <Message Text="Successfully downloaded %(WebInstaller.Filename)%(WebInstaller.Extension) layout" Importance="high" />
     </Target>
     
     <Target Name="Upload" DependsOnTargets="_ValidateProperties;_RunGpg;_PrintNames;_Upload;_Purge" />
