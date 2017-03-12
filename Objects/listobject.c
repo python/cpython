@@ -1506,7 +1506,8 @@ merge_getmem(MergeState *ms, Py_ssize_t need)
  * successful, -1 if error.
  */
 static Py_ssize_t
-merge_lo(MergeState *ms, sortslice ssa, Py_ssize_t na, sortslice ssb, Py_ssize_t nb)
+merge_lo(MergeState *ms, sortslice ssa, Py_ssize_t na,
+	 sortslice ssb, Py_ssize_t nb)
 {
     Py_ssize_t k;
     sortslice dest;
@@ -1637,7 +1638,8 @@ CopyB:
  * successful, -1 if error.
  */
 static Py_ssize_t
-merge_hi(MergeState *ms, sortslice ssa, Py_ssize_t na, sortslice ssb, Py_ssize_t nb)
+merge_hi(MergeState *ms, sortslice ssa, Py_ssize_t na,
+	 sortslice ssb, Py_ssize_t nb)
 {
     Py_ssize_t k;
     sortslice dest, basea, baseb;
