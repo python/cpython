@@ -12,7 +12,6 @@ import untabify
 
 SRCDIR = sysconfig.get_config_var('srcdir')
 
-
 def n_files_str(count):
     """Return 'N file(s)' with the proper plurality on 'file'."""
     return "{} file{}".format(count, "s" if count != 1 else "")
@@ -46,27 +45,73 @@ def mq_patches_applied():
         return st.returncode == 0 and bstdout
 
 
+def get_git_branch():
+    """Get the symbolic name for the current git branch"""
+    cmd = "git rev-parse --abbrev-ref HEAD".split()
+    try:
+        return subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError:
+        return None
+
+
+def get_git_upstream_remote():
+    """Get the remote name to use for upstream branches
+
+    Uses "upstream" if it exists, "origin" otherwise
+    """
+    cmd = "git remote get-url upstream".split()
+    try:
+        subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError:
+        return "origin"
+    return "upstream"
+
+
+@status("Getting base branch for PR",
+        info=lambda x: x if x is not None else "not a PR branch")
+def get_base_branch():
+    if not os.path.isdir(os.path.join(SRCDIR, '.git')):
+        # Not a git checkout, so there's no base branch
+        return None
+    version = sys.version_info
+    if version.releaselevel == 'alpha':
+        base_branch = "master"
+    else:
+        base_branch = "{0.major}.{0.minor}".format(version)
+    this_branch = get_git_branch()
+    if this_branch is None or this_branch == base_branch:
+        # Not on a git PR branch, so there's no base branch
+        return None
+    upstream_remote = get_git_upstream_remote()
+    return upstream_remote + "/" + base_branch
+
+
 @status("Getting the list of files that have been added/changed",
         info=lambda x: n_files_str(len(x)))
-def changed_files():
+def changed_files(base_branch=None):
     """Get the list of changed or added files from Mercurial or git."""
     if os.path.isdir(os.path.join(SRCDIR, '.hg')):
+        if base_branch is not None:
+            sys.exit('need a git checkout to check PR status')
         cmd = 'hg status --added --modified --no-status'
         if mq_patches_applied():
             cmd += ' --rev qparent'
         with subprocess.Popen(cmd.split(), stdout=subprocess.PIPE) as st:
             return [x.decode().rstrip() for x in st.stdout]
     elif os.path.isdir(os.path.join(SRCDIR, '.git')):
-        cmd = 'git status --porcelain'
+        if base_branch:
+            cmd = 'git diff --name-status ' + base_branch
+        else:
+            cmd = 'git status --porcelain'
         filenames = []
         with subprocess.Popen(cmd.split(), stdout=subprocess.PIPE) as st:
             for line in st.stdout:
                 line = line.decode().rstrip()
-                status = set(line[:2])
+                status_text, filename = line.split(maxsplit=1)
+                status = set(status_text)
                 # modified, added or unmerged files
                 if not status.intersection('MAU'):
                     continue
-                filename = line[3:]
                 if ' -> ' in filename:
                     # file is renamed
                     filename = filename.split(' -> ', 2)[1].strip()
@@ -165,7 +210,8 @@ def regenerated_pyconfig_h_in(file_paths):
         return "not needed"
 
 def main():
-    file_paths = changed_files()
+    base_branch = get_base_branch()
+    file_paths = changed_files(base_branch)
     python_files = [fn for fn in file_paths if fn.endswith('.py')]
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
