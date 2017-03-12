@@ -532,8 +532,8 @@ conflict.
 
 .. envvar:: PYTHONDONTWRITEBYTECODE
 
-   If this is set to a non-empty string, Python won't try to write ``.pyc`` or
-   ``.pyo`` files on the import of source modules.  This is equivalent to
+   If this is set to a non-empty string, Python won't try to write ``.pyc``
+   files on the import of source modules.  This is equivalent to
    specifying the :option:`-B` option.
 
 
