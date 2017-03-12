@@ -1976,7 +1976,6 @@ unsafe_latin_compare(PyObject* v, PyObject* w, MergeState* ms){
            PyUnicode_KIND(v) == PyUnicode_KIND(w) &&
            PyUnicode_KIND(v) == PyUnicode_1BYTE_KIND);
   #endif
-    if (v == w) return 0;
     
     int len = Py_MIN(PyUnicode_GET_LENGTH(v), PyUnicode_GET_LENGTH(w));
     int res = memcmp(PyUnicode_DATA(v), PyUnicode_DATA(w), len);
@@ -1997,7 +1996,6 @@ unsafe_long_compare(PyObject *v, PyObject *w, MergeState* ms)
            Py_ABS(Py_SIZE(v)) <= 1 &&
            Py_ABS(Py_SIZE(w)) <= 1);
   #endif
-    if (v == w) return 0;
     
     PyLongObject *vl, *wl;
     vl = (PyLongObject*)v;
