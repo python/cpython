@@ -10,6 +10,8 @@ What's New in Python 3.6.1 final?
 Core and Builtins
 -----------------
 
+- bpo-29600: Fix wrapping coroutine return values in StopIteration.
+
 - bpo-29723: The ``sys.path[0]`` initialization change for bpo-29139 caused a
   regression by revealing an inconsistency in how sys.path is initialized when
   executing ``__main__`` from a zipfile, directory, or other import location.

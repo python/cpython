@@ -575,8 +575,7 @@ _PyGen_SetStopIterationValue(PyObject *value)
     PyObject *e;
 
     if (value == NULL ||
-        (!PyTuple_Check(value) &&
-         !PyObject_TypeCheck(value, (PyTypeObject *) PyExc_StopIteration)))
+        (!PyTuple_Check(value) && !PyExceptionInstance_Check(value)))
     {
         /* Delay exception instantiation if we can */
         PyErr_SetObject(PyExc_StopIteration, value);
