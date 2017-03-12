@@ -586,7 +586,7 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *arg)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "integer argument or None expected, got '%.200s'",
+                     "argument should be integer or None, not '%.200s'",
                      Py_TYPE(arg)->tp_name);
         return NULL;
     }

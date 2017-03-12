@@ -255,7 +255,7 @@ mmap_convert_ssize_t(PyObject *obj, void *result) {
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "integer argument or None expected, got '%.200s'",
+                     "argument should be integer or None, not '%.200s'",
                      Py_TYPE(obj)->tp_name);
         return 0;
     }
