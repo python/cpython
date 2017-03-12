@@ -133,7 +133,7 @@ Glossary
       :term:`bytes-like objects <bytes-like object>`.
       Examples of binary files are files opened in binary mode (``'rb'``,
       ``'wb'`` or ``'rb+'``), :data:`sys.stdin.buffer`,
-      :data:`sys.stdout.buffer`, and instances of `io.BytesIO` and
+      :data:`sys.stdout.buffer`, and instances of :class:`io.BytesIO` and
       :class:`gzip.GzipFile`.
 
       .. seealso::
