@@ -2072,7 +2072,7 @@ unsafe_tuple_compare(PyObject* v, PyObject* w, MergeState* ms)
 
     /* Out of options: v[0] == w[0]! We need to look at v[1:] and w[1:].
      * We can use code copied straight from tupleobject.c:tuplerichcompare: */
-    for (i = 1; i < vlen && i < wlen; i++) {
+    for (i = 0; i < vlen && i < wlen; i++) {
         k = PyObject_RichCompareBool(vt->ob_item[i],
                                      wt->ob_item[i],
                                      Py_EQ);
@@ -2083,7 +2083,7 @@ unsafe_tuple_compare(PyObject* v, PyObject* w, MergeState* ms)
     }
 
     if (i >= vlen || i >= wlen) {
-        return vlen <  wlen;
+        return vlen < wlen;
     }
 
     return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
