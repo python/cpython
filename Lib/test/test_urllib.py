@@ -1488,48 +1488,72 @@ class URLopener_Tests(unittest.TestCase):
 class RequestTests(unittest.TestCase):
     """Unit tests for urllib.request.Request."""
 
-    """def setUp(self):
-        self.Request = urllib.request.Request"""
+    def setUp(self):
+        self.Request = urllib.request.Request
+
+        self.headers = {
+            'User-agent': ('Mozilla/5.0 (X11; Linux i686; rv:10.0) '
+                           'Gecko/20100101 Firefox/10.0')
+        }
 
     def test_default_values(self):
-        Request = urllib.request.Request
-        request = Request("http://www.python.org")
+        request = self.Request("http://www.python.org")
         self.assertEqual(request.get_method(), 'GET')
-        request = Request("http://www.python.org", {})
+        request = self.Request("http://www.python.org", {})
         self.assertEqual(request.get_method(), 'POST')
 
     def test_with_method_arg(self):
-        Request = urllib.request.Request
-        request = Request("http://www.python.org", method='HEAD')
+        request = self.Request("http://www.python.org", method='HEAD')
         self.assertEqual(request.method, 'HEAD')
         self.assertEqual(request.get_method(), 'HEAD')
-        request = Request("http://www.python.org", {}, method='HEAD')
+        request = self.Request("http://www.python.org", {}, method='HEAD')
         self.assertEqual(request.method, 'HEAD')
         self.assertEqual(request.get_method(), 'HEAD')
-        request = Request("http://www.python.org", method='GET')
+        request = self.Request("http://www.python.org", method='GET')
         self.assertEqual(request.get_method(), 'GET')
         request.method = 'HEAD'
         self.assertEqual(request.get_method(), 'HEAD')
-        """headers = {
-            'User-agent':  ('Mozilla/5.0 (X11; Linux i686; rv:10.0) '
-                            'Gecko/20100101 Firefox/10.0')
-        }
-        request = Request("http://www.python.org", headers=headers)
+
+    def test_request_with_headers(self):
+        """Verify headers if passed as a constructor argument."""
+        request = self.Request("http://www.python.org", headers=self.headers)
+        self.assertDictEqual(request.headers, self.headers)
+
+    def test_request_add_header(self):
+        """Verify headers if added through `Request.add_header()` method."""
+        request = self.Request("http://www.python.org")
+        request.add_header('User-agent', self.headers['User-agent'])
+        self.assertDictEqual(request.headers, self.headers)
+
+    def test_request_has_header_returns(self):
+        """Verify presence of headers is marked."""
+        request = self.Request("http://www.python.org", headers=self.headers)
         self.assertTrue(request.has_header('User-agent'))
-        self.assertEqual(
-            request.get_header('User-agent'),
-            headers['User-agent']
-        )
         self.assertFalse(request.has_header('Content-type'))
-        self.assertEqual(request.get_header('Content-type'), None)
 
-        request.add_header('Content-type', 'text/html; charset=utf-8')
-
-        self.assertTrue(request.has_header('Content-type'))
+    def test_request_get_header(self):
+        """Verify headers returned correctly."""
+        request = self.Request("http://www.python.org", headers=self.headers)
         self.assertEqual(
             request.get_header('User-agent'),
-            headers['User-agent']
-        )"""
+            self.headers['User-agent']
+        )
+        self.assertIsNone(request.get_header('Content-type'))
+
+    def test_request_header_items(self):
+        """Verify headers itemed correctly."""
+        request = self.Request("http://www.python.org", headers=self.headers)
+        self.assertListEqual(
+            request.header_items(),
+            list(self.headers.items())
+        )
+
+    def test_request_header_remove(self):
+        """Verify headers are removed correctly."""
+        request = self.Request("http://www.python.org", headers=self.headers)
+        self.assertDictEqual(request.headers, self.headers)
+        request.remove_header('User-agent'),
+        self.assertDictEqual(request.headers, {})
 
 
 class URL2PathNameTests(unittest.TestCase):
