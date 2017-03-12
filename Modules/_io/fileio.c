@@ -207,7 +207,7 @@ extern int _Py_open_cloexec_works;
 _io.FileIO.__init__
     file as nameobj: object
     mode: str = "r"
-    closefd: int(c_default="1") = True
+    closefd: bool(accept={int}) = True
     opener: object = None
 
 Open a file.
@@ -228,7 +228,7 @@ results in functionality similar to passing None).
 static int
 _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                          int closefd, PyObject *opener)
-/*[clinic end generated code: output=23413f68e6484bbd input=193164e293d6c097]*/
+/*[clinic end generated code: output=23413f68e6484bbd input=1596c9157a042a39]*/
 {
 #ifdef MS_WINDOWS
     Py_UNICODE *widename = NULL;

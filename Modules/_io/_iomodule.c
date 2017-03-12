@@ -105,7 +105,7 @@ _io.open
     encoding: str(accept={str, NoneType}) = NULL
     errors: str(accept={str, NoneType}) = NULL
     newline: str(accept={str, NoneType}) = NULL
-    closefd: int(c_default="1") = True
+    closefd: bool(accept={int}) = True
     opener: object = None
 
 Open file and return a stream.  Raise IOError upon failure.
@@ -232,7 +232,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=f4e1ca75223987bc]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=7f81b2a1d3b02344]*/
 {
     unsigned i;
 
