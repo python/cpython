@@ -23,7 +23,8 @@
 
 import unittest
 import sqlite3 as sqlite
-import tempfile
+
+from test.support import TESTFN, unlink
 
 class CollationTests(unittest.TestCase):
     def CheckCreateCollationNotString(self):
@@ -260,15 +261,15 @@ class TraceCallbackTests(unittest.TestCase):
 
         queries = ["create table foo(x)",
                    "insert into foo(x) values(1)"]
-        with tempfile.NamedTemporaryFile(suffix='.sqlite') as db_path:
-            con1 = sqlite.connect(db_path.name, isolation_level=None)
-            con2 = sqlite.connect(db_path.name)
-            con1.set_trace_callback(trace)
-            cur = con1.cursor()
-            cur.execute(queries[0])
-            con2.execute("create table bar(x)")
-            cur.execute(queries[1])
-            self.assertEqual(traced_statements, queries)
+        self.addCleanup(unlink, TESTFN)
+        con1 = sqlite.connect(TESTFN, isolation_level=None)
+        con2 = sqlite.connect(TESTFN)
+        con1.set_trace_callback(trace)
+        cur = con1.cursor()
+        cur.execute(queries[0])
+        con2.execute("create table bar(x)")
+        cur.execute(queries[1])
+        self.assertEqual(traced_statements, queries)
 
 
 def suite():
