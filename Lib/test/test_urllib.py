@@ -1507,6 +1507,16 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(request.get_method(), 'GET')
         request.method = 'HEAD'
         self.assertEqual(request.get_method(), 'HEAD')
+        headers = {
+            'User-agent':  ('Mozilla/5.0 (X11; Linux i686; rv:10.0) '
+                            'Gecko/20100101 Firefox/10.0')
+        }
+        request = Request("http://www.python.org", headers=headers)
+        self.assertTrue(request.has_header('User-agent'))
+        self.assertEqual(
+            request.get_header('User-agent'),
+            headers['User-agent']
+        )
 
 
 class URL2PathNameTests(unittest.TestCase):
