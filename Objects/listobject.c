@@ -1507,7 +1507,7 @@ merge_getmem(MergeState *ms, Py_ssize_t need)
  */
 static Py_ssize_t
 merge_lo(MergeState *ms, sortslice ssa, Py_ssize_t na,
-	 sortslice ssb, Py_ssize_t nb)
+         sortslice ssb, Py_ssize_t nb)
 {
     Py_ssize_t k;
     sortslice dest;
@@ -1639,7 +1639,7 @@ CopyB:
  */
 static Py_ssize_t
 merge_hi(MergeState *ms, sortslice ssa, Py_ssize_t na,
-	 sortslice ssb, Py_ssize_t nb)
+         sortslice ssb, Py_ssize_t nb)
 {
     Py_ssize_t k;
     sortslice dest, basea, baseb;
@@ -1950,7 +1950,7 @@ unsafe_object_compare(PyObject* v, PyObject* w, MergeState* ms)
     if (v == w) return 0;
     
     if (v->ob_type->tp_richcompare != ms->key_richcompare)
-	return PyObject_RichCompareBool(v, w, Py_LT);
+        return PyObject_RichCompareBool(v, w, Py_LT);
     
     PyObject* res = (*(ms->key_richcompare))(v, w, Py_LT);
     if (res == NULL)
