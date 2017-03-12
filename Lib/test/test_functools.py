@@ -403,6 +403,19 @@ class TestPartialC(TestPartial, unittest.TestCase):
         else:
             self.fail('partial object allowed __dict__ to be deleted')
 
+    def test_manually_adding_non_string_keyword(self):
+        p = self.partial(capture)
+        # Adding a non-string/unicode keyword to partial kwargs
+        p.keywords[1] = 10
+        self.assertRaises(TypeError, repr, p)
+        try:
+            p()
+        except TypeError:
+            pass
+        else:
+            self.fail('partial object allowed passing non-string keywords')
+
+
 class TestPartialPy(TestPartial, unittest.TestCase):
     partial = py_functools.partial
 

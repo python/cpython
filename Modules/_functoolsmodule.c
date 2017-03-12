@@ -253,6 +253,11 @@ partial_repr(partialobject *pto)
     /* Pack keyword arguments */
     assert (PyDict_Check(pto->kw));
     for (i = 0; PyDict_Next(pto->kw, &i, &key, &value);) {
+        if (!PyUnicode_Check(key)) {
+            PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+            Py_DECREF(arglist);
+            goto done;
+        }
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %U=%R", arglist,
                                                 key, value));
         if (arglist == NULL)
