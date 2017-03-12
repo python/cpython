@@ -3922,10 +3922,6 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
     }
 
     if (PyUnicode_Check(path)) {
-        if (PyUnicode_READY(path) == -1) {
-            Py_DECREF(path);
-            return 0;
-        }
         output = path;
     }
     else if (PyBytes_Check(path) || is_buffer) {
@@ -6086,15 +6082,11 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
 
       error:
         endinpos = s-starts;
-        writer.min_length = end - s + writer.pos;
         if (unicode_decode_call_errorhandler_writer(
                 errors, &errorHandler,
                 "unicodeescape", message,
                 &starts, &end, &startinpos, &endinpos, &exc, &s,
                 &writer)) {
-            goto onError;
-        }
-        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
             goto onError;
         }
 
@@ -6365,15 +6357,11 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
         }
 
         endinpos = s-starts;
-        writer.min_length = end - s + writer.pos;
         if (unicode_decode_call_errorhandler_writer(
                 errors, &errorHandler,
                 "rawunicodeescape", message,
                 &starts, &end, &startinpos, &endinpos, &exc, &s,
                 &writer)) {
-            goto onError;
-        }
-        if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0) {
             goto onError;
         }
 
@@ -6439,7 +6427,7 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
         if (ch < 0x100) {
             *p++ = (char) ch;
         }
-        /* U+0000-U+00ff range: Map 16-bit characters to '\uHHHH' */
+        /* U+0100-U+ffff range: Map 16-bit characters to '\uHHHH' */
         else if (ch < 0x10000) {
             *p++ = '\\';
             *p++ = 'u';
