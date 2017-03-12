@@ -74,17 +74,6 @@ static const double pi = 3.141592653589793238462643383279502884197;
 static const double sqrtpi = 1.772453850905516027298167483341145182798;
 static const double logpi = 1.144729885849400174143427351353058711647;
 
-#ifndef __APPLE__
-#  ifdef HAVE_TGAMMA
-#    define USE_TGAMMA
-#  endif
-#  ifdef HAVE_LGAMMA
-#    define USE_LGAMMA
-#  endif
-#endif
-
-#if !defined(USE_TGAMMA) || !defined(USE_LGAMMA)
-
 static double
 sinpi(double x)
 {
@@ -241,7 +230,6 @@ lanczos_sum(double x)
     }
     return num/den;
 }
-#endif /* !defined(USE_TGAMMA) || !defined(USE_LGAMMA) */
 
 /* Constant for +infinity, generated in the same way as float('inf'). */
 
@@ -275,14 +263,6 @@ m_nan(void)
 static double
 m_tgamma(double x)
 {
-#ifdef USE_TGAMMA
-    if (x == 0.0) {
-        errno = EDOM;
-        /* tgamma(+-0.0) = +-inf, divide-by-zero */
-        return copysign(Py_HUGE_VAL, x);
-    }
-    return tgamma(x);
-#else
     double absx, r, y, z, sqrtpow;
 
     /* special cases */
@@ -374,7 +354,6 @@ m_tgamma(double x)
     if (Py_IS_INFINITY(r))
         errno = ERANGE;
     return r;
-#endif
 }
 
 /*
@@ -386,15 +365,6 @@ static double
 m_lgamma(double x)
 {
     double r;
-
-#ifdef USE_LGAMMA
-    r = lgamma(x);
-    if (errno == ERANGE && x == floor(x) && x <= 0.0) {
-        errno = EDOM;           /* lgamma(n) = inf, divide-by-zero for */
-        return Py_HUGE_VAL;     /* integers n <= 0 */
-    }
-    return r;
-#else
     double absx;
 
     /* special cases */
@@ -433,7 +403,6 @@ m_lgamma(double x)
     if (Py_IS_INFINITY(r))
         errno = ERANGE;
     return r;
-#endif
 }
 
 #if !defined(HAVE_ERF) || !defined(HAVE_ERFC)
