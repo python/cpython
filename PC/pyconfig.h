@@ -684,12 +684,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
    least significant byte first */
 #define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1
 
-/* Define to 1 if you have the `tgamma' function. */
-#define HAVE_TGAMMA 1
-
-/* Define to 1 if you have the `lgamma' function. */
-#define HAVE_LGAMMA 1
-
 /* Define to 1 if you have the `erf' function. */
 #define HAVE_ERF 1
 
