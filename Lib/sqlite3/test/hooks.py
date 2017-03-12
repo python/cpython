@@ -23,7 +23,7 @@
 
 import unittest
 import sqlite3 as sqlite
-from tempfile import NamedTemporaryFile
+import tempfile
 
 class CollationTests(unittest.TestCase):
     def CheckCreateCollationNotString(self):
@@ -252,15 +252,15 @@ class TraceCallbackTests(unittest.TestCase):
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 3, 9), "sqlite3_prepare_v2 is not available")
     def CheckTraceCallbackContent(self):
         """
-        Test that the statement are correct. Fix for bpo-26187
+        bpo-26187
         """
-        with NamedTemporaryFile(suffix='.sqlite') as db_path:
-            traced_statements = []
-            def trace(statement):
-                traced_statements.append(statement)
+        traced_statements = []
+        def trace(statement):
+            traced_statements.append(statement)
 
-            queries = ["create table foo(x)",
-                       "insert into foo(x) values(1)"]
+        queries = ["create table foo(x)",
+                   "insert into foo(x) values(1)"]
+        with tempfile.NamedTemporaryFile(suffix='.sqlite') as db_path:
             con1 = sqlite.connect(db_path.name, isolation_level=None)
             con2 = sqlite.connect(db_path.name)
             con1.set_trace_callback(trace)
@@ -269,7 +269,6 @@ class TraceCallbackTests(unittest.TestCase):
             con2.execute("create table bar(x)")
             cur.execute(queries[1])
             self.assertEqual(traced_statements, queries)
-
 
 
 def suite():
