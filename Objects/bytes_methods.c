@@ -421,11 +421,6 @@ parse_args_finds_byte(const char *function_name, PyObject *args,
                                    start, end))
         return 0;
 
-    if (!PyNumber_Check(tmp_subobj)) {
-        *subobj = tmp_subobj;
-        return 1;
-    }
-
     ival = PyNumber_AsSsize_t(tmp_subobj, PyExc_OverflowError);
     if (ival == -1) {
         err = PyErr_Occurred();
