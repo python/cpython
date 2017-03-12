@@ -511,13 +511,13 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
 /*[clinic input]
 _io.IncrementalNewlineDecoder.decode
     input: object
-    final: int(c_default="0") = False
+    final: bool(accept={int}) = False
 [clinic start generated code]*/
 
 static PyObject *
 _io_IncrementalNewlineDecoder_decode_impl(nldecoder_object *self,
                                           PyObject *input, int final)
-/*[clinic end generated code: output=0d486755bb37a66e input=d65677385bfd6827]*/
+/*[clinic end generated code: output=0d486755bb37a66e input=a4ea97f26372d866]*/
 {
     return _PyIncrementalNewlineDecoder_decode((PyObject *) self, input, final);
 }
@@ -792,8 +792,8 @@ _io.TextIOWrapper.__init__
     encoding: str(accept={str, NoneType}) = NULL
     errors: str(accept={str, NoneType}) = NULL
     newline: str(accept={str, NoneType}) = NULL
-    line_buffering: int(c_default="0") = False
-    write_through: int(c_default="0") = False
+    line_buffering: bool(accept={int}) = False
+    write_through: bool(accept={int}) = False
 
 Character and line based layer over a BufferedIOBase object, buffer.
 
@@ -830,7 +830,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, const char *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=56a83402ce2a8381 input=3126cb3101a2c99b]*/
+/*[clinic end generated code: output=56a83402ce2a8381 input=598d10cc5f2ed7dd]*/
 {
     PyObject *raw, *codec_info = NULL;
     _PyIO_State *state = NULL;
