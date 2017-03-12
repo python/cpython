@@ -430,7 +430,8 @@ parse_args_finds_byte(const char *function_name, PyObject *args,
 
     if (!PyIndex_Check(tmp_subobj)) {
         PyErr_Format(PyExc_TypeError,
-                     "argument should be integer or bytes-like, not '%.200s'",
+                     "argument should be integer or bytes-like object, "
+                     "not '%.200s'",
                      Py_TYPE(tmp_subobj)->tp_name);
         return 0;
     }
