@@ -278,6 +278,9 @@ Extension Modules
 Library
 -------
 
+- bpo-8256: Fixed possible failing or crashing input() if attributes "encoding"
+  or "errors" of sys.stdin or sys.stdout are not set or are not strings.
+
 - bpo-28692: Using non-integer value for selecting a plural form in gettext is
   now deprecated.
 
