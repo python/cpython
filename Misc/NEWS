@@ -43,6 +43,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29742: get_extra_info() raises exception if get called on closed ssl transport.
+  Patch by Nikolay Kim.
+
 - bpo-8256: Fixed possible failing or crashing input() if attributes "encoding"
   or "errors" of sys.stdin or sys.stdout are not set or are not strings.
 
