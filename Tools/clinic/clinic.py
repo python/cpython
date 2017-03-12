@@ -2546,7 +2546,11 @@ class bool_converter(CConverter):
     format_unit = 'p'
     c_ignored_default = '0'
 
-    def converter_init(self):
+    def converter_init(self, *, accept={object}):
+        if accept == {int}:
+            self.format_unit = 'i'
+        elif accept != {object}:
+            fail("bool_converter: illegal 'accept' argument " + repr(accept))
         if self.default is not unspecified:
             self.default = bool(self.default)
             self.c_default = str(int(self.default))

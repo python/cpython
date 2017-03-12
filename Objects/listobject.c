@@ -1968,14 +1968,14 @@ list.sort
 
     *
     key as keyfunc: object = None
-    reverse: int(c_default="0") = False
+    reverse: bool(accept={int}) = False
 
 Stable sort *IN PLACE*.
 [clinic start generated code]*/
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
-/*[clinic end generated code: output=57b9f9c5e23fbe42 input=5029c13c9209d86a]*/
+/*[clinic end generated code: output=57b9f9c5e23fbe42 input=b0fcf743982c5b90]*/
 {
     MergeState ms;
     Py_ssize_t nremaining;
