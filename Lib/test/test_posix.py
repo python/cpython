@@ -1147,8 +1147,8 @@ class PosixTester(unittest.TestCase):
         posix.sched_setaffinity(0, mask)
         self.assertEqual(posix.sched_getaffinity(0), mask)
         self.assertRaises(OSError, posix.sched_setaffinity, 0, [])
+        self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-10])
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-1])
-        self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-1 << 1000])
         self.assertRaises(OverflowError, posix.sched_setaffinity, 0, [1<<128])
         self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
 
@@ -1159,6 +1159,7 @@ class PosixTester(unittest.TestCase):
         orig_mask = posix.sched_getaffinity(0)
         self.addCleanup(posix.sched_setaffinity, 0, orig_mask)
 
+        self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-1 << 1000])
         # verify OverflowError is not raised
         try:
             posix.sched_setaffinity(0, [INT_MAX - 1])
