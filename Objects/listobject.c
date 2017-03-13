@@ -1942,18 +1942,20 @@ safe_object_compare(PyObject* v, PyObject* w, MergeState* ms)
 static int
 unsafe_object_compare(PyObject* v, PyObject* w, MergeState* ms)
 {
-  /* Modified from Objects/object.c:PyObject_RichCompareBool, assuming: */
-  #ifdef Py_DEBUG
-    assert(v->ob_type == w->ob_type &&
-           v->ob_type->tp_richcompare != NULL);
-  #endif
-    int ok; 
+    int ok; PyObject* res;
+    
+    /* Modified from Objects/object.c:PyObject_RichCompareBool, assuming: */
+    #ifdef Py_DEBUG
+        assert(v->ob_type == w->ob_type &&
+	       v->ob_type->tp_richcompare != NULL);
+    #endif
+
     
     if (v == w) return 0;
     if (v->ob_type->tp_richcompare != ms->key_richcompare)
         return PyObject_RichCompareBool(v, w, Py_LT);
     
-    PyObject* res = (*(ms->key_richcompare))(v, w, Py_LT);
+    res = (*(ms->key_richcompare))(v, w, Py_LT);
     
     if (res == Py_NotImplemented) {
         Py_DECREF(res);
@@ -1975,16 +1977,18 @@ unsafe_object_compare(PyObject* v, PyObject* w, MergeState* ms)
 /* Latin string compare: safe for any two latin (one byte per char) strings. */
 static int
 unsafe_latin_compare(PyObject* v, PyObject* w, MergeState* ms){
-  /* Modified from Objects/unicodeobject.c:unicode_compare, assuming: */
-  #ifdef Py_DEBUG
-    assert(v->ob_type == w->ob_type &&
-           v->ob_type == &PyUnicode_Type &&
-           PyUnicode_KIND(v) == PyUnicode_KIND(w) &&
-           PyUnicode_KIND(v) == PyUnicode_1BYTE_KIND);
-  #endif
+    int len, res;
     
-    int len = Py_MIN(PyUnicode_GET_LENGTH(v), PyUnicode_GET_LENGTH(w));
-    int res = memcmp(PyUnicode_DATA(v), PyUnicode_DATA(w), len);
+    /* Modified from Objects/unicodeobject.c:unicode_compare, assuming: */
+    #ifdef Py_DEBUG
+        assert(v->ob_type == w->ob_type &&
+	       v->ob_type == &PyUnicode_Type &&
+	       PyUnicode_KIND(v) == PyUnicode_KIND(w) &&
+	       PyUnicode_KIND(v) == PyUnicode_1BYTE_KIND);
+    #endif
+    
+    len = Py_MIN(PyUnicode_GET_LENGTH(v), PyUnicode_GET_LENGTH(w));
+    res = memcmp(PyUnicode_DATA(v), PyUnicode_DATA(w), len);
 
     return (res != 0 ?
             res < 0 :
@@ -1995,20 +1999,21 @@ unsafe_latin_compare(PyObject* v, PyObject* w, MergeState* ms){
 static int
 unsafe_long_compare(PyObject *v, PyObject *w, MergeState* ms)
 {
-  /* Modified from Objects/longobject.c:long_compare, assuming: */
-  #ifdef Py_DEBUG
-    assert(v->ob_type == w->ob_type &&
-           v->ob_type == &PyLong_Type &&
-           Py_ABS(Py_SIZE(v)) <= 1 &&
-           Py_ABS(Py_SIZE(w)) <= 1);
-  #endif
+    PyLongObject *vl, *wl; sdigit v0, w0;
+
+    /* Modified from Objects/longobject.c:long_compare, assuming: */
+    #ifdef Py_DEBUG
+        assert(v->ob_type == w->ob_type &&
+	       v->ob_type == &PyLong_Type &&
+	       Py_ABS(Py_SIZE(v)) <= 1 &&
+	       Py_ABS(Py_SIZE(w)) <= 1);
+    #endif
     
-    PyLongObject *vl, *wl;
     vl = (PyLongObject*)v;
     wl = (PyLongObject*)w;
 
-    sdigit v0 = Py_SIZE(vl) == 0 ? 0 : (sdigit)vl->ob_digit[0];
-    sdigit w0 = Py_SIZE(wl) == 0 ? 0 : (sdigit)wl->ob_digit[0];
+    v0 = Py_SIZE(vl) == 0 ? 0 : (sdigit)vl->ob_digit[0];
+    w0 = Py_SIZE(wl) == 0 ? 0 : (sdigit)wl->ob_digit[0];
 
     if (Py_SIZE(vl) < 0)
         v0 = -v0;
@@ -2021,13 +2026,13 @@ unsafe_long_compare(PyObject *v, PyObject *w, MergeState* ms)
 /* Float compare: compare any two floats. */
 static int
 unsafe_float_compare(PyObject *v, PyObject *w, MergeState* ms){
-  /* Modified from Objects/floatobject.c:float_richcompare, assuming: */
-  #ifdef Py_DEBUG
-    assert(v->ob_type == w->ob_type &&
-           v->ob_type == &PyFloat_Type);
-  #endif
-    if (v == w) return 0;
-    
+    /* Modified from Objects/floatobject.c:float_richcompare, assuming: */
+    #ifdef Py_DEBUG
+        assert(v->ob_type == w->ob_type &&
+	       v->ob_type == &PyFloat_Type);
+    #endif
+      
+    if (v == w) return 0;    
     return PyFloat_AS_DOUBLE(v) < PyFloat_AS_DOUBLE(w);
 }
 
@@ -2038,25 +2043,23 @@ unsafe_float_compare(PyObject *v, PyObject *w, MergeState* ms){
  * on two levels (as long as [x[0] for x in L] is type-homogeneous.) */
 static int
 unsafe_tuple_compare(PyObject* v, PyObject* w, MergeState* ms)
-{
-  /* Modified from Objects/tupleobject.c:tuplerichcompare, assuming: */
-  #ifdef Py_DEBUG
-    assert(v->ob_type == w->ob_type &&
-           v->ob_type == &PyTuple_Type &&
-           Py_SIZE(v) > 0 &&
-           Py_SIZE(w) > 0);
-  #endif
-    
+{   
     PyTupleObject *vt, *wt;
-    Py_ssize_t i;
-    Py_ssize_t vlen, wlen;
+    Py_ssize_t i, vlen, wlen;
+    int k;
+
+    /* Modified from Objects/tupleobject.c:tuplerichcompare, assuming: */
+    #ifdef Py_DEBUG
+        assert(v->ob_type == w->ob_type &&
+	       v->ob_type == &PyTuple_Type &&
+	       Py_SIZE(v) > 0 &&
+	       Py_SIZE(w) > 0);
+    #endif
+
+    if (v == w) return 0;
 
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
-    
-    int k;
-    
-    if (v == w) return 0;
 
     /* Is v[0] < w[0]? */
     k = (*(ms->tuple_elem_compare))(vt->ob_item[0], wt->ob_item[0], ms);
