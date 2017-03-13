@@ -2049,7 +2049,7 @@ unsafe_tuple_compare(PyObject* v, PyObject* w, MergeState* ms)
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
     
-    int ok;
+    int k;
     
     if (v == w) return 0;
 
