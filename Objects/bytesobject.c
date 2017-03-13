@@ -505,8 +505,9 @@ byte_converter(PyObject *arg, char *p)
         else {
             iobj = PyNumber_Index(arg);
             if (iobj == NULL) {
-                if (!PyErr_ExceptionMatches(PyExc_TypeError))
+                if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
                     return 0;
+                }
                 PyErr_SetString(PyExc_TypeError,
                                 "%c requires an integer in range(256) or a "
                                 "single byte");

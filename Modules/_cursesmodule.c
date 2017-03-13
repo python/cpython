@@ -1225,8 +1225,7 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
             return NULL;
         }
         if (n < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "getstr: 'n' must be nonnegative");
+            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
         Py_BEGIN_ALLOW_THREADS
@@ -1250,8 +1249,7 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
             return NULL;
         }
         if (n < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "getstr: 'n' must be nonnegative");
+            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
 #ifdef STRICT_SYSV_CURSES
@@ -1402,8 +1400,7 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
             return NULL;
         }
         if (n < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "instr: 'n' must be nonnegative");
+            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
         rtn2 = winnstr(self->win, rtn, Py_MIN(n, 1023));
@@ -1419,8 +1416,7 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
             return NULL;
         }
         if (n < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "instr: 'n' must be nonnegative");
+            PyErr_SetString(PyExc_ValueError, "'n' must be nonnegative");
             return NULL;
         }
         rtn2 = mvwinnstr(self->win, y, x, rtn, Py_MIN(n,1023));
@@ -2607,8 +2603,7 @@ PyCurses_KeyName(PyObject *self, PyObject *args)
     }
 
     if (ch < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "keyname: key number must be nonnegative");
+        PyErr_SetString(PyExc_ValueError, "key number must be nonnegative");
         return NULL;
     }
     knp = keyname(ch);

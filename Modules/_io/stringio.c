@@ -461,6 +461,10 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *arg)
     if (PyIndex_Check(arg)) {
         size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "size value does not fit in C Py_ssize_t");
+            }
             return NULL;
         }
     }
@@ -477,7 +481,7 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *arg)
 
     if (size < 0) {
         PyErr_Format(PyExc_ValueError,
-                     "truncate: negative size value %zd", size);
+                     "Negative size value %zd", size);
         return NULL;
     }
 
