@@ -1,0 +1,101 @@
+---
+release_tag_re: |
+  (v(?:[\d.ab]|rc)+)
+pre_release_tag_re: |
+  \.\d+(?P<pre_release>(?:[ab]|rc)+\d*)$
+branch_name_re: |
+  \d+\.\d+
+sections:
+  # The prelude section is implicitly included.
+  - [core, Core and Builtins]
+  - [extensions, Extension Modules]
+  - [library, Library]
+  - [windows, Windows]
+  - [c-api, C API]
+  - [documentation, Documentation]
+  - [build, Build]
+  - [tools, Tools/Demos]
+  - [tests, Tests]
+template: |
+  prelude: |
+    Replace this text with content to appear at the top of the section
+    for this release. All of the prelude content is merged together
+    and then rendered separately from the items listed in other parts
+    of the file, so the text needs to be worded so that both the
+    prelude and the other items make sense when read
+    independently. This may mean repeating some details. Not every
+    release note requires a prelude. Usually only notes describing
+    major features or adding release theme details should have a
+    prelude.
+  core:
+    - |
+      List core language changes here, or remove this section.  All of
+      the list items in this section are combined when the release
+      notes are rendered, so the text needs to be worded so that it
+      does not depend on any information only available in another
+      section, such as the prelude. This may mean repeating some
+      details.
+  extensions:
+    - |
+      List changes to extension modules here, or remove this section.
+      All of the list items in this section are combined when the
+      release notes are rendered, so the text needs to be worded so
+      that it does not depend on any information only available in
+      another section, such as the prelude. This may mean repeating
+      some details.
+  library:
+    - |
+      List changes to the standard library here, or remove this
+      section.  All of the list items in this section are combined
+      when the release notes are rendered, so the text needs to be
+      worded so that it does not depend on any information only
+      available in another section, such as the prelude. This may mean
+      repeating some details.
+  windows:
+    - |
+      List changes affecting Windows users here, or remove this
+      section.  All of the list items in this section are combined
+      when the release notes are rendered, so the text needs to be
+      worded so that it does not depend on any information only
+      available in another section, such as the prelude. This may mean
+      repeating some details.
+  c-api:
+    - |
+      List changes to the C API here, or remove this section.  All of
+      the list items in this section are combined when the release
+      notes are rendered, so the text needs to be worded so that it
+      does not depend on any information only available in another
+      section, such as the prelude. This may mean repeating some
+      details.
+  documentation:
+    - |
+      List changes to the documentation here, or remove this section.
+      All of the list items in this section are combined when the
+      release notes are rendered, so the text needs to be worded so
+      that it does not depend on any information only available in
+      another section, such as the prelude. This may mean repeating
+      some details.
+  build:
+    - |
+      List changes to the build tools here, or remove this section.
+      All of the list items in this section are combined when the
+      release notes are rendered, so the text needs to be worded so
+      that it does not depend on any information only available in
+      another section, such as the prelude. This may mean repeating
+      some details.
+  tools:
+    - |
+      List changes to the Tools and Demos directories here, or remove
+      this section.  All of the list items in this section are
+      combined when the release notes are rendered, so the text needs
+      to be worded so that it does not depend on any information only
+      available in another section, such as the prelude. This may mean
+      repeating some details.
+  tests:
+    - |
+      List changes to the tests here, or remove this section.  All of
+      the list items in this section are combined when the release
+      notes are rendered, so the text needs to be worded so that it
+      does not depend on any information only available in another
+      section, such as the prelude. This may mean repeating some
+      details.
