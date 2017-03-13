@@ -1381,7 +1381,6 @@ class GeneralModuleTests(unittest.TestCase):
                           socket.getnameinfo, (HOST, -1 << 1000), 0)
         self.assertRaises(OverflowError,
                           socket.getnameinfo, (HOST, -1), 0)
-        # verify OverflowError is not raised
         socket.getnameinfo((HOST, 0), 0)
         socket.getnameinfo((HOST, 0xffff), 0)
         self.assertRaises(OverflowError,
@@ -1392,7 +1391,6 @@ class GeneralModuleTests(unittest.TestCase):
         # test flowinfo boundaries
         self.assertRaises(OverflowError,
                           socket.getnameinfo, (support.HOSTv6, 0, -1), 0)
-        # verify OverflowError is not raised
         socket.getnameinfo((support.HOSTv6, 0, 0), 0)
         socket.getnameinfo((support.HOSTv6, 0, (1 << 20) - 1), 0)
         self.assertRaises(OverflowError,

@@ -478,7 +478,6 @@ class MmapTests(unittest.TestCase):
 
         self.assertRaises(OverflowError, m.read, -1 << 1000)
         self.assertRaises(OverflowError, m.read, PY_SSIZE_T_MIN - 1)
-        # verify OverflowError is not raised
         m.read(PY_SSIZE_T_MIN)
         m.read(PY_SSIZE_T_MAX)
         self.assertRaises(OverflowError, m.read, PY_SSIZE_T_MAX + 1)

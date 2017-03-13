@@ -233,7 +233,7 @@ class TestFilemodeCStat(TestFilemode, unittest.TestCase):
 
         self.assertRaises(OverflowError, c_stat.S_IMODE, -1 << 1000)
         self.assertRaises(OverflowError, c_stat.S_IMODE, -1)
-        c_stat.S_IMODE(0) # verify OverflowError is not raised
+        c_stat.S_IMODE(0)
         self.assertRaises(OverflowError, c_stat.S_IMODE, 1 << 1000)
 
         # test platform specific mode_t upper limit
