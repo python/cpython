@@ -313,7 +313,7 @@ _emit_stderr_warning_for_c_locale(void)
 {
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
     if (ctype_loc != NULL && strcmp(ctype_loc, "C") == 0) {
-        fprintf(stderr, _C_LOCALE_WARNING);
+        fprintf(stderr, "%s", _C_LOCALE_WARNING);
     }
 }
 
