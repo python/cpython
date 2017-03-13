@@ -1,6 +1,7 @@
 # Tests the attempted automatic coercion of the C locale to a UTF-8 locale
 
 import unittest
+import os
 import sys
 import shutil
 import subprocess
@@ -29,22 +30,15 @@ def _set_locale_in_subprocess(locale_name, category):
     result, py_cmd = run_python_until_end("-c", cmd, __isolated=True)
     return result.rc == 0
 
-# Details of the shared library warning emitted at runtime
-LIBRARY_C_LOCALE_WARNING = (
-    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
-    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
-    "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
-    "locales is recommended."
-)
-
 # Details of the CLI warning emitted at runtime
 CLI_COERCION_WARNING_FMT = (
     "Python detected LC_CTYPE=C: {} coerced to {} (set another locale "
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behaviour)."
 )
 
+# TODO: Make this conditional on the PY_COERCE_C_LOCALE sysconfig var
 @test.support.cpython_only
-class LocaleOverrideTest(unittest.TestCase):
+class LocaleOverrideTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -145,8 +139,57 @@ class LocaleOverrideTest(unittest.TestCase):
         self._check_c_locale_coercion("ascii", coerce_c_locale="0")
 
 
+# Details of the shared library warning emitted at runtime
+LIBRARY_C_LOCALE_WARNING = (
+    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
+    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
+    "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
+    "locales is recommended.\n"
+)
+
+# TODO: Make this conditional on the PY_WARN_ON_C_LOCALE sysconfig var
+class EmbeddingTests(unittest.TestCase):
+    def setUp(self):
+        here = os.path.abspath(__file__)
+        basepath = os.path.dirname(os.path.dirname(os.path.dirname(here)))
+        self.test_exe = exe = os.path.join(basepath, "Programs", "_testembed")
+        if not os.path.exists(exe):
+            self.skipTest("%r doesn't exist" % exe)
+        # This is needed otherwise we get a fatal error:
+        # "Py_Initialize: Unable to get the locale encoding
+        # LookupError: no codec search functions registered: can't find encoding"
+        self.oldcwd = os.getcwd()
+        os.chdir(basepath)
+
+    def tearDown(self):
+        os.chdir(self.oldcwd)
+
+    def run_embedded_interpreter(self, *args):
+        """Runs a test in the embedded interpreter"""
+        cmd = [self.test_exe]
+        cmd.extend(args)
+        p = subprocess.Popen(cmd,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             universal_newlines=True)
+        (out, err) = p.communicate()
+        self.assertEqual(p.returncode, 0,
+                         "bad returncode %d, stderr is %r" %
+                         (p.returncode, err))
+        return out, err
+
+    def test_library_c_locale_warning(self):
+        # Checks forced configuration of embedded interpreter IO streams
+        out, err = self.run_embedded_interpreter("c_locale_warning")
+        if test.support.verbose > 1:
+            print()
+            print(out)
+            print(err)
+        self.assertEqual(out, "")
+        self.assertEqual(err, LIBRARY_C_LOCALE_WARNING)
+
 def test_main():
-    test.support.run_unittest(LocaleOverrideTest)
+    test.support.run_unittest(LocaleOverrideTests, EmbeddingTests)
     test.support.reap_children()
 
 if __name__ == "__main__":
