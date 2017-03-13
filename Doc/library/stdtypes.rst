@@ -1084,7 +1084,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | also removes it from *s*       |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.remove(x)``              | remove the first item from *s* | \(3)                |
-|                              | where ``s[i] == x``            |                     |
+|                              | where ``s[i]`` is equal to *x* |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.reverse()``              | reverses the items of *s* in   | \(4)                |
 |                              | place                          |                     |

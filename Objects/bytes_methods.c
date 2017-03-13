@@ -399,12 +399,15 @@ _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 #include "stringlib/find.h"
 
 /*
-Wraps stringlib_parse_args_finds() and additionally checks whether the
-first argument is an integer in range(0, 256).
+Wraps stringlib_parse_args_finds() and additionally checks the first
+argument type.
 
-If this is the case, writes the integer value to the byte parameter
-and sets subobj to NULL. Otherwise, sets the first argument to subobj
-and doesn't touch byte. The other parameters are similar to those of
+In case the first argument is a bytes-like object, sets it to subobj,
+and doesn't touch the byte parameter.
+In case it is an integer in range(0, 256), writes the integer value
+to byte, and sets subobj to NULL.
+
+The other parameters are similar to those of
 stringlib_parse_args_finds().
 */
 
@@ -415,27 +418,28 @@ parse_args_finds_byte(const char *function_name, PyObject *args,
 {
     PyObject *tmp_subobj;
     Py_ssize_t ival;
-    PyObject *err;
 
     if(!stringlib_parse_args_finds(function_name, args, &tmp_subobj,
                                    start, end))
         return 0;
 
-    if (!PyNumber_Check(tmp_subobj)) {
+    if (PyObject_CheckBuffer(tmp_subobj)) {
         *subobj = tmp_subobj;
         return 1;
     }
 
-    ival = PyNumber_AsSsize_t(tmp_subobj, PyExc_OverflowError);
-    if (ival == -1) {
-        err = PyErr_Occurred();
-        if (err && !PyErr_GivenExceptionMatches(err, PyExc_OverflowError)) {
-            PyErr_Clear();
-            *subobj = tmp_subobj;
-            return 1;
-        }
+    if (!PyIndex_Check(tmp_subobj)) {
+        PyErr_Format(PyExc_TypeError,
+                     "argument should be integer or bytes-like object, "
+                     "not '%.200s'",
+                     Py_TYPE(tmp_subobj)->tp_name);
+        return 0;
     }
 
+    ival = PyNumber_AsSsize_t(tmp_subobj, NULL);
+    if (ival == -1 && PyErr_Occurred()) {
+        return 0;
+    }
     if (ival < 0 || ival > 255) {
         PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
         return 0;

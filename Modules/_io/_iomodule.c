@@ -105,7 +105,7 @@ _io.open
     encoding: str(accept={str, NoneType}) = NULL
     errors: str(accept={str, NoneType}) = NULL
     newline: str(accept={str, NoneType}) = NULL
-    closefd: int(c_default="1") = True
+    closefd: bool(accept={int}) = True
     opener: object = None
 
 Open file and return a stream.  Raise IOError upon failure.
@@ -232,7 +232,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=f4e1ca75223987bc]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=7f81b2a1d3b02344]*/
 {
     unsigned i;
 
@@ -549,14 +549,15 @@ _PyIO_ConvertSsize_t(PyObject *obj, void *result) {
     if (obj == Py_None) {
         limit = -1;
     }
-    else if (PyNumber_Check(obj)) {
+    else if (PyIndex_Check(obj)) {
         limit = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
-        if (limit == -1 && PyErr_Occurred())
+        if (limit == -1 && PyErr_Occurred()) {
             return 0;
+        }
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "integer argument expected, got '%.200s'",
+                     "argument should be integer or None, not '%.200s'",
                      Py_TYPE(obj)->tp_name);
         return 0;
     }

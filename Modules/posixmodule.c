@@ -1927,11 +1927,13 @@ _pystat_fromstructstat(STRUCT_STAT *st)
         return NULL;
 
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
-#ifdef HAVE_LARGEFILE_SUPPORT
+#if defined(HAVE_LARGEFILE_SUPPORT) || defined(MS_WINDOWS)
+    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(st->st_ino));
     PyStructSequence_SET_ITEM(v, 1,
-                              PyLong_FromLongLong((long long)st->st_ino));
+                              PyLong_FromUnsignedLongLong(st->st_ino));
 #else
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long)st->st_ino));
+    Py_BUILD_ASSERT(sizeof(unsigned long) >= sizeof(st->st_ino));
+    PyStructSequence_SET_ITEM(v, 1, PyLong_FromUnsignedLong(st->st_ino));
 #endif
 #ifdef MS_WINDOWS
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLong(st->st_dev));
@@ -11152,7 +11154,7 @@ typedef struct {
     PyObject *lstat;
 #ifdef MS_WINDOWS
     struct _Py_stat_struct win32_lstat;
-    __int64 win32_file_index;
+    uint64_t win32_file_index;
     int got_file_index;
 #else /* POSIX */
 #ifdef HAVE_DIRENT_D_TYPE
@@ -11409,7 +11411,8 @@ os_DirEntry_inode_impl(DirEntry *self)
         self->win32_file_index = stat.st_ino;
         self->got_file_index = 1;
     }
-    return PyLong_FromLongLong((long long)self->win32_file_index);
+    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(self->win32_file_index));
+    return PyLong_FromUnsignedLongLong(self->win32_file_index);
 #else /* POSIX */
 #ifdef HAVE_LARGEFILE_SUPPORT
     return PyLong_FromLongLong((long long)self->d_ino);
