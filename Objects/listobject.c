@@ -1950,8 +1950,6 @@ unsafe_object_compare(PyObject* v, PyObject* w, MergeState* ms)
 	       v->ob_type->tp_richcompare != NULL);
     #endif
 
-    
-    if (v == w) return 0;
     if (v->ob_type->tp_richcompare != ms->key_richcompare)
         return PyObject_RichCompareBool(v, w, Py_LT);
     
@@ -2031,16 +2029,15 @@ unsafe_float_compare(PyObject *v, PyObject *w, MergeState* ms){
         assert(v->ob_type == w->ob_type &&
 	       v->ob_type == &PyFloat_Type);
     #endif
-      
-    if (v == w) return 0;    
     return PyFloat_AS_DOUBLE(v) < PyFloat_AS_DOUBLE(w);
 }
 
-/* Tuple compare: compare any two non-empty tuples, using 
+/* Tuple compare: compare *any* two tuples, using 
  * ms->tuple_elem_compare to compare the first elements, which is set 
  * using the same pre-sort check as we use for ms->key_compare,
  * but run on the list [x[0] for x in L]. This allows us to optimize compares
- * on two levels (as long as [x[0] for x in L] is type-homogeneous.) */
+ * on two levels (as long as [x[0] for x in L] is type-homogeneous.) The idea is 
+ * that most tuple compares don't involve x[1:]. */
 static int
 unsafe_tuple_compare(PyObject* v, PyObject* w, MergeState* ms)
 {   
@@ -2056,49 +2053,27 @@ unsafe_tuple_compare(PyObject* v, PyObject* w, MergeState* ms)
 	       Py_SIZE(w) > 0);
     #endif
 
-    if (v == w) return 0;
-
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
-
-    /* Is v[0] < w[0]? */
-    k = (*(ms->tuple_elem_compare))(vt->ob_item[0], wt->ob_item[0], ms);
-    if (k < 0)
-        return -1;
-    if (k)
-        return 1;
 
     vlen = Py_SIZE(vt);
     wlen = Py_SIZE(wt);
 
-    /* Well, are either of the tuples are singleton? */
-    if (vlen == 1 || wlen == 1)
-        return 0;
-
-    /* Well, is w[0] < v[0]? */
-    k = (*(ms->tuple_elem_compare))(wt->ob_item[0], vt->ob_item[0], ms);
-    if (k < 0)
-        return -1;
-    if (k)
-        return 0;
-
-    /* Out of options: v[0] == w[0]! We need to look at v[1:] and w[1:].
-     * We can use code copied straight from tupleobject.c:tuplerichcompare: */
     for (i = 0; i < vlen && i < wlen; i++) {
-        k = PyObject_RichCompareBool(vt->ob_item[i],
-                                     wt->ob_item[i],
-                                     Py_EQ);
+        k = PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_EQ);
         if (k < 0)
             return -1;
         if (!k)
             break;
     }
 
-    if (i >= vlen || i >= wlen) {
+    if (i >= vlen || i >= wlen)
         return vlen < wlen;
-    }
 
-    return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
+    if (i == 0)
+	return ms->tuple_elem_compare(vt->ob_item[i], wt->ob_item[i], ms);
+    else
+	return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
 }
 
 /* An adaptive, stable, natural mergesort.  See listsort.txt.
