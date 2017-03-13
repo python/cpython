@@ -28,6 +28,7 @@ wmain(int argc, wchar_t **argv)
  *
  */
 
+#ifdef PY_COERCE_C_LOCALE
 static const char *_C_LOCALE_COERCION_WARNING =
     "Python detected LC_CTYPE=C: %.20s coerced to %.20s (set another locale "
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behaviour).\n";
@@ -116,6 +117,7 @@ _handle_legacy_c_locale(void)
     }
     /* No C locale warning here, as Py_Initialize will emit one later */
 }
+#endif
 
 int
 main(int argc, char **argv)
@@ -125,7 +127,6 @@ main(int argc, char **argv)
     wchar_t **argv_copy2;
     int i, res;
     char *oldloc;
-    const char *ctype_loc;
 
     /* Force malloc() allocator to bootstrap Python */
     (void)_PyMem_SetupAllocators("malloc");
@@ -155,12 +156,14 @@ main(int argc, char **argv)
     /* Reconfigure the locale to the default for this process */
     setlocale(LC_ALL, "");
 
+#ifdef PY_COERCE_C_LOCALE
     /* When the LC_CTYPE category still claims to be using the C locale,
        assume configuration error and try for a UTF-8 based locale instead */
-    ctype_loc = setlocale(LC_CTYPE, NULL);
+    const char *ctype_loc = setlocale(LC_CTYPE, NULL);
     if (ctype_loc != NULL && strcmp(ctype_loc, "C") == 0) {
         _handle_legacy_c_locale();
     }
+#endif
 
     /* Convert from char to wchar_t based on the locale settings */
     for (i = 0; i < argc; i++) {

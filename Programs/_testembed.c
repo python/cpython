@@ -1,4 +1,5 @@
-#include <Python.h>
+#include "Python.h"
+#include "pyconfig.h"
 #include <stdio.h>
 
 /*********************************************************
@@ -131,11 +132,15 @@ static int test_forced_io_encoding(void)
 
 static int test_c_locale_warning(void)
 {
+#ifdef PY_WARN_ON_C_LOCALE
     /* Force use of the C locale */
     setenv("LC_ALL", "C", 1);
 
     _testembed_Py_Initialize();
     Py_Finalize();
+#else
+    printf("C locale compatibility warning disabled at compile time\n");
+#endif
     return 0;
 }
 

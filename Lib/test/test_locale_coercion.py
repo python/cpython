@@ -3,6 +3,7 @@
 import unittest
 import os
 import sys
+import sysconfig
 import shutil
 import subprocess
 import test.support
@@ -36,8 +37,9 @@ CLI_COERCION_WARNING_FMT = (
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behaviour)."
 )
 
-# TODO: Make this conditional on the PY_COERCE_C_LOCALE sysconfig var
 @test.support.cpython_only
+@unittest.skipUnless(sysconfig.get_config_var("PY_COERCE_C_LOCALE"),
+                     "C locale coercion disabled at build time")
 class LocaleOverrideTests(unittest.TestCase):
 
     @classmethod
@@ -147,7 +149,8 @@ LIBRARY_C_LOCALE_WARNING = (
     "locales is recommended.\n"
 )
 
-# TODO: Make this conditional on the PY_WARN_ON_C_LOCALE sysconfig var
+@unittest.skipUnless(sysconfig.get_config_var("PY_WARN_ON_C_LOCALE"),
+                     "C locale runtime warning disabled at build time")
 class EmbeddingTests(unittest.TestCase):
     def setUp(self):
         here = os.path.abspath(__file__)
