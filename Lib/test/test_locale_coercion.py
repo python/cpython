@@ -8,7 +8,6 @@ import test.support
 from test.support.script_helper import (
     run_python_until_end,
     interpreter_requires_environment,
-    RUNTIME_C_LOCALE_WARNING
 )
 
 # In order to get the warning messages to match up as expected, the candidate
@@ -29,6 +28,14 @@ def _set_locale_in_subprocess(locale_name, category):
     cmd = cmd_fmt.format(category, locale_name)
     result, py_cmd = run_python_until_end("-c", cmd, __isolated=True)
     return result.rc == 0
+
+# Details of the shared library warning emitted at runtime
+LIBRARY_C_LOCALE_WARNING = (
+    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
+    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
+    "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
+    "locales is recommended."
+)
 
 # Details of the CLI warning emitted at runtime
 CLI_COERCION_WARNING_FMT = (
@@ -100,16 +107,10 @@ class LocaleOverrideTest(unittest.TestCase):
               None: don't set the variable at all
               str: the value set in the child's environment
         """
-        if coerce_c_locale == "0":
-            # Check the library emits a warning
-            expected_warning = [
-                RUNTIME_C_LOCALE_WARNING,
-            ]
-        else:
+        expected_warning = []
+        if coerce_c_locale != "0":
             # Check C locale is coerced with a warning on stderr
-            expected_warning = [
-                self.EXPECTED_COERCION_WARNING,
-            ]
+            expected_warning.append(self.EXPECTED_COERCION_WARNING)
         base_var_dict = {
             "LANG": "",
             "LC_CTYPE": "",

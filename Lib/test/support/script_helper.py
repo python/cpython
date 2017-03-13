@@ -14,13 +14,6 @@ from importlib.util import source_from_cache
 from test.support import make_legacy_pyc, strip_python_stderr
 
 
-RUNTIME_C_LOCALE_WARNING = (
-    "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
-    "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
-    "C.utf8, or UTF-8 (if available) as alternative Unicode-compatible "
-    "locales is recommended."
-)
-
 # Cached result of the expensive test performed in the function below.
 __cached_interp_requires_environment = None
 

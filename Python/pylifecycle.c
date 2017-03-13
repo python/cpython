@@ -311,9 +311,17 @@ static const char *_C_LOCALE_WARNING =
 static void
 _emit_stderr_warning_for_c_locale(void)
 {
-    const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-    if (ctype_loc != NULL && strcmp(ctype_loc, "C") == 0) {
-        fprintf(stderr, "%s", _C_LOCALE_WARNING);
+    const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
+    /* We don't emit a warning if locale coercion has been explicitly disabled.
+     *
+     * For consistency with the corresponding check in Programs/python.c
+     * we ignore the Python -E and -I flags here.
+     */
+    if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
+        const char *ctype_loc = setlocale(LC_CTYPE, NULL);
+        if (ctype_loc != NULL && strcmp(ctype_loc, "C") == 0) {
+            fprintf(stderr, "%s", _C_LOCALE_WARNING);
+        }
     }
 }
 
