@@ -458,17 +458,19 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *arg)
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
 
-    if (PyNumber_Check(arg)) {
+    if (PyIndex_Check(arg)) {
         size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
-        if (size == -1 && PyErr_Occurred())
+        if (size == -1 && PyErr_Occurred()) {
             return NULL;
+        }
     }
     else if (arg == Py_None) {
         /* Truncate to current position if no argument is passed. */
         size = self->pos;
     }
     else {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
+        PyErr_Format(PyExc_TypeError,
+                     "argument should be integer or None, not '%.200s'",
                      Py_TYPE(arg)->tp_name);
         return NULL;
     }
