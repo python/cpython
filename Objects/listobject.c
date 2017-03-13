@@ -2054,7 +2054,7 @@ unsafe_tuple_compare(PyObject* v, PyObject* w, MergeState* ms)
     if (v == w) return 0;
 
     /* Is v[0] < w[0]? */
-    int k = (*(ms->tuple_elem_compare))(vt->ob_item[0], wt->ob_item[0], ms);
+    k = (*(ms->tuple_elem_compare))(vt->ob_item[0], wt->ob_item[0], ms);
     if (k < 0)
         return -1;
     if (k)
