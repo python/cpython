@@ -243,17 +243,17 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    the trailing CRLF stripped.  The default *callback* prints the line to ``sys.stdout``.
 
 
-.. method:: FTP.set_pasv(boolean)
+.. method:: FTP.set_pasv(val)
 
-   Enable "passive" mode if *boolean* is true, other disable passive mode.  (In
+   Enable "passive" mode if *val* is true, otherwise disable passive mode.  (In
    Python 2.0 and before, passive mode was off by default; in Python 2.1 and later,
    it is on by default.)
 
 
-.. method:: FTP.storbinary(command, file[, blocksize, callback, rest])
+.. method:: FTP.storbinary(command, fp[, blocksize, callback, rest])
 
    Store a file in binary transfer mode.  *command* should be an appropriate
-   ``STOR`` command: ``"STOR filename"``. *file* is an open file object which is
+   ``STOR`` command: ``"STOR filename"``. *fp* is an open file object which is
    read until EOF using its :meth:`read` method in blocks of size *blocksize* to
    provide the data to be stored.  The *blocksize* argument defaults to 8192.
    *callback* is an optional single parameter callable that is called
@@ -269,11 +269,11 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    .. versionchanged:: 2.7
       *rest* parameter added.
 
-.. method:: FTP.storlines(command, file[, callback])
+.. method:: FTP.storlines(command, fp[, callback])
 
    Store a file in ASCII transfer mode.  *command* should be an appropriate
    ``STOR`` command (see :meth:`storbinary`).  Lines are read until EOF from the
-   open file object *file* using its :meth:`~file.readline` method to provide
+   open file object *fp* using its :meth:`~file.readline` method to provide
    the data to be stored.  *callback* is an optional single parameter callable
    that is called on each line after it is sent.
 
