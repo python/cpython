@@ -1954,6 +1954,11 @@ unsafe_object_compare(PyObject* v, PyObject* w, MergeState* ms)
         return PyObject_RichCompareBool(v, w, Py_LT);
     
     PyObject* res = (*(ms->key_richcompare))(v, w, Py_LT);
+    
+    if (res == Py_NotImplemented) {
+        Py_DECREF(res);
+        return PyObject_RichCompareBool(v, w, Py_LT);
+    }
     if (res == NULL)
         return -1;
 
