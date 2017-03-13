@@ -423,18 +423,19 @@ class MmapTests(unittest.TestCase):
 
     @cpython_only
     def test_constructor_c_limits(self):
-        from _testcapi import INT_MIN, INT_MAX, PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
+        from _testcapi import INT_MIN, INT_MAX, PY_SSIZE_T_MAX
 
-        # bad fileno
+        # test overflow values of arguments that are stored in the
+        # same C types on unix and on Windows:
+        # fileno
         self.assertRaises(OverflowError, mmap.mmap, -1 << 1000, 16)
         self.assertRaises(OverflowError, mmap.mmap, INT_MIN - 1, 16)
         self.assertRaises(OverflowError, mmap.mmap, INT_MAX + 1, 16)
         self.assertRaises(OverflowError, mmap.mmap, 1 << 1000, 16)
-        # bad length
-        self.assertRaises(OverflowError, mmap.mmap, -1, PY_SSIZE_T_MIN - 1)
+        # length
         self.assertRaises(OverflowError, mmap.mmap, -1, PY_SSIZE_T_MAX + 1)
         self.assertRaises(OverflowError, mmap.mmap, -1, 1 << 1000)
-        # bad access
+        # access
         self.assertRaises(OverflowError, mmap.mmap, -1, 16, access=-1 << 1000)
         self.assertRaises(OverflowError, mmap.mmap, -1, 16, access=INT_MIN - 1)
         self.assertRaises(OverflowError, mmap.mmap, -1, 16, access=INT_MAX + 1)
