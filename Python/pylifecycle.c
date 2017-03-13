@@ -88,7 +88,7 @@ int Py_BytesWarningFlag; /* Warn on str(bytes) and str(buffer) */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
 int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
-int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.py[co]) */
+int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.pyc) */
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
 int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */

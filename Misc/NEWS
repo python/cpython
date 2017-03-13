@@ -10,6 +10,14 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29723: The ``sys.path[0]`` initialization change for bpo-29139 caused a
+  regression by revealing an inconsistency in how sys.path is initialized when
+  executing ``__main__`` from a zipfile, directory, or other import location.
+  The interpreter now consistently avoids ever adding the import location's
+  parent directory to ``sys.path``, and ensures no other ``sys.path`` entries
+  are inadvertently modified when inserting the import location named on the
+  command line.
+
 - bpo-29568: Escaped percent "%%" in the format string for classic string
   formatting no longer allows any characters between two percents.
 
@@ -270,6 +278,14 @@ Extension Modules
 Library
 -------
 
+- bpo-8256: Fixed possible failing or crashing input() if attributes "encoding"
+  or "errors" of sys.stdin or sys.stdout are not set or are not strings.
+
+- bpo-28692: Using non-integer value for selecting a plural form in gettext is
+  now deprecated.
+
+- bpo-26121: Use C library implementation for math functions erf() and erfc().
+
 - bpo-29619: os.stat() and os.DirEntry.inode() now convert inode (st_ino) using
   unsigned integers.
 
@@ -318,6 +334,9 @@ Library
 
 - bpo-28518: Start a transaction implicitly before a DML statement.
   Patch by Aviv Palivoda.
+
+- bpo-29742: get_extra_info() raises exception if get called on closed ssl transport.
+  Patch by Nikolay Kim.
 
 - Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
   '~' in the set of characters that is not quoted by default. Patch by
@@ -906,6 +925,10 @@ Build
 
 Tools/Demos
 -----------
+
+- bpo-24037: Argument Clinic now uses the converter `bool(accept={int})` rather
+  than `int` for semantical booleans.  This avoids repeating the default
+  value for Python and C and will help in converting to `bool` in future.
 
 - Issue #29367: python-gdb.py now supports also ``method-wrapper``
   (``wrapperobject``) objects.
