@@ -426,7 +426,7 @@ class MmapTests(unittest.TestCase):
         from _testcapi import INT_MIN, INT_MAX, PY_SSIZE_T_MAX
 
         # test overflow values of arguments that are stored in the
-        # same C types on unix and on Windows:
+        # same C types on Unix and on Windows:
         # fileno
         self.assertRaises(OverflowError, mmap.mmap, -1 << 1000, 16)
         self.assertRaises(OverflowError, mmap.mmap, INT_MIN - 1, 16)
