@@ -1,8 +1,42 @@
+# Binary data types
+*.aif binary
+*.aifc binary
+*.aiff binary
+*.au binary
+*.bmp binary
+*.exe binary
+*.icns binary
+*.gif binary
+*.ico binary
+*.jpg binary
 *.pck binary
-Lib/test/cjkencodings/* binary
-Lib/test/decimaltestdata/*.decTest binary
+*.png binary
+*.psd binary
+*.tar binary
+*.wav binary
+*.whl binary
+*.zip binary
+
+# Specific binary files
 Lib/test/sndhdrdata/sndhdr.* binary
-Lib/test/test_email/data/msg_26.txt binary
-Lib/test/xmltestdata/* binary
-Lib/venv/scripts/nt/* binary
-Lib/test/coding20731.py binary
+
+# Text files that should not be subject to eol conversion
+Lib/test/cjkencodings/* -text
+Lib/test/decimaltestdata/*.decTest -text
+Lib/test/test_email/data/*.txt -text
+Lib/test/xmltestdata/* -text
+Lib/test/coding20731.py -text
+
+# Third party code
+Modules/zlib/** -text
+Modules/expat/** -text
+
+# CRLF files
+*.bat eol=crlf
+*.ps1 eol=crlf
+*.sln eol=crlf
+*.vcxproj* eol=crlf
+*.props eol=crlf
+*.proj eol=crlf
+PCbuild/readme.txt eol=crlf
+PC/readme.txt eol=crlf
