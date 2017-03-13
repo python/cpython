@@ -32,8 +32,8 @@ def _set_locale_in_subprocess(locale_name, category):
 
 # Details of the CLI warning emitted at runtime
 CLI_COERCION_WARNING_FMT = (
-    "Python detected LC_CTYPE=C, {} set to {} (set another locale or "
-    "PYTHONCOERCECLOCALE=0 to disable this locale coercion behaviour)."
+    "Python detected LC_CTYPE=C: {} coerced to {} (set another locale "
+    "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behaviour)."
 )
 
 @test.support.cpython_only
