@@ -444,7 +444,7 @@ seterror(Py_ssize_t iarg, const char *msg, int *levels, const char *fname,
 
     if (PyErr_Occurred()) {
         assert(p_format_code != NULL);
-        if (PyErr_ExceptionMatches(PyExc_OverflowError) && fname != NULL &&
+        if (fname != NULL && PyErr_ExceptionMatches(PyExc_OverflowError) &&
             strchr("bhilLn", *p_format_code)) {
             PyErr_Format(PyExc_OverflowError,
                          "%.150s() argument out of range", fname);

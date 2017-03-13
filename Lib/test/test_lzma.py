@@ -60,16 +60,15 @@ class CompressorDecompressorTestCase(unittest.TestCase):
 
     @cpython_only
     def test_INT_TYPE_CONVERTER_FUNC_macro(self):
+        # test the macro by testing uint32_converter, which is created
+        # by using the macro, and is later used to convert the preset
+        # argument of LZMACompressor.
         self.assertRaises(OverflowError, LZMACompressor, preset=-1 << 1000)
         self.assertRaises(OverflowError, LZMACompressor, preset=-1)
+        LZMACompressor(preset=0)
+        self.assertRaises(LZMAError, LZMACompressor, preset=(1 << 32) - 1)
         self.assertRaises(OverflowError, LZMACompressor, preset=1 << 32)
         self.assertRaises(OverflowError, LZMACompressor, preset=1 << 1000)
-        # verify OverflowError is not raised.
-        for in_range_preset in [0, (1 << 32) - 1]:
-            try:
-                LZMACompressor(preset=in_range_preset)
-            except LZMAError:
-                pass
 
     def test_bad_filter_spec(self):
         self.assertRaises(TypeError, LZMACompressor, filters=[b"wobsite"])

@@ -787,7 +787,6 @@ class CBytesIOTest(PyBytesIOTest):
         self.assertRaises(OverflowError, memio.truncate, PY_SSIZE_T_MIN - 1)
         self.assertRaises(ValueError, memio.truncate, PY_SSIZE_T_MIN)
         self.assertRaises(ValueError, memio.truncate, -1)
-        # verify OverflowError/ValueError is not raised
         memio.truncate(0)
         memio.truncate(PY_SSIZE_T_MAX)
         self.assertRaises(OverflowError, memio.truncate, PY_SSIZE_T_MAX + 1)
@@ -849,7 +848,6 @@ class CStringIOTest(PyStringIOTest):
         self.assertRaises(OverflowError, memio.truncate, PY_SSIZE_T_MIN - 1)
         self.assertRaises(ValueError, memio.truncate, PY_SSIZE_T_MIN)
         self.assertRaises(ValueError, memio.truncate, -1)
-        # verify OverflowError/ValueError is not raised
         memio.truncate(0)
         memio.truncate(PY_SSIZE_T_MAX)
         self.assertRaises(OverflowError, memio.truncate, PY_SSIZE_T_MAX + 1)
