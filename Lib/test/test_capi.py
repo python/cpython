@@ -386,7 +386,7 @@ class EmbeddingTests(unittest.TestCase):
     def test_subinterps(self):
         # This is just a "don't crash" test
         out, err = self.run_embedded_interpreter("repeated_init_and_subinterpreters")
-        if support.verbose:
+        if support.verbose > 1:
             print()
             print(out)
             print(err)
@@ -404,14 +404,15 @@ class EmbeddingTests(unittest.TestCase):
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         out, err = self.run_embedded_interpreter("forced_io_encoding")
-        if support.verbose:
+        if support.verbose > 1:
             print()
             print(out)
             print(err)
-        expected_errors = sys.__stdout__.errors
-        expected_stdin_encoding = sys.__stdin__.encoding
+        expected_errors = "surrogateescape"
+        expected_stdin_encoding = "UTF-8"
         expected_pipe_encoding = self._get_default_pipe_encoding()
         expected_output = '\n'.join([
+        "Setting PYTHONIOENCODING=UTF-8:surrogateescape",
         "--- Use defaults ---",
         "Expected encoding: default",
         "Expected errors: default",
