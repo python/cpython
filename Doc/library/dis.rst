@@ -20,6 +20,9 @@ interpreter.
    between versions of Python.  Use of this module should not be considered to
    work across Python VMs or Python releases.
 
+   .. versionchanged:: 3.6
+      Use fixed 2 bytes per instruction for all instructions.
+
 
 Example: Given the function :func:`myfunc`::
 
@@ -210,10 +213,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
    This generator function uses the ``co_firstlineno`` and ``co_lnotab``
    attributes of the code object *code* to find the offsets which are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
-   Functions decoding directly ``co_lnotab`` should use a signed
-   8-bit integer type for the line number delta.  See
-   ``Objects/lnotab_notes.txt`` for the ``co_lnotab`` format and how to decode
-   it.
+   See ``Objects/lnotab_notes.txt`` for the ``co_lnotab`` format and how to
+   decode it.
 
    .. versionchanged:: 3.6
       Added support for negative line number delta.
@@ -287,7 +288,6 @@ details of bytecode instructions as :class:`Instruction` instances:
 
 
 The Python compiler currently generates the following bytecode instructions.
-Every instruction takes 2 bytes.
 
 
 **General instructions**
