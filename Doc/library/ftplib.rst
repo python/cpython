@@ -255,9 +255,9 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    prints the line to ``sys.stdout``.
 
 
-.. method:: FTP.set_pasv(boolean)
+.. method:: FTP.set_pasv(val)
 
-   Enable "passive" mode if *boolean* is true, other disable passive mode.
+   Enable "passive" mode if *val* is true, otherwise disable passive mode.
    Passive mode is on by default.
 
 
