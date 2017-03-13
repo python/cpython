@@ -543,8 +543,10 @@ class SSLProtocol(protocols.Protocol):
     def _get_extra_info(self, name, default=None):
         if name in self._extra:
             return self._extra[name]
-        else:
+        elif self._transport is not None:
             return self._transport.get_extra_info(name, default)
+        else:
+            return default
 
     def _start_shutdown(self):
         if self._in_shutdown:

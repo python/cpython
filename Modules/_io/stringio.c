@@ -458,14 +458,9 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *arg)
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
 
-    if (PyNumber_Check(arg)) {
+    if (PyIndex_Check(arg)) {
         size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-                PyErr_SetString(PyExc_OverflowError,
-                                "truncate: size value does not fit in C "
-                                "Py_ssize_t");
-            }
             return NULL;
         }
     }
@@ -475,7 +470,7 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *arg)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "truncate: integer argument expected, got '%s'",
+                     "argument should be integer or None, not '%.200s'",
                      Py_TYPE(arg)->tp_name);
         return NULL;
     }

@@ -578,7 +578,7 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *arg)
         /* Truncate to current position if no argument is passed. */
         size = self->pos;
     }
-    else {
+    else if (PyIndex_Check(arg)) {
         size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
             if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
@@ -587,6 +587,12 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *arg)
             }
             return NULL;
         }
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "argument should be integer or None, not '%.200s'",
+                     Py_TYPE(arg)->tp_name);
+        return NULL;
     }
 
     if (size < 0) {

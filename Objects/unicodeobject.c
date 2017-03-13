@@ -13089,7 +13089,7 @@ unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
 /*[clinic input]
 str.splitlines as unicode_splitlines
 
-    keepends: int(c_default="0") = False
+    keepends: bool(accept={int}) = False
 
 Return a list of the lines in the string, breaking at line boundaries.
 
@@ -13099,7 +13099,7 @@ true.
 
 static PyObject *
 unicode_splitlines_impl(PyObject *self, int keepends)
-/*[clinic end generated code: output=f664dcdad153ec40 input=d6ff99fe43465b0f]*/
+/*[clinic end generated code: output=f664dcdad153ec40 input=b508e180459bdd8b]*/
 {
     return PyUnicode_Splitlines(self, keepends);
 }
