@@ -341,7 +341,12 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     initialized = 1;
     _Py_Finalizing = NULL;
 
-#ifdef HAVE_SETLOCALE
+#ifdef __ANDROID__
+    /* Passing "" to setlocale() on Android requests the C locale rather
+     * than checking environment variables, so request C.UTF-8 explicitly
+     */
+    setlocale(LC_CTYPE, "C.UTF-8");
+#else
     /* Set up the LC_CTYPE locale, so we can obtain
        the locale's charset without having to switch
        locales. */

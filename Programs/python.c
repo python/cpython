@@ -153,8 +153,15 @@ main(int argc, char **argv)
         return 1;
     }
 
+#ifdef __ANDROID__
+    /* Passing "" to setlocale() on Android requests the C locale rather
+     * than checking environment variables, so request C.UTF-8 explicitly
+     */
+    setlocale(LC_ALL, "C.UTF-8");
+#else
     /* Reconfigure the locale to the default for this process */
     setlocale(LC_ALL, "");
+#endif
 
 #ifdef PY_COERCE_C_LOCALE
     /* When the LC_CTYPE category still claims to be using the C locale,
