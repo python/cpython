@@ -1947,15 +1947,16 @@ unsafe_object_compare(PyObject* v, PyObject* w, MergeState* ms)
     assert(v->ob_type == w->ob_type &&
            v->ob_type->tp_richcompare != NULL);
   #endif
-    if (v == w) return 0;
+    int ok; 
     
+    if (v == w) return 0;
     if (v->ob_type->tp_richcompare != ms->key_richcompare)
         return PyObject_RichCompareBool(v, w, Py_LT);
     
     PyObject* res = (*(ms->key_richcompare))(v, w, Py_LT);
     if (res == NULL)
         return -1;
-    int ok;
+
     if (PyBool_Check(res)){
         ok = (res == Py_True);
     }
@@ -2040,7 +2041,6 @@ unsafe_tuple_compare(PyObject* v, PyObject* w, MergeState* ms)
            Py_SIZE(v) > 0 &&
            Py_SIZE(w) > 0);
   #endif
-    if (v == w) return 0;
     
     PyTupleObject *vt, *wt;
     Py_ssize_t i;
@@ -2048,6 +2048,10 @@ unsafe_tuple_compare(PyObject* v, PyObject* w, MergeState* ms)
 
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
+    
+    int ok;
+    
+    if (v == w) return 0;
 
     /* Is v[0] < w[0]? */
     int k = (*(ms->tuple_elem_compare))(vt->ob_item[0], wt->ob_item[0], ms);
