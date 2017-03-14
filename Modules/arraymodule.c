@@ -202,14 +202,12 @@ b_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     }
     else if (x < -128) {
         PyErr_SetString(PyExc_OverflowError,
-                        "array('b').__setitem__() value argument too small "
-                        "to convert to C char");
+                        "array item too small to convert to C char");
         return -1;
     }
     else if (x > 127) {
         PyErr_SetString(PyExc_OverflowError,
-                        "array('b').__setitem__() value argument too large "
-                        "to convert to C char");
+                        "array item too large to convert to C char");
         return -1;
     }
     if (i >= 0) {
@@ -302,14 +300,12 @@ HH_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     }
     else if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
-                        "array('H').__setitem__() value argument can't be "
-                        "negative");
+                        "array item can't be negative");
         return -1;
     }
     else if (x > USHRT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
-                        "array('H').__setitem__() value argument too large "
-                        "to convert to C unsigned short");
+                        "array item too large to convert to C unsigned short");
         return -1;
     }
     if (i >= 0) {
@@ -373,8 +369,7 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (x == (unsigned long)-1 && PyErr_Occurred()) {
         assert(PyErr_ExceptionMatches(PyExc_OverflowError));
         PyErr_SetString(PyExc_OverflowError,
-                        "array('I').__setitem__() value argument does "
-                        "not fit in C unsigned int");
+                        "array item does not fit in C unsigned int");
         if (do_decref) {
             Py_DECREF(v);
         }
@@ -382,8 +377,7 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     }
     if (x > UINT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
-                        "array('I').__setitem__() value argument too large "
-                        "to convert to C unsigned int");
+                        "array item too large to convert to C unsigned int");
         if (do_decref) {
             Py_DECREF(v);
         }
@@ -441,8 +435,7 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (x == (unsigned long)-1 && PyErr_Occurred()) {
         assert(PyErr_ExceptionMatches(PyExc_OverflowError));
         PyErr_SetString(PyExc_OverflowError,
-                        "array('L').__setitem__() value argument does "
-                        "not fit in C unsigned long");
+                        "array item does not fit in C unsigned long");
         if (do_decref) {
             Py_DECREF(v);
         }
@@ -501,8 +494,7 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (x == (unsigned long long)-1 && PyErr_Occurred()) {
         assert(PyErr_ExceptionMatches(PyExc_OverflowError));
         PyErr_SetString(PyExc_OverflowError,
-                        "array('Q').__setitem__() value argument does "
-                        "not fit in C unsigned long long");
+                        "array item does not fit in C unsigned long long");
         if (do_decref) {
             Py_DECREF(v);
         }

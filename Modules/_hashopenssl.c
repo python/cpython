@@ -629,7 +629,7 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
     long iterations, dklen;
     int retval;
     const EVP_MD *digest;
-    int overflow = 0;
+    int overflow;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "sy*y*l|O:pbkdf2_hmac",
                                      kwlist, &name, &password, &salt,
