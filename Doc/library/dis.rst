@@ -218,7 +218,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    how to decode it.
 
    .. versionchanged:: 3.6
-      Line numbers can be not monotonically increasing.
+      Line numbers can be decreasing. Before, they were always increasing.
 
 
 .. function:: findlabels(code)
