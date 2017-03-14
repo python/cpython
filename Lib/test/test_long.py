@@ -712,8 +712,7 @@ class LongTest(unittest.TestCase):
                 self.assertEqual(format(value, format_spec),
                                  format(float(value), format_spec))
 
-    @support.cpython_only
-    def test__format__c_limits(self):
+        # test 'c' specifier limits
         self.assertRaises(OverflowError, format, -1 << 1000, 'c')
         self.assertRaises(OverflowError, format, -1, 'c')
         self.assertEqual(format(0, 'c'), '\x00')
