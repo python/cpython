@@ -18,6 +18,7 @@ typedef struct {
     PyObject *kw;
     PyObject *dict;
     PyObject *weakreflist; /* List of weak references */
+    int use_fastcall;
 } partialobject;
 
 static PyTypeObject partial_type;
@@ -110,6 +111,8 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    pto->use_fastcall = _PyObject_HasFastCall(func);
+
     return (PyObject *)pto;
 }
 
@@ -127,69 +130,110 @@ partial_dealloc(partialobject *pto)
 }
 
 static PyObject *
-partial_call(partialobject *pto, PyObject *args, PyObject *kw)
+partial_fastcall(partialobject *pto, PyObject **args, Py_ssize_t nargs,
+                 PyObject *kwargs)
 {
+    PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject *ret;
-    PyObject *argappl, *kwappl;
-    PyObject **stack;
-    Py_ssize_t nargs;
+    PyObject **stack, **stack_buf = NULL;
+    Py_ssize_t nargs2, pto_nargs;
+
+    pto_nargs = PyTuple_GET_SIZE(pto->args);
+    nargs2 = pto_nargs + nargs;
+
+    if (pto_nargs == 0) {
+        stack = args;
+    }
+    else if (nargs == 0) {
+        stack = &PyTuple_GET_ITEM(pto->args, 0);
+    }
+    else {
+        if (nargs2 <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
+            stack = small_stack;
+        }
+        else {
+            stack_buf = PyMem_Malloc(nargs2 * sizeof(PyObject *));
+            if (stack_buf == NULL) {
+                PyErr_NoMemory();
+                return NULL;
+            }
+            stack = stack_buf;
+        }
+
+        /* use borrowed references */
+        memcpy(stack,
+               &PyTuple_GET_ITEM(pto->args, 0),
+               pto_nargs * sizeof(PyObject*));
+        memcpy(&stack[pto_nargs],
+               args,
+               nargs * sizeof(PyObject*));
+    }
+
+    ret = _PyObject_FastCallDict(pto->fn, stack, nargs2, kwargs);
+    PyMem_Free(stack_buf);
+    return ret;
+}
+
+static PyObject *
+partial_call_impl(partialobject *pto, PyObject *args, PyObject *kwargs)
+{
+    PyObject *ret, *args2;
+
+    /* Note: tupleconcat() is optimized for empty tuples */
+    args2 = PySequence_Concat(pto->args, args);
+    if (args2 == NULL) {
+        return NULL;
+    }
+    assert(PyTuple_Check(args2));
+
+    ret = PyObject_Call(pto->fn, args2, kwargs);
+    Py_DECREF(args2);
+    return ret;
+}
+
+static PyObject *
+partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
+{
+    PyObject *kwargs2, *res;
 
     assert (PyCallable_Check(pto->fn));
     assert (PyTuple_Check(pto->args));
     assert (PyDict_Check(pto->kw));
 
-    if (PyTuple_GET_SIZE(pto->args) == 0) {
-        stack = &PyTuple_GET_ITEM(args, 0);
-        nargs = PyTuple_GET_SIZE(args);
-        argappl = NULL;
-    }
-    else if (PyTuple_GET_SIZE(args) == 0) {
-        stack = &PyTuple_GET_ITEM(pto->args, 0);
-        nargs = PyTuple_GET_SIZE(pto->args);
-        argappl = NULL;
-    }
-    else {
-        stack = NULL;
-        argappl = PySequence_Concat(pto->args, args);
-        if (argappl == NULL) {
-            return NULL;
-        }
-
-        assert(PyTuple_Check(argappl));
-    }
-
     if (PyDict_GET_SIZE(pto->kw) == 0) {
-        kwappl = kw;
-        Py_XINCREF(kwappl);
+        /* kwargs can be NULL */
+        kwargs2 = kwargs;
+        Py_XINCREF(kwargs2);
     }
     else {
         /* bpo-27840, bpo-29318: dictionary of keyword parameters must be
            copied, because a function using "**kwargs" can modify the
            dictionary. */
-        kwappl = PyDict_Copy(pto->kw);
-        if (kwappl == NULL) {
-            Py_XDECREF(argappl);
+        kwargs2 = PyDict_Copy(pto->kw);
+        if (kwargs2 == NULL) {
             return NULL;
         }
 
-        if (kw != NULL) {
-            if (PyDict_Merge(kwappl, kw, 1) != 0) {
-                Py_XDECREF(argappl);
-                Py_DECREF(kwappl);
+        if (kwargs != NULL) {
+            if (PyDict_Merge(kwargs2, kwargs, 1) != 0) {
+                Py_DECREF(kwargs2);
                 return NULL;
             }
         }
     }
 
-    if (stack) {
-        ret = _PyObject_FastCallDict(pto->fn, stack, nargs, kwappl);
+
+    if (pto->use_fastcall) {
+        res = partial_fastcall(pto,
+                               &PyTuple_GET_ITEM(args, 0),
+                               PyTuple_GET_SIZE(args),
+                               kwargs2);
     }
     else {
-        ret = PyObject_Call(pto->fn, argappl, kwappl);
-        Py_DECREF(argappl);
+        res = partial_call_impl(pto, args, kwargs2);
     }
-    Py_XDECREF(kwappl);
-    return ret;
+    Py_XDECREF(kwargs2);
+    return res;
 }
 
 static int
@@ -315,12 +359,13 @@ partial_setstate(partialobject *pto, PyObject *state)
         return NULL;
     }
 
-    Py_INCREF(fn);
     if (dict == Py_None)
         dict = NULL;
     else
         Py_INCREF(dict);
 
+    Py_INCREF(fn);
+    pto->use_fastcall = _PyObject_HasFastCall(fn);
     Py_SETREF(pto->fn, fn);
     Py_SETREF(pto->args, fnargs);
     Py_SETREF(pto->kw, kw);
