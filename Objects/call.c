@@ -940,25 +940,20 @@ PyObject_CallFunction(PyObject *callable, const char *format, ...)
 }
 
 
+/* PyEval_CallFunction is exact copy of PyObject_CallFunction.
+ * This function is kept for backward compatibility.
+ */
 PyObject *
 PyEval_CallFunction(PyObject *callable, const char *format, ...)
 {
-    va_list vargs;
-    PyObject *args;
-    PyObject *res;
+    va_list va;
+    PyObject *result;
 
-    va_start(vargs, format);
+    va_start(va, format);
+    result = _PyObject_CallFunctionVa(callable, format, va, 0);
+    va_end(va);
 
-    args = Py_VaBuildValue(format, vargs);
-    va_end(vargs);
-
-    if (args == NULL)
-        return NULL;
-
-    res = PyEval_CallObject(callable, args);
-    Py_DECREF(args);
-
-    return res;
+    return result;
 }
 
 
@@ -1015,33 +1010,29 @@ PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 }
 
 
+/* PyEval_CallMethod is exact copy of PyObject_CallMethod.
+ * This function is kept for backward compatibility.
+ */
 PyObject *
 PyEval_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 {
-    va_list vargs;
-    PyObject *meth;
-    PyObject *args;
-    PyObject *res;
+    va_list va;
+    PyObject *callable, *retval;
 
-    meth = PyObject_GetAttrString(obj, name);
-    if (meth == NULL)
-        return NULL;
-
-    va_start(vargs, format);
-
-    args = Py_VaBuildValue(format, vargs);
-    va_end(vargs);
-
-    if (args == NULL) {
-        Py_DECREF(meth);
-        return NULL;
+    if (obj == NULL || name == NULL) {
+        return null_error();
     }
 
-    res = PyEval_CallObject(meth, args);
-    Py_DECREF(meth);
-    Py_DECREF(args);
+    callable = PyObject_GetAttrString(obj, name);
+    if (callable == NULL)
+        return NULL;
 
-    return res;
+    va_start(va, format);
+    retval = callmethod(callable, format, va, 0);
+    va_end(va);
+
+    Py_DECREF(callable);
+    return retval;
 }
 
 
