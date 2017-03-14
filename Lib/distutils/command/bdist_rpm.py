@@ -62,6 +62,8 @@ class bdist_rpm(Command):
          "[default: vendor]"),
         ('doc-files=', None,
          "list of documentation files (space or comma-separated)"),
+        ('extra-files=', None,
+         "list of extra files to be included in the rpm (space or comma-separated) (generated externally)"),
         ('changelog=', None,
          "RPM changelog"),
         ('icon=', None,
@@ -151,6 +153,7 @@ class bdist_rpm(Command):
         self.vendor = None
         self.packager = None
         self.doc_files = None
+        self.extra_files = None
         self.changelog = None
         self.icon = None
 
@@ -220,6 +223,7 @@ class bdist_rpm(Command):
             for readme in ('README', 'README.txt'):
                 if os.path.exists(readme) and readme not in self.doc_files:
                     self.doc_files.append(readme)
+        self.ensure_string_list('extra_files')
 
         self.ensure_string('release', "1")
         self.ensure_string('serial')   # should it be an int?
@@ -260,6 +264,7 @@ class bdist_rpm(Command):
             print("vendor =", self.vendor)
             print("packager =", self.packager)
             print("doc_files =", self.doc_files)
+            print("extra_files = ", self.extra_files)
             print("changelog =", self.changelog)
 
         # make directories
@@ -548,6 +553,11 @@ class bdist_rpm(Command):
             '%files -f INSTALLED_FILES',
             '%defattr(-,root,root)',
             ])
+
+        if self.extra_files:
+            extra_files_seperator = "\n"
+            spec_file.append("\n" + extra_files_seperator.join(self.extra_files))
+
 
         if self.doc_files:
             doc_files_seperator = "\n"
