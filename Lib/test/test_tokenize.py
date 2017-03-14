@@ -408,6 +408,25 @@ def"', """\
     OP         ':'           (1, 23) (1, 24)
     NAME       'pass'        (1, 25) (1, 29)
     """)
+        self.check_tokenize("def d23(a: str, b: int=3) -> int: pass", """\
+    NAME       'def'         (1, 0) (1, 3)
+    NAME       'd23'         (1, 4) (1, 7)
+    OP         '('           (1, 7) (1, 8)
+    NAME       'a'           (1, 8) (1, 9)
+    OP         ':'           (1, 9) (1, 10)
+    NAME       'str'         (1, 11) (1, 14)
+    OP         ','           (1, 14) (1, 15)
+    NAME       'b'           (1, 16) (1, 17)
+    OP         ':'           (1, 17) (1, 18)
+    NAME       'int'         (1, 19) (1, 22)
+    OP         '='           (1, 22) (1, 23)
+    NUMBER     '3'           (1, 23) (1, 24)
+    OP         ')'           (1, 24) (1, 25)
+    OP         '->'          (1, 26) (1, 28)
+    NAME       'int'         (1, 29) (1, 32)
+    OP         ':'           (1, 32) (1, 33)
+    NAME       'pass'        (1, 34) (1, 38)
+    """)
 
     def test_comparison(self):
         # Comparison
@@ -1371,6 +1390,8 @@ class TestTokenize(TestCase):
         self.assertExactTypeEqual('**=', token.DOUBLESTAREQUAL)
         self.assertExactTypeEqual('//', token.DOUBLESLASH)
         self.assertExactTypeEqual('//=', token.DOUBLESLASHEQUAL)
+        self.assertExactTypeEqual('...', token.ELLIPSIS)
+        self.assertExactTypeEqual('->', token.RARROW)
         self.assertExactTypeEqual('@', token.AT)
         self.assertExactTypeEqual('@=', token.ATEQUAL)
 
