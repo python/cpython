@@ -1,8 +1,9 @@
 All about co_lnotab, the line number table.
 
 Code objects store a field named co_lnotab.  This is an array of unsigned bytes
-disguised as a Python string.  It is used to map bytecode offsets to source code
-line #s for tracebacks and to identify line number boundaries for line tracing.
+disguised as a Python bytes object.  It is used to map bytecode offsets to
+source code line #s for tracebacks and to identify line number boundaries for
+line tracing.
 
 The array is conceptually a compressed list of
     (bytecode offset increment, line number increment)
@@ -24,7 +25,8 @@ look like:
 The above doesn't really work, but it's a start. An unsigned byte (byte code
 offset) can't hold negative values, or values larger than 255, a signed byte
 (line number) can't hold values larger than 127 or less than -128, and the
-above example contains two such values. So we make two tweaks:
+above example contains two such values.  (Note that before 3.6, line number
+was also encoded by an unsigned byte.)  So we make two tweaks:
 
  (a) there's a deep assumption that byte code offsets increase monotonically,
  and
@@ -45,15 +47,14 @@ above example contains two such values. So we make two tweaks:
             line_incr -= 0x100
         lineno += line_incr
 
-(In C, this is implemented by PyCode_Addr2Line(). Note that before 3.6, only
-positive line_incr's were supported.)  In order for this to work,
+(In C, this is implemented by PyCode_Addr2Line().)  In order for this to work,
 when the addr field increments by more than 255, the line # increment in each
 pair generated must be 0 until the remaining addr increment is < 256.  So, in
 the example above, assemble_lnotab in compile.c should not (as was actually done
 until 2.2) expand 300, 200 to
     255, 255, 45, 45,
 but to
-    255, 0, 45, 128, 0, 72.
+    255, 0, 45, 127, 0, 73.
 
 The above is sufficient to reconstruct line numbers for tracebacks, but not for
 line tracing.  Tracing is handled by PyCode_CheckLineNumber() in codeobject.c
