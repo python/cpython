@@ -21,7 +21,8 @@ interpreter.
    work across Python VMs or Python releases.
 
    .. versionchanged:: 3.6
-      Use fixed 2 bytes per instruction for all instructions.
+      Use fixed 2 bytes per instruction for all instructions.  Instructions
+      of variable length were used before.
 
 
 Example: Given the function :func:`myfunc`::
@@ -217,7 +218,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    decode it.
 
    .. versionchanged:: 3.6
-      Added support for negative line number delta.
+      Line numbers can be not monotonically increasing.
 
 
 .. function:: findlabels(code)
@@ -1135,8 +1136,13 @@ All of the following opcodes use their arguments.
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
-   opcodes which don't take arguments ``< HAVE_ARGUMENT`` and those which do
-   ``>= HAVE_ARGUMENT``.
+   opcodes which don't use their arguments ``< HAVE_ARGUMENT`` and
+   those which do ``>= HAVE_ARGUMENT``.
+
+   .. versionchanged:: 3.6
+      Now every instruction have an argument, but opcodes ``< HAVE_ARGUMENT``
+      ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
+
 
 .. _opcode_collections:
 
