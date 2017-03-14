@@ -94,11 +94,11 @@ PyObject_{New, NewVar, Del}.
    the object gets initialized via PyObject_{Init, InitVar} after obtaining
    the raw memory.
 */
-PyAPI_FUNC(void *) PyObject_Malloc(size_t size);
+PyAPI_FUNC(void *) PyObject_Malloc(size_t size) Py_GCC_ATTRIBUTE((alloc_size(1)));
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
-PyAPI_FUNC(void *) PyObject_Calloc(size_t nelem, size_t elsize);
+PyAPI_FUNC(void *) PyObject_Calloc(size_t nelem, size_t elsize) Py_GCC_ATTRIBUTE((alloc_size(1, 2)));
 #endif
-PyAPI_FUNC(void *) PyObject_Realloc(void *ptr, size_t new_size);
+PyAPI_FUNC(void *) PyObject_Realloc(void *ptr, size_t new_size) Py_GCC_ATTRIBUTE((alloc_size(2)));
 PyAPI_FUNC(void) PyObject_Free(void *ptr);
 
 #ifndef Py_LIMITED_API
