@@ -1096,6 +1096,8 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(OverflowError, posix.sched_setparam, 0, param)
 
     @support.cpython_only
+    @unittest.skipUnless(hasattr(posix, 'sched_setparam'),
+                         "can't change scheduler params")
     def test_convert_sched_param_c_limits(self):
         from _testcapi import INT_MIN, INT_MAX
         orig_param = posix.sched_getparam(0)
