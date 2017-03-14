@@ -407,13 +407,27 @@ class TestPartialC(TestPartial, unittest.TestCase):
         p = self.partial(capture)
         # Adding a non-string/unicode keyword to partial kwargs
         p.keywords[1] = 10
-        self.assertRaises(TypeError, repr, p)
+        self.assertIn('1=10', repr(p))
         try:
             p()
         except TypeError:
             pass
         else:
             self.fail('partial object allowed passing non-string keywords')
+
+        # Deleting the key-value pair during key formatting shouldn't segfault.
+        class MutatesYourDict(object):
+            def __init__(self, dct):
+                self.dct = dct
+            def __str__(self):
+                del self.dct[self]
+                return 'astr'
+            def __repr__(self):
+                return 'arepr'
+
+        p = partial(capture)
+        p.keywords[MutatesYourDict(p.keywords)] = MutatesYourDict(p.keywords)
+        self.assertIn('astr=arepr', repr(p))
 
 
 class TestPartialPy(TestPartial, unittest.TestCase):
