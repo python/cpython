@@ -412,7 +412,7 @@ poll_register(pollObject *self, PyObject *args)
         assert(PyErr_Occurred());
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_SetString(PyExc_OverflowError,
-                            "register: eventmask value does not fit in C "
+                            "eventmask value does not fit in C "
                             "unsigned short");
         }
         return NULL;
@@ -462,7 +462,7 @@ poll_modify(pollObject *self, PyObject *args)
         assert(PyErr_Occurred());
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_SetString(PyExc_OverflowError,
-                            "modify: eventmask value does not fit in C "
+                            "eventmask value does not fit in C "
                             "unsigned short");
         }
         return NULL;
@@ -808,8 +808,8 @@ internal_devpoll_register(devpollObject *self, PyObject *args, int remove)
         assert(PyErr_Occurred());
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_SetString(PyExc_OverflowError,
-                            "register/modify: eventmask value does not fit "
-                            "in C unsigned short");
+                            "eventmask value does not fit in C "
+                            "unsigned short");
         }
         return NULL;
     }

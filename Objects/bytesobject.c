@@ -505,6 +505,7 @@ byte_converter(PyObject *arg, char *p)
         else {
             iobj = PyNumber_Index(arg);
             if (iobj == NULL) {
+                assert(PyErr_Occurred());
                 if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
                     return 0;
                 }

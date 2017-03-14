@@ -1092,7 +1092,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                                "access", "offset", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict,
-                                     "in|iii" _Py_PARSE_OFF_T ":mmap",
+                                     "in|iii" _Py_PARSE_OFF_T ":mmap.__new__",
                                      keywords, &fd, &map_size, &flags, &prot,
                                      &access, &offset)) {
         return NULL;
@@ -1253,8 +1253,8 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                                 "tagname",
                                 "access", "offset", NULL };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|ziL:mmap", keywords,
-                                     &fileno, &map_size,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|ziL:mmap.__new__",
+                                     keywords, &fileno, &map_size,
                                      &tagname, &access, &offset)) {
         return NULL;
     }
