@@ -428,21 +428,6 @@ def urlsplit(url, scheme='', allow_fragments=True):
     netloc = query = fragment = ''
     i = url.find(':')
     if i > 0:
-        if url[:i] == 'http': # optimize the common case
-            url = url[i+1:]
-            if url[:2] == '//':
-                netloc, url = _splitnetloc(url, 2)
-                if (('[' in netloc and ']' not in netloc) or
-                        (']' in netloc and '[' not in netloc)):
-                    raise ValueError("Invalid IPv6 URL")
-            if allow_fragments and '#' in url:
-                url, fragment = url.split('#', 1)
-            if '?' in url:
-                url, query = url.split('?', 1)
-            _checknetloc(netloc)
-            v = SplitResult('http', netloc, url, query, fragment)
-            _parse_cache[key] = v
-            return _coerce_result(v)
         for c in url[:i]:
             if c not in scheme_chars:
                 break
