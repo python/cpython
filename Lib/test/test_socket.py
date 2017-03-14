@@ -1234,11 +1234,6 @@ class GeneralModuleTests(unittest.TestCase):
     def test_getsockaddrarg(self):
         sock = socket.socket()
         self.addCleanup(sock.close)
-        port = support.find_unused_port()
-        big_port = port + 65536
-        neg_port = port - 65536
-        self.assertRaises(OverflowError, sock.bind, (HOST, big_port))
-        self.assertRaises(OverflowError, sock.bind, (HOST, neg_port))
 
         self.assertRaises(OverflowError, sock.bind, (HOST, -1 << 1000))
         self.assertRaises(OverflowError, sock.bind, (HOST, -1))
@@ -1376,26 +1371,6 @@ class GeneralModuleTests(unittest.TestCase):
         # only IP addresses are allowed
         self.assertRaises(OSError, socket.getnameinfo, ('mail.python.org',0), 0)
 
-        # test port boundaries
-        self.assertRaises(OverflowError,
-                          socket.getnameinfo, (HOST, -1 << 1000), 0)
-        self.assertRaises(OverflowError,
-                          socket.getnameinfo, (HOST, -1), 0)
-        socket.getnameinfo((HOST, 0), 0)
-        socket.getnameinfo((HOST, 0xffff), 0)
-        self.assertRaises(OverflowError,
-                          socket.getnameinfo, (HOST, 1 << 16), 0)
-        self.assertRaises(OverflowError,
-                          socket.getnameinfo, (HOST, 1 << 1000), 0)
-
-        # test flowinfo boundaries
-        self.assertRaises(OverflowError,
-                          socket.getnameinfo, (support.HOSTv6, 0, -1), 0)
-        socket.getnameinfo((support.HOSTv6, 0, 0), 0)
-        socket.getnameinfo((support.HOSTv6, 0, (1 << 20) - 1), 0)
-        self.assertRaises(OverflowError,
-                          socket.getnameinfo, (support.HOSTv6, 0, 1 << 20), 0)
-
     @unittest.skipUnless(support.is_resource_enabled('network'),
                          'network is not enabled')
     def test_idna(self):
@@ -1530,6 +1505,12 @@ class GeneralModuleTests(unittest.TestCase):
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
     def test_flowinfo(self):
+        self.assertRaises(OverflowError,
+                          socket.getnameinfo, (support.HOSTv6, 0, -1), 0)
+        socket.getnameinfo((support.HOSTv6, 0, 0), 0)
+        socket.getnameinfo((support.HOSTv6, 0, (1 << 20) - 1), 0)
+        self.assertRaises(OverflowError,
+                          socket.getnameinfo, (support.HOSTv6, 0, 1 << 20), 0)
         self.assertRaises(OverflowError, socket.getnameinfo,
                           (support.HOSTv6, 0, 0xffffffff), 0)
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:

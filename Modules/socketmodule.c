@@ -1783,8 +1783,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
         if (!PyArg_ParseTuple(args, "si|iiy*:getsockaddrarg", &interfaceName,
-                              &protoNumber, &pkttype, &hatype,
-                              &haddr)) {
+                              &protoNumber, &pkttype, &hatype, &haddr)) {
             return 0;
         }
         strncpy(ifr.ifr_name, interfaceName, sizeof(ifr.ifr_name));
@@ -6097,11 +6096,6 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     }
     if (!PyArg_ParseTuple(sa, "si|II:getnameinfo",
                           &hostp, &port, &flowinfo, &scope_id)) {
-        return NULL;
-    }
-    if (port < 0 || port > 0xffff) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "getnameinfo: port must be 0-65535.");
         return NULL;
     }
     if (flowinfo > 0xfffff) {
