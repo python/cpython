@@ -10,9 +10,9 @@ The array is conceptually a compressed list of
 pairs.  The details are important and delicate, best illustrated by example:
 
     byte code offset    source code line number
-        0		    1
-        6		    2
-       50		    7
+        0                   1
+        6                   2
+       50                   7
       350                 207
       361                 208
 
