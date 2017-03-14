@@ -815,7 +815,14 @@ class SysLogHandler(logging.Handler):
 
         if isinstance(address, str):
             self.unixsocket = True
-            self._connect_unixsocket(address)
+            # Syslog server may be unavailable during handler initialisation.
+            # C's openlog() function also ignores connection errors.
+            # Moreover, we ignore these errors while logging, so it not worse
+            # to ignore it also here.
+            try:
+                self._connect_unixsocket(address)
+            except OSError:
+                pass
         else:
             self.unixsocket = False
             if socktype is None:
