@@ -253,12 +253,10 @@ partial_repr(partialobject *pto)
     /* Pack keyword arguments */
     assert (PyDict_Check(pto->kw));
     for (i = 0; PyDict_Next(pto->kw, &i, &key, &value);) {
-        /* Prevent key.__str__ from deleting key or value during formatting. */
-        Py_INCREF(key);
+        /* Prevent key.__str__ from deleting the value. */
         Py_INCREF(value);
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %S=%R", arglist,
                                                 key, value));
-        Py_DECREF(key);
         Py_DECREF(value);
         if (arglist == NULL)
             goto done;
