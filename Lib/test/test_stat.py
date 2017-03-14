@@ -228,6 +228,8 @@ class TestFilemodeCStat(TestFilemode, unittest.TestCase):
     def test_mode_t_converter(self):
         from _testcapi import USHRT_MAX
 
+        # test _PyLong_AsMode_t by testing S_IMODE, which uses
+        # _PyLong_AsMode_t to convert the argument it receives.
         self.assertRaises(TypeError, c_stat.S_IMODE, 1.0)
         self.assertRaises(TypeError, c_stat.S_IMODE, '1')
 
