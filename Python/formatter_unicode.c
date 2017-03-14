@@ -890,7 +890,6 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
             goto done;
         }
 
-        /* taken from unicodeobject.c formatchar() */
         /* Integer input truncated to a character */
         x = PyLong_AsLongAndOverflow(value, &overflow);
         if (x == -1 && PyErr_Occurred()) {

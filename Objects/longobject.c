@@ -502,10 +502,12 @@ _PyLong_AsInt(PyObject *obj)
     if (overflow == 1 || result > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "Python int too large to convert to C int");
+        return -1;
     }
     else if (overflow == -1 || result < INT_MIN) {
         PyErr_SetString(PyExc_OverflowError,
                         "Python int too small to convert to C int");
+        return -1;
     }
     return (int)result;
 }
