@@ -528,6 +528,8 @@ byte_converter(PyObject *arg, char *p)
     return 0;
 }
 
+static PyObject *_PyBytes_FromBuffer(PyObject *x);
+
 static PyObject *
 format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
 {
@@ -564,8 +566,19 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         *plen = PyBytes_GET_SIZE(result);
         return result;
     }
+    /* does it support buffer protocol? */
+    if (PyObject_CheckBuffer(v)) {
+        /* maybe we can avoid making a copy of the buffer object here? */
+        result = _PyBytes_FromBuffer(v);
+        if (result == NULL)
+            return NULL;
+        *pbuf = PyBytes_AS_STRING(result);
+        *plen = PyBytes_GET_SIZE(result);
+        return result;
+    }
     PyErr_Format(PyExc_TypeError,
-                 "%%b requires bytes, or an object that implements __bytes__, not '%.100s'",
+                 "%%b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not '%.100s'",
                  Py_TYPE(v)->tp_name);
     return NULL;
 }
