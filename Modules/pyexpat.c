@@ -705,7 +705,7 @@ get_parse_result(xmlparseobject *self, int rv)
 pyexpat.xmlparser.Parse
 
     data: object
-    isfinal: int(c_default="0") = False
+    isfinal: bool(accept={int}) = False
     /
 
 Parse XML data.
@@ -716,7 +716,7 @@ Parse XML data.
 static PyObject *
 pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
                              int isfinal)
-/*[clinic end generated code: output=f4db843dd1f4ed4b input=199d9e8e92ebbb4b]*/
+/*[clinic end generated code: output=f4db843dd1f4ed4b input=eb616027bfa9847f]*/
 {
     const char *s;
     Py_ssize_t slen;
@@ -1188,7 +1188,7 @@ newxmlparseobject(const char *encoding, const char *namespace_separator, PyObjec
         Py_DECREF(self);
         return NULL;
     }
-#if ((XML_MAJOR_VERSION >= 2) && (XML_MINOR_VERSION >= 1)) || defined(XML_HAS_SET_HASH_SALT)
+#if XML_COMBINED_VERSION >= 20100 || defined(XML_HAS_SET_HASH_SALT)
     /* This feature was added upstream in libexpat 2.1.0.  Our expat copy
      * has a backport of this feature where we also define XML_HAS_SET_HASH_SALT
      * to indicate that we can still use it. */

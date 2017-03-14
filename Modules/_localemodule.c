@@ -262,7 +262,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     }
     errno = 0;
     n2 = wcsxfrm(buf, s, n1);
-    if (errno) {
+    if (errno && errno != ERANGE) {
         PyErr_SetFromErrno(PyExc_OSError);
         goto exit;
     }
