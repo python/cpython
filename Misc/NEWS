@@ -39,6 +39,9 @@ Extension Modules
 Library
 -------
 
+- bpo-27880: Fixed integer overflow in cPickle when pickle large strings or
+  too many objects.
+
 - bpo-29110: Fix file object leak in aifc.open() when file is given as a
   filesystem path and is not in valid AIFF format.
   Original patch by Anthony Zhang.
