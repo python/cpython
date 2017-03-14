@@ -2599,14 +2599,14 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (size == -1 && PyErr_Occurred()) {
             if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
                 PyErr_SetString(PyExc_OverflowError,
-                                "bytes: count does not fit in C Py_ssize_t");
+                                "count does not fit in C Py_ssize_t");
                 return NULL;
             }
             PyErr_Clear();  /* fall through */
         }
         else {
             if (size < 0) {
-                PyErr_SetString(PyExc_ValueError, "bytes: negative count");
+                PyErr_SetString(PyExc_ValueError, "negative count");
                 return NULL;
             }
             new = _PyBytes_FromSize(size, 1);
