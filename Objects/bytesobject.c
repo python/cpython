@@ -566,10 +566,9 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         *plen = PyBytes_GET_SIZE(result);
         return result;
     }
-    /* does it support buffer protocol?
-       maybe we can avoid making a copy of the buffer object here?
-    */
+    /* does it support buffer protocol? */
     if (PyObject_CheckBuffer(v)) {
+        /* maybe we can avoid making a copy of the buffer object here? */
         result = _PyBytes_FromBuffer(v);
         if (result == NULL)
             return NULL;
