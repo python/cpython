@@ -2,6 +2,22 @@
 #include "frameobject.h"
 
 
+int
+_PyObject_HasFastCall(PyObject *callable)
+{
+    if (PyFunction_Check(callable)) {
+        return 1;
+    }
+    else if (PyCFunction_Check(callable)) {
+        return !(PyCFunction_GET_FLAGS(callable) & METH_VARARGS);
+    }
+    else {
+        assert (PyCallable_Check(callable));
+        return 0;
+    }
+}
+
+
 static PyObject *
 null_error(void)
 {
