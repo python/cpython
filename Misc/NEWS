@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-28856: Fix an oversight that %b format for bytes should support objects
+  follow the buffer protocol.
+
 - bpo-29723: The ``sys.path[0]`` initialization change for bpo-29139 caused a
   regression by revealing an inconsistency in how sys.path is initialized when
   executing ``__main__`` from a zipfile, directory, or other import location.
