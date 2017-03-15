@@ -906,20 +906,47 @@ class LongTest(unittest.TestCase):
             self.check_truediv(-x, y)
             self.check_truediv(-x, -y)
 
+    def test_negative_shift_count(self):
+        with self.assertRaises(ValueError):
+            42 << -3
+        with self.assertRaises(ValueError):
+            42 << -(1 << 1000)
+        with self.assertRaises(ValueError):
+            42 >> -3
+        with self.assertRaises(ValueError):
+            42 >> -(1 << 1000)
+
     def test_lshift_of_zero(self):
         self.assertEqual(0 << 0, 0)
         self.assertEqual(0 << 10, 0)
         with self.assertRaises(ValueError):
             0 << -1
+        self.assertEqual(0 << (1 << 1000), 0)
+        with self.assertRaises(ValueError):
+            0 << -(1 << 1000)
 
     @support.cpython_only
-    def test_huge_lshift_of_zero(self):
+    def test_huge_lshift(self):
         # Shouldn't try to allocate memory for a huge shift. See issue #27870.
         # Other implementations may have a different boundary for overflow,
         # or not raise at all.
         self.assertEqual(0 << sys.maxsize, 0)
+        self.assertEqual(0 << (sys.maxsize + 1), 0)
         with self.assertRaises(OverflowError):
-            0 << (sys.maxsize + 1)
+            1 << (sys.maxsize + 1)
+
+    def test_huge_rshift(self):
+        self.assertEqual(42 >> (1 << 1000), 0)
+        self.assertEqual((-42) >> (1 << 1000), -1)
+
+    @support.cpython_only
+    @support.bigmemtest(sys.maxsize + 500, memuse=2/15, dry_run=False)
+    def test_huge_rshift_of_huge(self, size):
+        huge = 1 << 500 << sys.maxsize
+        with self.assertRaises(OverflowError):
+            huge >> (sys.maxsize + 1)
+        with self.assertRaises(OverflowError):
+            huge >> (sys.maxsize + 1000)
 
     def test_small_ints(self):
         for i in range(-5, 257):

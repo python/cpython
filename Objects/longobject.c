@@ -4308,13 +4308,20 @@ long_rshift(PyLongObject *a, PyLongObject *b)
         Py_DECREF(a2);
     }
     else {
-        shiftby = PyLong_AsSsize_t((PyObject *)b);
-        if (shiftby == -1L && PyErr_Occurred())
-            return NULL;
-        if (shiftby < 0) {
+        if (Py_SIZE(b) < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "negative shift count");
             return NULL;
+        }
+        shiftby = PyLong_AsSsize_t((PyObject *)b);
+        if (shiftby < 0) {
+            /* PyLong_Check(b) is true, so it must be that
+               PyLong_AsSsize_t raised an OverflowError. */
+            assert(PyErr_ExceptionMatches(PyExc_OverflowError));
+            if (Py_ABS(Py_SIZE(a)) > PY_SSIZE_T_MAX / PyLong_SHIFT)
+                return NULL;
+            PyErr_Clear();
+            return PyLong_FromLong(0);
         }
         wordshift = shiftby / PyLong_SHIFT;
         newsize = Py_ABS(Py_SIZE(a)) - wordshift;
@@ -4349,16 +4356,20 @@ long_lshift(PyObject *v, PyObject *w)
 
     CHECK_BINOP(a, b);
 
-    shiftby = PyLong_AsSsize_t((PyObject *)b);
-    if (shiftby == -1L && PyErr_Occurred())
-        return NULL;
-    if (shiftby < 0) {
+    if (Py_SIZE(b) < 0) {
         PyErr_SetString(PyExc_ValueError, "negative shift count");
         return NULL;
     }
-
     if (Py_SIZE(a) == 0) {
         return PyLong_FromLong(0);
+    }
+
+    shiftby = PyLong_AsSsize_t((PyObject *)b);
+    if (shiftby < 0) {
+        /* PyLong_Check(b) is true, so it must be that
+           PyLong_AsSsize_t raised an OverflowError. */
+        assert(PyErr_ExceptionMatches(PyExc_OverflowError));
+        return NULL;
     }
 
     /* wordshift, remshift = divmod(shiftby, PyLong_SHIFT) */
