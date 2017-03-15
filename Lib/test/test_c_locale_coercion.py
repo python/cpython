@@ -6,6 +6,8 @@ import sys
 import sysconfig
 import shutil
 import subprocess
+from collections import namedtuple
+
 import test.support
 from test.support.script_helper import (
     run_python_until_end,
@@ -37,6 +39,61 @@ CLI_COERCION_WARNING_FMT = (
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behaviour)."
 )
 
+_EncodingDetails = namedtuple("EncodingDetails",
+                              "fsencoding stdin_info stdout_info stderr_info")
+
+class EncodingDetails(_EncodingDetails):
+    CHILD_PROCESS_SCRIPT = ";".join([
+        "import sys",
+        "print(sys.getfilesystemencoding())",
+        "print(sys.stdin.encoding + ':' + sys.stdin.errors)",
+        "print(sys.stdout.encoding + ':' + sys.stdout.errors)",
+        "print(sys.stderr.encoding + ':' + sys.stderr.errors)",
+    ])
+
+    @classmethod
+    def get_expected_details(cls, expected_fsencoding):
+        """Returns expected child process details for a given encoding"""
+        _stream = expected_fsencoding + ":{}"
+        # stdin and stdout should use surrogateescape either because the
+        # coercion triggered, or because the C locale was detected
+        stream_info = 2*[_stream.format("surrogateescape")]
+        # stderr should always use backslashreplace
+        stream_info.append(_stream.format("backslashreplace"))
+        return dict(cls(expected_fsencoding, *stream_info)._asdict())
+
+    @staticmethod
+    def _replace_ascii_alias(data):
+        """ASCII may be reported as ANSI_X3.4-1968, so replace it in output"""
+        return data.replace(b"ANSI_X3.4-1968", b"ascii")
+
+    @classmethod
+    def get_child_details(cls, env_vars):
+        """Retrieves fsencoding and standard stream details from a child process
+
+        Returns (encoding_details, stderr_lines):
+
+        - encoding_details: EncodingDetails for eager decoding
+        - stderr_lines: result of calling splitlines() on the stderr output
+
+        The child is run in isolated mode if the current interpreter supports
+        that.
+        """
+        result, py_cmd = run_python_until_end(
+            "-c", cls.CHILD_PROCESS_SCRIPT,
+            __isolated=True,
+            **env_vars
+        )
+        if not result.rc == 0:
+            result.fail(py_cmd)
+        # All subprocess outputs in this test case should be pure ASCII
+        adjusted_output = cls._replace_ascii_alias(result.out)
+        stdout_lines = adjusted_output.decode("ascii").rstrip().splitlines()
+        child_encoding_details = dict(cls(*stdout_lines)._asdict())
+        stderr_lines = result.err.decode("ascii").rstrip().splitlines()
+        return child_encoding_details, stderr_lines
+
+
 @test.support.cpython_only
 @unittest.skipUnless(sysconfig.get_config_var("PY_COERCE_C_LOCALE"),
                      "C locale coercion disabled at build time")
@@ -53,49 +110,11 @@ class LocaleOverrideTests(unittest.TestCase):
             env_updates, target_locale
         )
 
-    def _get_child_fsencoding(self, env_vars):
-        """Retrieves sys.getfilesystemencoding() from a child process
-
-        Returns (fsencoding, stderr_lines):
-
-        - fsencoding: a lowercase str value with the child's fsencoding
-        - stderr_lines: result of calling splitlines() on the stderr output
-
-        The child is run in isolated mode if the current interpreter supports
-        that.
-        """
-        cmd = "import sys; print(sys.getfilesystemencoding().lower())"
-        result, py_cmd = run_python_until_end(
-            "-c", cmd,
-            __isolated=True,
-            **env_vars
-        )
-        if not result.rc == 0:
-            result.fail(py_cmd)
-        # All subprocess outputs in this test case should be pure ASCII
-        child_fsencoding = result.out.decode("ascii").rstrip()
-        child_stderr_lines = result.err.decode("ascii").rstrip().splitlines()
-        return child_fsencoding, child_stderr_lines
-
-
-    def test_C_utf8_locale(self):
-        # Ensure the C.UTF-8 locale is accepted entirely without complaint
-        base_var_dict = {
-            "LANG": "",
-            "LC_CTYPE": "",
-            "LC_ALL": "",
-        }
-        for env_var in base_var_dict:
-            with self.subTest(env_var=env_var):
-                var_dict = base_var_dict.copy()
-                var_dict[env_var] = "C.UTF-8"
-                fsencoding, stderr_lines = self._get_child_fsencoding(var_dict)
-                self.assertEqual(fsencoding, "utf-8")
-                self.assertFalse(stderr_lines)
-
-
-    def _check_c_locale_coercion(self, expected_fsencoding, coerce_c_locale):
-        """Check the handling of the C locale for various configurations
+    def _check_child_encoding_details(self,
+                                      env_vars,
+                                      expected_fsencoding,
+                                      expected_warning):
+        """Check the C locale handling for various configurations
 
         Parameters:
             expected_fsencoding: the encoding the child is expected to report
@@ -103,10 +122,30 @@ class LocaleOverrideTests(unittest.TestCase):
               None: don't set the variable at all
               str: the value set in the child's environment
         """
+        result = EncodingDetails.get_child_details(env_vars)
+        encoding_details, stderr_lines = result
+        self.assertEqual(encoding_details,
+                         EncodingDetails.get_expected_details(
+                             expected_fsencoding))
+        self.assertEqual(stderr_lines, expected_warning)
+
+
+    def _check_c_locale_coercion(self, expected_fsencoding, coerce_c_locale):
+        """Check the C locale handling for various configurations
+
+        Parameters:
+            expected_fsencoding: the encoding the child is expected to report
+            allow_c_locale: setting to use for PYTHONALLOWCLOCALE
+              None: don't set the variable at all
+              str: the value set in the child's environment
+        """
+
+        # Check for expected warning on stderr if C locale is coerced
         expected_warning = []
         if coerce_c_locale != "0":
-            # Check C locale is coerced with a warning on stderr
             expected_warning.append(self.EXPECTED_COERCION_WARNING)
+
+        self.maxDiff = None
         base_var_dict = {
             "LANG": "",
             "LC_CTYPE": "",
@@ -121,9 +160,9 @@ class LocaleOverrideTests(unittest.TestCase):
                     var_dict[env_var] = locale_to_set
                     if coerce_c_locale is not None:
                         var_dict["PYTHONCOERCECLOCALE"] = coerce_c_locale
-                    fsencoding, stderr_lines = self._get_child_fsencoding(var_dict)
-                    self.assertEqual(fsencoding, expected_fsencoding)
-                    self.assertEqual(stderr_lines, expected_warning)
+                    self._check_child_encoding_details(var_dict,
+                                                       expected_fsencoding,
+                                                       expected_warning)
 
 
     def test_test_PYTHONCOERCECLOCALE_not_set(self):
