@@ -48,6 +48,21 @@ PyCStgDict_dealloc(StgDictObject *self)
     PyDict_Type.tp_dealloc((PyObject *)self);
 }
 
+static PyObject *
+PyCStgDict_sizeof(StgDictObject *self, void *unused)
+{
+    Py_ssize_t res;
+
+    res = _PyDict_SizeOf((PyDictObject *)self);
+    res += sizeof(StgDictObject) - sizeof(PyDictObject);
+    if (self->format)
+        res += strlen(self->format) + 1;
+    res += self->ndim * sizeof(Py_ssize_t);
+    if (self->ffi_type_pointer.elements)
+        res += (self->length + 1) * sizeof(ffi_type *);
+    return PyLong_FromSsize_t(res);
+}
+
 int
 PyCStgDict_clone(StgDictObject *dst, StgDictObject *src)
 {
@@ -106,6 +121,11 @@ PyCStgDict_clone(StgDictObject *dst, StgDictObject *src)
     return 0;
 }
 
+static struct PyMethodDef PyCStgDict_methods[] = {
+    {"__sizeof__", (PyCFunction)PyCStgDict_sizeof, METH_NOARGS},
+    {NULL, NULL}                /* sentinel */
+};
+
 PyTypeObject PyCStgDict_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "StgDict",
@@ -134,7 +154,7 @@ PyTypeObject PyCStgDict_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    PyCStgDict_methods,                         /* tp_methods */
     0,                                          /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */

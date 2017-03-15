@@ -141,6 +141,11 @@ Optimizations
   in method calls being faster up to 20%.
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
 
+* Fast implementation from standard C library is now used for functions
+  :func:`~math.tgamma`, :func:`~math.lgamma`, :func:`~math.erf` and
+  :func:`~math.erfc` in the :mod:`math` module.
+  (Contributed by Serhiy Storchaka in :issue:`26121`.)
+
 
 Build and C API Changes
 =======================
@@ -182,6 +187,10 @@ Deprecated
   :meth:`PathEntryFinder.find_spec() <importlib.abc.PathEntryFinder.find_spec>`)
   both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`. (Contributed
   by Matthias Bussonnier in :issue:`29576`)
+
+- Using non-integer value for selecting a plural form in :mod:`gettext` is
+  now deprecated.  It never correctly worked.
+  (Contributed by Serhiy Storchaka in :issue:`28692`.)
 
 
 Removed

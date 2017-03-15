@@ -572,6 +572,73 @@ class CmdLineTest(unittest.TestCase):
             self.assertNotIn("\f", text)
             self.assertIn("\n    1 + 1 = 2\n    ^", text)
 
+    def test_consistent_sys_path_for_direct_execution(self):
+        # This test case ensures that the following all give the same
+        # sys.path configuration:
+        #
+        #    ./python -s script_dir/__main__.py
+        #    ./python -s script_dir
+        #    ./python -I script_dir
+        script = textwrap.dedent("""\
+            import sys
+            for entry in sys.path:
+                print(entry)
+            """)
+        # Always show full path diffs on errors
+        self.maxDiff = None
+        with support.temp_dir() as work_dir, support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, '__main__', script)
+            # Reference output comes from directly executing __main__.py
+            # We omit PYTHONPATH and user site to align with isolated mode
+            p = spawn_python("-Es", script_name, cwd=work_dir)
+            out_by_name = kill_python(p).decode().splitlines()
+            self.assertEqual(out_by_name[0], script_dir)
+            self.assertNotIn(work_dir, out_by_name)
+            # Directory execution should give the same output
+            p = spawn_python("-Es", script_dir, cwd=work_dir)
+            out_by_dir = kill_python(p).decode().splitlines()
+            self.assertEqual(out_by_dir, out_by_name)
+            # As should directory execution in isolated mode
+            p = spawn_python("-I", script_dir, cwd=work_dir)
+            out_by_dir_isolated = kill_python(p).decode().splitlines()
+            self.assertEqual(out_by_dir_isolated, out_by_dir, out_by_name)
+
+    def test_consistent_sys_path_for_module_execution(self):
+        # This test case ensures that the following both give the same
+        # sys.path configuration:
+        #    ./python -sm script_pkg.__main__
+        #    ./python -sm script_pkg
+        #
+        # And that this fails as unable to find the package:
+        #    ./python -Im script_pkg
+        script = textwrap.dedent("""\
+            import sys
+            for entry in sys.path:
+                print(entry)
+            """)
+        # Always show full path diffs on errors
+        self.maxDiff = None
+        with support.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+            script_name = _make_test_script(script_dir, '__main__', script)
+            # Reference output comes from `-m script_pkg.__main__`
+            # We omit PYTHONPATH and user site to better align with the
+            # direct execution test cases
+            p = spawn_python("-sm", "script_pkg.__main__", cwd=work_dir)
+            out_by_module = kill_python(p).decode().splitlines()
+            self.assertEqual(out_by_module[0], '')
+            self.assertNotIn(script_dir, out_by_module)
+            # Package execution should give the same output
+            p = spawn_python("-sm", "script_pkg", cwd=work_dir)
+            out_by_package = kill_python(p).decode().splitlines()
+            self.assertEqual(out_by_package, out_by_module)
+            # Isolated mode should fail with an import error
+            exitcode, stdout, stderr = assert_python_failure(
+                "-Im", "script_pkg", cwd=work_dir
+            )
+            traceback_lines = stderr.decode().splitlines()
+            self.assertIn("No module named script_pkg", traceback_lines[-1])
 
 def test_main():
     support.run_unittest(CmdLineTest)
