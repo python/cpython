@@ -728,12 +728,12 @@ conflict.
    following locales for the given locale categories before loading the
    interpreter runtime:
 
-   * ``C.UTF-8` (``LC_ALL``)
-   * ``C.utf8` (``LC_ALL``)
-   * ``UTF-8` (``LC_CTYPE``)
+   * ``C.UTF-8`` (``LC_ALL``)
+   * ``C.utf8`` (``LC_ALL``)
+   * ``UTF-8`` (``LC_CTYPE``)
 
    If setting one of these locale categories succeeds, then the matching
-   environment variables will be set (both ``LC_ALL` and ``LANG`` for the
+   environment variables will be set (both ``LC_ALL`` and ``LANG`` for the
    ``LC_ALL`` category, and ``LC_CTYPE`` for the ``LC_CTYPE`` category),
    and (if :envvar:`PYTHONIOENCODING` is not explicitly set), the text encoding
    and error handling for Python's standard streams in the current process
