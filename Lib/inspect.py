@@ -31,6 +31,7 @@ Here are some of the useful functions provided by this module:
 __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
+import abc
 import ast
 import dis
 import collections.abc
@@ -285,7 +286,24 @@ def isroutine(object):
 
 def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
-    return bool(isinstance(object, type) and object.__flags__ & TPFLAGS_IS_ABSTRACT)
+    if isinstance(object, type):
+        if object.__flags__ & TPFLAGS_IS_ABSTRACT:
+            return True
+        elif (issubclass(type(object), abc.ABCMeta)
+                and not hasattr(object, '__abstractmethods__')):
+            # We're likely in the __init_subclass__ of an ABC. ABCMeta.__new__
+            # hasn't finished running yet. We have to search for abstractmethods
+            # by hand. Code copied from ABCMeta.__new__.
+            abstracts = {name
+                         for name, value in object.__dict__.items()
+                         if getattr(value, "__isabstractmethod__", False)}
+            for base in object.__bases__:
+                for name in getattr(base, "__abstractmethods__", frozenset()):
+                    value = getattr(object, name, None)
+                    if getattr(value, "__isabstractmethod__", False):
+                        abstracts.add(name)
+            return bool(abstracts)
+    return False
 
 def getmembers(object, predicate=None):
     """Return all members of an object as (name, value) pairs sorted by name.
