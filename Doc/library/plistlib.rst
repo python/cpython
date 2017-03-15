@@ -135,8 +135,9 @@ The following functions are deprecated:
 
    .. deprecated:: 3.4 Use :func:`load` instead.
 
-   .. versionchanged: 3.7
-      Dict values in the result are now exact dicts.
+   .. versionchanged:: 3.7
+      Dict values in the result are now normal dicts.  You no longer can use
+      attribute access to access items of these dictionaries.
 
 
 .. function:: writePlist(rootObject, pathOrFile)
@@ -155,8 +156,9 @@ The following functions are deprecated:
 
    .. deprecated:: 3.4 Use :func:`loads` instead.
 
-   .. versionchanged: 3.7
-      Dict values in the result are now exact dicts.
+   .. versionchanged:: 3.7
+      Dict values in the result are now normal dicts.  You no longer can use
+      attribute access to access items of these dictionaries.
 
 
 .. function:: writePlistToBytes(rootObject)
