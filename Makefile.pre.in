@@ -1684,8 +1684,8 @@ patchcheck: all
 
 Python/thread.o: @THREADHEADERS@
 
-Misc/NEWS: Misc/NEWS.header
-	-reno report > $@
+Misc/NEWS:
+	-reno report --title 'Python News' --no-show-source > $@
 
 # Declare targets that aren't real files
 .PHONY: all build_all sharedmods oldsharedmods test quicktest
