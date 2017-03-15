@@ -1104,7 +1104,7 @@ get_decompress_func(void)
     _Py_IDENTIFIER(decompress);
 
     if (importing_zlib != 0)
-        /* Someone has a zlib.py[co] in their Zip file;
+        /* Someone has a zlib.pyc in their Zip file;
            let's avoid a stack overflow. */
         return NULL;
     importing_zlib = 1;
@@ -1263,7 +1263,12 @@ eq_mtime(time_t t1, time_t t2)
     return d <= 1;
 }
 
-/* Given the contents of a .py[co] file in a buffer, unmarshal the data
+/* Issue #29537: handle issue27286 bytecode incompatibility
+ * See Lib/importlib/_bootstrap_external.py for general discussion
+ */
+extern PY_UINT32_T _Py_BACKCOMPAT_MAGIC_NUMBER;
+
+/* Given the contents of a .pyc file in a buffer, unmarshal the data
    and return the code object. Return None if it the magic word doesn't
    match (we do this instead of raising an exception as we fall back
    to .py if available and we don't want to mask other errors).
@@ -1274,6 +1279,7 @@ unmarshal_code(PyObject *pathname, PyObject *data, time_t mtime)
     PyObject *code;
     unsigned char *buf = (unsigned char *)PyBytes_AsString(data);
     Py_ssize_t size = PyBytes_Size(data);
+    PY_UINT32_T magic;
 
     if (size < 12) {
         PyErr_SetString(ZipImportError,
@@ -1281,7 +1287,10 @@ unmarshal_code(PyObject *pathname, PyObject *data, time_t mtime)
         return NULL;
     }
 
-    if (get_uint32(buf) != (unsigned int)PyImport_GetMagicNumber()) {
+    magic = get_uint32(buf);
+    if (magic != (unsigned int)PyImport_GetMagicNumber()
+            /* Issue #29537: handle issue27286 bytecode incompatibility */
+            && magic != _Py_BACKCOMPAT_MAGIC_NUMBER) {
         if (Py_VerboseFlag) {
             PySys_FormatStderr("# %R has bad magic\n",
                                pathname);
@@ -1405,7 +1414,7 @@ get_mtime_of_source(ZipImporter *self, PyObject *path)
     PyObject *toc_entry, *stripped;
     time_t mtime;
 
-    /* strip 'c' or 'o' from *.py[co] */
+    /* strip 'c' from *.pyc */
     if (PyUnicode_READY(path) == -1)
         return (time_t)-1;
     stripped = PyUnicode_FromKindAndData(PyUnicode_KIND(path),

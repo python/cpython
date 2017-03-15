@@ -230,7 +230,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.5b1  3330 (PEP 448: Additional Unpacking Generalizations)
 #     Python 3.5b2  3340 (fix dictionary display evaluation order #11205)
 #     Python 3.5b2  3350 (add GET_YIELD_FROM_ITER opcode #24400)
-#     Python 3.5.2  3351 (fix BUILD_MAP_UNPACK_WITH_CALL opcode #27286)
+#     Python 3.5.3  3351 (fix BUILD_MAP_UNPACK_WITH_CALL opcode #27286)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -241,6 +241,28 @@ _code_type = type(_write_atomic.__code__)
 
 MAGIC_NUMBER = (3351).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
+
+# Issue #29537: handle issue27286 bytecode incompatibility
+#
+# The magic number bump in Python 3.5.3 for issue27286 turned out to create
+# significant backwards compatibility problems for redistributors and
+# other folks that rely on the bytecode format remaining stable within a
+# given maintenance release series. See http://bugs.python.org/issue29514
+# for more discussion of the problems that the original change caused.
+#
+# The _BACKCOMPAT_MAGIC_NUMBER below and any other changes marked with
+# "Issue #29537" comments allow Python 3.5.4+ to load bytecode files with both
+# the original 3.5.0 magic number and those with the updated magic number used
+# since 3.5.3.
+#
+# This is expected to be a one-off change used solely to restore legacy
+# bytecode compatibility within the 3.5.x series, so it avoids any changes
+# that would prompt a rebuild of C extension modules.
+#
+if _RAW_MAGIC_NUMBER != 168627479:
+    _msg = 'Magic number mismatch (the issue27286 workaround is for 3.5 only)'
+    raise SystemError(_msg)
+_BACKCOMPAT_MAGIC_NUMBER = (3350).to_bytes(2, 'little') + b'\r\n'
 
 _PYCACHE = '__pycache__'
 _OPT = 'opt-'
@@ -446,7 +468,9 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
     magic = data[:4]
     raw_timestamp = data[4:8]
     raw_size = data[8:12]
-    if magic != MAGIC_NUMBER:
+    if (magic != MAGIC_NUMBER
+            # Issue #29537: handle issue27286 bytecode incompatibility
+            and magic != _BACKCOMPAT_MAGIC_NUMBER):
         message = 'bad magic number in {!r}: {!r}'.format(name, magic)
         _verbose_message('{}', message)
         raise ImportError(message, **exc_details)

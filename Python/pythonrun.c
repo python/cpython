@@ -259,6 +259,21 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename_str, PyCompilerFlags *f
 }
 
 
+/* Issue #29537: handle issue27286 bytecode incompatibility
+ *   See Lib/importlib/_bootstrap_external.py for general discussion
+ */
+extern PY_UINT32_T _Py_BACKCOMPAT_HALF_MAGIC;
+static int
+_check_half_magic(unsigned int read_value, unsigned int halfmagic) {
+    return (read_value == halfmagic || read_value == _Py_BACKCOMPAT_HALF_MAGIC);
+}
+
+extern PY_UINT32_T _Py_BACKCOMPAT_MAGIC_NUMBER;
+static int
+_check_magic(long read_value, long magic) {
+    return (read_value == magic || read_value == _Py_BACKCOMPAT_MAGIC_NUMBER);
+}
+
 /* Check whether a file maybe a pyc file: Look at the extension,
    the file type, and, if we may close it, at the first few bytes. */
 
@@ -290,7 +305,7 @@ maybe_pyc_file(FILE *fp, const char* filename, const char* ext, int closeit)
         int ispyc = 0;
         if (ftell(fp) == 0) {
             if (fread(buf, 1, 2, fp) == 2 &&
-                ((unsigned int)buf[1]<<8 | buf[0]) == halfmagic)
+                _check_half_magic(((unsigned int)buf[1]<<8 | buf[0]), halfmagic))
                 ispyc = 1;
             rewind(fp);
         }
@@ -988,7 +1003,7 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
     long PyImport_GetMagicNumber(void);
 
     magic = PyMarshal_ReadLongFromFile(fp);
-    if (magic != PyImport_GetMagicNumber()) {
+    if (!_check_magic(magic, PyImport_GetMagicNumber())) {
         if (!PyErr_Occurred())
             PyErr_SetString(PyExc_RuntimeError,
                        "Bad magic number in .pyc file");

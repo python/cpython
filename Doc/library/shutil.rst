@@ -153,7 +153,7 @@ Directory and files operations
    is true and *src* is a symbolic link, *dst* will be a copy of
    the file *src* refers to.
 
-   :func:`copy` copies the file data and the file's permission
+   :func:`~shutil.copy` copies the file data and the file's permission
    mode (see :func:`os.chmod`).  Other metadata, like the
    file's creation and modification times, is not preserved.
    To preserve all file metadata from the original, use
@@ -302,7 +302,7 @@ Directory and files operations
    *src* and *dst*, and will be used to copy *src* to *dest* if
    :func:`os.rename` cannot be used.  If the source is a directory,
    :func:`copytree` is called, passing it the :func:`copy_function`. The
-   default *copy_function* is :func:`copy2`.  Using :func:`copy` as the
+   default *copy_function* is :func:`copy2`.  Using :func:`~shutil.copy` as the
    *copy_function* allows the move to succeed when it is not possible to also
    copy the metadata, at the expense of not copying any of the metadata.
 
