@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-28856: Fix an oversight that %b format for bytes should support objects
+  follow the buffer protocol.
+
 - bpo-29723: The ``sys.path[0]`` initialization change for bpo-29139 caused a
   regression by revealing an inconsistency in how sys.path is initialized when
   executing ``__main__`` from a zipfile, directory, or other import location.
@@ -277,6 +280,9 @@ Extension Modules
 
 Library
 -------
+
+- bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
+  are not strings.  Patch by Michael Seifert.
 
 - bpo-8256: Fixed possible failing or crashing input() if attributes "encoding"
   or "errors" of sys.stdin or sys.stdout are not set or are not strings.
