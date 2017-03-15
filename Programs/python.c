@@ -31,7 +31,7 @@ wmain(int argc, wchar_t **argv)
 #ifdef PY_COERCE_C_LOCALE
 static const char *_C_LOCALE_COERCION_WARNING =
     "Python detected LC_CTYPE=C: %.20s coerced to %.20s (set another locale "
-    "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behaviour).\n";
+    "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior).\n";
 
 typedef struct _CandidateLocale {
     const char *locale_name;
