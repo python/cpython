@@ -735,8 +735,9 @@ conflict.
    If setting one of these locale categories succeeds, then the matching
    environment variables will be set (both ``LC_ALL` and ``LANG`` for the
    ``LC_ALL`` category, and ``LC_CTYPE`` for the ``LC_CTYPE`` category),
-   and (if not already set to a non-empty string) :envvar:`PYTHONIOENCODING`
-   will be set to ``utf-8:surrogateescape``.
+   and (if :envvar:`PYTHONIOENCODING` is not explicitly set), the text encoding
+   and error handling for Python's standard streams in the current process
+   will be set to ``utf-8`` and ``surrogateescape`` respectively.
 
    Availability: \*nix
 

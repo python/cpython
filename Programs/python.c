@@ -80,10 +80,18 @@ _coerce_default_locale_settings(const _LocaleCoercionTarget *target)
         return;
     }
 
-    /* Set PYTHONIOENCODING if not already set */
-    if (setenv("PYTHONIOENCODING", "utf-8:surrogateescape", 0)) {
-        fprintf(stderr,
-                "Error setting PYTHONIOENCODING during C locale coercion\n");
+    /* Set standard stream encoding if PYTHONIOENCODING is not set
+     *
+     * We avoid setting PYTHONIOENCODING, as that can confuse Python 2
+     * instances in subprocesses that inherit the environment (as Python
+     * 2 has no 'surrogateescape' error handler).
+     *
+     * If PEP 540 is also implemented, this check will be replaced with
+     * unconditionally setting PYTHONUTF8=1
+     */
+    const char *io_encoding = getenv("PYTHONIOENCODING");
+    if ((io_encoding == NULL) || (strnlen(io_encoding, 1) == 0)) {
+        Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
     }
 
     /* Reconfigure with the overridden environment variables */
