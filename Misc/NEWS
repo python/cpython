@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
+  are not strings.  Patch by Michael Seifert.
+
 - bpo-29742: get_extra_info() raises exception if get called on closed ssl transport.
   Patch by Nikolay Kim.
 

@@ -402,6 +402,32 @@ class TestPartialC(TestPartial, unittest.TestCase):
         else:
             self.fail('partial object allowed __dict__ to be deleted')
 
+    def test_manually_adding_non_string_keyword(self):
+        p = self.partial(capture)
+        # Adding a non-string/unicode keyword to partial kwargs
+        p.keywords[1234] = 'value'
+        r = repr(p)
+        self.assertIn('1234', r)
+        self.assertIn("'value'", r)
+        with self.assertRaises(TypeError):
+            p()
+
+    def test_keystr_replaces_value(self):
+        p = self.partial(capture)
+
+        class MutatesYourDict(object):
+            def __str__(self):
+                p.keywords[self] = ['sth2']
+                return 'astr'
+
+        # Raplacing the value during key formatting should keep the original
+        # value alive (at least long enough).
+        p.keywords[MutatesYourDict()] = ['sth']
+        r = repr(p)
+        self.assertIn('astr', r)
+        self.assertIn("['sth']", r)
+
+
 class TestPartialPy(TestPartial, unittest.TestCase):
     partial = py_functools.partial
 
