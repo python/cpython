@@ -661,6 +661,9 @@ class BaseTestAPI:
         if HAS_UNIX_SOCKETS and self.family == socket.AF_UNIX:
             self.skipTest("Not applicable to AF_UNIX sockets.")
 
+        if sys.platform == "darwin" and self.use_poll:
+            self.skipTest("poll may fail on macOS; see issue #28087")
+
         class TestClient(BaseClient):
             def handle_expt(self):
                 self.socket.recv(1024, socket.MSG_OOB)

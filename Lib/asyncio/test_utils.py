@@ -449,12 +449,15 @@ class TestCase(unittest.TestCase):
         self.set_event_loop(loop)
         return loop
 
+    def unpatch_get_running_loop(self):
+        events._get_running_loop = self._get_running_loop
+
     def setUp(self):
         self._get_running_loop = events._get_running_loop
         events._get_running_loop = lambda: None
 
     def tearDown(self):
-        events._get_running_loop = self._get_running_loop
+        self.unpatch_get_running_loop()
 
         events.set_event_loop(None)
 

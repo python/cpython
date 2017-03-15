@@ -846,7 +846,7 @@ Constants
    The version string of the OpenSSL library loaded by the interpreter::
 
     >>> ssl.OPENSSL_VERSION
-    'OpenSSL 0.9.8k 25 Mar 2009'
+    'OpenSSL 1.0.2k  26 Jan 2017'
 
    .. versionadded:: 3.2
 
@@ -856,7 +856,7 @@ Constants
    OpenSSL library::
 
     >>> ssl.OPENSSL_VERSION_INFO
-    (0, 9, 8, 11, 15)
+    (1, 0, 2, 11, 15)
 
    .. versionadded:: 3.2
 
@@ -865,9 +865,9 @@ Constants
    The raw version number of the OpenSSL library, as a single integer::
 
     >>> ssl.OPENSSL_VERSION_NUMBER
-    9470143
+    268443839
     >>> hex(ssl.OPENSSL_VERSION_NUMBER)
-    '0x9080bf'
+    '0x100020bf'
 
    .. versionadded:: 3.2
 

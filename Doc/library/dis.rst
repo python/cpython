@@ -772,8 +772,13 @@ All of the following opcodes use their arguments.
 
 .. opcode:: BUILD_MAP (count)
 
-   Pushes a new dictionary object onto the stack.  The dictionary is pre-sized
-   to hold *count* entries.
+   Pushes a new dictionary object onto the stack.  Pops ``2 * count`` items
+   so that the dictionary holds *count* entries:
+   ``{..., TOS3: TOS2, TOS1: TOS}``.
+
+   .. versionchanged:: 3.5
+      The dictionary is created from stack items instead of creating an
+      empty dictionary pre-sized to hold *count* items.
 
 
 .. opcode:: BUILD_CONST_KEY_MAP (count)
@@ -791,6 +796,63 @@ All of the following opcodes use their arguments.
    onto the stack.
 
    .. versionadded:: 3.6
+
+
+.. opcode:: BUILD_TUPLE_UNPACK (count)
+
+   Pops *count* iterables from the stack, joins them in a single tuple,
+   and pushes the result.  Implements iterable unpacking in tuple
+   displays ``(*x, *y, *z)``.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BUILD_TUPLE_UNPACK_WITH_CALL (count)
+
+   This is similar to :opcode:`BUILD_TUPLE_UNPACK`,
+   but is used for ``f(*x, *y, *z)`` call syntax. The stack item at position
+   ``count + 1`` should be the corresponding callable ``f``.
+
+   .. versionadded:: 3.6
+
+
+.. opcode:: BUILD_LIST_UNPACK (count)
+
+   This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a list
+   instead of tuple.  Implements iterable unpacking in list
+   displays ``[*x, *y, *z]``.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BUILD_SET_UNPACK (count)
+
+   This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a set
+   instead of tuple.  Implements iterable unpacking in set
+   displays ``{*x, *y, *z}``.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BUILD_MAP_UNPACK (count)
+
+   Pops *count* mappings from the stack, merges them into a single dictionary,
+   and pushes the result.  Implements dictionary unpacking in dictionary
+   displays ``{**x, **y, **z}``.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BUILD_MAP_UNPACK_WITH_CALL (count)
+
+   This is similar to :opcode:`BUILD_MAP_UNPACK`,
+   but is used for ``f(**x, **y, **z)`` call syntax.  The stack item at
+   position ``count + 2`` should be the corresponding callable ``f``.
+
+   .. versionadded:: 3.5
+   .. versionchanged:: 3.6
+      The position of the callable is determined by adding 2 to the opcode
+      argument instead of encoding it in the second byte of the argument.
 
 
 .. opcode:: LOAD_ATTR (namei)
@@ -947,14 +1009,45 @@ All of the following opcodes use their arguments.
 
 .. opcode:: CALL_FUNCTION (argc)
 
-   Calls a function.  The low byte of *argc* indicates the number of positional
-   parameters, the high byte the number of keyword parameters. On the stack, the
-   opcode finds the keyword parameters first.  For each keyword argument, the
-   value is on top of the key.  Below the keyword parameters, the positional
-   parameters are on the stack, with the right-most parameter on top.  Below the
-   parameters, the function object to call is on the stack.  Pops all function
-   arguments, and the function itself off the stack, and pushes the return
-   value.
+   Calls a function.  *argc* indicates the number of positional arguments.
+   The positional arguments are on the stack, with the right-most argument
+   on top.  Below the arguments, the function object to call is on the stack.
+   Pops all function arguments, and the function itself off the stack, and
+   pushes the return value.
+
+   .. versionchanged:: 3.6
+      This opcode is used only for calls with positional arguments.
+
+
+.. opcode:: CALL_FUNCTION_KW (argc)
+
+   Calls a function.  *argc* indicates the number of arguments (positional
+   and keyword).  The top element on the stack contains a tuple of keyword
+   argument names.  Below the tuple, keyword arguments are on the stack, in
+   the order corresponding to the tuple.  Below the keyword arguments, the
+   positional arguments are on the stack, with the right-most parameter on
+   top.  Below the arguments, the function object to call is on the stack.
+   Pops all function arguments, and the function itself off the stack, and
+   pushes the return value.
+
+   .. versionchanged:: 3.6
+      Keyword arguments are packed in a tuple instead of a dictionary,
+      *argc* indicates the total number of arguments
+
+
+.. opcode:: CALL_FUNCTION_EX (flags)
+
+   Calls a function. The lowest bit of *flags* indicates whether the
+   var-keyword argument is placed at the top of the stack.  Below the
+   var-keyword argument, the var-positional argument is on the stack.
+   Below the arguments, the function object to call is placed.
+   Pops all function arguments, and the function itself off the stack, and
+   pushes the return value. Note that this opcode pops at most three items
+   from the stack. Var-positional and var-keyword arguments are packed
+   by :opcode:`BUILD_MAP_UNPACK_WITH_CALL` and
+   :opcode:`BUILD_MAP_UNPACK_WITH_CALL`.
+
+   .. versionadded:: 3.6
 
 
 .. opcode:: MAKE_FUNCTION (argc)
@@ -985,28 +1078,6 @@ All of the following opcodes use their arguments.
    bytes.  *ext* holds two additional bytes which, taken together with the
    subsequent opcode's argument, comprise a four-byte argument, *ext* being the
    two most-significant bytes.
-
-
-.. opcode:: CALL_FUNCTION_VAR (argc)
-
-   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The
-   top element on the stack contains the variable argument list, followed by
-   keyword and positional arguments.
-
-
-.. opcode:: CALL_FUNCTION_KW (argc)
-
-   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The
-   top element on the stack contains the keyword arguments dictionary, followed
-   by explicit keyword and positional arguments.
-
-
-.. opcode:: CALL_FUNCTION_VAR_KW (argc)
-
-   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`.  The
-   top element on the stack contains the keyword arguments dictionary, followed
-   by the variable-arguments tuple, followed by explicit keyword and positional
-   arguments.
 
 
 .. opcode:: FORMAT_VALUE (flags)

@@ -803,11 +803,6 @@ class GeneralModuleTests(unittest.TestCase):
             self.fail("Error testing host resolution mechanisms. (fqdn: %s, all: %s)" % (fqhn, repr(all_host_names)))
 
     def test_host_resolution(self):
-        for addr in ['0.1.1.~1', '1+.1.1.1', '::1q', '::1::2',
-                     '1:1:1:1:1:1:1:1:1']:
-            self.assertRaises(OSError, socket.gethostbyname, addr)
-            self.assertRaises(OSError, socket.gethostbyaddr, addr)
-
         for addr in [support.HOST, '10.0.0.1', '255.255.255.255']:
             self.assertEqual(socket.gethostbyname(addr), addr)
 
@@ -815,6 +810,21 @@ class GeneralModuleTests(unittest.TestCase):
         # a matching name entry (e.g. 'ip6-localhost')
         for host in [support.HOST]:
             self.assertIn(host, socket.gethostbyaddr(host)[2])
+
+    def test_host_resolution_bad_address(self):
+        # These are all malformed IP addresses and expected not to resolve to
+        # any result.  But some ISPs, e.g. AWS, may successfully resolve these
+        # IPs.
+        explanation = (
+            "resolving an invalid IP address did not raise OSError; "
+            "can be caused by a broken DNS server"
+        )
+        for addr in ['0.1.1.~1', '1+.1.1.1', '::1q', '::1::2',
+                     '1:1:1:1:1:1:1:1:1']:
+            with self.assertRaises(OSError):
+                socket.gethostbyname(addr)
+            with self.assertRaises(OSError, msg=explanation):
+                socket.gethostbyaddr(addr)
 
     @unittest.skipUnless(hasattr(socket, 'sethostname'), "test needs socket.sethostname()")
     @unittest.skipUnless(hasattr(socket, 'gethostname'), "test needs socket.gethostname()")
