@@ -716,16 +716,17 @@ conflict.
 
 .. envvar:: PYTHONCOERCECLOCALE
 
-   If set to a non-empty string, causes the main Python command line application
+   If set to the value ``0``, causes the main Python command line application
    to skip coercing the legacy ASCII-based C locale to a more capable UTF-8
    based alternative. Note that this setting is checked even when the
    :option:`-E` or :option:`-I` options are used, as it is handled prior to
    the processing of command line options.
 
-   If this variable is *not* set, and the current locale reported for the
-   ``LC_CTYPE`` category is the default ``C`` locale, then the Python CLI will
-   attempt to configure one of the following locales for the given locale
-   categories before loading the interpreter runtime:
+   If this variable is *not* set, or is set to a value other than ``0``, and
+   the current locale reported for the ``LC_CTYPE`` category is the default
+   ``C`` locale, then the Python CLI will attempt to configure one of the
+   following locales for the given locale categories before loading the
+   interpreter runtime:
 
    * ``C.UTF-8` (``LC_ALL``)
    * ``C.utf8` (``LC_ALL``)
