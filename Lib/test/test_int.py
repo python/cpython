@@ -246,9 +246,11 @@ class IntTestCases(unittest.TestCase):
 
     def test_keyword_args(self):
         # Test invoking int() using keyword arguments.
-        self.assertEqual(int(x=1.2), 1)
         self.assertEqual(int('100', base=2), 4)
-        self.assertEqual(int(x='100', base=2), 4)
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            int(x=1.2)
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            int(x='100', base=2)
         self.assertRaises(TypeError, int, base=10)
         self.assertRaises(TypeError, int, base=0)
 

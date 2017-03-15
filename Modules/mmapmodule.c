@@ -247,14 +247,15 @@ mmap_convert_ssize_t(PyObject *obj, void *result) {
     if (obj == Py_None) {
         limit = -1;
     }
-    else if (PyNumber_Check(obj)) {
+    else if (PyIndex_Check(obj)) {
         limit = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
-        if (limit == -1 && PyErr_Occurred())
+        if (limit == -1 && PyErr_Occurred()) {
             return 0;
+        }
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "integer argument expected, got '%.200s'",
+                     "argument should be integer or None, not '%.200s'",
                      Py_TYPE(obj)->tp_name);
         return 0;
     }
