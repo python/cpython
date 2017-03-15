@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Removed deprecated function ntpath.splitunc(). (:issue:`29197`)

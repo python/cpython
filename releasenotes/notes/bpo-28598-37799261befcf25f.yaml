@@ -1,0 +1,5 @@
+---
+core:
+  - |
+    Support __rmod__ for subclasses of str being called before str.__mod__.  Patch
+    by Martijn Pieters. (:issue:`28598`)

@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Remove vestigial MacOS 9 macurl2path module and its tests. (:issue:`28325`)

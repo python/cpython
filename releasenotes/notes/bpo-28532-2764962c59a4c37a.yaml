@@ -1,0 +1,4 @@
+---
+core:
+  - |
+    Show sys.version when -V option is supplied twice. (:issue:`28532`)

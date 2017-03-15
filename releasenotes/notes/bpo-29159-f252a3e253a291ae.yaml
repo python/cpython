@@ -1,0 +1,4 @@
+---
+core:
+  - |
+    Fix regression in bytes(x) when x.__index__() raises Exception. (:issue:`29159`)

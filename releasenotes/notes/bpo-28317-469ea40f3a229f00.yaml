@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    The disassembler now decodes FORMAT_VALUE argument. (:issue:`28317`)

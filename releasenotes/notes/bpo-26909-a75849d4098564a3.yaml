@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Fix slow pipes IO in asyncio. Patch by INADA Naoki. (:issue:`26909`)

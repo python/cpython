@@ -1,0 +1,5 @@
+---
+core:
+  - |
+    Fixed possible BytesWarning when compare the code objects. Warnings could be
+    emitted at compile time. (:issue:`29337`)

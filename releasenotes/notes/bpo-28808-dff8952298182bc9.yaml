@@ -1,0 +1,4 @@
+---
+c-api:
+  - |
+    PyUnicode_CompareWithASCIIString() now never raises exceptions. (:issue:`28808`)

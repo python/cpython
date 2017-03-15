@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    curses.ascii predicates now work correctly with negative integers. (:issue:`9770`)

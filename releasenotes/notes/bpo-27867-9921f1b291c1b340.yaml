@@ -1,0 +1,4 @@
+---
+c-api:
+  - |
+    Added functions PySlice_Unpack() and PySlice_AdjustIndices(). (:issue:`27867`)

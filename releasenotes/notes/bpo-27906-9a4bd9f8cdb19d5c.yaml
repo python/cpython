@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Fix socket accept exhaustion during high TCP traffic. Patch by Kevin Conway. (:issue:`27906`)

@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Prevent memory leak in win32_ver(). (:issue:`27932`)

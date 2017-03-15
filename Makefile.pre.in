@@ -1684,6 +1684,9 @@ patchcheck: all
 
 Python/thread.o: @THREADHEADERS@
 
+Misc/NEWS:
+	-reno report --title 'Python News' --no-show-source > $@
+
 # Declare targets that aren't real files
 .PHONY: all build_all sharedmods oldsharedmods test quicktest
 .PHONY: install altinstall oldsharedinstall bininstall altbininstall
@@ -1692,7 +1695,7 @@ Python/thread.o: @THREADHEADERS@
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck autoconf clean clobber distclean
 .PHONY: smelly funny patchcheck touch altmaninstall commoninstall
-.PHONY: gdbhooks
+.PHONY: gdbhooks Misc/NEWS
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
 # Local Variables:

@@ -38,7 +38,7 @@ help:
 	@echo "  serve      to serve the documentation on the localhost (8000)"
 
 build:
-	$(SPHINXBUILD) $(ALLSPHINXOPTS)
+	(. venv/bin/activate && $(SPHINXBUILD) $(ALLSPHINXOPTS))
 	@echo
 
 html: BUILDER = html
@@ -108,6 +108,7 @@ clean:
 venv:
 	$(PYTHON) -m venv venv
 	./venv/bin/python3 -m pip install -U Sphinx
+	./venv/bin/python3 -m pip install -U reno
 
 dist:
 	rm -rf dist

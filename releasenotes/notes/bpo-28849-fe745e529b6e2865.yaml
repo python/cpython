@@ -1,0 +1,4 @@
+---
+build:
+  - |
+    Do not define sys.implementation._multiarch on Android. (:issue:`28849`)

@@ -1,0 +1,4 @@
+---
+core:
+  - |
+    Fix memory leak and use-after-free in os module (path_converter). (:issue:`29034`)

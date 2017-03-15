@@ -1,0 +1,4 @@
+---
+windows:
+  - |
+    _PyIO_get_console_type fails for various paths (:issue:`28164`)

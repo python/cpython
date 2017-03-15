@@ -1,0 +1,5 @@
+---
+library:
+  - |
+    Fix a regression introduced in warnings.catch_warnings(): call
+    warnings.showwarning() if it was overriden inside the context manager. (:issue:`28835`)

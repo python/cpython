@@ -1,0 +1,4 @@
+---
+core:
+  - |
+    Fixed possibly dereferencing undefined pointers when creating weakref objects. (:issue:`29347`)

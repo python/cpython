@@ -1,0 +1,5 @@
+---
+core:
+  - |
+    Raise DeprecationWarning when async and await keywords are used as
+    variable/attribute/class/function name. (:issue:`26182`)

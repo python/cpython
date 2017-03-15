@@ -1,0 +1,4 @@
+---
+windows:
+  - |
+    Improvements to help manuals on Windows. (:issue:`28251`)

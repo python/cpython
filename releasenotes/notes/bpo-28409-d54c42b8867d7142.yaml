@@ -1,0 +1,4 @@
+---
+tests:
+  - |
+    regrtest: fix the parser of command line arguments. (:issue:`28409`)

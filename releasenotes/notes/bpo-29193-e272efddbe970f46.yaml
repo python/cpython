@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    A format string argument for string.Formatter.format() is now positional-only. (:issue:`29193`)

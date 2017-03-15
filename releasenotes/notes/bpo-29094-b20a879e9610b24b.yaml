@@ -1,0 +1,5 @@
+---
+library:
+  - |
+    Offsets in a ZIP file created with extern file object and modes "w" and "x" now
+    are relative to the start of the file. (:issue:`29094`)

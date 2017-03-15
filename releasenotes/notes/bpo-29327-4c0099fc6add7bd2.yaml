@@ -1,0 +1,4 @@
+---
+core:
+  - |
+    Fixed a crash when pass the iterable keyword argument to sorted(). (:issue:`29327`)

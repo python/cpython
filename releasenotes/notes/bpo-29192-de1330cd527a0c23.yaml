@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Removed deprecated features in the http.cookies module. (:issue:`29192`)

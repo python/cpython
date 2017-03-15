@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Fix error building socket module when multithreading is disabled. (:issue:`28480`)

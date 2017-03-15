@@ -1,0 +1,5 @@
+---
+build:
+  - |
+    Fixed build with Estonian locale (python-config and distclean targets in
+    Makefile). Patch by Arfrever Frehtes Taifersar Arahesis. (:issue:`28258`)

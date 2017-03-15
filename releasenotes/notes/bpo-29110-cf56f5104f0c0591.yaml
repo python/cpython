@@ -1,0 +1,5 @@
+---
+library:
+  - |
+    Fix file object leak in aifc.open() when file is given as a filesystem path and
+    is not in valid AIFF format. Patch by Anthony Zhang. (:issue:`29110`)

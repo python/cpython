@@ -1,0 +1,4 @@
+---
+windows:
+  - |
+    Opening CON for write access fails (:issue:`28161`)

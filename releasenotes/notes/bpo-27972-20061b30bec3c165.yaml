@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Prohibit Tasks to await on themselves. (:issue:`27972`)

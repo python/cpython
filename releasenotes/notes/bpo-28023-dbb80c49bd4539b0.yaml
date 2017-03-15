@@ -1,0 +1,4 @@
+---
+tools:
+  - |
+    Fix python-gdb.py didn't support new dict implementation. (:issue:`28023`)

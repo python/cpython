@@ -1,0 +1,4 @@
+---
+windows:
+  - |
+    WindowsConsoleIO readall() fails if first line starts with Ctrl+Z (:issue:`28162`)

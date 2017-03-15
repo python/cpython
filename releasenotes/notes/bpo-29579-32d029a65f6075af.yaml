@@ -1,0 +1,4 @@
+---
+windows:
+  - |
+    Removes readme.txt from the installer. (:issue:`29579`)

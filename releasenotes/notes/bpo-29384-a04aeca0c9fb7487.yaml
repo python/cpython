@@ -1,0 +1,4 @@
+---
+build:
+  - |
+    Remove old Be OS helper scripts. (:issue:`29384`)

@@ -1,0 +1,4 @@
+---
+core:
+  - |
+    ImportError.__init__ now resets not specified attributes. (:issue:`28289`)

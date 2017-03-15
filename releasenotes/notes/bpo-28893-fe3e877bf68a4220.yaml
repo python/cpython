@@ -1,0 +1,5 @@
+---
+core:
+  - |
+    Set correct __cause__ for errors about invalid awaitables returned from
+    __aiter__ and __anext__. (:issue:`28893`)

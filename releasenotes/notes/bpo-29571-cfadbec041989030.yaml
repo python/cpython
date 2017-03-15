@@ -1,0 +1,7 @@
+---
+tests:
+  - |
+    To match the behaviour of the ``re.LOCALE`` flag, test_re.test_locale_flag now
+    uses ``locale.getpreferredencoding(False)`` to determine the candidate encoding
+    for the test regex (allowing it to correctly skip the test when the default
+    locale encoding is a multi-byte encoding) (:issue:`29571`)

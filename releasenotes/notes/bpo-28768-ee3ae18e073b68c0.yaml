@@ -1,0 +1,4 @@
+---
+build:
+  - |
+    Fix implicit declaration of function _setmode. Patch by Masayuki Yamamoto (:issue:`28768`)

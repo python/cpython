@@ -1,0 +1,5 @@
+---
+library:
+  - |
+    Fixed out-of-bounds buffer access in the group() method of the match object.
+    Based on patch by WGH. (:issue:`29444`)
