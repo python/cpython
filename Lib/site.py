@@ -372,6 +372,17 @@ def setcopyright():
 def sethelper():
     builtins.help = _sitebuiltins._Helper()
 
+def gethistoryfile():
+    """Check if PYTHONHISTORY environment variable
+     is set and define it as python_history file,
+     if not use the default ~/.python_history file.
+     """
+    h = os.environ.get("PYTHONHISTORY")
+    if h != '':
+        return h
+    return os.path.join(os.path.expanduser('~'),
+        '.python_history')
+
 def enablerlcompleter():
     """Enable default readline configuration on interactive prompts, by
     registering a sys.__interactivehook__.
@@ -407,13 +418,9 @@ def enablerlcompleter():
             pass
 
         if readline.get_current_history_length() == 0:
-            # If no history was loaded, default to .python_history.
-            # The guard is necessary to avoid doubling history size at
-            # each interpreter exit when readline was already configured
-            # through a PYTHONSTARTUP hook, see:
-            # http://bugs.python.org/issue5845#msg198636
-            history = os.path.join(os.path.expanduser('~'),
-                                   '.python_history')
+            # If no history was loaded, default to .python_history,
+            # or PYTHONHISTORY.
+            history = gethistoryfile()
             try:
                 readline.read_history_file(history)
             except IOError:

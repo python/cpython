@@ -713,6 +713,13 @@ conflict.
 
    .. versionadded:: 3.6
 
+.. envvar:: PYTHONHISTORY
+
+   If set to a non-empty string, you can change the location of a python_history
+   file, by default it will be in ~/.python_history.
+
+   .. versionadded:: 3.7
+
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
