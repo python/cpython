@@ -29,6 +29,9 @@ wmain(int argc, wchar_t **argv)
  */
 
 #ifdef PY_COERCE_C_LOCALE
+/* Access private pylifecycle API to check PYTHONCOERCECLOCALE */
+extern int _Py_CLocaleCoercionIsExpected(void);
+
 static const char *_C_LOCALE_COERCION_WARNING =
     "Python detected LC_CTYPE=C: %.20s coerced to %.20s (set another locale "
     "or PYTHONCOERCECLOCALE=0 to disable this locale coercion behavior).\n";
@@ -101,7 +104,6 @@ _coerce_default_locale_settings(const _LocaleCoercionTarget *target)
 void
 _handle_legacy_c_locale(void)
 {
-    const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
     /* We ignore the Python -E and -I flags here, as we need to sort out
      * the locale settings *before* we try to do anything with the command
      * line arguments. For cross-platform debugging purposes, we also need
@@ -109,7 +111,7 @@ _handle_legacy_c_locale(void)
      * isolated from their environment to use the legacy ASCII-centric C
      * locale.
     */
-    if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
+    if (_Py_CLocaleCoercionIsExpected()) {
         /* PYTHONCOERCECLOCALE is not set, or is not set to exactly "0" */
         const _LocaleCoercionTarget *target = NULL;
         for (target = _TARGET_LOCALES; target->locale_name; target++) {

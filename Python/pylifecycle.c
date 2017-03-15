@@ -167,6 +167,7 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
     return 0;
 }
 
+
 /* Global initializations.  Can be undone by Py_FinalizeEx().  Don't
    call this twice without an intervening Py_FinalizeEx() call.  When
    initializations fail, a fatal error is issued and the function does
@@ -302,6 +303,30 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
 }
 
 
+/* Private helper to check whether or not Python expects the C locale to be
+ * coerced to a UTF-8 based locale prior to calling Py_Initialize
+ *
+ * Returns 1 if C locale coercion is expected
+ * Returns 0 if locale coercion is not expected, either due to it being disabled
+ * at build time, or due to PYTHONCOERCECLOCALE=0 being set in the environment
+ *
+ * May be called prior to Py_Initialize and without holding the GIL.
+ */
+int
+_Py_CLocaleCoercionIsExpected(void)
+{
+#ifdef PY_COERCE_C_LOCALE
+    /* This may be called prior to Py_Initialize, so we don't call any other
+     * Python APIs, and we ignore the -E and -I flags
+     */
+    const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
+    if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
+        return 1;
+    }
+#endif
+    return 0;
+}
+
 #ifdef PY_WARN_ON_C_LOCALE
 static const char *_C_LOCALE_WARNING =
     "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
@@ -312,13 +337,7 @@ static const char *_C_LOCALE_WARNING =
 static void
 _emit_stderr_warning_for_c_locale(void)
 {
-    const char *coerce_c_locale = getenv("PYTHONCOERCECLOCALE");
-    /* We don't emit a warning if locale coercion has been explicitly disabled.
-     *
-     * For consistency with the corresponding check in Programs/python.c
-     * we ignore the Python -E and -I flags here.
-     */
-    if (coerce_c_locale == NULL || strncmp(coerce_c_locale, "0", 2) != 0) {
+    if (_Py_CLocaleCoercionIsExpected()) {
         const char *ctype_loc = setlocale(LC_CTYPE, NULL);
         if (ctype_loc != NULL && strcmp(ctype_loc, "C") == 0) {
             fprintf(stderr, "%s", _C_LOCALE_WARNING);
