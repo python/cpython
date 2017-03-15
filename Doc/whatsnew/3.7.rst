@@ -55,9 +55,6 @@ For full details, see the :ref:`changelog <changelog>`.
    form. It will be updated substantially as Python 3.7 moves towards release,
    so it's worth checking back even after reading earlier versions.
 
-.. release-notes::
-   :earliest-version: v3.6.0
-
 Summary -- Release highlights
 =============================
 
