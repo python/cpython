@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Optimize and cleanup dict iteration.
+    Optimize and cleanup dict iteration. (:issue:`28183`)

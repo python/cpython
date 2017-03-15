@@ -2,4 +2,4 @@
 library:
   - |
     Removed support of deprecated undocumented keyword arguments in methods of
-    regular expression objects.
+    regular expression objects. (:issue:`29195`)

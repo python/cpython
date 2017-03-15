@@ -2,4 +2,4 @@
 tests:
   - |
     Add the support.setswitchinterval() function to fix test_functools hanging on
-    the Android armv7 qemu emulator.
+    the Android armv7 qemu emulator. (:issue:`26939`)

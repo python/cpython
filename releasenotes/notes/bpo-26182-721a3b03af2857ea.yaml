@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Fix a refleak in code that raises DeprecationWarning.
+    Fix a refleak in code that raises DeprecationWarning. (:issue:`26182`)

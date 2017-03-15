@@ -2,4 +2,4 @@
 core:
   - |
     functools.lru_cache() was susceptible to an obscure reentrancy bug triggerable
-    by a monkey-patched len() function.
+    by a monkey-patched len() function. (:issue:`28991`)

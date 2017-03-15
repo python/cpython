@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Remove UNIX socket from FS before binding. Patch by Коренберг Марк.
+    Remove UNIX socket from FS before binding. Patch by Коренберг Марк. (:issue:`28399`)

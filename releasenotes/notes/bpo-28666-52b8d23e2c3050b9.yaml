@@ -1,4 +1,4 @@
 ---
 tests:
   - |
-    Now test.support.rmtree is able to remove unwritable or unreadable directories.
+    Now test.support.rmtree is able to remove unwritable or unreadable directories. (:issue:`28666`)

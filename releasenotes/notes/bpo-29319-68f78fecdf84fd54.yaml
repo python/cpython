@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Prevent RunMainFromImporter overwriting sys.path[0].
+    Prevent RunMainFromImporter overwriting sys.path[0]. (:issue:`29319`)

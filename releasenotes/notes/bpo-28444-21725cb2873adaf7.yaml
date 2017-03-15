@@ -1,4 +1,4 @@
 ---
 build:
   - |
-    Fix missing extensions modules when cross compiling.
+    Fix missing extensions modules when cross compiling. (:issue:`28444`)

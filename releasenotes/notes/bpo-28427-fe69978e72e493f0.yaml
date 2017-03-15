@@ -2,4 +2,4 @@
 library:
   - |
     old keys should not remove new values from WeakValueDictionary when collecting
-    from another thread.
+    from another thread. (:issue:`28427`)

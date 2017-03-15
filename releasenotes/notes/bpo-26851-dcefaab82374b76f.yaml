@@ -1,4 +1,4 @@
 ---
 build:
   - |
-    Set Android compilation and link flags.
+    Set Android compilation and link flags. (:issue:`26851`)

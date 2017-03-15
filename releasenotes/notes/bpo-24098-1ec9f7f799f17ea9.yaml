@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Fixed possible crash when AST is changed in process of compiling it.
+    Fixed possible crash when AST is changed in process of compiling it. (:issue:`24098`)

@@ -2,4 +2,4 @@
 docs:
   - |
     Add canonical header link on each page to corresponding major version of the
-    documentation. Patch by Matthias Bussonnier.
+    documentation. Patch by Matthias Bussonnier. (:issue:`26355`)

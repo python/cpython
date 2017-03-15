@@ -1,4 +1,4 @@
 ---
 docs:
   - |
-    Fix Python 2 syntax in code for building the documentation.
+    Fix Python 2 syntax in code for building the documentation. (:issue:`29349`)

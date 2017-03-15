@@ -2,4 +2,4 @@
 core:
   - |
     Resolving special methods of uninitialized type now causes implicit
-    initialization of the type instead of a fail.
+    initialization of the type instead of a fail. (:issue:`26906`)

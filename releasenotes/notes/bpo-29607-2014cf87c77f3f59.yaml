@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Fix stack_effect computation for CALL_FUNCTION_EX. Patch by Matthieu Dartiailh.
+    Fix stack_effect computation for CALL_FUNCTION_EX. Patch by Matthieu Dartiailh. (:issue:`29607`)

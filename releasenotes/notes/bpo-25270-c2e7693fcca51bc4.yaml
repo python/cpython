@@ -2,4 +2,4 @@
 library:
   - |
     Prevent codecs.escape_encode() from raising SystemError when an empty
-    bytestring is passed.
+    bytestring is passed. (:issue:`25270`)

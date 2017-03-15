@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Fix asyncio to support instantiation of new event loops in child processes.
+    Fix asyncio to support instantiation of new event loops in child processes. (:issue:`29703`)

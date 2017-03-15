@@ -2,4 +2,4 @@
 library:
   - |
     The webbrowser module now supports Firefox 36+ and derived browsers. Based on
-    patch by Oleg Broytman.
+    patch by Oleg Broytman. (:issue:`23262`)

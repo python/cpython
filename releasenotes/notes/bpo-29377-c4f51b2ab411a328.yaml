@@ -2,4 +2,4 @@
 library:
   - |
     Add SlotWrapperType, MethodWrapperType, and MethodDescriptorType built-in types
-    to types module. Original patch by Manuel Krebber.
+    to types module. Original patch by Manuel Krebber. (:issue:`29377`)

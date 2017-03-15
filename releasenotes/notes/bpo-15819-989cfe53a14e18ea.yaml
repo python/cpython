@@ -2,4 +2,4 @@
 build:
   - |
     Remove redundant include search directory option for building outside the
-    source tree.
+    source tree. (:issue:`15819`)

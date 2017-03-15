@@ -2,4 +2,4 @@
 library:
   - |
     Fix function declaration (C flags) for the getiterator() method of
-    xml.etree.ElementTree.Element.
+    xml.etree.ElementTree.Element. (:issue:`28314`)

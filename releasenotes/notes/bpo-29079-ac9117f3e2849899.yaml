@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Prevent infinite loop in pathlib.resolve() on Windows
+    Prevent infinite loop in pathlib.resolve() on Windows (:issue:`29079`)

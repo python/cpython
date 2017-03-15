@@ -2,4 +2,4 @@
 c-api:
   - |
     The result of PyUnicode_AsUTF8AndSize() and PyUnicode_AsUTF8() is now of type
-    ``const char *`` rather of ``char *``.
+    ``const char *`` rather of ``char *``. (:issue:`28769`)

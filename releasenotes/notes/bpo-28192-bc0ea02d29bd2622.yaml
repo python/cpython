@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Don't import readline in isolated mode.
+    Don't import readline in isolated mode. (:issue:`28192`)

@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    os.fwalk() no longer fails on broken links.
+    os.fwalk() no longer fails on broken links. (:issue:`28353`)

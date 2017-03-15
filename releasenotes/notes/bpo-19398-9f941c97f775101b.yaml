@@ -2,4 +2,4 @@
 core:
   - |
     Extra slash no longer added to sys.path components in case of empty
-    compile-time PYTHONPATH components.
+    compile-time PYTHONPATH components. (:issue:`19398`)

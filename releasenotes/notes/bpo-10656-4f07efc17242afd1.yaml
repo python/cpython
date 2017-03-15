@@ -2,4 +2,4 @@
 build:
   - |
     Fix out-of-tree building on AIX.  Patch by Tristan Carel and Michael
-    Haubenwallner.
+    Haubenwallner. (:issue:`10656`)

@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Update authorizer constants in sqlite3 module. Patch by Dingyuan Wang.
+    Update authorizer constants in sqlite3 module. Patch by Dingyuan Wang. (:issue:`28985`)

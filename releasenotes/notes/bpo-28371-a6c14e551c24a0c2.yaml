@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Deprecate passing asyncio.Handles to run_in_executor.
+    Deprecate passing asyncio.Handles to run_in_executor. (:issue:`28371`)

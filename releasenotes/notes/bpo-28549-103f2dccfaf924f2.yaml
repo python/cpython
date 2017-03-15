@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Fixed segfault in curses's addch() with ncurses6.
+    Fixed segfault in curses's addch() with ncurses6. (:issue:`28549`)

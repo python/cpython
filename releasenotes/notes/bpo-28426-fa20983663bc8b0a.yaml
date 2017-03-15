@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Fixed potential crash in PyUnicode_AsDecodedObject() in debug build.
+    Fixed potential crash in PyUnicode_AsDecodedObject() in debug build. (:issue:`28426`)

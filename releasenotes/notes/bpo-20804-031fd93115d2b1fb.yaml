@@ -2,4 +2,4 @@
 library:
   - |
     The unittest.mock.sentinel attributes now preserve their identity when they are
-    copied or pickled.
+    copied or pickled. (:issue:`20804`)

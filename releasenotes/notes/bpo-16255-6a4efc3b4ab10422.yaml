@@ -2,4 +2,4 @@
 library:
   - |
     subprocess.Popen uses /system/bin/sh on Android as the shell, instead of
-    /bin/sh.
+    /bin/sh. (:issue:`16255`)

@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Prevent infinite loop in pathlib.Path.mkdir
+    Prevent infinite loop in pathlib.Path.mkdir (:issue:`29416`)

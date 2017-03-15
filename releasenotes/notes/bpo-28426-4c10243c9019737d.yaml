@@ -3,4 +3,4 @@ c-api:
   - |
     Deprecated undocumented functions PyUnicode_AsEncodedObject(),
     PyUnicode_AsDecodedObject(), PyUnicode_AsDecodedUnicode() and
-    PyUnicode_AsEncodedUnicode().
+    PyUnicode_AsEncodedUnicode(). (:issue:`28426`)

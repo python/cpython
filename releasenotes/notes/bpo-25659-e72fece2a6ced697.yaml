@@ -2,4 +2,4 @@
 library:
   - |
     In ctypes, prevent a crash calling the from_buffer() and from_buffer_copy()
-    methods on abstract classes like Array.
+    methods on abstract classes like Array. (:issue:`25659`)

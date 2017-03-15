@@ -2,4 +2,4 @@
 tests:
   - |
     Fix the tests that bind() a unix socket and raise PermissionError on Android
-    for a non-root user.
+    for a non-root user. (:issue:`28683`)

@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    imghdr now supports pathlib.
+    imghdr now supports pathlib. (:issue:`28228`)

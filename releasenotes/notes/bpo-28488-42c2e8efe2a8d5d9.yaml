@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    shutil.make_archive() no longer adds entry "./" to ZIP archive.
+    shutil.make_archive() no longer adds entry "./" to ZIP archive. (:issue:`28488`)

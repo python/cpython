@@ -1,4 +1,4 @@
 ---
 windows:
   - |
-    Deprecate WindowsRegistryFinder and disable it by default
+    Deprecate WindowsRegistryFinder and disable it by default (:issue:`28896`)

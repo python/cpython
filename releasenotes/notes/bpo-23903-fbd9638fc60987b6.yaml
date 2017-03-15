@@ -1,4 +1,4 @@
 ---
 build:
   - |
-    Added missed names to PC/python3.def.
+    Added missed names to PC/python3.def. (:issue:`23903`)

@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Fixed writing non-BMP characters with binary format in plistlib.
+    Fixed writing non-BMP characters with binary format in plistlib. (:issue:`28321`)

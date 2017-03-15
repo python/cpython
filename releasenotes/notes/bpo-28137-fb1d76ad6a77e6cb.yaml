@@ -1,4 +1,4 @@
 ---
 windows:
   - |
-    Renames Windows path file to ._pth
+    Renames Windows path file to ._pth (:issue:`28137`)

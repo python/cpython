@@ -1,4 +1,4 @@
 ---
 windows:
   - |
-    Adds signed catalog files for stdlib on Windows.
+    Adds signed catalog files for stdlib on Windows. (:issue:`28402`)

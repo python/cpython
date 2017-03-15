@@ -3,4 +3,4 @@ core:
   - |
     On Android, operating system data is now always encoded/decoded to/from UTF-8,
     instead of the locale encoding to avoid inconsistencies with os.fsencode() and
-    os.fsdecode() which are already using UTF-8.
+    os.fsdecode() which are already using UTF-8. (:issue:`26919`)

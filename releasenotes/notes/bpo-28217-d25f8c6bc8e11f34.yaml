@@ -1,4 +1,4 @@
 ---
 tests:
   - |
-    Adds _testconsole module to test console input.
+    Adds _testconsole module to test console input. (:issue:`28217`)

@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Added C implementation of asyncio.Future. Original patch by Yury Selivanov.
+    Added C implementation of asyncio.Future. Original patch by Yury Selivanov. (:issue:`26081`)

@@ -1,4 +1,4 @@
 ---
 build:
   - |
-    Prevent missing 'getentropy' declaration warning on macOS. Patch by Gareth Rees.
+    Prevent missing 'getentropy' declaration warning on macOS. Patch by Gareth Rees. (:issue:`28676`)

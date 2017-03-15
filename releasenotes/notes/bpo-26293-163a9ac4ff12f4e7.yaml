@@ -3,4 +3,4 @@ library:
   - |
     Fixed writing ZIP files that starts not from the start of the file.  Offsets in
     ZIP file now are relative to the start of the archive in conforming to the
-    specification.
+    specification. (:issue:`26293`)

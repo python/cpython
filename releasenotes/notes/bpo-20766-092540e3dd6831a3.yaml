@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Fix references leaked by pdb in the handling of SIGINT handlers.
+    Fix references leaked by pdb in the handling of SIGINT handlers. (:issue:`20766`)

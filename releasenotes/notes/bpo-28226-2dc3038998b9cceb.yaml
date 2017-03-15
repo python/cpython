@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    compileall now supports pathlib.
+    compileall now supports pathlib. (:issue:`28226`)

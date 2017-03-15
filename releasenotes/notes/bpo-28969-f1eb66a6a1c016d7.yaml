@@ -3,4 +3,4 @@ library:
   - |
     Fixed race condition in C implementation of functools.lru_cache. KeyError could
     be raised when cached function with full cache was simultaneously called from
-    different threads with the same uncached arguments.
+    different threads with the same uncached arguments. (:issue:`28969`)

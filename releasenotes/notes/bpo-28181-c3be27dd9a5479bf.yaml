@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Get antigravity over HTTPS. Patch by Kaartic Sivaraam.
+    Get antigravity over HTTPS. Patch by Kaartic Sivaraam. (:issue:`28181`)

@@ -3,4 +3,4 @@ core:
   - |
     The with-statement now checks for __enter__ before it checks for __exit__. This
     gives less confusing error messages when both methods are missing. Patch by
-    Jonathan Ellington.
+    Jonathan Ellington. (:issue:`27100`)

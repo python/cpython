@@ -2,4 +2,4 @@
 library:
   - |
     Fixed recursion errors in large or resized curses.textpad.Textbox.  Based on
-    patch by Tycho Andersen.
+    patch by Tycho Andersen. (:issue:`13051`)

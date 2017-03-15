@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Replace Py_MEMCPY with memcpy(). Visual Studio can properly optimize memcpy().
+    Replace Py_MEMCPY with memcpy(). Visual Studio can properly optimize memcpy(). (:issue:`28126`)

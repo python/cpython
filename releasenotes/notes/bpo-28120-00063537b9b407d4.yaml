@@ -2,4 +2,4 @@
 core:
   - |
     Fix dict.pop() for splitted dictionary when trying to remove a "pending key"
-    (Not yet inserted in split-table). Patch by Xiang Zhang.
+    (Not yet inserted in split-table). Patch by Xiang Zhang. (:issue:`28120`)

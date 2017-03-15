@@ -2,4 +2,4 @@
 core:
   - |
     Improved exception reporting for problematic __set_name__ attributes by looking
-    up on class instead of instance.
+    up on class instead of instance. (:issue:`28214`)

@@ -1,4 +1,4 @@
 ---
 tests:
   - |
-    Use proper command line parsing in _testembed
+    Use proper command line parsing in _testembed (:issue:`24932`)

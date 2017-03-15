@@ -1,4 +1,4 @@
 ---
 build:
   - |
-    Rename --with-optimiations to --enable-optimizations.
+    Rename --with-optimiations to --enable-optimizations. (:issue:`26359`)

@@ -2,4 +2,4 @@
 library:
   - |
     RobotFileParser now correctly returns default values for crawl_delay and
-    request_rate. Initial patch by Peter Wirtz.
+    request_rate. Initial patch by Peter Wirtz. (:issue:`25400`)

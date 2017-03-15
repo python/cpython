@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Fix crash when GC runs during weakref callbacks.
+    Fix crash when GC runs during weakref callbacks. (:issue:`26617`)

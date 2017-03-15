@@ -2,4 +2,4 @@
 library:
   - |
     Refuse monitoring processes if the child watcher has no loop attached. Patch by
-    Vincent Michel.
+    Vincent Michel. (:issue:`28368`)

@@ -1,4 +1,4 @@
 ---
 extensions:
   - |
-    Update zlib to 1.2.11.
+    Update zlib to 1.2.11. (:issue:`29169`)

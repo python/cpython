@@ -1,4 +1,4 @@
 ---
 tools:
   - |
-    The zipfile module CLI now prints usage to stderr. Patch by Stephen J. Turnbull.
+    The zipfile module CLI now prints usage to stderr. Patch by Stephen J. Turnbull. (:issue:`28102`)

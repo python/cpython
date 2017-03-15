@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Speed-up method calls: add LOAD_METHOD and CALL_METHOD opcodes.
+    Speed-up method calls: add LOAD_METHOD and CALL_METHOD opcodes. (:issue:`26110`)

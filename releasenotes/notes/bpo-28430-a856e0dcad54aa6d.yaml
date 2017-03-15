@@ -2,4 +2,4 @@
 library:
   - |
     Fix iterator of C implemented asyncio.Future doesn't accept non-None value is
-    passed to it.send(val).
+    passed to it.send(val). (:issue:`28430`)

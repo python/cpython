@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Fixes to memory allocation in _PyCode_SetExtra. Patch by Brian Coleman.
+    Fixes to memory allocation in _PyCode_SetExtra. Patch by Brian Coleman. (:issue:`29683`)

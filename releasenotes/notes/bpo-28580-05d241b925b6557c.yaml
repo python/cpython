@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Optimize iterating split table values. Patch by Xiang Zhang.
+    Optimize iterating split table values. Patch by Xiang Zhang. (:issue:`28580`)

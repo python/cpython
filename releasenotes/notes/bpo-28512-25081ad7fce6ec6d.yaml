@@ -2,4 +2,4 @@
 core:
   - |
     Fixed setting the offset attribute of SyntaxError by PyErr_SyntaxLocationEx()
-    and PyErr_SyntaxLocationObject().
+    and PyErr_SyntaxLocationObject(). (:issue:`28512`)

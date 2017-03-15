@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Fixed a crash when deallocate deep ElementTree.
+    Fixed a crash when deallocate deep ElementTree. (:issue:`28871`)

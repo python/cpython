@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Restored the __reduce__() methods of datetime objects.
+    Restored the __reduce__() methods of datetime objects. (:issue:`28752`)

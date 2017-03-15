@@ -2,4 +2,4 @@
 library:
   - |
     Fixed possible crashes when unpickle itertools objects from incorrect pickle
-    data. Based on patch by John Leitch.
+    data. Based on patch by John Leitch. (:issue:`28322`)

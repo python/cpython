@@ -3,4 +3,4 @@ core:
   - |
     Fix minor regression of PyEval_CallObjectWithKeywords. It should raise
     TypeError when kwargs is not a dict.  But it might cause segv when args=NULL
-    and kwargs is not a dict.
+    and kwargs is not a dict. (:issue:`29684`)

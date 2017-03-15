@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Do not include <sys/random.h> if it does not exist.
+    Do not include <sys/random.h> if it does not exist. (:issue:`28932`)

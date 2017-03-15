@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Fix assertion error in threading._DummyThread.is_alive().
+    Fix assertion error in threading._DummyThread.is_alive(). (:issue:`29376`)

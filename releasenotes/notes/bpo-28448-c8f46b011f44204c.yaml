@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Fix C implemented asyncio.Future didn't work on Windows.
+    Fix C implemented asyncio.Future didn't work on Windows. (:issue:`28448`)

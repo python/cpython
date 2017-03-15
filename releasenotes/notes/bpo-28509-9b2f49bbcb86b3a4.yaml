@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    dict.update() no longer allocate unnecessary large memory.
+    dict.update() no longer allocate unnecessary large memory. (:issue:`28509`)

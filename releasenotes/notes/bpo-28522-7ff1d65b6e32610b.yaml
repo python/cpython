@@ -1,4 +1,4 @@
 ---
 windows:
   - |
-    Fixes mishandled buffer reallocation in getpathp.c
+    Fixes mishandled buffer reallocation in getpathp.c (:issue:`28522`)

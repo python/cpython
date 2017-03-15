@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Raise RuntimeError when transport's FD is used with add_reader, add_writer, etc.
+    Raise RuntimeError when transport's FD is used with add_reader, add_writer, etc. (:issue:`28369`)

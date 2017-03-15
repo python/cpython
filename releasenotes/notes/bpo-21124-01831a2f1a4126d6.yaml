@@ -2,4 +2,4 @@
 build:
   - |
     Fix building the _struct module on Cygwin by passing ``NULL`` instead of
-    ``&PyType_Type`` to PyVarObject_HEAD_INIT.  Patch by Masayuki Yamamoto.
+    ``&PyType_Type`` to PyVarObject_HEAD_INIT.  Patch by Masayuki Yamamoto. (:issue:`21124`)

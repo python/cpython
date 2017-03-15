@@ -2,4 +2,4 @@
 c-api:
   - |
     Private variable _Py_PackageContext is now of type ``const char *`` rather of
-    ``char *``.
+    ``char *``. (:issue:`28748`)

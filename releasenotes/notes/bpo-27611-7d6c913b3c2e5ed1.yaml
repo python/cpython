@@ -2,4 +2,4 @@
 library:
   - |
     Fixed support of default root window in the tkinter.tix module. Added the
-    master parameter in the DisplayStyle constructor.
+    master parameter in the DisplayStyle constructor. (:issue:`27611`)

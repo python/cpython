@@ -2,4 +2,4 @@
 library:
   - |
     Altering a kwarg dictionary passed to functools.partial() no longer affects a
-    partial object after creation.
+    partial object after creation. (:issue:`29532`)

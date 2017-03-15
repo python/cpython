@@ -1,4 +1,4 @@
 ---
 c-api:
   - |
-    Compiler warnings are now emitted if use most of deprecated functions.
+    Compiler warnings are now emitted if use most of deprecated functions. (:issue:`19569`)

@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Fixed the comparison of mock.MagickMock with mock.ANY.
+    Fixed the comparison of mock.MagickMock with mock.ANY. (:issue:`28735`)

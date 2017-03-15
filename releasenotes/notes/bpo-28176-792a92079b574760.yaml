@@ -1,4 +1,4 @@
 ---
 library:
   - |
-    Fix callbacks race in asyncio.SelectorLoop.sock_connect.
+    Fix callbacks race in asyncio.SelectorLoop.sock_connect. (:issue:`28176`)

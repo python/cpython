@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    Clean up redundant code in long_rshift function. Thanks Oren Milman.
+    Clean up redundant code in long_rshift function. Thanks Oren Milman. (:issue:`27222`)

@@ -1,4 +1,4 @@
 ---
 core:
   - |
-    More than 255 arguments can now be passed to a function.
+    More than 255 arguments can now be passed to a function. (:issue:`12844`)

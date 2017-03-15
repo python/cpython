@@ -1,4 +1,4 @@
 ---
 windows:
   - |
-    Windows ._pth file should allow import site
+    Windows ._pth file should allow import site (:issue:`28138`)
