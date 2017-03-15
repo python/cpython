@@ -98,7 +98,6 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 value = type()
             try:
                 self.gen.throw(type, value, traceback)
-                raise RuntimeError("generator didn't stop after throw()")
             except StopIteration as exc:
                 # Suppress StopIteration *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration
@@ -124,6 +123,8 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 #
                 if sys.exc_info()[1] is not value:
                     raise
+            else:
+                raise RuntimeError("generator didn't stop after throw()")
 
 
 def contextmanager(func):

@@ -84,7 +84,8 @@ Other Language Changes
   (Contributed by Robert Xiao in :issue:`28927`.)
 
 * :exc:`ImportError` now displays module name and module ``__file__`` path when
-  ``from ... import ...`` fails. :issue:`29546`.
+  ``from ... import ...`` fails.
+  (Contributed by Matthias Bussonnier in :issue:`29546`.)
 
 
 New Modules
@@ -104,12 +105,25 @@ If *monetary* is true, the conversion uses monetary thousands separator and
 grouping strings.
 (Contributed by Garvit in :issue:`10379`.)
 
+os
+--
+
+Added support for :class:`bytes` paths in :func:`~os.fwalk`.
+(Contributed by Serhiy Storchaka in :issue:`28682`.)
+
 unittest.mock
 -------------
 
 The :const:`~unittest.mock.sentinel` attributes now preserve their identity
 when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`.
 (Contributed by Serhiy Storchaka in :issue:`20804`.)
+
+xmlrpc.server
+-------------
+
+:meth:`register_function` of :class:`xmlrpc.server.SimpleXMLRPCDispatcher` and
+its subclasses can be used as a decorator.
+(Contributed by Xiang Zhang in :issue:`7769`.)
 
 urllib.parse
 ------------
@@ -126,6 +140,11 @@ Optimizations
   instantiation of bound method objects for method calls, which results
   in method calls being faster up to 20%.
   (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
+
+* Fast implementation from standard C library is now used for functions
+  :func:`~math.tgamma`, :func:`~math.lgamma`, :func:`~math.erf` and
+  :func:`~math.erfc` in the :mod:`math` module.
+  (Contributed by Serhiy Storchaka in :issue:`26121`.)
 
 
 Build and C API Changes
@@ -172,6 +191,10 @@ Deprecated
   both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`. (Contributed
   by Matthias Bussonnier in :issue:`29576`)
 
+- Using non-integer value for selecting a plural form in :mod:`gettext` is
+  now deprecated.  It never correctly worked.
+  (Contributed by Serhiy Storchaka in :issue:`28692`.)
+
 
 Removed
 =======
@@ -189,6 +212,10 @@ API and Feature Removals
 * The ``splitunc()`` function in the :mod:`ntpath` module was deprecated in
   Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
   function instead.
+
+* Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
+  longer take keyword arguments.  The first argument of :func:`int` can now
+  be passes only as positional argument.
 
 
 Porting to Python 3.7

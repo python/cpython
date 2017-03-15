@@ -80,7 +80,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    however, where :class:`~subprocess.Popen` takes a single argument which is
    list of strings, :func:`subprocess_exec` takes multiple string arguments.
 
-   The *protocol_factory* must instanciate a subclass of the
+   The *protocol_factory* must instantiate a subclass of the
    :class:`asyncio.SubprocessProtocol` class.
 
    Other parameters:
@@ -123,7 +123,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    using the platform's "shell" syntax. This is similar to the standard library
    :class:`subprocess.Popen` class called with ``shell=True``.
 
-   The *protocol_factory* must instanciate a subclass of the
+   The *protocol_factory* must instantiate a subclass of the
    :class:`asyncio.SubprocessProtocol` class.
 
    See :meth:`~AbstractEventLoop.subprocess_exec` for more details about

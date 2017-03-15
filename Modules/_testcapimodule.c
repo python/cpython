@@ -1167,7 +1167,7 @@ getargs_K(PyObject *self, PyObject *args)
 }
 
 /* This function not only tests the 'k' getargs code, but also the
-   PyLong_AsUnsignedLongMask() and PyLong_AsUnsignedLongMask() functions. */
+   PyLong_AsUnsignedLongMask() function. */
 static PyObject *
 test_k_code(PyObject *self)
 {
@@ -1205,7 +1205,8 @@ test_k_code(PyObject *self)
     value = PyLong_AsUnsignedLongMask(num);
     if (value != (unsigned long)-0x42)
         return raiseTestError("test_k_code",
-            "PyLong_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
+                              "PyLong_AsUnsignedLongMask() returned wrong "
+                              "value for long -0xFFF..000042");
 
     PyTuple_SET_ITEM(tuple, 0, num);
 

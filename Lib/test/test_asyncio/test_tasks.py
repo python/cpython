@@ -1461,6 +1461,14 @@ class BaseTaskTests:
         def coro(loop):
             self.assertTrue(Task.current_task(loop=loop) is task)
 
+            # See http://bugs.python.org/issue29271 for details:
+            asyncio.set_event_loop(loop)
+            try:
+                self.assertIs(Task.current_task(None), task)
+                self.assertIs(Task.current_task(), task)
+            finally:
+                asyncio.set_event_loop(None)
+
         task = self.new_task(self.loop, coro(self.loop))
         self.loop.run_until_complete(task)
         self.assertIsNone(Task.current_task(loop=self.loop))
@@ -1805,7 +1813,16 @@ class BaseTaskTests:
         # schedule the task
         coro = kill_me(self.loop)
         task = asyncio.ensure_future(coro, loop=self.loop)
+
         self.assertEqual(Task.all_tasks(loop=self.loop), {task})
+
+        # See http://bugs.python.org/issue29271 for details:
+        asyncio.set_event_loop(self.loop)
+        try:
+            self.assertEqual(Task.all_tasks(), {task})
+            self.assertEqual(Task.all_tasks(None), {task})
+        finally:
+            asyncio.set_event_loop(None)
 
         # execute the task so it waits for future
         self.loop._run_once()

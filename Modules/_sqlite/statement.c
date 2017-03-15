@@ -93,7 +93,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     }
 
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_prepare(connection->db,
+    rc = SQLITE3_PREPARE(connection->db,
                          sql_cstr,
                          -1,
                          &self->st,
@@ -334,7 +334,7 @@ int pysqlite_statement_recompile(pysqlite_Statement* self, PyObject* params)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_prepare(self->db,
+    rc = SQLITE3_PREPARE(self->db,
                          sql_cstr,
                          -1,
                          &new_st,

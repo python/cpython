@@ -1406,8 +1406,10 @@ Instances of these classes have no public methods.  Functions exported by the
 shared library can be accessed as attributes or by index.  Please note that
 accessing the function through an attribute caches the result and therefore
 accessing it repeatedly returns the same object each time.  On the other hand,
-accessing it through an index returns a new object each time:
+accessing it through an index returns a new object each time::
 
+   >>> from ctypes import CDLL
+   >>> libc = CDLL("libc.so.6")  # On Linux
    >>> libc.time == libc.time
    True
    >>> libc['time'] == libc['time']

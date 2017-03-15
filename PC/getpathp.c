@@ -185,7 +185,7 @@ exists(wchar_t *filename)
    may extend 'filename' by one character.
 */
 static int
-ismodule(wchar_t *filename, int update_filename) /* Is module -- check for .pyc/.pyo too */
+ismodule(wchar_t *filename, int update_filename) /* Is module -- check for .pyc too */
 {
     size_t n;
 
@@ -196,7 +196,7 @@ ismodule(wchar_t *filename, int update_filename) /* Is module -- check for .pyc/
     n = wcsnlen_s(filename, MAXPATHLEN+1);
     if (n < MAXPATHLEN) {
         int exist = 0;
-        filename[n] = Py_OptimizeFlag ? L'o' : L'c';
+        filename[n] = L'c';
         filename[n + 1] = L'\0';
         exist = exists(filename);
         if (!update_filename)

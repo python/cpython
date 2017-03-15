@@ -58,7 +58,7 @@ class Get_signatureTest(unittest.TestCase):
                'Create and return a new object.  See help(type) for accurate signature.')
         gtest(list.__init__,
                'Initialize self.  See help(type(self)) for accurate signature.')
-        append_doc =  "L.append(object) -> None -- append object to end"
+        append_doc =  "Append object to the end of the list."
         gtest(list.append, append_doc)
         gtest([].append, append_doc)
         gtest(List.append, append_doc)
@@ -81,9 +81,9 @@ class Get_signatureTest(unittest.TestCase):
 
     def test_multiline_docstring(self):
         # Test fewer lines than max.
-        self.assertEqual(signature(list),
-                "list() -> new empty list\n"
-                "list(iterable) -> new list initialized from iterable's items")
+        self.assertEqual(signature(range),
+                "range(stop) -> range object\n"
+                "range(start, stop[, step]) -> range object")
 
         # Test max lines
         self.assertEqual(signature(bytes), '''\

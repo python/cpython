@@ -1960,9 +1960,9 @@ _PySys_Init(void)
                          PyUnicode_FromString(Py_GetVersion()));
     SET_SYS_FROM_STRING("hexversion",
                          PyLong_FromLong(PY_VERSION_HEX));
-    SET_SYS_FROM_STRING("_mercurial",
-                        Py_BuildValue("(szz)", "CPython", _Py_hgidentifier(),
-                                      _Py_hgversion()));
+    SET_SYS_FROM_STRING("_git",
+                        Py_BuildValue("(szz)", "CPython", _Py_gitidentifier(),
+                                      _Py_gitversion()));
     SET_SYS_FROM_STRING("dont_write_bytecode",
                          PyBool_FromLong(Py_DontWriteBytecodeFlag));
     SET_SYS_FROM_STRING("api_version",

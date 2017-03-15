@@ -92,10 +92,13 @@ The following functions are defined:
    *constructor* will never be called, and may be ``None``.
 
    Setting *preferred* to ``True`` makes this browser a preferred result for
-   a :func:`get` call with no argument. Otherwise, this entry point is only
+   a :func:`get` call with no argument.  Otherwise, this entry point is only
    useful if you plan to either set the :envvar:`BROWSER` variable or call
    :func:`get` with a nonempty argument matching the name of a handler you
    declare.
+
+   .. versionchanged:: 3.7
+      *preferred* keyword-only parameter was added.
 
 A number of browser types are predefined.  This table gives the type names that
 may be passed to the :func:`get` function and the corresponding instantiations

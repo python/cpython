@@ -746,12 +746,16 @@ Windows Popen Helpers
 The :class:`STARTUPINFO` class and following constants are only available
 on Windows.
 
-.. class:: STARTUPINFO()
+.. class:: STARTUPINFO(*, dwFlags=0, hStdInput=None, hStdOutput=None, \
+                       hStdError=None, wShowWindow=0)
 
    Partial support of the Windows
    `STARTUPINFO <https://msdn.microsoft.com/en-us/library/ms686331(v=vs.85).aspx>`__
-   structure is used for :class:`Popen` creation. The following attributes can be set
-   by passing them as keyword-only arguments.
+   structure is used for :class:`Popen` creation.  The following attributes can
+   be set by passing them as keyword-only arguments.
+
+   .. versionchanged:: 3.7
+      Keyword-only argument support was added.
 
    .. attribute:: dwFlags
 
@@ -793,8 +797,6 @@ on Windows.
       :data:`SW_HIDE` is provided for this attribute. It is used when
       :class:`Popen` is called with ``shell=True``.
 
-   .. versionchanged:: 3.7
-      *Keyword-only argument* support was added.
 
 Constants
 ^^^^^^^^^

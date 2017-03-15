@@ -1855,13 +1855,13 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
             awaitable = _PyCoro_GetAwaitableIter(iter);
             if (awaitable == NULL) {
-                SET_TOP(NULL);
-                PyErr_Format(
+                _PyErr_FormatFromCause(
                     PyExc_TypeError,
                     "'async for' received an invalid object "
                     "from __aiter__: %.100s",
                     Py_TYPE(iter)->tp_name);
 
+                SET_TOP(NULL);
                 Py_DECREF(iter);
                 goto error;
             } else {
@@ -1920,7 +1920,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
                 awaitable = _PyCoro_GetAwaitableIter(next_iter);
                 if (awaitable == NULL) {
-                    PyErr_Format(
+                    _PyErr_FormatFromCause(
                         PyExc_TypeError,
                         "'async for' received an invalid object "
                         "from __anext__: %.100s",
@@ -4818,7 +4818,20 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type) {
         PyThreadState *tstate = PyThreadState_GET();
-        C_TRACE(x, _PyMethodDescr_FastCallKeywords(func, stack, nargs, kwnames));
+        if (tstate->use_tracing && tstate->c_profilefunc) {
+            // We need to create PyCFunctionObject for tracing.
+            PyMethodDescrObject *descr = (PyMethodDescrObject*)func;
+            func = PyCFunction_NewEx(descr->d_method, stack[0], NULL);
+            if (func == NULL) {
+                return NULL;
+            }
+            C_TRACE(x, _PyCFunction_FastCallKeywords(func, stack+1, nargs-1,
+                                                     kwnames));
+            Py_DECREF(func);
+        }
+        else {
+            x = _PyMethodDescr_FastCallKeywords(func, stack, nargs, kwnames);
+        }
     }
     else {
         if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
