@@ -1126,7 +1126,7 @@ struct s_MergeState {
    the input (nothing is lost or duplicated).
 */
 static int
-binarysort(MergeState* ms, sortslice lo, PyObject **hi, PyObject **start)
+binarysort(MergeState *ms, sortslice lo, PyObject **hi, PyObject **start)
 {
     Py_ssize_t k;
     PyObject **l, **p, **r;
@@ -1200,7 +1200,7 @@ elements to get out of order).
 Returns -1 in case of error.
 */
 static Py_ssize_t
-count_run(MergeState* ms, PyObject **lo, PyObject **hi, int *descending)
+count_run(MergeState *ms, PyObject **lo, PyObject **hi, int *descending)
 {
     Py_ssize_t k;
     Py_ssize_t n;
@@ -1255,7 +1255,7 @@ key, and the last n-k should follow key.
 Returns -1 on error.  See listsort.txt for info on the method.
 */
 static Py_ssize_t
-gallop_left(MergeState* ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_t hint)
+gallop_left(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_t hint)
 {
     Py_ssize_t ofs;
     Py_ssize_t lastofs;
@@ -1346,7 +1346,7 @@ we're sticking to "<" comparisons that it's much harder to follow if
 written as one routine with yet another "left or right?" flag.
 */
 static Py_ssize_t
-gallop_right(MergeState* ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_t hint)
+gallop_right(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_t hint)
 {
     Py_ssize_t ofs;
     Py_ssize_t lastofs;
@@ -1929,9 +1929,9 @@ reverse_sortslice(sortslice *s, Py_ssize_t n)
 
 /* Heterogeneous compare: default, always safe to fall back on. */
 static int
-safe_object_compare(PyObject* v, PyObject* w, MergeState* ms)
+safe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
-  /* No assumptions necessary! */
+    /* No assumptions necessary! */
     return PyObject_RichCompareBool(v, w, Py_LT);
 }
 
@@ -1940,72 +1940,74 @@ safe_object_compare(PyObject* v, PyObject* w, MergeState* ms)
  *  pre-sort check.)
  */
 static int
-unsafe_object_compare(PyObject* v, PyObject* w, MergeState* ms)
+unsafe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
-    int ok; PyObject* res;
-    
-    /* Modified from Objects/object.c:PyObject_RichCompareBool, assuming: */
-    #ifdef Py_DEBUG
-        assert(v->ob_type == w->ob_type &&
-	       v->ob_type->tp_richcompare != NULL);
-    #endif
+    PyObject* res_obj; int res;
 
+    /* No assumptions, because we check first: */
     if (v->ob_type->tp_richcompare != ms->key_richcompare)
         return PyObject_RichCompareBool(v, w, Py_LT);
+
+    assert(ms->key_richcompare != NULL);
+    res_obj = (*(ms->key_richcompare))(v, w, Py_LT);
     
-    res = (*(ms->key_richcompare))(v, w, Py_LT);
-    
-    if (res == Py_NotImplemented) {
-        Py_DECREF(res);
+    if (res_obj == Py_NotImplemented) {
+        Py_DECREF(res_obj);
         return PyObject_RichCompareBool(v, w, Py_LT);
     }
-    if (res == NULL)
+    if (res_obj == NULL)
         return -1;
 
-    if (PyBool_Check(res)){
-        ok = (res == Py_True);
+    if (PyBool_Check(res_obj)) {
+        res = (res_obj == Py_True);
     }
     else {
-        ok = PyObject_IsTrue(res);
+        res = PyObject_IsTrue(res_obj);
     }
-    Py_DECREF(res);
-    return ok;
+    Py_DECREF(res_obj);
+
+    /* Note that we can't assert
+     *     res == PyObject_RichCompareBool(v, w, Py_LT);
+     * because of evil compare functions like this:
+     *     lambda a, b:  int(random.random() * 3) - 1)
+     * (which is actually in test_sort.py) */
+    return res;
 }
 
 /* Latin string compare: safe for any two latin (one byte per char) strings. */
 static int
-unsafe_latin_compare(PyObject* v, PyObject* w, MergeState* ms){
+unsafe_latin_compare(PyObject *v, PyObject *w, MergeState *ms)
+{
     int len, res;
     
     /* Modified from Objects/unicodeobject.c:unicode_compare, assuming: */
-    #ifdef Py_DEBUG
-        assert(v->ob_type == w->ob_type &&
-	       v->ob_type == &PyUnicode_Type &&
-	       PyUnicode_KIND(v) == PyUnicode_KIND(w) &&
-	       PyUnicode_KIND(v) == PyUnicode_1BYTE_KIND);
-    #endif
+    assert(v->ob_type == w->ob_type); 
+    assert(v->ob_type == &PyUnicode_Type);
+    assert(PyUnicode_KIND(v) == PyUnicode_KIND(w));
+    assert(PyUnicode_KIND(v) == PyUnicode_1BYTE_KIND);
     
     len = Py_MIN(PyUnicode_GET_LENGTH(v), PyUnicode_GET_LENGTH(w));
     res = memcmp(PyUnicode_DATA(v), PyUnicode_DATA(w), len);
 
-    return (res != 0 ?
-            res < 0 :
-            PyUnicode_GET_LENGTH(v) < PyUnicode_GET_LENGTH(w));
+    res = (res != 0 ?
+           res < 0 :
+           PyUnicode_GET_LENGTH(v) < PyUnicode_GET_LENGTH(w));
+
+    assert(res == PyObject_RichCompareBool(v, w, Py_LT));;
+    return res;
 }
 
 /* Bounded int compare: compare any two longs that fit in a single machine word. */
 static int
-unsafe_long_compare(PyObject *v, PyObject *w, MergeState* ms)
+unsafe_long_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
-    PyLongObject *vl, *wl; sdigit v0, w0;
+    PyLongObject *vl, *wl; sdigit v0, w0; int res;
 
     /* Modified from Objects/longobject.c:long_compare, assuming: */
-    #ifdef Py_DEBUG
-        assert(v->ob_type == w->ob_type &&
-	       v->ob_type == &PyLong_Type &&
-	       Py_ABS(Py_SIZE(v)) <= 1 &&
-	       Py_ABS(Py_SIZE(w)) <= 1);
-    #endif
+    assert(v->ob_type == w->ob_type); 
+    assert(v->ob_type == &PyLong_Type);
+    assert(Py_ABS(Py_SIZE(v)) <= 1);
+    assert(Py_ABS(Py_SIZE(w)) <= 1);
     
     vl = (PyLongObject*)v;
     wl = (PyLongObject*)w;
@@ -2018,18 +2020,24 @@ unsafe_long_compare(PyObject *v, PyObject *w, MergeState* ms)
     if (Py_SIZE(wl) < 0)
         w0 = -w0;
 
-    return v0 < w0;
+    res = v0 < w0;
+    assert(res == PyObject_RichCompareBool(v, w, Py_LT));
+    return res;
 }
 
 /* Float compare: compare any two floats. */
 static int
-unsafe_float_compare(PyObject *v, PyObject *w, MergeState* ms){
+unsafe_float_compare(PyObject *v, PyObject *w, MergeState *ms)
+{
+    int res;
+
     /* Modified from Objects/floatobject.c:float_richcompare, assuming: */
-    #ifdef Py_DEBUG
-        assert(v->ob_type == w->ob_type &&
-	       v->ob_type == &PyFloat_Type);
-    #endif
-    return PyFloat_AS_DOUBLE(v) < PyFloat_AS_DOUBLE(w);
+    assert(v->ob_type == w->ob_type); 
+    assert(v->ob_type == &PyFloat_Type);
+
+    res = PyFloat_AS_DOUBLE(v) < PyFloat_AS_DOUBLE(w);
+    assert(res == PyObject_RichCompareBool(v, w, Py_LT));
+    return res; 
 }
 
 /* Tuple compare: compare *any* two tuples, using 
@@ -2039,23 +2047,21 @@ unsafe_float_compare(PyObject *v, PyObject *w, MergeState* ms){
  * on two levels (as long as [x[0] for x in L] is type-homogeneous.) The idea is 
  * that most tuple compares don't involve x[1:]. */
 static int
-unsafe_tuple_compare(PyObject* v, PyObject* w, MergeState* ms)
+unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
 {   
     PyTupleObject *vt, *wt;
     Py_ssize_t i, vlen, wlen;
     int k;
 
     /* Modified from Objects/tupleobject.c:tuplerichcompare, assuming: */
-    #ifdef Py_DEBUG
-        assert(v->ob_type == w->ob_type &&
-	       v->ob_type == &PyTuple_Type &&
-	       Py_SIZE(v) > 0 &&
-	       Py_SIZE(w) > 0);
-    #endif
+    assert(v->ob_type == w->ob_type);
+    assert(v->ob_type == &PyTuple_Type);
+    assert(Py_SIZE(v) > 0);
+    assert(Py_SIZE(w) > 0);
 
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
-
+    
     vlen = Py_SIZE(vt);
     wlen = Py_SIZE(wt);
 
@@ -2070,10 +2076,11 @@ unsafe_tuple_compare(PyObject* v, PyObject* w, MergeState* ms)
     if (i >= vlen || i >= wlen)
         return vlen < wlen;
 
-    if (i == 0)
-	return ms->tuple_elem_compare(vt->ob_item[i], wt->ob_item[i], ms);
-    else
+    if (i == 0) {
+        return ms->tuple_elem_compare(vt->ob_item[i], wt->ob_item[i], ms);
+    } else {
 	return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
+    }
 }
 
 /* An adaptive, stable, natural mergesort.  See listsort.txt.
@@ -2156,7 +2163,7 @@ listsort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                                   Py_SIZE(lo.keys[0]) > 0);
 
         PyTypeObject* key_type = (keys_are_in_tuples ?
-                                  PyTuple_GET_ITEM(lo.keys[0],0)->ob_type :
+                                  PyTuple_GET_ITEM(lo.keys[0], 0)->ob_type :
                                   lo.keys[0]->ob_type);
 
         int keys_are_all_same_type = 1;
@@ -2165,10 +2172,10 @@ listsort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
 
         /* Prove that assumption by checking every key. */
         int i;
-        for (i=0; i< saved_ob_size; i++) {
+        for (i=0; i < saved_ob_size; i++) {
 
             if (keys_are_in_tuples &&
-                (lo.keys[i]->ob_type != &PyTuple_Type || Py_SIZE(lo.keys[i]) == 0)) {
+                !(lo.keys[i]->ob_type == &PyTuple_Type && Py_SIZE(lo.keys[i]) != 0)) {
                 keys_are_in_tuples = 0;
                 keys_are_all_same_type = 0;
                 break;
@@ -2178,7 +2185,7 @@ listsort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
              * lo.keys[i], not lo.keys[i] itself! We verify type-homogeneity 
              * for lists of tuples in the if-statement directly above. */
             PyObject* key = (keys_are_in_tuples ?
-                             PyTuple_GET_ITEM(lo.keys[i],0) :
+                             PyTuple_GET_ITEM(lo.keys[i], 0) :
                              lo.keys[i]);
 
             if (key->ob_type != key_type) {
@@ -2186,31 +2193,34 @@ listsort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                 break;
             }
 
-            else if (key_type == &PyLong_Type && ints_are_bounded &&
-                     Py_ABS(Py_SIZE(key)) > 1)
-                ints_are_bounded = 0;
-
-            else if (key_type == &PyUnicode_Type && strings_are_latin &&
-                     PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND)
+            if (key_type == &PyLong_Type) {
+                if (ints_are_bounded && Py_ABS(Py_SIZE(key)) > 1)
+                    ints_are_bounded = 0;
+            }
+            else if (key_type == &PyUnicode_Type){
+                if (strings_are_latin &&
+                    PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND)
                 strings_are_latin = 0;
+            }
         }
 
         /* Choose the best compare, given what we now know about the keys. */
         if (keys_are_all_same_type) {
 
-            if (key_type == &PyUnicode_Type && strings_are_latin)
+            if (key_type == &PyUnicode_Type && strings_are_latin) {
                 ms.key_compare = unsafe_latin_compare;
-
-            else if (key_type == &PyLong_Type && ints_are_bounded)
+            }
+            else if (key_type == &PyLong_Type && ints_are_bounded) {
                 ms.key_compare = unsafe_long_compare;
-
-            else if (key_type == &PyFloat_Type)
+            }
+            else if (key_type == &PyFloat_Type) {
                 ms.key_compare = unsafe_float_compare;
-
-            else if ((ms.key_richcompare = key_type->tp_richcompare) != NULL)
+            }
+            else if ((ms.key_richcompare = key_type->tp_richcompare) != NULL) {
                 ms.key_compare = unsafe_object_compare;
-
-        } else {
+            }
+        }
+        else {
             ms.key_compare = safe_object_compare;
         }
 
