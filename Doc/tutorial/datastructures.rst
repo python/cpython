@@ -40,7 +40,7 @@ objects:
 .. method:: list.remove(x)
    :noindex:
 
-   Remove the first item from the list whose value is *x*.  It is an error if
+   Remove the first item from the list whose value is equal to *x*.  It is an error if
    there is no such item.
 
 
@@ -63,7 +63,7 @@ objects:
 .. method:: list.index(x[, start[, end]])
    :noindex:
 
-   Return zero-based index in the list of the first item whose value is *x*.
+   Return zero-based index in the list of the first item whose value is equal to *x*.
    Raises a :exc:`ValueError` if there is no such item.
 
    The optional arguments *start* and *end* are interpreted as in the slice

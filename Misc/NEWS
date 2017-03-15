@@ -10,6 +10,28 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-28856: Fix an oversight that %b format for bytes should support objects
+  follow the buffer protocol.
+
+- bpo-29723: The ``sys.path[0]`` initialization change for bpo-29139 caused a
+  regression by revealing an inconsistency in how sys.path is initialized when
+  executing ``__main__`` from a zipfile, directory, or other import location.
+  The interpreter now consistently avoids ever adding the import location's
+  parent directory to ``sys.path``, and ensures no other ``sys.path`` entries
+  are inadvertently modified when inserting the import location named on the
+  command line.
+
+- bpo-29568: Escaped percent "%%" in the format string for classic string
+  formatting no longer allows any characters between two percents.
+
+- bpo-29714: Fix a regression that bytes format may fail when containing zero
+  bytes inside.
+
+- bpo-29695: bool(), float(), list() and tuple() no longer take keyword arguments.
+  The first argument of int() can now be passes only as positional argument.
+
+- bpo-20087: Prefer glibc's list of locale aliases to the X11 ones.
+
 - bpo-28893: Set correct __cause__ for errors about invalid awaitables
   returned from __aiter__ and __anext__.
 
@@ -263,12 +285,40 @@ Library
   in the plistlib module.  Dict values in the result of functions
   readPlist() and readPlistFromBytes() are now exact dicts.
 
+- bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
+  are not strings.  Patch by Michael Seifert.
+
+- bpo-8256: Fixed possible failing or crashing input() if attributes "encoding"
+  or "errors" of sys.stdin or sys.stdout are not set or are not strings.
+
+- bpo-28692: Using non-integer value for selecting a plural form in gettext is
+  now deprecated.
+
+- bpo-26121: Use C library implementation for math functions erf() and erfc().
+
+- bpo-29619: os.stat() and os.DirEntry.inode() now convert inode (st_ino) using
+  unsigned integers.
+
+- bpo-28298: Fix a bug that prevented array 'Q', 'L' and 'I' from accepting big
+  intables (objects that have __int__) as elements.
+
+- bpo-29645: Speed up importing the webbrowser module.  webbrowser.register()
+  is now thread-safe.
+
+- bpo-28231: The zipfile module now accepts path-like objects for external
+  paths.
+
+- bpo-26915: index() and count() methods of collections.abc.Sequence now
+  check identity before checking equality when do comparisons.
+
+- bpo-28682: Added support for bytes paths in os.fwalk().
+
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
 
 - bpo-9303: Migrate sqlite3 module to _v2 API.  Patch by Aviv Palivoda.
 
-- bpo-28963: Fix out of bound iteration in asyncio.Future.remove_done_callback 
+- bpo-28963: Fix out of bound iteration in asyncio.Future.remove_done_callback
   implemented in C.
 
 - bpo-29704: asyncio.subprocess.SubprocessStreamProtocol no longer closes before
@@ -294,6 +344,9 @@ Library
 
 - bpo-28518: Start a transaction implicitly before a DML statement.
   Patch by Aviv Palivoda.
+
+- bpo-29742: get_extra_info() raises exception if get called on closed ssl transport.
+  Patch by Nikolay Kim.
 
 - Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
   '~' in the set of characters that is not quoted by default. Patch by
@@ -883,6 +936,10 @@ Build
 Tools/Demos
 -----------
 
+- bpo-24037: Argument Clinic now uses the converter `bool(accept={int})` rather
+  than `int` for semantical booleans.  This avoids repeating the default
+  value for Python and C and will help in converting to `bool` in future.
+
 - Issue #29367: python-gdb.py now supports also ``method-wrapper``
   (``wrapperobject``) objects.
 
@@ -898,15 +955,6 @@ Tools/Demos
 
 Tests
 -----
-
-- bpo-28087: Skip test_asyncore and test_eintr poll failures on macOS.
-  Skip some tests of select.poll when running on macOS due to unresolved
-  issues with the underlying system poll function on some macOS versions.
-
-- Issue #29571: to match the behaviour of the ``re.LOCALE`` flag,
-  test_re.test_locale_flag now uses ``locale.getpreferredencoding(False)`` to
-  determine the candidate encoding for the test regex (allowing it to correctly
-  skip the test when the default locale encoding is a multi-byte encoding)
 
 - Issue #24932: Use proper command line parsing in _testembed
 

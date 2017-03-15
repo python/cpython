@@ -149,7 +149,7 @@ _io_BytesIO_tell(bytesio *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_io_BytesIO_read__doc__,
-"read($self, size=None, /)\n"
+"read($self, size=-1, /)\n"
 "--\n"
 "\n"
 "Read at most size bytes, returned as a bytes object.\n"
@@ -161,24 +161,23 @@ PyDoc_STRVAR(_io_BytesIO_read__doc__,
     {"read", (PyCFunction)_io_BytesIO_read, METH_FASTCALL, _io_BytesIO_read__doc__},
 
 static PyObject *
-_io_BytesIO_read_impl(bytesio *self, PyObject *arg);
+_io_BytesIO_read_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
 _io_BytesIO_read(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    PyObject *arg = Py_None;
+    Py_ssize_t size = -1;
 
-    if (!_PyArg_UnpackStack(args, nargs, "read",
-        0, 1,
-        &arg)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
+        _PyIO_ConvertSsize_t, &size)) {
         goto exit;
     }
 
     if (!_PyArg_NoStackKeywords("read", kwnames)) {
         goto exit;
     }
-    return_value = _io_BytesIO_read_impl(self, arg);
+    return_value = _io_BytesIO_read_impl(self, size);
 
 exit:
     return return_value;
@@ -197,17 +196,16 @@ PyDoc_STRVAR(_io_BytesIO_read1__doc__,
     {"read1", (PyCFunction)_io_BytesIO_read1, METH_FASTCALL, _io_BytesIO_read1__doc__},
 
 static PyObject *
-_io_BytesIO_read1_impl(bytesio *self, PyObject *size);
+_io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
 _io_BytesIO_read1(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    PyObject *size = Py_None;
+    Py_ssize_t size = -1;
 
-    if (!_PyArg_UnpackStack(args, nargs, "read1",
-        0, 1,
-        &size)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:read1",
+        _PyIO_ConvertSsize_t, &size)) {
         goto exit;
     }
 
@@ -221,7 +219,7 @@ exit:
 }
 
 PyDoc_STRVAR(_io_BytesIO_readline__doc__,
-"readline($self, size=None, /)\n"
+"readline($self, size=-1, /)\n"
 "--\n"
 "\n"
 "Next line from the file, as a bytes object.\n"
@@ -234,24 +232,23 @@ PyDoc_STRVAR(_io_BytesIO_readline__doc__,
     {"readline", (PyCFunction)_io_BytesIO_readline, METH_FASTCALL, _io_BytesIO_readline__doc__},
 
 static PyObject *
-_io_BytesIO_readline_impl(bytesio *self, PyObject *arg);
+_io_BytesIO_readline_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
 _io_BytesIO_readline(bytesio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    PyObject *arg = Py_None;
+    Py_ssize_t size = -1;
 
-    if (!_PyArg_UnpackStack(args, nargs, "readline",
-        0, 1,
-        &arg)) {
+    if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
+        _PyIO_ConvertSsize_t, &size)) {
         goto exit;
     }
 
     if (!_PyArg_NoStackKeywords("readline", kwnames)) {
         goto exit;
     }
-    return_value = _io_BytesIO_readline_impl(self, arg);
+    return_value = _io_BytesIO_readline_impl(self, size);
 
 exit:
     return return_value;
@@ -472,4 +469,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=138ee6ad6951bc84 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=74a856733a5d55b0 input=a9049054013a1b77]*/
