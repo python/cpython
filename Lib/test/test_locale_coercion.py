@@ -85,7 +85,7 @@ class LocaleOverrideTests(unittest.TestCase):
             "LC_CTYPE": "",
             "LC_ALL": "",
         }
-        for env_var in ("LC_ALL", "LC_CTYPE", "LANG"):
+        for env_var in base_var_dict:
             with self.subTest(env_var=env_var):
                 var_dict = base_var_dict.copy()
                 var_dict[env_var] = "C.UTF-8"
@@ -112,7 +112,7 @@ class LocaleOverrideTests(unittest.TestCase):
             "LC_CTYPE": "",
             "LC_ALL": "",
         }
-        for env_var in ("LC_ALL", "LC_CTYPE", "LANG"):
+        for env_var in base_var_dict:
             for locale_to_set in ("", "C", "POSIX", "invalid.ascii"):
                 with self.subTest(env_var=env_var,
                                   nominal_locale=locale_to_set,
@@ -161,11 +161,8 @@ class EmbeddingTests(unittest.TestCase):
         # This is needed otherwise we get a fatal error:
         # "Py_Initialize: Unable to get the locale encoding
         # LookupError: no codec search functions registered: can't find encoding"
-        self.oldcwd = os.getcwd()
+        self.addCleanup(os.chdir, os.getcwd())
         os.chdir(basepath)
-
-    def tearDown(self):
-        os.chdir(self.oldcwd)
 
     def run_embedded_interpreter(self, *args):
         """Runs a test in the embedded interpreter"""
