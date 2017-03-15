@@ -2076,11 +2076,10 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
     if (i >= vlen || i >= wlen)
         return vlen < wlen;
 
-    if (i == 0) {
+    if (i == 0) 
         return ms->tuple_elem_compare(vt->ob_item[i], wt->ob_item[i], ms);
-    } else {
+    else
 	return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
-    }
 }
 
 /* An adaptive, stable, natural mergesort.  See listsort.txt.
