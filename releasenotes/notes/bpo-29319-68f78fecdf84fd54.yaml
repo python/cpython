@@ -1,0 +1,4 @@
+---
+core:
+  - |
+    Prevent RunMainFromImporter overwriting sys.path[0].

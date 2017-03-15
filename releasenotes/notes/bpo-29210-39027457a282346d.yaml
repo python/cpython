@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Removed support of deprecated argument "exclude" in tarfile.TarFile.add().

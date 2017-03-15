@@ -1,0 +1,5 @@
+---
+library:
+  - |
+    Command-line interface of the zipfile module now uses argparse. Added support
+    of long options.

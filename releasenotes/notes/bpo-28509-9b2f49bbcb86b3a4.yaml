@@ -1,0 +1,4 @@
+---
+core:
+  - |
+    dict.update() no longer allocate unnecessary large memory.

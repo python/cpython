@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Fix assertion error in threading._DummyThread.is_alive().

@@ -1,0 +1,4 @@
+---
+windows:
+  - |
+    Fixes mishandled buffer reallocation in getpathp.c

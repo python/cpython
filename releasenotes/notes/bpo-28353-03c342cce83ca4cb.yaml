@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    os.fwalk() no longer fails on broken links.

@@ -1,0 +1,4 @@
+---
+core:
+  - |
+    Don't import readline in isolated mode.

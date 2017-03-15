@@ -1,0 +1,4 @@
+---
+tests:
+  - |
+    Adds _testconsole module to test console input.

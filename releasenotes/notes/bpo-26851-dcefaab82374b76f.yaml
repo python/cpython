@@ -1,0 +1,4 @@
+---
+build:
+  - |
+    Set Android compilation and link flags.

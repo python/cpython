@@ -1,0 +1,4 @@
+---
+core:
+  - |
+    Fix crash when GC runs during weakref callbacks.

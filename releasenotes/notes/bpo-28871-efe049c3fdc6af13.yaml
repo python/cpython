@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Fixed a crash when deallocate deep ElementTree.

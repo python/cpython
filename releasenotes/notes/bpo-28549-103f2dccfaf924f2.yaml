@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Fixed segfault in curses's addch() with ncurses6.

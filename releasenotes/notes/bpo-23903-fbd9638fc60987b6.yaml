@@ -1,0 +1,4 @@
+---
+build:
+  - |
+    Added missed names to PC/python3.def.

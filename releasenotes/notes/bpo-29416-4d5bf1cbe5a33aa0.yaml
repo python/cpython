@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Prevent infinite loop in pathlib.Path.mkdir

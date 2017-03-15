@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    compileall now supports pathlib.

@@ -1,0 +1,4 @@
+---
+core:
+  - |
+    Fixed bytes formatting of octals with zero padding in alternate form.

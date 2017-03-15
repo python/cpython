@@ -1,0 +1,4 @@
+---
+library:
+  - |
+    Prevent infinite loop in pathlib.resolve() on Windows

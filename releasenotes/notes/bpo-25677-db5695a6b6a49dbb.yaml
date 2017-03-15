@@ -1,0 +1,5 @@
+---
+core:
+  - |
+    Correct the positioning of the syntax error caret for indented blocks. Based on
+    patch by Michael Layzell.

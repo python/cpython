@@ -1,0 +1,5 @@
+---
+library:
+  - |
+    The textwrap.TextWrapper class now honors non-breaking spaces. Based on patch
+    by Kaarle Ritvanen.
