@@ -148,6 +148,10 @@ BLDSHARED=	@BLDSHARED@ $(PY_LDFLAGS)
 LDCXXSHARED=	@LDCXXSHARED@
 DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
+# list of exported symbols for AIX
+EXPORTSYMS=	@EXPORTSYMS@
+EXPORTSFROM=	@EXPORTSFROM@
+
 # Executable suffix (.exe on Windows and Mac OS X)
 EXE=		@EXEEXT@
 BUILDEXE=	@BUILDEXEEXT@
@@ -565,7 +569,7 @@ clinic: $(BUILDPYTHON) $(srcdir)/Modules/_blake2/blake2s_impl.c
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) ./Tools/clinic/clinic.py --make
 
 # Build the interpreter
-$(BUILDPYTHON):	Programs/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
+$(BUILDPYTHON):	Programs/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY) $(EXPORTSYMS)
 	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 platform: $(BUILDPYTHON) pybuilddir.txt
@@ -640,6 +644,10 @@ libpython$(LDVERSION).dylib: $(LIBRARY_OBJS)
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
 	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM) $(LDLAST)
 
+# list of exported symbols for AIX
+Modules/python.exp: $(LIBRARY)
+	$(srcdir)/Modules/makexp_aix $@ "$(EXPORTSFROM)" $?
+
 # Copy up the gdb python hooks into a position where they can be automatically
 # loaded by gdb during Lib/test/test_gdb.py
 #
@@ -711,7 +719,7 @@ Modules/Setup: $(srcdir)/Modules/Setup.dist
 		echo "-----------------------------------------------"; \
 	fi
 
-Programs/_testembed: Programs/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
+Programs/_testembed: Programs/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY) $(EXPORTSYMS)
 	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 ############################################################################
