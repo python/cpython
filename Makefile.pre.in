@@ -102,6 +102,9 @@ LDLAST=		@LDLAST@
 SGI_ABI=	@SGI_ABI@
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
+BLINKFORSHARED=	@BLINKFORSHARED@
+LINKFORMODULE=	@LINKFORMODULE@
+BLINKFORMODULE=	@BLINKFORMODULE@
 ARFLAGS=	@ARFLAGS@
 # Extra C flags added for building the interpreter object files.
 CFLAGSFORSHARED=@CFLAGSFORSHARED@
@@ -337,6 +340,11 @@ ASDLGEN=	$(PYTHON_FOR_GEN) $(srcdir)/Parser/asdl_c.py
 ##########################################################################
 # Python
 
+PYCONFIGFILES = \
+		Misc/python.pc \
+		Misc/python-config.sh \
+		Misc/python-config
+
 OPCODETARGETS_H= \
 		Python/opcode_targets.h
 
@@ -472,7 +480,7 @@ DTRACE_DEPS = \
 
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
-build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Programs/_testembed python-config
+build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Programs/_testembed $(PYCONFIGFILES)
 
 # Compile a binary with profile guided optimization.
 profile-opt:
@@ -566,7 +574,7 @@ clinic: $(BUILDPYTHON) $(srcdir)/Modules/_blake2/blake2s_impl.c
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
-	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
+	$(LINKCC) $(PY_LDFLAGS) $(BLINKFORSHARED) -o $@ Programs/python.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 platform: $(BUILDPYTHON) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
@@ -638,7 +646,7 @@ libpython$(LDVERSION).dylib: $(LIBRARY_OBJS)
 
 
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
-	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM) $(LDLAST)
+	$(BLDSHARED) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM) $(LDLAST)
 
 # Copy up the gdb python hooks into a position where they can be automatically
 # loaded by gdb during Lib/test/test_gdb.py
@@ -677,7 +685,7 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 # for a shared core library; otherwise, this rule is a noop.
 $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 	if test -n "$(DLLLIBRARY)"; then \
-		$(LDSHARED) -Wl,--out-implib=$@ -o $(DLLLIBRARY) $^ \
+		$(BLDSHARED) -Wl,--out-implib=$@ -o $(DLLLIBRARY) $^ \
 			$(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST); \
 	else true; \
 	fi
@@ -712,7 +720,7 @@ Modules/Setup: $(srcdir)/Modules/Setup.dist
 	fi
 
 Programs/_testembed: Programs/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
-	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
+	$(LINKCC) $(PY_LDFLAGS) $(BLINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 ############################################################################
 # Importlib
@@ -1341,18 +1349,18 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -m lib2to3.pgen2.driver $(DESTDIR)$(LIBDEST)/lib2to3/PatternGrammar.txt
 
-python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
-	@ # Substitution happens here, as the completely-expanded BINDIR
-	@ # is not available in configure
-	sed -e "s,@EXENAME@,$(BINDIR)/python$(LDVERSION)$(EXE)," < $(srcdir)/Misc/python-config.in >python-config.py
-	@ # Replace makefile compat. variable references with shell script compat. ones; $(VAR) -> ${VAR}
-	LC_ALL=C sed -e 's,\$$(\([A-Za-z0-9_]*\)),\$$\{\1\},g' < Misc/python-config.sh >python-config
-	@ # On Darwin, always use the python version of the script, the shell
-	@ # version doesn't use the compiler customizations that are provided
-	@ # in python (_osx_support.py).
-	@if test `uname -s` = Darwin; then \
-		cp python-config.py python-config; \
-	fi
+Misc/python.pc: $(srcdir)/Misc/python.pc.in
+Misc/python-config: $(srcdir)/Misc/python-config.in
+Misc/python-config.sh: $(srcdir)/Misc/python-config.sh.in
+
+# Besides a common subset, both sysconfig and config.status provide variables
+# not known to the other. While config.status provides the configured values,
+# sysconfig provides values with variable-references resolved already:
+# Substitute sysconfig values first, and remaining ones with config.status.
+$(PYCONFIGFILES): $(BUILDPYTHON) pybuilddir.txt
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -m sysconfig \
+	  --generate-config-file --file=-:$(srcdir)/$@.in | \
+	  $(SHELL) config.status --file=$@:-
 
 
 # Install the include files
@@ -1380,7 +1388,7 @@ LIBPL=		@LIBPL@
 # pkgconfig directory
 LIBPC=		$(LIBDIR)/pkgconfig
 
-libainstall:	all python-config
+libainstall:	all $(PYCONFIGFILES)
 	@for i in $(LIBDIR) $(LIBPL) $(LIBPC); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -1411,8 +1419,14 @@ libainstall:	all python-config
 	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(VERSION).pc
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
-	$(INSTALL_SCRIPT) python-config.py $(DESTDIR)$(LIBPL)/python-config.py
-	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python$(LDVERSION)-config
+	$(INSTALL_SCRIPT) Misc/python-config $(DESTDIR)$(LIBPL)/python-config.py
+	$(INSTALL_SCRIPT) Misc/python-config.sh $(DESTDIR)$(BINDIR)/python$(LDVERSION)-config
+	# On Darwin, always use the python version of the script, the shell
+	# version doesn't use the compiler customizations that are provided
+	# in python (_osx_support.py).
+	if test `uname -s` = Darwin; then \
+		$(INSTALL_SCRIPT) Misc/python-config $(DESTDIR)$(BINDIR)/python$(LDVERSION)-config; \
+	fi
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
 		echo; echo "Installing support files for building shared extension modules on AIX:"; \
@@ -1616,7 +1630,7 @@ clobber: clean profile-removal
 		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
-	-rm -f python-config.py python-config
+	-rm -f $(PYCONFIGFILES)
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
@@ -1627,7 +1641,7 @@ distclean: clobber
 	done
 	-rm -f core Makefile Makefile.pre config.status \
 		Modules/Setup Modules/Setup.local Modules/Setup.config \
-		Modules/ld_so_aix Modules/python.exp Misc/python.pc
+		Modules/ld_so_aix Modules/python.exp
 	-rm -f python*-gdb.py
 	# Issue #28258: set LC_ALL to avoid issues with Estonian locale.
 	# Expansion is performed here by shell (spawned by make) itself before

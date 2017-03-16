@@ -703,10 +703,51 @@ def _print_dict(title, data):
         print('\t%s = "%s"' % (key, value))
 
 
+def _generate_config_file(filename, template = None):
+    if not filename:
+        filename = '-'
+    if not template:
+        template = filename == '-' and filename or filename + '.in'
+    if not filename == '-' and filename == template:
+        raise ValueError(
+            "output filename '%s' must be different from input filename '%s'"
+            % (filename, template))
+
+    # build regex "@prefix@|@libdir@|@LIBPL@|..."
+    import re
+    rexstr = ''
+    sep = ''
+    vars = get_config_vars()
+    for k, v in vars.items():
+        rexstr += sep + '@'+k+'@'
+        sep = '|'
+    rex = re.compile(rexstr)
+
+    with filename == '-' and sys.stdout or open(filename, 'w') as outfile:
+        with template == '-' and sys.stdin or open(template, 'r') as infile:
+            for line in infile:
+                while True:
+                    found = rex.search(line)
+                    if not found:
+                        outfile.write(line)
+                        break
+                    value = vars.get(found.group(0)[1:-1])
+                    outfile.write(line[:found.span()[0]] + str(value))
+                    line = line[found.span()[1]:]
+    pass
+
+
 def _main():
     """Display all information sysconfig detains."""
     if '--generate-posix-vars' in sys.argv:
         _generate_posix_vars()
+        return
+    if '--generate-config-file' in sys.argv:
+        for arg in sys.argv:
+            param, sep, value = arg.partition('=')
+            if param == '--file': # see config.status --help
+                file, sep, template = value.partition(':')
+                _generate_config_file(file, template)
         return
     print('Platform: "%s"' % get_platform())
     print('Python version: "%s"' % get_python_version())

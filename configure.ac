@@ -2391,7 +2391,10 @@ AC_SUBST(LDSHARED)
 AC_SUBST(LDCXXSHARED)
 AC_SUBST(BLDSHARED)
 AC_SUBST(CCSHARED)
-AC_SUBST(LINKFORSHARED)
+AC_SUBST(LINKFORSHARED)dnl  how to link Python interpreter into an executable
+AC_SUBST(BLINKFORSHARED)dnl same at Python buildtime
+AC_SUBST(LINKFORMODULE)dnl  where a module gets the Python symbols from,
+AC_SUBST(BLINKFORMODULE)dnl same at Python buildtime
 
 # SHLIB_SUFFIX is the extension of shared libraries `(including the dot!)
 # -- usually .so, .sl on HP-UX, .dll on Cygwin
@@ -2419,11 +2422,11 @@ if test -z "$LDSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*)
-		BLDSHARED="Modules/ld_so_aix \$(CC) -bI:Modules/python.exp"
-		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
+		BLDSHARED="Modules/ld_so_aix \$(CC)"; BLINKFORMODULE="-Wl,-bI:Modules/python.exp"
+		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC)"; LINKFORMODULE="-Wl,-bI:\$(LIBPL)/python.exp"
 		;;
 	IRIX/5*) LDSHARED="ld -shared";;
-	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
+	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared"; LINKFORMODULE="-all";;
 	SunOS/5*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
@@ -2444,32 +2447,30 @@ then
 		LDCXXSHARED='$(CXX) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
-			BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-			LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-			LDCXXSHARED="$LDCXXSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+			BLINKFORMODULE='$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+			LINKFORMODULE='$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 		else
 			# No framework. Ignore undefined symbols, assuming they come from Python
-			LDSHARED="$LDSHARED -undefined suppress"
-			LDCXXSHARED="$LDCXXSHARED -undefined suppress"
+			LINKFORMODULE="-undefined suppress"
 		fi ;;
 	Darwin/1.4*|Darwin/5.*|Darwin/6.*)
 		LDSHARED='$(CC) -bundle'
 		LDCXXSHARED='$(CXX) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
-			BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-			LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-			LDCXXSHARED="$LDCXXSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+			BLINKFORMODULE='$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+			LINKFORMODULE='$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 		else
 			# No framework, use the Python app as bundle-loader
-			BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
-			LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
-			LDCXXSHARED="$LDCXXSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
+			BLINKFORMODULE='-bundle_loader $(BUILDPYTHON)'
+			LINKFORMODULE='-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 		fi ;;
 	Darwin/*)
 		# Use -undefined dynamic_lookup whenever possible (10.3 and later).
 		# This allows an extension to be used in any Python
 
+		LDSHARED='$(CC) -bundle'
+		LDCXXSHARED='$(CXX) -bundle'
 		dep_target_major=`echo ${MACOSX_DEPLOYMENT_TARGET} | \
 				sed 's/\([[0-9]]*\)\.\([[0-9]]*\).*/\1/'`
 		dep_target_minor=`echo ${MACOSX_DEPLOYMENT_TARGET} | \
@@ -2482,20 +2483,16 @@ then
 			LDCXXSHARED='$(CXX) -bundle'
 			if test "$enable_framework" ; then
 				# Link against the framework. All externals should be defined.
-				BLDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-				LDSHARED="$LDSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-				LDCXXSHARED="$LDCXXSHARED "'$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+				BLINKFORMODULE='$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+				LINKFORMODULE='$(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			else
 				# No framework, use the Python app as bundle-loader
-				BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
-				LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
-				LDCXXSHARED="$LDCXXSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
+				BLINKFORMODULE='-bundle_loader $(BUILDPYTHON)'
+				LINKFORMODULE='-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 			fi
 		else
 			# building for OS X 10.3 and later
-			LDSHARED='$(CC) -bundle -undefined dynamic_lookup'
-			LDCXXSHARED='$(CXX) -bundle -undefined dynamic_lookup'
-			BLDSHARED="$LDSHARED"
+			LINKFORMODULE='-undefined dynamic_lookup'
 		fi
 		;;
 	Linux*|GNU*|QNX*)
@@ -2515,16 +2512,16 @@ then
 	OpenBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
-				LDSHARED='$(CC) -shared $(CCSHARED)'
-				LDCXXSHARED='$(CXX) -shared $(CCSHARED)'
+				LDSHARED='$(CC) -shared'; LINKFORMODULE='$(CCSHARED)'
+				LDCXXSHARED='$(CXX) -shared'
 		else
 				case `uname -r` in
 				[[01]].* | 2.[[0-7]] | 2.[[0-7]].*)
-				   LDSHARED="ld -Bshareable ${LDFLAGS}"
+				   LDSHARED="ld -Bshareable"; LINKFORMODULE="${LDFLAGS}"
 				   ;;
 				*)
-				   LDSHARED='$(CC) -shared $(CCSHARED)'
-				   LDCXXSHARED='$(CXX) -shared $(CCSHARED)'
+				   LDSHARED='$(CC) -shared'; LINKFORMODULE='$(CCSHARED)'
+				   LDCXXSHARED='$(CXX) -shared'
 				   ;;
 				esac
 		fi;;
@@ -2540,17 +2537,19 @@ then
 			LDCXXSHARED='$(CXX) -G'
 		fi;;
 	SCO_SV*)
-		LDSHARED='$(CC) -Wl,-G,-Bexport'
-		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
+		LDSHARED='$(CC) -Wl,-G'; LINKFORMODULE='-Wl,-Bexport'
+		LDCXXSHARED='$(CXX) -Wl,-G';;
 	CYGWIN*)
-		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
-		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
+		LDSHARED="gcc -shared"; LINKFORMODULE="-Wl,--enable-auto-image-base"
+		LDCXXSHARED="g++ -shared";;
 	*)	LDSHARED="ld";;
 	esac
 fi
-AC_MSG_RESULT($LDSHARED)
-LDCXXSHARED=${LDCXXSHARED-$LDSHARED}
-BLDSHARED=${BLDSHARED-$LDSHARED}
+AC_MSG_RESULT($LDSHARED $LINKFORMODULE)
+BLINKFORMODULE=${BLINKFORMODULE-$LINKFORMODULE}
+BLDSHARED="${BLDSHARED-$LDSHARED} \$(BLINKFORMODULE)"
+LDCXXSHARED="${LDCXXSHARED-$LDSHARED} \$(LINKFORMODULE)"
+LDSHARED="$LDSHARED \$(LINKFORMODULE)"
 # CCSHARED are the C *flags* used to create objects to go into a shared
 # library (module) -- this is only needed for a few systems
 AC_MSG_CHECKING(CCSHARED)
@@ -2590,11 +2589,14 @@ fi
 AC_MSG_RESULT($CCSHARED)
 # LINKFORSHARED are the flags passed to the $(CC) command that links
 # the python executable -- this is only needed for a few systems
+# Make-targets using $(LINKFORSHARED) need to depend on $(EXPORTSYMS) for AIX.
 AC_MSG_CHECKING(LINKFORSHARED)
 if test -z "$LINKFORSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	AIX*)	LINKFORSHARED='-Wl,-bE:Modules/python.exp -lld';;
+	AIX*)
+	    BLINKFORSHARED='-Wl,-bE:Modules/python.exp -lld'
+	    LINKFORSHARED='-Wl,-bE:$(LIBPL)/python.exp -lld';;
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s";;
 #	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
@@ -2645,6 +2647,7 @@ then
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
+BLINKFORSHARED=${BLINKFORSHARED-$LINKFORSHARED}
 
 
 AC_SUBST(CFLAGSFORSHARED)
@@ -5420,7 +5423,7 @@ if test "$have_getrandom" = yes; then
 fi
 
 # generate output files
-AC_CONFIG_FILES(Makefile.pre Modules/Setup.config Misc/python.pc Misc/python-config.sh)
+AC_CONFIG_FILES(Makefile.pre Modules/Setup.config)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 

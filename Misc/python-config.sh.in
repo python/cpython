@@ -40,10 +40,9 @@ LIBM="@LIBM@"
 LIBC="@LIBC@"
 SYSLIBS="$LIBM $LIBC"
 ABIFLAGS="@ABIFLAGS@"
-LIBS="-lpython${VERSION}${ABIFLAGS} @LIBS@ $SYSLIBS"
 BASECFLAGS="@BASECFLAGS@"
 LDLIBRARY="@LDLIBRARY@"
-LINKFORSHARED="@LINKFORSHARED@"
+LINKFORMODULE="@LINKFORMODULE@"
 OPT="@OPT@"
 PY_ENABLE_SHARED="@PY_ENABLE_SHARED@"
 LDVERSION="@LDVERSION@"
@@ -85,18 +84,10 @@ do
             echo "$INCDIR $PLATINCDIR $BASECFLAGS $CFLAGS $OPT"
         ;;
         --libs)
-            echo "$LIBS"
+            # no libs for modules
         ;;
         --ldflags)
-            LINKFORSHAREDUSED=
-            if [ -z "$PYTHONFRAMEWORK" ] ; then
-                LINKFORSHAREDUSED=$LINKFORSHARED
-            fi
-            LIBPLUSED=
-            if [ "$PY_ENABLE_SHARED" = "0" ] ; then
-                LIBPLUSED="-L$LIBPL"
-            fi
-            echo "$LIBPLUSED -L$libdir $LIBS $LINKFORSHAREDUSED"
+            echo "$LINKFORMODULE"
         ;;
         --extension-suffix)
             echo "$SO"
