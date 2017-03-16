@@ -292,7 +292,6 @@ class TestOptimizedCompares(unittest.TestCase):
     def test_safe_object_compare(self):
         heterogeneous_lists = [[0, 'foo'],
                                [0.0, 'foo'],
-                               ['foo', b'foo'],
                                [('foo',), 'foo']]
         for L in heterogeneous_lists:
             self.assertRaises(TypeError, L.sort)
