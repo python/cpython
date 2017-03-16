@@ -6087,7 +6087,7 @@ socket_getnameinfo(PyObject *self, PyObject *args)
         return NULL;
     if (flowinfo > 0xfffff) {
         PyErr_SetString(PyExc_OverflowError,
-                        "getsockaddrarg: flowinfo must be 0-1048575.");
+                        "getnameinfo: flowinfo must be 0-1048575.");
         return NULL;
     }
     PyOS_snprintf(pbuf, sizeof(pbuf), "%d", port);
