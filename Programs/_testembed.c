@@ -107,9 +107,6 @@ static void check_stdio_details(const char *encoding, const char * errors)
 
 static int test_forced_io_encoding(void)
 {
-    /* Ensure consistent "defaults" */
-    printf("Setting PYTHONIOENCODING=UTF-8:surrogateescape\n");
-    setenv("PYTHONIOENCODING", "UTF-8:surrogateescape", 1);
     /* Check various combinations */
     printf("--- Use defaults ---\n");
     check_stdio_details(NULL, NULL);

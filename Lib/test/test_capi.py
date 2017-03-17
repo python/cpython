@@ -369,14 +369,15 @@ class EmbeddingTests(unittest.TestCase):
     def tearDown(self):
         os.chdir(self.oldcwd)
 
-    def run_embedded_interpreter(self, *args):
+    def run_embedded_interpreter(self, *args, env=None):
         """Runs a test in the embedded interpreter"""
         cmd = [self.test_exe]
         cmd.extend(args)
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
-                             universal_newlines=True)
+                             universal_newlines=True,
+                             env=env)
         (out, err) = p.communicate()
         self.assertEqual(p.returncode, 0,
                          "bad returncode %d, stderr is %r" %
@@ -403,7 +404,8 @@ class EmbeddingTests(unittest.TestCase):
 
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
-        out, err = self.run_embedded_interpreter("forced_io_encoding")
+        env = {"PYTHONIOENCODING": "UTF-8:surrogateescape"}
+        out, err = self.run_embedded_interpreter("forced_io_encoding", env=env)
         if support.verbose > 1:
             print()
             print(out)
@@ -412,7 +414,6 @@ class EmbeddingTests(unittest.TestCase):
         expected_stdin_encoding = "UTF-8"
         expected_pipe_encoding = self._get_default_pipe_encoding()
         expected_output = '\n'.join([
-        "Setting PYTHONIOENCODING=UTF-8:surrogateescape",
         "--- Use defaults ---",
         "Expected encoding: default",
         "Expected errors: default",
