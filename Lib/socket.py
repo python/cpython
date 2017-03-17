@@ -700,7 +700,7 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
     """
 
     host, port = address
-    errs = []
+    errors = []
     for res in getaddrinfo(host, port, 0, SOCK_STREAM):
         af, socktype, proto, canonname, sa = res
         sock = None
@@ -713,13 +713,15 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
             sock.connect(sa)
             return sock
 
-        except error as _:
-            errs.append(_)
+        except error as ex:
+            errors.append(ex)
             if sock is not None:
                 sock.close()
-
-    if errs:
-        raise error("connection failed", errs)
+    nerr = len(errors)
+    if nerr == 1:
+        raise errors[0]
+    elif nerr > 1:
+        raise error("no connection possible due to %d errors" % nerr, errors)
     else:
         raise error("getaddrinfo returns an empty list")
 
