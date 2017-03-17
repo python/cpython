@@ -118,7 +118,7 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
         try:
             result = (True, func(*args, **kwds))
         except Exception as e:
-            if wrap_exception:
+            if wrap_exception and func != _helper_reraises_exception:
                 e = ExceptionWithTraceback(e, e.__traceback__)
             result = (False, e)
         try:
@@ -130,6 +130,10 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
             put((job, i, (False, wrapped)))
         completed += 1
     util.debug('worker exiting after %d tasks' % completed)
+
+def _helper_reraises_exception(ex):
+    'Pickle-able helper function for use by _guarded_task_generation.'
+    raise ex
 
 #
 # Class representing a process pool
@@ -284,12 +288,7 @@ class Pool(object):
             for i, x in enumerate(iterable):
                 yield (result_job, i, func, (x,), {})
         except Exception as e:
-            yield (result_job, i+1, self._helper_reraises_exception, (e,), {})
-
-    @staticmethod
-    def _helper_reraises_exception(ex):
-        'Pickle-able helper function for use by _guarded_task_generation.'
-        raise ex
+            yield (result_job, i+1, _helper_reraises_exception, (e,), {})
 
     def imap(self, func, iterable, chunksize=1):
         '''
