@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29839: len() now raises ValueError rather than OverflowError if
+  __len__() returned large negative integer.
+
 - bpo-28856: Fix an oversight that %b format for bytes should support objects
   follow the buffer protocol.
 
