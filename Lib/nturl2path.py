@@ -1,4 +1,8 @@
-"""Convert a NT pathname to a file URL and vice versa."""
+"""Convert a NT pathname to a file URL and vice versa.
+
+This module only exists to hide implementation-specific details
+in urllib.requests. It is tested in test_urllib.py.
+"""
 
 def url2pathname(url):
     """OS-specific conversion from a relative URL of the 'file' scheme
