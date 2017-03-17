@@ -285,6 +285,9 @@ Library
   exception at the very first of an iterable may swallow the exception or
   make the program hang. Patch by Davin Potts and Xiang Zhang.
 
+- bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
+  are not strings.  Patch by Michael Seifert.
+
 - bpo-8256: Fixed possible failing or crashing input() if attributes "encoding"
   or "errors" of sys.stdin or sys.stdout are not set or are not strings.
 
@@ -761,6 +764,9 @@ Library
 
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
+
+- Issue #29581: ABCMeta.__new__ now accepts **kwargs, allowing abstract base
+  classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
 
 Windows
 -------

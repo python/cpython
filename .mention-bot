@@ -1,5 +1,4 @@
 {
-  "maxReviewers": 5,
   "numFilesToCheck": 10,
   "findPotentialReviewers": true,
   "fileBlacklist": [
