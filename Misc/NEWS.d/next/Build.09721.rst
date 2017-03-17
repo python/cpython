@@ -1,0 +1,1 @@
+Issue #26851: Set Android compilation and link flags.

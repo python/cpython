@@ -1,0 +1,3 @@
+Issue #28387: Fixed possible crash in _io.TextIOWrapper deallocator when
+the garbage collector is invoked in other thread.  Based on patch by
+Sebastian Cufre.

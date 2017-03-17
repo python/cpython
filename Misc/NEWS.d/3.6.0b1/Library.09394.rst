@@ -1,0 +1,1 @@
+Issue 27331: The email.mime classes now all accept an optional policy keyword.

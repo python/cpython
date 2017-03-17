@@ -1,0 +1,1 @@
+Issue #27239: idlelib.macosx.isXyzTk functions initialize as needed.

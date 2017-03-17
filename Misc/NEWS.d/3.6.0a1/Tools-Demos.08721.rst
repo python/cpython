@@ -1,0 +1,1 @@
+Issue #26316: Fix variable name typo in Argument Clinic.

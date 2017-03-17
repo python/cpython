@@ -1,0 +1,1 @@
+Issue #27647: Update bundled Tcl/Tk to 8.6.6.

@@ -1,0 +1,1 @@
+Issue #28500: Fix asyncio to handle async gens GC from another thread.

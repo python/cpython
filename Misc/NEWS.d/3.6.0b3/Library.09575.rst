@@ -1,0 +1,1 @@
+Issue #28492: Fix how StopIteration exception is raised in _asyncio.Future.

@@ -1,0 +1,1 @@
+Issue #25578: Fix (another) memory leak in SSLSocket.getpeercer().

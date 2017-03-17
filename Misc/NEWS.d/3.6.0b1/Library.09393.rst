@@ -1,0 +1,1 @@
+Issue 27988: Fix email iter_attachments incorrect mutation of payload list.

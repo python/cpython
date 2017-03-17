@@ -1,0 +1,1 @@
+Issue #26676: Added missing XMLPullParser to ElementTree.__all__.

@@ -1,0 +1,1 @@
+Issue #27917: Set platform triplets for Android builds.

@@ -1,0 +1,2 @@
+Issue #27998: Fixed bytes path support in os.scandir() on Windows.
+Patch by Eryk Sun.

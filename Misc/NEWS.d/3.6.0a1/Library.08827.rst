@@ -1,0 +1,1 @@
+Issue #22241: timezone.utc name is now plain 'UTC', not 'UTC-00:00'.

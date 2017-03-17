@@ -1,0 +1,1 @@
+Issue #28065: Update xz dependency to 5.2.2 and build it from source.

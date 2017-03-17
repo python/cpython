@@ -1,0 +1,1 @@
+Issue #23026: winreg.QueryValueEx() now return an integer for REG_QWORD type.

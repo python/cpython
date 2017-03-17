@@ -1,0 +1,1 @@
+Issue #27566: Fix clean target in freeze makefile (patch by Lisa Roach)

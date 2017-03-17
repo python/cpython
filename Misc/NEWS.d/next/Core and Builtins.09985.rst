@@ -1,0 +1,1 @@
+bpo-29438: Fixed use-after-free problem in key sharing dict.

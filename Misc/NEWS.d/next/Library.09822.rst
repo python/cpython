@@ -1,0 +1,2 @@
+Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
+a workaround to Tix library bug.

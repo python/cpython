@@ -1,0 +1,1 @@
+Issue #28225: bz2 module now supports pathlib.  Initial patch by Ethan Furman.

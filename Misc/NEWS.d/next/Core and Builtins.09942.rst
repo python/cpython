@@ -1,0 +1,2 @@
+Issue #23782: Fixed possible memory leak in _PyTraceback_Add() and exception
+loss in PyTraceBack_Here().

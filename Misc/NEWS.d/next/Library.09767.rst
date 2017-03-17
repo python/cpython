@@ -1,0 +1,1 @@
+Issue #28176: Fix callbacks race in asyncio.SelectorLoop.sock_connect.

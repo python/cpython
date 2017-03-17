@@ -1,0 +1,1 @@
+Issue #25995: os.walk() no longer uses FDs proportional to the tree depth.

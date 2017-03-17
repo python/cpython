@@ -1,0 +1,1 @@
+Issue #28289: ImportError.__init__ now resets not specified attributes.

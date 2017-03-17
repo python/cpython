@@ -1,0 +1,1 @@
+Issue #28932: Do not include <sys/random.h> if it does not exist.

@@ -1,0 +1,2 @@
+Issue #18287: PyType_Ready() now checks that tp_name is not NULL.
+Original patch by Niklas Koep.

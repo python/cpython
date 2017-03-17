@@ -1,0 +1,1 @@
+[Security] Issue #26556: Update expat to 2.1.1, fixes CVE-2015-1283.

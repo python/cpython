@@ -1,0 +1,1 @@
+Issue #28653: Fix a refleak in functools.lru_cache.

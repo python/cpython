@@ -1,0 +1,1 @@
+Issue #24848: Fixed a number of bugs in UTF-7 decoding of misformed data.

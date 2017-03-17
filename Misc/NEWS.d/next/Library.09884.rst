@@ -1,0 +1,2 @@
+bpo-29534: Fixed different behaviour of Decimal.from_float()
+for _decimal and _pydecimal. Thanks Andrew Nester.

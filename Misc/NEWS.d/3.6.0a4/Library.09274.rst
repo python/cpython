@@ -1,0 +1,1 @@
+Issue #27656: Do not assume sched.h defines any SCHED_* constants.

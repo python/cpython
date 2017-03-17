@@ -1,0 +1,1 @@
+Issue #24594: Validates persist parameter when opening MSI database

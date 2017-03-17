@@ -1,0 +1,1 @@
+Issue #26984: int() now always returns an instance of exact int.

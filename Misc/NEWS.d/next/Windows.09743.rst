@@ -1,0 +1,1 @@
+Issue #28137: Renames Windows path file to ._pth

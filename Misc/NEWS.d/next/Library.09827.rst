@@ -1,0 +1,3 @@
+Issue #28255: calendar.TextCalendar.prmonth() no longer prints a space
+at the start of new line after printing a month's calendar.  Patch by
+Xiang Zhang.

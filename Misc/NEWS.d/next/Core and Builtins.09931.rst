@@ -1,0 +1,1 @@
+Issue #26617: Fix crash when GC runs during weakref callbacks.

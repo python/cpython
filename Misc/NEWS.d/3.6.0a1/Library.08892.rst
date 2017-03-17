@@ -1,0 +1,1 @@
+Issue #25869: Optimized deepcopying ElementTree; it is now 20 times faster.

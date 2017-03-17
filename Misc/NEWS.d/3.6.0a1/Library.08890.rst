@@ -1,0 +1,1 @@
+Issue #25902: Fixed various refcount issues in ElementTree iteration.

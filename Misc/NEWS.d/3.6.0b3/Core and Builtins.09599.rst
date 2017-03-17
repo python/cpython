@@ -1,0 +1,2 @@
+Issue #28517: Fixed of-by-one error in the peephole optimizer that caused
+keeping unreachable code.

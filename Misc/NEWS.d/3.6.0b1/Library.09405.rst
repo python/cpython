@@ -1,0 +1,1 @@
+Issue #27576: Fix call order in OrderedDict.__init__().

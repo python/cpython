@@ -1,0 +1,1 @@
+Issue #28703: Fix asyncio.iscoroutinefunction to handle Mock objects.

@@ -1,0 +1,1 @@
+Issue #26404: Add context manager to socketserver.  Patch by Aviv Palivoda.

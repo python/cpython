@@ -1,0 +1,1 @@
+Issue #26996: Add secrets module as described in PEP 506.

@@ -1,0 +1,1 @@
+Issue #19711: Add tests for reloading namespace packages.

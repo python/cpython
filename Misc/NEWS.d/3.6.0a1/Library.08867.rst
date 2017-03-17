@@ -1,0 +1,1 @@
+Issue #25593: Change semantics of EventLoop.stop() in asyncio.

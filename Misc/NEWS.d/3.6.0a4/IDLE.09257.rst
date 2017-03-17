@@ -1,0 +1,1 @@
+Issue #27452: add line counter and crc to IDLE configHandler test dump.

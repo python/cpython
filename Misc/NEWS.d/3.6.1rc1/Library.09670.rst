@@ -1,0 +1,3 @@
+Issue #28779: multiprocessing.set_forkserver_preload() would crash the
+forkserver process if a preloaded module instantiated some
+multiprocessing objects such as locks.

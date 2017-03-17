@@ -1,0 +1,1 @@
+Issue #26073: Update the list of magic numbers in launcher

@@ -1,0 +1,4 @@
+Issue #23722: The data model reference and the porting section in the
+3.6 What's New guide now cover the additional ``__classcell__`` handling
+needed for custom metaclasses to fully support PEP 487 and zero-argument
+``super()``.

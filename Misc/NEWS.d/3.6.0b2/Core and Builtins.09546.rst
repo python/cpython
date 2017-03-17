@@ -1,0 +1,1 @@
+Issue #28192: Don't import readline in isolated mode.

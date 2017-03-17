@@ -1,0 +1,1 @@
+Issue #22806: Add ``python -m test --list-tests`` command to list tests.

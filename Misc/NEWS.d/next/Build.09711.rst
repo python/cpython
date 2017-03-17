@@ -1,0 +1,1 @@
+Issue #28444: Fix missing extensions modules when cross compiling.

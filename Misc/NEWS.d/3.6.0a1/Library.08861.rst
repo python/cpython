@@ -1,0 +1,1 @@
+Issue #25584: Fixed recursive glob() with patterns starting with '\*\*'.

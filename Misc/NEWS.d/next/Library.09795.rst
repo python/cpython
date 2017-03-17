@@ -1,0 +1,1 @@
+Issue #28228: imghdr now supports pathlib.

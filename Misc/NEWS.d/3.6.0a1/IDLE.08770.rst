@@ -1,0 +1,1 @@
+Issue #24199: Deprecate unused idlelib.idlever with possible removal in 3.6.

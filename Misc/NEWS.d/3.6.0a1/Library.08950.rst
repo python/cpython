@@ -1,0 +1,1 @@
+Issue #26177: Fixed the keys() method for Canvas and Scrollbar widgets.

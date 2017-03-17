@@ -1,0 +1,3 @@
+bpo-29615: SimpleXMLRPCDispatcher no longer chains KeyError (or any other
+exception) to exception(s) raised in the dispatched methods.
+Patch by Petr Motejlek.

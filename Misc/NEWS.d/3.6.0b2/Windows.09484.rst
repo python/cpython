@@ -1,0 +1,1 @@
+Issue #28164: _PyIO_get_console_type fails for various paths

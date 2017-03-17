@@ -1,0 +1,1 @@
+Issue #23992: multiprocessing: make MapResult not fail-fast upon exception.

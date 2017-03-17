@@ -1,0 +1,2 @@
+Issue #28201: Dict reduces possibility of 2nd conflict in hash table when
+hashes have same lower bits.

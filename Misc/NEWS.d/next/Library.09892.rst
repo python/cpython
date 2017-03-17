@@ -1,0 +1,2 @@
+bpo-28624: Add a test that checks that cwd parameter of Popen() accepts
+PathLike objects.  Patch by Sayan Chowdhury.

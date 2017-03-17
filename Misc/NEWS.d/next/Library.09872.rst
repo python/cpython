@@ -1,0 +1,1 @@
+Issue #29197: Removed deprecated function ntpath.splitunc().

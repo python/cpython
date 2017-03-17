@@ -1,0 +1,1 @@
+Issue #22820: Explain need for *print* when running file from Idle editor.

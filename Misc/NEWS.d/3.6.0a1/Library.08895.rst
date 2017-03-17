@@ -1,0 +1,1 @@
+Issue #24103: Fixed possible use after free in ElementTree.XMLPullParser.

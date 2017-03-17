@@ -1,0 +1,3 @@
+Issue #28368: Refuse monitoring processes if the child watcher has no
+loop attached.
+Patch by Vincent Michel.

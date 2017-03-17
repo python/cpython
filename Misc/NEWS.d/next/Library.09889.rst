@@ -1,0 +1,3 @@
+Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
+'~' in the set of characters that is not quoted by default. Patch by
+Christian Theune and Ratnadeep Debnath.

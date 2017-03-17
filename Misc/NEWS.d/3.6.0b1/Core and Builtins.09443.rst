@@ -1,0 +1,1 @@
+Issue #24254: Make class definition namespace ordered by default.

@@ -1,0 +1,2 @@
+Issue #24142: Reading a corrupt config file left configparser in an
+invalid state.  Original patch by Florian Höch.

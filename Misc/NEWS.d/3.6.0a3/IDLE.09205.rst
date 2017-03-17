@@ -1,0 +1,1 @@
+Issue #27365: Allow non-ascii chars in IDLE NEWS.txt, for contributor names.

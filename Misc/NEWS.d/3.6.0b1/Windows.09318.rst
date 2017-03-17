@@ -1,0 +1,1 @@
+Issue #6135: Adds encoding and errors parameters to subprocess.

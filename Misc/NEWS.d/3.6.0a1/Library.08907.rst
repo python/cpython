@@ -1,0 +1,1 @@
+Issue #26069: Remove the deprecated apis in the trace module.

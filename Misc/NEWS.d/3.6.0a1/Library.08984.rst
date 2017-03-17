@@ -1,0 +1,1 @@
+Issue #13952: Add .csv to mimetypes.types_map.  Patch by Geoff Wilson.

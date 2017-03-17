@@ -1,0 +1,2 @@
+Issue #28086: Single var-positional argument of tuple subtype was passed
+unscathed to the C-defined function.  Now it is converted to exact tuple.

@@ -1,0 +1,1 @@
+Issue #17642: add larger font sizes for classroom projection.

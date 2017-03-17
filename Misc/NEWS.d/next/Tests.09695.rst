@@ -1,0 +1,1 @@
+Issue #24932: Use proper command line parsing in _testembed

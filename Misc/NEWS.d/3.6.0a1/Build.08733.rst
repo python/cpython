@@ -1,0 +1,1 @@
+Issue #26268: Update Windows builds to use OpenSSL 1.0.2f.

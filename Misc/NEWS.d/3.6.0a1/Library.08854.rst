@@ -1,0 +1,1 @@
+Issue #25515: Always use os.urandom as a source of randomness in uuid.uuid4.

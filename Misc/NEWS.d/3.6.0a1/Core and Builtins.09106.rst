@@ -1,0 +1,1 @@
+Issue #23640: int.from_bytes() no longer bypasses constructors for subclasses.

@@ -1,0 +1,1 @@
+Issue #28164: Correctly handle special console filenames (patch by Eryk Sun)

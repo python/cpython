@@ -1,0 +1,1 @@
+Issue #28371: Deprecate passing asyncio.Handles to run_in_executor.

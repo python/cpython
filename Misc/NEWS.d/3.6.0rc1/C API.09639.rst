@@ -1,0 +1,1 @@
+Issue #28808: PyUnicode_CompareWithASCIIString() now never raises exceptions.

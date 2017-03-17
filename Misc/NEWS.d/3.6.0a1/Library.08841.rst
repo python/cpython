@@ -1,0 +1,1 @@
+Issue #25364: zipfile now works in threads disabled builds.

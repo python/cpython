@@ -1,0 +1,1 @@
+Issue #28138: Windows ._pth file should allow import site

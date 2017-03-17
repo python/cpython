@@ -1,0 +1,1 @@
+bpo-20087: Prefer glibc's list of locale aliases to the X11 ones.

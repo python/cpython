@@ -1,0 +1,1 @@
+Issue #23903: Added missed names to PC/python3.def.

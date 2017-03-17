@@ -1,0 +1,1 @@
+Issue #25554: Got rid of circular references in regular expression parsing.

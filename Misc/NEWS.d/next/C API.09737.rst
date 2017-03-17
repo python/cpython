@@ -1,0 +1,2 @@
+Issue #28822: The index parameters *start* and *end* of PyUnicode_FindChar()
+are now adjusted to behave like ``str[start:end]``.

@@ -1,0 +1,2 @@
+Issue #25270: Prevent codecs.escape_encode() from raising SystemError when
+an empty bytestring is passed.

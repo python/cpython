@@ -1,0 +1,1 @@
+Issue #25224: Doc: augment Idle feature list and no-subprocess section.

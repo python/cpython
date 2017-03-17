@@ -1,0 +1,1 @@
+Issue #26470: Port ssl and hashlib module to OpenSSL 1.1.0.

@@ -1,0 +1,1 @@
+Issue #27661: Added tzinfo keyword argument to datetime.combine.

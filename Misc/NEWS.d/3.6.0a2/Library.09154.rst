@@ -1,0 +1,1 @@
+Issue #26809: Add ``__all__`` to :mod:`string`.  Patch by Emanuel Barry.

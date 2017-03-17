@@ -1,0 +1,1 @@
+Issue #28522: Fixes mishandled buffer reallocation in getpathp.c

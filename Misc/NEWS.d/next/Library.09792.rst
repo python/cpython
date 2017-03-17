@@ -1,0 +1,6 @@
+Issue #28148: Stop using localtime() and gmtime() in the time
+module.
+
+Introduced platform independent _PyTime_localtime API that is
+similar to POSIX localtime_r, but available on all platforms.  Patch
+by Ed Schouten.

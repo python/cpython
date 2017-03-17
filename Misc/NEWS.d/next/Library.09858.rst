@@ -1,0 +1,2 @@
+Issue #13051: Fixed recursion errors in large or resized
+curses.textpad.Textbox.  Based on patch by Tycho Andersen.

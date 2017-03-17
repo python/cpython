@@ -1,0 +1,1 @@
+Issue #25446: Fix regression in smtplib's AUTH LOGIN support.

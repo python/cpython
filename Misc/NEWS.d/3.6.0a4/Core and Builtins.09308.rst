@@ -1,0 +1,1 @@
+Issue #17596: Include <wincrypt.h> to help with Min GW building.

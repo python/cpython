@@ -1,0 +1,1 @@
+Issue #27310: Fix IDLE.app failure to launch on OS X due to vestigial import.

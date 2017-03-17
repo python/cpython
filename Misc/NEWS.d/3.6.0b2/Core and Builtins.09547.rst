@@ -1,0 +1,2 @@
+Issue #27955: Fallback on reading /dev/urandom device when the getrandom()
+syscall fails with EPERM, for example when blocked by SECCOMP.

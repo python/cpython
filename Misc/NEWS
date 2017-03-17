@@ -2,10 +2,10 @@
 Python News
 +++++++++++
 
-What's New in Python 3.7.0 alpha 1?
-===================================
+What's New in Python next?
+==========================
 
-*Release date: XXXX-XX-XX*
+Release date: XXXX-XX-XX
 
 Core and Builtins
 -----------------
@@ -273,13 +273,11 @@ Core and Builtins
 - Issue #26110: Speed-up method calls: add LOAD_METHOD and CALL_METHOD
   opcodes.
 
-Extension Modules
------------------
-
-- Issue #29169: Update zlib to 1.2.11.
 
 Library
 -------
+
+- Issue #29169: Update zlib to 1.2.11.
 
 - bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
   are not strings.  Patch by Michael Seifert.
@@ -652,14 +650,14 @@ Library
 
 - Issue #28148: Stop using localtime() and gmtime() in the time
   module.
-
+  
   Introduced platform independent _PyTime_localtime API that is
   similar to POSIX localtime_r, but available on all platforms.  Patch
   by Ed Schouten.
 
 - Issue #28253: Fixed calendar functions for extreme months: 0001-01
   and 9999-12.
-
+  
   Methods itermonthdays() and itermonthdays2() are reimplemented so
   that they don't call itermonthdates() which can cause datetime.date
   under/overflow.
@@ -764,80 +762,6 @@ Library
 - Issue #29581: ABCMeta.__new__ now accepts **kwargs, allowing abstract base
   classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
 
-Windows
--------
-
-- bpo-29579: Removes readme.txt from the installer.
-
-- Issue #25778: winreg does not truncate string correctly (Patch by Eryk Sun)
-
-- Issue #28896: Deprecate WindowsRegistryFinder and disable it by default
-
-- Issue #28522: Fixes mishandled buffer reallocation in getpathp.c
-
-- Issue #28402: Adds signed catalog files for stdlib on Windows.
-
-- Issue #28333: Enables Unicode for ps1/ps2 and input() prompts. (Patch by
-  Eryk Sun)
-
-- Issue #28251: Improvements to help manuals on Windows.
-
-- Issue #28110: launcher.msi has different product codes between 32-bit and
-  64-bit
-
-- Issue #28161: Opening CON for write access fails
-
-- Issue #28162: WindowsConsoleIO readall() fails if first line starts with
-  Ctrl+Z
-
-- Issue #28163: WindowsConsoleIO fileno() passes wrong flags to
-  _open_osfhandle
-
-- Issue #28164: _PyIO_get_console_type fails for various paths
-
-- Issue #28137: Renames Windows path file to ._pth
-
-- Issue #28138: Windows ._pth file should allow import site
-
-C API
------
-
-- Issue #27867: Function PySlice_GetIndicesEx() is deprecated and replaced with
-  a macro if Py_LIMITED_API is not set or set to the value between 0x03050400
-  and 0x03060000 (not including) or 0x03060100 or higher.  Added functions
-  PySlice_Unpack() and PySlice_AdjustIndices().
-
-- Issue #29083: Fixed the declaration of some public API functions.
-  PyArg_VaParse() and PyArg_VaParseTupleAndKeywords() were not available in
-  limited API.  PyArg_ValidateKeywordArguments(), PyArg_UnpackTuple() and
-  Py_BuildValue() were not available in limited API of version < 3.3 when
-  PY_SSIZE_T_CLEAN is defined.
-
-- Issue #28769: The result of PyUnicode_AsUTF8AndSize() and PyUnicode_AsUTF8()
-  is now of type ``const char *`` rather of ``char *``.
-
-- Issue #29058: All stable API extensions added after Python 3.2 are now
-  available only when Py_LIMITED_API is set to the PY_VERSION_HEX value of
-  the minimum Python version supporting this API.
-
-- Issue #28822: The index parameters *start* and *end* of PyUnicode_FindChar()
-  are now adjusted to behave like ``str[start:end]``.
-
-- Issue #28808: PyUnicode_CompareWithASCIIString() now never raises exceptions.
-
-- Issue #28761: The fields name and doc of structures PyMemberDef, PyGetSetDef,
-  PyStructSequence_Field, PyStructSequence_Desc, and wrapperbase are now of
-  type ``const char *`` rather of ``char *``.
-
-- Issue #28748: Private variable _Py_PackageContext is now of type ``const char *``
-  rather of ``char *``.
-
-- Issue #19569: Compiler warnings are now emitted if use most of deprecated
-  functions.
-
-- Issue #28426: Deprecated undocumented functions PyUnicode_AsEncodedObject(),
-  PyUnicode_AsDecodedObject(), PyUnicode_AsDecodedUnicode() and
-  PyUnicode_AsEncodedUnicode().
 
 Documentation
 -------------
@@ -858,6 +782,37 @@ Documentation
   ``super()``.
 
 - Issue #28513: Documented command-line interface of zipfile.
+
+
+Tests
+-----
+
+- Issue #24932: Use proper command line parsing in _testembed
+
+- Issue #28950: Disallow -j0 to be combined with -T/-l in regrtest
+  command line arguments.
+
+- Issue #28683: Fix the tests that bind() a unix socket and raise
+  PermissionError on Android for a non-root user.
+
+- Issue #26936: Fix the test_socket failures on Android - getservbyname(),
+   getservbyport() and getaddrinfo() are broken on some Android API levels.
+
+- Issue #28666: Now test.support.rmtree is able to remove unwritable or
+  unreadable directories.
+
+- Issue #23839: Various caches now are cleared before running every test file.
+
+- Issue #26944: Fix test_posix for Android where 'id -G' is entirely wrong or
+  missing the effective gid.
+
+- Issue #28409: regrtest: fix the parser of command line arguments.
+
+- Issue #28217: Adds _testconsole module to test console input.
+
+- Issue #26939: Add the support.setswitchinterval() function to fix
+  test_functools hanging on the Android armv7 qemu emulator.
+
 
 Build
 -----
@@ -932,6 +887,43 @@ Build
 - Issue #28676: Prevent missing 'getentropy' declaration warning on macOS.
   Patch by Gareth Rees.
 
+
+Windows
+-------
+
+- bpo-29579: Removes readme.txt from the installer.
+
+- Issue #25778: winreg does not truncate string correctly (Patch by Eryk Sun)
+
+- Issue #28896: Deprecate WindowsRegistryFinder and disable it by default
+
+- Issue #28522: Fixes mishandled buffer reallocation in getpathp.c
+
+- Issue #28402: Adds signed catalog files for stdlib on Windows.
+
+- Issue #28333: Enables Unicode for ps1/ps2 and input() prompts. (Patch by
+  Eryk Sun)
+
+- Issue #28251: Improvements to help manuals on Windows.
+
+- Issue #28110: launcher.msi has different product codes between 32-bit and
+  64-bit
+
+- Issue #28161: Opening CON for write access fails
+
+- Issue #28162: WindowsConsoleIO readall() fails if first line starts with
+  Ctrl+Z
+
+- Issue #28163: WindowsConsoleIO fileno() passes wrong flags to
+  _open_osfhandle
+
+- Issue #28164: _PyIO_get_console_type fails for various paths
+
+- Issue #28137: Renames Windows path file to ._pth
+
+- Issue #28138: Windows ._pth file should allow import site
+
+
 Tools/Demos
 -----------
 
@@ -952,40 +944,53 @@ Tools/Demos
 - Issue #28102: The zipfile module CLI now prints usage to stderr.
   Patch by Stephen J. Turnbull.
 
-Tests
+
+C API
 -----
 
-- Issue #24932: Use proper command line parsing in _testembed
+- Issue #27867: Function PySlice_GetIndicesEx() is deprecated and replaced with
+  a macro if Py_LIMITED_API is not set or set to the value between 0x03050400
+  and 0x03060000 (not including) or 0x03060100 or higher.  Added functions
+  PySlice_Unpack() and PySlice_AdjustIndices().
 
-- Issue #28950: Disallow -j0 to be combined with -T/-l in regrtest
-  command line arguments.
+- Issue #29083: Fixed the declaration of some public API functions.
+  PyArg_VaParse() and PyArg_VaParseTupleAndKeywords() were not available in
+  limited API.  PyArg_ValidateKeywordArguments(), PyArg_UnpackTuple() and
+  Py_BuildValue() were not available in limited API of version < 3.3 when
+  PY_SSIZE_T_CLEAN is defined.
 
-- Issue #28683: Fix the tests that bind() a unix socket and raise
-  PermissionError on Android for a non-root user.
+- Issue #28769: The result of PyUnicode_AsUTF8AndSize() and PyUnicode_AsUTF8()
+  is now of type ``const char *`` rather of ``char *``.
 
- - Issue #26936: Fix the test_socket failures on Android - getservbyname(),
-   getservbyport() and getaddrinfo() are broken on some Android API levels.
+- Issue #29058: All stable API extensions added after Python 3.2 are now
+  available only when Py_LIMITED_API is set to the PY_VERSION_HEX value of
+  the minimum Python version supporting this API.
 
-- Issue #28666: Now test.support.rmtree is able to remove unwritable or
-  unreadable directories.
+- Issue #28822: The index parameters *start* and *end* of PyUnicode_FindChar()
+  are now adjusted to behave like ``str[start:end]``.
 
-- Issue #23839: Various caches now are cleared before running every test file.
+- Issue #28808: PyUnicode_CompareWithASCIIString() now never raises exceptions.
 
-- Issue #26944: Fix test_posix for Android where 'id -G' is entirely wrong or
-  missing the effective gid.
+- Issue #28761: The fields name and doc of structures PyMemberDef, PyGetSetDef,
+  PyStructSequence_Field, PyStructSequence_Desc, and wrapperbase are now of
+  type ``const char *`` rather of ``char *``.
 
-- Issue #28409: regrtest: fix the parser of command line arguments.
+- Issue #28748: Private variable _Py_PackageContext is now of type ``const char *``
+  rather of ``char *``.
 
-- Issue #28217: Adds _testconsole module to test console input.
+- Issue #19569: Compiler warnings are now emitted if use most of deprecated
+  functions.
 
-- Issue #26939: Add the support.setswitchinterval() function to fix
-  test_functools hanging on the Android armv7 qemu emulator.
+- Issue #28426: Deprecated undocumented functions PyUnicode_AsEncodedObject(),
+  PyUnicode_AsDecodedObject(), PyUnicode_AsDecodedUnicode() and
+  PyUnicode_AsEncodedUnicode().
+
 
 
 What's New in Python 3.6.1 release candidate 1?
 ===============================================
 
-*Release date: XXXX-XX-XX*
+Release date: XXXX-XX-XX
 
 Core and Builtins
 -----------------
@@ -1016,6 +1021,7 @@ Core and Builtins
 
 - Issue #28731: Optimize _PyDict_NewPresized() to create correct size dict.
   Improve speed of dict literal with constant keys up to 30%.
+
 
 Library
 -------
@@ -1048,25 +1054,12 @@ Library
   now when the grp module cannot be imported, as for example on Android
   platforms.
 
-Windows
--------
-
-- Issue #29326: Ignores blank lines in ._pth files (Patch by Alexey Izbyshev)
-
-- Issue #28164: Correctly handle special console filenames (patch by Eryk Sun)
-
-- Issue #29409: Implement PEP 529 for io.FileIO (Patch by Eryk Sun)
-
-- Issue #29392: Prevent crash when passing invalid arguments into msvcrt module.
-
-- Issue #25778: winreg does not truncate string correctly (Patch by Eryk Sun)
-
-- Issue #28896: Deprecate WindowsRegistryFinder and disable it by default.
 
 Documentation
 -------------
 
 - Issue #29349: Fix Python 2 syntax in code for building the documentation.
+
 
 Tests
 -----
@@ -1079,6 +1072,7 @@ Tests
 
 - Issue #26939: Add the support.setswitchinterval() function to fix
   test_functools hanging on the Android armv7 qemu emulator.
+
 
 Build
 -----
@@ -1097,18 +1091,37 @@ Build
 - Issue #28849: Do not define sys.implementation._multiarch on Android.
 
 
-What's New in Python 3.6.0?
-===========================
+Windows
+-------
 
-*Release date: 2016-12-23*
+- Issue #29326: Ignores blank lines in ._pth files (Patch by Alexey Izbyshev)
 
-- No changes since release candidate 2
+- Issue #28164: Correctly handle special console filenames (patch by Eryk Sun)
+
+- Issue #29409: Implement PEP 529 for io.FileIO (Patch by Eryk Sun)
+
+- Issue #29392: Prevent crash when passing invalid arguments into msvcrt module.
+
+- Issue #25778: winreg does not truncate string correctly (Patch by Eryk Sun)
+
+- Issue #28896: Deprecate WindowsRegistryFinder and disable it by default.
+
+
+
+What's New in Python 3.6.0 final?
+=================================
+
+Release date: 2016-12-23
+
+No changes since release candidate 2
+
+
 
 
 What's New in Python 3.6.0 release candidate 2?
 ===============================================
 
-*Release date: 2016-12-16*
+Release date: 2016-12-16
 
 Core and Builtins
 -----------------
@@ -1120,15 +1133,6 @@ Core and Builtins
 - Issue #28990: Fix asyncio SSL hanging if connection is closed before
   handshake is completed. (Patch by HoHo-Ho)
 
-Tools/Demos
------------
-
-- Issue #28770: Fix python-gdb.py for fastcalls.
-
-Windows
--------
-
-- Issue #28896: Deprecate WindowsRegistryFinder.
 
 Build
 -----
@@ -1136,10 +1140,23 @@ Build
 - Issue #28898: Prevent gdb build errors due to HAVE_LONG_LONG redefinition.
 
 
+Windows
+-------
+
+- Issue #28896: Deprecate WindowsRegistryFinder.
+
+
+Tools/Demos
+-----------
+
+- Issue #28770: Fix python-gdb.py for fastcalls.
+
+
+
 What's New in Python 3.6.0 release candidate 1?
 ===============================================
 
-*Release date: 2016-12-06*
+Release date: 2016-12-06
 
 Core and Builtins
 -----------------
@@ -1156,6 +1173,7 @@ Core and Builtins
 - Issue #28782: Fix a bug in the implementation ``yield from`` when checking
   if the next instruction is YIELD_FROM. Regression introduced by WORDCODE
   (issue #26647).
+
 
 Library
 -------
@@ -1180,10 +1198,6 @@ Library
 
 - Issue #28843: Fix asyncio C Task to handle exceptions __traceback__.
 
-C API
------
-
-- Issue #28808: PyUnicode_CompareWithASCIIString() now never raises exceptions.
 
 Documentation
 -------------
@@ -1192,16 +1206,24 @@ Documentation
   New guide now cover the additional ``__classcell__`` handling needed for
   custom metaclasses to fully support PEP 487 and zero-argument ``super()``.
 
+
 Tools/Demos
 -----------
 
 - Issue #28023: Fix python-gdb.py didn't support new dict implementation.
 
 
+C API
+-----
+
+- Issue #28808: PyUnicode_CompareWithASCIIString() now never raises exceptions.
+
+
+
 What's New in Python 3.6.0 beta 4?
 ==================================
 
-*Release date: 2016-11-21*
+Release date: 2016-11-21
 
 Core and Builtins
 -----------------
@@ -1238,6 +1260,7 @@ Core and Builtins
 
 - Issue #28721: Fix asynchronous generators aclose() and athrow() to
   handle StopAsyncIteration propagation properly.
+
 
 Library
 -------
@@ -1289,10 +1312,12 @@ Library
 
 - Issue #28720: Add collections.abc.AsyncGenerator.
 
+
 Documentation
 -------------
 
 - Issue #28513: Documented command-line interface of zipfile.
+
 
 Tests
 -----
@@ -1301,6 +1326,7 @@ Tests
   unreadable directories.
 
 - Issue #23839: Various caches now are cleared before running every test file.
+
 
 Build
 -----
@@ -1314,10 +1340,11 @@ Build
   Patch by Gareth Rees.
 
 
+
 What's New in Python 3.6.0 beta 3?
 ==================================
 
-*Release date: 2016-10-31*
+Release date: 2016-10-31
 
 Core and Builtins
 -----------------
@@ -1342,6 +1369,7 @@ Core and Builtins
 
 - Issue #28471: Fix "Python memory allocator called without holding the GIL"
   crash in socket.setblocking.
+
 
 Library
 -------
@@ -1421,19 +1449,6 @@ Library
 
 - Issue #28544: Implement asyncio.Task in C.
 
-Windows
--------
-
-- Issue #28522: Fixes mishandled buffer reallocation in getpathp.c
-
-Build
------
-
-- Issue #28444: Fix missing extensions modules when cross compiling.
-
-- Issue #28208: Update Windows build and OS X installers to use SQLite 3.14.2.
-
-- Issue #28248: Update Windows build and OS X installers to use OpenSSL 1.0.2j.
 
 Tests
 -----
@@ -1444,10 +1459,27 @@ Tests
 - Issue #28409: regrtest: fix the parser of command line arguments.
 
 
+Build
+-----
+
+- Issue #28444: Fix missing extensions modules when cross compiling.
+
+- Issue #28208: Update Windows build and OS X installers to use SQLite 3.14.2.
+
+- Issue #28248: Update Windows build and OS X installers to use OpenSSL 1.0.2j.
+
+
+Windows
+-------
+
+- Issue #28522: Fixes mishandled buffer reallocation in getpathp.c
+
+
+
 What's New in Python 3.6.0 beta 2?
 ==================================
 
-*Release date: 2016-10-10*
+Release date: 2016-10-10
 
 Core and Builtins
 -----------------
@@ -1518,6 +1550,7 @@ Core and Builtins
 - Issue #26182: Raise DeprecationWarning when async and await keywords are
   used as variable/attribute/class/function name.
 
+
 Library
 -------
 
@@ -1561,14 +1594,14 @@ Library
 
 - Issue #28148: Stop using localtime() and gmtime() in the time
   module.
-
+  
   Introduced platform independent _PyTime_localtime API that is
   similar to POSIX localtime_r, but available on all platforms.  Patch
   by Ed Schouten.
 
 - Issue #28253: Fixed calendar functions for extreme months: 0001-01
   and 9999-12.
-
+  
   Methods itermonthdays() and itermonthdays2() are reimplemented so
   that they don't call itermonthdates() which can cause datetime.date
   under/overflow.
@@ -1665,6 +1698,25 @@ Library
 
 - Issue #27972: Prohibit Tasks to await on themselves.
 
+
+Tests
+-----
+
+- Issue #28217: Adds _testconsole module to test console input.
+
+
+Build
+-----
+
+- Issue #28258: Fixed build with Estonian locale (python-config and distclean
+  targets in Makefile).  Patch by Arfrever Frehtes Taifersar Arahesis.
+
+- Issue #26661: setup.py now detects system libffi with multiarch wrapper.
+
+- Issue #15819: Remove redundant include search directory option for building
+  outside the source tree.
+
+
 Windows
 -------
 
@@ -1692,6 +1744,7 @@ Windows
 
 - Issue #28138: Windows ._pth file should allow import site
 
+
 C API
 -----
 
@@ -1699,27 +1752,12 @@ C API
   PyUnicode_AsDecodedObject(), PyUnicode_AsDecodedUnicode() and
   PyUnicode_AsEncodedUnicode().
 
-Build
------
-
-- Issue #28258: Fixed build with Estonian locale (python-config and distclean
-  targets in Makefile).  Patch by Arfrever Frehtes Taifersar Arahesis.
-
-- Issue #26661: setup.py now detects system libffi with multiarch wrapper.
-
-- Issue #15819: Remove redundant include search directory option for building
-  outside the source tree.
-
-Tests
------
-
-- Issue #28217: Adds _testconsole module to test console input.
 
 
 What's New in Python 3.6.0 beta 1?
 ==================================
 
-*Release date: 2016-09-12*
+Release date: 2016-09-12
 
 Core and Builtins
 -----------------
@@ -1857,6 +1895,7 @@ Core and Builtins
 - Issue #28008: Implement PEP 530 -- asynchronous comprehensions.
 
 - Issue #27942: Fix memory leak in codeobject.c
+
 
 Library
 -------
@@ -2113,33 +2152,6 @@ Library
 
 - Issue #27456: asyncio: Set TCP_NODELAY by default.
 
-IDLE
-----
-
-- Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
-  Patch by Roger Serwy, updated by Bayard Randel.
-
-- Issue #27922: Stop IDLE tests from 'flashing' gui widgets on the screen.
-
-- Issue #27891: Consistently group and sort imports within idlelib modules.
-
-- Issue #17642: add larger font sizes for classroom projection.
-
-- Add version to title of IDLE help window.
-
-- Issue #25564: In section on IDLE -- console differences, mention that
-  using exec means that __builtins__ is defined for each statement.
-
-- Issue #27821: Fix 3.6.0a3 regression that prevented custom key sets
-  from being selected when no custom theme was defined.
-
-C API
------
-
-- Issue #26900: Excluded underscored names and other private API from limited API.
-
-- Issue #26027: Add support for path-like objects in PyUnicode_FSConverter() &
-  PyUnicode_FSDecoder().
 
 Tests
 -----
@@ -2154,6 +2166,7 @@ Tests
 
 - Issue #27787: Call gc.collect() before checking each test for "dangling
   threads", since the dangling threads are weak references.
+
 
 Build
 -----
@@ -2190,12 +2203,6 @@ Build
   Also provide a sample Install Certificates command script to install a
   set of root certificates from the third-party certifi module.
 
-Tools/Demos
------------
-
-- Issue #27952: Get Tools/scripts/fixcid.py working with Python 3 and the
-  current "re" module, avoid invalid Python backslash escapes, and fix a bug
-  parsing escaped C quote signs.
 
 Windows
 -------
@@ -2227,10 +2234,49 @@ Windows
 - Issue #27883: Update sqlite to 3.14.1.0 on Windows.
 
 
+IDLE
+----
+
+- Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
+  Patch by Roger Serwy, updated by Bayard Randel.
+
+- Issue #27922: Stop IDLE tests from 'flashing' gui widgets on the screen.
+
+- Issue #27891: Consistently group and sort imports within idlelib modules.
+
+- Issue #17642: add larger font sizes for classroom projection.
+
+- Add version to title of IDLE help window.
+
+- Issue #25564: In section on IDLE -- console differences, mention that
+  using exec means that __builtins__ is defined for each statement.
+
+- Issue #27821: Fix 3.6.0a3 regression that prevented custom key sets
+  from being selected when no custom theme was defined.
+
+
+Tools/Demos
+-----------
+
+- Issue #27952: Get Tools/scripts/fixcid.py working with Python 3 and the
+  current "re" module, avoid invalid Python backslash escapes, and fix a bug
+  parsing escaped C quote signs.
+
+
+C API
+-----
+
+- Issue #26900: Excluded underscored names and other private API from limited API.
+
+- Issue #26027: Add support for path-like objects in PyUnicode_FSConverter() &
+  PyUnicode_FSDecoder().
+
+
+
 What's New in Python 3.6.0 alpha 4?
 ===================================
 
-*Release date: 2016-08-15*
+Release date: 2016-08-15
 
 Core and Builtins
 -----------------
@@ -2276,6 +2322,7 @@ Core and Builtins
 - Issue #27366: Implemented PEP 487 (Simpler customization of class creation).
   Upon subclassing, the __init_subclass__ classmethod is called on the base
   class. Descriptors are initialized with __set_name__ after class creation.
+
 
 Library
 -------
@@ -2385,6 +2432,59 @@ Library
 - Issue #27512: Fix a segfault when os.fspath() called an __fspath__() method
   that raised an exception. Patch by Xiang Zhang.
 
+
+Tests
+-----
+
+- Issue #25805: Skip a test in test_pkgutil as needed that doesn't work when
+  ``__name__ == __main__``. Patch by SilentGhost.
+
+- Issue #27472: Add test.support.unix_shell as the path to the default shell.
+
+- Issue #27369: In test_pyexpat, avoid testing an error message detail that
+  changed in Expat 2.2.0.
+
+- Issue #27594: Prevent assertion error when running test_ast with coverage
+  enabled: ensure code object has a valid first line number.
+  Patch suggested by Ivan Levkivskyi.
+
+
+Build
+-----
+
+- Issue #27713: Suppress spurious build warnings when updating importlib's
+  bootstrap files.  Patch by Xiang Zhang
+
+- Issue #25825: Correct the references to Modules/python.exp, which is
+  required on AIX.  The references were accidentally changed in 3.5.0a1.
+
+- Issue #27453: CPP invocation in configure must use CPPFLAGS. Patch by
+  Chi Hsuan Yen.
+
+- Issue #27641: The configure script now inserts comments into the makefile
+  to prevent the pgen and _freeze_importlib executables from being cross-
+  compiled.
+
+- Issue #26662: Set PYTHON_FOR_GEN in configure as the Python program to be
+  used for file generation during the build.
+
+- Issue #10910: Avoid C++ compilation errors on FreeBSD and OS X.
+  Also update FreedBSD version checks for the original ctype UTF-8 workaround.
+
+
+Windows
+-------
+
+- Issue #27647: Update bundled Tcl/Tk to 8.6.6.
+
+- Issue #27610: Adds PEP 514 metadata to Windows installer
+
+- Issue #27469: Adds a shell extension to the launcher so that drag and drop
+  works correctly.
+
+- Issue #27309: Enables proper Windows styles in python[w].exe manifest.
+
+
 IDLE
 ----
 
@@ -2414,60 +2514,12 @@ IDLE
 
 - Issue #27452: add line counter and crc to IDLE configHandler test dump.
 
-Tests
------
-
-- Issue #25805: Skip a test in test_pkgutil as needed that doesn't work when
-  ``__name__ == __main__``. Patch by SilentGhost.
-
-- Issue #27472: Add test.support.unix_shell as the path to the default shell.
-
-- Issue #27369: In test_pyexpat, avoid testing an error message detail that
-  changed in Expat 2.2.0.
-
-- Issue #27594: Prevent assertion error when running test_ast with coverage
-  enabled: ensure code object has a valid first line number.
-  Patch suggested by Ivan Levkivskyi.
-
-Windows
--------
-
-- Issue #27647: Update bundled Tcl/Tk to 8.6.6.
-
-- Issue #27610: Adds PEP 514 metadata to Windows installer
-
-- Issue #27469: Adds a shell extension to the launcher so that drag and drop
-  works correctly.
-
-- Issue #27309: Enables proper Windows styles in python[w].exe manifest.
-
-Build
------
-
-- Issue #27713: Suppress spurious build warnings when updating importlib's
-  bootstrap files.  Patch by Xiang Zhang
-
-- Issue #25825: Correct the references to Modules/python.exp, which is
-  required on AIX.  The references were accidentally changed in 3.5.0a1.
-
-- Issue #27453: CPP invocation in configure must use CPPFLAGS. Patch by
-  Chi Hsuan Yen.
-
-- Issue #27641: The configure script now inserts comments into the makefile
-  to prevent the pgen and _freeze_importlib executables from being cross-
-  compiled.
-
-- Issue #26662: Set PYTHON_FOR_GEN in configure as the Python program to be
-  used for file generation during the build.
-
-- Issue #10910: Avoid C++ compilation errors on FreeBSD and OS X.
-  Also update FreedBSD version checks for the original ctype UTF-8 workaround.
 
 
 What's New in Python 3.6.0 alpha 3?
 ===================================
 
-*Release date: 2016-07-11*
+Release date: 2016-07-11
 
 Core and Builtins
 -----------------
@@ -2485,6 +2537,7 @@ Core and Builtins
 
 - Issue #27007: The fromhex() class methods of bytes and bytearray subclasses
   now return an instance of corresponding subclass.
+
 
 Library
 -------
@@ -2584,6 +2637,48 @@ Library
 - Issue #27392: Add loop.connect_accepted_socket().
   Patch by Jim Fulton.
 
+
+Documentation
+-------------
+
+- Issue #19489: Moved the search box from the sidebar to the header and footer
+  of each page.  Patch by Ammar Askar.
+
+- Issue #27285: Update documentation to reflect the deprecation of ``pyvenv``
+  and normalize on the term "virtual environment". Patch by Steve Piercy.
+
+
+Tests
+-----
+
+- Issue #27027: Added test.support.is_android that is True when this is an
+  Android build.
+
+
+Build
+-----
+
+- Issue #28066: Fix the logic that searches build directories for generated
+  include files when building outside the source tree.
+
+- Issue #27442: Expose the Android API level that python was built against, in
+  sysconfig.get_config_vars() as 'ANDROID_API_LEVEL'.
+
+- Issue #27434: The interpreter that runs the cross-build, found in PATH, must
+  now be of the same feature version (e.g. 3.6) as the source being built.
+
+- Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
+
+- Issue #23968: Rename the platform directory from plat-$(MACHDEP) to
+  plat-$(PLATFORM_TRIPLET).
+  Rename the config directory (LIBPL) from config-$(LDVERSION) to
+  config-$(LDVERSION)-$(PLATFORM_TRIPLET).
+  Install the platform specifc _sysconfigdata module into the platform
+  directory and rename it to include the ABIFLAGS.
+
+- Don't use largefile support for GNU/Hurd.
+
+
 IDLE
 ----
 
@@ -2619,34 +2714,6 @@ IDLE
 
 - Issue #27310: Fix IDLE.app failure to launch on OS X due to vestigial import.
 
-C API
------
-
-- Issue #26754: PyUnicode_FSDecoder() accepted a filename argument encoded as
-  an iterable of integers. Now only strings and byte-like objects are accepted.
-
-Build
------
-
-- Issue #28066: Fix the logic that searches build directories for generated
-  include files when building outside the source tree.
-
-- Issue #27442: Expose the Android API level that python was built against, in
-  sysconfig.get_config_vars() as 'ANDROID_API_LEVEL'.
-
-- Issue #27434: The interpreter that runs the cross-build, found in PATH, must
-  now be of the same feature version (e.g. 3.6) as the source being built.
-
-- Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
-
-- Issue #23968: Rename the platform directory from plat-$(MACHDEP) to
-  plat-$(PLATFORM_TRIPLET).
-  Rename the config directory (LIBPL) from config-$(LDVERSION) to
-  config-$(LDVERSION)-$(PLATFORM_TRIPLET).
-  Install the platform specifc _sysconfigdata module into the platform
-  directory and rename it to include the ABIFLAGS.
-
-- Don't use largefile support for GNU/Hurd.
 
 Tools/Demos
 -----------
@@ -2656,26 +2723,19 @@ Tools/Demos
 
 - Issue #27418: Fixed Tools/importbench/importbench.py.
 
-Documentation
--------------
 
-- Issue #19489: Moved the search box from the sidebar to the header and footer
-  of each page.  Patch by Ammar Askar.
-
-- Issue #27285: Update documentation to reflect the deprecation of ``pyvenv``
-  and normalize on the term "virtual environment". Patch by Steve Piercy.
-
-Tests
+C API
 -----
 
-- Issue #27027: Added test.support.is_android that is True when this is an
-  Android build.
+- Issue #26754: PyUnicode_FSDecoder() accepted a filename argument encoded as
+  an iterable of integers. Now only strings and byte-like objects are accepted.
+
 
 
 What's New in Python 3.6.0 alpha 2?
 ===================================
 
-*Release date: 2016-06-13*
+Release date: 2016-06-13
 
 Core and Builtins
 -----------------
@@ -2843,6 +2903,52 @@ Library
 
 - Issue #21271: New keyword only parameters in reset_mock call.
 
+
+Documentation
+-------------
+
+- Issue #16484: Change the default PYTHONDOCS URL to "https:", and fix the
+  resulting links to use lowercase.  Patch by Sean Rodman, test by Kaushik
+  Nadikuditi.
+
+- Issue #24136: Document the new PEP 448 unpacking syntax of 3.5.
+
+- Issue #22558: Add remaining doc links to source code for Python-coded modules.
+  Patch by Yoni Lavi.
+
+
+Tests
+-----
+
+- Issue #25285: regrtest now uses subprocesses when the -j1 command line option
+  is used: each test file runs in a fresh child process. Before, the -j1 option
+  was ignored.
+
+- Issue #25285: Tools/buildbot/test.bat script now uses -j1 by default to run
+  each test file in fresh child process.
+
+
+Build
+-----
+
+- Issue #27229: Fix the cross-compiling pgen rule for in-tree builds.  Patch
+  by Xavier de Gaye.
+
+- Issue #26930: Update OS X 10.5+ 32-bit-only installer to build
+  and link with OpenSSL 1.0.2h.
+
+
+Windows
+-------
+
+- Issue #27064: The py.exe launcher now defaults to Python 3.
+  The Windows launcher ``py.exe`` no longer prefers an installed
+  Python 2 version over Python 3 by default when used interactively.
+
+- Issue #17500, and https://github.com/python/pythondotorg/issues/945: Remove
+  unused and outdated icons.
+
+
 IDLE
 ----
 
@@ -2911,49 +3017,13 @@ IDLE
 
 - Issue #23977: Add more asserts to test_delegator.
 
-Documentation
--------------
 
-- Issue #16484: Change the default PYTHONDOCS URL to "https:", and fix the
-  resulting links to use lowercase.  Patch by Sean Rodman, test by Kaushik
-  Nadikuditi.
+Tools/Demos
+-----------
 
-- Issue #24136: Document the new PEP 448 unpacking syntax of 3.5.
+- Issue #26282: Argument Clinic now supports positional-only and keyword
+  parameters in the same function.
 
-- Issue #22558: Add remaining doc links to source code for Python-coded modules.
-  Patch by Yoni Lavi.
-
-Tests
------
-
-- Issue #25285: regrtest now uses subprocesses when the -j1 command line option
-  is used: each test file runs in a fresh child process. Before, the -j1 option
-  was ignored.
-
-- Issue #25285: Tools/buildbot/test.bat script now uses -j1 by default to run
-  each test file in fresh child process.
-
-Windows
--------
-
-- Issue #27064: The py.exe launcher now defaults to Python 3.
-  The Windows launcher ``py.exe`` no longer prefers an installed
-  Python 2 version over Python 3 by default when used interactively.
-
-Build
------
-
-- Issue #27229: Fix the cross-compiling pgen rule for in-tree builds.  Patch
-  by Xavier de Gaye.
-
-- Issue #26930: Update OS X 10.5+ 32-bit-only installer to build
-  and link with OpenSSL 1.0.2h.
-
-Misc
-----
-
-- Issue #17500, and https://github.com/python/pythondotorg/issues/945: Remove
-  unused and outdated icons.
 
 C API
 -----
@@ -2963,11 +3033,6 @@ C API
 - Issue #26282: PyArg_ParseTupleAndKeywords() now supports positional-only
   parameters.
 
-Tools/Demos
------------
-
-- Issue #26282: Argument Clinic now supports positional-only and keyword
-  parameters in the same function.
 
 
 What's New in Python 3.6.0 alpha 1?
@@ -3259,6 +3324,7 @@ Core and Builtins
 - Issue #25887: Raise a RuntimeError when a coroutine object is awaited
   more than once.
 
+
 Library
 -------
 
@@ -3333,7 +3399,7 @@ Library
 - Issue #26711: Fixed the comparison of plistlib.Data with other types.
 
 - Issue #24114: Fix an uninitialized variable in `ctypes.util`.
-
+  
   The bug only occurs on SunOS when the ctypes implementation searches
   for the `crle` program.  Patch by Xiang Zhang.  Tested on SunOS by
   Kees Bos.
@@ -3969,6 +4035,154 @@ Library
 
 - Issue #27041: asyncio: Add loop.create_future method
 
+
+Documentation
+-------------
+
+- Issue #26736: Used HTTPS for external links in the documentation if possible.
+
+- Issue #6953: Rework the Readline module documentation to group related
+  functions together, and add more details such as what underlying Readline
+  functions and variables are accessed.
+
+- Issue #23606: Adds note to ctypes documentation regarding cdll.msvcrt.
+
+- Issue #24952: Clarify the default size argument of stack_size() in
+  the "threading" and "_thread" modules. Patch from Mattip.
+
+- Issue #26014: Update 3.x packaging documentation:
+  * "See also" links to the new docs are now provided in the legacy pages
+  * links to setuptools documentation have been updated
+
+
+Tests
+-----
+
+- Issue #21916: Added tests for the turtle module.  Patch by ingrid,
+  Gregory Loyse and Jelle Zijlstra.
+
+- Issue #26295: When using "python3 -m test --testdir=TESTDIR", regrtest
+  doesn't add "test." prefix to test module names.
+
+- Issue #26523: The multiprocessing thread pool (multiprocessing.dummy.Pool)
+  was untested.
+
+- Issue #26015: Added new tests for pickling iterators of mutable sequences.
+
+- Issue #26325: Added test.support.check_no_resource_warning() to check that
+  no ResourceWarning is emitted.
+
+- Issue #25940: Changed test_ssl to use its internal local server more.  This
+  avoids relying on svn.python.org, which recently changed root certificate.
+
+- Issue #25616: Tests for OrderedDict are extracted from test_collections
+  into separate file test_ordered_dict.
+
+- Issue #25449: Added tests for OrderedDict subclasses.
+
+- Issue #25188: Add -P/--pgo to test.regrtest to suppress error output when
+  running the test suite for the purposes of a PGO build. Initial patch by
+  Alecsandru Patrascu.
+
+- Issue #22806: Add ``python -m test --list-tests`` command to list tests.
+
+- Issue #18174: ``python -m test --huntrleaks ...`` now also checks for leak of
+  file descriptors. Patch written by Richard Oudkerk.
+
+- Issue #25260: Fix ``python -m test --coverage`` on Windows. Remove the
+  list of ignored directories.
+
+- ``PCbuild\rt.bat`` now accepts an unlimited number of arguments to pass along
+  to regrtest.py.  Previously there was a limit of 9.
+
+- Issue #26583: Skip test_timestamp_overflow in test_import if bytecode
+  files cannot be written.
+
+
+Build
+-----
+
+- Issue #21277: Don't try to link _ctypes with a ffi_convenience library.
+
+- Issue #26884: Fix linking extension modules for cross builds.
+  Patch by Xavier de Gaye.
+
+- Issue #26932: Fixed support of RTLD_* constants defined as enum values,
+  not via macros (in particular on Android).  Patch by Chi Hsuan Yen.
+
+- Issue #22359: Disable the rules for running _freeze_importlib and pgen when
+  cross-compiling.  The output of these programs is normally saved with the
+  source code anyway, and is still regenerated when doing a native build.
+  Patch by Xavier de Gaye.
+
+- Issue #21668: Link audioop, _datetime, _ctypes_test modules to libm,
+  except on Mac OS X. Patch written by Chi Hsuan Yen.
+
+- Issue #25702: A --with-lto configure option has been added that will
+  enable link time optimizations at build time during a make profile-opt.
+  Some compilers and toolchains are known to not produce stable code when
+  using LTO, be sure to test things thoroughly before relying on it.
+  It can provide a few % speed up over profile-opt alone.
+
+- Issue #26624: Adds validation of ucrtbase[d].dll version with warning
+  for old versions.
+
+- Issue #17603: Avoid error about nonexistant fileblocks.o file by using a
+  lower-level check for st_blocks in struct stat.
+
+- Issue #26079: Fixing the build output folder for tix-8.4.3.6. Patch by
+  Bjoern Thiel.
+
+- Issue #26465: Update Windows builds to use OpenSSL 1.0.2g.
+
+- Issue #25348: Added ``--pgo`` and ``--pgo-job`` arguments to
+  ``PCbuild\build.bat`` for building with Profile-Guided Optimization.  The
+  old ``PCbuild\build_pgo.bat`` script is removed.
+
+- Issue #25827: Add support for building with ICC to ``configure``, including
+  a new ``--with-icc`` flag.
+
+- Issue #25696: Fix installation of Python on UNIX with make -j9.
+
+- Issue #24986: It is now possible to build Python on Windows without errors
+  when external libraries are not available.
+
+- Issue #24421: Compile Modules/_math.c once, before building extensions.
+  Previously it could fail to compile properly if the math and cmath builds
+  were concurrent.
+
+- Issue #26465: Update OS X 10.5+ 32-bit-only installer to build
+  and link with OpenSSL 1.0.2g.
+
+- Issue #26268: Update Windows builds to use OpenSSL 1.0.2f.
+
+- Issue #25136: Support Apple Xcode 7's new textual SDK stub libraries.
+
+- Issue #24324: Do not enable unreachable code warnings when using
+  gcc as the option does not work correctly in older versions of gcc
+  and has been silently removed as of gcc-4.5.
+
+
+Windows
+-------
+
+- Issue #27053: Updates make_zip.py to correctly generate library ZIP file.
+
+- Issue #26268: Update the prepare_ssl.py script to handle OpenSSL releases
+  that don't include the contents of the include directory (that is, 1.0.2e
+  and later).
+
+- Issue #26071: bdist_wininst created binaries fail to start and find
+  32bit Python
+
+- Issue #26073: Update the list of magic numbers in launcher
+
+- Issue #26065: Excludes venv from library when generating embeddable
+  distro.
+
+- Issue #25022: Removed very outdated PC/example_nt/ directory.
+
+
 IDLE
 ----
 
@@ -4079,148 +4293,6 @@ IDLE
 
 - Issue #24790: Remove extraneous code (which also create 2 & 3 conflicts).
 
-Documentation
--------------
-
-- Issue #26736: Used HTTPS for external links in the documentation if possible.
-
-- Issue #6953: Rework the Readline module documentation to group related
-  functions together, and add more details such as what underlying Readline
-  functions and variables are accessed.
-
-- Issue #23606: Adds note to ctypes documentation regarding cdll.msvcrt.
-
-- Issue #24952: Clarify the default size argument of stack_size() in
-  the "threading" and "_thread" modules. Patch from Mattip.
-
-- Issue #26014: Update 3.x packaging documentation:
-  * "See also" links to the new docs are now provided in the legacy pages
-  * links to setuptools documentation have been updated
-
-Tests
------
-
-- Issue #21916: Added tests for the turtle module.  Patch by ingrid,
-  Gregory Loyse and Jelle Zijlstra.
-
-- Issue #26295: When using "python3 -m test --testdir=TESTDIR", regrtest
-  doesn't add "test." prefix to test module names.
-
-- Issue #26523: The multiprocessing thread pool (multiprocessing.dummy.Pool)
-  was untested.
-
-- Issue #26015: Added new tests for pickling iterators of mutable sequences.
-
-- Issue #26325: Added test.support.check_no_resource_warning() to check that
-  no ResourceWarning is emitted.
-
-- Issue #25940: Changed test_ssl to use its internal local server more.  This
-  avoids relying on svn.python.org, which recently changed root certificate.
-
-- Issue #25616: Tests for OrderedDict are extracted from test_collections
-  into separate file test_ordered_dict.
-
-- Issue #25449: Added tests for OrderedDict subclasses.
-
-- Issue #25188: Add -P/--pgo to test.regrtest to suppress error output when
-  running the test suite for the purposes of a PGO build. Initial patch by
-  Alecsandru Patrascu.
-
-- Issue #22806: Add ``python -m test --list-tests`` command to list tests.
-
-- Issue #18174: ``python -m test --huntrleaks ...`` now also checks for leak of
-  file descriptors. Patch written by Richard Oudkerk.
-
-- Issue #25260: Fix ``python -m test --coverage`` on Windows. Remove the
-  list of ignored directories.
-
-- ``PCbuild\rt.bat`` now accepts an unlimited number of arguments to pass along
-  to regrtest.py.  Previously there was a limit of 9.
-
-- Issue #26583: Skip test_timestamp_overflow in test_import if bytecode
-  files cannot be written.
-
-Build
------
-
-- Issue #21277: Don't try to link _ctypes with a ffi_convenience library.
-
-- Issue #26884: Fix linking extension modules for cross builds.
-  Patch by Xavier de Gaye.
-
-- Issue #26932: Fixed support of RTLD_* constants defined as enum values,
-  not via macros (in particular on Android).  Patch by Chi Hsuan Yen.
-
-- Issue #22359: Disable the rules for running _freeze_importlib and pgen when
-  cross-compiling.  The output of these programs is normally saved with the
-  source code anyway, and is still regenerated when doing a native build.
-  Patch by Xavier de Gaye.
-
-- Issue #21668: Link audioop, _datetime, _ctypes_test modules to libm,
-  except on Mac OS X. Patch written by Chi Hsuan Yen.
-
-- Issue #25702: A --with-lto configure option has been added that will
-  enable link time optimizations at build time during a make profile-opt.
-  Some compilers and toolchains are known to not produce stable code when
-  using LTO, be sure to test things thoroughly before relying on it.
-  It can provide a few % speed up over profile-opt alone.
-
-- Issue #26624: Adds validation of ucrtbase[d].dll version with warning
-  for old versions.
-
-- Issue #17603: Avoid error about nonexistant fileblocks.o file by using a
-  lower-level check for st_blocks in struct stat.
-
-- Issue #26079: Fixing the build output folder for tix-8.4.3.6. Patch by
-  Bjoern Thiel.
-
-- Issue #26465: Update Windows builds to use OpenSSL 1.0.2g.
-
-- Issue #25348: Added ``--pgo`` and ``--pgo-job`` arguments to
-  ``PCbuild\build.bat`` for building with Profile-Guided Optimization.  The
-  old ``PCbuild\build_pgo.bat`` script is removed.
-
-- Issue #25827: Add support for building with ICC to ``configure``, including
-  a new ``--with-icc`` flag.
-
-- Issue #25696: Fix installation of Python on UNIX with make -j9.
-
-- Issue #24986: It is now possible to build Python on Windows without errors
-  when external libraries are not available.
-
-- Issue #24421: Compile Modules/_math.c once, before building extensions.
-  Previously it could fail to compile properly if the math and cmath builds
-  were concurrent.
-
-- Issue #26465: Update OS X 10.5+ 32-bit-only installer to build
-  and link with OpenSSL 1.0.2g.
-
-- Issue #26268: Update Windows builds to use OpenSSL 1.0.2f.
-
-- Issue #25136: Support Apple Xcode 7's new textual SDK stub libraries.
-
-- Issue #24324: Do not enable unreachable code warnings when using
-  gcc as the option does not work correctly in older versions of gcc
-  and has been silently removed as of gcc-4.5.
-
-Windows
--------
-
-- Issue #27053: Updates make_zip.py to correctly generate library ZIP file.
-
-- Issue #26268: Update the prepare_ssl.py script to handle OpenSSL releases
-  that don't include the contents of the include directory (that is, 1.0.2e
-  and later).
-
-- Issue #26071: bdist_wininst created binaries fail to start and find
-  32bit Python
-
-- Issue #26073: Update the list of magic numbers in launcher
-
-- Issue #26065: Excludes venv from library when generating embeddable
-  distro.
-
-- Issue #25022: Removed very outdated PC/example_nt/ directory.
 
 Tools/Demos
 -----------
@@ -4243,6 +4315,7 @@ Tools/Demos
 - Issue #25154: The pyvenv script has been deprecated in favour of
   `python3 -m venv`.
 
+
 C API
 -----
 
@@ -4255,12 +4328,15 @@ C API
   instead of TypeError on programmical error in parsing format string.
 
 
-What's New in Python 3.5.3?
-===========================
+
+What's New in Python 3.5.3 final?
+=================================
 
 Release date: 2017-01-17
 
 There were no code changes between 3.5.3rc1 and 3.5.3 final.
+
+
 
 
 What's New in Python 3.5.3 release candidate 1?
@@ -4398,6 +4474,7 @@ Core and Builtins
 
 - Issue #27942: Fix memory leak in codeobject.c
 
+
 Library
 -------
 
@@ -4503,7 +4580,7 @@ Library
 
 - Issue #28253: Fixed calendar functions for extreme months: 0001-01
   and 9999-12.
-
+  
   Methods itermonthdays() and itermonthdays2() are reimplemented so
   that they don't call itermonthdates() which can cause datetime.date
   under/overflow.
@@ -4796,46 +4873,12 @@ Library
   completed.
   (Patch by HoHo-Ho)
 
-IDLE
-----
-
-- Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
-  Patch by Roger Serwy, updated by Bayard Randel.
-
-- Issue #27922: Stop IDLE tests from 'flashing' gui widgets on the screen.
-
-- Add version to title of IDLE help window.
-
-- Issue #25564: In section on IDLE -- console differences, mention that
-  using exec means that __builtins__ is defined for each statement.
-
-- Issue #27714: text_textview and test_autocomplete now pass when re-run
-  in the same process.  This occurs when test_idle fails when run with the
-  -w option but without -jn.  Fix warning from test_config.
-
-- Issue #25507: IDLE no longer runs buggy code because of its tkinter imports.
-  Users must include the same imports required to run directly in Python.
-
-- Issue #27452: add line counter and crc to IDLE configHandler test dump.
-
-- Issue #27365: Allow non-ascii chars in IDLE NEWS.txt, for contributor names.
-
-- Issue #27245: IDLE: Cleanly delete custom themes and key bindings.
-  Previously, when IDLE was started from a console or by import, a cascade
-  of warnings was emitted.  Patch by Serhiy Storchaka.
-
-C API
------
-
-- Issue #28808: PyUnicode_CompareWithASCIIString() now never raises exceptions.
-
-- Issue #26754: PyUnicode_FSDecoder() accepted a filename argument encoded as
-  an iterable of integers. Now only strings and bytes-like objects are accepted.
 
 Documentation
 -------------
 
 - Issue #28513: Documented command-line interface of zipfile.
+
 
 Tests
 -----
@@ -4856,33 +4899,6 @@ Tests
 - Issue #27369: In test_pyexpat, avoid testing an error message detail that
   changed in Expat 2.2.0.
 
-Tools/Demos
------------
-
-- Issue #27952: Get Tools/scripts/fixcid.py working with Python 3 and the
-  current "re" module, avoid invalid Python backslash escapes, and fix a bug
-  parsing escaped C quote signs.
-
-- Issue #27332: Fixed the type of the first argument of module-level functions
-  generated by Argument Clinic.  Patch by Petr Viktorin.
-
-- Issue #27418: Fixed Tools/importbench/importbench.py.
-
-Windows
--------
-
-- Issue #28251: Improvements to help manuals on Windows.
-
-- Issue #28110: launcher.msi has different product codes between 32-bit and
-  64-bit
-
-- Issue #25144: Ensures TargetDir is set before continuing with custom
-  install.
-
-- Issue #27469: Adds a shell extension to the launcher so that drag and drop
-  works correctly.
-
-- Issue #27309: Enabled proper Windows styles in python[w].exe manifest.
 
 Build
 -----
@@ -4949,8 +4965,77 @@ Build
   Patch by Gareth Rees.
 
 
-What's New in Python 3.5.2?
-===========================
+Windows
+-------
+
+- Issue #28251: Improvements to help manuals on Windows.
+
+- Issue #28110: launcher.msi has different product codes between 32-bit and
+  64-bit
+
+- Issue #25144: Ensures TargetDir is set before continuing with custom
+  install.
+
+- Issue #27469: Adds a shell extension to the launcher so that drag and drop
+  works correctly.
+
+- Issue #27309: Enabled proper Windows styles in python[w].exe manifest.
+
+
+IDLE
+----
+
+- Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
+  Patch by Roger Serwy, updated by Bayard Randel.
+
+- Issue #27922: Stop IDLE tests from 'flashing' gui widgets on the screen.
+
+- Add version to title of IDLE help window.
+
+- Issue #25564: In section on IDLE -- console differences, mention that
+  using exec means that __builtins__ is defined for each statement.
+
+- Issue #27714: text_textview and test_autocomplete now pass when re-run
+  in the same process.  This occurs when test_idle fails when run with the
+  -w option but without -jn.  Fix warning from test_config.
+
+- Issue #25507: IDLE no longer runs buggy code because of its tkinter imports.
+  Users must include the same imports required to run directly in Python.
+
+- Issue #27452: add line counter and crc to IDLE configHandler test dump.
+
+- Issue #27365: Allow non-ascii chars in IDLE NEWS.txt, for contributor names.
+
+- Issue #27245: IDLE: Cleanly delete custom themes and key bindings.
+  Previously, when IDLE was started from a console or by import, a cascade
+  of warnings was emitted.  Patch by Serhiy Storchaka.
+
+
+Tools/Demos
+-----------
+
+- Issue #27952: Get Tools/scripts/fixcid.py working with Python 3 and the
+  current "re" module, avoid invalid Python backslash escapes, and fix a bug
+  parsing escaped C quote signs.
+
+- Issue #27332: Fixed the type of the first argument of module-level functions
+  generated by Argument Clinic.  Patch by Petr Viktorin.
+
+- Issue #27418: Fixed Tools/importbench/importbench.py.
+
+
+C API
+-----
+
+- Issue #28808: PyUnicode_CompareWithASCIIString() now never raises exceptions.
+
+- Issue #26754: PyUnicode_FSDecoder() accepted a filename argument encoded as
+  an iterable of integers. Now only strings and bytes-like objects are accepted.
+
+
+
+What's New in Python 3.5.2 final?
+=================================
 
 Release date: 2016-06-26
 
@@ -4959,15 +5044,18 @@ Core and Builtins
 
 - Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
 
+
 Tests
 -----
 
 - Issue #26867: Ubuntu's openssl OP_NO_SSLv3 is forced on by default; fix test.
 
+
 IDLE
 ----
 
 - Issue #27365: Allow non-ascii in idlelib/NEWS.txt - minimal part for 3.5.2.
+
 
 
 What's New in Python 3.5.2 release candidate 1?
@@ -5206,7 +5294,7 @@ Library
 - Issue #26711: Fixed the comparison of plistlib.Data with other types.
 
 - Issue #24114: Fix an uninitialized variable in `ctypes.util`.
-
+  
   The bug only occurs on SunOS when the ctypes implementation searches
   for the `crle` program.  Patch by Xiang Zhang.  Tested on SunOS by
   Kees Bos.
@@ -5507,58 +5595,6 @@ Library
 - Issue #22970: asyncio: Fix inconsistency cancelling Condition.wait.
   Patch by David Coles.
 
-IDLE
-----
-
-- Issue #5124: Paste with text selected now replaces the selection on X11.
-  This matches how paste works on Windows, Mac, most modern Linux apps,
-  and ttk widgets.  Original patch by Serhiy Storchaka.
-
-- Issue #24759: Make clear in idlelib.idle_test.__init__ that the directory
-  is a private implementation of test.test_idle and tool for maintainers.
-
-- Issue #27196: Stop 'ThemeChanged' warnings when running IDLE tests.
-  These persisted after other warnings were suppressed in #20567.
-  Apply Serhiy Storchaka's update_idletasks solution to four test files.
-  Record this additional advice in idle_test/README.txt
-
-- Issue #20567: Revise idle_test/README.txt with advice about avoiding
-  tk warning messages from tests.  Apply advice to several IDLE tests.
-
-- Issue #27117: Make colorizer htest and turtledemo work with dark themes.
-  Move code for configuring text widget colors to a new function.
-
-- Issue #26673: When tk reports font size as 0, change to size 10.
-  Such fonts on Linux prevented the configuration dialog from opening.
-
-- Issue #21939: Add test for IDLE's percolator.
-  Original patch by Saimadhav Heblikar.
-
-- Issue #21676: Add test for IDLE's replace dialog.
-  Original patch by Saimadhav Heblikar.
-
-- Issue #18410: Add test for IDLE's search dialog.
-  Original patch by Westley Martínez.
-
-- Issue #21703: Add test for IDLE's undo delegator.
-  Original patch by Saimadhav Heblikar .
-
-- Issue #27044: Add ConfigDialog.remove_var_callbacks to stop memory leaks.
-
-- Issue #23977: Add more asserts to test_delegator.
-
-- Issue #20640: Add tests for idlelib.configHelpSourceEdit.
-  Patch by Saimadhav Heblikar.
-
-- In the 'IDLE-console differences' section of the IDLE doc, clarify
-  how running with IDLE affects sys.modules and the standard streams.
-
-- Issue #25507: fix incorrect change in IOBinding that prevented printing.
-  Augment IOBinding htest to include all major IOBinding functions.
-
-- Issue #25905: Revert unwanted conversion of ' to ’ RIGHT SINGLE QUOTATION
-  MARK in README.txt and open this and NEWS.txt with 'ascii'.
-  Re-encode CREDITS.txt to utf-8 and open it with 'utf-8'.
 
 Documentation
 -------------
@@ -5583,6 +5619,7 @@ Documentation
   * "See also" links to the new docs are now provided in the legacy pages
   * links to setuptools documentation have been updated
 
+
 Tests
 -----
 
@@ -5605,6 +5642,7 @@ Tests
 
 - Issue #26583: Skip test_timestamp_overflow in test_import if bytecode
   files cannot be written.
+
 
 Build
 -----
@@ -5665,6 +5703,7 @@ Build
   gcc as the option does not work correctly in older versions of gcc
   and has been silently removed as of gcc-4.5.
 
+
 Windows
 -------
 
@@ -5682,6 +5721,64 @@ Windows
 - Issue #26065: Excludes venv from library when generating embeddable
   distro.
 
+- Issue #17500, and https://github.com/python/pythondotorg/issues/945: Remove
+  unused and outdated icons.
+
+
+IDLE
+----
+
+- Issue #5124: Paste with text selected now replaces the selection on X11.
+  This matches how paste works on Windows, Mac, most modern Linux apps,
+  and ttk widgets.  Original patch by Serhiy Storchaka.
+
+- Issue #24759: Make clear in idlelib.idle_test.__init__ that the directory
+  is a private implementation of test.test_idle and tool for maintainers.
+
+- Issue #27196: Stop 'ThemeChanged' warnings when running IDLE tests.
+  These persisted after other warnings were suppressed in #20567.
+  Apply Serhiy Storchaka's update_idletasks solution to four test files.
+  Record this additional advice in idle_test/README.txt
+
+- Issue #20567: Revise idle_test/README.txt with advice about avoiding
+  tk warning messages from tests.  Apply advice to several IDLE tests.
+
+- Issue #27117: Make colorizer htest and turtledemo work with dark themes.
+  Move code for configuring text widget colors to a new function.
+
+- Issue #26673: When tk reports font size as 0, change to size 10.
+  Such fonts on Linux prevented the configuration dialog from opening.
+
+- Issue #21939: Add test for IDLE's percolator.
+  Original patch by Saimadhav Heblikar.
+
+- Issue #21676: Add test for IDLE's replace dialog.
+  Original patch by Saimadhav Heblikar.
+
+- Issue #18410: Add test for IDLE's search dialog.
+  Original patch by Westley Martínez.
+
+- Issue #21703: Add test for IDLE's undo delegator.
+  Original patch by Saimadhav Heblikar .
+
+- Issue #27044: Add ConfigDialog.remove_var_callbacks to stop memory leaks.
+
+- Issue #23977: Add more asserts to test_delegator.
+
+- Issue #20640: Add tests for idlelib.configHelpSourceEdit.
+  Patch by Saimadhav Heblikar.
+
+- In the 'IDLE-console differences' section of the IDLE doc, clarify
+  how running with IDLE affects sys.modules and the standard streams.
+
+- Issue #25507: fix incorrect change in IOBinding that prevented printing.
+  Augment IOBinding htest to include all major IOBinding functions.
+
+- Issue #25905: Revert unwanted conversion of ' to ’ RIGHT SINGLE QUOTATION
+  MARK in README.txt and open this and NEWS.txt with 'ascii'.
+  Re-encode CREDITS.txt to utf-8 and open it with 'utf-8'.
+
+
 Tools/Demos
 -----------
 
@@ -5698,11 +5795,6 @@ Tools/Demos
 
 - Issue #26316: Fix variable name typo in Argument Clinic.
 
-Misc
-----
-
-- Issue #17500, and https://github.com/python/pythondotorg/issues/945: Remove
-  unused and outdated icons.
 
 
 What's New in Python 3.5.1 final?
@@ -5716,11 +5808,13 @@ Core and Builtins
 - Issue #25709: Fixed problem with in-place string concatenation and
   utf-8 cache.
 
+
 Windows
 -------
 
 - Issue #25715: Python 3.5.1 installer shows wrong upgrade path and incorrect
   logic for launcher detection.
+
 
 
 What's New in Python 3.5.1 release candidate 1?
@@ -5793,6 +5887,7 @@ Core and Builtins
 - Issue #25150: Hide the private _Py_atomic_xxx symbols from the public
   Python.h header to fix a compilation error with OpenMP. PyThreadState_GET()
   becomes an alias to PyThreadState_Get() to avoid ABI incompatibilies.
+
 
 Library
 -------
@@ -6024,6 +6119,98 @@ Library
 
 - asyncio: ensure_future() now accepts awaitable objects.
 
+
+Documentation
+-------------
+
+- Issue #22558: Add remaining doc links to source code for Python-coded modules.
+  Patch by Yoni Lavi.
+
+- Issue #12067: Rewrite Comparisons section in the Expressions chapter of the
+  language reference. Some of the details of comparing mixed types were
+  incorrect or ambiguous. NotImplemented is only relevant at a lower level
+  than the Expressions chapter. Added details of comparing range() objects,
+  and default behaviour and consistency suggestions for user-defined classes.
+  Patch from Andy Maier.
+
+- Issue #24952: Clarify the default size argument of stack_size() in
+  the "threading" and "_thread" modules. Patch from Mattip.
+
+- Issue #23725: Overhaul tempfile docs. Note deprecated status of mktemp.
+  Patch from Zbigniew Jędrzejewski-Szmek.
+
+- Issue #24808: Update the types of some PyTypeObject fields.  Patch by
+  Joseph Weston.
+
+- Issue #22812: Fix unittest discovery examples.
+  Patch from Pam McA'Nulty.
+
+
+Tests
+-----
+
+- Issue #25449: Added tests for OrderedDict subclasses.
+
+- Issue #25099: Make test_compileall not fail when an entry on sys.path cannot
+  be written to (commonly seen in administrative installs on Windows).
+
+- Issue #23919: Prevents assert dialogs appearing in the test suite.
+
+- ``PCbuild\rt.bat`` now accepts an unlimited number of arguments to pass along
+  to regrtest.py.  Previously there was a limit of 9.
+
+
+Build
+-----
+
+- Issue #24915: Add LLVM support for PGO builds and use the test suite to
+  generate the profile data. Initial patch by Alecsandru Patrascu of Intel.
+
+- Issue #24910: Windows MSIs now have unique display names.
+
+- Issue #24986: It is now possible to build Python on Windows without errors
+  when external libraries are not available.
+
+
+Windows
+-------
+
+- Issue #25450: Updates shortcuts to start Python in installation directory.
+
+- Issue #25164: Changes default all-users install directory to match per-user
+  directory.
+
+- Issue #25143: Improves installer error messages for unsupported platforms.
+
+- Issue #25163: Display correct directory in installer when using non-default
+  settings.
+
+- Issue #25361: Disables use of SSE2 instructions in Windows 32-bit build
+
+- Issue #25089: Adds logging to installer for case where launcher is not
+  selected on upgrade.
+
+- Issue #25165: Windows uninstallation should not remove launcher if other
+  versions remain
+
+- Issue #25112: py.exe launcher is missing icons
+
+- Issue #25102: Windows installer does not precompile for -O or -OO.
+
+- Issue #25081: Makes Back button in installer go back to upgrade page when
+  upgrading.
+
+- Issue #25091: Increases font size of the installer.
+
+- Issue #25126: Clarifies that the non-web installer will download some
+  components.
+
+- Issue #25213: Restores requestedExecutionLevel to manifest to disable
+  UAC virtualization.
+
+- Issue #25022: Removed very outdated PC/example_nt/ directory.
+
+
 IDLE
 ----
 
@@ -6121,97 +6308,12 @@ IDLE
 
 - Issue #24790: Remove extraneous code (which also create 2 & 3 conflicts).
 
-Documentation
--------------
-
-- Issue #22558: Add remaining doc links to source code for Python-coded modules.
-  Patch by Yoni Lavi.
-
-- Issue #12067: Rewrite Comparisons section in the Expressions chapter of the
-  language reference. Some of the details of comparing mixed types were
-  incorrect or ambiguous. NotImplemented is only relevant at a lower level
-  than the Expressions chapter. Added details of comparing range() objects,
-  and default behaviour and consistency suggestions for user-defined classes.
-  Patch from Andy Maier.
-
-- Issue #24952: Clarify the default size argument of stack_size() in
-  the "threading" and "_thread" modules. Patch from Mattip.
-
-- Issue #23725: Overhaul tempfile docs. Note deprecated status of mktemp.
-  Patch from Zbigniew Jędrzejewski-Szmek.
-
-- Issue #24808: Update the types of some PyTypeObject fields.  Patch by
-  Joseph Weston.
-
-- Issue #22812: Fix unittest discovery examples.
-  Patch from Pam McA'Nulty.
-
-Tests
------
-
-- Issue #25449: Added tests for OrderedDict subclasses.
-
-- Issue #25099: Make test_compileall not fail when an entry on sys.path cannot
-  be written to (commonly seen in administrative installs on Windows).
-
-- Issue #23919: Prevents assert dialogs appearing in the test suite.
-
-- ``PCbuild\rt.bat`` now accepts an unlimited number of arguments to pass along
-  to regrtest.py.  Previously there was a limit of 9.
-
-Build
------
-
-- Issue #24915: Add LLVM support for PGO builds and use the test suite to
-  generate the profile data. Initial patch by Alecsandru Patrascu of Intel.
-
-- Issue #24910: Windows MSIs now have unique display names.
-
-- Issue #24986: It is now possible to build Python on Windows without errors
-  when external libraries are not available.
-
-Windows
--------
-
-- Issue #25450: Updates shortcuts to start Python in installation directory.
-
-- Issue #25164: Changes default all-users install directory to match per-user
-  directory.
-
-- Issue #25143: Improves installer error messages for unsupported platforms.
-
-- Issue #25163: Display correct directory in installer when using non-default
-  settings.
-
-- Issue #25361: Disables use of SSE2 instructions in Windows 32-bit build
-
-- Issue #25089: Adds logging to installer for case where launcher is not
-  selected on upgrade.
-
-- Issue #25165: Windows uninstallation should not remove launcher if other
-  versions remain
-
-- Issue #25112: py.exe launcher is missing icons
-
-- Issue #25102: Windows installer does not precompile for -O or -OO.
-
-- Issue #25081: Makes Back button in installer go back to upgrade page when
-  upgrading.
-
-- Issue #25091: Increases font size of the installer.
-
-- Issue #25126: Clarifies that the non-web installer will download some
-  components.
-
-- Issue #25213: Restores requestedExecutionLevel to manifest to disable
-  UAC virtualization.
-
-- Issue #25022: Removed very outdated PC/example_nt/ directory.
 
 Tools/Demos
 -----------
 
 - Issue #25440: Fix output of python-config --extension-suffix.
+
 
 
 What's New in Python 3.5.0 final?
@@ -6226,6 +6328,7 @@ Build
   parameter when installing quietly.
 
 
+
 What's New in Python 3.5.0 release candidate 4?
 ===============================================
 
@@ -6236,11 +6339,13 @@ Library
 
 - Issue #25029: Fixes MemoryError in test_strptime.
 
+
 Build
 -----
 
 - Issue #25027: Reverts partial-static build options and adds
   vcruntime140.dll to Windows installation.
+
 
 
 What's New in Python 3.5.0 release candidate 3?
@@ -6257,6 +6362,7 @@ Core and Builtins
 - Issue #24912: Prevent __class__ assignment to immutable built-in objects.
 
 - Issue #24975: Fix AST compilation for PEP 448 syntax.
+
 
 Library
 -------
@@ -6278,6 +6384,7 @@ Library
   Found by John Leitch and Bryce Darling.
 
 
+
 What's New in Python 3.5.0 release candidate 2?
 ===============================================
 
@@ -6296,6 +6403,7 @@ Core and Builtins
   a ``from .. import ...`` statement will trigger an ImportError instead of an
   AttributeError.
 
+
 Library
 -------
 
@@ -6304,6 +6412,7 @@ Library
 - Issue #24839: platform._syscmd_ver raises DeprecationWarning
 
 - Issue #24867: Fix Task.get_stack() for 'async def' coroutines
+
 
 
 What's New in Python 3.5.0 release candidate 1?
@@ -6315,6 +6424,7 @@ Core and Builtins
 -----------------
 
 - Issue #24667: Resize odict in all cases that the underlying dict resizes.
+
 
 Library
 -------
@@ -6358,21 +6468,6 @@ Library
 
 - Issue #24791: Fix grammar regression for call syntax: 'g(\*a or b)'.
 
-IDLE
-----
-
-- Issue #23672: Allow Idle to edit and run files with astral chars in name.
-  Patch by Mohd Sanad Zaki Rizvi.
-
-- Issue #24745: Idle editor default font. Switch from Courier to
-  platform-sensitive TkFixedFont.  This should not affect current customized
-  font selections.  If there is a problem, edit $HOME/.idlerc/config-main.cfg
-  and remove 'fontxxx' entries from [Editor Window].  Patch by Mark Roseman.
-
-- Issue #21192: Idle editor. When a file is run, put its name in the restart bar.
-  Do not print false prompts. Original patch by Adnan Umer.
-
-- Issue #13884: Idle menus. Remove tearoff lines. Patch by Roger Serwy.
 
 Documentation
 -------------
@@ -6389,12 +6484,31 @@ Documentation
 - Issue #24729: Correct IO tutorial to match implementation regarding
   encoding parameter to open function.
 
+
 Tests
 -----
 
 - Issue #24751: When running regrtest with the ``-w`` command line option,
   a test run is no longer marked as a failure if all tests succeed when
   re-run.
+
+
+IDLE
+----
+
+- Issue #23672: Allow Idle to edit and run files with astral chars in name.
+  Patch by Mohd Sanad Zaki Rizvi.
+
+- Issue #24745: Idle editor default font. Switch from Courier to
+  platform-sensitive TkFixedFont.  This should not affect current customized
+  font selections.  If there is a problem, edit $HOME/.idlerc/config-main.cfg
+  and remove 'fontxxx' entries from [Editor Window].  Patch by Mark Roseman.
+
+- Issue #21192: Idle editor. When a file is run, put its name in the restart bar.
+  Do not print false prompts. Original patch by Adnan Umer.
+
+- Issue #13884: Idle menus. Remove tearoff lines. Patch by Roger Serwy.
+
 
 
 What's New in Python 3.5.0 beta 4?
@@ -6422,6 +6536,7 @@ Core and Builtins
 
 - Issue #15944: memoryview: Allow arbitrary formats when casting to bytes.
   Patch by Martin Panter.
+
 
 Library
 -------
@@ -6477,11 +6592,13 @@ Library
 
 - Issue #24688: ast.get_docstring() for 'async def' functions.
 
+
 Build
 -----
 
 - Issue #24603: Update Windows builds and OS X 10.5 installer to use OpenSSL
   1.0.2d.
+
 
 
 What's New in Python 3.5.0 beta 3?
@@ -6515,6 +6632,7 @@ Core and Builtins
   Contributed by Benno Leslie and Yury Selivanov.
 
 - Issue #19235: Add new RecursionError exception. Patch by Georg Brandl.
+
 
 Library
 -------
@@ -6566,12 +6684,6 @@ Library
 
 - Issue #24369: Defend against key-changes during iteration.
 
-Tests
------
-
-- Issue #24373: _testmultiphase and xxlimited now use tp_traverse and
-  tp_finalize to avoid reference leaks encountered when combining tp_dealloc
-  with PyType_FromSpec (see issue #16690 for details)
 
 Documentation
 -------------
@@ -6582,11 +6694,21 @@ Documentation
 - Issue #24351: Clarify what is meant by "identifier" in the context of
   string.Template instances.
 
+
+Tests
+-----
+
+- Issue #24373: _testmultiphase and xxlimited now use tp_traverse and
+  tp_finalize to avoid reference leaks encountered when combining tp_dealloc
+  with PyType_FromSpec (see issue #16690 for details)
+
+
 Build
 -----
 
 - Issue #24432: Update Windows builds and OS X 10.5 installer to use OpenSSL
   1.0.2c.
+
 
 
 What's New in Python 3.5.0 beta 2?
@@ -6612,6 +6734,7 @@ Core and Builtins
 - Issue #24285: Fixed regression that prevented importing extension modules
   from inside packages. Patch by Petr Viktorin.
 
+
 Library
 -------
 
@@ -6629,6 +6752,7 @@ Library
 
 - Issue #23934: Fix inspect.signature to fail correctly for builtin types
   lacking signature information.  Initial patch by James Powell.
+
 
 
 What's New in Python 3.5.0 beta 1?
@@ -6685,6 +6809,7 @@ Core and Builtins
 - Issue #22906: PEP 479: Change StopIteration handling inside generators.
 
 - Issue #24017: PEP 492: Coroutines with async and await syntax.
+
 
 Library
 -------
@@ -6865,20 +6990,6 @@ Library
 - Issue #24298: Fix inspect.signature() to correctly unwrap wrappers
   around bound methods.
 
-IDLE
-----
-
-- Issue #23184: remove unused names and imports in idlelib.
-  Initial patch by Al Sweigart.
-
-Tests
------
-
-- Issue #21520: test_zipfile no longer fails if the word 'bad' appears
-  anywhere in the name of the current directory.
-
-- Issue #9517: Move script_helper into the support package.
-  Patch by Christie Wilson.
 
 Documentation
 -------------
@@ -6889,6 +7000,24 @@ Documentation
 - Issue #24029: Document the name binding behavior for submodule imports.
 
 - Issue #24077: Fix typo in man page for -I command option: -s, not -S
+
+
+Tests
+-----
+
+- Issue #21520: test_zipfile no longer fails if the word 'bad' appears
+  anywhere in the name of the current directory.
+
+- Issue #9517: Move script_helper into the support package.
+  Patch by Christie Wilson.
+
+
+IDLE
+----
+
+- Issue #23184: remove unused names and imports in idlelib.
+  Initial patch by Al Sweigart.
+
 
 Tools/Demos
 -----------
@@ -6902,6 +7031,7 @@ Tools/Demos
 - Issue #23330: h2py now supports arbitrary filenames in #include.
 
 - Issue #24031: make patchcheck now supports git checkouts, too.
+
 
 
 What's New in Python 3.5.0 alpha 4?
@@ -6940,6 +7070,7 @@ Core and Builtins
   memory conditions.
 
 - Issue #21354: PyCFunction_New function is exposed by python DLL again.
+
 
 Library
 -------
@@ -7089,13 +7220,6 @@ Library
 - Issue #23310: Fix MagicMock's initializer to work with __methods__, just
   like configure_mock().  Patch by Kasia Jachim.
 
-Build
------
-
-- Issue #23817: FreeBSD now uses "1.0" in the SOVERSION as other operating
-  systems, instead of just "1".
-
-- Issue #23501: Argument Clinic now generates code into separate files by default.
 
 Tests
 -----
@@ -7105,6 +7229,16 @@ Tests
 
 - Issue #22390: test.regrtest now emits a warning if temporary files or
   directories are left after running a test.
+
+
+Build
+-----
+
+- Issue #23817: FreeBSD now uses "1.0" in the SOVERSION as other operating
+  systems, instead of just "1".
+
+- Issue #23501: Argument Clinic now generates code into separate files by default.
+
 
 Tools/Demos
 -----------
@@ -7129,10 +7263,12 @@ Tools/Demos
   if Argument Clinic processes the same symbol multiple times, and it's emitted
   at the end of all processing rather than immediately after the first use.
 
+
 C API
 -----
 
 - Issue #23998: PyImport_ReInitLock() now checks for lock allocation error
+
 
 
 What's New in Python 3.5.0 alpha 3?
@@ -7159,6 +7295,7 @@ Core and Builtins
 
 - Issue #23629: Fix the default __sizeof__ implementation for variable-sized
   objects.
+
 
 Library
 -------
@@ -7301,10 +7438,6 @@ Library
   The usage of os.scandir() reduces the number of calls to os.stat().
   Initial patch written by Ben Hoyt.
 
-Build
------
-
-- Issue #23585: make patchcheck will ensure the interpreter is built.
 
 Tests
 -----
@@ -7312,6 +7445,13 @@ Tests
 - Issue #23583: Added tests for standard IO streams in IDLE.
 
 - Issue #22289: Prevent test_urllib2net failures due to ftp connection timeout.
+
+
+Build
+-----
+
+- Issue #23585: make patchcheck will ensure the interpreter is built.
+
 
 Tools/Demos
 -----------
@@ -7321,8 +7461,9 @@ Tools/Demos
   management protocol).
 
 
-What's New in Python 3.5 alpha 2?
-=================================
+
+What's New in Python 3.5.0 alpha 2?
+===================================
 
 Release date: 2015-03-09
 
@@ -7332,6 +7473,7 @@ Core and Builtins
 - Issue #23571: PyObject_Call() and PyCFunction_Call() now raise a SystemError
   if a function returns a result and raises an exception. The SystemError is
   chained to the previous exception.
+
 
 Library
 -------
@@ -7364,9 +7506,9 @@ Library
   Original patch by Mark Lawrence.
 
 - Issue #23521: Corrected pure python implementation of timedelta division.
-
- * Eliminated OverflowError from timedelta * float for some floats;
- * Corrected rounding in timedlta true division.
+  
+  Eliminated OverflowError from timedelta * float for some floats;
+  Corrected rounding in timedlta true division.
 
 - Issue #21619: Popen objects no longer leave a zombie after exit in the with
   statement if the pipe was broken.  Patch by Martin Panter.
@@ -7437,6 +7579,7 @@ Library
 - Issue #23801: Fix issue where cgi.FieldStorage did not always ignore the
   entire preamble to a multipart body.
 
+
 Build
 -----
 
@@ -7445,11 +7588,6 @@ Build
 
 - Issue #23686: Update OS X 10.5 installer build to use OpenSSL 1.0.2a.
 
-C API
------
-
-- Issue #20204: Deprecation warning is now raised for builtin types without the
-  __module__ attribute.
 
 Windows
 -------
@@ -7461,8 +7599,16 @@ Windows
   Moore.
 
 
-What's New in Python 3.5 alpha 1?
-=================================
+C API
+-----
+
+- Issue #20204: Deprecation warning is now raised for builtin types without the
+  __module__ attribute.
+
+
+
+What's New in Python 3.5.0 alpha 1?
+===================================
 
 Release date: 2015-02-08
 
@@ -7692,6 +7838,7 @@ Core and Builtins
 
 - Issue #23165: Perform overflow checks before allocating memory in the
   _Py_char2wchar function.
+
 
 Library
 -------
@@ -8091,7 +8238,6 @@ Library
   in its showtraceback method, to match the built in interactive interpreter.
 
 - Issue #23392: Added tests for marshal C API that works with FILE*.
-
 
 - Issue #10510: distutils register and upload methods now use HTML standards
   compliant CRLF line endings.
@@ -8882,193 +9028,6 @@ Library
   Removed use of hard-coded MSS as it's an optimization that's no longer needed
   with Nagle disabled.
 
-IDLE
-----
-
-- Issue #20577: Configuration of the max line length for the FormatParagraph
-  extension has been moved from the General tab of the Idle preferences dialog
-  to the FormatParagraph tab of the Config Extensions dialog.
-  Patch by Tal Einat.
-
-- Issue #16893: Update Idle doc chapter to match current Idle and add new
-  information.
-
-- Issue #3068: Add Idle extension configuration dialog to Options menu.
-  Changes are written to HOME/.idlerc/config-extensions.cfg.
-  Original patch by Tal Einat.
-
-- Issue #16233: A module browser (File : Class Browser, Alt+C) requires an
-  editor window with a filename.  When Class Browser is requested otherwise,
-  from a shell, output window, or 'Untitled' editor, Idle no longer displays
-  an error box.  It now pops up an Open Module box (Alt+M). If a valid name
-  is entered and a module is opened, a corresponding browser is also opened.
-
-- Issue #4832: Save As to type Python files automatically adds .py to the
-  name you enter (even if your system does not display it).  Some systems
-  automatically add .txt when type is Text files.
-
-- Issue #21986: Code objects are not normally pickled by the pickle module.
-  To match this, they are no longer pickled when running under Idle.
-
-- Issue #17390: Adjust Editor window title; remove 'Python',
-  move version to end.
-
-- Issue #14105: Idle debugger breakpoints no longer disappear
-  when inserting or deleting lines.
-
-- Issue #17172: Turtledemo can now be run from Idle.
-  Currently, the entry is on the Help menu, but it may move to Run.
-  Patch by Ramchandra Apt and Lita Cho.
-
-- Issue #21765: Add support for non-ascii identifiers to HyperParser.
-
-- Issue #21940: Add unittest for WidgetRedirector. Initial patch by Saimadhav
-  Heblikar.
-
-- Issue #18592: Add unittest for SearchDialogBase. Patch by Phil Webster.
-
-- Issue #21694: Add unittest for ParenMatch. Patch by Saimadhav Heblikar.
-
-- Issue #21686: add unittest for HyperParser. Original patch by Saimadhav
-  Heblikar.
-
-- Issue #12387: Add missing upper(lower)case versions of default Windows key
-  bindings for Idle so Caps Lock does not disable them. Patch by Roger Serwy.
-
-- Issue #21695: Closing a Find-in-files output window while the search is
-  still in progress no longer closes Idle.
-
-- Issue #18910: Add unittest for textView. Patch by Phil Webster.
-
-- Issue #18292: Add unittest for AutoExpand. Patch by Saihadhav Heblikar.
-
-- Issue #18409: Add unittest for AutoComplete. Patch by Phil Webster.
-
-- Issue #21477: htest.py - Improve framework, complete set of tests.
-  Patches by Saimadhav Heblikar
-
-- Issue #18104: Add idlelib/idle_test/htest.py with a few sample tests to begin
-  consolidating and improving human-validated tests of Idle. Change other files
-  as needed to work with htest.  Running the module as __main__ runs all tests.
-
-- Issue #21139: Change default paragraph width to 72, the PEP 8 recommendation.
-
-- Issue #21284: Paragraph reformat test passes after user changes reformat width.
-
-- Issue #17654: Ensure IDLE menus are customized properly on OS X for
-  non-framework builds and for all variants of Tk.
-
-- Issue #23180: Rename IDLE "Windows" menu item to "Window".
-  Patch by Al Sweigart.
-
-Build
------
-
-- Issue #15506: Use standard PKG_PROG_PKG_CONFIG autoconf macro in the configure
-  script.
-
-- Issue #22935: Allow the ssl module to be compiled if openssl doesn't support
-  SSL 3.
-
-- Issue #22592: Drop support of the Borland C compiler to build Python. The
-  distutils module still supports it to build extensions.
-
-- Issue #22591: Drop support of MS-DOS, especially of the DJGPP compiler
-  (MS-DOS port of GCC).
-
-- Issue #16537: Check whether self.extensions is empty in setup.py. Patch by
-  Jonathan Hosmer.
-
-- Issue #22359: Remove incorrect uses of recursive make.  Patch by Jonas
-  Wagner.
-
-- Issue #21958: Define HAVE_ROUND when building with Visual Studio 2013 and
-  above.  Patch by Zachary Turner.
-
-- Issue #18093: the programs that embed the CPython runtime are now in a
-  separate "Programs" directory, rather than being kept in the Modules
-  directory.
-
-- Issue #15759: "make suspicious", "make linkcheck" and "make doctest" in Doc/
-  now display special message when and only when there are failures.
-
-- Issue #21141: The Windows build process no longer attempts to find Perl,
-  instead relying on OpenSSL source being configured and ready to build.  The
-  ``PCbuild\build_ssl.py`` script has been re-written and re-named to
-  ``PCbuild\prepare_ssl.py``, and takes care of configuring OpenSSL source
-  for both 32 and 64 bit platforms.  OpenSSL sources obtained from
-  svn.python.org will always be pre-configured and ready to build.
-
-- Issue #21037: Add a build option to enable AddressSanitizer support.
-
-- Issue #19962: The Windows build process now creates "python.bat" in the
-  root of the source tree, which passes all arguments through to the most
-  recently built interpreter.
-
-- Issue #21285: Refactor and fix curses configure check to always search
-  in a ncursesw directory.
-
-- Issue #15234: For BerkelyDB and Sqlite, only add the found library and
-  include directories if they aren't already being searched. This avoids
-  an explicit runtime library dependency.
-
-- Issue #17861: Tools/scripts/generate_opcode_h.py automatically regenerates
-  Include/opcode.h from Lib/opcode.py if the latter gets any change.
-
-- Issue #20644: OS X installer build support for documentation build changes
-  in 3.4.1: assume externally supplied sphinx-build is available in /usr/bin.
-
-- Issue #20022: Eliminate use of deprecated bundlebuilder in OS X builds.
-
-- Issue #15968: Incorporated Tcl, Tk, and Tix builds into the Windows build
-  solution.
-
-- Issue #17095: Fix Modules/Setup *shared* support.
-
-- Issue #21811: Anticipated fixes to support OS X versions > 10.9.
-
-- Issue #21166: Prevent possible segfaults and other random failures of
-  python --generate-posix-vars in pybuilddir.txt build target.
-
-- Issue #18096: Fix library order returned by python-config.
-
-- Issue #17219: Add library build dir for Python extension cross-builds.
-
-- Issue #22919: Windows build updated to support VC 14.0 (Visual Studio 2015),
-  which will be used for the official release.
-
-- Issue #21236: Build _msi.pyd with cabinet.lib instead of fci.lib
-
-- Issue #17128: Use private version of OpenSSL for OS X 10.5+ installer.
-
-C API
------
-
-- Issue #14203: Remove obsolete support for view==NULL in PyBuffer_FillInfo(),
-  bytearray_getbuffer(), bytesiobuf_getbuffer() and array_buffer_getbuf().
-  All functions now raise BufferError in that case.
-
-- Issue #22445: PyBuffer_IsContiguous() now implements precise contiguity
-  tests, compatible with NumPy's NPY_RELAXED_STRIDES_CHECKING compilation
-  flag.  Previously the function reported false negatives for corner cases.
-
-- Issue #22079: PyType_Ready() now checks that statically allocated type has
-  no dynamically allocated bases.
-
-- Issue #22453: Removed non-documented macro PyObject_REPR().
-
-- Issue #18395: Rename ``_Py_char2wchar()`` to :c:func:`Py_DecodeLocale`,
-  rename ``_Py_wchar2char()`` to :c:func:`Py_EncodeLocale`, and document
-  these functions.
-
-- Issue #21233: Add new C functions: PyMem_RawCalloc(), PyMem_Calloc(),
-  PyObject_Calloc(), _PyObject_GC_Calloc(). bytes(int) is now using
-  ``calloc()`` instead of ``malloc()`` for large objects which is faster and
-  use less memory.
-
-- Issue #20942: PyImport_ImportFrozenModuleObject() no longer sets __file__ to
-  match what importlib does; this affects _frozen_importlib as well as any
-  module loaded using imp.init_frozen().
 
 Documentation
 -------------
@@ -9109,6 +9068,7 @@ Documentation
   anywhere else.
 
 - Issue #19697: Document cases where __main__.__spec__ is None.
+
 
 Tests
 -----
@@ -9216,6 +9176,192 @@ Tests
 - Issue #23345: Prevent test_ssl failures with large OpenSSL patch level
   values (like 0.9.8zc).
 
+
+Build
+-----
+
+- Issue #15506: Use standard PKG_PROG_PKG_CONFIG autoconf macro in the configure
+  script.
+
+- Issue #22935: Allow the ssl module to be compiled if openssl doesn't support
+  SSL 3.
+
+- Issue #22592: Drop support of the Borland C compiler to build Python. The
+  distutils module still supports it to build extensions.
+
+- Issue #22591: Drop support of MS-DOS, especially of the DJGPP compiler
+  (MS-DOS port of GCC).
+
+- Issue #16537: Check whether self.extensions is empty in setup.py. Patch by
+  Jonathan Hosmer.
+
+- Issue #22359: Remove incorrect uses of recursive make.  Patch by Jonas
+  Wagner.
+
+- Issue #21958: Define HAVE_ROUND when building with Visual Studio 2013 and
+  above.  Patch by Zachary Turner.
+
+- Issue #18093: the programs that embed the CPython runtime are now in a
+  separate "Programs" directory, rather than being kept in the Modules
+  directory.
+
+- Issue #15759: "make suspicious", "make linkcheck" and "make doctest" in Doc/
+  now display special message when and only when there are failures.
+
+- Issue #21141: The Windows build process no longer attempts to find Perl,
+  instead relying on OpenSSL source being configured and ready to build.  The
+  ``PCbuild\build_ssl.py`` script has been re-written and re-named to
+  ``PCbuild\prepare_ssl.py``, and takes care of configuring OpenSSL source
+  for both 32 and 64 bit platforms.  OpenSSL sources obtained from
+  svn.python.org will always be pre-configured and ready to build.
+
+- Issue #21037: Add a build option to enable AddressSanitizer support.
+
+- Issue #19962: The Windows build process now creates "python.bat" in the
+  root of the source tree, which passes all arguments through to the most
+  recently built interpreter.
+
+- Issue #21285: Refactor and fix curses configure check to always search
+  in a ncursesw directory.
+
+- Issue #15234: For BerkelyDB and Sqlite, only add the found library and
+  include directories if they aren't already being searched. This avoids
+  an explicit runtime library dependency.
+
+- Issue #17861: Tools/scripts/generate_opcode_h.py automatically regenerates
+  Include/opcode.h from Lib/opcode.py if the latter gets any change.
+
+- Issue #20644: OS X installer build support for documentation build changes
+  in 3.4.1: assume externally supplied sphinx-build is available in /usr/bin.
+
+- Issue #20022: Eliminate use of deprecated bundlebuilder in OS X builds.
+
+- Issue #15968: Incorporated Tcl, Tk, and Tix builds into the Windows build
+  solution.
+
+- Issue #17095: Fix Modules/Setup *shared* support.
+
+- Issue #21811: Anticipated fixes to support OS X versions > 10.9.
+
+- Issue #21166: Prevent possible segfaults and other random failures of
+  python --generate-posix-vars in pybuilddir.txt build target.
+
+- Issue #18096: Fix library order returned by python-config.
+
+- Issue #17219: Add library build dir for Python extension cross-builds.
+
+- Issue #22919: Windows build updated to support VC 14.0 (Visual Studio 2015),
+  which will be used for the official release.
+
+- Issue #21236: Build _msi.pyd with cabinet.lib instead of fci.lib
+
+- Issue #17128: Use private version of OpenSSL for OS X 10.5+ installer.
+
+
+Windows
+-------
+
+- Issue #23260: Update Windows installer
+
+- The bundled version of Tcl/Tk has been updated to 8.6.3.  The most visible
+  result of this change is the addition of new native file dialogs when
+  running on Windows Vista or newer.  See Tcl/Tk's TIP 432 for more
+  information.  Also, this version of Tcl/Tk includes support for Windows 10.
+
+- Issue #17896: The Windows build scripts now expect external library sources
+  to be in ``PCbuild\..\externals`` rather than ``PCbuild\..\..``.
+
+- Issue #17717: The Windows build scripts now use a copy of NASM pulled from
+  svn.python.org to build OpenSSL.
+
+- Issue #21907: Improved the batch scripts provided for building Python.
+
+- Issue #22644: The bundled version of OpenSSL has been updated to 1.0.1j.
+
+- Issue #10747: Use versioned labels in the Windows start menu.
+  Patch by Olive Kilburn.
+
+
+IDLE
+----
+
+- Issue #20577: Configuration of the max line length for the FormatParagraph
+  extension has been moved from the General tab of the Idle preferences dialog
+  to the FormatParagraph tab of the Config Extensions dialog.
+  Patch by Tal Einat.
+
+- Issue #16893: Update Idle doc chapter to match current Idle and add new
+  information.
+
+- Issue #3068: Add Idle extension configuration dialog to Options menu.
+  Changes are written to HOME/.idlerc/config-extensions.cfg.
+  Original patch by Tal Einat.
+
+- Issue #16233: A module browser (File : Class Browser, Alt+C) requires an
+  editor window with a filename.  When Class Browser is requested otherwise,
+  from a shell, output window, or 'Untitled' editor, Idle no longer displays
+  an error box.  It now pops up an Open Module box (Alt+M). If a valid name
+  is entered and a module is opened, a corresponding browser is also opened.
+
+- Issue #4832: Save As to type Python files automatically adds .py to the
+  name you enter (even if your system does not display it).  Some systems
+  automatically add .txt when type is Text files.
+
+- Issue #21986: Code objects are not normally pickled by the pickle module.
+  To match this, they are no longer pickled when running under Idle.
+
+- Issue #17390: Adjust Editor window title; remove 'Python',
+  move version to end.
+
+- Issue #14105: Idle debugger breakpoints no longer disappear
+  when inserting or deleting lines.
+
+- Issue #17172: Turtledemo can now be run from Idle.
+  Currently, the entry is on the Help menu, but it may move to Run.
+  Patch by Ramchandra Apt and Lita Cho.
+
+- Issue #21765: Add support for non-ascii identifiers to HyperParser.
+
+- Issue #21940: Add unittest for WidgetRedirector. Initial patch by Saimadhav
+  Heblikar.
+
+- Issue #18592: Add unittest for SearchDialogBase. Patch by Phil Webster.
+
+- Issue #21694: Add unittest for ParenMatch. Patch by Saimadhav Heblikar.
+
+- Issue #21686: add unittest for HyperParser. Original patch by Saimadhav
+  Heblikar.
+
+- Issue #12387: Add missing upper(lower)case versions of default Windows key
+  bindings for Idle so Caps Lock does not disable them. Patch by Roger Serwy.
+
+- Issue #21695: Closing a Find-in-files output window while the search is
+  still in progress no longer closes Idle.
+
+- Issue #18910: Add unittest for textView. Patch by Phil Webster.
+
+- Issue #18292: Add unittest for AutoExpand. Patch by Saihadhav Heblikar.
+
+- Issue #18409: Add unittest for AutoComplete. Patch by Phil Webster.
+
+- Issue #21477: htest.py - Improve framework, complete set of tests.
+  Patches by Saimadhav Heblikar
+
+- Issue #18104: Add idlelib/idle_test/htest.py with a few sample tests to begin
+  consolidating and improving human-validated tests of Idle. Change other files
+  as needed to work with htest.  Running the module as __main__ runs all tests.
+
+- Issue #21139: Change default paragraph width to 72, the PEP 8 recommendation.
+
+- Issue #21284: Paragraph reformat test passes after user changes reformat width.
+
+- Issue #17654: Ensure IDLE menus are customized properly on OS X for
+  non-framework builds and for all variants of Tk.
+
+- Issue #23180: Rename IDLE "Windows" menu item to "Window".
+  Patch by Al Sweigart.
+
+
 Tools/Demos
 -----------
 
@@ -9256,31 +9402,34 @@ Tools/Demos
 - Issue #20535: PYTHONWARNING no longer affects the run_tests.py script.
   Patch by Arfrever Frehtes Taifersar Arahesis.
 
-Windows
--------
 
-- Issue #23260: Update Windows installer
+C API
+-----
 
-- The bundled version of Tcl/Tk has been updated to 8.6.3.  The most visible
-  result of this change is the addition of new native file dialogs when
-  running on Windows Vista or newer.  See Tcl/Tk's TIP 432 for more
-  information.  Also, this version of Tcl/Tk includes support for Windows 10.
+- Issue #14203: Remove obsolete support for view==NULL in PyBuffer_FillInfo(),
+  bytearray_getbuffer(), bytesiobuf_getbuffer() and array_buffer_getbuf().
+  All functions now raise BufferError in that case.
 
-- Issue #17896: The Windows build scripts now expect external library sources
-  to be in ``PCbuild\..\externals`` rather than ``PCbuild\..\..``.
+- Issue #22445: PyBuffer_IsContiguous() now implements precise contiguity
+  tests, compatible with NumPy's NPY_RELAXED_STRIDES_CHECKING compilation
+  flag.  Previously the function reported false negatives for corner cases.
 
-- Issue #17717: The Windows build scripts now use a copy of NASM pulled from
-  svn.python.org to build OpenSSL.
+- Issue #22079: PyType_Ready() now checks that statically allocated type has
+  no dynamically allocated bases.
 
-- Issue #21907: Improved the batch scripts provided for building Python.
+- Issue #22453: Removed non-documented macro PyObject_REPR().
 
-- Issue #22644: The bundled version of OpenSSL has been updated to 1.0.1j.
+- Issue #18395: Rename ``_Py_char2wchar()`` to :c:func:`Py_DecodeLocale`,
+  rename ``_Py_wchar2char()`` to :c:func:`Py_EncodeLocale`, and document
+  these functions.
 
-- Issue #10747: Use versioned labels in the Windows start menu.
-  Patch by Olive Kilburn.
+- Issue #21233: Add new C functions: PyMem_RawCalloc(), PyMem_Calloc(),
+  PyObject_Calloc(), _PyObject_GC_Calloc(). bytes(int) is now using
+  ``calloc()`` instead of ``malloc()`` for large objects which is faster and
+  use less memory.
 
-- Issue #22980: .pyd files with a version and platform tag (for example,
-  ".cp35-win32.pyd") will now be loaded in preference to those without tags.
+- Issue #20942: PyImport_ImportFrozenModuleObject() no longer sets __file__ to
+  match what importlib does; this affects _frozen_importlib as well as any
+  module loaded using imp.init_frozen().
 
 
-**(For information about older versions, consult the HISTORY file.)**

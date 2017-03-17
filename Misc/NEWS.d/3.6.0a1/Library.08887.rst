@@ -1,0 +1,1 @@
+Issue #25761: Improved detecting errors in broken pickle data.

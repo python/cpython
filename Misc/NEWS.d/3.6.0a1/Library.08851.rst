@@ -1,0 +1,1 @@
+Issue #25390: typing: Don't crash on Union[str, Pattern].

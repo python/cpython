@@ -1,0 +1,3 @@
+Issue #28538: Fix the compilation error that occurs because if_nameindex() is
+available on Android API level 24, but the if_nameindex structure is not
+defined.

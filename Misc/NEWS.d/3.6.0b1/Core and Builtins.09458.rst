@@ -1,0 +1,1 @@
+Issue #27078: Added BUILD_STRING opcode.  Optimized f-strings evaluation.

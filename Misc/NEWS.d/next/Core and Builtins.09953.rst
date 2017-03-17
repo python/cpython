@@ -1,0 +1,2 @@
+Issue #28648: Fixed crash in Py_DecodeLocale() in debug build on Mac OS X
+when decode astral characters.  Patch by Xiang Zhang.

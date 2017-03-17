@@ -1,0 +1,2 @@
+bpo-28692: Using non-integer value for selecting a plural form in gettext is
+now deprecated.

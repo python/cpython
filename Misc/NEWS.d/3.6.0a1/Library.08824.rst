@@ -1,0 +1,1 @@
+Issue #24633: site-packages/README -> README.txt.

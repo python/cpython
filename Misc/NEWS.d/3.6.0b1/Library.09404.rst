@@ -1,0 +1,1 @@
+email.generator.DecodedGenerator now supports the policy keyword.

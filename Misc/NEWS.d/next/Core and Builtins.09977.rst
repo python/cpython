@@ -1,0 +1,2 @@
+Issue #29049: Call _PyObject_GC_TRACK() lazily when calling Python function.
+Calling function is up to 5% faster.

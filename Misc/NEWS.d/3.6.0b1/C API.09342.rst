@@ -1,0 +1,1 @@
+Issue #26900: Excluded underscored names and other private API from limited API.

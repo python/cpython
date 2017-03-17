@@ -1,0 +1,1 @@
+Issue #21271: New keyword only parameters in reset_mock call.

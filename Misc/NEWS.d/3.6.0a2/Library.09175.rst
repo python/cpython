@@ -1,0 +1,1 @@
+Issue #27294: Improved repr for Tkinter event objects.

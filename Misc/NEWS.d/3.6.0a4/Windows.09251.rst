@@ -1,0 +1,1 @@
+Issue #27610: Adds PEP 514 metadata to Windows installer

@@ -1,0 +1,1 @@
+Issue #27041: asyncio: Add loop.create_future method

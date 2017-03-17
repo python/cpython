@@ -1,0 +1,1 @@
+Issue #28226: compileall now supports pathlib.

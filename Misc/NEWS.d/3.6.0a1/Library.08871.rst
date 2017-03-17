@@ -1,0 +1,1 @@
+Issue #25691: Fixed crash on deleting ElementTree.Element attributes.

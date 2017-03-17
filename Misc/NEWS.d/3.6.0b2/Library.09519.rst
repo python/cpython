@@ -1,0 +1,2 @@
+Issue #27611: Fixed support of default root window in the tkinter.tix module.
+Added the master parameter in the DisplayStyle constructor.

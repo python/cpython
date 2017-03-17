@@ -1,0 +1,1 @@
+Issue #28183: Optimize and cleanup dict iteration.

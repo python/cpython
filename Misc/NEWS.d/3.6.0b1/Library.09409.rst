@@ -1,0 +1,1 @@
+Issue #433028: Added support of modifier spans in regular expressions.

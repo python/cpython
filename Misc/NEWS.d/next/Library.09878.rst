@@ -1,0 +1,2 @@
+Issue #29218: Unused install_misc command is now removed.  It has been
+documented as unused since 2000.  Patch by Eric N. Vander Weele.

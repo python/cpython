@@ -1,0 +1,1 @@
+Issue 28923: Remove editor artifacts from Tix.py.

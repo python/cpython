@@ -1,0 +1,2 @@
+bpo-29271: Fix Task.current_task and Task.all_tasks implemented in C
+to accept None argument as their pure Python implementation.

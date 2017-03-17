@@ -1,0 +1,3 @@
+Issue #26937: The chown() method of the tarfile.TarFile class does not fail
+now when the grp module cannot be imported, as for example on Android
+platforms.

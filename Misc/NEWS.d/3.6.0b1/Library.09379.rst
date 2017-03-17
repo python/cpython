@@ -1,0 +1,1 @@
+Issue #25387: Check return value of winsound.MessageBeep.

@@ -1,0 +1,2 @@
+Issue #26944: Fix test_posix for Android where 'id -G' is entirely wrong or
+missing the effective gid.

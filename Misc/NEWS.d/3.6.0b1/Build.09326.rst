@@ -1,0 +1,1 @@
+Issue #21122: Fix LTO builds on OS X.

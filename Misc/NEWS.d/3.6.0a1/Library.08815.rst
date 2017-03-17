@@ -1,0 +1,1 @@
+Issue #8585: improved tests for zipimporter2. Patch from Mark Lawrence.

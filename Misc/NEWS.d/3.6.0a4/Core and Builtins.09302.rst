@@ -1,0 +1,1 @@
+Issue #27083: Respect the PYTHONCASEOK environment variable under Windows.

@@ -1,0 +1,1 @@
+Issue #29326: Ignores blank lines in ._pth files (Patch by Alexey Izbyshev)

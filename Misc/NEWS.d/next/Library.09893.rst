@@ -1,0 +1,1 @@
+bpo-29376: Fix assertion error in threading._DummyThread.is_alive().

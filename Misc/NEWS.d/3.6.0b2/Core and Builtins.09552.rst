@@ -1,0 +1,1 @@
+Issue #27942: String constants now interned recursively in tuples and frozensets.

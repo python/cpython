@@ -1,0 +1,1 @@
+Issue #28071: Add early-out for differencing from an empty set.

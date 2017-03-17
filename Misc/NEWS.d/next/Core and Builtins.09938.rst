@@ -1,0 +1,2 @@
+Issue #28376: The type of long range iterator is now registered as Iterator.
+Patch by Oren Milman.

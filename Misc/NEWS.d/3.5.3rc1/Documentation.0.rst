@@ -1,0 +1,2 @@
+- Issue #28513: Documented command-line interface of zipfile.
+

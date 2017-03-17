@@ -1,0 +1,1 @@
+Issue #26307: The profile-opt build now applies PGO to the built-in modules.

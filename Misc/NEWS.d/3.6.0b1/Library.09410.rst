@@ -1,0 +1,1 @@
+Issue #23591: Add Flag, IntFlag, and auto() to enum module.

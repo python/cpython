@@ -1,0 +1,1 @@
+Issue #25688: Fixed file leak in ElementTree.iterparse() raising an error.

@@ -1,0 +1,1 @@
+Issue #28023: Fix python-gdb.py didn't support new dict implementation.

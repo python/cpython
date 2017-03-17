@@ -1,0 +1,1 @@
+Issue #27932: Prevent memory leak in win32_ver().

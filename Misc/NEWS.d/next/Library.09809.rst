@@ -1,0 +1,2 @@
+Issue #24452: Make webbrowser support Chrome on Mac OS X. Patch by
+Ned Batchelder.

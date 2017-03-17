@@ -1,0 +1,1 @@
+Issue #25199: Idle: add synchronization comments for future maintainers.

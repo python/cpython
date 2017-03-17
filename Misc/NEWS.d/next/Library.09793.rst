@@ -1,0 +1,2 @@
+Issue #28314: Fix function declaration (C flags) for the getiterator() method
+of xml.etree.ElementTree.Element.

@@ -1,0 +1,1 @@
+Issue #27034: Removed deprecated class asynchat.fifo.

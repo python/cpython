@@ -1,0 +1,1 @@
+Issue #26182: Fix a refleak in code that raises DeprecationWarning.

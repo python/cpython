@@ -1,0 +1,2 @@
+Issue #28120: Fix dict.pop() for splitted dictionary when trying to remove a
+"pending key" (Not yet inserted in split-table). Patch by Xiang Zhang.

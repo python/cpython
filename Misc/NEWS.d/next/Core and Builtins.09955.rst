@@ -1,0 +1,2 @@
+Issue #28746: Fix the set_inheritable() file descriptor method on platforms
+that do not have the ioctl FIOCLEX and FIONCLEX commands.

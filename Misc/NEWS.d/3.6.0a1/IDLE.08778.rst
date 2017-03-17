@@ -1,0 +1,1 @@
+Issue #25225: Condense and rewrite Idle doc section on text colors.

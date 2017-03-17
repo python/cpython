@@ -1,0 +1,1 @@
+Issue #26709: Fixed Y2038 problem in loading binary PLists.

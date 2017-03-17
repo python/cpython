@@ -1,0 +1,1 @@
+Issue #1602: Windows console doesn't input or print Unicode (PEP 528)

@@ -1,0 +1,2 @@
+bpo-28598: Support __rmod__ for subclasses of str being called before
+str.__mod__.  Patch by Martijn Pieters.

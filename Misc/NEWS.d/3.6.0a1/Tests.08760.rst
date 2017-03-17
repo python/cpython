@@ -1,0 +1,1 @@
+Issue #26015: Added new tests for pickling iterators of mutable sequences.

@@ -1,0 +1,1 @@
+Issue #26798: Add BLAKE2 (blake2b and blake2s) to hashlib.

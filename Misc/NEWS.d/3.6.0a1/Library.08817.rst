@@ -1,0 +1,1 @@
+Issue #13938: 2to3 converts StringTypes to a tuple. Patch from Mark Hammond.

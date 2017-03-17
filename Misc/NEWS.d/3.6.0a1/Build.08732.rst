@@ -1,0 +1,1 @@
+Issue #25136: Support Apple Xcode 7's new textual SDK stub libraries.

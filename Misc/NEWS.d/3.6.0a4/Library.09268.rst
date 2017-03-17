@@ -1,0 +1,1 @@
+Issue #27533: Release GIL in nt._isdir

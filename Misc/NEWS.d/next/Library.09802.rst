@@ -1,0 +1,1 @@
+Issue #28321: Fixed writing non-BMP characters with binary format in plistlib.

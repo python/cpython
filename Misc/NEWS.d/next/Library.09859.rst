@@ -1,0 +1,1 @@
+Issue #29079: Prevent infinite loop in pathlib.resolve() on Windows

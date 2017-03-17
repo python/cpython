@@ -1,0 +1,2 @@
+Issue #28427: old keys should not remove new values from
+WeakValueDictionary when collecting from another thread.

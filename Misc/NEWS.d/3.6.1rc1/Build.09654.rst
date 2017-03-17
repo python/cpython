@@ -1,0 +1,1 @@
+Issue #28849: Do not define sys.implementation._multiarch on Android.

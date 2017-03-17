@@ -1,0 +1,1 @@
+Issue #27044: Add ConfigDialog.remove_var_callbacks to stop memory leaks.

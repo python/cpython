@@ -1,0 +1,1 @@
+Issue #28005: Allow ImportErrors in encoding implementation to propagate.

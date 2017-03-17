@@ -1,0 +1,3 @@
+Issue #28275: Fixed possible use after free in the decompress()
+methods of the LZMADecompressor and BZ2Decompressor classes.
+Original patch by John Leitch.

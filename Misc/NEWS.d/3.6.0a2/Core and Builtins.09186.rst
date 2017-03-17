@@ -1,0 +1,1 @@
+Issue #27140: Added BUILD_CONST_KEY_MAP opcode.

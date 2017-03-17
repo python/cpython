@@ -1,0 +1,1 @@
+Issue #25441: asyncio: Raise error from drain() when socket is closed.

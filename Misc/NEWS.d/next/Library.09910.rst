@@ -1,0 +1,2 @@
+bpo-8256: Fixed possible failing or crashing input() if attributes "encoding"
+or "errors" of sys.stdin or sys.stdout are not set or are not strings.

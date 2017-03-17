@@ -1,0 +1,1 @@
+Issue #28735: Fixed the comparison of mock.MagickMock with mock.ANY.

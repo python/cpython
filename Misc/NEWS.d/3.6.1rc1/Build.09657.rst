@@ -1,0 +1,2 @@
+Issue #28762: lockf() is available on Android API level 24, but the F_LOCK
+macro is not defined in android-ndk-r13.

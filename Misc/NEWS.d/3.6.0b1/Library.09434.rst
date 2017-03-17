@@ -1,0 +1,1 @@
+Issue #28732: Fix crash in os.spawnv() with no elements in args

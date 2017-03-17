@@ -1,0 +1,6 @@
+Issue #28253: Fixed calendar functions for extreme months: 0001-01
+and 9999-12.
+
+Methods itermonthdays() and itermonthdays2() are reimplemented so
+that they don't call itermonthdates() which can cause datetime.date
+under/overflow.

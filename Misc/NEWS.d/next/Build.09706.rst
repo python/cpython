@@ -1,0 +1,2 @@
+Issue #21085: Add configure check for siginfo_t.si_band, which Cygwin does
+not provide.  Patch by Masayuki Yamamoto with review and rebase by Erik Bray.

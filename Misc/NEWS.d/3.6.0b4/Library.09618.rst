@@ -1,0 +1,1 @@
+Issue #28600: Optimize loop.call_soon.

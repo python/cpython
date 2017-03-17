@@ -1,0 +1,1 @@
+Issue #26186: Remove an invalid type check in importlib.util.LazyLoader.

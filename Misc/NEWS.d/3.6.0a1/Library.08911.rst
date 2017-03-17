@@ -1,0 +1,1 @@
+Issue #25850: Use cross-compilation by default for 64-bit Windows.

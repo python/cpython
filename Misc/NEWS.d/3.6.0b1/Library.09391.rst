@@ -1,0 +1,1 @@
+Eliminate a tautological-pointer-compare warning in _scproxy.c.

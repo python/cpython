@@ -1,0 +1,1 @@
+Issue #27138: Fix the doc comment for FileFinder.find_spec().

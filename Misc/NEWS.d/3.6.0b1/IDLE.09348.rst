@@ -1,0 +1,1 @@
+Issue #27922: Stop IDLE tests from 'flashing' gui widgets on the screen.

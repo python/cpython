@@ -1,0 +1,1 @@
+bpo-29579: Removes readme.txt from the installer.

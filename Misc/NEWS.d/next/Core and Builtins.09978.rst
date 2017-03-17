@@ -1,0 +1,1 @@
+Issue #29159: Fix regression in bytes(x) when x.__index__() raises Exception.

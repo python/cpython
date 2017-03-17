@@ -1,0 +1,1 @@
+Issue #29392: Prevent crash when passing invalid arguments into msvcrt module.

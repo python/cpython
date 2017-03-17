@@ -1,0 +1,1 @@
+Issue #17941: Add a *module* parameter to collections.namedtuple().

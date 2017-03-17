@@ -1,0 +1,1 @@
+Issue #26991: Fix possible refleak when creating a function with annotations.

@@ -1,0 +1,1 @@
+Issue #26359: Rename --with-optimiations to --enable-optimizations.

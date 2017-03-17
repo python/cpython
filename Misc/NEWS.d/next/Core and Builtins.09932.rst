@@ -1,0 +1,1 @@
+Issue #28350: String constants with null character no longer interned.

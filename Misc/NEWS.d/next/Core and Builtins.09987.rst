@@ -1,0 +1,2 @@
+bpo-29347: Fixed possibly dereferencing undefined pointers
+when creating weakref objects.

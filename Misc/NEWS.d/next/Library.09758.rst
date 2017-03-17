@@ -1,0 +1,1 @@
+Issue #27972: Prohibit Tasks to await on themselves.

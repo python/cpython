@@ -1,0 +1,1 @@
+Issue #27774: Fix possible Py_DECREF on unowned object in _sre.

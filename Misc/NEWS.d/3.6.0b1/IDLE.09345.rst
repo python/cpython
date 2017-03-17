@@ -1,0 +1,1 @@
+Add version to title of IDLE help window.

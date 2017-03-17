@@ -1,0 +1,1 @@
+Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].

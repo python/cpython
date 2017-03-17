@@ -1,0 +1,2 @@
+Issue #28380: unittest.mock Mock autospec functions now properly support
+assert_called, assert_not_called, and assert_called_once.

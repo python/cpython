@@ -1,0 +1,2 @@
+Issue #28322: Fixed possible crashes when unpickle itertools objects from
+incorrect pickle data.  Based on patch by John Leitch.

@@ -1,0 +1,2 @@
+Issue #28469: timeit now uses the sequence 1, 2, 5, 10, 20, 50,... instead
+of 1, 10, 100,... for autoranging.

@@ -1,0 +1,1 @@
+Issue #26513: Fixes platform module detection of Windows Server

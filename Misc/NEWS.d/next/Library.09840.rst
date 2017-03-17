@@ -1,0 +1,2 @@
+Issue #20572: Remove the subprocess.Popen.wait endtime parameter.  It was
+deprecated in 3.4 and undocumented prior to that.

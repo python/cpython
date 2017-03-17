@@ -1,0 +1,1 @@
+Issue #26661: setup.py now detects system libffi with multiarch wrapper.

@@ -1,0 +1,1 @@
+Issue #23606: Adds note to ctypes documentation regarding cdll.msvcrt.

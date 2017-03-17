@@ -1,0 +1,1 @@
+Issue #28229: lzma module now supports pathlib.

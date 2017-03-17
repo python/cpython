@@ -1,0 +1,1 @@
+Issue #12885: Fix error when distutils encounters symlink.

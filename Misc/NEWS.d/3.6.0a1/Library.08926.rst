@@ -1,0 +1,1 @@
+Issue #25911: Restored support of bytes paths in os.walk() on Windows.

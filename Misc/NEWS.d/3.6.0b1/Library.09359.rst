@@ -1,0 +1,1 @@
+Issue #21718: cursor.description is now available for queries using CTEs.

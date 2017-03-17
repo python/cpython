@@ -1,0 +1,1 @@
+Issue #27744: Add AF_ALG (Linux Kernel crypto) to socket module.

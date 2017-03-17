@@ -1,0 +1,3 @@
+Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
+improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
+Manuel Krebber, and Łukasz Langa.

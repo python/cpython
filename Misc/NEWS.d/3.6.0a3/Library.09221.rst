@@ -1,0 +1,1 @@
+Issue #27330: Fixed possible leaks in the ctypes module.

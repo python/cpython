@@ -1,0 +1,1 @@
+Issue #27883: Update sqlite to 3.14.1.0 on Windows.

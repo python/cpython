@@ -1,0 +1,1 @@
+Issue #21272: Use _sysconfigdata.py to initialize distutils.sysconfig.

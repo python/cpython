@@ -1,0 +1,1 @@
+Issue #25660: Fix TAB key behaviour in REPL with readline.

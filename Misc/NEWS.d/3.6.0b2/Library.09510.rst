@@ -1,0 +1,3 @@
+Issue #22493: Warning message emitted by using inline flags in the middle of
+regular expression now contains a (truncated) regex pattern.
+Patch by Tim Graham.

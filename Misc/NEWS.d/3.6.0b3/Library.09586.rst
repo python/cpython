@@ -1,0 +1,1 @@
+Issue #28353: os.fwalk() no longer fails on broken links.

@@ -1,0 +1,1 @@
+Issue #19883: Fixed possible integer overflows in zipimport.

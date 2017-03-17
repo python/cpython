@@ -1,0 +1,1 @@
+Issue #28248: Update Windows build and OS X installers to use OpenSSL 1.0.2j.

@@ -1,0 +1,1 @@
+Issue #28720: Add collections.abc.AsyncGenerator.

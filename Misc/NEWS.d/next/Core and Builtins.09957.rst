@@ -1,0 +1,1 @@
+Issue #28532: Show sys.version when -V option is supplied twice.

@@ -1,0 +1,1 @@
+Issue #26288: Optimize PyLong_AsDouble.

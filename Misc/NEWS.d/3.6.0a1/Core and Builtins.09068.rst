@@ -1,0 +1,1 @@
+Issue #25961: Disallowed null characters in the type name.

@@ -1,0 +1,1 @@
+Issue #23977: Add more asserts to test_delegator.

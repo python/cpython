@@ -1,0 +1,1 @@
+Issue #27942: Fix memory leak in codeobject.c

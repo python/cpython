@@ -1,0 +1,1 @@
+Issue #28070: Fixed parsing inline verbose flag in regular expressions.

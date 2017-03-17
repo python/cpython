@@ -1,0 +1,2 @@
+bpo-29576: Improve some deprecations in importlib. Some deprecated methods
+now emit DeprecationWarnings and have better descriptive messages.

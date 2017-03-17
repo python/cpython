@@ -1,0 +1,1 @@
+Issue #28488: shutil.make_archive() no longer adds entry "./" to ZIP archive.

@@ -1,0 +1,2 @@
+Issue #20191: Fixed a crash in resource.prlimit() when passing a sequence that
+doesn't own its elements as limits.

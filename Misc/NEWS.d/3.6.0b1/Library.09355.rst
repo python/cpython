@@ -1,0 +1,1 @@
+Issue #27573: exit message for code.interact is now configurable.

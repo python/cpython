@@ -1,0 +1,2 @@
+bpo-26915: index() and count() methods of collections.abc.Sequence now
+check identity before checking equality when do comparisons.

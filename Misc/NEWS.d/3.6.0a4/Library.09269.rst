@@ -1,0 +1,1 @@
+Issue #1621: Avoid signed int negation overflow in the "audioop" module.

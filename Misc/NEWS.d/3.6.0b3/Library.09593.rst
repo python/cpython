@@ -1,0 +1,1 @@
+Issue #28549: Fixed segfault in curses's addch() with ncurses6.

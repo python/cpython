@@ -1,0 +1,1 @@
+Issue #25935: Garbage collector now breaks reference loops with OrderedDict.

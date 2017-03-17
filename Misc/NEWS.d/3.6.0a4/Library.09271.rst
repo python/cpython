@@ -1,0 +1,1 @@
+Expose the EPOLLEXCLUSIVE constant (when it is defined) in the select module.

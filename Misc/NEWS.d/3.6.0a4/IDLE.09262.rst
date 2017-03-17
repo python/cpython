@@ -1,0 +1,1 @@
+Issue #27620: Escape key now closes Query box as cancelled.

@@ -1,0 +1,1 @@
+Issue #19884: Avoid spurious output on OS X with Gnu Readline.

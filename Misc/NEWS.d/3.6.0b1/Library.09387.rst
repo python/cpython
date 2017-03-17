@@ -1,0 +1,1 @@
+Issue #18844: Add random.choices().

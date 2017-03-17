@@ -1,0 +1,1 @@
+Issue #27040: Add loop.get_exception_handler method

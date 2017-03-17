@@ -1,0 +1,1 @@
+Issue #27427: Additional tests for the math module. Patch by Francisco Couzo.

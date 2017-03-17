@@ -1,0 +1,2 @@
+Issue #27222: Clean up redundant code in long_rshift function. Thanks
+Oren Milman.

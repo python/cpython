@@ -1,0 +1,1 @@
+Issue #27477: IDLE search dialogs now use ttk widgets.

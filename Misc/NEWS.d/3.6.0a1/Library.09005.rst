@@ -1,0 +1,1 @@
+Issue #26711: Fixed the comparison of plistlib.Data with other types.

@@ -1,0 +1,1 @@
+Issue #28082: Convert re flag constants to IntFlag.

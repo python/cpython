@@ -1,0 +1,1 @@
+Issue #25022: Removed very outdated PC/example_nt/ directory.

@@ -1,0 +1,1 @@
+Issue #26482: Allowed pickling recursive dequeues.

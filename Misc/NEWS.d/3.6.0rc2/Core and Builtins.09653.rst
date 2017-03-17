@@ -1,0 +1,3 @@
+Issue #28147: Fix a memory leak in split-table dictionaries: setattr()
+must not convert combined table into split table. Patch written by INADA
+Naoki.

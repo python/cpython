@@ -1,0 +1,1 @@
+Issue #29192: Removed deprecated features in the http.cookies module.

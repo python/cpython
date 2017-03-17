@@ -1,0 +1,2 @@
+Issue #29100: Fix datetime.fromtimestamp() regression introduced in Python
+3.6.0: check minimum and maximum years.

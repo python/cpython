@@ -1,0 +1,1 @@
+Issue #25778: winreg does not truncate string correctly (Patch by Eryk Sun)

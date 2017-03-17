@@ -1,0 +1,1 @@
+Issue #25718: Fixed copying object with state with boolean value is false.

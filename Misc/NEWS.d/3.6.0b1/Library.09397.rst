@@ -1,0 +1,1 @@
+Issue #26667: Support path-like objects in importlib.util.

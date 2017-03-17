@@ -1,0 +1,1 @@
+Issue #28509: dict.update() no longer allocate unnecessary large memory.

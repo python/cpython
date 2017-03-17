@@ -1,0 +1,1 @@
+Issue #25584: Added "escape" to the __all__ list in the glob module.

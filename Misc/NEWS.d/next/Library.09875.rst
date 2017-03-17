@@ -1,0 +1,2 @@
+Issue #29335: Fix subprocess.Popen.wait() when the child process has
+exited to a stopped instead of terminated state (ex: when under ptrace).

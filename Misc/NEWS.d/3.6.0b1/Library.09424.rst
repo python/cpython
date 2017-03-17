@@ -1,0 +1,1 @@
+Issue #19500: Add client-side SSL session resumption to the ssl module.

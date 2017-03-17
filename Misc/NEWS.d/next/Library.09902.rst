@@ -1,0 +1,1 @@
+bpo-28682: Added support for bytes paths in os.fwalk().

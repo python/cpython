@@ -1,0 +1,1 @@
+Update OS X installer to use SQLite 3.14.1 and XZ 5.2.2.

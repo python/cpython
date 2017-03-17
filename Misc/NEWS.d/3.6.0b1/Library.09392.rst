@@ -1,0 +1,1 @@
+Issue #16113: Add SHA-3 and SHAKE support to hashlib module.

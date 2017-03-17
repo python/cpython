@@ -1,0 +1,1 @@
+Issue #27456: asyncio: Set TCP_NODELAY by default.

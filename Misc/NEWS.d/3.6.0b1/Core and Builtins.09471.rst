@@ -1,0 +1,1 @@
+Issue #28046: Remove platform-specific directories from sys.path.

@@ -1,0 +1,2 @@
+Issue #28748: Private variable _Py_PackageContext is now of type ``const char *``
+rather of ``char *``.

@@ -1,0 +1,1 @@
+Issue #27472: Add test.support.unix_shell as the path to the default shell.

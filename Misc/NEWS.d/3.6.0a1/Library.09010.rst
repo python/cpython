@@ -1,0 +1,1 @@
+Issue #26881: The modulefinder module now supports extended opcode arguments.

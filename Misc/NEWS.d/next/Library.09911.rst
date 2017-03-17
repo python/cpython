@@ -1,0 +1,2 @@
+bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
+are not strings.  Patch by Michael Seifert.

@@ -1,0 +1,1 @@
+Issue #28752: Restored the __reduce__() methods of datetime objects.

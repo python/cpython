@@ -1,0 +1,1 @@
+Issue #29416: Prevent infinite loop in pathlib.Path.mkdir

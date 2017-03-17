@@ -1,0 +1,1 @@
+Issue #17884: Python now requires systems with inttypes.h and stdint.h

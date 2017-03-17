@@ -1,0 +1,1 @@
+Issue #27760: Fix possible integer overflow in binascii.b2a_qp.

@@ -1,0 +1,1 @@
+Issue #25928: Add Decimal.as_integer_ratio().

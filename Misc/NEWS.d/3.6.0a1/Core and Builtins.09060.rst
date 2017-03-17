@@ -1,0 +1,1 @@
+Issue #25485: telnetlib.Telnet is now a context manager.

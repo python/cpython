@@ -1,0 +1,1 @@
+Don't use largefile support for GNU/Hurd.

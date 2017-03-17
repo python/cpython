@@ -1,0 +1,1 @@
+Issue #28409: regrtest: fix the parser of command line arguments.

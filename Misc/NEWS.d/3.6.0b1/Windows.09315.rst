@@ -1,0 +1,1 @@
+Issue #20366: Build full text search support into SQLite on Windows.

@@ -1,0 +1,1 @@
+Issue #28251: Improvements to help manuals on Windows.

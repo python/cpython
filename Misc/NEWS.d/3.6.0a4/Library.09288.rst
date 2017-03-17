@@ -1,0 +1,1 @@
+Issue #6422: Add autorange method to timeit.Timer objects.

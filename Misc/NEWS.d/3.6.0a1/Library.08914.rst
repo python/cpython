@@ -1,0 +1,1 @@
+Issue #16620: Fixed AttributeError in msilib.Directory.glob().

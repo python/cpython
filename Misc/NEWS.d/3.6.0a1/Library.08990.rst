@@ -1,0 +1,1 @@
+Issue #26782: Add STARTUPINFO to subprocess.__all__ on Windows.

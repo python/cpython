@@ -1,0 +1,1 @@
+Issue #27372: Test_idle no longer changes the locale.

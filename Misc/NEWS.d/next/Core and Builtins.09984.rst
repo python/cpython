@@ -1,0 +1,1 @@
+bpo-29546: Set the 'path' and 'name' attribute on ImportError for ``from ... import ...``.

@@ -1,0 +1,1 @@
+Issue #28898: Prevent gdb build errors due to HAVE_LONG_LONG redefinition.

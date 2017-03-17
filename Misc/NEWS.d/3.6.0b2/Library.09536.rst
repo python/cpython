@@ -1,0 +1,1 @@
+Issue #27181 remove statistics.geometric_mean and defer until 3.7.

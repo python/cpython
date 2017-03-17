@@ -1,0 +1,2 @@
+bpo-29607: Fix stack_effect computation for CALL_FUNCTION_EX.
+Patch by Matthieu Dartiailh.

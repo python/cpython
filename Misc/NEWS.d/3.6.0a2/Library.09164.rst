@@ -1,0 +1,1 @@
+Issue #27186: Introduce os.PathLike and os.fspath() (part of PEP 519).

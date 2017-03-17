@@ -1,0 +1,2 @@
+Issue #29581: ABCMeta.__new__ now accepts **kwargs, allowing abstract base
+classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.

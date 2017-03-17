@@ -1,0 +1,1 @@
+Issue #28896: Deprecate WindowsRegistryFinder.

@@ -1,0 +1,1 @@
+Issue #28652: Make loop methods reject socket kinds they do not support.

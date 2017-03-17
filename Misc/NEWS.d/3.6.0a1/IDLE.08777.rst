@@ -1,0 +1,1 @@
+Issue #21995: Explain some differences between IDLE and console Python.

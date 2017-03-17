@@ -1,0 +1,3 @@
+Issue #19542: Fix bugs in WeakValueDictionary.setdefault() and
+WeakValueDictionary.pop() when a GC collection happens in another
+thread.

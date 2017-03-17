@@ -1,0 +1,1 @@
+Issue #27522: Avoid an unintentional reference cycle in email.feedparser.

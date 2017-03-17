@@ -1,0 +1,1 @@
+Issue #26736: Used HTTPS for external links in the documentation if possible.

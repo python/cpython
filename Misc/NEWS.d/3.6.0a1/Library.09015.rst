@@ -1,0 +1,1 @@
+Issue #25745: Fixed leaking a userptr in curses panel destructor.

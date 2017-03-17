@@ -1,0 +1,1 @@
+Issue #26129: Deprecated accepting non-integers in grp.getgrgid().

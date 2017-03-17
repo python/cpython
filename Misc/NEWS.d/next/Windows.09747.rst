@@ -1,0 +1,1 @@
+Issue #28161: Opening CON for write access fails

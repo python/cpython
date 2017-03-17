@@ -1,0 +1,2 @@
+Issue #29338: The help of a builtin or extension class now includes the
+constructor signature if __text_signature__ is provided for the class.

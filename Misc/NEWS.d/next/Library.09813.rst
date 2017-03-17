@@ -1,0 +1,2 @@
+Issue #28240: timeit: remove ``-c/--clock`` and ``-t/--time`` command line
+options which were deprecated since Python 3.3.

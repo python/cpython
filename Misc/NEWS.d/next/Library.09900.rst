@@ -1,0 +1,1 @@
+bpo-9303: Migrate sqlite3 module to _v2 API.  Patch by Aviv Palivoda.

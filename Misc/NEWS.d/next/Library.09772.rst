@@ -1,0 +1,1 @@
+Issue #27599: Fixed buffer overrun in binascii.b2a_qp() and binascii.a2b_qp().

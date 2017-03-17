@@ -1,0 +1,1 @@
+Issue #28770: Fix python-gdb.py for fastcalls.

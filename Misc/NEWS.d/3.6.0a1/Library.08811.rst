@@ -1,0 +1,1 @@
+Issue #13248: Remove deprecated inspect.getmoduleinfo function.

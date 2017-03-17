@@ -1,0 +1,1 @@
+Issue #27014: Fix infinite recursion using typing.py.  Thanks to Kalle Tuure!

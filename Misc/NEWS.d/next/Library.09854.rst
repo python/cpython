@@ -1,0 +1,1 @@
+Issue #28871: Fixed a crash when deallocate deep ElementTree.

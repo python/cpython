@@ -1,0 +1,1 @@
+Issue #27186: Add support for os.PathLike objects to open() (part of PEP 519).

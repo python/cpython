@@ -1,0 +1,1 @@
+Issue #23914: Fixed SystemError raised by unpickler on broken pickle data.

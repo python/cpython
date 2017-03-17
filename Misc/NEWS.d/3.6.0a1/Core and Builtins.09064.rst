@@ -1,0 +1,1 @@
+Issue #25766: Special method __bytes__() now works in str subclasses.

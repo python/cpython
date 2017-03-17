@@ -1,0 +1,2 @@
+Issue #26936: Fix the test_socket failures on Android - getservbyname(),
+ getservbyport() and getaddrinfo() are broken on some Android API levels.

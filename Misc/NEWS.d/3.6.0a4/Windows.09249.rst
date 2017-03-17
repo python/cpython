@@ -1,0 +1,1 @@
+Issue #27309: Enables proper Windows styles in python[w].exe manifest.

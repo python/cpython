@@ -1,0 +1,2 @@
+Issue #27441: Remove some redundant assignments to ob_size in longobject.c.
+Thanks Oren Milman.

@@ -1,0 +1,2 @@
+Issue #16255: subprocess.Popen uses /system/bin/sh on Android as the shell,
+instead of /bin/sh.

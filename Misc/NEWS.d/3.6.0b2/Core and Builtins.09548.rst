@@ -1,0 +1,2 @@
+Issue #28214: Now __set_name__ is looked up on the class instead of the
+instance.

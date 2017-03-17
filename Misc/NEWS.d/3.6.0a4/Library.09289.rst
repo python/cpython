@@ -1,0 +1,1 @@
+Issue #27573: code.interact now prints an message when exiting.

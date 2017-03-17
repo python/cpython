@@ -1,0 +1,1 @@
+Issue #27079: Fixed curses.ascii functions isblank(), iscntrl() and ispunct().

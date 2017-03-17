@@ -1,0 +1,1 @@
+Issue #25914: Fixed and simplified OrderedDict.__sizeof__.

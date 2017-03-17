@@ -1,0 +1,2 @@
+Issue #28835: Fix a regression introduced in warnings.catch_warnings():
+call warnings.showwarning() if it was overriden inside the context manager.

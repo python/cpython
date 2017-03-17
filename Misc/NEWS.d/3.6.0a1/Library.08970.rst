@@ -1,0 +1,1 @@
+Issue #26616: Fixed a bug in datetime.astimezone() method.

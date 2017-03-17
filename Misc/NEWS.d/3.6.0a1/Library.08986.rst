@@ -1,0 +1,1 @@
+Issue #26685: Raise OSError if closing a socket fails.
