@@ -442,7 +442,9 @@ Retrieving source code
 
    Return in a single string any lines of comments immediately preceding the
    object's source code (for a class, function, or method), or at the top of the
-   Python source file (if the object is a module).
+   Python source file (if the object is a module).  If the object's source code
+   is unavailable, return ``None``.  This could happen if the object has been
+   defined in C or the interactive shell.
 
 
 .. function:: getfile(object)
