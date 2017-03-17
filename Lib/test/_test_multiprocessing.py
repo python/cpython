@@ -1741,6 +1741,8 @@ def raise_large_valuerror(wait):
 class SayWhenError(ValueError): pass
 
 def exception_throwing_generator(total, when):
+    if when == -1:
+        raise SayWhenError("Somebody said when")
     for i in range(total):
         if i == when:
             raise SayWhenError("Somebody said when")
@@ -1818,6 +1820,32 @@ class _TestPool(BaseTestCase):
         except multiprocessing.TimeoutError:
             self.fail("pool.map_async with chunksize stalled on null list")
 
+    def test_map_handle_iterable_exception(self):
+        if self.TYPE == 'manager':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        # SayWhenError seen at the very first of the iterable
+        with self.assertRaises(SayWhenError):
+            self.pool.map(sqr, exception_throwing_generator(1, -1), 1)
+        # again, make sure it's reentrant
+        with self.assertRaises(SayWhenError):
+            self.pool.map(sqr, exception_throwing_generator(1, -1), 1)
+
+        with self.assertRaises(SayWhenError):
+            self.pool.map(sqr, exception_throwing_generator(10, 3), 1)
+
+        class SpecialIterable:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                raise SayWhenError
+            def __len__(self):
+                return 1
+        with self.assertRaises(SayWhenError):
+            self.pool.map(sqr, SpecialIterable(), 1)
+        with self.assertRaises(SayWhenError):
+            self.pool.map(sqr, SpecialIterable(), 1)
+
     def test_async(self):
         res = self.pool.apply_async(sqr, (7, TIMEOUT1,))
         get = TimingWrapper(res.get)
@@ -1848,6 +1876,13 @@ class _TestPool(BaseTestCase):
         if self.TYPE == 'manager':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
+        # SayWhenError seen at the very first of the iterable
+        it = self.pool.imap(sqr, exception_throwing_generator(1, -1), 1)
+        self.assertRaises(SayWhenError, it.__next__)
+        # again, make sure it's reentrant
+        it = self.pool.imap(sqr, exception_throwing_generator(1, -1), 1)
+        self.assertRaises(SayWhenError, it.__next__)
+
         it = self.pool.imap(sqr, exception_throwing_generator(10, 3), 1)
         for i in range(3):
             self.assertEqual(next(it), i*i)
@@ -1873,6 +1908,17 @@ class _TestPool(BaseTestCase):
     def test_imap_unordered_handle_iterable_exception(self):
         if self.TYPE == 'manager':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        # SayWhenError seen at the very first of the iterable
+        it = self.pool.imap_unordered(sqr,
+                                      exception_throwing_generator(1, -1),
+                                      1)
+        self.assertRaises(SayWhenError, it.__next__)
+        # again, make sure it's reentrant
+        it = self.pool.imap_unordered(sqr,
+                                      exception_throwing_generator(1, -1),
+                                      1)
+        self.assertRaises(SayWhenError, it.__next__)
 
         it = self.pool.imap_unordered(sqr,
                                       exception_throwing_generator(10, 3),
