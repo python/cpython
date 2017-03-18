@@ -455,7 +455,7 @@ class ProcessPoolExecutor(_base.Executor):
             return f
     submit.__doc__ = _base.Executor.submit.__doc__
 
-    def map(self, fn, *iterables, timeout=None, chunksize=1):
+    def map(self, fn, *iterables, timeout=None, chunksize=1, prefetch=None):
         """Returns an iterator equivalent to map(fn, iter).
 
         Args:
@@ -481,7 +481,7 @@ class ProcessPoolExecutor(_base.Executor):
 
         results = super().map(partial(_process_chunk, fn),
                               _get_chunks(*iterables, chunksize=chunksize),
-                              timeout=timeout)
+                              timeout=timeout, prefetch=prefetch)
         return itertools.chain.from_iterable(results)
 
     def shutdown(self, wait=True):

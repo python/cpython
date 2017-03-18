@@ -281,6 +281,12 @@ Extension Modules
 Library
 -------
 
+- bpo-29842: Executor.map no longer creates all futures eagerly prior to
+  yielding any results. This allows it to work with huge or infinite iterables
+  without consuming excessive resources or crashing, making it more suitable
+  as a drop in replacement for the built-in map.
+  Patch by Josh Rosenberg.
+
 - bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
   are not strings.  Patch by Michael Seifert.
 

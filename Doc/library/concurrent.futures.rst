@@ -38,7 +38,7 @@ Executor Objects
               future = executor.submit(pow, 323, 1235)
               print(future.result())
 
-    .. method:: map(func, *iterables, timeout=None, chunksize=1)
+    .. method:: map(func, *iterables, timeout=None, chunksize=1, prefetch=None)
 
        Equivalent to :func:`map(func, *iterables) <map>` except *func* is executed
        asynchronously and several calls to *func* may be made concurrently.  The
@@ -54,10 +54,15 @@ Executor Objects
        specified by setting *chunksize* to a positive integer. For very long
        iterables, using a large value for *chunksize* can significantly improve
        performance compared to the default size of 1. With :class:`ThreadPoolExecutor`,
-       *chunksize* has no effect.
+       *chunksize* has no effect. By default, a reasonable number of tasks are
+       queued beyond the number of workers, an explicit *prefetch* count may be
+       provided to specify how many extra tasks should be queued.
 
        .. versionchanged:: 3.5
           Added the *chunksize* argument.
+
+       .. versionchanged:: 3.7
+          Added the *prefetch* argument.
 
     .. method:: shutdown(wait=True)
 
