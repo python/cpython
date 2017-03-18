@@ -1497,12 +1497,15 @@ get_target_path(HANDLE hdl, wchar_t **target_path)
        the target path name (then we'll call lstat on it). */
     buf_size = GetFinalPathNameByHandleW(hdl, 0, 0,
                                          VOLUME_NAME_DOS);
-    if(!buf_size)
-        return FALSE;
+	if (!buf_size) {
+		CloseHandle(hdl);
+		return FALSE;
+	}
 
     buf = (wchar_t *)PyMem_RawMalloc((buf_size + 1) * sizeof(wchar_t));
     if (!buf) {
-        SetLastError(ERROR_OUTOFMEMORY);
+		CloseHandle(hdl);
+		SetLastError(ERROR_OUTOFMEMORY);
         return FALSE;
     }
 
@@ -1510,6 +1513,7 @@ get_target_path(HANDLE hdl, wchar_t **target_path)
                        buf, buf_size, VOLUME_NAME_DOS);
 
     if(!result_length) {
+		CloseFile(hdl);
         PyMem_RawFree(buf);
         return FALSE;
     }
@@ -1576,8 +1580,10 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             return -1;
         }
         if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (!win32_get_reparse_tag(hFile, &reparse_tag))
-                return -1;
+			if (!win32_get_reparse_tag(hFile, &reparse_tag)) {
+				CloseHandle(hFile);
+				return -1;
+			}
 
             /* Close the outer open file handle now that we're about to
                reopen it with different flags. */
@@ -1595,7 +1601,8 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                 if (hFile2 == INVALID_HANDLE_VALUE)
                     return -1;
 
-                if (!get_target_path(hFile2, &target_path))
+				/* get_target_path closes the file handle. */
+                if (!get_target_path(hFile2, &target_path)) 
                     return -1;
 
                 code = win32_xstat_impl(target_path, result, FALSE);
@@ -3696,17 +3703,23 @@ os__getfinalpathname_impl(PyObject *module, PyObject *path)
        target path name. */
     buf_size = GetFinalPathNameByHandleW(hFile, 0, 0, VOLUME_NAME_NT);
 
-    if(!buf_size)
-        return win32_error_object("GetFinalPathNameByHandle", path);
+	if (!buf_size) {
+		CloseHandle(hFile);
+		return win32_error_object("GetFinalPathNameByHandle", path);
+	}
 
     target_path = PyMem_New(wchar_t, buf_size+1);
-    if(!target_path)
-        return PyErr_NoMemory();
+	if (!target_path) {
+		CloseHandle(hFile);
+		return PyErr_NoMemory();
+	}
 
     result_length = GetFinalPathNameByHandleW(hFile, target_path,
                                               buf_size, VOLUME_NAME_DOS);
-    if(!result_length)
-        return win32_error_object("GetFinalPathNamyByHandle", path);
+	if (!result_length) {
+		CloseHandle(hFile);
+		return win32_error_object("GetFinalPathNamyByHandle", path);
+	}
 
     if(!CloseHandle(hFile))
         return win32_error_object("CloseHandle", path);
