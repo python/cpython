@@ -247,7 +247,7 @@ class TestPredicates(IsTestBase):
         isabstract_checks.clear()
         class AbstractChild(AbstractClassExample):
             pass
-        class AbstractGrandchild(AbstractClassExample):
+        class AbstractGrandchild(AbstractChild):
             pass
         class ConcreteGrandchild(ClassExample):
             pass
