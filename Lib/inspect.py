@@ -286,23 +286,26 @@ def isroutine(object):
 
 def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
-    if isinstance(object, type):
-        if object.__flags__ & TPFLAGS_IS_ABSTRACT:
+    if not isinstance(object, type):
+        return False
+    if object.__flags__ & TPFLAGS_IS_ABSTRACT:
+        return True
+    if not issubclass(type(object), abc.ABCMeta):
+        return False
+    if hasattr(object, '__abstractmethods__'):
+        # It looks like ABCMeta.__new__ has finished running;
+        # TPFLAGS_IS_ABSTRACT should have been accurate.
+        return False
+    # It looks like ABCMeta.__new__ has not finished running yet; we're
+    # probably in __init_subcalss_. We'll look for abstractmethods manually.
+    for name, value in object.__dict__.items():
+        if getattr(value, "__isabstractmethod__", False):
             return True
-        elif (issubclass(type(object), abc.ABCMeta)
-                and not hasattr(object, '__abstractmethods__')):
-            # We're likely in the __init_subclass__ of an ABC. ABCMeta.__new__
-            # hasn't finished running yet. We have to search for abstractmethods
-            # by hand. Code copied from ABCMeta.__new__.
-            abstracts = {name
-                         for name, value in object.__dict__.items()
-                         if getattr(value, "__isabstractmethod__", False)}
-            for base in object.__bases__:
-                for name in getattr(base, "__abstractmethods__", frozenset()):
-                    value = getattr(object, name, None)
-                    if getattr(value, "__isabstractmethod__", False):
-                        abstracts.add(name)
-            return bool(abstracts)
+    for base in object.__bases__:
+        for name in getattr(base, "__abstractmethods__", frozenset()):
+            value = getattr(object, name, None)
+            if getattr(value, "__isabstractmethod__", False):
+                return True
     return False
 
 def getmembers(object, predicate=None):
