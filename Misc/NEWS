@@ -281,6 +281,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch
+  by Nate Soares.
+
 - bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
   are not strings.  Patch by Michael Seifert.
 
@@ -763,9 +766,6 @@ Library
 
 - Issue #29581: ABCMeta.__new__ now accepts **kwargs, allowing abstract base
   classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
-
-- Issue #29822: inspect.isabstract() now works during __init_subclass__. Patch
-  by Nate Soares.
 
 Windows
 -------

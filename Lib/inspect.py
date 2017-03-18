@@ -302,7 +302,7 @@ def isabstract(object):
         if getattr(value, "__isabstractmethod__", False):
             return True
     for base in object.__bases__:
-        for name in getattr(base, "__abstractmethods__", frozenset()):
+        for name in getattr(base, "__abstractmethods__", ()):
             value = getattr(object, name, None)
             if getattr(value, "__isabstractmethod__", False):
                 return True

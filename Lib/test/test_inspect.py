@@ -231,24 +231,27 @@ class TestPredicates(IsTestBase):
 
     def test_isabstract_during_init_subclass(self):
         from abc import ABCMeta, abstractmethod
-
         isabstract_checks = []
-
         class AbstractChecker(metaclass=ABCMeta):
             def __init_subclass__(cls):
                 isabstract_checks.append(inspect.isabstract(cls))
-
         class AbstractClassExample(AbstractChecker):
-
             @abstractmethod
             def foo(self):
                 pass
-
         class ClassExample(AbstractClassExample):
             def foo(self):
                 pass
-
         self.assertEqual(isabstract_checks, [True, False])
+
+        isabstract_checks.clear()
+        class AbstractChild(AbstractClassExample):
+            pass
+        class AbstractGrandchild(AbstractClassExample):
+            pass
+        class ConcreteGrandchild(ClassExample):
+            pass
+        self.assertEqual(isabstract_checks, [True, True, False])
 
 
 class TestInterpreterStack(IsTestBase):
