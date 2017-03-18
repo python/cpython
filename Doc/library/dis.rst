@@ -21,8 +21,8 @@ interpreter.
    work across Python VMs or Python releases.
 
    .. versionchanged:: 3.6
-      Use fixed 2 bytes per instruction for all instructions.  Instructions
-      of variable length were used before.
+      Use 2 bytes for each instruction. Previously the number of bytes varied
+      by instruction.
 
 
 Example: Given the function :func:`myfunc`::
@@ -1140,7 +1140,7 @@ All of the following opcodes use their arguments.
    those which do ``>= HAVE_ARGUMENT``.
 
    .. versionchanged:: 3.6
-      Now every instruction have an argument, but opcodes ``< HAVE_ARGUMENT``
+      Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
       ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
 
 
