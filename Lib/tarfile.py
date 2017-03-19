@@ -761,17 +761,21 @@ class TarInfo(object):
 
     # In pax headers the "name" and "linkname" field are called
     # "path" and "linkpath".
-    def _getpath(self):
+    @property
+    def path(self):
         return self.name
-    def _setpath(self, name):
-        self.name = name
-    path = property(_getpath, _setpath)
 
-    def _getlinkpath(self):
+    @path.setter
+    def path(self, name):
+        self.name = name
+
+    @property
+    def linkpath(self):
         return self.linkname
-    def _setlinkpath(self, linkname):
+
+    @linkpath.setter
+    def linkpath(self, linkname):
         self.linkname = linkname
-    linkpath = property(_getlinkpath, _setlinkpath)
 
     def __repr__(self):
         return "<%s %r at %#x>" % (self.__class__.__name__,self.name,id(self))
