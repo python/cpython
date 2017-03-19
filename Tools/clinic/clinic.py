@@ -2659,6 +2659,18 @@ class Py_ssize_t_converter(CConverter):
     c_ignored_default = "0"
 
 
+class slice_index_converter(CConverter):
+    type = 'Py_ssize_t'
+
+    def converter_init(self, *, accept={int, NoneType}):
+        if accept == {int}:
+            self.converter = '_PyEval_SliceIndex'
+        elif accept == {int, NoneType}:
+            self.converter = '_PyEval_SliceIndexOrNone'
+        else:
+            fail("slice_index_converter: illegal 'accept' argument " + repr(accept))
+
+
 class float_converter(CConverter):
     type = 'float'
     default_type = float
