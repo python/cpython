@@ -212,7 +212,6 @@ print("history", ascii(readline.get_history_item(1)))
 
     @unittest.skipIf(is_editline,
                      "editline history size configuration is broken")
-    @unittest.expectedFailure
     def test_history_size(self):
         history_size = 10
         with temp_dir() as test_dir:
