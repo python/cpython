@@ -254,7 +254,7 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
     if (PyObject_GetBuffer(a, &va, PyBUF_SIMPLE) != 0 ||
         PyObject_GetBuffer(b, &vb, PyBUF_SIMPLE) != 0) {
             PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
-                         Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
+                         Py_TYPE(b)->tp_name, Py_TYPE(a)->tp_name);
             goto done;
     }
 
