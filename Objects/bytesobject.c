@@ -528,6 +528,8 @@ byte_converter(PyObject *arg, char *p)
     return 0;
 }
 
+static PyObject *_PyBytes_FromBuffer(PyObject *x);
+
 static PyObject *
 format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
 {
@@ -564,8 +566,19 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         *plen = PyBytes_GET_SIZE(result);
         return result;
     }
+    /* does it support buffer protocol? */
+    if (PyObject_CheckBuffer(v)) {
+        /* maybe we can avoid making a copy of the buffer object here? */
+        result = _PyBytes_FromBuffer(v);
+        if (result == NULL)
+            return NULL;
+        *pbuf = PyBytes_AS_STRING(result);
+        *plen = PyBytes_GET_SIZE(result);
+        return result;
+    }
     PyErr_Format(PyExc_TypeError,
-                 "%%b requires bytes, or an object that implements __bytes__, not '%.100s'",
+                 "%%b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not '%.100s'",
                  Py_TYPE(v)->tp_name);
     return NULL;
 }
@@ -650,6 +663,12 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 #endif
 
             fmt++;
+            if (*fmt == '%') {
+                *res++ = '%';
+                fmt++;
+                fmtcnt--;
+                continue;
+            }
             if (*fmt == '(') {
                 const char *keystart;
                 Py_ssize_t keylen;
@@ -794,11 +813,9 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                                 "incomplete format");
                 goto error;
             }
-            if (c != '%') {
-                v = getnextarg(args, arglen, &argidx);
-                if (v == NULL)
-                    goto error;
-            }
+            v = getnextarg(args, arglen, &argidx);
+            if (v == NULL)
+                goto error;
 
             if (fmtcnt < 0) {
                 /* last writer: disable writer overallocation */
@@ -808,10 +825,6 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             sign = 0;
             fill = ' ';
             switch (c) {
-            case '%':
-                *res++ = '%';
-                continue;
-
             case 'r':
                 // %r is only for 2/3 code; 3 only code should use %a
             case 'a':
@@ -1017,7 +1030,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 res += (width - len);
             }
 
-            if (dict && (argidx < arglen) && c != '%') {
+            if (dict && (argidx < arglen)) {
                 PyErr_SetString(PyExc_TypeError,
                            "not all arguments converted during bytes formatting");
                 Py_XDECREF(temp);
@@ -2293,7 +2306,7 @@ bytes_decode_impl(PyBytesObject *self, const char *encoding,
 /*[clinic input]
 bytes.splitlines
 
-    keepends: int(c_default="0") = False
+    keepends: bool(accept={int}) = False
 
 Return a list of the lines in the bytes, breaking at line boundaries.
 
@@ -2303,7 +2316,7 @@ true.
 
 static PyObject *
 bytes_splitlines_impl(PyBytesObject *self, int keepends)
-/*[clinic end generated code: output=3484149a5d880ffb input=7f4aac67144f9944]*/
+/*[clinic end generated code: output=3484149a5d880ffb input=a8b32eb01ff5a5ed]*/
 {
     return stringlib_splitlines(
         (PyObject*) self, PyBytes_AS_STRING(self),

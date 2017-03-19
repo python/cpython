@@ -209,6 +209,10 @@ PyAPI_FUNC(int) _PyStack_UnpackDict(
    40 bytes on the stack. */
 #define _PY_FASTCALL_SMALL_STACK 5
 
+/* Return 1 if callable supports FASTCALL calling convention for positional
+   arguments: see _PyObject_FastCallDict() and _PyObject_FastCallKeywords() */
+PyAPI_FUNC(int) _PyObject_HasFastCall(PyObject *callable);
+
 /* Call the callable object 'callable' with the "fast call" calling convention:
    args is a C array for positional arguments (nargs is the number of
    positional arguments), kwargs is a dictionary for keyword arguments.

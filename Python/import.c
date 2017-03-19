@@ -240,7 +240,7 @@ _imp_lock_held_impl(PyObject *module)
 #ifdef WITH_THREAD
     return PyBool_FromLong(import_lock_thread != -1);
 #else
-    return PyBool_FromLong(0);
+    Py_RETURN_FALSE;
 #endif
 }
 

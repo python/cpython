@@ -27,9 +27,8 @@ class TupleTest(seq_tests.CommonTest):
                          (1, 3, 5, 7, 9))
 
     def test_keyword_args(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(tuple(sequence=(x for x in range(10) if x % 2)),
-                             (1, 3, 5, 7, 9))
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            tuple(sequence=())
 
     def test_truth(self):
         super().test_truth()

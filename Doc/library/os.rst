@@ -2840,6 +2840,9 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.7
+      Added support for :class:`bytes` paths.
+
 
 Linux extended attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
