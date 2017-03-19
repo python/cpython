@@ -8,6 +8,13 @@
 #include "Python.h"
 #include "structmember.h"
 
+/*[clinic input]
+class complex "PyComplexObject *" "&PyComplex_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=819e057d2d10f5ec]*/
+
+#include "clinic/complexobject.c.h"
+
 /* elementary operations on complex numbers */
 
 static Py_complex c_1 = {1., 0.};
@@ -912,22 +919,27 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     return result;
 }
 
+/*[clinic input]
+@classmethod
+complex.__new__ as complex_new
+    real as r: object(c_default="Py_False") = 0
+    imag as i: object(c_default="NULL") = 0
+
+Create a complex number from a real part and an optional imaginary part.
+
+This is equivalent to (real + imag*1j) where imag defaults to 0.
+[clinic start generated code]*/
+
 static PyObject *
-complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
+/*[clinic end generated code: output=b6c7dd577b537dc1 input=e3d6b77ddcf280da]*/
 {
-    PyObject *r, *i, *tmp;
+    PyObject *tmp;
     PyNumberMethods *nbr, *nbi = NULL;
     Py_complex cr, ci;
     int own_r = 0;
     int cr_is_complex = 0;
     int ci_is_complex = 0;
-    static char *kwlist[] = {"real", "imag", 0};
-
-    r = Py_False;
-    i = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:complex", kwlist,
-                                     &r, &i))
-        return NULL;
 
     /* Special-case for a single argument when type(arg) is complex. */
     if (PyComplex_CheckExact(r) && i == NULL &&
@@ -1057,12 +1069,6 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return complex_subtype_from_doubles(type, cr.real, ci.real);
 }
 
-PyDoc_STRVAR(complex_doc,
-"complex(real[, imag]) -> complex number\n"
-"\n"
-"Create a complex number from a real part and an optional imaginary part.\n"
-"This is equivalent to (real + imag*1j) where imag defaults to 0.");
-
 static PyNumberMethods complex_as_number = {
     (binaryfunc)complex_add,                    /* nb_add */
     (binaryfunc)complex_sub,                    /* nb_subtract */
@@ -1119,8 +1125,8 @@ PyTypeObject PyComplex_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    complex_doc,                                /* tp_doc */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    complex_new__doc__,                         /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     complex_richcompare,                        /* tp_richcompare */

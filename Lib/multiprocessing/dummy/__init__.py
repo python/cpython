@@ -98,11 +98,15 @@ class Value(object):
     def __init__(self, typecode, value, lock=True):
         self._typecode = typecode
         self._value = value
-    def _get(self):
+
+    @property
+    def value(self):
         return self._value
-    def _set(self, value):
+
+    @value.setter
+    def value(self, value):
         self._value = value
-    value = property(_get, _set)
+
     def __repr__(self):
         return '<%s(%r, %r)>'%(type(self).__name__,self._typecode,self._value)
 
