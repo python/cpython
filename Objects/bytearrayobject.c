@@ -1952,7 +1952,7 @@ bytearray_join(PyByteArrayObject *self, PyObject *iterable_of_bytes)
 /*[clinic input]
 bytearray.splitlines
 
-    keepends: int(c_default="0") = False
+    keepends: bool(accept={int}) = False
 
 Return a list of the lines in the bytearray, breaking at line boundaries.
 
@@ -1962,7 +1962,7 @@ true.
 
 static PyObject *
 bytearray_splitlines_impl(PyByteArrayObject *self, int keepends)
-/*[clinic end generated code: output=4223c94b895f6ad9 input=8ccade941e5ea0bd]*/
+/*[clinic end generated code: output=4223c94b895f6ad9 input=99a27ad959b9cf6b]*/
 {
     return stringlib_splitlines(
         (PyObject*) self, PyByteArray_AS_STRING(self),

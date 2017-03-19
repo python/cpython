@@ -131,6 +131,10 @@ Glossary
    binary file
       A :term:`file object` able to read and write
       :term:`bytes-like objects <bytes-like object>`.
+      Examples of binary files are files opened in binary mode (``'rb'``,
+      ``'wb'`` or ``'rb+'``), :data:`sys.stdin.buffer`,
+      :data:`sys.stdout.buffer`, and instances of :class:`io.BytesIO` and
+      :class:`gzip.GzipFile`.
 
       .. seealso::
          A :term:`text file` reads and writes :class:`str` objects.
@@ -966,6 +970,9 @@ Glossary
       A :term:`file object` able to read and write :class:`str` objects.
       Often, a text file actually accesses a byte-oriented datastream
       and handles the :term:`text encoding` automatically.
+      Examples of text files are files opened in text mode (``'r'`` or ``'w'``),
+      :data:`sys.stdin`, :data:`sys.stdout`, and instances of
+      :class:`io.StringIO`.
 
       .. seealso::
          A :term:`binary file` reads and write :class:`bytes` objects.

@@ -1103,6 +1103,21 @@ class CoroutineTest(unittest.TestCase):
                                     "coroutine is being awaited already"):
             waiter(coro).send(None)
 
+    def test_await_16(self):
+        # See https://bugs.python.org/issue29600 for details.
+
+        async def f():
+            return ValueError()
+
+        async def g():
+            try:
+                raise KeyError
+            except:
+                return await f()
+
+        _, result = run_async(g())
+        self.assertIsNone(result.__context__)
+
     def test_with_1(self):
         class Manager:
             def __init__(self, name):
