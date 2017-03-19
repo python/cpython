@@ -3199,11 +3199,11 @@ _tkinter.create
     screenName: str(accept={str, NoneType}) = NULL
     baseName: str = NULL
     className: str = "Tk"
-    interactive: int(c_default="0") = False
-    wantobjects: int(c_default="0") = False
-    wantTk: int(c_default="1") = True
+    interactive: bool(accept={int}) = False
+    wantobjects: bool(accept={int}) = False
+    wantTk: bool(accept={int}) = True
         if false, then Tk_Init() doesn't get called
-    sync: int(c_default="0") = False
+    sync: bool(accept={int}) = False
         if true, then pass -sync to wish
     use: str(accept={str, NoneType}) = NULL
         if not None, then pass -use to wish
@@ -3216,7 +3216,7 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
                      const char *baseName, const char *className,
                      int interactive, int wantobjects, int wantTk, int sync,
                      const char *use)
-/*[clinic end generated code: output=e3315607648e6bb4 input=0d522aad1cb0ca0e]*/
+/*[clinic end generated code: output=e3315607648e6bb4 input=431907c134c80085]*/
 {
     /* XXX baseName is not used anymore;
      * try getting rid of it. */

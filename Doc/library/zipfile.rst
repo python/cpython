@@ -464,12 +464,12 @@ The :class:`PyZipFile` constructor takes the same parameters as the
       added to the archive, compiling if necessary.
 
       If *pathname* is a file, the filename must end with :file:`.py`, and
-      just the (corresponding :file:`\*.py[co]`) file is added at the top level
+      just the (corresponding :file:`\*.pyc`) file is added at the top level
       (no path information).  If *pathname* is a file that does not end with
       :file:`.py`, a :exc:`RuntimeError` will be raised.  If it is a directory,
       and the directory is not a package directory, then all the files
-      :file:`\*.py[co]` are added at the top level.  If the directory is a
-      package directory, then all :file:`\*.py[co]` are added under the package
+      :file:`\*.pyc` are added at the top level.  If the directory is a
+      package directory, then all :file:`\*.pyc` are added under the package
       name as a file path, and if any subdirectories are package directories,
       all of these are added recursively.
 
