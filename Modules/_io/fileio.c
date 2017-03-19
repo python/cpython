@@ -1082,9 +1082,19 @@ fileio_repr(fileio *self)
             self->fd, mode_string(self), self->closefd ? "True" : "False");
     }
     else {
-        res = PyUnicode_FromFormat(
-            "<_io.FileIO name=%R mode='%s' closefd=%s>",
-            nameobj, mode_string(self), self->closefd ? "True" : "False");
+        int status = Py_ReprEnter((PyObject *)self);
+        res = NULL;
+        if (status == 0) {
+            res = PyUnicode_FromFormat(
+                "<_io.FileIO name=%R mode='%s' closefd=%s>",
+                nameobj, mode_string(self), self->closefd ? "True" : "False");
+            Py_ReprLeave((PyObject *)self);
+        }
+        else if (status > 0) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "reentrant call inside %s.__repr__",
+                         Py_TYPE(self)->tp_name);
+        }
         Py_DECREF(nameobj);
     }
     return res;
