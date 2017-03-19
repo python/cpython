@@ -53,8 +53,6 @@ before_script:
 script:
   # `-r -w` implicitly provided through `make buildbottest`.
   - make buildbottest TESTOPTS="-j4"
-  # Test for C++ header compatibility.
-  - echo '#include "Python.h"' > test.cc && $CXX -c test.cc -o /dev/null -I ./Include -I .
 
 notifications:
   email: false
