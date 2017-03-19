@@ -2,8 +2,8 @@ import unittest
 from ctypes import *
 from ctypes.test import need_symbol
 from struct import calcsize
-import _testcapi
 import _ctypes_test
+import test.support
 
 class SubclassesTest(unittest.TestCase):
     def test_subclass(self):
@@ -202,7 +202,10 @@ class StructureTestCase(unittest.TestCase):
              "_pack_": -1}
         self.assertRaises(ValueError, type(Structure), "X", (Structure,), d)
 
+    @test.support.cpython_only
+    def test_packed_c_limits(self):
         # Issue 15989
+        import _testcapi
         d = {"_fields_": [("a", c_byte)],
              "_pack_": _testcapi.INT_MAX + 1}
         self.assertRaises(ValueError, type(Structure), "X", (Structure,), d)
