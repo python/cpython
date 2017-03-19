@@ -937,6 +937,8 @@ Build
 Tools/Demos
 -----------
 
+- bpo-29748: Added the slice index converter in Argument Clinic.
+
 - bpo-24037: Argument Clinic now uses the converter `bool(accept={int})` rather
   than `int` for semantical booleans.  This avoids repeating the default
   value for Python and C and will help in converting to `bool` in future.
