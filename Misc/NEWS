@@ -281,6 +281,8 @@ Extension Modules
 Library
 -------
 
+- bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
+
 - bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
   are not strings.  Patch by Michael Seifert.
 
