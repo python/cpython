@@ -181,20 +181,6 @@ def _strip_padding(s, amount):
 _percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
                          r'(?P<modifiers>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
 
-def format(percent, value, grouping=False, monetary=False, *additional):
-    """Deprecated, use format_string instead."""
-    warnings.warn(
-        "This method will be removed in future versions.  "
-        "Use 'locale.format_string()' instead.",
-        DeprecationWarning, stacklevel=2
-    )
-
-    match = _percent_re.match(percent)
-    if not match or len(match.group())!= len(percent):
-        raise ValueError(("format() must be given exactly one %%char "
-                         "format specifier, %s not valid") % repr(percent))
-    return _format(percent, value, grouping, monetary, *additional)
-
 def _format(percent, value, grouping=False, monetary=False, *additional):
     if additional:
         formatted = percent % ((value,) + additional)
@@ -222,6 +208,7 @@ def _format(percent, value, grouping=False, monetary=False, *additional):
 def format_string(f, val, grouping=False, monetary=False):
     """Formats a string in the same way that the % formatting would use,
     but takes the current locale into account.
+
     Grouping is applied if the third parameter is true.
     Conversion uses monetary thousands separator and grouping strings if
     forth parameter monetary is true."""
@@ -255,6 +242,20 @@ def format_string(f, val, grouping=False, monetary=False):
 
     return new_f % val
 
+def format(percent, value, grouping=False, monetary=False, *additional):
+    """Deprecated, use format_string instead."""
+    warnings.warn(
+        "This method will be removed in a future version of Python."
+        "Use 'locale.format_string()' instead.",
+        DeprecationWarning, stacklevel=2
+    )
+
+    match = _percent_re.match(percent)
+    if not match or len(match.group())!= len(percent):
+        raise ValueError(("format() must be given exactly one %%char "
+                         "format specifier, %s not valid") % repr(percent))
+    return _format(percent, value, grouping, monetary, *additional)
+
 def currency(val, symbol=True, grouping=False, international=False):
     """Formats val according to the currency settings
     in the current locale."""
@@ -266,7 +267,7 @@ def currency(val, symbol=True, grouping=False, international=False):
         raise ValueError("Currency formatting is not possible using "
                          "the 'C' locale.")
 
-    s = format_string('%%.%if' % digits, abs(val), grouping, monetary=True)
+    s = _format('%%.%if' % digits, abs(val), grouping, monetary=True)
     # '<' and '>' are markers if the sign must be inserted between symbol and value
     s = '<' + s + '>'
 
@@ -302,7 +303,7 @@ def currency(val, symbol=True, grouping=False, international=False):
 
 def str(val):
     """Convert float to string, taking the locale into account."""
-    return format_string("%.12g", val)
+    return _format("%.12g", val)
 
 def delocalize(string):
     "Parses a string as a normalized number according to the locale settings."

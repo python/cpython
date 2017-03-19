@@ -352,23 +352,6 @@ The :mod:`locale` module defines the following exception and functions:
    sequence of strings.
 
 
-.. function:: format(format, val, grouping=False, monetary=False)
-
-   Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
-   The format follows the conventions of the ``%`` operator.  For floating point
-   values, the decimal point is modified if appropriate.  If *grouping* is true,
-   also takes the grouping into account.
-
-   If *monetary* is true, the conversion uses monetary thousands separator and
-   grouping strings.
-
-   Please note that this function will only work for exactly one %char specifier.
-   For whole format strings, use :func:`format_string`.
-
-   .. deprecated:: 3.7
-      Use :meth:`format_string` instead
-
-
 .. function:: format_string(format, val, grouping=False, monetary=False)
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
@@ -384,6 +367,17 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. versionchanged:: 3.7
       The *monetary* keyword parameter was added.
+
+
+.. function:: format(format, val, grouping=False, monetary=False)
+
+   Please note that this function works like format_string but will only work
+   for exactly one %char specifier.
+
+   For whole format strings, use :func:`format_string`.
+
+   .. deprecated:: 3.7
+      Use :meth:`format_string` instead
 
 
 .. function:: currency(val, symbol=True, grouping=False, international=False)
