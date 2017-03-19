@@ -1772,6 +1772,7 @@ class SysSetCoroWrapperTest(unittest.TestCase):
             sys.set_coroutine_wrapper(None)
 
 
+@support.cpython_only
 class CAPITest(unittest.TestCase):
 
     def test_tp_await_1(self):
