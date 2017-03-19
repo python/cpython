@@ -3,6 +3,12 @@
 #include "Python.h"
 #include "structmember.h" /* Why is this not included in Python.h? */
 
+/*[clinic input]
+class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
+class property "propertyobject *" "&PyProperty_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
+
 static void
 descr_dealloc(PyDescrObject *descr)
 {
@@ -942,16 +948,19 @@ mappingproxy_check_mapping(PyObject *mapping)
     return 0;
 }
 
-static PyObject*
-mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"mapping", NULL};
-    PyObject *mapping;
-    mappingproxyobject *mappingproxy;
+/*[clinic input]
+@classmethod
+mappingproxy.__new__ as mappingproxy_new
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:mappingproxy",
-                                     kwlist, &mapping))
-        return NULL;
+    mapping: object
+
+[clinic start generated code]*/
+
+static PyObject *
+mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping)
+/*[clinic end generated code: output=65f27f02d5b68fa7 input=d2d620d4f598d4f8]*/
+{
+    mappingproxyobject *mappingproxy;
 
     if (mappingproxy_check_mapping(mapping) == -1)
         return NULL;
@@ -964,48 +973,6 @@ mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     _PyObject_GC_TRACK(mappingproxy);
     return (PyObject *)mappingproxy;
 }
-
-PyTypeObject PyDictProxy_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "mappingproxy",                             /* tp_name */
-    sizeof(mappingproxyobject),                 /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    (destructor)mappingproxy_dealloc,           /* tp_dealloc */
-    0,                                          /* tp_print */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
-    (reprfunc)mappingproxy_repr,                /* tp_repr */
-    0,                                          /* tp_as_number */
-    &mappingproxy_as_sequence,                  /* tp_as_sequence */
-    &mappingproxy_as_mapping,                   /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    (reprfunc)mappingproxy_str,                 /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    0,                                          /* tp_doc */
-    mappingproxy_traverse,                      /* tp_traverse */
-    0,                                          /* tp_clear */
-    (richcmpfunc)mappingproxy_richcompare,      /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    (getiterfunc)mappingproxy_getiter,          /* tp_iter */
-    0,                                          /* tp_iternext */
-    mappingproxy_methods,                       /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    mappingproxy_new,                           /* tp_new */
-};
 
 PyObject *
 PyDictProxy_New(PyObject *mapping)
@@ -1495,54 +1462,85 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
     return new;
 }
 
+/*[clinic input]
+property.__init__ as property_init
+
+    fget: object(c_default="NULL") = None
+        function to be used for getting an attribute value
+    fset: object(c_default="NULL") = None
+        function to be used for setting an attribute value
+    fdel: object(c_default="NULL") = None
+        function to be used for del'ing an attribute
+    doc: object(c_default="NULL") = None
+        docstring
+
+Property attribute.
+
+Typical use is to define a managed attribute x:
+
+class C(object):
+    def getx(self): return self._x
+    def setx(self, value): self._x = value
+    def delx(self): del self._x
+    x = property(getx, setx, delx, "I'm the 'x' property.")
+
+Decorators make defining new properties or modifying existing ones easy:
+
+class C(object):
+    @property
+    def x(self):
+        "I am the 'x' property."
+        return self._x
+    @x.setter
+    def x(self, value):
+        self._x = value
+    @x.deleter
+    def x(self):
+        del self._x
+[clinic start generated code]*/
+
 static int
-property_init(PyObject *self, PyObject *args, PyObject *kwds)
+property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
+                   PyObject *fdel, PyObject *doc)
+/*[clinic end generated code: output=01a960742b692b57 input=dfb5dbbffc6932d5]*/
 {
-    PyObject *get = NULL, *set = NULL, *del = NULL, *doc = NULL;
-    static char *kwlist[] = {"fget", "fset", "fdel", "doc", 0};
-    propertyobject *prop = (propertyobject *)self;
+    if (fget == Py_None)
+        fget = NULL;
+    if (fset == Py_None)
+        fset = NULL;
+    if (fdel == Py_None)
+        fdel = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOO:property",
-                                     kwlist, &get, &set, &del, &doc))
-        return -1;
-
-    if (get == Py_None)
-        get = NULL;
-    if (set == Py_None)
-        set = NULL;
-    if (del == Py_None)
-        del = NULL;
-
-    Py_XINCREF(get);
-    Py_XINCREF(set);
-    Py_XINCREF(del);
+    Py_XINCREF(fget);
+    Py_XINCREF(fset);
+    Py_XINCREF(fdel);
     Py_XINCREF(doc);
 
-    prop->prop_get = get;
-    prop->prop_set = set;
-    prop->prop_del = del;
-    prop->prop_doc = doc;
-    prop->getter_doc = 0;
+    self->prop_get = fget;
+    self->prop_set = fset;
+    self->prop_del = fdel;
+    self->prop_doc = doc;
+    self->getter_doc = 0;
 
     /* if no docstring given and the getter has one, use that one */
-    if ((doc == NULL || doc == Py_None) && get != NULL) {
+    if ((doc == NULL || doc == Py_None) && fget != NULL) {
         _Py_IDENTIFIER(__doc__);
-        PyObject *get_doc = _PyObject_GetAttrId(get, &PyId___doc__);
+        PyObject *get_doc = _PyObject_GetAttrId(fget, &PyId___doc__);
         if (get_doc) {
             if (Py_TYPE(self) == &PyProperty_Type) {
-                Py_XSETREF(prop->prop_doc, get_doc);
+                Py_XSETREF(self->prop_doc, get_doc);
             }
             else {
                 /* If this is a property subclass, put __doc__
                 in dict of the subclass instance instead,
                 otherwise it gets shadowed by __doc__ in the
                 class's dict. */
-                int err = _PyObject_SetAttrId(self, &PyId___doc__, get_doc);
+                int err = _PyObject_SetAttrId((PyObject *)self, &PyId___doc__, get_doc);
                 Py_DECREF(get_doc);
                 if (err < 0)
                     return -1;
             }
-            prop->getter_doc = 1;
+            self->getter_doc = 1;
         }
         else if (PyErr_ExceptionMatches(PyExc_Exception)) {
             PyErr_Clear();
@@ -1592,32 +1590,6 @@ static PyGetSetDef property_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
-PyDoc_STRVAR(property_doc,
-"property(fget=None, fset=None, fdel=None, doc=None) -> property attribute\n"
-"\n"
-"fget is a function to be used for getting an attribute value, and likewise\n"
-"fset is a function for setting, and fdel a function for del'ing, an\n"
-"attribute.  Typical use is to define a managed attribute x:\n\n"
-"class C(object):\n"
-"    def getx(self): return self._x\n"
-"    def setx(self, value): self._x = value\n"
-"    def delx(self): del self._x\n"
-"    x = property(getx, setx, delx, \"I'm the 'x' property.\")\n"
-"\n"
-"Decorators make defining new properties or modifying existing ones easy:\n\n"
-"class C(object):\n"
-"    @property\n"
-"    def x(self):\n"
-"        \"I am the 'x' property.\"\n"
-"        return self._x\n"
-"    @x.setter\n"
-"    def x(self, value):\n"
-"        self._x = value\n"
-"    @x.deleter\n"
-"    def x(self):\n"
-"        del self._x\n"
-);
-
 static int
 property_traverse(PyObject *self, visitproc visit, void *arg)
 {
@@ -1636,6 +1608,50 @@ property_clear(PyObject *self)
     Py_CLEAR(pp->prop_doc);
     return 0;
 }
+
+#include "clinic/descrobject.c.h"
+
+PyTypeObject PyDictProxy_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "mappingproxy",                             /* tp_name */
+    sizeof(mappingproxyobject),                 /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)mappingproxy_dealloc,           /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    (reprfunc)mappingproxy_repr,                /* tp_repr */
+    0,                                          /* tp_as_number */
+    &mappingproxy_as_sequence,                  /* tp_as_sequence */
+    &mappingproxy_as_mapping,                   /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    (reprfunc)mappingproxy_str,                 /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
+    0,                                          /* tp_doc */
+    mappingproxy_traverse,                      /* tp_traverse */
+    0,                                          /* tp_clear */
+    (richcmpfunc)mappingproxy_richcompare,      /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    (getiterfunc)mappingproxy_getiter,          /* tp_iter */
+    0,                                          /* tp_iternext */
+    mappingproxy_methods,                       /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    mappingproxy_new,                           /* tp_new */
+};
 
 PyTypeObject PyProperty_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -1660,7 +1676,7 @@ PyTypeObject PyProperty_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,                    /* tp_flags */
-    property_doc,                               /* tp_doc */
+    property_init__doc__,                       /* tp_doc */
     property_traverse,                          /* tp_traverse */
     (inquiry)property_clear,                    /* tp_clear */
     0,                                          /* tp_richcompare */

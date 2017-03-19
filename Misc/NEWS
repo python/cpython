@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-28856: Fix an oversight that %b format for bytes should support objects
+  follow the buffer protocol.
+
 - bpo-29723: The ``sys.path[0]`` initialization change for bpo-29139 caused a
   regression by revealing an inconsistency in how sys.path is initialized when
   executing ``__main__`` from a zipfile, directory, or other import location.
@@ -280,6 +283,11 @@ Library
 
 - bpo-10030: Sped up reading encrypted ZIP files by 2 times.
 
+- bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
+
+- bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
+  are not strings.  Patch by Michael Seifert.
+
 - bpo-8256: Fixed possible failing or crashing input() if attributes "encoding"
   or "errors" of sys.stdin or sys.stdout are not set or are not strings.
 
@@ -336,6 +344,9 @@ Library
 
 - bpo-28518: Start a transaction implicitly before a DML statement.
   Patch by Aviv Palivoda.
+
+- bpo-29742: get_extra_info() raises exception if get called on closed ssl transport.
+  Patch by Nikolay Kim.
 
 - Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
   '~' in the set of characters that is not quoted by default. Patch by
@@ -754,6 +765,9 @@ Library
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
 
+- Issue #29581: ABCMeta.__new__ now accepts **kwargs, allowing abstract base
+  classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
+
 Windows
 -------
 
@@ -924,6 +938,8 @@ Build
 
 Tools/Demos
 -----------
+
+- bpo-29748: Added the slice index converter in Argument Clinic.
 
 - bpo-24037: Argument Clinic now uses the converter `bool(accept={int})` rather
   than `int` for semantical booleans.  This avoids repeating the default
