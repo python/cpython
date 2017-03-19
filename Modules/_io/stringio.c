@@ -17,13 +17,6 @@ class _io.StringIO "stringio *" "&PyStringIO_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=c17bc0f42165cd7d]*/
 
-/*[python input]
-class io_ssize_t_converter(CConverter):
-    type = 'Py_ssize_t'
-    converter = '_PyIO_ConvertSsize_t'
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d0a811d3cbfd1b33]*/
-
 typedef struct {
     PyObject_HEAD
     Py_UCS4 *buf;
@@ -308,7 +301,7 @@ _io_StringIO_tell_impl(stringio *self)
 
 /*[clinic input]
 _io.StringIO.read
-    size: io_ssize_t = -1
+    size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Read at most size characters, returned as a string.
@@ -319,7 +312,7 @@ is reached. Return an empty string at EOF.
 
 static PyObject *
 _io_StringIO_read_impl(stringio *self, Py_ssize_t size)
-/*[clinic end generated code: output=ae8cf6002f71626c input=bbd84248eb4ab957]*/
+/*[clinic end generated code: output=ae8cf6002f71626c input=0921093383dfb92d]*/
 {
     Py_ssize_t n;
     Py_UCS4 *output;
@@ -380,7 +373,7 @@ _stringio_readline(stringio *self, Py_ssize_t limit)
 
 /*[clinic input]
 _io.StringIO.readline
-    size: io_ssize_t = -1
+    size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Read until newline or EOF.
@@ -390,7 +383,7 @@ Returns an empty string if EOF is hit immediately.
 
 static PyObject *
 _io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
-/*[clinic end generated code: output=cabd6452f1b7e85d input=04de7535f732cb3d]*/
+/*[clinic end generated code: output=cabd6452f1b7e85d input=a5bd70bf682aa276]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -439,7 +432,7 @@ stringio_iternext(stringio *self)
 
 /*[clinic input]
 _io.StringIO.truncate
-    pos as arg: object = None
+    pos as size: Py_ssize_t(accept={int, NoneType}, c_default="self->pos") = None
     /
 
 Truncate size to pos.
@@ -450,30 +443,11 @@ Returns the new absolute position.
 [clinic start generated code]*/
 
 static PyObject *
-_io_StringIO_truncate_impl(stringio *self, PyObject *arg)
-/*[clinic end generated code: output=6072439c2b01d306 input=748619a494ba53ad]*/
+_io_StringIO_truncate_impl(stringio *self, Py_ssize_t size)
+/*[clinic end generated code: output=eb3aef8e06701365 input=5505cff90ca48b96]*/
 {
-    Py_ssize_t size;
-
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
-
-    if (PyIndex_Check(arg)) {
-        size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
-        if (size == -1 && PyErr_Occurred()) {
-            return NULL;
-        }
-    }
-    else if (arg == Py_None) {
-        /* Truncate to current position if no argument is passed. */
-        size = self->pos;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "argument should be integer or None, not '%.200s'",
-                     Py_TYPE(arg)->tp_name);
-        return NULL;
-    }
 
     if (size < 0) {
         PyErr_Format(PyExc_ValueError,

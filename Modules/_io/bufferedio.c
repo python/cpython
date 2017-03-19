@@ -24,13 +24,6 @@ class _io.BufferedRandom "buffered *" "&PyBufferedRandom_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=59460b9c5639984d]*/
 
-/*[python input]
-class io_ssize_t_converter(CConverter):
-    type = 'Py_ssize_t'
-    converter = '_PyIO_ConvertSsize_t'
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d0a811d3cbfd1b33]*/
-
 _Py_IDENTIFIER(close);
 _Py_IDENTIFIER(_dealloc_warn);
 _Py_IDENTIFIER(flush);
@@ -892,13 +885,13 @@ end:
 
 /*[clinic input]
 _io._Buffered.read
-    size as n: io_ssize_t = -1
+    size as n: Py_ssize_t(accept={int, NoneType}) = -1
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_read_impl(buffered *self, Py_ssize_t n)
-/*[clinic end generated code: output=f41c78bb15b9bbe9 input=c0939ec7f9e9354f]*/
+/*[clinic end generated code: output=f41c78bb15b9bbe9 input=7df81e82e08a68a2]*/
 {
     PyObject *res;
 
@@ -1206,13 +1199,13 @@ end_unlocked:
 
 /*[clinic input]
 _io._Buffered.readline
-    size: io_ssize_t = -1
+    size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_readline_impl(buffered *self, Py_ssize_t size)
-/*[clinic end generated code: output=24dd2aa6e33be83c input=ff1e0df821cb4e5c]*/
+/*[clinic end generated code: output=24dd2aa6e33be83c input=673b6240e315ef8a]*/
 {
     CHECK_INITIALIZED(self)
     return _buffered_readline(self, size);

@@ -20,13 +20,6 @@ class _io._RawIOBase "PyObject *" "&PyRawIOBase_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=d29a4d076c2b211c]*/
 
-/*[python input]
-class io_ssize_t_converter(CConverter):
-    type = 'Py_ssize_t'
-    converter = '_PyIO_ConvertSsize_t'
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d0a811d3cbfd1b33]*/
-
 /*
  * IOBase class, an abstract class
  */
@@ -488,7 +481,7 @@ _io__IOBase_isatty_impl(PyObject *self)
 
 /*[clinic input]
 _io._IOBase.readline
-    size as limit: io_ssize_t = -1
+    size as limit: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Read and return a line from the stream.
@@ -502,7 +495,7 @@ terminator(s) recognized.
 
 static PyObject *
 _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
-/*[clinic end generated code: output=4479f79b58187840 input=df4cc8884f553cab]*/
+/*[clinic end generated code: output=4479f79b58187840 input=d0c596794e877bff]*/
 {
     /* For backwards compatibility, a (slowish) readline(). */
 
@@ -635,7 +628,7 @@ iobase_iternext(PyObject *self)
 
 /*[clinic input]
 _io._IOBase.readlines
-    hint: io_ssize_t = -1
+    hint: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
 Return a list of lines from the stream.
@@ -647,7 +640,7 @@ lines so far exceeds hint.
 
 static PyObject *
 _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
-/*[clinic end generated code: output=2f50421677fa3dea input=1961c4a95e96e661]*/
+/*[clinic end generated code: output=2f50421677fa3dea input=9400c786ea9dc416]*/
 {
     Py_ssize_t length = 0;
     PyObject *result;

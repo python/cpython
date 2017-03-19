@@ -1097,6 +1097,9 @@ PyAPI_FUNC(void) _Py_add_one_to_index_F(int nd, Py_ssize_t *index,
                                         const Py_ssize_t *shape);
 PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
                                         const Py_ssize_t *shape);
+
+/* Convert Python int to Py_ssize_t. Do nothing if the argument is None. */
+PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
 #endif /* !Py_LIMITED_API */
 
 

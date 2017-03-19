@@ -27,8 +27,6 @@ PyAPI_DATA(PyObject *) _PyWindowsConsoleIO_Type;
 #endif /* MS_WINDOWS */
 #endif /* Py_LIMITED_API */
 
-extern int _PyIO_ConvertSsize_t(PyObject *, void *);
-
 /* These functions are used as METH_NOARGS methods, are normally called
  * with args=NULL, and return a new reference.
  * BUT when args=Py_True is passed, they return a borrowed reference.
