@@ -4789,20 +4789,24 @@ long_float(PyObject *v)
 }
 
 static PyObject *
-long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase);
+
+/*[clinic input]
+@classmethod
+int.__new__ as long_new
+    x: object(c_default="NULL") = 0
+    /
+    base as obase: object(c_default="NULL") = 10
+[clinic start generated code]*/
 
 static PyObject *
-long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
+/*[clinic end generated code: output=e47cfe777ab0f24c input=81c98f418af9eb6f]*/
 {
-    PyObject *obase = NULL, *x = NULL;
     Py_ssize_t base;
-    static char *kwlist[] = {"", "base", 0};
 
     if (type != &PyLong_Type)
-        return long_subtype_new(type, args, kwds); /* Wimp out */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:int", kwlist,
-                                     &x, &obase))
-        return NULL;
+        return long_subtype_new(type, x, obase); /* Wimp out */
     if (x == NULL) {
         if (obase != NULL) {
             PyErr_SetString(PyExc_TypeError,
@@ -4846,13 +4850,13 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    the regular int.  The regular int is then thrown away.
 */
 static PyObject *
-long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
 {
     PyLongObject *tmp, *newobj;
     Py_ssize_t i, n;
 
     assert(PyType_IsSubtype(type, &PyLong_Type));
-    tmp = (PyLongObject *)long_new(&PyLong_Type, args, kwds);
+    tmp = (PyLongObject *)long_new_impl(&PyLong_Type, x, obase);
     if (tmp == NULL)
         return NULL;
     assert(PyLong_Check(tmp));
