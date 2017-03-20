@@ -30,10 +30,11 @@ Core and Builtins
 - bpo-29695: bool(), float(), list() and tuple() no longer take keyword arguments.
   The first argument of int() can now be passes only as positional argument.
 
-- bpo-20087: Prefer glibc's list of locale aliases to the X11 ones.
-
 - bpo-28893: Set correct __cause__ for errors about invalid awaitables
   returned from __aiter__ and __anext__.
+
+- bpo-28876: ``bool(range)`` works even if ``len(range)``
+  raises :exc:`OverflowError`.
 
 - bpo-29683: Fixes to memory allocation in _PyCode_SetExtra.  Patch by
   Brian Coleman.
@@ -283,6 +284,8 @@ Library
 
 - bpo-29654: Support If-Modified-Since HTTP header (browser cache).  Patch
   by Pierre Quentel.
+
+- bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
 
 - bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
   are not strings.  Patch by Michael Seifert.
@@ -764,6 +767,9 @@ Library
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
 
+- Issue #29581: ABCMeta.__new__ now accepts **kwargs, allowing abstract base
+  classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
+
 Windows
 -------
 
@@ -934,6 +940,8 @@ Build
 
 Tools/Demos
 -----------
+
+- bpo-29748: Added the slice index converter in Argument Clinic.
 
 - bpo-24037: Argument Clinic now uses the converter `bool(accept={int})` rather
   than `int` for semantical booleans.  This avoids repeating the default

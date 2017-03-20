@@ -906,6 +906,7 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(swapped & mask, mask)
             self.assertRaises(OverflowError, func, 1<<34)
 
+    @support.cpython_only
     def testNtoHErrors(self):
         import _testcapi
         s_good_values = [0, 1, 2, 0xffff]
