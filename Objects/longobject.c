@@ -4317,7 +4317,7 @@ long_rshift(PyLongObject *a, PyLongObject *b)
         shiftby = PyLong_AsSsize_t((PyObject *)b);
         if (shiftby >= 0) {
             wordshift = shiftby / PyLong_SHIFT;
-            loshift = shiftby - wordshift * PyLong_SHIFT;
+            loshift = shiftby % PyLong_SHIFT;
         }
         else {
             /* PyLong_Check(b) is true and Py_SIZE(b) >= 0, so it must be that
@@ -4335,7 +4335,7 @@ long_rshift(PyLongObject *a, PyLongObject *b)
                 assert(!PyErr_Occurred());
                 if (lshiftby >= 0 && lshiftby / PyLong_SHIFT < wordshift) {
                     wordshift = lshiftby / PyLong_SHIFT;
-                    loshift  = lshiftby - wordshift * PyLong_SHIFT;
+                    loshift  = lshiftby % PyLong_SHIFT;
                 }
             }
 #endif
@@ -4383,7 +4383,7 @@ long_lshift(PyObject *v, PyObject *w)
     /* wordshift, remshift = divmod(shiftby, PyLong_SHIFT) */
     if (shiftby >= 0) {
         wordshift = shiftby / PyLong_SHIFT;
-        remshift = shiftby - wordshift * PyLong_SHIFT;
+        remshift = shiftby % PyLong_SHIFT;
     }
     else {
         /* PyLong_Check(b) is true and Py_SIZE(b) >= 0, so it must be that
@@ -4400,7 +4400,7 @@ long_lshift(PyObject *v, PyObject *w)
         assert(!PyErr_Occurred());
         if (lshiftby >= 0 && lshiftby / PyLong_SHIFT < wordshift) {
             wordshift = lshiftby / PyLong_SHIFT;
-            remshift = lshiftby - wordshift * PyLong_SHIFT;
+            remshift = lshiftby % PyLong_SHIFT;
         }
 #endif
     }
