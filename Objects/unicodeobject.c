@@ -11282,7 +11282,16 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
     Py_UCS4 maxchar, maxchar2;
     Py_ssize_t left_len, right_len, new_len;
 
-    if (ensure_unicode(left) < 0 || ensure_unicode(right) < 0)
+    if (ensure_unicode(left) < 0)
+        return NULL;
+
+    if (!PyUnicode_Check(right)) {
+        PyErr_Format(PyExc_TypeError,
+                     "can only concatenate str (not \"%.200s\") to str",
+                     right->ob_type->tp_name);
+        return NULL;
+    }
+    if (PyUnicode_READY(right) < 0)
         return NULL;
 
     /* Shortcuts */

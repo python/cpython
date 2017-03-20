@@ -4917,6 +4917,13 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
     return 1;
 }
 
+int
+_PyEval_SliceIndexOrNone(PyObject *v, Py_ssize_t *pi)
+{
+    return v == Py_None || _PyEval_SliceIndex(v, pi);
+}
+
+
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
                          "BaseException is not allowed"
 

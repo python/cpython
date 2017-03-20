@@ -160,7 +160,7 @@ class PyclbrTest(TestCase):
         cm('aifc', ignore=('openfp', '_aifc_params'))  # set with = in module
         cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
         cm('pdb')
-        cm('pydoc')
+        cm('pydoc', ignore=('input', 'output',)) # properties
 
         # Tests for modules inside packages
         cm('email.parser')
