@@ -35,6 +35,9 @@ Core and Builtins
 - bpo-28893: Set correct __cause__ for errors about invalid awaitables
   returned from __aiter__ and __anext__.
 
+- bpo-28876: ``bool(range)`` works even if ``len(range)``
+  raises :exc:`OverflowError`.
+
 - bpo-29683: Fixes to memory allocation in _PyCode_SetExtra.  Patch by
   Brian Coleman.
 
