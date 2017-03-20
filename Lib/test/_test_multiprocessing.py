@@ -2016,13 +2016,16 @@ class _TestPool(BaseTestCase):
         self.assertGreater(time.time() - t_start, 0.9)
 
     def test_release_task_refs(self):
-        # Issue #29861:
+        # Issue #29861: task arguments and results should not be kept
+        # alive after we are done with them.
         objs = [CountedObject() for i in range(10)]
         refs = [weakref.ref(o) for o in objs]
         self.pool.map(identity, objs)
 
         del objs
         self.assertEqual(set(wr() for wr in refs), {None})
+        # With a process pool, copies of the objects are returned, check
+        # they were released too.
         self.assertEqual(CountedObject.n_instances, 0)
 
 
