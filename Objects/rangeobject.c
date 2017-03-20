@@ -682,7 +682,16 @@ range_bool(rangeobject* self)
 }
 
 static PyNumberMethods range_as_number = {
-    .nb_bool = (inquiry)range_bool,
+    0,                          /* nb_add */
+    0,                          /* nb_subtract */
+    0,                          /* nb_multiply */
+    0,                          /* nb_remainder */
+    0,                          /* nb_divmod */
+    0,                          /* nb_power */
+    0,                          /* nb_negative */
+    0,                          /* nb_positive */
+    0,                          /* nb_absolute */
+    (inquiry)range_bool,        /* nb_bool */
 };
 
 static PyObject * range_iter(PyObject *seq);
