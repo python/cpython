@@ -282,6 +282,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29861: Release references to tasks, their arguments and their results
+  as soon as they are finished in multiprocessing.Pool.
+
 - bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
 
 - bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
