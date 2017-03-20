@@ -420,16 +420,16 @@ class Pool(object):
                 try:
                     put(task)
                 except Exception as e:
-                    job, ind = task[:2]
+                    job, idx = task[:2]
                     try:
-                        cache[job]._set(ind, (False, e))
+                        cache[job]._set(idx, (False, e))
                     except KeyError:
                         pass
             else:
                 if set_length:
                     util.debug('doing set_length()')
-                    ind = task[1] if task else -1
-                    set_length(ind + 1)
+                    idx = task[1] if task else -1
+                    set_length(idx + 1)
                 continue
             break
         else:

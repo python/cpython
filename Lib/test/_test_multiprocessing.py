@@ -2015,7 +2015,8 @@ class _TestPool(BaseTestCase):
                     sys.excepthook(*sys.exc_info())
             self.assertIn('raise RuntimeError(123) # some comment',
                           f1.getvalue())
-            # _helper_reraises_exception should be treated as a remote exception
+            # _helper_reraises_exception should not make the error
+            # a remote exception
             with self.Pool(1) as p:
                 try:
                     p.map(sqr, exception_throwing_generator(1, -1), 1)
