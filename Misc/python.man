@@ -431,6 +431,10 @@ values.
 
 The integer must be a decimal number in the range [0,4294967295].  Specifying
 the value 0 will disable hash randomization.
+.IP PYTHONHISTORY
+If this is set you can change the location of a
+python_history file, by default it will be ~/.python_history.
+
 .SH AUTHOR
 The Python Software Foundation: https://www.python.org/psf/
 .SH INTERNET RESOURCES

@@ -105,7 +105,8 @@ static const char usage_6[] =
 "   predictable seed.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
-"   hooks.\n";
+"   hooks.\n"
+"PYTHONHISTORY: If this is set, you can change the location of a python_history file.\n";
 
 static int
 usage(int exitcode, const wchar_t* program)

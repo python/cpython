@@ -259,6 +259,10 @@ class HelperFunctionsTests(unittest.TestCase):
             wanted = os.path.join('xoxo', 'lib', 'site-packages')
             self.assertEqual(dirs[1], wanted)
 
+    def test_gethistoryfile(self):
+        os.environ['PYTHONHISTORY'] = "xoxo"
+        self.assertEqual(site.gethistoryfile(), "xoxo")
+
 class PthFile(object):
     """Helper class for handling testing of .pth files"""
 
