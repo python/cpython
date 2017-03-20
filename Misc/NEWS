@@ -30,8 +30,6 @@ Core and Builtins
 - bpo-29695: bool(), float(), list() and tuple() no longer take keyword arguments.
   The first argument of int() can now be passes only as positional argument.
 
-- bpo-20087: Prefer glibc's list of locale aliases to the X11 ones.
-
 - bpo-28893: Set correct __cause__ for errors about invalid awaitables
   returned from __aiter__ and __anext__.
 
