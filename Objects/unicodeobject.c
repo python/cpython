@@ -3633,7 +3633,8 @@ PyUnicode_AsEncodedString(PyObject *unicode,
             return NULL;
         }
 
-        b = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(v), Py_SIZE(v));
+        b = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(v),
+                                      PyByteArray_GET_SIZE(v));
         Py_DECREF(v);
         return b;
     }
