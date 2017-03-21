@@ -5024,7 +5024,7 @@ import_from(PyObject *v, PyObject *name)
 {
     PyObject *x;
     _Py_IDENTIFIER(__name__);
-    PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown;
+    PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
     x = PyObject_GetAttr(v, name);
     if (x != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -5039,6 +5039,7 @@ import_from(PyObject *v, PyObject *name)
     }
     fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
     if (fullmodname == NULL) {
+        Py_DECREF(pkgname);
         return NULL;
     }
     x = PyDict_GetItem(PyImport_GetModuleDict(), fullmodname);
@@ -5063,17 +5064,23 @@ import_from(PyObject *v, PyObject *name)
 
     if (pkgpath == NULL || !PyUnicode_Check(pkgpath)) {
         PyErr_Clear();
-        PyErr_SetImportError(
-            PyUnicode_FromFormat("cannot import name %R from %R (unknown location)",
-                name, pkgname_or_unknown),
-            pkgname, NULL);
-    } else {
-        PyErr_SetImportError(
-            PyUnicode_FromFormat("cannot import name %R from %R (%S)",
-                name, pkgname_or_unknown, pkgpath),
-            pkgname, pkgpath);
+        errmsg = PyUnicode_FromFormat(
+            "cannot import name %R from %R (unknown location)",
+            name, pkgname_or_unknown
+        );
+        /* NULL check for errmsg done by PyErr_SetImportError. */
+        PyErr_SetImportError(errmsg, pkgname, NULL);
+    }
+    else {
+        errmsg = PyUnicode_FromFormat(
+            "cannot import name %R from %R (%S)",
+            name, pkgname_or_unknown, pkgpath
+        );
+        /* NULL check for errmsg done by PyErr_SetImportError. */
+        PyErr_SetImportError(errmsg, pkgname, pkgpath);
     }
 
+    Py_XDECREF(errmsg);
     Py_XDECREF(pkgname_or_unknown);
     Py_XDECREF(pkgpath);
     return NULL;
