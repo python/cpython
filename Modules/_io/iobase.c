@@ -518,7 +518,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
     if (buffer == NULL)
         return NULL;
 
-    while (limit < 0 || Py_SIZE(buffer) < limit) {
+    while (limit < 0 || PyByteArray_GET_SIZE(buffer) < limit) {
         Py_ssize_t nreadahead = 1;
         PyObject *b;
 

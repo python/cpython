@@ -321,11 +321,12 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
             return function_code_fastcall(co, args, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == Py_SIZE(argdefs)) {
+                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             args = &PyTuple_GET_ITEM(argdefs, 0);
-            return function_code_fastcall(co, args, Py_SIZE(argdefs), globals);
+            return function_code_fastcall(co, args, PyTuple_GET_SIZE(argdefs),
+                                          globals);
         }
     }
 
@@ -364,7 +365,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     if (argdefs != NULL) {
         d = &PyTuple_GET_ITEM(argdefs, 0);
-        nd = Py_SIZE(argdefs);
+        nd = PyTuple_GET_SIZE(argdefs);
     }
     else {
         d = NULL;
@@ -406,11 +407,12 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
             return function_code_fastcall(co, stack, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == Py_SIZE(argdefs)) {
+                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             stack = &PyTuple_GET_ITEM(argdefs, 0);
-            return function_code_fastcall(co, stack, Py_SIZE(argdefs), globals);
+            return function_code_fastcall(co, stack, PyTuple_GET_SIZE(argdefs),
+                                          globals);
         }
     }
 
@@ -421,7 +423,7 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
 
     if (argdefs != NULL) {
         d = &PyTuple_GET_ITEM(argdefs, 0);
-        nd = Py_SIZE(argdefs);
+        nd = PyTuple_GET_SIZE(argdefs);
     }
     else {
         d = NULL;
