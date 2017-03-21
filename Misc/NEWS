@@ -10,6 +10,8 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29849: Fix a memory leak when an ImportError is raised during from import.
+
 - bpo-28856: Fix an oversight that %b format for bytes should support objects
   follow the buffer protocol.
 
