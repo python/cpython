@@ -5068,13 +5068,15 @@ import_from(PyObject *v, PyObject *name)
             "cannot import name %R from %R (unknown location)",
             name, pkgname_or_unknown
         );
-        /* doesn't check NULL for errmsg, PyErr_SetImportError will catch */
+        /* NULL check for errmsg done by PyErr_SetImportError. */
         PyErr_SetImportError(errmsg, pkgname, NULL);
-    } else {
+    }
+    else {
         errmsg = PyUnicode_FromFormat(
             "cannot import name %R from %R (%S)",
             name, pkgname_or_unknown, pkgpath
         );
+        /* NULL check for errmsg done by PyErr_SetImportError. */
         PyErr_SetImportError(errmsg, pkgname, pkgpath);
     }
 
