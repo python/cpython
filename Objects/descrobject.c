@@ -1385,7 +1385,7 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     PyTuple_SET_ITEM(args, 0, obj);
     ret = PyObject_Call(gs->prop_get, args, NULL);
     if (cached_args == NULL && Py_REFCNT(args) == 1) {
-        assert(Py_SIZE(args) == 1);
+        assert(PyTuple_GET_SIZE(args) == 1);
         assert(PyTuple_GET_ITEM(args, 0) == obj);
         cached_args = args;
         Py_DECREF(obj);

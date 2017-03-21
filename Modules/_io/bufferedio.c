@@ -83,7 +83,7 @@ _bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer, char readint
         return NULL;
     }
 
-    len = Py_SIZE(data);
+    len = PyBytes_GET_SIZE(data);
     if (len > buffer->len) {
         PyErr_Format(PyExc_ValueError,
                      "read() returned too much data: "
