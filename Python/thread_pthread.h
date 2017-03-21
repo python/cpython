@@ -143,7 +143,8 @@ typedef struct {
 } pthread_lock;
 
 #define CHECK_STATUS(name)  if (status != 0) { perror(name); error = 1; }
-#define CHECK_STATUS_PTHREAD(name)  if (status != 0) { char* strerror_msg = strerror(status);  fprintf(stderr, "%s: %s\n", name, strerror_msg); }
+#define CHECK_STATUS_PTHREAD(name)  if (status != 0) { fprintf(stderr, \
+    "%s: %s\n", name, strerror(status)); error = 1; }
 
 /*
  * Initialization.
