@@ -37,8 +37,8 @@ HAS_GIT=no-repository
 fi
 if test $HAS_GIT = found
 then
-    GITVERSION="git -C \$(srcdir) rev-parse HEAD"
-    GITTAG="git -C \$(srcdir) name-rev --tags --name-only HEAD"
+    GITVERSION="git -C \$(srcdir) rev-parse --short HEAD"
+    GITTAG="git -C \$(srcdir) describe --all --always --dirty"
     GITBRANCH="git -C \$(srcdir) name-rev --name-only HEAD"
 else
     GITVERSION=""
