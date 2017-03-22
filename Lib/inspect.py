@@ -2171,7 +2171,10 @@ def _signature_from_callable(obj, *,
 
     # Was this function wrapped by a decorator?
     if follow_wrapper_chains:
-        obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")))
+        # Unwrap until it has a explicit signature
+        # or it is a MethodType - we need to process it individually
+        obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")
+                                or isinstance(f, types.MethodType)))
         if isinstance(obj, types.MethodType):
             # If the unwrapped object is a *method*, we might want to
             # skip its first parameter (self).
