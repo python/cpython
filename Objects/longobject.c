@@ -4286,44 +4286,44 @@ long_bool(PyLongObject *v)
 }
 
 /* wordshift, remshift = divmod(shiftby, PyLong_SHIFT) */
-static void
-divmod_shift(PyObject *shiftby, Py_ssize_t *wordshift, Py_ssize_t *remshift)
+static int
+divmod_shift(PyLongObject *shiftby, Py_ssize_t *wordshift, digit *remshift)
 {
-    assert(PyLong_Check(shiftby));
+    assert(PyLong_Check((PyObject *)shiftby));
     assert(Py_SIZE(shiftby) >= 0);
-    Py_ssize_t lshiftby = PyLong_AsSsize_t(shiftby);
+    Py_ssize_t lshiftby = PyLong_AsSsize_t((PyObject *)shiftby);
     if (lshiftby >= 0) {
         *wordshift = lshiftby / PyLong_SHIFT;
         *remshift = lshiftby % PyLong_SHIFT;
+        return 0;
     }
-    else {
-        /* PyLong_Check(shiftby) is true and Py_SIZE(shiftby) >= 0, so it must
-           be that PyLong_AsSsize_t raised an OverflowError. */
-        assert(PyErr_ExceptionMatches(PyExc_OverflowError));
-        PyErr_Clear();
-        /* Clip the value.  With such large wordshift the right shift
-           returns 0 and the left shift raises an error in _PyLong_New(). */
-        *wordshift = PY_SSIZE_T_MAX / sizeof(digit);
-        *remshift = 0;
-#if SIZE_MAX / 2 < ULLONG_MAX / 15
-        int overflow;
-        long long llshiftby = PyLong_AsLongLongAndOverflow(shiftby, &overflow);
-        assert(!PyErr_Occurred());
-        if (llshiftby >= 0 /* no overflow */ &&
-                llshiftby / PyLong_SHIFT < PY_SSIZE_T_MAX / sizeof(digit)) {
-            *wordshift = llshiftby / PyLong_SHIFT;
-            *remshift = llshiftby % PyLong_SHIFT;
-        }
-#endif
+    /* PyLong_Check(shiftby) is true and Py_SIZE(shiftby) >= 0, so it must
+       be that PyLong_AsSsize_t raised an OverflowError. */
+    assert(PyErr_ExceptionMatches(PyExc_OverflowError));
+    PyErr_Clear();
+    PyLongObject *wordshift_obj = divrem1(shiftby, PyLong_SHIFT, remshift);
+    if (wordshift_obj == NULL) {
+        return -1;
     }
+    *wordshift = PyLong_AsSsize_t((PyObject *)wordshift_obj);
+    Py_DECREF(wordshift_obj);
+    if (*wordshift >= 0 && *wordshift < PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(digit)) {
+        return 0;
+    }
+    PyErr_Clear();
+    /* Clip the value.  With such large wordshift the right shift
+       returns 0 and the left shift raises an error in _PyLong_New(). */
+    *wordshift = PY_SSIZE_T_MAX / sizeof(digit);
+    *remshift = 0;
+    return 0;
 }
 
 static PyObject *
 long_rshift(PyLongObject *a, PyLongObject *b)
 {
     PyLongObject *z = NULL;
-    Py_ssize_t newsize, wordshift, loshift, hishift, i, j;
-    digit lomask, himask;
+    Py_ssize_t newsize, wordshift, hishift, i, j;
+    digit loshift, lomask, himask;
 
     CHECK_BINOP(a, b);
 
@@ -4347,7 +4347,8 @@ long_rshift(PyLongObject *a, PyLongObject *b)
         Py_DECREF(a2);
     }
     else {
-        divmod_shift((PyObject *)b, &wordshift, &loshift);
+        if (divmod_shift(b, &wordshift, &loshift) < 0)
+            return NULL;
         newsize = Py_SIZE(a) - wordshift;
         if (newsize <= 0)
             return PyLong_FromLong(0);
@@ -4374,7 +4375,8 @@ long_lshift(PyObject *v, PyObject *w)
     PyLongObject *a = (PyLongObject*)v;
     PyLongObject *b = (PyLongObject*)w;
     PyLongObject *z = NULL;
-    Py_ssize_t oldsize, newsize, wordshift, remshift, i, j;
+    Py_ssize_t oldsize, newsize, wordshift, i, j;
+    digit remshift;
     twodigits accum;
 
     CHECK_BINOP(a, b);
@@ -4387,7 +4389,8 @@ long_lshift(PyObject *v, PyObject *w)
         return PyLong_FromLong(0);
     }
 
-    divmod_shift((PyObject *)b, &wordshift, &remshift);
+    if (divmod_shift(b, &wordshift, &remshift) < 0)
+        return NULL;
     oldsize = Py_ABS(Py_SIZE(a));
     newsize = oldsize + wordshift;
     if (remshift)
