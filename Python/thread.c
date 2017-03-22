@@ -387,6 +387,24 @@ PyThread_delete_key_value(int key)
     PyThread_release_lock(keymutex);
 }
 
+int
+_PyThread_AcquireKeyLock(void)
+{
+    if (keymutex == NULL) {
+        keymutex = PyThread_allocate_lock();
+    }
+    if (keymutex == NULL) {
+        return 0;
+    }
+    return PyThread_acquire_lock(keymutex, 1);
+}
+
+void
+_PyThread_ReleaseKeyLock(void)
+{
+    PyThread_release_lock(keymutex);
+}
+
 /* Forget everything not associated with the current thread id.
  * This function is called from PyOS_AfterFork().  It is necessary
  * because other thread ids which were in use at the time of the fork

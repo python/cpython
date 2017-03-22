@@ -30,6 +30,8 @@ PyAPI_FUNC(void) PyThread_delete_key(int);
 PyAPI_FUNC(int) PyThread_set_key_value(int, void *);
 PyAPI_FUNC(void *) PyThread_get_key_value(int);
 PyAPI_FUNC(void) PyThread_delete_key_value(int key);
+PyAPI_FUNC(int) _PyThread_AcquireKeyLock(void);
+PyAPI_FUNC(void) _PyThread_ReleaseKeyLock(void);
 
 /* Cleanup after a fork */
 PyAPI_FUNC(void) PyThread_ReInitTLS(void);
