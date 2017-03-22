@@ -2124,20 +2124,19 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
     PyObject *array_str;
     int typecode = self->ob_descr->typecode;
     int mformat_code;
-    static PyObject *array_reconstructor = NULL;
+    _Py_STATICVAR(array_reconstructor);
     long protocol;
     _Py_IDENTIFIER(_array_reconstructor);
     _Py_IDENTIFIER(__dict__);
 
-    if (array_reconstructor == NULL) {
+    if (array_reconstructor.obj == NULL) {
         PyObject *array_module = PyImport_ImportModule("array");
         if (array_module == NULL)
             return NULL;
-        array_reconstructor = _PyObject_GetAttrId(
-            array_module,
-            &PyId__array_reconstructor);
+        PyObject *meth = _PyObject_GetAttrId(array_module,
+                                             &PyId__array_reconstructor);
         Py_DECREF(array_module);
-        if (array_reconstructor == NULL)
+        if (_PyStaticVar_Set(&array_reconstructor, meth))
             return NULL;
     }
 
@@ -2191,7 +2190,7 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
         return NULL;
     }
     result = Py_BuildValue(
-        "O(OCiN)O", array_reconstructor, Py_TYPE(self), typecode,
+        "O(OCiN)O", array_reconstructor.obj, Py_TYPE(self), typecode,
         mformat_code, array_str, dict);
     Py_DECREF(dict);
     return result;

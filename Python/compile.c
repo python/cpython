@@ -213,7 +213,7 @@ static int compiler_async_comprehension_generator(
                                       expr_ty elt, expr_ty val, int type);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
-static PyObject *__doc__;
+_Py_STATICVAR(__doc__);
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -306,10 +306,8 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCompilerFlags local_flags;
     int merged;
 
-    if (!__doc__) {
-        __doc__ = PyUnicode_InternFromString("__doc__");
-        if (!__doc__)
-            return NULL;
+    if (_PY_STATICVAR_INIT(&__doc__, PyUnicode_InternFromString("__doc__"))) {
+        return 0;
     }
 
     if (!compiler_init(&c))
@@ -1441,7 +1439,7 @@ compiler_body(struct compiler *c, asdl_seq *stmts, string docstring)
     /* if not -OO mode, set docstring */
     if (c->c_optimize < 2 && docstring) {
         ADDOP_O(c, LOAD_CONST, docstring, consts);
-        ADDOP_NAME(c, STORE_NAME, __doc__, names);
+        ADDOP_NAME(c, STORE_NAME, __doc__.obj, names);
     }
     VISIT_SEQ(c, stmt, stmts);
     return 1;
@@ -1452,14 +1450,14 @@ compiler_mod(struct compiler *c, mod_ty mod)
 {
     PyCodeObject *co;
     int addNone = 1;
-    static PyObject *module;
-    if (!module) {
-        module = PyUnicode_InternFromString("<module>");
-        if (!module)
-            return NULL;
+    _Py_STATICVAR(module);
+
+    if (_PY_STATICVAR_INIT(&module, PyUnicode_InternFromString("<module>"))) {
+        return 0;
     }
+
     /* Use 0 for firstlineno initially, will fixup in assemble(). */
-    if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 0))
+    if (!compiler_enter_scope(c, module.obj, COMPILER_SCOPE_MODULE, mod, 0))
         return NULL;
     switch (mod->kind) {
     case Module_kind:
@@ -2639,12 +2637,10 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
     PyObject *names = PyTuple_New(n);
     PyObject *level;
-    static PyObject *empty_string;
+    _Py_STATICVAR(empty_string);
 
-    if (!empty_string) {
-        empty_string = PyUnicode_FromString("");
-        if (!empty_string)
-            return 0;
+    if (_PY_STATICVAR_INIT(&empty_string, PyUnicode_FromString(""))) {
+        return 0;
     }
 
     if (!names)
@@ -2679,7 +2675,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
     }
     else {
-        ADDOP_NAME(c, IMPORT_NAME, empty_string, names);
+        ADDOP_NAME(c, IMPORT_NAME, empty_string.obj, names);
     }
     for (i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
@@ -2709,17 +2705,18 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 static int
 compiler_assert(struct compiler *c, stmt_ty s)
 {
-    static PyObject *assertion_error = NULL;
+    _Py_STATICVAR(assertion_error);
     basicblock *end;
     PyObject* msg;
 
     if (c->c_optimize)
         return 1;
-    if (assertion_error == NULL) {
-        assertion_error = PyUnicode_InternFromString("AssertionError");
-        if (assertion_error == NULL)
-            return 0;
+
+    if (_PY_STATICVAR_INIT(&assertion_error,
+                           PyUnicode_InternFromString("AssertionError"))) {
+        return 0;
     }
+
     if (s->v.Assert.test->kind == Tuple_kind &&
         asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) {
         msg = PyUnicode_FromString("assertion is always true, "
@@ -2739,7 +2736,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     if (end == NULL)
         return 0;
     ADDOP_JABS(c, POP_JUMP_IF_TRUE, end);
-    ADDOP_O(c, LOAD_GLOBAL, assertion_error, names);
+    ADDOP_O(c, LOAD_GLOBAL, assertion_error.obj, names);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, CALL_FUNCTION, 1);

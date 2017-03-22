@@ -62,6 +62,7 @@ static void call_ll_exitfuncs(void);
 extern int _PyUnicode_Init(void);
 extern int _PyStructSequence_Init(void);
 extern void _PyUnicode_Fini(void);
+extern void _PyStaticVar_Fini(void);
 extern int _PyLong_Init(void);
 extern void PyLong_Fini(void);
 extern int _PyFaulthandler_Init(void);
@@ -699,6 +700,7 @@ Py_FinalizeEx(void)
 
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini();
+    _PyStaticVar_Fini();
 
     /* reset file system default encoding */
     if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {

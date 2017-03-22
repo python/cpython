@@ -2129,3 +2129,36 @@ _Py_Dealloc(PyObject *op)
 #ifdef __cplusplus
 }
 #endif
+
+
+_Py_StaticVar* _Py_static_variables = NULL;
+
+int
+_PyStaticVar_Set(_Py_StaticVar *var, PyObject *obj)
+{
+    assert(var->next == NULL);
+    assert(var->obj == NULL);
+
+    if (obj == NULL) {
+        return -1;
+    }
+
+    var->obj = obj;
+    var->next = _Py_static_variables;
+    _Py_static_variables = var;
+    return 0;
+}
+
+void
+_PyStaticVar_Fini(void)
+{
+    _Py_StaticVar *next, *var;
+
+    for (var = _Py_static_variables; var != NULL; var = next) {
+        next = var->next;
+
+        Py_CLEAR(var->obj);
+        var->next = NULL;
+    }
+    _Py_static_variables = NULL;
+}
