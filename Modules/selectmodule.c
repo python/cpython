@@ -289,9 +289,9 @@ select_select(PyObject *self, PyObject *args)
         else
             ret = PyTuple_Pack(3, ifdlist, ofdlist, efdlist);
 
-        Py_DECREF(ifdlist);
-        Py_DECREF(ofdlist);
-        Py_DECREF(efdlist);
+        Py_XDECREF(ifdlist);
+        Py_XDECREF(ofdlist);
+        Py_XDECREF(efdlist);
     }
 
   finally:
@@ -1298,7 +1298,7 @@ kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
 
     if (PyLong_Check(pfd)
 #if IDENT_TYPE == T_UINT
-	&& PyLong_AsUnsignedLong(pfd) <= UINT_MAX
+        && PyLong_AsUnsignedLong(pfd) <= UINT_MAX
 #endif
     ) {
         self->e.ident = IDENT_AsType(pfd);
