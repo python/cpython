@@ -1071,6 +1071,17 @@ PyAPI_FUNC(void)
 _PyObject_DebugTypeStats(FILE *out);
 #endif /* ifndef Py_LIMITED_API */
 
+#ifndef Py_LIMITED_API
+/* Don't this this function (implementation detail), but _PY_ONCEVAR_INIT() */
+PyAPI_FUNC(int) _PyOnceVar_Set(PyObject **var, PyObject *value);
+
+/* Initialized the variable 'var' with the expression 'expr'.
+   The variable is only initialized once: do nothing if *var is not NULL.
+   Return 0 on success, return -1 on failure. */
+#define _PY_ONCEVAR_INIT(var, expr) \
+    ((var) == NULL ? _PyOnceVar_Set(&(var), (expr)) : 0)
+#endif /* ifndef Py_LIMITED_API */
+
 #ifdef __cplusplus
 }
 #endif

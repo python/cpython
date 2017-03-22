@@ -62,6 +62,7 @@ static void call_ll_exitfuncs(void);
 extern int _PyUnicode_Init(void);
 extern int _PyStructSequence_Init(void);
 extern void _PyUnicode_Fini(void);
+extern void _PyOnceVar_Fini(void);
 extern int _PyLong_Init(void);
 extern void PyLong_Fini(void);
 extern int _PyFaulthandler_Init(void);
@@ -671,6 +672,9 @@ Py_FinalizeEx(void)
     /* Clear interpreter state and all thread states. */
     PyInterpreterState_Clear(interp);
 
+    /* Clear private variables (first try) */
+    _PyOnceVar_Fini();
+
     /* Now we decref the exception classes.  After this point nothing
        can raise an exception.  That's okay, because each Fini() method
        below has been checked to make sure no exceptions are ever
@@ -699,6 +703,9 @@ Py_FinalizeEx(void)
 
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini();
+
+    /* Clear private variables (second try) */
+    _PyOnceVar_Fini();
 
     /* reset file system default encoding */
     if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {

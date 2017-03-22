@@ -2129,3 +2129,71 @@ _Py_Dealloc(PyObject *op)
 #ifdef __cplusplus
 }
 #endif
+
+
+static struct {
+    PyObject ***array;
+    Py_ssize_t len;
+    Py_ssize_t alloc;
+} once_variables = {NULL, 0, 0};
+
+int
+_PyOnceVar_Set(PyObject **var, PyObject *value)
+{
+    assert(var != NULL);
+    assert(*var == NULL);
+
+    if (value == NULL) {
+        return -1;
+    }
+
+    if (once_variables.len + 1 > once_variables.alloc) {
+        Py_ssize_t alloc, size;
+
+        alloc = once_variables.len + 1;
+        /* Overallocate 1.5x and allocate at least 16 items
+           to reduce number of required realloc() */
+        alloc = alloc * 3 / 2;
+        alloc = Py_MAX(alloc, 16);
+        if (alloc > PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(PyObject *)) {
+            PyErr_NoMemory();
+            goto error;
+        }
+        size = alloc * sizeof(once_variables.array[0]);
+
+        PyObject ***array2 = PyMem_Realloc(once_variables.array, size);
+        if (array2 == NULL) {
+            PyErr_NoMemory();
+            goto error;
+        }
+        once_variables.array = array2;
+        once_variables.alloc = alloc;
+    }
+
+    *var = value;
+    once_variables.array[once_variables.len] = var;
+    once_variables.len++;
+    return 0;
+
+error:
+    Py_DECREF(value);
+    return -1;
+}
+
+void
+_PyOnceVar_Fini(void)
+{
+    PyObject ***array = once_variables.array;
+    Py_ssize_t len  = once_variables.len;
+
+    once_variables.array = NULL;
+    once_variables.len = 0;
+    once_variables.alloc = 0;
+
+    /* clear variables in the reversed order of their initialization */
+    for (Py_ssize_t i = len - 1; i >= 0; i--) {
+        PyObject **var = array[i];
+        Py_CLEAR(*var);
+    }
+    PyMem_Free(array);
+}
