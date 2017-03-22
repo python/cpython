@@ -166,7 +166,7 @@ A single exception is defined as well:
    passing it to :meth:`convert_entityref`.  If a translation is returned, it calls
    the method :meth:`handle_data` with the translation; otherwise, it calls the
    method ``unknown_entityref(ref)``. The default :attr:`entitydefs` defines
-   translations for ``&amp;``, ``&apos``, ``&gt;``, ``&lt;``, and ``&quot;``.
+   translations for ``&amp;``, ``&apos;``, ``&gt;``, ``&lt;``, and ``&quot;``.
 
    .. versionchanged:: 2.5
       Use :meth:`convert_entityref` instead of hard-coding the conversion.
