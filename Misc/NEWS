@@ -287,6 +287,9 @@ Extension Modules
 Library
 -------
 
+- bpo-27863: Fixed multiple crashes in ElementTree caused by race conditions
+  and wrong types. 
+
 - bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
 
 - bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
