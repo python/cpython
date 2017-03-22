@@ -59,7 +59,7 @@ def main():
 
 class NannyNag(Exception):
     """
-    Raised by tokeneater() if detecting an ambiguous indent.
+    Raised by process_tokens() if detecting an ambiguous indent.
     Captured and handled in check().
     """
     def __init__(self, lineno, msg, line):
