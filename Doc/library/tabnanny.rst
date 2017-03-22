@@ -52,7 +52,7 @@ described below.
    handled in :func:`check`.
 
 
-.. function:: tokeneater(type, token, start, end, line)
+.. function:: process_tokens(type, token, start, end, line)
 
    This function is used by :func:`check` as a callback parameter to the function
    :func:`tokenize.tokenize`.
