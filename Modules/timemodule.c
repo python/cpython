@@ -1457,11 +1457,9 @@ pysleep(_PyTime_t secs)
             return -1;
         }
 
-        /* Allow sleep(0) to maintain win32 semantics, and as decreed
-         * by Guido, only the main thread can be interrupted.
-         */
+        /* Allow sleep(0) to maintain win32 semantics. */
         ul_millis = (unsigned long)millisecs;
-        if (ul_millis == 0 || !_PyOS_IsMainThread()) {
+        if (ul_millis == 0) {
             Py_BEGIN_ALLOW_THREADS
             Sleep(ul_millis);
             Py_END_ALLOW_THREADS

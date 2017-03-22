@@ -418,13 +418,6 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
             return NULL;
     }
 #endif
-#ifdef WITH_THREAD
-    if (PyThread_get_thread_ident() != main_thread) {
-        PyErr_SetString(PyExc_ValueError,
-                        "signal only works in main thread");
-        return NULL;
-    }
-#endif
     if (signalnum < 1 || signalnum >= NSIG) {
         PyErr_SetString(PyExc_ValueError,
                         "signal number out of range");
@@ -436,7 +429,8 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
         func = SIG_DFL;
     else if (!PyCallable_Check(handler)) {
         PyErr_SetString(PyExc_TypeError,
-"signal handler must be signal.SIG_IGN, signal.SIG_DFL, or a callable object");
+                        "signal handler must be signal.SIG_IGN, "
+                        "signal.SIG_DFL, or a callable object");
                 return NULL;
     }
     else
@@ -548,14 +542,6 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "i:set_wakeup_fd", &fd))
         return NULL;
-#endif
-
-#ifdef WITH_THREAD
-    if (PyThread_get_thread_ident() != main_thread) {
-        PyErr_SetString(PyExc_ValueError,
-                        "set_wakeup_fd only works in main thread");
-        return NULL;
-    }
 #endif
 
 #ifdef MS_WINDOWS
@@ -1501,11 +1487,6 @@ PyErr_CheckSignals(void)
     if (!is_tripped)
         return 0;
 
-#ifdef WITH_THREAD
-    if (PyThread_get_thread_ident() != main_thread)
-        return 0;
-#endif
-
     /*
      * The is_tripped variable is meant to speed up the calls to
      * PyErr_CheckSignals (both directly or via pending calls) when no
@@ -1553,7 +1534,16 @@ PyErr_CheckSignals(void)
 void
 PyErr_SetInterrupt(void)
 {
+#if defined(HAVE_PTHREAD_KILL) && defined(WITH_THREAD)
+    if (PyThread_get_thread_ident() == main_thread) {
+        trip_signal(SIGINT);
+    }
+    else {
+        pthread_kill(main_thread, SIGINT);
+    }
+#else
     trip_signal(SIGINT);
+#endif
 }
 
 void

@@ -355,6 +355,8 @@ PyEval_RestoreThread(PyThreadState *tstate)
    callback.
  */
 
+/* FIXME: move this array into PyThreadState to avoid race conditions between
+   threads when Py_AddPendingCall() is called by signal handlers. */
 #define NPENDINGCALLS 32
 static struct {
     int (*func)(void *);

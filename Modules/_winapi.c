@@ -1350,9 +1350,9 @@ _winapi_WaitForMultipleObjects_impl(PyObject *module, PyObject *handle_seq,
         handles[i] = h;
         Py_DECREF(v);
     }
-    /* If this is the main thread then make the wait interruptible
-       by Ctrl-C unless we are waiting for *all* handles */
-    if (!wait_flag && _PyOS_IsMainThread()) {
+    /* Make the wait interruptible by Ctrl-C unless
+       we are waiting for *all* handles */
+    if (!wait_flag) {
         sigint_event = _PyOS_SigintEvent();
         assert(sigint_event != NULL);
         handles[nhandles++] = sigint_event;
