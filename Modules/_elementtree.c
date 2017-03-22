@@ -524,8 +524,9 @@ subelement(PyObject* self, PyObject* args, PyObject* kw)
     }
 
     elem = element_new(tag, attrib);
-
     Py_DECREF(attrib);
+    if (elem == NULL)
+        return NULL;
 
     if (element_add_subelement(parent, elem) < 0) {
         Py_DECREF(elem);
