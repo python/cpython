@@ -143,6 +143,7 @@ class GeneralTest(unittest.TestCase):
         self.assertEqual(l, [5])
 
 
+@support.cpython_only
 class SubinterpreterTest(unittest.TestCase):
 
     def test_callbacks_leak(self):

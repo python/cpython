@@ -83,7 +83,7 @@ _bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer, char readint
         return NULL;
     }
 
-    len = Py_SIZE(data);
+    len = PyBytes_GET_SIZE(data);
     if (len > buffer->len) {
         PyErr_Format(PyExc_ValueError,
                      "read() returned too much data: "
@@ -1415,8 +1415,18 @@ buffered_repr(buffered *self)
         res = PyUnicode_FromFormat("<%s>", Py_TYPE(self)->tp_name);
     }
     else {
-        res = PyUnicode_FromFormat("<%s name=%R>",
-                                   Py_TYPE(self)->tp_name, nameobj);
+        int status = Py_ReprEnter((PyObject *)self);
+        res = NULL;
+        if (status == 0) {
+            res = PyUnicode_FromFormat("<%s name=%R>",
+                                       Py_TYPE(self)->tp_name, nameobj);
+            Py_ReprLeave((PyObject *)self);
+        }
+        else if (status > 0) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "reentrant call inside %s.__repr__",
+                         Py_TYPE(self)->tp_name);
+        }
         Py_DECREF(nameobj);
     }
     return res;
