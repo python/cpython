@@ -287,6 +287,10 @@ Extension Modules
 Library
 -------
 
+- bpo-29204: Element.getiterator() and the html parameter of XMLParser() were
+  deprecated only in the documentation.  Now using them emits a deprecation
+  warning.
+
 - bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
 
 - bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
