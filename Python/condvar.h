@@ -124,11 +124,12 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
 #include <windows.h>
 
 /* options */
-/* non-emulated condition variables are provided for those that want
- * to target Windows Vista.  Modify this macro to enable them.
+/* As of 3.5, we only support Windows Vista and newer,
+ * so we default to building using the non-emulated condition variables
+ * Set this macro to 1 to explicitly use emulated condition variables
  */
 #ifndef _PY_EMULATED_WIN_CV
-#define _PY_EMULATED_WIN_CV 1  /* use emulated condition variables */
+#define _PY_EMULATED_WIN_CV 0  /* use emulated condition variables */
 #endif
 
 /* fall back to emulation if not targeting Vista */
@@ -306,7 +307,7 @@ PyCOND_BROADCAST(PyCOND_T *cv)
 
 #else
 
-/* Use native Win7 primitives if build target is Win7 or higher */
+/* Use native Vista primitives if build target is Vista or higher */
 
 /* SRWLOCK is faster and better than CriticalSection */
 typedef SRWLOCK PyMUTEX_T;
@@ -359,13 +360,13 @@ PyCOND_WAIT(PyCOND_T *cv, PyMUTEX_T *cs)
     return SleepConditionVariableSRW(cv, cs, INFINITE, 0) ? 0 : -1;
 }
 
-/* This implementation makes no distinction about timeouts.  Signal
- * 2 to indicate that we don't know.
- */
 Py_LOCAL_INLINE(int)
 PyCOND_TIMEDWAIT(PyCOND_T *cv, PyMUTEX_T *cs, long long us)
 {
-    return SleepConditionVariableSRW(cv, cs, (DWORD)(us/1000), 0) ? 2 : -1;
+    if (SleepConditionVariableSRW(cv, cs, (DWORD)(us/1000), 0))
+        return 0;
+
+    return GetLastError() == ERROR_TIMEOUT ? 1 : -1;
 }
 
 Py_LOCAL_INLINE(int)

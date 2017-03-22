@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29871: Replace old condition variable emulation on Windows with
+  optimized locking primitives added in Windows Vista.
+
 - bpo-29859: Show correct error messages when any of the pthread_* calls in
   thread_pthread.h fails.
 
