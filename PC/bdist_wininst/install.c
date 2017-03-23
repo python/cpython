@@ -2179,7 +2179,7 @@ BOOL MyIsUserAnAdmin()
     // to leave the library loaded)
     if (0 == (shell32=LoadLibrary("shell32.dll")))
         return FALSE;
-    if (0 == (pfnIsUserAnAdmin=(PFNIsUserAnAdmin)GetProcAddress(shell32, "IsUserAnAdmin")))
+    if (NULL == (pfnIsUserAnAdmin=(PFNIsUserAnAdmin)GetProcAddress(shell32, "IsUserAnAdmin")))
         return FALSE;
     return (*pfnIsUserAnAdmin)();
 }
