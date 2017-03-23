@@ -47,10 +47,9 @@ get_warnings_attr(const char *attr, int try_import)
     PyObject *all_modules;
     PyObject *warnings_module, *obj;
 
-    if (warnings_str == NULL) {
-        warnings_str = PyUnicode_InternFromString("warnings");
-        if (warnings_str == NULL)
-            return NULL;
+    if (_PY_ONCEVAR_INIT(warnings_str,
+                         PyUnicode_InternFromString("warnings"))) {
+        return NULL;
     }
 
     /* don't try to import after the start of the Python finallization */
@@ -576,19 +575,13 @@ is_internal_frame(PyFrameObject *frame)
     PyObject *filename;
     int contains;
 
-    if (importlib_string == NULL) {
-        importlib_string = PyUnicode_FromString("importlib");
-        if (importlib_string == NULL) {
-            return 0;
-        }
-
-        bootstrap_string = PyUnicode_FromString("_bootstrap");
-        if (bootstrap_string == NULL) {
-            Py_DECREF(importlib_string);
-            return 0;
-        }
-        Py_INCREF(importlib_string);
-        Py_INCREF(bootstrap_string);
+    if (_PY_ONCEVAR_INIT(importlib_string,
+                         PyUnicode_FromString("importlib"))) {
+        return 0;
+    }
+    if (_PY_ONCEVAR_INIT(bootstrap_string,
+                         PyUnicode_FromString("_bootstrap"))) {
+        return 0;
     }
 
     if (frame == NULL || frame->f_code == NULL ||
@@ -1133,34 +1126,30 @@ create_filter(PyObject *category, const char *action)
     PyObject *lineno, *result;
 
     if (!strcmp(action, "ignore")) {
-        if (ignore_str == NULL) {
-            ignore_str = PyUnicode_InternFromString("ignore");
-            if (ignore_str == NULL)
-                return NULL;
+        if (_PY_ONCEVAR_INIT(ignore_str,
+                             PyUnicode_InternFromString("ignore"))) {
+            return NULL;
         }
         action_obj = ignore_str;
     }
     else if (!strcmp(action, "error")) {
-        if (error_str == NULL) {
-            error_str = PyUnicode_InternFromString("error");
-            if (error_str == NULL)
-                return NULL;
+        if (_PY_ONCEVAR_INIT(error_str,
+                             PyUnicode_InternFromString("error"))) {
+            return NULL;
         }
         action_obj = error_str;
     }
     else if (!strcmp(action, "default")) {
-        if (default_str == NULL) {
-            default_str = PyUnicode_InternFromString("default");
-            if (default_str == NULL)
-                return NULL;
+        if (_PY_ONCEVAR_INIT(default_str,
+                             PyUnicode_InternFromString("default"))) {
+            return NULL;
         }
         action_obj = default_str;
     }
     else if (!strcmp(action, "always")) {
-        if (always_str == NULL) {
-            always_str = PyUnicode_InternFromString("always");
-            if (always_str == NULL)
-                return NULL;
+        if (_PY_ONCEVAR_INIT(always_str,
+                             PyUnicode_InternFromString("always"))) {
+            return NULL;
         }
         action_obj = always_str;
     }

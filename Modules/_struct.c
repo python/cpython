@@ -2060,10 +2060,8 @@ cache_struct_converter(PyObject *fmt, PyObject **ptr)
         return 1;
     }
 
-    if (cache == NULL) {
-        cache = PyDict_New();
-        if (cache == NULL)
-            return 0;
+    if (_PY_ONCEVAR_INIT(cache, PyDict_New())) {
+        return 0;
     }
 
     s_object = PyDict_GetItem(cache, fmt);

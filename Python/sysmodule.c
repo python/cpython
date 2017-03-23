@@ -197,10 +197,8 @@ sys_displayhook(PyObject *self, PyObject *o)
             return NULL;
         }
     }
-    if (newline == NULL) {
-        newline = PyUnicode_FromString("\n");
-        if (newline == NULL)
-            return NULL;
+    if (_PY_ONCEVAR_INIT(newline, PyUnicode_FromString("\n"))) {
+        return NULL;
     }
     if (PyFile_WriteObject(newline, outf, Py_PRINT_RAW) != 0)
         return NULL;
@@ -360,14 +358,11 @@ trace_init(void)
         "call", "exception", "line", "return",
         "c_call", "c_exception", "c_return"
     };
-    PyObject *name;
     int i;
     for (i = 0; i < 7; ++i) {
-        if (whatstrings[i] == NULL) {
-            name = PyUnicode_InternFromString(whatnames[i]);
-            if (name == NULL)
-                return -1;
-            whatstrings[i] = name;
+        if (_PY_ONCEVAR_INIT(whatstrings[i],
+                             PyUnicode_InternFromString(whatnames[i]))) {
+            return -1;
         }
     }
     return 0;

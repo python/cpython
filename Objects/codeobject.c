@@ -217,15 +217,11 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     PyObject *filename_ob = NULL;
     PyObject *funcname_ob = NULL;
     PyCodeObject *result = NULL;
-    if (emptystring == NULL) {
-        emptystring = PyBytes_FromString("");
-        if (emptystring == NULL)
-            goto failed;
+    if (_PY_ONCEVAR_INIT(emptystring, PyBytes_FromString(""))) {
+        goto failed;
     }
-    if (nulltuple == NULL) {
-        nulltuple = PyTuple_New(0);
-        if (nulltuple == NULL)
-            goto failed;
+    if (_PY_ONCEVAR_INIT(nulltuple, PyTuple_New(0))) {
+        goto failed;
     }
     funcname_ob = PyUnicode_FromString(funcname);
     if (funcname_ob == NULL)

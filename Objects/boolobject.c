@@ -13,13 +13,19 @@ bool_repr(PyObject *self)
 {
     PyObject *s;
 
-    if (self == Py_True)
-        s = true_str ? true_str :
-            (true_str = PyUnicode_InternFromString("True"));
-    else
-        s = false_str ? false_str :
-            (false_str = PyUnicode_InternFromString("False"));
-    Py_XINCREF(s);
+    if (self == Py_True) {
+        if (_PY_ONCEVAR_INIT(true_str, PyUnicode_InternFromString("True"))) {
+            return NULL;
+        }
+        s = true_str;
+    }
+    else {
+        if (_PY_ONCEVAR_INIT(false_str, PyUnicode_InternFromString("False"))) {
+            return NULL;
+        }
+        s = false_str;
+    }
+    Py_INCREF(s);
     return s;
 }
 

@@ -12,10 +12,8 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     PyObject *doc, *consts, *module;
     static PyObject *__name__ = NULL;
 
-    if (__name__ == NULL) {
-        __name__ = PyUnicode_InternFromString("__name__");
-        if (__name__ == NULL)
-            return NULL;
+    if (_PY_ONCEVAR_INIT(__name__, PyUnicode_InternFromString("__name__"))) {
+        return NULL;
     }
 
     op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);

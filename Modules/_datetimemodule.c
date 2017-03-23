@@ -4445,10 +4445,8 @@ datetime_strptime(PyObject *cls, PyObject *args)
     if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
         return NULL;
 
-    if (module == NULL) {
-        module = PyImport_ImportModuleNoBlock("_strptime");
-        if (module == NULL)
-            return NULL;
+    if (_PY_ONCEVAR_INIT(module, PyImport_ImportModule("_strptime"))) {
+        return NULL;
     }
     return _PyObject_CallMethodIdObjArgs(module, &PyId__strptime_datetime,
                                          cls, string, format, NULL);
@@ -5839,23 +5837,34 @@ PyInit__datetime(void)
     Py_BUILD_ASSERT(DI100Y == 25 * DI4Y - 1);
     assert(DI100Y == days_before_year(100+1));
 
-    one = PyLong_FromLong(1);
-    us_per_ms = PyLong_FromLong(1000);
-    us_per_second = PyLong_FromLong(1000000);
-    us_per_minute = PyLong_FromLong(60000000);
-    seconds_per_day = PyLong_FromLong(24 * 3600);
-    if (one == NULL || us_per_ms == NULL || us_per_second == NULL ||
-        us_per_minute == NULL || seconds_per_day == NULL)
+    if (_PY_ONCEVAR_INIT(one, PyLong_FromLong(1))) {
         return NULL;
+    }
+    if (_PY_ONCEVAR_INIT(us_per_ms, PyLong_FromLong(1000))) {
+        return NULL;
+    }
+    if (_PY_ONCEVAR_INIT(us_per_second, PyLong_FromLong(1000000))) {
+        return NULL;
+    }
+    if (_PY_ONCEVAR_INIT(us_per_minute , PyLong_FromLong(60000000))) {
+        return NULL;
+    }
+    if (_PY_ONCEVAR_INIT(seconds_per_day, PyLong_FromLong(24 * 3600))) {
+        return NULL;
+    }
 
     /* The rest are too big for 32-bit ints, but even
      * us_per_week fits in 40 bits, so doubles should be exact.
      */
-    us_per_hour = PyLong_FromDouble(3600000000.0);
-    us_per_day = PyLong_FromDouble(86400000000.0);
-    us_per_week = PyLong_FromDouble(604800000000.0);
-    if (us_per_hour == NULL || us_per_day == NULL || us_per_week == NULL)
+    if (_PY_ONCEVAR_INIT(us_per_hour, PyLong_FromDouble(3600000000.0))) {
         return NULL;
+    }
+    if (_PY_ONCEVAR_INIT(us_per_day, PyLong_FromDouble(86400000000.0))) {
+        return NULL;
+    }
+    if (_PY_ONCEVAR_INIT(us_per_week, PyLong_FromDouble(604800000000.0))) {
+        return NULL;
+    }
     return m;
 }
 

@@ -1574,9 +1574,10 @@ PyInit_zipimport(void)
                            (PyObject *)&ZipImporter_Type) < 0)
         return NULL;
 
-    zip_directory_cache = PyDict_New();
-    if (zip_directory_cache == NULL)
-        return NULL;
+    if (_PY_ONCEVAR_INIT(zip_directory_cache, PyDict_New())) {
+        return 0;
+    }
+
     Py_INCREF(zip_directory_cache);
     if (PyModule_AddObject(mod, "_zip_directory_cache",
                            zip_directory_cache) < 0)

@@ -794,9 +794,10 @@ _PyIO_trap_eintr(void)
     PyObject *typ, *val, *tb;
     PyEnvironmentErrorObject *env_err;
 
-    if (eintr_int == NULL) {
-        eintr_int = PyLong_FromLong(EINTR);
-        assert(eintr_int != NULL);
+    if (_PY_ONCEVAR_INIT(eintr_int, PyLong_FromLong(EINTR))) {
+        /* ignore the exception! the function doesn't support
+           reporting a new error. */
+        return 0;
     }
     if (!PyErr_ExceptionMatches(PyExc_EnvironmentError))
         return 0;

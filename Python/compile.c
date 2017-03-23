@@ -213,7 +213,7 @@ static int compiler_async_comprehension_generator(
                                       expr_ty elt, expr_ty val, int type);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
-static PyObject *__doc__;
+static PyObject *__doc__ = NULL;
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -306,10 +306,8 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCompilerFlags local_flags;
     int merged;
 
-    if (!__doc__) {
-        __doc__ = PyUnicode_InternFromString("__doc__");
-        if (!__doc__)
-            return NULL;
+    if (_PY_ONCEVAR_INIT(__doc__, PyUnicode_InternFromString("__doc__"))) {
+        return NULL;
     }
 
     if (!compiler_init(&c))
@@ -1452,12 +1450,12 @@ compiler_mod(struct compiler *c, mod_ty mod)
 {
     PyCodeObject *co;
     int addNone = 1;
-    static PyObject *module;
-    if (!module) {
-        module = PyUnicode_InternFromString("<module>");
-        if (!module)
-            return NULL;
+    static PyObject *module = NULL;
+
+    if (_PY_ONCEVAR_INIT(module, PyUnicode_InternFromString("<module>"))) {
+        return NULL;
     }
+
     /* Use 0 for firstlineno initially, will fixup in assemble(). */
     if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 0))
         return NULL;
@@ -2639,12 +2637,10 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
     PyObject *names = PyTuple_New(n);
     PyObject *level;
-    static PyObject *empty_string;
+    static PyObject *empty_string = NULL;
 
-    if (!empty_string) {
-        empty_string = PyUnicode_FromString("");
-        if (!empty_string)
-            return 0;
+    if (_PY_ONCEVAR_INIT(empty_string, PyUnicode_FromString(""))) {
+        return 0;
     }
 
     if (!names)
@@ -2715,11 +2711,12 @@ compiler_assert(struct compiler *c, stmt_ty s)
 
     if (c->c_optimize)
         return 1;
-    if (assertion_error == NULL) {
-        assertion_error = PyUnicode_InternFromString("AssertionError");
-        if (assertion_error == NULL)
-            return 0;
+
+    if (_PY_ONCEVAR_INIT(assertion_error,
+                         PyUnicode_InternFromString("AssertionError"))) {
+        return 0;
     }
+
     if (s->v.Assert.test->kind == Tuple_kind &&
         asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) {
         msg = PyUnicode_FromString("assertion is always true, "

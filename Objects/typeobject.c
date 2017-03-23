@@ -4419,15 +4419,14 @@ static PyObject *
 object___reduce_ex___impl(PyObject *self, int protocol)
 /*[clinic end generated code: output=2e157766f6b50094 input=8dd6a9602a12749e]*/
 {
-    static PyObject *objreduce;
+    static PyObject *objreduce = NULL;
     PyObject *reduce, *res;
     _Py_IDENTIFIER(__reduce__);
 
-    if (objreduce == NULL) {
-        objreduce = _PyDict_GetItemId(PyBaseObject_Type.tp_dict,
-                                      &PyId___reduce__);
-        if (objreduce == NULL)
-            return NULL;
+    if (_PY_ONCEVAR_INIT(objreduce,
+                         _PyDict_GetItemId(PyBaseObject_Type.tp_dict,
+                                           &PyId___reduce__))) {
+        return NULL;
     }
 
     reduce = _PyObject_GetAttrId(self, &PyId___reduce__);

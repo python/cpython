@@ -4756,16 +4756,15 @@ certEncodingType(DWORD encodingType)
     static PyObject *x509_asn = NULL;
     static PyObject *pkcs_7_asn = NULL;
 
-    if (x509_asn == NULL) {
-        x509_asn = PyUnicode_InternFromString("x509_asn");
-        if (x509_asn == NULL)
-            return NULL;
+    if (_PY_ONCEVAR_INIT(x509_asn,
+                         PyUnicode_InternFromString("x509_asn"))) {
+        return NULL;
     }
-    if (pkcs_7_asn == NULL) {
-        pkcs_7_asn = PyUnicode_InternFromString("pkcs_7_asn");
-        if (pkcs_7_asn == NULL)
-            return NULL;
+    if (_PY_ONCEVAR_INIT(pkcs_7_asn,
+                         PyUnicode_InternFromString("pkcs_7_asn"))) {
+        return NULL;
     }
+
     switch(encodingType) {
     case X509_ASN_ENCODING:
         Py_INCREF(x509_asn);

@@ -2106,6 +2106,18 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
     return result;
 }
 
+static PyObject*
+get_array_reconstructor(void)
+{
+    PyObject *array_module = PyImport_ImportModule("array");
+    if (array_module == NULL)
+        return NULL;
+
+    PyObject *meth = PyObject_GetAttrString(array_module, "_array_reconstructor");
+    Py_DECREF(array_module);
+    return meth;
+}
+
 /*[clinic input]
 array.array.__reduce_ex__
 
@@ -2126,19 +2138,10 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
     int mformat_code;
     static PyObject *array_reconstructor = NULL;
     long protocol;
-    _Py_IDENTIFIER(_array_reconstructor);
     _Py_IDENTIFIER(__dict__);
 
-    if (array_reconstructor == NULL) {
-        PyObject *array_module = PyImport_ImportModule("array");
-        if (array_module == NULL)
-            return NULL;
-        array_reconstructor = _PyObject_GetAttrId(
-            array_module,
-            &PyId__array_reconstructor);
-        Py_DECREF(array_module);
-        if (array_reconstructor == NULL)
-            return NULL;
+    if (_PY_ONCEVAR_INIT(array_reconstructor, get_array_reconstructor())) {
+        return NULL;
     }
 
     if (!PyLong_Check(value)) {

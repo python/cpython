@@ -13077,9 +13077,9 @@ INITFUNC(void)
     Py_INCREF(&TerminalSizeType);
     PyModule_AddObject(m, "terminal_size", (PyObject*) &TerminalSizeType);
 
-    billion = PyLong_FromLong(1000000000);
-    if (!billion)
+    if (_PY_ONCEVAR_INIT(billion, PyLong_FromLong(1000000000))) {
         return NULL;
+    }
 
     /* suppress "function not used" warnings */
     {

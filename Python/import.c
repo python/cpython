@@ -29,7 +29,6 @@ extern struct _inittab _PyImport_Inittab[];
 
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 
-static PyObject *initstr = NULL;
 
 /*[clinic input]
 module _imp
@@ -44,9 +43,6 @@ void
 _PyImport_Init(void)
 {
     PyInterpreterState *interp = PyThreadState_Get()->interp;
-    initstr = PyUnicode_InternFromString("__init__");
-    if (initstr == NULL)
-        Py_FatalError("Can't initialize import variables");
     interp->builtins_copy = PyDict_Copy(interp->builtins);
     if (interp->builtins_copy == NULL)
         Py_FatalError("Can't backup builtins dict");
@@ -1721,7 +1717,7 @@ PyImport_ReloadModule(PyObject *m)
 PyObject *
 PyImport_Import(PyObject *module_name)
 {
-    static PyObject *silly_list = NULL;
+    static PyObject *empty_list = NULL;
     static PyObject *builtins_str = NULL;
     static PyObject *import_str = NULL;
     PyObject *globals = NULL;
@@ -1731,16 +1727,16 @@ PyImport_Import(PyObject *module_name)
     PyObject *r = NULL;
 
     /* Initialize constant string objects */
-    if (silly_list == NULL) {
-        import_str = PyUnicode_InternFromString("__import__");
-        if (import_str == NULL)
-            return NULL;
-        builtins_str = PyUnicode_InternFromString("__builtins__");
-        if (builtins_str == NULL)
-            return NULL;
-        silly_list = PyList_New(0);
-        if (silly_list == NULL)
-            return NULL;
+    if (_PY_ONCEVAR_INIT(empty_list, PyList_New(0))) {
+        return NULL;
+    }
+    if (_PY_ONCEVAR_INIT(builtins_str,
+                         PyUnicode_InternFromString("__builtins__"))) {
+        return NULL;
+    }
+    if (_PY_ONCEVAR_INIT(import_str,
+                         PyUnicode_InternFromString("__import__"))) {
+        return NULL;
     }
 
     /* Get the builtins from current globals */
@@ -1777,7 +1773,7 @@ PyImport_Import(PyObject *module_name)
        Always use absolute import here.
        Calling for side-effect of import. */
     r = PyObject_CallFunction(import, "OOOOi", module_name, globals,
-                              globals, silly_list, 0, NULL);
+                              globals, empty_list, 0, NULL);
     if (r == NULL)
         goto err;
     Py_DECREF(r);

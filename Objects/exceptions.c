@@ -2843,11 +2843,8 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     }
 
     /* Check for legacy print statements */
-    if (print_prefix == NULL) {
-        print_prefix = PyUnicode_InternFromString("print ");
-        if (print_prefix == NULL) {
-            return -1;
-        }
+    if (_PY_ONCEVAR_INIT(print_prefix, PyUnicode_InternFromString("print "))) {
+        return -1;
     }
     if (PyUnicode_Tailmatch(self->text, print_prefix,
                             start, text_len, -1)) {
@@ -2857,11 +2854,8 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     }
 
     /* Check for legacy exec statements */
-    if (exec_prefix == NULL) {
-        exec_prefix = PyUnicode_InternFromString("exec ");
-        if (exec_prefix == NULL) {
-            return -1;
-        }
+    if (_PY_ONCEVAR_INIT(exec_prefix, PyUnicode_InternFromString("exec "))) {
+        return -1;
     }
     if (PyUnicode_Tailmatch(self->text, exec_prefix,
                             start, text_len, -1)) {

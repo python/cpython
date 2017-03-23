@@ -68,10 +68,8 @@ join_list_unicode(PyObject *lst)
 {
     /* return u''.join(lst) */
     static PyObject *sep = NULL;
-    if (sep == NULL) {
-        sep = PyUnicode_FromStringAndSize("", 0);
-        if (sep == NULL)
-            return NULL;
+    if (_PY_ONCEVAR_INIT(sep, PyUnicode_FromStringAndSize("", 0))) {
+        return NULL;
     }
     return PyUnicode_Join(sep, lst);
 }
@@ -320,21 +318,28 @@ escape_unicode(PyObject *pystr)
     return rval;
 }
 
+static PyObject*
+get_json_decode_error(void)
+{
+    PyObject *decoder = PyImport_ImportModule("json.decoder");
+    if (decoder == NULL)
+        return NULL;
+
+    PyObject *err = PyObject_GetAttrString(decoder, "JSONDecodeError");
+    Py_DECREF(decoder);
+    return err;
+}
+
 static void
 raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 {
     /* Use JSONDecodeError exception to raise a nice looking ValueError subclass */
     static PyObject *JSONDecodeError = NULL;
     PyObject *exc;
-    if (JSONDecodeError == NULL) {
-        PyObject *decoder = PyImport_ImportModule("json.decoder");
-        if (decoder == NULL)
-            return;
-        JSONDecodeError = PyObject_GetAttrString(decoder, "JSONDecodeError");
-        Py_DECREF(decoder);
-        if (JSONDecodeError == NULL)
-            return;
+    if (_PY_ONCEVAR_INIT(JSONDecodeError, get_json_decode_error())) {
+        return;
     }
+
     exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
     if (exc) {
         PyErr_SetObject(JSONDecodeError, exc);
@@ -1413,24 +1418,27 @@ _encoded_const(PyObject *obj)
     /* Return the JSON string representation of None, True, False */
     if (obj == Py_None) {
         static PyObject *s_null = NULL;
-        if (s_null == NULL) {
-            s_null = PyUnicode_InternFromString("null");
+        if (_PY_ONCEVAR_INIT(s_null,
+                             PyUnicode_InternFromString("null"))) {
+            return NULL;
         }
         Py_INCREF(s_null);
         return s_null;
     }
     else if (obj == Py_True) {
         static PyObject *s_true = NULL;
-        if (s_true == NULL) {
-            s_true = PyUnicode_InternFromString("true");
+        if (_PY_ONCEVAR_INIT(s_true,
+                             PyUnicode_InternFromString("true"))) {
+            return NULL;
         }
         Py_INCREF(s_true);
         return s_true;
     }
     else if (obj == Py_False) {
         static PyObject *s_false = NULL;
-        if (s_false == NULL) {
-            s_false = PyUnicode_InternFromString("false");
+        if (_PY_ONCEVAR_INIT(s_false,
+                             PyUnicode_InternFromString("false"))) {
+            return NULL;
         }
         Py_INCREF(s_false);
         return s_false;
@@ -1599,12 +1607,14 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
     int sortkeys;
     Py_ssize_t idx;
 
-    if (open_dict == NULL || close_dict == NULL || empty_dict == NULL) {
-        open_dict = PyUnicode_InternFromString("{");
-        close_dict = PyUnicode_InternFromString("}");
-        empty_dict = PyUnicode_InternFromString("{}");
-        if (open_dict == NULL || close_dict == NULL || empty_dict == NULL)
-            return -1;
+    if (_PY_ONCEVAR_INIT(open_dict, PyUnicode_InternFromString("{"))) {
+        return -1;
+    }
+    if (_PY_ONCEVAR_INIT(close_dict, PyUnicode_InternFromString("}"))) {
+        return -1;
+    }
+    if (_PY_ONCEVAR_INIT(empty_dict, PyUnicode_InternFromString("{}"))) {
+        return -1;
     }
     if (PyDict_GET_SIZE(dct) == 0)  /* Fast path */
         return _PyAccu_Accumulate(acc, empty_dict);
@@ -1754,12 +1764,14 @@ encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
     PyObject *s_fast = NULL;
     Py_ssize_t i;
 
-    if (open_array == NULL || close_array == NULL || empty_array == NULL) {
-        open_array = PyUnicode_InternFromString("[");
-        close_array = PyUnicode_InternFromString("]");
-        empty_array = PyUnicode_InternFromString("[]");
-        if (open_array == NULL || close_array == NULL || empty_array == NULL)
-            return -1;
+    if (_PY_ONCEVAR_INIT(open_array, PyUnicode_InternFromString("["))) {
+        return -1;
+    }
+    if (_PY_ONCEVAR_INIT(close_array, PyUnicode_InternFromString("]"))) {
+        return -1;
+    }
+    if (_PY_ONCEVAR_INIT(empty_array, PyUnicode_InternFromString("[]"))) {
+        return -1;
     }
     ident = NULL;
     s_fast = PySequence_Fast(seq, "_iterencode_list needs a sequence");
