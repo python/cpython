@@ -88,7 +88,7 @@ module signal
 #ifdef WITH_THREAD
 #include <sys/types.h> /* For pid_t */
 #include "pythread.h"
-static long main_thread;
+static unsigned long main_thread;
 static pid_t main_pid;
 #endif
 
@@ -1088,7 +1088,7 @@ signal_sigtimedwait_impl(PyObject *module, PyObject *sigset,
 /*[clinic input]
 signal.pthread_kill
 
-    thread_id:  long
+    thread_id:  unsigned_long(bitwise=True)
     signalnum:  int
     /
 
@@ -1096,8 +1096,9 @@ Send a signal to a thread.
 [clinic start generated code]*/
 
 static PyObject *
-signal_pthread_kill_impl(PyObject *module, long thread_id, int signalnum)
-/*[clinic end generated code: output=2a09ce41f1c4228a input=77ed6a3b6f2a8122]*/
+signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
+                         int signalnum)
+/*[clinic end generated code: output=7629919b791bc27f input=1d901f2c7bb544ff]*/
 {
     int err;
 
