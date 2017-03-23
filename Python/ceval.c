@@ -148,7 +148,7 @@ static long dxp[256];
 #include "pythread.h"
 
 static PyThread_type_lock pending_lock = 0; /* for pending calls */
-static long main_thread = 0;
+static unsigned long main_thread = 0;
 /* This single variable consolidates all requests to break out of the fast path
    in the eval loop. */
 static _Py_atomic_int eval_breaker = {0};
@@ -4917,6 +4917,13 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
     return 1;
 }
 
+int
+_PyEval_SliceIndexOrNone(PyObject *v, Py_ssize_t *pi)
+{
+    return v == Py_None || _PyEval_SliceIndex(v, pi);
+}
+
+
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
                          "BaseException is not allowed"
 
@@ -5017,7 +5024,7 @@ import_from(PyObject *v, PyObject *name)
 {
     PyObject *x;
     _Py_IDENTIFIER(__name__);
-    PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown;
+    PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
     x = PyObject_GetAttr(v, name);
     if (x != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError))
@@ -5032,6 +5039,7 @@ import_from(PyObject *v, PyObject *name)
     }
     fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
     if (fullmodname == NULL) {
+        Py_DECREF(pkgname);
         return NULL;
     }
     x = PyDict_GetItem(PyImport_GetModuleDict(), fullmodname);
@@ -5056,17 +5064,23 @@ import_from(PyObject *v, PyObject *name)
 
     if (pkgpath == NULL || !PyUnicode_Check(pkgpath)) {
         PyErr_Clear();
-        PyErr_SetImportError(
-            PyUnicode_FromFormat("cannot import name %R from %R (unknown location)",
-                name, pkgname_or_unknown),
-            pkgname, NULL);
-    } else {
-        PyErr_SetImportError(
-            PyUnicode_FromFormat("cannot import name %R from %R (%S)",
-                name, pkgname_or_unknown, pkgpath),
-            pkgname, pkgpath);
+        errmsg = PyUnicode_FromFormat(
+            "cannot import name %R from %R (unknown location)",
+            name, pkgname_or_unknown
+        );
+        /* NULL check for errmsg done by PyErr_SetImportError. */
+        PyErr_SetImportError(errmsg, pkgname, NULL);
+    }
+    else {
+        errmsg = PyUnicode_FromFormat(
+            "cannot import name %R from %R (%S)",
+            name, pkgname_or_unknown, pkgpath
+        );
+        /* NULL check for errmsg done by PyErr_SetImportError. */
+        PyErr_SetImportError(errmsg, pkgname, pkgpath);
     }
 
+    Py_XDECREF(errmsg);
     Py_XDECREF(pkgname_or_unknown);
     Py_XDECREF(pkgpath);
     return NULL;

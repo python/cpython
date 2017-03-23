@@ -14,7 +14,7 @@ enum { RECURSIVE_MUTEX, SEMAPHORE };
 typedef struct {
     PyObject_HEAD
     SEM_HANDLE handle;
-    long last_tid;
+    unsigned long last_tid;
     int count;
     int maxvalue;
     int kind;

@@ -185,6 +185,16 @@ Deprecated
   (Contributed by Serhiy Storchaka in :issue:`28692`.)
 
 
+Changes in the C API
+--------------------
+
+- The type of results of :c:func:`PyThread_start_new_thread` and
+  :c:func:`PyThread_get_thread_ident`, and the *id* parameter of
+  :c:func:`PyThreadState_SetAsyncExc` changed from :c:type:`long` to
+  :c:type:`unsigned long`.
+  (Contributed by Serhiy Storchaka in :issue:`6532`.)
+
+
 Removed
 =======
 

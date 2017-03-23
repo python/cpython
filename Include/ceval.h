@@ -7,6 +7,12 @@ extern "C" {
 
 /* Interface to random parts in ceval.c */
 
+/* PyEval_CallObjectWithKeywords(), PyEval_CallObject(), PyEval_CallFunction
+ * and PyEval_CallMethod are kept for backward compatibility: PyObject_Call(),
+ * PyObject_CallFunction() and PyObject_CallMethod() are recommended to call
+ * a callable object.
+ */
+
 PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
     PyObject *callable,
     PyObject *args,
@@ -217,6 +223,7 @@ PyAPI_FUNC(Py_ssize_t) _PyEval_RequestCodeExtraIndex(freefunc);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyEval_SliceIndex(PyObject *, Py_ssize_t *);
+PyAPI_FUNC(int) _PyEval_SliceIndexOrNone(PyObject *, Py_ssize_t *);
 PyAPI_FUNC(void) _PyEval_SignalAsyncExc(void);
 #endif
 

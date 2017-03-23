@@ -578,11 +578,17 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *arg)
         /* Truncate to current position if no argument is passed. */
         size = self->pos;
     }
-    else {
+    else if (PyIndex_Check(arg)) {
         size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
             return NULL;
         }
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "argument should be integer or None, not '%.200s'",
+                     Py_TYPE(arg)->tp_name);
+        return NULL;
     }
 
     if (size < 0) {
@@ -816,7 +822,7 @@ bytesio_setstate(bytesio *self, PyObject *state)
     /* We allow the state tuple to be longer than 3, because we may need
        someday to extend the object's state without breaking
        backward-compatibility. */
-    if (!PyTuple_Check(state) || Py_SIZE(state) < 3) {
+    if (!PyTuple_Check(state) || PyTuple_GET_SIZE(state) < 3) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s.__setstate__ argument should be 3-tuple, got %.200s",
                      Py_TYPE(self)->tp_name, Py_TYPE(state)->tp_name);

@@ -458,17 +458,19 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *arg)
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
 
-    if (PyNumber_Check(arg)) {
+    if (PyIndex_Check(arg)) {
         size = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
-        if (size == -1 && PyErr_Occurred())
+        if (size == -1 && PyErr_Occurred()) {
             return NULL;
+        }
     }
     else if (arg == Py_None) {
         /* Truncate to current position if no argument is passed. */
         size = self->pos;
     }
     else {
-        PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
+        PyErr_Format(PyExc_TypeError,
+                     "argument should be integer or None, not '%.200s'",
                      Py_TYPE(arg)->tp_name);
         return NULL;
     }
@@ -875,7 +877,7 @@ stringio_setstate(stringio *self, PyObject *state)
     /* We allow the state tuple to be longer than 4, because we may need
        someday to extend the object's state without breaking
        backward-compatibility. */
-    if (!PyTuple_Check(state) || Py_SIZE(state) < 4) {
+    if (!PyTuple_Check(state) || PyTuple_GET_SIZE(state) < 4) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s.__setstate__ argument should be 4-tuple, got %.200s",
                      Py_TYPE(self)->tp_name, Py_TYPE(state)->tp_name);
