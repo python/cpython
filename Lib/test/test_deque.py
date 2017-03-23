@@ -409,7 +409,7 @@ class TestBasic(unittest.TestCase):
             d = deque(data[:i])
             r = d.reverse()
             self.assertEqual(list(d), list(reversed(data[:i])))
-            self.assertIs(r, None)
+            self.assertIsNone(r)
             d.reverse()
             self.assertEqual(list(d), data[:i])
         self.assertRaises(TypeError, d.reverse, 1)          # Arity is zero
@@ -512,7 +512,7 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(RuntimeError, d.remove, 'c')
         for x, y in zip(d, e):
             # verify that original order and values are retained.
-            self.assertTrue(x is y)
+            self.assertIs(x, y)
 
         # Handle evil mutator
         for match in (True, False):
@@ -748,7 +748,7 @@ class TestBasic(unittest.TestCase):
             obj.x = iter(container)
             del obj, container
             gc.collect()
-            self.assertTrue(ref() is None, "Cycle was not collected")
+            self.assertIsNone(ref(), "Cycle was not collected")
 
     check_sizeof = support.check_sizeof
 

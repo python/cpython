@@ -1164,7 +1164,7 @@ class TestCollectionABCs(ABCTestCase):
             def __hash__(self):
                 return self._hash()
         a, b = OneTwoThreeSet(), OneTwoThreeSet()
-        self.assertTrue(hash(a) == hash(b))
+        self.assertEqual(hash(a), hash(b))
 
     def test_isdisjoint_Set(self):
         class MySet(Set):
@@ -1790,7 +1790,7 @@ class TestCounter(unittest.TestCase):
     def test_invariant_for_the_in_operator(self):
         c = Counter(a=10, b=-2, c=0)
         for elem in c:
-            self.assertTrue(elem in c)
+            self.assertIn(elem, c)
             self.assertIn(elem, c)
 
     def test_multiset_operations(self):

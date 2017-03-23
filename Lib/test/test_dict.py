@@ -278,10 +278,10 @@ class DictTest(unittest.TestCase):
 
     def test_get(self):
         d = {}
-        self.assertIs(d.get('c'), None)
+        self.assertIsNone(d.get('c'))
         self.assertEqual(d.get('c', 3), 3)
         d = {'a': 1, 'b': 2}
-        self.assertIs(d.get('c'), None)
+        self.assertIsNone(d.get('c'))
         self.assertEqual(d.get('c', 3), 3)
         self.assertEqual(d.get('a'), 1)
         self.assertEqual(d.get('a', 3), 1)
@@ -291,9 +291,9 @@ class DictTest(unittest.TestCase):
     def test_setdefault(self):
         # dict.setdefault()
         d = {}
-        self.assertIs(d.setdefault('key0'), None)
+        self.assertIsNone(d.setdefault('key0'))
         d.setdefault('key0', [])
-        self.assertIs(d.setdefault('key0'), None)
+        self.assertIsNone(d.setdefault('key0'))
         d.setdefault('key', []).append(3)
         self.assertEqual(d['key'][0], 3)
         d.setdefault('key', []).append(4)
@@ -736,7 +736,7 @@ class DictTest(unittest.TestCase):
             obj.x = iter(obj.v)
             del obj, container
             gc.collect()
-            self.assertIs(ref(), None, "Cycle was not collected")
+            self.assertIsNone(ref(), "Cycle was not collected")
 
     def _not_tracked(self, t):
         # Nested containers can take several collections to untrack

@@ -76,16 +76,16 @@ class DictSetTest(unittest.TestCase):
         self.assertIsInstance(repr(d), str)
         r = repr(d.items())
         self.assertIsInstance(r, str)
-        self.assertTrue(r == "dict_items([('a', 'ABC'), (1, 10)])" or
-                        r == "dict_items([(1, 10), ('a', 'ABC')])")
+        self.assertIn(r, ("dict_items([('a', 'ABC'), (1, 10)])",
+                          "dict_items([(1, 10), ('a', 'ABC')])"))
         r = repr(d.keys())
         self.assertIsInstance(r, str)
-        self.assertTrue(r == "dict_keys(['a', 1])" or
-                        r == "dict_keys([1, 'a'])")
+        self.assertIn(r, ("dict_keys(['a', 1])",
+                          "dict_keys([1, 'a'])"))
         r = repr(d.values())
         self.assertIsInstance(r, str)
-        self.assertTrue(r == "dict_values(['ABC', 10])" or
-                        r == "dict_values([10, 'ABC'])")
+        self.assertIn(r, ("dict_values(['ABC', 10])",
+                          "dict_values([10, 'ABC'])"))
 
     def test_keys_set_operations(self):
         d1 = {'a': 1, 'b': 2}

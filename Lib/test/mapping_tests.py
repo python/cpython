@@ -72,7 +72,8 @@ class BasicTestMappingProtocol(unittest.TestCase):
             self.assertTrue(hasattr(iter, '__next__'))
             self.assertTrue(hasattr(iter, '__iter__'))
             x = list(iter)
-            self.assertTrue(set(x)==set(lst)==set(ref))
+            self.assertEqual(set(x), set(lst))
+            self.assertEqual(set(ref), set(lst))
         check_iterandlist(iter(d.keys()), list(d.keys()),
                           self.reference.keys())
         check_iterandlist(iter(d), list(d.keys()), self.reference.keys())
@@ -133,10 +134,10 @@ class BasicTestMappingProtocol(unittest.TestCase):
         self.assertEqual(self._empty_mapping(), self._empty_mapping())
 
     def test_bool(self):
-        self.assertTrue(not self._empty_mapping())
+        self.assertFalse(self._empty_mapping())
         self.assertTrue(self.reference)
-        self.assertTrue(bool(self._empty_mapping()) is False)
-        self.assertTrue(bool(self.reference) is True)
+        self.assertIs(bool(self._empty_mapping()), False)
+        self.assertIs(bool(self.reference), True)
 
     def test_keys(self):
         d = self._empty_mapping()
@@ -268,10 +269,10 @@ class BasicTestMappingProtocol(unittest.TestCase):
 
     def test_get(self):
         d = self._empty_mapping()
-        self.assertTrue(d.get(list(self.other.keys())[0]) is None)
+        self.assertIsNone(d.get(list(self.other.keys())[0]))
         self.assertEqual(d.get(list(self.other.keys())[0], 3), 3)
         d = self.reference
-        self.assertTrue(d.get(list(self.other.keys())[0]) is None)
+        self.assertIsNone(d.get(list(self.other.keys())[0]))
         self.assertEqual(d.get(list(self.other.keys())[0], 3), 3)
         self.assertEqual(d.get(list(self.inmapping.keys())[0]),
                          list(self.inmapping.values())[0])
@@ -304,15 +305,15 @@ class BasicTestMappingProtocol(unittest.TestCase):
 class TestMappingProtocol(BasicTestMappingProtocol):
     def test_constructor(self):
         BasicTestMappingProtocol.test_constructor(self)
-        self.assertTrue(self._empty_mapping() is not self._empty_mapping())
+        self.assertIsNot(self._empty_mapping(), self._empty_mapping())
         self.assertEqual(self.type2test(x=1, y=2), {"x": 1, "y": 2})
 
     def test_bool(self):
         BasicTestMappingProtocol.test_bool(self)
-        self.assertTrue(not self._empty_mapping())
+        self.assertFalse(self._empty_mapping())
         self.assertTrue(self._full_mapping({"x": "y"}))
-        self.assertTrue(bool(self._empty_mapping()) is False)
-        self.assertTrue(bool(self._full_mapping({"x": "y"})) is True)
+        self.assertIs(bool(self._empty_mapping()), False)
+        self.assertIs(bool(self._full_mapping({"x": "y"})), True)
 
     def test_keys(self):
         BasicTestMappingProtocol.test_keys(self)
@@ -338,7 +339,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
     def test_contains(self):
         d = self._empty_mapping()
         self.assertNotIn('a', d)
-        self.assertTrue(not ('a' in d))
+        self.assertFalse('a' in d)
         self.assertTrue('a' not in d)
         d = self._full_mapping({'a': 1, 'b': 2})
         self.assertIn('a', d)
@@ -422,7 +423,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
     def test_fromkeys(self):
         self.assertEqual(self.type2test.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         d = self._empty_mapping()
-        self.assertTrue(not(d.fromkeys('abc') is d))
+        self.assertIsNot(d.fromkeys('abc'), d)
         self.assertEqual(d.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         self.assertEqual(d.fromkeys((4,5),0), {4:0, 5:0})
         self.assertEqual(d.fromkeys([]), {})
@@ -433,9 +434,9 @@ class TestMappingProtocol(BasicTestMappingProtocol):
         class dictlike(self.type2test): pass
         self.assertEqual(dictlike.fromkeys('a'), {'a':None})
         self.assertEqual(dictlike().fromkeys('a'), {'a':None})
-        self.assertTrue(dictlike.fromkeys('a').__class__ is dictlike)
-        self.assertTrue(dictlike().fromkeys('a').__class__ is dictlike)
-        self.assertTrue(type(dictlike.fromkeys('a')) is dictlike)
+        self.assertIs(dictlike.fromkeys('a').__class__, dictlike)
+        self.assertIs(dictlike().fromkeys('a').__class__, dictlike)
+        self.assertIs(type(dictlike.fromkeys('a')), dictlike)
         class mydict(self.type2test):
             def __new__(cls):
                 return collections.UserDict()
@@ -477,10 +478,10 @@ class TestMappingProtocol(BasicTestMappingProtocol):
     def test_get(self):
         BasicTestMappingProtocol.test_get(self)
         d = self._empty_mapping()
-        self.assertTrue(d.get('c') is None)
+        self.assertIsNone(d.get('c'))
         self.assertEqual(d.get('c', 3), 3)
         d = self._full_mapping({'a' : 1, 'b' : 2})
-        self.assertTrue(d.get('c') is None)
+        self.assertIsNone(d.get('c'))
         self.assertEqual(d.get('c', 3), 3)
         self.assertEqual(d.get('a'), 1)
         self.assertEqual(d.get('a', 3), 1)
@@ -488,9 +489,9 @@ class TestMappingProtocol(BasicTestMappingProtocol):
     def test_setdefault(self):
         BasicTestMappingProtocol.test_setdefault(self)
         d = self._empty_mapping()
-        self.assertTrue(d.setdefault('key0') is None)
+        self.assertIsNone(d.setdefault('key0'))
         d.setdefault('key0', [])
-        self.assertTrue(d.setdefault('key0') is None)
+        self.assertIsNone(d.setdefault('key0'))
         d.setdefault('key', []).append(3)
         self.assertEqual(d['key'][0], 3)
         d.setdefault('key', []).append(4)
@@ -516,9 +517,10 @@ class TestMappingProtocol(BasicTestMappingProtocol):
                     self.assertEqual(va, int(ka))
                     kb, vb = tb = b.popitem()
                     self.assertEqual(vb, int(kb))
-                    self.assertTrue(not(copymode < 0 and ta != tb))
-                self.assertTrue(not a)
-                self.assertTrue(not b)
+                    if copymode < 0:
+                        self.assertEqual(ta, tb)
+                self.assertFalse(a)
+                self.assertFalse(b)
 
     def test_pop(self):
         BasicTestMappingProtocol.test_pop(self)

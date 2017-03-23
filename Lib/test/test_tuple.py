@@ -18,7 +18,7 @@ class TupleTest(seq_tests.CommonTest):
         self.assertEqual(tuple(), ())
         t0_3 = (0, 1, 2, 3)
         t0_3_bis = tuple(t0_3)
-        self.assertTrue(t0_3 is t0_3_bis)
+        self.assertIs(t0_3, t0_3_bis)
         self.assertEqual(tuple([]), ())
         self.assertEqual(tuple([0, 1, 2, 3]), (0, 1, 2, 3))
         self.assertEqual(tuple(''), ())
@@ -32,7 +32,7 @@ class TupleTest(seq_tests.CommonTest):
 
     def test_truth(self):
         super().test_truth()
-        self.assertTrue(not ())
+        self.assertFalse(())
         self.assertTrue((42, ))
 
     def test_len(self):
@@ -46,14 +46,14 @@ class TupleTest(seq_tests.CommonTest):
         u = (0, 1)
         u2 = u
         u += (2, 3)
-        self.assertTrue(u is not u2)
+        self.assertIsNot(u, u2)
 
     def test_imul(self):
         super().test_imul()
         u = (0, 1)
         u2 = u
         u *= 3
-        self.assertTrue(u is not u2)
+        self.assertIsNot(u, u2)
 
     def test_tupleresizebug(self):
         # Check that a specific bug in _PyTuple_Resize() is squashed.
@@ -84,7 +84,7 @@ class TupleTest(seq_tests.CommonTest):
         inps = base + [(i, j) for i in base for j in xp] + \
                      [(i, j) for i in xp for j in base] + xp + list(zip(base))
         collisions = len(inps) - len(set(map(hash, inps)))
-        self.assertTrue(collisions <= 15)
+        self.assertLessEqual(collisions, 15)
 
     def test_repr(self):
         l0 = tuple()

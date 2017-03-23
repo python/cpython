@@ -61,7 +61,7 @@ class TestHeap:
         for pos, item in enumerate(heap):
             if pos: # pos 0 has no parent
                 parentpos = (pos-1) >> 1
-                self.assertTrue(heap[parentpos] <= item)
+                self.assertLessEqual(heap[parentpos], item)
 
     def test_heapify(self):
         for size in list(range(30)) + [20000]:
