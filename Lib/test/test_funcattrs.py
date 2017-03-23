@@ -342,10 +342,10 @@ class StaticMethodAttrsTest(unittest.TestCase):
             pass
 
         c = classmethod(f)
-        self.assertTrue(c.__func__ is f)
+        self.assertIs(c.__func__, f)
 
         s = staticmethod(f)
-        self.assertTrue(s.__func__ is f)
+        self.assertIs(s.__func__, f)
 
 
 class BuiltinFunctionPropertiesTest(unittest.TestCase):

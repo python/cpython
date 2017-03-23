@@ -202,9 +202,9 @@ class _TestProcess(BaseTestCase):
         authkey = current.authkey
 
         self.assertTrue(current.is_alive())
-        self.assertTrue(not current.daemon)
+        self.assertFalse(current.daemon)
         self.assertIsInstance(authkey, bytes)
-        self.assertTrue(len(authkey) > 0)
+        self.assertGreater(len(authkey), 0)
         self.assertEqual(current.ident, os.getpid())
         self.assertEqual(current.exitcode, None)
 
@@ -247,7 +247,7 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(p.is_alive(), False)
         self.assertEqual(p.daemon, True)
         self.assertNotIn(p, self.active_children())
-        self.assertTrue(type(self.active_children()) is list)
+        self.assertIs(type(self.active_children()), list)
         self.assertEqual(p.exitcode, None)
 
         p.start()
@@ -330,8 +330,8 @@ class _TestProcess(BaseTestCase):
             cpus = multiprocessing.cpu_count()
         except NotImplementedError:
             cpus = 1
-        self.assertTrue(type(cpus) is int)
-        self.assertTrue(cpus >= 1)
+        self.assertIs(type(cpus), int)
+        self.assertGreaterEqual(cpus, 1)
 
     def test_active_children(self):
         self.assertEqual(type(self.active_children()), list)
@@ -1721,7 +1721,7 @@ class _TestContainers(BaseTestCase):
         del n.job
         self.assertEqual(str(n), "Namespace(name='Bob')")
         self.assertTrue(hasattr(n, 'name'))
-        self.assertTrue(not hasattr(n, 'job'))
+        self.assertFalse(hasattr(n, 'job'))
 
 #
 #
@@ -3078,7 +3078,7 @@ class _TestLogging(BaseTestCase):
     def test_enable_logging(self):
         logger = multiprocessing.get_logger()
         logger.setLevel(util.SUBWARNING)
-        self.assertTrue(logger is not None)
+        self.assertIsNotNone(logger)
         logger.debug('this will not be printed')
         logger.info('nor will this')
         logger.setLevel(LOG_LEVEL)
@@ -3815,8 +3815,8 @@ class TestStartMethod(unittest.TestCase):
         if sys.platform == 'win32':
             self.assertEqual(methods, ['spawn'])
         else:
-            self.assertTrue(methods == ['fork', 'spawn'] or
-                            methods == ['fork', 'spawn', 'forkserver'])
+            self.assertIn(methods, (['fork', 'spawn'],
+                                    ['fork', 'spawn', 'forkserver']))
 
     def test_preload_resources(self):
         if multiprocessing.get_start_method() != 'forkserver':

@@ -12,7 +12,7 @@ class FnmatchTestCase(unittest.TestCase):
                          "expected %r to match pattern %r"
                          % (filename, pattern))
         else:
-            self.assertTrue(not fn(filename, pattern),
+            self.assertFalse(fn(filename, pattern),
                          "expected %r not to match pattern %r"
                          % (filename, pattern))
 

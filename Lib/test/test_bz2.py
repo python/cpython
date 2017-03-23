@@ -720,7 +720,7 @@ class BZ2DecompressorTest(BaseTest):
             compressed = bz2.compress(data)
             bz2d = BZ2Decompressor()
             decompressed = bz2d.decompress(compressed)
-            self.assertTrue(decompressed == data)
+            self.assertEqual(decompressed, data)
         finally:
             data = None
             compressed = None

@@ -14,8 +14,8 @@ if not hasattr(select, "kqueue"):
 class TestKQueue(unittest.TestCase):
     def test_create_queue(self):
         kq = select.kqueue()
-        self.assertTrue(kq.fileno() > 0, kq.fileno())
-        self.assertTrue(not kq.closed)
+        self.assertGreater(kq.fileno(), 0)
+        self.assertFalse(kq.closed)
         kq.close()
         self.assertTrue(kq.closed)
         self.assertRaises(ValueError, kq.fileno)

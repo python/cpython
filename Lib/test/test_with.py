@@ -226,7 +226,7 @@ class ContextmanagerAssertionMixin(object):
         self.assertEqual(mock_manager.exit_args[0], exc_type)
         # Test the __exit__ arguments. Issue #7853
         self.assertIsInstance(mock_manager.exit_args[1], exc_type)
-        self.assertIsNot(mock_manager.exit_args[2], None)
+        self.assertIsNotNone(mock_manager.exit_args[2])
 
     def assertAfterWithGeneratorInvariantsWithError(self, mock_generator):
         self.assertTrue(mock_generator.yielded)

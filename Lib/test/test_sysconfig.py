@@ -286,7 +286,7 @@ class TestSysConfig(unittest.TestCase):
         # just making sure _main() runs and returns things in the stdout
         with captured_stdout() as output:
             _main()
-        self.assertTrue(len(output.getvalue().split('\n')) > 0)
+        self.assertGreater(len(output.getvalue().split('\n')), 0)
 
     @unittest.skipIf(sys.platform == "win32", "Does not apply to Windows")
     def test_ldshared_value(self):

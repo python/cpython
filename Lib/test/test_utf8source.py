@@ -19,7 +19,7 @@ class PEP3120Test(unittest.TestCase):
             import test.badsyntax_pep3120
         except SyntaxError as msg:
             msg = str(msg).lower()
-            self.assertTrue('utf-8' in msg)
+            self.assertIn('utf-8', msg)
         else:
             self.fail("expected exception didn't occur")
 

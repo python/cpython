@@ -26,7 +26,7 @@ class CryptTestCase(unittest.TestCase):
 
     def test_methods(self):
         # Guarantee that METHOD_CRYPT is the last method in crypt.methods.
-        self.assertTrue(len(crypt.methods) >= 1)
+        self.assertGreaterEqual(len(crypt.methods), 1)
         self.assertEqual(crypt.METHOD_CRYPT, crypt.methods[-1])
 
 if __name__ == "__main__":

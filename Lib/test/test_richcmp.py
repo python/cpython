@@ -106,7 +106,7 @@ class VectorTest(unittest.TestCase):
             self.assertEqual(len(realres), len(expres))
             for i in range(len(realres)):
                 # results are bool, so we can use "is" here
-                self.assertTrue(realres[i] is expres[i])
+                self.assertIs(realres[i], expres[i])
 
     def test_mixed(self):
         # check that comparisons involving Vector objects
@@ -163,7 +163,7 @@ class NumberTest(unittest.TestCase):
                 for op in opmap[opname]:
                     realres = op(ta, tb)
                     realres = getattr(realres, "x", realres)
-                    self.assertTrue(realres is expres)
+                    self.assertIs(realres, expres)
 
     def test_values(self):
         # check all operators and all comparison results
@@ -238,7 +238,7 @@ class MiscTest(unittest.TestCase):
         b.append(17)
         # Even recursive lists of different lengths are different,
         # but they cannot be ordered
-        self.assertTrue(not (a == b))
+        self.assertFalse(a == b)
         self.assertTrue(a != b)
         self.assertRaises(RecursionError, operator.lt, a, b)
         self.assertRaises(RecursionError, operator.le, a, b)
@@ -249,7 +249,7 @@ class MiscTest(unittest.TestCase):
         self.assertRaises(RecursionError, operator.ne, a, b)
         a.insert(0, 11)
         b.insert(0, 12)
-        self.assertTrue(not (a == b))
+        self.assertFalse(a == b)
         self.assertTrue(a != b)
         self.assertTrue(a < b)
 

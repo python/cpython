@@ -50,7 +50,7 @@ class TracebackCases(unittest.TestCase):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
         self.assertEqual(len(err), 4)
-        self.assertTrue(err[1].strip() == "return x!")
+        self.assertEqual(err[1].strip(), "return x!")
         self.assertIn("^", err[2]) # third line has caret
         self.assertEqual(err[1].find("!"), err[2].find("^")) # in the right place
 
@@ -153,7 +153,7 @@ class TracebackCases(unittest.TestCase):
             self.assertTrue(stdout[2].endswith(err_line),
                 "Invalid traceback line: {0!r} instead of {1!r}".format(
                     stdout[2], err_line))
-            self.assertTrue(stdout[3] == err_msg,
+            self.assertEqual(stdout[3], err_msg,
                 "Invalid error message: {0!r} instead of {1!r}".format(
                     stdout[3], err_msg))
 

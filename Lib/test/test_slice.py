@@ -137,7 +137,7 @@ class SliceTest(unittest.TestCase):
 
         obj = AnyClass()
         s = slice(obj)
-        self.assertTrue(s.stop is obj)
+        self.assertIs(s.stop, obj)
 
     def check_indices(self, slice, length):
         try:

@@ -221,7 +221,7 @@ class PlatformTest(unittest.TestCase):
                     real_ver = ln.strip().split()[-1]
                     break
             fd.close()
-            self.assertFalse(real_ver is None)
+            self.assertIsNotNone(real_ver)
             result_list = res[0].split('.')
             expect_list = real_ver.split('.')
             len_diff = len(result_list) - len(expect_list)

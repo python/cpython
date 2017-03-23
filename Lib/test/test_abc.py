@@ -299,14 +299,14 @@ class TestABC(unittest.TestCase):
         class B:
             pass
         b = B()
-        self.assertFalse(isinstance(b, A))
-        self.assertFalse(isinstance(b, (A,)))
+        self.assertNotIsInstance(b, A)
+        self.assertNotIsInstance(b, (A,))
         token_old = abc.get_cache_token()
         A.register(B)
         token_new = abc.get_cache_token()
         self.assertNotEqual(token_old, token_new)
-        self.assertTrue(isinstance(b, A))
-        self.assertTrue(isinstance(b, (A,)))
+        self.assertIsInstance(b, A)
+        self.assertIsInstance(b, (A,))
 
     def test_registration_builtins(self):
         class A(metaclass=abc.ABCMeta):

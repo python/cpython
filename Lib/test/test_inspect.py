@@ -241,7 +241,7 @@ class TestInterpreterStack(IsTestBase):
         self.istest(inspect.isframe, 'mod.fr')
 
     def test_stack(self):
-        self.assertTrue(len(mod.st) >= 5)
+        self.assertGreaterEqual(len(mod.st), 5)
         self.assertEqual(revise(*mod.st[0][1:]),
              (modfile, 16, 'eggs', ['    st = inspect.stack()\n'], 0))
         self.assertEqual(revise(*mod.st[1][1:]),
@@ -2853,7 +2853,7 @@ class TestSignatureObject(unittest.TestCase):
 
         sig = inspect.signature(test)
         sig = sig.replace(return_annotation=None)
-        self.assertIs(sig.return_annotation, None)
+        self.assertIsNone(sig.return_annotation)
         sig = sig.replace(return_annotation=sig.empty)
         self.assertIs(sig.return_annotation, sig.empty)
         sig = sig.replace(return_annotation=42)
@@ -2897,7 +2897,7 @@ class TestParameterObject(unittest.TestCase):
                         P.VAR_POSITIONAL < P.KEYWORD_ONLY < P.VAR_KEYWORD)
 
         self.assertEqual(str(P.POSITIONAL_ONLY), 'POSITIONAL_ONLY')
-        self.assertTrue('POSITIONAL_ONLY' in repr(P.POSITIONAL_ONLY))
+        self.assertIn('POSITIONAL_ONLY', repr(P.POSITIONAL_ONLY))
 
     def test_signature_parameter_object(self):
         p = inspect.Parameter('foo', default=10,
@@ -2986,7 +2986,7 @@ class TestParameterObject(unittest.TestCase):
             p2 = p2.replace(name=p2.empty)
 
         p2 = p2.replace(name='foo', default=None)
-        self.assertIs(p2.default, None)
+        self.assertIsNone(p2.default)
         self.assertNotEqual(p2, p)
 
         p2 = p2.replace(name='foo', default=p2.empty)

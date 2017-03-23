@@ -71,7 +71,7 @@ class TestGdbm(unittest.TestCase):
 
         self.g['x'] = 'x' * 10000
         size1 = os.path.getsize(filename)
-        self.assertTrue(size0 < size1)
+        self.assertLess(size0, size1)
 
         del self.g['x']
         # 'size' is supposed to be the same even after deleting an entry.

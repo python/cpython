@@ -268,20 +268,20 @@ class BasicTestCase(CfgParserTestCaseClass):
 
         # mapping access
         del cf['Types']
-        self.assertFalse('Types' in cf)
+        self.assertNotIn('Types', cf)
         with self.assertRaises(KeyError):
             del cf['Types']
         with self.assertRaises(ValueError):
             del cf[self.default_section]
         del cf['Spacey Bar']['foo']
-        self.assertFalse('foo' in cf['Spacey Bar'])
+        self.assertNotIn('foo', cf['Spacey Bar'])
         with self.assertRaises(KeyError):
             del cf['Spacey Bar']['foo']
-        self.assertTrue('that_value' in cf['Spacey Bar'])
+        self.assertIn('that_value', cf['Spacey Bar'])
         with self.assertRaises(KeyError):
             del cf['Spacey Bar']['that_value']
         del cf[self.default_section]['that_value']
-        self.assertFalse('that_value' in cf['Spacey Bar'])
+        self.assertNotIn('that_value', cf['Spacey Bar'])
         with self.assertRaises(KeyError):
             del cf[self.default_section]['that_value']
         with self.assertRaises(KeyError):
@@ -486,7 +486,7 @@ boolean {0[0]} NO
         with self.assertRaises(KeyError):
             # section names are case-sensitive
             cf["b"]["A"] = "value"
-        self.assertTrue("b" in cf["a"])
+        self.assertIn("b", cf["a"])
         cf["A"]["A-B"] = "A-B value"
         for opt in ("a-b", "A-b", "a-B", "A-B"):
             self.assertTrue(
@@ -508,7 +508,7 @@ boolean {0[0]} NO
         cf = self.fromstring("[section]\n"
                              "nekey{}nevalue\n".format(self.delimiters[0]),
                              defaults={"key":"value"})
-        self.assertTrue("Key" in cf["section"])
+        self.assertIn("Key", cf["section"])
 
     def test_default_case_sensitivity(self):
         cf = self.newconfig({"foo": "Bar"})
@@ -1571,7 +1571,7 @@ class CoverageOneHundredTestCase(unittest.TestCase):
             error.filename = 'filename'
             self.assertEqual(error.source, 'filename')
         for warning in w:
-            self.assertTrue(warning.category is DeprecationWarning)
+            self.assertIs(warning.category, DeprecationWarning)
 
     def test_interpolation_validation(self):
         parser = configparser.ConfigParser()
@@ -1600,7 +1600,7 @@ class CoverageOneHundredTestCase(unittest.TestCase):
             warnings.simplefilter("always", DeprecationWarning)
             parser.readfp(sio, filename='StringIO')
         for warning in w:
-            self.assertTrue(warning.category is DeprecationWarning)
+            self.assertIs(warning.category, DeprecationWarning)
         self.assertEqual(len(parser), 2)
         self.assertEqual(parser['section']['option'], 'value')
 
@@ -1609,7 +1609,7 @@ class CoverageOneHundredTestCase(unittest.TestCase):
             warnings.simplefilter("always", DeprecationWarning)
             parser = configparser.SafeConfigParser()
         for warning in w:
-            self.assertTrue(warning.category is DeprecationWarning)
+            self.assertIs(warning.category, DeprecationWarning)
 
     def test_sectionproxy_repr(self):
         parser = configparser.ConfigParser()

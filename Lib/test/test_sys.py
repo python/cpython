@@ -47,7 +47,7 @@ class SysModuleTest(unittest.TestCase):
 
         dh(None)
         self.assertEqual(out.getvalue(), "")
-        self.assertTrue(not hasattr(builtins, "_"))
+        self.assertFalse(hasattr(builtins, "_"))
         dh(42)
         self.assertEqual(out.getvalue(), "42\n")
         self.assertEqual(builtins._, 42)
@@ -181,7 +181,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertRaises(ValueError, sys.setswitchinterval, 0.0)
         orig = sys.getswitchinterval()
         # sanity check
-        self.assertTrue(orig < 0.5, orig)
+        self.assertLess(orig, 0.5)
         try:
             for n in 0.00001, 0.05, 3.0, orig:
                 sys.setswitchinterval(n)
@@ -403,7 +403,7 @@ class SysModuleTest(unittest.TestCase):
 
         # Verify that the captured main-thread frame is _this_ frame.
         frame = d.pop(main_id)
-        self.assertTrue(frame is sys._getframe())
+        self.assertIs(frame, sys._getframe())
 
         # Verify that the captured thread frame is blocked in g456, called
         # from f123.  This is a litte tricky, since various bits of
@@ -434,7 +434,7 @@ class SysModuleTest(unittest.TestCase):
         d = sys._current_frames()
         self.assertEqual(len(d), 1)
         self.assertIn(0, d)
-        self.assertTrue(d[0] is sys._getframe())
+        self.assertIs(d[0], sys._getframe())
 
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
@@ -448,8 +448,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(sys.float_info), 11)
         self.assertEqual(sys.float_info.radix, 2)
         self.assertEqual(len(sys.int_info), 2)
-        self.assertTrue(sys.int_info.bits_per_digit % 5 == 0)
-        self.assertTrue(sys.int_info.sizeof_digit >= 1)
+        self.assertEqual(sys.int_info.bits_per_digit % 5, 0)
+        self.assertGreaterEqual(sys.int_info.sizeof_digit, 1)
         self.assertEqual(type(sys.int_info.bits_per_digit), int)
         self.assertEqual(type(sys.int_info.sizeof_digit), int)
         self.assertIsInstance(sys.hexversion, int)
@@ -511,7 +511,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(vi[2], vi.micro)
         self.assertEqual(vi[3], vi.releaselevel)
         self.assertEqual(vi[4], vi.serial)
-        self.assertTrue(vi > (1,0,0))
+        self.assertGreater(vi, (1,0,0))
         self.assertIsInstance(sys.float_repr_style, str)
         self.assertIn(sys.float_repr_style, ('short', 'legacy'))
         if not sys.platform.startswith('win'):
@@ -535,9 +535,9 @@ class SysModuleTest(unittest.TestCase):
         numruns += 1
         self.assertRaises(TypeError, sys.intern)
         s = "never interned before" + str(numruns)
-        self.assertTrue(sys.intern(s) is s)
+        self.assertIs(sys.intern(s), s)
         s2 = s.swapcase().swapcase()
-        self.assertTrue(sys.intern(s2) is s)
+        self.assertIs(sys.intern(s2), s)
 
         # Subclasses of string can't be interned, because they
         # provide too much opportunity for insane things to happen.

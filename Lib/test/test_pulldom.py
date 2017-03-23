@@ -69,7 +69,7 @@ class PullDOMTestCase(unittest.TestCase):
         evt, node = next(items)
         self.assertEqual(pulldom.END_ELEMENT, evt)
         self.assertEqual("title", node.tagName)
-        self.assertTrue(title_node is node)
+        self.assertIs(title_node, node)
         evt, node = next(items)
         self.assertEqual(pulldom.CHARACTERS, evt)
         evt, node = next(items)

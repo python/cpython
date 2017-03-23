@@ -384,8 +384,8 @@ class TestShutil(unittest.TestCase):
             self.assertEqual(src_link_stat.st_flags, dst_link_stat.st_flags)
         # tell to follow but dst is not a link
         shutil.copystat(src_link, dst, follow_symlinks=False)
-        self.assertTrue(abs(os.stat(src).st_mtime - os.stat(dst).st_mtime) <
-                        00000.1)
+        self.assertAlmostEqual(os.stat(src).st_mtime, os.stat(dst).st_mtime,
+                               delta=0.1)
 
     @unittest.skipUnless(hasattr(os, 'chflags') and
                          hasattr(errno, 'EOPNOTSUPP') and
@@ -1754,7 +1754,7 @@ class TestCopyFile(unittest.TestCase):
 
         shutil.copyfile('srcfile', 'destfile')
         self.assertTrue(srcfile._entered)
-        self.assertTrue(srcfile._exited_with[0] is OSError)
+        self.assertIs(srcfile._exited_with[0], OSError)
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot open "destfile"',))
 
@@ -1776,7 +1776,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertTrue(srcfile._entered)
         self.assertTrue(destfile._entered)
         self.assertTrue(destfile._raised)
-        self.assertTrue(srcfile._exited_with[0] is OSError)
+        self.assertIs(srcfile._exited_with[0], OSError)
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot close',))
 
@@ -1799,7 +1799,7 @@ class TestCopyFile(unittest.TestCase):
         self.assertTrue(srcfile._entered)
         self.assertTrue(destfile._entered)
         self.assertFalse(destfile._raised)
-        self.assertTrue(srcfile._exited_with[0] is None)
+        self.assertIsNone(srcfile._exited_with[0])
         self.assertTrue(srcfile._raised)
 
     def test_move_dir_caseinsensitive(self):

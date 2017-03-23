@@ -791,7 +791,7 @@ class GeneralModuleTests(unittest.TestCase):
         except OSError:
             # Probably name lookup wasn't set up right; skip this test
             self.skipTest('name lookup failure')
-        self.assertTrue(ip.find('.') >= 0, "Error resolving host to ip.")
+        self.assertIn('.', ip, "Error resolving host to ip.")
         try:
             hname, aliases, ipaddrs = socket.gethostbyaddr(ip)
         except OSError:
@@ -1190,7 +1190,7 @@ class GeneralModuleTests(unittest.TestCase):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(sock.close)
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
-        self.assertFalse(reuse != 0, "initial mode is reuse")
+        self.assertEqual(reuse, 0, "initial mode is reuse")
 
     def testSetSockOpt(self):
         # Testing setsockopt()
@@ -1198,7 +1198,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.addCleanup(sock.close)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
-        self.assertFalse(reuse == 0, "failed to set reuse mode")
+        self.assertNotEqual(reuse, 0, "failed to set reuse mode")
 
     def testSendAfterClose(self):
         # testing send() after close() with timeout
@@ -3908,7 +3908,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         except OSError:
             pass
         end = time.time()
-        self.assertTrue((end - start) < 1.0, "Error setting non-blocking mode.")
+        self.assertLess(end - start, 1.0, "Error setting non-blocking mode.")
 
     def _testSetBlocking(self):
         pass
@@ -3943,7 +3943,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         except OSError:
             pass
         end = time.time()
-        self.assertTrue((end - start) < 1.0, "Error creating with non-blocking mode.")
+        self.assertLess(end - start, 1.0, "Error creating with non-blocking mode.")
 
     def _testInitNonBlocking(self):
         pass
@@ -4439,7 +4439,7 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
     testTimeoutDefault = _justAccept
     def _testTimeoutDefault(self):
         # passing no explicit timeout uses socket's global default
-        self.assertTrue(socket.getdefaulttimeout() is None)
+        self.assertIsNone(socket.getdefaulttimeout())
         socket.setdefaulttimeout(42)
         try:
             self.cli = socket.create_connection((HOST, self.port))
@@ -4451,7 +4451,7 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
     testTimeoutNone = _justAccept
     def _testTimeoutNone(self):
         # None timeout means the same as sock.settimeout(None)
-        self.assertTrue(socket.getdefaulttimeout() is None)
+        self.assertIsNone(socket.getdefaulttimeout())
         socket.setdefaulttimeout(30)
         try:
             self.cli = socket.create_connection((HOST, self.port), timeout=None)

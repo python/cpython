@@ -1346,7 +1346,7 @@ class TestBufferProtocol(unittest.TestCase):
                         # memoryview: reconstruct strides
                         ex = ndarray(items, shape=shape, format=fmt)
                         nd = ndarray(ex, getbuf=PyBUF_CONTIG_RO|PyBUF_FORMAT)
-                        self.assertTrue(nd.strides == ())
+                        self.assertEqual(nd.strides, ())
                         mv = nd.memoryview_from_buffer()
                         self.verify(mv, obj=None,
                                     itemsize=itemsize, fmt=fmt, readonly=1,
@@ -1574,13 +1574,13 @@ class TestBufferProtocol(unittest.TestCase):
             nd = ndarray(items, shape=[5], format=fmt)
             for i, v in enumerate(nd):
                 self.assertEqual(v, items[i])
-                self.assertTrue(v in nd)
+                self.assertIn(v, nd)
 
             if is_memoryview_format(fmt):
                 mv = memoryview(nd)
                 for i, v in enumerate(mv):
                     self.assertEqual(v, items[i])
-                    self.assertTrue(v in mv)
+                    self.assertIn(v, mv)
 
     def test_ndarray_slice_invalid(self):
         items = [1,2,3,4,5,6,7,8]
@@ -2533,8 +2533,8 @@ class TestBufferProtocol(unittest.TestCase):
                     mv_err = e.__class__
 
                 if struct_err or mv_err:
-                    self.assertIsNot(struct_err, None)
-                    self.assertIsNot(mv_err, None)
+                    self.assertIsNotNone(struct_err)
+                    self.assertIsNotNone(mv_err)
                 else:
                     self.assertEqual(m[1], nd[1])
 
@@ -4357,7 +4357,7 @@ class TestBufferProtocol(unittest.TestCase):
         y = ndarray(x, getbuf=PyBUF_FULL_RO)
         z = ndarray(y, getbuf=PyBUF_FULL_RO)
         m = memoryview(z)
-        self.assertIs(y.obj, None)
+        self.assertIsNone(y.obj)
         self.assertIs(m.obj, z)
         self.verify(m, obj=z,
                     itemsize=1, fmt=fmt, readonly=1,
@@ -4371,7 +4371,7 @@ class TestBufferProtocol(unittest.TestCase):
         m = memoryview(z)
         # Clearly setting view.obj==NULL is inferior, since it
         # messes up the redirection chain:
-        self.assertIs(y.obj, None)
+        self.assertIsNone(y.obj)
         self.assertIs(z.obj, y)
         self.assertIs(m.obj, y)
         self.verify(m, obj=y,

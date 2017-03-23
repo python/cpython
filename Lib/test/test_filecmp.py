@@ -83,10 +83,10 @@ class DirCompareTestCase(unittest.TestCase):
         self.assertIn('.hg', filecmp.DEFAULT_IGNORES)
 
     def test_cmpfiles(self):
-        self.assertTrue(filecmp.cmpfiles(self.dir, self.dir, ['file']) ==
+        self.assertEqual(filecmp.cmpfiles(self.dir, self.dir, ['file']),
                         (['file'], [], []),
                         "Comparing directory to itself fails")
-        self.assertTrue(filecmp.cmpfiles(self.dir, self.dir_same, ['file']) ==
+        self.assertEqual(filecmp.cmpfiles(self.dir, self.dir_same, ['file']),
                         (['file'], [], []),
                         "Comparing directory to same fails")
 

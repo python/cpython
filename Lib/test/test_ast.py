@@ -203,7 +203,7 @@ class AST_Tests(unittest.TestCase):
             return
         if isinstance(ast_node, (ast.expr, ast.stmt, ast.excepthandler)):
             node_pos = (ast_node.lineno, ast_node.col_offset)
-            self.assertTrue(node_pos >= parent_pos)
+            self.assertGreaterEqual(node_pos, parent_pos)
             parent_pos = (ast_node.lineno, ast_node.col_offset)
         for name in ast_node._fields:
             value = getattr(ast_node, name)

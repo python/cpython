@@ -210,7 +210,7 @@ class ComplexTest(unittest.TestCase):
     def test_boolcontext(self):
         for i in range(100):
             self.assertTrue(complex(random() + 1e-6, random() + 1e-6))
-        self.assertTrue(not complex(0.0, 0.0))
+        self.assertFalse(complex(0.0, 0.0))
 
     def test_conjugate(self):
         self.assertClose(complex(5.3, 9.8).conjugate(), 5.3-9.8j)
@@ -295,7 +295,7 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(split_zeros(complex(-0., 1.).real), split_zeros(-0.))
 
         c = 3.14 + 1j
-        self.assertTrue(complex(c) is c)
+        self.assertIs(complex(c), c)
         del c
 
         self.assertRaises(TypeError, complex, "1", "1")

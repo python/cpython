@@ -106,7 +106,7 @@ class TestUnicodeFiles(unittest.TestCase):
             self._do_single(filename)
         finally:
             os.unlink(filename)
-        self.assertTrue(not os.path.exists(filename))
+        self.assertFalse(os.path.exists(filename))
         # and again with os.open.
         f = os.open(filename, os.O_CREAT)
         os.close(f)

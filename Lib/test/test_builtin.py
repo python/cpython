@@ -157,7 +157,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(abs(0), 0)
         self.assertEqual(abs(1234), 1234)
         self.assertEqual(abs(-1234), 1234)
-        self.assertTrue(abs(-sys.maxsize-1) > 0)
+        self.assertGreater(abs(-sys.maxsize-1), 0)
         # float
         self.assertEqual(abs(0.0), 0.0)
         self.assertEqual(abs(3.14), 3.14)
@@ -242,7 +242,7 @@ class BuiltinTest(unittest.TestCase):
 
     def test_neg(self):
         x = -sys.maxsize-1
-        self.assertTrue(isinstance(x, int))
+        self.assertIsInstance(x, int)
         self.assertEqual(-x, sys.maxsize+1)
 
     def test_callable(self):
@@ -302,7 +302,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises((OverflowError, ValueError), chr, 2**32)
 
     def test_cmp(self):
-        self.assertTrue(not hasattr(builtins, "cmp"))
+        self.assertFalse(hasattr(builtins, "cmp"))
 
     def test_compile(self):
         compile('print(1)\n', '', 'exec')
@@ -406,7 +406,7 @@ class BuiltinTest(unittest.TestCase):
             def __dir__(self):
                 return ["kan", "ga", "roo"]
         f = Foo()
-        self.assertTrue(dir(f) == ["ga", "kan", "roo"])
+        self.assertEqual(dir(f), ["ga", "kan", "roo"])
 
         # dir(obj__dir__tuple)
         class Foo(object):
@@ -414,7 +414,7 @@ class BuiltinTest(unittest.TestCase):
                 return ("b", "c", "a")
         res = dir(Foo())
         self.assertIsInstance(res, list)
-        self.assertTrue(res == ["a", "b", "c"])
+        self.assertEqual(res, ["a", "b", "c"])
 
         # dir(obj__dir__not_sequence)
         class Foo(object):
@@ -645,7 +645,7 @@ class BuiltinTest(unittest.TestCase):
             self.check_iter_pickle(f1, list(f2), proto)
 
     def test_getattr(self):
-        self.assertTrue(getattr(sys, 'stdout') is sys.stdout)
+        self.assertIs(getattr(sys, 'stdout'), sys.stdout)
         self.assertRaises(TypeError, getattr, sys, 1)
         self.assertRaises(TypeError, getattr, sys, 1, "foo")
         self.assertRaises(TypeError, getattr)
@@ -726,11 +726,11 @@ class BuiltinTest(unittest.TestCase):
         c = C()
         d = D()
         e = E()
-        self.assertTrue(isinstance(c, C))
-        self.assertTrue(isinstance(d, C))
-        self.assertTrue(not isinstance(e, C))
-        self.assertTrue(not isinstance(c, D))
-        self.assertTrue(not isinstance('foo', E))
+        self.assertIsInstance(c, C)
+        self.assertIsInstance(d, C)
+        self.assertNotIsInstance(e, C)
+        self.assertNotIsInstance(c, D)
+        self.assertNotIsInstance('foo', E)
         self.assertRaises(TypeError, isinstance, E, 'foo')
         self.assertRaises(TypeError, isinstance)
 
@@ -746,7 +746,7 @@ class BuiltinTest(unittest.TestCase):
         e = E()
         self.assertTrue(issubclass(D, C))
         self.assertTrue(issubclass(C, C))
-        self.assertTrue(not issubclass(C, D))
+        self.assertFalse(issubclass(C, D))
         self.assertRaises(TypeError, issubclass, 'foo', E)
         self.assertRaises(TypeError, issubclass, E, 'foo')
         self.assertRaises(TypeError, issubclass)

@@ -96,7 +96,7 @@ class TestCase(unittest.TestCase):
             # Cannot assert type equality because dict iterators unpickle as list
             # iterators.
             # self.assertEqual(type(itorg), type(it))
-            self.assertTrue(isinstance(it, collections.abc.Iterator))
+            self.assertIsInstance(it, collections.abc.Iterator)
             self.assertEqual(list(it), seq)
 
             it = pickle.loads(d)
@@ -117,7 +117,7 @@ class TestCase(unittest.TestCase):
         seq = list(range(10))
         it = iter(seq)
         it2 = iter(it)
-        self.assertTrue(it is it2)
+        self.assertIs(it, it2)
 
     # Test that for loops over iterators work
     def test_iter_for_loop(self):

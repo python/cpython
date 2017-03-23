@@ -1252,8 +1252,8 @@ class FailingServerTestCase(unittest.TestCase):
             # ignore failures due to non-blocking socket 'unavailable' errors
             if not is_unavailable_exception(e) and hasattr(e, "headers"):
                 # The two server-side error headers shouldn't be sent back in this case
-                self.assertTrue(e.headers.get("X-exception") is None)
-                self.assertTrue(e.headers.get("X-traceback") is None)
+                self.assertIsNone(e.headers.get("X-exception"))
+                self.assertIsNone(e.headers.get("X-traceback"))
         else:
             self.fail('ProtocolError not raised')
 
@@ -1274,7 +1274,7 @@ class FailingServerTestCase(unittest.TestCase):
                 # We should get error info in the response
                 expected_err = "invalid literal for int() with base 10: 'I am broken'"
                 self.assertEqual(e.headers.get("X-exception"), expected_err)
-                self.assertTrue(e.headers.get("X-traceback") is not None)
+                self.assertIsNotNone(e.headers.get("X-traceback"))
         else:
             self.fail('ProtocolError not raised')
 

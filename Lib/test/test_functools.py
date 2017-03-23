@@ -129,7 +129,8 @@ class TestPartial:
             p = self.partial(capture, *args)
             expected = args + ('x',)
             got, empty = p('x')
-            self.assertTrue(expected == got and empty == {})
+            self.assertEqual(got, expected)
+            self.assertEqual(empty, {})
 
     def test_keyword(self):
         # make sure keyword arguments are captured correctly
@@ -137,15 +138,18 @@ class TestPartial:
             p = self.partial(capture, a=a)
             expected = {'a':a,'x':None}
             empty, got = p(x=None)
-            self.assertTrue(expected == got and empty == ())
+            self.assertEqual(got, expected)
+            self.assertEqual(empty, ())
 
     def test_no_side_effects(self):
         # make sure there are no side effects that affect subsequent calls
         p = self.partial(capture, 0, a=1)
         args1, kw1 = p(1, b=2)
-        self.assertTrue(args1 == (0,1) and kw1 == {'a':1,'b':2})
+        self.assertEqual(args1, (0,1))
+        self.assertEqual(kw1, {'a':1,'b':2})
         args2, kw2 = p()
-        self.assertTrue(args2 == (0,) and kw2 == {'a':1})
+        self.assertEqual(args2, (0,))
+        self.assertEqual(kw2, {'a':1})
 
     def test_error_propagation(self):
         def f(x, y):
@@ -1155,7 +1159,7 @@ class TestLRU:
             expected = orig(x, y)
             self.assertEqual(actual, expected)
         hits, misses, maxsize, currsize = f.cache_info()
-        self.assertTrue(hits > misses)
+        self.assertGreater(hits, misses)
         self.assertEqual(hits + misses, 1000)
         self.assertEqual(currsize, 20)
 

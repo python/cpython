@@ -159,14 +159,14 @@ class TestBisect:
             elem = randrange(-1, n+1)
             ip = self.module.bisect_left(data, elem)
             if ip < len(data):
-                self.assertTrue(elem <= data[ip])
+                self.assertLessEqual(elem, data[ip])
             if ip > 0:
-                self.assertTrue(data[ip-1] < elem)
+                self.assertLess(data[ip-1], elem)
             ip = self.module.bisect_right(data, elem)
             if ip < len(data):
-                self.assertTrue(elem < data[ip])
+                self.assertLess(elem, data[ip])
             if ip > 0:
-                self.assertTrue(data[ip-1] <= elem)
+                self.assertLessEqual(data[ip-1], elem)
 
     def test_optionalSlicing(self):
         for func, data, elem, expected in self.precomputedCases:
@@ -177,13 +177,13 @@ class TestBisect:
                     ip = func(data, elem, lo, hi)
                     self.assertTrue(lo <= ip <= hi)
                     if func is self.module.bisect_left and ip < hi:
-                        self.assertTrue(elem <= data[ip])
+                        self.assertLessEqual(elem, data[ip])
                     if func is self.module.bisect_left and ip > lo:
-                        self.assertTrue(data[ip-1] < elem)
+                        self.assertLess(data[ip-1], elem)
                     if func is self.module.bisect_right and ip < hi:
-                        self.assertTrue(elem < data[ip])
+                        self.assertLess(elem, data[ip])
                     if func is self.module.bisect_right and ip > lo:
-                        self.assertTrue(data[ip-1] <= elem)
+                        self.assertLessEqual(data[ip-1], elem)
                     self.assertEqual(ip, max(lo, min(hi, expected)))
 
     def test_backcompatibility(self):

@@ -54,7 +54,7 @@ class CodeopTests(unittest.TestCase):
         except SyntaxError:
             self.assertTrue(is_syntax)
         except OverflowError:
-            self.assertTrue(not is_syntax)
+            self.assertFalse(is_syntax)
 
     def test_valid(self):
         av = self.assertValid
