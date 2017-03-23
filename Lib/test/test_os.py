@@ -3241,13 +3241,11 @@ class TestScandir(unittest.TestCase):
         self.assertFalse(entry.is_symlink())
         if os.name == 'nt':
             self.assertRaises(FileNotFoundError, entry.inode)
-            # don't fail
-            entry.stat()
-            entry.stat(follow_symlinks=False)
         else:
             self.assertGreater(entry.inode(), 0)
-            self.assertRaises(FileNotFoundError, entry.stat)
-            self.assertRaises(FileNotFoundError, entry.stat, follow_symlinks=False)
+        self.assertRaises(FileNotFoundError, entry.stat)
+        self.assertRaises(FileNotFoundError, entry.stat, follow_symlinks=False)
+
 
     def test_removed_file(self):
         entry = self.create_file_entry()
@@ -3260,13 +3258,10 @@ class TestScandir(unittest.TestCase):
         self.assertFalse(entry.is_symlink())
         if os.name == 'nt':
             self.assertRaises(FileNotFoundError, entry.inode)
-            # don't fail
-            entry.stat()
-            entry.stat(follow_symlinks=False)
         else:
             self.assertGreater(entry.inode(), 0)
-            self.assertRaises(FileNotFoundError, entry.stat)
-            self.assertRaises(FileNotFoundError, entry.stat, follow_symlinks=False)
+        self.assertRaises(FileNotFoundError, entry.stat)
+        self.assertRaises(FileNotFoundError, entry.stat, follow_symlinks=False)
 
     def test_broken_symlink(self):
         if not support.can_symlink():
@@ -3369,6 +3364,14 @@ class TestScandir(unittest.TestCase):
         with self.check_no_resource_warning():
             del iterator
 
+    def test_scandir_stat_match(self):
+        stat_basic = os.stat(__file__)
+        stat_scandir = os.stat(__file__)
+        for entry in os.scandir(os.path.dirname(os.path.abspath(__file__))):
+            if entry.name == os.path.basename(__file__):
+                stat_scandir = entry.stat()
+                break
+        self.assertEqual(stat_basic, stat_scandir)
 
 class TestPEP519(unittest.TestCase):
 
