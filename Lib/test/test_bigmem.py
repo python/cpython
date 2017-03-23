@@ -865,7 +865,7 @@ class TupleTest(unittest.TestCase):
         h1 = hash(t1)
         del t1
         t2 = (0,) * (size + 1)
-        self.assertFalse(h1 == hash(t2))
+        self.assertNotEqual(h1, hash(t2))
 
     @bigmemtest(size=_2G + 10, memuse=8)
     def test_index_and_slice(self, size):
@@ -991,8 +991,8 @@ class ListTest(unittest.TestCase):
         l = [sys.stdout] * size
         l += l
         self.assertEqual(len(l), size * 2)
-        self.assertTrue(l[0] is l[-1])
-        self.assertTrue(l[size - 1] is l[size + 1])
+        self.assertIs(l[0], l[-1])
+        self.assertIs(l[size - 1], l[size + 1])
 
     @bigmemtest(size=_2G // 2 + 2, memuse=24)
     def test_inplace_concat_small(self, size):
@@ -1091,13 +1091,13 @@ class ListTest(unittest.TestCase):
         l = ['']
         l *= size
         self.assertEqual(len(l), size)
-        self.assertTrue(l[0] is l[-1])
+        self.assertIs(l[0], l[-1])
         del l
 
         l = [''] * size
         l *= 2
         self.assertEqual(len(l), size * 2)
-        self.assertTrue(l[size - 1] is l[-1])
+        self.assertIs(l[size - 1], l[-1])
 
     @bigmemtest(size=_2G // 2 + 2, memuse=16)
     def test_inplace_repeat_small(self, size):
@@ -1131,8 +1131,8 @@ class ListTest(unittest.TestCase):
         l = [object()] * size
         l.append(object())
         self.assertEqual(len(l), size+1)
-        self.assertTrue(l[-3] is l[-2])
-        self.assertFalse(l[-2] is l[-1])
+        self.assertIs(l[-3], l[-2])
+        self.assertIsNot(l[-2], l[-1])
 
     @bigmemtest(size=_2G // 5 + 2, memuse=8 * 5)
     def test_count(self, size):
@@ -1144,8 +1144,8 @@ class ListTest(unittest.TestCase):
         l = [object] * size
         l.extend(l)
         self.assertEqual(len(l), size * 2)
-        self.assertTrue(l[0] is l[-1])
-        self.assertTrue(l[size - 1] is l[size + 1])
+        self.assertIs(l[0], l[-1])
+        self.assertIs(l[size - 1], l[size + 1])
 
     @bigmemtest(size=_2G // 2 + 2, memuse=16)
     def test_extend_small(self, size):
