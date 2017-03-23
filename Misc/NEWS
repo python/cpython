@@ -317,6 +317,9 @@ Library
 
 - bpo-28682: Added support for bytes paths in os.fwalk().
 
+- bpo-29728: Add new :data:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constant.
+  Patch by Nathaniel J. Smith.
+  
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
 
