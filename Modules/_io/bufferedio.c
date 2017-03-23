@@ -239,7 +239,7 @@ typedef struct {
 
 #ifdef WITH_THREAD
     PyThread_type_lock lock;
-    volatile long owner;
+    volatile unsigned long owner;
 #endif
 
     Py_ssize_t buffer_size;

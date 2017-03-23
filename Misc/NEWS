@@ -813,6 +813,10 @@ Windows
 C API
 -----
 
+- bpo-6532: The type of results of PyThread_start_new_thread() and
+  PyThread_get_thread_ident(), and the id parameter of
+  PyThreadState_SetAsyncExc() changed from "long" to "unsigned long".
+
 - Issue #27867: Function PySlice_GetIndicesEx() is deprecated and replaced with
   a macro if Py_LIMITED_API is not set or set to the value between 0x03050400
   and 0x03060000 (not including) or 0x03060100 or higher.  Added functions
