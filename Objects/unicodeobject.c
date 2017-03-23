@@ -221,9 +221,6 @@ static PyObject *unicode_empty = NULL;
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
 
-/* List of static strings. */
-static _Py_Identifier *static_strings = NULL;
-
 /* Single character Unicode strings in the Latin-1 range are being
    shared as well. */
 static PyObject *unicode_latin1[256] = {NULL};
@@ -2111,31 +2108,11 @@ PyUnicode_FromString(const char *u)
 PyObject *
 _PyUnicode_FromId(_Py_Identifier *id)
 {
-    if (!id->object) {
-        id->object = PyUnicode_DecodeUTF8Stateful(id->string,
-                                                  strlen(id->string),
-                                                  NULL, NULL);
-        if (!id->object)
-            return NULL;
-        PyUnicode_InternInPlace(&id->object);
-        assert(!id->next);
-        id->next = static_strings;
-        static_strings = id;
+    if (_PY_ONCEVAR_INIT(id->object,
+                         PyUnicode_InternFromString(id->string))) {
+        return NULL;
     }
     return id->object;
-}
-
-void
-_PyUnicode_ClearStaticStrings()
-{
-    _Py_Identifier *tmp, *s = static_strings;
-    while (s) {
-        Py_CLEAR(s->object);
-        tmp = s->next;
-        s->next = NULL;
-        s = tmp;
-    }
-    static_strings = NULL;
 }
 
 /* Internal function, doesn't check maximum character */
@@ -15246,7 +15223,6 @@ _PyUnicode_Fini(void)
 
     for (i = 0; i < 256; i++)
         Py_CLEAR(unicode_latin1[i]);
-    _PyUnicode_ClearStaticStrings();
     (void)PyUnicode_ClearFreeList();
 }
 

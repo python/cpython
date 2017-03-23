@@ -6384,12 +6384,12 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 }
 
 static _Py_Identifier name_op[] = {
-    {0, "__lt__", 0},
-    {0, "__le__", 0},
-    {0, "__eq__", 0},
-    {0, "__ne__", 0},
-    {0, "__gt__", 0},
-    {0, "__ge__", 0}
+    {"__lt__", 0},
+    {"__le__", 0},
+    {"__eq__", 0},
+    {"__ne__", 0},
+    {"__gt__", 0},
+    {"__ge__", 0}
 };
 
 static PyObject *
