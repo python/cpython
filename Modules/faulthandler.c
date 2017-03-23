@@ -678,7 +678,7 @@ faulthandler_dump_traceback_later(PyObject *self,
     /* Arm these locks to serve as events when released */
     PyThread_acquire_lock(thread.running, 1);
 
-    if (PyThread_start_new_thread(faulthandler_thread, NULL) == -1) {
+    if (PyThread_start_new_thread(faulthandler_thread, NULL) == PYTHREAD_INVALID_THREAD_ID) {
         PyThread_release_lock(thread.running);
         Py_CLEAR(thread.file);
         PyMem_Free(header);
