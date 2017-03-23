@@ -643,7 +643,7 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
 
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
 
-    if (*aggregate_instance == 0) {
+    if (*aggregate_instance == NULL) {
         *aggregate_instance = _PyObject_CallNoArg(aggregate_class);
 
         if (PyErr_Occurred()) {
