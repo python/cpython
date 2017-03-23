@@ -85,38 +85,42 @@ class GeneralFloatCases(unittest.TestCase):
     def test_non_numeric_input_types(self):
         # Test possible non-numeric types for the argument x, including
         # subclasses of the explicitly documented accepted types.
+        def check(f):
+            x = f(b" 3.14  ")
+            self.assertEqual(float(x), 3.14)
+            with self.assertRaisesRegex(ValueError, "could not convert"):
+                float(f(b'A' * 0x10))
+
         class CustomStr(str): pass
         class CustomBytes(bytes): pass
         class CustomByteArray(bytearray): pass
 
-        factories = [
-            bytes,
-            bytearray,
-            lambda b: CustomStr(b.decode()),
-            CustomBytes,
-            CustomByteArray,
-            memoryview,
-        ]
+        check(bytes)
+        check(bytearray)
+        check(lambda b: CustomStr(b.decode()))
+        check(CustomBytes)
+        check(CustomByteArray)
+        with self.assertWarns(DeprecationWarning):
+            check(memoryview)
         try:
             from array import array
         except ImportError:
             pass
         else:
-            factories.append(lambda b: array('B', b))
-
-        for f in factories:
-            x = f(b" 3.14  ")
-            with self.subTest(type(x)):
-                self.assertEqual(float(x), 3.14)
-                with self.assertRaisesRegex(ValueError, "could not convert"):
-                    float(f(b'A' * 0x10))
+            with self.assertWarns(DeprecationWarning):
+                check(lambda b: array('B', b))
 
     def test_float_memoryview(self):
-        self.assertEqual(float(memoryview(b'12.3')[1:4]), 2.3)
-        self.assertEqual(float(memoryview(b'12.3\x00')[1:4]), 2.3)
-        self.assertEqual(float(memoryview(b'12.3 ')[1:4]), 2.3)
-        self.assertEqual(float(memoryview(b'12.3A')[1:4]), 2.3)
-        self.assertEqual(float(memoryview(b'12.34')[1:4]), 2.3)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(float(memoryview(b'12.3')[1:4]), 2.3)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(float(memoryview(b'12.3\x00')[1:4]), 2.3)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(float(memoryview(b'12.3 ')[1:4]), 2.3)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(float(memoryview(b'12.3A')[1:4]), 2.3)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(float(memoryview(b'12.34')[1:4]), 2.3)
 
     def test_error_message(self):
         def check(s):

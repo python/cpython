@@ -191,6 +191,12 @@ PyFloat_FromString(PyObject *v)
         len = PyByteArray_GET_SIZE(v);
     }
     else if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) == 0) {
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "float() argument must be a string, a bytes object, "
+                "a bytearray or a number, not '%.100s'",
+                v->ob_type->tp_name)) {
+            return NULL;
+        }
         s = (const char *)view.buf;
         len = view.len;
         /* Copy to NUL-terminated buffer. */
@@ -203,7 +209,8 @@ PyFloat_FromString(PyObject *v)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-            "float() argument must be a string or a number, not '%.200s'",
+            "float() argument must be a string, a bytes object, "
+            "a bytearray or a number, not '%.200s'",
             Py_TYPE(v)->tp_name);
         return NULL;
     }

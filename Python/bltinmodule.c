@@ -628,6 +628,12 @@ source_as_string(PyObject *cmd, const char *funcname, const char *what, PyCompil
         size = PyByteArray_GET_SIZE(cmd);
     }
     else if (PyObject_GetBuffer(cmd, &view, PyBUF_SIMPLE) == 0) {
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "%s() arg 1 must be a %s object, not '%.100s'",
+                funcname, what,
+                cmd->ob_type->tp_name)) {
+            return NULL;
+        }
         /* Copy to NUL-terminated buffer. */
         *cmd_copy = PyBytes_FromStringAndSize(
             (const char *)view.buf, view.len);
@@ -756,7 +762,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         goto finally;
     }
 
-    str = source_as_string(source, "compile", "string, bytes or AST", &cf, &source_copy);
+    str = source_as_string(source, "compile", "string, bytes, bytearray or AST", &cf, &source_copy);
     if (str == NULL)
         goto error;
 
@@ -884,7 +890,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     }
 
     cf.cf_flags = PyCF_SOURCE_IS_UTF8;
-    str = source_as_string(source, "eval", "string, bytes or code", &cf, &source_copy);
+    str = source_as_string(source, "eval", "string, bytes, bytearray or code", &cf, &source_copy);
     if (str == NULL)
         return NULL;
 
@@ -969,7 +975,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         PyCompilerFlags cf;
         cf.cf_flags = PyCF_SOURCE_IS_UTF8;
         str = source_as_string(source, "exec",
-                                       "string, bytes or code", &cf,
+                                       "string, bytes, bytearray or code", &cf,
                                        &source_copy);
         if (str == NULL)
             return NULL;

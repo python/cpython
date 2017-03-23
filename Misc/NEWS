@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-27572: Deprecated using bytes-like objects except bytes and bytearray in
+  builtins int(), float(), compile(), eval() and exec().
+
 - bpo-29859: Show correct error messages when any of the pthread_* calls in
   thread_pthread.h fails.
 

@@ -560,19 +560,25 @@ if 1:
         # objects are accepted, which could be not terminated.
         with self.assertRaisesRegex(ValueError, "cannot contain null"):
             compile("123\x00", "<dummy>", "eval")
-        with self.assertRaisesRegex(ValueError, "cannot contain null"):
+        with self.assertRaisesRegex(ValueError, "cannot contain null"), \
+             self.assertWarns(DeprecationWarning):
             compile(memoryview(b"123\x00"), "<dummy>", "eval")
-        code = compile(memoryview(b"123\x00")[1:-1], "<dummy>", "eval")
+        with self.assertWarns(DeprecationWarning):
+            code = compile(memoryview(b"123\x00")[1:-1], "<dummy>", "eval")
         self.assertEqual(eval(code), 23)
-        code = compile(memoryview(b"1234")[1:-1], "<dummy>", "eval")
+        with self.assertWarns(DeprecationWarning):
+            code = compile(memoryview(b"1234")[1:-1], "<dummy>", "eval")
         self.assertEqual(eval(code), 23)
-        code = compile(memoryview(b"$23$")[1:-1], "<dummy>", "eval")
+        with self.assertWarns(DeprecationWarning):
+            code = compile(memoryview(b"$23$")[1:-1], "<dummy>", "eval")
         self.assertEqual(eval(code), 23)
 
         # Also test when eval() and exec() do the compilation step
-        self.assertEqual(eval(memoryview(b"1234")[1:-1]), 23)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(eval(memoryview(b"1234")[1:-1]), 23)
         namespace = dict()
-        exec(memoryview(b"ax = 123")[1:-1], namespace)
+        with self.assertWarns(DeprecationWarning):
+            exec(memoryview(b"ax = 123")[1:-1], namespace)
         self.assertEqual(namespace['x'], 12)
 
     def check_constant(self, func, expected):

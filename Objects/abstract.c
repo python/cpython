@@ -1377,6 +1377,12 @@ PyNumber_Long(PyObject *o)
     if (PyObject_GetBuffer(o, &view, PyBUF_SIMPLE) == 0) {
         PyObject *bytes;
 
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "int() argument must be a string, a bytes object, "
+                "a bytearray or a number, not '%.100s'",
+                o->ob_type->tp_name)) {
+            return NULL;
+        }
         /* Copy to NUL-terminated buffer. */
         bytes = PyBytes_FromStringAndSize((const char *)view.buf, view.len);
         if (bytes == NULL) {
@@ -1390,8 +1396,8 @@ PyNumber_Long(PyObject *o)
         return result;
     }
 
-    return type_error("int() argument must be a string, a bytes-like object "
-                      "or a number, not '%.200s'", o);
+    return type_error("int() argument must be a string, a bytes object, "
+                      "a bytearray or a number, not '%.200s'", o);
 }
 
 PyObject *
