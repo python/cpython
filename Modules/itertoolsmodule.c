@@ -942,11 +942,11 @@ cycle_next(cycleobject *lz)
             return NULL;
         Py_CLEAR(lz->it);
     }
-    if (Py_SIZE(lz->saved) == 0)
+    if (PyList_GET_SIZE(lz->saved) == 0)
         return NULL;
     item = PyList_GET_ITEM(lz->saved, lz->index);
     lz->index++;
-    if (lz->index >= Py_SIZE(lz->saved))
+    if (lz->index >= PyList_GET_SIZE(lz->saved))
         lz->index = 0;
     Py_INCREF(item);
     return item;
