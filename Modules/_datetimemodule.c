@@ -2506,29 +2506,47 @@ static PyGetSetDef date_getset[] = {
 static char *date_kws[] = {"year", "month", "day", NULL};
 
 static PyObject *
+date_from_pickle(PyTypeObject *type, PyObject *state)
+{
+    PyDateTime_Date *me;
+
+    me = (PyDateTime_Date *) (type->tp_alloc(type, 0));
+    if (me != NULL) {
+        const char *pdata = PyBytes_AS_STRING(state);
+        memcpy(me->data, pdata, _PyDateTime_DATE_DATASIZE);
+        me->hashcode = -1;
+    }
+    return (PyObject *)me;
+}
+
+static PyObject *
 date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     PyObject *self = NULL;
-    PyObject *state;
     int year;
     int month;
     int day;
 
     /* Check for invocation from pickle with __getstate__ state */
-    if (PyTuple_GET_SIZE(args) == 1 &&
-        PyBytes_Check(state = PyTuple_GET_ITEM(args, 0)) &&
-        PyBytes_GET_SIZE(state) == _PyDateTime_DATE_DATASIZE &&
-        MONTH_IS_SANE(PyBytes_AS_STRING(state)[2]))
-    {
-        PyDateTime_Date *me;
-
-        me = (PyDateTime_Date *) (type->tp_alloc(type, 0));
-        if (me != NULL) {
-            char *pdata = PyBytes_AS_STRING(state);
-            memcpy(me->data, pdata, _PyDateTime_DATE_DATASIZE);
-            me->hashcode = -1;
+    if (PyTuple_GET_SIZE(args) >= 1) {
+        PyObject *state = PyTuple_GET_ITEM(args, 0);
+        if (PyBytes_Check(state)) {
+            if (PyBytes_GET_SIZE(state) == _PyDateTime_DATE_DATASIZE &&
+                MONTH_IS_SANE(PyBytes_AS_STRING(state)[2])) {
+                return date_from_pickle(type, state);
+            }
         }
-        return (PyObject *)me;
+        else if (PyUnicode_Check(state)) {
+            if (PyUnicode_GET_LENGTH(state) == _PyDateTime_DATE_DATASIZE &&
+                MONTH_IS_SANE(PyUnicode_READ_CHAR(state, 2) & 0xFF)) {
+                state = PyUnicode_AsEncodedString(state, "ascii", "surrogateescape");
+                if (state == NULL)
+                    return NULL;
+                self = date_from_pickle(type, state);
+                Py_DECREF(state);
+                return self;
+            }
+        }
     }
 
     if (PyArg_ParseTupleAndKeywords(args, kw, "iii", date_kws,
@@ -3563,10 +3581,42 @@ static char *time_kws[] = {"hour", "minute", "second", "microsecond",
                            "tzinfo", "fold", NULL};
 
 static PyObject *
+time_from_pickle(PyTypeObject *type, PyObject *state, PyObject *tzinfo)
+{
+    PyDateTime_Time *me;
+    char aware = (char)(tzinfo != Py_None);
+
+    if (aware && check_tzinfo_subclass(tzinfo) < 0) {
+        PyErr_SetString(PyExc_TypeError, "bad tzinfo state arg");
+        return NULL;
+    }
+
+    me = (PyDateTime_Time *) (type->tp_alloc(type, aware));
+    if (me != NULL) {
+        const char *pdata = PyBytes_AS_STRING(state);
+
+        memcpy(me->data, pdata, _PyDateTime_TIME_DATASIZE);
+        me->hashcode = -1;
+        me->hastzinfo = aware;
+        if (aware) {
+            Py_INCREF(tzinfo);
+            me->tzinfo = tzinfo;
+        }
+        if (pdata[0] & (1 << 7)) {
+            me->data[0] -= 128;
+            me->fold = 1;
+        }
+        else {
+            me->fold = 0;
+        }
+    }
+    return (PyObject *)me;
+}
+
+static PyObject *
 time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     PyObject *self = NULL;
-    PyObject *state;
     int hour = 0;
     int minute = 0;
     int second = 0;
@@ -3575,44 +3625,29 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     int fold = 0;
 
     /* Check for invocation from pickle with __getstate__ state */
-    if (PyTuple_GET_SIZE(args) >= 1 &&
-        PyTuple_GET_SIZE(args) <= 2 &&
-        PyBytes_Check(state = PyTuple_GET_ITEM(args, 0)) &&
-        PyBytes_GET_SIZE(state) == _PyDateTime_TIME_DATASIZE &&
-        (0x7F & ((unsigned char) (PyBytes_AS_STRING(state)[0]))) < 24)
-    {
-        PyDateTime_Time *me;
-        char aware;
-
+    if (PyTuple_GET_SIZE(args) >= 1 && PyTuple_GET_SIZE(args) <= 2) {
+        PyObject *state = PyTuple_GET_ITEM(args, 0);
         if (PyTuple_GET_SIZE(args) == 2) {
             tzinfo = PyTuple_GET_ITEM(args, 1);
-            if (check_tzinfo_subclass(tzinfo) < 0) {
-                PyErr_SetString(PyExc_TypeError, "bad "
-                    "tzinfo state arg");
-                return NULL;
+        }
+        if (PyBytes_Check(state)) {
+            if (PyBytes_GET_SIZE(state) == _PyDateTime_TIME_DATASIZE &&
+                (0x7F & ((unsigned char) (PyBytes_AS_STRING(state)[0]))) < 24) {
+                return time_from_pickle(type, state, tzinfo);
             }
         }
-        aware = (char)(tzinfo != Py_None);
-        me = (PyDateTime_Time *) (type->tp_alloc(type, aware));
-        if (me != NULL) {
-            char *pdata = PyBytes_AS_STRING(state);
-
-            memcpy(me->data, pdata, _PyDateTime_TIME_DATASIZE);
-            me->hashcode = -1;
-            me->hastzinfo = aware;
-            if (aware) {
-                Py_INCREF(tzinfo);
-                me->tzinfo = tzinfo;
-            }
-            if (pdata[0] & (1 << 7)) {
-                me->data[0] -= 128;
-                me->fold = 1;
-            }
-            else {
-                me->fold = 0;
+        else if (PyUnicode_Check(state)) {
+            if (PyUnicode_GET_LENGTH(state) == _PyDateTime_TIME_DATASIZE &&
+                (0x7F & PyUnicode_READ_CHAR(state, 2)) < 24) {
+                state = PyUnicode_AsEncodedString(state, "ascii", "surrogateescape");
+                if (state == NULL)
+                    return NULL;
+                self = time_from_pickle(type, state, tzinfo);
+                Py_DECREF(state);
+                return self;
             }
         }
-        return (PyObject *)me;
+        tzinfo = Py_None;
     }
 
     if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i", time_kws,
@@ -4146,10 +4181,42 @@ static char *datetime_kws[] = {
 };
 
 static PyObject *
+datetime_from_pickle(PyTypeObject *type, PyObject *state, PyObject *tzinfo)
+{
+    PyDateTime_DateTime *me;
+    char aware = (char)(tzinfo != Py_None);
+
+    if (aware && check_tzinfo_subclass(tzinfo) < 0) {
+        PyErr_SetString(PyExc_TypeError, "bad tzinfo state arg");
+        return NULL;
+    }
+
+    me = (PyDateTime_DateTime *) (type->tp_alloc(type, aware));
+    if (me != NULL) {
+        const char *pdata = PyBytes_AS_STRING(state);
+
+        memcpy(me->data, pdata, _PyDateTime_DATETIME_DATASIZE);
+        me->hashcode = -1;
+        me->hastzinfo = aware;
+        if (aware) {
+            Py_INCREF(tzinfo);
+            me->tzinfo = tzinfo;
+        }
+        if (pdata[2] & (1 << 7)) {
+            me->data[2] -= 128;
+            me->fold = 1;
+        }
+        else {
+            me->fold = 0;
+        }
+    }
+    return (PyObject *)me;
+}
+
+static PyObject *
 datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     PyObject *self = NULL;
-    PyObject *state;
     int year;
     int month;
     int day;
@@ -4161,44 +4228,29 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     PyObject *tzinfo = Py_None;
 
     /* Check for invocation from pickle with __getstate__ state */
-    if (PyTuple_GET_SIZE(args) >= 1 &&
-        PyTuple_GET_SIZE(args) <= 2 &&
-        PyBytes_Check(state = PyTuple_GET_ITEM(args, 0)) &&
-        PyBytes_GET_SIZE(state) == _PyDateTime_DATETIME_DATASIZE &&
-        MONTH_IS_SANE(PyBytes_AS_STRING(state)[2] & 0x7F))
-    {
-        PyDateTime_DateTime *me;
-        char aware;
-
+    if (PyTuple_GET_SIZE(args) >= 1 && PyTuple_GET_SIZE(args) <= 2) {
+        PyObject *state = PyTuple_GET_ITEM(args, 0);
         if (PyTuple_GET_SIZE(args) == 2) {
             tzinfo = PyTuple_GET_ITEM(args, 1);
-            if (check_tzinfo_subclass(tzinfo) < 0) {
-                PyErr_SetString(PyExc_TypeError, "bad "
-                    "tzinfo state arg");
-                return NULL;
+        }
+        if (PyBytes_Check(state)) {
+            if (PyBytes_GET_SIZE(state) == _PyDateTime_DATETIME_DATASIZE &&
+                MONTH_IS_SANE(PyBytes_AS_STRING(state)[2] & 0x7F)) {
+                return datetime_from_pickle(type, state, tzinfo);
             }
         }
-        aware = (char)(tzinfo != Py_None);
-        me = (PyDateTime_DateTime *) (type->tp_alloc(type , aware));
-        if (me != NULL) {
-            char *pdata = PyBytes_AS_STRING(state);
-
-            memcpy(me->data, pdata, _PyDateTime_DATETIME_DATASIZE);
-            me->hashcode = -1;
-            me->hastzinfo = aware;
-            if (aware) {
-                Py_INCREF(tzinfo);
-                me->tzinfo = tzinfo;
-            }
-            if (pdata[2] & (1 << 7)) {
-                me->data[2] -= 128;
-                me->fold = 1;
-            }
-            else {
-                me->fold = 0;
+        else if (PyUnicode_Check(state)) {
+            if (PyUnicode_GET_LENGTH(state) == _PyDateTime_DATETIME_DATASIZE &&
+                MONTH_IS_SANE(PyUnicode_READ_CHAR(state, 2) & 0x7F)) {
+                state = PyUnicode_AsEncodedString(state, "ascii", "surrogateescape");
+                if (state == NULL)
+                    return NULL;
+                self = datetime_from_pickle(type, state, tzinfo);
+                Py_DECREF(state);
+                return self;
             }
         }
-        return (PyObject *)me;
+        tzinfo = Py_None;
     }
 
     if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO$i", datetime_kws,

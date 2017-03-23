@@ -287,6 +287,10 @@ Extension Modules
 Library
 -------
 
+- bpo-22005: Implemented unpickling instances of datetime, date and
+  time pickled by Python 2.  errors='surrogateescape' should be used for
+  successful decoding.
+
 - bpo-29884: faulthandler: Restore the old sigaltstack during teardown.
   Patch by Christophe Zeitouny.
 
