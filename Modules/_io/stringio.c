@@ -877,7 +877,7 @@ stringio_setstate(stringio *self, PyObject *state)
     /* We allow the state tuple to be longer than 4, because we may need
        someday to extend the object's state without breaking
        backward-compatibility. */
-    if (!PyTuple_Check(state) || Py_SIZE(state) < 4) {
+    if (!PyTuple_Check(state) || PyTuple_GET_SIZE(state) < 4) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s.__setstate__ argument should be 4-tuple, got %.200s",
                      Py_TYPE(self)->tp_name, Py_TYPE(state)->tp_name);

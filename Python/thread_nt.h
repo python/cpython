@@ -140,7 +140,7 @@ LeaveNonRecursiveMutex(PNRMUTEX mutex)
 }
 #endif /* _PY_USE_CV_LOCKS */
 
-long PyThread_get_thread_ident(void);
+unsigned long PyThread_get_thread_ident(void);
 
 /*
  * Initialization of the C package, should not be needed.
@@ -172,21 +172,21 @@ bootstrap(void *call)
     return 0;
 }
 
-long
+unsigned long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
     HANDLE hThread;
     unsigned threadID;
     callobj *obj;
 
-    dprintf(("%ld: PyThread_start_new_thread called\n",
+    dprintf(("%lu: PyThread_start_new_thread called\n",
              PyThread_get_thread_ident()));
     if (!initialized)
         PyThread_init_thread();
 
     obj = (callobj*)HeapAlloc(GetProcessHeap(), 0, sizeof(*obj));
     if (!obj)
-        return -1;
+        return PYTHREAD_INVALID_THREAD_ID;
     obj->func = func;
     obj->arg = arg;
     hThread = (HANDLE)_beginthreadex(0,
@@ -199,24 +199,24 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
          * too many threads".
          */
         int e = errno;
-        dprintf(("%ld: PyThread_start_new_thread failed, errno %d\n",
+        dprintf(("%lu: PyThread_start_new_thread failed, errno %d\n",
                  PyThread_get_thread_ident(), e));
         threadID = (unsigned)-1;
         HeapFree(GetProcessHeap(), 0, obj);
     }
     else {
-        dprintf(("%ld: PyThread_start_new_thread succeeded: %p\n",
+        dprintf(("%lu: PyThread_start_new_thread succeeded: %p\n",
                  PyThread_get_thread_ident(), (void*)hThread));
         CloseHandle(hThread);
     }
-    return (long) threadID;
+    return threadID;
 }
 
 /*
  * Return the thread Id instead of a handle. The Id is said to uniquely identify the
  * thread in the system
  */
-long
+unsigned long
 PyThread_get_thread_ident(void)
 {
     if (!initialized)
@@ -228,7 +228,7 @@ PyThread_get_thread_ident(void)
 void
 PyThread_exit_thread(void)
 {
-    dprintf(("%ld: PyThread_exit_thread called\n", PyThread_get_thread_ident()));
+    dprintf(("%lu: PyThread_exit_thread called\n", PyThread_get_thread_ident()));
     if (!initialized)
         exit(0);
     _endthreadex(0);
@@ -250,7 +250,7 @@ PyThread_allocate_lock(void)
 
     aLock = AllocNonRecursiveMutex() ;
 
-    dprintf(("%ld: PyThread_allocate_lock() -> %p\n", PyThread_get_thread_ident(), aLock));
+    dprintf(("%lu: PyThread_allocate_lock() -> %p\n", PyThread_get_thread_ident(), aLock));
 
     return (PyThread_type_lock) aLock;
 }
@@ -258,7 +258,7 @@ PyThread_allocate_lock(void)
 void
 PyThread_free_lock(PyThread_type_lock aLock)
 {
-    dprintf(("%ld: PyThread_free_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
+    dprintf(("%lu: PyThread_free_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
     FreeNonRecursiveMutex(aLock) ;
 }
@@ -289,7 +289,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock,
     else
         milliseconds = INFINITE;
 
-    dprintf(("%ld: PyThread_acquire_lock_timed(%p, %lld) called\n",
+    dprintf(("%lu: PyThread_acquire_lock_timed(%p, %lld) called\n",
              PyThread_get_thread_ident(), aLock, microseconds));
 
     if (aLock && EnterNonRecursiveMutex((PNRMUTEX)aLock,
@@ -300,7 +300,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock,
         success = PY_LOCK_FAILURE;
     }
 
-    dprintf(("%ld: PyThread_acquire_lock(%p, %lld) -> %d\n",
+    dprintf(("%lu: PyThread_acquire_lock(%p, %lld) -> %d\n",
              PyThread_get_thread_ident(), aLock, microseconds, success));
 
     return success;
@@ -314,10 +314,10 @@ PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 void
 PyThread_release_lock(PyThread_type_lock aLock)
 {
-    dprintf(("%ld: PyThread_release_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
+    dprintf(("%lu: PyThread_release_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
     if (!(aLock && LeaveNonRecursiveMutex((PNRMUTEX) aLock)))
-        dprintf(("%ld: Could not PyThread_release_lock(%p) error: %ld\n", PyThread_get_thread_ident(), aLock, GetLastError()));
+        dprintf(("%lu: Could not PyThread_release_lock(%p) error: %ld\n", PyThread_get_thread_ident(), aLock, GetLastError()));
 }
 
 /* minimum/maximum thread stack sizes supported */
