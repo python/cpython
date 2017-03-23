@@ -569,12 +569,12 @@ def test_pdb_run_with_incorrect_argument():
     >>> with pti:
     ...     pdb_invoke('run', lambda x: x)
     Traceback (most recent call last):
-    TypeError: exec() arg 1 must be a string, bytes or code object
+    TypeError: exec() arg 1 must be a string, bytes, bytearray or code object
 
     >>> with pti:
     ...     pdb_invoke('runeval', lambda x: x)
     Traceback (most recent call last):
-    TypeError: eval() arg 1 must be a string, bytes or code object
+    TypeError: eval() arg 1 must be a string, bytes, bytearray or code object
     """
 
 
