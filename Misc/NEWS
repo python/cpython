@@ -287,6 +287,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29884: faulthandler: Restore the old sigaltstack during teardown.
+  Patch by Christophe Zeitouny.
+
 - bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
 
 - bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
