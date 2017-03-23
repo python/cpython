@@ -1138,6 +1138,10 @@ static PyObject *
 thread_get_ident(PyObject *self)
 {
     unsigned long ident = PyThread_get_thread_ident();
+    if (ident == PYTHREAD_INVALID_THREAD_ID) {
+        PyErr_SetString(ThreadError, "no current thread ident");
+        return NULL;
+    }
     return PyLong_FromUnsignedLong(ident);
 }
 
