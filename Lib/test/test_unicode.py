@@ -58,7 +58,7 @@ class UnicodeTest(string_tests.CommonTest,
         method = getattr(object, methodname)
         realresult = method(*args)
         self.assertEqual(realresult, result)
-        self.assertTrue(type(realresult) is type(result))
+        self.assertIs(type(realresult), type(result))
 
         # if the original is returned make sure that
         # this doesn't happen with subclasses
@@ -70,7 +70,7 @@ class UnicodeTest(string_tests.CommonTest,
             method = getattr(object, methodname)
             realresult = method(*args)
             self.assertEqual(realresult, result)
-            self.assertTrue(object is not realresult)
+            self.assertIsNot(object, realresult)
 
     def test_literals(self):
         self.assertEqual('\xff', '\u00ff')

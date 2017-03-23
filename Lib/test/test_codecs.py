@@ -56,7 +56,7 @@ class MixInCheckStateHandling:
                 # reset decoder to the default state without anything buffered
                 d.setstate((state[0][:0], 0))
                 # Feeding the previous input may not produce any output
-                self.assertTrue(not d.decode(state[0]))
+                self.assertFalse(d.decode(state[0]))
                 # The decoder must return to the same state
                 self.assertEqual(state, d.getstate())
             # Create a new decoder and set it to the state
@@ -410,7 +410,7 @@ class UTF32Test(ReadTest, unittest.TestCase):
         f.write("spam")
         d = s.getvalue()
         # check whether there is exactly one BOM in it
-        self.assertTrue(d == self.spamle or d == self.spambe)
+        self.assertIn(d, (self.spamle, self.spambe))
         # try to read it back
         s = io.BytesIO(d)
         f = reader(s)
@@ -594,7 +594,7 @@ class UTF16Test(ReadTest, unittest.TestCase):
         f.write("spam")
         d = s.getvalue()
         # check whether there is exactly one BOM in it
-        self.assertTrue(d == self.spamle or d == self.spambe)
+        self.assertIn(d, (self.spamle, self.spambe))
         # try to read it back
         s = io.BytesIO(d)
         f = reader(s)
@@ -1977,7 +1977,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                 for c in s:
                     writer.write(c)
                     chunk = q.read()
-                    self.assertTrue(type(chunk) is bytes, type(chunk))
+                    self.assertIs(type(chunk), bytes)
                     encodedresult += chunk
                 q = Queue(b"")
                 reader = codecs.getreader(encoding)(q)
