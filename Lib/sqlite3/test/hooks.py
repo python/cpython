@@ -252,9 +252,7 @@ class TraceCallbackTests(unittest.TestCase):
 
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 3, 9), "sqlite3_prepare_v2 is not available")
     def CheckTraceCallbackContent(self):
-        """
-        bpo-26187
-        """
+        # set_trace_callback() shouldn't produce duplicate content (bpo-26187)
         traced_statements = []
         def trace(statement):
             traced_statements.append(statement)

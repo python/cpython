@@ -278,9 +278,9 @@ Extension Modules
 Library
 -------
 
-- bpo-26187: Test that sqlite trace callback is not called multiple
-  times when schema is changing. Fixed by bpo-9303
-  (Migrate sqlite3 module to _v2 API). Patch by Aviv Palivoda.
+- bpo-26187: Test that sqlite3 trace callback is not called multiple
+  times when schema is changing.  Indirectly fixed by switching to 
+  use sqlite3_prepare_v2() in bpo-9303.  Patch by Aviv Palivoda.
 
 - bpo-8256: Fixed possible failing or crashing input() if attributes "encoding"
   or "errors" of sys.stdin or sys.stdout are not set or are not strings.
@@ -306,7 +306,6 @@ Library
   check identity before checking equality when do comparisons.
 
 - bpo-28682: Added support for bytes paths in os.fwalk().
->>>>>>> upstream/master
 
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
