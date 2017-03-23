@@ -4022,7 +4022,7 @@ _PyObject_GetState(PyObject *obj, int required)
             if (obj->ob_type->tp_weaklistoffset)
                 basicsize += sizeof(PyObject *);
             if (slotnames != Py_None)
-                basicsize += sizeof(PyObject *) * Py_SIZE(slotnames);
+                basicsize += sizeof(PyObject *) * PyList_GET_SIZE(slotnames);
             if (obj->ob_type->tp_basicsize > basicsize) {
                 Py_DECREF(slotnames);
                 Py_DECREF(state);
@@ -4033,7 +4033,7 @@ _PyObject_GetState(PyObject *obj, int required)
             }
         }
 
-        if (slotnames != Py_None && Py_SIZE(slotnames) > 0) {
+        if (slotnames != Py_None && PyList_GET_SIZE(slotnames) > 0) {
             PyObject *slots;
             Py_ssize_t slotnames_size, i;
 
@@ -4044,7 +4044,7 @@ _PyObject_GetState(PyObject *obj, int required)
                 return NULL;
             }
 
-            slotnames_size = Py_SIZE(slotnames);
+            slotnames_size = PyList_GET_SIZE(slotnames);
             for (i = 0; i < slotnames_size; i++) {
                 PyObject *name, *value;
 
@@ -4070,7 +4070,7 @@ _PyObject_GetState(PyObject *obj, int required)
 
                 /* The list is stored on the class so it may mutate while we
                    iterate over it */
-                if (slotnames_size != Py_SIZE(slotnames)) {
+                if (slotnames_size != PyList_GET_SIZE(slotnames)) {
                     PyErr_Format(PyExc_RuntimeError,
                                  "__slotsname__ changed size during iteration");
                     goto error;
@@ -4142,10 +4142,10 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
             Py_DECREF(newargs);
             return -1;
         }
-        if (Py_SIZE(newargs) != 2) {
+        if (PyTuple_GET_SIZE(newargs) != 2) {
             PyErr_Format(PyExc_ValueError,
                          "__getnewargs_ex__ should return a tuple of "
-                         "length 2, not %zd", Py_SIZE(newargs));
+                         "length 2, not %zd", PyTuple_GET_SIZE(newargs));
             Py_DECREF(newargs);
             return -1;
         }

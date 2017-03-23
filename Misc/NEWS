@@ -10,6 +10,11 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29859: Show correct error messages when any of the pthread_* calls in
+  thread_pthread.h fails.
+
+- bpo-29849: Fix a memory leak when an ImportError is raised during from import.
+
 - bpo-28856: Fix an oversight that %b format for bytes should support objects
   follow the buffer protocol.
 
@@ -285,6 +290,9 @@ Library
 - bpo-29861: Release references to tasks, their arguments and their results
   as soon as they are finished in multiprocessing.Pool.
 
+- bpo-29884: faulthandler: Restore the old sigaltstack during teardown.
+  Patch by Christophe Zeitouny.
+
 - bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
 
 - bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
@@ -315,6 +323,9 @@ Library
 
 - bpo-28682: Added support for bytes paths in os.fwalk().
 
+- bpo-29728: Add new :data:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constant.
+  Patch by Nathaniel J. Smith.
+  
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
 
@@ -807,6 +818,10 @@ Windows
 
 C API
 -----
+
+- bpo-6532: The type of results of PyThread_start_new_thread() and
+  PyThread_get_thread_ident(), and the id parameter of
+  PyThreadState_SetAsyncExc() changed from "long" to "unsigned long".
 
 - Issue #27867: Function PySlice_GetIndicesEx() is deprecated and replaced with
   a macro if Py_LIMITED_API is not set or set to the value between 0x03050400
