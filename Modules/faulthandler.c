@@ -124,6 +124,7 @@ static const size_t faulthandler_nsignals = \
 
 #ifdef HAVE_SIGALTSTACK
 static stack_t stack;
+static stack_t old_stack;
 #endif
 
 
@@ -1317,7 +1318,7 @@ int _PyFaulthandler_Init(void)
     stack.ss_size = SIGSTKSZ;
     stack.ss_sp = PyMem_Malloc(stack.ss_size);
     if (stack.ss_sp != NULL) {
-        err = sigaltstack(&stack, NULL);
+        err = sigaltstack(&stack, &old_stack);
         if (err) {
             PyMem_Free(stack.ss_sp);
             stack.ss_sp = NULL;
@@ -1373,6 +1374,20 @@ void _PyFaulthandler_Fini(void)
     faulthandler_disable();
 #ifdef HAVE_SIGALTSTACK
     if (stack.ss_sp != NULL) {
+        /* Fetch the current alt stack */
+        stack_t current_stack;
+        if (sigaltstack(NULL, &current_stack) == 0) {
+            if (current_stack.ss_sp == stack.ss_sp) {
+                /* The current alt stack is the one that we installed.
+                 It is safe to restore the old stack that we found when
+                 we installed ours */
+                sigaltstack(&old_stack, NULL);
+            } else {
+                /* Someone switched to a different alt stack and didn't
+                   restore ours when they were done (if they're done).
+                   There's not much we can do in this unlikely case */
+            }
+        }
         PyMem_Free(stack.ss_sp);
         stack.ss_sp = NULL;
     }
