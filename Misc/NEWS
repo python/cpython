@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- bpo-29861: Release references to tasks, their arguments and their results
+  as soon as they are finished in multiprocessing.Pool.
+
 - bpo-29884: faulthandler: Restore the old sigaltstack during teardown.
   Patch by Christophe Zeitouny.
 

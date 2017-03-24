@@ -18,6 +18,7 @@ import random
 import logging
 import struct
 import operator
+import weakref
 import test.support
 import test.support.script_helper
 
@@ -1738,6 +1739,19 @@ def raise_large_valuerror(wait):
     time.sleep(wait)
     raise ValueError("x" * 1024**2)
 
+def identity(x):
+    return x
+
+class CountedObject(object):
+    n_instances = 0
+
+    def __new__(cls):
+        cls.n_instances += 1
+        return object.__new__(cls)
+
+    def __del__(self):
+        type(self).n_instances -= 1
+
 class SayWhenError(ValueError): pass
 
 def exception_throwing_generator(total, when):
@@ -1745,6 +1759,7 @@ def exception_throwing_generator(total, when):
         if i == when:
             raise SayWhenError("Somebody said when")
         yield i
+
 
 class _TestPool(BaseTestCase):
 
@@ -1999,6 +2014,19 @@ class _TestPool(BaseTestCase):
 
         # check that we indeed waited for all jobs
         self.assertGreater(time.time() - t_start, 0.9)
+
+    def test_release_task_refs(self):
+        # Issue #29861: task arguments and results should not be kept
+        # alive after we are done with them.
+        objs = [CountedObject() for i in range(10)]
+        refs = [weakref.ref(o) for o in objs]
+        self.pool.map(identity, objs)
+
+        del objs
+        self.assertEqual(set(wr() for wr in refs), {None})
+        # With a process pool, copies of the objects are returned, check
+        # they were released too.
+        self.assertEqual(CountedObject.n_instances, 0)
 
 
 def raising():
