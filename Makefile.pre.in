@@ -1555,7 +1555,7 @@ autoconf:
 tags::
 	cd $(srcdir); \
 	ctags -w Include/*.h; \
-	for i in $(SRCDIRS); do ctags -w -a $$i/*.[ch]; \
+	for i in $(SRCDIRS); do ctags -f tags -w -a $$i/*.[ch]; \
 	done; \
 	LC_ALL=C sort -o tags tags
 
