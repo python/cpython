@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29894: The deprecation warning is emitted if __complex__ returns an
+  instance of a strict subclass of complex.  In a future versions of Python
+  this can be an error.
+
 - bpo-29859: Show correct error messages when any of the pthread_* calls in
   thread_pthread.h fails.
 
