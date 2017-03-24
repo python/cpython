@@ -287,6 +287,9 @@ Extension Modules
 Library
 -------
 
+- bpo-25803: Avoid incorrect errors raised by Path.mkdir(exist_ok=True)
+  when the OS gives priority to errors such as EACCES over EEXIST.
+
 - bpo-29861: Release references to tasks, their arguments and their results
   as soon as they are finished in multiprocessing.Pool.
 
