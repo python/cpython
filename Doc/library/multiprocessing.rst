@@ -135,7 +135,7 @@ start a *semaphore tracker* process which tracks the unlinked named
 semaphores created by processes of the program.  When all processes
 have exited the semaphore tracker unlinks any remaining semaphores.
 Usually there should be none, but if a process was killed by a signal
-there may some "leaked" semaphores.  (Unlinking the named semaphores
+there may be some "leaked" semaphores.  (Unlinking the named semaphores
 is a serious matter since the system allows only a limited number, and
 they will not be automatically unlinked until the next reboot.)
 
@@ -179,7 +179,7 @@ program. ::
 
 Note that objects related to one context may not be compatible with
 processes for a different context.  In particular, locks created using
-the *fork* context cannot be passed to a processes started using the
+the *fork* context cannot be passed to processes started using the
 *spawn* or *forkserver* start methods.
 
 A library which wants to use a particular start method should probably
