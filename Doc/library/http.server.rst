@@ -362,6 +362,8 @@ of which this module provides three different variants:
       For example usage, see the implementation of the :func:`test` function
       invocation in the :mod:`http.server` module.
 
+      .. versionchanged:: 3.7
+         Support of the ``'If-Modified-Since'`` header.
 
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
