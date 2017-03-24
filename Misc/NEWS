@@ -287,6 +287,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29861: Release references to tasks, their arguments and their results
+  as soon as they are finished in multiprocessing.Pool.
+
 - bpo-19930: The mode argument of os.makedirs() no longer affects the file
   permission bits of newly-created intermediate-level directories.
 
