@@ -20,6 +20,10 @@ interpreter.
    between versions of Python.  Use of this module should not be considered to
    work across Python VMs or Python releases.
 
+   .. versionchanged:: 3.6
+      Use 2 bytes for each instruction. Previously the number of bytes varied
+      by instruction.
+
 
 Example: Given the function :func:`myfunc`::
 
@@ -210,6 +214,11 @@ operation is being performed, so the intermediate analysis object isn't useful:
    This generator function uses the ``co_firstlineno`` and ``co_lnotab``
    attributes of the code object *code* to find the offsets which are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
+   See :source:`Objects/lnotab_notes.txt` for the ``co_lnotab`` format and
+   how to decode it.
+
+   .. versionchanged:: 3.6
+      Line numbers can be decreasing. Before, they were always increasing.
 
 
 .. function:: findlabels(code)
@@ -1105,8 +1114,13 @@ All of the following opcodes use their arguments.
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
-   opcodes which don't take arguments ``< HAVE_ARGUMENT`` and those which do
-   ``>= HAVE_ARGUMENT``.
+   opcodes which don't use their argument and those that do
+   (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
+
+   .. versionchanged:: 3.6
+      Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
+      ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
+
 
 .. _opcode_collections:
 
