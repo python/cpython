@@ -1136,8 +1136,8 @@ All of the following opcodes use their arguments.
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
-   opcodes which don't use their arguments ``< HAVE_ARGUMENT`` and
-   those which do ``>= HAVE_ARGUMENT``.
+   opcodes which don't use their argument and those that do
+   (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
 
    .. versionchanged:: 3.6
       Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
