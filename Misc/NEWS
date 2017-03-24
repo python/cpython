@@ -39,6 +39,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29861: Release references to tasks, their arguments and their results
+  as soon as they are finished in multiprocessing.Pool.
+
 - bpo-27880: Fixed integer overflow in cPickle when pickle large strings or
   too many objects.
 
