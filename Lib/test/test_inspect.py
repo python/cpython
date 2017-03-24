@@ -384,6 +384,11 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getcomments(self):
         self.assertEqual(inspect.getcomments(mod), '# line 1\n')
         self.assertEqual(inspect.getcomments(mod.StupidGit), '# line 20\n')
+        # If the object source file is not available, return None.
+        co = compile('x=1', '_non_existing_filename.py', 'exec')
+        self.assertIsNone(inspect.getcomments(co))
+        # If the object has been defined in C, return None.
+        self.assertIsNone(inspect.getcomments(list))
 
     def test_getmodule(self):
         # Check actual module

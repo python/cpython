@@ -207,7 +207,7 @@ extern int _Py_open_cloexec_works;
 _io.FileIO.__init__
     file as nameobj: object
     mode: str = "r"
-    closefd: int(c_default="1") = True
+    closefd: bool(accept={int}) = True
     opener: object = None
 
 Open a file.
@@ -228,7 +228,7 @@ results in functionality similar to passing None).
 static int
 _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                          int closefd, PyObject *opener)
-/*[clinic end generated code: output=23413f68e6484bbd input=193164e293d6c097]*/
+/*[clinic end generated code: output=23413f68e6484bbd input=1596c9157a042a39]*/
 {
 #ifdef MS_WINDOWS
     Py_UNICODE *widename = NULL;
@@ -1082,9 +1082,19 @@ fileio_repr(fileio *self)
             self->fd, mode_string(self), self->closefd ? "True" : "False");
     }
     else {
-        res = PyUnicode_FromFormat(
-            "<_io.FileIO name=%R mode='%s' closefd=%s>",
-            nameobj, mode_string(self), self->closefd ? "True" : "False");
+        int status = Py_ReprEnter((PyObject *)self);
+        res = NULL;
+        if (status == 0) {
+            res = PyUnicode_FromFormat(
+                "<_io.FileIO name=%R mode='%s' closefd=%s>",
+                nameobj, mode_string(self), self->closefd ? "True" : "False");
+            Py_ReprLeave((PyObject *)self);
+        }
+        else if (status > 0) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "reentrant call inside %s.__repr__",
+                         Py_TYPE(self)->tp_name);
+        }
         Py_DECREF(nameobj);
     }
     return res;

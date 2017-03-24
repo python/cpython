@@ -993,14 +993,14 @@ class Thread:
         #
         # Must take care to not raise an exception if _dummy_thread is being
         # used (and thus this module is being used as an instance of
-        # dummy_threading).  _dummy_thread.get_ident() always returns -1 since
+        # dummy_threading).  _dummy_thread.get_ident() always returns 1 since
         # there is only one thread if _dummy_thread is being used.  Thus
         # len(_active) is always <= 1 here, and any Thread instance created
         # overwrites the (if any) thread currently registered in _active.
         #
         # An instance of _MainThread is always created by 'threading'.  This
         # gets overwritten the instant an instance of Thread is created; both
-        # threads return -1 from _dummy_thread.get_ident() and thus have the
+        # threads return 1 from _dummy_thread.get_ident() and thus have the
         # same key in the dict.  So when the _MainThread instance created by
         # 'threading' tries to clean itself up when atexit calls this method
         # it gets a KeyError if another Thread instance was created.

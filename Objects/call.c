@@ -2,6 +2,22 @@
 #include "frameobject.h"
 
 
+int
+_PyObject_HasFastCall(PyObject *callable)
+{
+    if (PyFunction_Check(callable)) {
+        return 1;
+    }
+    else if (PyCFunction_Check(callable)) {
+        return !(PyCFunction_GET_FLAGS(callable) & METH_VARARGS);
+    }
+    else {
+        assert (PyCallable_Check(callable));
+        return 0;
+    }
+}
+
+
 static PyObject *
 null_error(void)
 {
@@ -305,11 +321,12 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
             return function_code_fastcall(co, args, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == Py_SIZE(argdefs)) {
+                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             args = &PyTuple_GET_ITEM(argdefs, 0);
-            return function_code_fastcall(co, args, Py_SIZE(argdefs), globals);
+            return function_code_fastcall(co, args, PyTuple_GET_SIZE(argdefs),
+                                          globals);
         }
     }
 
@@ -348,7 +365,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
 
     if (argdefs != NULL) {
         d = &PyTuple_GET_ITEM(argdefs, 0);
-        nd = Py_SIZE(argdefs);
+        nd = PyTuple_GET_SIZE(argdefs);
     }
     else {
         d = NULL;
@@ -390,11 +407,12 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
             return function_code_fastcall(co, stack, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == Py_SIZE(argdefs)) {
+                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             stack = &PyTuple_GET_ITEM(argdefs, 0);
-            return function_code_fastcall(co, stack, Py_SIZE(argdefs), globals);
+            return function_code_fastcall(co, stack, PyTuple_GET_SIZE(argdefs),
+                                          globals);
         }
     }
 
@@ -405,7 +423,7 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
 
     if (argdefs != NULL) {
         d = &PyTuple_GET_ITEM(argdefs, 0);
-        nd = Py_SIZE(argdefs);
+        nd = PyTuple_GET_SIZE(argdefs);
     }
     else {
         d = NULL;
@@ -940,25 +958,20 @@ PyObject_CallFunction(PyObject *callable, const char *format, ...)
 }
 
 
+/* PyEval_CallFunction is exact copy of PyObject_CallFunction.
+ * This function is kept for backward compatibility.
+ */
 PyObject *
 PyEval_CallFunction(PyObject *callable, const char *format, ...)
 {
-    va_list vargs;
-    PyObject *args;
-    PyObject *res;
+    va_list va;
+    PyObject *result;
 
-    va_start(vargs, format);
+    va_start(va, format);
+    result = _PyObject_CallFunctionVa(callable, format, va, 0);
+    va_end(va);
 
-    args = Py_VaBuildValue(format, vargs);
-    va_end(vargs);
-
-    if (args == NULL)
-        return NULL;
-
-    res = PyEval_CallObject(callable, args);
-    Py_DECREF(args);
-
-    return res;
+    return result;
 }
 
 
@@ -1015,33 +1028,29 @@ PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 }
 
 
+/* PyEval_CallMethod is exact copy of PyObject_CallMethod.
+ * This function is kept for backward compatibility.
+ */
 PyObject *
 PyEval_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 {
-    va_list vargs;
-    PyObject *meth;
-    PyObject *args;
-    PyObject *res;
+    va_list va;
+    PyObject *callable, *retval;
 
-    meth = PyObject_GetAttrString(obj, name);
-    if (meth == NULL)
-        return NULL;
-
-    va_start(vargs, format);
-
-    args = Py_VaBuildValue(format, vargs);
-    va_end(vargs);
-
-    if (args == NULL) {
-        Py_DECREF(meth);
-        return NULL;
+    if (obj == NULL || name == NULL) {
+        return null_error();
     }
 
-    res = PyEval_CallObject(meth, args);
-    Py_DECREF(meth);
-    Py_DECREF(args);
+    callable = PyObject_GetAttrString(obj, name);
+    if (callable == NULL)
+        return NULL;
 
-    return res;
+    va_start(va, format);
+    retval = callmethod(callable, format, va, 0);
+    va_end(va);
+
+    Py_DECREF(callable);
+    return retval;
 }
 
 

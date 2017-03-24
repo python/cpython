@@ -170,6 +170,10 @@ class BoolTest(unittest.TestCase):
         self.assertIs(bool(""), False)
         self.assertIs(bool(), False)
 
+    def test_keyword_args(self):
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            bool(x=10)
+
     def test_format(self):
         self.assertEqual("%d" % False, "0")
         self.assertEqual("%d" % True, "1")

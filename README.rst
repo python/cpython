@@ -5,6 +5,10 @@ This is Python version 3.7.0 alpha 1
    :alt: CPython build status on Travis CI
    :target: https://travis-ci.org/python/cpython
 
+.. image:: https://ci.appveyor.com/api/projects/status/4mew1a93xdkbf5ua/branch/master?svg=true
+   :alt: CPython build status on Appveyor
+   :target: https://ci.appveyor.com/project/python/cpython/branch/master
+
 .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
