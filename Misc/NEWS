@@ -10,6 +10,11 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29859: Show correct error messages when any of the pthread_* calls in
+  thread_pthread.h fails.
+
+- bpo-29849: Fix a memory leak when an ImportError is raised during from import.
+
 - bpo-28856: Fix an oversight that %b format for bytes should support objects
   follow the buffer protocol.
 
@@ -30,10 +35,11 @@ Core and Builtins
 - bpo-29695: bool(), float(), list() and tuple() no longer take keyword arguments.
   The first argument of int() can now be passes only as positional argument.
 
-- bpo-20087: Prefer glibc's list of locale aliases to the X11 ones.
-
 - bpo-28893: Set correct __cause__ for errors about invalid awaitables
   returned from __aiter__ and __anext__.
+
+- bpo-28876: ``bool(range)`` works even if ``len(range)``
+  raises :exc:`OverflowError`.
 
 - bpo-29683: Fixes to memory allocation in _PyCode_SetExtra.  Patch by
   Brian Coleman.
@@ -281,6 +287,11 @@ Extension Modules
 Library
 -------
 
+- bpo-29884: faulthandler: Restore the old sigaltstack during teardown.
+  Patch by Christophe Zeitouny.
+
+- bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
+
 - bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
   are not strings.  Patch by Michael Seifert.
 
@@ -309,6 +320,9 @@ Library
 
 - bpo-28682: Added support for bytes paths in os.fwalk().
 
+- bpo-29728: Add new :data:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constant.
+  Patch by Nathaniel J. Smith.
+  
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
 
@@ -802,6 +816,10 @@ Windows
 C API
 -----
 
+- bpo-6532: The type of results of PyThread_start_new_thread() and
+  PyThread_get_thread_ident(), and the id parameter of
+  PyThreadState_SetAsyncExc() changed from "long" to "unsigned long".
+
 - Issue #27867: Function PySlice_GetIndicesEx() is deprecated and replaced with
   a macro if Py_LIMITED_API is not set or set to the value between 0x03050400
   and 0x03060000 (not including) or 0x03060100 or higher.  Added functions
@@ -934,6 +952,8 @@ Build
 
 Tools/Demos
 -----------
+
+- bpo-29748: Added the slice index converter in Argument Clinic.
 
 - bpo-24037: Argument Clinic now uses the converter `bool(accept={int})` rather
   than `int` for semantical booleans.  This avoids repeating the default

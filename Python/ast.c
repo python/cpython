@@ -4221,7 +4221,7 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
                 p += 10;
             }
             /* Should be impossible to overflow */
-            assert(p - buf <= Py_SIZE(u));
+            assert(p - buf <= PyBytes_GET_SIZE(u));
             Py_DECREF(w);
         } else {
             *p++ = *s++;
