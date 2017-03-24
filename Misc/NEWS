@@ -287,6 +287,9 @@ Extension Modules
 Library
 -------
 
+- bpo-19930: The mode argument of os.makedirs() no longer affects the file
+  permission bits of newly-created intermediate-level directories.
+
 - bpo-29884: faulthandler: Restore the old sigaltstack during teardown.
   Patch by Christophe Zeitouny.
 
