@@ -526,6 +526,10 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    :class:`MH` instances have all of the methods of :class:`Mailbox` in addition
    to the following:
 
+   .. versionchanged:: 3.7
+
+      Supported folders that don't contain a :file:`.mh_sequences` file.
+
 
    .. method:: list_folders()
 
