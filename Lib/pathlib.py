@@ -1220,25 +1220,23 @@ class Path(PurePath):
         os.close(fd)
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
         if self._closed:
             self._raise_closed()
-        if not parents:
-            try:
-                self._accessor.mkdir(self, mode)
-            except FileExistsError:
-                if not exist_ok or not self.is_dir():
-                    raise
-        else:
-            try:
-                self._accessor.mkdir(self, mode)
-            except FileExistsError:
-                if not exist_ok or not self.is_dir():
-                    raise
-            except OSError as e:
-                if e.errno != ENOENT or self.parent == self:
-                    raise
-                self.parent.mkdir(parents=True)
-                self._accessor.mkdir(self, mode)
+        try:
+            self._accessor.mkdir(self, mode)
+        except FileNotFoundError:
+            if not parents or self.parent == self:
+                raise
+            self.parent.mkdir(parents=True)
+            self._accessor.mkdir(self, mode)
+        except OSError:
+            # Cannot rely on checking for EEXIST, since the operating system
+            # could give priority to other errors like EACCES or EROFS
+            if not exist_ok or not self.is_dir():
+                raise
 
     def chmod(self, mode):
         """
