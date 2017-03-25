@@ -11,6 +11,7 @@ import os
 import socket
 import warnings
 import signal
+import collections
 
 from . import base_events
 from . import constants
@@ -425,6 +426,102 @@ class _ProactorWritePipeTransport(_ProactorBaseWritePipeTransport):
             self.close()
 
 
+class _ProactorDatagramTransport(_ProactorBasePipeTransport):
+
+    def __init__(self, loop, sock, protocol, address=None,
+                 waiter=None, extra=None):
+        super(_ProactorDatagramTransport, self).__init__(loop, sock, protocol,
+                                                         waiter=waiter,
+                                                         extra=extra)
+        self._address = address
+        # We don't need to call _protocol.connection_made() since our base
+        # constructor does it for us.
+        self._buffer = collections.deque()
+        self._loop.call_soon(self._loop_reading)
+
+    def abort(self):
+        self._force_close(None)
+
+    def sendto(self, data, addr=None):
+        if not isinstance(data, (bytes, bytearray, memoryview)):
+            raise TypeError('data argument must be byte-ish (%r)',
+                            type(data))
+
+        if not data:
+            return
+
+        if self._conn_lost and self._address:
+            # close() or force_close() has been called on the bound endpoint
+            return
+
+        self._buffer.appendleft((data, addr))
+
+        if self._write_fut is None:
+            # No current write operations are active, kick one off
+            self._loop_writing()
+        else:
+            # A write operation is already kicked off
+            pass
+
+    def _loop_writing(self, fut=None):
+        if self._conn_lost:
+            return
+
+        assert fut is self._write_fut
+        if fut:
+            # We are in a _loop_writing() done callback, get the result
+            fut.result()
+
+        if not self._buffer or (self._conn_lost and self._address):
+            # The connection has been closed
+            self._write_fut = None
+            return
+
+        data, addr = self._buffer.pop()
+
+        self._write_fut = None
+        try:
+            if self._address:
+                self._write_fut = self._loop._proactor.send(self._sock, data)
+            else:
+                self._write_fut = self._loop._proactor.sendto(self._sock, data, addr=addr)
+        except OSError as exc:
+            self._protocol.error_received(exc)
+            self._fatal_error(exc, 'Fatal error sending UDP datagram')
+        else:
+            self._write_fut.add_done_callback(self._loop_writing)
+
+    def _loop_reading(self, fut=None):
+        if self._conn_lost:
+            return
+
+        assert self._read_fut is fut
+
+        if fut:
+            res = fut.result()
+
+            if self._address:
+                data, addr = res, self._address
+            else:
+                data, addr = res
+
+            self._protocol.datagram_received(data, addr)
+
+        if self._conn_lost:
+            return
+
+        try:
+            if self._address:
+                self._read_fut = self._loop._proactor.recv(self._sock, 4096)
+            else:
+                self._read_fut = self._loop._proactor.recvfrom(self._sock, 4096)
+        except OSError as exc:
+            self._protocol.error_received(exc)
+            self._fatal_error(exc, "Fatal error reading from UDP endpoint")
+        else:
+            self._read_fut.add_done_callback(self._loop_reading)
+
+
 class _ProactorDuplexPipeTransport(_ProactorReadPipeTransport,
                                    _ProactorBaseWritePipeTransport,
                                    transports.Transport):
@@ -506,9 +603,15 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 self, protocol, sslcontext, waiter,
                 server_side, server_hostname,
                 ssl_handshake_timeout=ssl_handshake_timeout)
+
         _ProactorSocketTransport(self, rawsock, ssl_protocol,
                                  extra=extra, server=server)
         return ssl_protocol._app_transport
+
+    def _make_datagram_transport(self, sock, protocol,
+                                 address=None, waiter=None, extra=None):
+        return _ProactorDatagramTransport(self, sock, protocol, address,
+                                          waiter, extra)
 
     def _make_duplex_pipe_transport(self, sock, protocol, waiter=None,
                                     extra=None):
