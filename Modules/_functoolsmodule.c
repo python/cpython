@@ -66,24 +66,18 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         Py_DECREF(pto);
         return NULL;
     }
-    if (pargs == NULL || PyTuple_GET_SIZE(pargs) == 0) {
+    if (pargs == NULL) {
         pto->args = nargs;
-        Py_INCREF(nargs);
-    }
-    else if (PyTuple_GET_SIZE(nargs) == 0) {
-        pto->args = pargs;
-        Py_INCREF(pargs);
     }
     else {
         pto->args = PySequence_Concat(pargs, nargs);
+        Py_DECREF(nargs);
         if (pto->args == NULL) {
-            Py_DECREF(nargs);
             Py_DECREF(pto);
             return NULL;
         }
         assert(PyTuple_Check(pto->args));
     }
-    Py_DECREF(nargs);
 
     if (pkw == NULL || PyDict_GET_SIZE(pkw) == 0) {
         if (kw == NULL) {
