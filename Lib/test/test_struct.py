@@ -578,6 +578,18 @@ class StructTest(unittest.TestCase):
         self.check_sizeof('0s', 1)
         self.check_sizeof('0c', 0)
 
+    def test_Struct_addition(self):
+        s1 = struct.Struct(">L")
+        s2 = struct.Struct(">B")
+        s3 = s1 + s2
+        self.assertEqual(s3.format, b">LB")
+
+    def test_Struct_addition_format_not_identical(self):
+        s1 = struct.Struct(">L")
+        s2 = struct.Struct("<B")
+        with self.assertRaises(TypeError):
+            s1 + s2
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """
