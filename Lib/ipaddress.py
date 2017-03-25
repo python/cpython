@@ -1371,12 +1371,12 @@ class IPv4Interface(IPv4Address):
         if isinstance(address, tuple):
             IPv4Address.__init__(self, address[0])
             if len(address) > 1:
-                self._prefixlen = int(address[1])
+                arg = address[1]
             else:
-                self._prefixlen = self._max_prefixlen
+                arg = self._max_prefixlen
 
             self.network = IPv4Network(address, strict=False)
-            self.netmask = self.network.netmask
+            self.netmask, self._prefixlen = self._make_netmask(arg)
             self.hostmask = self.network.hostmask
             return
 
@@ -2064,11 +2064,11 @@ class IPv6Interface(IPv6Address):
         if isinstance(address, tuple):
             IPv6Address.__init__(self, address[0])
             if len(address) > 1:
-                self._prefixlen = int(address[1])
+                arg = address[1]
             else:
-                self._prefixlen = self._max_prefixlen
+                arg = self._max_prefixlen
             self.network = IPv6Network(address, strict=False)
-            self.netmask = self.network.netmask
+            self.netmask, self._prefixlen = self._make_netmask(arg)
             self.hostmask = self.network.hostmask
             return
 
