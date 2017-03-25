@@ -232,8 +232,8 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
 
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError('data argument must be byte-ish (%r)',
-                            type(data))
+            raise TypeError('data argument must be a bytes-like object, not %r' %
+                            type(data).__name__)
         if self._eof_written:
             raise RuntimeError('write_eof() already called')
 
