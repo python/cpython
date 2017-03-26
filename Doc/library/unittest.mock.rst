@@ -10,6 +10,29 @@
 
 .. versionadded:: 3.3
 
+.. testsetup::
+
+   import unittest
+   import unittest_mock.package.module as module
+   import unittest_mock.package as package
+
+   # This allows us to import unittest_mock.package.module as
+   # ``import module`` and unittest_mock.package as ``import package``
+   import sys
+   sys.modules['module'] = module
+   sys.modules['package'] = package
+
+.. testcleanup::
+
+   for module in [
+           'unittest_mock',
+           'unittest_mock.package',
+           'unittest_mock.package.module',
+           'package',
+           'module']:
+        del sys.modules[module]
+
+
 **Source code:** :source:`Lib/unittest/mock.py`
 
 --------------
@@ -47,6 +70,10 @@ can configure them, to specify return values or limit what attributes are
 available, and then make assertions about how they have been used:
 
     >>> from unittest.mock import MagicMock
+    >>> class ProductionClass:
+    ...     def method(self):
+    ...         pass
+    ...
     >>> thing = ProductionClass()
     >>> thing.method = MagicMock(return_value=3)
     >>> thing.method(3, 4, 5, key='value')
@@ -56,6 +83,7 @@ available, and then make assertions about how they have been used:
 :attr:`side_effect` allows you to perform side effects, including raising an
 exception when a mock is called:
 
+   >>> from unittest.mock import Mock
    >>> mock = Mock(side_effect=KeyError('foo'))
    >>> mock()
    Traceback (most recent call last):
@@ -348,6 +376,7 @@ the *new_callable* argument to :func:`patch`.
             >>> mock(2)
             >>> mock(3)
             >>> mock(4)
+            >>> from unittest.mock import call
             >>> calls = [call(2), call(3)]
             >>> mock.assert_has_calls(calls)
             >>> calls = [call(4), call(2), call(3)]
@@ -504,6 +533,7 @@ the *new_callable* argument to :func:`patch`.
         the normal way:
 
             >>> mock = Mock()
+            >>> from unittest.mock import sentinel
             >>> mock.return_value.attribute = sentinel.Attribute
             >>> mock.return_value()
             <Mock name='mock()()' id='...'>
@@ -553,6 +583,7 @@ the *new_callable* argument to :func:`patch`.
 
         Using a callable:
 
+            >>> from unittest.mock import DEFAULT
             >>> mock = Mock(return_value=3)
             >>> def side_effect(*args, **kwargs):
             ...     return DEFAULT
@@ -709,6 +740,13 @@ the *new_callable* argument to :func:`patch`.
 Mock objects that use a class or an instance as a :attr:`spec` or
 :attr:`spec_set` are able to pass :func:`isinstance` tests:
 
+    >>> class SomeClass:
+    ...     def static_method(par):
+    ...         pass
+    ...     @classmethod
+    ...     def class_method(cls, par):
+    ...         pass
+    ...
     >>> mock = Mock(spec=SomeClass)
     >>> isinstance(mock, SomeClass)
     True
@@ -776,6 +814,7 @@ apply to method calls on the mock object.
    Fetching a :class:`PropertyMock` instance from an object calls the mock, with
    no args. Setting it calls the mock with the value being set.
 
+        >>> from unittest.mock import PropertyMock
         >>> class Foo:
         ...     @property
         ...     def foo(self):
@@ -1162,6 +1201,7 @@ The *new_callable* argument is useful where you want to use an alternative
 class to the default :class:`MagicMock` for the created mock. For example, if
 you wanted a :class:`NonCallableMock` to be used:
 
+    >>> from unittest.mock import NonCallableMock
     >>> thing = object()
     >>> with patch('__main__.thing', new_callable=NonCallableMock) as mock_thing:
     ...     assert thing is mock_thing
@@ -1424,7 +1464,7 @@ the call to ``patcher.start``.
 A typical use case for this might be for doing multiple patches in the ``setUp``
 method of a :class:`TestCase`:
 
-    >>> class MyTest(TestCase):
+    >>> class MyTest(unittest.TestCase):
     ...     def setUp(self):
     ...         self.patcher1 = patch('package.module.Class1')
     ...         self.patcher2 = patch('package.module.Class2')
@@ -1440,6 +1480,7 @@ method of a :class:`TestCase`:
     ...         assert package.module.Class2 is self.MockClass2
     ...
     >>> MyTest('test_something').run()
+    <unittest.result.TestResult ...>
 
 .. caution::
 
@@ -1448,7 +1489,7 @@ method of a :class:`TestCase`:
     exception is raised in the ``setUp`` then ``tearDown`` is not called.
     :meth:`unittest.TestCase.addCleanup` makes this easier:
 
-        >>> class MyTest(TestCase):
+        >>> class MyTest(unittest.TestCase):
         ...     def setUp(self):
         ...         patcher = patch('package.module.Class')
         ...         self.MockClass = patcher.start()
@@ -1476,6 +1517,13 @@ patch builtins
 You can patch any builtins within a module. The following example patches
 builtin :func:`ord`:
 
+.. testsetup:: ord
+
+   from builtins import ord
+   from unittest.mock import patch
+
+.. doctest:: ord
+
     >>> @patch('__main__.ord')
     ... def test(mock_ord):
     ...     mock_ord.return_value = 101
@@ -1495,6 +1543,17 @@ start with ``'test'`` as being test methods. This is the same way that the
 
 It is possible that you want to use a different prefix for your tests. You can
 inform the patchers of the different prefix by setting ``patch.TEST_PREFIX``:
+
+.. testsetup:: test-prefix
+
+   from unittest.mock import patch
+   TEST_PREFIX = patch.TEST_PREFIX
+
+.. testcleanup:: test-prefix
+
+   patch.TEST_PREFIX = TEST_PREFIX
+
+.. doctest:: test-prefix
 
     >>> patch.TEST_PREFIX = 'foo'
     >>> value = 3
@@ -1930,7 +1989,7 @@ arguments are a dictionary:
     >>> args, kwargs = kall
     >>> args
     (1, 2, 3)
-    >>> kwargs
+    >>> kwargs  # doctest: +SKIP
     {'arg2': 'two', 'arg': 'one'}
     >>> args is kall[0]
     True
@@ -1946,7 +2005,7 @@ arguments are a dictionary:
     'foo'
     >>> args
     (4, 5, 6)
-    >>> kwargs
+    >>> kwargs  # doctest: +SKIP
     {'arg2': 'three', 'arg': 'two'}
     >>> name is m.mock_calls[0][0]
     True
@@ -1994,6 +2053,7 @@ To ignore certain arguments you can pass in objects that compare equal to
 :meth:`~Mock.assert_called_once_with` will then succeed no matter what was
 passed in.
 
+    >>> from unittest.mock import ANY
     >>> mock = Mock(return_value=None)
     >>> mock('foo', bar=object())
     >>> mock.assert_called_once_with('foo', bar=ANY)
@@ -2027,12 +2087,15 @@ If the mock was created with a *spec* (or *autospec* of course) then all the
 attributes from the original are shown, even if they haven't been accessed
 yet:
 
+.. doctest::
+   :options: +NORMALIZE_WHITESPACE
+
     >>> dir(Mock())
     ['assert_any_call',
+     'assert_called',
+     'assert_called_once',
      'assert_called_once_with',
      'assert_called_with',
-     'assert_has_calls',
-     'attach_mock',
      ...
     >>> from urllib import request
     >>> dir(Mock(spec=request))
@@ -2046,7 +2109,7 @@ Many of the not-very-useful (private to :class:`Mock` rather than the thing bein
 mocked) underscore and double underscore prefixed attributes have been
 filtered from the result of calling :func:`dir` on a :class:`Mock`. If you dislike this
 behaviour you can switch it off by setting the module level switch
-:data:`FILTER_DIR`:
+:data:`FILTER_DIR`::
 
     >>> from unittest import mock
     >>> mock.FILTER_DIR = False
@@ -2108,6 +2171,14 @@ The issue is that even if you mock out the call to :func:`open` it is the
 Mocking context managers with a :class:`MagicMock` is common enough and fiddly
 enough that a helper function is useful.
 
+.. testsetup:: open
+
+   from builtins import open
+   from unittest.mock import patch
+
+.. doctest:: open
+
+    >>> from unittest.mock import mock_open
     >>> m = mock_open()
     >>> with patch('__main__.open', m):
     ...     with open('foo', 'w') as h:
@@ -2123,6 +2194,8 @@ enough that a helper function is useful.
     >>> handle.write.assert_called_once_with('some stuff')
 
 And for reading files:
+
+.. doctest:: open
 
     >>> with patch('__main__.open', mock_open(read_data='bibble')) as m:
     ...     with open('foo') as h:

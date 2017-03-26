@@ -6,6 +6,34 @@
 
 .. versionadded:: 3.3
 
+.. testsetup::
+
+   import unittest
+   import unittest_mock.mymodule as mymodule
+   import unittest_mock.package as package
+
+   # The examples require mymodule to have the following attributes
+   for attr in ['Class1', 'Class2', 'Foo', 'Bar', 'Spam', 'SomeClass', 'date']:
+       setattr(mymodule, attr, None)
+
+   # This allows us to import unittest_mock.mymodule as
+   # ``import module`` and unittest_mock.package as ``import package``
+   import sys
+   sys.modules['mymodule'] = mymodule
+   sys.modules['package'] = package
+
+   class SomeClass:
+       attribute = None
+
+.. testcleanup::
+
+   for module in [
+           'unittest_mock',
+           'unittest_mock.package',
+           'unittest_mock.mymodule',
+           'package',
+           'mymodule']:
+        del sys.modules[module]
 
 .. _getting-started:
 
@@ -23,6 +51,7 @@ Common uses for :class:`Mock` objects include:
 You might want to replace a method on an object to check that
 it is called with the correct arguments by another part of the system:
 
+    >>> from unittest.mock import MagicMock
     >>> real = SomeClass()
     >>> real.method = MagicMock(name='method')
     >>> real.method(3, 4, 5, key='value')
@@ -77,6 +106,7 @@ an object then it calls ``close`` on it.
 So to test it we need to pass in an object with a ``close`` method and check
 that it was called correctly.
 
+    >>> from unittest.mock import Mock
     >>> real = ProductionClass()
     >>> mock = Mock()
     >>> real.closer(mock)
@@ -102,10 +132,11 @@ mock. The ``Foo`` instance is the result of calling the mock, so it is configure
 by modifying the mock :attr:`~Mock.return_value`.
 
     >>> def some_function():
-    ...     instance = module.Foo()
+    ...     instance = mymodule.Foo()
     ...     return instance.method()
     ...
-    >>> with patch('module.Foo') as mock:
+    >>> from unittest.mock import patch
+    >>> with patch('mymodule.Foo') as mock:
     ...     instance = mock.return_value
     ...     instance.method.return_value = 'the result'
     ...     result = some_function()
@@ -149,6 +180,7 @@ that they were made in the right order and with no additional calls:
 You use the :data:`call` object to construct lists for comparing with
 ``mock_calls``:
 
+    >>> from unittest.mock import call
     >>> expected = [call.method(), call.attribute.method(10, x=53)]
     >>> mock.mock_calls == expected
     True
@@ -323,6 +355,7 @@ with.
 
 ``patch.object``:
 
+    >>> from unittest.mock import sentinel
     >>> original = SomeClass.attribute
     >>> @patch.object(SomeClass, 'attribute', sentinel.attribute)
     ... def test():
@@ -372,6 +405,10 @@ If you want to patch with a Mock, you can use :func:`patch` with only one argume
 (or :func:`patch.object` with two arguments). The mock will be created for you and
 passed into the test function / method:
 
+    >>> class SomeClass:
+    ...     def static_method():
+    ...        pass
+    ...
     >>> class MyTest(unittest.TestCase):
     ...     @patch.object(SomeClass, 'static_method')
     ...     def test_something(self, mock_method):
@@ -460,6 +497,19 @@ testable way in the first place...
 
 So, suppose we have some code that looks a little bit like this:
 
+.. testsetup:: backend_provider
+
+   from unittest.mock import Mock, call
+   class BackendProvider:
+       def get_endpoint(self, par):
+           class Endpoint:
+               def create_call(self, par1, par2):
+                   class Call:
+                       def start_call(self):
+                           ...
+
+.. doctest:: backend_provider
+
     >>> class Something:
     ...     def __init__(self):
     ...         self.backend = BackendProvider()
@@ -487,6 +537,8 @@ response object for it. To set the response as the return value for that final
 We can do that in a slightly nicer way using the :meth:`~Mock.configure_mock`
 method to directly set the return value for us:
 
+.. doctest:: backend_provider
+
     >>> something = Something()
     >>> mock_response = Mock(spec=open)
     >>> mock_backend = Mock()
@@ -496,6 +548,8 @@ method to directly set the return value for us:
 With these we monkey patch the "mock backend" in place and can make the real
 call:
 
+.. doctest:: backend_provider
+
     >>> something.backend = mock_backend
     >>> something.method()
 
@@ -503,6 +557,8 @@ Using :attr:`~Mock.mock_calls` we can check the chained call with a single
 assert. A chained call is several calls in one line of code, so there will be
 several entries in ``mock_calls``. We can use :meth:`call.call_list` to create
 this list of calls for us:
+
+.. doctest:: backend_provider
 
     >>> chained = call.get_endpoint('foobar').create_call('spam', 'eggs').start_call()
     >>> call_list = chained.call_list()
@@ -603,7 +659,7 @@ methods on the class. A test method is identified by methods whose names start
 with ``test``:
 
     >>> @patch('mymodule.SomeClass')
-    ... class MyTest(TestCase):
+    ... class MyTest(unittest.TestCase):
     ...
     ...     def test_one(self, MockSomeClass):
     ...         self.assertIs(mymodule.SomeClass, MockSomeClass)
@@ -622,7 +678,7 @@ with ``test``:
 An alternative way of managing patches is to use the :ref:`start-and-stop`.
 These allow you to move the patching into your ``setUp`` and ``tearDown`` methods.
 
-    >>> class MyTest(TestCase):
+    >>> class MyTest(unittest.TestCase):
     ...     def setUp(self):
     ...         self.patcher = patch('mymodule.foo')
     ...         self.mock_foo = self.patcher.start()
@@ -634,13 +690,14 @@ These allow you to move the patching into your ``setUp`` and ``tearDown`` method
     ...         self.patcher.stop()
     ...
     >>> MyTest('test_foo').run()
+    <unittest.result.TestResult ...>
 
 If you use this technique you must ensure that the patching is "undone" by
 calling ``stop``. This can be fiddlier than you might think, because if an
 exception is raised in the setUp then tearDown is not called.
 :meth:`unittest.TestCase.addCleanup` makes this easier:
 
-    >>> class MyTest(TestCase):
+    >>> class MyTest(unittest.TestCase):
     ...     def setUp(self):
     ...         patcher = patch('mymodule.foo')
     ...         self.addCleanup(patcher.stop)
@@ -650,6 +707,7 @@ exception is raised in the setUp then tearDown is not called.
     ...         self.assertIs(mymodule.foo, self.mock_foo)
     ...
     >>> MyTest('test_foo').run()
+    <unittest.result.TestResult ...>
 
 
 Mocking Unbound Methods
@@ -856,7 +914,7 @@ Using patch as a context manager is nice, but if you do multiple patches you
 can end up with nested with statements indenting further and further to the
 right:
 
-    >>> class MyTest(TestCase):
+    >>> class MyTest(unittest.TestCase):
     ...
     ...     def test_foo(self):
     ...         with patch('mymodule.Foo') as mock_foo:
@@ -875,7 +933,7 @@ achieve the same effect without the nested indentation. A simple helper
 method, ``create_patch``, puts the patch in place and returns the created mock
 for us:
 
-    >>> class MyTest(TestCase):
+    >>> class MyTest(unittest.TestCase):
     ...
     ...     def create_patch(self, name):
     ...         patcher = patch(name)
@@ -894,6 +952,7 @@ for us:
     ...
     >>> original = mymodule.Foo
     >>> MyTest('test_foo').run()
+    <unittest.result.TestResult run=1 errors=0 failures=0>
     >>> assert mymodule.Foo is original
 
 
@@ -968,7 +1027,7 @@ mock methods and attributes:
     [call('a'), call('c'), call('d'), call('b'), call('d')]
     >>> mock.__setitem__.call_args_list
     [call('b', 'fish'), call('d', 'eggs')]
-    >>> my_dict
+    >>> my_dict  # doctest: +SKIP
     {'a': 1, 'c': 3, 'b': 'fish', 'd': 'eggs'}
 
 
