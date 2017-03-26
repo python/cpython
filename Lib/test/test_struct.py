@@ -584,6 +584,12 @@ class StructTest(unittest.TestCase):
         s3 = s1 + s2
         self.assertEqual(s3.format, b">LB")
 
+    def test_Struct_addition_no_order(self):
+        s1 = struct.Struct("L")
+        s2 = struct.Struct("B")
+        s3 = s1 + s2
+        self.assertEqual(s3.format, b"LB")
+
     def test_Struct_addition_format_not_identical(self):
         s1 = struct.Struct(">L")
         s2 = struct.Struct("<B")

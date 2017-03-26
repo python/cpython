@@ -1986,6 +1986,7 @@ struct_add(PyObject *left, PyObject *right)
 {
     PyObject * new_object, *new_format;
     char *left_fmt, *right_fmt;
+    int left_has_order, right_has_order;
 
     if (!(PyObject_TypeCheck(left, &PyStructType)
          && PyObject_TypeCheck(right, &PyStructType)))
@@ -1993,13 +1994,19 @@ struct_add(PyObject *left, PyObject *right)
 
     left_fmt = PyBytes_AsString(((PyStructObject*)left)->s_format);
     right_fmt = PyBytes_AsString(((PyStructObject*)right)->s_format);
-    
-    if (*left_fmt != *right_fmt) {
+
+    left_has_order = (*left_fmt == '@' || *left_fmt == '=' || *left_fmt == '>' ||
+        *left_fmt == '<' || *left_fmt == '!');
+    right_has_order = (*right_fmt == '@' || *right_fmt == '=' || *right_fmt == '>' ||
+        *right_fmt == '<' || *right_fmt == '!');
+
+    if ((right_has_order != left_has_order) ||
+        (left_has_order && right_has_order && (*left_fmt != *right_fmt))) {
         PyErr_SetString(PyExc_TypeError, "Format must be identitacal");
         return NULL;
     }
 
-    new_format = PyBytes_FromFormat("%s%s", left_fmt, right_fmt + 1);
+    new_format = PyBytes_FromFormat("%s%s", left_fmt, right_fmt + left_has_order * right_has_order);
     if (!new_format)
         return NULL;
 
