@@ -1,4 +1,3 @@
-import importlib
 import importlib.abc
 import importlib.util
 import os
@@ -148,7 +147,7 @@ class EditorWindow(object):
         text.bind("<<python-docs>>", self.python_docs)
         text.bind("<<about-idle>>", self.about_dialog)
         text.bind("<<open-config-dialog>>", self.config_dialog)
-        text.bind("<<open-module>>", self.open_module)
+        text.bind("<<open-module>>", self.open_module_event)
         text.bind("<<do-nothing>>", lambda event: "break")
         text.bind("<<select-all>>", self.select_all)
         text.bind("<<remove-selection>>", self.remove_selection)
@@ -295,7 +294,7 @@ class EditorWindow(object):
     def home_callback(self, event):
         if (event.state & 4) != 0 and event.keysym == "Home":
             # state&4==Control. If <Control-Home>, use the Tk binding.
-            return
+            return None
         if self.text.index("iomark") and \
            self.text.compare("iomark", "<=", "insert lineend") and \
            self.text.compare("insert linestart", "<=", "iomark"):
@@ -424,6 +423,7 @@ class EditorWindow(object):
         rmenu.tk_popup(event.x_root, event.y_root)
         if iswin:
             self.text.config(cursor="ibeam")
+        return "break"
 
     rmenu_specs = [
         # ("Label", "<<virtual-event>>", "statefuncname"), ...
@@ -465,11 +465,13 @@ class EditorWindow(object):
         "Handle Help 'About IDLE' event."
         # Synchronize with macosx.overrideRootMenu.about_dialog.
         help_about.AboutDialog(self.top,'About IDLE')
+        return "break"
 
     def config_dialog(self, event=None):
         "Handle Options 'Configure IDLE' event."
         # Synchronize with macosx.overrideRootMenu.config_dialog.
         configdialog.ConfigDialog(self.top,'Settings')
+        return "break"
 
     def help_dialog(self, event=None):
         "Handle Help 'IDLE Help' event."
@@ -479,6 +481,7 @@ class EditorWindow(object):
         else:
             parent = self.top
         help.show_idlehelp(parent)
+        return "break"
 
     def python_docs(self, event=None):
         if sys.platform[:3] == 'win':
@@ -498,7 +501,7 @@ class EditorWindow(object):
     def copy(self,event):
         if not self.text.tag_ranges("sel"):
             # There is no selection, so do nothing and maybe interrupt.
-            return
+            return None
         self.text.event_generate("<<Copy>>")
         return "break"
 
@@ -516,6 +519,7 @@ class EditorWindow(object):
     def remove_selection(self, event=None):
         self.text.tag_remove("sel", "1.0", "end")
         self.text.see("insert")
+        return "break"
 
     def move_at_edge_if_selection(self, edge_index):
         """Cursor move begins at start or end of selection
@@ -576,8 +580,9 @@ class EditorWindow(object):
             return "break"
         text.mark_set("insert", "%d.0" % lineno)
         text.see("insert")
+        return "break"
 
-    def open_module(self, event=None):
+    def open_module(self):
         """Get module name from user and open it.
 
         Return module path or None for calls by open_class_browser
@@ -601,21 +606,27 @@ class EditorWindow(object):
                 self.io.loadfile(file_path)
         return file_path
 
+    def open_module_event(self, event):
+        self.open_module()
+        return "break"
+
     def open_class_browser(self, event=None):
         filename = self.io.filename
         if not (self.__class__.__name__ == 'PyShellEditorWindow'
                 and filename):
             filename = self.open_module()
             if filename is None:
-                return
+                return "break"
         head, tail = os.path.split(filename)
         base, ext = os.path.splitext(tail)
         from idlelib import browser
         browser.ClassBrowser(self.flist, base, [head])
+        return "break"
 
     def open_path_browser(self, event=None):
         from idlelib import pathbrowser
         pathbrowser.PathBrowser(self.flist)
+        return "break"
 
     def open_turtle_demo(self, event = None):
         import subprocess
@@ -624,6 +635,7 @@ class EditorWindow(object):
                '-c',
                'from turtledemo.__main__ import main; main()']
         subprocess.Popen(cmd, shell=False)
+        return "break"
 
     def gotoline(self, lineno):
         if lineno is not None and lineno > 0:
@@ -880,6 +892,7 @@ class EditorWindow(object):
 
     def center_insert_event(self, event):
         self.center()
+        return "break"
 
     def center(self, mark="insert"):
         text = self.text
@@ -911,6 +924,7 @@ class EditorWindow(object):
 
     def close_event(self, event):
         self.close()
+        return "break"
 
     def maybesave(self):
         if self.io:
@@ -1358,6 +1372,7 @@ class EditorWindow(object):
             line = lines[pos]
             lines[pos] = '##' + line
         self.set_region(head, tail, chars, lines)
+        return "break"
 
     def uncomment_region_event(self, event):
         head, tail, chars, lines = self.get_region()
@@ -1371,6 +1386,7 @@ class EditorWindow(object):
                 line = line[1:]
             lines[pos] = line
         self.set_region(head, tail, chars, lines)
+        return "break"
 
     def tabify_region_event(self, event):
         head, tail, chars, lines = self.get_region()
@@ -1383,6 +1399,7 @@ class EditorWindow(object):
                 ntabs, nspaces = divmod(effective, tabwidth)
                 lines[pos] = '\t' * ntabs + ' ' * nspaces + line[raw:]
         self.set_region(head, tail, chars, lines)
+        return "break"
 
     def untabify_region_event(self, event):
         head, tail, chars, lines = self.get_region()
@@ -1391,6 +1408,7 @@ class EditorWindow(object):
         for pos in range(len(lines)):
             lines[pos] = lines[pos].expandtabs(tabwidth)
         self.set_region(head, tail, chars, lines)
+        return "break"
 
     def toggle_tabs_event(self, event):
         if self.askyesno(

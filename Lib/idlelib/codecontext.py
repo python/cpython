@@ -89,6 +89,7 @@ class CodeContext:
         idleConf.SetOption("extensions", "CodeContext", "visible",
                            str(self.label is not None))
         idleConf.SaveUserCfgFiles()
+        return "break"
 
     def get_line_info(self, linenum):
         """Get the line indent value, text, and any block start keyword

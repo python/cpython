@@ -76,6 +76,7 @@ class ScrolledList:
         index = self.listbox.index("active")
         self.select(index)
         menu.tk_popup(event.x_root, event.y_root)
+        return "break"
 
     def make_menu(self):
         menu = Menu(self.listbox, tearoff=0)

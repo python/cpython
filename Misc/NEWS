@@ -2152,6 +2152,10 @@ Library
 IDLE
 ----
 
+- Issue #29910: IDLE no longer delete character after commenting out a region
+  by key shortcut.  Fixed also other potential conflicts between IDLE's and
+  default key bindings.
+
 - Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
   Patch by Roger Serwy, updated by Bayard Randel.
 

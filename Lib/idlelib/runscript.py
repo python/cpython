@@ -63,6 +63,7 @@ class ScriptBinding:
             return 'break'
         if not self.tabnanny(filename):
             return 'break'
+        return "break"
 
     def tabnanny(self, filename):
         # XXX: tabnanny should work on binary files as well

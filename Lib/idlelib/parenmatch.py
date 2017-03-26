@@ -94,26 +94,28 @@ class ParenMatch:
                    .get_surrounding_brackets())
         if indices is None:
             self.bell()
-            return
+            return "break"
         self.activate_restore()
         self.create_tag(indices)
         self.set_timeout_last()
+        return "break"
 
     def paren_closed_event(self, event):
         # If it was a shortcut and not really a closing paren, quit.
         closer = self.text.get("insert-1c")
         if closer not in _openers:
-            return
+            return "break"
         hp = HyperParser(self.editwin, "insert-1c")
         if not hp.is_in_code():
-            return
+            return "break"
         indices = hp.get_surrounding_brackets(_openers[closer], True)
         if indices is None:
             self.bell()
-            return
+            return "break"
         self.activate_restore()
         self.create_tag(indices)
         self.set_timeout()
+        return "break"
 
     def restore_event(self, event=None):
         self.text.tag_delete("paren")
