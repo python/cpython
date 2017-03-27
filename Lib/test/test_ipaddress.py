@@ -1425,9 +1425,8 @@ class IpaddrUnitTest(unittest.TestCase):
 
         self.assertEqual(ip1.compare_networks(ip1), 0)
 
-        # if addresses are the same, sort by netmask
-        self.assertEqual(ip1.compare_networks(ip2), -1)
-        self.assertEqual(ip2.compare_networks(ip1), 1)
+        self.assertEqual(ip1.compare_networks(ip2), 0)
+        self.assertEqual(ip2.compare_networks(ip1), 0)
 
         self.assertEqual(ip1.compare_networks(ip3), -1)
         self.assertEqual(ip3.compare_networks(ip1), 1)
