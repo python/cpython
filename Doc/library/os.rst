@@ -1741,8 +1741,11 @@ features:
    Recursive directory creation function.  Like :func:`mkdir`, but makes all
    intermediate-level directories needed to contain the leaf directory.
 
-   The *mode* parameter is passed to :func:`mkdir`; see :ref:`the mkdir()
-   description <mkdir_modebits>` for how it is interpreted.
+   The *mode* parameter is passed to :func:`mkdir` for creating the leaf
+   directory; see :ref:`the mkdir() description <mkdir_modebits>` for how it
+   is interpreted.  To set the file permission bits of any newly-created parent
+   directories you can set the umask before invoking :func:`makedirs`.  The
+   file permission bits of existing parent directories are not changed.
 
    If *exist_ok* is ``False`` (the default), an :exc:`OSError` is raised if the
    target directory already exists.
@@ -1766,6 +1769,10 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.7
+      The *mode* argument no longer affects the file permission bits of
+      newly-created intermediate-level directories.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
@@ -2840,6 +2847,9 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.7
+      Added support for :class:`bytes` paths.
+
 
 Linux extended attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2859,7 +2869,7 @@ These functions are all available on Linux only.
    :ref:`not following symlinks <follow_symlinks>`.
 
    .. versionchanged:: 3.6
-      Accepts a :term:`path-like object` fpr *path* and *attribute*.
+      Accepts a :term:`path-like object` for *path* and *attribute*.
 
 
 .. function:: listxattr(path=None, *, follow_symlinks=True)

@@ -25,25 +25,25 @@ else
     BASECPPFLAGS=""
 fi
 
-AC_SUBST(HGVERSION)
-AC_SUBST(HGTAG)
-AC_SUBST(HGBRANCH)
+AC_SUBST(GITVERSION)
+AC_SUBST(GITTAG)
+AC_SUBST(GITBRANCH)
 
-if test -e $srcdir/.hg/dirstate
+if test -e $srcdir/.git/HEAD
 then
-AC_CHECK_PROG(HAS_HG, hg, found, not-found)
+AC_CHECK_PROG(HAS_GIT, git, found, not-found)
 else
-HAS_HG=no-repository
+HAS_GIT=no-repository
 fi
-if test $HAS_HG = found
+if test $HAS_GIT = found
 then
-    HGVERSION="hg id -i \$(srcdir)"
-    HGTAG="hg id -t \$(srcdir)"
-    HGBRANCH="hg id -b \$(srcdir)"
+    GITVERSION="git -C \$(srcdir) rev-parse --short HEAD"
+    GITTAG="git -C \$(srcdir) describe --all --always --dirty"
+    GITBRANCH="git -C \$(srcdir) name-rev --name-only HEAD"
 else
-    HGVERSION=""
-    HGTAG=""
-    HGBRANCH=""
+    GITVERSION=""
+    GITTAG=""
+    GITBRANCH=""
 fi
 
 AC_CONFIG_SRCDIR([Include/object.h])
@@ -5200,7 +5200,7 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Grammar Objects Python Modules Mac Programs"
+SRCDIRS="Parser Objects Python Modules Programs"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

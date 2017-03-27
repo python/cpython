@@ -164,6 +164,10 @@ def _as_int(n):
     except TypeError:
         raise TypeError('Plural value must be an integer, got %s' %
                         (n.__class__.__name__,)) from None
+    import warnings
+    warnings.warn('Plural value must be an integer, got %s' %
+                  (n.__class__.__name__,),
+                  DeprecationWarning, 4)
     return n
 
 def c2py(plural):

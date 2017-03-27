@@ -731,6 +731,10 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
     if (seq == NULL)
         return seq;
 
+    /* Reduce the number of repetitions when maxlen would be exceeded */
+    if (deque->maxlen >= 0 && n * size > deque->maxlen)
+        n = (deque->maxlen + size - 1) / size;
+
     for (i = 0 ; i < n-1 ; i++) {
         rv = deque_extend(deque, seq);
         if (rv == NULL) {

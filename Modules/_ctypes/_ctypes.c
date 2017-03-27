@@ -924,6 +924,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (proto) {
         StgDictObject *itemdict = PyType_stgdict(proto);
         const char *current_format;
+        /* PyCPointerType_SetProto has verified proto has a stgdict. */
         assert(itemdict);
         /* If itemdict->format is NULL, then this is a pointer to an
            incomplete type.  We create a generic format string
@@ -970,7 +971,11 @@ PyCPointerType_set_type(PyTypeObject *self, PyObject *type)
     StgDictObject *dict;
 
     dict = PyType_stgdict((PyObject *)self);
-    assert(dict);
+    if (!dict) {
+        PyErr_SetString(PyExc_TypeError,
+                        "abstract class");
+        return NULL;
+    }
 
     if (-1 == PyCPointerType_SetProto(dict, type))
         return NULL;
@@ -995,7 +1000,11 @@ PyCPointerType_from_param(PyObject *type, PyObject *value)
     }
 
     typedict = PyType_stgdict(type);
-    assert(typedict); /* Cannot be NULL for pointer types */
+    if (!typedict) {
+        PyErr_SetString(PyExc_TypeError,
+                        "abstract class");
+        return NULL;
+    }
 
     /* If we expect POINTER(<type>), but receive a <type> instance, accept
        it by calling byref(<type>).
@@ -2057,7 +2066,11 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     }
 
     dict = PyType_stgdict(type);
-    assert(dict);
+    if (!dict) {
+        PyErr_SetString(PyExc_TypeError,
+                        "abstract class");
+        return NULL;
+    }
 
     /* I think we can rely on this being a one-character string */
     fmt = PyUnicode_AsUTF8(dict->proto);
@@ -3146,7 +3159,11 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
     PyObject *argtypes;
 
     dict = PyType_stgdict((PyObject *)type);
-    assert(dict); /* Cannot be NULL. 'type' is a PyCFuncPtr type. */
+    if (!dict) {
+        PyErr_SetString(PyExc_TypeError,
+                        "abstract class");
+        return 0;
+    }
     argtypes = dict->argtypes;
 
     if (paramflags == NULL || dict->argtypes == NULL)
@@ -4779,7 +4796,7 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     }
 
     stgdict = PyObject_stgdict((PyObject *)self);
-    assert(stgdict); /* Cannot be NULL fr pointer instances */
+    assert(stgdict); /* Cannot be NULL for pointer instances */
 
     proto = stgdict->proto;
     assert(proto);
@@ -4807,7 +4824,7 @@ Pointer_get_contents(CDataObject *self, void *closure)
     }
 
     stgdict = PyObject_stgdict((PyObject *)self);
-    assert(stgdict); /* Cannot be NULL fr pointer instances */
+    assert(stgdict); /* Cannot be NULL for pointer instances */
     return PyCData_FromBaseObj(stgdict->proto,
                              (PyObject *)self, 0,
                              *(void **)self->b_ptr);
@@ -4826,7 +4843,7 @@ Pointer_set_contents(CDataObject *self, PyObject *value, void *closure)
         return -1;
     }
     stgdict = PyObject_stgdict((PyObject *)self);
-    assert(stgdict); /* Cannot be NULL fr pointer instances */
+    assert(stgdict); /* Cannot be NULL for pointer instances */
     assert(stgdict->proto);
     if (!CDataObject_Check(value)) {
         int res = PyObject_IsInstance(value, stgdict->proto);

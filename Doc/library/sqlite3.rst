@@ -927,14 +927,6 @@ By default, the :mod:`sqlite3` module opens transactions implicitly before a
 Data Modification Language (DML)  statement (i.e.
 ``INSERT``/``UPDATE``/``DELETE``/``REPLACE``).
 
-So if you are within a transaction and issue a command like ``CREATE TABLE
-...``, ``VACUUM``, ``PRAGMA``, the :mod:`sqlite3` module will commit implicitly
-before executing that command. There are two reasons for doing that. The first
-is that some of these commands don't work within transactions. The other reason
-is that sqlite3 needs to keep track of the transaction state (if a transaction
-is active or not).  The current transaction state is exposed through the
-:attr:`Connection.in_transaction` attribute of the connection object.
-
 You can control which kind of ``BEGIN`` statements sqlite3 implicitly executes
 (or none at all) via the *isolation_level* parameter to the :func:`connect`
 call, or via the :attr:`isolation_level` property of connections.
@@ -944,6 +936,9 @@ If you want **autocommit mode**, then set :attr:`isolation_level` to ``None``.
 Otherwise leave it at its default, which will result in a plain "BEGIN"
 statement, or set it to one of SQLite's supported isolation levels: "DEFERRED",
 "IMMEDIATE" or "EXCLUSIVE".
+
+The current transaction state is exposed through the
+:attr:`Connection.in_transaction` attribute of the connection object.
 
 .. versionchanged:: 3.6
    :mod:`sqlite3` used to implicitly commit an open transaction before DDL

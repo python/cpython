@@ -2,8 +2,6 @@
   What's New In Python 3.6
 ****************************
 
-:Release: |release|
-:Date: |today|
 :Editors: Elvis Pranskevichus <elvis@magic.io>, Yury Selivanov <yury@magic.io>
 
 .. Rules for maintenance:

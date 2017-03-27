@@ -24,6 +24,8 @@ init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
 {
     self->hash = -1;
     self->wr_object = ob;
+    self->wr_prev = NULL;
+    self->wr_next = NULL;
     Py_XINCREF(callback);
     self->wr_callback = callback;
 }

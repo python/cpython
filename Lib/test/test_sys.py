@@ -393,6 +393,9 @@ class SysModuleTest(unittest.TestCase):
         thread_id = thread_info[0]
 
         d = sys._current_frames()
+        for tid in d:
+            self.assertIsInstance(tid, int)
+            self.assertGreater(tid, 0)
 
         main_id = threading.get_ident()
         self.assertIn(main_id, d)

@@ -442,7 +442,9 @@ Retrieving source code
 
    Return in a single string any lines of comments immediately preceding the
    object's source code (for a class, function, or method), or at the top of the
-   Python source file (if the object is a module).
+   Python source file (if the object is a module).  If the object's source code
+   is unavailable, return ``None``.  This could happen if the object has been
+   defined in C or the interactive shell.
 
 
 .. function:: getfile(object)
@@ -905,10 +907,8 @@ Classes and functions
    are the names of the ``*`` and ``**`` arguments or ``None``.  *locals* is the
    locals dictionary of the given frame.
 
-   .. deprecated:: 3.5
-      Use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      better introspecting API for callables.
+   .. note::
+      This function was inadvertently marked as deprecated in Python 3.5.
 
 
 .. function:: formatargspec(args[, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations[, formatarg, formatvarargs, formatvarkw, formatvalue, formatreturns, formatannotations]])
@@ -944,10 +944,8 @@ Classes and functions
    :func:`getargvalues`.  The format\* arguments are the corresponding optional
    formatting functions that are called to turn names and values into strings.
 
-   .. deprecated:: 3.5
-      Use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      better introspecting API for callables.
+   .. note::
+      This function was inadvertently marked as deprecated in Python 3.5.
 
 
 .. function:: getmro(cls)

@@ -2728,12 +2728,12 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 #endif
 
 
-#ifndef OPENSSL_NO_ECDH
+#if !defined(OPENSSL_NO_ECDH) && !defined(OPENSSL_VERSION_1_1)
     /* Allow automatic ECDH curve selection (on OpenSSL 1.0.2+), or use
        prime256v1 by default.  This is Apache mod_ssl's initialization
        policy, so we should be safe. OpenSSL 1.1 has it enabled by default.
      */
-#if defined(SSL_CTX_set_ecdh_auto) && !defined(OPENSSL_VERSION_1_1)
+#if defined(SSL_CTX_set_ecdh_auto)
     SSL_CTX_set_ecdh_auto(self->ctx, 1);
 #else
     {
@@ -5032,8 +5032,7 @@ static PyThread_type_lock *_ssl_locks = NULL;
 static void
 _ssl_threadid_callback(CRYPTO_THREADID *id)
 {
-    CRYPTO_THREADID_set_numeric(id,
-                                (unsigned long)PyThread_get_thread_ident());
+    CRYPTO_THREADID_set_numeric(id, PyThread_get_thread_ident());
 }
 #else
 /* deprecated CRYPTO_set_id_callback() API. */

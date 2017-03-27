@@ -46,6 +46,9 @@ Typical usage:
 
 import os
 
+from enum import Enum
+
+
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
@@ -55,7 +58,14 @@ RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
 int_ = int      # The built-in int type
 bytes_ = bytes  # The built-in bytes type
 
-class UUID(object):
+
+class SafeUUID(Enum):
+    safe = 0
+    unsafe = -1
+    unknown = None
+
+
+class UUID:
     """Instances of the UUID class represent UUIDs as specified in RFC 4122.
     UUID objects are immutable, hashable, and usable as dictionary keys.
     Converting a UUID to a string with str() yields something in the form
@@ -101,10 +111,15 @@ class UUID(object):
 
         version     the UUID version number (1 through 5, meaningful only
                     when the variant is RFC_4122)
+
+        is_safe     An enum indicating whether the UUID has been generated in
+                    a way that is safe for multiprocessing applications, via
+                    uuid_generate_time_safe(3).
     """
 
     def __init__(self, hex=None, bytes=None, bytes_le=None, fields=None,
-                       int=None, version=None):
+                       int=None, version=None,
+                       *, is_safe=SafeUUID.unknown):
         r"""Create a UUID from either a string of 32 hexadecimal digits,
         a string of 16 bytes as the 'bytes' argument, a string of 16 bytes
         in little-endian order as the 'bytes_le' argument, a tuple of six
@@ -128,6 +143,10 @@ class UUID(object):
         be given.  The 'version' argument is optional; if given, the resulting
         UUID will have its variant and version set according to RFC 4122,
         overriding the given 'hex', 'bytes', 'bytes_le', 'fields', or 'int'.
+
+        is_safe is an enum exposed as an attribute on the instance.  It
+        indicates whether the UUID has been generated in a way that is safe
+        for multiprocessing applications, via uuid_generate_time_safe(3).
         """
 
         if [hex, bytes, bytes_le, fields, int].count(None) != 4:
@@ -182,6 +201,7 @@ class UUID(object):
             int &= ~(0xf000 << 64)
             int |= version << 76
         self.__dict__['int'] = int
+        self.__dict__['is_safe'] = is_safe
 
     def __eq__(self, other):
         if isinstance(other, UUID):
@@ -472,10 +492,17 @@ try:
     for libname in _libnames:
         try:
             lib = ctypes.CDLL(ctypes.util.find_library(libname))
-        except Exception:
+        except Exception:                           # pragma: nocover
             continue
-        if hasattr(lib, 'uuid_generate_time'):
+        # Try to find the safe variety first.
+        if hasattr(lib, 'uuid_generate_time_safe'):
+            _uuid_generate_time = lib.uuid_generate_time_safe
+            # int uuid_generate_time_safe(uuid_t out);
+            break
+        elif hasattr(lib, 'uuid_generate_time'):    # pragma: nocover
             _uuid_generate_time = lib.uuid_generate_time
+            # void uuid_generate_time(uuid_t out);
+            _uuid_generate_time.restype = None
             break
     del _libnames
 
@@ -566,8 +593,12 @@ def uuid1(node=None, clock_seq=None):
     # use UuidCreate here because its UUIDs don't conform to RFC 4122).
     if _uuid_generate_time and node is clock_seq is None:
         _buffer = ctypes.create_string_buffer(16)
-        _uuid_generate_time(_buffer)
-        return UUID(bytes=bytes_(_buffer.raw))
+        safely_generated = _uuid_generate_time(_buffer)
+        try:
+            is_safe = SafeUUID(safely_generated)
+        except ValueError:
+            is_safe = SafeUUID.unknown
+        return UUID(bytes=bytes_(_buffer.raw), is_safe=is_safe)
 
     global _last_timestamp
     import time

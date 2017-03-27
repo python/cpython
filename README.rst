@@ -5,6 +5,10 @@ This is Python version 3.7.0 alpha 1
    :alt: CPython build status on Travis CI
    :target: https://travis-ci.org/python/cpython
 
+.. image:: https://ci.appveyor.com/api/projects/status/4mew1a93xdkbf5ua/branch/master?svg=true
+   :alt: CPython build status on Appveyor
+   :target: https://ci.appveyor.com/project/python/cpython/branch/master
+
 .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
@@ -15,6 +19,24 @@ reserved.
 
 See the end of this file for further copyright and license information.
 
+.. contents::
+
+General Information
+-------------------
+
+- Website: https://www.python.org
+- Source code: https://github.com/python/cpython
+- Issue tracker: https://bugs.python.org
+- Documentation: https://docs.python.org
+- Developer's Guide: https://docs.python.org/devguide/
+
+Contributing to CPython
+-----------------------
+
+For more complete instructions on contributing to CPython development,
+see the `Developer Guide`_.
+
+.. _Developer Guide: https://docs.python.org/devguide/
 
 Using Python
 ------------
@@ -24,11 +46,10 @@ Installable Python kits, and information about using Python, are available at
 
 .. _python.org: https://www.python.org/
 
-
 Build Instructions
 ------------------
 
-On Unix, Linux, BSD, OSX, and Cygwin::
+On Unix, Linux, BSD, macOS, and Cygwin::
 
     ./configure
     make
@@ -38,10 +59,10 @@ On Unix, Linux, BSD, OSX, and Cygwin::
 This will install Python as python3.
 
 You can pass many options to the configure script; run ``./configure --help``
-to find out more.  On OSX and Cygwin, the executable is called ``python.exe``;
+to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
 elsewhere it's just ``python``.
 
-On Mac OS X, if you have configured Python with ``--enable-framework``, you
+On macOS, if you have configured Python with ``--enable-framework``, you
 should use ``make frameworkinstall`` to do the installation.  Note that this
 installs the Python executable in a place that is not normally on your PATH,
 you may want to set up a symlink in ``/usr/local/bin``.
@@ -69,7 +90,7 @@ below.
 
 
 Profile Guided Optimization
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 PGO takes advantage of recent versions of the GCC or Clang compilers.  If ran,
 ``make profile-opt`` will do several steps.
@@ -93,7 +114,7 @@ optimized and suitable for distribution or production installation.
 
 
 Link Time Optimization
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 Enabled via configure's ``--with-lto`` flag.  LTO takes advantage of the
 ability of recent compiler toolchains to optimize across the otherwise
@@ -125,10 +146,6 @@ It can also be downloaded in many formats for faster access.  The documentation
 is downloadable in HTML, PDF, and reStructuredText formats; the latter version
 is primarily for documentation authors, translators, and people with special
 formatting requirements.
-
-If you would like to contribute to the development of Python, relevant
-documentation is available in the `Python Developer's Guide
-<https://docs.python.org/devguide/>`_.
 
 For information about building Python's documentation, refer to `Doc/README.rst
 <https://github.com/python/cpython/blob/master/Doc/README.rst>`_.

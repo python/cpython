@@ -37,7 +37,7 @@ Used in:  Py_SAFE_DOWNCAST
  * integral synonyms.  Only define the ones we actually need.
  */
 
-// long long is required. Ensure HAVE_LONG_LONG is defined for compatibility.
+/* long long is required. Ensure HAVE_LONG_LONG is defined for compatibility. */
 #ifndef HAVE_LONG_LONG
 #define HAVE_LONG_LONG 1
 #endif
@@ -671,7 +671,7 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #                               define PyMODINIT_FUNC __declspec(dllexport) PyObject*
 #                       endif /* __cplusplus */
 #               endif /* Py_BUILD_CORE */
-#       endif /* HAVE_DECLSPEC */
+#       endif /* HAVE_DECLSPEC_DLL */
 #endif /* Py_ENABLE_SHARED */
 
 /* If no external linkage macros defined by now, create defaults */

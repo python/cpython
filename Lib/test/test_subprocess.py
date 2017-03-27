@@ -347,6 +347,16 @@ class ProcessTestCase(BaseTestCase):
         temp_dir = self._normalize_cwd(temp_dir)
         self._assert_cwd(temp_dir, sys.executable, cwd=temp_dir)
 
+    def test_cwd_with_pathlike(self):
+        temp_dir = tempfile.gettempdir()
+        temp_dir = self._normalize_cwd(temp_dir)
+
+        class _PathLikeObj:
+            def __fspath__(self):
+                return temp_dir
+
+        self._assert_cwd(temp_dir, sys.executable, cwd=_PathLikeObj())
+
     @unittest.skipIf(mswindows, "pending resolution of issue #15533")
     def test_cwd_with_relative_arg(self):
         # Check that Popen looks for args[0] relative to cwd if args[0]
@@ -2544,6 +2554,22 @@ class Win32ProcessTestCase(BaseTestCase):
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.dwFlags = STARTF_USESHOWWINDOW
         startupinfo.wShowWindow = SW_MAXIMIZE
+        # Since Python is a console process, it won't be affected
+        # by wShowWindow, but the argument should be silently
+        # ignored
+        subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
+                        startupinfo=startupinfo)
+
+    def test_startupinfo_keywords(self):
+        # startupinfo argument
+        # We use hardcoded constants, because we do not want to
+        # depend on win32all.
+        STARTF_USERSHOWWINDOW = 1
+        SW_MAXIMIZE = 3
+        startupinfo = subprocess.STARTUPINFO(
+            dwFlags=STARTF_USERSHOWWINDOW,
+            wShowWindow=SW_MAXIMIZE
+        )
         # Since Python is a console process, it won't be affected
         # by wShowWindow, but the argument should be silently
         # ignored

@@ -1072,7 +1072,7 @@ are always available.  They are listed here in alphabetical order.
          * The ``'x'`` mode was added.
          * :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
          * :exc:`FileExistsError` is now raised if the file opened in exclusive
-         * creation mode (``'x'``) already exists.
+           creation mode (``'x'``) already exists.
 
    .. versionchanged::
       3.4

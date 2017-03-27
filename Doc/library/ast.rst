@@ -133,9 +133,17 @@ and classes for traversing abstract syntax trees:
 .. function:: get_docstring(node, clean=True)
 
    Return the docstring of the given *node* (which must be a
-   :class:`FunctionDef`, :class:`ClassDef` or :class:`Module` node), or ``None``
-   if it has no docstring.  If *clean* is true, clean up the docstring's
-   indentation with :func:`inspect.cleandoc`.
+   :class:`FunctionDef`, :class:`AsyncFunctionDef`, :class:`ClassDef`,
+   or :class:`Module` node), or ``None`` if it has no docstring.
+   If *clean* is true, clean up the docstring's indentation with
+   :func:`inspect.cleandoc`.
+
+   .. versionchanged:: 3.5
+      :class:`AsyncFunctionDef` is now supported.
+
+   .. versionchanged:: 3.7
+      The docstring is now exported from the node docstring field, instead of
+      the first body statement.
 
 
 .. function:: fix_missing_locations(node)

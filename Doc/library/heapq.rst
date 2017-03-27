@@ -100,7 +100,9 @@ The module also offers three general purpose functions based on heaps.
    ``None`` (compare the elements directly).
 
    *reverse* is a boolean value.  If set to ``True``, then the input elements
-   are merged as if each comparison were reversed.
+   are merged as if each comparison were reversed. To achieve behavior similar
+   to ``sorted(itertools.chain(*iterables), reverse=True)``, all iterables must
+   be sorted from largest to smallest.
 
    .. versionchanged:: 3.5
       Added the optional *key* and *reverse* parameters.

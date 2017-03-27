@@ -303,6 +303,8 @@ class Aifc_read:
     # _ssnd_chunk -- instantiation of a chunk class for the SSND chunk
     # _framesize -- size of one frame in the file
 
+    _file = None  # Set here since __del__ checks it
+
     def initfp(self, file):
         self._version = 0
         self._convert = None
@@ -344,9 +346,15 @@ class Aifc_read:
 
     def __init__(self, f):
         if isinstance(f, str):
-            f = builtins.open(f, 'rb')
-        # else, assume it is an open file object already
-        self.initfp(f)
+            file_object = builtins.open(f, 'rb')
+            try:
+                self.initfp(file_object)
+            except:
+                file_object.close()
+                raise
+        else:
+            # assume it is an open file object already
+            self.initfp(f)
 
     def __enter__(self):
         return self
@@ -541,18 +549,23 @@ class Aifc_write:
     # _datalength -- the size of the audio samples written to the header
     # _datawritten -- the size of the audio samples actually written
 
+    _file = None  # Set here since __del__ checks it
+
     def __init__(self, f):
         if isinstance(f, str):
-            filename = f
-            f = builtins.open(f, 'wb')
+            file_object = builtins.open(f, 'wb')
+            try:
+                self.initfp(file_object)
+            except:
+                file_object.close()
+                raise
+
+            # treat .aiff file extensions as non-compressed audio
+            if f.endswith('.aiff'):
+                self._aifc = 0
         else:
-            # else, assume it is an open file object already
-            filename = '???'
-        self.initfp(f)
-        if filename[-5:] == '.aiff':
-            self._aifc = 0
-        else:
-            self._aifc = 1
+            # assume it is an open file object already
+            self.initfp(f)
 
     def initfp(self, file):
         self._file = file
