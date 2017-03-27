@@ -306,9 +306,9 @@ definition with the same method name.
    +=============+==================+===================================+
    | name        | const char \*    | attribute name.                   |
    +-------------+------------------+-----------------------------------+
-   | get         | :c:type:`getter` | C Function to get the attribute   |
+   | get         | getter           | C Function to get the attribute   |
    +-------------+------------------+-----------------------------------+
-   | set         | :c:type:`setter` | optional C function to set or     |
+   | set         | setter           | optional C function to set or     |
    |             |                  | delete the attribute.  If omitted |
    |             |                  | the attribute is readonly.        |
    +-------------+------------------+-----------------------------------+
@@ -319,25 +319,16 @@ definition with the same method name.
    |             |                  | getter and setter.                |
    +-------------+------------------+-----------------------------------+
 
-
-.. c:type:: getter
-
-   Type of functions used to implement attribute get functions in C.
-   Functions of this type take one :c:type:`PyObject\*` parameter (the
+   The ``get`` function takes one :c:type:`PyObject\*` parameter (the
    instance) and a function pointer (the associated ``closure``)::
 
        typedef PyObject *(*getter)(PyObject *, void *);
 
-   Should return a new reference on success or *NULL* with a set exception on
-   failure.
+   It should return a new reference on success or *NULL* with a set exception
+   on failure.
 
-
-.. c:type:: setter
-
-   Type of functions used to implement attribute set functions in C.
-   Functions of this type take two :c:type:`PyObject\*` parameters (the
-   instance and the value to be set) and a function pointer
-   (the associated ``closure``)::
+   ``set`` functions take two :c:type:`PyObject\*` parameters (the instance and
+   the value to be set) and a function pointer (the associated ``closure``)::
 
        typedef int (*setter)(PyObject *, PyObject *, void *);
 
