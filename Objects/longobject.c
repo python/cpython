@@ -2558,8 +2558,8 @@ long_divrem(PyLongObject *a, PyLongObject *b,
         if (*prem == NULL) {
             return -1;
         }
-        *pdiv = (PyLongObject*)_PyLong_Zero;
         Py_INCREF(_PyLong_Zero);
+        *pdiv = (PyLongObject*)_PyLong_Zero;
         return 0;
     }
     if (size_b == 1) {
@@ -5513,8 +5513,8 @@ PyLong_Fini(void)
     /* Integers are currently statically allocated. Py_DECREF is not
        needed, but Python must forget about the reference or multiple
        reinitializations will fail. */
-    Py_DECREF(_PyLong_One);
-    Py_DECREF(_PyLong_Zero);
+    Py_CLEAR(_PyLong_One);
+    Py_CLEAR(_PyLong_Zero);
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
     int i;
     PyLongObject *v = small_ints;

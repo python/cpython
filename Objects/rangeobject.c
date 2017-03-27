@@ -83,10 +83,10 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         stop = PyNumber_Index(stop);
         if (!stop)
             return NULL;
+        Py_INCREF(_PyLong_Zero);
         start = _PyLong_Zero;
-        Py_INCREF(start);
+        Py_INCREF(_PyLong_One);
         step = _PyLong_One;
-        Py_INCREF(step);
     }
     else {
         if (!PyArg_UnpackTuple(args, "range", 2, 3,
