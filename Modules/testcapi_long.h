@@ -1,6 +1,7 @@
 /* Poor-man's template.  Macros used:
    TESTNAME     name of the test (like test_long_api_inner)
    TYPENAME     the signed type (like long)
+   UTYPENAME    the unsigned type (like unsigned long)
    F_S_TO_PY    convert signed to pylong; TYPENAME -> PyObject*
    F_PY_TO_S    convert pylong to signed; PyObject* -> TYPENAME
    F_U_TO_PY    convert unsigned to pylong; unsigned TYPENAME -> PyObject*
@@ -11,7 +12,7 @@ static PyObject *
 TESTNAME(PyObject *error(const char*))
 {
     const int NBITS = sizeof(TYPENAME) * 8;
-    unsigned TYPENAME base;
+    UTYPENAME base;
     PyObject *pyresult;
     int i;
 
@@ -30,7 +31,7 @@ TESTNAME(PyObject *error(const char*))
         int j;
         for (j = 0; j < 6; ++j) {
             TYPENAME in, out;
-            unsigned TYPENAME uin, uout;
+            UTYPENAME uin, uout;
 
             /* For 0, 1, 2 use base; for 3, 4, 5 use -base */
             uin = j < 3 ? base : 0U - base;
@@ -39,7 +40,7 @@ TESTNAME(PyObject *error(const char*))
              * For 1 & 4, leave alone.
              * For 2 & 5, add 1.
              */
-            uin += (unsigned TYPENAME)(TYPENAME)(j % 3 - 1);
+            uin += (UTYPENAME)(TYPENAME)(j % 3 - 1);
 
             pyresult = F_U_TO_PY(uin);
             if (pyresult == NULL)
@@ -47,7 +48,7 @@ TESTNAME(PyObject *error(const char*))
                  "unsigned unexpected null result");
 
             uout = F_PY_TO_U(pyresult);
-            if (uout == (unsigned TYPENAME)-1 && PyErr_Occurred())
+            if (uout == (UTYPENAME)-1 && PyErr_Occurred())
                 return error(
                     "unsigned unexpected -1 result");
             if (uout != uin)
@@ -79,7 +80,7 @@ TESTNAME(PyObject *error(const char*))
     {
         PyObject *one, *x, *y;
         TYPENAME out;
-        unsigned TYPENAME uout;
+        UTYPENAME uout;
 
         one = PyLong_FromLong(1);
         if (one == NULL)
@@ -93,7 +94,7 @@ TESTNAME(PyObject *error(const char*))
                 "unexpected NULL from PyNumber_Negative");
 
         uout = F_PY_TO_U(x);
-        if (uout != (unsigned TYPENAME)-1 || !PyErr_Occurred())
+        if (uout != (UTYPENAME)-1 || !PyErr_Occurred())
             return error(
                 "PyLong_AsUnsignedXXX(-1) didn't complain");
         if (!PyErr_ExceptionMatches(PyExc_OverflowError))
@@ -116,7 +117,7 @@ TESTNAME(PyObject *error(const char*))
                 "unexpected NULL from PyNumber_Lshift");
 
         uout = F_PY_TO_U(x);
-        if (uout != (unsigned TYPENAME)-1 || !PyErr_Occurred())
+        if (uout != (UTYPENAME)-1 || !PyErr_Occurred())
             return error(
                 "PyLong_AsUnsignedXXX(2**NBITS) didn't "
                 "complain");
@@ -179,7 +180,7 @@ TESTNAME(PyObject *error(const char*))
     /* Test F_PY_TO_{S,U} on non-pylong input. This should raise a TypeError. */
     {
         TYPENAME out;
-        unsigned TYPENAME uout;
+        UTYPENAME uout;
 
         Py_INCREF(Py_None);
 
@@ -192,7 +193,7 @@ TESTNAME(PyObject *error(const char*))
         PyErr_Clear();
 
         uout = F_PY_TO_U(Py_None);
-        if (uout != (unsigned TYPENAME)-1 || !PyErr_Occurred())
+        if (uout != (UTYPENAME)-1 || !PyErr_Occurred())
             return error("PyLong_AsXXX(None) didn't complain");
         if (!PyErr_ExceptionMatches(PyExc_TypeError))
             return error("PyLong_AsXXX(None) raised "

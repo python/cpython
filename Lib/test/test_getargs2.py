@@ -3,7 +3,7 @@ import math
 import sys
 from test import support
 # Skip this test if the _testcapi module isn't available.
-support.import_module('_testcapi')
+_testcapi = support.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
 
 # > How about the following counterproposal. This also changes some of
@@ -128,222 +128,120 @@ class DictSubclass(dict):
     pass
 
 
-class Unsigned_TestCase(unittest.TestCase):
-    def test_b(self):
-        from _testcapi import getargs_b
-        # b returns 'unsigned char', and does range checking (0 ... UCHAR_MAX)
-        self.assertRaises(TypeError, getargs_b, 3.14)
-        self.assertEqual(99, getargs_b(Int()))
-        self.assertEqual(0, getargs_b(IntSubclass()))
-        self.assertRaises(TypeError, getargs_b, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_b(BadInt2()))
-        self.assertEqual(0, getargs_b(BadInt3()))
+class UnsignedLong_TestCase:
+    getargs = None
+    MIN = 0
+    MAX = 1
+    SUPPORT_INT = False
 
-        self.assertRaises(OverflowError, getargs_b, -1)
-        self.assertEqual(0, getargs_b(0))
-        self.assertEqual(UCHAR_MAX, getargs_b(UCHAR_MAX))
-        self.assertRaises(OverflowError, getargs_b, UCHAR_MAX + 1)
+    def test_basic(self):
+        self.assertEqual(42, self.getargs(42))
+        self.assertEqual(self.MIN, self.getargs(self.MIN))
+        self.assertEqual(self.MAX, self.getargs(self.MAX))
 
-        self.assertEqual(42, getargs_b(42))
-        self.assertRaises(OverflowError, getargs_b, VERY_LARGE)
+    def test_types(self):
+        self.assertRaises(TypeError, self.getargs, 3.14)
+        self.assertRaises(TypeError, self.getargs, "Hello")
+        self.assertEqual(0, self.getargs(IntSubclass()))
 
-    def test_B(self):
-        from _testcapi import getargs_B
-        # B returns 'unsigned char', no range checking
-        self.assertRaises(TypeError, getargs_B, 3.14)
-        self.assertEqual(99, getargs_B(Int()))
-        self.assertEqual(0, getargs_B(IntSubclass()))
-        self.assertRaises(TypeError, getargs_B, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_B(BadInt2()))
-        self.assertEqual(0, getargs_B(BadInt3()))
+    def test_int(self):
+        if self.SUPPORT_INT:
+            self.assertEqual(99, self.getargs(Int()))
+            self.assertRaises(TypeError, self.getargs, BadInt())
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(1, self.getargs(BadInt2()))
+        else:
+            self.assertRaises(TypeError, self.getargs, Int())
+            self.assertRaises(TypeError, self.getargs, BadInt())
+            self.assertRaises(TypeError, self.getargs, BadInt2())
 
-        self.assertEqual(UCHAR_MAX, getargs_B(-1))
-        self.assertEqual(0, getargs_B(0))
-        self.assertEqual(UCHAR_MAX, getargs_B(UCHAR_MAX))
-        self.assertEqual(0, getargs_B(UCHAR_MAX+1))
+        self.assertEqual(0, self.getargs(BadInt3()))
 
-        self.assertEqual(42, getargs_B(42))
-        self.assertEqual(UCHAR_MAX & VERY_LARGE, getargs_B(VERY_LARGE))
-
-    def test_H(self):
-        from _testcapi import getargs_H
-        # H returns 'unsigned short', no range checking
-        self.assertRaises(TypeError, getargs_H, 3.14)
-        self.assertEqual(99, getargs_H(Int()))
-        self.assertEqual(0, getargs_H(IntSubclass()))
-        self.assertRaises(TypeError, getargs_H, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_H(BadInt2()))
-        self.assertEqual(0, getargs_H(BadInt3()))
-
-        self.assertEqual(USHRT_MAX, getargs_H(-1))
-        self.assertEqual(0, getargs_H(0))
-        self.assertEqual(USHRT_MAX, getargs_H(USHRT_MAX))
-        self.assertEqual(0, getargs_H(USHRT_MAX+1))
-
-        self.assertEqual(42, getargs_H(42))
-
-        self.assertEqual(VERY_LARGE & USHRT_MAX, getargs_H(VERY_LARGE))
-
-    def test_I(self):
-        from _testcapi import getargs_I
-        # I returns 'unsigned int', no range checking
-        self.assertRaises(TypeError, getargs_I, 3.14)
-        self.assertEqual(99, getargs_I(Int()))
-        self.assertEqual(0, getargs_I(IntSubclass()))
-        self.assertRaises(TypeError, getargs_I, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_I(BadInt2()))
-        self.assertEqual(0, getargs_I(BadInt3()))
-
-        self.assertEqual(UINT_MAX, getargs_I(-1))
-        self.assertEqual(0, getargs_I(0))
-        self.assertEqual(UINT_MAX, getargs_I(UINT_MAX))
-        self.assertEqual(0, getargs_I(UINT_MAX+1))
-
-        self.assertEqual(42, getargs_I(42))
-
-        self.assertEqual(VERY_LARGE & UINT_MAX, getargs_I(VERY_LARGE))
-
-    def test_k(self):
-        from _testcapi import getargs_k
-        # k returns 'unsigned long', no range checking
-        # it does not accept float, or instances with __int__
-        self.assertRaises(TypeError, getargs_k, 3.14)
-        self.assertRaises(TypeError, getargs_k, Int())
-        self.assertEqual(0, getargs_k(IntSubclass()))
-        self.assertRaises(TypeError, getargs_k, BadInt())
-        self.assertRaises(TypeError, getargs_k, BadInt2())
-        self.assertEqual(0, getargs_k(BadInt3()))
-
-        self.assertEqual(ULONG_MAX, getargs_k(-1))
-        self.assertEqual(0, getargs_k(0))
-        self.assertEqual(ULONG_MAX, getargs_k(ULONG_MAX))
-        self.assertEqual(0, getargs_k(ULONG_MAX+1))
-
-        self.assertEqual(42, getargs_k(42))
-
-        self.assertEqual(VERY_LARGE & ULONG_MAX, getargs_k(VERY_LARGE))
-
-class Signed_TestCase(unittest.TestCase):
-    def test_h(self):
-        from _testcapi import getargs_h
-        # h returns 'short', and does range checking (SHRT_MIN ... SHRT_MAX)
-        self.assertRaises(TypeError, getargs_h, 3.14)
-        self.assertEqual(99, getargs_h(Int()))
-        self.assertEqual(0, getargs_h(IntSubclass()))
-        self.assertRaises(TypeError, getargs_h, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_h(BadInt2()))
-        self.assertEqual(0, getargs_h(BadInt3()))
-
-        self.assertRaises(OverflowError, getargs_h, SHRT_MIN-1)
-        self.assertEqual(SHRT_MIN, getargs_h(SHRT_MIN))
-        self.assertEqual(SHRT_MAX, getargs_h(SHRT_MAX))
-        self.assertRaises(OverflowError, getargs_h, SHRT_MAX+1)
-
-        self.assertEqual(42, getargs_h(42))
-        self.assertRaises(OverflowError, getargs_h, VERY_LARGE)
-
-    def test_i(self):
-        from _testcapi import getargs_i
-        # i returns 'int', and does range checking (INT_MIN ... INT_MAX)
-        self.assertRaises(TypeError, getargs_i, 3.14)
-        self.assertEqual(99, getargs_i(Int()))
-        self.assertEqual(0, getargs_i(IntSubclass()))
-        self.assertRaises(TypeError, getargs_i, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_i(BadInt2()))
-        self.assertEqual(0, getargs_i(BadInt3()))
-
-        self.assertRaises(OverflowError, getargs_i, INT_MIN-1)
-        self.assertEqual(INT_MIN, getargs_i(INT_MIN))
-        self.assertEqual(INT_MAX, getargs_i(INT_MAX))
-        self.assertRaises(OverflowError, getargs_i, INT_MAX+1)
-
-        self.assertEqual(42, getargs_i(42))
-        self.assertRaises(OverflowError, getargs_i, VERY_LARGE)
-
-    def test_l(self):
-        from _testcapi import getargs_l
-        # l returns 'long', and does range checking (LONG_MIN ... LONG_MAX)
-        self.assertRaises(TypeError, getargs_l, 3.14)
-        self.assertEqual(99, getargs_l(Int()))
-        self.assertEqual(0, getargs_l(IntSubclass()))
-        self.assertRaises(TypeError, getargs_l, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_l(BadInt2()))
-        self.assertEqual(0, getargs_l(BadInt3()))
-
-        self.assertRaises(OverflowError, getargs_l, LONG_MIN-1)
-        self.assertEqual(LONG_MIN, getargs_l(LONG_MIN))
-        self.assertEqual(LONG_MAX, getargs_l(LONG_MAX))
-        self.assertRaises(OverflowError, getargs_l, LONG_MAX+1)
-
-        self.assertEqual(42, getargs_l(42))
-        self.assertRaises(OverflowError, getargs_l, VERY_LARGE)
-
-    def test_n(self):
-        from _testcapi import getargs_n
-        # n returns 'Py_ssize_t', and does range checking
-        # (PY_SSIZE_T_MIN ... PY_SSIZE_T_MAX)
-        self.assertRaises(TypeError, getargs_n, 3.14)
-        self.assertRaises(TypeError, getargs_n, Int())
-        self.assertEqual(0, getargs_n(IntSubclass()))
-        self.assertRaises(TypeError, getargs_n, BadInt())
-        self.assertRaises(TypeError, getargs_n, BadInt2())
-        self.assertEqual(0, getargs_n(BadInt3()))
-
-        self.assertRaises(OverflowError, getargs_n, PY_SSIZE_T_MIN-1)
-        self.assertEqual(PY_SSIZE_T_MIN, getargs_n(PY_SSIZE_T_MIN))
-        self.assertEqual(PY_SSIZE_T_MAX, getargs_n(PY_SSIZE_T_MAX))
-        self.assertRaises(OverflowError, getargs_n, PY_SSIZE_T_MAX+1)
-
-        self.assertEqual(42, getargs_n(42))
-        self.assertRaises(OverflowError, getargs_n, VERY_LARGE)
+    def test_overflow(self):
+        for value in (self.MIN - 1, self.MAX + 1):
+            self.assertEqual(value & self.MAX, self.getargs(value))
+        self.assertEqual(VERY_LARGE & self.MAX, self.getargs(VERY_LARGE))
 
 
-class LongLong_TestCase(unittest.TestCase):
-    def test_L(self):
-        from _testcapi import getargs_L
-        # L returns 'long long', and does range checking (LLONG_MIN
-        # ... LLONG_MAX)
-        self.assertRaises(TypeError, getargs_L, 3.14)
-        self.assertRaises(TypeError, getargs_L, "Hello")
-        self.assertEqual(99, getargs_L(Int()))
-        self.assertEqual(0, getargs_L(IntSubclass()))
-        self.assertRaises(TypeError, getargs_L, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_L(BadInt2()))
-        self.assertEqual(0, getargs_L(BadInt3()))
+class SignedLong_TestCase(UnsignedLong_TestCase):
+    MIN = -1
+    SUPPORT_INT = True
 
-        self.assertRaises(OverflowError, getargs_L, LLONG_MIN-1)
-        self.assertEqual(LLONG_MIN, getargs_L(LLONG_MIN))
-        self.assertEqual(LLONG_MAX, getargs_L(LLONG_MAX))
-        self.assertRaises(OverflowError, getargs_L, LLONG_MAX+1)
+    def test_overflow(self):
+        self.assertRaises(OverflowError, self.getargs, self.MIN - 1)
+        self.assertRaises(OverflowError, self.getargs, self.MAX + 1)
+        self.assertRaises(OverflowError, self.getargs, VERY_LARGE)
 
-        self.assertEqual(42, getargs_L(42))
-        self.assertRaises(OverflowError, getargs_L, VERY_LARGE)
 
-    def test_K(self):
-        from _testcapi import getargs_K
-        # K return 'unsigned long long', no range checking
-        self.assertRaises(TypeError, getargs_K, 3.14)
-        self.assertRaises(TypeError, getargs_K, Int())
-        self.assertEqual(0, getargs_K(IntSubclass()))
-        self.assertRaises(TypeError, getargs_K, BadInt())
-        self.assertRaises(TypeError, getargs_K, BadInt2())
-        self.assertEqual(0, getargs_K(BadInt3()))
+class Long_b(SignedLong_TestCase, unittest.TestCase):
+    getargs = _testcapi.getargs_b
+    MIN = 0
+    MAX = UCHAR_MAX
 
-        self.assertEqual(ULLONG_MAX, getargs_K(ULLONG_MAX))
-        self.assertEqual(0, getargs_K(0))
-        self.assertEqual(0, getargs_K(ULLONG_MAX+1))
 
-        self.assertEqual(42, getargs_K(42))
+class Long_h(SignedLong_TestCase, unittest.TestCase):
+    getargs = _testcapi.getargs_h
+    MIN = SHRT_MIN
+    MAX = SHRT_MAX
 
-        self.assertEqual(VERY_LARGE & ULLONG_MAX, getargs_K(VERY_LARGE))
+
+class Long_i(SignedLong_TestCase, unittest.TestCase):
+    getargs = _testcapi.getargs_i
+    MIN = INT_MIN
+    MAX = INT_MAX
+
+
+class Long_l(SignedLong_TestCase, unittest.TestCase):
+    getargs = _testcapi.getargs_l
+    MIN = LONG_MIN
+    MAX = LONG_MAX
+
+
+class LongLong_L(SignedLong_TestCase, unittest.TestCase):
+    getargs = _testcapi.getargs_L
+    MIN = LLONG_MIN
+    MAX = LLONG_MAX
+
+
+class Long_n(SignedLong_TestCase, unittest.TestCase):
+    getargs = _testcapi.getargs_n
+    MIN = PY_SSIZE_T_MIN
+    MAX = PY_SSIZE_T_MAX
+    SUPPORT_INT = False
+
+
+class Long_B(UnsignedLong_TestCase, unittest.TestCase):
+    getargs = _testcapi.getargs_B
+    MAX = UCHAR_MAX
+    SUPPORT_INT = True
+
+
+class Long_H(UnsignedLong_TestCase, unittest.TestCase):
+    getargs = _testcapi.getargs_H
+    MAX = USHRT_MAX
+    SUPPORT_INT = True
+
+
+class Long_I(UnsignedLong_TestCase, unittest.TestCase):
+    getargs = _testcapi.getargs_I
+    MAX = UINT_MAX
+    SUPPORT_INT = True
+
+
+class Long_k(UnsignedLong_TestCase, unittest.TestCase):
+    getargs = _testcapi.getargs_k
+    MAX = ULONG_MAX
+
+
+class LongLong_K(UnsignedLong_TestCase, unittest.TestCase):
+    getargs = _testcapi.getargs_K
+    MAX = ULLONG_MAX
+
+
+class Long_IntMax_m(SignedLong_TestCase, unittest.TestCase):
+    getargs = _testcapi.getargs_m
+    MIN = _testcapi.INTMAX_MIN
+    MAX = _testcapi.INTMAX_MAX
 
 
 class Float_TestCase(unittest.TestCase):

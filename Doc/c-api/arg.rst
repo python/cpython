@@ -275,6 +275,11 @@ Numbers
 ``n`` (:class:`int`) [Py_ssize_t]
    Convert a Python integer to a C :c:type:`Py_ssize_t`.
 
+``m`` (:class:`int`) [intmax_t]
+   Convert a Python integer to a C :c:type:`intmax_t`.
+
+   .. versionadded:: 3.7
+
 ``c`` (:class:`bytes` or :class:`bytearray` of length 1) [char]
    Convert a Python byte, represented as a :class:`bytes` or
    :class:`bytearray` object of length 1, to a C :c:type:`char`.
@@ -600,6 +605,9 @@ Building values
    ``n`` (:class:`int`) [Py_ssize_t]
       Convert a C :c:type:`Py_ssize_t` to a Python integer.
 
+   ``m`` (:class:`int`) [intmax_t]
+      Convert a C :c:type:`intmax_t` to a Python integer.
+
    ``c`` (:class:`bytes` of length 1) [char]
       Convert a C :c:type:`int` representing a byte to a Python :class:`bytes` object of
       length 1.
@@ -652,6 +660,11 @@ Building values
 
    If there is an error in the format string, the :exc:`SystemError` exception is
    set and *NULL* returned.
+
+   .. versionchanged:: 3.7
+
+      Added ``m`` format for ``intmax_t``.
+
 
 .. c:function:: PyObject* Py_VaBuildValue(const char *format, va_list vargs)
 

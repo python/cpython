@@ -645,7 +645,7 @@ fail:
 #endif /* MS_WINDOWS */
 
 
-#define _PyLong_FromDev PyLong_FromLongLong
+#define _PyLong_FromDev PyLong_FromIntMax
 
 
 #if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
@@ -1165,16 +1165,6 @@ Py_off_t_converter(PyObject *arg, void *addr)
     if (PyErr_Occurred())
         return 0;
     return 1;
-}
-
-static PyObject *
-PyLong_FromPy_off_t(Py_off_t offset)
-{
-#ifdef HAVE_LARGEFILE_SUPPORT
-    return PyLong_FromLongLong(offset);
-#else
-    return PyLong_FromLong(offset);
-#endif
 }
 
 #ifdef MS_WINDOWS
@@ -1927,14 +1917,8 @@ _pystat_fromstructstat(STRUCT_STAT *st)
         return NULL;
 
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
-#if defined(HAVE_LARGEFILE_SUPPORT) || defined(MS_WINDOWS)
-    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(st->st_ino));
     PyStructSequence_SET_ITEM(v, 1,
-                              PyLong_FromUnsignedLongLong(st->st_ino));
-#else
-    Py_BUILD_ASSERT(sizeof(unsigned long) >= sizeof(st->st_ino));
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromUnsignedLong(st->st_ino));
-#endif
+                              PyLong_FromUIntMax(st->st_ino));
 #ifdef MS_WINDOWS
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLong(st->st_dev));
 #else
@@ -1948,12 +1932,7 @@ _pystat_fromstructstat(STRUCT_STAT *st)
     PyStructSequence_SET_ITEM(v, 4, _PyLong_FromUid(st->st_uid));
     PyStructSequence_SET_ITEM(v, 5, _PyLong_FromGid(st->st_gid));
 #endif
-#ifdef HAVE_LARGEFILE_SUPPORT
-    PyStructSequence_SET_ITEM(v, 6,
-                              PyLong_FromLongLong((long long)st->st_size));
-#else
-    PyStructSequence_SET_ITEM(v, 6, PyLong_FromLong(st->st_size));
-#endif
+    PyStructSequence_SET_ITEM(v, 6, PyLong_FromIntMax(st->st_size));
 
 #if defined(HAVE_STAT_TV_NSEC)
     ansec = st->st_atim.tv_nsec;
@@ -2358,7 +2337,7 @@ class Py_off_t_converter(CConverter):
 
 class Py_off_t_return_converter(long_return_converter):
     type = 'Py_off_t'
-    conversion_fn = 'PyLong_FromPy_off_t'
+    conversion_fn = 'PyLong_FromIntMax'
 
 class path_confname_converter(CConverter):
     type="int"
@@ -2376,7 +2355,7 @@ class sched_param_converter(CConverter):
     impl_by_reference = True;
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=418fce0e01144461]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=6810f54d2201a416]*/
 
 /*[clinic input]
 
@@ -9153,18 +9132,12 @@ _pystatvfs_fromstructstatvfs(struct statvfs st) {
 #else
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_bsize));
     PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_frsize));
-    PyStructSequence_SET_ITEM(v, 2,
-                              PyLong_FromLongLong((long long) st.f_blocks));
-    PyStructSequence_SET_ITEM(v, 3,
-                              PyLong_FromLongLong((long long) st.f_bfree));
-    PyStructSequence_SET_ITEM(v, 4,
-                              PyLong_FromLongLong((long long) st.f_bavail));
-    PyStructSequence_SET_ITEM(v, 5,
-                              PyLong_FromLongLong((long long) st.f_files));
-    PyStructSequence_SET_ITEM(v, 6,
-                              PyLong_FromLongLong((long long) st.f_ffree));
-    PyStructSequence_SET_ITEM(v, 7,
-                              PyLong_FromLongLong((long long) st.f_favail));
+    PyStructSequence_SET_ITEM(v, 2, PyLong_FromIntMax(st.f_blocks));
+    PyStructSequence_SET_ITEM(v, 3, PyLong_FromIntMax(st.f_bfree));
+    PyStructSequence_SET_ITEM(v, 4, PyLong_FromIntMax(st.f_bavail));
+    PyStructSequence_SET_ITEM(v, 5, PyLong_FromIntMax(st.f_files));
+    PyStructSequence_SET_ITEM(v, 6, PyLong_FromIntMax(st.f_ffree));
+    PyStructSequence_SET_ITEM(v, 7, PyLong_FromIntMax(st.f_favail));
     PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
     PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
 #endif
@@ -11414,11 +11387,7 @@ os_DirEntry_inode_impl(DirEntry *self)
     Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(self->win32_file_index));
     return PyLong_FromUnsignedLongLong(self->win32_file_index);
 #else /* POSIX */
-#ifdef HAVE_LARGEFILE_SUPPORT
-    return PyLong_FromLongLong((long long)self->d_ino);
-#else
-    return PyLong_FromLong((long)self->d_ino);
-#endif
+    return PyLong_FromUIntMax((long)self->d_ino);
 #endif
 }
 

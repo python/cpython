@@ -473,12 +473,7 @@ PyInit_resource(void)
     PyModule_AddIntMacro(m, RLIMIT_NPTS);
 #endif
 
-    if (sizeof(RLIM_INFINITY) > sizeof(long)) {
-        v = PyLong_FromLongLong((long long) RLIM_INFINITY);
-    } else
-    {
-        v = PyLong_FromLong((long) RLIM_INFINITY);
-    }
+    v = PyLong_FromIntMax(RLIM_INFINITY);
     if (v) {
         PyModule_AddObject(m, "RLIM_INFINITY", v);
     }

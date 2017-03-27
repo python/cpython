@@ -38,31 +38,28 @@ error_time_t_overflow(void)
 time_t
 _PyLong_AsTime_t(PyObject *obj)
 {
-#if SIZEOF_TIME_T == SIZEOF_LONG_LONG
-    long long val;
-    val = PyLong_AsLongLong(obj);
-#else
-    long val;
-    Py_BUILD_ASSERT(sizeof(time_t) <= sizeof(long));
-    val = PyLong_AsLong(obj);
-#endif
+    intmax_t val;
+    time_t t;
+
+    val = PyLong_AsIntMax(obj);
     if (val == -1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
             error_time_t_overflow();
         return -1;
     }
-    return (time_t)val;
+
+    t = (time_t)val;
+    if ((intmax_t)t != val) {
+        error_time_t_overflow();
+        return -1;
+    }
+    return t;
 }
 
 PyObject *
 _PyLong_FromTime_t(time_t t)
 {
-#if SIZEOF_TIME_T == SIZEOF_LONG_LONG
-    return PyLong_FromLongLong((long long)t);
-#else
-    Py_BUILD_ASSERT(sizeof(time_t) <= sizeof(long));
-    return PyLong_FromLong((long)t);
-#endif
+    return PyLong_FromIntMax(t);
 }
 
 /* Round to nearest with ties going to nearest even integer
@@ -358,8 +355,7 @@ _PyTime_AsSecondsDouble(_PyTime_t t)
 PyObject *
 _PyTime_AsNanosecondsObject(_PyTime_t t)
 {
-    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(_PyTime_t));
-    return PyLong_FromLongLong((long long)t);
+    return PyLong_FromIntMax(t);
 }
 
 static _PyTime_t

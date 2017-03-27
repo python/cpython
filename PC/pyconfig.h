@@ -346,6 +346,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define SIZEOF_LONG_LONG 8
 #define SIZEOF_DOUBLE 8
 #define SIZEOF_FLOAT 4
+#define SIZEOF_INTMAX_T 8
 
 /* VC 7.1 has them and VC 6.0 does not.  VC 6.0 has a version number of 1200.
    Microsoft eMbedded Visual C++ 4.0 has a version number of 1201 and doesn't

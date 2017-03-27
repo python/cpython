@@ -3606,7 +3606,7 @@ os_lseek(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = PyLong_FromPy_off_t(_return_value);
+    return_value = PyLong_FromIntMax(_return_value);
 
 exit:
     return return_value;
@@ -6493,4 +6493,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=5a0be969e3f71660 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e3c4d69deb356f4c input=a9049054013a1b77]*/

@@ -1442,9 +1442,9 @@ static PyModuleDef _lzmamodule = {
 /* Some of our constants are more than 32 bits wide, so PyModule_AddIntConstant
    would not work correctly on platforms with 32-bit longs. */
 static int
-module_add_int_constant(PyObject *m, const char *name, long long value)
+module_add_int_constant(PyObject *m, const char *name, intmax_t value)
 {
-    PyObject *o = PyLong_FromLongLong(value);
+    PyObject *o = PyLong_FromIntMax(value);
     if (o == NULL)
         return -1;
     if (PyModule_AddObject(m, name, o) == 0)

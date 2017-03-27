@@ -61,6 +61,7 @@ test_config(PyObject *self)
     CHECK_SIZEOF(SIZEOF_VOID_P, void*);
     CHECK_SIZEOF(SIZEOF_TIME_T, time_t);
     CHECK_SIZEOF(SIZEOF_LONG_LONG, long long);
+    CHECK_SIZEOF(SIZEOF_INTMAX_T, intmax_t);
 
 #undef CHECK_SIZEOF
 
@@ -401,6 +402,7 @@ raise_test_long_error(const char* msg)
 
 #define TESTNAME        test_long_api_inner
 #define TYPENAME        long
+#define UTYPENAME       unsigned long
 #define F_S_TO_PY       PyLong_FromLong
 #define F_PY_TO_S       PyLong_AsLong
 #define F_U_TO_PY       PyLong_FromUnsignedLong
@@ -416,10 +418,45 @@ test_long_api(PyObject* self)
 
 #undef TESTNAME
 #undef TYPENAME
+#undef UTYPENAME
 #undef F_S_TO_PY
 #undef F_PY_TO_S
 #undef F_U_TO_PY
 #undef F_PY_TO_U
+
+/* intmax_t */
+
+static PyObject *
+raise_test_long_intmax_error(const char* msg)
+{
+    return raiseTestError("test_long_intmax_api", msg);
+}
+
+#define TESTNAME        test_long_intmax_api_inner
+#define TYPENAME        intmax_t
+#define UTYPENAME       uintmax_t
+#define F_S_TO_PY       PyLong_FromIntMax
+#define F_PY_TO_S       PyLong_AsIntMax
+#define F_U_TO_PY       PyLong_FromUIntMax
+#define F_PY_TO_U       PyLong_AsUIntMax
+
+#include "testcapi_long.h"
+
+static PyObject *
+test_long_intmax_api(PyObject* self, PyObject *args)
+{
+    return TESTNAME(raise_test_long_intmax_error);
+}
+
+#undef TESTNAME
+#undef TYPENAME
+#undef UTYPENAME
+#undef F_S_TO_PY
+#undef F_PY_TO_S
+#undef F_U_TO_PY
+#undef F_PY_TO_U
+
+/* long long */
 
 static PyObject *
 raise_test_longlong_error(const char* msg)
@@ -429,6 +466,7 @@ raise_test_longlong_error(const char* msg)
 
 #define TESTNAME        test_longlong_api_inner
 #define TYPENAME        long long
+#define UTYPENAME       unsigned long long
 #define F_S_TO_PY       PyLong_FromLongLong
 #define F_PY_TO_S       PyLong_AsLongLong
 #define F_U_TO_PY       PyLong_FromUnsignedLongLong
@@ -444,6 +482,7 @@ test_longlong_api(PyObject* self, PyObject *args)
 
 #undef TESTNAME
 #undef TYPENAME
+#undef UTYPENAME
 #undef F_S_TO_PY
 #undef F_PY_TO_S
 #undef F_U_TO_PY
@@ -1164,6 +1203,15 @@ getargs_K(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "K", &value))
         return NULL;
     return PyLong_FromUnsignedLongLong(value);
+}
+
+static PyObject *
+getargs_m(PyObject *self, PyObject *args)
+{
+    intmax_t value;
+    if (!PyArg_ParseTuple(args, "m", &value))
+        return NULL;
+    return PyLong_FromIntMax(value);
 }
 
 /* This function not only tests the 'k' getargs code, but also the
@@ -4041,6 +4089,7 @@ static PyMethodDef TestMethods[] = {
     {"dict_hassplittable",      dict_hassplittable,              METH_O},
     {"test_lazy_hash_inheritance",      (PyCFunction)test_lazy_hash_inheritance,METH_NOARGS},
     {"test_long_api",           (PyCFunction)test_long_api,      METH_NOARGS},
+    {"test_long_intmax_api",           (PyCFunction)test_long_intmax_api,      METH_NOARGS},
     {"test_xincref_doesnt_leak",(PyCFunction)test_xincref_doesnt_leak,      METH_NOARGS},
     {"test_incref_doesnt_leak", (PyCFunction)test_incref_doesnt_leak,      METH_NOARGS},
     {"test_xdecref_doesnt_leak",(PyCFunction)test_xdecref_doesnt_leak,      METH_NOARGS},
@@ -4089,6 +4138,7 @@ static PyMethodDef TestMethods[] = {
     {"getargs_p",               getargs_p,                       METH_VARARGS},
     {"getargs_L",               getargs_L,                       METH_VARARGS},
     {"getargs_K",               getargs_K,                       METH_VARARGS},
+    {"getargs_m",               getargs_m,                       METH_VARARGS},
     {"test_longlong_api",       test_longlong_api,               METH_NOARGS},
     {"test_long_long_and_overflow",
         (PyCFunction)test_long_long_and_overflow, METH_NOARGS},
@@ -4627,7 +4677,10 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "UINT_MAX",  PyLong_FromUnsignedLong(UINT_MAX));
     PyModule_AddObject(m, "LONG_MAX", PyLong_FromLong(LONG_MAX));
     PyModule_AddObject(m, "LONG_MIN", PyLong_FromLong(LONG_MIN));
+    PyModule_AddObject(m, "INTMAX_MAX", PyLong_FromIntMax(INTMAX_MAX));
+    PyModule_AddObject(m, "INTMAX_MIN", PyLong_FromIntMax(INTMAX_MIN));
     PyModule_AddObject(m, "ULONG_MAX", PyLong_FromUnsignedLong(ULONG_MAX));
+    PyModule_AddObject(m, "UINTMAX_MAX", PyLong_FromUIntMax(UINTMAX_MAX));
     PyModule_AddObject(m, "FLT_MAX", PyFloat_FromDouble(FLT_MAX));
     PyModule_AddObject(m, "FLT_MIN", PyFloat_FromDouble(FLT_MIN));
     PyModule_AddObject(m, "DBL_MAX", PyFloat_FromDouble(DBL_MAX));

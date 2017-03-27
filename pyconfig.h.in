@@ -1281,6 +1281,9 @@
 /* The size of `int', as computed by sizeof. */
 #undef SIZEOF_INT
 
+/* The size of `intmax_t', as computed by sizeof. */
+#undef SIZEOF_INTMAX_T
+
 /* The size of `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
