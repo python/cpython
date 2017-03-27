@@ -10,7 +10,6 @@ import os.path
 import socketserver
 import time
 import calendar
-import inspect
 
 from test.support import (reap_threads, verbose, transient_internet,
                           run_with_tz, run_with_locale)

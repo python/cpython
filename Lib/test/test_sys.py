@@ -9,7 +9,6 @@ import operator
 import codecs
 import gc
 import sysconfig
-import platform
 import locale
 
 # count the number of test runs, used to create unique

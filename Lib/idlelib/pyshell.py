@@ -19,7 +19,6 @@ if TkVersion < 8.5:
 
 from code import InteractiveInterpreter
 import getopt
-import io
 import linecache
 import os
 import os.path
