@@ -2267,8 +2267,6 @@ _count_elements(PyObject *self, PyObject *args)
     PyObject *it, *iterable, *mapping, *oldval;
     PyObject *newval = NULL;
     PyObject *key = NULL;
-    PyObject *zero = NULL;
-    PyObject *one = NULL;
     PyObject *bound_get = NULL;
     PyObject *mapping_get;
     PyObject *dict_get;
@@ -2281,10 +2279,6 @@ _count_elements(PyObject *self, PyObject *args)
     it = PyObject_GetIter(iterable);
     if (it == NULL)
         return NULL;
-
-    one = PyLong_FromLong(1);
-    if (one == NULL)
-        goto done;
 
     /* Only take the fast path when get() and __setitem__()
      * have not been overridden.
@@ -2325,10 +2319,10 @@ _count_elements(PyObject *self, PyObject *args)
             if (oldval == NULL) {
                 if (PyErr_Occurred())
                     goto done;
-                if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) < 0)
+                if (_PyDict_SetItem_KnownHash(mapping, key, _PyLong_One, hash) < 0)
                     goto done;
             } else {
-                newval = PyNumber_Add(oldval, one);
+                newval = PyNumber_Add(oldval, _PyLong_One);
                 if (newval == NULL)
                     goto done;
                 if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) < 0)
@@ -2342,18 +2336,14 @@ _count_elements(PyObject *self, PyObject *args)
         if (bound_get == NULL)
             goto done;
 
-        zero = PyLong_FromLong(0);
-        if (zero == NULL)
-            goto done;
-
         while (1) {
             key = PyIter_Next(it);
             if (key == NULL)
                 break;
-            oldval = PyObject_CallFunctionObjArgs(bound_get, key, zero, NULL);
+            oldval = PyObject_CallFunctionObjArgs(bound_get, key, _PyLong_Zero, NULL);
             if (oldval == NULL)
                 break;
-            newval = PyNumber_Add(oldval, one);
+            newval = PyNumber_Add(oldval, _PyLong_One);
             Py_DECREF(oldval);
             if (newval == NULL)
                 break;
@@ -2369,8 +2359,6 @@ done:
     Py_XDECREF(key);
     Py_XDECREF(newval);
     Py_XDECREF(bound_get);
-    Py_XDECREF(zero);
-    Py_XDECREF(one);
     if (PyErr_Occurred())
         return NULL;
     Py_RETURN_NONE;

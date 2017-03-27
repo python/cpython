@@ -529,14 +529,7 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     PyObject *y;
     PyObject *compare;
     PyObject *answer;
-    static PyObject *zero;
     PyObject* stack[2];
-
-    if (zero == NULL) {
-        zero = PyLong_FromLong(0);
-        if (!zero)
-            return NULL;
-    }
 
     if (Py_TYPE(other) != &keyobject_type){
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
@@ -561,7 +554,7 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
         return NULL;
     }
 
-    answer = PyObject_RichCompare(res, zero, op);
+    answer = PyObject_RichCompare(res, _PyLong_Zero, op);
     Py_DECREF(res);
     return answer;
 }
