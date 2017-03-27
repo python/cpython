@@ -657,9 +657,15 @@ Nesting arguments and more complex examples::
 Template strings
 ----------------
 
-Templates provide simpler string substitutions as described in :pep:`292`.
-Instead of the normal ``%``\ -based substitutions, Templates support ``$``\
--based substitutions, using the following rules:
+Template strings provide simpler string substitutions as described in
+:pep:`292`.  The primary use case for template strings is for
+internationalization (i18n) since in those contexts, the more featured yet
+complex formatting languages for f-strings and ``str.format()`` can make
+translations more difficult to implement.  As an example of a library for i18n
+built on template strings, see the `flufl.i18n
+<http://flufli18n.readthedocs.io/en/latest/>`_ package.
+
+Template strings support ``$``-based substitutions, using the following rules:
 
 * ``$$`` is an escape; it is replaced with a single ``$``.
 
@@ -735,14 +741,15 @@ Here is an example of how to use a Template::
    >>> Template('$who likes $what').safe_substitute(d)
    'tim likes $what'
 
-Advanced usage: you can derive subclasses of :class:`Template` to customize the
-placeholder syntax, delimiter character, or the entire regular expression used
-to parse template strings.  To do this, you can override these class attributes:
+Advanced usage: you can derive subclasses of :class:`Template` to customize
+the placeholder syntax, delimiter character, or the entire regular expression
+used to parse template strings.  To do this, you can override these class
+attributes:
 
-* *delimiter* -- This is the literal string describing a placeholder introducing
-  delimiter.  The default value is ``$``.  Note that this should *not* be a
-  regular expression, as the implementation will call :meth:`re.escape` on this
-  string as needed.
+* *delimiter* -- This is the literal string describing a placeholder
+  introducing delimiter.  The default value is ``$``.  Note that this should
+  *not* be a regular expression, as the implementation will call
+  :meth:`re.escape` on this string as needed.
 
 * *idpattern* -- This is the regular expression describing the pattern for
   non-braced placeholders (the braces will be added automatically as
@@ -787,4 +794,3 @@ Helper functions
    or ``None``, runs of whitespace characters are replaced by a single space
    and leading and trailing whitespace are removed, otherwise *sep* is used to
    split and join the words.
-
