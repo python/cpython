@@ -291,6 +291,9 @@ Extension Modules
 Library
 -------
 
+- bpo-23890: unittest.TestCase.assertRaises() now manually breaks a reference
+  cycle to not keep objects alive longer than expected.
+
 - bpo-29901: The zipapp module now supports general path-like objects, not
   just pathlib.Path.
 
