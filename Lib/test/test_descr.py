@@ -5236,7 +5236,20 @@ class PicklingTests(unittest.TestCase):
 
         import copyreg
         expected = (copyreg.__newobj__, (A,), (None, {'spam': 42}), None, None)
-        self.assertEqual(A().__reduce__(2), expected)  # Shouldn't crash
+        self.assertEqual(A().__reduce_ex__(2), expected)  # Shouldn't crash
+
+    def test_object_reduce(self):
+        # Issue #29914
+        # __reduce__() takes no arguments
+        object().__reduce__()
+        with self.assertRaises(TypeError):
+            object().__reduce__(0)
+        # __reduce_ex__() takes one integer argument
+        object().__reduce_ex__(0)
+        with self.assertRaises(TypeError):
+            object().__reduce_ex__()
+        with self.assertRaises(TypeError):
+            object().__reduce_ex__(None)
 
 
 class SharedKeyTests(unittest.TestCase):
