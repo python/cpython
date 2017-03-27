@@ -7,7 +7,6 @@
 
 import abc
 import ast
-import atexit
 import collections
 import contextlib
 import copy
@@ -27,7 +26,6 @@ import tempfile
 import textwrap
 import traceback
 import types
-import uuid
 
 from types import *
 NoneType = type(None)
