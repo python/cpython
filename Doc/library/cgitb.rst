@@ -52,6 +52,17 @@ analysis.
    argument *format* is ``"html"``, the output is formatted as HTML.  Any other
    value forces plain text output.  The default value is ``"html"``.
 
+.. function:: text(info[, context=5])
+
+   Handles the exception described by *info* (a 3-tuple containing the result of 
+   :func:`sys.exc_info`), formatting its traceback as text and returning the 
+   result as a string.
+   
+.. function:: html(info[, context=5])
+
+   Handles the exception described by *info* (a 3-tuple containing the result of 
+   :func:`sys.exc_info`), formatting its traceback as html and returning the 
+   result as a string.
 
 .. function:: handler([info])
 
