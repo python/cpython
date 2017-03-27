@@ -75,18 +75,9 @@ files in megabytes.{% endtrans %}</p>
 <p>{% trans %}These archives contain all the content in the
 documentation.{% endtrans %}</p>
 
-{% if release == '2.7.0' %}
-  {% set path = 'download/releases/2.7' %}
-  {% set section = 'Download' %}
-{% elif release == '2.7.1' or ('2.7.1a' <= release < '2.7.8') %}
-  {% set path = 'download/releases/' + release[:5] %}
-  {% set section = 'Download' %}
-{% else %}
-  {% set path = 'downloads/release/python-' + release.replace('.', '') %}
-  {% set section = 'Files' %}
-{% endif %}
-<p>{% trans %}HTML Help (<tt>.chm</tt>) files are made available in the "{{ section }}" section
-on the <a href="https://www.python.org/{{ path }}/">Python download page</a>.{% endtrans %}</p>
+<p>{% trans download_page="https://www.python.org/downloads/release/python-" + release.replace('.', '') + "/" %}HTML Help
+(<tt>.chm</tt>) files are made available in the "Files" section
+on the <a href="{{ download_page }}">Python download page</a>.{% endtrans %}</p>
 
 
 <h2>{% trans %}Unpacking{% endtrans %}</h2>
