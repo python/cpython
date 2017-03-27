@@ -75,9 +75,9 @@ files in megabytes.{% endtrans %}</p>
 <p>{% trans %}These archives contain all the content in the
 documentation.{% endtrans %}</p>
 
-<p>{% trans download_page="https://www.python.org/download/releases/{{ release[:5] }}/" %}HTML Help
-(<tt>.chm</tt>) files are made available in the "Windows" section
-on the <a href={{ download_page }}>Python download page</a>.{% endtrans %}</p>
+<p>{% trans download_page="https://www.python.org/downloads/release/python-" + release.replace('.', '') + "/" %}HTML Help
+(<tt>.chm</tt>) files are made available in the "Files" section
+on the <a href="{{ download_page }}">Python download page</a>.{% endtrans %}</p>
 
 
 <h2>{% trans %}Unpacking{% endtrans %}</h2>
