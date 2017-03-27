@@ -10,11 +10,11 @@ os:
   - linux
   # macOS builds are disabled as the machines are under-provisioned on Travis,
   # adding up to an extra hour completing a full CI run.
-  #- osx
 
 compiler:
   - clang
-  - gcc
+  # gcc also works, but to keep the # of concurrent builds down, we use one C
+  # compiler here and the other to run the coverage build.
 
 env:
   - TESTING=cpython
