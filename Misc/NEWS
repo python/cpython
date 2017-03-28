@@ -118,6 +118,8 @@ Documentation
 Build
 -----
 
+- bpo-29643: Fix ``--enable-optimization`` configure option didn't work.
+
 - bpo-29572: Update Windows build and OS X installers to use OpenSSL 1.0.2k.
 
 - Issue #28768: Fix implicit declaration of function _setmode. Patch by
