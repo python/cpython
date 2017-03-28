@@ -397,6 +397,9 @@ Library
 - bpo-29534: Fixed different behaviour of Decimal.from_float()
   for _decimal and _pydecimal. Thanks Andrew Nester.
 
+- bpo-10379: locale.format_string now supports the 'monetary' keyword argument,
+  and locale.format is deprecated.
+
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
   Manuel Krebber, and Łukasz Langa.
