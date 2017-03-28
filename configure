@@ -6521,7 +6521,7 @@ $as_echo_n "checking for --enable-optimizations... " >&6; }
 # Check whether --enable-optimizations was given.
 if test "${enable_optimizations+set}" = set; then :
   enableval=$enable_optimizations;
-if test "$withval" != no
+if test "$enableval" != no
 then
   Py_OPT='true'
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
