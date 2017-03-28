@@ -658,7 +658,7 @@ Template strings
 ----------------
 
 Template strings provide simpler string substitutions as described in
-:pep:`292`.  The primary use case for template strings is for
+:pep:`292`.  A primary use case for template strings is for
 internationalization (i18n) since in that context, the simpler syntax and
 functionality makes it easier to translate than other built-in string
 formatting facilities in Python.  As an example of a library built on template
