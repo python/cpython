@@ -1262,7 +1262,8 @@ are always available.  They are listed here in alphabetical order.
    closest multiple of 10 to the power minus *ndigits*; if two multiples are
    equally close, rounding is done toward the even choice (so, for example,
    both ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is
-   ``2``).  The return value is an integer if called with one argument,
+   ``2``).  Any integer value is valid for *ndigits* (positive, zero, or
+   negative).  The return value is an integer if called with one argument,
    otherwise of the same type as *number*.
 
    .. note::

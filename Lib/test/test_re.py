@@ -1,5 +1,5 @@
-from test.support import verbose, run_unittest, gc_collect, bigmemtest, _2G, \
-        cpython_only, captured_stdout
+from test.support import (gc_collect, bigmemtest, _2G,
+                          cpython_only, captured_stdout)
 import locale
 import re
 import sre_compile
