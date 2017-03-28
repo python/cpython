@@ -1252,10 +1252,10 @@ are always available.  They are listed here in alphabetical order.
    arguments starting at ``0``).
 
 
-.. function:: round(x[, ndigits])
+.. function:: round(number[, ndigits])
 
-   Return a number *x* rounded to *ndigits* precision after the
-   decimal point.  If *ndigits* is omitted or is ``None``, it returns the
+   Return *number* rounded to *ndigits* precision after the decimal
+   point.  If *ndigits* is omitted or is ``None``, it returns the
    nearest integer to its input.
 
    For the built-in types supporting :func:`round`, values are rounded to the
@@ -1264,10 +1264,10 @@ are always available.  They are listed here in alphabetical order.
    both ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is
    ``2``).  Any integer value is valid for *ndigits* (positive, zero, or
    negative).  The return value is an integer if called with one argument,
-   otherwise of the same type as *x*.
+   otherwise of the same type as *number*.
 
-   For a general Python object ``x``, ``round(x, ndigits)`` delegates to
-   ``x.__round__(ndigits)``.
+   For a general Python object ``number``, ``round(number, ndigits)`` delegates to
+   ``number.__round__(ndigits)``.
 
    .. note::
 
