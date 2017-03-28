@@ -13,6 +13,15 @@ Core and Builtins
 - bpo-24821: Fixed the slowing down to 25 times in the searching of some
   unlucky Unicode characters.
 
+- bpo-29894: The deprecation warning is emitted if __complex__ returns an
+  instance of a strict subclass of complex.  In a future versions of Python
+  this can be an error.
+
+- bpo-29859: Show correct error messages when any of the pthread_* calls in
+  thread_pthread.h fails.
+
+- bpo-29849: Fix a memory leak when an ImportError is raised during from import.
+
 - bpo-28856: Fix an oversight that %b format for bytes should support objects
   follow the buffer protocol.
 
@@ -33,10 +42,11 @@ Core and Builtins
 - bpo-29695: bool(), float(), list() and tuple() no longer take keyword arguments.
   The first argument of int() can now be passes only as positional argument.
 
-- bpo-20087: Prefer glibc's list of locale aliases to the X11 ones.
-
 - bpo-28893: Set correct __cause__ for errors about invalid awaitables
   returned from __aiter__ and __anext__.
+
+- bpo-28876: ``bool(range)`` works even if ``len(range)``
+  raises :exc:`OverflowError`.
 
 - bpo-29683: Fixes to memory allocation in _PyCode_SetExtra.  Patch by
   Brian Coleman.
@@ -284,6 +294,24 @@ Extension Modules
 Library
 -------
 
+- bpo-23890: unittest.TestCase.assertRaises() now manually breaks a reference
+  cycle to not keep objects alive longer than expected.
+
+- bpo-29901: The zipapp module now supports general path-like objects, not
+  just pathlib.Path.
+
+- bpo-25803: Avoid incorrect errors raised by Path.mkdir(exist_ok=True)
+  when the OS gives priority to errors such as EACCES over EEXIST.
+
+- bpo-29861: Release references to tasks, their arguments and their results
+  as soon as they are finished in multiprocessing.Pool.
+
+- bpo-19930: The mode argument of os.makedirs() no longer affects the file
+  permission bits of newly-created intermediate-level directories.
+
+- bpo-29884: faulthandler: Restore the old sigaltstack during teardown.
+  Patch by Christophe Zeitouny.
+
 - bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
 
 - bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
@@ -313,6 +341,9 @@ Library
   check identity before checking equality when do comparisons.
 
 - bpo-28682: Added support for bytes paths in os.fwalk().
+
+- bpo-29728: Add new :data:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constant.
+  Patch by Nathaniel J. Smith.
 
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
@@ -368,6 +399,9 @@ Library
 
 - bpo-29534: Fixed different behaviour of Decimal.from_float()
   for _decimal and _pydecimal. Thanks Andrew Nester.
+
+- bpo-10379: locale.format_string now supports the 'monetary' keyword argument,
+  and locale.format is deprecated.
 
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
@@ -766,7 +800,7 @@ Library
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
 
-- Issue #29581: ABCMeta.__new__ now accepts **kwargs, allowing abstract base
+- Issue #29581: ABCMeta.__new__ now accepts ``**kwargs``, allowing abstract base
   classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
 
 Windows
@@ -806,6 +840,10 @@ Windows
 
 C API
 -----
+
+- bpo-6532: The type of results of PyThread_start_new_thread() and
+  PyThread_get_thread_ident(), and the id parameter of
+  PyThreadState_SetAsyncExc() changed from "long" to "unsigned long".
 
 - Issue #27867: Function PySlice_GetIndicesEx() is deprecated and replaced with
   a macro if Py_LIMITED_API is not set or set to the value between 0x03050400
@@ -847,6 +885,10 @@ C API
 Documentation
 -------------
 
+- bpo-19824, bpo-20314, bpo-12518: Improve the documentation for, and links
+  to, template strings by emphasizing their utility for internationalization,
+  and by clarifying some usage constraints.
+
 - bpo-28929: Link the documentation to its source file on GitHub.
 
 - bpo-25008: Document smtpd.py as effectively deprecated and add a pointer to
@@ -866,6 +908,8 @@ Documentation
 
 Build
 -----
+
+- bpo-29643: Fix ``--enable-optimization`` didn't work.
 
 - bpo-27593: sys.version and the platform module python_build(),
   python_branch(), and python_revision() functions now use

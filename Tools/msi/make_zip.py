@@ -10,7 +10,7 @@ import tempfile
 from itertools import chain
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
-import subprocess
+
 
 TKTCL_RE = re.compile(r'^(_?tk|tcl).+\.(pyd|dll)', re.IGNORECASE)
 DEBUG_RE = re.compile(r'_d\.(pyd|dll|exe|pdb|lib)$', re.IGNORECASE)

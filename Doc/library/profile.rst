@@ -85,11 +85,11 @@ next line: ``Ordered by: standard name``, indicates that the text string in the
 far right column was used to sort the output. The column headings include:
 
 ncalls
-   for the number of calls,
+   for the number of calls.
 
 tottime
-    for the total time spent in the given function (and excluding time made in
-    calls to sub-functions)
+   for the total time spent in the given function (and excluding time made in
+   calls to sub-functions)
 
 percall
    is the quotient of ``tottime`` divided by ``ncalls``

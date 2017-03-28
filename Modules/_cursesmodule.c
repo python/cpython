@@ -2987,7 +2987,7 @@ PyCurses_tigetstr(PyObject *self, PyObject *args)
         return NULL;
 
     capname = tigetstr( capname );
-    if (capname == 0 || capname == (char*) -1) {
+    if (capname == NULL || capname == (char*) -1) {
         Py_RETURN_NONE;
     }
     return PyBytes_FromString( capname );

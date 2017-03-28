@@ -108,7 +108,7 @@ typedef struct _ts {
     int gilstate_counter;
 
     PyObject *async_exc; /* Asynchronous exception to raise */
-    long thread_id; /* Thread id where this tstate was created */
+    unsigned long thread_id; /* Thread id where this tstate was created */
 
     int trash_delete_nesting;
     PyObject *trash_delete_later;
@@ -200,7 +200,7 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
 PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
-PyAPI_FUNC(int) PyThreadState_SetAsyncExc(long, PyObject *);
+PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 
 
 /* Variable and macro for in-line access to current thread state */

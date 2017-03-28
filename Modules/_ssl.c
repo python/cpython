@@ -5032,8 +5032,7 @@ static PyThread_type_lock *_ssl_locks = NULL;
 static void
 _ssl_threadid_callback(CRYPTO_THREADID *id)
 {
-    CRYPTO_THREADID_set_numeric(id,
-                                (unsigned long)PyThread_get_thread_ident());
+    CRYPTO_THREADID_set_numeric(id, PyThread_get_thread_ident());
 }
 #else
 /* deprecated CRYPTO_set_id_callback() API. */

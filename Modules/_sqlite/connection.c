@@ -643,7 +643,7 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
 
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
 
-    if (*aggregate_instance == 0) {
+    if (*aggregate_instance == NULL) {
         *aggregate_instance = _PyObject_CallNoArg(aggregate_class);
 
         if (PyErr_Occurred()) {
@@ -1125,7 +1125,7 @@ int pysqlite_check_thread(pysqlite_Connection* self)
         if (PyThread_get_thread_ident() != self->thread_ident) {
             PyErr_Format(pysqlite_ProgrammingError,
                         "SQLite objects created in a thread can only be used in that same thread."
-                        "The object was created in thread id %ld and this is thread id %ld",
+                        "The object was created in thread id %lu and this is thread id %lu",
                         self->thread_ident, PyThread_get_thread_ident());
             return 0;
         }
