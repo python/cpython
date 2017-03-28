@@ -879,6 +879,10 @@ C API
 Documentation
 -------------
 
+- bpo-19824, bpo-20314, bpo-12518: Improve the documentation for, and links
+  to, template strings by emphasizing their utility for internationalization,
+  and by clarifying some usage constraints.
+
 - bpo-28929: Link the documentation to its source file on GitHub.
 
 - bpo-25008: Document smtpd.py as effectively deprecated and add a pointer to
