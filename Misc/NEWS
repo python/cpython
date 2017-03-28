@@ -991,6 +991,11 @@ Tools/Demos
 - Issue #28102: The zipfile module CLI now prints usage to stderr.
   Patch by Stephen J. Turnbull.
 
+Build
+-----
+
+- bpo-29643: Fix ``--enable-optimization`` didn't work.
+
 Tests
 -----
 
