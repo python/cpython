@@ -118,6 +118,8 @@ Documentation
 Build
 -----
 
+- bpo-29643: Fix ``--enable-optimization`` configure option didn't work.
+
 - bpo-29572: Update Windows build and OS X installers to use OpenSSL 1.0.2k.
 
 - Issue #28768: Fix implicit declaration of function _setmode. Patch by
@@ -3793,6 +3795,9 @@ Library
 - Issue #15402: An issue in the struct module that caused sys.getsizeof to
   return incorrect results for struct.Struct instances has been fixed.
   Initial patch by Serhiy Storchaka.
+
+Tests
+-----
 
 - Issue #15232: when mangle_from is True, email.Generator now correctly mangles
   lines that start with 'From ' that occur in a MIME preamble or epilog.
