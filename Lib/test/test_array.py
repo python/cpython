@@ -870,6 +870,10 @@ class BaseTest:
             self.assertEqual(a.index(x), example.index(x))
         self.assertRaises(ValueError, a.index, None)
         self.assertRaises(ValueError, a.index, self.outside)
+        # Verify that exception message contains value (issue13349)
+        with self.assertRaises(ValueError) as cm:
+            a.index(self.outside)
+        self.assertIn(repr(self.outside), str(cm.exception))
 
     def test_count(self):
         example = 2*self.example
@@ -891,7 +895,10 @@ class BaseTest:
 
         a = array.array(self.typecode, self.example)
         self.assertRaises(ValueError, a.remove, self.outside)
-
+        # Verify that exception message contains value (issue13349)
+        with self.assertRaises(ValueError) as cm:
+            a.remove(self.outside)
+        self.assertIn(repr(self.outside), str(cm.exception))
         self.assertRaises(ValueError, a.remove, None)
 
     def test_pop(self):

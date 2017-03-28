@@ -1116,7 +1116,7 @@ deque_index(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
             index = 0;
         }
     }
-    PyErr_Format(PyExc_ValueError, "%R is not in deque", v);
+    PyErr_Format(PyExc_ValueError, "\"%.100R\" not in deque", v);
     return NULL;
 }
 
@@ -1201,7 +1201,7 @@ deque_remove(dequeobject *deque, PyObject *value)
         }
         _deque_rotate(deque, -1);
     }
-    PyErr_SetString(PyExc_ValueError, "deque.remove(x): x not in deque");
+    PyErr_Format(PyExc_ValueError, "\"%.100R\" not in deque", value);
     return NULL;
 }
 

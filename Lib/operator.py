@@ -176,7 +176,7 @@ def indexOf(a, b):
         if j == b:
             return i
     else:
-        raise ValueError('sequence.index(x): x not in sequence')
+        raise ValueError("'%.100r' not in sequence" % b)
 
 def setitem(a, b, c):
     "Same as a[b] = c."

@@ -2243,7 +2243,7 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_Format(PyExc_ValueError, "%R is not in list", value);
+    PyErr_Format(PyExc_ValueError, "\"%.100R\" not in list", value);
     return NULL;
 }
 
@@ -2301,7 +2301,7 @@ list_remove(PyListObject *self, PyObject *value)
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
+    PyErr_Format(PyExc_ValueError, "\"%.100R\" not in list", value);
     return NULL;
 }
 

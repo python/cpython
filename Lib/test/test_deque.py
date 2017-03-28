@@ -504,6 +504,10 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(d, deque('abdefghij'))
         self.assertRaises(ValueError, d.remove, 'c')
         self.assertEqual(d, deque('abdefghij'))
+        # Verify that exception message contains value (issue13349)
+        with self.assertRaises(ValueError) as cm:
+            d.remove(None)
+        self.assertIn(repr(None), str(cm.exception))
 
         # Handle comparison errors
         d = deque(['a', 'b', BadCmp(), 'c'])
