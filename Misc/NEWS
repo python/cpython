@@ -899,6 +899,8 @@ Documentation
 Build
 -----
 
+- bpo-29643: Fix ``--enable-optimization`` didn't work.
+
 - bpo-27593: sys.version and the platform module python_build(),
   python_branch(), and python_revision() functions now use
   git information rather than hg when building from a repo.
@@ -990,11 +992,6 @@ Tools/Demos
 
 - Issue #28102: The zipfile module CLI now prints usage to stderr.
   Patch by Stephen J. Turnbull.
-
-Build
------
-
-- bpo-29643: Fix ``--enable-optimization`` didn't work.
 
 Tests
 -----
