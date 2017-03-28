@@ -46,7 +46,12 @@ internationalized, to the local language and cultural habits.
 #   find this format documented anywhere.
 
 
-import locale, copy, io, os, re, struct, sys
+import copy
+import locale
+import os
+import re
+import struct
+import sys
 from errno import ENOENT
 
 
