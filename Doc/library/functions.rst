@@ -1265,7 +1265,7 @@ are always available.  They are listed here in alphabetical order.
    ``2``).  Any integer value is valid for *ndigits* (positive, zero, or
    negative).  The return value is an integer if called with one argument,
    otherwise of the same type as *x*.
-   
+
    For a general Python object ``x``, ``round(x, ndigits)`` delegates to
    ``x.__round__(ndigits)``.
 
