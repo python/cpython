@@ -320,6 +320,21 @@ Glossary
       A module written in C or C++, using Python's C API to interact with the
       core and with user code.
 
+   f-string
+      Short for :dfn:`formatted string literal`, which is string literal
+      that is prefixed with ``'f'`` or ``'F'``.  f-strings contain
+      replacement fields, which are expressions delimited by curly braces
+      ``{}``.  For example::
+
+         >>> name = "Fred"
+         >>> f"He said his name is {name!r}."
+         "He said his name is 'Fred'."
+         >>> f"He said his name is {repr(name)}."
+         "He said his name is 'Fred'."
+
+      See also :pep:`498`, the proposal that added formatted string literals,
+      and the :ref:`documentation <f-strings>`.
+
    file object
       An object exposing a file-oriented API (with methods such as
       :meth:`read()` or :meth:`write()`) to an underlying resource.  Depending
