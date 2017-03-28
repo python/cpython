@@ -321,7 +321,7 @@ Glossary
       core and with user code.
 
    f-string
-      Short for :dfn:`formatted string literal`, which is string literal
+      Short for :dfn:`formatted string literal`, which is a string literal
       that is prefixed with ``'f'`` or ``'F'``.  f-strings contain
       replacement fields, which are expressions delimited by curly braces
       ``{}``.  For example::
