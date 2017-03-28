@@ -659,11 +659,11 @@ Template strings
 
 Template strings provide simpler string substitutions as described in
 :pep:`292`.  The primary use case for template strings is for
-internationalization (i18n) since in those contexts, the more featured yet
-complex formatting languages for f-strings and ``str.format()`` can make
-translations more difficult to implement.  As an example of a library for i18n
-built on template strings, see the `flufl.i18n
-<http://flufli18n.readthedocs.io/en/latest/>`_ package.
+internationalization (i18n) since in that context, the simpler syntax and
+functionality makes it easier to translate than other built-in string
+formatting facilities in Python.  As an example of a library built on template
+strings for i18n, see the
+`flufl.i18n <http://flufli18n.readthedocs.io/en/latest/>`_ package.
 
 Template strings support ``$``-based substitutions, using the following rules:
 
@@ -749,7 +749,9 @@ attributes:
 * *delimiter* -- This is the literal string describing a placeholder
   introducing delimiter.  The default value is ``$``.  Note that this should
   *not* be a regular expression, as the implementation will call
-  :meth:`re.escape` on this string as needed.
+  :meth:`re.escape` on this string as needed.  Note further that you cannot
+  change the delimiter after class creation (i.e. a different delimiter must
+  be set in the subclass's class namespace).
 
 * *idpattern* -- This is the regular expression describing the pattern for
   non-braced placeholders (the braces will be added automatically as
