@@ -60,6 +60,11 @@ Library
   exception) to exception(s) raised in the dispatched methods.
   Patch by Petr Motejlek.
 
+Build
+-----
+
+- bpo-29643: Fix ``--enable-optimization`` didn't work.
+
 
 What's New in Python 3.6.1?
 ===========================
@@ -89,13 +94,6 @@ What's New in Python 3.6.1 release candidate 1
 ==============================================
 
 *Release date: 2017-03-04*
-Build
------
-
-- bpo-29643: Fix ``--enable-optimization`` didn't work.
-
-Tests
------
 
 Core and Builtins
 -----------------
