@@ -76,16 +76,14 @@ Other Language Changes
 ======================
 
 * More than 255 arguments can now be passed to a function, and a function can
-  now have more than 255 parameters.
-  (Contributed by Serhiy Storchaka in :issue:`12844` and :issue:`18896`.)
+  now have more than 255 parameters. (Contributed by Serhiy Storchaka in
+  :issue:`12844` and :issue:`18896`.)
 
 * :meth:`bytes.fromhex` and :meth:`bytearray.fromhex` now ignore all ASCII
-  whitespace, not only spaces.
-  (Contributed by Robert Xiao in :issue:`28927`.)
+  whitespace, not only spaces. (Contributed by Robert Xiao in :issue:`28927`.)
 
 * :exc:`ImportError` now displays module name and module ``__file__`` path when
-  ``from ... import ...`` fails.
-  (Contributed by Matthias Bussonnier in :issue:`29546`.)
+  ``from ... import ...`` fails. (Contributed by Matthias Bussonnier in :issue:`29546`.)
 
 
 New Modules
@@ -97,25 +95,32 @@ New Modules
 Improved Modules
 ================
 
+locale
+------
+
+Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
+If *monetary* is true, the conversion uses monetary thousands separator and
+grouping strings. (Contributed by Garvit in :issue:`10379`.)
+
 os
 --
 
-Added support for :class:`bytes` paths in :func:`~os.fwalk`.
-(Contributed by Serhiy Storchaka in :issue:`28682`.)
+Added support for :class:`bytes` paths in :func:`~os.fwalk`. (Contributed by
+Serhiy Storchaka in :issue:`28682`.)
 
 unittest.mock
 -------------
 
 The :const:`~unittest.mock.sentinel` attributes now preserve their identity
-when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`.
-(Contributed by Serhiy Storchaka in :issue:`20804`.)
+when they are :mod:`copied <copy>` or :mod:`pickled <pickle>`. (Contributed by
+Serhiy Storchaka in :issue:`20804`.)
 
 xmlrpc.server
 -------------
 
 :meth:`register_function` of :class:`xmlrpc.server.SimpleXMLRPCDispatcher` and
-its subclasses can be used as a decorator.
-(Contributed by Xiang Zhang in :issue:`7769`.)
+its subclasses can be used as a decorator. (Contributed by Xiang Zhang in
+:issue:`7769`.)
 
 urllib.parse
 ------------
@@ -130,13 +135,13 @@ Optimizations
 
 * Added two new opcodes: ``LOAD_METHOD`` and ``CALL_METHOD`` to avoid
   instantiation of bound method objects for method calls, which results
-  in method calls being faster up to 20%.
-  (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
+  in method calls being faster up to 20%. (Contributed by Yury Selivanov and
+  INADA Naoki in :issue:`26110`.)
 
 * Fast implementation from standard C library is now used for functions
   :func:`~math.tgamma`, :func:`~math.lgamma`, :func:`~math.erf` and
-  :func:`~math.erfc` in the :mod:`math` module.
-  (Contributed by Serhiy Storchaka in :issue:`26121`.)
+  :func:`~math.erfc` in the :mod:`math` module. (Contributed by Serhiy
+  Storchaka in :issue:`26121`.)
 
 
 Build and C API Changes
@@ -154,8 +159,8 @@ Build and C API Changes
   ``char *``.  (Contributed by Serhiy Storchaka in :issue:`28761`.)
 
 * The result of :c:func:`PyUnicode_AsUTF8AndSize` and :c:func:`PyUnicode_AsUTF8`
-  is now of type ``const char *`` rather of ``char *``.
-  (Contributed by Serhiy Storchaka in :issue:`28769`.)
+  is now of type ``const char *`` rather of ``char *``. (Contributed by Serhiy
+  Storchaka in :issue:`28769`.)
 
 * Added functions :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices`.
   (Contributed by Serhiy Storchaka in :issue:`27867`.)
@@ -169,6 +174,9 @@ Deprecated
   ``0x03050400`` and ``0x03060000`` (not including) or ``0x03060100`` or
   higher.  (Contributed by Serhiy Storchaka in :issue:`27867`.)
 
+- Deprecated :meth:`format` from :mod:`locale`, use the :meth:`format_string`
+  instead. (Contributed by Garvit in :issue:`10379`.)
+
 - Methods
   :meth:`MetaPathFinder.find_module() <importlib.abc.MetaPathFinder.find_module>`
   (replaced by
@@ -181,8 +189,8 @@ Deprecated
   by Matthias Bussonnier in :issue:`29576`)
 
 - Using non-integer value for selecting a plural form in :mod:`gettext` is
-  now deprecated.  It never correctly worked.
-  (Contributed by Serhiy Storchaka in :issue:`28692`.)
+  now deprecated.  It never correctly worked. (Contributed by Serhiy Storchaka
+  in :issue:`28692`.)
 
 
 Changes in the C API
@@ -229,8 +237,8 @@ Changes in the Python API
 
 * A format string argument for :meth:`string.Formatter.format`
   is now :ref:`positional-only <positional-only_parameter>`.
-  Passing it as a keyword argument was deprecated in Python 3.5.
-  (Contributed by Serhiy Storchaka in :issue:`29193`.)
+  Passing it as a keyword argument was deprecated in Python 3.5. (Contributed
+  by Serhiy Storchaka in :issue:`29193`.)
 
 * Attributes :attr:`~http.cookies.Morsel.key`,
   :attr:`~http.cookies.Morsel.value` and
@@ -244,8 +252,8 @@ Changes in the Python API
   ``ClassDef`` AST nodes now have a new ``docstring`` field.
   The first statement in their body is not considered as a docstring
   anymore.  ``co_firstlineno`` and ``co_lnotab`` of code object for class
-  and module are affected by this change.
-  (Contributed by INADA Naoki and Eugene Toder in :issue:`29463`.)
+  and module are affected by this change. (Contributed by INADA Naoki and
+  Eugene Toder in :issue:`29463`.)
 
 * The *mode* argument of :func:`os.makedirs` no longer affects the file
   permission bits of newly-created intermediate-level directories.
