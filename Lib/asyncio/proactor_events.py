@@ -160,22 +160,30 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
 
     def pause_reading(self):
         if self._closing:
-            raise RuntimeError('Cannot pause_reading() when closing')
-        if self._paused:
-            raise RuntimeError('Already paused')
-        self._paused = True
-        if self._loop.get_debug():
-            logger.debug("%r pauses reading", self)
+            return
+        elif self._paused:
+            if self._loop.get_debug():
+                logger.debug(
+                    "%r: ignoring pause_reading() call; already paused",
+                    self)
+        else:
+            self._paused = True
+            if self._loop.get_debug():
+                logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
-        if not self._paused:
-            raise RuntimeError('Not paused')
-        self._paused = False
         if self._closing:
             return
-        self._loop.call_soon(self._loop_reading, self._read_fut)
-        if self._loop.get_debug():
-            logger.debug("%r resumes reading", self)
+        elif not self._paused:
+            if self._loop.get_debug():
+                logger.debug(
+                    "%r: ignoring resume_reading() call; already reading",
+                    self)
+        else:
+            self._paused = False
+            self._loop.call_soon(self._loop_reading, self._read_fut)
+            if self._loop.get_debug():
+                logger.debug("%r resumes reading", self)
 
     def _loop_reading(self, fut=None):
         if self._paused:

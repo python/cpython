@@ -699,23 +699,31 @@ class _SelectorSocketTransport(_SelectorTransport):
 
     def pause_reading(self):
         if self._closing:
-            raise RuntimeError('Cannot pause_reading() when closing')
-        if self._paused:
-            raise RuntimeError('Already paused')
-        self._paused = True
-        self._loop._remove_reader(self._sock_fd)
-        if self._loop.get_debug():
-            logger.debug("%r pauses reading", self)
+            return
+        elif self._paused:
+            if self._loop.get_debug():
+                logger.debug(
+                    "%r: ignoring pause_reading() call; already paused",
+                    self)
+        else:
+            self._paused = True
+            self._loop._remove_reader(self._sock_fd)
+            if self._loop.get_debug():
+                logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
-        if not self._paused:
-            raise RuntimeError('Not paused')
-        self._paused = False
         if self._closing:
             return
-        self._loop._add_reader(self._sock_fd, self._read_ready)
-        if self._loop.get_debug():
-            logger.debug("%r resumes reading", self)
+        elif not self._paused:
+            if self._loop.get_debug():
+                logger.debug(
+                    "%r: ignoring resume_reading() call; already reading",
+                    self)
+        else:
+            self._paused = False
+            self._loop._add_reader(self._sock_fd, self._read_ready)
+            if self._loop.get_debug():
+                logger.debug("%r resumes reading", self)
 
     def _read_ready(self):
         if self._conn_lost:
@@ -932,23 +940,31 @@ class _SelectorSslTransport(_SelectorTransport):
         # call resume_reading() again, and things will flow again.
 
         if self._closing:
-            raise RuntimeError('Cannot pause_reading() when closing')
-        if self._paused:
-            raise RuntimeError('Already paused')
-        self._paused = True
-        self._loop._remove_reader(self._sock_fd)
-        if self._loop.get_debug():
-            logger.debug("%r pauses reading", self)
+            return
+        elif self._paused:
+            if self._loop.get_debug():
+                logger.debug(
+                    "%r: ignoring pause_reading() call; already paused",
+                    self)
+        else:
+            self._paused = True
+            self._loop._remove_reader(self._sock_fd)
+            if self._loop.get_debug():
+                logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
-        if not self._paused:
-            raise RuntimeError('Not paused')
-        self._paused = False
         if self._closing:
             return
-        self._loop._add_reader(self._sock_fd, self._read_ready)
-        if self._loop.get_debug():
-            logger.debug("%r resumes reading", self)
+        elif not self._paused:
+            if self._loop.get_debug():
+                logger.debug(
+                    "%r: ignoring resume_reading() call; already reading",
+                    self)
+        else:
+            self._paused = False
+            self._loop._add_reader(self._sock_fd, self._read_ready)
+            if self._loop.get_debug():
+                logger.debug("%r resumes reading", self)
 
     def _read_ready(self):
         if self._conn_lost:
