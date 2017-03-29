@@ -6082,6 +6082,7 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
 
       error:
         endinpos = s-starts;
+        writer.min_length = end - s + writer.pos;
         if (unicode_decode_call_errorhandler_writer(
                 errors, &errorHandler,
                 "unicodeescape", message,
@@ -6357,6 +6358,7 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
         }
 
         endinpos = s-starts;
+        writer.min_length = end - s + writer.pos;
         if (unicode_decode_call_errorhandler_writer(
                 errors, &errorHandler,
                 "rawunicodeescape", message,
