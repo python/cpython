@@ -964,12 +964,12 @@ Notes:
 
 Standard Warnings
 =================
- 
+
 All standard Python warning categories are available as global variables whose
 names are ``PyExc_`` followed by the Python exception name. These have the type
 :c:type:`PyObject\*`; they are all class objects. For completeness, here are all
 the variables:
- 
+
 +------------------------------------------+---------------------------------+----------+
 | C Name                                   | Python Name                     | Notes    |
 +==========================================+=================================+==========+
@@ -995,7 +995,7 @@ the variables:
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_Warning`                  | :exc:`Warning`                  | \(1)     |
 +------------------------------------------+---------------------------------+----------+
- 
+
 .. versionadded:: 3.2
    :c:data:`PyExc_ResourceWarning`.
 
