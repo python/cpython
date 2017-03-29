@@ -4892,14 +4892,10 @@ do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
    and silently boost values less than -PY_SSIZE_T_MAX-1 to -PY_SSIZE_T_MAX-1.
    Return 0 on error, 1 on success.
 */
-/* Note:  If v is NULL, return success without storing into *pi.  This
-   is because_PyEval_SliceIndex() is called by apply_slice(), which can be
-   called by the SLICE opcode with v and/or w equal to NULL.
-*/
 int
 _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 {
-    if (v != NULL) {
+    if (v != Py_None) {
         Py_ssize_t x;
         if (PyIndex_Check(v)) {
             x = PyNumber_AsSsize_t(v, NULL);
@@ -4918,9 +4914,22 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 }
 
 int
-_PyEval_SliceIndexOrNone(PyObject *v, Py_ssize_t *pi)
+_PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 {
-    return v == Py_None || _PyEval_SliceIndex(v, pi);
+    Py_ssize_t x;
+    if (PyIndex_Check(v)) {
+        x = PyNumber_AsSsize_t(v, NULL);
+        if (x == -1 && PyErr_Occurred())
+            return 0;
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError,
+                        "slice indices must be integers or "
+                        "have an __index__ method");
+        return 0;
+    }
+    *pi = x;
+    return 1;
 }
 
 

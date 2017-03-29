@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29935: Fixed error messages in the index() method of tuple, list and deque
+  when pass indices of wrong type.
+
 - bpo-29894: The deprecation warning is emitted if __complex__ returns an
   instance of a strict subclass of complex.  In a future versions of Python
   this can be an error.

@@ -534,8 +534,8 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
 tuple.index
 
     value: object
-    start: object(converter="_PyEval_SliceIndex", type="Py_ssize_t") = 0
-    stop: object(converter="_PyEval_SliceIndex", type="Py_ssize_t", c_default="PY_SSIZE_T_MAX") = sys.maxsize
+    start: slice_index(accept={int}) = 0
+    stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
     /
 
 Return first index of value.
@@ -546,7 +546,7 @@ Raises ValueError if the value is not present.
 static PyObject *
 tuple_index_impl(PyTupleObject *self, PyObject *value, Py_ssize_t start,
                  Py_ssize_t stop)
-/*[clinic end generated code: output=07b6f9f3cb5c33eb input=28890d4bec234471]*/
+/*[clinic end generated code: output=07b6f9f3cb5c33eb input=fb39e9874a21fe3f]*/
 {
     Py_ssize_t i;
 
