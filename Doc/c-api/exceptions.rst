@@ -753,43 +753,45 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | C Name                                  | Python Name                     | Notes    |
 +=========================================+=================================+==========+
-| :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | \(1)     |
-+-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_Exception`               | :exc:`Exception`                | \(1)     |
-+-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ArithmeticError`         | :exc:`ArithmeticError`          | \(1)     |
-+-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_LookupError`             | :exc:`LookupError`              | \(1)     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_AssertionError`          | :exc:`AssertionError`           |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_AttributeError`          | :exc:`AttributeError`           |          |
 +-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | \(1)     |
++-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_BlockingIOError`         | :exc:`BlockingIOError`          |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_BrokenPipeError`         | :exc:`BrokenPipeError`          |          |
 +-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_BufferError`             | :exc:`BufferError`              |          |
++-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ChildProcessError`       | :exc:`ChildProcessError`        |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_ConnectionError`         | :exc:`ConnectionError`          |          |
-+-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ConnectionAbortedError`  | :exc:`ConnectionAbortedError`   |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_ConnectionError`         | :exc:`ConnectionError`          |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ConnectionRefusedError`  | :exc:`ConnectionRefusedError`   |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ConnectionResetError`    | :exc:`ConnectionResetError`     |          |
 +-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_EOFError`                | :exc:`EOFError`                 |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_Exception`               | :exc:`Exception`                | \(1)     |
++-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_FileExistsError`         | :exc:`FileExistsError`          |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_FileNotFoundError`       | :exc:`FileNotFoundError`        |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_EOFError`                | :exc:`EOFError`                 |          |
-+-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_FloatingPointError`      | :exc:`FloatingPointError`       |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_GeneratorExit`           | :exc:`GeneratorExit`            |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ImportError`             | :exc:`ImportError`              |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_ModuleNotFoundError`     | :exc:`ModuleNotFoundError`      |          |
+| :c:data:`PyExc_IndentationError`        | :exc:`IndentationError`         |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_IndexError`              | :exc:`IndexError`               |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -801,7 +803,11 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_KeyboardInterrupt`       | :exc:`KeyboardInterrupt`        |          |
 +-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_LookupError`             | :exc:`LookupError`              | \(1)     |
++-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_MemoryError`             | :exc:`MemoryError`              |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_ModuleNotFoundError`     | :exc:`ModuleNotFoundError`      |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_NameError`               | :exc:`NameError`                |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -823,15 +829,31 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_RuntimeError`            | :exc:`RuntimeError`             |          |
 +-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_StopAsyncIteration`      | :exc:`StopAsyncIteration`       |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_StopIteration`           | :exc:`StopIteration`            |          |
++-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_SyntaxError`             | :exc:`SyntaxError`              |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_SystemError`             | :exc:`SystemError`              |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_TimeoutError`            | :exc:`TimeoutError`             |          |
-+-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_SystemExit`              | :exc:`SystemExit`               |          |
 +-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_TabError`                | :exc:`TabError`                 |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_TimeoutError`            | :exc:`TimeoutError`             |          |
++-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_TypeError`               | :exc:`TypeError`                |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UnboundLocalError`       | :exc:`UnboundLocalError`        |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UnicodeDecodeError`      | :exc:`UnicodeDecodeError`       |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UnicodeEncodeError`      | :exc:`UnicodeEncodeError`       |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UnicodeError`            | :exc:`UnicodeError`             |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UnicodeTranslateError`   | :exc:`UnicodeTranslateError`    |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ValueError`              | :exc:`ValueError`               |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -849,8 +871,10 @@ the variables:
    and :c:data:`PyExc_TimeoutError` were introduced following :pep:`3151`.
 
 .. versionadded:: 3.5
-   :c:data:`PyExc_RecursionError`.
+   :c:data:`PyExc_StopAsyncIteration` and :c:data:`PyExc_RecursionError`.
 
+.. versionadded:: 3.6
+   :c:data:`PyExc_ModuleNotFoundError`.
 
 These are compatibility aliases to :c:data:`PyExc_OSError`:
 
@@ -869,29 +893,34 @@ These are compatibility aliases to :c:data:`PyExc_OSError`:
 
 
 .. index::
-   single: PyExc_BaseException
-   single: PyExc_Exception
    single: PyExc_ArithmeticError
-   single: PyExc_LookupError
    single: PyExc_AssertionError
    single: PyExc_AttributeError
+   single: PyExc_BaseException
    single: PyExc_BlockingIOError
    single: PyExc_BrokenPipeError
-   single: PyExc_ConnectionError
+   single: PyExc_BufferError
+   single: PyExc_ChildProcessError
    single: PyExc_ConnectionAbortedError
+   single: PyExc_ConnectionError
    single: PyExc_ConnectionRefusedError
    single: PyExc_ConnectionResetError
    single: PyExc_EOFError
+   single: PyExc_Exception
    single: PyExc_FileExistsError
    single: PyExc_FileNotFoundError
    single: PyExc_FloatingPointError
+   single: PyExc_GeneratorExit
    single: PyExc_ImportError
+   single: PyExc_IndentationError
    single: PyExc_IndexError
    single: PyExc_InterruptedError
    single: PyExc_IsADirectoryError
    single: PyExc_KeyError
    single: PyExc_KeyboardInterrupt
+   single: PyExc_LookupError
    single: PyExc_MemoryError
+   single: PyExc_ModuleNotFoundError
    single: PyExc_NameError
    single: PyExc_NotADirectoryError
    single: PyExc_NotImplementedError
@@ -902,11 +931,19 @@ These are compatibility aliases to :c:data:`PyExc_OSError`:
    single: PyExc_RecursionError
    single: PyExc_ReferenceError
    single: PyExc_RuntimeError
+   single: PyExc_StopAsyncIteration
+   single: PyExc_StopIteration
    single: PyExc_SyntaxError
    single: PyExc_SystemError
    single: PyExc_SystemExit
+   single: PyExc_TabError
    single: PyExc_TimeoutError
    single: PyExc_TypeError
+   single: PyExc_UnboundLocalError
+   single: PyExc_UnicodeDecodeError
+   single: PyExc_UnicodeEncodeError
+   single: PyExc_UnicodeError
+   single: PyExc_UnicodeTranslateError
    single: PyExc_ValueError
    single: PyExc_ZeroDivisionError
    single: PyExc_EnvironmentError
