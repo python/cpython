@@ -83,10 +83,12 @@ PyObject *
 _PyObject_FastCallDict(PyObject *callable, PyObject **args, Py_ssize_t nargs,
                        PyObject *kwargs)
 {
+#ifdef Py_DEBUG
     /* _PyObject_FastCallDict() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
+#endif
 
     assert(callable != NULL);
     assert(nargs >= 0);
@@ -136,10 +138,12 @@ PyObject *
 _PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t nargs,
                            PyObject *kwnames)
 {
+#ifdef Py_DEBUG
     /* _PyObject_FastCallKeywords() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
+#endif
 
     assert(nargs >= 0);
     assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
@@ -214,10 +218,13 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
     ternaryfunc call;
     PyObject *result;
 
+#ifdef Py_DEBUG
     /* PyObject_Call() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
+#endif
+
     assert(PyTuple_Check(args));
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
@@ -445,10 +452,12 @@ PyObject *
 _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **args,
                              Py_ssize_t nargs, PyObject *kwargs)
 {
+#ifdef Py_DEBUG
     /* _PyMethodDef_RawFastCallDict() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
+#endif
 
     assert(method != NULL);
     assert(nargs >= 0);
@@ -579,10 +588,12 @@ PyObject *
 _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject **args,
                                  Py_ssize_t nargs, PyObject *kwnames)
 {
+#ifdef Py_DEBUG
     /* _PyMethodDef_RawFastCallKeywords() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!PyErr_Occurred());
+#endif
 
     assert(method != NULL);
     assert(nargs >= 0);
@@ -716,7 +727,9 @@ _PyCFunction_FastCallKeywords(PyObject *func, PyObject **args,
 static PyObject *
 cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
 {
+#ifdef Py_DEBUG
     assert(!PyErr_Occurred());
+#endif
 
     PyCFunction meth = PyCFunction_GET_FUNCTION(func);
     PyObject *self = PyCFunction_GET_SELF(func);
