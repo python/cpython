@@ -1982,7 +1982,7 @@ class RegressionTests(unittest.TestCase):
         # number this would probably only fail in Py_DEBUG mode.
         it = chain.from_iterable(() for unused in range(10000000))
         with self.assertRaises(StopIteration):
-          next(it)
+            next(it)
 
 class SubclassWithKwargsTest(unittest.TestCase):
     def test_keywords_in_subclass(self):
