@@ -1976,7 +1976,7 @@ class RegressionTests(unittest.TestCase):
         self.assertRaises(AssertionError, list, cycle(gen1()))
         self.assertEqual(hist, [0,1])
 
-    def test_deep_recursion(self):
+    def test_long_chain_of_empty_iterables(self):
         # Make sure itertools.chain doesn't run into recursion limits when
         # dealing with long chains of empty iterables. Even with a high
         # number this would probably only fail in Py_DEBUG mode.
