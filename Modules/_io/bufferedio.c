@@ -83,7 +83,7 @@ _bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer, char readint
         return NULL;
     }
 
-    len = Py_SIZE(data);
+    len = PyBytes_GET_SIZE(data);
     if (len > buffer->len) {
         PyErr_Format(PyExc_ValueError,
                      "read() returned too much data: "
@@ -239,7 +239,7 @@ typedef struct {
 
 #ifdef WITH_THREAD
     PyThread_type_lock lock;
-    volatile long owner;
+    volatile unsigned long owner;
 #endif
 
     Py_ssize_t buffer_size;

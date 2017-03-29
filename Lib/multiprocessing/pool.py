@@ -128,6 +128,8 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
             util.debug("Possible encoding error while sending result: %s" % (
                 wrapped))
             put((job, i, (False, wrapped)))
+
+        task = job = result = func = args = kwds = None
         completed += 1
     util.debug('worker exiting after %d tasks' % completed)
 
@@ -412,29 +414,31 @@ class Pool(object):
 
         for taskseq, set_length in iter(taskqueue.get, None):
             task = None
-            # iterating taskseq cannot fail
-            for task in taskseq:
-                if thread._state:
-                    util.debug('task handler found thread._state != RUN')
-                    break
-                try:
-                    put(task)
-                except Exception as e:
-                    job, idx = task[:2]
+            try:
+                # iterating taskseq cannot fail
+                for task in taskseq:
+                    if thread._state:
+                        util.debug('task handler found thread._state != RUN')
+                        break
                     try:
-                        cache[job]._set(idx, (False, e))
-                    except KeyError:
-                        pass
-            else:
-                if set_length:
-                    util.debug('doing set_length()')
-                    idx = task[1] if task else -1
-                    set_length(idx + 1)
-                continue
-            break
+                        put(task)
+                    except Exception as e:
+                        job, idx = task[:2]
+                        try:
+                            cache[job]._set(idx, (False, e))
+                        except KeyError:
+                            pass
+                else:
+                    if set_length:
+                        util.debug('doing set_length()')
+                        idx = task[1] if task else -1
+                        set_length(idx + 1)
+                    continue
+                break
+            finally:
+                task = taskseq = job = None
         else:
             util.debug('task handler got sentinel')
-
 
         try:
             # tell result handler to finish when cache is empty
@@ -475,6 +479,7 @@ class Pool(object):
                 cache[job]._set(i, obj)
             except KeyError:
                 pass
+            task = job = obj = None
 
         while cache and thread._state != TERMINATE:
             try:
@@ -491,6 +496,7 @@ class Pool(object):
                 cache[job]._set(i, obj)
             except KeyError:
                 pass
+            task = job = obj = None
 
         if hasattr(outqueue, '_reader'):
             util.debug('ensuring that outqueue is not full')

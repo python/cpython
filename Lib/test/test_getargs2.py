@@ -408,7 +408,8 @@ class Float_TestCase(unittest.TestCase):
         self.assertEqual(getargs_D(ComplexSubclass(7.5+0.25j)), 7.5+0.25j)
         self.assertEqual(getargs_D(ComplexSubclass2(7.5+0.25j)), 7.5+0.25j)
         self.assertRaises(TypeError, getargs_D, BadComplex())
-        self.assertEqual(getargs_D(BadComplex2()), 4.25+0.5j)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_D(BadComplex2()), 4.25+0.5j)
         self.assertEqual(getargs_D(BadComplex3(7.5+0.25j)), 7.5+0.25j)
 
         for x in (DBL_MIN, -DBL_MIN, DBL_MAX, -DBL_MAX, INF, -INF):

@@ -668,6 +668,16 @@ static PyMappingMethods range_as_mapping = {
         (objobjargproc)0,            /* mp_ass_subscript */
 };
 
+static int
+range_bool(rangeobject* self)
+{
+    return PyObject_IsTrue(self->length);
+}
+
+static PyNumberMethods range_as_number = {
+    .nb_bool = (inquiry)range_bool,
+};
+
 static PyObject * range_iter(PyObject *seq);
 static PyObject * range_reverse(PyObject *seq);
 
@@ -707,7 +717,7 @@ PyTypeObject PyRange_Type = {
         0,                      /* tp_setattr */
         0,                      /* tp_reserved */
         (reprfunc)range_repr,   /* tp_repr */
-        0,                      /* tp_as_number */
+        &range_as_number,       /* tp_as_number */
         &range_as_sequence,     /* tp_as_sequence */
         &range_as_mapping,      /* tp_as_mapping */
         (hashfunc)range_hash,   /* tp_hash */

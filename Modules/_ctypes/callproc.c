@@ -132,7 +132,7 @@ _ctypes_get_errobj(int **pspace)
     PyObject *dict = PyThreadState_GetDict();
     PyObject *errobj;
     static PyObject *error_object_name;
-    if (dict == 0) {
+    if (dict == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot get thread state");
         return NULL;
