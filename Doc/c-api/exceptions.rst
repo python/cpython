@@ -961,3 +961,58 @@ Notes:
 (3)
    Only defined on Windows; protect code that uses this by testing that the
    preprocessor macro ``MS_WINDOWS`` is defined.
+
+Standard Warnings
+=================
+ 
+All standard Python warning categories are available as global variables whose
+names are ``PyExc_`` followed by the Python exception name. These have the type
+:c:type:`PyObject\*`; they are all class objects. For completeness, here are all
+the variables:
+ 
++------------------------------------------+---------------------------------+----------+
+| C Name                                   | Python Name                     | Notes    |
++==========================================+=================================+==========+
+| :c:data:`PyExc_BytesWarning`             | :exc:`BytesWarning`             |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_DeprecationWarning`       | :exc:`DeprecationWarning`       |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_FutureWarning`            | :exc:`FutureWarning`            |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_ImportWarning`            | :exc:`ImportWarning`            |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_PendingDepricationWarning`| :exc:`PendingDeprecationWarning`|          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_ResourceWarning`          | :exc:`ResourceWarning`          |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_RuntimeWarning`           | :exc:`RuntimeWarning`           |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_SyntaxWarning`            | :exc:`SyntaxWarning`            |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UnicodeWarning`           | :exc:`UnicodeWarning`           |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UserWarning`              | :exc:`UserWarning`              |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_Warning`                  | :exc:`Warning`                  | \(1)     |
++------------------------------------------+---------------------------------+----------+
+ 
+.. versionadded:: 3.2
+   :c:data:`PyExc_ResourceWarning`.
+
+.. index::
+   single: PyExc_BytesWarning
+   single: PyExc_DepricationWarning
+   single: PyExc_FutureWarning
+   single: PyExc_ImportWarning
+   single: PyExc_PendingDeprecationWarning
+   single: PyExc_ResourceWarning
+   single: PyExc_RuntimeWarning
+   single: PyExc_SyntaxWarning
+   single: PyExc_UnicodeWarning
+   single: PyExc_UserWarning
+   single: PyExc_Warning
+
+Notes:
+
+(1)
+   This is a base class for other standard exceptions.
