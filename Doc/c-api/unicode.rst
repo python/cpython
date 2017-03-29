@@ -524,6 +524,27 @@ APIs:
    copied as-is to the result string, and any extra arguments discarded.
 
    .. note::
+      In Python, the '0' conversion flag **IS NOT** ignored when a precision is
+      given for 'd', 'i', 'o', 'u', 'x' and 'X' conversion types.
+
+      for example, in python:
+
+      .. sourcecode:: python
+
+         >>> '%010.5d' % (100)
+         '0000000100'
+
+      But in C/C++ printf:
+
+      .. sourcecode:: none
+
+         >>> printf("%010.5d", 100);
+         '       100'
+
+      In this situation, you should not consider Python format characters is
+      **exactly** equivalent to printf, but **nearly** equivalent.
+
+   .. note::
       The width formatter unit is number of characters rather than bytes.
       The precision formatter unit is number of bytes for ``"%s"`` and
       ``"%V"`` (if the ``PyObject*`` argument is NULL), and a number of

@@ -111,6 +111,27 @@ called with a non-bytes parameter.
    An unrecognized format character causes all the rest of the format string to be
    copied as-is to the result object, and any extra arguments discarded.
 
+   .. note::
+      In Python, the '0' conversion flag **IS NOT** ignored when a precision is
+      given for 'd', 'i', 'o', 'u', 'x' and 'X' conversion types.
+
+      for example, in python:
+
+      .. sourcecode:: python
+
+         >>> '%010.5d' % (100)
+         '0000000100'
+
+      But in C/C++ printf:
+
+      .. sourcecode:: none
+
+         >>> printf("%010.5d", 100);
+         '       100'
+
+      In this situation, you should not consider Python format characters is
+      **exactly** equivalent to printf, but **nearly** equivalent.
+
 
 .. c:function:: PyObject* PyBytes_FromFormatV(const char *format, va_list vargs)
 
