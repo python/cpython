@@ -333,7 +333,7 @@ Glossary
          "He said his name is 'Fred'."
 
       See also the documentation for :ref:`f-strings <f-strings>`, and :pep:`498`,
-      the proposal that them.
+      the proposal that added them.
 
    file object
       An object exposing a file-oriented API (with methods such as
