@@ -59,8 +59,8 @@ STRINGLIB(find_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
         /* If looking for a multiple of 256, we'd have too
            many false positives looking for the '\0' byte in UCS2
            and UCS4 representations. */
-        if (needle != 0)
-            while (e - p > MEMCHR_CUT_OFF) {
+        if (needle != 0) {
+            do {
                 void *candidate = memchr(p, needle,
                                          (e - p) * sizeof(STRINGLIB_CHAR));
                 if (candidate == NULL)
@@ -83,6 +83,8 @@ STRINGLIB(find_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
                     p++;
                 }
             }
+            while (e - p > MEMCHR_CUT_OFF);
+        }
 #endif
     }
     while (p < e) {
@@ -104,7 +106,7 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 
     if (n > MEMCHR_CUT_OFF) {
 #if STRINGLIB_SIZEOF_CHAR == 1
-        p = memrchr(s, ch, n * sizeof(STRINGLIB_CHAR));
+        p = memrchr(s, ch, n);
         if (p != NULL)
             return (p - s);
         return -1;
@@ -117,8 +119,8 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
         /* If looking for a multiple of 256, we'd have too
            many false positives looking for the '\0' byte in UCS2
            and UCS4 representations. */
-        if (needle != 0)
-            while (n > MEMCHR_CUT_OFF) {
+        if (needle != 0) {
+            do {
                 void *candidate = memrchr(s, needle,
                                           n * sizeof(STRINGLIB_CHAR));
                 if (candidate == NULL)
@@ -142,6 +144,8 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
                 }
                 n = p - s;
             }
+            while (n > MEMCHR_CUT_OFF);
+        }
 #endif
     }
 #endif  /* HAVE_MEMRCHR */
