@@ -524,25 +524,9 @@ APIs:
    copied as-is to the result string, and any extra arguments discarded.
 
    .. note::
-      In Python, the '0' conversion flag **IS NOT** ignored when a precision is
-      given for 'd', 'i', 'o', 'u', 'x' and 'X' conversion types.
 
-      for example, in python:
-
-      .. sourcecode:: python
-
-         >>> '%010.5d' % (100)
-         '0000000100'
-
-      But in C/C++ printf:
-
-      .. sourcecode:: none
-
-         >>> printf("%010.5d", 100);
-         '       100'
-
-      In this situation, you should not consider Python format characters is
-      **exactly** equivalent to printf, but **nearly** equivalent.
+      For integer specifiers (d, i, o, u, x, X): If combine, `0` flag specifier
+      will superior than `.number` percision specifier.
 
    .. note::
       The width formatter unit is number of characters rather than bytes.
