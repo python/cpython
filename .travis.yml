@@ -15,11 +15,11 @@ os:
   - linux
   # macOS builds are disabled as the machines are under-provisioned on Travis,
   # adding up to an extra hour completing a full CI run.
-  #- osx
 
 compiler:
   - clang
-  - gcc
+  # gcc also works, but to keep the # of concurrent builds down, we use one C
+  # compiler here and the other to run the coverage build.
 
 env:
   - TESTING=cpython
@@ -32,22 +32,22 @@ matrix:
   include:
     - os: linux
       language: python
-      python: 3.5
+      python: 3.6
       env:
         - TESTING=docs
       before_script:
         - cd Doc
         - make venv
       script:
-        - make check suspicious html PYTHON="./venv/bin/python" SPHINXBUILD="./venv/bin/python -m sphinx" SPHINXOPTS="-q"
+        - make check suspicious html PYTHON="./venv/bin/python" SPHINXBUILD="./venv/bin/python -m sphinx" SPHINXOPTS="-q -W"
     - os: linux
       language: c
-      compiler: clang
+      compiler: gcc
       env:
         - TESTING=coverage
       before_script:
         - |
-            if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)/'
+            if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)|(^Misc)/'
             then
               echo "Only docs were updated, stopping build process."
               exit
@@ -64,20 +64,11 @@ matrix:
         # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
         - source ./venv/bin/activate
         - bash <(curl -s https://codecov.io/bash)
-    - os: linux
-      language: cpp
-      compiler: clang
-      env:
-        - TESTING="C++ header compatibility"
-      before_script:
-        - ./configure
-      script:
-        - echo '#include "Python.h"' > test.cc && $CXX -c test.cc -o /dev/null -I ./Include -I .
 
 # Travis provides only 2 cores, so don't overdue the parallelism and waste memory.
 before_script:
   - |
-      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)/'
+      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '(\.(rst|yml)$)|(^Doc)|(^Misc)/'
       then
         echo "Only docs were updated, stopping build process."
         exit

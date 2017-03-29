@@ -1,5 +1,5 @@
-from test.support import verbose, run_unittest, gc_collect, bigmemtest, _2G, \
-        cpython_only, captured_stdout
+from test.support import (gc_collect, bigmemtest, _2G,
+                          cpython_only, captured_stdout)
 import locale
 import re
 import sre_compile
@@ -1399,7 +1399,7 @@ class ReTests(unittest.TestCase):
 
     def test_locale_flag(self):
         import locale
-        enc = locale.getpreferredencoding(False)
+        _, enc = locale.getlocale(locale.LC_CTYPE)
         # Search non-ASCII letter
         for i in range(128, 256):
             try:

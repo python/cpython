@@ -13,12 +13,40 @@ Core and Builtins
 - bpo-24821: Fixed the slowing down to 25 times in the searching of some
   unlucky Unicode characters.
 
-- bpo-29695: Using "x" as a keyword argument in int(), bool() and float() and
-  using "sequence" as a keyword argument in list() and tuple() are deprecated.
-  Specify the value as a positional argument instead.
+- bpo-29894: The deprecation warning is emitted if __complex__ returns an
+  instance of a strict subclass of complex.  In a future versions of Python
+  this can be an error.
+
+- bpo-29859: Show correct error messages when any of the pthread_* calls in
+  thread_pthread.h fails.
+
+- bpo-29849: Fix a memory leak when an ImportError is raised during from import.
+
+- bpo-28856: Fix an oversight that %b format for bytes should support objects
+  follow the buffer protocol.
+
+- bpo-29723: The ``sys.path[0]`` initialization change for bpo-29139 caused a
+  regression by revealing an inconsistency in how sys.path is initialized when
+  executing ``__main__`` from a zipfile, directory, or other import location.
+  The interpreter now consistently avoids ever adding the import location's
+  parent directory to ``sys.path``, and ensures no other ``sys.path`` entries
+  are inadvertently modified when inserting the import location named on the
+  command line.
+
+- bpo-29568: Escaped percent "%%" in the format string for classic string
+  formatting no longer allows any characters between two percents.
+
+- bpo-29714: Fix a regression that bytes format may fail when containing zero
+  bytes inside.
+
+- bpo-29695: bool(), float(), list() and tuple() no longer take keyword arguments.
+  The first argument of int() can now be passes only as positional argument.
 
 - bpo-28893: Set correct __cause__ for errors about invalid awaitables
   returned from __aiter__ and __anext__.
+
+- bpo-28876: ``bool(range)`` works even if ``len(range)``
+  raises :exc:`OverflowError`.
 
 - bpo-29683: Fixes to memory allocation in _PyCode_SetExtra.  Patch by
   Brian Coleman.
@@ -266,12 +294,63 @@ Extension Modules
 Library
 -------
 
+- bpo-23890: unittest.TestCase.assertRaises() now manually breaks a reference
+  cycle to not keep objects alive longer than expected.
+
+- bpo-29901: The zipapp module now supports general path-like objects, not
+  just pathlib.Path.
+
+- bpo-25803: Avoid incorrect errors raised by Path.mkdir(exist_ok=True)
+  when the OS gives priority to errors such as EACCES over EEXIST.
+
+- bpo-29861: Release references to tasks, their arguments and their results
+  as soon as they are finished in multiprocessing.Pool.
+
+- bpo-19930: The mode argument of os.makedirs() no longer affects the file
+  permission bits of newly-created intermediate-level directories.
+
+- bpo-29884: faulthandler: Restore the old sigaltstack during teardown.
+  Patch by Christophe Zeitouny.
+
+- bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
+
+- bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
+  are not strings.  Patch by Michael Seifert.
+
+- bpo-8256: Fixed possible failing or crashing input() if attributes "encoding"
+  or "errors" of sys.stdin or sys.stdout are not set or are not strings.
+
+- bpo-28692: Using non-integer value for selecting a plural form in gettext is
+  now deprecated.
+
+- bpo-26121: Use C library implementation for math functions erf() and erfc().
+
+- bpo-29619: os.stat() and os.DirEntry.inode() now convert inode (st_ino) using
+  unsigned integers.
+
+- bpo-28298: Fix a bug that prevented array 'Q', 'L' and 'I' from accepting big
+  intables (objects that have __int__) as elements.
+
+- bpo-29645: Speed up importing the webbrowser module.  webbrowser.register()
+  is now thread-safe.
+
+- bpo-28231: The zipfile module now accepts path-like objects for external
+  paths.
+
+- bpo-26915: index() and count() methods of collections.abc.Sequence now
+  check identity before checking equality when do comparisons.
+
+- bpo-28682: Added support for bytes paths in os.fwalk().
+
+- bpo-29728: Add new :data:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constant.
+  Patch by Nathaniel J. Smith.
+
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
 
 - bpo-9303: Migrate sqlite3 module to _v2 API.  Patch by Aviv Palivoda.
 
-- bpo-28963: Fix out of bound iteration in asyncio.Future.remove_done_callback 
+- bpo-28963: Fix out of bound iteration in asyncio.Future.remove_done_callback
   implemented in C.
 
 - bpo-29704: asyncio.subprocess.SubprocessStreamProtocol no longer closes before
@@ -298,6 +377,9 @@ Library
 - bpo-28518: Start a transaction implicitly before a DML statement.
   Patch by Aviv Palivoda.
 
+- bpo-29742: get_extra_info() raises exception if get called on closed ssl transport.
+  Patch by Nikolay Kim.
+
 - Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
   '~' in the set of characters that is not quoted by default. Patch by
   Christian Theune and Ratnadeep Debnath.
@@ -317,6 +399,9 @@ Library
 
 - bpo-29534: Fixed different behaviour of Decimal.from_float()
   for _decimal and _pydecimal. Thanks Andrew Nester.
+
+- bpo-10379: locale.format_string now supports the 'monetary' keyword argument,
+  and locale.format is deprecated.
 
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
@@ -715,6 +800,9 @@ Library
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
 
+- Issue #29581: ABCMeta.__new__ now accepts ``**kwargs``, allowing abstract base
+  classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
+
 Windows
 -------
 
@@ -752,6 +840,10 @@ Windows
 
 C API
 -----
+
+- bpo-6532: The type of results of PyThread_start_new_thread() and
+  PyThread_get_thread_ident(), and the id parameter of
+  PyThreadState_SetAsyncExc() changed from "long" to "unsigned long".
 
 - Issue #27867: Function PySlice_GetIndicesEx() is deprecated and replaced with
   a macro if Py_LIMITED_API is not set or set to the value between 0x03050400
@@ -793,6 +885,10 @@ C API
 Documentation
 -------------
 
+- bpo-19824, bpo-20314, bpo-12518: Improve the documentation for, and links
+  to, template strings by emphasizing their utility for internationalization,
+  and by clarifying some usage constraints.
+
 - bpo-28929: Link the documentation to its source file on GitHub.
 
 - bpo-25008: Document smtpd.py as effectively deprecated and add a pointer to
@@ -812,6 +908,8 @@ Documentation
 
 Build
 -----
+
+- bpo-29643: Fix ``--enable-optimization`` didn't work.
 
 - bpo-27593: sys.version and the platform module python_build(),
   python_branch(), and python_revision() functions now use
@@ -886,6 +984,12 @@ Build
 Tools/Demos
 -----------
 
+- bpo-29748: Added the slice index converter in Argument Clinic.
+
+- bpo-24037: Argument Clinic now uses the converter `bool(accept={int})` rather
+  than `int` for semantical booleans.  This avoids repeating the default
+  value for Python and C and will help in converting to `bool` in future.
+
 - Issue #29367: python-gdb.py now supports also ``method-wrapper``
   (``wrapperobject``) objects.
 
@@ -901,15 +1005,6 @@ Tools/Demos
 
 Tests
 -----
-
-- bpo-28087: Skip test_asyncore and test_eintr poll failures on macOS.
-  Skip some tests of select.poll when running on macOS due to unresolved
-  issues with the underlying system poll function on some macOS versions.
-
-- Issue #29571: to match the behaviour of the ``re.LOCALE`` flag,
-  test_re.test_locale_flag now uses ``locale.getpreferredencoding(False)`` to
-  determine the candidate encoding for the test regex (allowing it to correctly
-  skip the test when the default locale encoding is a multi-byte encoding)
 
 - Issue #24932: Use proper command line parsing in _testembed
 
