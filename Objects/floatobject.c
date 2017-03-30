@@ -443,7 +443,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
             double fracpart;
             double intpart;
             PyObject *result = NULL;
-            PyObject *one = NULL;
             PyObject *vv = NULL;
             PyObject *ww = w;
 
@@ -466,23 +465,19 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                  */
                 PyObject *temp;
 
-                one = PyLong_FromLong(1);
-                if (one == NULL)
-                    goto Error;
-
-                temp = PyNumber_Lshift(ww, one);
+                temp = PyNumber_Lshift(ww, _PyLong_One);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(ww);
                 ww = temp;
 
-                temp = PyNumber_Lshift(vv, one);
+                temp = PyNumber_Lshift(vv, _PyLong_One);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(vv);
                 vv = temp;
 
-                temp = PyNumber_Or(vv, one);
+                temp = PyNumber_Or(vv, _PyLong_One);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(vv);
@@ -496,7 +491,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
          Error:
             Py_XDECREF(vv);
             Py_XDECREF(ww);
-            Py_XDECREF(one);
             return result;
         }
     } /* else if (PyLong_Check(w)) */
@@ -1617,7 +1611,7 @@ float_subtype_new(PyTypeObject *type, PyObject *x);
 /*[clinic input]
 @classmethod
 float.__new__ as float_new
-    x: object(c_default="Py_False") = 0
+    x: object(c_default="_PyLong_Zero") = 0
     /
 
 Convert a string or number to a floating point number, if possible.

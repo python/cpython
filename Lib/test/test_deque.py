@@ -5,7 +5,6 @@ import gc
 import weakref
 import copy
 import pickle
-from io import StringIO
 import random
 import struct
 

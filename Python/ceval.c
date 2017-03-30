@@ -148,7 +148,7 @@ static long dxp[256];
 #include "pythread.h"
 
 static PyThread_type_lock pending_lock = 0; /* for pending calls */
-static long main_thread = 0;
+static unsigned long main_thread = 0;
 /* This single variable consolidates all requests to break out of the fast path
    in the eval loop. */
 static _Py_atomic_int eval_breaker = {0};

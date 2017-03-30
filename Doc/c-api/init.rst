@@ -830,7 +830,7 @@ been created.
    the caller should assume no current thread state is available.
 
 
-.. c:function:: int PyThreadState_SetAsyncExc(long id, PyObject *exc)
+.. c:function:: int PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 
    Asynchronously raise an exception in a thread. The *id* argument is the thread
    id of the target thread; *exc* is the exception object to be raised. This
@@ -840,6 +840,9 @@ been created.
    zero if the thread id isn't found.  If *exc* is :const:`NULL`, the pending
    exception (if any) for the thread is cleared. This raises no exceptions.
 
+   .. versionchanged:: 3.7
+      The type of the *id* parameter changed from :c:type:`long` to
+      :c:type:`unsigned long`.
 
 .. c:function:: void PyEval_AcquireThread(PyThreadState *tstate)
 
