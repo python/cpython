@@ -298,6 +298,10 @@ Extension Modules
 Library
 -------
 
+- bpo-29204: Element.getiterator() and the html parameter of XMLParser() were
+  deprecated only in the documentation (since Python 3.2 and 3.4 correspondintly).
+  Now using them emits a deprecation warning.
+
 - bpo-27863: Fixed multiple crashes in ElementTree caused by race conditions
   and wrong types. 
 
