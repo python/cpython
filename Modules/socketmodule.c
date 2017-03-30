@@ -7507,6 +7507,9 @@ PyInit__socket(void)
 #ifdef  TCP_USER_TIMEOUT
     PyModule_AddIntMacro(m, TCP_USER_TIMEOUT);
 #endif
+#ifdef  TCP_NOTSENT_LOWAT
+    PyModule_AddIntMacro(m, TCP_NOTSENT_LOWAT);
+#endif
 
     /* IPX options */
 #ifdef  IPX_TYPE

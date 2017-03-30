@@ -17,6 +17,7 @@ import re
 import collections
 from builtins import str as _builtin_str
 import functools
+import warnings
 
 # Try importing the _locale module.
 #
@@ -180,19 +181,6 @@ def _strip_padding(s, amount):
 _percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
                          r'(?P<modifiers>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
 
-def format(percent, value, grouping=False, monetary=False, *additional):
-    """Returns the locale-aware substitution of a %? specifier
-    (percent).
-
-    additional is for format strings which contain one or more
-    '*' modifiers."""
-    # this is only for one-percent-specifier strings and this should be checked
-    match = _percent_re.match(percent)
-    if not match or len(match.group())!= len(percent):
-        raise ValueError(("format() must be given exactly one %%char "
-                         "format specifier, %s not valid") % repr(percent))
-    return _format(percent, value, grouping, monetary, *additional)
-
 def _format(percent, value, grouping=False, monetary=False, *additional):
     if additional:
         formatted = percent % ((value,) + additional)
@@ -217,10 +205,13 @@ def _format(percent, value, grouping=False, monetary=False, *additional):
             formatted = _strip_padding(formatted, seps)
     return formatted
 
-def format_string(f, val, grouping=False):
+def format_string(f, val, grouping=False, monetary=False):
     """Formats a string in the same way that the % formatting would use,
     but takes the current locale into account.
-    Grouping is applied if the third parameter is true."""
+
+    Grouping is applied if the third parameter is true.
+    Conversion uses monetary thousands separator and grouping strings if
+    forth parameter monetary is true."""
     percents = list(_percent_re.finditer(f))
     new_f = _percent_re.sub('%s', f)
 
@@ -230,7 +221,7 @@ def format_string(f, val, grouping=False):
             if perc.group()[-1]=='%':
                 new_val.append('%')
             else:
-                new_val.append(format(perc.group(), val, grouping))
+                new_val.append(_format(perc.group(), val, grouping, monetary))
     else:
         if not isinstance(val, tuple):
             val = (val,)
@@ -244,12 +235,26 @@ def format_string(f, val, grouping=False):
                 new_val.append(_format(perc.group(),
                                       val[i],
                                       grouping,
-                                      False,
+                                      monetary,
                                       *val[i+1:i+1+starcount]))
                 i += (1 + starcount)
     val = tuple(new_val)
 
     return new_f % val
+
+def format(percent, value, grouping=False, monetary=False, *additional):
+    """Deprecated, use format_string instead."""
+    warnings.warn(
+        "This method will be removed in a future version of Python."
+        "Use 'locale.format_string()' instead.",
+        DeprecationWarning, stacklevel=2
+    )
+
+    match = _percent_re.match(percent)
+    if not match or len(match.group())!= len(percent):
+        raise ValueError(("format() must be given exactly one %%char "
+                         "format specifier, %s not valid") % repr(percent))
+    return _format(percent, value, grouping, monetary, *additional)
 
 def currency(val, symbol=True, grouping=False, international=False):
     """Formats val according to the currency settings
@@ -262,7 +267,7 @@ def currency(val, symbol=True, grouping=False, international=False):
         raise ValueError("Currency formatting is not possible using "
                          "the 'C' locale.")
 
-    s = format('%%.%if' % digits, abs(val), grouping, monetary=True)
+    s = _format('%%.%if' % digits, abs(val), grouping, monetary=True)
     # '<' and '>' are markers if the sign must be inserted between symbol and value
     s = '<' + s + '>'
 
@@ -298,7 +303,7 @@ def currency(val, symbol=True, grouping=False, international=False):
 
 def str(val):
     """Convert float to string, taking the locale into account."""
-    return format("%.12g", val)
+    return _format("%.12g", val)
 
 def delocalize(string):
     "Parses a string as a normalized number according to the locale settings."
@@ -327,7 +332,7 @@ def atoi(string):
 def _test():
     setlocale(LC_ALL, "")
     #do grouping
-    s1 = format("%d", 123456789,1)
+    s1 = format_string("%d", 123456789,1)
     print(s1, "is", atoi(s1))
     #standard formatting
     s1 = str(3.14)

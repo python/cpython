@@ -18,7 +18,7 @@ import types
 import unittest
 import warnings
 from operator import neg
-from test.support import TESTFN, unlink,  run_unittest, check_warnings
+from test.support import TESTFN, unlink, check_warnings
 from test.support.script_helper import assert_python_ok
 try:
     import pty, signal

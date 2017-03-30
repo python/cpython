@@ -11,7 +11,6 @@ import os.path
 import errno
 import functools
 import subprocess
-from contextlib import ExitStack
 from shutil import (make_archive,
                     register_archive_format, unregister_archive_format,
                     get_archive_formats, Error, unpack_archive,
@@ -22,8 +21,7 @@ import tarfile
 import zipfile
 
 from test import support
-from test.support import (TESTFN, check_warnings, captured_stdout,
-                          android_not_root)
+from test.support import TESTFN, android_not_root
 
 TESTFN2 = TESTFN + "2"
 

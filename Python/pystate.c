@@ -580,7 +580,8 @@ PyThreadState_GetDict(void)
    existing async exception.  This raises no exceptions. */
 
 int
-PyThreadState_SetAsyncExc(long id, PyObject *exc) {
+PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
+{
     PyInterpreterState *interp = GET_INTERP_STATE();
     PyThreadState *p;
 
@@ -668,7 +669,7 @@ _PyThread_CurrentFrames(void)
             struct _frame *frame = t->frame;
             if (frame == NULL)
                 continue;
-            id = PyLong_FromLong(t->thread_id);
+            id = PyLong_FromUnsignedLong(t->thread_id);
             if (id == NULL)
                 goto Fail;
             stat = PyDict_SetItem(result, id, (PyObject *)frame);

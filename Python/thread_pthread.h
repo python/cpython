@@ -184,7 +184,7 @@ PyThread__init_thread(void)
  */
 
 
-long
+unsigned long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
     pthread_t th;
@@ -202,7 +202,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
     if (pthread_attr_init(&attrs) != 0)
-        return -1;
+        return PYTHREAD_INVALID_THREAD_ID;
 #endif
 #if defined(THREAD_STACK_SIZE)
     tss = (_pythread_stacksize != 0) ? _pythread_stacksize
@@ -210,7 +210,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     if (tss != 0) {
         if (pthread_attr_setstacksize(&attrs, tss) != 0) {
             pthread_attr_destroy(&attrs);
-            return -1;
+            return PYTHREAD_INVALID_THREAD_ID;
         }
     }
 #endif
@@ -232,31 +232,31 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     pthread_attr_destroy(&attrs);
 #endif
     if (status != 0)
-        return -1;
+        return PYTHREAD_INVALID_THREAD_ID;
 
     pthread_detach(th);
 
 #if SIZEOF_PTHREAD_T <= SIZEOF_LONG
-    return (long) th;
+    return (unsigned long) th;
 #else
-    return (long) *(long *) &th;
+    return (unsigned long) *(unsigned long *) &th;
 #endif
 }
 
 /* XXX This implementation is considered (to quote Tim Peters) "inherently
    hosed" because:
      - It does not guarantee the promise that a non-zero integer is returned.
-     - The cast to long is inherently unsafe.
+     - The cast to unsigned long is inherently unsafe.
      - It is not clear that the 'volatile' (for AIX?) are any longer necessary.
 */
-long
+unsigned long
 PyThread_get_thread_ident(void)
 {
     volatile pthread_t threadid;
     if (!initialized)
         PyThread_init_thread();
     threadid = pthread_self();
-    return (long) threadid;
+    return (unsigned long) threadid;
 }
 
 void
