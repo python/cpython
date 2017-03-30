@@ -88,7 +88,7 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
             try:
                 next(self.gen)
             except StopIteration:
-                return
+                return None
             else:
                 raise RuntimeError("generator didn't stop")
         else:
@@ -102,7 +102,12 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 # Suppress StopIteration *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration
                 # raised inside the "with" statement from being suppressed.
-                return exc is not value
+                # Conform to PEP 8 - "Either all return statements in a function
+                # should return an expression, or none of them should".
+                if exc is not value:
+                    return True
+                else:
+                    return False
             except RuntimeError as exc:
                 # Don't re-raise the passed in exception. (issue27122)
                 if exc is value:
@@ -123,6 +128,7 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 #
                 if sys.exc_info()[1] is not value:
                     raise
+                return None
             else:
                 raise RuntimeError("generator didn't stop after throw()")
 
