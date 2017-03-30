@@ -89,7 +89,8 @@ All integers are implemented as "long" integer objects of arbitrary size.
    determined based on the leading characters of *str*: if *str* starts with
    ``'0x'`` or ``'0X'``, radix 16 will be used; if *str* starts with ``'0o'`` or
    ``'0O'``, radix 8 will be used; if *str* starts with ``'0b'`` or ``'0B'``,
-   radix 2 will be used; otherwise radix 10 will be used.  If *base* is not
+   radix 2 will be used; if *str* starts with any number other than ``0``, then
+   radix 10 will be used; otherwise :exc:`ValueError` will be raised.  If *base* is not
    ``0``, it must be between ``2`` and ``36``, inclusive.  Leading spaces are
    ignored.  If there are no digits, :exc:`ValueError` will be raised.
 
