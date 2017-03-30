@@ -125,20 +125,20 @@ the definition of all other Python objects.
    Structure used to describe a method of an extension type.  This structure has
    four fields:
 
-   +------------------+-------------+-------------------------------+
-   | Field            | C Type      | Meaning                       |
-   +==================+=============+===============================+
-   | :attr:`ml_name`  | char \*     | name of the method            |
-   +------------------+-------------+-------------------------------+
-   | :attr:`ml_meth`  | PyCFunction | pointer to the C              |
-   |                  |             | implementation                |
-   +------------------+-------------+-------------------------------+
-   | :attr:`ml_flags` | int         | flag bits indicating how the  |
-   |                  |             | call should be constructed    |
-   +------------------+-------------+-------------------------------+
-   | :attr:`ml_doc`   | char \*     | points to the contents of the |
-   |                  |             | docstring                     |
-   +------------------+-------------+-------------------------------+
+   +------------------+---------------+-------------------------------+
+   | Field            | C Type        | Meaning                       |
+   +==================+===============+===============================+
+   | :attr:`ml_name`  | const char \* | name of the method            |
+   +------------------+---------------+-------------------------------+
+   | :attr:`ml_meth`  | PyCFunction   | pointer to the C              |
+   |                  |               | implementation                |
+   +------------------+---------------+-------------------------------+
+   | :attr:`ml_flags` | int           | flag bits indicating how the  |
+   |                  |               | call should be constructed    |
+   +------------------+---------------+-------------------------------+
+   | :attr:`ml_doc`   | const char \* | points to the contents of the |
+   |                  |               | docstring                     |
+   +------------------+---------------+-------------------------------+
 
 The :attr:`ml_meth` is a C function pointer.  The functions may be of different
 types, but they always return :c:type:`PyObject\*`.  If the function is not of
@@ -236,25 +236,25 @@ definition with the same method name.
    Structure which describes an attribute of a type which corresponds to a C
    struct member.  Its fields are:
 
-   +------------------+-------------+-------------------------------+
-   | Field            | C Type      | Meaning                       |
-   +==================+=============+===============================+
-   | :attr:`name`     | char \*     | name of the member            |
-   +------------------+-------------+-------------------------------+
-   | :attr:`!type`    | int         | the type of the member in the |
-   |                  |             | C struct                      |
-   +------------------+-------------+-------------------------------+
-   | :attr:`offset`   | Py_ssize_t  | the offset in bytes that the  |
-   |                  |             | member is located on the      |
-   |                  |             | type's object struct          |
-   +------------------+-------------+-------------------------------+
-   | :attr:`flags`    | int         | flag bits indicating if the   |
-   |                  |             | field should be read-only or  |
-   |                  |             | writable                      |
-   +------------------+-------------+-------------------------------+
-   | :attr:`doc`      | char \*     | points to the contents of the |
-   |                  |             | docstring                     |
-   +------------------+-------------+-------------------------------+
+   +------------------+---------------+-------------------------------+
+   | Field            | C Type        | Meaning                       |
+   +==================+===============+===============================+
+   | :attr:`name`     | const char \* | name of the member            |
+   +------------------+---------------+-------------------------------+
+   | :attr:`!type`    | int           | the type of the member in the |
+   |                  |               | C struct                      |
+   +------------------+---------------+-------------------------------+
+   | :attr:`offset`   | Py_ssize_t    | the offset in bytes that the  |
+   |                  |               | member is located on the      |
+   |                  |               | type's object struct          |
+   +------------------+---------------+-------------------------------+
+   | :attr:`flags`    | int           | flag bits indicating if the   |
+   |                  |               | field should be read-only or  |
+   |                  |               | writable                      |
+   +------------------+---------------+-------------------------------+
+   | :attr:`doc`      | const char \* | points to the contents of the |
+   |                  |               | docstring                     |
+   +------------------+---------------+-------------------------------+
 
    :attr:`!type` can be one of many ``T_`` macros corresponding to various C
    types.  When the member is accessed in Python, it will be converted to the
@@ -268,7 +268,7 @@ definition with the same method name.
    T_LONG          long
    T_FLOAT         float
    T_DOUBLE        double
-   T_STRING        char \*
+   T_STRING        const char \*
    T_OBJECT        PyObject \*
    T_OBJECT_EX     PyObject \*
    T_CHAR          char

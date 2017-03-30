@@ -231,11 +231,6 @@ Importing Modules
    Finalize the import mechanism.  For internal use only.
 
 
-.. c:function:: PyObject* _PyImport_FindExtension(char *, char *)
-
-   For internal use only.
-
-
 .. c:function:: int PyImport_ImportFrozenModuleObject(PyObject *name)
 
    Load a frozen module named *name*.  Return ``1`` for success, ``0`` if the
@@ -266,8 +261,8 @@ Importing Modules
    is::
 
       struct _frozen {
-          char *name;
-          unsigned char *code;
+          const char *name;
+          const unsigned char *code;
           int size;
       };
 
@@ -300,7 +295,7 @@ Importing Modules
    The structure is defined in :file:`Include/import.h` as::
 
       struct _inittab {
-          char *name;                 /* ASCII encoded string */
+          const char *name;           /* ASCII encoded string */
           PyObject* (*initfunc)(void);
       };
 
