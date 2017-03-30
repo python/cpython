@@ -294,6 +294,9 @@ Extension Modules
 Library
 -------
 
+- bpo-25996: Added support of file descriptors in os.scandir() on Unix.
+  os.fwalk() is sped up by 2 times by using os.scandir().
+
 - bpo-28699: Fixed a bug in pools in multiprocessing.pool that raising an
   exception at the very first of an iterable may swallow the exception or
   make the program hang. Patch by Davin Potts and Xiang Zhang.
