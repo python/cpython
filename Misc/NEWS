@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-24821: Fixed the slowing down to 25 times in the searching of some
+  unlucky Unicode characters.
+
 - bpo-29894: The deprecation warning is emitted if __complex__ returns an
   instance of a strict subclass of complex.  In a future versions of Python
   this can be an error.
