@@ -295,6 +295,9 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
         case 'l':
             return PyLong_FromLong(va_arg(*p_va, long));
 
+        case 'm':
+            return PyLong_FromIntMax(va_arg(*p_va, intmax_t));
+
         case 'k':
         {
             unsigned long n;

@@ -1182,8 +1182,9 @@ fromWideIntObj(PyObject* tkapp, Tcl_Obj *value)
 {
         Tcl_WideInt wideValue;
         if (Tcl_GetWideIntFromObj(Tkapp_Interp(tkapp), value, &wideValue) == TCL_OK) {
-            if (sizeof(wideValue) <= SIZEOF_LONG_LONG)
-                return PyLong_FromLongLong(wideValue);
+            if (sizeof(wideValue) <= SIZEOF_INTMAX_T) {
+                return PyLong_FromIntMax(wideValue);
+            }
             return _PyLong_FromByteArray((unsigned char *)(void *)&wideValue,
                                          sizeof(wideValue),
                                          PY_LITTLE_ENDIAN,

@@ -432,7 +432,7 @@ mmap_size_method(mmap_object *self,
 #ifdef MS_WINDOWS
     if (self->file_handle != INVALID_HANDLE_VALUE) {
         DWORD low,high;
-        long long size;
+        intmax_t size;
         low = GetFileSize(self->file_handle, &high);
         if (low == INVALID_FILE_SIZE) {
             /* It might be that the function appears to have failed,
@@ -443,8 +443,8 @@ mmap_size_method(mmap_object *self,
         }
         if (!high && low < LONG_MAX)
             return PyLong_FromLong((long)low);
-        size = (((long long)high)<<32) + low;
-        return PyLong_FromLongLong(size);
+        size = (((intmax_t)high)<<32) + low;
+        return PyLong_FromIntMax(size);
     } else {
         return PyLong_FromSsize_t(self->size);
     }
@@ -455,11 +455,7 @@ mmap_size_method(mmap_object *self,
         struct _Py_stat_struct status;
         if (_Py_fstat(self->fd, &status) == -1)
             return NULL;
-#ifdef HAVE_LARGEFILE_SUPPORT
-        return PyLong_FromLongLong(status.st_size);
-#else
-        return PyLong_FromLong(status.st_size);
-#endif
+        return PyLong_FromIntMax(status.st_size);
     }
 #endif /* UNIX */
 }

@@ -805,6 +805,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         *p = ival;
         break;
     }
+
     case 'l': {/* long int */
         long *p = va_arg(*p_va, long *);
         long ival;
@@ -850,6 +851,22 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         else
             return converterr("int", arg, msgbuf, bufsize);
         *p = ival;
+        break;
+    }
+
+    case 'm': { /* intmax_t */
+        intmax_t *p = va_arg(*p_va, intmax_t *);
+        intmax_t ival;
+        if (float_argument_error(arg)) {
+            RETURN_ERR_OCCURRED;
+        }
+        ival = PyLong_AsIntMax(arg);
+        if (ival == -1 && PyErr_Occurred()) {
+            RETURN_ERR_OCCURRED;
+        }
+        else {
+            *p = ival;
+        }
         break;
     }
 
@@ -2241,6 +2258,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
     case 'L': /* long long */
     case 'K': /* long long sized bitfield */
     case 'n': /* Py_ssize_t */
+    case 'm': /* intmax_t */
     case 'f': /* float */
     case 'd': /* double */
     case 'D': /* complex double */

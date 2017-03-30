@@ -17,14 +17,19 @@ PyAPI_DATA(PyTypeObject) PyLong_Type;
 
 PyAPI_FUNC(PyObject *) PyLong_FromLong(long);
 PyAPI_FUNC(PyObject *) PyLong_FromUnsignedLong(unsigned long);
+PyAPI_FUNC(PyObject *) PyLong_FromIntMax(intmax_t);
+PyAPI_FUNC(PyObject *) PyLong_FromUIntMax(uintmax_t);
 PyAPI_FUNC(PyObject *) PyLong_FromSize_t(size_t);
 PyAPI_FUNC(PyObject *) PyLong_FromSsize_t(Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyLong_FromDouble(double);
 PyAPI_FUNC(long) PyLong_AsLong(PyObject *);
 PyAPI_FUNC(long) PyLong_AsLongAndOverflow(PyObject *, int *);
+PyAPI_FUNC(intmax_t) PyLong_AsIntMax(PyObject *);
+PyAPI_FUNC(intmax_t) PyLong_AsIntMaxAndOverflow(PyObject *, int *);
 PyAPI_FUNC(Py_ssize_t) PyLong_AsSsize_t(PyObject *);
 PyAPI_FUNC(size_t) PyLong_AsSize_t(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLong(PyObject *);
+PyAPI_FUNC(uintmax_t) PyLong_AsUIntMax(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyLong_AsInt(PyObject *);
