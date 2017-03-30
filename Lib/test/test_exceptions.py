@@ -537,7 +537,7 @@ class ExceptionTests(unittest.TestCase):
             pass
         obj = None
         obj = wr()
-        self.assertTrue(obj is None, "%s" % obj)
+        self.assertIsNone(obj)
 
         # Qualified "except" without "as"
         obj = MyObj()
@@ -548,7 +548,7 @@ class ExceptionTests(unittest.TestCase):
             pass
         obj = None
         obj = wr()
-        self.assertTrue(obj is None, "%s" % obj)
+        self.assertIsNone(obj)
 
         # Bare "except"
         obj = MyObj()
@@ -559,7 +559,7 @@ class ExceptionTests(unittest.TestCase):
             pass
         obj = None
         obj = wr()
-        self.assertTrue(obj is None, "%s" % obj)
+        self.assertIsNone(obj)
 
         # "except" with premature block leave
         obj = MyObj()
@@ -571,7 +571,7 @@ class ExceptionTests(unittest.TestCase):
                 break
         obj = None
         obj = wr()
-        self.assertTrue(obj is None, "%s" % obj)
+        self.assertIsNone(obj)
 
         # "except" block raising another exception
         obj = MyObj()
@@ -592,7 +592,7 @@ class ExceptionTests(unittest.TestCase):
             # guarantee no ref cycles on CPython (don't gc_collect)
             if check_impl_detail(cpython=False):
                 gc_collect()
-            self.assertTrue(obj is None, "%s" % obj)
+            self.assertIsNone(obj)
 
         # Some complicated construct
         obj = MyObj()
@@ -611,7 +611,7 @@ class ExceptionTests(unittest.TestCase):
         if check_impl_detail(cpython=False):
             gc_collect()
         obj = wr()
-        self.assertTrue(obj is None, "%s" % obj)
+        self.assertIsNone(obj)
 
         # Inside an exception-silencing "with" block
         class Context:
@@ -627,7 +627,7 @@ class ExceptionTests(unittest.TestCase):
         if check_impl_detail(cpython=False):
             gc_collect()
         obj = wr()
-        self.assertTrue(obj is None, "%s" % obj)
+        self.assertIsNone(obj)
 
     def test_exception_target_in_nested_scope(self):
         # issue 4617: This used to raise a SyntaxError
@@ -779,7 +779,7 @@ class ExceptionTests(unittest.TestCase):
         testfunc(g)
         g = obj = None
         obj = wr()
-        self.assertIs(obj, None)
+        self.assertIsNone(obj)
 
     def test_generator_throw_cleanup_exc_state(self):
         def do_throw(g):
@@ -904,7 +904,7 @@ class ExceptionTests(unittest.TestCase):
             except RecursionError:
                 return sys.exc_info()
         e, v, tb = g()
-        self.assertTrue(isinstance(v, RecursionError), type(v))
+        self.assertIsInstance(v, RecursionError, type(v))
         self.assertIn("maximum recursion depth exceeded", str(v))
 
 
