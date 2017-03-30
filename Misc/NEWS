@@ -42,6 +42,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29942: Fix a crash in itertools.chain.from_iterable when encountering
+  long runs of empty iterables.
+
 - bpo-29861: Release references to tasks, their arguments and their results
   as soon as they are finished in multiprocessing.Pool.
 
