@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29935: Fixed error messages in the index() method of tuple, list and deque
+  when pass indices of wrong type.
+
 - bpo-29816: Shift operation now has less opportunity to raise OverflowError.
   ValueError always is raised rather than OverflowError for negative counts.
   Shifting zero with non-negative count always returns zero.
