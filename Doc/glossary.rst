@@ -321,9 +321,9 @@ Glossary
       core and with user code.
 
    f-string
-      String literals prefixed with f or F are commonly called "f-strings"
-      which is short for :dfn:`formatted string literal`.  See also
-      :ref:`f-strings <f-strings>` and :pep:`498`.
+      String literals prefixed with ``'f'`` or ``'F'`` are commonly called
+      "f-strings" which is short for
+      :ref:`formatted string literals <f-strings>`.  See also :pep:`498`.
 
    file object
       An object exposing a file-oriented API (with methods such as
