@@ -418,10 +418,11 @@ Pickling and unpickling normal class instances
    When a pickled class instance is unpickled, its :meth:`__init__` method is
    normally *not* invoked.  If it is desirable that the :meth:`__init__` method
    be called on unpickling, an old-style class can define a method
-   :meth:`__getinitargs__`, which should return a *tuple* containing the
+   :meth:`__getinitargs__`, which should return a *tuple* of positional
    arguments to be passed to the class constructor (:meth:`__init__` for
-   example).  The :meth:`__getinitargs__` method is called at pickle time; the
-   tuple it returns is incorporated in the pickle for the instance.
+   example).  Keyword arguments are not supported.  The :meth:`__getinitargs__`
+   method is called at pickle time; the tuple it returns is incorporated in the
+   pickle for the instance.
 
 .. method:: object.__getnewargs__()
 
