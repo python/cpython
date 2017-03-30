@@ -145,6 +145,7 @@ PyAPI_FUNC(void) PyEval_ReInitThreads(void);
 #endif /* !WITH_THREAD */
 
 PyAPI_FUNC(int) _PyEval_SliceIndex(PyObject *, Py_ssize_t *);
+PyAPI_FUNC(int) _PyEval_SliceIndexNotNone(PyObject *, Py_ssize_t *);
 
 
 #ifdef __cplusplus
