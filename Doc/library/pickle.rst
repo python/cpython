@@ -420,7 +420,7 @@ Pickling and unpickling normal class instances
    be called on unpickling, an old-style class can define a method
    :meth:`__getinitargs__`, which should return a *tuple* of positional
    arguments to be passed to the class constructor (:meth:`__init__` for
-   example). However, it doesn't support ``kwargs``. The :meth:`__getinitargs__`
+   example). Keyword arguments are not supported. The :meth:`__getinitargs__`
    method is called at pickle time; the tuple it returns is incorporated in the
    pickle for the instance.
 
