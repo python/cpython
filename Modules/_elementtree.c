@@ -1366,7 +1366,12 @@ _elementtree_Element_getchildren_impl(ElementObject *self)
     Py_ssize_t i;
     PyObject* list;
 
-    /* FIXME: report as deprecated? */
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "This method will be removed in future versions.  "
+                     "Use 'list(elem)' or iteration over elem instead.",
+                     1) < 0) {
+        return NULL;
+    }
 
     if (!self->extra)
         return PyList_New(0);
@@ -1412,6 +1417,28 @@ _elementtree_Element_iter_impl(ElementObject *self, PyObject *tag)
     }
 
     return create_elementiter(self, tag, 0);
+}
+
+
+/*[clinic input]
+_elementtree.Element.getiterator
+
+    tag: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+_elementtree_Element_getiterator_impl(ElementObject *self, PyObject *tag)
+/*[clinic end generated code: output=cb69ff4a3742dfa1 input=500da1a03f7b9e28]*/
+{
+    /* Change for a DeprecationWarning in 1.4 */
+    if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
+                     "This method will be removed in future versions.  "
+                     "Use 'tree.iter()' or 'list(tree.iter())' instead.",
+                     1) < 0) {
+        return NULL;
+    }
+    return _elementtree_Element_iter_impl(self, tag);
 }
 
 
@@ -3244,6 +3271,14 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
                                      PyObject *target, const char *encoding)
 /*[clinic end generated code: output=d6a16c63dda54441 input=155bc5695baafffd]*/
 {
+    if (html != NULL) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "The html argument of XMLParser() is deprecated",
+                         1) < 0) {
+            return -1;
+        }
+    }
+
     self->entity = PyDict_New();
     if (!self->entity)
         return -1;
@@ -3716,7 +3751,7 @@ static PyMethodDef element_methods[] = {
     _ELEMENTTREE_ELEMENT_ITERTEXT_METHODDEF
     _ELEMENTTREE_ELEMENT_ITERFIND_METHODDEF
 
-    {"getiterator", (PyCFunction)_elementtree_Element_iter, METH_FASTCALL, _elementtree_Element_iter__doc__},
+    _ELEMENTTREE_ELEMENT_GETITERATOR_METHODDEF
     _ELEMENTTREE_ELEMENT_GETCHILDREN_METHODDEF
 
     _ELEMENTTREE_ELEMENT_ITEMS_METHODDEF
