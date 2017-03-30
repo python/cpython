@@ -2670,9 +2670,9 @@ class slice_index_converter(CConverter):
 
     def converter_init(self, *, accept={int, NoneType}):
         if accept == {int}:
-            self.converter = '_PyEval_SliceIndex'
+            self.converter = '_PyEval_SliceIndexNotNone'
         elif accept == {int, NoneType}:
-            self.converter = '_PyEval_SliceIndexOrNone'
+            self.converter = '_PyEval_SliceIndex'
         else:
             fail("slice_index_converter: illegal 'accept' argument " + repr(accept))
 

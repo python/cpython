@@ -1066,8 +1066,8 @@ deque_index(dequeobject *deque, PyObject **args, Py_ssize_t nargs,
         return NULL;
     }
     if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index", &v,
-                           _PyEval_SliceIndex, &start,
-                           _PyEval_SliceIndex, &stop)) {
+                           _PyEval_SliceIndexNotNone, &start,
+                           _PyEval_SliceIndexNotNone, &stop)) {
         return NULL;
     }
 
