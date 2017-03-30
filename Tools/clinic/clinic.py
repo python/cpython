@@ -2650,11 +2650,19 @@ class unsigned_long_long_converter(CConverter):
         if not bitwise:
             fail("Unsigned long long must be bitwise (for now).")
 
+
 class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
-    default_type = int
-    format_unit = 'n'
     c_ignored_default = "0"
+
+    def converter_init(self, *, accept={int}):
+        if accept == {int}:
+            self.format_unit = 'n'
+            self.default_type = int
+        elif accept == {int, NoneType}:
+            self.converter = '_Py_convert_optional_to_ssize_t'
+        else:
+            fail("Py_ssize_t_converter: illegal 'accept' argument " + repr(accept))
 
 
 class slice_index_converter(CConverter):

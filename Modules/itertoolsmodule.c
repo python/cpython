@@ -3965,24 +3965,16 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 fast_mode = 0;
             }
         }
-        Py_INCREF(long_cnt);
     } else {
         cnt = 0;
-        long_cnt = PyLong_FromLong(0);
-        if (long_cnt == NULL) {
-            return NULL;
-        }
+        long_cnt = _PyLong_Zero;
     }
+    Py_INCREF(long_cnt);
 
     /* If not specified, step defaults to 1 */
-    if (long_step == NULL) {
-        long_step = PyLong_FromLong(1);
-        if (long_step == NULL) {
-            Py_DECREF(long_cnt);
-            return NULL;
-        }
-    } else
-        Py_INCREF(long_step);
+    if (long_step == NULL)
+        long_step = _PyLong_One;
+    Py_INCREF(long_step);
 
     assert(long_cnt != NULL && long_step != NULL);
 
