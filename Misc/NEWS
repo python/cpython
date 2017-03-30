@@ -10,6 +10,9 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- bpo-29935: Fixed error messages in the index() method of tuple, list and deque
+  when pass indices of wrong type.
+
 - bpo-28876: ``bool(range)`` works even if ``len(range)``
   raises :exc:`OverflowError`.
 
