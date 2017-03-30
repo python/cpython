@@ -10,6 +10,9 @@ What's New in Python 3.6.2 release candidate 1?
 Core and Builtins
 -----------------
 
+- bpo-29935: Fixed error messages in the index() method of tuple, list and deque
+  when pass indices of wrong type.
+
 - bpo-29859: Show correct error messages when any of the pthread_* calls in
   thread_pthread.h fails.
 
