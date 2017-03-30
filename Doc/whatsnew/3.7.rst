@@ -138,6 +138,11 @@ Optimizations
   in method calls being faster up to 20%. (Contributed by Yury Selivanov and
   INADA Naoki in :issue:`26110`.)
 
+* Searching some unlucky Unicode characters (like Ukrainian capital "Є")
+  in a string was to 25 times slower than searching other characters.
+  Now it is slower only by 3 times in worst case.
+  (Contributed by Serhiy Storchaka in :issue:`24821`.)
+
 * Fast implementation from standard C library is now used for functions
   :func:`~math.tgamma`, :func:`~math.lgamma`, :func:`~math.erf` and
   :func:`~math.erfc` in the :mod:`math` module. (Contributed by Serhiy
