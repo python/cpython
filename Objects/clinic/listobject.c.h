@@ -196,7 +196,7 @@ list_index(PyListObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     Py_ssize_t stop = PY_SSIZE_T_MAX;
 
     if (!_PyArg_ParseStack(args, nargs, "O|O&O&:index",
-        &value, _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &stop)) {
+        &value, _PyEval_SliceIndexNotNone, &start, _PyEval_SliceIndexNotNone, &stop)) {
         goto exit;
     }
 
@@ -297,4 +297,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=2a3b75efcf858ed5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=71deae70ca0e6799 input=a9049054013a1b77]*/
