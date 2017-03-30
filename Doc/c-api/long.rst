@@ -91,8 +91,9 @@ All integers are implemented as "long" integer objects of arbitrary size.
    ``'0O'``, radix 8 will be used; if *str* starts with ``'0b'`` or ``'0B'``,
    radix 2 will be used; if *str* starts with any number other than ``0``, then
    radix 10 will be used; otherwise :exc:`ValueError` will be raised.  If *base* is not
-   ``0``, it must be between ``2`` and ``36``, inclusive.  Leading spaces are
-   ignored.  If there are no digits, :exc:`ValueError` will be raised.
+   ``0``, it must be between ``2`` and ``36``, inclusive.  Leading spaces and single
+   underscores after a base specifier and between digits are ignored.  If there are
+   no digits, :exc:`ValueError` will be raised.
 
 
 .. c:function:: PyObject* PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
