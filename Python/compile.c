@@ -561,7 +561,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
         _Py_IDENTIFIER(__class__);
-        PyObject *tuple, *name, *zero;
+        PyObject *tuple, *name;
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
         assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
@@ -575,15 +575,8 @@ compiler_enter_scope(struct compiler *c, identifier name,
             compiler_unit_free(u);
             return 0;
         }
-        zero = PyLong_FromLong(0);
-        if (!zero) {
-            Py_DECREF(tuple);
-            compiler_unit_free(u);
-            return 0;
-        }
-        res = PyDict_SetItem(u->u_cellvars, tuple, zero);
+        res = PyDict_SetItem(u->u_cellvars, tuple, _PyLong_Zero);
         Py_DECREF(tuple);
-        Py_DECREF(zero);
         if (res < 0) {
             compiler_unit_free(u);
             return 0;
@@ -2596,14 +2589,8 @@ compiler_import(struct compiler *c, stmt_ty s)
     for (i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.Import.names, i);
         int r;
-        PyObject *level;
 
-        level = PyLong_FromLong(0);
-        if (level == NULL)
-            return 0;
-
-        ADDOP_O(c, LOAD_CONST, level, consts);
-        Py_DECREF(level);
+        ADDOP_O(c, LOAD_CONST, _PyLong_Zero, consts);
         ADDOP_O(c, LOAD_CONST, Py_None, consts);
         ADDOP_NAME(c, IMPORT_NAME, alias->name, names);
 

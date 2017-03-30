@@ -1078,7 +1078,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         if (cookieObj == NULL)
             goto error;
 
-        cmp = PyObject_RichCompareBool(cookieObj, _PyIO_zero, Py_EQ);
+        cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
         Py_DECREF(cookieObj);
         if (cmp < 0) {
             goto error;
@@ -1087,7 +1087,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         if (cmp == 0) {
             self->encoding_start_of_stream = 0;
             res = PyObject_CallMethodObjArgs(self->encoder, _PyIO_str_setstate,
-                                             _PyIO_zero, NULL);
+                                             _PyLong_Zero, NULL);
             if (res == NULL)
                 goto error;
             Py_DECREF(res);
@@ -2030,7 +2030,7 @@ _textiowrapper_encoder_reset(textio *self, int start_of_stream)
     }
     else {
         res = PyObject_CallMethodObjArgs(self->encoder, _PyIO_str_setstate,
-                                         _PyIO_zero, NULL);
+                                         _PyLong_Zero, NULL);
         self->encoding_start_of_stream = 0;
     }
     if (res == NULL)
@@ -2075,7 +2075,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
 
     if (whence == 1) {
         /* seek relative to current position */
-        cmp = PyObject_RichCompareBool(cookieObj, _PyIO_zero, Py_EQ);
+        cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
         if (cmp < 0)
             goto fail;
 
@@ -2094,7 +2094,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
     }
     else if (whence == 2) {
         /* seek relative to end of file */
-        cmp = PyObject_RichCompareBool(cookieObj, _PyIO_zero, Py_EQ);
+        cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
         if (cmp < 0)
             goto fail;
 
@@ -2123,7 +2123,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         if (self->encoder) {
             /* If seek() == 0, we are at the start of stream, otherwise not */
-            cmp = PyObject_RichCompareBool(res, _PyIO_zero, Py_EQ);
+            cmp = PyObject_RichCompareBool(res, _PyLong_Zero, Py_EQ);
             if (cmp < 0 || _textiowrapper_encoder_reset(self, cmp)) {
                 Py_DECREF(res);
                 goto fail;
@@ -2137,7 +2137,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         goto fail;
     }
 
-    cmp = PyObject_RichCompareBool(cookieObj, _PyIO_zero, Py_LT);
+    cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_LT);
     if (cmp < 0)
         goto fail;
 
