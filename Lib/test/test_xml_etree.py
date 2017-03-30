@@ -1879,6 +1879,118 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 repr(e)  # Should not crash
 
+    def test_element_get_text(self):
+        # Issue #27863
+        class X(str):
+            def __del__(self):
+                try:
+                    elem.text
+                except NameError:
+                    pass
+
+        b = ET.TreeBuilder()
+        b.start('tag', {})
+        b.data('ABCD')
+        b.data(X('EFGH'))
+        b.data('IJKL')
+        b.end('tag')
+
+        elem = b.close()
+        self.assertEqual(elem.text, 'ABCDEFGHIJKL')
+
+    def test_element_get_tail(self):
+        # Issue #27863
+        class X(str):
+            def __del__(self):
+                try:
+                    elem[0].tail
+                except NameError:
+                    pass
+
+        b = ET.TreeBuilder()
+        b.start('root', {})
+        b.start('tag', {})
+        b.end('tag')
+        b.data('ABCD')
+        b.data(X('EFGH'))
+        b.data('IJKL')
+        b.end('root')
+
+        elem = b.close()
+        self.assertEqual(elem[0].tail, 'ABCDEFGHIJKL')
+
+    def test_element_iter(self):
+        # Issue #27863
+        state = {
+            'tag': 'tag',
+            '_children': [None],  # non-Element
+            'attrib': 'attr',
+            'tail': 'tail',
+            'text': 'text',
+        }
+
+        e = ET.Element('tag')
+        try:
+            e.__setstate__(state)
+        except AttributeError:
+            e.__dict__ = state
+
+        it = e.iter()
+        self.assertIs(next(it), e)
+        self.assertRaises(AttributeError, next, it)
+
+    def test_subscr(self):
+        # Issue #27863
+        class X:
+            def __index__(self):
+                del e[:]
+                return 1
+
+        e = ET.Element('elem')
+        e.append(ET.Element('child'))
+        e[:X()]  # shouldn't crash
+
+        e.append(ET.Element('child'))
+        e[0:10:X()]  # shouldn't crash
+
+    def test_ass_subscr(self):
+        # Issue #27863
+        class X:
+            def __index__(self):
+                e[:] = []
+                return 1
+
+        e = ET.Element('elem')
+        for _ in range(10):
+            e.insert(0, ET.Element('child'))
+
+        e[0:10:X()] = []  # shouldn't crash
+
+    def test_treebuilder_start(self):
+        # Issue #27863
+        def element_factory(x, y):
+            return []
+        b = ET.TreeBuilder(element_factory=element_factory)
+
+        b.start('tag', {})
+        b.data('ABCD')
+        self.assertRaises(AttributeError, b.start, 'tag2', {})
+        del b
+        gc_collect()
+
+    def test_treebuilder_end(self):
+        # Issue #27863
+        def element_factory(x, y):
+            return []
+        b = ET.TreeBuilder(element_factory=element_factory)
+
+        b.start('tag', {})
+        b.data('ABCD')
+        self.assertRaises(AttributeError, b.end, 'tag')
+        del b
+        gc_collect()
+
+
 class MutatingElementPath(str):
     def __new__(cls, elem, *args):
         self = str.__new__(cls, *args)
