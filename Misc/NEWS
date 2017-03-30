@@ -46,6 +46,9 @@ Extension Modules
 Library
 -------
 
+- bpo-27863: Fixed multiple crashes in ElementTree caused by race conditions
+  and wrong types.
+
 - bpo-28699: Fixed a bug in pools in multiprocessing.pool that raising an
   exception at the very first of an iterable may swallow the exception or
   make the program hang. Patch by Davin Potts and Xiang Zhang.
