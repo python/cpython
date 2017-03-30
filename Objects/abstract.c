@@ -146,9 +146,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
     m = o->ob_type->tp_as_mapping;
     if (m && m->mp_subscript) {
         PyObject *item = m->mp_subscript(o, key);
-#ifdef Py_DEBUG
         assert((item != NULL) ^ (PyErr_Occurred() != NULL));
-#endif
         return item;
     }
 
@@ -1625,9 +1623,7 @@ PySequence_GetItem(PyObject *s, Py_ssize_t i)
             if (m->sq_length) {
                 Py_ssize_t l = (*m->sq_length)(s);
                 if (l < 0) {
-#ifdef Py_DEBUG
                     assert(PyErr_Occurred());
-#endif
                     return NULL;
                 }
                 i += l;
