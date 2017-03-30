@@ -53,7 +53,6 @@ PyObject *_PyIO_str_write;
 
 PyObject *_PyIO_empty_str;
 PyObject *_PyIO_empty_bytes;
-PyObject *_PyIO_zero;
 
 PyDoc_STRVAR(module_doc,
 "The io module provides the Python interfaces to stream handling. The\n"
@@ -789,9 +788,6 @@ PyInit__io(void)
         goto fail;
     if (!_PyIO_empty_bytes &&
         !(_PyIO_empty_bytes = PyBytes_FromStringAndSize(NULL, 0)))
-        goto fail;
-    if (!_PyIO_zero &&
-        !(_PyIO_zero = PyLong_FromLong(0L)))
         goto fail;
 
     state->initialized = 1;
