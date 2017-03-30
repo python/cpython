@@ -3,6 +3,7 @@ import unittest
 import locale
 import sys
 import codecs
+import warnings
 
 class BaseLocalizedTest(unittest.TestCase):
     #
@@ -196,6 +197,10 @@ class EnUSNumberFormatting(BaseFormattingTest):
         self._test_format("%20.f", -42, grouping=0, out='-42'.rjust(20))
         self._test_format("%+10.f", -4200, grouping=0, out='-4200'.rjust(10))
         self._test_format("%-10.f", 4200, grouping=0, out='4200'.ljust(10))
+
+    def test_format_deprecation(self):
+        with self.assertWarns(DeprecationWarning):
+            locale.format("%-10.f", 4200, grouping=True)
 
     def test_complex_formatting(self):
         # Spaces in formatting string
@@ -449,7 +454,7 @@ class NormalizeTest(unittest.TestCase):
         self.check('ko_kr.euckr', 'ko_KR.eucKR')
         self.check('zh_cn.euc', 'zh_CN.eucCN')
         self.check('zh_tw.euc', 'zh_TW.eucTW')
-        self.check('zh_tw.euctw', 'zh_TW.EUC_TW')
+        self.check('zh_tw.euctw', 'zh_TW.eucTW')
 
     def test_japanese(self):
         self.check('ja', 'ja_JP.eucJP')
@@ -474,9 +479,6 @@ class NormalizeTest(unittest.TestCase):
         self.check('japanese.euc', 'ja_JP.eucJP')
         self.check('japanese.sjis', 'ja_JP.SJIS')
         self.check('jp_jp', 'ja_JP.eucJP')
-
-    def test_en_IN(self):
-        self.check('en_IN', 'en_IN.UTF-8')
 
 
 class TestMiscellaneous(unittest.TestCase):

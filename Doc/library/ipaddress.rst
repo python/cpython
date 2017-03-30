@@ -554,6 +554,9 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
          >>> ip_network('192.0.2.1/32').compare_networks(ip_network('192.0.2.1/32'))
          0
 
+      .. deprecated:: 3.7
+         It uses the same ordering and comparison algorithm as "<", "==", and ">"
+
 
 .. class:: IPv6Network(address, strict=True)
 

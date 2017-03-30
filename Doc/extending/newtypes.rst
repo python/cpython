@@ -1361,9 +1361,9 @@ Here is a desultory example of the implementation of the call function. ::
    newdatatype_call(newdatatypeobject *obj, PyObject *args, PyObject *other)
    {
        PyObject *result;
-       char *arg1;
-       char *arg2;
-       char *arg3;
+       const char *arg1;
+       const char *arg2;
+       const char *arg3;
 
        if (!PyArg_ParseTuple(args, "sss:call", &arg1, &arg2, &arg3)) {
            return NULL;
