@@ -5926,7 +5926,7 @@ os_scandir(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwname
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
     static _PyArg_Parser _parser = {"|O&:scandir", _keywords, 0};
-    path_t path = PATH_T_INITIALIZE("scandir", "path", 1, 0);
+    path_t path = PATH_T_INITIALIZE("scandir", "path", 1, PATH_HAVE_FDOPENDIR);
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         path_converter, &path)) {
@@ -6493,4 +6493,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=5a0be969e3f71660 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5529857101c08b49 input=a9049054013a1b77]*/

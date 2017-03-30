@@ -11161,6 +11161,7 @@ typedef struct {
     unsigned char d_type;
 #endif
     ino_t d_ino;
+    int dir_fd;
 #endif
 } DirEntry;
 
@@ -11210,19 +11211,31 @@ DirEntry_fetch_stat(DirEntry *self, int follow_symlinks)
     PyObject *ub;
 
 #ifdef MS_WINDOWS
-    if (PyUnicode_FSDecoder(self->path, &ub)) {
-        const wchar_t *path = PyUnicode_AsUnicode(ub);
+    if (!PyUnicode_FSDecoder(self->path, &ub))
+        return NULL;
+    const wchar_t *path = PyUnicode_AsUnicode(ub);
 #else /* POSIX */
-    if (PyUnicode_FSConverter(self->path, &ub)) {
-        const char *path = PyBytes_AS_STRING(ub);
+    if (!PyUnicode_FSConverter(self->path, &ub))
+        return NULL;
+    const char *path = PyBytes_AS_STRING(ub);
+    if (self->dir_fd != DEFAULT_DIR_FD) {
+#ifdef HAVE_FSTATAT
+        result = fstatat(self->dir_fd, path, &st,
+                         follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+#else
+        PyErr_SetString(PyExc_NotImplementedError, "can't fetch stat");
+        return NULL;
+#endif /* HAVE_FSTATAT */
+    }
+    else
 #endif
+    {
         if (follow_symlinks)
             result = STAT(path, &st);
         else
             result = LSTAT(path, &st);
-        Py_DECREF(ub);
-    } else
-        return NULL;
+    }
+    Py_DECREF(ub);
 
     if (result != 0)
         return path_object_error(self->path);
@@ -11633,20 +11646,36 @@ DirEntry_from_posix_info(path_t *path, const char *name, Py_ssize_t name_len,
     entry->stat = NULL;
     entry->lstat = NULL;
 
-    joined_path = join_path_filename(path->narrow, name, name_len);
-    if (!joined_path)
-        goto error;
+    if (path->fd != -1) {
+        entry->dir_fd = path->fd;
+        joined_path = NULL;
+    }
+    else {
+        entry->dir_fd = DEFAULT_DIR_FD;
+        joined_path = join_path_filename(path->narrow, name, name_len);
+        if (!joined_path)
+            goto error;
+    }
 
     if (!path->narrow || !PyBytes_Check(path->object)) {
         entry->name = PyUnicode_DecodeFSDefaultAndSize(name, name_len);
-        entry->path = PyUnicode_DecodeFSDefault(joined_path);
+        if (joined_path)
+            entry->path = PyUnicode_DecodeFSDefault(joined_path);
     }
     else {
         entry->name = PyBytes_FromStringAndSize(name, name_len);
-        entry->path = PyBytes_FromString(joined_path);
+        if (joined_path)
+            entry->path = PyBytes_FromString(joined_path);
     }
     PyMem_Free(joined_path);
-    if (!entry->name || !entry->path)
+    if (!entry->name)
+        goto error;
+
+    if (path->fd != -1) {
+        entry->path = entry->name;
+        Py_INCREF(entry->path);
+    }
+    else if (!entry->path)
         goto error;
 
 #ifdef HAVE_DIRENT_D_TYPE
@@ -11673,6 +11702,9 @@ typedef struct {
     int first_time;
 #else /* POSIX */
     DIR *dirp;
+#endif
+#ifdef HAVE_FDOPENDIR
+    int fd;
 #endif
 } ScandirIterator;
 
@@ -11758,6 +11790,10 @@ ScandirIterator_closedir(ScandirIterator *iterator)
 
     iterator->dirp = NULL;
     Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_FDOPENDIR
+    if (iterator->path.fd != -1)
+        rewinddir(dirp);
+#endif
     closedir(dirp);
     Py_END_ALLOW_THREADS
     return;
@@ -11933,7 +11969,7 @@ static PyTypeObject ScandirIteratorType = {
 /*[clinic input]
 os.scandir
 
-    path : path_t(nullable=True) = None
+    path : path_t(nullable=True, allow_fd='PATH_HAVE_FDOPENDIR') = None
 
 Return an iterator of DirEntry objects for given path.
 
@@ -11946,13 +11982,16 @@ If path is None, uses the path='.'.
 
 static PyObject *
 os_scandir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=6eb2668b675ca89e input=e62b08b3cd41f604]*/
+/*[clinic end generated code: output=6eb2668b675ca89e input=b139dc1c57f60846]*/
 {
     ScandirIterator *iterator;
 #ifdef MS_WINDOWS
     wchar_t *path_strW;
 #else
     const char *path_str;
+#ifdef HAVE_FDOPENDIR
+    int fd = -1;
+#endif
 #endif
 
     iterator = PyObject_New(ScandirIterator, &ScandirIteratorType);
@@ -11988,18 +12027,40 @@ os_scandir_impl(PyObject *module, path_t *path)
         goto error;
     }
 #else /* POSIX */
-    if (iterator->path.narrow)
-        path_str = iterator->path.narrow;
-    else
-        path_str = ".";
-
     errno = 0;
-    Py_BEGIN_ALLOW_THREADS
-    iterator->dirp = opendir(path_str);
-    Py_END_ALLOW_THREADS
+#ifdef HAVE_FDOPENDIR
+    if (path->fd != -1) {
+        /* closedir() closes the FD, so we duplicate it */
+        fd = _Py_dup(path->fd);
+        if (fd == -1)
+            goto error;
+
+        Py_BEGIN_ALLOW_THREADS
+        iterator->dirp = fdopendir(fd);
+        Py_END_ALLOW_THREADS
+    }
+    else
+#endif
+    {
+        if (iterator->path.narrow)
+            path_str = iterator->path.narrow;
+        else
+            path_str = ".";
+
+        Py_BEGIN_ALLOW_THREADS
+        iterator->dirp = opendir(path_str);
+        Py_END_ALLOW_THREADS
+    }
 
     if (!iterator->dirp) {
         path_error(&iterator->path);
+#ifdef HAVE_FDOPENDIR
+        if (fd != -1) {
+            Py_BEGIN_ALLOW_THREADS
+            close(fd);
+            Py_END_ALLOW_THREADS
+        }
+#endif
         goto error;
     }
 #endif
