@@ -10,6 +10,9 @@ What's New in Python 2.7.14?
 Core and Builtins
 -----------------
 
+- bpo-29935: Fixed error messages in the index() method of tuple and list
+  when pass indices of wrong type.
+
 - bpo-28598: Support __rmod__ for subclasses of str being called before
   str.__mod__.  Patch by Martijn Pieters.
 
