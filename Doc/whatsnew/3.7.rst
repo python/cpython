@@ -108,6 +108,9 @@ os
 Added support for :class:`bytes` paths in :func:`~os.fwalk`. (Contributed by
 Serhiy Storchaka in :issue:`28682`.)
 
+Added support for :ref:`file descriptors <path_fd>` in :func:`~os.scandir`
+on Unix.  (Contributed by Serhiy Storchaka in :issue:`25996`.)
+
 unittest.mock
 -------------
 
@@ -138,10 +141,19 @@ Optimizations
   in method calls being faster up to 20%. (Contributed by Yury Selivanov and
   INADA Naoki in :issue:`26110`.)
 
+* Searching some unlucky Unicode characters (like Ukrainian capital "Є")
+  in a string was to 25 times slower than searching other characters.
+  Now it is slower only by 3 times in worst case.
+  (Contributed by Serhiy Storchaka in :issue:`24821`.)
+
 * Fast implementation from standard C library is now used for functions
   :func:`~math.tgamma`, :func:`~math.lgamma`, :func:`~math.erf` and
   :func:`~math.erfc` in the :mod:`math` module. (Contributed by Serhiy
   Storchaka in :issue:`26121`.)
+
+* The :func:`os.fwalk` function has been sped up by 2 times.  This was done
+  using the :func:`os.scandir` function.
+  (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
 
 Build and C API Changes
