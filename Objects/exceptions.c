@@ -2488,7 +2488,6 @@ _PyExc_Init(PyObject *bltinmod)
     PRE_INIT(ZeroDivisionError)
     PRE_INIT(SystemError)
     PRE_INIT(ReferenceError)
-    PRE_INIT(BufferError)
     PRE_INIT(MemoryError)
     PRE_INIT(BufferError)
     PRE_INIT(Warning)
@@ -2504,22 +2503,22 @@ _PyExc_Init(PyObject *bltinmod)
     PRE_INIT(ResourceWarning)
 
     /* OSError subclasses */
-    PRE_INIT(ConnectionError);
+    PRE_INIT(ConnectionError)
 
-    PRE_INIT(BlockingIOError);
-    PRE_INIT(BrokenPipeError);
-    PRE_INIT(ChildProcessError);
-    PRE_INIT(ConnectionAbortedError);
-    PRE_INIT(ConnectionRefusedError);
-    PRE_INIT(ConnectionResetError);
-    PRE_INIT(FileExistsError);
-    PRE_INIT(FileNotFoundError);
-    PRE_INIT(IsADirectoryError);
-    PRE_INIT(NotADirectoryError);
-    PRE_INIT(InterruptedError);
-    PRE_INIT(PermissionError);
-    PRE_INIT(ProcessLookupError);
-    PRE_INIT(TimeoutError);
+    PRE_INIT(BlockingIOError)
+    PRE_INIT(BrokenPipeError)
+    PRE_INIT(ChildProcessError)
+    PRE_INIT(ConnectionAbortedError)
+    PRE_INIT(ConnectionRefusedError)
+    PRE_INIT(ConnectionResetError)
+    PRE_INIT(FileExistsError)
+    PRE_INIT(FileNotFoundError)
+    PRE_INIT(IsADirectoryError)
+    PRE_INIT(NotADirectoryError)
+    PRE_INIT(InterruptedError)
+    PRE_INIT(PermissionError)
+    PRE_INIT(ProcessLookupError)
+    PRE_INIT(TimeoutError)
 
     bdict = PyModule_GetDict(bltinmod);
     if (bdict == NULL)
@@ -2566,7 +2565,6 @@ _PyExc_Init(PyObject *bltinmod)
     POST_INIT(ZeroDivisionError)
     POST_INIT(SystemError)
     POST_INIT(ReferenceError)
-    POST_INIT(BufferError)
     POST_INIT(MemoryError)
     POST_INIT(BufferError)
     POST_INIT(Warning)
@@ -2588,43 +2586,43 @@ _PyExc_Init(PyObject *bltinmod)
     }
 
     /* OSError subclasses */
-    POST_INIT(ConnectionError);
+    POST_INIT(ConnectionError)
 
-    POST_INIT(BlockingIOError);
-    ADD_ERRNO(BlockingIOError, EAGAIN);
-    ADD_ERRNO(BlockingIOError, EALREADY);
-    ADD_ERRNO(BlockingIOError, EINPROGRESS);
-    ADD_ERRNO(BlockingIOError, EWOULDBLOCK);
-    POST_INIT(BrokenPipeError);
-    ADD_ERRNO(BrokenPipeError, EPIPE);
+    POST_INIT(BlockingIOError)
+    ADD_ERRNO(BlockingIOError, EAGAIN)
+    ADD_ERRNO(BlockingIOError, EALREADY)
+    ADD_ERRNO(BlockingIOError, EINPROGRESS)
+    ADD_ERRNO(BlockingIOError, EWOULDBLOCK)
+    POST_INIT(BrokenPipeError)
+    ADD_ERRNO(BrokenPipeError, EPIPE)
 #ifdef ESHUTDOWN
-    ADD_ERRNO(BrokenPipeError, ESHUTDOWN);
+    ADD_ERRNO(BrokenPipeError, ESHUTDOWN)
 #endif
-    POST_INIT(ChildProcessError);
-    ADD_ERRNO(ChildProcessError, ECHILD);
-    POST_INIT(ConnectionAbortedError);
-    ADD_ERRNO(ConnectionAbortedError, ECONNABORTED);
-    POST_INIT(ConnectionRefusedError);
-    ADD_ERRNO(ConnectionRefusedError, ECONNREFUSED);
-    POST_INIT(ConnectionResetError);
-    ADD_ERRNO(ConnectionResetError, ECONNRESET);
-    POST_INIT(FileExistsError);
-    ADD_ERRNO(FileExistsError, EEXIST);
-    POST_INIT(FileNotFoundError);
-    ADD_ERRNO(FileNotFoundError, ENOENT);
-    POST_INIT(IsADirectoryError);
-    ADD_ERRNO(IsADirectoryError, EISDIR);
-    POST_INIT(NotADirectoryError);
-    ADD_ERRNO(NotADirectoryError, ENOTDIR);
-    POST_INIT(InterruptedError);
-    ADD_ERRNO(InterruptedError, EINTR);
-    POST_INIT(PermissionError);
-    ADD_ERRNO(PermissionError, EACCES);
-    ADD_ERRNO(PermissionError, EPERM);
-    POST_INIT(ProcessLookupError);
-    ADD_ERRNO(ProcessLookupError, ESRCH);
-    POST_INIT(TimeoutError);
-    ADD_ERRNO(TimeoutError, ETIMEDOUT);
+    POST_INIT(ChildProcessError)
+    ADD_ERRNO(ChildProcessError, ECHILD)
+    POST_INIT(ConnectionAbortedError)
+    ADD_ERRNO(ConnectionAbortedError, ECONNABORTED)
+    POST_INIT(ConnectionRefusedError)
+    ADD_ERRNO(ConnectionRefusedError, ECONNREFUSED)
+    POST_INIT(ConnectionResetError)
+    ADD_ERRNO(ConnectionResetError, ECONNRESET)
+    POST_INIT(FileExistsError)
+    ADD_ERRNO(FileExistsError, EEXIST)
+    POST_INIT(FileNotFoundError)
+    ADD_ERRNO(FileNotFoundError, ENOENT)
+    POST_INIT(IsADirectoryError)
+    ADD_ERRNO(IsADirectoryError, EISDIR)
+    POST_INIT(NotADirectoryError)
+    ADD_ERRNO(NotADirectoryError, ENOTDIR)
+    POST_INIT(InterruptedError)
+    ADD_ERRNO(InterruptedError, EINTR)
+    POST_INIT(PermissionError)
+    ADD_ERRNO(PermissionError, EACCES)
+    ADD_ERRNO(PermissionError, EPERM)
+    POST_INIT(ProcessLookupError)
+    ADD_ERRNO(ProcessLookupError, ESRCH)
+    POST_INIT(TimeoutError)
+    ADD_ERRNO(TimeoutError, ETIMEDOUT)
 
     preallocate_memerrors();
 

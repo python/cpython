@@ -100,7 +100,6 @@ enum_traverse(enumobject *en, visitproc visit, void *arg)
 static PyObject *
 enum_next_long(enumobject *en, PyObject* next_item)
 {
-    static PyObject *one = NULL;
     PyObject *result = en->en_result;
     PyObject *next_index;
     PyObject *stepped_up;
@@ -110,14 +109,9 @@ enum_next_long(enumobject *en, PyObject* next_item)
         if (en->en_longindex == NULL)
             return NULL;
     }
-    if (one == NULL) {
-        one = PyLong_FromLong(1);
-        if (one == NULL)
-            return NULL;
-    }
     next_index = en->en_longindex;
     assert(next_index != NULL);
-    stepped_up = PyNumber_Add(next_index, one);
+    stepped_up = PyNumber_Add(next_index, _PyLong_One);
     if (stepped_up == NULL)
         return NULL;
     en->en_longindex = stepped_up;

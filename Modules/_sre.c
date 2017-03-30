@@ -2041,7 +2041,7 @@ match_group(MatchObject* self, PyObject* args)
 
     switch (size) {
     case 0:
-        result = match_getslice(self, Py_False, Py_None);
+        result = match_getslice(self, _PyLong_Zero, Py_None);
         break;
     case 1:
         result = match_getslice(self, PyTuple_GET_ITEM(args, 0), Py_None);

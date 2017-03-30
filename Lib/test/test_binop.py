@@ -1,7 +1,6 @@
 """Tests for binary operators on subtypes of built-in types."""
 
 import unittest
-from test import support
 from operator import eq, le, ne
 from abc import ABCMeta
 

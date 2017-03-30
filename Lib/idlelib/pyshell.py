@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
 
+import sys
+
 try:
     from tkinter import *
 except ImportError:
@@ -17,7 +19,6 @@ if TkVersion < 8.5:
 
 from code import InteractiveInterpreter
 import getopt
-import io
 import linecache
 import os
 import os.path
@@ -25,7 +26,6 @@ from platform import python_version, system
 import re
 import socket
 import subprocess
-import sys
 import threading
 import time
 import tokenize

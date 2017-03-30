@@ -194,12 +194,6 @@ This means that the following code will print 42::
    i = 42
    f()
 
-There are several cases where Python statements are illegal when used in
-conjunction with nested scopes that contain free variables.
-
-If a variable is referenced in an enclosing scope, it is illegal to delete the
-name.  An error will be reported at compile time.
-
 .. XXX from * also invalid with relative imports (at least currently)
 
 The :func:`eval` and :func:`exec` functions do not have access to the full
