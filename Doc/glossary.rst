@@ -321,19 +321,9 @@ Glossary
       core and with user code.
 
    f-string
-      Short for :dfn:`formatted string literal`, which is a string literal
-      that is prefixed with ``'f'`` or ``'F'``.  F-strings contain
-      replacement fields, which are expressions delimited by curly braces
-      ``{}``.  For example::
-
-         >>> name = "Fred"
-         >>> f"He said his name is {name!r}."
-         "He said his name is 'Fred'."
-         >>> f"He said his name is {repr(name)}."
-         "He said his name is 'Fred'."
-
-      See also the documentation for :ref:`f-strings <f-strings>`, and :pep:`498`,
-      the proposal that added them.
+      String literals prefixed with f or F are commonly called "f-strings"
+      which is short for :dfn:`formatted string literal`.  See also
+      :ref:`f-strings <f-strings>` and :pep:`498`.
 
    file object
       An object exposing a file-oriented API (with methods such as
