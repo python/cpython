@@ -298,6 +298,9 @@ Extension Modules
 Library
 -------
 
+- bpo-27863: Fixed multiple crashes in ElementTree caused by race conditions
+  and wrong types. 
+
 - bpo-25996: Added support of file descriptors in os.scandir() on Unix.
   os.fwalk() is sped up by 2 times by using os.scandir().
 
