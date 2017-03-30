@@ -550,7 +550,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **arg
 no_keyword_error:
     PyErr_Format(PyExc_TypeError,
                  "%.200s() takes no keyword arguments",
-                 method->ml_name, nargs);
+                 method->ml_name);
 
 exit:
     Py_LeaveRecursiveCall();

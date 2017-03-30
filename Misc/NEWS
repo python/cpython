@@ -10,6 +10,13 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29816: Shift operation now has less opportunity to raise OverflowError.
+  ValueError always is raised rather than OverflowError for negative counts.
+  Shifting zero with non-negative count always returns zero.
+
+- bpo-24821: Fixed the slowing down to 25 times in the searching of some
+  unlucky Unicode characters.
+
 - bpo-29894: The deprecation warning is emitted if __complex__ returns an
   instance of a strict subclass of complex.  In a future versions of Python
   this can be an error.
@@ -295,6 +302,26 @@ Library
   time pickled by Python 2.  errors='surrogateescape' should be used for
   successful decoding.
 
+- bpo-29204: Element.getiterator() and the html parameter of XMLParser() were
+  deprecated only in the documentation (since Python 3.2 and 3.4 correspondintly).
+  Now using them emits a deprecation warning.
+
+- bpo-27863: Fixed multiple crashes in ElementTree caused by race conditions
+  and wrong types. 
+
+- bpo-25996: Added support of file descriptors in os.scandir() on Unix.
+  os.fwalk() is sped up by 2 times by using os.scandir().
+
+- bpo-28699: Fixed a bug in pools in multiprocessing.pool that raising an
+  exception at the very first of an iterable may swallow the exception or
+  make the program hang. Patch by Davin Potts and Xiang Zhang.
+
+- bpo-23890: unittest.TestCase.assertRaises() now manually breaks a reference
+  cycle to not keep objects alive longer than expected.
+
+- bpo-29901: The zipapp module now supports general path-like objects, not
+  just pathlib.Path.
+
 - bpo-25803: Avoid incorrect errors raised by Path.mkdir(exist_ok=True)
   when the OS gives priority to errors such as EACCES over EEXIST.
 
@@ -339,7 +366,7 @@ Library
 
 - bpo-29728: Add new :data:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constant.
   Patch by Nathaniel J. Smith.
-  
+
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
 
@@ -394,6 +421,9 @@ Library
 
 - bpo-29534: Fixed different behaviour of Decimal.from_float()
   for _decimal and _pydecimal. Thanks Andrew Nester.
+
+- bpo-10379: locale.format_string now supports the 'monetary' keyword argument,
+  and locale.format is deprecated.
 
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
@@ -792,7 +822,7 @@ Library
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
 
-- Issue #29581: ABCMeta.__new__ now accepts **kwargs, allowing abstract base
+- Issue #29581: ABCMeta.__new__ now accepts ``**kwargs``, allowing abstract base
   classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
 
 Windows
@@ -877,6 +907,10 @@ C API
 Documentation
 -------------
 
+- bpo-19824, bpo-20314, bpo-12518: Improve the documentation for, and links
+  to, template strings by emphasizing their utility for internationalization,
+  and by clarifying some usage constraints.
+
 - bpo-28929: Link the documentation to its source file on GitHub.
 
 - bpo-25008: Document smtpd.py as effectively deprecated and add a pointer to
@@ -896,6 +930,8 @@ Documentation
 
 Build
 -----
+
+- bpo-29643: Fix ``--enable-optimization`` didn't work.
 
 - bpo-27593: sys.version and the platform module python_build(),
   python_branch(), and python_revision() functions now use
