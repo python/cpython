@@ -936,7 +936,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 /*[clinic input]
 @classmethod
 complex.__new__ as complex_new
-    real as r: object(c_default="Py_False") = 0
+    real as r: object(c_default="_PyLong_Zero") = 0
     imag as i: object(c_default="NULL") = 0
 
 Create a complex number from a real part and an optional imaginary part.

@@ -134,7 +134,7 @@ _io__Buffered_read(buffered *self, PyObject **args, Py_ssize_t nargs, PyObject *
     Py_ssize_t n = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:read",
-        _PyIO_ConvertSsize_t, &n)) {
+        _Py_convert_optional_to_ssize_t, &n)) {
         goto exit;
     }
 
@@ -258,7 +258,7 @@ _io__Buffered_readline(buffered *self, PyObject **args, Py_ssize_t nargs, PyObje
     Py_ssize_t size = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
-        _PyIO_ConvertSsize_t, &size)) {
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
 
@@ -500,4 +500,4 @@ _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e37b969b1acaa09c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3cf3262c9b157dc1 input=a9049054013a1b77]*/
