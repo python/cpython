@@ -1705,8 +1705,10 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
             }
             if (max < nargs) {
                 PyErr_Format(PyExc_TypeError,
-                             "Function takes %s %d positional arguments"
+                             "%s%s takes %s %d positional arguments"
                              " (%d given)",
+                             (fname == NULL) ? "Function" : fname,
+                             (fname == NULL) ? "" : "()",
                              (min != INT_MAX) ? "at most" : "exactly",
                              max, nargs);
                 return cleanreturn(0, &freelist);
@@ -1779,8 +1781,10 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
 
     if (skip) {
         PyErr_Format(PyExc_TypeError,
-                     "Function takes %s %d positional arguments"
+                     "%s%s takes %s %d positional arguments"
                      " (%d given)",
+                     (fname == NULL) ? "Function" : fname,
+                     (fname == NULL) ? "" : "()",
                      (Py_MIN(pos, min) < i) ? "at least" : "exactly",
                      Py_MIN(pos, min), nargs);
         return cleanreturn(0, &freelist);
@@ -1826,8 +1830,10 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
             if (!match) {
                 PyErr_Format(PyExc_TypeError,
                              "'%U' is an invalid keyword "
-                             "argument for this function",
-                             key);
+                             "argument for %s%s",
+                             key,
+                             (fname == NULL) ? "this function" : fname,
+                             (fname == NULL) ? "" : "()");
                 return cleanreturn(0, &freelist);
             }
         }
@@ -2070,7 +2076,9 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
     }
     if (parser->max < nargs) {
         PyErr_Format(PyExc_TypeError,
-                     "Function takes %s %d positional arguments (%d given)",
+                     "%s%s takes %s %d positional arguments (%d given)",
+                     (parser->fname == NULL) ? "Function" : parser->fname,
+                     (parser->fname == NULL) ? "" : "()",
                      (parser->min != INT_MAX) ? "at most" : "exactly",
                      parser->max, nargs);
         return cleanreturn(0, &freelist);
@@ -2115,8 +2123,10 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
             if (i < pos) {
                 Py_ssize_t min = Py_MIN(pos, parser->min);
                 PyErr_Format(PyExc_TypeError,
-                             "Function takes %s %d positional arguments"
+                             "%s%s takes %s %d positional arguments"
                              " (%d given)",
+                             (parser->fname == NULL) ? "Function" : parser->fname,
+                             (parser->fname == NULL) ? "" : "()",
                              min < parser->max ? "at least" : "exactly",
                              min, nargs);
             }
@@ -2184,8 +2194,10 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
                 if (!match) {
                     PyErr_Format(PyExc_TypeError,
                                  "'%U' is an invalid keyword "
-                                 "argument for this function",
-                                 keyword);
+                                 "argument for %s%s",
+                                 keyword,
+                                 (parser->fname == NULL) ? "this function" : parser->fname,
+                                 (parser->fname == NULL) ? "" : "()");
                 }
                 return cleanreturn(0, &freelist);
             }
