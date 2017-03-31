@@ -437,7 +437,7 @@ static PyObject *empty_values[1] = { NULL };
 /* #define DEBUG_PYDICT */
 
 
-#ifdef Py_DEBUG
+#ifndef NDEBUG
 static int
 _PyDict_CheckConsistency(PyDictObject *mp)
 {
