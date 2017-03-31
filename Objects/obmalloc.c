@@ -1227,6 +1227,9 @@ _PyObject_Alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
 
     _Py_AllocatedBlocks++;
 
+    if (nelem == 0 || elsize == 0)
+        goto redirect;
+
     assert(nelem <= PY_SSIZE_T_MAX / elsize);
     nbytes = nelem * elsize;
 
@@ -1236,9 +1239,6 @@ _PyObject_Alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
     if (UNLIKELY(running_on_valgrind))
         goto redirect;
 #endif
-
-    if (nelem == 0 || elsize == 0)
-        goto redirect;
 
     if ((nbytes - 1) < SMALL_REQUEST_THRESHOLD) {
         LOCK();
