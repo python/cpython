@@ -126,6 +126,12 @@ The module defines the following functions and data items:
    This is negative if the local DST timezone is east of UTC (as in Western Europe,
    including the UK).  Only use this if ``daylight`` is nonzero.
 
+   .. note::
+
+      This value is determined by the timezone rules in effect at module load time
+      and may be incorrect for times in the past.  It is recommended to use the
+      :attr:`tm_gmtoff` and :attr:`tm_zone` results from :func:`localtime` to
+      obtain timezone information.
 
 .. function:: asctime([t])
 
@@ -260,6 +266,13 @@ The module defines the following functions and data items:
 .. data:: daylight
 
    Nonzero if a DST timezone is defined.
+
+   .. note::
+
+      This value is determined by the timezone rules in effect at module load time
+      and may be incorrect for times in the past.  It is recommended to use the
+      :attr:`tm_gmtoff` and :attr:`tm_zone` results from :func:`localtime` to
+      obtain timezone information.
 
 
 .. function:: get_clock_info(name)
@@ -612,12 +625,26 @@ The module defines the following functions and data items:
    The offset of the local (non-DST) timezone, in seconds west of UTC (negative in
    most of Western Europe, positive in the US, zero in the UK).
 
+   .. note::
+
+      This value is determined by the timezone rules in effect at module load time
+      and may be incorrect for times in the past.  It is recommended to use the
+      :attr:`tm_gmtoff` and :attr:`tm_zone` results from :func:`localtime` to
+      obtain timezone information.
+
 
 .. data:: tzname
 
    A tuple of two strings: the first is the name of the local non-DST timezone, the
    second is the name of the local DST timezone.  If no DST timezone is defined,
    the second string should not be used.
+
+   .. note::
+
+      This value is determined by the timezone rules in effect at module load time
+      and may be incorrect for times in the past.  It is recommended to use the
+      :attr:`tm_gmtoff` and :attr:`tm_zone` results from :func:`localtime` to
+      obtain timezone information.
 
 
 .. function:: tzset()
