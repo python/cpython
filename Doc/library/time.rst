@@ -118,7 +118,8 @@ An explanation of some terminology and conventions is in order.
   +-------------------------+-------------------------+-------------------------+
 
 
-The module defines the following functions and data items:
+Functions
+---------
 
 .. function:: asctime([t])
 
@@ -177,65 +178,6 @@ The module defines the following functions and data items:
 .. function:: clock_settime(clk_id, time)
 
    Set the time of the specified clock *clk_id*.
-
-   Availability: Unix.
-
-   .. versionadded:: 3.3
-
-
-.. data:: CLOCK_HIGHRES
-
-   The Solaris OS has a CLOCK_HIGHRES timer that attempts to use an optimal
-   hardware source, and may give close to nanosecond resolution.  CLOCK_HIGHRES
-   is the nonadjustable, high-resolution clock.
-
-   Availability: Solaris.
-
-   .. versionadded:: 3.3
-
-
-.. data:: CLOCK_MONOTONIC
-
-   Clock that cannot be set and represents monotonic time since some unspecified
-   starting point.
-
-   Availability: Unix.
-
-   .. versionadded:: 3.3
-
-
-.. data:: CLOCK_MONOTONIC_RAW
-
-   Similar to :data:`CLOCK_MONOTONIC`, but provides access to a raw
-   hardware-based time that is not subject to NTP adjustments.
-
-   Availability: Linux 2.6.28 or later.
-
-   .. versionadded:: 3.3
-
-
-.. data:: CLOCK_PROCESS_CPUTIME_ID
-
-   High-resolution per-process timer from the CPU.
-
-   Availability: Unix.
-
-   .. versionadded:: 3.3
-
-
-.. data:: CLOCK_REALTIME
-
-   System-wide real-time clock.  Setting this clock requires appropriate
-   privileges.
-
-   Availability: Unix.
-
-   .. versionadded:: 3.3
-
-
-.. data:: CLOCK_THREAD_CPUTIME_ID
-
-   Thread-specific CPU-time clock.
 
    Availability: Unix.
 
@@ -684,7 +626,67 @@ The module defines the following functions and data items:
       ('EET', 'EEST')
 
 
-The module defines the following data items:
+Constants
+---------
+
+.. data:: CLOCK_HIGHRES
+
+   The Solaris OS has a CLOCK_HIGHRES timer that attempts to use an optimal
+   hardware source, and may give close to nanosecond resolution.  CLOCK_HIGHRES
+   is the nonadjustable, high-resolution clock.
+
+   Availability: Solaris.
+
+   .. versionadded:: 3.3
+
+
+.. data:: CLOCK_MONOTONIC
+
+   Clock that cannot be set and represents monotonic time since some unspecified
+   starting point.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. data:: CLOCK_MONOTONIC_RAW
+
+   Similar to :data:`CLOCK_MONOTONIC`, but provides access to a raw
+   hardware-based time that is not subject to NTP adjustments.
+
+   Availability: Linux 2.6.28 or later.
+
+   .. versionadded:: 3.3
+
+
+.. data:: CLOCK_PROCESS_CPUTIME_ID
+
+   High-resolution per-process timer from the CPU.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. data:: CLOCK_REALTIME
+
+   System-wide real-time clock.  Setting this clock requires appropriate
+   privileges.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. data:: CLOCK_THREAD_CPUTIME_ID
+
+   Thread-specific CPU-time clock.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.3
+
 
 .. data:: altzone
 
