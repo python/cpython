@@ -120,19 +120,6 @@ An explanation of some terminology and conventions is in order.
 
 The module defines the following functions and data items:
 
-.. data:: altzone
-
-   The offset of the local DST timezone, in seconds west of UTC, if one is defined.
-   This is negative if the local DST timezone is east of UTC (as in Western Europe,
-   including the UK).  Only use this if ``daylight`` is nonzero.
-
-   .. note::
-
-      This value is determined by the timezone rules in effect at module load time
-      and may be incorrect for times in the past.  It is recommended to use the
-      :attr:`tm_gmtoff` and :attr:`tm_zone` results from :func:`localtime` to
-      obtain timezone information.
-
 .. function:: asctime([t])
 
    Convert a tuple or :class:`struct_time` representing a time as returned by
@@ -261,18 +248,6 @@ The module defines the following functions and data items:
    local time. If *secs* is not provided or :const:`None`, the current time as
    returned by :func:`.time` is used.  ``ctime(secs)`` is equivalent to
    ``asctime(localtime(secs))``. Locale information is not used by :func:`ctime`.
-
-
-.. data:: daylight
-
-   Nonzero if a DST timezone is defined.
-
-   .. note::
-
-      This value is determined by the timezone rules in effect at module load time
-      and may be incorrect for times in the past.  It is recommended to use the
-      :attr:`tm_gmtoff` and :attr:`tm_zone` results from :func:`localtime` to
-      obtain timezone information.
 
 
 .. function:: get_clock_info(name)
@@ -620,32 +595,6 @@ The module defines the following functions and data items:
    :class:`struct_time` object is returned, from which the components
    of the calendar date may be accessed as attributes.
 
-.. data:: timezone
-
-   The offset of the local (non-DST) timezone, in seconds west of UTC (negative in
-   most of Western Europe, positive in the US, zero in the UK).
-
-   .. note::
-
-      This value is determined by the timezone rules in effect at module load time
-      and may be incorrect for times in the past.  It is recommended to use the
-      :attr:`tm_gmtoff` and :attr:`tm_zone` results from :func:`localtime` to
-      obtain timezone information.
-
-
-.. data:: tzname
-
-   A tuple of two strings: the first is the name of the local non-DST timezone, the
-   second is the name of the local DST timezone.  If no DST timezone is defined,
-   the second string should not be used.
-
-   .. note::
-
-      This value is determined by the timezone rules in effect at module load time
-      and may be incorrect for times in the past.  It is recommended to use the
-      :attr:`tm_gmtoff` and :attr:`tm_zone` results from :func:`localtime` to
-      obtain timezone information.
-
 
 .. function:: tzset()
 
@@ -733,6 +682,38 @@ The module defines the following functions and data items:
       >>> time.tzset()
       >>> time.tzname
       ('EET', 'EEST')
+
+
+The module defines the following data items:
+
+.. data:: altzone
+
+   The offset of the local DST timezone, in seconds west of UTC, if one is defined.
+   This is negative if the local DST timezone is east of UTC (as in Western Europe,
+   including the UK).  Only use this if ``daylight`` is nonzero.  See note.
+
+.. data:: daylight
+
+   Nonzero if a DST timezone is defined.  See note.
+
+.. data:: timezone
+
+   The offset of the local (non-DST) timezone, in seconds west of UTC (negative in
+   most of Western Europe, positive in the US, zero in the UK).  See note.
+
+.. data:: tzname
+
+   A tuple of two strings: the first is the name of the local non-DST timezone, the
+   second is the name of the local DST timezone.  If no DST timezone is defined,
+   the second string should not be used.  See note.
+
+   .. note::
+
+      For the above data items (:data:`altzone`, :data:`daylight`, :data:`timezone`,
+      and :data:`tzname`), the value is determined by the timezone rules in effect
+      at module load time and may be incorrect for times in the past.  It is
+      recommended to use the :attr:`tm_gmtoff` and :attr:`tm_zone` results from
+      :func:`localtime` to obtain timezone information.
 
 
 .. seealso::
