@@ -1227,7 +1227,7 @@ _PyObject_Alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
 
     _Py_AllocatedBlocks++;
 
-    assert(nelem <= PY_SSIZE_T_MAX / elsize);
+    assert(elsize == 0 || nelem <= PY_SSIZE_T_MAX / elsize);
     nbytes = nelem * elsize;
 
 #ifdef WITH_VALGRIND
