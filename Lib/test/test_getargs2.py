@@ -553,7 +553,8 @@ class Keywords_TestCase(unittest.TestCase):
         try:
             getargs_keywords(arg1=(1,2))
         except TypeError as err:
-            self.assertEqual(str(err), "required argument for function 'arg2' (pos 2) not found")
+            self.assertEqual(
+                str(err), "function missing required argument 'arg2' (pos 2)")
         else:
             self.fail('TypeError should have been raised')
 
@@ -626,11 +627,11 @@ class KeywordOnly_TestCase(unittest.TestCase):
             )
         # required arg missing
         with self.assertRaisesRegex(TypeError,
-            r"required argument for function 'required' \(pos 1\) not found"):
+            r"function missing required argument 'required' \(pos 1\)"):
             getargs_keyword_only(optional=2)
 
         with self.assertRaisesRegex(TypeError,
-            r"required argument for function 'required' \(pos 1\) not found"):
+            r"function missing required argument 'required' \(pos 1\)"):
             getargs_keyword_only(keyword_only=3)
 
     def test_too_many_args(self):

@@ -1754,8 +1754,8 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                      * or the end of the format. */
                 }
                 else {
-                    PyErr_Format(PyExc_TypeError,  "required argument "
-                                 "for %.200s%s '%s' (pos %d) not found",
+                    PyErr_Format(PyExc_TypeError,  "%.200s%s missing required "
+                                 "argument '%s' (pos %d)",
                                  (fname == NULL) ? "function" : fname,
                                  (fname == NULL) ? "" : "()",
                                  kwlist[i], i+1);
@@ -2136,8 +2136,8 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
             }
             else {
                 keyword = PyTuple_GET_ITEM(kwtuple, i - pos);
-                PyErr_Format(PyExc_TypeError, "required argument "
-                             "for %.200s%s '%U' (pos %d) not found",
+                PyErr_Format(PyExc_TypeError,  "%.200s%s missing required "
+                             "argument '%U' (pos %d)",
                              (parser->fname == NULL) ? "function" : parser->fname,
                              (parser->fname == NULL) ? "" : "()",
                              keyword, i+1);
