@@ -451,43 +451,43 @@ APIs:
    | :attr:`%c`        | int                 | A single character,            |
    |                   |                     | represented as a C int.        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%d`        | int                 | Exactly equivalent to          |
+   | :attr:`%d`        | int                 | Nearly equivalent to           |
    |                   |                     | ``printf("%d")``.              |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%u`        | unsigned int        | Exactly equivalent to          |
+   | :attr:`%u`        | unsigned int        | Nearly equivalent to           |
    |                   |                     | ``printf("%u")``.              |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%ld`       | long                | Exactly equivalent to          |
+   | :attr:`%ld`       | long                | Nearly equivalent to           |
    |                   |                     | ``printf("%ld")``.             |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%li`       | long                | Exactly equivalent to          |
+   | :attr:`%li`       | long                | Nearly equivalent to           |
    |                   |                     | ``printf("%li")``.             |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lu`       | unsigned long       | Exactly equivalent to          |
+   | :attr:`%lu`       | unsigned long       | Nearly equivalent to           |
    |                   |                     | ``printf("%lu")``.             |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lld`      | long long           | Exactly equivalent to          |
+   | :attr:`%lld`      | long long           | Nearly equivalent to           |
    |                   |                     | ``printf("%lld")``.            |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lli`      | long long           | Exactly equivalent to          |
+   | :attr:`%lli`      | long long           | Nearly equivalent to           |
    |                   |                     | ``printf("%lli")``.            |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%llu`      | unsigned long long  | Exactly equivalent to          |
+   | :attr:`%llu`      | unsigned long long  | Nearly equivalent to           |
    |                   |                     | ``printf("%llu")``.            |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zd`       | Py_ssize_t          | Exactly equivalent to          |
+   | :attr:`%zd`       | Py_ssize_t          | Nearly equivalent to           |
    |                   |                     | ``printf("%zd")``.             |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zi`       | Py_ssize_t          | Exactly equivalent to          |
+   | :attr:`%zi`       | Py_ssize_t          | Nearly equivalent to           |
    |                   |                     | ``printf("%zi")``.             |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zu`       | size_t              | Exactly equivalent to          |
+   | :attr:`%zu`       | size_t              | Nearly equivalent to           |
    |                   |                     | ``printf("%zu")``.             |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%i`        | int                 | Exactly equivalent to          |
+   | :attr:`%i`        | int                 | Nearly equivalent to           |
    |                   |                     | ``printf("%i")``.              |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%x`        | int                 | Exactly equivalent to          |
+   | :attr:`%x`        | int                 | Nearly equivalent to           |
    |                   |                     | ``printf("%x")``.              |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%s`        | char\*              | A null-terminated C character  |
@@ -525,8 +525,8 @@ APIs:
 
    .. note::
 
-      For integer specifiers (d, i, o, u, x, X): If combine, `0` flag specifier
-      will superior than `.number` percision specifier.
+      For integer specifiers (d, i, o, u, x, X): A 0 conversion flag is not
+      ignored when a precision is given.
 
    .. note::
       The width formatter unit is number of characters rather than bytes.
