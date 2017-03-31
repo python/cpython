@@ -3926,16 +3926,16 @@ time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
                                       time_kws,
                                       &hh, &mm, &ss, &us, &tzinfo, &fold))
         return NULL;
+    if (fold != 0 && fold != 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "fold must be either 0 or 1");
+        return NULL;
+    }
     tuple = Py_BuildValue("iiiiO", hh, mm, ss, us, tzinfo);
     if (tuple == NULL)
         return NULL;
     clone = time_new(Py_TYPE(self), tuple, NULL);
     if (clone != NULL) {
-        if (fold != 0 && fold != 1) {
-            PyErr_SetString(PyExc_ValueError,
-                            "fold must be either 0 or 1");
-            return NULL;
-        }
         TIME_SET_FOLD(clone, fold);
     }
     Py_DECREF(tuple);
@@ -5019,17 +5019,16 @@ datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
                                       &y, &m, &d, &hh, &mm, &ss, &us,
                                       &tzinfo, &fold))
         return NULL;
+    if (fold != 0 && fold != 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "fold must be either 0 or 1");
+        return NULL;
+    }
     tuple = Py_BuildValue("iiiiiiiO", y, m, d, hh, mm, ss, us, tzinfo);
     if (tuple == NULL)
         return NULL;
     clone = datetime_new(Py_TYPE(self), tuple, NULL);
-
     if (clone != NULL) {
-        if (fold != 0 && fold != 1) {
-            PyErr_SetString(PyExc_ValueError,
-                            "fold must be either 0 or 1");
-            return NULL;
-        }
         DATE_SET_FOLD(clone, fold);
     }
     Py_DECREF(tuple);
