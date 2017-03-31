@@ -128,7 +128,7 @@ skip_signature(const char *doc)
     return NULL;
 }
 
-#ifndef NDEBUG
+#ifdef Py_DEBUG
 static int
 _PyType_CheckConsistency(PyTypeObject *type)
 {
