@@ -320,6 +320,11 @@ Glossary
       A module written in C or C++, using Python's C API to interact with the
       core and with user code.
 
+   f-string
+      String literals prefixed with ``'f'`` or ``'F'`` are commonly called
+      "f-strings" which is short for
+      :ref:`formatted string literals <f-strings>`.  See also :pep:`498`.
+
    file object
       An object exposing a file-oriented API (with methods such as
       :meth:`read()` or :meth:`write()`) to an underlying resource.  Depending

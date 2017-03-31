@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29935: Fixed error messages in the index() method of tuple, list and deque
+  when pass indices of wrong type.
+
 - bpo-29816: Shift operation now has less opportunity to raise OverflowError.
   ValueError always is raised rather than OverflowError for negative counts.
   Shifting zero with non-negative count always returns zero.
@@ -301,6 +304,14 @@ Library
 - bpo-22005: Implemented unpickling instances of datetime, date and
   time pickled by Python 2.  errors='surrogateescape' should be used for
   successful decoding.
+
+- bpo-29953: Fixed memory leaks in the replace() method of datetime and time
+  objects when pass out of bound fold argument.
+
+- bpo-29942: Fix a crash in itertools.chain.from_iterable when encountering
+  long runs of empty iterables.
+
+- bpo-10030: Sped up reading encrypted ZIP files by 2 times.
 
 - bpo-29204: Element.getiterator() and the html parameter of XMLParser() were
   deprecated only in the documentation (since Python 3.2 and 3.4 correspondintly).
