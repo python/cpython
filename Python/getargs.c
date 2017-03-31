@@ -1584,7 +1584,7 @@ PyArg_ValidateKeywordArguments(PyObject *kwargs)
     }
     if (!_PyDict_HasOnlyStringKeys(kwargs)) {
         PyErr_SetString(PyExc_TypeError,
-                        "keyword arguments must be strings");
+                        "keywords must be strings");
         return 0;
     }
     return 1;
@@ -1822,7 +1822,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
             int match = 0;
             if (!PyUnicode_Check(key)) {
                 PyErr_SetString(PyExc_TypeError,
-                                "keyword arguments must be strings");
+                                "keywords must be strings");
                 return cleanreturn(0, &freelist);
             }
             for (i = pos; i < len; i++) {
@@ -2194,7 +2194,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
 
             if (!PyUnicode_Check(keyword)) {
                 PyErr_SetString(PyExc_TypeError,
-                                "keyword arguments must be strings");
+                                "keywords must be strings");
                 return cleanreturn(0, &freelist);
             }
             match = PySequence_Contains(kwtuple, keyword);

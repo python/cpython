@@ -256,7 +256,7 @@ Overridden parameters
     >>> f(**{1: 3}, **{1: 5})
     Traceback (most recent call last):
       ...
-    TypeError: f() keyword arguments must be strings
+    TypeError: f() keywords must be strings
 
 Unpacking non-sequence
 
