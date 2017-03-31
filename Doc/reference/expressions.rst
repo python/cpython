@@ -1185,7 +1185,7 @@ built-in types.
     true).
 
 * Mappings (instances of :class:`dict`) compare equal if and only if they have
-  equal `(key, value)` pairs. Equality comparison of the keys and elements
+  equal `(key, value)` pairs. Equality comparison of the keys and values
   enforces reflexivity.
 
   Outcomes other than equality are resolved
