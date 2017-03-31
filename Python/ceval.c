@@ -2721,7 +2721,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                             PyObject *key = PyTuple_GET_ITEM(val, 0);
                             if (!PyUnicode_Check(key)) {
                                 PyErr_Format(PyExc_TypeError,
-                                        "%.200s%.200s keywords must be strings",
+                                        "%.200s%.200s keyword arguments must be strings",
                                         PyEval_GetFuncName(func),
                                         PyEval_GetFuncDesc(func));
                             } else {
@@ -3990,7 +3990,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
 
         if (keyword == NULL || !PyUnicode_Check(keyword)) {
             PyErr_Format(PyExc_TypeError,
-                         "%U() keywords must be strings",
+                         "%U() keyword arguments must be strings",
                          co->co_name);
             goto fail;
         }

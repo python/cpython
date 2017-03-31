@@ -1655,7 +1655,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
     nkwargs = (kwargs == NULL) ? 0 : PyDict_GET_SIZE(kwargs);
     if (nargs + nkwargs > len) {
         PyErr_Format(PyExc_TypeError,
-                     "%s%s takes at most %d argument%s (%zd given)",
+                     "%.200s%s takes at most %d argument%s (%zd given)",
                      (fname == NULL) ? "function" : fname,
                      (fname == NULL) ? "" : "()",
                      len,
@@ -1705,9 +1705,9 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
             }
             if (max < nargs) {
                 PyErr_Format(PyExc_TypeError,
-                             "%s%s takes %s %d positional arguments"
+                             "%.200s%s takes %s %d positional arguments"
                              " (%d given)",
-                             (fname == NULL) ? "Function" : fname,
+                             (fname == NULL) ? "function" : fname,
                              (fname == NULL) ? "" : "()",
                              (min != INT_MAX) ? "at most" : "exactly",
                              max, nargs);
@@ -1754,8 +1754,10 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                      * or the end of the format. */
                 }
                 else {
-                    PyErr_Format(PyExc_TypeError, "Required argument "
-                                 "'%s' (pos %d) not found",
+                    PyErr_Format(PyExc_TypeError,  "required argument "
+                                 "for %.200s%s '%s' (pos %d) not found",
+                                 (fname == NULL) ? "function" : fname,
+                                 (fname == NULL) ? "" : "()",
                                  kwlist[i], i+1);
                     return cleanreturn(0, &freelist);
                 }
@@ -1781,9 +1783,9 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
 
     if (skip) {
         PyErr_Format(PyExc_TypeError,
-                     "%s%s takes %s %d positional arguments"
+                     "%.200s%s takes %s %d positional arguments"
                      " (%d given)",
-                     (fname == NULL) ? "Function" : fname,
+                     (fname == NULL) ? "function" : fname,
                      (fname == NULL) ? "" : "()",
                      (Py_MIN(pos, min) < i) ? "at least" : "exactly",
                      Py_MIN(pos, min), nargs);
@@ -1806,8 +1808,10 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
             if (current_arg) {
                 /* arg present in tuple and in dict */
                 PyErr_Format(PyExc_TypeError,
-                             "Argument given by name ('%s') "
+                             "argument for %.200s%s given by name ('%s') "
                              "and position (%d)",
+                             (fname == NULL) ? "function" : fname,
+                             (fname == NULL) ? "" : "()",
                              kwlist[i], i+1);
                 return cleanreturn(0, &freelist);
             }
@@ -1818,7 +1822,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
             int match = 0;
             if (!PyUnicode_Check(key)) {
                 PyErr_SetString(PyExc_TypeError,
-                                "keywords must be strings");
+                                "keyword arguments must be strings");
                 return cleanreturn(0, &freelist);
             }
             for (i = pos; i < len; i++) {
@@ -1830,7 +1834,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
             if (!match) {
                 PyErr_Format(PyExc_TypeError,
                              "'%U' is an invalid keyword "
-                             "argument for %s%s",
+                             "argument for %.200s%s",
                              key,
                              (fname == NULL) ? "this function" : fname,
                              (fname == NULL) ? "" : "()");
@@ -2066,7 +2070,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
     }
     if (nargs + nkwargs > len) {
         PyErr_Format(PyExc_TypeError,
-                     "%s%s takes at most %d argument%s (%zd given)",
+                     "%.200s%s takes at most %d argument%s (%zd given)",
                      (parser->fname == NULL) ? "function" : parser->fname,
                      (parser->fname == NULL) ? "" : "()",
                      len,
@@ -2076,8 +2080,8 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
     }
     if (parser->max < nargs) {
         PyErr_Format(PyExc_TypeError,
-                     "%s%s takes %s %d positional arguments (%d given)",
-                     (parser->fname == NULL) ? "Function" : parser->fname,
+                     "%200s%s takes %s %d positional arguments (%d given)",
+                     (parser->fname == NULL) ? "function" : parser->fname,
                      (parser->fname == NULL) ? "" : "()",
                      (parser->min != INT_MAX) ? "at most" : "exactly",
                      parser->max, nargs);
@@ -2123,17 +2127,19 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
             if (i < pos) {
                 Py_ssize_t min = Py_MIN(pos, parser->min);
                 PyErr_Format(PyExc_TypeError,
-                             "%s%s takes %s %d positional arguments"
+                             "%.200s%s takes %s %d positional arguments"
                              " (%d given)",
-                             (parser->fname == NULL) ? "Function" : parser->fname,
+                             (parser->fname == NULL) ? "function" : parser->fname,
                              (parser->fname == NULL) ? "" : "()",
                              min < parser->max ? "at least" : "exactly",
                              min, nargs);
             }
             else {
                 keyword = PyTuple_GET_ITEM(kwtuple, i - pos);
-                PyErr_Format(PyExc_TypeError, "Required argument "
-                             "'%U' (pos %d) not found",
+                PyErr_Format(PyExc_TypeError, "required argument "
+                             "for %.200s%s '%U' (pos %d) not found",
+                             (parser->fname == NULL) ? "function" : parser->fname,
+                             (parser->fname == NULL) ? "" : "()",
                              keyword, i+1);
             }
             return cleanreturn(0, &freelist);
@@ -2163,8 +2169,10 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
             if (current_arg) {
                 /* arg present in tuple and in dict */
                 PyErr_Format(PyExc_TypeError,
-                             "Argument given by name ('%U') "
+                             "argument for %.200s%s given by name ('%U') "
                              "and position (%d)",
+                             (parser->fname == NULL) ? "function" : parser->fname,
+                             (parser->fname == NULL) ? "" : "()",
                              keyword, i+1);
                 return cleanreturn(0, &freelist);
             }
@@ -2186,7 +2194,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
 
             if (!PyUnicode_Check(keyword)) {
                 PyErr_SetString(PyExc_TypeError,
-                                "keywords must be strings");
+                                "keyword arguments must be strings");
                 return cleanreturn(0, &freelist);
             }
             match = PySequence_Contains(kwtuple, keyword);
@@ -2194,7 +2202,7 @@ vgetargskeywordsfast_impl(PyObject **args, Py_ssize_t nargs,
                 if (!match) {
                     PyErr_Format(PyExc_TypeError,
                                  "'%U' is an invalid keyword "
-                                 "argument for %s%s",
+                                 "argument for %.200s%s",
                                  keyword,
                                  (parser->fname == NULL) ? "this function" : parser->fname,
                                  (parser->fname == NULL) ? "" : "()");
@@ -2377,7 +2385,7 @@ unpack_stack(PyObject **args, Py_ssize_t nargs, const char *name,
         if (name != NULL)
             PyErr_Format(
                 PyExc_TypeError,
-                "%s expected %s%zd arguments, got %zd",
+                "%.200s expected %s%zd arguments, got %zd",
                 name, (min == max ? "" : "at least "), min, nargs);
         else
             PyErr_Format(
@@ -2396,7 +2404,7 @@ unpack_stack(PyObject **args, Py_ssize_t nargs, const char *name,
         if (name != NULL)
             PyErr_Format(
                 PyExc_TypeError,
-                "%s expected %s%zd arguments, got %zd",
+                "%.200s expected %s%zd arguments, got %zd",
                 name, (min == max ? "" : "at most "), max, nargs);
         else
             PyErr_Format(
@@ -2481,7 +2489,7 @@ _PyArg_NoKeywords(const char *funcname, PyObject *kwargs)
         return 1;
     }
 
-    PyErr_Format(PyExc_TypeError, "%s does not take keyword arguments",
+    PyErr_Format(PyExc_TypeError, "%.200s does not take keyword arguments",
                     funcname);
     return 0;
 }
@@ -2498,7 +2506,7 @@ _PyArg_NoStackKeywords(const char *funcname, PyObject *kwnames)
         return 1;
     }
 
-    PyErr_Format(PyExc_TypeError, "%s does not take keyword arguments",
+    PyErr_Format(PyExc_TypeError, "%.200s does not take keyword arguments",
                     funcname);
     return 0;
 }
@@ -2516,7 +2524,7 @@ _PyArg_NoPositional(const char *funcname, PyObject *args)
     if (PyTuple_GET_SIZE(args) == 0)
         return 1;
 
-    PyErr_Format(PyExc_TypeError, "%s does not take positional arguments",
+    PyErr_Format(PyExc_TypeError, "%.200s does not take positional arguments",
                     funcname);
     return 0;
 }
