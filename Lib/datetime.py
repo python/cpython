@@ -694,7 +694,7 @@ class date:
         """
         if (month is None and
             isinstance(year, (bytes, str)) and len(year) == 4 and
-            1 <= ord(year[2:3])&0xFF <= 12):
+            1 <= ord(year[2:3]) <= 12):
             # Pickle support
             if isinstance(year, str):
                 year = year.encode('ascii', 'surrogateescape')
