@@ -830,7 +830,6 @@ class HandlerTests(unittest.TestCase):
         for url, ftp in [
             ("file://ftp.example.com//foo.txt", False),
             ("file://ftp.example.com///foo.txt", False),
-# XXXX bug: fails with OSError, should be URLError
             ("file://ftp.example.com/foo.txt", False),
             ("file://somehost//foo/something.txt", False),
             ("file://localhost//foo/something.txt", False),
@@ -839,7 +838,7 @@ class HandlerTests(unittest.TestCase):
             try:
                 h.file_open(req)
             # XXXX remove OSError when bug fixed
-            except (urllib.error.URLError, OSError):
+            except urllib.error.URLError:
                 self.assertFalse(ftp)
             else:
                 self.assertIs(o.req, req)
@@ -1414,7 +1413,6 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
 
-    # TODO: This should be only for OSX
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):
         bypass = {
@@ -1688,7 +1686,6 @@ class HandlerTests(unittest.TestCase):
         with self.assertRaises(http.client.BadStatusLine):
             handler.do_open(conn, req)
         self.assertTrue(conn.fakesock.closed, "Connection not closed")
-
 
 
 class MiscTests(unittest.TestCase):

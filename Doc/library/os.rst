@@ -2029,6 +2029,9 @@ features:
    attributes of each :class:`os.DirEntry` will be ``bytes``; in all other
    circumstances, they will be of type ``str``.
 
+   This function can also support :ref:`specifying a file descriptor
+   <path_fd>`; the file descriptor must refer to a directory.
+
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
 
@@ -2075,6 +2078,9 @@ features:
 
       The function accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.7
+      Added support for :ref:`file descriptors <path_fd>` on Unix.
+
 
 .. class:: DirEntry
 
@@ -2114,7 +2120,9 @@ features:
       The entry's full path name: equivalent to ``os.path.join(scandir_path,
       entry.name)`` where *scandir_path* is the :func:`scandir` *path*
       argument.  The path is only absolute if the :func:`scandir` *path*
-      argument was absolute.
+      argument was absolute.  If the :func:`scandir` *path*
+      argument was a :ref:`file descriptor <path_fd>`, the :attr:`path`
+      attribute is the same as the :attr:`name` attribute.
 
       The :attr:`path` attribute will be ``bytes`` if the :func:`scandir`
       *path* argument is of type ``bytes`` and ``str`` otherwise.  Use

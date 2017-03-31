@@ -10,6 +10,16 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29935: Fixed error messages in the index() method of tuple, list and deque
+  when pass indices of wrong type.
+
+- bpo-29816: Shift operation now has less opportunity to raise OverflowError.
+  ValueError always is raised rather than OverflowError for negative counts.
+  Shifting zero with non-negative count always returns zero.
+
+- bpo-24821: Fixed the slowing down to 25 times in the searching of some
+  unlucky Unicode characters.
+
 - bpo-29894: The deprecation warning is emitted if __complex__ returns an
   instance of a strict subclass of complex.  In a future versions of Python
   this can be an error.
@@ -293,6 +303,22 @@ Library
 
 - bpo-29931: Fixed comparison check for ipaddress.ip_interface objects.
   Patch by Sanjay Sundaresan.
+
+- bpo-29942: Fix a crash in itertools.chain.from_iterable when encountering
+  long runs of empty iterables.
+
+- bpo-10030: Sped up reading encrypted ZIP files by 2 times.
+
+- bpo-29204: Element.getiterator() and the html parameter of XMLParser() were
+  deprecated only in the documentation (since Python 3.2 and 3.4 correspondintly).
+  Now using them emits a deprecation warning.
+
+- bpo-27863: Fixed multiple crashes in ElementTree caused by race conditions
+  and wrong types. 
+
+- bpo-25996: Added support of file descriptors in os.scandir() on Unix.
+  os.fwalk() is sped up by 2 times by using os.scandir().
+
 
 - bpo-28699: Fixed a bug in pools in multiprocessing.pool that raising an
   exception at the very first of an iterable may swallow the exception or

@@ -96,10 +96,10 @@ called with a non-bytes parameter.
    | :attr:`%x`        | int           | Exactly equivalent to          |
    |                   |               | ``printf("%x")``.              |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%s`        | char\*        | A null-terminated C character  |
+   | :attr:`%s`        | const char\*  | A null-terminated C character  |
    |                   |               | array.                         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%p`        | void\*        | The hex representation of a C  |
+   | :attr:`%p`        | const void\*  | The hex representation of a C  |
    |                   |               | pointer. Mostly equivalent to  |
    |                   |               | ``printf("%p")`` except that   |
    |                   |               | it is guaranteed to start with |
