@@ -2263,6 +2263,10 @@ PyAPI_FUNC(Py_UNICODE*) PyUnicode_AsUnicodeCopy(
 PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     PyObject *op,
     int check_content);
+#elif !defined(NDEBUG)
+/* For asserts that call _PyUnicode_CheckConsistency(), which would
+ * otherwise be a problem when building with asserts but without Py_DEBUG. */
+#define _PyUnicode_CheckConsistency(op, check_content) PyUnicode_Check(op)
 #endif
 
 /* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
