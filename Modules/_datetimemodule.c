@@ -2537,7 +2537,7 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         }
         else if (PyUnicode_Check(state)) {
             if (PyUnicode_GET_LENGTH(state) == _PyDateTime_DATE_DATASIZE &&
-                MONTH_IS_SANE(PyUnicode_READ_CHAR(state, 2) & 0xFF)) {
+                MONTH_IS_SANE(PyUnicode_READ_CHAR(state, 2))) {
                 state = PyUnicode_AsEncodedString(state, "ascii", "surrogateescape");
                 if (state == NULL)
                     return NULL;
