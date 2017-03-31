@@ -568,6 +568,12 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
          attributes are ``default_time_format`` (for the strptime format string)
          and ``default_msec_format`` (for appending the millisecond value).
 
+      .. versionchanged:: 3.7
+	 In a further generalization of the default format string, the
+	 decimal point is now taken from the current locale instead of being
+	 hard-coded as a comma. This value is saved as a class-level
+	 attribute, ``default_decimal_point``.
+
    .. method:: formatException(exc_info)
 
       Formats the specified exception information (a standard exception tuple as

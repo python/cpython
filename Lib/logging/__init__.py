@@ -23,7 +23,7 @@ Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, traceback, warnings, weakref, collections
+import sys, os, time, io, traceback, warnings, weakref, collections, locale
 
 from string import Template
 
@@ -490,7 +490,8 @@ class Formatter(object):
         self.datefmt = datefmt
 
     default_time_format = '%Y-%m-%d %H:%M:%S'
-    default_msec_format = '%s,%03d'
+    default_decimal_point = locale.localeconv().get("decimal_point", ",")
+    default_msec_format = '%s' + default_decimal_point + '%03d'
 
     def formatTime(self, record, datefmt=None):
         """

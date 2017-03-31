@@ -31,6 +31,7 @@ import pickle
 import io
 import gc
 import json
+import locale
 import os
 import queue
 import random
@@ -3240,6 +3241,7 @@ class FormatterTest(unittest.TestCase):
         }
         self.variants = {
         }
+        self.dp = locale.localeconv().get("decimal_point", ",")
 
     def get_record(self, name=None):
         result = dict(self.common)
@@ -3310,10 +3312,12 @@ class FormatterTest(unittest.TestCase):
         r.msecs = 123
         f = logging.Formatter('%(asctime)s %(message)s')
         f.converter = time.gmtime
-        self.assertEqual(f.formatTime(r), '1993-04-21 08:03:00,123')
+        self.assertEqual(f.formatTime(r), 
+                         '1993-04-21 08:03:00%s123' % self.dp)
         self.assertEqual(f.formatTime(r, '%Y:%d'), '1993:21')
         f.format(r)
-        self.assertEqual(r.asctime, '1993-04-21 08:03:00,123')
+        self.assertEqual(r.asctime, 
+                         '1993-04-21 08:03:00%s123' % self.dp)
 
 class TestBufferingFormatter(logging.BufferingFormatter):
     def formatHeader(self, records):
@@ -4366,6 +4370,9 @@ class MiscTestCase(unittest.TestCase):
                      'root', 'threading'}
         support.check__all__(self, logging, blacklist=blacklist)
 
+    def test_decimal_point(self):
+        dp = locale.localeconv().get("decimal_point", ",")
+        self.assertEqual(logging.Formatter.default_decimal_point, dp)
 
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
