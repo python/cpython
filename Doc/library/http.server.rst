@@ -343,9 +343,9 @@ of which this module provides three different variants:
       :func:`os.listdir` to scan the directory, and returns a ``404`` error
       response if the :func:`~os.listdir` fails.
 
-      If the request was mapped to a file, it is opened. Any :exc:`OSError` 
-      exception in opening the requested file is mapped to a ``404``, 
-      ``'File not found'`` error. If there was a ``'If-Modified-Since'`` 
+      If the request was mapped to a file, it is opened. Any :exc:`OSError`
+      exception in opening the requested file is mapped to a ``404``,
+      ``'File not found'`` error. If there was a ``'If-Modified-Since'``
       header in the request, and the file was not modified after this time,
       a ``304``, ``'Not Modified'`` response is sent. Otherwise, the content
       type is guessed by calling the :meth:`guess_type` method, which in turn
