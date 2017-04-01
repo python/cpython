@@ -141,44 +141,55 @@ class RequestHdrsTests(unittest.TestCase):
         mgr = urllib.request.HTTPPasswordMgr()
         add = mgr.add_password
         find_user_pass = mgr.find_user_password
+
         add("Some Realm", "http://example.com/", "joe", "password")
         add("Some Realm", "http://example.com/ni", "ni", "ni")
-        add("c", "http://example.com/foo", "foo", "ni")
-        add("c", "http://example.com/bar", "bar", "nini")
-        add("b", "http://example.com/", "first", "blah")
-        add("b", "http://example.com/", "second", "spam")
-        add("a", "http://example.com", "1", "a")
         add("Some Realm", "http://c.example.com:3128", "3", "c")
         add("Some Realm", "d.example.com", "4", "d")
         add("Some Realm", "e.example.com:3128", "5", "e")
 
+        # For the same realm, password set the highest path is the winner.
         self.assertEqual(find_user_pass("Some Realm", "example.com"),
                          ('joe', 'password'))
-
-        #self.assertEqual(find_user_pass("Some Realm", "http://example.com/ni"),
-        #                ('ni', 'ni'))
-
+        self.assertEqual(find_user_pass("Some Realm", "http://example.com/ni"),
+                         ('joe', 'password'))
         self.assertEqual(find_user_pass("Some Realm", "http://example.com"),
                          ('joe', 'password'))
         self.assertEqual(find_user_pass("Some Realm", "http://example.com/"),
                          ('joe', 'password'))
-        self.assertEqual(
-            find_user_pass("Some Realm", "http://example.com/spam"),
-            ('joe', 'password'))
-        self.assertEqual(
-            find_user_pass("Some Realm", "http://example.com/spam/spam"),
-            ('joe', 'password'))
+        self.assertEqual(find_user_pass("Some Realm",
+                                        "http://example.com/spam"),
+                         ('joe', 'password'))
+
+        self.assertEqual(find_user_pass("Some Realm",
+                                        "http://example.com/spam/spam"),
+                         ('joe', 'password'))
+
+        # You can have different passwords for different paths.
+
+        add("c", "http://example.com/foo", "foo", "ni")
+        add("c", "http://example.com/bar", "bar", "nini")
+
         self.assertEqual(find_user_pass("c", "http://example.com/foo"),
                          ('foo', 'ni'))
+
         self.assertEqual(find_user_pass("c", "http://example.com/bar"),
                          ('bar', 'nini'))
+
+        # For the same path, newer password should be considered.
+
+        add("b", "http://example.com/", "first", "blah")
+        add("b", "http://example.com/", "second", "spam")
+
         self.assertEqual(find_user_pass("b", "http://example.com/"),
                          ('second', 'spam'))
 
         # No special relationship between a.example.com and example.com:
 
+        add("a", "http://example.com", "1", "a")
         self.assertEqual(find_user_pass("a", "http://example.com/"),
                          ('1', 'a'))
+
         self.assertEqual(find_user_pass("a", "http://a.example.com/"),
                          (None, None))
 
