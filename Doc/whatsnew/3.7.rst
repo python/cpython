@@ -114,8 +114,8 @@ on Unix.  (Contributed by Serhiy Storchaka in :issue:`25996`.)
 math
 ----
 
-New ``remainder`` function, implementing the IEEE 754-style remainder
-operation. (Constructed by Mark Dickinson in :issue:`29962`.)
+New :func:`~math.remainder` function, implementing the IEEE 754-style remainder
+operation. (Contributed by Mark Dickinson in :issue:`29962`.)
 
 unittest.mock
 -------------
