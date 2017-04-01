@@ -302,6 +302,9 @@ Extension Modules
 
 Library
 -------
+- bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in 
+  contextlib.contextmanager.
+  Patch by Siddharth Velankar.
 
 - bpo-29962: Add math.remainder operation, implementing remainder
   as specified in IEEE 754.
