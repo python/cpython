@@ -626,8 +626,8 @@ Functions
       ('EET', 'EEST')
 
 
-Constants
----------
+Clock ID Constants
+------------------
 
 .. data:: CLOCK_HIGHRES
 
@@ -688,6 +688,9 @@ Constants
    .. versionadded:: 3.3
 
 
+Time Zone Constants
+-------------------
+
 .. data:: altzone
 
    The offset of the local DST timezone, in seconds west of UTC, if one is defined.
@@ -711,7 +714,7 @@ Constants
 
    .. note::
 
-      For the above data items (:data:`altzone`, :data:`daylight`, :data:`timezone`,
+      For the above Time Zone constants (:data:`altzone`, :data:`daylight`, :data:`timezone`,
       and :data:`tzname`), the value is determined by the timezone rules in effect
       at module load time or the last time :func:`tzset` is called and may be incorrect
       for times in the past.  It is recommended to use the :attr:`tm_gmtoff` and
