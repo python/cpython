@@ -111,6 +111,12 @@ Serhiy Storchaka in :issue:`28682`.)
 Added support for :ref:`file descriptors <path_fd>` in :func:`~os.scandir`
 on Unix.  (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
+math
+----
+
+New ``remainder`` function, implementing the IEEE 754-style remainder
+operation. (Constructed by Mark Dickinson in :issue:`29962`.)
+
 unittest.mock
 -------------
 

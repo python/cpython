@@ -600,6 +600,54 @@ m_atan2(double y, double x)
     return atan2(y, x);
 }
 
+
+/* IEEE 754-style remainder operation: x - n*y where n*y is the nearest
+   multiple of y to x, taking n even in the case of a tie. Assuming an IEEE 754
+   binary floating-point format, the result is always exact. */
+
+static double
+m_remainder(double x, double y)
+{
+    /* Deal with most common case first. */
+    if (Py_IS_FINITE(x) && Py_IS_FINITE(y)) {
+        double absx, absy, c, m, r;
+
+        if (y == 0.0) {
+            return Py_NAN;
+        }
+
+        absx = fabs(x);
+        absy = fabs(y);
+        m = fmod(absx, absy);
+        c = absy - m;
+        if (m < c) {
+            r = m;
+        }
+        else if (m > c) {
+            r = -c;
+        }
+        else {
+            assert(m == c);
+            r = m - 2.0 * fmod(0.5 * (absx - m), absy);
+        }
+        return copysign(1.0, x) * r;
+    }
+
+    /* Special values. */
+    if (Py_IS_NAN(x)) {
+        return x;
+    }
+    if (Py_IS_NAN(y)) {
+        return y;
+    }
+    if (Py_IS_INFINITY(x)) {
+        return Py_NAN;
+    }
+    assert(Py_IS_INFINITY(y));
+    return x;
+}
+
+
 /*
     Various platforms (Solaris, OpenBSD) do nonstandard things for log(0),
     log(-ve), log(NaN).  Here are wrappers for log and log10 that deal with
@@ -1072,6 +1120,12 @@ FUNC1(log1p, m_log1p, 0,
       "log1p($module, x, /)\n--\n\n"
       "Return the natural logarithm of 1+x (base e).\n\n"
       "The result is computed in a way which is accurate for x near zero.")
+FUNC2(remainder, m_remainder,
+      "remainder($module, x, y, /)\n--\n\n"
+      "Difference between x and the closest integer multiple of y.\n\n"
+      "Return x - n*y where n*y is the closest integer multiple of y.\n"
+      "In the case where x is exactly halfway between two multiples of\n"
+      "y, the nearest even value of n is used. The result is always exact.")
 FUNC1(sin, sin, 0,
       "sin($module, x, /)\n--\n\n"
       "Return the sine of x (measured in radians).")
@@ -2258,6 +2312,7 @@ static PyMethodDef math_methods[] = {
     MATH_MODF_METHODDEF
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
+    {"remainder",       math_remainder, METH_VARARGS,   math_remainder_doc},
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},

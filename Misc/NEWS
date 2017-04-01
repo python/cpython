@@ -303,6 +303,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29962: Add math.remainder operation, implementing remainder
+  as specified in IEEE 754.
+
 - bpo-29931: Fixed comparison check for ipaddress.ip_interface objects.
   Patch by Sanjay Sundaresan.
 
