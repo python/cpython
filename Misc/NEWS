@@ -301,6 +301,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29931: Fixed comparison check for ipaddress.ip_interface objects.
+  Patch by Sanjay Sundaresan.
+
 - bpo-29953: Fixed memory leaks in the replace() method of datetime and time
   objects when pass out of bound fold argument.
 
