@@ -512,10 +512,10 @@ class BasicSocketTests(unittest.TestCase):
         fail(cert, 'Xa.com')
         fail(cert, '.a.com')
 
-        # only match one left-most wildcard
+        # only match wildcard in left-most segment
         cert = {'subject': ((('commonName', 'f*.com'),),)}
-        ok(cert, 'foo.com')
-        ok(cert, 'f.com')
+        fail(cert, 'foo.com')
+        fail(cert, 'f.com')
         fail(cert, 'bar.com')
         fail(cert, 'foo.a.com')
         fail(cert, 'bar.foo.com')
@@ -637,7 +637,7 @@ class BasicSocketTests(unittest.TestCase):
         # Issue #17980: avoid denials of service by refusing more than one
         # wildcard per fragment.
         cert = {'subject': ((('commonName', 'a*b.com'),),)}
-        ok(cert, 'axxb.com')
+        fail(cert, 'axxb.com')
         cert = {'subject': ((('commonName', 'a*b.co*'),),)}
         fail(cert, 'axxb.com')
         cert = {'subject': ((('commonName', 'a*b*.com'),),)}
