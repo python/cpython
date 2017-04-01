@@ -642,8 +642,8 @@ Cursor Objects
 
    .. attribute:: arraysize
 
-      This attribute allows you to set the number of rows returned by :meth:`fetchmany`.
-      The default value is 1 meaning a single row would be fetched per call.
+      Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
+      The default value is 1 which means a single row would be fetched per call.
 
    .. attribute:: description
 
