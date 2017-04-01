@@ -1741,8 +1741,11 @@ features:
    Recursive directory creation function.  Like :func:`mkdir`, but makes all
    intermediate-level directories needed to contain the leaf directory.
 
-   The *mode* parameter is passed to :func:`mkdir`; see :ref:`the mkdir()
-   description <mkdir_modebits>` for how it is interpreted.
+   The *mode* parameter is passed to :func:`mkdir` for creating the leaf
+   directory; see :ref:`the mkdir() description <mkdir_modebits>` for how it
+   is interpreted.  To set the file permission bits of any newly-created parent
+   directories you can set the umask before invoking :func:`makedirs`.  The
+   file permission bits of existing parent directories are not changed.
 
    If *exist_ok* is ``False`` (the default), an :exc:`OSError` is raised if the
    target directory already exists.
@@ -1766,6 +1769,10 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.7
+      The *mode* argument no longer affects the file permission bits of
+      newly-created intermediate-level directories.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
@@ -2022,6 +2029,9 @@ features:
    attributes of each :class:`os.DirEntry` will be ``bytes``; in all other
    circumstances, they will be of type ``str``.
 
+   This function can also support :ref:`specifying a file descriptor
+   <path_fd>`; the file descriptor must refer to a directory.
+
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
 
@@ -2068,6 +2078,9 @@ features:
 
       The function accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.7
+      Added support for :ref:`file descriptors <path_fd>` on Unix.
+
 
 .. class:: DirEntry
 
@@ -2107,7 +2120,9 @@ features:
       The entry's full path name: equivalent to ``os.path.join(scandir_path,
       entry.name)`` where *scandir_path* is the :func:`scandir` *path*
       argument.  The path is only absolute if the :func:`scandir` *path*
-      argument was absolute.
+      argument was absolute.  If the :func:`scandir` *path*
+      argument was a :ref:`file descriptor <path_fd>`, the :attr:`path`
+      attribute is the same as the :attr:`name` attribute.
 
       The :attr:`path` attribute will be ``bytes`` if the :func:`scandir`
       *path* argument is of type ``bytes`` and ``str`` otherwise.  Use
