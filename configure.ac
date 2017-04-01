@@ -1274,7 +1274,7 @@ Py_OPT='false'
 AC_MSG_CHECKING(for --enable-optimizations)
 AC_ARG_ENABLE(optimizations, AS_HELP_STRING([--enable-optimizations], [Enable expensive optimizations (PGO, etc).  Disabled by default.]),
 [
-if test "$withval" != no
+if test "$enableval" != no
 then
   Py_OPT='true'
   AC_MSG_RESULT(yes);
@@ -5200,7 +5200,7 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Grammar Objects Python Modules Mac Programs"
+SRCDIRS="Parser Objects Python Modules Programs"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

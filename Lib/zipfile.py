@@ -509,65 +509,63 @@ class ZipInfo (object):
         return self.filename[-1] == '/'
 
 
-class _ZipDecrypter:
-    """Class to handle decryption of files stored within a ZIP archive.
+# ZIP encryption uses the CRC32 one-byte primitive for scrambling some
+# internal keys. We noticed that a direct implementation is faster than
+# relying on binascii.crc32().
 
-    ZIP supports a password-based form of encryption. Even though known
-    plaintext attacks have been found against it, it is still useful
-    to be able to get data out of such a file.
+_crctable = None
+def _gen_crc(crc):
+    for j in range(8):
+        if crc & 1:
+            crc = (crc >> 1) ^ 0xEDB88320
+        else:
+            crc >>= 1
+    return crc
 
-    Usage:
-        zd = _ZipDecrypter(mypwd)
-        plain_char = zd(cypher_char)
-        plain_text = map(zd, cypher_text)
-    """
+# ZIP supports a password-based form of encryption. Even though known
+# plaintext attacks have been found against it, it is still useful
+# to be able to get data out of such a file.
+#
+# Usage:
+#     zd = _ZipDecrypter(mypwd)
+#     plain_bytes = zd(cypher_bytes)
 
-    def _GenerateCRCTable():
-        """Generate a CRC-32 table.
+def _ZipDecrypter(pwd):
+    key0 = 305419896
+    key1 = 591751049
+    key2 = 878082192
 
-        ZIP encryption uses the CRC32 one-byte primitive for scrambling some
-        internal keys. We noticed that a direct implementation is faster than
-        relying on binascii.crc32().
-        """
-        poly = 0xedb88320
-        table = [0] * 256
-        for i in range(256):
-            crc = i
-            for j in range(8):
-                if crc & 1:
-                    crc = ((crc >> 1) & 0x7FFFFFFF) ^ poly
-                else:
-                    crc = ((crc >> 1) & 0x7FFFFFFF)
-            table[i] = crc
-        return table
-    crctable = None
+    global _crctable
+    if _crctable is None:
+        _crctable = list(map(_gen_crc, range(256)))
+    crctable = _crctable
 
-    def _crc32(self, ch, crc):
+    def crc32(ch, crc):
         """Compute the CRC32 primitive on one byte."""
-        return ((crc >> 8) & 0xffffff) ^ self.crctable[(crc ^ ch) & 0xff]
+        return (crc >> 8) ^ crctable[(crc ^ ch) & 0xFF]
 
-    def __init__(self, pwd):
-        if _ZipDecrypter.crctable is None:
-            _ZipDecrypter.crctable = _ZipDecrypter._GenerateCRCTable()
-        self.key0 = 305419896
-        self.key1 = 591751049
-        self.key2 = 878082192
-        for p in pwd:
-            self._UpdateKeys(p)
+    def update_keys(c):
+        nonlocal key0, key1, key2
+        key0 = crc32(c, key0)
+        key1 = (key1 + (key0 & 0xFF)) & 0xFFFFFFFF
+        key1 = (key1 * 134775813 + 1) & 0xFFFFFFFF
+        key2 = crc32(key1 >> 24, key2)
 
-    def _UpdateKeys(self, c):
-        self.key0 = self._crc32(c, self.key0)
-        self.key1 = (self.key1 + (self.key0 & 255)) & 4294967295
-        self.key1 = (self.key1 * 134775813 + 1) & 4294967295
-        self.key2 = self._crc32((self.key1 >> 24) & 255, self.key2)
+    for p in pwd:
+        update_keys(p)
 
-    def __call__(self, c):
-        """Decrypt a single character."""
-        assert isinstance(c, int)
-        k = self.key2 | 2
-        c = c ^ (((k * (k^1)) >> 8) & 255)
-        self._UpdateKeys(c)
-        return c
+    def decrypter(data):
+        """Decrypt a bytes object."""
+        result = bytearray()
+        append = result.append
+        for c in data:
+            k = key2 | 2
+            c ^= ((k * (k^1)) >> 8) & 0xFF
+            update_keys(c)
+            append(c)
+        return bytes(result)
+
+    return decrypter
 
 
 class LZMACompressor:
@@ -953,7 +951,7 @@ class ZipExtFile(io.BufferedIOBase):
             raise EOFError
 
         if self._decrypter is not None:
-            data = bytes(map(self._decrypter, data))
+            data = self._decrypter(data)
         return data
 
     def close(self):
@@ -1411,7 +1409,7 @@ class ZipFile:
                 #  or the MSB of the file time depending on the header type
                 #  and is used to check the correctness of the password.
                 header = zef_file.read(12)
-                h = list(map(zd, header[0:12]))
+                h = zd(header[0:12])
                 if zinfo.flag_bits & 0x8:
                     # compare against the file type from extended local headers
                     check_byte = (zinfo._raw_time >> 8) & 0xff

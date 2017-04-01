@@ -2076,10 +2076,11 @@ expression support in the :mod:`re` module).
 
    The formatting operations described here exhibit a variety of quirks that
    lead to a number of common errors (such as failing to display tuples and
-   dictionaries correctly).  Using the newer :ref:`formatted
-   string literals <f-strings>` or the :meth:`str.format` interface
-   helps avoid these errors.  These alternatives also provide more powerful,
-   flexible and extensible approaches to formatting text.
+   dictionaries correctly).  Using the newer :ref:`formatted string literals
+   <f-strings>`, the :meth:`str.format` interface, or :ref:`template strings
+   <template-strings>` may help avoid these errors.  Each of these
+   alternatives provides their own trade-offs and benefits of simplicity,
+   flexibility, and/or extensibility.
 
 String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.
