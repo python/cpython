@@ -751,10 +751,11 @@ All standard Python exceptions are available as global variables whose names are
 the variables:
 
 .. index::
+   single: PyExc_BaseException
+   single: PyExc_Exception
    single: PyExc_ArithmeticError
    single: PyExc_AssertionError
    single: PyExc_AttributeError
-   single: PyExc_BaseException
    single: PyExc_BlockingIOError
    single: PyExc_BrokenPipeError
    single: PyExc_BufferError
@@ -764,7 +765,6 @@ the variables:
    single: PyExc_ConnectionRefusedError
    single: PyExc_ConnectionResetError
    single: PyExc_EOFError
-   single: PyExc_Exception
    single: PyExc_FileExistsError
    single: PyExc_FileNotFoundError
    single: PyExc_FloatingPointError
@@ -808,13 +808,15 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | C Name                                  | Python Name                     | Notes    |
 +=========================================+=================================+==========+
+| :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | \(1)     |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_Exception`               | :exc:`Exception`                | \(1)     |
++-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ArithmeticError`         | :exc:`ArithmeticError`          | \(1)     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_AssertionError`          | :exc:`AssertionError`           |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_AttributeError`          | :exc:`AttributeError`           |          |
-+-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | \(1)     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_BlockingIOError`         | :exc:`BlockingIOError`          |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -833,8 +835,6 @@ the variables:
 | :c:data:`PyExc_ConnectionResetError`    | :exc:`ConnectionResetError`     |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_EOFError`                | :exc:`EOFError`                 |          |
-+-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_Exception`               | :exc:`Exception`                | \(1)     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_FileExistsError`         | :exc:`FileExistsError`          |          |
 +-----------------------------------------+---------------------------------+----------+
@@ -972,6 +972,7 @@ names are ``PyExc_`` followed by the Python exception name. These have the type
 the variables:
 
 .. index::
+   single: PyExc_Warning
    single: PyExc_BytesWarning
    single: PyExc_DepricationWarning
    single: PyExc_FutureWarning
@@ -982,11 +983,12 @@ the variables:
    single: PyExc_SyntaxWarning
    single: PyExc_UnicodeWarning
    single: PyExc_UserWarning
-   single: PyExc_Warning
 
 +------------------------------------------+---------------------------------+----------+
 | C Name                                   | Python Name                     | Notes    |
 +==========================================+=================================+==========+
+| :c:data:`PyExc_Warning`                  | :exc:`Warning`                  | \(1)     |
++------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_BytesWarning`             | :exc:`BytesWarning`             |          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_DeprecationWarning`       | :exc:`DeprecationWarning`       |          |
@@ -1006,8 +1008,6 @@ the variables:
 | :c:data:`PyExc_UnicodeWarning`           | :exc:`UnicodeWarning`           |          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_UserWarning`              | :exc:`UserWarning`              |          |
-+------------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_Warning`                  | :exc:`Warning`                  | \(1)     |
 +------------------------------------------+---------------------------------+----------+
 
 .. versionadded:: 3.2
