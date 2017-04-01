@@ -9,6 +9,7 @@ __author__ = "George Boutsioukis <gboutsioukis@gmail.com>"
 
 import logging
 import itertools
+from collections import defaultdict
 
 from . import pytree
 from .btm_utils import reduce_tree
@@ -96,7 +97,7 @@ class BottomMatcher(object):
            A dictionary of node matches with fixers as the keys
         """
         current_ac_node = self.root
-        results = {}
+        results = defaultdict(list)
         for leaf in leaves:
             current_ast_node = leaf
             while current_ast_node:
@@ -116,7 +117,7 @@ class BottomMatcher(object):
                     #token matches
                     current_ac_node = current_ac_node.transition_table[node_token]
                     for fixer in current_ac_node.fixers:
-                        results.setdefault(fixer, []).append(current_ast_node)
+                        results[fixer].append(current_ast_node)
                 else:
                     #matching failed, reset automaton
                     current_ac_node = self.root
@@ -130,7 +131,7 @@ class BottomMatcher(object):
                         #token matches
                         current_ac_node = current_ac_node.transition_table[node_token]
                         for fixer in current_ac_node.fixers:
-                            results.setdefault(fixer, []).append(current_ast_node)
+                            results[fixer].append(current_ast_node)
 
                 current_ast_node = current_ast_node.parent
         return results
