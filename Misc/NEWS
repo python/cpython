@@ -10,6 +10,8 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29949: Fix memory usage regression of set and frozenset object.
+
 - bpo-29935: Fixed error messages in the index() method of tuple, list and deque
   when pass indices of wrong type.
 
