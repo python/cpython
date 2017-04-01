@@ -640,6 +640,11 @@ Cursor Objects
       .. versionchanged:: 3.6
          Added support for the ``REPLACE`` statement.
 
+   .. attribute:: arraysize
+
+      This attribute allows you to set the number of rows returned by :meth:`fetchmany`.
+      The default value is 1 meaning a single row would be fetched per call.
+
    .. attribute:: description
 
       This read-only attribute provides the column names of the last query. To
