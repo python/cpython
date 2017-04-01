@@ -627,6 +627,33 @@ m_remainder(double x, double y)
             r = -c;
         }
         else {
+            /*
+               Here absx is exactly halfway between two multiples of absy,
+               and we need to choose the even multiple. x now has the form
+
+                   absx = n * absy + m
+
+               for some integer n (recalling that m = 0.5*absy at this point).
+               If n is even we want to return m; if n is odd, we need to
+               return -m.
+
+               So
+
+                   0.5 * (absx - m) = (n/2) * absy
+
+               and now reducing modulo absy gives us:
+
+                                                  | m, if n is odd
+                   fmod(0.5 * (absx - m), absy) = |
+                                                  | 0, if n is even
+
+               Now m - 2.0 * fmod(...) gives the desired result: m
+               if n is even, -m if m is odd.
+
+               Note that all steps in fmod(0.5 * (absx - m), absy)
+               will be computed exactly, with no rounding error
+               introduced.
+            */
             assert(m == c);
             r = m - 2.0 * fmod(0.5 * (absx - m), absy);
         }
