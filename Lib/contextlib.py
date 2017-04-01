@@ -88,7 +88,7 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
             try:
                 next(self.gen)
             except StopIteration:
-                return None
+                return False
             else:
                 raise RuntimeError("generator didn't stop")
         else:
@@ -102,12 +102,7 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 # Suppress StopIteration *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration
                 # raised inside the "with" statement from being suppressed.
-                # Conform to PEP 8 - "Either all return statements in a function
-                # should return an expression, or none of them should".
-                if exc is not value:
-                    return True
-                else:
-                    return False
+                return exc is not value
             except RuntimeError as exc:
                 # Don't re-raise the passed in exception. (issue27122)
                 if exc is value:
@@ -115,7 +110,7 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 # Likewise, avoid suppressing if a StopIteration exception
                 # was passed to throw() and later wrapped into a RuntimeError
                 # (see PEP 479).
-                if exc.__cause__ is value and type is StopIteration:
+                if type is StopIteration and exc.__cause__ is value: 
                     return False
                 raise
             except:
@@ -126,9 +121,9 @@ class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
                 # fixes the impedance mismatch between the throw() protocol
                 # and the __exit__() protocol.
                 #
-                if sys.exc_info()[1] is not value:
-                    raise
-                return None
+                if sys.exc_info()[1] is value:
+                    return False
+                raise
             else:
                 raise RuntimeError("generator didn't stop after throw()")
 

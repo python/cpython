@@ -152,6 +152,27 @@ def woohoo():
         else:
             self.fail('StopIteration was suppressed')
 
+    def test_contextmanager_do_not_unchain_non_stopiteration_exceptions(self):
+        code = """\
+from __future__ import generator_stop
+from contextlib import contextmanager
+@contextmanager
+def test_issue29692():
+    try:
+        yield
+    except Exception as exc:
+        raise RuntimeError from exc
+"""
+        locals = {}
+        exec(code, locals, locals)
+        test_issue29692 = locals['test_issue29692']
+
+        try:
+            with test_issue29692():
+                raise ZeroDivisionError
+        except Exception as ex:
+            self.assertIs(type(ex), RuntimeError)
+
     def _create_contextmanager_attribs(self):
         def attribs(**kw):
             def decorate(func):
