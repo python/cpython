@@ -713,9 +713,9 @@ Constants
 
       For the above data items (:data:`altzone`, :data:`daylight`, :data:`timezone`,
       and :data:`tzname`), the value is determined by the timezone rules in effect
-      at module load time and may be incorrect for times in the past.  It is
-      recommended to use the :attr:`tm_gmtoff` and :attr:`tm_zone` results from
-      :func:`localtime` to obtain timezone information.
+      at module load time or the last time :func:`tzset` is called and may be incorrect
+      for times in the past.  It is recommended to use the :attr:`tm_gmtoff` and
+      :attr:`tm_zone` results from :func:`localtime` to obtain timezone information.
 
 
 .. seealso::
