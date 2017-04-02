@@ -303,6 +303,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29654: Support If-Modified-Since HTTP header (browser cache).  Patch
+  by Pierre Quentel.
+
 - bpo-29931: Fixed comparison check for ipaddress.ip_interface objects.
   Patch by Sanjay Sundaresan.
 
