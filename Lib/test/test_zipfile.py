@@ -2140,7 +2140,7 @@ class CommandLineTest(unittest.TestCase):
     def zipfilecmd_failure(self, *args):
         return script_helper.assert_python_failure('-m', 'zipfile', *args)
 
-    def test_bad_use(self, *args):
+    def test_bad_use(self):
         rc, out, err = self.zipfilecmd_failure()
         self.assertEqual(out, b'')
         self.assertIn(b'usage', err.lower())
