@@ -239,6 +239,14 @@ def _dnsname_match(dn, hostname):
         raise CertificateError(
             "wildcard can only be present in left most segment: " + repr(dn))
 
+    if wildcards > 1:
+        # Issue #17980: avoid denials of service by refusing more
+        # than one wildcard per fragment.  A survey of established
+        # policy among SSL implementations showed it to be a
+        # reasonable choice.
+        raise CertificateError(
+            "too many wildcards in certificate DNS name: " + repr(dn))
+
     # speed up common case w/o wildcards
     if not wildcards:
         return dn.lower() == hostname.lower()
