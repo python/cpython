@@ -90,7 +90,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
    a `decinteger` beginning with 0 raises a :exc:`ValueError`.  If *base* is not
    ``0``, it must be between ``2`` and ``36``, inclusive.  Leading spaces and single
    underscores after a base specifier and between digits are ignored.  If there are
-   no digits, :exc:`ValueError` will be raised. 
+   no digits, :exc:`ValueError` will be raised.
 
 
 .. c:function:: PyObject* PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
