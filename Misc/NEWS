@@ -11,7 +11,7 @@ Core and Builtins
 -----------------
 
 - bpo-29960: Preserve generator state when _random.Random.setstate()
-  raises an exception.
+  raises an exception.  Patch by Bryan Olson.
 
 - bpo-29949: Fix memory usage regression of set and frozenset object.
 
