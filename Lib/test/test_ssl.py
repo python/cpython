@@ -552,8 +552,8 @@ class BasicSocketTests(unittest.TestCase):
         # are supported.
         idna = 'www*.pythön.org'.encode("idna").decode("ascii")
         cert = {'subject': ((('commonName', idna),),)}
-        ok(cert, 'www.pythön.org'.encode("idna").decode("ascii"))
-        ok(cert, 'www1.pythön.org'.encode("idna").decode("ascii"))
+        fail(cert, 'www.pythön.org'.encode("idna").decode("ascii"))
+        fail(cert, 'www1.pythön.org'.encode("idna").decode("ascii"))
         fail(cert, 'ftp.pythön.org'.encode("idna").decode("ascii"))
         fail(cert, 'pythön.org'.encode("idna").decode("ascii"))
 
