@@ -7,16 +7,6 @@ import unittest
 cET = test_support.import_module('xml.etree.cElementTree')
 
 
-# cElementTree specific tests
-
-def sanity():
-    """
-    Import sanity.
-
-    >>> from xml.etree import cElementTree
-    """
-
-
 @unittest.skipUnless(cET, 'requires _elementtree')
 class MiscTests(unittest.TestCase):
     # Issue #8651.
@@ -69,21 +59,10 @@ def test_main():
 
     # Run the tests specific to the C implementation
     test_support.run_unittest(MiscTests)
-    test_support.run_doctest(test_xml_etree_c, verbosity=True)
 
-    # Assign the C implementation before running the doctests
-    # Patch the __name__, to prevent confusion with the pure Python test
-    pyET = test_xml_etree.ET
-    py__name__ = test_xml_etree.__name__
-    test_xml_etree.ET = cET
-    if __name__ != '__main__':
-        test_xml_etree.__name__ = __name__
-    try:
-        # Run the same test suite as xml.etree.ElementTree
-        test_xml_etree.test_main(module_name='xml.etree.cElementTree')
-    finally:
-        test_xml_etree.ET = pyET
-        test_xml_etree.__name__ = py__name__
+    # Run the same test suite as the Python module
+    test_xml_etree.test_main(module=cET)
+
 
 if __name__ == '__main__':
     test_main()

@@ -131,6 +131,11 @@ Build
 - Issue #28768: Fix implicit declaration of function _setmode. Patch by
   Masayuki Yamamoto
 
+Tests
+-----
+
+- bpo-15083: Convert ElementTree doctests to unittests.
+
 
 What's New in Python 2.7.13
 ===========================
