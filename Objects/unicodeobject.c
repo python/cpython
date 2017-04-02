@@ -15120,15 +15120,13 @@ onError:
 
 PyDoc_STRVAR(unicode_doc,
 "str(object='') -> str\n\
-str(object, encoding=\"utf-8\", errors=\"strict\") -> str\n\
+str(object, encoding='utf-8', errors='strict') -> str\n\
 \n\
 Create a new string object from the given object. If encoding or\n\
 errors is specified, then the object must expose a data buffer\n\
 that will be decoded using the given encoding and error handler.\n\
 Otherwise, returns the result of object.__str__() (if defined)\n\
-or repr(object).\n\
-encoding defaults to sys.getdefaultencoding().\n\
-errors defaults to 'strict'.");
+or repr(object).");
 
 static PyObject *unicode_iter(PyObject *seq);
 
