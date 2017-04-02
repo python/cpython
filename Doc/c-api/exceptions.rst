@@ -847,8 +847,6 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_MemoryError`             | :exc:`MemoryError`              |          |
 +-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_ModuleNotFoundError`     | :exc:`ModuleNotFoundError`      |          |
-+-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_NameError`               | :exc:`NameError`                |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_NotADirectoryError`      | :exc:`NotADirectoryError`       |          |
@@ -912,9 +910,6 @@ the variables:
 
 .. versionadded:: 3.5
    :c:data:`PyExc_StopAsyncIteration` and :c:data:`PyExc_RecursionError`.
-
-.. versionadded:: 3.6
-   :c:data:`PyExc_ModuleNotFoundError`.
 
 These are compatibility aliases to :c:data:`PyExc_OSError`:
 
