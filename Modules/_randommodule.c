@@ -376,7 +376,7 @@ random_setstate(RandomObject *self, PyObject *state)
         return NULL;
     }
     self->index = (int)index;
-    for (i=0; i<N; i++)
+    for (i = 0; i < N; i++)
         self->state[i] = new_state[i];
 
     Py_RETURN_NONE;
