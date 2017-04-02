@@ -234,8 +234,7 @@ def _dnsname_match(dn, hostname):
 
     wildcards = leftmost.count('*')
     if wildcards == 1 and len(leftmost) > 1:
-        """ Only match wildcard in leftmost segment.
-        """
+        # Only match wildcard in leftmost segment.
         raise CertificateError(
             "wildcard can only be present in left most segment: " + repr(dn))
 

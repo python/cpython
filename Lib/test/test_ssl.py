@@ -512,7 +512,8 @@ class BasicSocketTests(unittest.TestCase):
         fail(cert, 'Xa.com')
         fail(cert, '.a.com')
 
-        # only match wildcard in left-most segment
+        # only match wildcards when they are the only thing
+        # in left-most segment
         cert = {'subject': ((('commonName', 'f*.com'),),)}
         fail(cert, 'foo.com')
         fail(cert, 'f.com')
