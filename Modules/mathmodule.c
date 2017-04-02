@@ -619,6 +619,27 @@ m_remainder(double x, double y)
         absx = fabs(x);
         absy = fabs(y);
         m = fmod(absx, absy);
+
+        /*
+           Warning: some subtlety here. What we *want* to know at this point is
+           whether the remainder m is less than, equal to, or greater than half
+           of absy. However, we can't do that comparison directly because we
+           can't be sure that 0.5*absy is representable (the mutiplication
+           might incur precision loss due to underflow). So instead we compare
+           m with the complement c = absy - m: m < 0.5*absy if and only if m <
+           c, and so on. The catch is that absy - m might also not be
+           representable, but it turns out that it doesn't matter:
+
+           - if m > 0.5*absy then absy - m is exactly representable, by
+             Sterbenz's lemma, so m > c
+           - if m == 0.5*absy then again absy - m is exactly representable
+             and m == c
+           - if m < 0.5*absy then either (i) 0.5*absy is exactly representable,
+             in which case 0.5*absy < absy - m, so 0.5*absy <= c and hence m <
+             c, or (ii) absy is tiny, either subnormal or in the lowest normal
+             binade. Then absy - m is exactly representable and again m < c.
+        */
+
         c = absy - m;
         if (m < c) {
             r = m;
