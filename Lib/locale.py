@@ -245,7 +245,7 @@ def format_string(f, val, grouping=False, monetary=False):
 def format(percent, value, grouping=False, monetary=False, *additional):
     """Deprecated, use format_string instead."""
     warnings.warn(
-        "This method will be removed in a future version of Python."
+        "This method will be removed in a future version of Python. "
         "Use 'locale.format_string()' instead.",
         DeprecationWarning, stacklevel=2
     )
