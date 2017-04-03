@@ -1008,9 +1008,9 @@ The module defines the following classes, functions and decorators:
 
    :data:`ClassVar` is not a class itself, and should not
    be used with :func:`isinstance` or :func:`issubclass`.
-   Note that :data:`ClassVar` does not change Python runtime behavior;
-   it can be used by 3rd party type checkers, so that the following
-   code might flagged as an error by those::
+   :data:`ClassVar` does not change Python runtime behavior, but
+   it can be used by third-party type checkers. For example, a type checker
+   might flag the following code as an error::
 
       enterprise_d = Starship(3000)
       enterprise_d.stats = {} # Error, setting class variable on instance
