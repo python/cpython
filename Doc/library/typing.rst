@@ -671,13 +671,13 @@ The module defines the following classes, functions and decorators:
 .. class:: Counter(collections.Counter, Dict[T, int])
 
    A generic version of :class:`collections.Counter`.
-   
+
    .. versionadded:: 3.6.1
 
 .. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
 
    A generic version of :class:`collections.ChainMap`.
-   
+
    .. versionadded:: 3.6.1
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
@@ -764,7 +764,7 @@ The module defines the following classes, functions and decorators:
    and ``BinaryIO`` for respectively ``IO[str]`` and ``IO[bytes]``.
    These represent the types of I/O streams such as returned by
    :func:`open`.
-   
+
    These types are also accessible directly as ``typing.IO``,
    ``typing.TextIO``, and ``typing.BinaryIO``.
 
@@ -778,7 +778,7 @@ The module defines the following classes, functions and decorators:
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
-   
+
    These types are also accessible directly as ``typing.Pattern``
    and ``typing.Match``.
 
@@ -811,14 +811,14 @@ The module defines the following classes, functions and decorators:
    giving a dict mapping field names to types, and ``_field_defaults``, a dict
    mapping field names to default values.  (The field names are in the
    ``_fields`` attribute, which is part of the namedtuple API.)
-   
+
    ``NamedTuple`` subclasses can also have docstrings and methods::
-   
+
       class Employee(NamedTuple):
           """Represents an employee."""
           name: str
           id: int = 3
-          
+
           def __repr__(self) -> str:
               return f'<Employee {self.name}, id={self.id}>'
 
