@@ -22,6 +22,21 @@ def coding_checker(self, coder):
     return check
 
 
+def create_stream_rw(filename, mode='r', encoding=None, errors='strict', buffering=1):
+    if encoding is not None and \
+       'b' not in mode:
+        # Force opening of the file in binary mode
+        mode = mode + 'b'
+    file = open(filename, mode, buffering)
+    if encoding is None:
+        return file
+    info = codecs.lookup(encoding)
+    srw = codecs.StreamReaderWriter(file, info.streamreader, info.streamwriter, errors)
+    # Add attributes to simplify introspection
+    srw.encoding = encoding
+    return srw
+
+
 class Queue(object):
     """
     queue: write bytes at one end, read bytes from the other end
@@ -657,7 +672,7 @@ class UTF16Test(ReadTest, unittest.TestCase):
         with open(support.TESTFN, 'wb') as fp:
             fp.write(s)
         with support.check_warnings(('', DeprecationWarning)):
-            reader = codecs.open(support.TESTFN, 'U', encoding=self.encoding)
+            reader = create_stream_rw(support.TESTFN, 'U', encoding=self.encoding)
         with reader:
             self.assertEqual(reader.read(), s1)
 
@@ -1792,7 +1807,7 @@ class CodecsModuleTest(unittest.TestCase):
         self.addCleanup(support.unlink, support.TESTFN)
         for mode in ('w', 'r', 'r+', 'w+', 'a', 'a+'):
             with self.subTest(mode), \
-                    codecs.open(support.TESTFN, mode, 'ascii') as file:
+                    create_stream_rw(support.TESTFN, mode, 'ascii') as file:
                 self.assertIsInstance(file, codecs.StreamReaderWriter)
 
     def test_undefined(self):
@@ -2608,7 +2623,7 @@ class BomTest(unittest.TestCase):
         self.addCleanup(support.unlink, support.TESTFN)
         for encoding in tests:
             # Check if the BOM is written only once
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with create_stream_rw(support.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data)
                 f.write(data)
                 f.seek(0)
@@ -2617,7 +2632,7 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data * 2)
 
             # Check that the BOM is written after a seek(0)
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with create_stream_rw(support.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data[0])
                 self.assertNotEqual(f.tell(), 0)
                 f.seek(0)
@@ -2626,7 +2641,7 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data)
 
             # (StreamWriter) Check that the BOM is written after a seek(0)
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with create_stream_rw(support.TESTFN, 'w+', encoding=encoding) as f:
                 f.writer.write(data[0])
                 self.assertNotEqual(f.writer.tell(), 0)
                 f.writer.seek(0)
@@ -2636,7 +2651,7 @@ class BomTest(unittest.TestCase):
 
             # Check that the BOM is not written after a seek() at a position
             # different than the start
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with create_stream_rw(support.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data)
                 f.seek(f.tell())
                 f.write(data)
@@ -2645,7 +2660,7 @@ class BomTest(unittest.TestCase):
 
             # (StreamWriter) Check that the BOM is not written after a seek()
             # at a position different than the start
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with create_stream_rw(support.TESTFN, 'w+', encoding=encoding) as f:
                 f.writer.write(data)
                 f.writer.seek(f.writer.tell())
                 f.writer.write(data)
