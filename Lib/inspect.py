@@ -297,7 +297,7 @@ def isabstract(object):
         # TPFLAGS_IS_ABSTRACT should have been accurate.
         return False
     # It looks like ABCMeta.__new__ has not finished running yet; we're
-    # probably in __init_subcalss_. We'll look for abstractmethods manually.
+    # probably in __init_subcalss__. We'll look for abstractmethods manually.
     for name, value in object.__dict__.items():
         if getattr(value, "__isabstractmethod__", False):
             return True
