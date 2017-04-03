@@ -812,7 +812,7 @@ The module defines the following classes, functions and decorators:
    mapping field names to default values.  (The field names are in the
    ``_fields`` attribute, which is part of the namedtuple API.)
    
-   Classes can also have docstrings and methods::
+   ``NamedTuple`` subclasses can also have docstrings and methods::
    
       class Employee(NamedTuple):
           """Represents an employee."""
