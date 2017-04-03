@@ -763,7 +763,6 @@ the variables:
    single: PyExc_KeyboardInterrupt
    single: PyExc_LookupError
    single: PyExc_MemoryError
-   single: PyExc_ModuleNotFoundError
    single: PyExc_NameError
    single: PyExc_NotADirectoryError
    single: PyExc_NotImplementedError
