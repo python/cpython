@@ -877,7 +877,8 @@ class ContextTests(unittest.TestCase):
         with self.assertRaisesRegex(ssl.SSLError, "No cipher can be selected"):
             ctx.set_ciphers("^$:,;?*'dorothyx")
 
-    @unittest.skipIf(ssl.OPENSSL_VERSION_INFO < (1, 0, 2, 0, 0), 'OpenSSL too old')
+    @unittest.skipIf(ssl._OPENSSL_API_VERSION < (1, 0, 2, 0, 0),
+                     'OpenSSL too old')
     def test_get_ciphers(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         ctx.set_ciphers('AESGCM')
@@ -3595,8 +3596,11 @@ def test_main(verbose=False):
                     break
             else:
                 plat = repr(platform.platform())
-        print("test_ssl: testing with %r %r" %
-            (ssl.OPENSSL_VERSION, ssl.OPENSSL_VERSION_INFO))
+        print("test_ssl: testing with %r %r"
+              % (ssl.OPENSSL_VERSION, ssl.OPENSSL_VERSION_INFO))
+        # ssl._OPENSSL_API_VERSION is a CPython implementation detail
+        if hasattr(ssl, '_OPENSSL_API_VERSION'):
+            print(f"          API version {ssl._OPENSSL_API_VERSION}")
         print("          under %s" % plat)
         print("          HAS_SNI = %r" % ssl.HAS_SNI)
         print("          OP_ALL = 0x%8x" % ssl.OP_ALL)
