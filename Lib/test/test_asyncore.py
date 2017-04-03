@@ -606,6 +606,9 @@ class BaseTestAPI(unittest.TestCase):
         # Note: this might fail on some platforms as OOB data is
         # tenuously supported and rarely used.
 
+        if sys.platform == "darwin" and self.use_poll:
+            self.skipTest("poll may fail on macOS; see issue #28087")
+
         class TestClient(BaseClient):
             def handle_expt(self):
                 self.flag = True
