@@ -612,6 +612,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
         append(bits[i + 1])
     return ''.join(res)
 
+
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
              encoding='utf-8', errors='replace'):
     """Parse a query given as a string argument.
@@ -633,6 +634,8 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
 
         encoding and errors: specify how to decode percent-encoded sequences
             into Unicode characters, as accepted by the bytes.decode() method.
+
+    Returns a dictionary.
     """
     parsed_result = {}
     pairs = parse_qsl(qs, keep_blank_values, strict_parsing,
@@ -643,6 +646,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
         else:
             parsed_result[name] = [value]
     return parsed_result
+
 
 def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
               encoding='utf-8', errors='replace'):
