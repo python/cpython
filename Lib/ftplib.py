@@ -412,12 +412,14 @@ class FTP:
         """
         self.voidcmd('TYPE I')
         conn = self.transfercmd(cmd, rest)
-        while 1:
-            data = conn.recv(blocksize)
-            if not data:
-                break
-            callback(data)
-        conn.close()
+        try:
+            while 1:
+                data = conn.recv(blocksize)
+                if not data:
+                    break
+                callback(data)
+        finally:
+            conn.close()
         return self.voidresp()
 
     def retrlines(self, cmd, callback = None):
@@ -435,21 +437,25 @@ class FTP:
         if callback is None: callback = print_line
         resp = self.sendcmd('TYPE A')
         conn = self.transfercmd(cmd)
-        fp = conn.makefile('rb')
-        while 1:
-            line = fp.readline(self.maxline + 1)
-            if len(line) > self.maxline:
-                raise Error("got more than %d bytes" % self.maxline)
-            if self.debugging > 2: print '*retr*', repr(line)
-            if not line:
-                break
-            if line[-2:] == CRLF:
-                line = line[:-2]
-            elif line[-1:] == '\n':
-                line = line[:-1]
-            callback(line)
-        fp.close()
-        conn.close()
+        fp = None
+        try:
+            fp = conn.makefile('rb')
+            while 1:
+                line = fp.readline(self.maxline + 1)
+                if len(line) > self.maxline:
+                    raise Error("got more than %d bytes" % self.maxline)
+                if self.debugging > 2: print '*retr*', repr(line)
+                if not line:
+                    break
+                if line[-2:] == CRLF:
+                    line = line[:-2]
+                elif line[-1:] == '\n':
+                    line = line[:-1]
+                callback(line)
+        finally:
+            if fp:
+                fp.close()
+            conn.close()
         return self.voidresp()
 
     def storbinary(self, cmd, fp, blocksize=8192, callback=None, rest=None):
@@ -469,12 +475,14 @@ class FTP:
         """
         self.voidcmd('TYPE I')
         conn = self.transfercmd(cmd, rest)
-        while 1:
-            buf = fp.read(blocksize)
-            if not buf: break
-            conn.sendall(buf)
-            if callback: callback(buf)
-        conn.close()
+        try:
+            while 1:
+                buf = fp.read(blocksize)
+                if not buf: break
+                conn.sendall(buf)
+                if callback: callback(buf)
+        finally:
+            conn.close()
         return self.voidresp()
 
     def storlines(self, cmd, fp, callback=None):
@@ -491,17 +499,19 @@ class FTP:
         """
         self.voidcmd('TYPE A')
         conn = self.transfercmd(cmd)
-        while 1:
-            buf = fp.readline(self.maxline + 1)
-            if len(buf) > self.maxline:
-                raise Error("got more than %d bytes" % self.maxline)
-            if not buf: break
-            if buf[-2:] != CRLF:
-                if buf[-1] in CRLF: buf = buf[:-1]
-                buf = buf + CRLF
-            conn.sendall(buf)
-            if callback: callback(buf)
-        conn.close()
+        try:
+            while 1:
+                buf = fp.readline(self.maxline + 1)
+                if len(buf) > self.maxline:
+                    raise Error("got more than %d bytes" % self.maxline)
+                if not buf: break
+                if buf[-2:] != CRLF:
+                    if buf[-1] in CRLF: buf = buf[:-1]
+                    buf = buf + CRLF
+                conn.sendall(buf)
+                if callback: callback(buf)
+        finally:
+            conn.close()
         return self.voidresp()
 
     def acct(self, password):
