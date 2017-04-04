@@ -593,12 +593,6 @@ type objects) *must* have the :attr:`ob_size` field.
    ``Py_NotImplemented``, if another error occurred it must return ``NULL`` and
    set an exception condition.
 
-   .. note::
-
-      If you want to implement a type for which only a limited set of
-      comparisons makes sense (e.g. ``==`` and ``!=``, but not ``<`` and
-      friends), directly raise :exc:`TypeError` in the rich comparison function.
-
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_hash`:
    a subtype inherits :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` when
    the subtype's :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both
