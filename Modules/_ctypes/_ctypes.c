@@ -3606,12 +3606,9 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
         case PARAMFLAG_FIN | PARAMFLAG_FLCID:
             /* ['in', 'lcid'] parameter.  Always taken from defval,
              if given, else the integer 0. */
-            if (defval == NULL) {
-                defval = PyLong_FromLong(0);
-                if (defval == NULL)
-                    goto error;
-            } else
-                Py_INCREF(defval);
+            if (defval == NULL)
+                defval = _PyLong_Zero;
+            Py_INCREF(defval);
             PyTuple_SET_ITEM(callargs, i, defval);
             break;
         case (PARAMFLAG_FIN | PARAMFLAG_FOUT):

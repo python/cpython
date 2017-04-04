@@ -71,8 +71,10 @@ module math
 */
 
 static const double pi = 3.141592653589793238462643383279502884197;
-static const double sqrtpi = 1.772453850905516027298167483341145182798;
 static const double logpi = 1.144729885849400174143427351353058711647;
+#if !defined(HAVE_ERF) || !defined(HAVE_ERFC)
+static const double sqrtpi = 1.772453850905516027298167483341145182798;
+#endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
 
 static double
 sinpi(double x)

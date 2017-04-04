@@ -199,8 +199,8 @@ Power and logarithmic functions
 
 .. function:: exp(x)
 
-   Return ``e**x``.
-
+   Return e raised to the power *x*, where e = 2.718281... is the base
+   of natural logarithms.
 
 .. function:: expm1(x)
 

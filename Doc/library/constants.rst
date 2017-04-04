@@ -46,7 +46,7 @@ A small number of constants live in the built-in namespace.  They are:
 
    .. note::
 
-      ``NotImplentedError`` and ``NotImplemented`` are not interchangeable,
+      ``NotImplementedError`` and ``NotImplemented`` are not interchangeable,
       even though they have similar names and purposes.
       See :exc:`NotImplementedError` for details on when to use it.
 
