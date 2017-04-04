@@ -652,7 +652,7 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
               encoding='utf-8', errors='replace'):
     """Parse a query given as a string argument.
 
-    Arguments:
+        Arguments:
 
         qs: percent-encoded query string to be parsed
 
