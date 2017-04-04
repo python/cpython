@@ -303,6 +303,10 @@ Extension Modules
 Library
 -------
 
+- bpo-29979: rewrite cgi.parse_multipart, reusing the FieldStorage class and
+  making its results consistent with those of FieldStorage for
+  multipart/form-data requests. Patch by Pierre Quentel.
+  
 - bpo-29649: Improve struct.pack_into() exception messages for problems
   with the buffer size and offset.  Patch by Andrew Nester.
 
