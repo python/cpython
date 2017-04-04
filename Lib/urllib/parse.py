@@ -3,25 +3,26 @@
 urlparse module is based upon the following RFC specifications.
 
 RFC 3986 (STD66): "Uniform Resource Identifiers" by T. Berners-Lee, R. Fielding
-and L.  Masinter, January 2005.
+and L. Masinter, January 2005.
 
 RFC 2732 : "Format for Literal IPv6 Addresses in URL's by R.Hinden, B.Carpenter
-and L.Masinter, December 1999.
+and L. Masinter, December 1999.
 
 RFC 2396:  "Uniform Resource Identifiers (URI)": Generic Syntax by T.
 Berners-Lee, R. Fielding, and L. Masinter, August 1998.
 
-RFC 2368: "The mailto URL scheme", by P.Hoffman , L Masinter, J. Zawinski, July 1998.
+RFC 2368: "The mailto URL scheme", by P.Hoffman, L Masinter, J. Zawinski,
+July 1998.
 
-RFC 1808: "Relative Uniform Resource Locators", by R. Fielding, UC Irvine, June
-1995.
+RFC 1808: "Relative Uniform Resource Locators", by R. Fielding, UC Irvine,
+June 1995.
 
-RFC 1738: "Uniform Resource Locators (URL)" by T. Berners-Lee, L. Masinter, M.
-McCahill, December 1994
+RFC 1738: "Uniform Resource Locators (URL)" by T. Berners-Lee, L. Masinter,
+M. McCahill, December 1994
 
 RFC 3986 is considered the current standard and any future changes to
 urlparse module should conform with it.  The urlparse module is
-currently not entirely compliant with this RFC due to defacto
+currently not entirely compliant with this RFC due to de-facto
 scenarios for parsing, and for backward compatibility purposes, some
 parsing quirks from older RFCs are retained. The testcases in
 test_urlparse.py provides a good indicator of parsing behavior.
@@ -38,29 +39,37 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "DefragResult", "ParseResult", "SplitResult",
            "DefragResultBytes", "ParseResultBytes", "SplitResultBytes"]
 
-# A classification of schemes ('' means apply by default)
-uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'imap',
+# A classification of schemes.
+# We have '' as scheme value to accommodate for the default value of scheme
+# arg in urlsplit and urlparse.
+
+uses_relative = ['', 'ftp', 'http', 'gopher', 'nntp', 'imap',
                  'wais', 'file', 'https', 'shttp', 'mms',
-                 'prospero', 'rtsp', 'rtspu', '', 'sftp',
+                 'prospero', 'rtsp', 'rtspu', 'sftp',
                  'svn', 'svn+ssh', 'ws', 'wss']
-uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
+
+uses_netloc = ['', 'ftp', 'http', 'gopher', 'nntp', 'telnet',
                'imap', 'wais', 'file', 'mms', 'https', 'shttp',
-               'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
+               'snews', 'prospero', 'rtsp', 'rtspu', 'rsync',
                'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh',
                'ws', 'wss']
-uses_params = ['ftp', 'hdl', 'prospero', 'http', 'imap',
+
+uses_params = ['', 'ftp', 'hdl', 'prospero', 'http', 'imap',
                'https', 'shttp', 'rtsp', 'rtspu', 'sip', 'sips',
-               'mms', '', 'sftp', 'tel']
+               'mms', 'sftp', 'tel']
 
 # These are not actually used anymore, but should stay for backwards
 # compatibility.  (They are undocumented, but have a public-looking name.)
+
 non_hierarchical = ['gopher', 'hdl', 'mailto', 'news',
                     'telnet', 'wais', 'imap', 'snews', 'sip', 'sips']
-uses_query = ['http', 'wais', 'imap', 'https', 'shttp', 'mms',
-              'gopher', 'rtsp', 'rtspu', 'sip', 'sips', '']
-uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news',
+
+uses_query = ['', 'http', 'wais', 'imap', 'https', 'shttp', 'mms',
+              'gopher', 'rtsp', 'rtspu', 'sip', 'sips']
+
+uses_fragment = ['', 'ftp', 'hdl', 'http', 'gopher', 'news',
                  'nntp', 'wais', 'https', 'shttp', 'snews',
-                 'file', 'prospero', '']
+                 'file', 'prospero']
 
 # Characters valid in scheme names
 scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
