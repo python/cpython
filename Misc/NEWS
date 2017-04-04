@@ -303,6 +303,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29649: Improve struct.pack_into() exception messages for problems
+  with the buffer size and offset.  Patch by Andrew Nester.
+
 - bpo-29654: Support If-Modified-Since HTTP header (browser cache).  Patch
   by Pierre Quentel.
 
