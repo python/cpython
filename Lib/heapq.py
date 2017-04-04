@@ -599,9 +599,3 @@ try:
     from _heapq import _heappop_max
 except ImportError:
     pass
-
-
-if __name__ == "__main__":
-
-    import doctest
-    print(doctest.testmod())
