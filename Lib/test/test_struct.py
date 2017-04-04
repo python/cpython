@@ -578,6 +578,26 @@ class StructTest(unittest.TestCase):
         self.check_sizeof('0s', 1)
         self.check_sizeof('0c', 0)
 
+    def test_boundary_error_message(self):
+        regex = (
+            r'pack_into requires a buffer of at least 6 '
+            r'bytes for packing 1 bytes at offset 5 '
+            r'\(actual buffer size is 1\)'
+        )
+        with self.assertRaisesRegex(struct.error, regex):
+            struct.pack_into('b', bytearray(1), 5, 1)
+
+    def test_boundary_error_message_with_negative_offset(self):
+        byte_list = bytearray(10)
+        with self.assertRaisesRegex(
+                struct.error,
+                r'no space to pack 4 bytes at offset -2'):
+            struct.pack_into('<I', byte_list, -2, 123)
+
+        with self.assertRaisesRegex(
+                struct.error,
+                'offset -11 out of range for 10-byte buffer'):
+            struct.pack_into('<B', byte_list, -11, 123)
 
 class UnpackIteratorTest(unittest.TestCase):
     """
