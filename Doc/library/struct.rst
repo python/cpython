@@ -448,6 +448,19 @@ The :mod:`struct` module also defines the following type:
       The calculated size of the struct (and hence of the bytes object produced
       by the :meth:`pack` method) corresponding to :attr:`format`.
 
+   Starting in version 3.7 The :class:`Struct` class support ``__add__()``.
+
+   Example:
+
+   .. doctest::
+
+       >>> from struct import Struct
+       >>> s1 = Struct(">L")
+       >>> s2 = Struct(">B")
+       >>> s3 = s1 + s2
+       >>> s3.format
+       b">LB"
+
 
 .. _half precision format: https://en.wikipedia.org/wiki/Half-precision_floating-point_format
 

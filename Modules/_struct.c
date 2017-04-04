@@ -1981,6 +1981,42 @@ s_sizeof(PyStructObject *self, void *unused)
     return PyLong_FromSsize_t(size);
 }
 
+static PyObject *
+struct_add(PyObject *left, PyObject *right)
+{
+    PyObject * new_object, *new_format;
+    char *left_fmt, *right_fmt;
+    int left_has_order, right_has_order;
+
+    if (!(PyObject_TypeCheck(left, &PyStructType)
+         && PyObject_TypeCheck(right, &PyStructType)))
+        Py_RETURN_NOTIMPLEMENTED;
+
+    left_fmt = PyBytes_AsString(((PyStructObject*)left)->s_format);
+    right_fmt = PyBytes_AsString(((PyStructObject*)right)->s_format);
+
+    left_has_order = (*left_fmt == '@' || *left_fmt == '=' || *left_fmt == '>' ||
+        *left_fmt == '<' || *left_fmt == '!');
+    right_has_order = (*right_fmt == '@' || *right_fmt == '=' || *right_fmt == '>' ||
+        *right_fmt == '<' || *right_fmt == '!');
+
+    if ((right_has_order != left_has_order) ||
+        (left_has_order && right_has_order && (*left_fmt != *right_fmt))) {
+        PyErr_SetString(PyExc_TypeError, "Format must be identitacal");
+        return NULL;
+    }
+
+    new_format = PyBytes_FromFormat("%s%s", left_fmt, right_fmt + left_has_order * right_has_order);
+    if (!new_format)
+        return NULL;
+
+    new_object = PyObject_CallFunctionObjArgs((PyObject *)(&PyStructType), new_format, NULL);
+    if (!new_object)
+        Py_DECREF(new_format);
+
+    return new_object;
+}
+
 /* List of functions */
 
 static struct PyMethodDef s_methods[] = {
@@ -2001,6 +2037,10 @@ static PyGetSetDef s_getsetlist[] = {
     {NULL} /* sentinel */
 };
 
+static PyNumberMethods struct_as_number = {
+    .nb_add = struct_add,
+};
+
 static
 PyTypeObject PyStructType = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -2013,7 +2053,7 @@ PyTypeObject PyStructType = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_reserved */
     0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
+    &struct_as_number,                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
