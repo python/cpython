@@ -19,7 +19,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"real", "imag", NULL};
     static _PyArg_Parser _parser = {"|OO:complex", _keywords, 0};
-    PyObject *r = Py_False;
+    PyObject *r = _PyLong_Zero;
     PyObject *i = NULL;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
@@ -31,4 +31,4 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=74035493480ab5e5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5017b2458bdc4ecd input=a9049054013a1b77]*/
