@@ -946,7 +946,7 @@ This is equivalent to (real + imag*1j) where imag defaults to 0.
 
 static PyObject *
 complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
-/*[clinic end generated code: output=b6c7dd577b537dc1 input=e3d6b77ddcf280da]*/
+/*[clinic end generated code: output=b6c7dd577b537dc1 input=6f6b0bedba29bcb5]*/
 {
     PyObject *tmp;
     PyNumberMethods *nbr, *nbi = NULL;
