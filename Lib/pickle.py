@@ -269,7 +269,7 @@ def _getattribute(obj, name):
             obj = getattr(obj, subpath)
         except AttributeError:
             raise AttributeError("Can't get attribute {!r} on {!r}"
-                                 .format(name, obj))
+                                 .format(name, obj)) from None
     return obj, parent
 
 def whichmodule(obj, name):
@@ -919,7 +919,7 @@ class _Pickler:
         except (ImportError, KeyError, AttributeError):
             raise PicklingError(
                 "Can't pickle %r: it's not found as %s.%s" %
-                (obj, module_name, name))
+                (obj, module_name, name)) from None
         else:
             if obj2 is not obj:
                 raise PicklingError(
@@ -964,7 +964,7 @@ class _Pickler:
             except UnicodeEncodeError:
                 raise PicklingError(
                     "can't pickle global identifier '%s.%s' using "
-                    "pickle protocol %i" % (module, name, self.proto))
+                    "pickle protocol %i" % (module, name, self.proto)) from None
 
         self.memoize(obj)
 
