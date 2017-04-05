@@ -303,6 +303,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29962: Add math.remainder operation, implementing remainder
+  as specified in IEEE 754.
+
 - bpo-29649: Improve struct.pack_into() exception messages for problems
   with the buffer size and offset.  Patch by Andrew Nester.
 
