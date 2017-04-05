@@ -1253,7 +1253,7 @@ _get_crl_dp(X509 *certificate) {
 
   done:
     Py_XDECREF(lst);
-    sk_DIST_POINT_pop_free(dps, DIST_POINT_free);
+    CRL_DIST_POINTS_free(dps);
     return res;
 }
 
