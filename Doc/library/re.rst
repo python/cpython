@@ -955,6 +955,11 @@ attributes:
    The pattern string from which the RE object was compiled.
 
 
+.. versionchanged:: 3.7
+   Added support of :func:`copy.copy` and :func:`copy.deepcopy`.  Compiled
+   regular expression objects are considered atomic.
+
+
 .. _match-objects:
 
 Match Objects
@@ -1154,6 +1159,11 @@ Match objects support the following methods and attributes:
 .. attribute:: match.string
 
    The string passed to :meth:`~regex.match` or :meth:`~regex.search`.
+
+
+.. versionchanged:: 3.7
+   Added support of :func:`copy.copy` and :func:`copy.deepcopy`.  Match objects
+   are considered atomic.
 
 
 .. _re-examples:
