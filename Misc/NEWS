@@ -303,6 +303,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29996: The width of the terminal is now used as default width in pprint()
+  if the output stream is connected to a terminal.
+
 - bpo-29649: Improve struct.pack_into() exception messages for problems
   with the buffer size and offset.  Patch by Andrew Nester.
 

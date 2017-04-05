@@ -345,7 +345,7 @@ mappingproxy(OrderedDict([('the', 0),
         exp = """\
 {'names with spaces': 'should be presented using repr()',
  others.should.not.be: like.this}"""
-        self.assertEqual(DottedPrettyPrinter().pformat(o), exp)
+        self.assertEqual(DottedPrettyPrinter(width=80).pformat(o), exp)
 
     def test_set_reprs(self):
         self.assertEqual(pprint.pformat(set()), 'set()')

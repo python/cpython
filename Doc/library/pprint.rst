@@ -30,7 +30,7 @@ The :mod:`pprint` module defines one class:
 .. First the implementation class:
 
 
-.. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
+.. class:: PrettyPrinter(indent=1, width=None, depth=None, stream=None, *, \
                          compact=False)
 
    Construct a :class:`PrettyPrinter` instance.  This constructor understands
@@ -44,7 +44,9 @@ The :mod:`pprint` module defines one class:
    controlled by *depth*; if the data structure being printed is too deep, the next
    contained level is replaced by ``...``.  By default, there is no constraint on
    the depth of the objects being formatted.  The desired output width is
-   constrained using the *width* parameter; the default is 80 characters.  If a
+   constrained using the *width* parameter, or the width of the terminal if
+   an output stream is interactive (i.e., connected to a
+   terminal/tty device), or by 80 characters.  If a
    structure cannot be formatted within the constrained width, a best effort will
    be made.  If *compact* is false (the default) each item of a long sequence
    will be formatted on a separate line.  If *compact* is true, as many items
@@ -76,6 +78,9 @@ The :mod:`pprint` module defines one class:
       >>> pp.pprint(tup)
       ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead', (...)))))))
 
+   .. versionchanged:: 3.7
+      The width of the terminal is used if an output stream is interactive.
+
 
 The :mod:`pprint` module also provides several shortcut functions:
 
@@ -89,7 +94,7 @@ The :mod:`pprint` module also provides several shortcut functions:
       Added the *compact* parameter.
 
 
-.. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
+.. function:: pprint(object, stream=None, indent=1, width=None, depth=None, *, \
                      compact=False)
 
    Prints the formatted representation of *object* on *stream*, followed by a
@@ -112,6 +117,9 @@ The :mod:`pprint` module also provides several shortcut functions:
        'lumberjack',
        'knights',
        'ni']
+
+   .. versionchanged:: 3.7
+      The width of the terminal is used if an output stream is interactive.
 
 
 .. function:: isreadable(object)

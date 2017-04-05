@@ -39,12 +39,13 @@ import re
 import sys as _sys
 import types as _types
 from io import StringIO as _StringIO
+from os import get_terminal_size as _get_terminal_size
 
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
            "PrettyPrinter"]
 
 
-def pprint(object, stream=None, indent=1, width=80, depth=None, *,
+def pprint(object, stream=None, indent=1, width=None, depth=None, *,
            compact=False):
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
     printer = PrettyPrinter(
@@ -96,7 +97,7 @@ def _safe_tuple(t):
     return _safe_key(t[0]), _safe_key(t[1])
 
 class PrettyPrinter:
-    def __init__(self, indent=1, width=80, depth=None, stream=None, *,
+    def __init__(self, indent=1, width=None, depth=None, stream=None, *,
                  compact=False):
         """Handle pretty printing operations onto a stream using a set of
         configured parameters.
@@ -118,21 +119,30 @@ class PrettyPrinter:
             If true, several items will be combined in one line.
 
         """
+        if stream is None:
+            stream = _sys.stdout
         indent = int(indent)
-        width = int(width)
         if indent < 0:
             raise ValueError('indent must be >= 0')
         if depth is not None and depth <= 0:
             raise ValueError('depth must be > 0')
+        if width is None:
+            width = 80
+            if hasattr(stream, 'isatty') and stream.isatty():
+                try:
+                    width = _get_terminal_size(stream.fileno()).columns
+                except (AttributeError, ValueError, OSError):
+                    # stream doesn't have a fileno, or is closed, detached, or
+                    # not a terminal, or os.get_terminal_size() is unsupported
+                    pass
+        else:
+            width = int(width)
         if not width:
             raise ValueError('width must be != 0')
         self._depth = depth
         self._indent_per_level = indent
         self._width = width
-        if stream is not None:
-            self._stream = stream
-        else:
-            self._stream = _sys.stdout
+        self._stream = stream
         self._compact = bool(compact)
 
     def pprint(self, object):
