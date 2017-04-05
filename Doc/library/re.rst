@@ -786,12 +786,16 @@ form.
 
 .. function:: escape(string)
 
-   Escape all the characters in pattern except ASCII letters, numbers and ``'_'``.
+   Escape special characters in a string.
    This is useful if you want to match an arbitrary literal string that may
    have regular expression metacharacters in it.
 
    .. versionchanged:: 3.3
       The ``'_'`` character is no longer escaped.
+
+   .. versionchanged:: 3.7
+      Only characters that can have special meaning in a regular expression
+      are escaped.
 
 
 .. function:: purge()
