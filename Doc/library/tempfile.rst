@@ -219,10 +219,13 @@ The module defines the following user-callable items:
       * On all other platforms, the directories :file:`/tmp`, :file:`/var/tmp`, and
         :file:`/usr/tmp`, in that order.
 
-   #. As a last resort, the current working directory.
+   #. The current working directory.
 
    The result of this search is cached, see the description of
    :data:`tempdir` below.
+
+   :exc:`FileNotFoundError` is raised if no suitable directory can be found.
+
 
 .. function:: gettempdirb()
 
