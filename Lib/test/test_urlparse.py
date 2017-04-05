@@ -6,8 +6,8 @@ RFC2396_BASE = "http://a/b/c/d;p?q"
 RFC3986_BASE = 'http://a/b/c/d;p?q'
 SIMPLE_BASE  = 'http://a/b/c/d'
 
-# A list of test cases.  Each test case is a two-tuple that contains
-# a string with the query and a dictionary with the expected result.
+# Each parse_qsl testcase is a two-tuple that contains
+# a string with the query and a list with the expected result.
 
 parse_qsl_test_cases = [
     ("", []),
@@ -41,6 +41,9 @@ parse_qsl_test_cases = [
     (b"a=a+b;b=b+c", [(b'a', b'a b'), (b'b', b'b c')]),
     (b"a=1;a=2", [(b'a', b'1'), (b'a', b'2')]),
 ]
+
+# Each parse_qs testcase is a two-tuple that contains
+# a string with the query and a dictionary with the expected result.
 
 parse_qs_test_cases = [
     ("", {}),
@@ -290,7 +293,6 @@ class UrlParseTestCase(unittest.TestCase):
     def test_RFC2396(self):
         # cases from RFC 2396
 
-
         self.checkJoin(RFC2396_BASE, 'g:h', 'g:h')
         self.checkJoin(RFC2396_BASE, 'g', 'http://a/b/c/g')
         self.checkJoin(RFC2396_BASE, './g', 'http://a/b/c/g')
@@ -333,9 +335,7 @@ class UrlParseTestCase(unittest.TestCase):
         # self.checkJoin(RFC2396_BASE, '/./g', 'http://a/./g')
         # self.checkJoin(RFC2396_BASE, '/../g', 'http://a/../g')
 
-
     def test_RFC3986(self):
-        # Test cases from RFC3986
         self.checkJoin(RFC3986_BASE, '?y','http://a/b/c/d;p?y')
         self.checkJoin(RFC3986_BASE, ';x', 'http://a/b/c/;x')
         self.checkJoin(RFC3986_BASE, 'g:h','g:h')
@@ -363,7 +363,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC3986_BASE, '../../g','http://a/g')
         self.checkJoin(RFC3986_BASE, '../../../g', 'http://a/g')
 
-        #Abnormal Examples
+        # Abnormal Examples
 
         # The 'abnormal scenarios' are incompatible with RFC2986 parsing
         # Tests are here for reference.
