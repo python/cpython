@@ -701,6 +701,9 @@ deepcopy(PyObject** object, PyObject* memo)
 {
     PyObject* copy;
 
+    if (!*object)
+        return 1;
+
     copy = call(
         "copy", "deepcopy",
         PyTuple_Pack(2, *object, memo)
@@ -1368,6 +1371,8 @@ PyDoc_STRVAR(pattern_doc, "Compiled regular expression objects");
 static PyObject *
 pattern_groupindex(PatternObject *self)
 {
+    if (self->groupindex == NULL)
+        return PyDict_New();
     return PyDictProxy_New(self->groupindex);
 }
 
@@ -1378,10 +1383,10 @@ _sre.compile
 
     pattern: object
     flags: int
-    code: object(subclass_of='&PyList_Type')
+    code: object
     groups: Py_ssize_t
-    groupindex: object(subclass_of='&PyDict_Type')
-    indexgroup: object(subclass_of='&PyTuple_Type')
+    groupindex: object
+    indexgroup: object
 
 [clinic start generated code]*/
 
@@ -1389,12 +1394,33 @@ static PyObject *
 _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
                   PyObject *code, Py_ssize_t groups, PyObject *groupindex,
                   PyObject *indexgroup)
-/*[clinic end generated code: output=ef9c2b3693776404 input=0a68476dbbe5db30]*/
+/*[clinic end generated code: output=ef9c2b3693776404 input=a8e20fbe159f4a08]*/
 {
     /* "compile" pattern descriptor to pattern object */
 
     PatternObject* self;
     Py_ssize_t i, n;
+
+    if (!PyList_CheckExact(code)) {
+        PyErr_Format(PyExc_TypeError,
+                     "compile() argument 3 must be exact list, not %.100s",
+                     code->ob_type->tp_name);
+        return NULL;
+    }
+
+    if (!PyDict_CheckExact(groupindex)) {
+        PyErr_Format(PyExc_TypeError,
+                     "compile() argument 5 must be exact dict, not %.100s",
+                     groupindex->ob_type->tp_name);
+        return NULL;
+    }
+
+    if (!PyTuple_CheckExact(indexgroup)) {
+        PyErr_Format(PyExc_TypeError,
+                     "compile() argument 6 must be exact tuple, not %.100s",
+                     indexgroup->ob_type->tp_name);
+        return NULL;
+    }
 
     n = PyList_GET_SIZE(code);
     /* coverity[ampersand_in_size] */
@@ -1448,11 +1474,14 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 
     self->groups = groups;
 
-    Py_INCREF(groupindex);
-    self->groupindex = groupindex;
-
-    Py_INCREF(indexgroup);
-    self->indexgroup = indexgroup;
+    if (PyDict_GET_SIZE(groupindex) > 0) {
+        Py_INCREF(groupindex);
+        self->groupindex = groupindex;
+        if (PyTuple_GET_SIZE(indexgroup) > 0) {
+            Py_INCREF(indexgroup);
+            self->indexgroup = indexgroup;
+        }
+    }
 
     if (!_validate(self)) {
         Py_DECREF(self);
@@ -1994,13 +2023,10 @@ match_getindex(MatchObject* self, PyObject* index)
     i = -1;
 
     if (self->pattern->groupindex) {
-        index = PyObject_GetItem(self->pattern->groupindex, index);
-        if (index) {
-            if (PyLong_Check(index))
-                i = PyLong_AsSsize_t(index);
-            Py_DECREF(index);
-        } else
-            PyErr_Clear();
+        index = PyDict_GetItem(self->pattern->groupindex, index);
+        if (index && PyLong_Check(index)) {
+            i = PyLong_AsSsize_t(index);
+        }
     }
 
     return i;
@@ -2118,40 +2144,34 @@ static PyObject *
 _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value)
 /*[clinic end generated code: output=29917c9073e41757 input=0ded7960b23780aa]*/
 {
-    PyObject* result;
-    PyObject* keys;
-    Py_ssize_t index;
+    PyObject *result;
+    PyObject *key;
+    PyObject *value;
+    Py_ssize_t pos = 0;
+    Py_hash_t hash;
 
     result = PyDict_New();
     if (!result || !self->pattern->groupindex)
         return result;
 
-    keys = PyMapping_Keys(self->pattern->groupindex);
-    if (!keys)
-        goto failed;
-
-    for (index = 0; index < PyList_GET_SIZE(keys); index++) {
+    while (_PyDict_Next(self->pattern->groupindex, &pos, &key, &value, &hash)) {
         int status;
-        PyObject* key;
-        PyObject* value;
-        key = PyList_GET_ITEM(keys, index);
-        if (!key)
-            goto failed;
+        Py_INCREF(key);
         value = match_getslice(self, key, default_value);
-        if (!value)
+        if (!value) {
+            Py_DECREF(key);
             goto failed;
-        status = PyDict_SetItem(result, key, value);
+        }
+        status = _PyDict_SetItem_KnownHash(result, key, value, hash);
         Py_DECREF(value);
+        Py_DECREF(key);
         if (status < 0)
             goto failed;
     }
 
-    Py_DECREF(keys);
-
     return result;
 
 failed:
-    Py_XDECREF(keys);
     Py_DECREF(result);
     return NULL;
 }
@@ -2378,13 +2398,14 @@ match_lastindex_get(MatchObject *self)
 static PyObject *
 match_lastgroup_get(MatchObject *self)
 {
-    if (self->pattern->indexgroup && self->lastindex >= 0) {
-        PyObject* result = PySequence_GetItem(
-            self->pattern->indexgroup, self->lastindex
-            );
-        if (result)
-            return result;
-        PyErr_Clear();
+    if (self->pattern->indexgroup &&
+        self->lastindex >= 0 &&
+        self->lastindex < PyTuple_GET_SIZE(self->pattern->indexgroup))
+    {
+        PyObject *result = PyTuple_GET_ITEM(self->pattern->indexgroup,
+                                            self->lastindex);
+        Py_INCREF(result);
+        return result;
     }
     Py_RETURN_NONE;
 }
