@@ -512,7 +512,8 @@ def _build_localename(localetuple):
         else:
             return language + '.' + encoding
     except (TypeError, ValueError):
-        raise TypeError('Locale must be None, a string, or an iterable of two strings -- language code, encoding.')
+        raise TypeError('Locale must be None, a string, or an iterable of '
+                        'two strings -- language code, encoding.') from None
 
 def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
 
