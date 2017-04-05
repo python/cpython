@@ -103,7 +103,8 @@ def py_scanstring(s, end, strict=True,
         try:
             esc = s[end]
         except IndexError:
-            raise JSONDecodeError("Unterminated string starting at", s, begin)
+            raise JSONDecodeError("Unterminated string starting at",
+                                  s, begin) from None
         # If not a unicode escape sequence, must be in the lookup table
         if esc != 'u':
             try:

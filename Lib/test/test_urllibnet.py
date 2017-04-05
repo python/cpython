@@ -29,7 +29,7 @@ class URLTimeoutTest(unittest.TestCase):
 
 
 class urlopenNetworkTests(unittest.TestCase):
-    """Tests urllib.reqest.urlopen using the network.
+    """Tests urllib.request.urlopen using the network.
 
     These tests are not exhaustive.  Assuming that testing using files does a
     good job overall of some of the basic interface features.  There are no

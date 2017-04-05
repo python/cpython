@@ -1619,7 +1619,7 @@ Convert a string or number to a floating point number, if possible.
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x)
-/*[clinic end generated code: output=ccf1e8dc460ba6ba input=c98d8e811ad2037a]*/
+/*[clinic end generated code: output=ccf1e8dc460ba6ba input=540ee77c204ff87a]*/
 {
     if (type != &PyFloat_Type)
         return float_subtype_new(type, x); /* Wimp out */

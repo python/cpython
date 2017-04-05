@@ -720,14 +720,14 @@ class IMapIterator(object):
                 item = self._items.popleft()
             except IndexError:
                 if self._index == self._length:
-                    raise StopIteration
+                    raise StopIteration from None
                 self._cond.wait(timeout)
                 try:
                     item = self._items.popleft()
                 except IndexError:
                     if self._index == self._length:
-                        raise StopIteration
-                    raise TimeoutError
+                        raise StopIteration from None
+                    raise TimeoutError from None
 
         success, value = item
         if success:
