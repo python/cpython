@@ -53,7 +53,6 @@ PyObject *_PyIO_str_write;
 
 PyObject *_PyIO_empty_str;
 PyObject *_PyIO_empty_bytes;
-PyObject *_PyIO_zero;
 
 PyDoc_STRVAR(module_doc,
 "The io module provides the Python interfaces to stream handling. The\n"
@@ -105,7 +104,7 @@ _io.open
     encoding: str(accept={str, NoneType}) = NULL
     errors: str(accept={str, NoneType}) = NULL
     newline: str(accept={str, NoneType}) = NULL
-    closefd: int(c_default="1") = True
+    closefd: bool(accept={int}) = True
     opener: object = None
 
 Open file and return a stream.  Raise IOError upon failure.
@@ -232,7 +231,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=f4e1ca75223987bc]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=7f81b2a1d3b02344]*/
 {
     unsigned i;
 
@@ -542,29 +541,6 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
 }
 
 
-/* Basically the "n" format code with the ability to turn None into -1. */
-int
-_PyIO_ConvertSsize_t(PyObject *obj, void *result) {
-    Py_ssize_t limit;
-    if (obj == Py_None) {
-        limit = -1;
-    }
-    else if (PyNumber_Check(obj)) {
-        limit = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
-        if (limit == -1 && PyErr_Occurred())
-            return 0;
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "integer argument expected, got '%.200s'",
-                     Py_TYPE(obj)->tp_name);
-        return 0;
-    }
-    *((Py_ssize_t *)result) = limit;
-    return 1;
-}
-
-
 _PyIO_State *
 _PyIO_get_module_state(void)
 {
@@ -788,9 +764,6 @@ PyInit__io(void)
         goto fail;
     if (!_PyIO_empty_bytes &&
         !(_PyIO_empty_bytes = PyBytes_FromStringAndSize(NULL, 0)))
-        goto fail;
-    if (!_PyIO_zero &&
-        !(_PyIO_zero = PyLong_FromLong(0L)))
         goto fail;
 
     state->initialized = 1;

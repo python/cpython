@@ -46,7 +46,12 @@ internationalized, to the local language and cultural habits.
 #   find this format documented anywhere.
 
 
-import locale, copy, io, os, re, struct, sys
+import copy
+import locale
+import os
+import re
+import struct
+import sys
 from errno import ENOENT
 
 
@@ -164,6 +169,10 @@ def _as_int(n):
     except TypeError:
         raise TypeError('Plural value must be an integer, got %s' %
                         (n.__class__.__name__,)) from None
+    import warnings
+    warnings.warn('Plural value must be an integer, got %s' %
+                  (n.__class__.__name__,),
+                  DeprecationWarning, 4)
     return n
 
 def c2py(plural):

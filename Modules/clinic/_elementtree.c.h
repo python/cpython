@@ -333,6 +333,35 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_elementtree_Element_getiterator__doc__,
+"getiterator($self, /, tag=None)\n"
+"--\n"
+"\n");
+
+#define _ELEMENTTREE_ELEMENT_GETITERATOR_METHODDEF    \
+    {"getiterator", (PyCFunction)_elementtree_Element_getiterator, METH_FASTCALL, _elementtree_Element_getiterator__doc__},
+
+static PyObject *
+_elementtree_Element_getiterator_impl(ElementObject *self, PyObject *tag);
+
+static PyObject *
+_elementtree_Element_getiterator(ElementObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"tag", NULL};
+    static _PyArg_Parser _parser = {"|O:getiterator", _keywords, 0};
+    PyObject *tag = Py_None;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &tag)) {
+        goto exit;
+    }
+    return_value = _elementtree_Element_getiterator_impl(self, tag);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_elementtree_Element_itertext__doc__,
 "itertext($self, /)\n"
 "--\n"
@@ -726,4 +755,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject **args, Py_ssi
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b69fa98c40917f58 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fbc92d64735adec0 input=a9049054013a1b77]*/

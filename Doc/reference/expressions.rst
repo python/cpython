@@ -1355,7 +1355,7 @@ built-in types.
     true).
 
 * Mappings (instances of :class:`dict`) compare equal if and only if they have
-  equal `(key, value)` pairs. Equality comparison of the keys and elements
+  equal `(key, value)` pairs. Equality comparison of the keys and values
   enforces reflexivity.
 
   Order comparisons (``<``, ``>``, ``<=``, and ``>=``) raise :exc:`TypeError`.
@@ -1431,28 +1431,29 @@ Membership test operations
 --------------------------
 
 The operators :keyword:`in` and :keyword:`not in` test for membership.  ``x in
-s`` evaluates to true if *x* is a member of *s*, and false otherwise.  ``x not
-in s`` returns the negation of ``x in s``.  All built-in sequences and set types
-support this as well as dictionary, for which :keyword:`in` tests whether the
-dictionary has a given key. For container types such as list, tuple, set,
-frozenset, dict, or collections.deque, the expression ``x in y`` is equivalent
+s`` evaluates to ``True`` if *x* is a member of *s*, and ``False`` otherwise.
+``x not in s`` returns the negation of ``x in s``.  All built-in sequences and
+set types support this as well as dictionary, for which :keyword:`in` tests
+whether the dictionary has a given key. For container types such as list, tuple,
+set, frozenset, dict, or collections.deque, the expression ``x in y`` is equivalent
 to ``any(x is e or x == e for e in y)``.
 
-For the string and bytes types, ``x in y`` is true if and only if *x* is a
+For the string and bytes types, ``x in y`` is ``True`` if and only if *x* is a
 substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Empty strings are
 always considered to be a substring of any other string, so ``"" in "abc"`` will
 return ``True``.
 
 For user-defined classes which define the :meth:`__contains__` method, ``x in
-y`` is true if and only if ``y.__contains__(x)`` is true.
+y`` returns ``True`` if ``y.__contains__(x)`` returns a true value, and
+``False`` otherwise.
 
 For user-defined classes which do not define :meth:`__contains__` but do define
-:meth:`__iter__`, ``x in y`` is true if some value ``z`` with ``x == z`` is
+:meth:`__iter__`, ``x in y`` is ``True`` if some value ``z`` with ``x == z`` is
 produced while iterating over ``y``.  If an exception is raised during the
 iteration, it is as if :keyword:`in` raised that exception.
 
 Lastly, the old-style iteration protocol is tried: if a class defines
-:meth:`__getitem__`, ``x in y`` is true if and only if there is a non-negative
+:meth:`__getitem__`, ``x in y`` is ``True`` if and only if there is a non-negative
 integer index *i* such that ``x == y[i]``, and all lower integer indices do not
 raise :exc:`IndexError` exception.  (If any other exception is raised, it is as
 if :keyword:`in` raised that exception).

@@ -235,7 +235,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
    Retrieve a file in binary transfer mode.  *cmd* should be an appropriate
    ``RETR`` command: ``'RETR filename'``. The *callback* function is called for
-   each block of data received, with a single string argument giving the data
+   each block of data received, with a single bytes argument giving the data
    block. The optional *blocksize* argument specifies the maximum chunk size to
    read on the low-level socket object created to do the actual transfer (which
    will also be the largest size of the data blocks passed to *callback*).  A
@@ -255,9 +255,9 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    prints the line to ``sys.stdout``.
 
 
-.. method:: FTP.set_pasv(boolean)
+.. method:: FTP.set_pasv(val)
 
-   Enable "passive" mode if *boolean* is true, other disable passive mode.
+   Enable "passive" mode if *val* is true, otherwise disable passive mode.
    Passive mode is on by default.
 
 

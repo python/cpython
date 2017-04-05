@@ -1118,6 +1118,18 @@ class MakedirTests(unittest.TestCase):
                             'dir5', 'dir6')
         os.makedirs(path)
 
+    def test_mode(self):
+        with support.temp_umask(0o002):
+            base = support.TESTFN
+            parent = os.path.join(base, 'dir1')
+            path = os.path.join(parent, 'dir2')
+            os.makedirs(path, 0o555)
+            self.assertTrue(os.path.exists(path))
+            self.assertTrue(os.path.isdir(path))
+            if os.name != 'nt':
+                self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o555)
+                self.assertEqual(stat.S_IMODE(os.stat(parent).st_mode), 0o775)
+
     def test_exist_ok_existing_directory(self):
         path = os.path.join(support.TESTFN, 'dir1')
         mode = 0o777
@@ -3301,6 +3313,35 @@ class TestScandir(unittest.TestCase):
         self.assertEqual(entry.path,
                          os.fsencode(os.path.join(self.path, 'file.txt')))
 
+    @unittest.skipUnless(os.listdir in os.supports_fd,
+                         'fd support for listdir required for this test.')
+    def test_fd(self):
+        self.assertIn(os.scandir, os.supports_fd)
+        self.create_file('file.txt')
+        expected_names = ['file.txt']
+        if support.can_symlink():
+            os.symlink('file.txt', os.path.join(self.path, 'link'))
+            expected_names.append('link')
+
+        fd = os.open(self.path, os.O_RDONLY)
+        try:
+            with os.scandir(fd) as it:
+                entries = list(it)
+            names = [entry.name for entry in entries]
+            self.assertEqual(sorted(names), expected_names)
+            self.assertEqual(names, os.listdir(fd))
+            for entry in entries:
+                self.assertEqual(entry.path, entry.name)
+                self.assertEqual(os.fspath(entry), entry.name)
+                self.assertEqual(entry.is_symlink(), entry.name == 'link')
+                if os.stat in os.supports_dir_fd:
+                    st = os.stat(entry.name, dir_fd=fd)
+                    self.assertEqual(entry.stat(), st)
+                    st = os.stat(entry.name, dir_fd=fd, follow_symlinks=False)
+                    self.assertEqual(entry.stat(follow_symlinks=False), st)
+        finally:
+            os.close(fd)
+
     def test_empty_path(self):
         self.assertRaises(FileNotFoundError, os.scandir, '')
 
@@ -3316,7 +3357,7 @@ class TestScandir(unittest.TestCase):
         self.assertEqual(len(entries2), 0, entries2)
 
     def test_bad_path_type(self):
-        for obj in [1234, 1.234, {}, []]:
+        for obj in [1.234, {}, []]:
             self.assertRaises(TypeError, os.scandir, obj)
 
     def test_close(self):

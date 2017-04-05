@@ -71,8 +71,10 @@ module math
 */
 
 static const double pi = 3.141592653589793238462643383279502884197;
-static const double sqrtpi = 1.772453850905516027298167483341145182798;
 static const double logpi = 1.144729885849400174143427351353058711647;
+#if !defined(HAVE_ERF) || !defined(HAVE_ERFC)
+static const double sqrtpi = 1.772453850905516027298167483341145182798;
+#endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
 
 static double
 sinpi(double x)
@@ -364,7 +366,8 @@ m_tgamma(double x)
 static double
 m_lgamma(double x)
 {
-    double r, absx;
+    double r;
+    double absx;
 
     /* special cases */
     if (!Py_IS_FINITE(x)) {
@@ -403,6 +406,8 @@ m_lgamma(double x)
         errno = ERANGE;
     return r;
 }
+
+#if !defined(HAVE_ERF) || !defined(HAVE_ERFC)
 
 /*
    Implementations of the error function erf(x) and the complementary error
@@ -513,11 +518,16 @@ m_erfc_contfrac(double x)
     return result;
 }
 
+#endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
+
 /* Error function erf(x), for general x */
 
 static double
 m_erf(double x)
 {
+#ifdef HAVE_ERF
+    return erf(x);
+#else
     double absx, cf;
 
     if (Py_IS_NAN(x))
@@ -529,6 +539,7 @@ m_erf(double x)
         cf = m_erfc_contfrac(absx);
         return x > 0.0 ? 1.0 - cf : cf - 1.0;
     }
+#endif
 }
 
 /* Complementary error function erfc(x), for general x. */
@@ -536,6 +547,9 @@ m_erf(double x)
 static double
 m_erfc(double x)
 {
+#ifdef HAVE_ERFC
+    return erfc(x);
+#else
     double absx, cf;
 
     if (Py_IS_NAN(x))
@@ -547,6 +561,7 @@ m_erfc(double x)
         cf = m_erfc_contfrac(absx);
         return x > 0.0 ? cf : 2.0 - cf;
     }
+#endif
 }
 
 /*
