@@ -9,6 +9,7 @@ What's New in Python 3.7.0 alpha 1?
 
 Core and Builtins
 -----------------
+- bpo-29990: fix range checking in GB18030 decoder.
 
 - bpo-29949: Fix memory usage regression of set and frozenset object.
 
