@@ -1377,23 +1377,23 @@ member in the :c:type:`PyTypeObject` structure should be *NULL*.  Otherwise, the
    Structure used to hold the function pointers which define an implementation of
    the buffer protocol.
 
-   The first slot is :attr:`bf_getreadbuffer`, of type :c:type:`getreadbufferproc`.
+   The first slot is :attr:`bf_getreadbuffer`, of type :c:type:`readbufferproc`.
    If this slot is *NULL*, then the object does not support reading from the
    internal data.  This is non-sensical, so implementors should fill this in, but
    callers should test that the slot contains a non-*NULL* value.
 
    The next slot is :attr:`bf_getwritebuffer` having type
-   :c:type:`getwritebufferproc`.  This slot may be *NULL* if the object does not
+   :c:type:`writebufferproc`.  This slot may be *NULL* if the object does not
    allow writing into its returned buffers.
 
-   The third slot is :attr:`bf_getsegcount`, with type :c:type:`getsegcountproc`.
+   The third slot is :attr:`bf_getsegcount`, with type :c:type:`segcountproc`.
    This slot must not be *NULL* and is used to inform the caller how many segments
    the object contains.  Simple objects such as :c:type:`PyString_Type` and
    :c:type:`PyBuffer_Type` objects contain a single segment.
 
    .. index:: single: PyType_HasFeature()
 
-   The last slot is :attr:`bf_getcharbuffer`, of type :c:type:`getcharbufferproc`.
+   The last slot is :attr:`bf_getcharbuffer`, of type :c:type:`charbufferproc`.
    This slot will only be present if the :const:`Py_TPFLAGS_HAVE_GETCHARBUFFER`
    flag is present in the :c:member:`~PyTypeObject.tp_flags` field of the object's
    :c:type:`PyTypeObject`. Before using this slot, the caller should test whether it
