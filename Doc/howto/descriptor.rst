@@ -359,7 +359,7 @@ calls are unexciting::
 
     >>> class E(object):
     ...     def f(x):
-    ...         return(x)
+    ...         return x
     ...     f = staticmethod(f)
     ...
     >>> print(E.f(3))
