@@ -98,7 +98,7 @@ class WeakSet:
             try:
                 itemref = self.data.pop()
             except KeyError:
-                raise KeyError('pop from empty WeakSet')
+                raise KeyError('pop from empty WeakSet') from None
             item = itemref()
             if item is not None:
                 return item
