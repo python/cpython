@@ -344,8 +344,6 @@ class _PollLikeSelector(_BaseSelectorImpl):
     def __init__(self):
         super().__init__()
         self._poller = self._poller()
-        self._is_epoll = hasattr(select, "epoll") and \
-            isinstance(self._poller, select.epoll)
 
     def register(self, fileobj, events, data=None):
         key = super().register(fileobj, events, data)
