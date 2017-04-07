@@ -303,6 +303,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30014: selectors.EpollSelector.modify, selectors.PollSelector.modify
+  and selectors.DevpollSelector.modify are around 1.5x faster.
+  (Contributed by Giampaolo Rodola')
+
 - bpo-29962: Add math.remainder operation, implementing remainder
   as specified in IEEE 754.
 
