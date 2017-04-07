@@ -1410,7 +1410,8 @@ class IPv4Interface(IPv4Address):
         if address_less is NotImplemented:
             return NotImplemented
         try:
-            return self.network < other.network
+            return (self.network < other.network or
+                    self.network == other.network and address_less)
         except AttributeError:
             # We *do* allow addresses and interfaces to be sorted. The
             # unassociated address is considered less than all interfaces.
@@ -2100,7 +2101,8 @@ class IPv6Interface(IPv6Address):
         if address_less is NotImplemented:
             return NotImplemented
         try:
-            return self.network < other.network
+            return (self.network < other.network or
+                    self.network == other.network and address_less)
         except AttributeError:
             # We *do* allow addresses and interfaces to be sorted. The
             # unassociated address is considered less than all interfaces.
