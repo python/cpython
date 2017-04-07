@@ -117,7 +117,10 @@ class BottomMatcher(object):
                     #token matches
                     current_ac_node = current_ac_node.transition_table[node_token]
                     for fixer in current_ac_node.fixers:
+                        if not fixer in results:
+                            results[fixer] = []
                         results[fixer].append(current_ast_node)
+
                 else:
                     #matching failed, reset automaton
                     current_ac_node = self.root
@@ -131,6 +134,8 @@ class BottomMatcher(object):
                         #token matches
                         current_ac_node = current_ac_node.transition_table[node_token]
                         for fixer in current_ac_node.fixers:
+                            if not fixer in results.keys():
+                                results[fixer] = []
                             results[fixer].append(current_ast_node)
 
                 current_ast_node = current_ast_node.parent
