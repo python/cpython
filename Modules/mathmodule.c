@@ -600,6 +600,102 @@ m_atan2(double y, double x)
     return atan2(y, x);
 }
 
+
+/* IEEE 754-style remainder operation: x - n*y where n*y is the nearest
+   multiple of y to x, taking n even in the case of a tie. Assuming an IEEE 754
+   binary floating-point format, the result is always exact. */
+
+static double
+m_remainder(double x, double y)
+{
+    /* Deal with most common case first. */
+    if (Py_IS_FINITE(x) && Py_IS_FINITE(y)) {
+        double absx, absy, c, m, r;
+
+        if (y == 0.0) {
+            return Py_NAN;
+        }
+
+        absx = fabs(x);
+        absy = fabs(y);
+        m = fmod(absx, absy);
+
+        /*
+           Warning: some subtlety here. What we *want* to know at this point is
+           whether the remainder m is less than, equal to, or greater than half
+           of absy. However, we can't do that comparison directly because we
+           can't be sure that 0.5*absy is representable (the mutiplication
+           might incur precision loss due to underflow). So instead we compare
+           m with the complement c = absy - m: m < 0.5*absy if and only if m <
+           c, and so on. The catch is that absy - m might also not be
+           representable, but it turns out that it doesn't matter:
+
+           - if m > 0.5*absy then absy - m is exactly representable, by
+             Sterbenz's lemma, so m > c
+           - if m == 0.5*absy then again absy - m is exactly representable
+             and m == c
+           - if m < 0.5*absy then either (i) 0.5*absy is exactly representable,
+             in which case 0.5*absy < absy - m, so 0.5*absy <= c and hence m <
+             c, or (ii) absy is tiny, either subnormal or in the lowest normal
+             binade. Then absy - m is exactly representable and again m < c.
+        */
+
+        c = absy - m;
+        if (m < c) {
+            r = m;
+        }
+        else if (m > c) {
+            r = -c;
+        }
+        else {
+            /*
+               Here absx is exactly halfway between two multiples of absy,
+               and we need to choose the even multiple. x now has the form
+
+                   absx = n * absy + m
+
+               for some integer n (recalling that m = 0.5*absy at this point).
+               If n is even we want to return m; if n is odd, we need to
+               return -m.
+
+               So
+
+                   0.5 * (absx - m) = (n/2) * absy
+
+               and now reducing modulo absy gives us:
+
+                                                  | m, if n is odd
+                   fmod(0.5 * (absx - m), absy) = |
+                                                  | 0, if n is even
+
+               Now m - 2.0 * fmod(...) gives the desired result: m
+               if n is even, -m if m is odd.
+
+               Note that all steps in fmod(0.5 * (absx - m), absy)
+               will be computed exactly, with no rounding error
+               introduced.
+            */
+            assert(m == c);
+            r = m - 2.0 * fmod(0.5 * (absx - m), absy);
+        }
+        return copysign(1.0, x) * r;
+    }
+
+    /* Special values. */
+    if (Py_IS_NAN(x)) {
+        return x;
+    }
+    if (Py_IS_NAN(y)) {
+        return y;
+    }
+    if (Py_IS_INFINITY(x)) {
+        return Py_NAN;
+    }
+    assert(Py_IS_INFINITY(y));
+    return x;
+}
+
+
 /*
     Various platforms (Solaris, OpenBSD) do nonstandard things for log(0),
     log(-ve), log(NaN).  Here are wrappers for log and log10 that deal with
@@ -1072,6 +1168,12 @@ FUNC1(log1p, m_log1p, 0,
       "log1p($module, x, /)\n--\n\n"
       "Return the natural logarithm of 1+x (base e).\n\n"
       "The result is computed in a way which is accurate for x near zero.")
+FUNC2(remainder, m_remainder,
+      "remainder($module, x, y, /)\n--\n\n"
+      "Difference between x and the closest integer multiple of y.\n\n"
+      "Return x - n*y where n*y is the closest integer multiple of y.\n"
+      "In the case where x is exactly halfway between two multiples of\n"
+      "y, the nearest even value of n is used. The result is always exact.")
 FUNC1(sin, sin, 0,
       "sin($module, x, /)\n--\n\n"
       "Return the sine of x (measured in radians).")
@@ -2258,6 +2360,7 @@ static PyMethodDef math_methods[] = {
     MATH_MODF_METHODDEF
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
+    {"remainder",       math_remainder, METH_VARARGS,   math_remainder_doc},
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},

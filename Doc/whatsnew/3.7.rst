@@ -110,6 +110,12 @@ Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
 If *monetary* is true, the conversion uses monetary thousands separator and
 grouping strings. (Contributed by Garvit in :issue:`10379`.)
 
+math
+----
+
+New :func:`~math.remainder` function, implementing the IEEE 754-style remainder
+operation. (Contributed by Mark Dickinson in :issue:`29962`.)
+
 os
 --
 
