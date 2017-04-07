@@ -451,7 +451,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         state_values[-1] = float('nan')
         state = (int(x) for x in state_values)
         self.assertRaises(TypeError, self.gen.setstate, (2, state, None))
- 
+
     def test_referenceImplementation(self):
         # Compare the python implementation with results from the original
         # code.  Create 2000 53-bit precision random floats.  Compare only
