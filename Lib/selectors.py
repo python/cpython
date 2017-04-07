@@ -251,7 +251,6 @@ class _BaseSelectorImpl(BaseSelector):
         return key
 
     def modify(self, fileobj, events, data=None):
-        # TODO: Subclasses can probably optimize this even further.
         try:
             key = self._fd_to_key[self._fileobj_lookup(fileobj)]
         except KeyError:
@@ -362,6 +361,31 @@ if hasattr(select, 'poll'):
             self._poll.unregister(key.fd)
             return key
 
+        def modify(self, fileobj, events, data=None):
+            try:
+                key = self._fd_to_key[self._fileobj_lookup(fileobj)]
+            except KeyError:
+                raise KeyError("{!r} is not registered".format(fileobj)) from None
+            changed = False
+            if events != key.events:
+                selector_events = 0
+                if events & EVENT_READ:
+                    selector_events |= select.POLLIN
+                if events & EVENT_WRITE:
+                    selector_events |= select.POLLOUT
+                try:
+                    self._poll.modify(key.fd, selector_events)
+                except BaseException:
+                    super().unregister(fileobj)
+                    raise
+                changed = True
+            if data != key.data:
+                changed = True
+            if changed:
+                key = key._replace(events=events, data=data)
+                self._fd_to_key[key.fd] = key
+            return key
+
         def select(self, timeout=None):
             if timeout is None:
                 timeout = None
@@ -457,6 +481,31 @@ if hasattr(select, 'epoll'):
                     ready.append((key, events & key.events))
             return ready
 
+        def modify(self, fileobj, events, data=None):
+            try:
+                key = self._fd_to_key[self._fileobj_lookup(fileobj)]
+            except KeyError:
+                raise KeyError("{!r} is not registered".format(fileobj)) from None
+            changed = False
+            if events != key.events:
+                selector_events = 0
+                if events & EVENT_READ:
+                    selector_events |= select.EPOLLIN
+                if events & EVENT_WRITE:
+                    selector_events |= select.EPOLLOUT
+                try:
+                    self._epoll.modify(key.fd, selector_events)
+                except BaseException:
+                    super().unregister(fileobj)
+                    raise
+                changed = True
+            if data != key.data:
+                changed = True
+            if changed:
+                key = key._replace(events=events, data=data)
+                self._fd_to_key[key.fd] = key
+            return key
+
         def close(self):
             self._epoll.close()
             super().close()
@@ -487,6 +536,31 @@ if hasattr(select, 'devpoll'):
         def unregister(self, fileobj):
             key = super().unregister(fileobj)
             self._devpoll.unregister(key.fd)
+            return key
+
+        def modify(self, fileobj, events, data=None):
+            try:
+                key = self._fd_to_key[self._fileobj_lookup(fileobj)]
+            except KeyError:
+                raise KeyError("{!r} is not registered".format(fileobj)) from None
+            changed = False
+            if events != key.events:
+                selector_events = 0
+                if events & EVENT_READ:
+                    selector_events |= select.POLLIN
+                if events & EVENT_WRITE:
+                    selector_events |= select.POLLOUT
+                try:
+                    self._devpoll.modify(key.fd, selector_events)
+                except BaseException:
+                    super().unregister(fileobj)
+                    raise
+                changed = True
+            if data != key.data:
+                changed = True
+            if changed:
+                key = key._replace(events=events, data=data)
+                self._fd_to_key[key.fd] = key
             return key
 
         def select(self, timeout=None):

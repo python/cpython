@@ -169,6 +169,8 @@ Optimizations
   using the :func:`os.scandir` function.
   (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
+* :meth:`selectors.DefaultSelector.modify` on Linux, OSX and Solaris is around
+  1.5x faster. (Contributed by Giampaolo Rodola')
 
 Build and C API Changes
 =======================
