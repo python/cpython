@@ -2058,6 +2058,32 @@ libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h)
 AC_HEADER_DIRENT
+
+# This works around a buggy version in autoconf <= 2.69.
+# See <https://lists.gnu.org/archive/html/autoconf/2016-08/msg00014.html>
+
+m4_version_prereq([2.70], [], [
+
+# This is taken from the following Autoconf patch:
+# http://git.sv.gnu.org/cgit/autoconf.git/commit/?id=XXXXXXX
+
+m4_undefine([AC_HEADER_MAJOR])
+AC_DEFUN([AC_HEADER_MAJOR],
+[AC_CHECK_HEADERS_ONCE([sys/types.h])
+AC_CHECK_HEADER([sys/mkdev.h],
+  [AC_DEFINE([MAJOR_IN_MKDEV], [1],
+    [Define to 1 if `major', `minor', and `makedev' are declared in
+     <mkdev.h>.])])
+if test $ac_cv_header_sys_mkdev_h = no; then
+  AC_CHECK_HEADER([sys/sysmacros.h],
+    [AC_DEFINE([MAJOR_IN_SYSMACROS], [1],
+      [Define to 1 if `major', `minor', and `makedev' are declared in
+       <sysmacros.h>.])])
+fi
+])
+
+])
+
 AC_HEADER_MAJOR
 
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.

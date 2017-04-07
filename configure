@@ -622,6 +622,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
+ac_header_list=
 ac_subst_vars='LTLIBOBJS
 ENSUREPIP
 SRCDIRS
@@ -2609,6 +2610,7 @@ $as_echo "$as_me: creating cache $cache_file" >&6;}
   >$cache_file
 fi
 
+as_fn_append ac_header_list " sys/types.h"
 # Check that the precious variables saved in the cache have kept the same
 # value.
 ac_cache_corrupted=false
@@ -7994,35 +7996,40 @@ fi
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether sys/types.h defines makedev" >&5
-$as_echo_n "checking whether sys/types.h defines makedev... " >&6; }
-if ${ac_cv_header_sys_types_h_makedev+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/types.h>
-int
-main ()
-{
-return makedev(0, 0);
-  ;
-  return 0;
-}
+
+# This works around a buggy version in autoconf <= 2.69.
+# See <https://lists.gnu.org/archive/html/autoconf/2016-08/msg00014.html>
+
+
+
+# This is taken from the following Autoconf patch:
+# http://git.sv.gnu.org/cgit/autoconf.git/commit/?id=XXXXXXX
+
+
+
+
+
+
+
+
+
+  for ac_header in $ac_header_list
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default
+"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_header_sys_types_h_makedev=yes
-else
-  ac_cv_header_sys_types_h_makedev=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
 
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_sys_types_h_makedev" >&5
-$as_echo "$ac_cv_header_sys_types_h_makedev" >&6; }
 
-if test $ac_cv_header_sys_types_h_makedev = no; then
+done
+
+
+
+
 ac_fn_c_check_header_mongrel "$LINENO" "sys/mkdev.h" "ac_cv_header_sys_mkdev_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_mkdev_h" = xyes; then :
 
@@ -8031,9 +8038,8 @@ $as_echo "#define MAJOR_IN_MKDEV 1" >>confdefs.h
 fi
 
 
-
-  if test $ac_cv_header_sys_mkdev_h = no; then
-    ac_fn_c_check_header_mongrel "$LINENO" "sys/sysmacros.h" "ac_cv_header_sys_sysmacros_h" "$ac_includes_default"
+if test $ac_cv_header_sys_mkdev_h = no; then
+  ac_fn_c_check_header_mongrel "$LINENO" "sys/sysmacros.h" "ac_cv_header_sys_sysmacros_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_sysmacros_h" = xyes; then :
 
 $as_echo "#define MAJOR_IN_SYSMACROS 1" >>confdefs.h
@@ -8041,7 +8047,6 @@ $as_echo "#define MAJOR_IN_SYSMACROS 1" >>confdefs.h
 fi
 
 
-  fi
 fi
 
 

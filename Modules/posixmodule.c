@@ -51,6 +51,17 @@ disguised Unix interface).  Refer to the library manual and\n\
 corresponding Unix manual entries for more information on calls.");
 
 
+#if defined(MAJOR_IN_MKDEV)
+#include <sys/mkdev.h>
+#else
+#if defined(MAJOR_IN_SYSMACROS)
+#include <sys/sysmacros.h>
+#endif
+#if defined(HAVE_MKNOD) && defined(HAVE_SYS_MKDEV_H)
+#include <sys/mkdev.h>
+#endif
+#endif
+
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
@@ -371,17 +382,6 @@ static int win32_can_symlink = 0;
 #       define LSTAT lstat
 #       define FSTAT fstat
 #       define STRUCT_STAT struct stat
-#endif
-
-#if defined(MAJOR_IN_MKDEV)
-#include <sys/mkdev.h>
-#else
-#if defined(MAJOR_IN_SYSMACROS)
-#include <sys/sysmacros.h>
-#endif
-#if defined(HAVE_MKNOD) && defined(HAVE_SYS_MKDEV_H)
-#include <sys/mkdev.h>
-#endif
 #endif
 
 #define DWORD_MAX 4294967295U
