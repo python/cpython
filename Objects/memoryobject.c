@@ -584,10 +584,11 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
     else if (PySlice_Check(key)) {
         Py_ssize_t start, stop, step, slicelength;
 
-        if (PySlice_GetIndicesEx((PySliceObject*)key, get_shape0(view),
-                                 &start, &stop, &step, &slicelength) < 0) {
+        if (_PySlice_Unpack((PySliceObject *)key, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = _PySlice_AdjustIndices(get_shape0(view), &start, &stop,
+                                            step);
     
         if (step == 1 && view->ndim == 1) {
             Py_buffer newview;
@@ -662,10 +663,10 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
     else if (PySlice_Check(key)) {
         Py_ssize_t stop, step;
 
-        if (PySlice_GetIndicesEx((PySliceObject*)key, get_shape0(view),
-                         &start, &stop, &step, &len) < 0) {
+        if (_PySlice_Unpack((PySliceObject *)key, &start, &stop, &step) < 0) {
             return -1;
         }
+        len = _PySlice_AdjustIndices(get_shape0(view), &start, &stop, step);
         if (step != 1) {
             PyErr_SetNone(PyExc_NotImplementedError);
             return -1;
