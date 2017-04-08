@@ -1310,10 +1310,10 @@ string_subscript(PyStringObject* self, PyObject* item)
         char* result_buf;
         PyObject* result;
 
-        if (PySlice_Unpack((PySliceObject *)item, &start, &stop, &step) < 0) {
+        if (_PySlice_Unpack((PySliceObject *)item, &start, &stop, &step) < 0) {
             return NULL;
         }
-        slicelength = PySlice_AdjustIndices(PyString_GET_SIZE(self), &start,
+        slicelength = _PySlice_AdjustIndices(PyString_GET_SIZE(self), &start,
                                             &stop, step);
 
         if (slicelength <= 0) {

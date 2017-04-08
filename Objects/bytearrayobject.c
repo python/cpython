@@ -435,10 +435,10 @@ bytearray_subscript(PyByteArrayObject *self, PyObject *index)
     }
     else if (PySlice_Check(index)) {
         Py_ssize_t start, stop, step, slicelength, cur, i;
-        if (PySlice_Unpack((PySliceObject *)index, &start, &stop, &step) < 0) {
+        if (_PySlice_Unpack((PySliceObject *)index, &start, &stop, &step) < 0) {
             return NULL;
         }
-        slicelength = PySlice_AdjustIndices(PyByteArray_GET_SIZE(self),
+        slicelength = _PySlice_AdjustIndices(PyByteArray_GET_SIZE(self),
                                             &start, &stop, step);
 
         if (slicelength <= 0)
@@ -619,10 +619,10 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
         }
     }
     else if (PySlice_Check(index)) {
-        if (PySlice_Unpack((PySliceObject *)index, &start, &stop, &step) < 0) {
+        if (_PySlice_Unpack((PySliceObject *)index, &start, &stop, &step) < 0) {
             return -1;
         }
-        slicelen = PySlice_AdjustIndices(PyByteArray_GET_SIZE(self), &start,
+        slicelen = _PySlice_AdjustIndices(PyByteArray_GET_SIZE(self), &start,
                                          &stop, step);
     }
     else {

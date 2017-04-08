@@ -294,10 +294,10 @@ slice_indices(PySliceObject* self, PyObject* len)
         return NULL;
     }
 
-    if (PySlice_Unpack(self, &start, &stop, &step) < 0) {
+    if (_PySlice_Unpack(self, &start, &stop, &step) < 0) {
         return NULL;
     }
-    slicelength = PySlice_AdjustIndices(ilen, &start, &stop, step);
+    slicelength = _PySlice_AdjustIndices(ilen, &start, &stop, step);
 
     return Py_BuildValue("(nnn)", start, stop, step);
 }
