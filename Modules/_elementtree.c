@@ -1740,11 +1740,11 @@ element_subscr(PyObject* self_, PyObject* item)
         if (!self->extra)
             return PyList_New(0);
 
-        if (PySlice_GetIndicesEx(item,
-                self->extra->length,
-                &start, &stop, &step, &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
+                                         step);
 
         if (slicelen <= 0)
             return PyList_New(0);
@@ -1796,11 +1796,11 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
                 return -1;
         }
 
-        if (PySlice_GetIndicesEx(item,
-                self->extra->length,
-                &start, &stop, &step, &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
+        slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
+                                         step);
 
         if (value == NULL) {
             /* Delete slice */
