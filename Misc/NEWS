@@ -49,6 +49,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29998: Pickling and copying ImportError now preserves name and path
+  attributes.
+
 - bpo-29942: Fix a crash in itertools.chain.from_iterable when encountering
   long runs of empty iterables.
 
