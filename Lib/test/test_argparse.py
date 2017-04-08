@@ -786,6 +786,22 @@ class TestOptionalsDisallowLongAbbreviation(ParserTestCase):
         ('--foonly 7 --foodle --foo 2', NS(foo='2', foodle=True, foonly='7')),
     ]
 
+
+class TestDashAndUnderscoreAreTheSame(ParserTestCase):
+    """Check that - and _ in option names are interchangeable"""
+
+    argument_signatures = [
+        Sig('--with-dash'),
+        Sig('--with_underscore'),
+    ]
+    failures = []
+    successes = [
+        ('--with-dash=x', NS(with_dash='x', with_underscore=None)),
+        ('--with_dash=x', NS(with_dash='x', with_underscore=None)),
+        ('--with-underscore=x', NS(with_underscore='x', with_dash=None)),
+        ('--with_underscore=x', NS(with_underscore='x', with_dash=None)),
+    ]
+
 # ================
 # Positional tests
 # ================
