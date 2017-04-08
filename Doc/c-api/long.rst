@@ -85,12 +85,12 @@ All integers are implemented as "long" integer objects of arbitrary size.
    Return a new :c:type:`PyLongObject` based on the string value in *str*, which
    is interpreted according to the radix in *base*.  If *pend* is non-*NULL*,
    *\*pend* will point to the first character in *str* which follows the
-   representation of the number.  If *base* is ``0``, the *str* is interpreted using
-   the :ref:`integers` defintion; additionally, a literal 0 evaluates as *base* 0 and
-   a :attr:`decinteger` beginning with 0 raises a :exc:`ValueError`.  If *base* is not
-   ``0``, it must be between ``2`` and ``36``, inclusive.  Leading spaces and single
-   underscores after a base specifier and between digits are ignored.  If there are
-   no digits, :exc:`ValueError` will be raised.
+   representation of the number.  If *base* is ``0``, *str* is interpreted using
+   the :ref:`integers` definition; a literal 0 evaluates to 0; since
+   leading zeroes are not allowed in a :token:`decinteger`, this raises a :exc:`ValueError`.
+   If *base* is not ``0``, it must be between ``2`` and ``36``, inclusive.  Leading
+   spaces and single underscores after a base specifier and between digits are ignored.
+   If there are no digits, :exc:`ValueError` will be raised.
 
 
 .. c:function:: PyObject* PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
