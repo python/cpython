@@ -4434,11 +4434,10 @@ Array_subscript(PyObject *_self, PyObject *item)
         PyObject *np;
         Py_ssize_t start, stop, step, slicelen, cur, i;
 
-        if (PySlice_GetIndicesEx((PySliceObject *)item,
-                                 self->b_length, &start, &stop,
-                                 &step, &slicelen) < 0) {
+        if (PySlice_Unpack((PySliceObject *)item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelen = PySlice_AdjustIndices(self->b_length, &start, &stop, step);
 
         stgdict = PyObject_stgdict((PyObject *)self);
         assert(stgdict); /* Cannot be NULL for array object instances */
