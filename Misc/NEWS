@@ -307,6 +307,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29998: Pickling and copying ImportError now preserves name and path
+  attributes.
+
 - bpo-29962: Add math.remainder operation, implementing remainder
   as specified in IEEE 754.
 
