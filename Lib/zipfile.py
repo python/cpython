@@ -980,6 +980,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         return True
 
     def write(self, data):
+        if self.closed:
+            raise ValueError('I/O operation on closed file.')
         nbytes = len(data)
         self._file_size += nbytes
         self._crc = crc32(data, self._crc)
@@ -990,6 +992,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         return nbytes
 
     def close(self):
+        if self.closed:
+            return
         super().close()
         # Flush any data from the compressor, and update header info
         if self._compressor:

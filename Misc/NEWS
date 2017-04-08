@@ -303,6 +303,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30017: Allowed calling the close() method of the zip entry writer object
+  multiple times.  Writing to closed zip entry writer object now always produce
+  a ValueError.
+
 - bpo-29962: Add math.remainder operation, implementing remainder
   as specified in IEEE 754.
 
