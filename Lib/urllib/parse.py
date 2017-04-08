@@ -22,7 +22,7 @@ M. McCahill, December 1994
 
 RFC 3986 is considered the current standard and any future changes to
 urlparse module should conform with it.  The urlparse module is
-currently not entirely compliant with this RFC due to de-facto
+currently not entirely compliant with this RFC due to de facto
 scenarios for parsing, and for backward compatibility purposes, some
 parsing quirks from older RFCs are retained. The testcases in
 test_urlparse.py provides a good indicator of parsing behavior.
@@ -40,8 +40,7 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "DefragResultBytes", "ParseResultBytes", "SplitResultBytes"]
 
 # A classification of schemes.
-# We have '' as scheme value to accommodate for the default value of scheme
-# arg in urlsplit and urlparse.
+# We use '' as the scheme value for default scheme in urlsplit and urlparse.
 
 uses_relative = ['', 'ftp', 'http', 'gopher', 'nntp', 'imap',
                  'wais', 'file', 'https', 'shttp', 'mms',
