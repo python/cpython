@@ -525,84 +525,25 @@ All standard Python exceptions are available as global variables whose names are
 :c:type:`PyObject\*`; they are all class objects.  For completeness, here are all
 the variables:
 
-+-------------------------------------+----------------------------+----------+
-| C Name                              | Python Name                | Notes    |
-+=====================================+============================+==========+
-| :c:data:`PyExc_BaseException`       | :exc:`BaseException`       | (1), (4) |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_Exception`           | :exc:`Exception`           | \(1)     |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_StandardError`       | :exc:`StandardError`       | \(1)     |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_ArithmeticError`     | :exc:`ArithmeticError`     | \(1)     |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_LookupError`         | :exc:`LookupError`         | \(1)     |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_AssertionError`      | :exc:`AssertionError`      |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_AttributeError`      | :exc:`AttributeError`      |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_EOFError`            | :exc:`EOFError`            |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_EnvironmentError`    | :exc:`EnvironmentError`    | \(1)     |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_FloatingPointError`  | :exc:`FloatingPointError`  |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_IOError`             | :exc:`IOError`             |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_ImportError`         | :exc:`ImportError`         |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_IndexError`          | :exc:`IndexError`          |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_KeyError`            | :exc:`KeyError`            |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_KeyboardInterrupt`   | :exc:`KeyboardInterrupt`   |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_MemoryError`         | :exc:`MemoryError`         |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_NameError`           | :exc:`NameError`           |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_NotImplementedError` | :exc:`NotImplementedError` |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_OSError`             | :exc:`OSError`             |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_OverflowError`       | :exc:`OverflowError`       |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_ReferenceError`      | :exc:`ReferenceError`      | \(2)     |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_RuntimeError`        | :exc:`RuntimeError`        |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_SyntaxError`         | :exc:`SyntaxError`         |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_SystemError`         | :exc:`SystemError`         |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_SystemExit`          | :exc:`SystemExit`          |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_TypeError`           | :exc:`TypeError`           |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_ValueError`          | :exc:`ValueError`          |          |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_WindowsError`        | :exc:`WindowsError`        | \(3)     |
-+-------------------------------------+----------------------------+----------+
-| :c:data:`PyExc_ZeroDivisionError`   | :exc:`ZeroDivisionError`   |          |
-+-------------------------------------+----------------------------+----------+
-
 .. index::
    single: PyExc_BaseException
    single: PyExc_Exception
    single: PyExc_StandardError
    single: PyExc_ArithmeticError
-   single: PyExc_LookupError
    single: PyExc_AssertionError
    single: PyExc_AttributeError
-   single: PyExc_EOFError
+   single: PyExc_BufferError
    single: PyExc_EnvironmentError
+   single: PyExc_EOFError
    single: PyExc_FloatingPointError
-   single: PyExc_IOError
+   single: PyExc_GeneratorExit
    single: PyExc_ImportError
+   single: PyExc_IndentationError
    single: PyExc_IndexError
+   single: PyExc_IOError
    single: PyExc_KeyError
    single: PyExc_KeyboardInterrupt
+   single: PyExc_LookupError
    single: PyExc_MemoryError
    single: PyExc_NameError
    single: PyExc_NotImplementedError
@@ -610,13 +551,105 @@ the variables:
    single: PyExc_OverflowError
    single: PyExc_ReferenceError
    single: PyExc_RuntimeError
+   single: PyExc_StopIteration
    single: PyExc_SyntaxError
    single: PyExc_SystemError
    single: PyExc_SystemExit
+   single: PyExc_TabError
    single: PyExc_TypeError
+   single: PyExc_UnboundLocalError
+   single: PyExc_UnicodeDecodeError
+   single: PyExc_UnicodeEncodeError
+   single: PyExc_UnicodeError
+   single: PyExc_UnicodeTranslateError
+   single: PyExc_VMSError
    single: PyExc_ValueError
    single: PyExc_WindowsError
    single: PyExc_ZeroDivisionError
+
++-----------------------------------------+---------------------------------+----------+
+| C Name                                  | Python Name                     | Notes    |
++=========================================+=================================+==========+
+| :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | (1), (4) |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_Exception`               | :exc:`Exception`                | \(1)     |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_StandardError`           | :exc:`StandardError`            | \(1)     |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_ArithmeticError`         | :exc:`ArithmeticError`          | \(1)     |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_AssertionError`          | :exc:`AssertionError`           |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_AttributeError`          | :exc:`AttributeError`           |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_BufferError`             | :exc:`BufferError`              |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_EnvironmentError`        | :exc:`EnvironmentError`         | \(1)     |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_EOFError`                | :exc:`EOFError`                 |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_FloatingPointError`      | :exc:`FloatingPointError`       |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_GeneratorExit`           | :exc:`GeneratorExit`            |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_ImportError`             | :exc:`ImportError`              |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_IndentationError`        | :exc:`IndentationError`         |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_IndexError`              | :exc:`IndexError`               |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_IOError`                 | :exc:`IOError`                  |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_KeyError`                | :exc:`KeyError`                 |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_KeyboardInterrupt`       | :exc:`KeyboardInterrupt`        |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_LookupError`             | :exc:`LookupError`              | \(1)     |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_MemoryError`             | :exc:`MemoryError`              |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_NameError`               | :exc:`NameError`                |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_NotImplementedError`     | :exc:`NotImplementedError`      |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_OSError`                 | :exc:`OSError`                  |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_OverflowError`           | :exc:`OverflowError`            |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_ReferenceError`          | :exc:`ReferenceError`           | \(2)     |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_RuntimeError`            | :exc:`RuntimeError`             |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_StopIteration`           | :exc:`StopIteration`            |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_SyntaxError`             | :exc:`SyntaxError`              |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_SystemError`             | :exc:`SystemError`              |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_SystemExit`              | :exc:`SystemExit`               |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_TabError`                | :exc:`TabError`                 |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_TypeError`               | :exc:`TypeError`                |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UnboundLocalError`       | :exc:`UnboundLocalError`        |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UnicodeDecodeError`      | :exc:`UnicodeDecodeError`       |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UnicodeEncodeError`      | :exc:`UnicodeEncodeError`       |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UnicodeError`            | :exc:`UnicodeError`             |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UnicodeTranslateError`   | :exc:`UnicodeTranslateError`    |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_VMSError`                | :exc:`VMSError`                 | \(5)     |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_ValueError`              | :exc:`ValueError`               |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_WindowsError`            | :exc:`WindowsError`             | \(3)     |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_ZeroDivisionError`       | :exc:`ZeroDivisionError`        |          |
++-----------------------------------------+---------------------------------+----------+
 
 Notes:
 
@@ -633,6 +666,58 @@ Notes:
 (4)
    .. versionadded:: 2.5
 
+(5)
+   Only defined on VMS; protect code that uses this by testing that the
+   preprocessor macro ``__VMS`` is defined.
+
+Standard Warnings
+=================
+
+All standard Python warning categories are available as global variables whose
+names are ``PyExc_`` followed by the Python exception name. These have the type
+:c:type:`PyObject\*`; they are all class objects. For completeness, here are all
+the variables:
+
+.. index::
+   single: PyExc_Warning
+   single: PyExc_BytesWarning
+   single: PyExc_DepricationWarning
+   single: PyExc_FutureWarning
+   single: PyExc_ImportWarning
+   single: PyExc_PendingDeprecationWarning
+   single: PyExc_RuntimeWarning
+   single: PyExc_SyntaxWarning
+   single: PyExc_UnicodeWarning
+   single: PyExc_UserWarning
+
++------------------------------------------+---------------------------------+----------+
+| C Name                                   | Python Name                     | Notes    |
++==========================================+=================================+==========+
+| :c:data:`PyExc_Warning`                  | :exc:`Warning`                  | \(1)     |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_BytesWarning`             | :exc:`BytesWarning`             |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_DeprecationWarning`       | :exc:`DeprecationWarning`       |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_FutureWarning`            | :exc:`FutureWarning`            |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_ImportWarning`            | :exc:`ImportWarning`            |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_PendingDepricationWarning`| :exc:`PendingDeprecationWarning`|          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_RuntimeWarning`           | :exc:`RuntimeWarning`           |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_SyntaxWarning`            | :exc:`SyntaxWarning`            |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UnicodeWarning`           | :exc:`UnicodeWarning`           |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_UserWarning`              | :exc:`UserWarning`              |          |
++------------------------------------------+---------------------------------+----------+
+
+Notes:
+
+(1)
+   This is a base class for other standard warning categories.
 
 String Exceptions
 =================
@@ -640,4 +725,3 @@ String Exceptions
 .. versionchanged:: 2.6
    All exceptions to be raised or caught must be derived from :exc:`BaseException`.
    Trying to raise a string exception now raises :exc:`TypeError`.
-
