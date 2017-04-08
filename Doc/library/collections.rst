@@ -270,7 +270,7 @@ For example::
 
         Return a list of the *n* most common elements and their counts from the
         most common to the least.  If *n* is omitted or ``None``,
-        :func:`most_common` returns *all* elements in the counter.
+        :meth:`most_common` returns *all* elements in the counter.
         Elements with equal counts are ordered arbitrarily:
 
             >>> Counter('abracadabra').most_common(3)  # doctest: +SKIP
@@ -621,7 +621,7 @@ added elements by appending to the right and popping to the left::
 
 The :meth:`~deque.rotate` method provides a way to implement :class:`deque` slicing
 and deletion.  For example, a pure Python implementation of ``del d[n]`` relies on
-the :meth:`~deque.rotate` method to position elements to be popped::
+the ``rotate()`` method to position elements to be popped::
 
     def delete_nth(d, n):
         d.rotate(-n)
@@ -1036,8 +1036,8 @@ anywhere a regular dictionary is used.
 
 .. versionchanged:: 3.6
    With the acceptance of :pep:`468`, order is retained for keyword arguments
-   passed to the :class:`OrderedDict` constructor and its
-   :meth:`update` method.
+   passed to the :class:`OrderedDict` constructor and its :meth:`update`
+   method.
 
 :class:`OrderedDict` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1166,15 +1166,17 @@ subclass directly from :class:`str`; however, this class can be easier
 to work with because the underlying string is accessible as an
 attribute.
 
-.. class:: UserString([sequence])
+.. class:: UserString(seq)
 
-    Class that simulates a string or a Unicode string object.  The instance's
+    Class that simulates a string object.  The instance's
     content is kept in a regular string object, which is accessible via the
     :attr:`data` attribute of :class:`UserString` instances.  The instance's
-    contents are initially set to a copy of *sequence*.  The *sequence* can
-    be an instance of :class:`bytes`, :class:`str`, :class:`UserString` (or a
-    subclass) or an arbitrary sequence which can be converted into a string using
-    the built-in :func:`str` function.
+    contents are initially set to a copy of *seq*.  The *seq* can
+    be any object which can be converted into a string using the built-in
+    :func:`str` function.
+
+    In addition to supporting the methods and operations of strings,
+    :class:`UserString` instances provide the following attribute:
 
     .. attribute:: data
 
