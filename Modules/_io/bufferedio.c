@@ -695,7 +695,7 @@ _buffered_raw_tell(buffered *self)
     Py_DECREF(res);
     if (n < 0) {
         if (!PyErr_Occurred())
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "Raw stream returned invalid position %" PY_PRIdOFF,
                          (PY_OFF_T_COMPAT)n);
         return -1;
@@ -728,7 +728,7 @@ _buffered_raw_seek(buffered *self, Py_off_t target, int whence)
     Py_DECREF(res);
     if (n < 0) {
         if (!PyErr_Occurred())
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "Raw stream returned invalid position %" PY_PRIdOFF,
                          (PY_OFF_T_COMPAT)n);
         return -1;
@@ -776,7 +776,7 @@ _buffered_init(buffered *self)
     return 0;
 }
 
-/* Return 1 if an EnvironmentError with errno == EINTR is set (and then
+/* Return 1 if an OSError with errno == EINTR is set (and then
    clears the error indicator), 0 otherwise.
    Should only be called when PyErr_Occurred() is true.
 */
@@ -785,17 +785,17 @@ _PyIO_trap_eintr(void)
 {
     static PyObject *eintr_int = NULL;
     PyObject *typ, *val, *tb;
-    PyEnvironmentErrorObject *env_err;
+    PyOSErrorObject *env_err;
 
     if (eintr_int == NULL) {
         eintr_int = PyLong_FromLong(EINTR);
         assert(eintr_int != NULL);
     }
-    if (!PyErr_ExceptionMatches(PyExc_EnvironmentError))
+    if (!PyErr_ExceptionMatches(PyExc_OSError))
         return 0;
     PyErr_Fetch(&typ, &val, &tb);
     PyErr_NormalizeException(&typ, &val, &tb);
-    env_err = (PyEnvironmentErrorObject *) val;
+    env_err = (PyOSErrorObject *) val;
     assert(env_err != NULL);
     if (env_err->myerrno != NULL &&
         PyObject_RichCompareBool(env_err->myerrno, eintr_int, Py_EQ) > 0) {
@@ -1374,7 +1374,7 @@ buffered_iternext(buffered *self)
         line = PyObject_CallMethodObjArgs((PyObject *)self,
                                            _PyIO_str_readline, NULL);
         if (line && !PyBytes_Check(line)) {
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "readline() should have returned a bytes object, "
                          "not '%.200s'", Py_TYPE(line)->tp_name);
             Py_DECREF(line);
@@ -1501,7 +1501,7 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
     n = PyNumber_AsSsize_t(res, PyExc_ValueError);
     Py_DECREF(res);
     if (n < 0 || n > len) {
-        PyErr_Format(PyExc_IOError,
+        PyErr_Format(PyExc_OSError,
                      "raw readinto() returned invalid length %zd "
                      "(should have been between 0 and %zd)", n, len);
         return -1;
@@ -1858,7 +1858,7 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     n = PyNumber_AsSsize_t(res, PyExc_ValueError);
     Py_DECREF(res);
     if (n < 0 || n > len) {
-        PyErr_Format(PyExc_IOError,
+        PyErr_Format(PyExc_OSError,
                      "raw write() returned invalid length %zd "
                      "(should have been between 0 and %zd)", n, len);
         return -1;
