@@ -821,5 +821,20 @@ class ArgsTestCase(BaseTestCase):
                                   randomize=True)
 
 
+class TempCwdTestCase(unittest.TestCase):
+    @unittest.skipUnless(hasattr(os, "fork"), "test requires os.fork")
+    def test_forked_child(self):
+        import sys
+        with support.temp_cwd() as cwd:
+            pid = os.fork()
+            if pid != 0:
+                # parent
+                os.waitpid(pid, 0)
+                self.assertTrue(os.path.isdir(cwd), "directory was removed "+cwd)
+        if pid == 0:
+            # terminate the child in order to not confuse the test runner
+            os._exit(0)
+
+
 if __name__ == '__main__':
     unittest.main()
