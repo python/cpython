@@ -1171,7 +1171,7 @@ attribute.
     Class that simulates a string object.  The instance's
     content is kept in a regular string object, which is accessible via the
     :attr:`data` attribute of :class:`UserString` instances.  The instance's
-    contents are initially set to a copy of *seq*.  The *seq* can
+    contents are initially set to a copy of *seq*.  The *seq* argument can
     be any object which can be converted into a string using the built-in
     :func:`str` function.
 
