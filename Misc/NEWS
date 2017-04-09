@@ -307,6 +307,10 @@ Extension Modules
 Library
 -------
 
+- bpo-26187: Test that sqlite3 trace callback is not called multiple
+  times when schema is changing.  Indirectly fixed by switching to 
+  use sqlite3_prepare_v2() in bpo-9303.  Patch by Aviv Palivoda.
+
 - bpo-29998: Pickling and copying ImportError now preserves name and path
   attributes.
 
