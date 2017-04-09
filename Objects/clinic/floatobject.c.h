@@ -171,7 +171,7 @@ static PyObject *
 float_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyObject *x = Py_False;
+    PyObject *x = _PyLong_Zero;
 
     if ((type == &PyFloat_Type) &&
         !_PyArg_NoKeywords("float", kwargs)) {
@@ -313,4 +313,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a3dafb0f6c6f1514 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dc6b0b67a7e40c93 input=a9049054013a1b77]*/

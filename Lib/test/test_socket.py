@@ -1026,7 +1026,9 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(b'\xaa\xaa\xaa\xaa', f('170.170.170.170'))
         self.assertEqual(b'\x01\x02\x03\x04', f('1.2.3.4'))
         self.assertEqual(b'\xff\xff\xff\xff', f('255.255.255.255'))
-        assertInvalid(f, '0.0.0.')
+        # bpo-29972: inet_pton() doesn't fail on AIX
+        if not sys.platform.startswith('aix'):
+            assertInvalid(f, '0.0.0.')
         assertInvalid(f, '300.0.0.0')
         assertInvalid(f, 'a.0.0.0')
         assertInvalid(f, '1.2.3.4.5')
@@ -1081,10 +1083,12 @@ class GeneralModuleTests(unittest.TestCase):
         assertInvalid('::0::')
         assertInvalid('1::abc::')
         assertInvalid('1::abc::def')
-        assertInvalid('1:2:3:4:5:6:')
         assertInvalid('1:2:3:4:5:6')
-        assertInvalid('1:2:3:4:5:6:7:8:')
         assertInvalid('1:2:3:4:5:6:7:8:0')
+        # bpo-29972: inet_pton() doesn't fail on AIX
+        if not sys.platform.startswith('aix'):
+            assertInvalid('1:2:3:4:5:6:')
+            assertInvalid('1:2:3:4:5:6:7:8:')
 
         self.assertEqual(b'\x00' * 12 + b'\xfe\x2a\x17\x40',
             f('::254.42.23.64')

@@ -16,7 +16,7 @@ from random import randint, random, getrandbits
 from test.support import script_helper
 from test.support import (TESTFN, findfile, unlink, rmtree, temp_dir, temp_cwd,
                           requires_zlib, requires_bz2, requires_lzma,
-                          captured_stdout, check_warnings)
+                          captured_stdout)
 
 TESTFN2 = TESTFN + "2"
 TESTFNDIR = TESTFN + "d"
@@ -2139,6 +2139,16 @@ class CommandLineTest(unittest.TestCase):
 
     def zipfilecmd_failure(self, *args):
         return script_helper.assert_python_failure('-m', 'zipfile', *args)
+
+    def test_bad_use(self):
+        rc, out, err = self.zipfilecmd_failure()
+        self.assertEqual(out, b'')
+        self.assertIn(b'usage', err.lower())
+        self.assertIn(b'error', err.lower())
+        self.assertIn(b'required', err.lower())
+        rc, out, err = self.zipfilecmd_failure('-l', '')
+        self.assertEqual(out, b'')
+        self.assertNotEqual(err.strip(), b'')
 
     def test_test_command(self):
         zip_name = findfile('zipdir.zip')
