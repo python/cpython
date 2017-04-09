@@ -74,7 +74,7 @@ def get_git_upstream_remote():
 @status("Getting base branch for PR",
         info=lambda x: x if x is not None else "not a PR branch")
 def get_base_branch():
-    if not os.path.isdir(os.path.join(SRCDIR, '.git')):
+    if not os.path.exists(os.path.join(SRCDIR, '.git')):
         # Not a git checkout, so there's no base branch
         return None
     version = sys.version_info
