@@ -824,7 +824,6 @@ class ArgsTestCase(BaseTestCase):
 class TempCwdTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, "fork"), "test requires os.fork")
     def test_forked_child(self):
-        import sys
         with support.temp_cwd() as cwd:
             pid = os.fork()
             if pid != 0:
