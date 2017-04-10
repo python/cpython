@@ -1581,6 +1581,10 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     tok->async_def = 1;
                     return ASYNC;
                 }
+            } else {
+                if (memcmp(tok->start, "await", 5) == 0) {
+                    return AWAIT;
+                }
             }
         }
 
