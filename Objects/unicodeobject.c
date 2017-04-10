@@ -15119,7 +15119,7 @@ onError:
 }
 
 PyDoc_STRVAR(unicode_doc,
-"str(object, encoding='utf-8', errors='strict') -> str\n\
+"str(object='', encoding='utf-8', errors='strict') -> str\n\
 \n\
 Create a new string object from the given object. If encoding or\n\
 errors is specified, then the object must expose a data buffer\n\
