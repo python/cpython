@@ -1487,7 +1487,6 @@ class FileHandler(BaseHandler):
                     origurl = 'file://' + filename
                 return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
-            # users shouldn't expect OSErrors coming from urlopen()
             raise URLError(exp)
         raise URLError('file not on local host')
 
