@@ -965,6 +965,8 @@ def temp_dir(path=None, quiet=False):
     try:
         yield path
     finally:
+        # In case the process forks, let only the parent remove the
+        # directory. The child has a diffent process id. (bpo-30028)
         if dir_created and pid == os.getpid():
             rmtree(path)
 

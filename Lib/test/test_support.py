@@ -161,6 +161,20 @@ class TestSupport(unittest.TestCase):
                                         f'temporary directory {path!r}: '),
                         warn)
 
+    @unittest.skipUnless(hasattr(os, "fork"), "test requires os.fork")
+    def test_temp_dir__forked_child(self):
+        """Test that a forked child process does not remove the directory."""
+        with support.temp_cwd() as temp_path:
+            pid = os.fork()
+            if pid != 0:
+                # parent process
+                os.waitpid(pid, 0)  # wait for the child to terminate
+                # make sure that temp_path is still present
+                self.assertTrue(os.path.isdir(temp_path))
+        if pid == 0:
+            # terminate the child in order to not confuse the test runner
+            os._exit(0)
+
     # Tests for change_cwd()
 
     def test_change_cwd(self):
