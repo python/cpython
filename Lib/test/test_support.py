@@ -7,7 +7,9 @@ import unittest
 import socket
 import tempfile
 import errno
+import textwrap
 from test import support
+from test.support import script_helper
 
 TESTFN = support.TESTFN
 
@@ -164,16 +166,18 @@ class TestSupport(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, "fork"), "test requires os.fork")
     def test_temp_dir__forked_child(self):
         """Test that a forked child process does not remove the directory."""
-        with support.temp_cwd() as temp_path:
-            pid = os.fork()
-            if pid != 0:
-                # parent process
-                os.waitpid(pid, 0)  # wait for the child to terminate
-                # make sure that temp_path is still present
-                self.assertTrue(os.path.isdir(temp_path))
-        if pid == 0:
-            # terminate the child in order to not confuse the test runner
-            os._exit(0)
+        # Run the test as an external script, because it uses fork.
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            import os
+            from test import support
+            with support.temp_cwd() as temp_path:
+                pid = os.fork()
+                if pid != 0:
+                    # parent process
+                    os.waitpid(pid, 0)  # wait for the child to terminate
+                    # make sure that temp_path is still present
+                    assert os.path.isdir(temp_path), "Child removed temp_path."
+        """))
 
     # Tests for change_cwd()
 
