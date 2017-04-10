@@ -40,7 +40,8 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "DefragResultBytes", "ParseResultBytes", "SplitResultBytes"]
 
 # A classification of schemes.
-# We use '' as the scheme value for default scheme in urlsplit and urlparse.
+# The empty string classifies URLs with no scheme specified,
+# being the default value returned by “urlsplit” and “urlparse”.
 
 uses_relative = ['', 'ftp', 'http', 'gopher', 'nntp', 'imap',
                  'wais', 'file', 'https', 'shttp', 'mms',
