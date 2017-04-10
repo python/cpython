@@ -929,8 +929,8 @@ Glossary
 
    set comprehension
       A compact way to process all or part of the elements in a sequence and
-      return a set with the results. ``results = {'foo' for _ in range(10)}``
-      generates a set of strings with ``foo``.
+      return a set with the results. ``results = {c for c in 'abracadabra' if
+      c not in 'abc'`` generates a set of strings with ``{'r', 'd'}``.
 
    sequence
       An :term:`iterable` which supports efficient element access using integer
