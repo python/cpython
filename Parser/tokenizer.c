@@ -1581,9 +1581,21 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     tok->async_def = 1;
                     return ASYNC;
                 }
-            } else {
-                /* we're outside a 'async def' function */
-                if (memcmp(tok->start, "await", 5) == 0) {
+            } else if (memcmp(tok->start, "await", 5) == 0) {
+                /* The current token is 'await'.
+                   Look ahead one token.*/
+
+                struct tok_state ahead_tok;
+                char *ahead_tok_start = NULL, *ahead_tok_end = NULL;
+                int ahead_tok_kind;
+
+                memcpy(&ahead_tok, tok, sizeof(ahead_tok));
+                ahead_tok_kind = tok_get(&ahead_tok, &ahead_tok_start,
+                                         &ahead_tok_end);
+
+                if (ahead_tok_kind == NAME
+                    && ahead_tok.cur - ahead_tok.start == 3)
+                {
                     return AWAIT;
                 }
             }
