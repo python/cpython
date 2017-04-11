@@ -17,7 +17,7 @@ import traceback
 import types
 import unittest
 import warnings
-from operator import neg
+from operator import neg, length_hint
 from test.support import TESTFN, unlink, check_warnings
 from test.support.script_helper import assert_python_ok
 try:
@@ -837,6 +837,23 @@ class BuiltinTest(unittest.TestCase):
             raise RuntimeError
         self.assertRaises(RuntimeError, list, map(badfunc, range(5)))
 
+    def test_map_length_hint(self):
+        self.assertEqual(4, length_hint(map(int, [1]*4)))
+        self.assertEqual(1, length_hint(map(max, [1]*100, [1])))
+        # Something without a length_hint: A generator
+        self.assertEqual(0, length_hint(map(max, (i for i in [1]))))
+        # Something that raises an error inside length_hint
+        class BadLengthHintIterator(object):
+            def __iter__(self):
+                return self
+            def __length_hint__(self):
+                raise ValueError
+        self.assertRaises(ValueError, length_hint, map(int, BadLengthHintIterator()))
+
+        mapit = map(max, [1]*10, [1]*5)
+        next(mapit)
+        self.assertEqual(4, length_hint(mapit))
+
     def test_map_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             m1 = map(map_char, "Is this the real life?")
@@ -1366,6 +1383,26 @@ class BuiltinTest(unittest.TestCase):
                 else:
                     return i
         self.assertRaises(ValueError, list, zip(BadSeq(), BadSeq()))
+
+    def test_zip_length_hint(self):
+        self.assertEqual(0, length_hint(zip()))
+        self.assertEqual(4, length_hint(zip([1]*4)))
+        self.assertEqual(1, length_hint(zip([1]*100, [1])))
+        # Something without a length_hint: A generator
+        self.assertEqual(0, length_hint(zip((i for i in [1]), [1]*10)))
+
+        # Something that raises an error inside length_hint
+        class BadLengthHintIterator(object):
+            def __iter__(self):
+                return self
+            def __length_hint__(self):
+                raise ValueError
+        self.assertRaises(ValueError, length_hint, zip(BadLengthHintIterator()))
+
+        zipit = zip([1]*5, [1]*10)
+        next(zipit)
+        self.assertEqual(4, length_hint(zipit))
+
 
     def test_zip_pickle(self):
         a = (1, 2, 3)

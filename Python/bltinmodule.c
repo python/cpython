@@ -1222,6 +1222,26 @@ exit:
 }
 
 static PyObject *
+map_len(mapobject *lz)
+{
+    Py_ssize_t length_hint = PY_SSIZE_T_MAX;
+    Py_ssize_t i;
+
+    for (i = 0; length_hint > 0 && i < PyTuple_GET_SIZE(lz->iters); i++) {
+        PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
+        Py_ssize_t it_len = PyObject_LengthHint(it, 0);
+
+        if (it_len < length_hint)
+            length_hint = it_len;
+    }
+
+    if (length_hint == -1)
+        return NULL;
+
+    return PyLong_FromSsize_t(length_hint);
+}
+
+static PyObject *
 map_reduce(mapobject *lz)
 {
     Py_ssize_t numargs = PyTuple_GET_SIZE(lz->iters);
@@ -1240,8 +1260,11 @@ map_reduce(mapobject *lz)
     return Py_BuildValue("ON", Py_TYPE(lz), args);
 }
 
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
+
 static PyMethodDef map_methods[] = {
-    {"__reduce__",   (PyCFunction)map_reduce,   METH_NOARGS, reduce_doc},
+    {"__length_hint__",   (PyCFunction)map_len,      METH_NOARGS, length_hint_doc},
+    {"__reduce__",        (PyCFunction)map_reduce,   METH_NOARGS, reduce_doc},
     {NULL,           NULL}           /* sentinel */
 };
 
@@ -2551,6 +2574,32 @@ zip_next(zipobject *lz)
 }
 
 static PyObject *
+zip_len(zipobject *lz)
+{
+    Py_ssize_t tuplesize = lz->tuplesize;
+    Py_ssize_t length_hint = PY_SSIZE_T_MAX;
+    Py_ssize_t i;
+
+    if (tuplesize == 0) {
+        Py_INCREF(_PyLong_Zero);
+        return _PyLong_Zero;
+    }
+
+    for (i = 0; length_hint > 0 && i < PyTuple_GET_SIZE(lz->ittuple); i++) {
+        PyObject *it = PyTuple_GET_ITEM(lz->ittuple, i);
+        Py_ssize_t it_len = PyObject_LengthHint(it, 0);
+
+        if (it_len < length_hint)
+            length_hint = it_len;
+    }
+
+    if (length_hint == -1)
+        return NULL;
+
+    return PyLong_FromSsize_t(length_hint);
+}
+
+static PyObject *
 zip_reduce(zipobject *lz)
 {
     /* Just recreate the zip with the internal iterator tuple */
@@ -2558,7 +2607,8 @@ zip_reduce(zipobject *lz)
 }
 
 static PyMethodDef zip_methods[] = {
-    {"__reduce__",   (PyCFunction)zip_reduce,   METH_NOARGS, reduce_doc},
+    {"__length_hint__",   (PyCFunction)zip_len,      METH_NOARGS, length_hint_doc},
+    {"__reduce__",        (PyCFunction)zip_reduce,   METH_NOARGS, reduce_doc},
     {NULL,           NULL}           /* sentinel */
 };
 
