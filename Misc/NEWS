@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29914: Fixed default implementations of __reduce__ and __reduce_ex__().
+  object.__reduce__() no longer takes arguments, object.__reduce_ex__() now
+  requires one argument.
+
 - bpo-29949: Fix memory usage regression of set and frozenset object.
 
 - bpo-29935: Fixed error messages in the index() method of tuple, list and deque
@@ -302,6 +306,16 @@ Extension Modules
 
 Library
 -------
+- bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in 
+  contextlib.contextmanager.
+  Patch by Siddharth Velankar.
+
+- bpo-26187: Test that sqlite3 trace callback is not called multiple
+  times when schema is changing.  Indirectly fixed by switching to 
+  use sqlite3_prepare_v2() in bpo-9303.  Patch by Aviv Palivoda.
+
+- bpo-29998: Pickling and copying ImportError now preserves name and path
+  attributes.
 
 - bpo-29995: re.escape() now escapes only regex special characters.
 
