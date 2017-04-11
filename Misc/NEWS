@@ -306,6 +306,9 @@ Extension Modules
 
 Library
 -------
+- bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in 
+  contextlib.contextmanager.
+  Patch by Siddharth Velankar.
 
 - bpo-26187: Test that sqlite3 trace callback is not called multiple
   times when schema is changing.  Indirectly fixed by switching to 
