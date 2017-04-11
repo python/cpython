@@ -9,12 +9,18 @@ This solution is inspired by Dijkstra (Structured Programming).  It is
 a classic recursive backtracking approach.
 """
 
+import argparse
+
+
 N = 8                                   # Default; command line overrides
+SILENT = False                          # If true, count solutions only
+
 
 class Queens:
 
-    def __init__(self, n=N):
+    def __init__(self, n=N, silent=SILENT):
         self.n = n
+        self.silent = silent
         self.reset()
 
     def reset(self):
@@ -50,8 +56,6 @@ class Queens:
         self.up[x-y] = 0
         self.down[x+y] = 0
 
-    silent = 0                          # If true, count solutions only
-
     def display(self):
         self.nfound = self.nfound + 1
         if self.silent:
@@ -67,19 +71,21 @@ class Queens:
             print('|')
         print('+-' + '--'*self.n + '+')
 
+
 def main():
-    import sys
-    silent = 0
-    n = N
-    if sys.argv[1:2] == ['-n']:
-        silent = 1
-        del sys.argv[1]
-    if sys.argv[1:]:
-        n = int(sys.argv[1])
-    q = Queens(n)
-    q.silent = silent
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "side_size", default=N, type=int, nargs="?",
+        help="size of the board side")
+    parser.add_argument(
+        "-n", "--silent", default=SILENT, action="store_true",
+        help="count solutions only")
+    args = parser.parse_args()
+    q = Queens(args.side_size, silent=args.silent)
     q.solve()
-    print("Found", q.nfound, "solutions.")
+    print("Found {} solution{}.".format(
+        q.nfound, "" if q.nfound == 1 else "s"))
+
 
 if __name__ == "__main__":
     main()
