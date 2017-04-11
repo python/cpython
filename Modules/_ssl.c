@@ -1257,9 +1257,7 @@ _get_crl_dp(X509 *certificate) {
 
   done:
     Py_XDECREF(lst);
-#if OPENSSL_VERSION_NUMBER < 0x10001000L
-    sk_DIST_POINT_free(dps);
-#endif
+    CRL_DIST_POINTS_free(dps);
     return res;
 }
 
