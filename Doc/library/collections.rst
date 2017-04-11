@@ -357,22 +357,21 @@ or subtracting from an empty counter.
       restrictions on its keys and values.  The values are intended to be numbers
       representing counts, but you *could* store anything in the value field.
 
-    * The :meth:`~Counter.most_common` method requires only that the values be
-      orderable.
+    * The :meth:`~Counter.most_common` method requires only that the values be orderable.
 
     * For in-place operations such as ``c[key] += 1``, the value type need only
       support addition and subtraction.  So fractions, floats, and decimals would
       work and negative values are supported.  The same is also true for
-      :meth:`~Counter.update` and :meth:`~Counter.subtract` which allow negative
-      and zero values for both inputs and outputs.
+      :meth:`~Counter.update` and :meth:`~Counter.subtract` which allow negative and zero values
+      for both inputs and outputs.
 
     * The multiset methods are designed only for use cases with positive values.
       The inputs may be negative or zero, but only outputs with positive values
       are created.  There are no type restrictions, but the value type needs to
       support addition, subtraction, and comparison.
 
-    * The :meth:`~Counter.elements` method requires integer counts.  It ignores
-      zero and negative counts.
+    * The :meth:`~Counter.elements` method requires integer counts.  It ignores zero and
+      negative counts.
 
 .. seealso::
 
@@ -391,7 +390,7 @@ or subtracting from an empty counter.
     * To enumerate all distinct multisets of a given size over a given set of
       elements, see :func:`itertools.combinations_with_replacement`::
 
-          map(Counter, combinations_with_replacement('ABC', 2)) --> AA AB AC BB BC CC
+          map(Counter, combinations_with_replacement('ABC', 2)) # --> AA AB AC BB BC CC
 
 
 :class:`deque` objects
@@ -619,8 +618,8 @@ added elements by appending to the right and popping to the left::
             d.append(elem)
             yield s / n
 
-The :meth:`~deque.rotate` method provides a way to implement :class:`deque` slicing
-and deletion.  For example, a pure Python implementation of ``del d[n]`` relies on
+The :meth:`~deque.rotate` method provides a way to implement :class:`deque` slicing and
+deletion.  For example, a pure Python implementation of ``del d[n]`` relies on
 the ``rotate()`` method to position elements to be popped::
 
     def delete_nth(d, n):
@@ -629,9 +628,9 @@ the ``rotate()`` method to position elements to be popped::
         d.rotate(n)
 
 To implement :class:`deque` slicing, use a similar approach applying
-:meth:`~deque.rotate` to bring a target element to the left side of the deque.
-Remove old entries with :meth:`~deque.popleft`, add new entries with
-:meth:`~deque.extend`, and then reverse the rotation.
+:meth:`~deque.rotate` to bring a target element to the left side of the deque. Remove
+old entries with :meth:`~deque.popleft`, add new entries with :meth:`~deque.extend`, and then
+reverse the rotation.
 With minor variations on that approach, it is easy to implement Forth style
 stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 ``rot``, and ``roll``.
@@ -691,8 +690,8 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 :class:`defaultdict` Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Using :class:`list` as the :attr:`~defaultdict.default_factory`, it is easy to
-group a sequence of key-value pairs into a dictionary of lists:
+Using :class:`list` as the :attr:`~defaultdict.default_factory`, it is easy to group a
+sequence of key-value pairs into a dictionary of lists:
 
     >>> s = [('yellow', 1), ('blue', 2), ('yellow', 3), ('blue', 4), ('red', 1)]
     >>> d = defaultdict(list)
