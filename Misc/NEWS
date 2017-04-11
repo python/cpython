@@ -303,7 +303,7 @@ Extension Modules
 Library
 -------
 
-- bpo-29995: re.escape() now escapes only special characters.
+- bpo-29995: re.escape() now escapes only regex special characters.
 
 - bpo-29962: Add math.remainder operation, implementing remainder
   as specified in IEEE 754.

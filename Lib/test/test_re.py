@@ -917,8 +917,9 @@ class ReTests(unittest.TestCase):
         self.assertEqual(m.group(), match)
         self.assertEqual(m.span(), span)
 
+    LITERAL_CHARS = string.ascii_letters + string.digits + '!"%&\',/:;<=>@_`~'
+
     def test_re_escape(self):
-        literal_chars = string.ascii_letters + string.digits + '!"%&\',/:;<=>@_`~'
         p = ''.join(chr(i) for i in range(256))
         for c in p:
             self.assertMatch(re.escape(c), c)
@@ -927,8 +928,7 @@ class ReTests(unittest.TestCase):
         self.assertMatch(re.escape(p), p)
         for c in '-.]{}':
             self.assertEqual(re.escape(c)[:1], '\\')
-        literal_chars = (string.ascii_letters + string.digits +
-                         '!"%&\',/:;<=>@_`~')
+        literal_chars = self.LITERAL_CHARS
         self.assertEqual(re.escape(literal_chars), literal_chars)
 
     def test_re_escape_bytes(self):
@@ -942,8 +942,7 @@ class ReTests(unittest.TestCase):
         for i in b'-.]{}':
             b = bytes([i])
             self.assertEqual(re.escape(b)[:1], b'\\')
-        literal_chars = ((string.ascii_letters + string.digits).encode() +
-                         b'!"%&\',/:;<=>@_`~')
+        literal_chars = self.LITERAL_CHARS.encode('ascii')
         self.assertEqual(re.escape(literal_chars), literal_chars)
 
     def test_re_escape_non_ascii(self):
