@@ -1,16 +1,16 @@
-import token
-import unittest
-from test import support
 import filecmp
 import os
-import sys
 import subprocess
+import sys
+from test import support
+import token
+import unittest
 
-TOKEN_FILE               = support.findfile('token.py')
-TOKEN_INCLUDE_FILE       = os.path.join(os.path.split(__file__)[0],
-                                        '..', '..', 'Include', 'token.h')
-TEST_PY_FILE             = 'token_test.py'
-NONEXISTENT_FILE         = b'not_here.txt'
+
+TOKEN_FILE = support.findfile('token.py')
+TOKEN_INCLUDE_FILE = os.path.join(os.path.split(__file__)[0],
+                                  '..', '..', 'Include', 'token.h')
+TEST_PY_FILE = 'token_test.py'
 
 
 class TestTokenGeneration(unittest.TestCase):
@@ -22,6 +22,7 @@ class TestTokenGeneration(unittest.TestCase):
         with open(dest_file, 'wb') as fp:
             fp.writelines(lines[:lines.index(b"#--start constants--" + nl) + 1])
             fp.writelines(lines[lines.index(b"#--end constants--" + nl):])
+        self.addCleanup(support.unlink, dest_file)
 
     def _generate_tokens(self, skeleton_file, target_token_py_file):
         proc = subprocess.Popen([sys.executable,
@@ -31,22 +32,21 @@ class TestTokenGeneration(unittest.TestCase):
         stderr = proc.communicate()[1]
         return proc.returncode, stderr
 
-    @unittest.skipIf(not os.path.exists(TOKEN_FILE),
+    @unittest.skipUnless(os.path.exists(TOKEN_FILE),
                      'test only works from source build directory')
     def test_real_token_file(self):
         self._copy_file_without_generated_tokens(TOKEN_FILE, TEST_PY_FILE)
-        self.addCleanup(support.unlink, TEST_PY_FILE)
         self.assertFalse(filecmp.cmp(TOKEN_FILE, TEST_PY_FILE))
         self.assertEqual((0, b''), self._generate_tokens(TOKEN_INCLUDE_FILE,
                                                          TEST_PY_FILE))
         self.assertTrue(filecmp.cmp(TOKEN_FILE, TEST_PY_FILE))
 
-    def test_missing_output_file_causes_Error(self):
-        rc, stderr = self._generate_tokens(os.devnull, NONEXISTENT_FILE)
+    def test_missing_output_file_causes_error(self):
+        rc, stderr = self._generate_tokens(os.devnull, 'not_here.txt')
         self.assertNotEqual(rc, 0)
         self.assertIn(b'I/O error', stderr)
-        self.assertIn(NONEXISTENT_FILE, stderr)
+        self.assertIn(b'not_here.txt', stderr)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

@@ -1352,23 +1352,25 @@ class TestTokenize(TestCase):
                          tok_name[token.ENDMARKER])
 
     def test_all_literal_tokens(self):
-        NON_LITERALS = {token.ENDMARKER, token.NAME, token.NUMBER,
-                        token.STRING, token.NEWLINE, token.INDENT,
-                        token.DEDENT, token.OP, token.ERRORTOKEN,
-                        token.AWAIT, token.ASYNC,
-                        token.N_TOKENS, token.NT_OFFSET}
+        non_literals = {
+            token.ENDMARKER, token.NAME, token.NUMBER,
+            token.STRING, token.NEWLINE, token.INDENT,
+            token.DEDENT, token.OP, token.ERRORTOKEN,
+            token.AWAIT, token.ASYNC,
+            token.N_TOKENS, token.NT_OFFSET,
+        }
 
         for tok in range(token.N_TOKENS):
-            if tok in NON_LITERALS:
+            if tok in non_literals:
                 continue
             name = tok_name[tok]
-            self.assertIn(tok, EXACT_TOKEN_TYPES.values(),
-                    "Literal token " + name + " not in EXACT_TOKEN_TYPES")
+            with self.subTest(name=name):
+                self.assertIn(tok, EXACT_TOKEN_TYPES.values())
 
-        for tok in NON_LITERALS:
+        for tok in non_literals:
             name = tok_name[tok]
-            self.assertNotIn(tok, EXACT_TOKEN_TYPES.values(),
-                    "Non literal token " + name + " in EXACT_TOKEN_TYPES")
+            with self.subTest(name=name):
+                self.assertNotIn(tok, EXACT_TOKEN_TYPES.values())
 
     def test_exact_type(self):
         self.assertExactTypeEqual('()', token.LPAR, token.RPAR)
