@@ -475,14 +475,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     CONST_STACK_CREATE();
 
     for (i=find_op(codestr, 0) ; i<codelen ; i=nexti) {
-        /* Bail out if an exception is set
-         * bpo-25828: fold_binops_on_constants may stuck when there is a big
-         * nubmer to calculate, e.g. 2 ** (2 ** 100). It may need to handle
-         * KeyboardInterrupt or MemoryError
-         */
-        if (PyErr_Occurred())
-            goto exitError;
-
         opcode = _Py_OPCODE(codestr[i]);
         op_start = i;
         while (op_start >= 1 && _Py_OPCODE(codestr[op_start-1]) == EXTENDED_ARG) {
@@ -722,6 +714,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 break;
         }
     }
+
+    /* Bail out if an exception is set */
+    if (PyErr_Occurred())
+        goto exitError;
 
     /* Fixup lnotab */
     for (i = 0, nops = 0; i < codelen; i++) {
