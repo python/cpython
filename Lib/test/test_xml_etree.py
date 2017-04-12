@@ -1579,6 +1579,7 @@ class BadElementTest(unittest.TestCase):
             def __eq__(self, o):
                 del e[:]
                 return False
+            __hash__ = object.__hash__
         e = ET.Element('foo')
         e.extend([X('bar')])
         self.assertRaises(ValueError, e.remove, ET.Element('baz'))
@@ -1679,12 +1680,12 @@ class MutatingElementPath(str):
     def __eq__(self, o):
         del self.elem[:]
         return True
-MutatingElementPath.__hash__ = str.__hash__
+    __hash__ = str.__hash__
 
 class BadElementPath(str):
     def __eq__(self, o):
-        raise 1/0
-BadElementPath.__hash__ = str.__hash__
+        raise 1.0/0.0
+    __hash__ = str.__hash__
 
 class BadElementPathTest(unittest.TestCase):
     def setUp(self):
