@@ -306,6 +306,9 @@ Extension Modules
 
 Library
 -------
+
+- bpo-30058: Fixed buffer overflow in select.kqueue.control().
+
 - bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in 
   contextlib.contextmanager.
   Patch by Siddharth Velankar.
