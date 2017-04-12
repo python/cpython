@@ -23,11 +23,6 @@
    # make sure each group gets a fresh context
    setcontext(Context())
 
-.. testcleanup:: *
-
-   # make sure other tests (also outside this file) get a fresh context
-   setcontext(Context())
-
 --------------
 
 The :mod:`decimal` module provides support for fast correctly-rounded
@@ -182,11 +177,6 @@ an exception::
 The significance of a new Decimal is determined solely by the number of digits
 input.  Context precision and rounding only come into play during arithmetic
 operations.
-
-.. testcleanup:: newcontext
-
-   # make sure other tests (also outside this file) get a fresh context
-   setcontext(Context())
 
 .. doctest:: newcontext
 
