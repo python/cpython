@@ -359,12 +359,12 @@ calls are unexciting::
 
     >>> class E(object):
     ...     def f(x):
-    ...         return x
+    ...         print(x)
     ...     f = staticmethod(f)
     ...
-    >>> print(E.f(3))
+    >>> E.f(3)
     3
-    >>> print(E().f(3))
+    >>> E().f(3)
     3
 
 Using the non-data descriptor protocol, a pure Python version of
