@@ -1818,7 +1818,6 @@ class _BasePathTest(object):
                     os.mkdir(path, mode)      # from another process
                     concurrently_created.add(path)
                 os.mkdir(path, mode)          # our real call
-            org_mkdir = pathlib._normal_accessor.mkdir
 
             pattern = [bool(pattern_num & (1 << n)) for n in range(5)]
             concurrently_created = set()
@@ -1826,10 +1825,10 @@ class _BasePathTest(object):
             try:
                 with mock.patch("pathlib._normal_accessor.mkdir", my_mkdir):
                     p12.mkdir(parents=True, exist_ok=False)
-                got_exception = False
             except FileExistsError:
-                got_exception = True
-            self.assertEqual(str(p12) in concurrently_created, got_exception)
+                self.assertIn(str(p12), concurrently_created)
+            else:
+                self.assertNotIn(str(p12), concurrently_created)
             self.assertTrue(p.exists())
 
     @support.skip_unless_symlink
