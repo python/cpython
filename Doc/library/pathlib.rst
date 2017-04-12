@@ -46,7 +46,7 @@ Pure paths are useful in some special cases; for example:
 Basic use
 ---------
 
-Importing the main class:
+Importing the main class::
 
    >>> from pathlib import Path
 
