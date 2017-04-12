@@ -306,6 +306,9 @@ Extension Modules
 
 Library
 -------
+
+- bpo-29694: race condition in pathlib mkdir with flags parents=True
+
 - bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in 
   contextlib.contextmanager.
   Patch by Siddharth Velankar.
