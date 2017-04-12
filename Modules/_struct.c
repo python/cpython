@@ -552,6 +552,7 @@ static int
 np_ubyte(char *p, PyObject *v, const formatdef *f)
 {
     long x;
+    unsigned char y;
     if (get_long(v, &x) < 0)
         return -1;
     if (x < 0 || x > 255){
@@ -559,7 +560,8 @@ np_ubyte(char *p, PyObject *v, const formatdef *f)
                         "ubyte format requires 0 <= number <= 255");
         return -1;
     }
-    *p = (char)x;
+    y = (unsigned char)x;
+    *p = *((char *)&y);
     return 0;
 }
 
@@ -900,7 +902,8 @@ bp_int(char *p, PyObject *v, const formatdef *f)
 #endif
     }
     do {
-        p[--i] = (char)x;
+        unsigned char y = (unsigned char)(x & 0xffL);
+        p[--i] = *((char *)&y);
         x >>= 8;
     } while (i > 0);
     return 0;
@@ -921,7 +924,8 @@ bp_uint(char *p, PyObject *v, const formatdef *f)
             RANGE_ERROR(x, f, 1, maxint - 1);
     }
     do {
-        p[--i] = (char)x;
+        unsigned char y = (unsigned char)(x & 0xffUL);
+        p[--i] = *((char *)&y);
         x >>= 8;
     } while (i > 0);
     return 0;
@@ -1119,7 +1123,8 @@ lp_int(char *p, PyObject *v, const formatdef *f)
 #endif
     }
     do {
-        *p++ = (char)x;
+        unsigned char y = (unsigned char)(x & 0xffL);
+        *p++ = *((char *)&y);
         x >>= 8;
     } while (--i > 0);
     return 0;
@@ -1140,7 +1145,8 @@ lp_uint(char *p, PyObject *v, const formatdef *f)
             RANGE_ERROR(x, f, 1, maxint - 1);
     }
     do {
-        *p++ = (char)x;
+        unsigned char y = (unsigned char)(x & 0xffUL);
+        *p++ = *((char *)&y);
         x >>= 8;
     } while (--i > 0);
     return 0;
