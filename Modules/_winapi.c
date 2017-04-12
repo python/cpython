@@ -722,12 +722,17 @@ getenvironment(PyObject* environment)
         return NULL;
     }
 
-    envsize = PyMapping_Length(environment);
-
     keys = PyMapping_Keys(environment);
     values = PyMapping_Values(environment);
     if (!keys || !values)
         goto error;
+
+    envsize = PyList_GET_SIZE(keys);
+    if (PyList_GET_SIZE(values) != envsize) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "environment changed size during iteration");
+        goto error;
+    }
 
     totalsize = 1; /* trailing null character */
     for (i = 0; i < envsize; i++) {
