@@ -136,11 +136,16 @@ attributes:
 |           |                 | frame, or ``None``        |
 +-----------+-----------------+---------------------------+
 | code      | co_argcount     | number of arguments (not  |
-|           |                 | including \* or \*\*      |
+|           |                 | including keyword only    |
+|           |                 | arguments, \* or \*\*     |
 |           |                 | args)                     |
 +-----------+-----------------+---------------------------+
 |           | co_code         | string of raw compiled    |
 |           |                 | bytecode                  |
++-----------+-----------------+---------------------------+
+|           | co_cellvars     | tuple of names of cell    |
+|           |                 | variables (referenced by  |
+|           |                 | containing scopes)        |
 +-----------+-----------------+---------------------------+
 |           | co_consts       | tuple of constants used   |
 |           |                 | in the bytecode           |
@@ -159,6 +164,14 @@ attributes:
 |           | co_lnotab       | encoded mapping of line   |
 |           |                 | numbers to bytecode       |
 |           |                 | indices                   |
++-----------+-----------------+---------------------------+
+|           | co_freevars     | tuple of names of free    |
+|           |                 | variables (referenced via |
+|           |                 | a function's closure)     |
++-----------+-----------------+---------------------------+
+|           | co_kwonlyargcount | number of keyword only   |
+|           |                   | arguments (not including |
+|           |                   | \*\* arg)                |
 +-----------+-----------------+---------------------------+
 |           | co_name         | name with which this code |
 |           |                 | object was defined        |
@@ -1268,6 +1281,10 @@ Code Objects Bit Flags
 Python code objects have a ``co_flags`` attribute, which is a bitmap of
 the following flags:
 
+.. data:: CO_OPTIMIZED
+
+   The code object is optimized, using fast locals.
+
 .. data:: CO_NEWLOCALS
 
    If set, a new dict will be created for the frame's ``f_locals`` when
@@ -1280,6 +1297,10 @@ the following flags:
 .. data:: CO_VARKEYWORDS
 
    The code object has a variable keyword parameter (``**kwargs``-like).
+
+.. data:: CO_NESTED
+
+   The flag is set when the code object is a nested function.
 
 .. data:: CO_GENERATOR
 
