@@ -744,7 +744,6 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     const char *errors = NULL;
     Py_ssize_t count;
     PyObject *it;
-    PyObject *(*iternext)(PyObject *);
 
     if (Py_SIZE(self) != 0) {
         /* Empty previous contents (yes, do this first of all!) */
@@ -840,7 +839,6 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     it = PyObject_GetIter(arg);
     if (it == NULL)
         return -1;
-    iternext = *Py_TYPE(it)->tp_iternext;
 
     /* Run the iterator to exhaustion */
     for (;;) {
@@ -848,7 +846,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
         int rc, value;
 
         /* Get the next item */
-        item = iternext(it);
+        item = Py_TYPE(it)->tp_iternext(it);
         if (item == NULL) {
             if (PyErr_Occurred()) {
                 if (!PyErr_ExceptionMatches(PyExc_StopIteration))

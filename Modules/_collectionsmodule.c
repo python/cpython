@@ -358,11 +358,9 @@ finalize_iterator(PyObject *it)
 static PyObject*
 consume_iterator(PyObject *it)
 {
-    PyObject *(*iternext)(PyObject *);
     PyObject *item;
 
-    iternext = *Py_TYPE(it)->tp_iternext;
-    while ((item = iternext(it)) != NULL) {
+    while ((item = Py_TYPE(it)->tp_iternext(it)) != NULL) {
         Py_DECREF(item);
     }
     return finalize_iterator(it);
@@ -372,7 +370,6 @@ static PyObject *
 deque_extend(dequeobject *deque, PyObject *iterable)
 {
     PyObject *it, *item;
-    PyObject *(*iternext)(PyObject *);
     Py_ssize_t maxlen = deque->maxlen;
 
     /* Handle case where id(deque) == id(iterable) */
@@ -401,8 +398,7 @@ deque_extend(dequeobject *deque, PyObject *iterable)
         deque->rightindex = 0;
     }
 
-    iternext = *Py_TYPE(it)->tp_iternext;
-    while ((item = iternext(it)) != NULL) {
+    while ((item = Py_TYPE(it)->tp_iternext(it)) != NULL) {
         if (deque->rightindex == BLOCKLEN - 1) {
             block *b = newblock();
             if (b == NULL) {
@@ -437,7 +433,6 @@ static PyObject *
 deque_extendleft(dequeobject *deque, PyObject *iterable)
 {
     PyObject *it, *item;
-    PyObject *(*iternext)(PyObject *);
     Py_ssize_t maxlen = deque->maxlen;
 
     /* Handle case where id(deque) == id(iterable) */
@@ -466,8 +461,7 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
         deque->rightindex = BLOCKLEN - 2;
     }
 
-    iternext = *Py_TYPE(it)->tp_iternext;
-    while ((item = iternext(it)) != NULL) {
+    while ((item = Py_TYPE(it)->tp_iternext(it)) != NULL) {
         if (deque->leftindex == 0) {
             block *b = newblock();
             if (b == NULL) {

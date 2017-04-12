@@ -5,7 +5,9 @@ import unittest
 from test.support import run_unittest, TESTFN, unlink, cpython_only
 from test.support import check_free_after_iterating
 import pickle
+import collections
 import collections.abc
+import itertools
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -964,6 +966,122 @@ class TestCase(unittest.TestCase):
                 pass
         except TypeError:
             pass
+
+    def test_deleting_next(self):
+        # Issue #XXXXX: Don't cache tp_iternext
+        def make_iter(value):
+            class Iterator:
+                def __iter__(self):
+                    return self
+                def __next__(self):
+                    del Iterator.__next__
+                    return value
+            return Iterator()
+
+        with self.assertRaises(TypeError):
+            for i in make_iter(1):
+                pass
+        self.assertRaises(TypeError, list, make_iter(1))
+        self.assertRaises(TypeError, [].extend, make_iter(1))
+        self.assertRaises(TypeError, tuple, make_iter(1))
+        self.assertRaises(TypeError, set, make_iter(1))
+        self.assertRaises(TypeError, frozenset, make_iter(1))
+        self.assertRaises(TypeError, set().update, make_iter(1))
+        self.assertRaises(TypeError, dict, make_iter((1, 2)))
+        self.assertRaises(TypeError, {}.update, make_iter((1, 2)))
+        self.assertRaises(TypeError, dict.fromkeys, make_iter(1))
+        self.assertRaises(TypeError, bytes, make_iter(1))
+        self.assertRaises(TypeError, bytearray, make_iter(1))
+        self.assertRaises(TypeError, ''.join, make_iter('a'))
+        self.assertRaises(TypeError, all, make_iter(1))
+        self.assertRaises(TypeError, any, make_iter(0))
+        self.assertRaises(TypeError, max, make_iter(1))
+        self.assertRaises(TypeError, min, make_iter(1))
+        self.assertRaises(TypeError, next, filter(None, make_iter(0)))
+        it = make_iter(1)
+        self.assertRaises(TypeError, next, map(print, it, it))
+        it = make_iter(1)
+        self.assertRaises(TypeError, next, zip(it, it))
+        self.assertRaises(TypeError, collections.deque, make_iter(1))
+        self.assertRaises(TypeError, collections.deque, make_iter(1), 0)
+        self.assertRaises(TypeError, collections.deque().extend, make_iter(1))
+        self.assertRaises(TypeError, collections.deque().extendleft, make_iter(1))
+        self.assertRaises(TypeError, next, itertools.dropwhile(bool, make_iter(1)))
+        it = itertools.takewhile(bool, make_iter(1))
+        next(it)
+        self.assertRaises(TypeError, next, it)
+        self.assertRaises(TypeError, next, itertools.islice(make_iter(1), 1, 2))
+        self.assertRaises(TypeError, next, itertools.compress(make_iter(1), [0]))
+        self.assertRaises(TypeError, next, itertools.compress([1, 2], make_iter(0)))
+        self.assertRaises(TypeError, next, itertools.filterfalse(bool, make_iter(1)))
+        def g():
+            yield from make_iter(1)
+        it = g()
+        next(it)
+        self.assertRaises(TypeError, next, it)
+
+    def test_mutating_next(self):
+        def make_iter(value1, value2):
+            it2 = iter((value2,))
+            def subiter():
+                Iterator.__next__ = Iterator.next2
+                yield value1
+            class Iterator(filter):
+                def next2(self):
+                    return next(it2)
+            return Iterator(lambda x: True, subiter())
+
+        self.assertEqual(list(make_iter(1, 2)), [1, 2])
+        x = []
+        x.extend(make_iter(1, 2))
+        self.assertEqual(x, [1, 2])
+        self.assertEqual(tuple(make_iter(1, 2)), (1, 2))
+        self.assertEqual(set(make_iter(1, 2)), {1, 2})
+        self.assertEqual(frozenset(make_iter(1, 2)), frozenset({1, 2}))
+        x = set()
+        x.update(make_iter(1, 2))
+        self.assertEqual(x, {1, 2})
+        self.assertEqual(dict(make_iter((1, 2), (3, 4))), {1: 2, 3: 4})
+        x = {}
+        x.update(make_iter((1, 2), (3, 4)))
+        self.assertEqual(x, {1: 2, 3: 4})
+        self.assertEqual(dict.fromkeys(make_iter(1, 2)), {1: None, 2: None})
+        self.assertEqual(bytes(make_iter(1, 2)), b'\1\2')
+        self.assertEqual(bytearray(make_iter(1, 2)), bytearray(b'\1\2'))
+        self.assertEqual(''.join(make_iter('a', 'b')), 'ab')
+        self.assertEqual(all(make_iter(1, 0)), False)
+        self.assertEqual(any(make_iter(0, 1)), True)
+        self.assertEqual(max(make_iter(1, 2)), 2)
+        self.assertEqual(min(make_iter(2, 1)), 1)
+        self.assertEqual(next(filter(None, make_iter(0, 1))), 1)
+        it = make_iter('100', 2)
+        self.assertEqual(next(map(int, it, it)), 4)
+        it = make_iter(1, 2)
+        self.assertEqual(next(zip(it, it)), (1, 2))
+        self.assertEqual(collections.deque(make_iter(1, 2)),
+                         collections.deque([1, 2]))
+        self.assertEqual(collections.deque(make_iter(1, 2), 0),
+                         collections.deque(maxlen=0))
+        x = collections.deque()
+        x.extend(make_iter(1, 2))
+        self.assertEqual(x, collections.deque([1, 2]))
+        x = collections.deque()
+        x.extendleft(make_iter(1, 2))
+        self.assertEqual(x, collections.deque([2, 1]))
+
+        self.assertEqual(next(itertools.dropwhile(bool, make_iter(1, ''))), '')
+        it = itertools.takewhile(bool, make_iter(1, 2))
+        self.assertEqual(next(it), 1)
+        self.assertEqual(next(it), 2)
+        self.assertEqual(next(itertools.islice(make_iter(1, 2), 1, 2)), 2)
+        self.assertEqual(next(itertools.compress(make_iter(1, 2), [0, 1])), 2)
+        self.assertEqual(next(itertools.compress([1, 2], make_iter(0, 1))), 2)
+        self.assertEqual(next(itertools.filterfalse(bool, make_iter(1, ''))), '')
+        def g():
+            yield from make_iter(1, 2)
+        it = g()
+        self.assertEqual(next(it), 1)
+        self.assertEqual(next(it), 2)
 
     def test_extending_list_with_iterator_does_not_segfault(self):
         # The code to extend a list with an iterator has a fair
