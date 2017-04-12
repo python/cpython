@@ -291,10 +291,11 @@ an error value).
    is the function calling :c:func:`PyErr_WarnEx`, 2 is  the function above that,
    and so forth.
 
+   Warning categories must be subclasses of :c:data:`PyExc_Warning`;
    :c:data:`PyExc_Warning` is a subclass of :c:data:`PyExc_Exception`;
-   warning categories must be subclasses of :c:data:`Warning`; the default warning
-   category is :c:data:`RuntimeWarning`. Their names are enumerated at
-   :ref:`standarwarningcategories`.
+   the default warning category is :c:data:`PyExc_RuntimeWarning`. The standard
+   Python warning categories are available as global variables whose names are
+   enumerated at :ref:`standarwarningcategories`.
 
    For information about warning control, see the documentation for the
    :mod:`warnings` module and the :option:`-W` option in the command line
