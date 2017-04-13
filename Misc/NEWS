@@ -48,6 +48,9 @@ Extension Modules
 
 Library
 -------
+- bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in 
+  contextlib.contextmanager.
+  Patch by Siddharth Velankar.
 
 - bpo-29998: Pickling and copying ImportError now preserves name and path
   attributes.
