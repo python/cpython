@@ -1383,10 +1383,10 @@ _sre.compile
 
     pattern: object
     flags: int
-    code: object
+    code: object(subclass_of='&PyList_Type')
     groups: Py_ssize_t
-    groupindex: object
-    indexgroup: object
+    groupindex: object(subclass_of='&PyDict_Type')
+    indexgroup: object(subclass_of='&PyTuple_Type')
 
 [clinic start generated code]*/
 
@@ -1394,33 +1394,12 @@ static PyObject *
 _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
                   PyObject *code, Py_ssize_t groups, PyObject *groupindex,
                   PyObject *indexgroup)
-/*[clinic end generated code: output=ef9c2b3693776404 input=a8e20fbe159f4a08]*/
+/*[clinic end generated code: output=ef9c2b3693776404 input=0a68476dbbe5db30]*/
 {
     /* "compile" pattern descriptor to pattern object */
 
     PatternObject* self;
     Py_ssize_t i, n;
-
-    if (!PyList_CheckExact(code)) {
-        PyErr_Format(PyExc_TypeError,
-                     "compile() argument 3 must be exact list, not %.100s",
-                     code->ob_type->tp_name);
-        return NULL;
-    }
-
-    if (!PyDict_CheckExact(groupindex)) {
-        PyErr_Format(PyExc_TypeError,
-                     "compile() argument 5 must be exact dict, not %.100s",
-                     groupindex->ob_type->tp_name);
-        return NULL;
-    }
-
-    if (!PyTuple_CheckExact(indexgroup)) {
-        PyErr_Format(PyExc_TypeError,
-                     "compile() argument 6 must be exact tuple, not %.100s",
-                     indexgroup->ob_type->tp_name);
-        return NULL;
-    }
 
     n = PyList_GET_SIZE(code);
     /* coverity[ampersand_in_size] */
