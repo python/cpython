@@ -308,7 +308,7 @@ Library
 -------
 
 - bpo-29694: Fixed race condition in pathlib mkdir with flags
-  parents=True.
+  parents=True.  Patch by Armin Rigo.
 
 - bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in 
   contextlib.contextmanager.
