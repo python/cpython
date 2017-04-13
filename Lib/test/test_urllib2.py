@@ -848,7 +848,6 @@ class HandlerTests(unittest.TestCase):
             req = Request(url)
             try:
                 h.file_open(req)
-            # XXXX remove OSError when bug fixed
             except urllib.error.URLError:
                 self.assertFalse(ftp)
             else:

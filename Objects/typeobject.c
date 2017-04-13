@@ -4393,23 +4393,20 @@ _common_reduce(PyObject *self, int proto)
 /*[clinic input]
 object.__reduce__
 
-  protocol: int = 0
-  /
-
 Helper for pickle.
 [clinic start generated code]*/
 
 static PyObject *
-object___reduce___impl(PyObject *self, int protocol)
-/*[clinic end generated code: output=5572e699c467dd5b input=227f37ed68bd938a]*/
+object___reduce___impl(PyObject *self)
+/*[clinic end generated code: output=d4ca691f891c6e2f input=11562e663947e18b]*/
 {
-    return _common_reduce(self, protocol);
+    return _common_reduce(self, 0);
 }
 
 /*[clinic input]
 object.__reduce_ex__
 
-  protocol: int = 0
+  protocol: int
   /
 
 Helper for pickle.
@@ -4417,7 +4414,7 @@ Helper for pickle.
 
 static PyObject *
 object___reduce_ex___impl(PyObject *self, int protocol)
-/*[clinic end generated code: output=2e157766f6b50094 input=8dd6a9602a12749e]*/
+/*[clinic end generated code: output=2e157766f6b50094 input=f326b43fb8a4c5ff]*/
 {
     static PyObject *objreduce;
     PyObject *reduce, *res;
