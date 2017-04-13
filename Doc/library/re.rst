@@ -784,9 +784,9 @@ form.
       Unmatched groups are replaced with an empty string.
 
 
-.. function:: escape(string)
+.. function:: escape(pattern)
 
-   Escape all the characters in pattern except ASCII letters, numbers and ``'_'``.
+   Escape all the characters in *pattern* except ASCII letters, numbers and ``'_'``.
    This is useful if you want to match an arbitrary literal string that may
    have regular expression metacharacters in it.  For example::
 
