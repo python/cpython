@@ -274,6 +274,8 @@ whatsnew/3.2,,:location,zope9-location = ${zope9:location}
 whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
 whatsnew/changelog,,:gz,": TarFile opened with external fileobj and ""w:gz"" mode didn't"
 whatsnew/changelog,,::,": Use ""127.0.0.1"" or ""::1"" instead of ""localhost"" as much as"
+library/re,,`,!#$%&'*+-.^_`|~:
+library/re,,`,\!\#\$\%\&\'\*\+\-\.\^_\`\|\~\:
 library/tarfile,149,:xz,'x:xz'
 library/xml.etree.elementtree,290,:sometag,prefix:sometag
 library/xml.etree.elementtree,301,:fictional,"<actors xmlns:fictional=""http://characters.example.com"""
