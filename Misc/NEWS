@@ -163,6 +163,8 @@ C API
 Documentation
 -------------
 
+- bpo-26985: Add missing info of code object in inspect documentation.
+
 - bpo-28929: Link the documentation to its source file on GitHub.
 
 - bpo-25008: Document smtpd.py as effectively deprecated and add a pointer to
