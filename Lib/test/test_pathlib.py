@@ -1813,7 +1813,7 @@ class _BasePathTest(object):
                 # just before we try to create it ourselves.  We do it
                 # in all possible pattern combinations, assuming that this
                 # function is called at most 5 times (dirCPC/dir1/dir2,
-                # dirCPC/dir1, dirCPC, dirCPC/dir1, cirCPC/dir1/dir2).
+                # dirCPC/dir1, dirCPC, dirCPC/dir1, dirCPC/dir1/dir2).
                 if pattern.pop():
                     os.mkdir(path, mode)      # from another process
                     concurrently_created.add(path)
