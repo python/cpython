@@ -24,7 +24,7 @@ while True:
             if buffer.lstrip().upper().startswith("SELECT"):
                 print(cur.fetchall())
         except sqlite3.Error as e:
-            msg = str(e))
+            msg = str(e)
             error_code = e.sqlite_errorcode
             error_name = e.sqlite_name
             print(f"Error {error_name} [Errno {error_code}]: {msg}")
