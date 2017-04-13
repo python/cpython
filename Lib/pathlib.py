@@ -1217,8 +1217,8 @@ class Path(PurePath):
         except FileNotFoundError:
             if not parents or self.parent == self:
                 raise
-            self.parent.mkdir(parents=True)
-            self._accessor.mkdir(self, mode)
+            self.parent.mkdir(parents=True, exist_ok=True)
+            self.mkdir(mode, parents=False, exist_ok=exist_ok)
         except OSError:
             # Cannot rely on checking for EEXIST, since the operating system
             # could give priority to other errors like EACCES or EROFS
