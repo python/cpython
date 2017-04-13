@@ -610,7 +610,7 @@ are always available.  They are listed here in alphabetical order.
 
   .. note::
 
-    For object's with custom :meth:`__hash__` methods, note that :func:`hash`
+    For objects with custom :meth:`__hash__` methods, note that :func:`hash`
     truncates the return value based on the bit width of the host machine.
     See :meth:`__hash__` for details.
 
