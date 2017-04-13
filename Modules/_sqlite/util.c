@@ -47,20 +47,21 @@ int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
  */
 int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
 {
+    PyObject *exc_class;
     int errorcode = sqlite3_errcode(db);
 
     switch (errorcode)
     {
         case SQLITE_OK:
             PyErr_Clear();
-            break;
+            return errorcode;
         case SQLITE_INTERNAL:
         case SQLITE_NOTFOUND:
-            PyErr_SetString(pysqlite_InternalError, sqlite3_errmsg(db));
+            exc_class = pysqlite_InternalError;
             break;
         case SQLITE_NOMEM:
             (void)PyErr_NoMemory();
-            break;
+            return errorcode;
         case SQLITE_ERROR:
         case SQLITE_PERM:
         case SQLITE_ABORT:
@@ -74,25 +75,70 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
         case SQLITE_PROTOCOL:
         case SQLITE_EMPTY:
         case SQLITE_SCHEMA:
-            PyErr_SetString(pysqlite_OperationalError, sqlite3_errmsg(db));
+            exc_class = pysqlite_OperationalError;
             break;
         case SQLITE_CORRUPT:
-            PyErr_SetString(pysqlite_DatabaseError, sqlite3_errmsg(db));
+            exc_class = pysqlite_DatabaseError;
             break;
         case SQLITE_TOOBIG:
-            PyErr_SetString(pysqlite_DataError, sqlite3_errmsg(db));
+            exc_class = pysqlite_DataError;
             break;
         case SQLITE_CONSTRAINT:
         case SQLITE_MISMATCH:
-            PyErr_SetString(pysqlite_IntegrityError, sqlite3_errmsg(db));
+            exc_class = pysqlite_IntegrityError;
             break;
         case SQLITE_MISUSE:
-            PyErr_SetString(pysqlite_ProgrammingError, sqlite3_errmsg(db));
+            exc_class = pysqlite_ProgrammingError;
             break;
         default:
-            PyErr_SetString(pysqlite_DatabaseError, sqlite3_errmsg(db));
+            exc_class = pysqlite_DatabaseError;
             break;
     }
+
+    /* Create and set the exception. */
+    {
+        const char *error_msg;
+        const char *error_name;
+        PyObject *exc = NULL;
+        PyObject *args = NULL;
+        PyObject *py_code = NULL;
+        PyObject *py_name = NULL;
+
+        error_name = sqlite3ErrName(errorcode);
+
+        error_msg = sqlite3_errmsg(db);
+
+        args = Py_BuildValue("(s)", error_msg);
+        if (!args)
+            goto error;
+
+        exc = PyObject_Call(exc_class, args, NULL);
+        if (!exc)
+            goto error;
+
+        py_code = Py_BuildValue("i", errorcode);
+        if (!py_code)
+            goto error;
+
+        if (PyObject_SetAttrString(exc, "sqlite_errorcode", py_code) < 0)
+            goto error;
+
+        py_name = Py_BuildValue("s", error_name);
+        if (!py_name)
+            goto error;
+
+        if (PyObject_SetAttrString(exc, "sqlite_errorname", py_name) < 0)
+            goto error;
+
+        PyErr_SetObject((PyObject *) Py_TYPE(exc), exc);
+
+    error:
+        Py_XDECREF(py_code);
+        Py_XDECREF(py_name);
+        Py_XDECREF(args);
+        Py_XDECREF(exc);
+    }
+
 
     return errorcode;
 }

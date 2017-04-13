@@ -83,6 +83,14 @@ class ModuleTests(unittest.TestCase):
                                    sqlite.DatabaseError),
                         "NotSupportedError is not a subclass of DatabaseError")
 
+    def CheckErrorCodeOnException(self):
+        with self.assertRaises(sqlite.Error) as cm:
+           db = sqlite.connect('/no/such/file/exists')
+        e = cm.exception
+        self.assertEqual(e.sqlite_errorcode, sqlite.SQLITE_CANTOPEN)
+        self.assertEqual(e.sqlite_errorname, "SQLITE_CANTOPEN")
+        self.assertEqual(str(e), "unable to open database file")
+
 class ConnectionTests(unittest.TestCase):
 
     def setUp(self):

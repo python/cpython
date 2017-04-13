@@ -270,6 +270,26 @@ Module functions and constants
    disable the feature again.
 
 
+.. exception:: Error
+
+   Raised to signal an error from the underlying SQLite library.
+
+   .. attribute:: sqlite_errorcode
+
+      The numeric error code from the `SQLite API
+      <http://www.sqlite.org/c3ref/c_abort.html>`_.
+
+      .. versionadded:: 3.7
+
+   .. attribute:: sqlite_errorname
+
+      The symbolic name of the numeric error code
+      from the `SQLite API
+      <http://www.sqlite.org/c3ref/c_abort.html>`_.
+
+      .. versionadded:: 3.7
+
+
 .. _sqlite3-connection-objects:
 
 Connection Objects

@@ -271,13 +271,70 @@ struct _IntConstantPair {
 
 typedef struct _IntConstantPair IntConstantPair;
 
+/* sqlite API error codes */
+static const IntConstantPair _error_codes[] = {
+  {"SQLITE_OK", SQLITE_OK},
+  {"SQLITE_ERROR", SQLITE_ERROR},
+  {"SQLITE_INTERNAL", SQLITE_INTERNAL},
+  {"SQLITE_PERM", SQLITE_PERM},
+  {"SQLITE_ABORT", SQLITE_ABORT},
+  {"SQLITE_BUSY", SQLITE_BUSY},
+  {"SQLITE_LOCKED", SQLITE_LOCKED},
+  {"SQLITE_NOMEM", SQLITE_NOMEM},
+  {"SQLITE_READONLY", SQLITE_READONLY},
+  {"SQLITE_INTERRUPT", SQLITE_INTERRUPT},
+  {"SQLITE_IOERR", SQLITE_IOERR},
+  {"SQLITE_CORRUPT", SQLITE_CORRUPT},
+  {"SQLITE_NOTFOUND", SQLITE_NOTFOUND},
+  {"SQLITE_FULL", SQLITE_FULL},
+  {"SQLITE_CANTOPEN", SQLITE_CANTOPEN},
+  {"SQLITE_PROTOCOL", SQLITE_PROTOCOL},
+  {"SQLITE_EMPTY", SQLITE_EMPTY},
+  {"SQLITE_SCHEMA", SQLITE_SCHEMA},
+  {"SQLITE_TOOBIG", SQLITE_TOOBIG},
+  {"SQLITE_CONSTRAINT", SQLITE_CONSTRAINT},
+  {"SQLITE_MISMATCH", SQLITE_MISMATCH},
+  {"SQLITE_MISUSE", SQLITE_MISUSE},
+#ifdef SQLITE_NOLFS
+  {"SQLITE_NOLFS", SQLITE_NOLFS},
+#endif
+#ifdef SQLITE_AUTH
+  {"SQLITE_AUTH", SQLITE_AUTH},
+#endif
+#ifdef SQLITE_FORMAT
+  {"SQLITE_FORMAT", SQLITE_FORMAT},
+#endif
+#ifdef SQLITE_RANGE
+  {"SQLITE_RANGE", SQLITE_RANGE},
+#endif
+#ifdef SQLITE_NOTADB
+  {"SQLITE_NOTADB", SQLITE_NOTADB},
+#endif
+  {"SQLITE_DONE", SQLITE_DONE},
+  {"SQLITE_ROW", SQLITE_ROW},
+  {(char*)NULL, 0},
+  {"SQLITE_UNKNOWN", -1}
+};
+
+const char *sqlite3ErrName(int rc) {
+    int i;
+    for (i = 0; _error_codes[i].constant_name != 0; i++) {
+        if (_error_codes[i].constant_value == rc)
+          return _error_codes[i].constant_name;
+    }
+    // No error code matched.
+    return _error_codes[i+1].constant_name;
+}
+
 static const IntConstantPair _int_constants[] = {
     {"PARSE_DECLTYPES", PARSE_DECLTYPES},
     {"PARSE_COLNAMES", PARSE_COLNAMES},
 
-    {"SQLITE_OK", SQLITE_OK},
+    /* enumerated return values for sqlite3_set_authorizer() callback */
     {"SQLITE_DENY", SQLITE_DENY},
     {"SQLITE_IGNORE", SQLITE_IGNORE},
+
+    /* enumerated values for sqlite3_set_authorizer() callback */
     {"SQLITE_CREATE_INDEX", SQLITE_CREATE_INDEX},
     {"SQLITE_CREATE_TABLE", SQLITE_CREATE_TABLE},
     {"SQLITE_CREATE_TEMP_INDEX", SQLITE_CREATE_TEMP_INDEX},
@@ -341,6 +398,29 @@ static struct PyModuleDef _sqlite3module = {
         NULL,
         NULL
 };
+
+
+static int add_to_dict(PyObject *dict, const char *key, int value)
+{
+    int sawerror;
+    PyObject *value_obj = PyLong_FromLong(value);
+    PyObject *name = PyUnicode_FromString(key);
+
+    if (!value_obj || !name) {
+        Py_XDECREF(name);
+        Py_XDECREF(value_obj);
+        return 1;
+    }
+
+    sawerror = PyDict_SetItem(dict, name, value_obj) < 0;
+
+    Py_DECREF(value_obj);
+    Py_DECREF(name);
+
+    if (sawerror)
+        return 1;
+    return 0;
+}
 
 PyMODINIT_FUNC PyInit__sqlite3(void)
 {
@@ -445,12 +525,16 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 
     /* Set integer constants */
     for (i = 0; _int_constants[i].constant_name != NULL; i++) {
-        tmp_obj = PyLong_FromLong(_int_constants[i].constant_value);
-        if (!tmp_obj) {
+        if (add_to_dict(dict, _int_constants[i].constant_name,
+                        _int_constants[i].constant_value) != 0)
             goto error;
-        }
-        PyDict_SetItemString(dict, _int_constants[i].constant_name, tmp_obj);
-        Py_DECREF(tmp_obj);
+    }
+
+    /* Set error constants */
+    for (i = 0; _error_codes[i].constant_name != 0; i++) {
+        if (add_to_dict(dict, _error_codes[i].constant_name,
+                        _error_codes[i].constant_value) != 0)
+            goto error;
     }
 
     if (!(tmp_obj = PyUnicode_FromString(PYSQLITE_VERSION))) {

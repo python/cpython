@@ -48,6 +48,8 @@ extern PyObject* _pysqlite_converters;
 extern int _pysqlite_enable_callback_tracebacks;
 extern int pysqlite_BaseTypeAdapted;
 
+extern const char *sqlite3ErrName(int rc);
+
 #define PARSE_DECLTYPES 1
 #define PARSE_COLNAMES 2
 #endif
