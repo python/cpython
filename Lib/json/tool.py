@@ -35,6 +35,8 @@ def main():
                        const=None, help='Use compact mode.')
     group.add_argument('--tab', action='store_const', dest='indent',
                        const='\t', help='Use tabs for indentation.')
+    group.add_argument('--compact', action='store_true',
+                       help='Use most compact whitespace format.')
     parser.add_argument('--sort-keys', action='store_true',
                         help='sort the output of dictionaries by key')
     options = parser.parse_args()
@@ -46,11 +48,15 @@ def main():
         except ValueError as e:
             raise SystemExit(e)
 
+    kwargs = {
+        'indent': options.indent,
+        'sort_keys': options.sort_keys,
+    }
+    if options.compact:
+        kwargs['indent'] = None
+        kwargs['separators'] = ',', ':'
     with options.outfile as outfile:
-        json.dump(obj, outfile,
-                  indent=options.indent,
-                  sort_keys=options.sort_keys,
-                  )
+        json.dump(obj, outfile, **kwargs)
         outfile.write('\n')
 
 

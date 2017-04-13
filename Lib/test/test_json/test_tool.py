@@ -137,3 +137,12 @@ class TestTool(unittest.TestCase):
             json_stdout, err = proc.communicate(json_stdin)
         self.assertEqual(expect.splitlines(), json_stdout.splitlines())
         self.assertEqual(err, b'')
+
+    def test_compact(self):
+        json_stdin = b'[ 1 ,\n 2]'
+        expect = b'[1,2]'
+        args = sys.executable, '-m', 'json.tool', '--compact'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+            json_stdout, err = proc.communicate(json_stdin)
+        self.assertEqual(expect.splitlines(), json_stdout.splitlines())
+        self.assertEqual(err, b'')
