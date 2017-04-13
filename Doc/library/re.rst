@@ -786,7 +786,7 @@ form.
 
 .. function:: escape(pattern)
 
-   Escape all the characters in *pattern* except ASCII letters, numbers and ``'_'``.
+   Escape special characters in *pattern*.
    This is useful if you want to match an arbitrary literal string that may
    have regular expression metacharacters in it.  For example::
 
@@ -795,14 +795,18 @@ form.
 
       >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
       >>> print('[%s]+' % re.escape(legal_chars))
-      [abcdefghijklmnopqrstuvwxyz0123456789\!\#\$\%\&\'\*\+\-\.\^_\`\|\~\:]+
+      [abcdefghijklmnopqrstuvwxyz0123456789!\#\$%&'\*\+\-\.\^_`\|~:]+
 
       >>> operators = ['+', '-', '*', '/', '**']
       >>> print('|'.join(map(re.escape, sorted(operators, reverse=True))))
-      \/|\-|\+|\*\*|\*
+      /|\-|\+|\*\*|\*
 
    .. versionchanged:: 3.3
       The ``'_'`` character is no longer escaped.
+
+   .. versionchanged:: 3.7
+      Only characters that can have special meaning in a regular expression
+      are escaped.
 
 
 .. function:: purge()
