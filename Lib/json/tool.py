@@ -33,6 +33,8 @@ def main():
                        'pretty-printing. Defaults to 4.')
     group.add_argument('--no-indent', action='store_const', dest='indent',
                        const=None, help='Use compact mode.')
+    group.add_argument('--tab', action='store_const', dest='indent',
+                       const='\t', help='Use tabs for indentation.')
     parser.add_argument('--sort-keys', action='store_true',
                         help='sort the output of dictionaries by key')
     options = parser.parse_args()
