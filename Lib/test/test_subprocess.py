@@ -2418,7 +2418,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 with self.assertRaises(TypeError):
                     _posixsubprocess.fork_exec(
                         args, exe_list,
-                        True, [], cwd, env_list,
+                        True, (), cwd, env_list,
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
                         True, True, func)
