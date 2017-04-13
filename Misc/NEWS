@@ -314,6 +314,9 @@ Library
   times when schema is changing.  Indirectly fixed by switching to 
   use sqlite3_prepare_v2() in bpo-9303.  Patch by Aviv Palivoda.
 
+- bpo-30017: Allowed calling the close() method of the zip entry writer object
+  multiple times.  Writing to a closed writer now always produces a ValueError.
+
 - bpo-29998: Pickling and copying ImportError now preserves name and path
   attributes.
 
@@ -943,6 +946,8 @@ C API
 
 Documentation
 -------------
+
+- bpo-26985: Add missing info of code object in inspect documentation.
 
 - bpo-19824, bpo-20314, bpo-12518: Improve the documentation for, and links
   to, template strings by emphasizing their utility for internationalization,

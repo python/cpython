@@ -784,11 +784,22 @@ form.
       Unmatched groups are replaced with an empty string.
 
 
-.. function:: escape(string)
+.. function:: escape(pattern)
 
-   Escape special characters in a string.
+   Escape special characters in *pattern*.
    This is useful if you want to match an arbitrary literal string that may
-   have regular expression metacharacters in it.
+   have regular expression metacharacters in it.  For example::
+
+      >>> print(re.escape('python.exe'))
+      python\.exe
+
+      >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
+      >>> print('[%s]+' % re.escape(legal_chars))
+      [abcdefghijklmnopqrstuvwxyz0123456789!\#\$%&'\*\+\-\.\^_`\|~:]+
+
+      >>> operators = ['+', '-', '*', '/', '**']
+      >>> print('|'.join(map(re.escape, sorted(operators, reverse=True))))
+      /|\-|\+|\*\*|\*
 
    .. versionchanged:: 3.3
       The ``'_'`` character is no longer escaped.
