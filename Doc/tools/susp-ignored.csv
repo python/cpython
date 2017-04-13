@@ -99,6 +99,8 @@ library/profile,,:lineno,ncalls  tottime  percall  cumtime  percall filename:lin
 library/profile,,:lineno,filename:lineno(function)
 library/pyexpat,,:elem1,<py:elem1 />
 library/pyexpat,,:py,"xmlns:py = ""http://www.python.org/ns/"">"
+library/re,,`,!#$%&'*+-.^_`|~:
+library/re,,`,\!\#\$\%\&\'\*\+\-\.\^_\`\|\~\:
 library/smtplib,,:port,method must support that as well as a regular host:port
 library/socket,,::,'5aef:2b::8'
 library/sqlite3,,:memory,

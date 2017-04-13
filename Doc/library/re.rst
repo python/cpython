@@ -695,11 +695,22 @@ form.
       Added the optional flags argument.
 
 
-.. function:: escape(string)
+.. function:: escape(pattern)
 
-   Return *string* with all non-alphanumerics backslashed; this is useful if you
-   want to match an arbitrary literal string that may have regular expression
-   metacharacters in it.
+   Escape all the characters in *pattern* except ASCII letters and numbers.
+   This is useful if you want to match an arbitrary literal string that may
+   have regular expression metacharacters in it.  For example::
+
+      >>> print re.escape('python.exe')
+      python\.exe
+
+      >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
+      >>> print '[%s]+' % re.escape(legal_chars)
+      [abcdefghijklmnopqrstuvwxyz0123456789\!\#\$\%\&\'\*\+\-\.\^\_\`\|\~\:]+
+
+      >>> operators = ['+', '-', '*', '/', '**']
+      >>> print '|'.join(map(re.escape, sorted(operators, reverse=True)))
+      \/|\-|\+|\*\*|\*
 
 
 .. function:: purge()
