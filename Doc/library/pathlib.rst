@@ -659,7 +659,9 @@ call fails (for example because the path doesn't exist):
 .. method:: Path.stat()
 
    Return information about this path (similarly to :func:`os.stat`).
-   The result is looked up at each call to this method. ::
+   The result is looked up at each call to this method.
+
+   ::
 
       >>> p = Path('setup.py')
       >>> p.stat().st_size
@@ -974,7 +976,9 @@ call fails (for example because the path doesn't exist):
    to :func:`os.path.samefile` and :func:`os.path.samestat`.
 
    An :exc:`OSError` can be raised if either file cannot be accessed for some
-   reason. ::
+   reason.
+
+   ::
 
       >>> p = Path('spam')
       >>> q = Path('eggs')
@@ -990,7 +994,9 @@ call fails (for example because the path doesn't exist):
 
    Make this path a symbolic link to *target*.  Under Windows,
    *target_is_directory* must be true (default ``False``) if the link's target
-   is a directory.  Under POSIX, *target_is_directory*'s value is ignored. ::
+   is a directory.  Under POSIX, *target_is_directory*'s value is ignored.
+
+   ::
 
       >>> p = Path('mylink')
       >>> p.symlink_to('setup.py')

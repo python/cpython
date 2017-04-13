@@ -2262,7 +2262,9 @@ SSL versions 2 and 3 are considered insecure and are therefore dangerous to
 use.  If you want maximum compatibility between clients and servers, it is
 recommended to use :const:`PROTOCOL_TLS_CLIENT` or
 :const:`PROTOCOL_TLS_SERVER` as the protocol version. SSLv2 and SSLv3 are
-disabled by default. ::
+disabled by default.
+
+::
 
    >>> client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
    >>> client_context.options |= ssl.OP_NO_TLSv1
