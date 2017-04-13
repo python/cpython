@@ -86,6 +86,11 @@ Build
 
 - bpo-29643: Fix ``--enable-optimization`` didn't work.
 
+Documentation
+-------------
+
+- bpo-26985: Add missing info of code object in inspect documentation.
+
 
 What's New in Python 3.6.1?
 ===========================
