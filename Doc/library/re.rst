@@ -68,7 +68,7 @@ operations; boundary conditions between *A* and *B*; or have numbered group
 references.  Thus, complex expressions can easily be constructed from simpler
 primitive expressions like the ones described here.  For details of the theory
 and implementation of regular expressions, consult the Friedl book referenced
-above, or almost any textbook about compiler construction.
+below, or almost any textbook about compiler construction.
 
 A brief explanation of the format of regular expressions follows.  For further
 information and a gentler presentation, consult the :ref:`regex-howto`.
