@@ -2152,7 +2152,12 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
         if (seq == NULL) {
             return NULL;
         }
-        nchanges = PySequence_Fast_GET_SIZE(arg);
+        if (PySequence_Fast_GET_SIZE(arg) > INT_MAX / sizeof(struct kevent)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "changelist is too long");
+            goto error;
+        }
+        nchanges = (int)PySequence_Fast_GET_SIZE(arg);
 
         chl = PyMem_New(struct kevent, nchanges);
         if (chl == NULL) {
