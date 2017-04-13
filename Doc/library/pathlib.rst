@@ -271,6 +271,10 @@ property:
 Methods and properties
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. testsetup::
+
+   from pathlib import PurePosixPath, PureWindowsPath
+
 Pure paths provide the following methods and properties:
 
 .. data:: PurePath.drive
@@ -657,6 +661,8 @@ call fails (for example because the path doesn't exist):
    Return information about this path (similarly to :func:`os.stat`).
    The result is looked up at each call to this method.
 
+   ::
+
       >>> p = Path('setup.py')
       >>> p.stat().st_size
       956
@@ -948,7 +954,7 @@ call fails (for example because the path doesn't exist):
 .. method:: Path.rglob(pattern)
 
    This is like calling :meth:`Path.glob` with "``**``" added in front of the
-   given *pattern*:
+   given *pattern*::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),
@@ -972,6 +978,8 @@ call fails (for example because the path doesn't exist):
    An :exc:`OSError` can be raised if either file cannot be accessed for some
    reason.
 
+   ::
+
       >>> p = Path('spam')
       >>> q = Path('eggs')
       >>> p.samefile(q)
@@ -987,6 +995,8 @@ call fails (for example because the path doesn't exist):
    Make this path a symbolic link to *target*.  Under Windows,
    *target_is_directory* must be true (default ``False``) if the link's target
    is a directory.  Under POSIX, *target_is_directory*'s value is ignored.
+
+   ::
 
       >>> p = Path('mylink')
       >>> p.symlink_to('setup.py')
