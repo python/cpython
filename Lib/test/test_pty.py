@@ -907,15 +907,9 @@ class PtyMockingTestBase:
             setattr(module, attr, v)
 
         for file in self.files:
-            try:
-                file.close()
-            except OSError:
-                debug("close error {}".format(file))
+            file.close()
         for fd in self.fds:
-            try:
-                os.close(fd)
-            except OSError:
-                debug("os.close error {}".format(fd))
+            os.close(fd)
 
     def _pipe(self):
         pipe_fds = os.pipe()
