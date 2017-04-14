@@ -320,47 +320,6 @@ class PtyPosixIntegrationTest(unittest.TestCase):
         self.assertEqual(retcode, 81)
 
 
-class PtyMockingTestBase(unittest.TestCase):
-    """Base class for tests which replace STDIN and STDOUT of the pty
-    module with their own pipes."""
-
-    def setUp(self):
-        save_and_restore = ['pty.STDIN_FILENO',
-                            'pty.STDOUT_FILENO',
-                            'pty.select']
-        self.saved = dict()
-        for k in save_and_restore:
-            module, attr = k.split('.')
-            module = globals()[module]
-            self.saved[k] = getattr(module, attr)
-
-        self.fds = []  # A list of file descriptors to close.
-        self.files = []
-        self.select_rfds_lengths = []
-        self.select_rfds_results = []
-
-    def tearDown(self):
-        for k, v in self.saved.items():
-            module, attr = k.split('.')
-            module = globals()[module]
-            setattr(module, attr, v)
-
-        for file in self.files:
-            try:
-                file.close()
-            except OSError:
-                debug("close error {}".format(file))
-        for fd in self.fds:
-            try:
-                os.close(fd)
-            except OSError:
-                debug("os.close error {}".format(fd))
-
-    def _pipe(self):
-        pipe_fds = os.pipe()
-        self.fds.extend(pipe_fds)
-        return pipe_fds
-
 class PtySpawnTestBase:
     """A base class for the following integration test setup: A child
     process is spawned with pty.spawn().  The child runs a fresh python
@@ -916,6 +875,47 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase, unittest.TestCase):
             self._EXEC_CHILD_INTR
         self._spawn_master_and_slave(self._background_process_intr, child_code)
 
+
+class PtyMockingTestBase(unittest.TestCase):
+    """Base class for tests which replace STDIN and STDOUT of the pty
+    module with their own pipes."""
+
+    def setUp(self):
+        save_and_restore = ['pty.STDIN_FILENO',
+                            'pty.STDOUT_FILENO',
+                            'pty.select']
+        self.saved = dict()
+        for k in save_and_restore:
+            module, attr = k.split('.')
+            module = globals()[module]
+            self.saved[k] = getattr(module, attr)
+
+        self.fds = []  # A list of file descriptors to close.
+        self.files = []
+        self.select_rfds_lengths = []
+        self.select_rfds_results = []
+
+    def tearDown(self):
+        for k, v in self.saved.items():
+            module, attr = k.split('.')
+            module = globals()[module]
+            setattr(module, attr, v)
+
+        for file in self.files:
+            try:
+                file.close()
+            except OSError:
+                debug("close error {}".format(file))
+        for fd in self.fds:
+            try:
+                os.close(fd)
+            except OSError:
+                debug("os.close error {}".format(fd))
+
+    def _pipe(self):
+        pipe_fds = os.pipe()
+        self.fds.extend(pipe_fds)
+        return pipe_fds
 
 class _MockSelectEternalWait(Exception):
     """Used both as exception and placeholder value.  Models that no
