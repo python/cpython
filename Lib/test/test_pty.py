@@ -71,7 +71,7 @@ def _os_timeout_read(fd, n):
 # In order to avoid newline translation and normalize_output completely,
 # some test cases never emit newline characters and flush the fd
 # manually.  For example, using print('foo', end='', flush=True) in a
-# forked child allows to read exactly len('foo') in the parent.  For
+# forked child allows reading exactly len('foo') in the parent.  For
 # this, _os_read_exactly and _os_read_exhaust_exactly can be used.
 
 def _os_readline(fd):
@@ -147,7 +147,6 @@ class PtyBasicTest(unittest.TestCase):
     def test_basic(self):
         try:
             debug("Calling master_open()")
-            # XXX deprecated function
             master_fd, slave_name = pty.master_open()
             debug("Got master_fd '%d', slave_name '%s'" %
                   (master_fd, slave_name))
@@ -326,40 +325,51 @@ class PtySpawnTestBase(unittest.TestCase):
     interpreter; its python code is passed via command line argument as
     string.  A background process is forked, reusing the current
     instance of the python interpreter.  These processes are connected
-    over STDIN/STDOUT pipes.  These tests run fork(), select(),
-    execlp(), and other calls on your system.
+    over STDIN/STDOUT pipes.  The tests run fork(), select(), execlp(),
+    and other calls on your system.
 
-    Starting from the parent (the main thread of this test suite), two
-    additional processes are forked in this test setup.  We call the
-    spawn()-ed child the 'slave' because it is connected to the slave
-    side of the pty.  The background process is connected to the master
-    side of the pty.
+    Starting from the parent (the main thread of this test suite), three
+    processes are forked for this setup.  We call the spawn()-ed child
+    the 'slave' because it is connected to the slave side of the pty.
+    The background process is connected to the master side of the pty.
+    Internal details require a spawn_runner.  The actual tests are
+    executed between slave and background.
+    
+    Sequence diagram of the overall test setup:
 
-    parent
-      |
-    create mock
+    ┌──────┐
+    │parent│
+    └──────┘
+        |
+      create
     STDIN/STDOUT
-    pipes
-      |
-      |
-      ..os.fork().> background
-      |                |
-      |
-      .......................pty.spawn(*)..>slave
-     pty._copy
-     and wait          | <-- STDIN/STDOUT --> |
-     wait slave        |         pipes        |
-                       |                      |
-                       |                      |
-                      exit                    |
-                                              |
-                                             exit
-     wait for
-     background
-      |
+      pipes
+        |
+        |                                                  ┌──────────┐
+        |---------------------os.fork()------------------->│background│
+        |                                                  └──────────┘
+        |             ┌──────┐                                   |
+        |-_pty_spawn->│spawn │                              master_fun
+        |             │runner│                                   |
+    wait for          └──────┘                                   |
+     slave                |                                      |
+        .                 |              ┌─────┐                 |
+        .                 |--pty.spawn-->│slave│                 |
+        .                 .              └─────┘                 |
+        .                 .                 |                    |
+        .                 .             slave_src                |
+        .                 .                 | <- STDIN/STDOUT -> |
+        .                 .                 |       pipes        |
+        .                 .                 |                    |
+        .                 .                 |                    |
+        .                 .                 |                   exit
+        .                 .                 |                    .
+        .                 |< . . . . . . . exit                  .
+        |< . . . . . . .exit                                     .
+     wait for                                                    .
+    background                                                   .
+        |< . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-
-    *) python -c "slave child python code here"
 
 
     The code for the spawned slave is python code in a string.  This
@@ -378,7 +388,7 @@ class PtySpawnTestBase(unittest.TestCase):
         """)
 
     @staticmethod
-    def _greenfield_pty_spawn(stdin, stdout, args, pre_spawn_hook=''):
+    def _pty_spawn(stdin, stdout, args, pre_spawn_hook=''):
         """Execute pty.spawn() in a fresh python interpreter, make stdin
         and stdout available through pipes.  Use the pre_spawn_hook to
         allow monkey patching of the pty module."""
@@ -391,7 +401,7 @@ class PtySpawnTestBase(unittest.TestCase):
         # Invoking this functions creates two children: the spawn_runner
         # as isolated child to execute pty.spawn and capture stdout and
         # its grandchild (running args) created by pty.spawn.
-        spawn_runner = pre_spawn_hook +textwrap.dedent("""
+        spawn_runner = pre_spawn_hook + textwrap.dedent("""
             import pty, sys;
             ret = pty.spawn(sys.argv[1:]);
             retcode = (ret & 0xff00) >> 8;
@@ -458,27 +468,25 @@ class PtySpawnTestBase(unittest.TestCase):
         # spawn the slave in a new python interpreter, passing the code
         # with the -c option
         try:
-            self._greenfield_pty_spawn(mock_stdin_fd, mock_stdout_fd,
-                                       [sys.executable, '-c', slave_src],
-                                       pre_spawn_hook=pre_spawn_hook)
+            self._pty_spawn(mock_stdin_fd, mock_stdout_fd,
+                            [sys.executable, '-c', slave_src],
+                            pre_spawn_hook=pre_spawn_hook)
         except subprocess.CalledProcessError as e:
             debug("Slave failed.")
-            errmsg = ["Spawned slave returned but failed."]
             debug("killing background process ({:d})".format(background_pid))
             os.kill(background_pid, 9)
-            if verbose:
-                read_from_stdout_fd = read_from_stdout_fd
-                errmsg.extend(["The failed child code was:",
-                               "--- BEGIN child code ---",
-                               slave_src,
-                               "--- END child code ---"])
-                rd, _, _ = select.select([read_from_stdout_fd], [], [], 0)
-                if rd:
-                    errmsg.append("Dumping what the slave wrote last:")
-                    rawoutput = os.read(read_from_stdout_fd, 1024*1024)
-                    errmsg.append(repr(rawoutput))
-                else:
-                    errmsg.append("No output from child.")
+            errmsg = ["Spawned slave returned but failed.",
+                      "The failed child code was:",
+                      "--- BEGIN child code ---",
+                      slave_src,
+                      "--- END child code ---"]
+            rd, _, _ = select.select([read_from_stdout_fd], [], [], 0)
+            if rd:
+                errmsg.append("Dumping what the slave wrote last:")
+                rawoutput = os.read(read_from_stdout_fd, 1024*1024)
+                errmsg.append(repr(rawoutput))
+            else:
+                errmsg.append("No output from child.")
             self.fail('\n'.join(errmsg))
 
         retcode_background = os.waitpid(background_pid, 0)[1]
