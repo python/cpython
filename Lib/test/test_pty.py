@@ -363,40 +363,6 @@ class PtyMockingTestBase(unittest.TestCase):
         self.fds.extend(pipe_fds)
         return pipe_fds
 
-    def _mock_stdin_stdout(self):
-        """Mock STDIN and STDOUT with two fresh pipes.  Replaces
-        pty.STDIN_FILENO/pty.STDOUT_FILENO by one end of the pipe.
-        Returns the other end of the pipe."""
-        read_from_stdout_fd, mock_stdout_fd = self._pipe()
-        pty.STDOUT_FILENO = mock_stdout_fd
-        mock_stdin_fd, write_to_stdin_fd = self._pipe()
-        pty.STDIN_FILENO = mock_stdin_fd
-
-        # STDIN and STDOUT fileno of the pty module are replaced by our
-        # mocks.  This is required for the pty._copy loop.  In contrast,
-        # when pty.fork is called, the child's input/output must be set
-        # up properly, i.e. STDIN=0, STDOUT=1; not our mock fds.  If
-        # pty.fork can delegate its work to os.forkpty, STDIN and STDOUT
-        # are correctly set.  If os.forkpty is not available, the backup
-        # path of pty.fork would break in the presence of our mocks.  We
-        # wrap pty.fork to temporarily restore the STDIN/STDOUT file
-        # descriptors for forking and reintroduce our mocks immediately
-        # afterwards.
-        def forkwrap():
-            # debug("Calling wrapped pty.fork ({}), "
-            #       "delegating to {}".format(pty.fork,
-            #                                 self.saved['pty.fork']))
-            pty.STDIN_FILENO = 0
-            pty.STDOUT_FILENO = 1
-            self.assertEqual(pty.STDERR_FILENO, 2, "pty.fork correct STDERR")
-            ret = self.saved['pty.fork']()
-            pty.STDIN_FILENO = mock_stdin_fd
-            pty.STDOUT_FILENO = mock_stdout_fd
-            return ret
-        pty.fork = forkwrap
-
-        return (write_to_stdin_fd, read_from_stdout_fd)
-
     def _disable_os_forkpty(self):
         """os.forkpty is only available on some flavours of UNIX.
         Replace it by a function which always fails.  Used to trigger
@@ -467,13 +433,15 @@ class PtySpawnTestBase(PtyMockingTestBase):
         """)
 
     @staticmethod
-    def _greenfield_pty_spawn(args):
+    def _greenfield_pty_spawn(stdin, stdout, args):
         """Execute pty.spawn() in a fresh python interpreter, capture
         stdin and stdout with a pipe"""
         # We cannot use the test.support.captured_output() functions
         # because the pty module writes to filedescriptors directly.
         # We cannot use test.support.script_helper because we need to
         # interact with the spawned child.
+        # We cannot monkey-patch pty.STDIN_FILENO to a pipe because the
+        # fallback path of pty.fork() relies on them.
         # Invoking this functions creates two children: the spawn_runner
         # as isolated child to execute pty.spawn and capture stdout and
         # its grandchild (running args) created by pty.spawn.
@@ -481,7 +449,7 @@ class PtySpawnTestBase(PtyMockingTestBase):
             'ret = pty.spawn(sys.argv[1:]);'\
             'retcode = (ret & 0xff00) >> 8;'\
             'sys.exit(retcode)'
-        subprocess.run([sys.executable, "-c", spawn_runner]+args, stdin=pty.STDIN_FILENO, stdout=pty.STDOUT_FILENO, check=True)
+        subprocess.run([sys.executable, "-c", spawn_runner]+args, stdin=stdin, stdout=stdout, check=True)
 
     @staticmethod
     def _fork_background_process(master_fun, io_fds):
@@ -517,14 +485,13 @@ class PtySpawnTestBase(PtyMockingTestBase):
         code as string.  This function forks them and connects their
         STDIN/STDOUT over a pipe and checks that they cleanly exit.
         Control never returns from master_fun."""
-        io_fds = self._mock_stdin_stdout()
-        # io_fds[0]: write to slave's STDIN
-        # io_fds[1]: read from slave's STDOUT
+        mock_stdin_fd, write_to_stdin_fd = self._pipe()
+        read_from_stdout_fd, mock_stdout_fd = self._pipe()
 
         if close_stdin:
             debug("Closing stdin")
-            os.close(io_fds[0])
-            self.fds.remove(io_fds[0])
+            os.close(write_to_stdin_fd)
+            self.fds.remove(write_to_stdin_fd)
 
         sys.stdout.flush()
         sys.stderr.flush()
@@ -535,19 +502,19 @@ class PtySpawnTestBase(PtyMockingTestBase):
         # STDOUT piped!  The forked child will print to the same fd as
         # we (the parent) print our debug information to.
 
-        background_pid = self._fork_background_process(master_fun, io_fds)
+        background_pid = self._fork_background_process(master_fun, (write_to_stdin_fd, read_from_stdout_fd))
 
         # spawn the slave in a new python interpreter, passing the code
         # with the -c option
         try:
-            self._greenfield_pty_spawn([sys.executable, '-c', slave_src])
+            self._greenfield_pty_spawn(mock_stdin_fd, mock_stdout_fd, [sys.executable, '-c', slave_src])
         except subprocess.CalledProcessError as e:
             debug("Slave failed.")
             errmsg = ["Spawned slave returned but failed."]
             debug("killing background process ({:d})".format(background_pid))
             os.kill(background_pid, 9)
             if verbose:
-                read_from_stdout_fd = io_fds[1]
+                read_from_stdout_fd = read_from_stdout_fd
                 errmsg.extend(["The failed child code was:",
                                "--- BEGIN child code ---",
                                slave_src,
@@ -568,7 +535,7 @@ class PtySpawnTestBase(PtyMockingTestBase):
         # We require that b'slave exits now' is left in the slave's
         # STDOUT to confirm clean exit.
         expecting = b'slave exits now'
-        slave_wrote = _os_read_exhaust_exactly(io_fds[1], len(expecting))
+        slave_wrote = _os_read_exhaust_exactly(read_from_stdout_fd, len(expecting))
         self.assertEqual(slave_wrote, expecting)
 
 
@@ -947,6 +914,16 @@ class _MockSelectEternalWait(Exception):
 class PtyCopyTests(PtyMockingTestBase):
     """Whitebox mocking tests which don't spawn children or hang.  Test
     the _copy loop to transfer data between parent and child."""
+
+    def _mock_stdin_stdout(self):
+        """Mock STDIN and STDOUT with two fresh pipes.  Replaces
+        pty.STDIN_FILENO/pty.STDOUT_FILENO by one end of the pipe.
+        Returns the other end of the pipe."""
+        read_from_stdout_fd, mock_stdout_fd = self._pipe()
+        pty.STDOUT_FILENO = mock_stdout_fd
+        mock_stdin_fd, write_to_stdin_fd = self._pipe()
+        pty.STDIN_FILENO = mock_stdin_fd
+        return (write_to_stdin_fd, read_from_stdout_fd)
 
     def _socketpair(self):
         socketpair = socket.socketpair()
