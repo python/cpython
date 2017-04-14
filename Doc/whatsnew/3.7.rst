@@ -103,6 +103,13 @@ cgi
 is a list of strings, not bytes.
 (Contributed by Pierre Quentel in :issue:`29979`.)
 
+distutils
+---------
+
+README.rst is now included in the list of distutils standard READMEs and
+therefore included in source distributions.
+(Contributed by Ryan Gonzalez in :issue:`11913`.)
+
 http.server
 -----------
 
@@ -117,6 +124,12 @@ locale
 Added another argument *monetary* in :meth:`format_string` of :mod:`locale`.
 If *monetary* is true, the conversion uses monetary thousands separator and
 grouping strings. (Contributed by Garvit in :issue:`10379`.)
+
+math
+----
+
+New :func:`~math.remainder` function, implementing the IEEE 754-style remainder
+operation. (Contributed by Mark Dickinson in :issue:`29962`.)
 
 os
 --

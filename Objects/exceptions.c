@@ -682,6 +682,53 @@ ImportError_str(PyImportErrorObject *self)
     }
 }
 
+static PyObject *
+ImportError_getstate(PyImportErrorObject *self)
+{
+    PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
+    if (self->name || self->path) {
+        _Py_IDENTIFIER(name);
+        _Py_IDENTIFIER(path);
+        dict = dict ? PyDict_Copy(dict) : PyDict_New();
+        if (dict == NULL)
+            return NULL;
+        if (self->name && _PyDict_SetItemId(dict, &PyId_name, self->name) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        if (self->path && _PyDict_SetItemId(dict, &PyId_path, self->path) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        return dict;
+    }
+    else if (dict) {
+        Py_INCREF(dict);
+        return dict;
+    }
+    else {
+        Py_RETURN_NONE;
+    }
+}
+
+/* Pickling support */
+static PyObject *
+ImportError_reduce(PyImportErrorObject *self)
+{
+    PyObject *res;
+    PyObject *args;
+    PyObject *state = ImportError_getstate(self);
+    if (state == NULL)
+        return NULL;
+    args = ((PyBaseExceptionObject *)self)->args;
+    if (state == Py_None)
+        res = PyTuple_Pack(2, Py_TYPE(self), args);
+    else
+        res = PyTuple_Pack(3, Py_TYPE(self), args, state);
+    Py_DECREF(state);
+    return res;
+}
+
 static PyMemberDef ImportError_members[] = {
     {"msg", T_OBJECT, offsetof(PyImportErrorObject, msg), 0,
         PyDoc_STR("exception message")},
@@ -693,6 +740,7 @@ static PyMemberDef ImportError_members[] = {
 };
 
 static PyMethodDef ImportError_methods[] = {
+    {"__reduce__", (PyCFunction)ImportError_reduce, METH_NOARGS},
     {NULL}
 };
 
