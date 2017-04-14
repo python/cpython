@@ -11,6 +11,7 @@ import select
 import signal
 import socket
 import textwrap
+import subprocess
 import unittest
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
@@ -466,6 +467,23 @@ class PtySpawnTestBase(PtyMockingTestBase):
         """)
 
     @staticmethod
+    def _greenfield_pty_spawn(args):
+        """Execute pty.spawn() in a fresh python interpreter, capture
+        stdin and stdout with a pipe"""
+        # We cannot use the test.support.captured_output() functions
+        # because the pty module writes to filedescriptors directly.
+        # We cannot use test.support.script_helper because we need to
+        # interact with the spawned child.
+        # Invoking this functions creates two children: the spawn_runner
+        # as isolated child to execute pty.spawn and capture stdout and
+        # its grandchild (running args) created by pty.spawn.
+        spawn_runner = 'import pty, sys;'\
+            'ret = pty.spawn(sys.argv[1:]);'\
+            'retcode = (ret & 0xff00) >> 8;'\
+            'sys.exit(retcode)'
+        subprocess.run([sys.executable, "-c", spawn_runner]+args, stdin=pty.STDIN_FILENO, stdout=pty.STDOUT_FILENO, check=True)
+
+    @staticmethod
     def _fork_background_process(master_fun, io_fds):
         pid = os.fork()
         assert pid >= 0, "fork failure must raise OSError"
@@ -521,11 +539,11 @@ class PtySpawnTestBase(PtyMockingTestBase):
 
         # spawn the slave in a new python interpreter, passing the code
         # with the -c option
-        retcode_slave = pty.spawn([sys.executable, '-c', slave_src])
-        if retcode_slave != 0:
+        try:
+            self._greenfield_pty_spawn([sys.executable, '-c', slave_src])
+        except subprocess.CalledProcessError as e:
             debug("Slave failed.")
-            errmsg = ["Spawned slave returned but failed.",
-                      "Exit code {:d}".format(retcode_slave)]
+            errmsg = ["Spawned slave returned but failed."]
             debug("killing background process ({:d})".format(background_pid))
             os.kill(background_pid, 9)
             if verbose:
@@ -542,7 +560,6 @@ class PtySpawnTestBase(PtyMockingTestBase):
                 else:
                     errmsg.append("No output from child.")
             self.fail('\n'.join(errmsg))
-        self.assertEqual(retcode_slave, 0)
 
         retcode_background = os.waitpid(background_pid, 0)[1]
         self.assertEqual(retcode_background, 0)
