@@ -428,12 +428,14 @@ class PtySpawnTestBase(unittest.TestCase):
             os._exit(rc)
 
     def _spawn_master_and_slave(self, master_fun, slave_src, close_stdin=False,
-                                disable_osforkpty=False):
+                                pre_spawn_hook=''):
         """Spawn a slave and fork a master background process.
         master_fun must be a python function.  slave_src must be python
         code as string.  This function forks them and connects their
         STDIN/STDOUT over a pipe and checks that they cleanly exit.
-        Control never returns from master_fun."""
+        Control never returns from master_fun.  Optionally, python code
+        supplied via the pre_spawn_hook will be executed before the
+        slave is spawned."""
         mock_stdin_fd, write_to_stdin_fd = os.pipe()
         read_from_stdout_fd, mock_stdout_fd = os.pipe()
 
@@ -456,13 +458,9 @@ class PtySpawnTestBase(unittest.TestCase):
         # spawn the slave in a new python interpreter, passing the code
         # with the -c option
         try:
-            if disable_osforkpty:
-                hook = self._EXEC_DISABLE_OS_FORKPTY
-            else:
-                hook = ''
             self._greenfield_pty_spawn(mock_stdin_fd, mock_stdout_fd,
                                        [sys.executable, '-c', slave_src],
-                                       pre_spawn_hook=hook)
+                                       pre_spawn_hook=pre_spawn_hook)
         except subprocess.CalledProcessError as e:
             debug("Slave failed.")
             errmsg = ["Spawned slave returned but failed."]
@@ -496,22 +494,6 @@ class PtySpawnTestBase(unittest.TestCase):
             os.close(fd)
         if not close_stdin:
             os.close(write_to_stdin_fd)
-
-    # os.forkpty is only available on some flavours of UNIX.  Replace it
-    # by a function which always fails.  Used to guarantee that the
-    # fallback code path in pty.fork is also tested.
-    _EXEC_DISABLE_OS_FORKPTY = textwrap.dedent("""
-        import os
-
-        def _mock_disabled_osforkpty():
-            "Simulate function failure or unavailability."
-            #os.write(2, b'os.forkpty successfully disabled.\\n')
-            raise OSError
-
-        #os.write(2, b' disabling os.forkpty.\\n')
-        os.forkpty = _mock_disabled_osforkpty
-
-        """)
 
 
 class PtyPingTest(PtySpawnTestBase):
@@ -558,13 +540,24 @@ class PtyPingTest(PtySpawnTestBase):
         child_code = self._EXEC_IMPORTS + self._EXEC_CHILD
         self._spawn_master_and_slave(self._background_process, child_code)
 
+    # os.forkpty is only available on some flavours of UNIX.  Replace it
+    # by a function which always fails.  Used to guarantee that the
+    # fallback code path in pty.fork is also tested.
+    _DISABLE_OS_FORKPTY = textwrap.dedent("""
+        import os
+        def _mock_disabled_osforkpty():
+            #os.write(2, b'os.forkpty successfully disabled.\\n')
+            raise OSError
+        os.forkpty = _mock_disabled_osforkpty
+        """)
+
     def test_alternate_ping_disable_osforkpty(self):
         """Spawn a slave and fork a master background process.  Let them
         Ping-Pong count to 1000 by turns. Disable os.forkpty(), trigger
         pty.fork() backup code."""
         child_code = self._EXEC_IMPORTS + self._EXEC_CHILD
         self._spawn_master_and_slave(self._background_process, child_code,
-                                     disable_osforkpty=True)
+                                     pre_spawn_hook=self._DISABLE_OS_FORKPTY)
 
 class PtyReadAllTest(PtySpawnTestBase):
     """Read from (slow) pty.spawn()ed child, make sure we get
