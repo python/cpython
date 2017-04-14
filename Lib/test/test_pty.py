@@ -320,7 +320,7 @@ class PtyPosixIntegrationTest(unittest.TestCase):
         self.assertEqual(retcode, 81)
 
 
-class PtySpawnTestBase:
+class PtySpawnTestBase(unittest.TestCase):
     """A base class for the following integration test setup: A child
     process is spawned with pty.spawn().  The child runs a fresh python
     interpreter; its python code is passed via command line argument as
@@ -386,8 +386,8 @@ class PtySpawnTestBase:
         # because the pty module writes to filedescriptors directly.
         # We cannot use test.support.script_helper because we need to
         # interact with the spawned child.
-        # We cannot monkey-patch pty.STDIN_FILENO to a pipe because the
-        # fallback path of pty.fork() relies on them.
+        # We cannot monkey-patch pty.STDIN_FILENO to point to a pipe
+        # because the fallback path of pty.fork() relies on them.
         # Invoking this functions creates two children: the spawn_runner
         # as isolated child to execute pty.spawn and capture stdout and
         # its grandchild (running args) created by pty.spawn.
@@ -396,7 +396,8 @@ class PtySpawnTestBase:
             ret = pty.spawn(sys.argv[1:]);
             retcode = (ret & 0xff00) >> 8;
             sys.exit(retcode)""")
-        subprocess.run([sys.executable, "-c", spawn_runner]+args, stdin=stdin, stdout=stdout, check=True)
+        subprocess.run([sys.executable, "-c", spawn_runner]+args,
+                       stdin=stdin, stdout=stdout, check=True)
 
     @staticmethod
     def _fork_background_process(master_fun, io_fds):
@@ -426,8 +427,8 @@ class PtySpawnTestBase:
             sys.stderr.flush()
             os._exit(rc)
 
-    def _spawn_master_and_slave(self, master_fun, slave_src,
-            close_stdin=False, disable_osforkpty=False):
+    def _spawn_master_and_slave(self, master_fun, slave_src, close_stdin=False,
+                                disable_osforkpty=False):
         """Spawn a slave and fork a master background process.
         master_fun must be a python function.  slave_src must be python
         code as string.  This function forks them and connects their
@@ -449,7 +450,8 @@ class PtySpawnTestBase:
         # STDOUT piped!  The forked child will print to the same fd as
         # we (the parent) print our debug information to.
 
-        background_pid = self._fork_background_process(master_fun, (write_to_stdin_fd, read_from_stdout_fd))
+        io_fds = (write_to_stdin_fd, read_from_stdout_fd)
+        background_pid = self._fork_background_process(master_fun, io_fds)
 
         # spawn the slave in a new python interpreter, passing the code
         # with the -c option
@@ -459,7 +461,8 @@ class PtySpawnTestBase:
             else:
                 hook = ''
             self._greenfield_pty_spawn(mock_stdin_fd, mock_stdout_fd,
-                    [sys.executable, '-c', slave_src], pre_spawn_hook=hook)
+                                       [sys.executable, '-c', slave_src],
+                                       pre_spawn_hook=hook)
         except subprocess.CalledProcessError as e:
             debug("Slave failed.")
             errmsg = ["Spawned slave returned but failed."]
@@ -494,6 +497,9 @@ class PtySpawnTestBase:
         if not close_stdin:
             os.close(write_to_stdin_fd)
 
+    # os.forkpty is only available on some flavours of UNIX.  Replace it
+    # by a function which always fails.  Used to guarantee that the
+    # fallback code path in pty.fork is also tested.
     _EXEC_DISABLE_OS_FORKPTY = textwrap.dedent("""
         import os
 
@@ -503,15 +509,12 @@ class PtySpawnTestBase:
             raise OSError
 
         #os.write(2, b' disabling os.forkpty.\\n')
-        # os.forkpty is only available on some flavours of UNIX.
-        # Replace it by a function which always fails.  Used to guarantee
-        # that the fallback code path in pty.fork is also tested.
         os.forkpty = _mock_disabled_osforkpty
 
         """)
 
 
-class PtyPingTest(PtySpawnTestBase, unittest.TestCase):
+class PtyPingTest(PtySpawnTestBase):
     """Master and Slave count to 1000 by turns."""
 
     _EXEC_CHILD = textwrap.dedent("""
@@ -560,9 +563,10 @@ class PtyPingTest(PtySpawnTestBase, unittest.TestCase):
         Ping-Pong count to 1000 by turns. Disable os.forkpty(), trigger
         pty.fork() backup code."""
         child_code = self._EXEC_IMPORTS + self._EXEC_CHILD
-        self._spawn_master_and_slave(self._background_process, child_code, disable_osforkpty=True)
+        self._spawn_master_and_slave(self._background_process, child_code,
+                                     disable_osforkpty=True)
 
-class PtyReadAllTest(PtySpawnTestBase, unittest.TestCase):
+class PtyReadAllTest(PtySpawnTestBase):
     """Read from (slow) pty.spawn()ed child, make sure we get
     everything.  Slow tests."""
 
@@ -613,7 +617,7 @@ class PtyReadAllTest(PtySpawnTestBase, unittest.TestCase):
         self._spawn_master_and_slave(self._background_process, child_code,
                                      close_stdin=True)
 
-class PtyTermiosIntegrationTest(PtySpawnTestBase, unittest.TestCase):
+class PtyTermiosIntegrationTest(PtySpawnTestBase):
     """Terminals are not just pipes.  This integration testsuite asserts
     that specific terminal functionality is operational.  It tests ISIG,
     which transforms sending 0x03 at the master side (usually triggered
