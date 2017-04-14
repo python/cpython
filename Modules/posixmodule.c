@@ -8119,15 +8119,16 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
                     "sendfile() header is too large");
                 return NULL;
             }
-            sf.hdr_cnt = (int)i;
-            i = 0;
-            if (sf.hdr_cnt > 0 &&
-                (i = iov_setup(&(sf.headers), &hbuf,
-                                headers, sf.hdr_cnt, PyBUF_SIMPLE)) < 0)
-                return NULL;
+            if (i > 0) {
+                sf.hdr_cnt = (int)i;
+                i = iov_setup(&(sf.headers), &hbuf,
+                              headers, sf.hdr_cnt, PyBUF_SIMPLE);
+                if (i < 0)
+                    return NULL;
 #ifdef __APPLE__
-            sbytes += i;
+                sbytes += i;
 #endif
+            }
         }
     }
     if (trailers != NULL) {
@@ -8144,15 +8145,16 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
                     "sendfile() trailer is too large");
                 return NULL;
             }
-            sf.trl_cnt = (int)i;
-            i = 0;
-            if (sf.trl_cnt > 0 &&
-                (i = iov_setup(&(sf.trailers), &tbuf,
-                                trailers, sf.trl_cnt, PyBUF_SIMPLE)) < 0)
-                return NULL;
+            if (i > 0) {
+                sf.trl_cnt = (int)i;
+                i = iov_setup(&(sf.trailers), &tbuf,
+                              trailers, sf.trl_cnt, PyBUF_SIMPLE);
+                if (i < 0)
+                    return NULL;
 #ifdef __APPLE__
-            sbytes += i;
+                sbytes += i;
 #endif
+            }
         }
     }
 
