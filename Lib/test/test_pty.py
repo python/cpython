@@ -881,9 +881,15 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         self._spawn_master_and_slave(self._background_process_intr, child_code)
 
 
-class PtyMockingTestBase:
-    """Base class for tests which replace STDIN and STDOUT of the pty
-    module with their own pipes."""
+class _MockSelectEternalWait(Exception):
+    """Used both as exception and placeholder value.  Models that no
+    more select activity is expected and that a test can be
+    terminated."""
+    pass
+
+class PtyCopyTests(unittest.TestCase):
+    """Whitebox mocking tests which don't spawn children or hang.  Test
+    the _copy loop to transfer data between parent and child."""
 
     def setUp(self):
         save_and_restore = ['pty.STDIN_FILENO',
@@ -900,6 +906,10 @@ class PtyMockingTestBase:
         self.select_rfds_lengths = []
         self.select_rfds_results = []
 
+        # monkey-patch pty.select with our mock
+        pty.select = self._mock_select
+
+
     def tearDown(self):
         for k, v in self.saved.items():
             module, attr = k.split('.')
@@ -915,31 +925,6 @@ class PtyMockingTestBase:
         pipe_fds = os.pipe()
         self.fds.extend(pipe_fds)
         return pipe_fds
-
-class _MockSelectEternalWait(Exception):
-    """Used both as exception and placeholder value.  Models that no
-    more select activity is expected and that a test can be
-    terminated."""
-    pass
-
-class PtyCopyTests(PtyMockingTestBase, unittest.TestCase):
-    """Whitebox mocking tests which don't spawn children or hang.  Test
-    the _copy loop to transfer data between parent and child."""
-
-    def _mock_stdin_stdout(self):
-        """Mock STDIN and STDOUT with two fresh pipes.  Replaces
-        pty.STDIN_FILENO/pty.STDOUT_FILENO by one end of the pipe.
-        Returns the other end of the pipe."""
-        read_from_stdout_fd, mock_stdout_fd = self._pipe()
-        pty.STDOUT_FILENO = mock_stdout_fd
-        mock_stdin_fd, write_to_stdin_fd = self._pipe()
-        pty.STDIN_FILENO = mock_stdin_fd
-        return (write_to_stdin_fd, read_from_stdout_fd)
-
-    def _socketpair(self):
-        socketpair = socket.socketpair()
-        self.files.extend(socketpair)
-        return socketpair
 
     def _mock_select(self, rfds, wfds, xfds):
         """Simulates the behavior of select.select.  Only implemented
@@ -959,8 +944,8 @@ class PtyCopyTests(PtyMockingTestBase, unittest.TestCase):
         return rfds_result, [], []
 
     def test__mock_select(self):
-        """Test the select proxy of the test class.  Such meta testing.
-        """
+        """Test the select proxy of this test class.  Meta testing."""
+
         self.select_rfds_lengths.append(0)
         with self.assertRaises(AssertionError):
             self._mock_select([], [], [])
@@ -983,6 +968,21 @@ class PtyCopyTests(PtyMockingTestBase, unittest.TestCase):
         self.assertEqual(self.select_rfds_lengths, [])
         self.assertEqual(self.select_rfds_results, [])
 
+    def _mock_stdin_stdout(self):
+        """Mock STDIN and STDOUT with two fresh pipes.  Replaces
+        pty.STDIN_FILENO/pty.STDOUT_FILENO by one end of the pipe.
+        Returns the other end of the pipe."""
+        read_from_stdout_fd, mock_stdout_fd = self._pipe()
+        pty.STDOUT_FILENO = mock_stdout_fd
+        mock_stdin_fd, write_to_stdin_fd = self._pipe()
+        pty.STDIN_FILENO = mock_stdin_fd
+        return (write_to_stdin_fd, read_from_stdout_fd)
+
+    def _socketpair(self):
+        socketpair = socket.socketpair()
+        self.files.extend(socketpair)
+        return socketpair
+
     def test__copy_to_each(self):
         """Test the normal data case on both master_fd and stdin."""
         write_to_stdin_fd, read_from_stdout_fd = self._mock_stdin_stdout()
@@ -994,9 +994,6 @@ class PtyCopyTests(PtyMockingTestBase, unittest.TestCase):
         # Feed data.  Smaller than PIPEBUF.  These writes will not block.
         os.write(masters[1], b'from master')
         os.write(write_to_stdin_fd, b'from stdin')
-
-        # monkey-patch pty.select with our mock
-        pty.select = self._mock_select
 
         # Expect two select calls, the last one will simulate eternal waiting
         self.select_rfds_lengths.append(2)
@@ -1035,9 +1032,6 @@ class PtyCopyTests(PtyMockingTestBase, unittest.TestCase):
             self.fds.remove(write_to_stdin_fd)
         else:
             os.write(write_to_stdin_fd, b'from stdin')
-
-        # monkey-patch pty.select with our mock
-        pty.select = self._mock_select
 
         # Expect exactly one select() call.  This call returns master_fd
         # and STDIN.  Since the slave side of masters is closed, we
@@ -1085,9 +1079,6 @@ class PtyCopyTests(PtyMockingTestBase, unittest.TestCase):
 
         os.close(write_to_stdin_fd)
         self.fds.remove(write_to_stdin_fd)
-
-        # monkey-patch pty.select with our mock
-        pty.select = self._mock_select
 
         # Expect two select() calls.  The first call returns master_fd
         # and STDIN.
