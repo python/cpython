@@ -209,14 +209,10 @@ def parse_multipart(fp, pdict, encoding="utf-8"):
     Returns a dictionary just like parse_qs(): keys are the field names, each
     value is a list of values for that field. For non-file fields, the value
     is a list of strings.
-    
-    This is easy to use but not much good if you are expecting megabytes to be
-    uploaded -- in that case, use the FieldStorage class instead which is much
-    more flexible.  Note that content-type is the raw, unparsed contents of
-    the content-type header.
-
     """
-    boundary = pdict['boundary'].decode('ascii') # cf. RFC 2046
+    # RFC 2026, Section 5.1 : The "multipart" boundary delimiters are always
+    # represented as 7bit US-ASCII.
+    boundary = pdict['boundary'].decode('ascii')
     ctype = "multipart/form-data; boundary={}".format(boundary)
     headers = Message()
     headers.set_type(ctype)
