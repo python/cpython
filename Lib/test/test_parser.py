@@ -1,4 +1,6 @@
+import copy
 import parser
+import pickle
 import unittest
 import operator
 import struct
@@ -771,6 +773,21 @@ class STObjectTestCase(unittest.TestCase):
         self.assertRaises(TypeError, operator.le, False, st1)
         self.assertRaises(TypeError, operator.lt, st1, 1815)
         self.assertRaises(TypeError, operator.gt, b'waterloo', st2)
+
+    def test_copy_pickle(self):
+        sts = [
+            parser.expr('2 + 3'),
+            parser.suite('x = 2; y = x + 3'),
+            parser.expr('list(x**3 for x in range(20))')
+        ]
+        for st in sts:
+            st_copy = copy.copy(st)
+            self.assertEqual(st_copy.totuple(), st.totuple())
+            st_copy = copy.deepcopy(st)
+            self.assertEqual(st_copy.totuple(), st.totuple())
+            for proto in range(pickle.HIGHEST_PROTOCOL+1):
+                st_copy = pickle.loads(pickle.dumps(st, proto))
+                self.assertEqual(st_copy.totuple(), st.totuple())
 
     check_sizeof = support.check_sizeof
 
