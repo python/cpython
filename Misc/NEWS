@@ -42,6 +42,8 @@ Extension Modules
 Library
 -------
 
+- bpo-30011: Fixed race condition in HTMLParser.unescape().
+
 - bpo-27863: Fixed multiple crashes in ElementTree caused by race conditions
   and wrong types.
 
