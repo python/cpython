@@ -95,6 +95,13 @@ New Modules
 Improved Modules
 ================
 
+distutils
+---------
+
+README.rst is now included in the list of distutils standard READMEs and
+therefore included in source distributions.
+(Contributed by Ryan Gonzalez in :issue:`11913`.)
+
 http.server
 -----------
 
