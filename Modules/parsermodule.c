@@ -1012,6 +1012,14 @@ build_node_tree(PyObject *tuple)
         if (num == encoding_decl) {
             encoding = PySequence_GetItem(tuple, 2);
             if (encoding == NULL) {
+                PyErr_SetString(parser_error, "missed encoding");
+                return NULL;
+            }
+            if (!PyUnicode_Check(encoding)) {
+                PyErr_Format(parser_error,
+                             "encoding must be a string, found %.200s",
+                             Py_TYPE(encoding)->tp_name);
+                Py_DECREF(encoding);
                 return NULL;
             }
             /* tuple isn't borrowed anymore here, need to DECREF */

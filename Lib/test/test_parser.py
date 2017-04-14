@@ -630,6 +630,24 @@ class IllegalSyntaxTestCase(unittest.TestCase):
              (4, ''), (0, ''))
         self.check_bad_tree(tree, "from import fred")
 
+    def test_illegal_encoding(self):
+        # Illegal encoding declaration
+        tree = \
+            (339,
+             (257, (0, '')))
+        self.check_bad_tree(tree, "missed encoding")
+        tree = \
+            (339,
+             (257, (0, '')),
+              b'iso-8859-1')
+        self.check_bad_tree(tree, "non-string encoding")
+        tree = \
+            (339,
+             (257, (0, '')),
+              '\udcff')
+        with self.assertRaises(UnicodeEncodeError):
+            parser.sequence2st(tree)
+
 
 class CompileTestCase(unittest.TestCase):
 
