@@ -876,7 +876,7 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase, unittest.TestCase):
         self._spawn_master_and_slave(self._background_process_intr, child_code)
 
 
-class PtyMockingTestBase(unittest.TestCase):
+class PtyMockingTestBase:
     """Base class for tests which replace STDIN and STDOUT of the pty
     module with their own pipes."""
 
@@ -923,7 +923,7 @@ class _MockSelectEternalWait(Exception):
     terminated."""
     pass
 
-class PtyCopyTests(PtyMockingTestBase):
+class PtyCopyTests(PtyMockingTestBase, unittest.TestCase):
     """Whitebox mocking tests which don't spawn children or hang.  Test
     the _copy loop to transfer data between parent and child."""
 
