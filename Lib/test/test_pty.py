@@ -379,9 +379,9 @@ class PtySpawnTestBase(unittest.TestCase):
 
     @staticmethod
     def _greenfield_pty_spawn(stdin, stdout, args, pre_spawn_hook=''):
-        """Execute pty.spawn() in a fresh python interpreter, capture
-        stdin and stdout with a pipe.  Use the pre_spawn_hook to allow
-        monkey patching of the pty module."""
+        """Execute pty.spawn() in a fresh python interpreter, make stdin
+        and stdout available through pipes.  Use the pre_spawn_hook to
+        allow monkey patching of the pty module."""
         # We cannot use the test.support.captured_output() functions
         # because the pty module writes to filedescriptors directly.
         # We cannot use test.support.script_helper because we need to
