@@ -666,7 +666,13 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
     }
 
     while (1) {
-        PyObject *line = PyIter_Next(self);
+        PyObject *it, *line;
+        it = PyObject_GetIter(self);
+        if (it == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        line = PyIter_Next(it);
         if (line == NULL) {
             if (PyErr_Occurred()) {
                 Py_DECREF(result);
