@@ -361,7 +361,7 @@ class PtyMockingTestBase(unittest.TestCase):
         self.fds.extend(pipe_fds)
         return pipe_fds
 
-class PtySpawnTestBase(PtyMockingTestBase):
+class PtySpawnTestBase:
     """A base class for the following integration test setup: A child
     process is spawned with pty.spawn().  The child runs a fresh python
     interpreter; its python code is passed via command line argument as
@@ -474,13 +474,12 @@ class PtySpawnTestBase(PtyMockingTestBase):
         code as string.  This function forks them and connects their
         STDIN/STDOUT over a pipe and checks that they cleanly exit.
         Control never returns from master_fun."""
-        mock_stdin_fd, write_to_stdin_fd = self._pipe()
-        read_from_stdout_fd, mock_stdout_fd = self._pipe()
+        mock_stdin_fd, write_to_stdin_fd = os.pipe()
+        read_from_stdout_fd, mock_stdout_fd = os.pipe()
 
         if close_stdin:
             debug("Closing stdin")
             os.close(write_to_stdin_fd)
-            self.fds.remove(write_to_stdin_fd)
 
         sys.stdout.flush()
         sys.stderr.flush()
@@ -531,6 +530,10 @@ class PtySpawnTestBase(PtyMockingTestBase):
         expecting = b'slave exits now'
         slave_wrote = _os_read_exhaust_exactly(read_from_stdout_fd, len(expecting))
         self.assertEqual(slave_wrote, expecting)
+        for fd in [mock_stdin_fd, read_from_stdout_fd, mock_stdout_fd]:
+            os.close(fd)
+        if not close_stdin:
+            os.close(write_to_stdin_fd)
 
     _EXEC_DISABLE_OS_FORKPTY = textwrap.dedent("""
         import os
@@ -549,7 +552,7 @@ class PtySpawnTestBase(PtyMockingTestBase):
         """)
 
 
-class PtyPingTest(PtySpawnTestBase):
+class PtyPingTest(PtySpawnTestBase, unittest.TestCase):
     """Master and Slave count to 1000 by turns."""
 
     _EXEC_CHILD = textwrap.dedent("""
@@ -600,7 +603,7 @@ class PtyPingTest(PtySpawnTestBase):
         child_code = self._EXEC_IMPORTS + self._EXEC_CHILD
         self._spawn_master_and_slave(self._background_process, child_code, disable_osforkpty=True)
 
-class PtyReadAllTest(PtySpawnTestBase):
+class PtyReadAllTest(PtySpawnTestBase, unittest.TestCase):
     """Read from (slow) pty.spawn()ed child, make sure we get
     everything.  Slow tests."""
 
@@ -651,7 +654,7 @@ class PtyReadAllTest(PtySpawnTestBase):
         self._spawn_master_and_slave(self._background_process, child_code,
                                      close_stdin=True)
 
-class PtyTermiosIntegrationTest(PtySpawnTestBase):
+class PtyTermiosIntegrationTest(PtySpawnTestBase, unittest.TestCase):
     """Terminals are not just pipes.  This integration testsuite asserts
     that specific terminal functionality is operational.  It tests ISIG,
     which transforms sending 0x03 at the master side (usually triggered
