@@ -426,6 +426,52 @@ class IllegalSyntaxTestCase(unittest.TestCase):
         # not even remotely valid:
         self.check_bad_tree((1, 2, 3), "<junk>")
 
+    def test_illegal_terminal(self):
+        tree = \
+            (257,
+             (269,
+              (270,
+               (271,
+                (277,
+                 (1,))),
+               (4, ''))),
+             (4, ''),
+             (0, ''))
+        self.check_bad_tree(tree, "too small items in terminal node")
+        tree = \
+            (257,
+             (269,
+              (270,
+               (271,
+                (277,
+                 (1, b'pass'))),
+               (4, ''))),
+             (4, ''),
+             (0, ''))
+        self.check_bad_tree(tree, "non-string second item in terminal node")
+        tree = \
+            (257,
+             (269,
+              (270,
+               (271,
+                (277,
+                 (1, 'pass', '0', 0))),
+               (4, ''))),
+             (4, ''),
+             (0, ''))
+        self.check_bad_tree(tree, "non-integer third item in terminal node")
+        tree = \
+            (257,
+             (269,
+              (270,
+               (271,
+                (277,
+                 (1, 'pass', 0, 0))),
+               (4, ''))),
+             (4, ''),
+             (0, ''))
+        self.check_bad_tree(tree, "too many items in terminal node")
+
     def test_illegal_yield_1(self):
         # Illegal yield statement: def f(): return 1; yield 1
         tree = \
