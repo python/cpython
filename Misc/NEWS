@@ -306,12 +306,15 @@ Extension Modules
 
 Library
 -------
-- bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in 
-  contextlib.contextmanager.
-  Patch by Siddharth Velankar.
+
+- bpo-30068: _io._IOBase.readlines will check if it's closed first when
+  hint is present.
+
+- bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in
+  contextlib.contextmanager.  Patch by Siddharth Velankar.
 
 - bpo-26187: Test that sqlite3 trace callback is not called multiple
-  times when schema is changing.  Indirectly fixed by switching to 
+  times when schema is changing.  Indirectly fixed by switching to
   use sqlite3_prepare_v2() in bpo-9303.  Patch by Aviv Palivoda.
 
 - bpo-30017: Allowed calling the close() method of the zip entry writer object
