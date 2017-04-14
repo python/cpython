@@ -829,7 +829,6 @@ list_extend(PyListObject *self, PyObject *iterable)
     Py_ssize_t n;                  /* guess for size of iterable */
     Py_ssize_t mn;                 /* m + n */
     Py_ssize_t i;
-    PyObject *(*iternext)(PyObject *);
 
     /* Special cases:
        1) lists and tuples which can use PySequence_Fast ops
@@ -875,7 +874,6 @@ list_extend(PyListObject *self, PyObject *iterable)
     it = PyObject_GetIter(iterable);
     if (it == NULL)
         return NULL;
-    iternext = *it->ob_type->tp_iternext;
 
     /* Guess a result list size. */
     n = PyObject_LengthHint(iterable, 8);
@@ -901,7 +899,7 @@ list_extend(PyListObject *self, PyObject *iterable)
 
     /* Run iterator to exhaustion. */
     for (;;) {
-        PyObject *item = iternext(it);
+        PyObject *item = it->ob_type->tp_iternext(it);
         if (item == NULL) {
             if (PyErr_Occurred()) {
                 if (PyErr_ExceptionMatches(PyExc_StopIteration))

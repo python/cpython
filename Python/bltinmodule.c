@@ -272,16 +272,14 @@ builtin_all(PyObject *module, PyObject *iterable)
 /*[clinic end generated code: output=ca2a7127276f79b3 input=1a7c5d1bc3438a21]*/
 {
     PyObject *it, *item;
-    PyObject *(*iternext)(PyObject *);
     int cmp;
 
     it = PyObject_GetIter(iterable);
     if (it == NULL)
         return NULL;
-    iternext = *Py_TYPE(it)->tp_iternext;
 
     for (;;) {
-        item = iternext(it);
+        item = Py_TYPE(it)->tp_iternext(it);
         if (item == NULL)
             break;
         cmp = PyObject_IsTrue(item);
@@ -321,16 +319,14 @@ builtin_any(PyObject *module, PyObject *iterable)
 /*[clinic end generated code: output=fa65684748caa60e input=41d7451c23384f24]*/
 {
     PyObject *it, *item;
-    PyObject *(*iternext)(PyObject *);
     int cmp;
 
     it = PyObject_GetIter(iterable);
     if (it == NULL)
         return NULL;
-    iternext = *Py_TYPE(it)->tp_iternext;
 
     for (;;) {
-        item = iternext(it);
+        item = Py_TYPE(it)->tp_iternext(it);
         if (item == NULL)
             break;
         cmp = PyObject_IsTrue(item);
@@ -476,12 +472,10 @@ filter_next(filterobject *lz)
     PyObject *item;
     PyObject *it = lz->it;
     long ok;
-    PyObject *(*iternext)(PyObject *);
     int checktrue = lz->func == Py_None || lz->func == (PyObject *)&PyBool_Type;
 
-    iternext = *Py_TYPE(it)->tp_iternext;
     for (;;) {
-        item = iternext(it);
+        item = Py_TYPE(it)->tp_iternext(it);
         if (item == NULL)
             return NULL;
 

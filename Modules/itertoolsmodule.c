@@ -1120,11 +1120,9 @@ dropwhile_next(dropwhileobject *lz)
     PyObject *item, *good;
     PyObject *it = lz->it;
     long ok;
-    PyObject *(*iternext)(PyObject *);
 
-    iternext = *Py_TYPE(it)->tp_iternext;
     for (;;) {
-        item = iternext(it);
+        item = Py_TYPE(it)->tp_iternext(it);
         if (item == NULL)
             return NULL;
         if (lz->start == 1)
@@ -1505,14 +1503,12 @@ islice_next(isliceobject *lz)
     PyObject *it = lz->it;
     Py_ssize_t stop = lz->stop;
     Py_ssize_t oldnext;
-    PyObject *(*iternext)(PyObject *);
 
     if (it == NULL)
         return NULL;
 
-    iternext = *Py_TYPE(it)->tp_iternext;
     while (lz->cnt < lz->next) {
-        item = iternext(it);
+        item = Py_TYPE(it)->tp_iternext(it);
         if (item == NULL)
             goto empty;
         Py_DECREF(item);
@@ -1520,7 +1516,7 @@ islice_next(isliceobject *lz)
     }
     if (stop != -1 && lz->cnt >= stop)
         goto empty;
-    item = iternext(it);
+    item = Py_TYPE(it)->tp_iternext(it);
     if (item == NULL)
         goto empty;
     lz->cnt++;
@@ -3655,8 +3651,6 @@ compress_next(compressobject *lz)
 {
     PyObject *data = lz->data, *selectors = lz->selectors;
     PyObject *datum, *selector;
-    PyObject *(*datanext)(PyObject *) = *Py_TYPE(data)->tp_iternext;
-    PyObject *(*selectornext)(PyObject *) = *Py_TYPE(selectors)->tp_iternext;
     int ok;
 
     while (1) {
@@ -3666,11 +3660,11 @@ compress_next(compressobject *lz)
            exception first).
         */
 
-        datum = datanext(data);
+        datum = Py_TYPE(data)->tp_iternext(data);
         if (datum == NULL)
             return NULL;
 
-        selector = selectornext(selectors);
+        selector = Py_TYPE(selectors)->tp_iternext(selectors);
         if (selector == NULL) {
             Py_DECREF(datum);
             return NULL;
@@ -3816,11 +3810,9 @@ filterfalse_next(filterfalseobject *lz)
     PyObject *item;
     PyObject *it = lz->it;
     long ok;
-    PyObject *(*iternext)(PyObject *);
 
-    iternext = *Py_TYPE(it)->tp_iternext;
     for (;;) {
-        item = iternext(it);
+        item = Py_TYPE(it)->tp_iternext(it);
         if (item == NULL)
             return NULL;
 
