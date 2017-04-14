@@ -313,6 +313,9 @@ Library
 - bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in
   contextlib.contextmanager.  Patch by Siddharth Velankar.
 
+- bpo-29694: Fixed race condition in pathlib mkdir with flags
+  parents=True.  Patch by Armin Rigo.
+
 - bpo-26187: Test that sqlite3 trace callback is not called multiple
   times when schema is changing.  Indirectly fixed by switching to
   use sqlite3_prepare_v2() in bpo-9303.  Patch by Aviv Palivoda.
@@ -322,6 +325,8 @@ Library
 
 - bpo-29998: Pickling and copying ImportError now preserves name and path
   attributes.
+
+- bpo-29995: re.escape() now escapes only regex special characters.
 
 - bpo-29962: Add math.remainder operation, implementing remainder
   as specified in IEEE 754.
