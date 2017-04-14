@@ -334,7 +334,7 @@ class PtySpawnTestBase(unittest.TestCase):
     The background process is connected to the master side of the pty.
     Internal details require a spawn_runner.  The actual tests are
     executed between slave and background.
-    
+
     Sequence diagram of the overall test setup:
 
     ┌──────┐
@@ -554,10 +554,10 @@ class PtyPingTest(PtySpawnTestBase):
     _DISABLE_OS_FORKPTY = textwrap.dedent("""
         import os
         def _mock_disabled_osforkpty():
-            #os.write(2, b'os.forkpty successfully disabled.\\n')
+            if {}: os.write(2, b'os.forkpty successfully disabled.\\n')
             raise OSError
         os.forkpty = _mock_disabled_osforkpty
-        """)
+        """.format(verbose))
 
     def test_alternate_ping_disable_osforkpty(self):
         """Spawn a slave and fork a master background process.  Let them
