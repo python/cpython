@@ -327,9 +327,7 @@ class PtyMockingTestBase(unittest.TestCase):
     def setUp(self):
         save_and_restore = ['pty.STDIN_FILENO',
                             'pty.STDOUT_FILENO',
-                            'pty.select',
-                            'pty.fork',
-                            'os.forkpty']
+                            'pty.select']
         self.saved = dict()
         for k in save_and_restore:
             module, attr = k.split('.')
