@@ -110,7 +110,7 @@ __copyright__ = """
 
 """
 
-__version__ = '1.0.7'
+__version__ = '1.0.8'
 
 import collections
 import sys, os, re, subprocess
@@ -1198,7 +1198,9 @@ def _sys_version(sys_version=None):
         elif buildtime:
             builddate = builddate + ' ' + buildtime
 
-    if hasattr(sys, '_mercurial'):
+    if hasattr(sys, '_git'):
+        _, branch, revision = sys._git
+    elif hasattr(sys, '_mercurial'):
         _, branch, revision = sys._mercurial
     elif hasattr(sys, 'subversion'):
         # sys.subversion was added in Python 2.5

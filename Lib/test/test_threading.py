@@ -170,6 +170,9 @@ class ThreadTests(BaseTestCase):
         mutex.acquire()
         self.assertIn(tid, threading._active)
         self.assertIsInstance(threading._active[tid], threading._DummyThread)
+        #Issue 29376
+        self.assertTrue(threading._active[tid].is_alive())
+        self.assertRegex(repr(threading._active[tid]), '_DummyThread')
         del threading._active[tid]
 
     # PyThreadState_SetAsyncExc() is a CPython-only gimmick, not (currently)

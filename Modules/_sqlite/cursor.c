@@ -511,10 +511,9 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     pysqlite_statement_reset(self->statement);
     pysqlite_statement_mark_dirty(self->statement);
 
-    /* For backwards compatibility reasons, do not start a transaction if a
-       DDL statement is encountered.  If anybody wants transactional DDL,
-       they can issue a BEGIN statement manually. */
-    if (self->connection->begin_statement && !sqlite3_stmt_readonly(self->statement->st) && !self->statement->is_ddl) {
+    /* We start a transaction implicitly before a DML statement.
+       SELECT is the only exception. See #9924. */
+    if (self->connection->begin_statement && self->statement->is_dml) {
         if (sqlite3_get_autocommit(self->connection->db)) {
             result = _pysqlite_connection_begin(self->connection);
             if (!result) {
@@ -609,7 +608,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
             }
         }
 
-        if (!sqlite3_stmt_readonly(self->statement->st)) {
+        if (self->statement->is_dml) {
             self->rowcount += (long)sqlite3_changes(self->connection->db);
         } else {
             self->rowcount= -1L;

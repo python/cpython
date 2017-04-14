@@ -208,7 +208,7 @@ class Timer:
         return r
 
     def autorange(self, callback=None):
-        """Return the number of loops so that total time >= 0.2.
+        """Return the number of loops and time taken so that total time >= 0.2.
 
         Calls the timeit method with *number* set to successive powers of
         ten (10, 100, 1000, ...) up to a maximum of one billion, until

@@ -88,9 +88,12 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         if (kw == NULL) {
             pto->kw = PyDict_New();
         }
-        else {
+        else if (Py_REFCNT(kw) == 1) {
             Py_INCREF(kw);
             pto->kw = kw;
+        }
+        else {
+            pto->kw = PyDict_Copy(kw);
         }
     }
     else {
@@ -247,8 +250,11 @@ partial_repr(partialobject *pto)
     /* Pack keyword arguments */
     assert (PyDict_Check(pto->kw));
     for (i = 0; PyDict_Next(pto->kw, &i, &key, &value);) {
-        Py_SETREF(arglist, PyUnicode_FromFormat("%U, %U=%R", arglist,
+        /* Prevent key.__str__ from deleting the value. */
+        Py_INCREF(value);
+        Py_SETREF(arglist, PyUnicode_FromFormat("%U, %S=%R", arglist,
                                                 key, value));
+        Py_DECREF(value);
         if (arglist == NULL)
             goto done;
     }

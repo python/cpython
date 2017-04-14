@@ -391,7 +391,7 @@ with a fixed size of 256 KB. It falls back to :c:func:`PyMem_RawMalloc` and
 :c:func:`PyMem_RawRealloc` for allocations larger than 512 bytes.
 
 *pymalloc* is the default allocator of the :c:data:`PYMEM_DOMAIN_MEM` (ex:
-:c:func:`PyObject_Malloc`) and :c:data:`PYMEM_DOMAIN_OBJ` (ex:
+:c:func:`PyMem_Malloc`) and :c:data:`PYMEM_DOMAIN_OBJ` (ex:
 :c:func:`PyObject_Malloc`) domains.
 
 The arena allocator uses the following functions:

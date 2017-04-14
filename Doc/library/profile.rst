@@ -85,11 +85,11 @@ next line: ``Ordered by: standard name``, indicates that the text string in the
 far right column was used to sort the output. The column headings include:
 
 ncalls
-   for the number of calls,
+   for the number of calls.
 
 tottime
-    for the total time spent in the given function (and excluding time made in
-    calls to sub-functions)
+   for the total time spent in the given function (and excluding time made in
+   calls to sub-functions)
 
 percall
    is the quotient of ``tottime`` divided by ``ncalls``
@@ -444,9 +444,10 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       significant entries.  Initially, the list is taken to be the complete set
       of profiled functions.  Each restriction is either an integer (to select a
       count of lines), or a decimal fraction between 0.0 and 1.0 inclusive (to
-      select a percentage of lines), or a regular expression (to pattern match
-      the standard name that is printed.  If several restrictions are provided,
-      then they are applied sequentially.  For example::
+      select a percentage of lines), or a string that will interpreted as a
+      regular expression (to pattern match the standard name that is printed).
+      If several restrictions are provided, then they are applied sequentially.
+      For example::
 
          print_stats(.1, 'foo:')
 

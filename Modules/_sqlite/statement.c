@@ -73,8 +73,9 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     Py_INCREF(sql);
     self->sql = sql;
 
-    /* determine if the statement is a DDL statement */
-    self->is_ddl = 0;
+    /* Determine if the statement is a DML statement.
+       SELECT is the only exception. See #9924. */
+    self->is_dml = 0;
     for (p = sql_cstr; *p != 0; p++) {
         switch (*p) {
             case ' ':
@@ -84,9 +85,10 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
                 continue;
         }
 
-        self->is_ddl = (PyOS_strnicmp(p, "create ", 7) == 0)
-                    || (PyOS_strnicmp(p, "drop ", 5) == 0)
-                    || (PyOS_strnicmp(p, "reindex ", 8) == 0);
+        self->is_dml = (PyOS_strnicmp(p, "insert ", 7) == 0)
+                    || (PyOS_strnicmp(p, "update ", 7) == 0)
+                    || (PyOS_strnicmp(p, "delete ", 7) == 0)
+                    || (PyOS_strnicmp(p, "replace ", 8) == 0);
         break;
     }
 

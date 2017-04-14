@@ -347,6 +347,16 @@ class ProcessTestCase(BaseTestCase):
         temp_dir = self._normalize_cwd(temp_dir)
         self._assert_cwd(temp_dir, sys.executable, cwd=temp_dir)
 
+    def test_cwd_with_pathlike(self):
+        temp_dir = tempfile.gettempdir()
+        temp_dir = self._normalize_cwd(temp_dir)
+
+        class _PathLikeObj:
+            def __fspath__(self):
+                return temp_dir
+
+        self._assert_cwd(temp_dir, sys.executable, cwd=_PathLikeObj())
+
     @unittest.skipIf(mswindows, "pending resolution of issue #15533")
     def test_cwd_with_relative_arg(self):
         # Check that Popen looks for args[0] relative to cwd if args[0]

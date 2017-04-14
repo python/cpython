@@ -1103,6 +1103,21 @@ class CoroutineTest(unittest.TestCase):
                                     "coroutine is being awaited already"):
             waiter(coro).send(None)
 
+    def test_await_16(self):
+        # See https://bugs.python.org/issue29600 for details.
+
+        async def f():
+            return ValueError()
+
+        async def g():
+            try:
+                raise KeyError
+            except:
+                return await f()
+
+        _, result = run_async(g())
+        self.assertIsNone(result.__context__)
+
     def test_with_1(self):
         class Manager:
             def __init__(self, name):
@@ -1680,6 +1695,44 @@ class CoroutineTest(unittest.TestCase):
                 warnings.simplefilter("error")
                 run_async(foo())
 
+    def test_for_11(self):
+        class F:
+            def __aiter__(self):
+                return self
+            def __anext__(self):
+                return self
+            def __await__(self):
+                1 / 0
+
+        async def main():
+            async for _ in F():
+                pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'an invalid object from __anext__') as c:
+            main().send(None)
+
+        err = c.exception
+        self.assertIsInstance(err.__cause__, ZeroDivisionError)
+
+    def test_for_12(self):
+        class F:
+            def __aiter__(self):
+                return self
+            def __await__(self):
+                1 / 0
+
+        async def main():
+            async for _ in F():
+                pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'an invalid object from __aiter__') as c:
+            main().send(None)
+
+        err = c.exception
+        self.assertIsInstance(err.__cause__, ZeroDivisionError)
+
     def test_for_tuple(self):
         class Done(Exception): pass
 
@@ -2064,6 +2117,7 @@ class SysSetCoroWrapperTest(unittest.TestCase):
             sys.set_coroutine_wrapper(None)
 
 
+@support.cpython_only
 class CAPITest(unittest.TestCase):
 
     def test_tp_await_1(self):
