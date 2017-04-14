@@ -643,7 +643,7 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
 /*[clinic end generated code: output=2f50421677fa3dea input=9400c786ea9dc416]*/
 {
     Py_ssize_t length = 0;
-    PyObject *result;
+    PyObject *result, *it;
 
     result = PyList_New(0);
     if (result == NULL)
@@ -665,14 +665,14 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
         return result;
     }
 
+    it = PyObject_GetIter(self);
+    if (it == NULL) {
+        Py_DECREF(result);
+        return NULL;
+    }
+
     while (1) {
-        PyObject *it, *line;
-        it = PyObject_GetIter(self);
-        if (it == NULL) {
-            Py_DECREF(result);
-            return NULL;
-        }
-        line = PyIter_Next(it);
+        PyObject *line = PyIter_Next(it);
         if (line == NULL) {
             if (PyErr_Occurred()) {
                 Py_DECREF(result);
