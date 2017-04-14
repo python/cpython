@@ -310,6 +310,8 @@ Extension Modules
 Library
 -------
 
+- bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
+
 - bpo-29694: Fixed race condition in pathlib mkdir with flags
   parents=True.  Patch by Armin Rigo.
 
