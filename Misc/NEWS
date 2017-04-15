@@ -42,6 +42,8 @@ Extension Modules
 Library
 -------
 
+- bpo-30011: Fixed race condition in HTMLParser.unescape().
+
 - bpo-30068: _io._IOBase.readlines will check if it's closed first when
   hint is present.
 
