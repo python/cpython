@@ -321,19 +321,24 @@ class PtyPosixIntegrationTest(unittest.TestCase):
 
 class PtySpawnTestBase(unittest.TestCase):
     """A base class for the following integration test setup: A child
-    process is spawned with pty.spawn().  The child runs a fresh python
-    interpreter; its python code is passed via command line argument as
-    string.  A background process is forked, reusing the current
-    instance of the python interpreter.  These processes are connected
-    over STDIN/STDOUT pipes.  The tests run fork(), select(), execlp(),
-    and other calls on your system.
+    process is spawned with pty.spawn() and a background process is
+    forked from the test suite.  The two processes are connected over
+    STDIN/STDOUT pipes to communicate.  The tests run fork(), select(),
+    execlp(), and other calls on your system.
 
-    Starting from the parent (the main thread of this test suite), three
-    processes are forked for this setup.  We call the spawn()-ed child
-    the 'slave' because it is connected to the slave side of the pty.
-    The background process is connected to the master side of the pty.
-    Internal details require a spawn_runner.  The actual tests are
-    executed between slave and background.
+    Starting from the parent (the main thread of this test suite), the
+    following processes are forked for this setup:
+     * The 'slave'. We call the pty.spawn()-ed child the 'slave' because
+       it is connected to the slave side of the pty.  It executes python
+       code passed as a string.  This makes the test suite very
+       portable.  The main test code runs here.
+     * The 'background' process, which interacts with the slave and
+       drives the tests.  It is connected to the master side of the pty.
+       Being forked from the parent, it reuses the parent's instance of
+       the python interpreter.
+     * The 'spawn_runner', an internal helper to capture the
+       input/output of the slave.
+    The actual tests are executed between slave and background.
 
     Sequence diagram of the overall test setup:
 
@@ -370,10 +375,6 @@ class PtySpawnTestBase(unittest.TestCase):
     background                                                   .
         |< . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-
-
-    The code for the spawned slave is python code in a string.  This
-    makes the test suite very portable.
     """
     # We introduce this generic base class for the test setup to
     # encapsulate multiple different types of tests in individual
@@ -395,12 +396,12 @@ class PtySpawnTestBase(unittest.TestCase):
         # We cannot use the test.support.captured_output() functions
         # because the pty module writes to filedescriptors directly.
         # We cannot use test.support.script_helper because we need to
-        # interact with the spawned child.
+        # interact with the spawned slave.
         # We cannot monkey-patch pty.STDIN_FILENO to point to a pipe
         # because the fallback path of pty.fork() relies on them.
         # Invoking this functions creates two children: the spawn_runner
         # as isolated child to execute pty.spawn and capture stdout and
-        # its grandchild (running args) created by pty.spawn.
+        # its grandchild (the slave, running args) created by pty.spawn.
         spawn_runner = pre_spawn_hook + textwrap.dedent("""
             import pty, sys;
             ret = pty.spawn(sys.argv[1:]);
@@ -456,11 +457,8 @@ class PtySpawnTestBase(unittest.TestCase):
         sys.stdout.flush()
         sys.stderr.flush()
         # Without this flush, we interfere with the debug output from
-        # the child that will be spawned and execute master_fun. Don't
-        # confuse it with the child spawned by spawn().  It will work
-        # fine without the flush, unless you enable debug and have your
-        # STDOUT piped!  The forked child will print to the same fd as
-        # we (the parent) print our debug information to.
+        # the background process (running master_fun).  Parent and
+        # background process print debug information to the same fd.
 
         io_fds = (write_to_stdin_fd, read_from_stdout_fd)
         background_pid = self._fork_background_process(master_fun, io_fds)
@@ -476,10 +474,10 @@ class PtySpawnTestBase(unittest.TestCase):
             debug("killing background process ({:d})".format(background_pid))
             os.kill(background_pid, 9)
             errmsg = ["Spawned slave returned but failed.",
-                      "The failed child code was:",
-                      "--- BEGIN child code ---",
+                      "The failed slave code was:",
+                      "--- BEGIN slave code ---",
                       slave_src,
-                      "--- END child code ---"]
+                      "--- END slave code ---"]
             rd, _, _ = select.select([read_from_stdout_fd], [], [], 0)
             if rd:
                 errmsg.append("Dumping what the slave wrote last:")
