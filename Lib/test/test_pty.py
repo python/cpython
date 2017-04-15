@@ -303,18 +303,18 @@ class PtyPosixIntegrationTest(unittest.TestCase):
         return retcode
 
     def test_spawn_exitsuccess(self):
-        """Spawn the python-equivalent of /bin/true."""
+        # Spawn the python-equivalent of /bin/true.
         retcode = self._spawn_py_get_retcode('import sys; sys.exit()')
         self.assertEqual(retcode, 0)
 
     def test_spawn_exitfailure(self):
-        """Spawn the python-equivalent of /bin/false."""
+        # Spawn the python-equivalent of /bin/false.
         retcode = self._spawn_py_get_retcode('import sys; sys.exit(1)')
         self.assertEqual(retcode, 1)
 
     def test_spawn_uncommon_exit_code(self):
-        """Test an uncommon exit code, which is less likely to be caused
-        by a Python exception or other failure."""
+        # Test an uncommon exit code, which is less likely to be caused
+        # by a Python exception or other failure.
         retcode = self._spawn_py_get_retcode('import sys; sys.exit(81)')
         self.assertEqual(retcode, 81)
 
@@ -541,8 +541,7 @@ class PtyPingTest(PtySpawnTestBase):
         return 0 # success
 
     def test_alternate_ping(self):
-        """Spawn a slave and fork a master background process.  Let them
-        Ping-Pong count to 1000 by turns."""
+        # Let background and slave Ping-Pong count to 1000 by turns.
         child_code = self._EXEC_IMPORTS + self._EXEC_CHILD
         self._spawn_master_and_slave(self._background_process, child_code)
 
@@ -557,10 +556,8 @@ class PtyPingTest(PtySpawnTestBase):
         os.forkpty = _mock_disabled_osforkpty
         """.format(verbose))
 
-    def test_alternate_ping_disable_osforkpty(self):
-        """Spawn a slave and fork a master background process.  Let them
-        Ping-Pong count to 1000 by turns. Disable os.forkpty(), trigger
-        pty.fork() backup code."""
+    def test_ping_disable_osforkpty(self):
+        # Disable os.forkpty(), trigger pty.fork() fallback code path.
         child_code = self._EXEC_IMPORTS + self._EXEC_CHILD
         self._spawn_master_and_slave(self._background_process, child_code,
                                      pre_spawn_hook=self._DISABLE_OS_FORKPTY)
@@ -600,16 +597,14 @@ class PtyReadAllTest(PtySpawnTestBase):
         """)
 
     def test_read(self):
-        """Spawn a slave and fork a master background process.  Receive
-        several kBytes from the slave."""
+        # Receive several kBytes from the slave.
         child_code = self._EXEC_IMPORTS + \
                      self._EXEC_CHILD_FMT.format(sleeptime=0.05)
         debug("Test may take up to 1 second ...")
         self._spawn_master_and_slave(self._background_process, child_code)
 
     def test_read_close_stdin(self):
-        """Spawn a slave and fork a master background process.  Close
-        STDIN and receive several kBytes from the slave."""
+        # Close STDIN and receive several kBytes from the slave.
         # only sleep in one test to speed this up
         child_code = self._EXEC_IMPORTS + \
                      self._EXEC_CHILD_FMT.format(sleeptime=0)
@@ -700,7 +695,7 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         """)
 
     def test_echo(self):
-        """Echo terminal input, and translate the echoed newline."""
+        # Echo terminal input, and translate the echoed newline.
         child_code = self._EXEC_IMPORTS + \
             self._EXEC_BASE_TERMINAL_SETUP_FMT.format(add_lflags="") + \
             self._EXEC_CHILD_ECHO
@@ -739,8 +734,7 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         """)
 
     def test_bell_echoctl(self):
-        """Terminals: Pretty printing of the bell character in caret
-        notation."""
+        # Pretty printing of the bell character in caret notation.
         lflags = self._enable_echoctl()
         child_code = self._EXEC_IMPORTS + \
             self._EXEC_BASE_TERMINAL_SETUP_FMT.format(add_lflags=lflags) + \
@@ -786,7 +780,7 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         """)
 
     def test_eof(self):
-        """Terminals: Processing of the special EOF character."""
+        # Processing of the special EOF character.
         child_code = self._EXEC_IMPORTS + \
             self._EXEC_BASE_TERMINAL_SETUP_FMT.format(add_lflags="") + \
             self._EXEC_CHILD_EOF
@@ -843,10 +837,10 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         """)
 
     def test_intr(self):
-        """Terminals: Writing a x03 char to the master side is
-        translated to sending an INTR signal to the slave.  Simulates
-        pressing ctrl+c in master."""
-        # tell our controlling terminal to send signals on special characters
+        # Writing a x03 char to the master side is translated to sending
+        # an INTR signal to the slave.  Simulates pressing ctrl+c in
+        # master.
+        # Tell our controlling terminal to send signals on special characters
         lflags = " | termios.ISIG"
         child_code = self._EXEC_IMPORTS + \
             self._EXEC_BASE_TERMINAL_SETUP_FMT.format(add_lflags=lflags) + \
@@ -927,7 +921,7 @@ class PtyCopyTests(unittest.TestCase):
         self.assertGreater(pty.STDIN_FILENO, 2, "replaced by our mock")
 
     def test__mock_select(self):
-        """Test the select proxy of this test class.  Meta testing."""
+        # Test the select proxy of this test class. Meta testing.
         self.select_rfds_lengths.append(0)
         with self.assertRaises(AssertionError):
             self._mock_select([], [], [])
@@ -956,7 +950,7 @@ class PtyCopyTests(unittest.TestCase):
         return socketpair
 
     def test__copy_to_each(self):
-        """Test the normal data case on both master_fd and stdin."""
+        # Test the normal data case on both master_fd and stdin.
         masters = [s.fileno() for s in self._socketpair()]
 
         # Feed data.  Smaller than PIPEBUF.  These writes will not block.
@@ -1024,15 +1018,15 @@ class PtyCopyTests(unittest.TestCase):
             self.assertEqual(unconsumed, b'from stdin')
 
     def test__copy_eof_on_all(self):
-        """Test the empty read EOF case on both master_fd and stdin."""
+        # Test the empty read EOF case on both master_fd and stdin.
         self._copy_eof_close_slave_helper(close_stdin=True)
 
     def test__copy_eof_on_master(self):
-        """Test the empty read EOF case on only master_fd."""
+        # Test the empty read EOF case on only master_fd.
         self._copy_eof_close_slave_helper(close_stdin=False)
 
     def test__copy_eof_on_stdin(self):
-        """Test the empty read EOF case on stdin."""
+        # Test the empty read EOF case on stdin.
         masters = [s.fileno() for s in self._socketpair()]
 
         # Fill with dummy data
