@@ -807,10 +807,13 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         to_slave = b'This buffered stuff will be ignored'+INTR+b' Ohai slave!\n'
         pty._writen(to_stdin, to_slave)
 
-        expected = INTR+b' Ohai slave!\r\n'
-        received = _os_read_exactly(from_stdout, len(expected))
-        if received != expected:
-            raise RuntimeError("Expecting {!r} but got {!r}".format(expected, received))
+        expected = b' Ohai slave!\r\n'
+        # Race: The kernel may or may not echo parts before the INTR.  In
+        # either case, due to canonical mode, the slave will only receive the
+        # string after INTR.
+        received = _os_readline(from_stdout)
+        if not received.endswith(expected):
+            raise RuntimeError("Expecting to end with {!r} but got {!r}".format(expected, received))
 
         debug("[background] got it back")
         return 0
