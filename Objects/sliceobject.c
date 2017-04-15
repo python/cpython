@@ -286,7 +286,7 @@ static PyMemberDef slice_members[] = {
 static PyObject*
 slice_indices(PySliceObject* self, PyObject* len)
 {
-    Py_ssize_t ilen, start, stop, step, slicelength;
+    Py_ssize_t ilen, start, stop, step;
 
     ilen = PyNumber_AsSsize_t(len, PyExc_OverflowError);
 
@@ -294,10 +294,10 @@ slice_indices(PySliceObject* self, PyObject* len)
         return NULL;
     }
 
-    if (_PySlice_Unpack(self, &start, &stop, &step) < 0) {
+    if (_PySlice_Unpack((PyObject *)self, &start, &stop, &step) < 0) {
         return NULL;
     }
-    slicelength = _PySlice_AdjustIndices(ilen, &start, &stop, step);
+    _PySlice_AdjustIndices(ilen, &start, &stop, step);
 
     return Py_BuildValue("(nnn)", start, stop, step);
 }
