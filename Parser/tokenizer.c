@@ -1357,14 +1357,6 @@ tok_decimal_tail(struct tok_state *tok)
     return c;
 }
 
-/*
- * tok_get - Get next token, after space stripping etc.
- * @tok: a tok_state which intent to get next token
- * @p_start: start position of the token to update
- * @p_end: end position of the token to update
- *
- * Return: (int)token type, define from Include/token.h
- */
 static int
 tok_get(struct tok_state *tok, char **p_start, char **p_end)
 {
@@ -1902,6 +1894,14 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     return PyToken_OneChar(c);
 }
 
+/*
+ * PyTokenizer_Get - Get next token, after space stripping etc.
+ * @tok: a tok_state which intent to get next token
+ * @p_start: start position of the token to update
+ * @p_end: end position of the token to update
+ *
+ * Return: (int)token type, define from Include/token.h
+ */
 int
 PyTokenizer_Get(struct tok_state *tok, char **p_start, char **p_end)
 {
