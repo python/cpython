@@ -114,7 +114,7 @@ structseq_subscript(PyStructSequence *self, PyObject *item)
         Py_ssize_t start, stop, step, slicelen, cur, i;
         PyObject *result;
 
-        if (_PySlice_Unpack((PySliceObject *)item, &start, &stop, &step) < 0) {
+        if (_PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
         slicelen = _PySlice_AdjustIndices(VISIBLE_SIZE(self), &start, &stop,
