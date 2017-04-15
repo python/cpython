@@ -700,7 +700,7 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         """)
 
     def test_echo(self):
-        """Echo terminal input, and translate the echoed newline"""
+        """Echo terminal input, and translate the echoed newline."""
         child_code = self._EXEC_IMPORTS + \
             self._EXEC_BASE_TERMINAL_SETUP_FMT.format(add_lflags="") + \
             self._EXEC_CHILD_ECHO
@@ -792,16 +792,6 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         """Terminals: Processing of the special EOF character."""
         child_code = self._EXEC_IMPORTS + \
             self._EXEC_BASE_TERMINAL_SETUP_FMT.format(add_lflags="") + \
-            self._EXEC_CHILD_EOF
-        self._spawn_master_and_slave(self._background_process_eof, child_code)
-
-    def test_eof_echoctl(self):
-        """Terminals: Processing of the special EOF character with
-        ECHOCTL enabled."""
-        # ^D is usually not pretty printed
-        lflags = self._enable_echoctl()
-        child_code = self._EXEC_IMPORTS + \
-            self._EXEC_BASE_TERMINAL_SETUP_FMT.format(add_lflags=lflags) + \
             self._EXEC_CHILD_EOF
         self._spawn_master_and_slave(self._background_process_eof, child_code)
 
