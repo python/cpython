@@ -643,16 +643,14 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
             raise ValueError('handshake with slave failed')
         debug("[background] slave ready.")
 
+    @unittest.skipUnless(sys.platform == 'linux', "ECHOCTL only supported by Linux")
     def _enable_echoctl(self):
-        if sys.platform == 'linux':
-            self.echoctl = True
-        else:
-            raise unittest.SkipTest('Test only available on Linux.')
+        self.echoctl = True
 
     _EXEC_BASE_TERMINAL_SETUP_FMT = textwrap.dedent(r"""
         def _base_terminal_setup(additional_lflag=0):
-            "Set up terminal to sane defaults (with regard to my Linux"
-            "system). See POSIX.1-2008, Chapter 11, General Terminal"
+            "Set up terminal to sane defaults (with regard to my Linux "
+            "system). See POSIX.1-2008, Chapter 11, General Terminal "
             "Interface."
 
             # Warning: ECHOCTL is not defined in POSIX.  Works on
@@ -710,8 +708,7 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         """)
 
     def test_echo(self):
-        """Terminals: Echoing of all characters written to the master
-        side and newline output translation."""
+        """Echo terminal input, and translate the echoed newline"""
         child_code = self._EXEC_IMPORTS + \
             self._EXEC_BASE_TERMINAL_SETUP_FMT.format(echoctl=False) + \
             self._EXEC_CHILD_ECHO
@@ -1058,8 +1055,7 @@ class PtyCopyTests(unittest.TestCase):
 
     def test__copy_eof_on_stdin(self):
         """Test the empty read EOF case on stdin."""
-        socketpair = self._socketpair()
-        masters = [s.fileno() for s in socketpair]
+        masters = [s.fileno() for s in self._socketpair()]
 
         # Fill with dummy data
         os.write(masters[1], b'from master')
