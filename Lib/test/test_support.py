@@ -176,7 +176,8 @@ class TestSupport(unittest.TestCase):
                     # parent process
                     os.waitpid(pid, 0)  # wait for the child to terminate
                     # make sure that temp_path is still present
-                    assert os.path.isdir(temp_path), "Child removed temp_path."
+                    if not os.path.isdir(temp_path):
+                        raise AssertionError("Child removed temp_path.")
         """))
 
     # Tests for change_cwd()
