@@ -689,8 +689,10 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
         if (length > hint)
             break;
     }
+
     Py_DECREF(it);
     return result;
+
  error:
     Py_XDECREF(it);
     Py_DECREF(result);
