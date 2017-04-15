@@ -138,7 +138,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: dis(x=None, *, file=None)
+.. function:: dis(x=None, *, file=None, recursive=False)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
    method, a function, a generator, a code object, a string of source code or
@@ -152,8 +152,15 @@ operation is being performed, so the intermediate analysis object isn't useful:
    The disassembly is written as text to the supplied *file* argument if
    provided and to ``sys.stdout`` otherwise.
 
+   If *recursive* is true, also recursively disassemble internal code objects
+   (the code of comprehensions, generator expressions and local functions, and
+   the code used for building local classes).
+
    .. versionchanged:: 3.4
       Added *file* parameter.
+
+   .. versionchanged:: 3.7
+      Added *recursive* parameter.
 
 
 .. function:: distb(tb=None, *, file=None)
@@ -169,7 +176,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: disassemble(code, lasti=-1, *, file=None)
+.. function:: disassemble(code, lasti=-1, *, file=None, recursive=False)
               disco(code, lasti=-1, *, file=None)
 
    Disassemble a code object, indicating the last instruction if *lasti* was
@@ -189,8 +196,15 @@ operation is being performed, so the intermediate analysis object isn't useful:
    The disassembly is written as text to the supplied *file* argument if
    provided and to ``sys.stdout`` otherwise.
 
+   If *recursive* is true, also recursively disassemble internal code objects
+   (the code of comprehensions, generator expressions and local functions, and
+   the code used for building local classes).
+
    .. versionchanged:: 3.4
       Added *file* parameter.
+
+   .. versionchanged:: 3.7
+      Added *recursive* parameter.
 
 
 .. function:: get_instructions(x, *, first_line=None)

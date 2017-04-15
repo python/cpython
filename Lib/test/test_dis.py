@@ -324,16 +324,47 @@ dis_fstring = """\
 def _g(x):
     yield x
 
+def _h(y):
+    def foo(x):
+        '''funcdoc'''
+        return x+y
+    return foo
+
+dis_nested = """\
+%3d           0 LOAD_CLOSURE             0 (y)
+              2 BUILD_TUPLE              1
+              4 LOAD_CONST               1 (<code object foo at 0x..., file "%s", line %3d>)
+              6 LOAD_CONST               2 ('_h.<locals>.foo')
+              8 MAKE_FUNCTION            8
+             10 STORE_FAST               1 (foo)
+
+%3d          12 LOAD_FAST                1 (foo)
+             14 RETURN_VALUE
+
+Disassembly of <code object foo at 0x..., file "%s", line %3d>:
+%3d           0 LOAD_FAST                0 (x)
+              2 LOAD_DEREF               0 (y)
+              4 BINARY_ADD
+              6 RETURN_VALUE
+""" % (_h.__code__.co_firstlineno + 1,
+       __file__,
+       _h.__code__.co_firstlineno + 1,
+       _h.__code__.co_firstlineno + 4,
+       __file__,
+       _h.__code__.co_firstlineno + 1,
+       _h.__code__.co_firstlineno + 3,
+)
+
 class DisTests(unittest.TestCase):
 
-    def get_disassembly(self, func, lasti=-1, wrapper=True):
+    def get_disassembly(self, func, lasti=-1, wrapper=True, **kwargs):
         # We want to test the default printing behaviour, not the file arg
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             if wrapper:
-                dis.dis(func)
+                dis.dis(func, **kwargs)
             else:
-                dis.disassemble(func, lasti)
+                dis.disassemble(func, lasti, **kwargs)
         return output.getvalue()
 
     def get_disassemble_as_string(self, func, lasti=-1):
@@ -452,15 +483,25 @@ class DisTests(unittest.TestCase):
     def test_dis_object(self):
         self.assertRaises(TypeError, dis.dis, object())
 
+    def test_disassemble_recursive(self):
+        dis = self.get_disassembly(_h, recursive=True)
+        dis = self.strip_addresses(dis)
+        self.assertEqual(dis, dis_nested)
+
+        dis = self.get_disassembly(_h.__code__, wrapper=False, recursive=True)
+        dis = self.strip_addresses(dis)
+        self.assertEqual(dis, dis_nested)
+
+
 class DisWithFileTests(DisTests):
 
     # Run the tests again, using the file arg instead of print
-    def get_disassembly(self, func, lasti=-1, wrapper=True):
+    def get_disassembly(self, func, lasti=-1, wrapper=True, **kwargs):
         output = io.StringIO()
         if wrapper:
-            dis.dis(func, file=output)
+            dis.dis(func, file=output, **kwargs)
         else:
-            dis.disassemble(func, lasti, file=output)
+            dis.disassemble(func, lasti, file=output, **kwargs)
         return output.getvalue()
 
 

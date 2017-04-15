@@ -310,6 +310,9 @@ Extension Modules
 Library
 -------
 
+- bpo-11822: The dis.dis() and dis.disassemble() functions now are able to
+  disassemble internal code objects.
+
 - bpo-30068: _io._IOBase.readlines will check if it's closed first when
   hint is present.
 
