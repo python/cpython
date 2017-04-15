@@ -589,8 +589,13 @@ PyDoc_STRVAR(iobase_readlines_doc,
 static PyObject *
 iobase_readlines(PyObject *self, PyObject *args)
 {
+<<<<<<< HEAD
     Py_ssize_t hint = -1, length = 0;
     PyObject *result;
+=======
+    Py_ssize_t length = 0;
+    PyObject *result, *it = NULL;
+>>>>>>> 026435c... bpo-30068: add missing iter(self) in _io._IOBase.readlines when hint is present (#1130)
 
     if (!PyArg_ParseTuple(args, "|O&:readlines", &_PyIO_ConvertSsize_t, &hint)) {
         return NULL;
@@ -606,19 +611,22 @@ iobase_readlines(PyObject *self, PyObject *args)
            probably be removed here. */
         PyObject *ret = PyObject_CallMethod(result, "extend", "O", self);
         if (ret == NULL) {
-            Py_DECREF(result);
-            return NULL;
+            goto error;
         }
         Py_DECREF(ret);
         return result;
     }
 
+    it = PyObject_GetIter(self);
+    if (it == NULL) {
+        goto error;
+    }
+
     while (1) {
-        PyObject *line = PyIter_Next(self);
+        PyObject *line = PyIter_Next(it);
         if (line == NULL) {
             if (PyErr_Occurred()) {
-                Py_DECREF(result);
-                return NULL;
+                goto error;
             }
             else
                 break; /* StopIteration raised */
@@ -626,8 +634,7 @@ iobase_readlines(PyObject *self, PyObject *args)
 
         if (PyList_Append(result, line) < 0) {
             Py_DECREF(line);
-            Py_DECREF(result);
-            return NULL;
+            goto error;
         }
         length += PyObject_Size(line);
         Py_DECREF(line);
@@ -635,7 +642,14 @@ iobase_readlines(PyObject *self, PyObject *args)
         if (length > hint)
             break;
     }
+
+    Py_DECREF(it);
     return result;
+
+ error:
+    Py_XDECREF(it);
+    Py_DECREF(result);
+    return NULL;
 }
 
 static PyObject *

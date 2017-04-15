@@ -42,6 +42,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30068: _io._IOBase.readlines will check if it's closed first when
+  hint is present.
+
 - bpo-27863: Fixed multiple crashes in ElementTree caused by race conditions
   and wrong types.
 
@@ -12349,4 +12352,3 @@ Mac
 ----
 
 **(For information about older versions, consult the HISTORY file.)**
-
