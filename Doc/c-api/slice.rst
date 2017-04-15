@@ -66,3 +66,14 @@ Slice Objects
       :c:type:`int *` type for *start*, *stop*, *step*, and *slicelength*. This
       might require changes in your code for properly supporting 64-bit
       systems.
+
+
+Ellipsis Object
+---------------
+
+
+.. c:var:: PyObject *Py_Ellipsis
+
+   The Python ``Ellipsis`` object.  This object has no methods.  It needs to be
+   treated just like any other object with respect to reference counts.  Like
+   :c:data:`Py_None` it is a singleton object.
