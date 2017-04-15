@@ -759,7 +759,7 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         # STDOUT.  Tested on OS X 10.6.8 and 10.11.2.  Wipe EOF
         # character which may remain here.
         c = os.read(from_stdout, 1)
-        if c == b'\x04':
+        if c == b'\x04': # ignore EOF character
             c = os.read(from_stdout, 1)
         if c != b'!':
             raise RuntimeError("Did not receive marker.")
@@ -777,10 +777,7 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
             # we expect an EOF here, this is good
             pass
 
-        # OS X leaves an EOF character in the channel which we want to
-        # remove. We set an exclamation mark as marker and in the
-        # background process, we read everything until we reach this
-        # marker.
+        # Send an exclamation mark as marker.
         print("!", end='', flush=True)
 
         # Send final confirmation that all went well to master.
