@@ -645,38 +645,31 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
 
     @unittest.skipUnless(sys.platform == 'linux', "ECHOCTL only supported by Linux")
     def _enable_echoctl(self):
-        self.echoctl = True
+        # Warning: ECHOCTL is not defined in POSIX.  Works on
+        # Linux 4.4 with Ubuntu GLIBC 2.23. Did not work on Mac.
+        return " | termios.ECHOCTL" #pass as additional lflags
 
     _EXEC_BASE_TERMINAL_SETUP_FMT = textwrap.dedent(r"""
-        def _base_terminal_setup(additional_lflag=0):
-            "Set up terminal to sane defaults (with regard to my Linux "
-            "system). See POSIX.1-2008, Chapter 11, General Terminal "
-            "Interface."
+        "Set up terminal to sane defaults (with regard to my Linux system). "
+        "See POSIX.1-2008, Chapter 11, General Terminal Interface."
 
-            # Warning: ECHOCTL is not defined in POSIX.  Works on
-            # Linux 4.4 with Ubuntu GLIBC 2.23. Did not work on Mac.
-            if {echoctl}:
-                echoctl = termios.ECHOCTL
-            else:
-                echoctl = 0
+        terminal_fd = sys.stdin.fileno()
+        old = termios.tcgetattr(terminal_fd)
+        # don't need iflag
+        old[0] = 0
 
-            terminal_fd = sys.stdin.fileno()
-            old = termios.tcgetattr(terminal_fd)
-            # don't need iflag
-            old[0] = 0
+        # oflag: output processing: replace \n by \r\n
+        old[1] = termios.ONLCR | termios.OPOST
 
-            # oflag: output processing: replace \n by \r\n
-            old[1] = termios.ONLCR | termios.OPOST
+        # don't need cflag
+        old[2] = 0
 
-            # don't need cflag
-            old[2] = 0
+        # lflag: canonical mode (line-buffer),
+        #        normal echoing,
+        #        echoing of control chars in caret notation (for example ^C)
+        old[3] = termios.ICANON | termios.ECHO {add_lflags}
 
-            # lflag: canonical mode (line-buffer),
-            #        normal echoing,
-            #        echoing of control chars in caret notation (for example ^C)
-            old[3] = termios.ICANON | termios.ECHO | echoctl | additional_lflag
-
-            termios.tcsetattr(terminal_fd, termios.TCSADRAIN, old)
+        termios.tcsetattr(terminal_fd, termios.TCSADRAIN, old)
         """)
 
     @staticmethod
@@ -695,7 +688,6 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         return 0
 
     _EXEC_CHILD_ECHO = textwrap.dedent(r"""
-        _base_terminal_setup()
         print("slave ready!", end='', flush=True)
 
         inp = input()
@@ -710,7 +702,7 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
     def test_echo(self):
         """Echo terminal input, and translate the echoed newline"""
         child_code = self._EXEC_IMPORTS + \
-            self._EXEC_BASE_TERMINAL_SETUP_FMT.format(echoctl=False) + \
+            self._EXEC_BASE_TERMINAL_SETUP_FMT.format(add_lflags="") + \
             self._EXEC_CHILD_ECHO
         self._spawn_master_and_slave(self._background_process_echo, child_code)
 
@@ -733,7 +725,6 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         return 0
 
     _EXEC_CHILD_BELL = textwrap.dedent(r"""
-        _base_terminal_setup()
         print("slave ready!", end='', flush=True)
 
         command = input()
@@ -750,9 +741,9 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
     def test_bell_echoctl(self):
         """Terminals: Pretty printing of the bell character in caret
         notation."""
-        self._enable_echoctl()
+        lflags = self._enable_echoctl()
         child_code = self._EXEC_IMPORTS + \
-            self._EXEC_BASE_TERMINAL_SETUP_FMT.format(echoctl=self.echoctl) + \
+            self._EXEC_BASE_TERMINAL_SETUP_FMT.format(add_lflags=lflags) + \
             self._EXEC_CHILD_BELL
         self._spawn_master_and_slave(self._background_process_bell, child_code)
 
@@ -776,7 +767,6 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         return 0
 
     _EXEC_CHILD_EOF = textwrap.dedent("""
-        _base_terminal_setup()
         print("slave ready!", end='', flush=True)
 
         try:
@@ -800,9 +790,8 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
 
     def test_eof(self):
         """Terminals: Processing of the special EOF character."""
-        self.echoctl = False
         child_code = self._EXEC_IMPORTS + \
-            self._EXEC_BASE_TERMINAL_SETUP_FMT.format(echoctl=self.echoctl) + \
+            self._EXEC_BASE_TERMINAL_SETUP_FMT.format(add_lflags="") + \
             self._EXEC_CHILD_EOF
         self._spawn_master_and_slave(self._background_process_eof, child_code)
 
@@ -810,9 +799,9 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         """Terminals: Processing of the special EOF character with
         ECHOCTL enabled."""
         # ^D is usually not pretty printed
-        self._enable_echoctl()
+        lflags = self._enable_echoctl()
         child_code = self._EXEC_IMPORTS + \
-            self._EXEC_BASE_TERMINAL_SETUP_FMT.format(echoctl=self.echoctl) + \
+            self._EXEC_BASE_TERMINAL_SETUP_FMT.format(add_lflags=lflags) + \
             self._EXEC_CHILD_EOF
         self._spawn_master_and_slave(self._background_process_eof, child_code)
 
@@ -845,8 +834,6 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
 
         signal.signal(signal.SIGINT, _SIGINT_handler)
 
-        # tell our controlling terminal to send signals on special characters
-        _base_terminal_setup(termios.ISIG)
         print("slave ready!", end='', flush=True)
 
         command = input()
@@ -869,9 +856,10 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
         """Terminals: Writing a x03 char to the master side is
         translated to sending an INTR signal to the slave.  Simulates
         pressing ctrl+c in master."""
-        self.echoctl = False
+        # tell our controlling terminal to send signals on special characters
+        lflags = " | termios.ISIG"
         child_code = self._EXEC_IMPORTS + \
-            self._EXEC_BASE_TERMINAL_SETUP_FMT.format(echoctl=self.echoctl) + \
+            self._EXEC_BASE_TERMINAL_SETUP_FMT.format(add_lflags=lflags) + \
             self._EXEC_CHILD_INTR
         self._spawn_master_and_slave(self._background_process_intr, child_code)
 
