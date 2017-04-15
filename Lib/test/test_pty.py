@@ -661,7 +661,7 @@ class PtyTermiosIntegrationTest(PtySpawnTestBase):
 
         # lflag: canonical mode (line-buffer),
         #        normal echoing,
-        #        echoing of control chars in caret notation (for example ^C)
+        #        optional: additional flags
         old[3] = termios.ICANON | termios.ECHO {add_lflags}
 
         termios.tcsetattr(terminal_fd, termios.TCSADRAIN, old)
