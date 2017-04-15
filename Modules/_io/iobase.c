@@ -1,9 +1,9 @@
 /*
     An implementation of the I/O abstract base classes hierarchy
     as defined by PEP 3116 - "New I/O"
-    
+
     Classes defined here: IOBase, RawIOBase.
-    
+
     Written by Amaury Forgeot d'Arc and Antoine Pitrou
 */
 
@@ -19,7 +19,7 @@
 
 typedef struct {
     PyObject_HEAD
-    
+
     PyObject *dict;
     PyObject *weakreflist;
 } iobase;
@@ -589,13 +589,8 @@ PyDoc_STRVAR(iobase_readlines_doc,
 static PyObject *
 iobase_readlines(PyObject *self, PyObject *args)
 {
-<<<<<<< HEAD
     Py_ssize_t hint = -1, length = 0;
-    PyObject *result;
-=======
-    Py_ssize_t length = 0;
     PyObject *result, *it = NULL;
->>>>>>> 026435c... bpo-30068: add missing iter(self) in _io._IOBase.readlines when hint is present (#1130)
 
     if (!PyArg_ParseTuple(args, "|O&:readlines", &_PyIO_ConvertSsize_t, &hint)) {
         return NULL;
@@ -837,7 +832,7 @@ rawiobase_readall(PyObject *self, PyObject *args)
     int r;
     PyObject *chunks = PyList_New(0);
     PyObject *result;
-    
+
     if (chunks == NULL)
         return NULL;
 
