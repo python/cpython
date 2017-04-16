@@ -599,6 +599,21 @@ class StructTest(unittest.TestCase):
                 'offset -11 out of range for 10-byte buffer'):
             struct.pack_into('<B', byte_list, -11, 123)
 
+    def test_bad_value_error_message(self):
+        regex = (
+            r'got bad value at item 4, short format requires '
+            r'\(-0x7fff - 1\) <= number <= 0x7fff'
+        )
+        with self.assertRaisesRegex(struct.error, regex):
+            struct.pack('4h', 0x5FFF, 0x6FFF, 0x7FFF, 0x8FFF)
+        with self.assertRaisesRegex(struct.error, regex):
+            struct.pack('3hh', 0x5FFF, 0x6FFF, 0x7FFF, 0x8FFF)
+        with self.assertRaisesRegex(struct.error, regex):
+            struct.pack('hhhh', 0x5FFF, 0x6FFF, 0x7FFF, 0x8FFF)
+        with self.assertRaisesRegex(struct.error, regex):
+            struct.pack('iihh', 0x5FFF, 0x6FFF, 0x7FFF, 0x8FFF)
+
+
 class UnpackIteratorTest(unittest.TestCase):
     """
     Tests for iterative unpacking (struct.Struct.iter_unpack).
