@@ -394,18 +394,14 @@ class AsyncBadSyntaxTest(unittest.TestCase):
         ]
 
         for code in samples:
-            with self.subTest(code=code), self.assertWarnsRegex(
-                    DeprecationWarning,
-                    "'await' will become reserved keywords"):
+            with self.subTest(code=code), self.assertRaises(SyntaxError):
                 compile(code, "<test>", "exec")
 
     def test_badsyntax_3(self):
-        with self.assertRaises(DeprecationWarning):
-            with warnings.catch_warnings():
-                warnings.simplefilter("error")
-                compile("async = 1", "<test>", "exec")
+        with self.assertRaises(SyntaxError):
+            compile("async = 1", "<test>", "exec")
 
-    def test_goodsyntax_1(self):
+    def test_badsyntax_4(self):
         # Tests for issue 24619
 
         samples = [
@@ -454,14 +450,8 @@ class AsyncBadSyntaxTest(unittest.TestCase):
         ]
 
         for code in samples:
-            with self.subTest(code=code):
-                loc = {}
-
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    exec(code, loc, loc)
-
-                self.assertEqual(loc['foo'](10), 11)
+            with self.subTest(code=code), self.assertRaises(SyntaxError):
+                compile(code, "<test>", "exec")
 
 
 class TokenizerRegrTest(unittest.TestCase):
