@@ -3275,7 +3275,7 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
         }
         else if (errno != 0) {
             ERR_clear_error();
-            PyErr_SetFromErrno(PyExc_IOError);
+            PyErr_SetFromErrno(PyExc_OSError);
         }
         else {
             _setSSLError(NULL, 0, __FILE__, __LINE__);
@@ -3296,7 +3296,7 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
         }
         else if (errno != 0) {
             ERR_clear_error();
-            PyErr_SetFromErrno(PyExc_IOError);
+            PyErr_SetFromErrno(PyExc_OSError);
         }
         else {
             _setSSLError(NULL, 0, __FILE__, __LINE__);
@@ -3504,7 +3504,7 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
             ok = 0;
             if (errno != 0) {
                 ERR_clear_error();
-                PyErr_SetFromErrno(PyExc_IOError);
+                PyErr_SetFromErrno(PyExc_OSError);
             }
             else {
                 _setSSLError(NULL, 0, __FILE__, __LINE__);
