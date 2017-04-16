@@ -285,6 +285,20 @@ class TestTimeit(unittest.TestCase):
         s = self.run_main(seconds_per_increment=60.0, switches=['-r-5'])
         self.assertEqual(s, "1 loop, best of 1: 60 sec per loop\n")
 
+    def test_main_duplicate(self):
+        s = self.run_main(seconds_per_increment=1/16,
+                          switches=['-r5', '--duplicate=1'])
+        self.assertEqual(s, "5 loops, best of 5: 62.5 msec per loop\n")
+        s = self.run_main(seconds_per_increment=1/16,
+                          switches=['-r5', '--duplicate=2'])
+        self.assertEqual(s, "4 loops, best of 5: 62.5 msec per loop\n")
+        s = self.run_main(seconds_per_increment=1/16,
+                          switches=['-r5', '--duplicate=25'])
+        self.assertEqual(s, "25 loops, best of 5: 62.5 msec per loop\n")
+        s = self.run_main(seconds_per_increment=1/16,
+                          switches=['-r5', '-n75', '--duplicate=25'])
+        self.assertEqual(s, "75 loops, best of 5: 62.5 msec per loop\n")
+
     @unittest.skipIf(sys.flags.optimize >= 2, "need __doc__")
     def test_main_help(self):
         s = self.run_main(switches=['-h'])

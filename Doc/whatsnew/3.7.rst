@@ -132,6 +132,13 @@ Serhiy Storchaka in :issue:`28682`.)
 Added support for :ref:`file descriptors <path_fd>` in :func:`~os.scandir`
 on Unix.  (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
+timeit
+------
+
+A new command line option :samp:`--duplicate={D}` can be used to reduce the
+overhead of the loop by duplicating statements.
+(Contributed by Serhiy Storchaka in :issue:`30080`.)
+
 unittest.mock
 -------------
 

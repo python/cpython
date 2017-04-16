@@ -19,6 +19,8 @@ Options:
   -p/--process: use time.process_time() (default is time.perf_counter())
   -v/--verbose: print raw timing results; repeat for more digits precision
   -u/--unit: set the output time unit (nsec, usec, msec, or sec)
+  --duplicate N: duplicate statements to reduce the overhead of the loop
+                 (default 1)
   -h/--help: print this usage message and exit
   --: separate options from statement, use when statement starts with -
   statement: statement to be timed (default 'pass')
@@ -34,7 +36,8 @@ successive powers of 10 until the total time is at least 0.2 seconds.
 Note: there is a certain baseline overhead associated with executing a
 pass statement.  It differs between versions.  The code here doesn't try
 to hide it, but you should be aware of it.  The baseline overhead can be
-measured by invoking the program without arguments.
+measured by invoking the program without arguments.  Use the --duplicate
+option to reduce the overhead.
 
 Classes:
 
@@ -259,7 +262,7 @@ def main(args=None, *, _wrap_timer=None):
     try:
         opts, args = getopt.getopt(args, "n:u:s:r:tcpvh",
                                    ["number=", "setup=", "repeat=",
-                                    "time", "clock", "process",
+                                    "duplicate=", "process",
                                     "verbose", "unit=", "help"])
     except getopt.error as err:
         print(err)
@@ -267,10 +270,10 @@ def main(args=None, *, _wrap_timer=None):
         return 2
 
     timer = default_timer
-    stmt = "\n".join(args) or "pass"
     number = 0 # auto-determine
     setup = []
     repeat = default_repeat
+    duplicate = 1
     verbose = 0
     time_unit = None
     units = {"nsec": 1e-9, "usec": 1e-6, "msec": 1e-3, "sec": 1.0}
@@ -291,6 +294,8 @@ def main(args=None, *, _wrap_timer=None):
             repeat = int(a)
             if repeat <= 0:
                 repeat = 1
+        if o == "--duplicate":
+            duplicate = int(a)
         if o in ("-p", "--process"):
             timer = time.process_time
         if o in ("-v", "--verbose"):
@@ -301,6 +306,7 @@ def main(args=None, *, _wrap_timer=None):
             print(__doc__, end=' ')
             return 0
     setup = "\n".join(setup) or "pass"
+    stmt = "\n".join(args * duplicate) or "pass"
 
     # Include the current directory, so that local imports work (sys.path
     # contains the directory of this script, rather than the current
@@ -316,6 +322,7 @@ def main(args=None, *, _wrap_timer=None):
         callback = None
         if verbose:
             def callback(number, time_taken):
+                number *= duplicate
                 msg = "{num} loop{s} -> {secs:.{prec}g} secs"
                 plural = (number != 1)
                 print(msg.format(num=number, s='s' if plural else '',
@@ -328,6 +335,12 @@ def main(args=None, *, _wrap_timer=None):
 
         if verbose:
             print()
+    else:
+        if number % duplicate:
+            print("number is not divisible by duplicate.",
+                  file=sys.stderr)
+            return 2
+        number //= duplicate
 
     try:
         raw_timings = t.repeat(repeat, number)
@@ -352,6 +365,7 @@ def main(args=None, *, _wrap_timer=None):
     if verbose:
         print("raw times: %s" % ", ".join(map(format_time, raw_timings)))
         print()
+    number *= duplicate
     timings = [dt / number for dt in raw_timings]
 
     best = min(timings)

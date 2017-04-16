@@ -227,6 +227,12 @@ Where the following options are understood:
 
    .. versionadded:: 3.5
 
+.. cmdoption:: --duplicate=D
+
+    duplicate statements to reduce the overhead of the loop (default 1)
+
+   .. versionadded:: 3.7
+
 .. cmdoption:: -v, --verbose
 
    print raw timing results; repeat for more digits precision
@@ -254,7 +260,8 @@ most cases.  You can use :func:`time.process_time` to measure CPU time.
    There is a certain baseline overhead associated with executing a pass statement.
    The code here doesn't try to hide it, but you should be aware of it.  The
    baseline overhead can be measured by invoking the program without arguments,
-   and it might differ between Python versions.
+   and it might differ between Python versions.  Use the :option:`--duplicate`
+   option to reduce the overhead.
 
 
 .. _timeit-examples:
