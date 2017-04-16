@@ -602,7 +602,6 @@ class StructTest(unittest.TestCase):
     def test_bad_value_error_message(self):
         regex = (
             r'got bad value at item 4, short format requires '
-            r'\(-0x7fff - 1\) <= number <= 0x7fff'
         )
         with self.assertRaisesRegex(struct.error, regex):
             struct.pack('4h', 0x5FFF, 0x6FFF, 0x7FFF, 0x8FFF)
