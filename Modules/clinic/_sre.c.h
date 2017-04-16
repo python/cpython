@@ -383,33 +383,12 @@ _sre_SRE_Pattern___copy__(PatternObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern___deepcopy____doc__,
-"__deepcopy__($self, /, memo)\n"
+"__deepcopy__($self, memo, /)\n"
 "--\n"
 "\n");
 
 #define _SRE_SRE_PATTERN___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", (PyCFunction)_sre_SRE_Pattern___deepcopy__, METH_FASTCALL, _sre_SRE_Pattern___deepcopy____doc__},
-
-static PyObject *
-_sre_SRE_Pattern___deepcopy___impl(PatternObject *self, PyObject *memo);
-
-static PyObject *
-_sre_SRE_Pattern___deepcopy__(PatternObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"memo", NULL};
-    static _PyArg_Parser _parser = {"O:__deepcopy__", _keywords, 0};
-    PyObject *memo;
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &memo)) {
-        goto exit;
-    }
-    return_value = _sre_SRE_Pattern___deepcopy___impl(self, memo);
-
-exit:
-    return return_value;
-}
+    {"__deepcopy__", (PyCFunction)_sre_SRE_Pattern___deepcopy__, METH_O, _sre_SRE_Pattern___deepcopy____doc__},
 
 PyDoc_STRVAR(_sre_compile__doc__,
 "compile($module, /, pattern, flags, code, groups, groupindex,\n"
@@ -671,33 +650,12 @@ _sre_SRE_Match___copy__(MatchObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_sre_SRE_Match___deepcopy____doc__,
-"__deepcopy__($self, /, memo)\n"
+"__deepcopy__($self, memo, /)\n"
 "--\n"
 "\n");
 
 #define _SRE_SRE_MATCH___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", (PyCFunction)_sre_SRE_Match___deepcopy__, METH_FASTCALL, _sre_SRE_Match___deepcopy____doc__},
-
-static PyObject *
-_sre_SRE_Match___deepcopy___impl(MatchObject *self, PyObject *memo);
-
-static PyObject *
-_sre_SRE_Match___deepcopy__(MatchObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"memo", NULL};
-    static _PyArg_Parser _parser = {"O:__deepcopy__", _keywords, 0};
-    PyObject *memo;
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &memo)) {
-        goto exit;
-    }
-    return_value = _sre_SRE_Match___deepcopy___impl(self, memo);
-
-exit:
-    return return_value;
-}
+    {"__deepcopy__", (PyCFunction)_sre_SRE_Match___deepcopy__, METH_O, _sre_SRE_Match___deepcopy____doc__},
 
 PyDoc_STRVAR(_sre_SRE_Scanner_match__doc__,
 "match($self, /)\n"
@@ -732,4 +690,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=5df18da8e2dc762c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6dab3ba8864da9e input=a9049054013a1b77]*/
