@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- bpo-30017: Allowed calling the close() method of the zip entry writer object
+  multiple times.  Writing to a closed writer now always produces a ValueError.
+
 - bpo-30068: _io._IOBase.readlines will check if it's closed first when
   hint is present.
 
