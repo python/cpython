@@ -584,7 +584,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
     else if (PySlice_Check(key)) {
         Py_ssize_t start, stop, step, slicelength;
 
-        if (_PySlice_Unpack((PySliceObject *)key, &start, &stop, &step) < 0) {
+        if (_PySlice_Unpack(key, &start, &stop, &step) < 0) {
             return NULL;
         }
         slicelength = _PySlice_AdjustIndices(get_shape0(view), &start, &stop,
@@ -663,7 +663,7 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
     else if (PySlice_Check(key)) {
         Py_ssize_t stop, step;
 
-        if (_PySlice_Unpack((PySliceObject *)key, &start, &stop, &step) < 0) {
+        if (_PySlice_Unpack(key, &start, &stop, &step) < 0) {
             return -1;
         }
         len = _PySlice_AdjustIndices(get_shape0(view), &start, &stop, step);

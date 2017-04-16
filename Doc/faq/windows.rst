@@ -295,7 +295,7 @@ this respect, and is easily configured to use spaces: Take :menuselection:`Tools
 size" to 4, and select the "Insert spaces" radio button.
 
 If you suspect mixed tabs and spaces are causing problems in leading whitespace,
-run Python with the :option:`-t` switch or run ``Tools/Scripts/tabnanny.py`` to
+run Python with the :option:`-t` switch or run the :mod:`tabnanny` module to
 check a directory tree in batch mode.
 
 

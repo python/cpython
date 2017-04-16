@@ -4434,10 +4434,9 @@ Array_subscript(PyObject *_self, PyObject *item)
         PyObject *np;
         Py_ssize_t start, stop, step, slicelen, cur, i;
 
-        if (PySlice_Unpack((PySliceObject *)item, &start, &stop, &step) < 0) {
+        if (_PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
-        slicelen = PySlice_AdjustIndices(self->b_length, &start, &stop, step);
 
         stgdict = PyObject_stgdict((PyObject *)self);
         assert(stgdict); /* Cannot be NULL for array object instances */
@@ -4446,6 +4445,7 @@ Array_subscript(PyObject *_self, PyObject *item)
         assert(itemdict); /* proto is the item type of the array, a
                              ctypes type, so this cannot be NULL */
 
+        slicelen = _PySlice_AdjustIndices(self->b_length, &start, &stop, step);
         if (itemdict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
             char *ptr = (char *)self->b_ptr;
             char *dest;
@@ -4612,7 +4612,7 @@ Array_ass_subscript(PyObject *_self, PyObject *item, PyObject *value)
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen, otherlen, i, cur;
 
-        if (_PySlice_Unpack((PySliceObject *)item, &start, &stop, &step) < 0) {
+        if (_PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
         slicelen = _PySlice_AdjustIndices(self->b_length, &start, &stop, step);

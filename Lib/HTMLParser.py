@@ -462,11 +462,12 @@ class HTMLParser(markupbase.ParserBase):
             else:
                 # Cannot use name2codepoint directly, because HTMLParser supports apos,
                 # which is not part of HTML 4
-                import htmlentitydefs
                 if HTMLParser.entitydefs is None:
-                    entitydefs = HTMLParser.entitydefs = {'apos':u"'"}
+                    import htmlentitydefs
+                    entitydefs = {'apos':u"'"}
                     for k, v in htmlentitydefs.name2codepoint.iteritems():
                         entitydefs[k] = unichr(v)
+                    HTMLParser.entitydefs = entitydefs
                 try:
                     return self.entitydefs[s]
                 except KeyError:
