@@ -671,8 +671,8 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
     }
 
     while (1) {
-        PyObject *line = PyIter_Next(it);
         Py_ssize_t line_length;
+        PyObject *line = PyIter_Next(it);
         if (line == NULL) {
             if (PyErr_Occurred()) {
                 goto error;
@@ -688,8 +688,7 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
         line_length = PyObject_Size(line);
         Py_DECREF(line);
         if (line_length < 0) {
-            Py_DECREF(result);
-            return NULL;
+            goto error;
         }
         if (line_length > hint - length)
             break;
