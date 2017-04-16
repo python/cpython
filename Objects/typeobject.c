@@ -5924,14 +5924,21 @@ slot_sq_length(PyObject *self)
 
     if (res == NULL)
         return -1;
-    len = PyNumber_AsSsize_t(res, PyExc_OverflowError);
-    Py_DECREF(res);
-    if (len < 0) {
-        if (!PyErr_Occurred())
-            PyErr_SetString(PyExc_ValueError,
-                            "__len__() should return >= 0");
+
+    Py_SETREF(res, PyNumber_Index(res));
+    if (res == NULL)
+        return -1;
+
+    assert(PyLong_Check(res));
+    if (Py_SIZE(res) < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "__len__() should return >= 0");
         return -1;
     }
+
+    len = PyNumber_AsSsize_t(res, PyExc_OverflowError);
+    assert(len >= 0 || PyErr_ExceptionMatches(PyExc_OverflowError));
+    Py_DECREF(res);
     return len;
 }
 
