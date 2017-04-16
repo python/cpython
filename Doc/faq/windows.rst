@@ -170,8 +170,9 @@ offender.
 How do I make an executable from a Python script?
 -------------------------------------------------
 
-See http://cx-freeze.sourceforge.net/ and http://www.pyinstaller.org/ for the 
-distutils extensions that allows you to create console and GUI executables 
+See http://cx-freeze.sourceforge.net/ for the distutils extension and
+http://www.pyinstaller.org/ for another package, 
+that both allow you to create console and GUI executables 
 from Python code.
 `py2exe <http://www.py2exe.org/>`_, popular extension for building
 Python 2.x-based executables, partially supports Python 3, see 
