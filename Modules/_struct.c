@@ -66,12 +66,12 @@ static Py_ssize_t g_offset = 0;
 
 #define PyStructErr_BufferLength (128)
 #define PyStructErr_SetString(type, string) \
-    PyErr_Format(type, "%s, got bad value at item %ld", string, g_offset)
+    PyErr_Format(type, "got bad value at item %ld, %s", g_offset, string)
 #define PyStructErr_Format(type, format, ...) \
     do { \
         static char buf[PyStructErr_BufferLength]; \
         snprintf(buf, PyStructErr_BufferLength, format, __VA_ARGS__); \
-        PyErr_Format(type, "%s, got bad value at item %ld", buf, g_offset);  \
+        PyErr_Format(type, "got bad value at item %ld, %s", g_offset, buf);  \
     } while (0)
 
 
