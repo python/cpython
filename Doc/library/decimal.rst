@@ -23,6 +23,11 @@
    # make sure each group gets a fresh context
    setcontext(Context())
 
+.. testcleanup:: *
+
+   # make sure other tests (outside this file) get a fresh context
+   setcontext(Context())
+
 --------------
 
 The :mod:`decimal` module provides support for fast correctly-rounded
