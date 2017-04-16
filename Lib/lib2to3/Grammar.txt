@@ -34,7 +34,7 @@ eval_input: testlist NEWLINE* ENDMARKER
 decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
 decorators: decorator+
 decorated: decorators (classdef | funcdef | async_funcdef)
-async_funcdef: ASYNC funcdef
+async_funcdef: 'async' funcdef
 funcdef: 'def' NAME parameters ['->' test] ':' suite
 parameters: '(' [typedargslist] ')'
 typedargslist: ((tfpdef ['=' test] ',')*
@@ -85,7 +85,7 @@ exec_stmt: 'exec' expr ['in' test [',' test]]
 assert_stmt: 'assert' test [',' test]
 
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated | async_stmt
-async_stmt: ASYNC (funcdef | with_stmt | for_stmt)
+async_stmt: 'async' (funcdef | with_stmt | for_stmt)
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
 while_stmt: 'while' test ':' suite ['else' ':' suite]
 for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
@@ -123,15 +123,16 @@ and_expr: shift_expr ('&' shift_expr)*
 shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 arith_expr: term (('+'|'-') term)*
 term: factor (('*'|'@'|'/'|'%'|'//') factor)*
-factor: ('+'|'-'|'~') factor | power
-power: [AWAIT] atom trailer* ['**' factor]
+factor: ('+'|'-'|'~') factor | await_expr
+await_expr: 'await' power | power
+power: atom trailer* ['**' factor]
 atom: ('(' [yield_expr|testlist_gexp] ')' |
        '[' [listmaker] ']' |
        '{' [dictsetmaker] '}' |
        '`' testlist1 '`' |
        NAME | NUMBER | STRING+ | '.' '.' '.')
-listmaker: (test|star_expr) ( old_comp_for | (',' (test|star_expr))* [','] )
-testlist_gexp: (test|star_expr) ( old_comp_for | (',' (test|star_expr))* [','] )
+listmaker: (test|star_expr) ( old_comp_for | comp_async_for | (',' (test|star_expr))* [','] )
+testlist_gexp: (test|star_expr) ( old_comp_for | comp_async_for | (',' (test|star_expr))* [','] )
 lambdef: 'lambda' [varargslist] ':' test
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
@@ -140,9 +141,9 @@ sliceop: ':' [test]
 exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
 testlist: test (',' test)* [',']
 dictsetmaker: ( ((test ':' test | '**' expr)
-                 (comp_for | (',' (test ':' test | '**' expr))* [','])) |
+                 (comp_for | comp_async_for | (',' (test ':' test | '**' expr))* [','])) |
                 ((test | star_expr)
-		 (comp_for | (',' (test | star_expr))* [','])) )
+		 (comp_for | comp_async_for | (',' (test | star_expr))* [','])) )
 
 classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
 
@@ -155,13 +156,15 @@ arglist: argument (',' argument)* [',']
 # Illegal combinations and orderings are blocked in ast.c:
 # multiple (test comp_for) arguments are blocked; keyword unpackings
 # that precede iterable unpackings are blocked; etc.
-argument: ( test [comp_for] |
+argument: ( test [comp_for_or_async] |
             test '=' test |
 	    '**' expr |
 	    star_expr )
 
-comp_iter: comp_for | comp_if
-comp_for: [ASYNC] 'for' exprlist 'in' or_test [comp_iter]
+comp_for_or_async: comp_async_for | comp_for
+comp_iter: comp_async_for | comp_for | comp_if
+comp_async_for: 'async' 'for' exprlist 'in' testlist_safe [comp_iter]
+comp_for: 'for' exprlist 'in' testlist_safe [comp_iter]
 comp_if: 'if' old_test [comp_iter]
 
 # As noted above, testlist_safe extends the syntax allowed in list
