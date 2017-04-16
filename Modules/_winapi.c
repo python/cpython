@@ -224,7 +224,7 @@ _winapi_Overlapped_GetOverlappedResult_impl(OverlappedObject *self, int wait)
             break;
         default:
             self->pending = 0;
-            return PyErr_SetExcFromWindowsErr(PyExc_IOError, err);
+            return PyErr_SetExcFromWindowsErr(PyExc_OSError, err);
     }
     if (self->completed && self->read_buffer != NULL) {
         assert(PyBytes_CheckExact(self->read_buffer));
@@ -276,7 +276,7 @@ _winapi_Overlapped_cancel_impl(OverlappedObject *self)
 
     /* CancelIoEx returns ERROR_NOT_FOUND if the I/O completed in-between */
     if (!res && GetLastError() != ERROR_NOT_FOUND)
-        return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+        return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
     self->pending = 0;
     Py_RETURN_NONE;
 }
@@ -1139,7 +1139,7 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
         Py_END_ALLOW_THREADS
         if (!ret) {
             Py_DECREF(buf);
-            return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+            return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
         }
         if (_PyBytes_Resize(&buf, nread))
             return NULL;
@@ -1150,7 +1150,7 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
         ret = PeekNamedPipe(handle, NULL, 0, NULL, &navail, &nleft);
         Py_END_ALLOW_THREADS
         if (!ret) {
-            return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+            return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
         }
         return Py_BuildValue("ii", navail, nleft);
     }
@@ -1201,7 +1201,7 @@ _winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
                 overlapped->pending = 1;
             else if (err != ERROR_MORE_DATA) {
                 Py_DECREF(overlapped);
-                return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+                return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
             }
         }
         return Py_BuildValue("NI", (PyObject *) overlapped, err);
@@ -1209,7 +1209,7 @@ _winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
 
     if (!ret && err != ERROR_MORE_DATA) {
         Py_DECREF(buf);
-        return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+        return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
     }
     if (_PyBytes_Resize(&buf, nread))
         return NULL;
@@ -1366,10 +1366,10 @@ _winapi_WaitForMultipleObjects_impl(PyObject *module, PyObject *handle_seq,
     Py_END_ALLOW_THREADS
 
     if (result == WAIT_FAILED)
-        return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+        return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
     else if (sigint_event != NULL && result == WAIT_OBJECT_0 + nhandles - 1) {
         errno = EINTR;
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     }
 
     return PyLong_FromLong((int) result);
@@ -1455,7 +1455,7 @@ _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
                 overlapped->pending = 1;
             else {
                 Py_DECREF(overlapped);
-                return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+                return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
             }
         }
         return Py_BuildValue("NI", (PyObject *) overlapped, err);
@@ -1463,7 +1463,7 @@ _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
 
     PyBuffer_Release(buf);
     if (!ret)
-        return PyErr_SetExcFromWindowsErr(PyExc_IOError, 0);
+        return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
     return Py_BuildValue("II", written, err);
 }
 
