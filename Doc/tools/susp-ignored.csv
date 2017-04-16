@@ -302,6 +302,8 @@ whatsnew/3.2,,:feed,>>> urllib.parse.urlparse('http://[dead:beef:cafe:5417:affe:
 whatsnew/3.2,,:gz,">>> with tarfile.open(name='myarchive.tar.gz', mode='w:gz') as tf:"
 whatsnew/3.2,,:location,zope9-location = ${zope9:location}
 whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
+library/re,,`,!#$%&'*+-.^_`|~:
+library/re,,`,\!\#\$\%\&\'\*\+\-\.\^_\`\|\~\:
 library/tarfile,,:xz,'x:xz'
 library/xml.etree.elementtree,,:sometag,prefix:sometag
 library/xml.etree.elementtree,,:fictional,"<actors xmlns:fictional=""http://characters.example.com"""
