@@ -273,14 +273,18 @@ class Maildir(Mailbox):
             'tmp': os.path.join(self._path, 'tmp'),
             'new': os.path.join(self._path, 'new'),
             'cur': os.path.join(self._path, 'cur'),
-            }
-        if not os.path.exists(self._path):
-            if create:
-                os.mkdir(self._path, 0o700)
-                for path in self._paths.values():
-                    os.mkdir(path, 0o700)
-            else:
-                raise NoSuchMailboxError(self._path)
+        }
+
+        def _mkdir_or_error(path):
+            if not os.path.exists(path):
+                if not create:
+                    raise NoSuchMailboxError(path)
+                os.mkdir(path, 0o700)
+
+        _mkdir_or_error(self._path)
+        for path in self._paths.values():
+            _mkdir_or_error(path)
+
         self._toc = {}
         self._toc_mtimes = {'cur': 0, 'new': 0}
         self._last_read = 0         # Records last time we read cur/new
