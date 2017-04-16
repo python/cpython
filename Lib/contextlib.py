@@ -65,7 +65,7 @@ class _GeneratorContextManager(ContextDecorator):
             try:
                 next(self.gen)
             except StopIteration:
-                return
+                return False
             else:
                 raise RuntimeError("generator didn't stop")
         else:
@@ -75,7 +75,6 @@ class _GeneratorContextManager(ContextDecorator):
                 value = type()
             try:
                 self.gen.throw(type, value, traceback)
-                raise RuntimeError("generator didn't stop after throw()")
             except StopIteration as exc:
                 # Suppress StopIteration *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration
@@ -88,7 +87,7 @@ class _GeneratorContextManager(ContextDecorator):
                 # Likewise, avoid suppressing if a StopIteration exception
                 # was passed to throw() and later wrapped into a RuntimeError
                 # (see PEP 479).
-                if exc.__cause__ is value:
+                if type is StopIteration and exc.__cause__ is value:
                     return False
                 raise
             except:
@@ -99,8 +98,10 @@ class _GeneratorContextManager(ContextDecorator):
                 # fixes the impedance mismatch between the throw() protocol
                 # and the __exit__() protocol.
                 #
-                if sys.exc_info()[1] is not value:
-                    raise
+                if sys.exc_info()[1] is value:
+                    return False
+                raise
+            raise RuntimeError("generator didn't stop after throw()")
 
 
 def contextmanager(func):
