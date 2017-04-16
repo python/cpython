@@ -82,7 +82,7 @@ msvcrt_heapmin_impl(PyObject *module)
 /*[clinic end generated code: output=1ba00f344782dc19 input=82e1771d21bde2d8]*/
 {
     if (_heapmin() != 0)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
 
     Py_RETURN_NONE;
 }
@@ -96,7 +96,7 @@ msvcrt.locking
 
 Lock part of a file based on file descriptor fd from the C runtime.
 
-Raises IOError on failure. The locked region of the file extends from
+Raises OSError on failure. The locked region of the file extends from
 the current file position for nbytes bytes, and may continue beyond
 the end of the file. mode must be one of the LK_* constants listed
 below. Multiple regions in a file may be locked at the same time, but
@@ -106,7 +106,7 @@ individually.
 
 static PyObject *
 msvcrt_locking_impl(PyObject *module, int fd, int mode, long nbytes)
-/*[clinic end generated code: output=a4a90deca9785a03 input=d9f13f0f6a713ba7]*/
+/*[clinic end generated code: output=a4a90deca9785a03 input=e97bd15fc4a04fef]*/
 {
     int err;
 
@@ -116,7 +116,7 @@ msvcrt_locking_impl(PyObject *module, int fd, int mode, long nbytes)
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     if (err != 0)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
 
     Py_RETURN_NONE;
 }
@@ -144,7 +144,7 @@ msvcrt_setmode_impl(PyObject *module, int fd, int flags)
     flags = _setmode(fd, flags);
     _Py_END_SUPPRESS_IPH
     if (flags == -1)
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
 
     return flags;
 }
@@ -173,7 +173,7 @@ msvcrt_open_osfhandle_impl(PyObject *module, intptr_t handle, int flags)
     fd = _open_osfhandle(handle, flags);
     _Py_END_SUPPRESS_IPH
     if (fd == -1)
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
 
     return fd;
 }
@@ -186,12 +186,12 @@ msvcrt.get_osfhandle -> handle
 
 Return the file handle for the file descriptor fd.
 
-Raises IOError if fd is not recognized.
+Raises OSError if fd is not recognized.
 [clinic start generated code]*/
 
 static intptr_t
 msvcrt_get_osfhandle_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=7ce761dd0de2b503 input=c7d18d02c8017ec1]*/
+/*[clinic end generated code: output=7ce761dd0de2b503 input=305900f4bfab76c7]*/
 {
     intptr_t handle = -1;
 
@@ -199,7 +199,7 @@ msvcrt_get_osfhandle_impl(PyObject *module, int fd)
     handle = _get_osfhandle(fd);
     _Py_END_SUPPRESS_IPH
     if (handle == -1)
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
 
     return handle;
 }
@@ -359,7 +359,7 @@ msvcrt_ungetch_impl(PyObject *module, char char_value)
     _Py_END_SUPPRESS_IPH
 
     if (res == EOF)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
 }
 
@@ -383,7 +383,7 @@ msvcrt_ungetwch_impl(PyObject *module, int unicode_char)
     _Py_END_SUPPRESS_IPH
 
     if (res == WEOF)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
 }
 
@@ -435,7 +435,7 @@ msvcrt_CrtSetReportMode_impl(PyObject *module, int type, int mode)
     res = _CrtSetReportMode(type, mode);
     _Py_END_SUPPRESS_IPH
     if (res == -1)
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
     return res;
 }
 
