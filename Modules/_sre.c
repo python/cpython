@@ -60,12 +60,6 @@ static const char copyright[] =
 #undef VERBOSE
 
 /* -------------------------------------------------------------------- */
-/* optional features */
-
-/* enables copy/deepcopy handling (work in progress) */
-#undef USE_BUILTIN_COPY
-
-/* -------------------------------------------------------------------- */
 
 #if defined(_MSC_VER)
 #pragma optimize("agtw", on) /* doesn't seem to make much difference... */
@@ -695,28 +689,6 @@ call(const char* module, const char* function, PyObject* args)
     return result;
 }
 
-#ifdef USE_BUILTIN_COPY
-static int
-deepcopy(PyObject** object, PyObject* memo)
-{
-    PyObject* copy;
-
-    if (!*object)
-        return 1;
-
-    copy = call(
-        "copy", "deepcopy",
-        PyTuple_Pack(2, *object, memo)
-        );
-    if (!copy)
-        return 0;
-
-    Py_SETREF(*object, copy);
-
-    return 1; /* success */
-}
-#endif
-
 /*[clinic input]
 _sre.SRE_Pattern.findall
 
@@ -1229,60 +1201,24 @@ static PyObject *
 _sre_SRE_Pattern___copy___impl(PatternObject *self)
 /*[clinic end generated code: output=85dedc2db1bd8694 input=a730a59d863bc9f5]*/
 {
-#ifdef USE_BUILTIN_COPY
-    PatternObject* copy;
-    int offset;
-
-    copy = PyObject_NEW_VAR(PatternObject, &Pattern_Type, self->codesize);
-    if (!copy)
-        return NULL;
-
-    offset = offsetof(PatternObject, groups);
-
-    Py_XINCREF(self->groupindex);
-    Py_XINCREF(self->indexgroup);
-    Py_XINCREF(self->pattern);
-
-    memcpy((char*) copy + offset, (char*) self + offset,
-           sizeof(PatternObject) + self->codesize * sizeof(SRE_CODE) - offset);
-    copy->weakreflist = NULL;
-
-    return (PyObject*) copy;
-#else
-    PyErr_SetString(PyExc_TypeError, "cannot copy this pattern object");
-    return NULL;
-#endif
+    Py_INCREF(self);
+    return (PyObject *)self;
 }
 
 /*[clinic input]
 _sre.SRE_Pattern.__deepcopy__
 
     memo: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
-_sre_SRE_Pattern___deepcopy___impl(PatternObject *self, PyObject *memo)
-/*[clinic end generated code: output=75efe69bd12c5d7d input=3959719482c07f70]*/
+_sre_SRE_Pattern___deepcopy__(PatternObject *self, PyObject *memo)
+/*[clinic end generated code: output=2ad25679c1f1204a input=a465b1602f997bed]*/
 {
-#ifdef USE_BUILTIN_COPY
-    PatternObject* copy;
-
-    copy = (PatternObject*) pattern_copy(self);
-    if (!copy)
-        return NULL;
-
-    if (!deepcopy(&copy->groupindex, memo) ||
-        !deepcopy(&copy->indexgroup, memo) ||
-        !deepcopy(&copy->pattern, memo)) {
-        Py_DECREF(copy);
-        return NULL;
-    }
-
-#else
-    PyErr_SetString(PyExc_TypeError, "cannot deepcopy this pattern object");
-    return NULL;
-#endif
+    Py_INCREF(self);
+    return (PyObject *)self;
 }
 
 static PyObject *
@@ -2298,63 +2234,24 @@ static PyObject *
 _sre_SRE_Match___copy___impl(MatchObject *self)
 /*[clinic end generated code: output=a779c5fc8b5b4eb4 input=3bb4d30b6baddb5b]*/
 {
-#ifdef USE_BUILTIN_COPY
-    MatchObject* copy;
-    Py_ssize_t slots, offset;
-
-    slots = 2 * (self->pattern->groups+1);
-
-    copy = PyObject_NEW_VAR(MatchObject, &Match_Type, slots);
-    if (!copy)
-        return NULL;
-
-    /* this value a constant, but any compiler should be able to
-       figure that out all by itself */
-    offset = offsetof(MatchObject, string);
-
-    Py_XINCREF(self->pattern);
-    Py_XINCREF(self->string);
-    Py_XINCREF(self->regs);
-
-    memcpy((char*) copy + offset, (char*) self + offset,
-           sizeof(MatchObject) + slots * sizeof(Py_ssize_t) - offset);
-
-    return (PyObject*) copy;
-#else
-    PyErr_SetString(PyExc_TypeError, "cannot copy this match object");
-    return NULL;
-#endif
+    Py_INCREF(self);
+    return (PyObject *)self;
 }
 
 /*[clinic input]
 _sre.SRE_Match.__deepcopy__
 
     memo: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
-_sre_SRE_Match___deepcopy___impl(MatchObject *self, PyObject *memo)
-/*[clinic end generated code: output=2b657578eb03f4a3 input=b65b72489eac64cc]*/
+_sre_SRE_Match___deepcopy__(MatchObject *self, PyObject *memo)
+/*[clinic end generated code: output=ba7cb46d655e4ee2 input=779d12a31c2c325e]*/
 {
-#ifdef USE_BUILTIN_COPY
-    MatchObject* copy;
-
-    copy = (MatchObject*) match_copy(self);
-    if (!copy)
-        return NULL;
-
-    if (!deepcopy((PyObject**) &copy->pattern, memo) ||
-        !deepcopy(&copy->string, memo) ||
-        !deepcopy(&copy->regs, memo)) {
-        Py_DECREF(copy);
-        return NULL;
-    }
-
-#else
-    PyErr_SetString(PyExc_TypeError, "cannot deepcopy this match object");
-    return NULL;
-#endif
+    Py_INCREF(self);
+    return (PyObject *)self;
 }
 
 PyDoc_STRVAR(match_doc,

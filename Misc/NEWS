@@ -313,6 +313,9 @@ Extension Modules
 Library
 -------
 
+- bpo-10076: Compiled regular expression and match objects in the re module
+  now support copy.copy() and copy.deepcopy() (they are considered atomic).
+
 - bpo-30068: _io._IOBase.readlines will check if it's closed first when
   hint is present.
 
