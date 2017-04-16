@@ -768,7 +768,7 @@ static int devpoll_flush(devpollObject *self)
         ** the wild.
         ** See http://bugs.python.org/issue6397.
         */
-        PyErr_Format(PyExc_IOError, "failed to write all pollfds. "
+        PyErr_Format(PyExc_OSError, "failed to write all pollfds. "
                 "Please, report at http://bugs.python.org/. "
                 "Data to report: Size tried: %d, actual size written: %d.",
                 size, n);
@@ -948,7 +948,7 @@ devpoll_poll(devpollObject *self, PyObject *args)
     } while (1);
 
     if (poll_result < 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 

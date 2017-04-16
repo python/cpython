@@ -526,7 +526,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
                 goto fail;
             }
             if (!PyBytes_Check(readahead)) {
-                PyErr_Format(PyExc_IOError,
+                PyErr_Format(PyExc_OSError,
                              "peek() should have returned a bytes object, "
                              "not '%.200s'", Py_TYPE(readahead)->tp_name);
                 Py_DECREF(readahead);
@@ -566,7 +566,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
             goto fail;
         }
         if (!PyBytes_Check(b)) {
-            PyErr_Format(PyExc_IOError,
+            PyErr_Format(PyExc_OSError,
                          "read() should have returned a bytes object, "
                          "not '%.200s'", Py_TYPE(b)->tp_name);
             Py_DECREF(b);
