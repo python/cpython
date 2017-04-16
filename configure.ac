@@ -37,8 +37,8 @@ HAS_GIT=no-repository
 fi
 if test $HAS_GIT = found
 then
-    GITVERSION="git -C \$(srcdir) rev-parse HEAD"
-    GITTAG="git -C \$(srcdir) name-rev --tags --name-only HEAD"
+    GITVERSION="git -C \$(srcdir) rev-parse --short HEAD"
+    GITTAG="git -C \$(srcdir) describe --all --always --dirty"
     GITBRANCH="git -C \$(srcdir) name-rev --name-only HEAD"
 else
     GITVERSION=""
@@ -1274,7 +1274,7 @@ Py_OPT='false'
 AC_MSG_CHECKING(for --enable-optimizations)
 AC_ARG_ENABLE(optimizations, AS_HELP_STRING([--enable-optimizations], [Enable expensive optimizations (PGO, etc).  Disabled by default.]),
 [
-if test "$withval" != no
+if test "$enableval" != no
 then
   Py_OPT='true'
   AC_MSG_RESULT(yes);
@@ -2716,7 +2716,8 @@ esac
 
 # check for systems that require aligned memory access
 AC_MSG_CHECKING(aligned memory access is required)
-AC_TRY_RUN([
+AC_CACHE_VAL(ac_cv_aligned_required,
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main()
 {
     char s[16];
@@ -2728,18 +2729,16 @@ int main()
     if (*p1 == *p2)
         return 1;
     return 0;
-}
-              ],
-     [aligned_required=no],
-     [aligned_required=yes],
-     [aligned_required=yes])
-
-if test "$aligned_required" = yes ; then
+}]])],
+[ac_cv_aligned_required=no],
+[ac_cv_aligned_required=yes],
+[ac_cv_aligned_required=yes])
+])
+AC_MSG_RESULT($ac_cv_aligned_required)
+if test "$ac_cv_aligned_required" = yes ; then
   AC_DEFINE([HAVE_ALIGNED_REQUIRED], [1],
     [Define if aligned memory access is required])
 fi
-AC_MSG_RESULT($aligned_required)
-
 
 # str, bytes and memoryview hash algorithm
 AH_TEMPLATE(Py_HASH_ALGORITHM,
@@ -5200,7 +5199,7 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Grammar Objects Python Modules Mac Programs"
+SRCDIRS="Parser Objects Python Modules Programs"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

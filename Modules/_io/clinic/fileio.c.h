@@ -214,7 +214,7 @@ _io_FileIO_read(fileio *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     Py_ssize_t size = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:read",
-        _PyIO_ConvertSsize_t, &size)) {
+        _Py_convert_optional_to_ssize_t, &size)) {
         goto exit;
     }
 
@@ -385,4 +385,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=034d782a0daa82bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a4044e2d878248d0 input=a9049054013a1b77]*/

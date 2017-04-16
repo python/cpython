@@ -1014,6 +1014,16 @@ class CommonBufferedTests:
         raw.name = b"dummy"
         self.assertEqual(repr(b), "<%s name=b'dummy'>" % clsname)
 
+    def test_recursive_repr(self):
+        # Issue #25455
+        raw = self.MockRawIO()
+        b = self.tp(raw)
+        with support.swap_attr(raw, 'name', b):
+            try:
+                repr(b)  # Should not crash
+            except RuntimeError:
+                pass
+
     def test_flush_error_on_close(self):
         # Test that buffered file is closed despite failed flush
         # and that flush() is called before file closed.
@@ -2435,6 +2445,16 @@ class TextIOWrapperTest(unittest.TestCase):
         t.buffer.detach()
         repr(t)  # Should not raise an exception
 
+    def test_recursive_repr(self):
+        # Issue #25455
+        raw = self.BytesIO()
+        t = self.TextIOWrapper(raw)
+        with support.swap_attr(raw, 'name', t):
+            try:
+                repr(t)  # Should not crash
+            except RuntimeError:
+                pass
+
     def test_line_buffering(self):
         r = self.BytesIO()
         b = self.BufferedWriter(r, 1000)
@@ -3490,6 +3510,7 @@ class MiscIOTest(unittest.TestCase):
                 self.assertRaises(ValueError, f.readinto1, bytearray(1024))
             self.assertRaises(ValueError, f.readline)
             self.assertRaises(ValueError, f.readlines)
+            self.assertRaises(ValueError, f.readlines, 1)
             self.assertRaises(ValueError, f.seek, 0)
             self.assertRaises(ValueError, f.tell)
             self.assertRaises(ValueError, f.truncate)

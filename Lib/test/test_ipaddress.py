@@ -1405,14 +1405,35 @@ class IpaddrUnitTest(unittest.TestCase):
                         ipaddress.ip_address('::2'))
 
     def testInterfaceComparison(self):
-        self.assertTrue(ipaddress.ip_interface('1.1.1.1') <=
-                        ipaddress.ip_interface('1.1.1.1'))
-        self.assertTrue(ipaddress.ip_interface('1.1.1.1') <=
-                        ipaddress.ip_interface('1.1.1.2'))
-        self.assertTrue(ipaddress.ip_interface('::1') <=
-                        ipaddress.ip_interface('::1'))
-        self.assertTrue(ipaddress.ip_interface('::1') <=
-                        ipaddress.ip_interface('::2'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.1/24') ==
+                        ipaddress.ip_interface('1.1.1.1/24'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.1/16') <
+                        ipaddress.ip_interface('1.1.1.1/24'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.1/24') <
+                        ipaddress.ip_interface('1.1.1.2/24'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.2/16') <
+                        ipaddress.ip_interface('1.1.1.1/24'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.1/24') >
+                        ipaddress.ip_interface('1.1.1.1/16'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.2/24') >
+                        ipaddress.ip_interface('1.1.1.1/24'))
+        self.assertTrue(ipaddress.ip_interface('1.1.1.1/24') >
+                        ipaddress.ip_interface('1.1.1.2/16'))
+
+        self.assertTrue(ipaddress.ip_interface('::1/64') ==
+                        ipaddress.ip_interface('::1/64'))
+        self.assertTrue(ipaddress.ip_interface('::1/64') <
+                        ipaddress.ip_interface('::1/80'))
+        self.assertTrue(ipaddress.ip_interface('::1/64') <
+                        ipaddress.ip_interface('::2/64'))
+        self.assertTrue(ipaddress.ip_interface('::2/48') <
+                        ipaddress.ip_interface('::1/64'))
+        self.assertTrue(ipaddress.ip_interface('::1/80') >
+                        ipaddress.ip_interface('::1/64'))
+        self.assertTrue(ipaddress.ip_interface('::2/64') >
+                        ipaddress.ip_interface('::1/64'))
+        self.assertTrue(ipaddress.ip_interface('::1/64') >
+                        ipaddress.ip_interface('::2/48'))
 
     def testNetworkComparison(self):
         # ip1 and ip2 have the same network address
