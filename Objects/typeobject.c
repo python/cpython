@@ -5931,6 +5931,7 @@ slot_sq_length(PyObject *self)
 
     assert(PyLong_Check(res));
     if (Py_SIZE(res) < 0) {
+        Py_DECREF(res);
         PyErr_SetString(PyExc_ValueError,
                         "__len__() should return >= 0");
         return -1;
