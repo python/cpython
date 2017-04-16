@@ -57,7 +57,7 @@ typedef struct {
  * append the index of which value raise the error.
  *
  * For example:
- *     >>> struct.pack('hh', , 0x7FFFF, 0x8FFFF)
+ *     >>> struct.pack('hh', 0x7FFF, 0x8FFF)
  *     struct.error: 'h' format requires -32768 <= number <= 32767, got bad value at item 2
  */
 
