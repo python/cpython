@@ -209,7 +209,7 @@ class TestKQueue(unittest.TestCase):
         kq.close()
 
     def test_issue30058(self):
-        # chagelist must be an iterable
+        # changelist must be an iterable
         kq = select.kqueue()
         a, b = socket.socketpair()
         ev = select.kevent(a, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE)
