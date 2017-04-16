@@ -1642,9 +1642,9 @@ ast_for_funcdef_impl(struct compiling *c, const node *n,
 static stmt_ty
 ast_for_async_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 {
-    /* async_funcdef: ASYNC funcdef */
+    /* async_funcdef: 'async' funcdef */
     REQ(n, async_funcdef);
-    REQ(CHILD(n, 0), ASYNC);
+    REQ(CHILD(n, 0), NAME);
     REQ(CHILD(n, 1), funcdef);
 
     return ast_for_funcdef_impl(c, CHILD(n, 1), decorator_seq,
@@ -1663,9 +1663,9 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 static stmt_ty
 ast_for_async_stmt(struct compiling *c, const node *n)
 {
-    /* async_stmt: ASYNC (funcdef | with_stmt | for_stmt) */
+    /* async_stmt: 'async' (funcdef | with_stmt | for_stmt) */
     REQ(n, async_stmt);
-    REQ(CHILD(n, 0), ASYNC);
+    REQ(CHILD(n, 0), NAME);
 
     switch (TYPE(CHILD(n, 1))) {
         case funcdef:
@@ -1783,8 +1783,8 @@ count_comp_fors(struct compiling *c, const node *n)
   count_comp_for:
     is_async = 0;
     n_fors++;
-    REQ(n, comp_for);
-    if (TYPE(CHILD(n, 0)) == ASYNC) {
+    assert(TYPE(n) == comp_for || TYPE(n) == comp_async_for);
+    if (TYPE(n) == comp_async_for) {
         is_async = 1;
     }
     if (NCH(n) == (5 + is_async)) {
@@ -1796,7 +1796,7 @@ count_comp_fors(struct compiling *c, const node *n)
   count_comp_iter:
     REQ(n, comp_iter);
     n = CHILD(n, 0);
-    if (TYPE(n) == comp_for)
+    if (TYPE(n) == comp_for || TYPE(n) == comp_async_for)
         goto count_comp_for;
     else if (TYPE(n) == comp_if) {
         if (NCH(n) == 3) {
@@ -1825,7 +1825,7 @@ count_comp_ifs(struct compiling *c, const node *n)
 
     while (1) {
         REQ(n, comp_iter);
-        if (TYPE(CHILD(n, 0)) == comp_for)
+        if (TYPE(CHILD(n, 0)) == comp_for || TYPE(CHILD(n, 0)) == comp_async_for)
             return n_ifs;
         n = CHILD(n, 0);
         REQ(n, comp_if);
@@ -1857,9 +1857,9 @@ ast_for_comprehension(struct compiling *c, const node *n)
         node *for_ch;
         int is_async = 0;
 
-        REQ(n, comp_for);
+        assert(TYPE(n) == comp_for || TYPE(n) == comp_async_for);
 
-        if (TYPE(CHILD(n, 0)) == ASYNC) {
+        if (TYPE(n) == comp_async_for) {
             is_async = 1;
         }
 
@@ -1909,7 +1909,7 @@ ast_for_comprehension(struct compiling *c, const node *n)
                 if (NCH(n) == 3)
                     n = CHILD(n, 2);
             }
-            /* on exit, must guarantee that n is a comp_for */
+            /* on exit, must guarantee that n is a comp_for or comp_async_for */
             if (TYPE(n) == comp_iter)
                 n = CHILD(n, 0);
             comp->ifs = ifs;
@@ -1939,7 +1939,11 @@ ast_for_itercomp(struct compiling *c, const node *n, int type)
         return NULL;
     }
 
-    comps = ast_for_comprehension(c, CHILD(n, 1));
+    ch = CHILD(n, 1);
+    if (TYPE(ch) == comp_for_or_async)
+        ch = CHILD(ch, 0);
+
+    comps = ast_for_comprehension(c, ch);
     if (!comps)
         return NULL;
 
@@ -2172,7 +2176,7 @@ ast_for_atom(struct compiling *c, const node *n)
             return ast_for_expr(c, ch);
 
         /* testlist_comp: test ( comp_for | (',' test)* [','] ) */
-        if ((NCH(ch) > 1) && (TYPE(CHILD(ch, 1)) == comp_for))
+        if ((NCH(ch) > 1) && (TYPE(CHILD(ch, 1)) == comp_for || TYPE(CHILD(ch, 1)) == comp_async_for))
             return ast_for_genexp(c, ch);
 
         return ast_for_testlist(c, ch);
@@ -2212,12 +2216,13 @@ ast_for_atom(struct compiling *c, const node *n)
                 res = ast_for_setdisplay(c, ch);
             }
             else if (NCH(ch) > 1 &&
-                    TYPE(CHILD(ch, 1)) == comp_for) {
+                    (TYPE(CHILD(ch, 1)) == comp_for || TYPE(CHILD(ch, 1)) == comp_async_for)) {
                 /* It's a set comprehension. */
                 res = ast_for_setcomp(c, ch);
             }
             else if (NCH(ch) > 3 - is_dict &&
-                    TYPE(CHILD(ch, 3 - is_dict)) == comp_for) {
+                    (TYPE(CHILD(ch, 3 - is_dict)) == comp_for ||
+                     TYPE(CHILD(ch, 3 - is_dict)) == comp_async_for)) {
                 /* It's a dictionary comprehension. */
                 if (is_dict) {
                     ast_error(c, n, "dict unpacking cannot be used in "
@@ -2464,27 +2469,19 @@ ast_for_factor(struct compiling *c, const node *n)
 static expr_ty
 ast_for_atom_expr(struct compiling *c, const node *n)
 {
-    int i, nch, start = 0;
+    int i, nch;
     expr_ty e, tmp;
 
     REQ(n, atom_expr);
     nch = NCH(n);
 
-    if (TYPE(CHILD(n, 0)) == AWAIT) {
-        start = 1;
-        assert(nch > 1);
-    }
-
-    e = ast_for_atom(c, CHILD(n, start));
+    e = ast_for_atom(c, CHILD(n, 0));
     if (!e)
         return NULL;
     if (nch == 1)
         return e;
-    if (start && nch == 2) {
-        return Await(e, LINENO(n), n->n_col_offset, c->c_arena);
-    }
 
-    for (i = start + 1; i < nch; i++) {
+    for (i = 1; i < nch; i++) {
         node *ch = CHILD(n, i);
         if (TYPE(ch) != trailer)
             break;
@@ -2496,13 +2493,30 @@ ast_for_atom_expr(struct compiling *c, const node *n)
         e = tmp;
     }
 
-    if (start) {
-        /* there was an AWAIT */
-        return Await(e, LINENO(n), n->n_col_offset, c->c_arena);
+    return e;
+}
+
+static expr_ty
+ast_for_await_expr(struct compiling* c, const node *n)
+{
+    int nch, start;
+    expr_ty e;
+
+    REQ(n, await_expr);
+    nch = NCH(n);
+
+    if (nch == 2) {
+        start = 1;
+    } else {
+        assert(nch == 1);
+        start = 0;
     }
-    else {
+    e = ast_for_atom_expr(c, CHILD(n, start));
+    if (!e)
+        return NULL;
+    if (nch == 1)
         return e;
-    }
+    return Await(e, LINENO(n), n->n_col_offset, c->c_arena);
 }
 
 static expr_ty
@@ -2512,7 +2526,7 @@ ast_for_power(struct compiling *c, const node *n)
      */
     expr_ty e;
     REQ(n, power);
-    e = ast_for_atom_expr(c, CHILD(n, 0));
+    e = ast_for_await_expr(c, CHILD(n, 0));
     if (!e)
         return NULL;
     if (NCH(n) == 1)
@@ -2732,7 +2746,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
         if (TYPE(ch) == argument) {
             if (NCH(ch) == 1)
                 nargs++;
-            else if (TYPE(CHILD(ch, 1)) == comp_for)
+            else if (TYPE(CHILD(ch, 1)) == comp_for_or_async)
                 ngens++;
             else if (TYPE(CHILD(ch, 0)) == STAR)
                 nargs++;
@@ -2813,7 +2827,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                 asdl_seq_SET(keywords, nkeywords++, kw);
                 ndoublestars++;
             }
-            else if (TYPE(CHILD(ch, 1)) == comp_for) {
+            else if (TYPE(CHILD(ch, 1)) == comp_for_or_async) {
                 /* the lone generator expression */
                 e = ast_for_genexp(c, ch);
                 if (!e)
@@ -2880,6 +2894,7 @@ ast_for_testlist(struct compiling *c, const node* n)
     if (TYPE(n) == testlist_comp) {
         if (NCH(n) > 1)
             assert(TYPE(CHILD(n, 1)) != comp_for);
+            assert(TYPE(CHILD(n, 1)) != comp_async_for);
     }
     else {
         assert(TYPE(n) == testlist ||
