@@ -1013,7 +1013,7 @@ All of the following opcodes use their arguments.
 
    Raises an exception. *argc* indicates the number of parameters to the raise
    statement, ranging from 0 to 2.  If it is 0, it will raise directily.
-   If it is 1, exception will be `TOS`. If it is 2, cause will be `TOS` and exception will be `TOS1`.
+   If it is 1, exception will be ``TOS``. If it is 2, cause will be ``TOS`` and exception will be ``TOS1``.
 
 .. opcode:: CALL_FUNCTION (argc)
 
