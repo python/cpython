@@ -229,7 +229,7 @@ Where the following options are understood:
 
 .. cmdoption:: --duplicate=D
 
-    duplicate statements to reduce the overhead of the loop (default 1)
+   duplicate statements to reduce the overhead of the loop (default 1)
 
    .. versionadded:: 3.7
 
