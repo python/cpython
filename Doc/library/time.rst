@@ -118,6 +118,8 @@ An explanation of some terminology and conventions is in order.
   +-------------------------+-------------------------+-------------------------+
 
 
+.. _time-functions:
+
 Functions
 ---------
 
@@ -159,7 +161,8 @@ Functions
 
 .. function:: clock_getres(clk_id)
 
-   Return the resolution (precision) of the specified clock *clk_id*.
+   Return the resolution (precision) of the specified clock *clk_id*.  Refer to
+   :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
    Availability: Unix.
 
@@ -168,7 +171,8 @@ Functions
 
 .. function:: clock_gettime(clk_id)
 
-   Return the time of the specified clock *clk_id*.
+   Return the time of the specified clock *clk_id*.  Refer to
+   :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
    Availability: Unix.
 
@@ -177,7 +181,8 @@ Functions
 
 .. function:: clock_settime(clk_id, time)
 
-   Set the time of the specified clock *clk_id*.
+   Set the time of the specified clock *clk_id*.  Refer to
+   :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
    Availability: Unix.
 
@@ -209,7 +214,7 @@ Functions
    - *adjustable*: ``True`` if the clock can be changed automatically (e.g. by
      a NTP daemon) or manually by the system administrator, ``False`` otherwise
    - *implementation*: The name of the underlying C function used to get
-     the clock value
+     the clock value.  Refer to :ref:`time-clock-id-constants` for possible values.
    - *monotonic*: ``True`` if the clock cannot go backward,
      ``False`` otherwise
    - *resolution*: The resolution of the clock in seconds (:class:`float`)
@@ -626,8 +631,13 @@ Functions
       ('EET', 'EEST')
 
 
+.. _time-clock-id-constants:
+
 Clock ID Constants
 ------------------
+
+These constants are used as parameters for :func:`clock_getres`, :func:`clock_gettime`,
+and :func:`clock_settime`.
 
 .. data:: CLOCK_HIGHRES
 
@@ -688,6 +698,8 @@ Clock ID Constants
    .. versionadded:: 3.3
 
 
+.. _time-time-zone-constants:
+
 Time Zone Constants
 -------------------
 
@@ -695,30 +707,30 @@ Time Zone Constants
 
    The offset of the local DST timezone, in seconds west of UTC, if one is defined.
    This is negative if the local DST timezone is east of UTC (as in Western Europe,
-   including the UK).  Only use this if ``daylight`` is nonzero.  See note.
+   including the UK).  Only use this if ``daylight`` is nonzero.  See note below.
 
 .. data:: daylight
 
-   Nonzero if a DST timezone is defined.  See note.
+   Nonzero if a DST timezone is defined.  See note below.
 
 .. data:: timezone
 
    The offset of the local (non-DST) timezone, in seconds west of UTC (negative in
-   most of Western Europe, positive in the US, zero in the UK).  See note.
+   most of Western Europe, positive in the US, zero in the UK).  See note below.
 
 .. data:: tzname
 
    A tuple of two strings: the first is the name of the local non-DST timezone, the
    second is the name of the local DST timezone.  If no DST timezone is defined,
-   the second string should not be used.  See note.
+   the second string should not be used.  See note below.
 
-   .. note::
+.. note::
 
-      For the above Time Zone constants (:data:`altzone`, :data:`daylight`, :data:`timezone`,
-      and :data:`tzname`), the value is determined by the timezone rules in effect
-      at module load time or the last time :func:`tzset` is called and may be incorrect
-      for times in the past.  It is recommended to use the :attr:`tm_gmtoff` and
-      :attr:`tm_zone` results from :func:`localtime` to obtain timezone information.
+   For the above Time Zone constants (:data:`altzone`, :data:`daylight`, :data:`timezone`,
+   and :data:`tzname`), the value is determined by the timezone rules in effect
+   at module load time or the last time :func:`tzset` is called and may be incorrect
+   for times in the past.  It is recommended to use the :attr:`tm_gmtoff` and
+   :attr:`tm_zone` results from :func:`localtime` to obtain timezone information.
 
 
 .. seealso::
