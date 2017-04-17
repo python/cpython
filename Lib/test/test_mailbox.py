@@ -587,7 +587,8 @@ class TestMailboxSuperclass(TestBase, unittest.TestCase):
 
 class TestMaildir(TestMailbox, unittest.TestCase):
 
-    _factory = lambda self, path, factory=None: mailbox.Maildir(path, factory)
+    def _factory(self, path, factory=None, create=True):
+        return mailbox.Maildir(dirname=path, factory=factory, create=create)
 
     def setUp(self):
         TestMailbox.setUp(self)
@@ -676,6 +677,32 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         os.mkdir(self._path)  # maildir exists, but there's no subdirs in it
         self._box = self._factory(self._path, factory=None)
         self._check_basics()
+
+    def test_fail_initialize_if_no_folder(self):
+        """
+        Check that trying to initialize mailbox with create=False raises
+        mailbox.NoSuchMailboxError if any of required folders is missing.
+        """
+        subdirs = '', 'tmp', 'new', 'cur'
+        def _create_subfolders_except(dir_):
+            self._delete_recursively(self._path)
+            if not dir_:
+                return
+            for _subdir in subdirs:
+                if dir_ == _subdir:
+                    continue
+                subpath = os.path.normpath(os.path.join(self._path, _subdir))
+                os.mkdir(subpath)
+
+        # Initialize a non-existent mailbox
+        self.tearDown()
+        for subdir in subdirs:
+            with self.subTest(subdir=subdir):
+                subpath = os.path.normpath(os.path.join(self._path, subdir))
+                _create_subfolders_except(subdir)
+                with self.assertRaisesRegexp(
+                        mailbox.NoSuchMailboxError, subpath):
+                    self._factory(subpath, factory=None, create=False)
 
     def _check_basics(self, factory=None):
         # (Used by test_open_new() and test_open_existing().)
