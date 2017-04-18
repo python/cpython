@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-12414: sys.getsizeof() on a code object now returns the sizes 
+  which includes the code struct and sizes of objects which it references.
+  Patch by Dong-hee Na.
+
 - bpo-29839: len() now raises ValueError rather than OverflowError if
   __len__() returned a large negative integer.
 
