@@ -699,6 +699,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         for subdir in subdirs:
             with self.subTest(subdir=subdir):
                 subpath = os.path.normpath(os.path.join(self._path, subdir))
+                subpath = os.path.abspath(subpath)
                 _create_subfolders_except(subdir)
                 with self.assertRaisesRegex(
                         mailbox.NoSuchMailboxError, subpath):
