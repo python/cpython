@@ -313,6 +313,8 @@ Extension Modules
 Library
 -------
 
+- bpo-29950: Rename SlotWrapperType to WrapperDescriptorType.
+
 - bpo-10076: Compiled regular expression and match objects in the re module
   now support copy.copy() and copy.deepcopy() (they are considered atomic).
 
