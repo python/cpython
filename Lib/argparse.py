@@ -67,6 +67,7 @@ __all__ = [
     'ArgumentError',
     'ArgumentTypeError',
     'FileType',
+    'Manpage',
     'HelpFormatter',
     'ArgumentDefaultsHelpFormatter',
     'RawDescriptionHelpFormatter',
@@ -141,6 +142,60 @@ def _ensure_value(namespace, name, value):
     if getattr(namespace, name, None) is None:
         setattr(namespace, name, value)
     return getattr(namespace, name)
+
+
+# ==================
+# Formatting Manpage
+# ==================
+
+class Manpage(object):
+    def __init__(self, parser):
+        self.prog = parser.prog
+        self.parser = parser
+        self.mf = _ManpageFormatter(self.prog)
+        self.formatter = self.parser._get_formatter()
+        self.synopsis = self.parser.format_usage().split(':')[-1].split()
+        self.description = self.parser.description
+
+    def format_text(self, text):
+        # Wrap by parser formatter and convert to manpage format
+        return self.mf.format_text(self.formatter._format_text(text))
+
+    def __str__(self):
+        lines = []
+
+        # Header
+        lines.append('.TH {prog} "1" Manual\n'.format(prog=self.prog))
+
+        # Name
+        lines.append('.SH NAME')
+        lines.append(self.prog)
+
+        # Synopsis
+        if self.synopsis:
+            lines.append('.SH SYNOPSIS')
+            lines.append('.B {}'.format(self.synopsis[0]))
+            lines.append(' '.join(self.synopsis[1:]))
+
+        # Description
+        if self.description:
+            lines.append('.SH DESCRIPTION')
+            # Wrap by parser formatter
+            lines.append(self.format_text(self.description))
+
+        # Options
+        lines.append('.SH OPTIONS')
+        for action_group in self.parser._action_groups:
+            for action in action_group._group_actions:
+                lines.append('.TP')
+                lines.extend(self.mf.format_action(action))
+
+        # Additional Section
+        for section in self.parser._manpage:
+            lines.append('.SH {}'.format(section['heading'].upper()))
+            lines.append(self.format_text(section['description']))
+
+        return '\n'.join(lines)
 
 
 # ===============
@@ -284,6 +339,10 @@ class HelpFormatter(object):
             help = self._long_break_matcher.sub('\n\n', help)
             help = help.strip('\n') + '\n'
         return help
+
+    def format_manpage(self, parser):
+        manpage = Manpage(parser)
+        return str(manpage)
 
     def _join_parts(self, part_strings):
         return ''.join([part
@@ -687,6 +746,85 @@ class MetavarTypeHelpFormatter(HelpFormatter):
     def _get_default_metavar_for_positional(self, action):
         return action.type.__name__
 
+
+class _ManpageFormatter(HelpFormatter):
+    def _markup(self, text):
+        return text.replace('-', '\\-')
+
+    def _underline(self, text):
+        return '\\fI\\,{}\\/\\fR'.format(text)
+
+    def _bold(self, text):
+        if not text.strip().startswith('\\fB'):
+            text = '\\fB{}'.format(text)
+        if not text.strip().endswith('\\fR'):
+            text = '{}\\fR'.format(text)
+        return text
+
+    def _format_action_invocation(self, action):
+        if not action.option_strings:
+            metavar, = self._metavar_formatter(action, action.dest)(1)
+            return metavar
+        else:
+            parts = []
+
+            # if the Optional doesn't take a value, format is:
+            #    -s, --long
+            if action.nargs == 0:
+                parts.extend(map(self._bold, action.option_strings))
+
+            # if the Optional takes a value, format is:
+            #    -s ARGS, --long ARGS
+            else:
+                default = self._underline(action.dest.upper())
+                args_string = self._format_args(action, default)
+                for option_string in action.option_strings:
+                    parts.append('{} {}'.format(self._bold(option_string),
+                                                args_string))
+            return ', '.join(parts)
+
+    def _format_action(self, action):
+        # determine the required width and the entry label
+        help_position = min(self._action_max_length + 2,
+                            self._max_help_position)
+        action_width = help_position - self._current_indent - 2
+        action_header = self._format_action_invocation(action)
+
+        # no help; start on same line and add a final newline
+        if not action.help:
+            tup = self._current_indent, '', action_header
+            action_header = '%*s%s' % tup
+
+        # short action name; start on the same line and pad two spaces
+        elif len(action_header) <= action_width:
+            tup = self._current_indent, '', action_width, action_header
+            action_header = '%*s%-*s  ' % tup
+
+        # long action name; start on the next line
+        else:
+            tup = self._current_indent, '', action_header
+            action_header = '%*s%s' % tup
+
+        # collect the pieces of the action help
+        parts = [action_header]
+
+        # if there was help for the action, add lines of help text
+        if action.help:
+            help_text = self._expand_help(action).strip('\n')
+            help_text = help_text.replace('\n', '\n.br\n')
+            parts.append(help_text)
+
+        # if there are any sub-actions, add their help as well
+        for subaction in self._iter_indented_subactions(action):
+            parts.append(self._format_action(subaction))
+
+        return map(self._markup, parts)
+
+    def format_action(self, action):
+        return self._format_action(action)
+
+    def format_text(self, text):
+        return self._markup(text.strip('\n').replace('\n', '\n.br\n') + '\n')
 
 
 # =====================
@@ -1261,6 +1399,9 @@ class _ActionsContainer(object):
         # defaults storage
         self._defaults = {}
 
+        # manpage section
+        self._manpage = []
+
         # determines whether an "option" looks like a negative number
         self._negative_number_matcher = _re.compile(r'^-\d+$|^-\d*\.\d+$')
 
@@ -1296,6 +1437,11 @@ class _ActionsContainer(object):
                 return action.default
         return self._defaults.get(dest, None)
 
+    # ======================
+    # Adding manpage section
+    # ======================
+    def add_manpage_section(self, heading, description):
+        self._manpage.append({'heading': heading, 'description': description})
 
     # =======================
     # Adding argument actions
@@ -2345,6 +2491,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # determine help from format above
         return formatter.format_help()
 
+    def format_manpage(self):
+        formatter = self._get_formatter()
+
+        return formatter.format_manpage(self)
+
     def _get_formatter(self):
         return self.formatter_class(prog=self.prog)
 
@@ -2360,6 +2511,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         if file is None:
             file = _sys.stdout
         self._print_message(self.format_help(), file)
+
+    def print_manpage(self, file=None):
+        if file is None:
+            file = _sys.stdout
+        self._print_message(self.format_manpage(), file)
 
     def _print_message(self, message, file=None):
         if message:

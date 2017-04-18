@@ -1525,6 +1525,34 @@ be achieved by specifying the ``namespace=`` keyword argument::
 Other utilities
 ---------------
 
+Manpage
+^^^^^^^
+
+``argparse`` now have the ability to auto generate Unix man page.
+
+.. versionadded:: 3.7
+
+
+.. method:: ArgumentParser.add_manpage_section(heading, description)
+
+    Adding new section to man page.
+
+    Description of parameters:
+
+      * heading: title of the section, it will automatically convert to upper case
+      * description: description about this section
+
+Some example usage::
+
+>>> # Adding Copyright section
+>>> parser = argparse.ArgumentParser(prog='PROG')
+>>> parser.add_manpage_section('Copyright', 'Copyright \(co 2017 Python Software Foundation.')
+
+.. method:: ArgumentParser.print_manpage(file=None)
+
+  Print out the Unix man page format.
+
+
 Sub-commands
 ^^^^^^^^^^^^
 
