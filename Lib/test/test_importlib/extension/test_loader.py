@@ -9,6 +9,7 @@ import types
 import unittest
 import importlib.util
 import importlib
+import datetime
 
 
 class LoaderTests(abc.LoaderTests):
@@ -144,6 +145,15 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             ex_class = module.Example
             importlib.reload(module)
             self.assertIs(ex_class, module.Example)
+
+    def test_reload_faliure(self):
+        '''Test that reload throws ModuleNotFounderror if reloading'''
+        '''a module whose spec cannot be found'''
+        datetime.__name__ = 'destroyed_datetime'
+        datetime.__spec__ = None
+        sys.modules[datetime.__name__] = datetime
+        with self.assertRaises(ModuleNotFoundError):
+            importlib.reload(datetime)
 
     def test_try_registration(self):
         '''Assert that the PyState_{Find,Add,Remove}Module C API doesn't work'''
