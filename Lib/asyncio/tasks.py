@@ -516,12 +516,9 @@ def ensure_future(coro_or_future, *, loop=None):
         return task
     elif compat.PY35 and inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
-    elif hasattr(coro_or_future.__class__, 'set_running_or_notify_cancel'):
-        raise TypeError('An asyncio.Future, coroutine or an awaitable is '
-                        'required. Not compatible with '
-                        'concurrent.futures.Future')
     else:
-        raise TypeError('A Future, a coroutine or an awaitable is required')
+        raise TypeError('An asyncio.Future, a coroutine or an awaitable is '
+                        'required')
 
 
 @coroutine
