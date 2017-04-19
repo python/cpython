@@ -763,6 +763,9 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
     Py_ssize_t i;
     int  err;
 
+    if (len < 0) {
+        return NULL;
+    }
     for (i = 1; i < len; ++i) {
         /* elem must always be a sequence, however simple */
         PyObject* elem = PySequence_GetItem(tuple, i);
@@ -783,7 +786,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                     if (type == -1 && PyErr_Occurred()) {
                         Py_DECREF(temp);
                         Py_DECREF(elem);
-                        return 0;
+                        return NULL;
                     }
                 }
                 Py_DECREF(temp);
@@ -795,7 +798,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             PyErr_SetObject(parser_error, err);
             Py_XDECREF(err);
             Py_XDECREF(elem);
-            return (0);
+            return NULL;
         }
         if (ISTERMINAL(type)) {
             Py_ssize_t len = PyObject_Size(elem);
@@ -804,11 +807,14 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
 
             if ((len != 2) && (len != 3)) {
                 err_string("terminal nodes must have 2 or 3 entries");
-                return 0;
+                Py_DECREF(elem);
+                return NULL;
             }
             temp = PySequence_GetItem(elem, 1);
-            if (temp == NULL)
-                return 0;
+            if (temp == NULL) {
+                Py_DECREF(elem);
+                return NULL;
+            }
             if (!PyUnicode_Check(temp)) {
                 PyErr_Format(parser_error,
                              "second item in terminal node must be a string,"
@@ -816,46 +822,49 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                              Py_TYPE(temp)->tp_name);
                 Py_DECREF(temp);
                 Py_DECREF(elem);
-                return 0;
+                return NULL;
             }
             if (len == 3) {
                 PyObject *o = PySequence_GetItem(elem, 2);
-                if (o != NULL) {
-                    if (PyLong_Check(o)) {
-                        int num = _PyLong_AsInt(o);
-                        if (num == -1 && PyErr_Occurred()) {
-                            Py_DECREF(o);
-                            Py_DECREF(temp);
-                            Py_DECREF(elem);
-                            return 0;
-                        }
-                        *line_num = num;
-                    }
-                    else {
-                        PyErr_Format(parser_error,
-                                     "third item in terminal node must be an"
-                                     " integer, found %s",
-                                     Py_TYPE(temp)->tp_name);
+                if (o == NULL) {
+                    Py_DECREF(temp);
+                    Py_DECREF(elem);
+                    return NULL;
+                }
+                if (PyLong_Check(o)) {
+                    int num = _PyLong_AsInt(o);
+                    if (num == -1 && PyErr_Occurred()) {
                         Py_DECREF(o);
                         Py_DECREF(temp);
                         Py_DECREF(elem);
-                        return 0;
+                        return NULL;
                     }
-                    Py_DECREF(o);
+                    *line_num = num;
                 }
+                else {
+                    PyErr_Format(parser_error,
+                                 "third item in terminal node must be an"
+                                 " integer, found %s",
+                                 Py_TYPE(temp)->tp_name);
+                    Py_DECREF(o);
+                    Py_DECREF(temp);
+                    Py_DECREF(elem);
+                    return NULL;
+                }
+                Py_DECREF(o);
             }
             temp_str = _PyUnicode_AsStringAndSize(temp, &len);
             if (temp_str == NULL) {
                 Py_DECREF(temp);
-                Py_XDECREF(elem);
-                return 0;
+                Py_DECREF(elem);
+                return NULL;
             }
             strn = (char *)PyObject_MALLOC(len + 1);
             if (strn == NULL) {
                 Py_DECREF(temp);
-                Py_XDECREF(elem);
+                Py_DECREF(elem);
                 PyErr_NoMemory();
-                return 0;
+                return NULL;
             }
             (void) memcpy(strn, temp_str, len + 1);
             Py_DECREF(temp);
@@ -865,20 +874,21 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
              *  It has to be one or the other; this is an error.
              *  Raise an exception.
              */
-            PyObject *err = Py_BuildValue("os", elem, "unknown node type.");
+            PyObject *err = Py_BuildValue("Os", elem, "unknown node type.");
             PyErr_SetObject(parser_error, err);
             Py_XDECREF(err);
-            Py_XDECREF(elem);
-            return (0);
+            Py_DECREF(elem);
+            return NULL;
         }
         err = PyNode_AddChild(root, type, strn, *line_num, 0);
         if (err == E_NOMEM) {
-            Py_XDECREF(elem);
+            Py_DECREF(elem);
             PyObject_FREE(strn);
-            return (node *) PyErr_NoMemory();
+            PyErr_NoMemory();
+            return NULL;
         }
         if (err == E_OVERFLOW) {
-            Py_XDECREF(elem);
+            Py_DECREF(elem);
             PyObject_FREE(strn);
             PyErr_SetString(PyExc_ValueError,
                             "unsupported number of child nodes");
@@ -889,14 +899,14 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             node* new_child = CHILD(root, i - 1);
 
             if (new_child != build_node_children(elem, new_child, line_num)) {
-                Py_XDECREF(elem);
-                return (0);
+                Py_DECREF(elem);
+                return NULL;
             }
         }
         else if (type == NEWLINE) {     /* It's true:  we increment the     */
             ++(*line_num);              /* line number *after* the newline! */
         }
-        Py_XDECREF(elem);
+        Py_DECREF(elem);
     }
     return root;
 }
@@ -931,10 +941,23 @@ build_node_tree(PyObject *tuple)
 
         if (num == encoding_decl) {
             encoding = PySequence_GetItem(tuple, 2);
+            if (encoding == NULL) {
+                PyErr_SetString(parser_error, "missed encoding");
+                return NULL;
+            }
+            if (!PyUnicode_Check(encoding)) {
+                PyErr_Format(parser_error,
+                             "encoding must be a string, found %.200s",
+                             Py_TYPE(encoding)->tp_name);
+                Py_DECREF(encoding);
+                return NULL;
+            }
             /* tuple isn't borrowed anymore here, need to DECREF */
             tuple = PySequence_GetSlice(tuple, 0, 2);
-            if (tuple == NULL)
+            if (tuple == NULL) {
+                Py_DECREF(encoding);
                 return NULL;
+            }
         }
         res = PyNode_New(num);
         if (res != NULL) {
@@ -947,23 +970,25 @@ build_node_tree(PyObject *tuple)
                 const char *temp;
                 temp = _PyUnicode_AsStringAndSize(encoding, &len);
                 if (temp == NULL) {
-                    Py_DECREF(res);
+                    PyNode_Free(res);
                     Py_DECREF(encoding);
                     Py_DECREF(tuple);
                     return NULL;
                 }
                 res->n_str = (char *)PyObject_MALLOC(len + 1);
                 if (res->n_str == NULL) {
-                    Py_DECREF(res);
+                    PyNode_Free(res);
                     Py_DECREF(encoding);
                     Py_DECREF(tuple);
                     PyErr_NoMemory();
                     return NULL;
                 }
                 (void) memcpy(res->n_str, temp, len + 1);
-                Py_DECREF(encoding);
-                Py_DECREF(tuple);
             }
+        }
+        if (encoding != NULL) {
+            Py_DECREF(encoding);
+            Py_DECREF(tuple);
         }
     }
     else {
@@ -971,7 +996,7 @@ build_node_tree(PyObject *tuple)
          *  NONTERMINAL, we can't use it.  Not sure the implementation
          *  allows this condition, but the API doesn't preclude it.
          */
-        PyObject *err = Py_BuildValue("os", tuple,
+        PyObject *err = Py_BuildValue("Os", tuple,
                                       "Illegal component tuple.");
         PyErr_SetObject(parser_error, err);
         Py_XDECREF(err);
@@ -3433,7 +3458,6 @@ parser__pickler(PyObject *self, PyObject *args)
             result = Py_BuildValue("O(O)", pickle_constructor, tuple);
             Py_DECREF(tuple);
         }
-        Py_DECREF(empty_dict);
         Py_DECREF(newargs);
     }
   finally:
