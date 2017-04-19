@@ -4333,7 +4333,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
     PyObject *fillvalue = Py_None;
-    Py_ssize_t tuplesize;
+    Py_ssize_t tuplesize = PySequence_Length(args);
 
     if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_Size(kwds) > 0) {
         fillvalue = PyDict_GetItemString(kwds, "fillvalue");
@@ -4346,7 +4346,6 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     /* args must be a tuple */
     assert(PyTuple_Check(args));
-    tuplesize = PyTuple_GET_SIZE(args);
 
     /* obtain iterators */
     ittuple = PyTuple_New(tuplesize);

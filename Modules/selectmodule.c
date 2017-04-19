@@ -2022,8 +2022,8 @@ newKqueue_Object(PyTypeObject *type, SOCKET fd)
 static PyObject *
 kqueue_queue_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    if (PyTuple_GET_SIZE(args) ||
-                    (kwds != NULL && PyDict_Size(kwds))) {
+    if ((args != NULL && PyObject_Size(args)) ||
+                    (kwds != NULL && PyObject_Size(kwds))) {
         PyErr_SetString(PyExc_ValueError,
                         "select.kqueue doesn't accept arguments");
         return NULL;
