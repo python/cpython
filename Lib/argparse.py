@@ -152,8 +152,8 @@ class Manpage(object):
     def __init__(self, parser):
         self.prog = parser.prog
         self.parser = parser
-        self.mf = _ManpageFormatter(self.prog)
         self.formatter = self.parser._get_formatter()
+        self.mf = _ManpageFormatter(self.prog, self.formatter)
         self.synopsis = self.parser.format_usage().split(':')[-1].split()
         self.description = self.parser.description
 
@@ -186,6 +186,8 @@ class Manpage(object):
         # Options
         lines.append('.SH OPTIONS')
         for action_group in self.parser._action_groups:
+            if action_group.title and action_group._group_actions:
+                lines.append('.SS ' + action_group.title)
             for action in action_group._group_actions:
                 lines.append('.TP')
                 lines.extend(self.mf.format_action(action))
@@ -196,6 +198,7 @@ class Manpage(object):
             lines.append(self.format_text(section['content']))
 
         return '\n'.join(lines)
+
 
 
 # ===============
@@ -748,6 +751,10 @@ class MetavarTypeHelpFormatter(HelpFormatter):
 
 
 class _ManpageFormatter(HelpFormatter):
+    def __init__(self, prog, old_formatter):
+        super().__init__(prog)
+        self.of = old_formatter
+
     def _markup(self, text):
         return text.replace('-', r'\-')
 
@@ -808,7 +815,7 @@ class _ManpageFormatter(HelpFormatter):
 
         # if there was help for the action, add lines of help text
         if action.help:
-            help_text = self._expand_help(action).strip('\n')
+            help_text = self.of._format_text(self._expand_help(action)).strip('\n')
             help_text = help_text.replace('\n', '\n.br\n')
             parts.append(help_text)
 
