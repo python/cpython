@@ -3036,6 +3036,7 @@ class TestHelpBiggerOptionals(HelpTestCase):
 
         EPILOG
     '''
+
     manpage = '''\
         .TH PROG "1" Manual
         .SH NAME
@@ -3257,7 +3258,7 @@ class TestHelpBiggerOptionalGroups(HelpTestCase):
 class TestHelpBiggerPositionals(HelpTestCase):
     """Make sure that help aligns when arguments are longer"""
 
-    parser_signature = Sig(usage='USAGE', description='DESCRIPTION')
+    parser_signature = Sig(prog='PROG', usage='USAGE', description='DESCRIPTION')
     argument_signatures = [
         Sig('-x', action='store_true', help='X HELP'),
         Sig('--y', help='Y HELP'),
@@ -3282,9 +3283,9 @@ class TestHelpBiggerPositionals(HelpTestCase):
           --y Y            Y HELP
         '''
     manpage = '''\
-        .TH python -m unittest "1" Manual
+        .TH PROG "1" Manual
         .SH NAME
-        python -m unittest
+        PROG
         .SH SYNOPSIS
         .B USAGE
 
@@ -3471,7 +3472,7 @@ HHAAHHH
 class TestHelpWrappingLongNames(HelpTestCase):
     """Make sure that text after long names starts on the next line"""
 
-    parser_signature = Sig(usage='USAGE', description= 'D D' * 30)
+    parser_signature = Sig(prog='PROG', usage='USAGE', description= 'D D' * 30)
     argument_signatures = [
         Sig('-v', '--version', action='version', version='V V' * 30),
         Sig('-x', metavar='X' * 25, help='XH XH' * 20),
@@ -3516,9 +3517,9 @@ ZHZH ZHZH
                                 ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZH
         '''
     manpage = '''\
-        .TH python -m unittest "1" Manual
+        .TH PROG "1" Manual
         .SH NAME
-        python -m unittest
+        PROG
         .SH SYNOPSIS
         .B USAGE
 
