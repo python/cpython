@@ -722,17 +722,22 @@ getenvironment(PyObject* environment)
         return NULL;
     }
 
-    envsize = PyMapping_Length(environment);
-
     keys = PyMapping_Keys(environment);
     values = PyMapping_Values(environment);
     if (!keys || !values)
         goto error;
 
+    envsize = PySequence_Fast_GET_SIZE(keys);
+    if (PySequence_Fast_GET_SIZE(values) != envsize) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "environment changed size during iteration");
+        goto error;
+    }
+
     totalsize = 1; /* trailing null character */
     for (i = 0; i < envsize; i++) {
-        PyObject* key = PyList_GET_ITEM(keys, i);
-        PyObject* value = PyList_GET_ITEM(values, i);
+        PyObject* key = PySequence_Fast_GET_ITEM(keys, i);
+        PyObject* value = PySequence_Fast_GET_ITEM(values, i);
 
         if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
             PyErr_SetString(PyExc_TypeError,
@@ -760,8 +765,8 @@ getenvironment(PyObject* environment)
     end = buffer + totalsize;
 
     for (i = 0; i < envsize; i++) {
-        PyObject* key = PyList_GET_ITEM(keys, i);
-        PyObject* value = PyList_GET_ITEM(values, i);
+        PyObject* key = PySequence_Fast_GET_ITEM(keys, i);
+        PyObject* value = PySequence_Fast_GET_ITEM(values, i);
         if (!PyUnicode_AsUCS4(key, p, end - p, 0))
             goto error;
         p += PyUnicode_GET_LENGTH(key);
