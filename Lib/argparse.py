@@ -189,7 +189,17 @@ class Manpage(object):
                 lines.append('.SS ' + action_group.title)
             for action in action_group._group_actions:
                 lines.append('.TP')
-                lines.extend(self.mf.format_action(action))
+
+                fa = self.mf.format_action(action)
+                if len(fa) == 1:
+                    lines.extend(fa)
+                else:
+                    # This is a subcommand
+                    for command in fa:
+                        if isinstance(command, list):
+                            lines.extend(command)
+                        else:
+                            lines.append(command)
 
         # Additional Section
         for section in self.parser._manpage:
@@ -754,7 +764,9 @@ class _ManpageFormatter(HelpFormatter):
         self.of = old_formatter
 
     def _markup(self, text):
-        return text.replace('-', r'\-')
+        if isinstance(text, str):
+            return text.replace('-', r'\-')
+        return text
 
     def _underline(self, text):
         return r'\fI\,{}\/\fR'.format(text)
@@ -822,7 +834,7 @@ class _ManpageFormatter(HelpFormatter):
         for subaction in self._iter_indented_subactions(action):
             parts.append(self._format_action(subaction))
 
-        return map(self._markup, parts)
+        return [self._markup(p) for p in parts]
 
     def format_action(self, action):
         return self._format_action(action)
