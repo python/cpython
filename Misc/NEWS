@@ -313,6 +313,8 @@ Extension Modules
 Library
 -------
 
+- bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
+
 - bpo-22352: Column widths in the output of dis.dis() are now adjusted for
   large line numbers and instruction offsets.
 
