@@ -406,9 +406,9 @@ class IOTest(unittest.TestCase):
 
     def test_next_nonsizeable(self):
         # Issue #30061
-        # Crash when __next__() returns an object without __len__
+        # Crash when next() returns an object without __len__
         class R(self.IOBase):
-            def __next__(self):
+            def next(self):
                 return None
         self.assertRaises(TypeError, R().readlines, 1)
 
