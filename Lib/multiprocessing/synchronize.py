@@ -46,8 +46,6 @@ SEM_VALUE_MAX = _multiprocessing.SemLock.SEM_VALUE_MAX
 
 class SemLock(object):
 
-    _rand = tempfile._RandomNameSequence()
-
     def __init__(self, kind, value, maxvalue, *, ctx):
         if ctx is None:
             ctx = context._default_context.get_context()
@@ -115,7 +113,7 @@ class SemLock(object):
     @staticmethod
     def _make_name():
         return '%s-%s' % (process.current_process()._config['semprefix'],
-                          next(SemLock._rand))
+                          tempfile._random_name())
 
 #
 # Semaphore

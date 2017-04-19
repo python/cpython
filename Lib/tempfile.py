@@ -42,7 +42,7 @@ import io as _io
 import os as _os
 import shutil as _shutil
 import errno as _errno
-from random import Random as _Random
+from random import SystemRandom as _SystemRandom
 import weakref as _weakref
 
 try:
@@ -132,33 +132,25 @@ def _sanitize_params(prefix, suffix, dir):
             dir = gettempdirb()
     return prefix, suffix, dir, output_type
 
+_RNG_INST = None
 
-class _RandomNameSequence:
-    """An instance of _RandomNameSequence generates an endless
-    sequence of unpredictable strings which can safely be incorporated
-    into file names.  Each string is six characters long.  Multiple
-    threads can safely use the same instance at the same time.
+def _random_name():
+    """Generate an endless sequence of unpredictable strings which
+    can safely be incorporated into file names.  Each string is 8
+    characters long.  Multiple threads and forked processes can
+    safely use the same instance at the same time."""
+    global _RNG_INST
 
-    _RandomNameSequence is an iterator."""
+    if _RNG_INST is None:
+        # bpo-30030: Use the system RNG to be thread-safe and to handle fork().
+        # Create a single SystemRandom() instance and reuse it between threads
+        # for performance: create/destroy SystemRandom instance is expensive.
+        _RNG_INST = _SystemRandom()
 
     characters = "abcdefghijklmnopqrstuvwxyz0123456789_"
+    rng = _RNG_INST
+    return ''.join(rng.choice(characters) for _ in range(8))
 
-    @property
-    def rng(self):
-        cur_pid = _os.getpid()
-        if cur_pid != getattr(self, '_rng_pid', None):
-            self._rng = _Random()
-            self._rng_pid = cur_pid
-        return self._rng
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        c = self.characters
-        choose = self.rng.choice
-        letters = [choose(c) for dummy in range(8)]
-        return ''.join(letters)
 
 def _candidate_tempdir_list():
     """Generate a list of candidate temporary directories which
@@ -194,7 +186,6 @@ def _get_default_tempdir():
     is successful, the test file is deleted.  To prevent denial of
     service, the name of the test file must be randomized."""
 
-    namer = _RandomNameSequence()
     dirlist = _candidate_tempdir_list()
 
     for dir in dirlist:
@@ -202,7 +193,7 @@ def _get_default_tempdir():
             dir = _os.path.abspath(dir)
         # Try only a few names per directory.
         for seq in range(100):
-            name = next(namer)
+            name = _random_name()
             filename = _os.path.join(dir, name)
             try:
                 fd = _os.open(filename, _bin_openflags, 0o600)
@@ -230,31 +221,14 @@ def _get_default_tempdir():
                             "No usable temporary directory found in %s" %
                             dirlist)
 
-_name_sequence = None
-
-def _get_candidate_names():
-    """Common setup sequence for all user-callable interfaces."""
-
-    global _name_sequence
-    if _name_sequence is None:
-        _once_lock.acquire()
-        try:
-            if _name_sequence is None:
-                _name_sequence = _RandomNameSequence()
-        finally:
-            _once_lock.release()
-    return _name_sequence
-
 
 def _mkstemp_inner(dir, pre, suf, flags, output_type):
     """Code common to mkstemp, TemporaryFile, and NamedTemporaryFile."""
 
-    names = _get_candidate_names()
-    if output_type is bytes:
-        names = map(_os.fsencode, names)
-
     for seq in range(TMP_MAX):
-        name = next(names)
+        name = _random_name()
+        if output_type is bytes:
+            name = _os.fsencode(name)
         file = _os.path.join(dir, pre + name + suf)
         try:
             fd = _os.open(file, flags, 0o600)
@@ -290,12 +264,9 @@ def gettempdir():
     """Accessor for tempfile.tempdir."""
     global tempdir
     if tempdir is None:
-        _once_lock.acquire()
-        try:
+        with _once_lock:
             if tempdir is None:
                 tempdir = _get_default_tempdir()
-        finally:
-            _once_lock.release()
     return tempdir
 
 def gettempdirb():
@@ -357,12 +328,10 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
 
     prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
 
-    names = _get_candidate_names()
-    if output_type is bytes:
-        names = map(_os.fsencode, names)
-
     for seq in range(TMP_MAX):
-        name = next(names)
+        name = _random_name()
+        if output_type is bytes:
+            name = _os.fsencode(name)
         file = _os.path.join(dir, prefix + name + suffix)
         try:
             _os.mkdir(file, 0o700)
@@ -402,9 +371,8 @@ def mktemp(suffix="", prefix=template, dir=None):
     if dir is None:
         dir = gettempdir()
 
-    names = _get_candidate_names()
     for seq in range(TMP_MAX):
-        name = next(names)
+        name = _random_name()
         file = _os.path.join(dir, prefix + name + suffix)
         if not _exists(file):
             return file
