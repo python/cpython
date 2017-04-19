@@ -571,7 +571,8 @@ iobase_iternext(PyObject *self)
     if (line == NULL)
         return NULL;
 
-    if (PyObject_Size(line) == 0) {
+    if (PyObject_Size(line) <= 0) {
+        /* Error or empty */
         Py_DECREF(line);
         return NULL;
     }
@@ -618,6 +619,7 @@ iobase_readlines(PyObject *self, PyObject *args)
     }
 
     while (1) {
+        Py_ssize_t line_length;
         PyObject *line = PyIter_Next(it);
         if (line == NULL) {
             if (PyErr_Occurred()) {
@@ -631,11 +633,14 @@ iobase_readlines(PyObject *self, PyObject *args)
             Py_DECREF(line);
             goto error;
         }
-        length += PyObject_Size(line);
+        line_length = PyObject_Size(line);
         Py_DECREF(line);
-
-        if (length > hint)
+        if (line_length < 0) {
+            goto error;
+        }
+        if (line_length > hint - length)
             break;
+        length += line_length;
     }
 
     Py_DECREF(it);

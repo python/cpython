@@ -1604,6 +1604,9 @@ mbstreamwriter_writelines(MultibyteStreamWriterObject *self, PyObject *lines)
         if (r == -1)
             return NULL;
     }
+    /* PySequence_Length() can fail */
+    if (PyErr_Occurred())
+        return NULL;
 
     Py_RETURN_NONE;
 }
