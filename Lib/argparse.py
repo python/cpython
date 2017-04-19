@@ -769,6 +769,7 @@ class _ManpageFormatter(HelpFormatter):
     def _format_action_invocation(self, action):
         if not action.option_strings:
             metavar, = self._metavar_formatter(action, action.dest)(1)
+            metavar = self._bold(metavar)
             return metavar
         else:
             parts = []
