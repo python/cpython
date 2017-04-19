@@ -142,7 +142,7 @@ ArgumentParser objects
                           formatter_class=argparse.HelpFormatter, \
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
-                          add_help=True, allow_abbrev=True)
+                          add_help=True, allow_abbrev=True, add_manpage=False)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -179,8 +179,13 @@ ArgumentParser objects
    * allow_abbrev_ - Allows long options to be abbreviated if the
      abbreviation is unambiguous. (default: ``True``)
 
+   * add_manpage_ - Add a ``--manpage``  option to the parser (default: ``False``)
+
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
+
+   .. versionchanged:: 3.7
+      *add_manpage* parameter was added.
 
 The following sections describe how each of these are used.
 
@@ -639,6 +644,39 @@ the help options::
 
    optional arguments:
      +h, ++help  show this help message and exit
+
+
+add_manpage
+^^^^^^^^^^^
+
+By default, ArgumentParser objects will not add an option which display the
+parser's man page message. You should enable is when creating ArgumentParser
+obejcts. For example, consider a file named ``myprogram.py`` containing the
+following code::
+
+   import argparse
+   parser = argparse.ArgumentParser(add_manpage=True)
+   parser.add_argument('--foo', help='foo help')
+   args = parser.parse_args()
+
+If ``--manpage`` is supplied at the command line, the ArgumentParser
+man page will be open:
+
+.. code-block:: shell-session
+
+   $ python myprogram.py --manpage
+    tests.py(1)       General Commands Manual        tests.py(1)
+
+    NAME
+           tests.py
+
+    SYNOPSIS
+           tests.py [-h] [--manpage] [--foo FOO]
+
+    OPTIONS
+       optional arguments
+           -h, --help
+                  show this help message and exit
 
 
 The add_argument() method

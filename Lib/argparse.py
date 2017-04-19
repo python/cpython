@@ -1179,6 +1179,31 @@ class _HelpAction(Action):
         parser.exit()
 
 
+class _ManpageAction(Action):
+    def __init__(self,
+                 option_strings,
+                 dest=SUPPRESS,
+                 default=SUPPRESS,
+                 help=None):
+        super(_ManpageAction, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            default=default,
+            nargs=0,
+            help=help)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        import os
+        import tempfile
+        import subprocess
+        tmpfile = tempfile.NamedTemporaryFile('w', delete=False)
+        parser.print_manpage(tmpfile)
+        tmpfile.close()
+        subprocess.call(['man', tmpfile.name])
+        parser.exit()
+        os.unlink(tmpfile.name)
+
+
 class _VersionAction(Action):
 
     def __init__(self,
@@ -1402,6 +1427,7 @@ class _ActionsContainer(object):
         self.register('action', 'append_const', _AppendConstAction)
         self.register('action', 'count', _CountAction)
         self.register('action', 'help', _HelpAction)
+        self.register('action', 'manpage', _ManpageAction)
         self.register('action', 'version', _VersionAction)
         self.register('action', 'parsers', _SubParsersAction)
 
@@ -1775,7 +1801,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  argument_default=None,
                  conflict_handler='error',
                  add_help=True,
-                 allow_abbrev=True):
+                 allow_abbrev=True,
+                 add_manpage=False):
 
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1794,6 +1821,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.fromfile_prefix_chars = fromfile_prefix_chars
         self.add_help = add_help
         self.allow_abbrev = allow_abbrev
+        self.add_manpage = add_manpage
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
@@ -1813,6 +1841,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 default_prefix+'h', default_prefix*2+'help',
                 action='help', default=SUPPRESS,
                 help=_('show this help message and exit'))
+
+        if self.add_manpage:
+            self.add_argument(
+                default_prefix*2+'manpage',
+                action='manpage', default=SUPPRESS,
+                help=_('show UNIX man page'))
 
         # add parent arguments and defaults
         for parent in parents:
