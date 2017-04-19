@@ -159,7 +159,7 @@ class Manpage(object):
 
     def format_text(self, text):
         # Wrap by parser formatter and convert to manpage format
-        return self.mf.format_text(self.formatter._format_text(text))
+        return self.mf.format_text(self.formatter._format_text(text)).strip('\n')
 
     def __str__(self):
         lines = []
@@ -197,8 +197,7 @@ class Manpage(object):
             lines.append('.SH {}'.format(section['heading'].upper()))
             lines.append(self.format_text(section['content']))
 
-        return '\n'.join(lines)
-
+        return '\n'.join(lines).strip('\n') + '\n'
 
 
 # ===============
