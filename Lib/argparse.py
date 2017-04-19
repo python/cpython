@@ -180,7 +180,6 @@ class Manpage(object):
         # Description
         if self.description:
             lines.append('.SH DESCRIPTION')
-            # Wrap by parser formatter
             lines.append(self.format_text(self.description))
 
         # Options
