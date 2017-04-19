@@ -1217,6 +1217,24 @@ csv_writerow(WriterObj *self, PyObject *seq)
             append_ok = join_append(self, NULL, quoted);
             Py_DECREF(field);
         }
+        else if (PyNumber_Check(field)) {
+            PyObject* float_obj;
+            PyObject* str;
+            double d = PyFloat_AsDouble(field);
+            if (d == -1 && PyErr_Occurred()) {
+                Py_DECREF(iter);
+                return NULL;
+            }
+            float_obj = PyFloat_FromDouble(d);
+            if (float_obj == NULL) {
+                Py_DECREF(iter);
+                return NULL;
+            }
+            str = PyObject_Str(float_obj);
+            Py_DECREF(float_obj);
+            append_ok = join_append(self, str, quoted);
+            Py_DECREF(str);   
+        }
         else {
             PyObject *str;
 
