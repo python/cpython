@@ -6077,7 +6077,7 @@ Set the groups of the current process to list.");
 static PyObject *
 posix_setgroups(PyObject *self, PyObject *groups)
 {
-    int i, len;
+    Py_ssize_t i, len;
     gid_t grouplist[MAX_GROUPS];
 
     if (!PySequence_Check(groups)) {
@@ -6085,6 +6085,9 @@ posix_setgroups(PyObject *self, PyObject *groups)
         return NULL;
     }
     len = PySequence_Size(groups);
+    if (len < 0) {
+        return NULL;
+    }
     if (len > MAX_GROUPS) {
         PyErr_SetString(PyExc_ValueError, "too many groups");
         return NULL;
