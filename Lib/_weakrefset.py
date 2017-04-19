@@ -106,12 +106,20 @@ class WeakSet:
     def remove(self, item):
         if self._pending_removals:
             self._commit_removals()
-        self.data.remove(ref(item))
+        try:
+            wr = ref(item)
+        except TypeError:
+            raise KeyError(item) from None
+        self.data.remove(wr)
 
     def discard(self, item):
         if self._pending_removals:
             self._commit_removals()
-        self.data.discard(ref(item))
+        try:
+            wr = ref(item)
+        except TypeError:
+            return
+        self.data.discard(wr)
 
     def update(self, other):
         if self._pending_removals:
