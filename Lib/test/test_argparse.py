@@ -2996,7 +2996,8 @@ class TestHelpFormattingMetaclass(type):
 
         # add tests for {format,print}_{usage,help}
         for func_suffix, std_name in [('usage', 'stdout'),
-                                      ('help', 'stdout')]:
+                                      ('help', 'stdout'),
+                                      ('manpage', 'stdout')]:
             AddTests(cls, func_suffix, std_name)
 
 bases = TestCase,
@@ -3034,6 +3035,37 @@ class TestHelpBiggerOptionals(HelpTestCase):
           --y Y          Y HELP
 
         EPILOG
+    '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-v] [-x] [--y Y] foo bar
+        .SH DESCRIPTION
+        DESCRIPTION
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBfoo\\fR
+        FOO HELP
+        .TP
+        \\fBbar\\fR
+        BAR HELP
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-v\\fR, \\fB\\-\\-version\\fR
+        show program's version number and exit
+        .TP
+        \\fB\\-x\\fR
+        X HELP
+        .TP
+        \\fB\\-\\-y\\fR \\fI\\,Y\\/\\fR
+        Y HELP
     '''
     version = '''\
         0.1
@@ -3091,6 +3123,49 @@ class TestShortColumns(HelpTestCase):
 
         EPILOG
     '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-v] [-x] [--y Y] foo bar
+        .SH DESCRIPTION
+        DESCRIPTION
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBfoo\\fR
+        FOO HELP
+        .TP
+        \\fBbar\\fR
+        BAR HELP
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this
+        .br
+        help message
+        .br
+        and exit
+        .TP
+        \\fB\\-v\\fR, \\fB\\-\\-version\\fR
+        show
+        .br
+        program's
+        .br
+        version
+        .br
+        number and
+        .br
+        exit
+        .TP
+        \\fB\\-x\\fR
+        X HELP
+        .TP
+        \\fB\\-\\-y\\fR \\fI\\,Y\\/\\fR
+        Y HELP
+    '''
     version                     = TestHelpBiggerOptionals.version
 
 
@@ -3136,6 +3211,44 @@ class TestHelpBiggerOptionalGroups(HelpTestCase):
 
         EPILOG
     '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-v] [-x] [--y Y] [-z Z [Z ...]] foo bar baz
+        .SH DESCRIPTION
+        DESCRIPTION
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBfoo\\fR
+        FOO HELP
+        .TP
+        \\fBbar\\fR
+        BAR HELP
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-v\\fR, \\fB\\-\\-version\\fR
+        show program's version number and exit
+        .TP
+        \\fB\\-x\\fR
+        X HELP
+        .TP
+        \\fB\\-\\-y\\fR \\fI\\,Y\\/\\fR
+        Y HELP
+        .SS GROUP TITLE
+        .TP
+        \\fBbaz\\fR
+        BAZ HELP
+        .TP
+        \\fB\\-z\\fR \\fI\\,Z\\/\\fR [\\fI\\,Z\\/\\fR ...]
+        Z HELP
+    '''
     version = '''\
         0.1
         '''
@@ -3168,7 +3281,34 @@ class TestHelpBiggerPositionals(HelpTestCase):
           -x               X HELP
           --y Y            Y HELP
         '''
+    manpage = '''\
+        .TH python -m unittest "1" Manual
+        .SH NAME
+        python -m unittest
+        .SH SYNOPSIS
+        .B USAGE
 
+        .SH DESCRIPTION
+        DESCRIPTION
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBekiekiekifekang\\fR
+        EKI HELP
+        .TP
+        \\fBbar\\fR
+        BAR HELP
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-x\\fR
+        X HELP
+        .TP
+        \\fB\\-\\-y\\fR \\fI\\,Y\\/\\fR
+        Y HELP
+    '''
     version = ''
 
 
@@ -3221,6 +3361,36 @@ multiple
 be wrapped
                       over multiple lines
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-x XX] [-a] yyy
+        .SH DESCRIPTION
+        oddly formatted description that is so long that it should go onto multiple
+        .br
+        lines when wrapped
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fByyy\\fR
+        normal y help
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-x\\fR XX
+        oddly formatted \\-x help
+        .SS title
+        .TP
+        \\fB\\-a\\fR
+        oddly formatted \\-a help again, so long that it should be wrapped over multiple
+        .br
+        lines
+    '''
     version = ''
 
 
@@ -3261,6 +3431,40 @@ HXXHH HXXHH
 HHAAHHH
                       HHAAHHH HHAAHHH HHA
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-x XX] [-a] yyy
+        .SH DESCRIPTION
+        D DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD
+        .br
+        DD DD DD DD D
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fByyy\\fR
+        YH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH
+        .br
+        YHYH YHYH YHYH YHYH YH
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-x\\fR XX
+        XHH HXXHH HXXHH HXXHH HXXHH HXXHH HXXHH HXXHH HXXHH HXXHH HXXHH HXXHH HXXHH
+        .br
+        HXXHH HXXHH HXXHH HXXHH HXXHH HXXHH HXXHH HX
+        .SS ALPHAS
+        .TP
+        \\fB\\-a\\fR
+        AHHH HHAAHHH HHAAHHH HHAAHHH HHAAHHH HHAAHHH HHAAHHH HHAAHHH HHAAHHH HHAAHHH
+        .br
+        HHA
+    '''
     version = ''
 
 
@@ -3311,6 +3515,48 @@ AHAH AHAH
 ZHZH ZHZH
                                 ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZH
         '''
+    manpage = '''\
+        .TH python -m unittest "1" Manual
+        .SH NAME
+        python -m unittest
+        .SH SYNOPSIS
+        .B USAGE
+
+        .SH DESCRIPTION
+        D DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD DD
+        .br
+        DD DD DD DD D
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fByyyyyyyyyyyyyyyyyyyyyyyyy\\fR
+        YH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH
+        .br
+        YHYH YHYH YHYH YHYH YH
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-v\\fR, \\fB\\-\\-version\\fR
+        show program's version number and exit
+        .TP
+        \\fB\\-x\\fR XXXXXXXXXXXXXXXXXXXXXXXXX
+        XH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH
+        .br
+        XHXH XHXH XHXH XHXH XH
+        .SS ALPHAS
+        .TP
+        \\fB\\-a\\fR AAAAAAAAAAAAAAAAAAAAAAAAA
+        AH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH
+        .br
+        AHAH AHAH AHAH AHAH AH
+        .TP
+        \\fBzzzzzzzzzzzzzzzzzzzzzzzzz\\fR
+        ZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH
+        .br
+        ZHZH ZHZH ZHZH ZHZH ZH
+    '''
     version = '''\
         V VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV \
 VV VV VV
@@ -3359,6 +3605,48 @@ class TestHelpUsage(HelpTestCase):
           d               d
           e               e
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-w W [W ...]] [-x [X [X ...]]] [-y [Y]] [-z Z Z Z] a b b [c] [d [d ...]] e [e ...]
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBa\\fR
+        a
+        .TP
+        \\fBb\\fR
+        b
+        .TP
+        \\fBc\\fR
+        c
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-w\\fR \\fI\\,W\\/\\fR [\\fI\\,W\\/\\fR ...]
+        w
+        .TP
+        \\fB\\-x\\fR [\\fI\\,X\\/\\fR [\\fI\\,X\\/\\fR ...]]
+        x
+        .SS group
+        .TP
+        \\fB\\-y\\fR [\\fI\\,Y\\/\\fR]
+        y
+        .TP
+        \\fB\\-z\\fR \\fI\\,Z\\/\\fR \\fI\\,Z\\/\\fR \\fI\\,Z\\/\\fR
+        z
+        .TP
+        \\fBd\\fR
+        d
+        .TP
+        \\fBe\\fR
+        e
+    '''
     version = ''
 
 
@@ -3390,6 +3678,29 @@ class TestHelpOnlyUserGroups(HelpTestCase):
           b     b
           -y Y  y
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-x X] [-y Y] a b
+        .SH OPTIONS
+        .SS xxxx
+        .TP
+        \\fB\\-x\\fR \\fI\\,X\\/\\fR
+        x
+        .TP
+        \\fBa\\fR
+        a
+        .SS yyyy
+        .TP
+        \\fBb\\fR
+        b
+        .TP
+        \\fB\\-y\\fR \\fI\\,Y\\/\\fR
+        y
+    '''
     version = ''
 
 
@@ -3419,6 +3730,28 @@ class TestHelpUsageLongProg(HelpTestCase):
           -w W
           -x X
         '''
+    manpage = '''\
+        .TH PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP "1" Manual
+        .SH NAME
+        PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
+        .SH SYNOPSIS
+        .B PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
+        [-h] [-w W] [-x X] a b
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBa\\fR
+        .TP
+        \\fBb\\fR
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-w\\fR W
+        .TP
+        \\fB\\-x\\fR X
+    '''
     version = ''
 
 
@@ -3455,6 +3788,32 @@ class TestHelpUsageLongProgOptionsWrap(HelpTestCase):
           -y YYYYYYYYYYYYYYYYYYYYYYYYY
           -z ZZZZZZZZZZZZZZZZZZZZZZZZZ
         '''
+    manpage = '''\
+        .TH PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP "1" Manual
+        .SH NAME
+        PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
+        .SH SYNOPSIS
+        .B PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
+        [-h] [-w WWWWWWWWWWWWWWWWWWWWWWWWW] [-x XXXXXXXXXXXXXXXXXXXXXXXXX] [-y YYYYYYYYYYYYYYYYYYYYYYYYY] [-z ZZZZZZZZZZZZZZZZZZZZZZZZZ] a b
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBa\\fR
+        .TP
+        \\fBb\\fR
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-w\\fR WWWWWWWWWWWWWWWWWWWWWWWWW
+        .TP
+        \\fB\\-x\\fR XXXXXXXXXXXXXXXXXXXXXXXXX
+        .TP
+        \\fB\\-y\\fR YYYYYYYYYYYYYYYYYYYYYYYYY
+        .TP
+        \\fB\\-z\\fR ZZZZZZZZZZZZZZZZZZZZZZZZZ
+    '''
     version = ''
 
 
@@ -3480,6 +3839,22 @@ class TestHelpUsageLongProgPositionalsWrap(HelpTestCase):
           bbbbbbbbbbbbbbbbbbbbbbbbb
           ccccccccccccccccccccccccc
         '''
+    manpage = '''\
+        .TH PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP "1" Manual
+        .SH NAME
+        PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
+        .SH SYNOPSIS
+        .B PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
+        aaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbbb ccccccccccccccccccccccccc
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBaaaaaaaaaaaaaaaaaaaaaaaaa\\fR
+        .TP
+        \\fBbbbbbbbbbbbbbbbbbbbbbbbbb\\fR
+        .TP
+        \\fBccccccccccccccccccccccccc\\fR
+    '''
     version = ''
 
 
@@ -3518,6 +3893,34 @@ class TestHelpUsageOptionalsWrap(HelpTestCase):
           -y YYYYYYYYYYYYYYYYYYYYYYYYY
           -z ZZZZZZZZZZZZZZZZZZZZZZZZZ
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-w WWWWWWWWWWWWWWWWWWWWWWWWW] [-x XXXXXXXXXXXXXXXXXXXXXXXXX] [-y YYYYYYYYYYYYYYYYYYYYYYYYY] [-z ZZZZZZZZZZZZZZZZZZZZZZZZZ] a b c
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBa\\fR
+        .TP
+        \\fBb\\fR
+        .TP
+        \\fBc\\fR
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-w\\fR WWWWWWWWWWWWWWWWWWWWWWWWW
+        .TP
+        \\fB\\-x\\fR XXXXXXXXXXXXXXXXXXXXXXXXX
+        .TP
+        \\fB\\-y\\fR YYYYYYYYYYYYYYYYYYYYYYYYY
+        .TP
+        \\fB\\-z\\fR ZZZZZZZZZZZZZZZZZZZZZZZZZ
+    '''
     version = ''
 
 
@@ -3552,6 +3955,32 @@ class TestHelpUsagePositionalsWrap(HelpTestCase):
           -y Y
           -z Z
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-x X] [-y Y] [-z Z] aaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbbb ccccccccccccccccccccccccc
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBaaaaaaaaaaaaaaaaaaaaaaaaa\\fR
+        .TP
+        \\fBbbbbbbbbbbbbbbbbbbbbbbbbb\\fR
+        .TP
+        \\fBccccccccccccccccccccccccc\\fR
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-x\\fR \\fI\\,X\\/\\fR
+        .TP
+        \\fB\\-y\\fR \\fI\\,Y\\/\\fR
+        .TP
+        \\fB\\-z\\fR \\fI\\,Z\\/\\fR
+    '''
     version = ''
 
 
@@ -3588,6 +4017,32 @@ class TestHelpUsageOptionalsPositionalsWrap(HelpTestCase):
           -y YYYYYYYYYYYYYYYYYYYYYYYYY
           -z ZZZZZZZZZZZZZZZZZZZZZZZZZ
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-x XXXXXXXXXXXXXXXXXXXXXXXXX] [-y YYYYYYYYYYYYYYYYYYYYYYYYY] [-z ZZZZZZZZZZZZZZZZZZZZZZZZZ] aaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbbb ccccccccccccccccccccccccc
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBaaaaaaaaaaaaaaaaaaaaaaaaa\\fR
+        .TP
+        \\fBbbbbbbbbbbbbbbbbbbbbbbbbb\\fR
+        .TP
+        \\fBccccccccccccccccccccccccc\\fR
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-x\\fR XXXXXXXXXXXXXXXXXXXXXXXXX
+        .TP
+        \\fB\\-y\\fR YYYYYYYYYYYYYYYYYYYYYYYYY
+        .TP
+        \\fB\\-z\\fR ZZZZZZZZZZZZZZZZZZZZZZZZZ
+    '''
     version = ''
 
 
@@ -3614,6 +4069,25 @@ class TestHelpUsageOptionalsOnlyWrap(HelpTestCase):
           -y YYYYYYYYYYYYYYYYYYYYYYYYY
           -z ZZZZZZZZZZZZZZZZZZZZZZZZZ
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-x XXXXXXXXXXXXXXXXXXXXXXXXX] [-y YYYYYYYYYYYYYYYYYYYYYYYYY] [-z ZZZZZZZZZZZZZZZZZZZZZZZZZ]
+        .SH OPTIONS
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-x\\fR XXXXXXXXXXXXXXXXXXXXXXXXX
+        .TP
+        \\fB\\-y\\fR YYYYYYYYYYYYYYYYYYYYYYYYY
+        .TP
+        \\fB\\-z\\fR ZZZZZZZZZZZZZZZZZZZZZZZZZ
+    '''
     version = ''
 
 
@@ -3638,6 +4112,22 @@ class TestHelpUsagePositionalsOnlyWrap(HelpTestCase):
           bbbbbbbbbbbbbbbbbbbbbbbbb
           ccccccccccccccccccccccccc
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        aaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbbb ccccccccccccccccccccccccc
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBaaaaaaaaaaaaaaaaaaaaaaaaa\\fR
+        .TP
+        \\fBbbbbbbbbbbbbbbbbbbbbbbbbb\\fR
+        .TP
+        \\fBccccccccccccccccccccccccc\\fR
+    '''
     version = ''
 
 
@@ -3684,6 +4174,45 @@ class TestHelpVariableExpansion(HelpTestCase):
           -a A           a PROG None
           -b B           b PROG -1
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-x X] [-y] [--foo {a,b,c}] [--bar BBB] [-a A] [-b B] spam badger
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBspam\\fR
+        spam PROG None
+        .TP
+        \\fBbadger\\fR
+        badger PROG 0.5
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-x\\fR \\fI\\,X\\/\\fR
+        x PROG None int %
+        .TP
+        \\fB\\-y\\fR
+        y PROG 42 XXX
+        .TP
+        \\fB\\-\\-foo\\fR {a,b,c}
+        foo PROG None a, b, c
+        .TP
+        \\fB\\-\\-bar\\fR BBB
+        bar PROG baz bar
+        .SS group
+        .TP
+        \\fB\\-a\\fR \\fI\\,A\\/\\fR
+        a PROG None
+        .TP
+        \\fB\\-b\\fR \\fI\\,B\\/\\fR
+        b PROG \\-1
+    '''
     version = ''
 
 
@@ -3701,6 +4230,19 @@ class TestHelpVariableExpansionUsageSupplied(HelpTestCase):
         optional arguments:
           -h, --help  show this help message and exit
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        FOO
+        .SH OPTIONS
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+    '''
     version = ''
 
 
@@ -3714,6 +4256,15 @@ class TestHelpVariableExpansionNoArguments(HelpTestCase):
         usage: PROG
         ''')
     help = usage
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+
+        .SH OPTIONS
+    '''
     version = ''
 
 
@@ -3735,6 +4286,23 @@ class TestHelpSuppressUsage(HelpTestCase):
           --foo FOO   foo help
         '''
     usage = ''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBspam\\fR
+        spam help
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-\\-foo\\fR \\fI\\,FOO\\/\\fR
+        foo help
+    '''
     version = ''
 
 
@@ -3755,6 +4323,19 @@ class TestHelpSuppressOptional(HelpTestCase):
         positional arguments:
           spam  spam help
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        spam
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBspam\\fR
+        spam help
+    '''
     version = ''
 
 
@@ -3781,6 +4362,26 @@ class TestHelpSuppressOptionalGroup(HelpTestCase):
           -h, --help  show this help message and exit
           --foo FOO   foo help
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [--foo FOO] spam
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBspam\\fR
+        spam help
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-\\-foo\\fR \\fI\\,FOO\\/\\fR
+        foo help
+    '''
     version = ''
 
 
@@ -3802,6 +4403,22 @@ class TestHelpSuppressPositional(HelpTestCase):
           -h, --help  show this help message and exit
           --foo FOO   foo help
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [--foo FOO]
+        .SH OPTIONS
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-\\-foo\\fR \\fI\\,FOO\\/\\fR
+        foo help
+    '''
     version = ''
 
 
@@ -3822,6 +4439,22 @@ class TestHelpRequiredOptional(HelpTestCase):
           -h, --help  show this help message and exit
           --foo FOO   foo help
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] --foo FOO
+        .SH OPTIONS
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-\\-foo\\fR \\fI\\,FOO\\/\\fR
+        foo help
+    '''
     version = ''
 
 
@@ -3843,6 +4476,22 @@ class TestHelpAlternatePrefixChars(HelpTestCase):
           ^^foo              foo help
           ;b BAR, ;;bar BAR  bar help
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [^^foo] [;b BAR]
+        .SH OPTIONS
+        .SS optional arguments
+        .TP
+        \\fB^^foo\\fR
+        foo help
+        .TP
+        \\fB;b\\fR \\fI\\,BAR\\/\\fR, \\fB;;bar\\fR \\fI\\,BAR\\/\\fR
+        bar help
+    '''
     version = ''
 
 
@@ -3866,6 +4515,23 @@ class TestHelpNoHelpOptional(HelpTestCase):
         optional arguments:
           --foo FOO  foo help
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [--foo FOO] spam
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBspam\\fR
+        spam help
+        .SS optional arguments
+        .TP
+        \\fB\\-\\-foo\\fR \\fI\\,FOO\\/\\fR
+        foo help
+    '''
     version = ''
 
 
@@ -3890,6 +4556,24 @@ class TestHelpNone(HelpTestCase):
           -h, --help  show this help message and exit
           --foo FOO
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [--foo FOO] spam
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBspam\\fR
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-\\-foo\\fR \\fI\\,FOO\\/\\fR
+    '''
     version = ''
 
 
@@ -3917,6 +4601,31 @@ class TestHelpTupleMetavar(HelpTestCase):
           -y Y1 Y2 Y3       y
           -z [Z1]           z
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-w W1 [W2 ...]] [-x [X1 [X2 ...]]] [-y Y1 Y2 Y3] [-z [Z1]]
+        .SH OPTIONS
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-w\\fR W1 [W2 ...]
+        w
+        .TP
+        \\fB\\-x\\fR [X1 [X2 ...]]
+        x
+        .TP
+        \\fB\\-y\\fR Y1 Y2 Y3
+        y
+        .TP
+        \\fB\\-z\\fR [Z1]
+        z
+    '''
     version = ''
 
 
@@ -3966,6 +4675,40 @@ class TestHelpRawText(HelpTestCase):
 
           --bar BAR   bar help
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [--foo FOO] [--bar BAR] spam
+        .SH DESCRIPTION
+        Keep the formatting
+        .br
+            exactly as it is written
+        .br
+
+        .br
+        here
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBspam\\fR
+        spam help
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-\\-foo\\fR \\fI\\,FOO\\/\\fR
+            foo help should also
+        .br
+        appear as given here
+        .SS title
+        .TP
+        \\fB\\-\\-bar\\fR \\fI\\,BAR\\/\\fR
+        bar help
+    '''
     version = ''
 
 
@@ -4014,6 +4757,40 @@ class TestHelpRawDescription(HelpTestCase):
 
           --bar BAR   bar help
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [--foo FOO] [--bar BAR] spam
+        .SH DESCRIPTION
+        Keep the formatting
+        .br
+            exactly as it is written
+        .br
+
+        .br
+        here
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBspam\\fR
+        spam help
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-\\-foo\\fR \\fI\\,FOO\\/\\fR
+          foo help should not
+        .br
+            retain this odd formatting
+        .SS title
+        .TP
+        \\fB\\-\\-bar\\fR \\fI\\,BAR\\/\\fR
+        bar help
+    '''
     version = ''
 
 
@@ -4055,7 +4832,41 @@ class TestHelpArgumentDefaults(HelpTestCase):
 
           --baz BAZ   baz help (default: 42)
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [--foo FOO] [--bar] [--baz BAZ] spam [badger]
+        .SH DESCRIPTION
+        description
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBspam\\fR
+        spam help
+        .TP
+        \\fBbadger\\fR
+        badger help
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-\\-foo\\fR \\fI\\,FOO\\/\\fR
+        foo help \\- oh and by the way, None
+        .TP
+        \\fB\\-\\-bar\\fR
+        bar help
+        .SS title
+        .TP
+        \\fB\\-\\-baz\\fR \\fI\\,BAZ\\/\\fR
+        baz help
+    '''
+
     version = ''
+
 
 class TestHelpVersionAction(HelpTestCase):
     """Test the default help for the version action"""
@@ -4074,6 +4885,24 @@ class TestHelpVersionAction(HelpTestCase):
           -h, --help     show this help message and exit
           -V, --version  show program's version number and exit
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-V]
+        .SH DESCRIPTION
+        description
+        .SH OPTIONS
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-V\\fR, \\fB\\-\\-version\\fR
+        show program's version number and exit
+    '''
     version = ''
 
 
@@ -4100,6 +4929,26 @@ class TestHelpVersionActionSuppress(HelpTestCase):
           -h, --help  show this help message and exit
           --foo FOO   foo help
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [--foo FOO] spam
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBspam\\fR
+        spam help
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-\\-foo\\fR \\fI\\,FOO\\/\\fR
+        foo help
+    '''
 
 
 class TestHelpSubparsersOrdering(HelpTestCase):
@@ -4127,9 +4976,32 @@ class TestHelpSubparsersOrdering(HelpTestCase):
           -v, --version  show program's version number and exit
         '''
 
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-v] {a,b,c,d,e} ...
+        .SH DESCRIPTION
+        display some subcommands
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fB{a,b,c,d,e}\\fR
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-v\\fR, \\fB\\-\\-version\\fR
+        show program's version number and exit
+    '''
+
     version = '''\
         0.1
         '''
+
 
 class TestHelpSubparsersWithHelpOrdering(HelpTestCase):
     """Test ordering of subcommands in help matches the code"""
@@ -4168,10 +5040,41 @@ class TestHelpSubparsersWithHelpOrdering(HelpTestCase):
           -v, --version  show program's version number and exit
         '''
 
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-v] {a,b,c,d,e} ...
+        .SH DESCRIPTION
+        display some subcommands
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fB{a,b,c,d,e}\\fR
+          \\fBa\\fR
+        a subcommand help
+          \\fBb\\fR
+        b subcommand help
+          \\fBc\\fR
+        c subcommand help
+          \\fBd\\fR
+        d subcommand help
+          \\fBe\\fR
+        e subcommand help
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-v\\fR, \\fB\\-\\-version\\fR
+        show program's version number and exit
+    '''
+
     version = '''\
         0.1
         '''
-
 
 
 class TestHelpMetavarTypeFormatter(HelpTestCase):
@@ -4201,6 +5104,28 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
           -b custom_type
           -c SOME FLOAT
         '''
+    manpage = '''\
+        .TH PROG "1" Manual
+        .SH NAME
+        PROG
+        .SH SYNOPSIS
+        .B PROG
+        [-h] [-b custom_type] [-c SOME FLOAT] int
+        .SH DESCRIPTION
+        description
+        .SH OPTIONS
+        .SS positional arguments
+        .TP
+        \\fBa\\fR
+        .SS optional arguments
+        .TP
+        \\fB\\-h\\fR, \\fB\\-\\-help\\fR
+        show this help message and exit
+        .TP
+        \\fB\\-b\\fR \\fI\\,B\\/\\fR
+        .TP
+        \\fB\\-c\\fR SOME FLOAT
+    '''
     version = ''
 
 
