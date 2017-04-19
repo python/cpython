@@ -603,7 +603,7 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
         goto error;
     toc_entry = PyDict_GetItem(self->files, key);
     if (toc_entry == NULL) {
-        PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, key);
+        PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, key);
         Py_DECREF(key);
         goto error;
     }
@@ -709,7 +709,7 @@ module, or raises ZipImportError if it wasn't found.");
 PyDoc_STRVAR(doc_get_data,
 "get_data(pathname) -> string with file data.\n\
 \n\
-Return the data associated with 'pathname'. Raise IOError if\n\
+Return the data associated with 'pathname'. Raise OSError if\n\
 the file wasn't found.");
 
 PyDoc_STRVAR(doc_is_package,
@@ -1193,7 +1193,7 @@ get_data(PyObject *archive, PyObject *toc_entry)
         goto file_error;
     }
     if (fread(buf, 1, data_size, fp) != (size_t)data_size) {
-        PyErr_SetString(PyExc_IOError,
+        PyErr_SetString(PyExc_OSError,
                         "zipimport: can't read data");
         goto error;
     }

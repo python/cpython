@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29839: len() now raises ValueError rather than OverflowError if
+  __len__() returned a large negative integer.
+
 - bpo-11913: README.rst is now included in the list of distutils standard
   READMEs and therefore included in source distributions.
 
@@ -312,12 +315,17 @@ Library
 
 - bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
 
+- bpo-10076: Compiled regular expression and match objects in the re module
+  now support copy.copy() and copy.deepcopy() (they are considered atomic).
+
+- bpo-30068: _io._IOBase.readlines will check if it's closed first when
+  hint is present.
+
 - bpo-29694: Fixed race condition in pathlib mkdir with flags
   parents=True.  Patch by Armin Rigo.
 
 - bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in
-  contextlib.contextmanager.
-  Patch by Siddharth Velankar.
+  contextlib.contextmanager.  Patch by Siddharth Velankar.
 
 - bpo-26187: Test that sqlite3 trace callback is not called multiple
   times when schema is changing.  Indirectly fixed by switching to

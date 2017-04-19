@@ -141,7 +141,7 @@ static void RunStartupFile(PyCompilerFlags *cf)
             save_errno = errno;
             PySys_WriteStderr("Could not open PYTHONSTARTUP\n");
             errno = save_errno;
-            PyErr_SetFromErrnoWithFilename(PyExc_IOError,
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError,
                             startup);
             PyErr_Print();
             PyErr_Clear();

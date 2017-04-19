@@ -1438,7 +1438,7 @@ PyInit__signal(void)
 
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
     ItimerError = PyErr_NewException("signal.ItimerError",
-            PyExc_IOError, NULL);
+            PyExc_OSError, NULL);
     if (ItimerError != NULL)
         PyDict_SetItemString(d, "ItimerError", ItimerError);
 #endif
