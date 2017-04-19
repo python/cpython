@@ -42,6 +42,8 @@ Extension Modules
 Library
 -------
 
+- bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
+
 - bpo-30061: Fixed crashes in IOBase methods next() and readlines() when
   readline() or next() respectively return non-sizeable object.
   Fixed possible other errors caused by not checking results of PyObject_Size(),
