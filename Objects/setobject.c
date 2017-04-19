@@ -1561,7 +1561,7 @@ set_difference(PySetObject *so, PyObject *other)
         other_size = PySet_GET_SIZE(other);
     }
     else if (PyDict_CheckExact(other)) {
-        other_size = PyDict_GET_SIZE(other);
+        other_size = PyDict_Size(other);
     }
     else {
         return set_copy_and_difference(so, other);
