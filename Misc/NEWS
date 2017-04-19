@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29839: len() now raises ValueError rather than OverflowError if
+  __len__() returned a large negative integer.
+
 - bpo-11913: README.rst is now included in the list of distutils standard
   READMEs and therefore included in source distributions.
 
@@ -312,6 +315,9 @@ Library
 
 - bpo-22352: Column widths in the output of dis.dis() are now adjusted for
   large line numbers and instruction offsets.
+
+- bpo-10076: Compiled regular expression and match objects in the re module
+  now support copy.copy() and copy.deepcopy() (they are considered atomic).
 
 - bpo-30068: _io._IOBase.readlines will check if it's closed first when
   hint is present.

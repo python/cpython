@@ -971,6 +971,15 @@ class ReTests(unittest.TestCase):
         # current pickle expects the _compile() reconstructor in re module
         from re import _compile
 
+    def test_copying(self):
+        import copy
+        p = re.compile(r'(?P<int>\d+)(?:\.(?P<frac>\d*))?')
+        self.assertIs(copy.copy(p), p)
+        self.assertIs(copy.deepcopy(p), p)
+        m = p.match('12.34')
+        self.assertIs(copy.copy(m), m)
+        self.assertIs(copy.deepcopy(m), m)
+
     def test_constants(self):
         self.assertEqual(re.I, re.IGNORECASE)
         self.assertEqual(re.L, re.LOCALE)

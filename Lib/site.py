@@ -416,7 +416,7 @@ def enablerlcompleter():
                                    '.python_history')
             try:
                 readline.read_history_file(history)
-            except IOError:
+            except OSError:
                 pass
             atexit.register(readline.write_history_file, history)
 
