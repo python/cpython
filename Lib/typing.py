@@ -11,9 +11,9 @@ try:
 except ImportError:
     import collections as collections_abc  # Fallback for PY3.2.
 try:
-    from types import SlotWrapperType, MethodWrapperType, MethodDescriptorType
+    from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType
 except ImportError:
-    SlotWrapperType = type(object.__init__)
+    WrapperDescriptorType = type(object.__init__)
     MethodWrapperType = type(object().__str__)
     MethodDescriptorType = type(str.join)
 
@@ -1450,7 +1450,7 @@ def _get_defaults(func):
 
 _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
                   types.MethodType, types.ModuleType,
-                  SlotWrapperType, MethodWrapperType, MethodDescriptorType)
+                  WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
 
 
 def get_type_hints(obj, globalns=None, localns=None):
