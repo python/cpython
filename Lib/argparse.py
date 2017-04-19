@@ -185,21 +185,25 @@ class Manpage(object):
         # Options
         lines.append('.SH OPTIONS')
         for action_group in self.parser._action_groups:
-            if action_group.title and action_group._group_actions:
-                lines.append('.SS ' + action_group.title)
+            ag_lines = []
             for action in action_group._group_actions:
-                lines.append('.TP')
-
+                if action.help == SUPPRESS:
+                    continue
+                ag_lines.append('.TP')
                 fa = self.mf.format_action(action)
                 if len(fa) == 1:
-                    lines.extend(fa)
+                    ag_lines.extend(fa)
                 else:
                     # This is a subcommand
                     for command in fa:
                         if isinstance(command, list):
-                            lines.extend(command)
+                            ag_lines.extend(command)
                         else:
-                            lines.append(command)
+                            ag_lines.append(command)
+
+            if action_group.title and ag_lines:
+                lines.append('.SS ' + action_group.title)
+                lines.extend(ag_lines)
 
         # Additional Section
         for section in self.parser._manpage:
