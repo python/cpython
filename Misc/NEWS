@@ -313,6 +313,9 @@ Extension Modules
 Library
 -------
 
+- bpo-22352: Column widths in the output of dis.dis() are now adjusted for
+  large line numbers and instruction offsets.
+
 - bpo-30061: Fixed crashes in IOBase methods __next__() and readlines() when
   readline() or __next__() respectively return non-sizeable object.
   Fixed possible other errors caused by not checking results of PyObject_Size(),
