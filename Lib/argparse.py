@@ -165,7 +165,7 @@ class Manpage(object):
         lines = []
 
         # Header
-        lines.append('.TH {prog} "1" Manual\n'.format(prog=self.prog))
+        lines.append('.TH {prog} "1" Manual'.format(prog=self.prog))
 
         # Name
         lines.append('.SH NAME')
