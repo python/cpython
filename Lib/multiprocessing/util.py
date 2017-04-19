@@ -386,7 +386,7 @@ def _close_stdin():
 
 def spawnv_passfds(path, args, passfds):
     import _posixsubprocess
-    passfds = sorted(passfds)
+    passfds = tuple(sorted(map(int, passfds)))
     errpipe_read, errpipe_write = os.pipe()
     try:
         return _posixsubprocess.fork_exec(
