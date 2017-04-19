@@ -1535,22 +1535,23 @@ Manpage
 
 .. method:: ArgumentParser.add_manpage_section(heading, description)
 
-    Adding new section to man page.
+    Add a new section to man page. This only has an effect if ``print_manpage``
+    is used.
 
     Description of parameters:
 
-      * heading: title of the section, it will automatically convert to upper case
-      * description: description about this section
+      * heading: the title of the section, it will be automatically converted to upper case
+      * content: content of this section, using raw ``TROFF`` format
 
-Some example usage::
+Example usage::
 
->>> # Adding Copyright section
+>>> # Add a copyright section
 >>> parser = argparse.ArgumentParser(prog='PROG')
->>> parser.add_manpage_section('Copyright', 'Copyright \(co 2017 Python Software Foundation.')
+>>> parser.add_manpage_section('Copyright', r'Copyright (co 2017 Python Software Foundation.')
 
 .. method:: ArgumentParser.print_manpage(file=None)
 
-  Print out the Unix man page format.
+  Print out the help page for the parser in UNIX man page format.
 
 
 Sub-commands

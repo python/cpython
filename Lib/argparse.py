@@ -193,7 +193,7 @@ class Manpage(object):
         # Additional Section
         for section in self.parser._manpage:
             lines.append('.SH {}'.format(section['heading'].upper()))
-            lines.append(self.format_text(section['description']))
+            lines.append(self.format_text(section['content']))
 
         return '\n'.join(lines)
 
@@ -749,16 +749,16 @@ class MetavarTypeHelpFormatter(HelpFormatter):
 
 class _ManpageFormatter(HelpFormatter):
     def _markup(self, text):
-        return text.replace('-', '\\-')
+        return text.replace('-', r'\-')
 
     def _underline(self, text):
-        return '\\fI\\,{}\\/\\fR'.format(text)
+        return r'\fI\,{}\/\fR'.format(text)
 
     def _bold(self, text):
-        if not text.strip().startswith('\\fB'):
-            text = '\\fB{}'.format(text)
-        if not text.strip().endswith('\\fR'):
-            text = '{}\\fR'.format(text)
+        if not text.strip().startswith(r'\fB'):
+            text = r'\fB{}'.format(text)
+        if not text.strip().endswith(r'\fR'):
+            text = r'{}\fR'.format(text)
         return text
 
     def _format_action_invocation(self, action):
@@ -790,18 +790,16 @@ class _ManpageFormatter(HelpFormatter):
         action_width = help_position - self._current_indent - 2
         action_header = self._format_action_invocation(action)
 
-        # no help; start on same line and add a final newline
         if not action.help:
+            # no help; start on same line and add a final newline
             tup = self._current_indent, '', action_header
             action_header = '%*s%s' % tup
-
-        # short action name; start on the same line and pad two spaces
         elif len(action_header) <= action_width:
+            # short action name; start on the same line and pad two spaces
             tup = self._current_indent, '', action_width, action_header
             action_header = '%*s%-*s  ' % tup
-
-        # long action name; start on the next line
         else:
+            # long action name; start on the next line
             tup = self._current_indent, '', action_header
             action_header = '%*s%s' % tup
 
@@ -1440,8 +1438,8 @@ class _ActionsContainer(object):
     # ======================
     # Adding manpage section
     # ======================
-    def add_manpage_section(self, heading, description):
-        self._manpage.append({'heading': heading, 'description': description})
+    def add_manpage_section(self, heading, content):
+        self._manpage.append({'heading': heading, 'content': content})
 
     # =======================
     # Adding argument actions
@@ -2493,7 +2491,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
     def format_manpage(self):
         formatter = self._get_formatter()
-
         return formatter.format_manpage(self)
 
     def _get_formatter(self):
