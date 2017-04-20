@@ -35,6 +35,10 @@ class CProfileTest(ProfileTest):
         finally:
             unlink(TESTFN)
 
+    # Issue 30113, skip when using cProfile
+    def test_regression_30113(self):
+        pass
+
 
 def test_main():
     run_unittest(CProfileTest)

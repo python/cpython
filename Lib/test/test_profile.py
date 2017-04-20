@@ -93,6 +93,18 @@ class ProfileTest(unittest.TestCase):
                                   filename=TESTFN)
         self.assertTrue(os.path.exists(TESTFN))
 
+    def test_regression_30113(self):
+        def foo(self):
+            pr = self.profilerclass()
+            sys.setprofile(pr.dispatcher)
+            return 0xDEADBEAF
+
+        regex = r"\('Bad return', \('profile', 0, 'profiler'\)\)"
+        with self.assertRaisesRegex(AssertionError, regex):
+            foo(self)
+
+        sys.setprofile(None)
+
 
 def regenerate_expected_output(filename, cls):
     filename = filename.rstrip('co')
