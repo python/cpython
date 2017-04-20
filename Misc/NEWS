@@ -10,6 +10,10 @@ What's New in Python 3.6.2 release candidate 1?
 Core and Builtins
 -----------------
 
+- bpo-12414: sys.getsizeof() on a code object now returns the sizes 
+  which includes the code struct and sizes of objects which it references.
+  Patch by Dong-hee Na.
+
 - bpo-29949: Fix memory usage regression of set and frozenset object.
 
 - bpo-29935: Fixed error messages in the index() method of tuple, list and deque
