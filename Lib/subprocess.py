@@ -134,6 +134,7 @@ if _mswindows:
             self.hStdOutput = hStdOutput
             self.hStdError = hStdError
             self.wShowWindow = wShowWindow
+            self.lpAttributeList = {"handle_list": []}
 else:
     import _posixsubprocess
     import select
@@ -608,25 +609,15 @@ class Popen(object):
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
 
+        if close_fds is _PLATFORM_DEFAULT_CLOSE_FDS:
+            close_fds = True
+
         if _mswindows:
             if preexec_fn is not None:
                 raise ValueError("preexec_fn is not supported on Windows "
                                  "platforms")
-            any_stdio_set = (stdin is not None or stdout is not None or
-                             stderr is not None)
-            if close_fds is _PLATFORM_DEFAULT_CLOSE_FDS:
-                if any_stdio_set:
-                    close_fds = False
-                else:
-                    close_fds = True
-            elif close_fds and any_stdio_set:
-                raise ValueError(
-                        "close_fds is not supported on Windows platforms"
-                        " if you redirect stdin/stdout/stderr")
         else:
             # POSIX
-            if close_fds is _PLATFORM_DEFAULT_CLOSE_FDS:
-                close_fds = True
             if pass_fds and not close_fds:
                 warnings.warn("pass_fds overriding close_fds.", RuntimeWarning)
                 close_fds = True
@@ -951,6 +942,19 @@ class Popen(object):
             return Handle(h)
 
 
+        def _filter_handle_list(self, handle_list):
+            """Filter out console handles that can't be used
+            in lpAttributeList["handle_list"] and make sure the list
+            isn't empty"""
+            # An handle with it's lowest two bits set might be a special console
+            # handle that if passed in lpAttributeList["handle_list"], will
+            # cause it to fail. We use a set comprehension to remove duplicates.
+            return list({handle for handle in handle_list
+                         if handle & 0x3 != 0x3
+                         or _winapi.GetFileType(handle) !=
+                            _winapi.FILE_TYPE_CHAR})
+
+
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            pass_fds, cwd, env,
                            startupinfo, creationflags, shell,
@@ -968,11 +972,39 @@ class Popen(object):
             # Process startup details
             if startupinfo is None:
                 startupinfo = STARTUPINFO()
-            if -1 not in (p2cread, c2pwrite, errwrite):
+
+            use_std_handles = -1 not in (p2cread, c2pwrite, errwrite)
+            if use_std_handles:
                 startupinfo.dwFlags |= _winapi.STARTF_USESTDHANDLES
                 startupinfo.hStdInput = p2cread
                 startupinfo.hStdOutput = c2pwrite
                 startupinfo.hStdError = errwrite
+
+            attribute_list = startupinfo.lpAttributeList
+            have_handle_list = (attribute_list and
+                                "handle_list" in attribute_list and
+                                attribute_list["handle_list"])
+
+            # If we were given an handle_list or need to create one
+            if have_handle_list or (use_std_handles and close_fds):
+                if attribute_list is None:
+                    attribute_list = startupinfo.lpAttributeList = {}
+                handle_list = attribute_list.setdefault("handle_list", [])
+
+                if use_std_handles:
+                    handle_list += [p2cread, c2pwrite, errwrite]
+
+                handle_list[:] = self._filter_handle_list(handle_list)
+
+                if handle_list:
+                    if have_handle_list and not close_fds:
+                        warnings.warn("startupinfo.lpAttributeList['handle_list'] "
+                                      "overriding close_fds", RuntimeWarning)
+
+                    # When using the handle_list we always request to inherit
+                    # handles but the only handles that will be inherited are
+                    # the ones in the handle_list
+                    close_fds = False
 
             if shell:
                 startupinfo.dwFlags |= _winapi.STARTF_USESHOWWINDOW

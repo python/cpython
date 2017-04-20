@@ -447,16 +447,19 @@ functions.
       common use of *preexec_fn* to call os.setsid() in the child.
 
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed. (POSIX only).
-   The default varies by platform:  Always true on POSIX.  On Windows it is
-   true when *stdin*/*stdout*/*stderr* are :const:`None`, false otherwise.
+   :const:`2` will be closed before the child process is executed.
    On Windows, if *close_fds* is true then no handles will be inherited by the
-   child process.  Note that on Windows, you cannot set *close_fds* to true and
-   also redirect the standard handles by setting *stdin*, *stdout* or *stderr*.
+   child process unless explicitly passed in the ``handle_list`` element of
+   :attr:`STARTUPINFO.lpAttributeList`, or by standard handle redirection.
 
    .. versionchanged:: 3.2
       The default for *close_fds* was changed from :const:`False` to
       what is described above.
+
+   .. versionchanged:: 3.7
+      On Windows the default for *close_fds* was changed from :const:`False` to
+      :const:`True`. It's now possible to set *close_fds* to :const:`True` when
+      redirecting the standard handles.
 
    *pass_fds* is an optional sequence of file descriptors to keep open
    between the parent and child.  Providing any *pass_fds* forces
@@ -797,6 +800,19 @@ on Windows.
       :data:`SW_HIDE` is provided for this attribute. It is used when
       :class:`Popen` is called with ``shell=True``.
 
+   .. attribute:: lpAttributeList
+
+      A dictionary of additional attributes for process creation as given in
+      ``STARTUPINFOEX``, see
+      `UpdateProcThreadAttribute <https://msdn.microsoft.com/en-us/library/windows/desktop/ms686880(v=vs.85).aspx>`__.
+
+      Supported attributes:
+
+      **handle_list**
+         When *close_fds* is :const:`True`, supplies a list of
+         handles that will be inherited.
+
+      .. versionadded:: 3.7
 
 Constants
 ^^^^^^^^^

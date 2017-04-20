@@ -2601,11 +2601,6 @@ class Win32ProcessTestCase(BaseTestCase):
                           [sys.executable, "-c",
                            "import sys; sys.exit(47)"],
                           preexec_fn=lambda: 1)
-        self.assertRaises(ValueError, subprocess.call,
-                          [sys.executable, "-c",
-                           "import sys; sys.exit(47)"],
-                          stdout=subprocess.PIPE,
-                          close_fds=True)
 
     def test_close_fds(self):
         # close file descriptors
@@ -2613,6 +2608,56 @@ class Win32ProcessTestCase(BaseTestCase):
                               "import sys; sys.exit(47)"],
                               close_fds=True)
         self.assertEqual(rc, 47)
+
+    def test_close_fds_with_stdio(self):
+        import msvcrt
+
+        fds = os.pipe()
+        self.addCleanup(os.close, fds[0])
+        self.addCleanup(os.close, fds[1])
+
+        handles = []
+        for fd in fds:
+            os.set_inheritable(fd, True)
+            handles.append(msvcrt.get_osfhandle(fd))
+
+        p = subprocess.Popen([sys.executable, "-c",
+                              "import msvcrt; print(msvcrt.open_osfhandle({}, 0))".format(handles[0])],
+                             stdout=subprocess.PIPE, close_fds=False)
+        stdout, stderr = p.communicate()
+        self.assertEqual(p.returncode, 0)
+        int(stdout.strip())  # Check that stdout is an integer
+
+        p = subprocess.Popen([sys.executable, "-c",
+                              "import msvcrt; print(msvcrt.open_osfhandle({}, 0))".format(handles[0])],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+        stdout, stderr = p.communicate()
+        self.assertEqual(p.returncode, 1)
+        self.assertIn(b"OSError", stderr)
+
+        # The same as the previous call, but with an empty handle_list
+        handle_list = []
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.lpAttributeList = {"handle_list": handle_list}
+        p = subprocess.Popen([sys.executable, "-c",
+                              "import msvcrt; print(msvcrt.open_osfhandle({}, 0))".format(handles[0])],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             startupinfo=startupinfo, close_fds=True)
+        stdout, stderr = p.communicate()
+        self.assertEqual(p.returncode, 1)
+        self.assertIn(b"OSError", stderr)
+
+    def test_empty_attribute_list(self):
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.lpAttributeList = {}
+        subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
+                        startupinfo=startupinfo)
+
+    def test_empty_handle_list(self):
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.lpAttributeList = {"handle_list": []}
+        subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
+                        startupinfo=startupinfo)
 
     def test_shell_sequence(self):
         # Run command through the shell (sequence)
