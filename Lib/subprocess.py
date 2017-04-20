@@ -992,7 +992,7 @@ class Popen(object):
                 handle_list = attribute_list.setdefault("handle_list", [])
 
                 if use_std_handles:
-                    handle_list += [p2cread, c2pwrite, errwrite]
+                    handle_list += [int(p2cread), int(c2pwrite), int(errwrite)]
 
                 handle_list[:] = self._filter_handle_list(handle_list)
 
