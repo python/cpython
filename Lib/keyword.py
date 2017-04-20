@@ -47,6 +47,8 @@ kwlist = [
         'while',
         'with',
         'yield',
+        'async',
+        'await',
 #--end keywords--
         ]
 
