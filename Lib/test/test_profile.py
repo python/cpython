@@ -102,34 +102,23 @@ class ProfileTest(unittest.TestCase):
         self.assertEqual(flag, [1, 2])
         self.assertTrue(os.path.exists(TESTFN))
 
-    def test_runblock_ctx_manager(self):
+    def test_ctx_manager(self):
         flag = []
         with silent():
-            with self.profilermodule.runblock():
+            with self.profilerclass():
                 flag.append(1)
         self.assertEqual(flag, [1])
-        with self.profilermodule.runblock(filename=TESTFN):
-            flag.append(2)
-        self.assertEqual(flag, [1, 2])
-        self.assertTrue(os.path.exists(TESTFN))
 
-    def test_runblock_decorator(self):
+    def test_decorator(self):
         flag = []
 
-        @self.profilermodule.runblock()
+        @self.profilerclass()
         def foo():
             flag.append(1)
         with silent():
             foo()
         self.assertEqual(flag, [1])
 
-        @self.profilermodule.runblock(filename=TESTFN)
-        def foo():
-            flag.append(1)
-        with silent():
-            foo()
-        self.assertEqual(flag, [1, 1])
-        self.assertTrue(os.path.exists(TESTFN))
 
 def regenerate_expected_output(filename, cls):
     filename = filename.rstrip('co')
