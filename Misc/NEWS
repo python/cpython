@@ -313,6 +313,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29802: Fixed reference counting in module-level struct functions when
+  pass argumens of wrong type.
+
 - bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
 
 - bpo-22352: Column widths in the output of dis.dis() are now adjusted for
