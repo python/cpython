@@ -502,7 +502,7 @@ class BaseClient(BaseTestHandler):
 class BaseTestAPI:
 
     def tearDown(self):
-        asyncore.close_all()
+        asyncore.close_all(ignore_all=True)
 
     def loop_waiting_for_flag(self, instance, timeout=5):
         timeout = float(timeout) / 100
@@ -782,7 +782,7 @@ class BaseTestAPI:
 
         server = BaseServer(self.family, self.addr)
         t = threading.Thread(target=lambda: asyncore.loop(timeout=0.1,
-                                                          count=500), name="ident")
+                                                          count=500))
         t.start()
         try:
             with socket.socket(self.family, socket.SOCK_STREAM) as s:
