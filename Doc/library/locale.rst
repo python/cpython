@@ -371,13 +371,14 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: format(format, val, grouping=False, monetary=False)
 
-   Please note that this function works like format_string but will only work
-   for exactly one %char specifier.
+   Please note that this function works like :meth:`format_string` but will
+   only work for exactly one ``%char`` specifier.  For example, ``'%f'`` and
+   ``'%.0f'`` are both valid specifiers, but ``'%f kB'`` is not.
 
    For whole format strings, use :func:`format_string`.
 
    .. deprecated:: 3.7
-      Use :meth:`format_string` instead
+      Use :meth:`format_string` instead.
 
 
 .. function:: currency(val, symbol=True, grouping=False, international=False)
