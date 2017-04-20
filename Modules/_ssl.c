@@ -73,7 +73,7 @@ static PySocketModule_APIObject PySocketModule;
 #include "openssl/err.h"
 #include "openssl/rand.h"
 #include "openssl/bio.h"
-#include "openssl/conf.h"
+#include "openssl/engine.h"
 
 /* SSL error object */
 static PyObject *PySSLErrorObject;
@@ -5181,13 +5181,8 @@ PyInit__ssl(void)
 #endif  /* WITH_THREAD */
     OpenSSL_add_all_algorithms();
 
-    /*
-     * Load config file, and other important initialisation in order to detect
-     * architecture optimizations correctly. E.g: POWER8 optimization
-     *
-     * Source: https://wiki.openssl.org/index.php/Libcrypto_API
-     */
-    OPENSSL_config(NULL);
+    /* Load OPENSSL engines for improved performance */
+    ENGINE_load_builtin_engines();
 
     /* Add symbols to module dict */
     sslerror_type_slots[0].pfunc = PyExc_OSError;

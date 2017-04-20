@@ -21,7 +21,7 @@
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
-#include <openssl/conf.h>
+#include <openssl/engine.h>
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
 #include "openssl/err.h"
@@ -456,13 +456,6 @@ EVPnew(PyObject *name_obj,
         return NULL;
     }
 
-    /*
-     * Load config file, and other important initialisation in order to detect
-     * architecture optimizations correctly. E.g: POWER8 optimization
-     *
-     * Source: https://wiki.openssl.org/index.php/Libcrypto_API
-     */
-    OPENSSL_config(NULL);
     if ((self = newEVPobject(name_obj)) == NULL)
         return NULL;
 
@@ -1009,6 +1002,9 @@ PyInit__hashlib(void)
 
     OpenSSL_add_all_digests();
     ERR_load_crypto_strings();
+
+    /* Load OPENSSL engines for improved performance */
+    ENGINE_load_builtin_engines();
 
     /* TODO build EVP_functions openssl_* entries dynamically based
      * on what hashes are supported rather than listing many
