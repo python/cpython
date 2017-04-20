@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-29840: bool() no longer raises OverflowError for objects without defined
+  __bool__ when __len__() returned large integer or raised OverflowError.
+
 - bpo-29839: len() now raises ValueError rather than OverflowError if
   __len__() returned a large negative integer.
 

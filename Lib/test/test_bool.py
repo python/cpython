@@ -344,6 +344,16 @@ class BoolTest(unittest.TestCase):
                 except (Exception) as e_len:
                     self.assertEqual(str(e_bool), str(e_len))
 
+    def test_len_overflow(self):
+        self.assertIs(bool(range(1 << 1000)), True)
+        class A:
+            def __len__(self):
+                return length
+        length = 1 << 1000
+        self.assertIs(bool(A()), True)
+        length = -1 << 1000
+        self.assertRaises(ValueError, bool, A())
+
     def test_blocked(self):
         class A:
             __bool__ = None
