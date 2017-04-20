@@ -1003,7 +1003,7 @@ PyInit__hashlib(void)
     OpenSSL_add_all_digests();
     ERR_load_crypto_strings();
 
-    /* Load OPENSSL engines for improved performance */
+    /* Load OPENSSL engines to improve performance */
     ENGINE_load_builtin_engines();
 
     /* TODO build EVP_functions openssl_* entries dynamically based

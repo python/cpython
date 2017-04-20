@@ -5181,7 +5181,7 @@ PyInit__ssl(void)
 #endif  /* WITH_THREAD */
     OpenSSL_add_all_algorithms();
 
-    /* Load OPENSSL engines for improved performance */
+    /* Load OPENSSL engines to improve performance */
     ENGINE_load_builtin_engines();
 
     /* Add symbols to module dict */
