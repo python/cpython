@@ -1160,6 +1160,7 @@ PyDoc_STRVAR(get_clock_info_doc,
 \n\
 Get information of the specified clock.");
 
+#if !defined(HAVE_TZNAME) || defined(__GLIBC__) || defined(__CYGWIN__)
 static void
 get_zone(char *zone, int n, struct tm *p)
 {
@@ -1180,6 +1181,7 @@ get_gmtoff(time_t t, struct tm *p)
     return timegm(p) - t;
 #endif
 }
+#endif /* !defined(HAVE_TZNAME) || defined(__GLIBC__) || defined(__CYGWIN__) */
 
 static void
 PyInit_timezone(PyObject *m) {
