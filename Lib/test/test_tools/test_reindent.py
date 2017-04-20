@@ -23,6 +23,13 @@ class ReindentTests(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertGreater(err, b'')
 
+    def test_reindent_file_with_bad_encoding(self):
+        bad_coding_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), '../bad_coding.py')
+        rc, out, err = assert_python_ok(self.script, '-r', bad_coding_path)
+        self.assertEqual(out, b'')
+        self.assertGreater(err, b'')
+
 
 if __name__ == '__main__':
     unittest.main()
