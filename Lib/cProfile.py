@@ -24,17 +24,13 @@ def runcall(func, *args, filename=None, sort=-1):
     return _pyprofile._Utils(Profile).runcall(func, *args, filename=filename,
                                               sort=sort)
 
-def runblock(filename=None, sort=-1):
-    return _pyprofile._Utils(Profile).runblock(filename, sort)
-
 run.__doc__ = _pyprofile.run.__doc__
 runctx.__doc__ = _pyprofile.runctx.__doc__
 runcall.__doc__ = _pyprofile.runcall.__doc__
-runblock.__doc__ = _pyprofile.runblock.__doc__
 
 # ____________________________________________________________
 
-class Profile(_lsprof.Profiler):
+class Profile(_lsprof.Profiler, contextlib.ContextDecorator):
     """Profile(custom_timer=None, time_unit=None, subcalls=True, builtins=True)
 
     Builds a profiler object using the specified timer function.
@@ -49,9 +45,12 @@ class Profile(_lsprof.Profiler):
 
     def __enter__(self):
         self.enable()
+        return self
 
     def __exit__(self, *args):
         self.disable()
+        self.print_stats()
+        return False
 
     def print_stats(self, sort=-1):
         import pstats
@@ -123,14 +122,6 @@ class Profile(_lsprof.Profiler):
         self.enable()
         try:
             return func(*args, **kw)
-        finally:
-            self.disable()
-
-    @contextlib.contextmanager
-    def runblock(self):
-        self.enable()
-        try:
-            yield self
         finally:
             self.disable()
 

@@ -78,20 +78,6 @@ class _Utils:
         finally:
            self._show(prof, filename, sort)
 
-    @contextlib.contextmanager
-    def runblock(self, filename=None, sort=-1):
-        prof = self.profiler()
-        try:
-            with prof.runblock():
-                yield
-        except SystemExit:
-            pass
-        finally:
-            if filename is not None:
-                prof.dump_stats(filename)
-            else:
-                prof.print_stats(sort)
-
     def _show(self, prof, filename, sort):
         if filename is not None:
             prof.dump_stats(filename)
@@ -131,24 +117,8 @@ def runcall(func, *args, filename=None, sort=-1):
     """
     return _Utils(Profile).runcall(func, *args, filename=filename, sort=sort)
 
-def runblock(filename=None, sort=-1):
-    """Function that runs a block of code under profile, and can be
-    used as a context manager or a decorator.
-    Example:
 
-    >>> with runblock():
-    ...     pass
-    ...
-    >>> @runblock()
-    ... def foo():
-    ...     pass
-    ...
-    >>>
-    """
-    return _Utils(Profile).runblock(filename, sort)
-
-
-class Profile:
+class Profile(contextlib.ContextDecorator):
     """Profiler class.
 
     self.cur is always a tuple.  Each such tuple corresponds to a stack
@@ -225,6 +195,16 @@ class Profile:
                 self.get_time = get_time_timer
         self.t = self.get_time()
         self.simulate_call('profiler')
+
+    def __enter__(self):
+        self.set_cmd('')
+        sys.setprofile(self.dispatcher)
+        return self
+
+    def __exit__(self, *args):
+        sys.setprofile(None)
+        self.print_stats()
+        return False
 
     # Heavily optimized dispatch routine for os.times() timer
 
@@ -485,14 +465,6 @@ class Profile:
         finally:
             sys.setprofile(None)
 
-    @contextlib.contextmanager
-    def runblock(self):
-        self.set_cmd('')
-        sys.setprofile(self.dispatcher)
-        try:
-            yield self
-        finally:
-            sys.setprofile(None)
 
     #******************************************************************
     # The following calculates the overhead for using a profiler.  The
