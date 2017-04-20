@@ -317,10 +317,7 @@ class Profile(contextlib.ContextDecorator):
 
     def trace_dispatch_return(self, frame, t):
         if frame is not self.cur[-2]:
-            if frame is not self.cur[-2].f_back:
-                if self.cur[-3] != ('profile', 0, ''):
-                    raise AssertionError("Bad return", self.cur[-3])
-                return 1
+            assert frame is self.cur[-2].f_back, ("Bad return", self.cur[-3])
             self.trace_dispatch_return(self.cur[-2], 0)
 
         # Prefix "r" means part of the Returning or exiting frame.
