@@ -286,16 +286,11 @@ is a separate error indicator for each thread.
    exception handling (for example, :c:func:`Py_DECREF` owned references and return
    an error value).
 
-   Warning categories must be subclasses of :c:data:`Warning`; the default warning
-   category is :c:data:`RuntimeWarning`.  The standard Python warning categories are
-   available as global variables whose names are ``PyExc_`` followed by the Python
-   exception name. These have the type :c:type:`PyObject\*`; they are all class
-   objects. Their names are :c:data:`PyExc_Warning`, :c:data:`PyExc_UserWarning`,
-   :c:data:`PyExc_UnicodeWarning`, :c:data:`PyExc_DeprecationWarning`,
-   :c:data:`PyExc_SyntaxWarning`, :c:data:`PyExc_RuntimeWarning`, and
-   :c:data:`PyExc_FutureWarning`.  :c:data:`PyExc_Warning` is a subclass of
-   :c:data:`PyExc_Exception`; the other warning categories are subclasses of
-   :c:data:`PyExc_Warning`.
+   Warning categories must be subclasses of :c:data:`PyExc_Warning`;
+   :c:data:`PyExc_Warning` is a subclass of :c:data:`PyExc_Exception`;
+   the default warning category is :c:data:`PyExc_RuntimeWarning`. The standard
+   Python warning categories are available as global variables whose names are
+   enumerated at :ref:`standarwarningcategories`.
 
    For information about warning control, see the documentation for the
    :mod:`warnings` module and the :option:`-W` option in the command line
@@ -670,8 +665,10 @@ Notes:
    Only defined on VMS; protect code that uses this by testing that the
    preprocessor macro ``__VMS`` is defined.
 
-Standard Warnings
-=================
+.. _standarwarningcategories:
+
+Standard Warning Categories
+===========================
 
 All standard Python warning categories are available as global variables whose
 names are ``PyExc_`` followed by the Python exception name. These have the type
