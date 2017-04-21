@@ -6812,18 +6812,31 @@ then
            WRAP="-fwrapv"
         fi
 
-        # Clang also needs -fwrapv
         case $CC in
             *clang*)
-                WRAP="-fwrapv"
-                # bpo-30104: Python/dtoa.c requires to be build with
-                # -fno-strict-aliasing to fix compiler issue on the
-                # double/ULong[2] union using clang 4.0 and optimization level
-                # -O2 or higher
-                # https://bugs.llvm.org//show_bug.cgi?id=31928
-                ALIASING="-fno-strict-aliasing"
+                cc_is_clang=1
                 ;;
+            *)
+                if $CC --version 2>&1 | grep -q clang
+                then
+                    cc_is_clang=1
+                else
+                    cc_is_clang=
+                fi
         esac
+
+        if test -n "${cc_is_clang}"
+        then
+            # Clang also needs -fwrapv
+            WRAP="-fwrapv"
+
+            # bpo-30104: Python/dtoa.c requires to be build with
+            # -fno-strict-aliasing to fix compiler issue on the
+            # double/ULong[2] union using clang 4.0 and optimization level
+            # -O2 or higher
+            # https://bugs.llvm.org//show_bug.cgi?id=31928
+            ALIASING="-fno-strict-aliasing"
+        fi
 
 	case $ac_cv_prog_cc_g in
 	yes)
