@@ -809,7 +809,7 @@ on Windows.
       Supported attributes:
 
       **handle_list**
-         When *close_fds* is :const:`True`, supplies a list of
+         When *close_fds* is :const:`False`, supplies a list of
          handles that will be inherited.
 
       .. versionadded:: 3.7

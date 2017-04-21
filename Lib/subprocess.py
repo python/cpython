@@ -981,9 +981,9 @@ class Popen(object):
                 startupinfo.hStdError = errwrite
 
             attribute_list = startupinfo.lpAttributeList
-            have_handle_list = (attribute_list and
-                                "handle_list" in attribute_list and
-                                attribute_list["handle_list"])
+            have_handle_list = bool(attribute_list and
+                                    "handle_list" in attribute_list and
+                                    attribute_list["handle_list"])
 
             # If we were given an handle_list or need to create one
             if have_handle_list or (use_std_handles and close_fds):
@@ -997,7 +997,7 @@ class Popen(object):
                 handle_list[:] = self._filter_handle_list(handle_list)
 
                 if handle_list:
-                    if have_handle_list and not close_fds:
+                    if have_handle_list and close_fds:
                         warnings.warn("startupinfo.lpAttributeList['handle_list'] "
                                       "overriding close_fds", RuntimeWarning)
 
