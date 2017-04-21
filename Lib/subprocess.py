@@ -997,7 +997,7 @@ class Popen(object):
                 handle_list[:] = self._filter_handle_list(handle_list)
 
                 if handle_list:
-                    if have_handle_list and close_fds:
+                    if not close_fds:
                         warnings.warn("startupinfo.lpAttributeList['handle_list'] "
                                       "overriding close_fds", RuntimeWarning)
 

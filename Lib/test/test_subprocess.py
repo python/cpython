@@ -2647,14 +2647,14 @@ class Win32ProcessTestCase(BaseTestCase):
         self.assertEqual(p.returncode, 1)
         self.assertIn(b"OSError", stderr)
 
-        # And with a non empty handle_list
+        # Check for a warning due to using handle_list and close_fds=False
         with support.check_warnings((".*overriding close_fds", RuntimeWarning)):
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.lpAttributeList = {"handle_list": handles[:]}
             p = subprocess.Popen([sys.executable, "-c",
                                   "import msvcrt; print(msvcrt.open_osfhandle({}, 0))".format(handles[0])],
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                 startupinfo=startupinfo, close_fds=True)
+                                 startupinfo=startupinfo, close_fds=False)
             stdout, stderr = p.communicate()
             self.assertEqual(p.returncode, 0)
 
