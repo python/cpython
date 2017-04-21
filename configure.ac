@@ -1454,8 +1454,15 @@ then
 
         # Clang also needs -fwrapv
         case $CC in
-            *clang*) WRAP="-fwrapv"
-            ;;
+            *clang*)
+                WRAP="-fwrapv"
+                # bpo-30104: Python/dtoa.c requires to be build with
+                # -fno-strict-aliasing to fix compiler issue on the
+                # double/ULong[2] union using clang 4.0 and optimization level
+                # -O2 or higher
+                # https://bugs.llvm.org//show_bug.cgi?id=31928
+                ALIASING="-fno-strict-aliasing"
+                ;;
         esac
 
 	case $ac_cv_prog_cc_g in
@@ -1464,18 +1471,21 @@ then
 		# Optimization messes up debuggers, so turn it off for
 		# debug builds.
                 if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall $STRICT_PROTO"
+                    OPT="-g -Og -Wall"
                 else
-                    OPT="-g -O0 -Wall $STRICT_PROTO"
+                    OPT="-g -O0 -Wall"
                 fi
 	    else
-		OPT="-g $WRAP -O3 -Wall $STRICT_PROTO"
+		OPT="-g $WRAP -O3 -Wall"
 	    fi
 	    ;;
 	*)
-	    OPT="-O3 -Wall $STRICT_PROTO"
+	    OPT="-O3 -Wall"
 	    ;;
 	esac
+
+	OPT="$OPT $STRICT_PROTO $ALIASING"
+
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
 	    ;;
