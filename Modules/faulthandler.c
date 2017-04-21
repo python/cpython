@@ -55,6 +55,9 @@ static struct {
     int fd;
     int all_threads;
     PyInterpreterState *interp;
+#ifdef MS_WINDOWS
+    void *exc_handler;
+#endif
 } fatal_error = {0, NULL, -1, 0};
 
 #ifdef FAULTHANDLER_LATER
@@ -462,7 +465,8 @@ faulthandler_enable(void)
     }
 
 #ifdef MS_WINDOWS
-    AddVectoredExceptionHandler(1, faulthandler_exc_handler);
+    assert(fatal_error.exc_handler == NULL);
+    fatal_error.exc_handler = AddVectoredExceptionHandler(1, faulthandler_exc_handler);
 #endif
     return 0;
 }
@@ -514,7 +518,12 @@ faulthandler_disable(void)
             faulthandler_disable_fatal_handler(handler);
         }
     }
-
+#ifdef MS_WINDOWS
+    if (fatal_error.exc_handler != NULL) {
+        RemoveVectoredExceptionHandler(fatal_error.exc_handler);
+        fatal_error.exc_handler = NULL;
+    }
+#endif
     Py_CLEAR(fatal_error.file);
 }
 
