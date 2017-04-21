@@ -479,7 +479,7 @@ class TestGeneratorExpressions(GrammarTest):
 
 def diff(fn, result, encoding='utf-8'):
     try:
-        with open('@', 'w', encoding=encoding) as f:
+        with open('@', 'w', encoding=encoding, newline='\n') as f:
             f.write(str(result))
         fn = fn.replace('"', '\\"')
         return subprocess.call(['diff', '-u', fn, '@'], stdout=(subprocess.DEVNULL if verbose < 1 else None))
