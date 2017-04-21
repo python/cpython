@@ -1502,6 +1502,9 @@ class FTPHandler(BaseHandler):
         host = req.host
         if not host:
             raise URLError('ftp error: no host given')
+        target_host = unquote(host)
+        if '\n' in target_host:
+            raise URLError("illegal ftp host")
         host, port = splitport(host)
         if port is None:
             port = ftplib.FTP_PORT

@@ -426,6 +426,22 @@ Connection: close
         self.assertFalse(e.exception.filename)
         self.assertTrue(e.exception.reason)
 
+    def test_ftp_illegalhost(self):
+        illegal_ftp_hosts = [
+            'ftp://foo:bar%0d%0aINJECTED@example.net/file.png',
+            'fTp://foo:bar%0d%0aINJECTED@example.net/file.png',
+            'FTP://foo:bar%0d%0aINJECTED@example.net/file.png',
+            'ftp://foo:bar%0aINJECTED@example.net/file.png',
+            'fTp://foo:bar%0aINJECTED@example.net/file.png',
+            'FTP://foo:bar%0aINJECTED@example.net/file.png'
+            ]
+
+        for host in illegal_ftp_hosts:
+            with self.assertRaises(urllib.error.URLError) as e:
+                urlopen(host)
+            self.assertFalse(e.exception.filename)
+            self.assertTrue(e.exception.reason)
+
     @patch.object(urllib.request, 'MAXFTPCACHE', 0)
     def test_ftp_cache_pruning(self):
         self.fakeftp()
