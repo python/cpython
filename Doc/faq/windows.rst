@@ -329,7 +329,7 @@ Prior to Python 2.7 and 3.2, to terminate a process, you can use :mod:`ctypes`::
 
 In 2.7 and 3.2, :func:`os.kill` is implemented similar to the above function,
 with the additional feature of being able to send :kbd:`Ctrl+C` and :kbd:`Ctrl+Break`
-to console subprocesses which are designed to handle those signals. See
+to console subprocesses which are designed to handle those signals.  See
 :func:`os.kill` for further details.
 
 How do I extract the downloaded documentation on Windows?
