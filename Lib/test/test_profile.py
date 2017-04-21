@@ -10,7 +10,13 @@ from test.support import TESTFN, run_unittest, unlink
 from contextlib import contextmanager
 
 import profile
+from test import support
 from test.profilee import testfunc, timer
+from test.support import script_helper
+
+TEMPDIR = os.path.abspath(support.TESTFN) + '-profiledir'
+outputdir = TEMPDIR + '-output-test'
+outputname = os.path.join(outputdir, 'output_stats')
 
 
 class ProfileTest(unittest.TestCase):
@@ -94,6 +100,75 @@ class ProfileTest(unittest.TestCase):
         self.assertTrue(os.path.exists(TESTFN))
 
 
+class ProfileCommandLineTest(unittest.TestCase):
+
+    profilename = 'profile'
+
+    def profilecmd(self, *args, **kwargs):
+        rc, out, err = script_helper.assert_python_ok('-m', self.profilename,
+                                                      *args, **kwargs)
+        return out.replace(os.linesep.encode(), b'\n')
+
+    def profilecmd_failure(self, *args):
+        return script_helper.assert_python_failure('-m', self.profilename,
+                                                   *args)
+
+    def test_outputfile(self):
+        for opt in '-o', '--outfile':
+            try:
+                scriptfile = support.findfile('profilee.py')
+                with support.temp_cwd(outputdir):
+                    out = self.profilecmd(opt, outputname, scriptfile)
+                self.assertEqual(out, b'')
+            finally:
+                support.rmtree(outputdir)
+
+    def test_sort_by_call_count(self):
+        for opt in '-s', '--sort':
+            scriptfile = support.findfile('profilee.py')
+            out = self.profilecmd(opt, 'ncalls', scriptfile)
+            self.assertIn(b'Ordered by: call count', out)
+
+    def test_sort_by_total_time(self):
+        for opt in '-s', '--sort':
+            scriptfile = support.findfile('profilee.py')
+            for arg in 'time', 'tottime':
+                out = self.profilecmd(opt, arg, scriptfile)
+                self.assertIn(b'Ordered by: internal time', out)
+
+    def test_sort_by_cumulative_time(self):
+        for opt in '-s', '--sort':
+            scriptfile = support.findfile('profilee.py')
+            for arg in 'cumtime', 'cumulative':
+                out = self.profilecmd(opt, arg, scriptfile)
+                self.assertIn(b'Ordered by: cumulative time', out)
+
+    def test_sort_by_filename(self):
+        for opt in '-s', '--sort':
+            scriptfile = support.findfile('profilee.py')
+            for arg in 'file', 'filename', 'module':
+                out = self.profilecmd(opt, 'filename', scriptfile)
+                self.assertIn(b'Ordered by: file name', out)
+
+    def test_sort_by_primitive_call_count_time(self):
+        for opt in '-s', '--sort':
+            scriptfile = support.findfile('profilee.py')
+            out = self.profilecmd(opt, 'pcalls', scriptfile)
+            self.assertIn(b'Ordered by: primitive call count', out)
+
+    def test_sort_by_line_number(self):
+        for opt in '-s', '--sort':
+            scriptfile = support.findfile('profilee.py')
+            out = self.profilecmd(opt, 'line', scriptfile)
+            self.assertIn(b'Ordered by: line number', out)
+
+    def test_sort_by_standard_name(self):
+        for opt in '-s', '--sort':
+            scriptfile = support.findfile('profilee.py')
+            out = self.profilecmd(opt, 'stdname', scriptfile)
+            self.assertIn(b'Ordered by: standard name', out)
+
+
 def regenerate_expected_output(filename, cls):
     filename = filename.rstrip('co')
     print('Regenerating %s...' % filename)
@@ -125,6 +200,7 @@ def silent():
 
 def test_main():
     run_unittest(ProfileTest)
+    run_unittest(ProfileCommandLineTest)
 
 def main():
     if '-r' not in sys.argv:

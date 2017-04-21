@@ -5,7 +5,8 @@ from test.support import run_unittest, TESTFN, unlink
 
 # rip off all interesting stuff from test_profile
 import cProfile
-from test.test_profile import ProfileTest, regenerate_expected_output
+from test.test_profile import ProfileTest, ProfileCommandLineTest
+from test.test_profile import regenerate_expected_output
 
 
 class CProfileTest(ProfileTest):
@@ -36,8 +37,14 @@ class CProfileTest(ProfileTest):
             unlink(TESTFN)
 
 
+class CProfileCommandLineTest(ProfileCommandLineTest):
+
+    profilename = 'cProfile'
+
+
 def test_main():
     run_unittest(CProfileTest)
+    run_unittest(CProfileCommandLineTest)
 
 def main():
     if '-r' not in sys.argv:
