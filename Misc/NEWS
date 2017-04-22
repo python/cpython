@@ -317,6 +317,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29960: Preserve generator state when _random.Random.setstate()
+  raises an exception.  Patch by Bryan Olson.
+
 - bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
 
 - bpo-22352: Column widths in the output of dis.dis() are now adjusted for
