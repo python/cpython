@@ -676,3 +676,196 @@ The :mod:`test.support` module defines the following classes:
 
    Class used to record warnings for unit tests. See documentation of
    :func:`check_warnings` above for more details.
+
+
+:mod:`test.support.script_helper` --- Helper utilities for script execution tests
+---------------------------------------------------------------------------------
+
+.. module:: test.support.script_helper
+   :synopsis: Support for script creation and execution tests
+
+The :mod:`test.support.script_helper` module defines common utilities used
+across various script exection or command line interface tests, such as creating
+scripts in temporary directories or running python subprocesses based on given
+arguments.
+
+
+This module defines the following functions:
+
+.. function:: assert_python_ok(*args, **env_vars)
+
+   Runs the interpreter with *args* and optional environment
+   variables *env_vars*, asserting that run succeeds (return code is zero).
+
+   Returns a (return code, stdout, stderr) tuple on success, throws an
+   appropriate :exc:`AssertionError` for a non-zero return code containing
+   stdout and stderr of the failed process.
+
+   Trailing whitespace will be stripped for stderr.
+
+   You can change the way the interpreter is started using these keywords:
+
+   * *__cleanenv*: If the *__cleanenv* keyword is set, *env_vars* is used as a
+     fresh environment, otherwise it is added to the environment of the current
+     process.
+   * *__isolated*: Python is started in isolated mode (command line option
+     ``-I``), except if the *__isolated* keyword is present and set to False.
+
+
+.. function:: assert_python_failure(*args, **env_vars)
+
+   Runs the interpreter with *args* and optional environment
+   variables *env_vars*, asserting that the run fails (return code is non-zero).
+
+   Returns a (return code, stdout, stderr) tuple on failure, throws an
+   appropriate :exc:`AssertionError`` if the return code is zero containing
+   stdout and stderr of the failed process.
+
+   Trailing whitespace will be stripped for stderr.
+
+   You can change the way the interpreter is started using these keywords:
+
+   * *__cleanenv*: If the *__cleanenv* keyword is set, *env_vars* is used as a
+     fresh environment, otherwise it is added to the environment of the current
+     process.
+   * *__isolated*: Python is started in isolated mode (command line option
+     ``-I``), except if the *__isolated* keyword is present and set to False.
+
+
+.. function:: spawn_python(*args, **kw)
+
+   Runs a Python subprocess with the given arguments and returns the
+   resulting :class:`subprocess.Popen` instance.
+
+   The ``-E`` option is always passed to the subprocess, both ``stdin`` and
+   ``stdout`` are configured as binary pipes and ``stderr`` is merged with
+   ``stdout``.
+
+   The *kw* arguments are passed through to subprocess.Popen.
+
+
+.. function:: kill_python(p)
+
+   Runs the given Popen process until completion and return stdout.
+
+   This will also include stderr output if the process was started with
+   :func:`spawn_python`.
+
+
+.. function:: make_script(script_dir, script_basename, \
+                          source, omit_suffix=False)
+
+   Creates a new Python script/module in the given directory.
+
+   This function invalidates the import system caches, allowing the created
+   file to be immediately imported.
+
+   By default, *script_dir* and *script_basename* are combined with
+   :data:`os.extsep` and the normal ``py`` extension to create the full
+   path to the file. If *omit_suffix* is true, the base name is used
+   directly as the name of created file with no extension.
+
+   The *source* argument is a Unicode string which will be written to the file
+   as UTF-8.
+
+
+.. function:: make_zip_script(zip_dir, zip_basename, \
+                              script_name, name_in_zip=None)
+
+   Creates a new zip archive in the given directory, containing the specified
+   Python script/module.
+
+   This function invalidates the import system caches, allowing the created
+   file to be immediately imported.
+
+   By default, the script is placed at the base of the zip archive using
+   just the same filename as the script itself. This can be changed by
+   specifying the *name_in_zip* parameter to choose a particular name.
+
+   There is also a special case for when *script_name* refers to a file
+   in a ``__pycache__`` directory. In that case, the helper will create a
+   new compiled bytecode file from the original source file using the
+   legacy naming scheme and place that in the zip archive instead.
+
+
+.. function:: make_pkg(pkg_dir, init_source='')
+
+   Creates a simple self-contained Python package, optionally with a
+   non-empty init file.
+
+   This function invalidates the import system caches, allowing the created
+   directory to be immediately imported.
+
+   Equivalent to::
+
+      os.mkdir(pkg_dir)
+      make_script(pkg_dir, "__init__", init_source)
+
+
+.. function:: make_zip_pkg(zip_dir, zip_basename, \
+                           pkg_name, script_basename, source, \
+                           depth=1, compiled=False)
+
+   Create a self-contained Python package inside a new zip archive in the
+   given directory.
+
+   This function invalidates the import system caches, allowing the contents
+   of the created archive to be immediately imported.
+
+   For example, this call::
+
+      make_zip_pkg('.', 'example', 'mypkg', 'submodule', '', depth=2)
+
+   Would create an archive in the current directory called ``example.zip``
+   with the layout::
+
+      mypkg/
+        __init__.py
+        mypkg/
+          __init__.py
+          submodule.py
+
+   The init modules in the packages inside the archive are always empty,
+   while *source* is written to the submodule named by *script_basename*.
+
+   The *depth* argument controls how many deeply nested the package is.
+
+   If *compiled* is true, then the the files added to the archive will be
+   suitable named compiled bytecode files rather than the original source
+   files.
+
+
+.. function:: interpreter_requires_environment()
+
+   Returns ``True`` if our :data:`sys.executable` interpreter requires
+   environment variables in order to be able to run at all.
+
+   This is designed to be used with :func:`unittest.skipIf` to annotate tests
+   that need to use an ``assert_python_*()`` function to launch an isolated
+   mode (-I) or no environment mode (-E) sub-interpreter process.
+
+   A normal build & test does not run into this situation but it can happen
+   when trying to run the standard library test suite from an interpreter that
+   doesn't have an obvious home with Python's current home finding logic.
+
+   Setting ``PYTHONHOME`` is one way to get most of the test suite to run in that
+   situation.  ``PYTHONPATH`` or ``PYTHONUSERSITE`` are the other common
+   environment variables that might impact whether or not the interpreter
+   can start.
+
+
+.. function:: run_python_until_end(*args, **env_vars)
+
+   Starts a python interpreter process with *args* and environment variables
+   *env_vars*. Pipes are created for stdout, stdin and stderr.
+
+   Waits until the process completes and returns the runcode, stdout and
+   stderr as a `_PythonRunResult`.
+
+   You can change the way the interpreter is started using these keywords:
+
+   * *__cleanenv*: If the *__cleanenv* keyword is set, *env_vars* is used as a
+     fresh environment, otherwise it is added to the environment of the current
+     process.
+   * *__isolated*: Python is started in isolated mode (command line option
+     ``-I``), except if the *__isolated* keyword is present and set to False.
