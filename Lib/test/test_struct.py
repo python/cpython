@@ -612,6 +612,15 @@ class StructTest(unittest.TestCase):
         with self.assertRaisesRegex(struct.error, regex):
             struct.pack('iihh', 0x5FFF, 0x6FFF, 0x7FFF, 0x8FFF)
 
+    def test_issue29802(self):
+        # When the second argument of struct.unpack() was of wrong type
+        # the Struct object was decrefed twice and the reference to
+        # deallocated object was left in a cache.
+        with self.assertRaises(TypeError):
+            struct.unpack(b'b', 0)
+        # Shouldn't crash.
+        self.assertEqual(struct.unpack(b'b', b'a'), (b'a'[0],))
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """

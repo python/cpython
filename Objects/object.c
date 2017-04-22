@@ -406,7 +406,7 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
     }
     if (ret == 0) {
         if (ferror(fp)) {
-            PyErr_SetFromErrno(PyExc_IOError);
+            PyErr_SetFromErrno(PyExc_OSError);
             clearerr(fp);
             ret = -1;
         }
