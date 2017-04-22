@@ -781,8 +781,9 @@ class BaseTestAPI:
             self.skipTest("test specific to AF_INET and AF_INET6")
 
         server = BaseServer(self.family, self.addr)
+        # run the thread 500 ms: the socket should be connected in 200 ms
         t = threading.Thread(target=lambda: asyncore.loop(timeout=0.1,
-                                                          count=500))
+                                                          count=5))
         t.start()
         try:
             with socket.socket(self.family, socket.SOCK_STREAM) as s:

@@ -695,7 +695,6 @@ ARFLAGS
 ac_ct_AR
 AR
 RANLIB
-USE_INLINE
 GNULD
 LINKCC
 LDVERSION
@@ -5839,56 +5838,6 @@ esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GNULD" >&5
 $as_echo "$GNULD" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inline" >&5
-$as_echo_n "checking for inline... " >&6; }
-if ${ac_cv_c_inline+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_cv_c_inline=no
-for ac_kw in inline __inline__ __inline; do
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#ifndef __cplusplus
-typedef int foo_t;
-static $ac_kw foo_t static_foo () {return 0; }
-$ac_kw foo_t foo () {return 0; }
-#endif
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_c_inline=$ac_kw
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  test "$ac_cv_c_inline" != no && break
-done
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_inline" >&5
-$as_echo "$ac_cv_c_inline" >&6; }
-
-case $ac_cv_c_inline in
-  inline | yes) ;;
-  *)
-    case $ac_cv_c_inline in
-      no) ac_val=;;
-      *) ac_val=$ac_cv_c_inline;;
-    esac
-    cat >>confdefs.h <<_ACEOF
-#ifndef __cplusplus
-#define inline $ac_val
-#endif
-_ACEOF
-    ;;
-esac
-
-if test "$ac_cv_c_inline" != no ; then
-
-$as_echo "#define USE_INLINE 1" >>confdefs.h
-
-
-fi
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-shared" >&5
 $as_echo_n "checking for --enable-shared... " >&6; }
 # Check whether --enable-shared was given.
@@ -6863,11 +6812,31 @@ then
            WRAP="-fwrapv"
         fi
 
-        # Clang also needs -fwrapv
         case $CC in
-            *clang*) WRAP="-fwrapv"
-            ;;
+            *clang*)
+                cc_is_clang=1
+                ;;
+            *)
+                if $CC --version 2>&1 | grep -q clang
+                then
+                    cc_is_clang=1
+                else
+                    cc_is_clang=
+                fi
         esac
+
+        if test -n "${cc_is_clang}"
+        then
+            # Clang also needs -fwrapv
+            WRAP="-fwrapv"
+
+            # bpo-30104: Python/dtoa.c requires to be build with
+            # -fno-strict-aliasing to fix compiler issue on the
+            # double/ULong[2] union using clang 4.0 and optimization level
+            # -O2 or higher
+            # https://bugs.llvm.org//show_bug.cgi?id=31928
+            ALIASING="-fno-strict-aliasing"
+        fi
 
 	case $ac_cv_prog_cc_g in
 	yes)
@@ -6875,18 +6844,21 @@ then
 		# Optimization messes up debuggers, so turn it off for
 		# debug builds.
                 if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall $STRICT_PROTO"
+                    OPT="-g -Og -Wall"
                 else
-                    OPT="-g -O0 -Wall $STRICT_PROTO"
+                    OPT="-g -O0 -Wall"
                 fi
 	    else
-		OPT="-g $WRAP -O3 -Wall $STRICT_PROTO"
+		OPT="-g $WRAP -O3 -Wall"
 	    fi
 	    ;;
 	*)
-	    OPT="-O3 -Wall $STRICT_PROTO"
+	    OPT="-O3 -Wall"
 	    ;;
 	esac
+
+	OPT="$OPT $STRICT_PROTO $ALIASING"
+
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
 	    ;;

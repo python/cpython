@@ -11,7 +11,11 @@ Core and Builtins
 -----------------
 
 - bpo-29840: bool() no longer raises OverflowError for objects without defined
-  __bool__ when __len__() returned large integer or raised OverflowError.
+  __bool__ when __len__() returned a large integer or raised OverflowError.
+
+- bpo-12414: sys.getsizeof() on a code object now returns the sizes
+  which includes the code struct and sizes of objects which it references.
+  Patch by Dong-hee Na.
 
 - bpo-29839: len() now raises ValueError rather than OverflowError if
   __len__() returned a large negative integer.
@@ -315,6 +319,9 @@ Extension Modules
 
 Library
 -------
+
+- bpo-29960: Preserve generator state when _random.Random.setstate()
+  raises an exception.  Patch by Bryan Olson.
 
 - bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
 
