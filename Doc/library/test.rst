@@ -718,7 +718,7 @@ This module defines the following functions:
    variables *env_vars*, asserting that the run fails (return code is non-zero).
 
    Returns a (return code, stdout, stderr) tuple on failure, throws an
-   appropriate :exc:`AssertionError`` if the return code is zero containing
+   appropriate :exc:`AssertionError` if the return code is zero containing
    stdout and stderr of the failed process.
 
    Trailing whitespace will be stripped for stderr.
