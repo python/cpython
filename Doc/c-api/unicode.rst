@@ -525,8 +525,8 @@ APIs:
 
    .. note::
 
-      For integer specifiers (d, i, o, u, x, X): A 0 conversion flag is not
-      ignored when a precision is given.
+      For integer specifiers (d, i, o, u, x, X): the 0-conversion flag has
+      effect even when a precision is given.
 
    .. note::
       The width formatter unit is number of characters rather than bytes.

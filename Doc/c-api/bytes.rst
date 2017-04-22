@@ -113,8 +113,8 @@ called with a non-bytes parameter.
 
    .. note::
 
-      For integer specifiers (d, i, o, u, x, X): A 0 conversion flag is not
-      ignored when a precision is given.
+      For integer specifiers (d, i, o, u, x, X): the 0-conversion flag has
+      effect even when a precision is given.
 
 
 .. c:function:: PyObject* PyBytes_FromFormatV(const char *format, va_list vargs)
