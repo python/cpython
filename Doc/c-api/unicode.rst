@@ -451,44 +451,44 @@ APIs:
    | :attr:`%c`        | int                 | A single character,            |
    |                   |                     | represented as a C int.        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%d`        | int                 | Nearly equivalent to           |
-   |                   |                     | ``printf("%d")``.              |
+   | :attr:`%d`        | int                 | Equivalent to                  |
+   |                   |                     | ``printf("%d")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%u`        | unsigned int        | Nearly equivalent to           |
-   |                   |                     | ``printf("%u")``.              |
+   | :attr:`%u`        | unsigned int        | Equivalent to                  |
+   |                   |                     | ``printf("%u")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%ld`       | long                | Nearly equivalent to           |
-   |                   |                     | ``printf("%ld")``.             |
+   | :attr:`%ld`       | long                | Equivalent to                  |
+   |                   |                     | ``printf("%ld")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%li`       | long                | Nearly equivalent to           |
-   |                   |                     | ``printf("%li")``.             |
+   | :attr:`%li`       | long                | Equivalent to                  |
+   |                   |                     | ``printf("%li")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lu`       | unsigned long       | Nearly equivalent to           |
-   |                   |                     | ``printf("%lu")``.             |
+   | :attr:`%lu`       | unsigned long       | Equivalent to                  |
+   |                   |                     | ``printf("%lu")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lld`      | long long           | Nearly equivalent to           |
-   |                   |                     | ``printf("%lld")``.            |
+   | :attr:`%lld`      | long long           | Equivalent to                  |
+   |                   |                     | ``printf("%lld")``. [1]_       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lli`      | long long           | Nearly equivalent to           |
-   |                   |                     | ``printf("%lli")``.            |
+   | :attr:`%lli`      | long long           | Equivalent to                  |
+   |                   |                     | ``printf("%lli")``. [1]_       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%llu`      | unsigned long long  | Nearly equivalent to           |
-   |                   |                     | ``printf("%llu")``.            |
+   | :attr:`%llu`      | unsigned long long  | Equivalent to                  |
+   |                   |                     | ``printf("%llu")``. [1]_       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zd`       | Py_ssize_t          | Nearly equivalent to           |
-   |                   |                     | ``printf("%zd")``.             |
+   | :attr:`%zd`       | Py_ssize_t          | Equivalent to                  |
+   |                   |                     | ``printf("%zd")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zi`       | Py_ssize_t          | Nearly equivalent to           |
-   |                   |                     | ``printf("%zi")``.             |
+   | :attr:`%zi`       | Py_ssize_t          | Equivalent to                  |
+   |                   |                     | ``printf("%zi")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zu`       | size_t              | Nearly equivalent to           |
-   |                   |                     | ``printf("%zu")``.             |
+   | :attr:`%zu`       | size_t              | Equivalent to                  |
+   |                   |                     | ``printf("%zu")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%i`        | int                 | Nearly equivalent to           |
-   |                   |                     | ``printf("%i")``.              |
+   | :attr:`%i`        | int                 | Equivalent to                  |
+   |                   |                     | ``printf("%i")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%x`        | int                 | Nearly equivalent to           |
-   |                   |                     | ``printf("%x")``.              |
+   | :attr:`%x`        | int                 | Equivalent to                  |
+   |                   |                     | ``printf("%x")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%s`        | char\*              | A null-terminated C character  |
    |                   |                     | array.                         |
@@ -523,10 +523,8 @@ APIs:
    An unrecognized format character causes all the rest of the format string to be
    copied as-is to the result string, and any extra arguments discarded.
 
-   .. note::
-
-      For integer specifiers (d, i, o, u, x, X): the 0-conversion flag has
-      effect even when a precision is given.
+   .. [1] For integer specifiers (d, u, ld, li, lu, lld, lli, llu, zd, zi,
+      zu, i, x): the 0-conversion flag has effect even when a precision is given.
 
    .. note::
       The width formatter unit is number of characters rather than bytes.
