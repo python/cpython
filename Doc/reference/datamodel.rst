@@ -2016,7 +2016,7 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    In CPython, the length is required to be at most :attr:`sys.maxsize`.
    If the length is larger than ``sys.maxsize`` some features (such as
    :func:`len`) may raise :exc:`OverflowError`.  To prevent raising
-   ``OverflowError`` by truth value testing an object must define a
+   ``OverflowError`` by truth value testing, an object must define a
    :meth:`__bool__` method.
 
 
