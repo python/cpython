@@ -54,6 +54,8 @@ PCbuild/*.suo
 PCbuild/*.*sdf
 PCbuild/*-pgi
 PCbuild/*-pgo
+PCbuild/*.VC.db
+PCbuild/*.VC.opendb
 PCbuild/.vs/
 PCbuild/amd64/
 PCbuild/obj/

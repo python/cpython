@@ -245,7 +245,7 @@ class MimeTypes:
             while True:
                 try:
                     ctype = _winreg.EnumKey(mimedb, i)
-                except EnvironmentError:
+                except OSError:
                     break
                 else:
                     if '\0' not in ctype:
@@ -259,13 +259,13 @@ class MimeTypes:
                         # Only check file extensions
                         if not subkeyname.startswith("."):
                             continue
-                        # raises EnvironmentError if no 'Content Type' value
+                        # raises OSError if no 'Content Type' value
                         mimetype, datatype = _winreg.QueryValueEx(
                             subkey, 'Content Type')
                         if datatype != _winreg.REG_SZ:
                             continue
                         self.add_type(mimetype, subkeyname, strict)
-                except EnvironmentError:
+                except OSError:
                     continue
 
 def guess_type(url, strict=True):
