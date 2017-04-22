@@ -371,6 +371,13 @@ class Profile:
         frame = self.fake_frame(code, pframe)
         self.dispatch['call'](self, frame, 0)
 
+    # bpo-30113 tweak for helper funtion wrap sys.setprofile
+    def _adjust_frame(self):
+        # Get helper function frame objecct
+        frame = sys._getframe(1)
+        self.dispatch['call'](self, frame, 0)
+
+
     # collect stats from pending stack, including getting final
     # timings for self.cmd frame.
 
