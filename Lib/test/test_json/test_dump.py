@@ -47,6 +47,22 @@ class TestDump:
         d[1337] = "true.dat"
         self.assertEqual(self.dumps(d, sort_keys=True), '{"1337": "true.dat"}')
 
+    def test_encode_overridden_bool(self):
+        class L(list):
+            def __bool__(self):
+                return value
+
+        class D(dict):
+            def __bool__(self):
+                return value
+
+        value = True
+        self.assertEqual(self.dumps(L()), '[]')
+        self.assertEqual(self.dumps(D()), '{}')
+        value = False
+        self.assertEqual(self.dumps(L([1])), '[1]')
+        self.assertEqual(self.dumps(D({'a': 1})), '{"a": 1}')
+
 
 class TestPyDump(TestDump, PyTest): pass
 

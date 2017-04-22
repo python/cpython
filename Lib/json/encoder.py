@@ -275,7 +275,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         _indent = ' ' * _indent
 
     def _iterencode_list(lst, _current_indent_level):
-        if not lst:
+        if not len(lst):
             yield '[]'
             return
         if markers is not None:
@@ -283,7 +283,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             if markerid in markers:
                 raise ValueError("Circular reference detected")
             markers[markerid] = lst
-        buf = '['
+        yield '['
+        buf = ''
         if _indent is not None:
             _current_indent_level += 1
             newline_indent = '\n' + _indent * _current_indent_level
@@ -331,7 +332,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             del markers[markerid]
 
     def _iterencode_dict(dct, _current_indent_level):
-        if not dct:
+        if not len(dct):
             yield '{}'
             return
         if markers is not None:

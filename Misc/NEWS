@@ -317,6 +317,8 @@ Extension Modules
 Library
 -------
 
+- bpo-27613: Fixed json.dump() for collections with overridden __bool__().
+
 - bpo-29960: Preserve generator state when _random.Random.setstate()
   raises an exception.  Patch by Bryan Olson.
 
