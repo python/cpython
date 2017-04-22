@@ -56,6 +56,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29960: Preserve generator state when _random.Random.setstate()
+  raises an exception.  Patch by Bryan Olson.
+
 - bpo-30414: multiprocessing.Queue._feed background running
   thread do not break from main loop on exception.
 
