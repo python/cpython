@@ -320,9 +320,6 @@ Library
 - bpo-29960: Preserve generator state when _random.Random.setstate()
   raises an exception.  Patch by Bryan Olson.
 
-- bpo-29802: Fixed reference counting in module-level struct functions when
-  pass arguments of wrong type.
-
 - bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
 
 - bpo-22352: Column widths in the output of dis.dis() are now adjusted for
