@@ -686,7 +686,7 @@ The :mod:`test.support` module defines the following classes:
    :synopsis: Support for script creation and execution tests
 
 The :mod:`test.support.script_helper` module defines common utilities used
-across various script exection or command line interface tests, such as creating
+across various script execution or command line interface tests, such as creating
 scripts in temporary directories or running python subprocesses based on given
 arguments.
 
@@ -694,33 +694,17 @@ arguments.
 This module defines the following functions:
 
 .. function:: assert_python_ok(*args, **env_vars)
-
-   Runs the interpreter with *args* and optional environment
-   variables *env_vars*, asserting that run succeeds (return code is zero).
-
-   Returns a (return code, stdout, stderr) tuple on success, throws an
-   appropriate :exc:`AssertionError` for a non-zero return code containing
-   stdout and stderr of the failed process.
-
-   Trailing whitespace will be stripped for stderr.
-
-   You can change the way the interpreter is started using these keywords:
-
-   * *__cleanenv*: If the *__cleanenv* keyword is set, *env_vars* is used as a
-     fresh environment, otherwise it is added to the environment of the current
-     process.
-   * *__isolated*: Python is started in isolated mode (command line option
-     ``-I``), except if the *__isolated* keyword is present and set to False.
-
-
 .. function:: assert_python_failure(*args, **env_vars)
 
    Runs the interpreter with *args* and optional environment
-   variables *env_vars*, asserting that the run fails (return code is non-zero).
+   variables *env_vars*, asserting that the run succeeds (exit status is zero)
+   or fails (exit status is non-zero)
 
-   Returns a (return code, stdout, stderr) tuple on failure, throws an
-   appropriate :exc:`AssertionError` if the return code is zero containing
-   stdout and stderr of the failed process.
+   If the exit status is non-zero (for :func:`assert_python_ok`), or the exit
+   status is zero (for :func:`assert_python_failure`), the function raises an
+   :exc:`AssertionError`, which includes the *stdout* and *stderr* from the
+   interpreter. Otherwise, the function returns an (*exit status*, *stdout*,
+   *stderr*) tuple.
 
    Trailing whitespace will be stripped for stderr.
 
@@ -735,7 +719,7 @@ This module defines the following functions:
 
 .. function:: spawn_python(*args, **kw)
 
-   Runs a Python subprocess with the given arguments and returns the
+   Spawns a Python subprocess with the given arguments and returns the
    resulting :class:`subprocess.Popen` instance.
 
    The ``-E`` option is always passed to the subprocess, both ``stdin`` and
@@ -747,7 +731,9 @@ This module defines the following functions:
 
 .. function:: kill_python(p)
 
-   Runs the given Popen process until completion and return stdout.
+   Runs the given Popen process until completion and returns stdout. Note that
+   this won't send a signal (e.g. *SIGTERM*, *SIGKILL*) to the given process, but
+   it does close the input pipe.
 
    This will also include stderr output if the process was started with
    :func:`spawn_python`.
@@ -764,7 +750,7 @@ This module defines the following functions:
    By default, *script_dir* and *script_basename* are combined with
    :data:`os.extsep` and the normal ``py`` extension to create the full
    path to the file. If *omit_suffix* is true, the base name is used
-   directly as the name of created file with no extension.
+   directly as the name of the created file with no extension.
 
    The *source* argument is a Unicode string which will be written to the file
    as UTF-8.
@@ -817,7 +803,7 @@ This module defines the following functions:
 
       make_zip_pkg('.', 'example', 'mypkg', 'submodule', '', depth=2)
 
-   Would create an archive in the current directory called ``example.zip``
+   would create an archive in the current directory called ``example.zip``
    with the layout::
 
       mypkg/
@@ -829,10 +815,10 @@ This module defines the following functions:
    The init modules in the packages inside the archive are always empty,
    while *source* is written to the submodule named by *script_basename*.
 
-   The *depth* argument controls how many deeply nested the package is.
+   The *depth* argument controls how deeply nested the package is.
 
-   If *compiled* is true, then the the files added to the archive will be
-   suitable named compiled bytecode files rather than the original source
+   If *compiled* is true, then the files added to the archive will be
+   suitably-named compiled bytecode files rather than the original source
    files.
 
 
