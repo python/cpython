@@ -2442,13 +2442,14 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
-    Py_ssize_t tuplesize = PySequence_Length(args);
+    Py_ssize_t tuplesize;
 
     if (type == &PyZip_Type && !_PyArg_NoKeywords("zip()", kwds))
         return NULL;
 
     /* args must be a tuple */
     assert(PyTuple_Check(args));
+    tuplesize = PyTuple_GET_SIZE(args);
 
     /* obtain iterators */
     ittuple = PyTuple_New(tuplesize);

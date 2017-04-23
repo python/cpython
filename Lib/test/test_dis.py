@@ -175,6 +175,13 @@ _BIG_LINENO_FORMAT = """\
               6 RETURN_VALUE
 """
 
+_BIG_LINENO_FORMAT2 = """\
+%4d           0 LOAD_GLOBAL              0 (spam)
+               2 POP_TOP
+               4 LOAD_CONST               0 (None)
+               6 RETURN_VALUE
+"""
+
 dis_module_expected_results = """\
 Disassembly of f:
   4           0 LOAD_CONST               0 (None)
@@ -360,6 +367,17 @@ class DisTests(unittest.TestCase):
         self.assertEqual(dis.opmap["EXTENDED_ARG"], dis.EXTENDED_ARG)
         self.assertEqual(dis.opmap["STORE_NAME"], dis.HAVE_ARGUMENT)
 
+    def test_widths(self):
+        for opcode, opname in enumerate(dis.opname):
+            if opname in ('BUILD_MAP_UNPACK_WITH_CALL',
+                          'BUILD_TUPLE_UNPACK_WITH_CALL'):
+                continue
+            with self.subTest(opname=opname):
+                width = dis._OPNAME_WIDTH
+                if opcode < dis.HAVE_ARGUMENT:
+                    width += 1 + dis._OPARG_WIDTH
+                self.assertLessEqual(len(opname), width)
+
     def test_dis(self):
         self.do_disassembly_test(_f, dis_f)
 
@@ -387,12 +405,44 @@ class DisTests(unittest.TestCase):
             self.do_disassembly_test(func(i), expected)
 
         # Test some larger ranges too
-        for i in range(300, 5000, 10):
+        for i in range(300, 1000, 10):
             expected = _BIG_LINENO_FORMAT % (i + 2)
+            self.do_disassembly_test(func(i), expected)
+
+        for i in range(1000, 5000, 10):
+            expected = _BIG_LINENO_FORMAT2 % (i + 2)
             self.do_disassembly_test(func(i), expected)
 
         from test import dis_module
         self.do_disassembly_test(dis_module, dis_module_expected_results)
+
+    def test_big_offsets(self):
+        def func(count):
+            namespace = {}
+            func = "def foo(x):\n " + ";".join(["x = x + 1"] * count) + "\n return x"
+            exec(func, namespace)
+            return namespace['foo']
+
+        def expected(count, w):
+            s = ['''\
+           %*d LOAD_FAST                0 (x)
+           %*d LOAD_CONST               1 (1)
+           %*d BINARY_ADD
+           %*d STORE_FAST               0 (x)
+''' % (w, 8*i, w, 8*i + 2, w, 8*i + 4, w, 8*i + 6)
+                 for i in range(count)]
+            s += ['''\
+
+  3        %*d LOAD_FAST                0 (x)
+           %*d RETURN_VALUE
+''' % (w, 8*count, w, 8*count + 2)]
+            s[0] = '  2' + s[0][3:]
+            return ''.join(s)
+
+        for i in range(1, 5):
+            self.do_disassembly_test(func(i), expected(i, 4))
+        self.do_disassembly_test(func(1249), expected(1249, 4))
+        self.do_disassembly_test(func(1250), expected(1250, 5))
 
     def test_disassemble_str(self):
         self.do_disassembly_test(expr_str, dis_expr_str)

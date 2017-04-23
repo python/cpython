@@ -1,5 +1,4 @@
 # tempfile.py unit tests.
-import collections.abc
 import tempfile
 import errno
 import io
@@ -291,9 +290,9 @@ class TestGetCandidateNames(BaseTestCase):
     """Test the internal function _get_candidate_names."""
 
     def test_retval(self):
-        # _get_candidate_names returns an iterator
+        # _get_candidate_names returns a _RandomNameSequence object
         obj = tempfile._get_candidate_names()
-        self.assertIsInstance(obj, collections.abc.Iterator)
+        self.assertIsInstance(obj, tempfile._RandomNameSequence)
 
     def test_same_thing(self):
         # _get_candidate_names always returns the same object

@@ -14,6 +14,10 @@ Core and Builtins
   the middle of resuming a chain of nested 'yield from' or 'await'
   calls, it's now correctly delivered to the innermost frame.
 
+- bpo-12414: sys.getsizeof() on a code object now returns the sizes 
+  which includes the code struct and sizes of objects which it references.
+  Patch by Dong-hee Na.
+
 - bpo-29839: len() now raises ValueError rather than OverflowError if
   __len__() returned a large negative integer.
 
@@ -316,6 +320,19 @@ Extension Modules
 
 Library
 -------
+
+- bpo-29960: Preserve generator state when _random.Random.setstate()
+  raises an exception.  Patch by Bryan Olson.
+
+- bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
+
+- bpo-22352: Column widths in the output of dis.dis() are now adjusted for
+  large line numbers and instruction offsets.
+
+- bpo-30061: Fixed crashes in IOBase methods __next__() and readlines() when
+  readline() or __next__() respectively return non-sizeable object.
+  Fixed possible other errors caused by not checking results of PyObject_Size(),
+  PySequence_Size(), or PyMapping_Size().
 
 - bpo-10076: Compiled regular expression and match objects in the re module
   now support copy.copy() and copy.deepcopy() (they are considered atomic).
