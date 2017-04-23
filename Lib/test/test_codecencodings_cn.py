@@ -48,6 +48,12 @@ class Test_GB18030(multibytecodec_support.TestBase, unittest.TestCase):
         (b"abc\x84\x32\x80\x80def", "replace", 'abc\ufffd2\ufffd\ufffddef'),
         (b"abc\x81\x30\x81\x30def", "strict", 'abc\x80def'),
         (b"abc\x86\x30\x81\x30def", "replace", 'abc\ufffd0\ufffd0def'),
+        # issue29990
+        (b"\xFF\x30\x81\x30", "strict", None),
+        (b"\x81\x30\xFF\x30", "strict", None),
+        (b"abc\x81\x39\xFF\x39\xc1\xc4", "replace", "abc\ufffd\x39\ufffd\x39\u804a"),
+        (b"abc\xAB\x36\xFF\x30def", "replace", 'abc\ufffd\x36\ufffd\x30def'),
+        (b"abc\xBF\x38\xFF\x32\xc1\xc4", "ignore",  "abc\x38\x32\u804a"),
     )
     has_iso10646 = True
 
