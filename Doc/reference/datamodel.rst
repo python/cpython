@@ -1891,6 +1891,14 @@ sequences, it should iterate through the values.
    :meth:`__nonzero__` method and whose :meth:`__len__` method returns zero is
    considered to be false in a Boolean context.
 
+   .. impl-detail::
+
+      In CPython, the length is required to be at most :attr:`sys.maxsize`.
+      If the length is larger than :attr:`!sys.maxsize` some features (such as
+      :func:`len`) may raise :exc:`OverflowError`.  To prevent raising
+      :exc:`!OverflowError` by truth value testing, an object must define a
+      :meth:`__nonzero__` method.
+
 
 .. method:: object.__getitem__(self, key)
 
