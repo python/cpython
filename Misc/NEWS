@@ -317,6 +317,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30143: 2to3 now generates a code that uses abstract collection classes
+  from collections.abc rather than collections.
+
 - bpo-29960: Preserve generator state when _random.Random.setstate()
   raises an exception.  Patch by Bryan Olson.
 
