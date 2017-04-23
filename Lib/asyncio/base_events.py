@@ -14,6 +14,7 @@ to modify the meaning of the API call itself.
 """
 
 import collections
+import collections.abc
 import concurrent.futures
 import heapq
 import itertools
@@ -1001,7 +1002,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             if host == '':
                 hosts = [None]
             elif (isinstance(host, str) or
-                  not isinstance(host, collections.Iterable)):
+                  not isinstance(host, collections.abc.Iterable)):
                 hosts = [host]
             else:
                 hosts = host
