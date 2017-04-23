@@ -3813,7 +3813,7 @@ test_PyTime_AsTimeval(PyObject *self, PyObject *args)
     if (_PyTime_AsTimeval(t, &tv, round) < 0)
         return NULL;
 
-    seconds = PyLong_FromLong((long long)tv.tv_sec);
+    seconds = PyLong_FromLongLong(tv.tv_sec);
     if (seconds == NULL)
         return NULL;
     return Py_BuildValue("Nl", seconds, tv.tv_usec);
