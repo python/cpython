@@ -1866,7 +1866,8 @@ Tests
 - Issue #28217: Adds _testconsole module to test console input.
 
 
-What's New in Python 3.6.0 beta ==============================
+What's New in Python 3.6.0 beta 1?
+==================================
 
 *Release date: 2016-09-12*
 
