@@ -148,6 +148,10 @@ _IntEnum._convert(
     lambda name: name.startswith('CERT_'),
     source=_ssl)
 
+_IntFlag._convert(
+    'HostFlags', __name__,
+    lambda name: name.startswith('HOSTFLAG_'),
+    source=_ssl)
 
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
 _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
@@ -216,9 +220,7 @@ _RESTRICTED_SERVER_CIPHERS = (
     '!aNULL:!eNULL:!MD5:!DSS:!RC4:!3DES'
 )
 
-
-class CertificateError(ValueError):
-    pass
+CertificateError = SSLCertVerificationError
 
 
 def _dnsname_match(dn, hostname):
@@ -472,6 +474,14 @@ class SSLContext(_SSLContext):
     @options.setter
     def options(self, value):
         super(SSLContext, SSLContext).options.__set__(self, value)
+
+    @property
+    def host_flags(self):
+        return HostFlags(super().host_flags)
+
+    @host_flags.setter
+    def host_flags(self, value):
+        super(SSLContext, SSLContext).host_flags.__set__(self, value)
 
     @property
     def verify_flags(self):
