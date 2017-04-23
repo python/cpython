@@ -85,6 +85,10 @@ Other Language Changes
 * :exc:`ImportError` now displays module name and module ``__file__`` path when
   ``from ... import ...`` fails. (Contributed by Matthias Bussonnier in :issue:`29546`.)
 
+* Circular imports involving absolute imports with binding a submodule to
+  a name are now supported.
+  (Contributed by Serhiy Storchaka in :issue:`30024`.)
+
 
 New Modules
 ===========

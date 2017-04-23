@@ -317,6 +317,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30024: Circular imports involving absolute imports with binding
+  a submodule to a name are now supported.
+
 - bpo-29960: Preserve generator state when _random.Random.setstate()
   raises an exception.  Patch by Bryan Olson.
 
