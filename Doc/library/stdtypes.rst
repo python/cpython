@@ -2369,7 +2369,7 @@ Bytearray Objects
 .. index:: object: bytearray
 
 :class:`bytearray` objects are a mutable counterpart to :class:`bytes`
-objects. 
+objects.
 
 .. class:: bytearray([source[, encoding[, errors]]])
 
