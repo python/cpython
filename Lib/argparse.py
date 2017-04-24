@@ -84,14 +84,9 @@ __all__ = [
 
 
 import collections as _collections
-import copy as _copy
 import os as _os
 import re as _re
 import sys as _sys
-import textwrap as _textwrap
-
-from gettext import gettext as _, ngettext
-
 
 SUPPRESS = '==SUPPRESS=='
 
@@ -105,6 +100,14 @@ _UNRECOGNIZED_ARGS_ATTR = '_unrecognized_args'
 # =============================
 # Utility functions and classes
 # =============================
+
+def _(*args):
+    import gettext
+    return gettext.gettext(*args)
+
+def ngettext(*args):
+    import gettext
+    return gettext.ngettext(*args)
 
 class _AttributeHolder(object):
     """Abstract base class that provides __repr__.
@@ -135,12 +138,6 @@ class _AttributeHolder(object):
 
     def _get_args(self):
         return []
-
-
-def _ensure_value(namespace, name, value):
-    if getattr(namespace, name, None) is None:
-        setattr(namespace, name, value)
-    return getattr(namespace, name)
 
 
 # ===============
@@ -617,12 +614,15 @@ class HelpFormatter(object):
 
     def _split_lines(self, text, width):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        return _textwrap.wrap(text, width)
+        import textwrap
+        return textwrap.wrap(text, width)
 
     def _fill_text(self, text, width, indent):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        return _textwrap.fill(text, width, initial_indent=indent,
-                                           subsequent_indent=indent)
+        import textwrap
+        return textwrap.fill(text, width,
+                             initial_indent=indent,
+                             subsequent_indent=indent)
 
     def _get_help_string(self, action):
         return action.help
@@ -950,7 +950,12 @@ class _AppendAction(Action):
             metavar=metavar)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        items = _copy.copy(_ensure_value(namespace, self.dest, []))
+        items = getattr(namespace, self.dest, None)
+        if items is None:
+            items = []
+        else:
+            import copy
+            items = copy.copy(items)
         items.append(values)
         setattr(namespace, self.dest, items)
 
@@ -976,7 +981,12 @@ class _AppendConstAction(Action):
             metavar=metavar)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        items = _copy.copy(_ensure_value(namespace, self.dest, []))
+        items = getattr(namespace, self.dest, None)
+        if items is None:
+            items = []
+        else:
+            import copy
+            items = copy.copy(items)
         items.append(self.const)
         setattr(namespace, self.dest, items)
 
@@ -998,8 +1008,10 @@ class _CountAction(Action):
             help=help)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        new_count = _ensure_value(namespace, self.dest, 0) + 1
-        setattr(namespace, self.dest, new_count)
+        count = getattr(namespace, self.dest, None)
+        if count is None:
+            count = 0
+        setattr(namespace, self.dest, count + 1)
 
 
 class _HelpAction(Action):
