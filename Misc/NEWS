@@ -45,6 +45,9 @@ Core and Builtins
 Library
 -------
 
+- bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch
+  by Nate Soares.
+
 - bpo-30557: faulthandler now correctly filters and displays exception codes
   on Windows
 
@@ -96,6 +99,9 @@ Library
   Jim Fasarakis-Hilliard and Ivan Levkivskyi.
 
 - bpo-30205: Fix getsockname() for unbound AF_UNIX sockets on Linux.
+
+- bpo-29960: Preserve generator state when _random.Random.setstate()
+  raises an exception.  Patch by Bryan Olson.
 
 - bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
 
