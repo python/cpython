@@ -1,4 +1,4 @@
-import collections
+import collections.abc
 import io
 import os
 import errno
@@ -1408,7 +1408,7 @@ class _BasePathTest(object):
         P = self.cls
         p = P(BASE)
         it = p.glob("fileA")
-        self.assertIsInstance(it, collections.Iterator)
+        self.assertIsInstance(it, collections.abc.Iterator)
         _check(it, ["fileA"])
         _check(p.glob("fileB"), [])
         _check(p.glob("dir*/file*"), ["dirB/fileB", "dirC/fileC"])
@@ -1432,7 +1432,7 @@ class _BasePathTest(object):
         P = self.cls
         p = P(BASE)
         it = p.rglob("fileA")
-        self.assertIsInstance(it, collections.Iterator)
+        self.assertIsInstance(it, collections.abc.Iterator)
         _check(it, ["fileA"])
         _check(p.rglob("fileB"), ["dirB/fileB"])
         _check(p.rglob("*/fileA"), [])
