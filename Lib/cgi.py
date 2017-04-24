@@ -32,7 +32,7 @@ __version__ = "2.6"
 # =======
 
 from io import StringIO, BytesIO, TextIOWrapper
-from collections import Mapping
+from collections.abc import Mapping
 import sys
 import os
 import urllib.parse
