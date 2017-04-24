@@ -1,6 +1,7 @@
 import abc
 import builtins
 import collections
+import collections.abc
 import copy
 from itertools import permutations
 import pickle
