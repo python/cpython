@@ -382,11 +382,11 @@ class HTMLCalendar(Calendar):
     # CSS classes for the day <td>s
     cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
     noday_classes = "noday"
-    weekday_head_styles = cssclasses
-    month_head_styles = "month"
-    month_styles = "month"
-    year_head_styles = "year"
-    year_styles = "year"
+    weekday_head_classes = cssclasses
+    month_head_classes = "month"
+    month_classes = "month"
+    year_head_classes = "year"
+    year_classes = "year"
 
     def formatday(self, day, weekday):
         """
@@ -410,7 +410,7 @@ class HTMLCalendar(Calendar):
         Return a weekday name as a table header.
         """
         return '<th class="%s">%s</th>' % (
-            self.weekday_head_styles[day], day_abbr[day])
+            self.weekday_head_classes[day], day_abbr[day])
 
     def formatweekheader(self):
         """
@@ -428,7 +428,7 @@ class HTMLCalendar(Calendar):
         else:
             s = '%s' % month_name[themonth]
         return '<tr><th colspan="7" class="%s">%s</th></tr>' % (
-            self.month_head_styles, s)
+            self.month_head_classes, s)
 
     def formatmonth(self, theyear, themonth, withyear=True):
         """
@@ -437,7 +437,7 @@ class HTMLCalendar(Calendar):
         v = []
         a = v.append
         a('<table border="0" cellpadding="0" cellspacing="0" class="%s">' % (
-            self.month_styles))
+            self.month_classes))
         a('\n')
         a(self.formatmonthname(theyear, themonth, withyear=withyear))
         a('\n')
@@ -458,10 +458,10 @@ class HTMLCalendar(Calendar):
         a = v.append
         width = max(width, 1)
         a('<table border="0" cellpadding="0" cellspacing="0" class="%s">' %
-          self.year_head_styles)
+          self.year_head_classes)
         a('\n')
         a('<tr><th colspan="%d" class="%s">%s</th></tr>' % (
-            width, self.year_styles, theyear))
+            width, self.year_classes, theyear))
         for i in range(January, January+12, width):
             # months in this row
             months = range(i, min(i+width, 13))
