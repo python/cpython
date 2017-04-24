@@ -619,6 +619,7 @@ class HandlerTest(BaseTest):
 
     @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
     @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.reap_threads
     def test_race(self):
         # Issue #14632 refers.
         def remove_loop(fname, tries):
@@ -776,7 +777,10 @@ if threading:
             """
             self.close()
             self._thread.join(timeout)
+            alive = self._thread.is_alive()
             self._thread = None
+            if alive:
+                self.fail("join() timed out")
 
     class ControlMixin(object):
         """
@@ -827,7 +831,10 @@ if threading:
             self.shutdown()
             if self._thread is not None:
                 self._thread.join(timeout)
+                alive = self._thread.is_alive()
                 self._thread = None
+                if alive:
+                    self.fail("join() timed out")
             self.server_close()
             self.ready.clear()
 
@@ -962,6 +969,8 @@ if threading:
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class SMTPHandlerTest(BaseTest):
     TIMEOUT = 8.0
+
+    @support.reap_threads
     def test_basic(self):
         sockmap = {}
         server = TestSMTPServer((support.HOST, 0), self.process_message, 0.001,
@@ -1752,6 +1761,7 @@ class HTTPHandlerTest(BaseTest):
         request.end_headers()
         self.handled.set()
 
+    @support.reap_threads
     def test_output(self):
         # The log message sent to the HTTPHandler is properly received.
         logger = logging.getLogger("http")
@@ -2863,8 +2873,11 @@ class ConfigDictTest(BaseTest):
             t.ready.wait(2.0)
             logging.config.stopListening()
             t.join(2.0)
+            if t.is_alive():
+                self.fail("join() timed out")
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.reap_threads
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(json.dumps(self.config10))
@@ -2885,6 +2898,7 @@ class ConfigDictTest(BaseTest):
             ], stream=output)
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.reap_threads
     def test_listen_config_1_ok(self):
         with support.captured_stdout() as output:
             self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))
@@ -2900,6 +2914,7 @@ class ConfigDictTest(BaseTest):
             self.assert_log_lines([])
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
+    @support.reap_threads
     def test_listen_verify(self):
 
         def verify_fail(stuff):
