@@ -1062,7 +1062,7 @@ The :func:`~math.erf` function computes a probability integral or `Gaussian
 error function <https://en.wikipedia.org/wiki/Error_function>`_.  The
 complementary error function, :func:`~math.erfc`, is ``1 - erf(x)``:
 
-.. doctest:
+.. doctest::
    :options: +SKIP
 
    >>> from math import erf, erfc, sqrt
