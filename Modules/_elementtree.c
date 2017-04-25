@@ -1027,8 +1027,8 @@ element_setstate_from_Python(ElementObject *self, PyObject *state)
 
     tag = attrib = text = tail = children = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(_PyTuple_Empty, state, "|$OOOOO", kwlist, &tag,
-                                     &attrib, &text, &tail, &children))
+    if (!PyArg_ParseTupleAndKeywords(_PyTuple_Empty, state, "|$OOOOO", kwlist,
+                                     &tag, &attrib, &text, &tail, &children))
         return NULL;
     return element_setstate_from_attributes(self, tag, attrib, text, tail,
                                             children);
