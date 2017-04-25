@@ -607,7 +607,8 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
     if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1)
         return -1;
 
-    if (!PyArg_ParseTupleAndKeywords(_PyTuple_Empty, kwds, "|$OO:ImportError", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(_PyTuple_Empty, kwds,
+                                     "|$OO:ImportError", kwlist,
                                      &name, &path)) {
         return -1;
     }

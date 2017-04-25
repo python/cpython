@@ -989,7 +989,8 @@ odict_reduce(register PyODictObject *od)
     if (items_iter == NULL)
         goto Done;
 
-    result = PyTuple_Pack(5, Py_TYPE(od), _PyTuple_Empty, dict ? dict : Py_None, Py_None, items_iter);
+    result = PyTuple_Pack(5, Py_TYPE(od), _PyTuple_Empty,
+                          dict ? dict : Py_None, Py_None, items_iter);
     Py_DECREF(items_iter);
 
 Done:
