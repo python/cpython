@@ -7,6 +7,12 @@ extern "C" {
 
 /* Interface to random parts in ceval.c */
 
+/* PyEval_CallObjectWithKeywords(), PyEval_CallObject(), PyEval_CallFunction
+ * and PyEval_CallMethod are kept for backward compatibility: PyObject_Call(),
+ * PyObject_CallFunction() and PyObject_CallMethod() are recommended to call
+ * a callable object.
+ */
+
 PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
     PyObject *callable,
     PyObject *args,
@@ -147,7 +153,7 @@ PyAPI_FUNC(PyObject *) _PyEval_EvalFrameDefault(struct _frame *f, int exc);
 
     if (...premature_exit...) {
         Py_BLOCK_THREADS
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -155,7 +161,7 @@ PyAPI_FUNC(PyObject *) _PyEval_EvalFrameDefault(struct _frame *f, int exc);
 
     Py_BLOCK_THREADS
     if (...premature_exit...) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     Py_UNBLOCK_THREADS
@@ -217,6 +223,7 @@ PyAPI_FUNC(Py_ssize_t) _PyEval_RequestCodeExtraIndex(freefunc);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyEval_SliceIndex(PyObject *, Py_ssize_t *);
+PyAPI_FUNC(int) _PyEval_SliceIndexNotNone(PyObject *, Py_ssize_t *);
 PyAPI_FUNC(void) _PyEval_SignalAsyncExc(void);
 #endif
 

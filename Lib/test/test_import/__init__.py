@@ -85,6 +85,15 @@ class ImportTests(unittest.TestCase):
             from os import i_dont_exist
         self.assertEqual(cm.exception.name, 'os')
         self.assertEqual(cm.exception.path, os.__file__)
+        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'os' \(.*os.py\)")
+
+    def test_from_import_missing_attr_has_name_and_so_path(self):
+        import select
+        with self.assertRaises(ImportError) as cm:
+            from select import i_dont_exist
+        self.assertEqual(cm.exception.name, 'select')
+        self.assertEqual(cm.exception.path, select.__file__)
+        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'select' \(.*\.(so|pyd)\)")
 
     def test_from_import_missing_attr_has_name(self):
         with self.assertRaises(ImportError) as cm:
@@ -365,8 +374,11 @@ class ImportTests(unittest.TestCase):
         module_name = 'test_from_import_AttributeError'
         self.addCleanup(unload, module_name)
         sys.modules[module_name] = AlwaysAttributeError()
-        with self.assertRaises(ImportError):
+        with self.assertRaises(ImportError) as cm:
             from test_from_import_AttributeError import does_not_exist
+
+        self.assertEqual(str(cm.exception),
+            "cannot import name 'does_not_exist' from '<unknown module name>' (unknown location)")
 
 
 @skip_if_dont_write_bytecode

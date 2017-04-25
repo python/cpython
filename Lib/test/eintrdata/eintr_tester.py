@@ -380,7 +380,12 @@ class SignalEINTRTest(EINTRBaseTest):
         t0 = time.monotonic()
         signal.sigtimedwait([signal.SIGUSR1], self.sleep_time)
         dt = time.monotonic() - t0
-        self.assertGreaterEqual(dt, self.sleep_time)
+
+        if sys.platform.startswith('aix'):
+            # On AIX, sigtimedwait(0.2) sleeps 199.8 ms
+            self.assertGreaterEqual(dt, self.sleep_time * 0.9)
+        else:
+            self.assertGreaterEqual(dt, self.sleep_time)
 
     @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
                          'need signal.sigwaitinfo()')
@@ -437,6 +442,8 @@ class SelectEINTRTest(EINTRBaseTest):
         self.stop_alarm()
         self.assertGreaterEqual(dt, self.sleep_time)
 
+    @unittest.skipIf(sys.platform == "darwin",
+                     "poll may fail on macOS; see issue #28087")
     @unittest.skipUnless(hasattr(select, 'poll'), 'need select.poll')
     def test_poll(self):
         poller = select.poll()

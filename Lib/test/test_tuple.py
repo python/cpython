@@ -23,6 +23,12 @@ class TupleTest(seq_tests.CommonTest):
         self.assertEqual(tuple([0, 1, 2, 3]), (0, 1, 2, 3))
         self.assertEqual(tuple(''), ())
         self.assertEqual(tuple('spam'), ('s', 'p', 'a', 'm'))
+        self.assertEqual(tuple(x for x in range(10) if x % 2),
+                         (1, 3, 5, 7, 9))
+
+    def test_keyword_args(self):
+        with self.assertRaisesRegex(TypeError, 'keyword argument'):
+            tuple(sequence=())
 
     def test_truth(self):
         super().test_truth()

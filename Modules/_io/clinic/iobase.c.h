@@ -186,7 +186,7 @@ _io__IOBase_readline(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject
     Py_ssize_t limit = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:readline",
-        _PyIO_ConvertSsize_t, &limit)) {
+        _Py_convert_optional_to_ssize_t, &limit)) {
         goto exit;
     }
 
@@ -222,7 +222,7 @@ _io__IOBase_readlines(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObjec
     Py_ssize_t hint = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:readlines",
-        _PyIO_ConvertSsize_t, &hint)) {
+        _Py_convert_optional_to_ssize_t, &hint)) {
         goto exit;
     }
 
@@ -291,4 +291,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=1bcece367fc7b0cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d3f59c135231baae input=a9049054013a1b77]*/

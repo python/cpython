@@ -1010,8 +1010,11 @@ class FwalkTests(WalkTests):
     """Tests for os.fwalk()."""
 
     def walk(self, top, **kwargs):
-        for root, dirs, files, root_fd in os.fwalk(top, **kwargs):
+        for root, dirs, files, root_fd in self.fwalk(top, **kwargs):
             yield (root, dirs, files)
+
+    def fwalk(self, *args, **kwargs):
+        return os.fwalk(*args, **kwargs)
 
     def _compare_to_walk(self, walk_kwargs, fwalk_kwargs):
         """
@@ -1027,7 +1030,7 @@ class FwalkTests(WalkTests):
             for root, dirs, files in os.walk(**walk_kwargs):
                 expected[root] = (set(dirs), set(files))
 
-            for root, dirs, files, rootfd in os.fwalk(**fwalk_kwargs):
+            for root, dirs, files, rootfd in self.fwalk(**fwalk_kwargs):
                 self.assertIn(root, expected)
                 self.assertEqual(expected[root], (set(dirs), set(files)))
 
@@ -1049,7 +1052,7 @@ class FwalkTests(WalkTests):
         # check returned file descriptors
         for topdown, follow_symlinks in itertools.product((True, False), repeat=2):
             args = support.TESTFN, topdown, None
-            for root, dirs, files, rootfd in os.fwalk(*args, follow_symlinks=follow_symlinks):
+            for root, dirs, files, rootfd in self.fwalk(*args, follow_symlinks=follow_symlinks):
                 # check that the FD is valid
                 os.fstat(rootfd)
                 # redundant check
@@ -1064,7 +1067,7 @@ class FwalkTests(WalkTests):
         minfd = os.dup(1)
         os.close(minfd)
         for i in range(256):
-            for x in os.fwalk(support.TESTFN):
+            for x in self.fwalk(support.TESTFN):
                 pass
         newfd = os.dup(1)
         self.addCleanup(os.close, newfd)
@@ -1072,14 +1075,6 @@ class FwalkTests(WalkTests):
 
 class BytesWalkTests(WalkTests):
     """Tests for os.walk() with bytes."""
-    def setUp(self):
-        super().setUp()
-        self.stack = contextlib.ExitStack()
-
-    def tearDown(self):
-        self.stack.close()
-        super().tearDown()
-
     def walk(self, top, **kwargs):
         if 'follow_symlinks' in kwargs:
             kwargs['followlinks'] = kwargs.pop('follow_symlinks')
@@ -1088,6 +1083,18 @@ class BytesWalkTests(WalkTests):
             dirs = list(map(os.fsdecode, bdirs))
             files = list(map(os.fsdecode, bfiles))
             yield (root, dirs, files)
+            bdirs[:] = list(map(os.fsencode, dirs))
+            bfiles[:] = list(map(os.fsencode, files))
+
+@unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
+class BytesFwalkTests(FwalkTests):
+    """Tests for os.walk() with bytes."""
+    def fwalk(self, top='.', *args, **kwargs):
+        for broot, bdirs, bfiles, topfd in os.fwalk(os.fsencode(top), *args, **kwargs):
+            root = os.fsdecode(broot)
+            dirs = list(map(os.fsdecode, bdirs))
+            files = list(map(os.fsdecode, bfiles))
+            yield (root, dirs, files, topfd)
             bdirs[:] = list(map(os.fsencode, dirs))
             bfiles[:] = list(map(os.fsencode, files))
 
@@ -1110,6 +1117,18 @@ class MakedirTests(unittest.TestCase):
         path = os.path.join(base, 'dir1', os.curdir, 'dir2', 'dir3', 'dir4',
                             'dir5', 'dir6')
         os.makedirs(path)
+
+    def test_mode(self):
+        with support.temp_umask(0o002):
+            base = support.TESTFN
+            parent = os.path.join(base, 'dir1')
+            path = os.path.join(parent, 'dir2')
+            os.makedirs(path, 0o555)
+            self.assertTrue(os.path.exists(path))
+            self.assertTrue(os.path.isdir(path))
+            if os.name != 'nt':
+                self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o555)
+                self.assertEqual(stat.S_IMODE(os.stat(parent).st_mode), 0o775)
 
     def test_exist_ok_existing_directory(self):
         path = os.path.join(support.TESTFN, 'dir1')
@@ -3294,6 +3313,35 @@ class TestScandir(unittest.TestCase):
         self.assertEqual(entry.path,
                          os.fsencode(os.path.join(self.path, 'file.txt')))
 
+    @unittest.skipUnless(os.listdir in os.supports_fd,
+                         'fd support for listdir required for this test.')
+    def test_fd(self):
+        self.assertIn(os.scandir, os.supports_fd)
+        self.create_file('file.txt')
+        expected_names = ['file.txt']
+        if support.can_symlink():
+            os.symlink('file.txt', os.path.join(self.path, 'link'))
+            expected_names.append('link')
+
+        fd = os.open(self.path, os.O_RDONLY)
+        try:
+            with os.scandir(fd) as it:
+                entries = list(it)
+            names = [entry.name for entry in entries]
+            self.assertEqual(sorted(names), expected_names)
+            self.assertEqual(names, os.listdir(fd))
+            for entry in entries:
+                self.assertEqual(entry.path, entry.name)
+                self.assertEqual(os.fspath(entry), entry.name)
+                self.assertEqual(entry.is_symlink(), entry.name == 'link')
+                if os.stat in os.supports_dir_fd:
+                    st = os.stat(entry.name, dir_fd=fd)
+                    self.assertEqual(entry.stat(), st)
+                    st = os.stat(entry.name, dir_fd=fd, follow_symlinks=False)
+                    self.assertEqual(entry.stat(follow_symlinks=False), st)
+        finally:
+            os.close(fd)
+
     def test_empty_path(self):
         self.assertRaises(FileNotFoundError, os.scandir, '')
 
@@ -3309,7 +3357,7 @@ class TestScandir(unittest.TestCase):
         self.assertEqual(len(entries2), 0, entries2)
 
     def test_bad_path_type(self):
-        for obj in [1234, 1.234, {}, []]:
+        for obj in [1.234, {}, []]:
             self.assertRaises(TypeError, os.scandir, obj)
 
     def test_close(self):

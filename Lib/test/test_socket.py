@@ -803,11 +803,6 @@ class GeneralModuleTests(unittest.TestCase):
             self.fail("Error testing host resolution mechanisms. (fqdn: %s, all: %s)" % (fqhn, repr(all_host_names)))
 
     def test_host_resolution(self):
-        for addr in ['0.1.1.~1', '1+.1.1.1', '::1q', '::1::2',
-                     '1:1:1:1:1:1:1:1:1']:
-            self.assertRaises(OSError, socket.gethostbyname, addr)
-            self.assertRaises(OSError, socket.gethostbyaddr, addr)
-
         for addr in [support.HOST, '10.0.0.1', '255.255.255.255']:
             self.assertEqual(socket.gethostbyname(addr), addr)
 
@@ -815,6 +810,21 @@ class GeneralModuleTests(unittest.TestCase):
         # a matching name entry (e.g. 'ip6-localhost')
         for host in [support.HOST]:
             self.assertIn(host, socket.gethostbyaddr(host)[2])
+
+    def test_host_resolution_bad_address(self):
+        # These are all malformed IP addresses and expected not to resolve to
+        # any result.  But some ISPs, e.g. AWS, may successfully resolve these
+        # IPs.
+        explanation = (
+            "resolving an invalid IP address did not raise OSError; "
+            "can be caused by a broken DNS server"
+        )
+        for addr in ['0.1.1.~1', '1+.1.1.1', '::1q', '::1::2',
+                     '1:1:1:1:1:1:1:1:1']:
+            with self.assertRaises(OSError):
+                socket.gethostbyname(addr)
+            with self.assertRaises(OSError, msg=explanation):
+                socket.gethostbyaddr(addr)
 
     @unittest.skipUnless(hasattr(socket, 'sethostname'), "test needs socket.sethostname()")
     @unittest.skipUnless(hasattr(socket, 'gethostname'), "test needs socket.gethostname()")
@@ -896,6 +906,7 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(swapped & mask, mask)
             self.assertRaises(OverflowError, func, 1<<34)
 
+    @support.cpython_only
     def testNtoHErrors(self):
         import _testcapi
         s_good_values = [0, 1, 2, 0xffff]
@@ -1015,7 +1026,9 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(b'\xaa\xaa\xaa\xaa', f('170.170.170.170'))
         self.assertEqual(b'\x01\x02\x03\x04', f('1.2.3.4'))
         self.assertEqual(b'\xff\xff\xff\xff', f('255.255.255.255'))
-        assertInvalid(f, '0.0.0.')
+        # bpo-29972: inet_pton() doesn't fail on AIX
+        if not sys.platform.startswith('aix'):
+            assertInvalid(f, '0.0.0.')
         assertInvalid(f, '300.0.0.0')
         assertInvalid(f, 'a.0.0.0')
         assertInvalid(f, '1.2.3.4.5')
@@ -1070,10 +1083,12 @@ class GeneralModuleTests(unittest.TestCase):
         assertInvalid('::0::')
         assertInvalid('1::abc::')
         assertInvalid('1::abc::def')
-        assertInvalid('1:2:3:4:5:6:')
         assertInvalid('1:2:3:4:5:6')
-        assertInvalid('1:2:3:4:5:6:7:8:')
         assertInvalid('1:2:3:4:5:6:7:8:0')
+        # bpo-29972: inet_pton() doesn't fail on AIX
+        if not sys.platform.startswith('aix'):
+            assertInvalid('1:2:3:4:5:6:')
+            assertInvalid('1:2:3:4:5:6:7:8:')
 
         self.assertEqual(b'\x00' * 12 + b'\xfe\x2a\x17\x40',
             f('::254.42.23.64')

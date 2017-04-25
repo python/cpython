@@ -22,11 +22,11 @@ objects:
    Add an item to the end of the list.  Equivalent to ``a[len(a):] = [x]``.
 
 
-.. method:: list.extend(L)
+.. method:: list.extend(iterable)
    :noindex:
 
-   Extend the list by appending all the items in the given list.  Equivalent to
-   ``a[len(a):] = L``.
+   Extend the list by appending all the items from the iterable.  Equivalent to
+   ``a[len(a):] = iterable``.
 
 
 .. method:: list.insert(i, x)
@@ -40,7 +40,7 @@ objects:
 .. method:: list.remove(x)
    :noindex:
 
-   Remove the first item from the list whose value is *x*.  It is an error if
+   Remove the first item from the list whose value is equal to *x*.  It is an error if
    there is no such item.
 
 
@@ -63,12 +63,12 @@ objects:
 .. method:: list.index(x[, start[, end]])
    :noindex:
 
-   Return zero-based index in the list of the first item whose value is *x*.
+   Return zero-based index in the list of the first item whose value is equal to *x*.
    Raises a :exc:`ValueError` if there is no such item.
 
    The optional arguments *start* and *end* are interpreted as in the slice
    notation and are used to limit the search to a particular subsequence of
-   *x*.  The returned index is computed relative to the beginning of the full
+   the list.  The returned index is computed relative to the beginning of the full
    sequence rather than the *start* argument.
 
 

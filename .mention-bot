@@ -1,0 +1,11 @@
+{
+  "numFilesToCheck": 10,
+  "findPotentialReviewers": true,
+  "fileBlacklist": [
+    "Misc/ACKS",
+    "Misc/NEWS",
+    "Doc/whatsnew/*.rst"
+  ],
+  "userBlacklist": ["gvanrossum", "skrah", "haypo"],
+  "userBlacklistForPR": ["benjaminp", "skrah", "berkerpeksag"]
+}

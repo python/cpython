@@ -25,25 +25,25 @@ else
     BASECPPFLAGS=""
 fi
 
-AC_SUBST(HGVERSION)
-AC_SUBST(HGTAG)
-AC_SUBST(HGBRANCH)
+AC_SUBST(GITVERSION)
+AC_SUBST(GITTAG)
+AC_SUBST(GITBRANCH)
 
-if test -e $srcdir/.hg/dirstate
+if test -e $srcdir/.git/HEAD
 then
-AC_CHECK_PROG(HAS_HG, hg, found, not-found)
+AC_CHECK_PROG(HAS_GIT, git, found, not-found)
 else
-HAS_HG=no-repository
+HAS_GIT=no-repository
 fi
-if test $HAS_HG = found
+if test $HAS_GIT = found
 then
-    HGVERSION="hg id -i \$(srcdir)"
-    HGTAG="hg id -t \$(srcdir)"
-    HGBRANCH="hg id -b \$(srcdir)"
+    GITVERSION="git -C \$(srcdir) rev-parse --short HEAD"
+    GITTAG="git -C \$(srcdir) describe --all --always --dirty"
+    GITBRANCH="git -C \$(srcdir) name-rev --name-only HEAD"
 else
-    HGVERSION=""
-    HGTAG=""
-    HGBRANCH=""
+    GITVERSION=""
+    GITTAG=""
+    GITBRANCH=""
 fi
 
 AC_CONFIG_SRCDIR([Include/object.h])
@@ -1078,13 +1078,6 @@ case `"$ac_prog" -V 2>&1 < /dev/null` in
 esac
 AC_MSG_RESULT($GNULD)
 
-AC_C_INLINE
-if test "$ac_cv_c_inline" != no ; then
-        AC_DEFINE(USE_INLINE, 1, [Define to use the C99 inline keyword.])
-        AC_SUBST(USE_INLINE)
-fi
-
-
 AC_MSG_CHECKING(for --enable-shared)
 AC_ARG_ENABLE(shared,
               AS_HELP_STRING([--enable-shared], [disable/enable building shared python library]))
@@ -1274,7 +1267,7 @@ Py_OPT='false'
 AC_MSG_CHECKING(for --enable-optimizations)
 AC_ARG_ENABLE(optimizations, AS_HELP_STRING([--enable-optimizations], [Enable expensive optimizations (PGO, etc).  Disabled by default.]),
 [
-if test "$withval" != no
+if test "$enableval" != no
 then
   Py_OPT='true'
   AC_MSG_RESULT(yes);
@@ -1459,11 +1452,31 @@ then
            WRAP="-fwrapv"
         fi
 
-        # Clang also needs -fwrapv
         case $CC in
-            *clang*) WRAP="-fwrapv"
-            ;;
+            *clang*)
+                cc_is_clang=1
+                ;;
+            *)
+                if $CC --version 2>&1 | grep -q clang
+                then
+                    cc_is_clang=1
+                else
+                    cc_is_clang=
+                fi
         esac
+
+        if test -n "${cc_is_clang}"
+        then
+            # Clang also needs -fwrapv
+            WRAP="-fwrapv"
+
+            # bpo-30104: Python/dtoa.c requires to be build with
+            # -fno-strict-aliasing to fix compiler issue on the
+            # double/ULong[2] union using clang 4.0 and optimization level
+            # -O2 or higher
+            # https://bugs.llvm.org//show_bug.cgi?id=31928
+            ALIASING="-fno-strict-aliasing"
+        fi
 
 	case $ac_cv_prog_cc_g in
 	yes)
@@ -1471,18 +1484,21 @@ then
 		# Optimization messes up debuggers, so turn it off for
 		# debug builds.
                 if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall $STRICT_PROTO"
+                    OPT="-g -Og -Wall"
                 else
-                    OPT="-g -O0 -Wall $STRICT_PROTO"
+                    OPT="-g -O0 -Wall"
                 fi
 	    else
-		OPT="-g $WRAP -O3 -Wall $STRICT_PROTO"
+		OPT="-g $WRAP -O3 -Wall"
 	    fi
 	    ;;
 	*)
-	    OPT="-O3 -Wall $STRICT_PROTO"
+	    OPT="-O3 -Wall"
 	    ;;
 	esac
+
+	OPT="$OPT $STRICT_PROTO $ALIASING"
+
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
 	    ;;
@@ -2716,7 +2732,8 @@ esac
 
 # check for systems that require aligned memory access
 AC_MSG_CHECKING(aligned memory access is required)
-AC_TRY_RUN([
+AC_CACHE_VAL(ac_cv_aligned_required,
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main()
 {
     char s[16];
@@ -2728,18 +2745,16 @@ int main()
     if (*p1 == *p2)
         return 1;
     return 0;
-}
-              ],
-     [aligned_required=no],
-     [aligned_required=yes],
-     [aligned_required=yes])
-
-if test "$aligned_required" = yes ; then
+}]])],
+[ac_cv_aligned_required=no],
+[ac_cv_aligned_required=yes],
+[ac_cv_aligned_required=yes])
+])
+AC_MSG_RESULT($ac_cv_aligned_required)
+if test "$ac_cv_aligned_required" = yes ; then
   AC_DEFINE([HAVE_ALIGNED_REQUIRED], [1],
     [Define if aligned memory access is required])
 fi
-AC_MSG_RESULT($aligned_required)
-
 
 # str, bytes and memoryview hash algorithm
 AH_TEMPLATE(Py_HASH_ALGORITHM,
@@ -5200,7 +5215,7 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Grammar Objects Python Modules Mac Programs"
+SRCDIRS="Parser Objects Python Modules Programs"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

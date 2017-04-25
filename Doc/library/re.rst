@@ -42,6 +42,12 @@ module-level functions and methods on
 that don't require you to compile a regex object first, but miss some
 fine-tuning parameters.
 
+.. seealso::
+
+   The third-party `regex <https://pypi.python.org/pypi/regex/>`_ module,
+   which has an API compatible with the standard library :mod:`re` module,
+   but offers additional functionality and a more thorough Unicode support.
+
 
 .. _re-syntax:
 
@@ -778,14 +784,29 @@ form.
       Unmatched groups are replaced with an empty string.
 
 
-.. function:: escape(string)
+.. function:: escape(pattern)
 
-   Escape all the characters in pattern except ASCII letters, numbers and ``'_'``.
+   Escape special characters in *pattern*.
    This is useful if you want to match an arbitrary literal string that may
-   have regular expression metacharacters in it.
+   have regular expression metacharacters in it.  For example::
+
+      >>> print(re.escape('python.exe'))
+      python\.exe
+
+      >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
+      >>> print('[%s]+' % re.escape(legal_chars))
+      [abcdefghijklmnopqrstuvwxyz0123456789!\#\$%&'\*\+\-\.\^_`\|~:]+
+
+      >>> operators = ['+', '-', '*', '/', '**']
+      >>> print('|'.join(map(re.escape, sorted(operators, reverse=True))))
+      /|\-|\+|\*\*|\*
 
    .. versionchanged:: 3.3
       The ``'_'`` character is no longer escaped.
+
+   .. versionchanged:: 3.7
+      Only characters that can have special meaning in a regular expression
+      are escaped.
 
 
 .. function:: purge()
@@ -947,6 +968,11 @@ attributes:
 .. attribute:: regex.pattern
 
    The pattern string from which the RE object was compiled.
+
+
+.. versionchanged:: 3.7
+   Added support of :func:`copy.copy` and :func:`copy.deepcopy`.  Compiled
+   regular expression objects are considered atomic.
 
 
 .. _match-objects:
@@ -1148,6 +1174,11 @@ Match objects support the following methods and attributes:
 .. attribute:: match.string
 
    The string passed to :meth:`~regex.match` or :meth:`~regex.search`.
+
+
+.. versionchanged:: 3.7
+   Added support of :func:`copy.copy` and :func:`copy.deepcopy`.  Match objects
+   are considered atomic.
 
 
 .. _re-examples:

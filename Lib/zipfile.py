@@ -438,7 +438,9 @@ class ZipInfo (object):
         unpack = struct.unpack
         while len(extra) >= 4:
             tp, ln = unpack('<HH', extra[:4])
-            if tp == 1:
+            if ln+4 > len(extra):
+                raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
+            if tp == 0x0001:
                 if ln >= 24:
                     counts = unpack('<QQQ', extra[4:28])
                 elif ln == 16:
@@ -478,6 +480,8 @@ class ZipInfo (object):
         this will be the same as filename, but without a drive letter and with
         leading path separators removed).
         """
+        if isinstance(filename, os.PathLike):
+            filename = os.fspath(filename)
         st = os.stat(filename)
         isdir = stat.S_ISDIR(st.st_mode)
         mtime = time.localtime(st.st_mtime)
@@ -505,65 +509,63 @@ class ZipInfo (object):
         return self.filename[-1] == '/'
 
 
-class _ZipDecrypter:
-    """Class to handle decryption of files stored within a ZIP archive.
+# ZIP encryption uses the CRC32 one-byte primitive for scrambling some
+# internal keys. We noticed that a direct implementation is faster than
+# relying on binascii.crc32().
 
-    ZIP supports a password-based form of encryption. Even though known
-    plaintext attacks have been found against it, it is still useful
-    to be able to get data out of such a file.
+_crctable = None
+def _gen_crc(crc):
+    for j in range(8):
+        if crc & 1:
+            crc = (crc >> 1) ^ 0xEDB88320
+        else:
+            crc >>= 1
+    return crc
 
-    Usage:
-        zd = _ZipDecrypter(mypwd)
-        plain_char = zd(cypher_char)
-        plain_text = map(zd, cypher_text)
-    """
+# ZIP supports a password-based form of encryption. Even though known
+# plaintext attacks have been found against it, it is still useful
+# to be able to get data out of such a file.
+#
+# Usage:
+#     zd = _ZipDecrypter(mypwd)
+#     plain_bytes = zd(cypher_bytes)
 
-    def _GenerateCRCTable():
-        """Generate a CRC-32 table.
+def _ZipDecrypter(pwd):
+    key0 = 305419896
+    key1 = 591751049
+    key2 = 878082192
 
-        ZIP encryption uses the CRC32 one-byte primitive for scrambling some
-        internal keys. We noticed that a direct implementation is faster than
-        relying on binascii.crc32().
-        """
-        poly = 0xedb88320
-        table = [0] * 256
-        for i in range(256):
-            crc = i
-            for j in range(8):
-                if crc & 1:
-                    crc = ((crc >> 1) & 0x7FFFFFFF) ^ poly
-                else:
-                    crc = ((crc >> 1) & 0x7FFFFFFF)
-            table[i] = crc
-        return table
-    crctable = None
+    global _crctable
+    if _crctable is None:
+        _crctable = list(map(_gen_crc, range(256)))
+    crctable = _crctable
 
-    def _crc32(self, ch, crc):
+    def crc32(ch, crc):
         """Compute the CRC32 primitive on one byte."""
-        return ((crc >> 8) & 0xffffff) ^ self.crctable[(crc ^ ch) & 0xff]
+        return (crc >> 8) ^ crctable[(crc ^ ch) & 0xFF]
 
-    def __init__(self, pwd):
-        if _ZipDecrypter.crctable is None:
-            _ZipDecrypter.crctable = _ZipDecrypter._GenerateCRCTable()
-        self.key0 = 305419896
-        self.key1 = 591751049
-        self.key2 = 878082192
-        for p in pwd:
-            self._UpdateKeys(p)
+    def update_keys(c):
+        nonlocal key0, key1, key2
+        key0 = crc32(c, key0)
+        key1 = (key1 + (key0 & 0xFF)) & 0xFFFFFFFF
+        key1 = (key1 * 134775813 + 1) & 0xFFFFFFFF
+        key2 = crc32(key1 >> 24, key2)
 
-    def _UpdateKeys(self, c):
-        self.key0 = self._crc32(c, self.key0)
-        self.key1 = (self.key1 + (self.key0 & 255)) & 4294967295
-        self.key1 = (self.key1 * 134775813 + 1) & 4294967295
-        self.key2 = self._crc32((self.key1 >> 24) & 255, self.key2)
+    for p in pwd:
+        update_keys(p)
 
-    def __call__(self, c):
-        """Decrypt a single character."""
-        assert isinstance(c, int)
-        k = self.key2 | 2
-        c = c ^ (((k * (k^1)) >> 8) & 255)
-        self._UpdateKeys(c)
-        return c
+    def decrypter(data):
+        """Decrypt a bytes object."""
+        result = bytearray()
+        append = result.append
+        for c in data:
+            k = key2 | 2
+            c ^= ((k * (k^1)) >> 8) & 0xFF
+            update_keys(c)
+            append(c)
+        return bytes(result)
+
+    return decrypter
 
 
 class LZMACompressor:
@@ -949,7 +951,7 @@ class ZipExtFile(io.BufferedIOBase):
             raise EOFError
 
         if self._decrypter is not None:
-            data = bytes(map(self._decrypter, data))
+            data = self._decrypter(data)
         return data
 
     def close(self):
@@ -978,6 +980,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         return True
 
     def write(self, data):
+        if self.closed:
+            raise ValueError('I/O operation on closed file.')
         nbytes = len(data)
         self._file_size += nbytes
         self._crc = crc32(data, self._crc)
@@ -988,6 +992,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         return nbytes
 
     def close(self):
+        if self.closed:
+            return
         super().close()
         # Flush any data from the compressor, and update header info
         if self._compressor:
@@ -1069,6 +1075,8 @@ class ZipFile:
         self._comment = b''
 
         # Check if we were passed a file-like object
+        if isinstance(file, os.PathLike):
+            file = os.fspath(file)
         if isinstance(file, str):
             # No, it's a filename
             self._filePassed = 0
@@ -1405,7 +1413,7 @@ class ZipFile:
                 #  or the MSB of the file time depending on the header type
                 #  and is used to check the correctness of the password.
                 header = zef_file.read(12)
-                h = list(map(zd, header[0:12]))
+                h = zd(header[0:12])
                 if zinfo.flag_bits & 0x8:
                     # compare against the file type from extended local headers
                     check_byte = (zinfo._raw_time >> 8) & 0xff
@@ -1469,11 +1477,10 @@ class ZipFile:
            as possible. `member' may be a filename or a ZipInfo object. You can
            specify a different directory using `path'.
         """
-        if not isinstance(member, ZipInfo):
-            member = self.getinfo(member)
-
         if path is None:
             path = os.getcwd()
+        else:
+            path = os.fspath(path)
 
         return self._extract_member(member, path, pwd)
 
@@ -1486,8 +1493,13 @@ class ZipFile:
         if members is None:
             members = self.namelist()
 
+        if path is None:
+            path = os.getcwd()
+        else:
+            path = os.fspath(path)
+
         for zipinfo in members:
-            self.extract(zipinfo, path, pwd)
+            self._extract_member(zipinfo, path, pwd)
 
     @classmethod
     def _sanitize_windows_name(cls, arcname, pathsep):
@@ -1508,6 +1520,9 @@ class ZipFile:
         """Extract the ZipInfo object 'member' to a physical
            file on the path targetpath.
         """
+        if not isinstance(member, ZipInfo):
+            member = self.getinfo(member)
+
         # build the destination pathname, replacing
         # forward slashes to platform specific separators.
         arcname = member.filename.replace('/', os.path.sep)
@@ -1800,6 +1815,7 @@ class PyZipFile(ZipFile):
         If filterfunc(pathname) is given, it is called with every argument.
         When it is False, the file or directory is skipped.
         """
+        pathname = os.fspath(pathname)
         if filterfunc and not filterfunc(pathname):
             if self.debug:
                 label = 'path' if os.path.isdir(pathname) else 'file'
@@ -1953,9 +1969,9 @@ class PyZipFile(ZipFile):
 def main(args=None):
     import argparse
 
-    description = 'A simple command line interface for zipfile module.'
+    description = 'A simple command-line interface for zipfile module.'
     parser = argparse.ArgumentParser(description=description)
-    group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-l', '--list', metavar='<zipfile>',
                        help='Show listing of a zipfile')
     group.add_argument('-e', '--extract', nargs=2,
@@ -2009,9 +2025,6 @@ def main(args=None):
                 if zippath in ('', os.curdir, os.pardir):
                     zippath = ''
                 addToZip(zf, path, zippath)
-
-    else:
-        parser.exit(2, parser.format_usage())
 
 if __name__ == "__main__":
     main()

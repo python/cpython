@@ -80,7 +80,7 @@ Module Objects
    .. versionadded:: 3.3
 
 
-.. c:function:: char* PyModule_GetName(PyObject *module)
+.. c:function:: const char* PyModule_GetName(PyObject *module)
 
    Similar to :c:func:`PyModule_GetNameObject` but return the name encoded to
    ``'utf-8'``.
@@ -112,7 +112,7 @@ Module Objects
    .. versionadded:: 3.2
 
 
-.. c:function:: char* PyModule_GetFilename(PyObject *module)
+.. c:function:: const char* PyModule_GetFilename(PyObject *module)
 
    Similar to :c:func:`PyModule_GetFilenameObject` but return the filename
    encoded to 'utf-8'.
@@ -146,11 +146,11 @@ or request "multi-phase initialization" by returning the definition struct itsel
 
       Always initialize this member to :const:`PyModuleDef_HEAD_INIT`.
 
-   .. c:member:: char* m_name
+   .. c:member:: const char *m_name
 
       Name for the new module.
 
-   .. c:member:: char* m_doc
+   .. c:member:: const char *m_doc
 
       Docstring for the module; usually a docstring variable created with
       :c:func:`PyDoc_STRVAR` is used.

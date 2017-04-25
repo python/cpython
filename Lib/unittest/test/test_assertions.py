@@ -112,8 +112,8 @@ class Test_Assertions(unittest.TestCase):
                 a = A()
                 wr = weakref.ref(a)
                 try:
-                    raise IOError
-                except IOError:
+                    raise OSError
+                except OSError:
                     raise ValueError
 
             def test_functional(self):

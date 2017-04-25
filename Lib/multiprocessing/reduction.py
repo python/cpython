@@ -7,7 +7,7 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 import copyreg
 import functools
 import io

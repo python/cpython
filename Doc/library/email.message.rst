@@ -364,7 +364,7 @@ message objects.
       *header* specifies an alternative header to :mailheader:`Content-Type`.
 
       If the value contains non-ASCII characters, the charset and language may
-      be explicity specified using the optional *charset* and *language*
+      be explicitly specified using the optional *charset* and *language*
       parameters.  Optional *language* specifies the :rfc:`2231` language,
       defaulting to the empty string.  Both *charset* and *language* should be
       strings.  The default is to use the ``utf8`` *charset* and ``None`` for
