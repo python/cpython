@@ -2315,7 +2315,7 @@ data and are closely related to string objects in a variety of other ways.
    numbers are a commonly used format for describing binary data. Accordingly,
    the bytes type has an additional class method to read data in that format:
 
-   .. classmethod:: bytes.fromhex(string)
+   .. classmethod:: fromhex(string)
 
       This :class:`bytes` class method returns a bytes object, decoding the
       given string object.  The string must contain two hexadecimal digits per
@@ -2331,7 +2331,7 @@ data and are closely related to string objects in a variety of other ways.
    A reverse conversion function exists to transform a bytes object into its
    hexadecimal representation.
 
-   .. method:: bytes.hex()
+   .. method:: hex()
 
       Return a string object containing two hexadecimal digits for each
       byte in the instance.
@@ -2391,7 +2391,7 @@ objects.
    numbers are a commonly used format for describing binary data. Accordingly,
    the bytearray type has an additional class method to read data in that format:
 
-   .. classmethod:: bytearray.fromhex(string)
+   .. classmethod:: fromhex(string)
 
       This :class:`bytearray` class method returns bytearray object, decoding
       the given string object.  The string must contain two hexadecimal digits
@@ -2407,7 +2407,7 @@ objects.
    A reverse conversion function exists to transform a bytearray object into its
    hexadecimal representation.
 
-   .. method:: bytearray.hex()
+   .. method:: hex()
 
       Return a string object containing two hexadecimal digits for each
       byte in the instance.
