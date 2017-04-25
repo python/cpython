@@ -399,8 +399,7 @@ child_exec(char *const exec_array[],
            int close_fds, int restore_signals,
            int call_setsid,
            PyObject *py_fds_to_keep,
-           PyObject *preexec_fn,
-           PyObject *preexec_fn_args_tuple)
+           PyObject *preexec_fn)
 {
     int i, saved_errno, reached_preexec = 0;
     PyObject *result;
@@ -472,9 +471,9 @@ child_exec(char *const exec_array[],
 #endif
 
     reached_preexec = 1;
-    if (preexec_fn != Py_None && preexec_fn_args_tuple) {
+    if (preexec_fn != Py_None) {
         /* This is where the user has asked us to deadlock their program. */
-        result = PyObject_Call(preexec_fn, preexec_fn_args_tuple, NULL);
+        result = PyObject_Call(preexec_fn, _PyTuple_Empty, NULL);
         if (result == NULL) {
             /* Stringifying the exception or traceback would involve
              * memory allocation and thus potential for deadlock.
@@ -549,7 +548,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     PyObject *executable_list, *py_fds_to_keep;
     PyObject *env_list, *preexec_fn;
     PyObject *process_args, *converted_args = NULL, *fast_args = NULL;
-    PyObject *preexec_fn_args_tuple = NULL;
     int p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite;
     int errpipe_read, errpipe_write, close_fds, restore_signals;
     int call_setsid;
@@ -654,7 +652,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     }
 
     if (preexec_fn != Py_None) {
-        preexec_fn_args_tuple = _PyTuple_Empty;
 #ifdef WITH_THREAD
         _PyImport_AcquireLock();
         import_lock_held = 1;
@@ -691,7 +688,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
                    p2cread, p2cwrite, c2pread, c2pwrite,
                    errread, errwrite, errpipe_read, errpipe_write,
                    close_fds, restore_signals, call_setsid,
-                   py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
+                   py_fds_to_keep, preexec_fn);
         _exit(255);
         return NULL;  /* Dead code to avoid a potential compiler warning. */
     }
