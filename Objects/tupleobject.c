@@ -39,7 +39,7 @@ PyObject *_PyTuple_Empty = (PyObject *) &_PyTuple_EmptyStruct.obj;
 
 #if PyTuple_MAXSAVESIZE > 1
 /* Entries 1 up to PyTuple_MAXSAVESIZE are free lists, entry 0 is not used. */
-static PyTupleObject *free_list[PyTuple_MAXSAVESIZE] = {};
+static PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
 static int numfree[PyTuple_MAXSAVESIZE];
 #endif
 #ifdef COUNT_ALLOCS
