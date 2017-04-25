@@ -18,6 +18,10 @@ Actions are bound to events by resources (e.g. keyword argument
 command) or with the method bind.
 
 Example (Hello, World):
+Notice that in Python 3.* Tkinter was changed to tkinter
+Please check your version of Python and that your system
+is configured for tkinter properly.
+
 import tkinter
 from tkinter.constants import *
 tk = tkinter.Tk()
