@@ -35,6 +35,10 @@ Tuple Objects
 
    Return a new tuple object of size *len*, or *NULL* on failure.
 
+   .. versionchanged:: 3.7
+
+      ``PyTuple_New(0)`` now does not raise exceptions.
+
 
 .. c:function:: PyObject* PyTuple_Pack(Py_ssize_t n, ...)
 

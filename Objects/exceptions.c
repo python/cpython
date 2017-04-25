@@ -40,19 +40,8 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->dict = NULL;
     self->traceback = self->cause = self->context = NULL;
     self->suppress_context = 0;
-
-    if (args) {
-        self->args = args;
-        Py_INCREF(args);
-        return (PyObject *)self;
-    }
-
-    self->args = PyTuple_New(0);
-    if (!self->args) {
-        Py_DECREF(self);
-        return NULL;
-    }
-
+    Py_INCREF(args);
+    self->args = args;
     return (PyObject *)self;
 }
 
@@ -611,7 +600,6 @@ static int
 ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"name", "path", 0};
-    PyObject *empty_tuple;
     PyObject *msg = NULL;
     PyObject *name = NULL;
     PyObject *path = NULL;
@@ -619,15 +607,10 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
     if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1)
         return -1;
 
-    empty_tuple = PyTuple_New(0);
-    if (!empty_tuple)
-        return -1;
-    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$OO:ImportError", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(_PyTuple_Empty, kwds, "|$OO:ImportError", kwlist,
                                      &name, &path)) {
-        Py_DECREF(empty_tuple);
         return -1;
     }
-    Py_DECREF(empty_tuple);
 
     Py_XINCREF(name);
     Py_XSETREF(self->name, name);
@@ -991,8 +974,7 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     else {
         self->args = PyTuple_New(0);
-        if (self->args == NULL)
-            goto error;
+        assert(self->args != NULL);
     }
 
     Py_XDECREF(args);
@@ -2249,9 +2231,7 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* Fetch object from freelist and revive it */
     self = memerrors_freelist;
     self->args = PyTuple_New(0);
-    /* This shouldn't happen since the empty tuple is persistent */
-    if (self->args == NULL)
-        return NULL;
+    assert(self->args != NULL);
     memerrors_freelist = (PyBaseExceptionObject *) self->dict;
     memerrors_numfree--;
     self->dict = NULL;
@@ -2283,7 +2263,7 @@ preallocate_memerrors(void)
     PyObject *errors[MEMERRORS_SAVE];
     for (i = 0; i < MEMERRORS_SAVE; i++) {
         errors[i] = MemoryError_new((PyTypeObject *) PyExc_MemoryError,
-                                    NULL, NULL);
+                                    _PyTuple_Empty, NULL);
         if (!errors[i])
             Py_FatalError("Could not preallocate MemoryError object");
     }
@@ -2675,7 +2655,8 @@ _PyExc_Init(PyObject *bltinmod)
     preallocate_memerrors();
 
     if (!PyExc_RecursionErrorInst) {
-        PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RecursionError, NULL, NULL);
+        PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RecursionError,
+                                                     _PyTuple_Empty, NULL);
         if (!PyExc_RecursionErrorInst)
             Py_FatalError("Cannot pre-allocate RecursionError instance for "
                             "recursion errors");

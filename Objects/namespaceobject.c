@@ -171,14 +171,7 @@ PyDoc_STRVAR(namespace_reduce__doc__, "Return state information for pickling");
 static PyObject *
 namespace_reduce(_PyNamespaceObject *ns)
 {
-    PyObject *result, *args = PyTuple_New(0);
-
-    if (!args)
-        return NULL;
-
-    result = PyTuple_Pack(3, (PyObject *)Py_TYPE(ns), args, ns->ns_dict);
-    Py_DECREF(args);
-    return result;
+    return PyTuple_Pack(3, (PyObject *)Py_TYPE(ns), _PyTuple_Empty, ns->ns_dict);
 }
 
 

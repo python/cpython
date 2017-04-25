@@ -3625,20 +3625,12 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             if (callable == NULL)
                 return -1;
 
-            newargs = PyTuple_New(0);
-            if (newargs == NULL) {
-                Py_DECREF(callable);
-                return -1;
-            }
-
             if (save(self, callable, 0) < 0 ||
-                save(self, newargs, 0) < 0 ||
+                save(self, _PyTuple_Empty, 0) < 0 ||
                 _Pickler_Write(self, &reduce_op, 1) < 0) {
-                Py_DECREF(newargs);
                 Py_DECREF(callable);
                 return -1;
             }
-            Py_DECREF(newargs);
             Py_DECREF(callable);
         }
     }

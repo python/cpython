@@ -962,7 +962,7 @@ odict_reduce(register PyODictObject *od)
     _Py_IDENTIFIER(__dict__);
     _Py_IDENTIFIER(items);
     PyObject *dict = NULL, *result = NULL;
-    PyObject *items_iter, *items, *args = NULL;
+    PyObject *items_iter, *items;
 
     /* capture any instance state */
     dict = _PyObject_GetAttrId((PyObject *)od, &PyId___dict__);
@@ -980,10 +980,6 @@ odict_reduce(register PyODictObject *od)
     }
 
     /* build the result */
-    args = PyTuple_New(0);
-    if (args == NULL)
-        goto Done;
-
     items = _PyObject_CallMethodIdObjArgs((PyObject *)od, &PyId_items, NULL);
     if (items == NULL)
         goto Done;
@@ -993,12 +989,11 @@ odict_reduce(register PyODictObject *od)
     if (items_iter == NULL)
         goto Done;
 
-    result = PyTuple_Pack(5, Py_TYPE(od), args, dict ? dict : Py_None, Py_None, items_iter);
+    result = PyTuple_Pack(5, Py_TYPE(od), _PyTuple_Empty, dict ? dict : Py_None, Py_None, items_iter);
     Py_DECREF(items_iter);
 
 Done:
     Py_XDECREF(dict);
-    Py_XDECREF(args);
 
     return result;
 }

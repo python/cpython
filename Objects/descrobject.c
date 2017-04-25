@@ -1360,7 +1360,6 @@ property_dealloc(PyObject *self)
 static PyObject *
 property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
-    static PyObject * volatile cached_args = NULL;
     PyObject *args;
     PyObject *ret;
     propertyobject *gs = (propertyobject *)self;
@@ -1373,28 +1372,13 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
         return NULL;
     }
-    args = cached_args;
-    cached_args = NULL;
-    if (!args) {
-        args = PyTuple_New(1);
-        if (!args)
-            return NULL;
-        _PyObject_GC_UNTRACK(args);
-    }
+    args = PyTuple_New(1);
+    if (!args)
+        return NULL;
     Py_INCREF(obj);
     PyTuple_SET_ITEM(args, 0, obj);
     ret = PyObject_Call(gs->prop_get, args, NULL);
-    if (cached_args == NULL && Py_REFCNT(args) == 1) {
-        assert(PyTuple_GET_SIZE(args) == 1);
-        assert(PyTuple_GET_ITEM(args, 0) == obj);
-        cached_args = args;
-        Py_DECREF(obj);
-    }
-    else {
-        assert(Py_REFCNT(args) >= 1);
-        _PyObject_GC_TRACK(args);
-        Py_DECREF(args);
-    }
+    Py_DECREF(args);
     return ret;
 }
 

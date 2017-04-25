@@ -390,7 +390,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     PyObject* result;
     int numcols;
     PyObject* descriptor;
-    PyObject* second_argument = NULL;
+    PyObject* second_argument;
     sqlite_int64 lastrowid;
 
     if (!check_cursor(self)) {
@@ -426,6 +426,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         }
     } else {
         /* execute() */
+        second_argument = _PyTuple_Empty;
         if (!PyArg_ParseTuple(args, "O|O", &operation, &second_argument)) {
             goto error;
         }
@@ -435,24 +436,10 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
             goto error;
         }
 
-        parameters_list = PyList_New(0);
+        parameters_list = PyTuple_Pack(1, second_argument);
         if (!parameters_list) {
             goto error;
         }
-
-        if (second_argument == NULL) {
-            second_argument = PyTuple_New(0);
-            if (!second_argument) {
-                goto error;
-            }
-        } else {
-            Py_INCREF(second_argument);
-        }
-        if (PyList_Append(parameters_list, second_argument) != 0) {
-            Py_DECREF(second_argument);
-            goto error;
-        }
-        Py_DECREF(second_argument);
 
         parameters_iter = PyObject_GetIter(parameters_list);
         if (!parameters_iter) {

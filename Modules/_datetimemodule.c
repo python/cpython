@@ -3169,9 +3169,7 @@ tzinfo_reduce(PyObject *self)
         PyErr_Clear();
 
         args = PyTuple_New(0);
-        if (args == NULL) {
-            return NULL;
-        }
+        assert(args != NULL);
     }
 
     getstate = _PyObject_GetAttrId(self, &PyId___getstate__);

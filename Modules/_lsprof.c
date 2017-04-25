@@ -115,12 +115,11 @@ static PyTypeObject PyProfiler_Type;
 /*** External Timers ***/
 
 #define DOUBLE_TIMER_PRECISION   4294967296.0
-static PyObject *empty_tuple;
 
 static long long CallExternalTimer(ProfilerObject *pObj)
 {
     long long result;
-    PyObject *o = PyObject_Call(pObj->externalTimer, empty_tuple, NULL);
+    PyObject *o = PyObject_Call(pObj->externalTimer, _PyTuple_Empty, NULL);
     if (o == NULL) {
         PyErr_WriteUnraisable(pObj->externalTimer);
         return 0;
@@ -882,7 +881,6 @@ PyInit__lsprof(void)
                        (PyObject*) &StatsEntryType);
     PyModule_AddObject(module, "profiler_subentry",
                        (PyObject*) &StatsSubEntryType);
-    empty_tuple = PyTuple_New(0);
     initialized = 1;
     return module;
 }

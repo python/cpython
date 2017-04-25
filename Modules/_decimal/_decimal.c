@@ -3735,9 +3735,7 @@ PyDec_AsTuple(PyObject *dec, PyObject *dummy UNUSED)
         }
         else {
             coeff = PyTuple_New(0);
-            if (coeff == NULL) {
-                goto out;
-            }
+            assert(coeff != NULL);
         }
     }
 

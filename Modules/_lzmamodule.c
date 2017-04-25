@@ -71,9 +71,6 @@ typedef struct {
 /* LZMAError class object. */
 static PyObject *Error;
 
-/* An empty tuple, used by the filter specifier parsing code. */
-static PyObject *empty_tuple;
-
 
 /* Helper functions. */
 
@@ -234,7 +231,7 @@ parse_filter_spec_lzma(PyObject *spec)
         return NULL;
     }
 
-    if (!PyArg_ParseTupleAndKeywords(empty_tuple, spec,
+    if (!PyArg_ParseTupleAndKeywords(_PyTuple_Empty, spec,
                                      "|OOO&O&O&O&O&O&O&O&", optnames,
                                      &id, &preset_obj,
                                      uint32_converter, &options->dict_size,
@@ -261,7 +258,7 @@ parse_filter_spec_delta(PyObject *spec)
     uint32_t dist = 1;
     lzma_options_delta *options;
 
-    if (!PyArg_ParseTupleAndKeywords(empty_tuple, spec, "|OO&", optnames,
+    if (!PyArg_ParseTupleAndKeywords(_PyTuple_Empty, spec, "|OO&", optnames,
                                      &id, uint32_converter, &dist)) {
         PyErr_SetString(PyExc_ValueError,
                         "Invalid filter specifier for delta filter");
@@ -285,7 +282,7 @@ parse_filter_spec_bcj(PyObject *spec)
     uint32_t start_offset = 0;
     lzma_options_bcj *options;
 
-    if (!PyArg_ParseTupleAndKeywords(empty_tuple, spec, "|OO&", optnames,
+    if (!PyArg_ParseTupleAndKeywords(_PyTuple_Empty, spec, "|OO&", optnames,
                                      &id, uint32_converter, &start_offset)) {
         PyErr_SetString(PyExc_ValueError,
                         "Invalid filter specifier for BCJ filter");
@@ -1460,10 +1457,6 @@ PyMODINIT_FUNC
 PyInit__lzma(void)
 {
     PyObject *m;
-
-    empty_tuple = PyTuple_New(0);
-    if (empty_tuple == NULL)
-        return NULL;
 
     m = PyModule_Create(&_lzmamodule);
     if (m == NULL)

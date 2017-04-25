@@ -40,6 +40,10 @@ PyAPI_DATA(PyTypeObject) PyTupleIter_Type;
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TUPLE_SUBCLASS)
 #define PyTuple_CheckExact(op) (Py_TYPE(op) == &PyTuple_Type)
 
+#ifndef Py_LIMITED_API
+PyAPI_DATA(PyObject *) _PyTuple_Empty;
+#endif
+
 PyAPI_FUNC(PyObject *) PyTuple_New(Py_ssize_t size);
 PyAPI_FUNC(Py_ssize_t) PyTuple_Size(PyObject *);
 PyAPI_FUNC(PyObject *) PyTuple_GetItem(PyObject *, Py_ssize_t);

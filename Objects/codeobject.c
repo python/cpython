@@ -213,18 +213,12 @@ PyCodeObject *
 PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 {
     static PyObject *emptystring = NULL;
-    static PyObject *nulltuple = NULL;
     PyObject *filename_ob = NULL;
     PyObject *funcname_ob = NULL;
     PyCodeObject *result = NULL;
     if (emptystring == NULL) {
         emptystring = PyBytes_FromString("");
         if (emptystring == NULL)
-            goto failed;
-    }
-    if (nulltuple == NULL) {
-        nulltuple = PyTuple_New(0);
-        if (nulltuple == NULL)
             goto failed;
     }
     funcname_ob = PyUnicode_FromString(funcname);
@@ -240,11 +234,11 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
                 0,                              /* stacksize */
                 0,                              /* flags */
                 emptystring,                    /* code */
-                nulltuple,                      /* consts */
-                nulltuple,                      /* names */
-                nulltuple,                      /* varnames */
-                nulltuple,                      /* freevars */
-                nulltuple,                      /* cellvars */
+                _PyTuple_Empty,                 /* consts */
+                _PyTuple_Empty,                 /* names */
+                _PyTuple_Empty,                 /* varnames */
+                _PyTuple_Empty,                 /* freevars */
+                _PyTuple_Empty,                 /* cellvars */
                 filename_ob,                    /* filename */
                 funcname_ob,                    /* name */
                 firstlineno,                    /* firstlineno */

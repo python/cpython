@@ -1023,24 +1023,15 @@ element_setstate_from_Python(ElementObject *self, PyObject *state)
 {
     static char *kwlist[] = {PICKLED_TAG, PICKLED_ATTRIB, PICKLED_TEXT,
                              PICKLED_TAIL, PICKLED_CHILDREN, 0};
-    PyObject *args;
     PyObject *tag, *attrib, *text, *tail, *children;
-    PyObject *retval;
 
     tag = attrib = text = tail = children = NULL;
-    args = PyTuple_New(0);
-    if (!args)
+
+    if (!PyArg_ParseTupleAndKeywords(_PyTuple_Empty, state, "|$OOOOO", kwlist, &tag,
+                                     &attrib, &text, &tail, &children))
         return NULL;
-
-    if (PyArg_ParseTupleAndKeywords(args, state, "|$OOOOO", kwlist, &tag,
-                                    &attrib, &text, &tail, &children))
-        retval = element_setstate_from_attributes(self, tag, attrib, text,
-                                                  tail, children);
-    else
-        retval = NULL;
-
-    Py_DECREF(args);
-    return retval;
+    return element_setstate_from_attributes(self, tag, attrib, text, tail,
+                                            children);
 }
 
 /*[clinic input]

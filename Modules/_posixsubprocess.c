@@ -654,9 +654,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     }
 
     if (preexec_fn != Py_None) {
-        preexec_fn_args_tuple = PyTuple_New(0);
-        if (!preexec_fn_args_tuple)
-            goto cleanup;
+        preexec_fn_args_tuple = _PyTuple_Empty;
 #ifdef WITH_THREAD
         _PyImport_AcquireLock();
         import_lock_held = 1;
@@ -724,7 +722,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     if (_enable_gc(need_to_reenable_gc, gc_module)) {
         pid = -1;
     }
-    Py_XDECREF(preexec_fn_args_tuple);
     Py_XDECREF(gc_module);
 
     if (pid == -1)
@@ -745,7 +742,6 @@ cleanup:
         _Py_FreeCharPArray(exec_array);
     Py_XDECREF(converted_args);
     Py_XDECREF(fast_args);
-    Py_XDECREF(preexec_fn_args_tuple);
     _enable_gc(need_to_reenable_gc, gc_module);
     Py_XDECREF(gc_module);
     return NULL;

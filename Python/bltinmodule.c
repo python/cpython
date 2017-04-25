@@ -1513,24 +1513,18 @@ static PyObject *
 min_max(PyObject *args, PyObject *kwds, int op)
 {
     PyObject *v, *it, *item, *val, *maxitem, *maxval, *keyfunc=NULL;
-    PyObject *emptytuple, *defaultval = NULL;
+    PyObject *defaultval = NULL;
     static char *kwlist[] = {"key", "default", NULL};
     const char *name = op == Py_LT ? "min" : "max";
     const int positional = PyTuple_Size(args) > 1;
-    int ret;
 
     if (positional)
         v = args;
     else if (!PyArg_UnpackTuple(args, name, 1, 1, &v))
         return NULL;
 
-    emptytuple = PyTuple_New(0);
-    if (emptytuple == NULL)
-        return NULL;
-    ret = PyArg_ParseTupleAndKeywords(emptytuple, kwds, "|$OO", kwlist,
-                                      &keyfunc, &defaultval);
-    Py_DECREF(emptytuple);
-    if (!ret)
+    if (!PyArg_ParseTupleAndKeywords(_PyTuple_Empty, kwds, "|$OO", kwlist,
+                                     &keyfunc, &defaultval))
         return NULL;
 
     if (positional && defaultval != NULL) {

@@ -2031,15 +2031,10 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (kwds != NULL) {
         char *kwlist[] = {"repeat", 0};
-        PyObject *tmpargs = PyTuple_New(0);
-        if (tmpargs == NULL)
-            return NULL;
-        if (!PyArg_ParseTupleAndKeywords(tmpargs, kwds, "|n:product",
+        if (!PyArg_ParseTupleAndKeywords(_PyTuple_Empty, kwds, "|n:product",
                                          kwlist, &repeat)) {
-            Py_DECREF(tmpargs);
             return NULL;
         }
-        Py_DECREF(tmpargs);
         if (repeat < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "repeat argument cannot be negative");
@@ -4491,13 +4486,9 @@ zip_longest_reduce(ziplongestobject *lz)
     for (i=0; i<PyTuple_GET_SIZE(lz->ittuple); i++) {
         PyObject *elem = PyTuple_GET_ITEM(lz->ittuple, i);
         if (elem == NULL) {
-            elem = PyTuple_New(0);
-            if (elem == NULL) {
-                Py_DECREF(args);
-                return NULL;
-            }
-        } else
-            Py_INCREF(elem);
+            elem = _PyTuple_Empty;
+        }
+        Py_INCREF(elem);
         PyTuple_SET_ITEM(args, i, elem);
     }
     return Py_BuildValue("ONO", Py_TYPE(lz), args, lz->fillvalue);
