@@ -55,9 +55,9 @@ patterns.
       import fnmatch
       import os
 
-      for file in os.listdir('.'):
-          if fnmatch.fnmatch(file, '*.txt'):
-              print(file)
+      for filename in os.listdir('.'):
+          if fnmatch.fnmatch(filename, '*.txt'):
+              print(filename)
 
 
 .. function:: fnmatchcase(filename, pattern)
