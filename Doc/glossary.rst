@@ -273,10 +273,10 @@ Glossary
       Called a hash in Perl.
 
    dictionary comprehension
-      A compact way to process all or part of the pair elements in a sequence
+      A compact way to process all or part of the items in a sequence
       and return a dictionary with the results. ``results = {n: n ** 2 for n in
       range(10)}`` generates a dictionary containing key ``n`` which mapped to
-      value ``n ** 2``.
+      value ``n ** 2``. See :ref:`comprehensions`.
 
    dictionary view
       The objects returned from :meth:`dict.keys`, :meth:`dict.values`, and
@@ -930,7 +930,8 @@ Glossary
    set comprehension
       A compact way to process all or part of the elements in a sequence and
       return a set with the results. ``results = {c for c in 'abracadabra' if
-      c not in 'abc'}`` generates a set of strings with ``{'r', 'd'}``.
+      c not in 'abc'}`` generates the set of strings with ``{'r', 'd'}``.  See
+      :ref:`comprehensions`.
 
    sequence
       An :term:`iterable` which supports efficient element access using integer
