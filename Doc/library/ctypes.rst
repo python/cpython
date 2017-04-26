@@ -308,12 +308,16 @@ bytes objects are immutable)::
 
    >>> s = "Hello, World"
    >>> c_s = c_wchar_p(s)
-   >>> print(c_s, c_s.value)
-   c_wchar_p(139966785747344) Hello World
+   >>> print(c_s)
+   c_wchar_p(139966785747344)
+   >>> print(c_s.value)
+   Hello World
    >>> c_s.value = "Hi, there"
-   >>> print(c_s, c_s.value)
-   c_wchar_p(139966783348904) Hi, there
-   >>> print(s)                            # first object is unchanged
+   >>> print(c_s)
+   c_wchar_p(139966783348904)
+   >>> print(c_s.value)
+   Hi, there
+   >>> print(s)                # first object is unchanged
    Hello, World
    >>>
 
