@@ -1280,34 +1280,34 @@ The exact constants available are system dependent.
 | ``A_ATTRIBUTES`` | Bit-mask to extract           |
 |                  | attributes                    |
 +------------------+-------------------------------+
-| ``A_ALTCHARSET`` | Alternate character set mode. |
-+------------------+-------------------------------+
-| ``A_BLINK``      | Blink mode.                   |
-+------------------+-------------------------------+
-| ``A_BOLD``       | Bold mode.                    |
-+------------------+-------------------------------+
-| ``A_ITALIC``     | Italic mode.                  |
-+------------------+-------------------------------+
-| ``A_DIM``        | Dim mode.                     |
-+------------------+-------------------------------+
-| ``A_INVIS``      | Invisible or blank mode       |
-+------------------+-------------------------------+
-| ``A_PROTECT``    | Protected mode                |
-+------------------+-------------------------------+
 | ``A_CHARTEXT``   | Bit-mask to extract a         |
 |                  | character                     |
 +------------------+-------------------------------+
 | ``A_COLOR``      | Bit-mask to extract           |
 |                  | color-pair field information  |
 +------------------+-------------------------------+
-| ``A_NORMAL``     | Normal attribute.             |
+| ``A_ALTCHARSET`` | Alternate character set mode  |
++------------------+-------------------------------+
+| ``A_BLINK``      | Blink mode                    |
++------------------+-------------------------------+
+| ``A_BOLD``       | Bold mode                     |
++------------------+-------------------------------+
+| ``A_DIM``        | Dim mode                      |
++------------------+-------------------------------+
+| ``A_INVIS``      | Invisible or blank mode       |
++------------------+-------------------------------+
+| ``A_ITALIC``     | Italic mode                   |
++------------------+-------------------------------+
+| ``A_NORMAL``     | Normal attribute              |
++------------------+-------------------------------+
+| ``A_PROTECT``    | Protected mode                |
 +------------------+-------------------------------+
 | ``A_REVERSE``    | Reverse background and        |
-|                  | foreground colors.            |
+|                  | foreground colors             |
 +------------------+-------------------------------+
-| ``A_STANDOUT``   | Standout mode.                |
+| ``A_STANDOUT``   | Standout mode                 |
 +------------------+-------------------------------+
-| ``A_UNDERLINE``  | Underline mode.               |
+| ``A_UNDERLINE``  | Underline mode                |
 +------------------+-------------------------------+
 | ``A_HORIZONTAL`` | Horizontal highlight          |
 +------------------+-------------------------------+
