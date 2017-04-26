@@ -93,6 +93,7 @@ __all__ = [
 ]
 
 import __future__
+import argparse
 import difflib
 import inspect
 import linecache
@@ -2740,7 +2741,6 @@ __test__ = {"_TestClass": _TestClass,
 
 
 def _test():
-    import argparse
     parser = argparse.ArgumentParser(description="doctest runner")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help='print very verbose output for all tests')
