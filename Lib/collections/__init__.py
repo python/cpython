@@ -26,6 +26,7 @@ __all__ += _collections_abc.__all__
 from operator import itemgetter as _itemgetter, eq as _eq
 from keyword import iskeyword as _iskeyword
 import sys as _sys
+import heapq as _heapq
 from _weakref import proxy as _proxy
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 from reprlib import recursive_repr as _recursive_repr
@@ -550,8 +551,7 @@ class Counter(dict):
         # Emulate Bag.sortedByCount from Smalltalk
         if n is None:
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
-        import heapq
-        return heapq.nlargest(n, self.items(), key=_itemgetter(1))
+        return _heapq.nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
         '''Iterator over elements repeating each as many times as its count.
