@@ -3831,7 +3831,7 @@ The constructors for both classes work the same:
 .. class:: set([iterable])
            frozenset([iterable])
 
-   Sets can be created by several ways:b
+   Sets can be created by several ways:
 
    * Using a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
    * Using a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
