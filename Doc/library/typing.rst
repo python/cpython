@@ -140,6 +140,8 @@ See :pep:`484` for more details.
    ``Derived`` is expected. This is useful when you want to prevent logic
    errors with minimal runtime cost.
 
+.. versionadded:: 3.5.2
+
 Callable
 --------
 
@@ -488,6 +490,8 @@ The module defines the following classes, functions and decorators:
    ``Type[Any]`` is equivalent to ``Type`` which in turn is equivalent
    to ``type``, which is the root of Python's metaclass hierarchy.
 
+   .. versionadded:: 3.5.2
+
 .. class:: Iterable(Generic[T_co])
 
     A generic version of :class:`collections.abc.Iterable`.
@@ -499,6 +503,8 @@ The module defines the following classes, functions and decorators:
 .. class:: Reversible(Iterable[T_co])
 
     A generic version of :class:`collections.abc.Reversible`.
+
+   .. versionadded:: 3.5.2
 
 .. class:: SupportsInt
 
@@ -680,6 +686,8 @@ The module defines the following classes, functions and decorators:
 
    .. versionadded:: 3.6.1
 
+   .. versionadded:: 3.5.2
+
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
    A generator can be annotated by the generic type
@@ -755,6 +763,8 @@ The module defines the following classes, functions and decorators:
 
        def add_unicode_checkmark(text: Text) -> Text:
            return text + u' \u2713'
+
+   .. versionadded:: 3.5.2
 
 .. class:: io
 
@@ -840,6 +850,8 @@ The module defines the following classes, functions and decorators:
 
       UserId = NewType('UserId', int)
       first_user = UserId(1)
+
+   .. versionadded:: 3.5.2
 
 .. function:: cast(typ, val)
 
@@ -1043,3 +1055,5 @@ The module defines the following classes, functions and decorators:
 
       def fun():
           local_var: expensive_mod.some_type = other_fun()
+
+   .. versionadded:: 3.5.2
