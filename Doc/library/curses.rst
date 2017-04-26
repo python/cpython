@@ -1271,11 +1271,15 @@ The :mod:`curses` module defines the following data members:
    A string representing the current version of the module.  Also available as
    :const:`__version__`.
 
-Several constants are available to specify character cell attributes:
+Some constants are available to specify character cell attributes.
+The exact constants available are system dependent.
 
 +------------------+-------------------------------+
 | Attribute        | Meaning                       |
 +==================+===============================+
+| ``A_ATTRIBUTES`` | Bit-mask to extract           |
+|                  | attributes                    |
++------------------+-------------------------------+
 | ``A_ALTCHARSET`` | Alternate character set mode. |
 +------------------+-------------------------------+
 | ``A_BLINK``      | Blink mode.                   |
@@ -1286,6 +1290,16 @@ Several constants are available to specify character cell attributes:
 +------------------+-------------------------------+
 | ``A_DIM``        | Dim mode.                     |
 +------------------+-------------------------------+
+| ``A_INVIS``      | Invisible or blank mode       |
++------------------+-------------------------------+
+| ``A_PROTECT``    | Protected mode                |
++------------------+-------------------------------+
+| ``A_CHARTEXT``   | Bit-mask to extract a         |
+|                  | character                     |
++------------------+-------------------------------+
+| ``A_COLOR``      | Bit-mask to extract           |
+|                  | color-pair field information  |
++------------------+-------------------------------+
 | ``A_NORMAL``     | Normal attribute.             |
 +------------------+-------------------------------+
 | ``A_REVERSE``    | Reverse background and        |
@@ -1294,6 +1308,18 @@ Several constants are available to specify character cell attributes:
 | ``A_STANDOUT``   | Standout mode.                |
 +------------------+-------------------------------+
 | ``A_UNDERLINE``  | Underline mode.               |
++------------------+-------------------------------+
+| ``A_HORIZONTAL`` | Horizontal highlight          |
++------------------+-------------------------------+
+| ``A_LEFT``       | Left highlight                |
++------------------+-------------------------------+
+| ``A_LOW``        | Low highlight                 |
++------------------+-------------------------------+
+| ``A_RIGHT``      | Right highlight               |
++------------------+-------------------------------+
+| ``A_TOP``        | Top highlight                 |
++------------------+-------------------------------+
+| ``A_VERTICAL``   | Vertical highlight            |
 +------------------+-------------------------------+
 
 .. versionadded:: 3.7
