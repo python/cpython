@@ -314,7 +314,7 @@ bytes objects are immutable)::
    Hello World
    >>> c_s.value = "Hi, there"
    >>> print(c_s)
-   c_wchar_p(139966783348904)
+   c_wchar_p(139966783348904)  # the memory location have changed
    >>> print(c_s.value)
    Hi, there
    >>> print(s)                # first object is unchanged
