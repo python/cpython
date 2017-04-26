@@ -317,6 +317,8 @@ Extension Modules
 Library
 -------
 
+- bpo-30101: Add support for curses.A_ITALIC.
+
 - bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch
   by Nate Soares.
 
