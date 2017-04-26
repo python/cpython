@@ -303,6 +303,7 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None):
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-q', action='store_true',
                        help="don't print version and copyright messages")

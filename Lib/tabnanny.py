@@ -40,6 +40,7 @@ def errprint(*args):
 
 def main():
     import getopt
+
     global verbose, filename_only
     try:
         opts, args = getopt.getopt(sys.argv[1:], "qv")
