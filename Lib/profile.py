@@ -25,10 +25,8 @@
 
 
 import sys
-import os
 import time
 import marshal
-from optparse import OptionParser
 
 __all__ = ["run", "runctx", "Profile"]
 
@@ -552,6 +550,9 @@ class Profile:
 #****************************************************************************
 
 def main():
+    import os
+    from optparse import OptionParser
+
     usage = "profile.py [-o output_file_path] [-s sort] scriptfile [arg] ..."
     parser = OptionParser(usage=usage)
     parser.allow_interspersed_args = False
