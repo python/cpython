@@ -37,7 +37,7 @@ Tuple Objects
 
    .. versionchanged:: 3.7
 
-      ``PyTuple_New(0)`` now does not raise exceptions.
+      ``PyTuple_New(0)`` always succeeds and never returns *NULL*.
 
 
 .. c:function:: PyObject* PyTuple_Pack(Py_ssize_t n, ...)
