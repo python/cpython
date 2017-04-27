@@ -66,10 +66,8 @@ static const char copyright[] =
 #pragma warning(disable: 4710) /* who cares if functions are not inlined ;-) */
 /* fastest possible local call under MSVC */
 #define LOCAL(type) static __inline type __fastcall
-#elif defined(USE_INLINE)
-#define LOCAL(type) static inline type
 #else
-#define LOCAL(type) static type
+#define LOCAL(type) static inline type
 #endif
 
 /* error codes */

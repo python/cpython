@@ -59,11 +59,11 @@ the persistent dictionary on disk, if feasible).
 from pickle import Pickler, Unpickler
 from io import BytesIO
 
-import collections
+import collections.abc
 
 __all__ = ["Shelf", "BsdDbShelf", "DbfilenameShelf", "open"]
 
-class _ClosedDict(collections.MutableMapping):
+class _ClosedDict(collections.abc.MutableMapping):
     'Marker for a closed dict.  Access attempts raise a ValueError.'
 
     def closed(self, *args):
@@ -74,7 +74,7 @@ class _ClosedDict(collections.MutableMapping):
         return '<Closed Dictionary>'
 
 
-class Shelf(collections.MutableMapping):
+class Shelf(collections.abc.MutableMapping):
     """Base class for shelf implementations.
 
     This is initialized with a dictionary-like object.

@@ -41,6 +41,13 @@ class BuildExtTestCase(TempdirManager,
         return build_ext(*args, **kwargs)
 
     def test_build_ext(self):
+        # bpo-30132: On Windows, a .pdb file may be created in the current
+        # working directory. Create a temporary working directory to cleanup
+        # everything at the end of the test.
+        with support.temp_cwd():
+            self._test_build_ext()
+
+    def _test_build_ext(self):
         cmd = support.missing_compiler_executable()
         if cmd is not None:
             self.skipTest('The %r command is not found' % cmd)
