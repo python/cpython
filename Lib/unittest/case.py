@@ -857,12 +857,15 @@ class TestCase(object):
             raise TypeError("specify delta or places not both")
 
         if delta is not None:
-            if abs(first - second) <= delta:
+            diff = abs(first - second)
+            if diff <= delta:
                 return
 
-            standardMsg = '%s != %s within %s delta' % (safe_repr(first),
-                                                        safe_repr(second),
-                                                        safe_repr(delta))
+            standardMsg = '%s != %s within %s delta (%s difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                safe_repr(delta),
+                safe_repr(diff))
         else:
             if places is None:
                 places = 7
@@ -891,11 +894,14 @@ class TestCase(object):
         if delta is not None and places is not None:
             raise TypeError("specify delta or places not both")
         if delta is not None:
-            if not (first == second) and abs(first - second) > delta:
+            diff = abs(first - second)
+            if not (first == second) and diff > delta:
                 return
-            standardMsg = '%s == %s within %s delta' % (safe_repr(first),
-                                                        safe_repr(second),
-                                                        safe_repr(delta))
+            standardMsg = '%s == %s within %s delta (%s difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                safe_repr(delta),
+                diff)
         else:
             if places is None:
                 places = 7
