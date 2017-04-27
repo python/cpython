@@ -632,6 +632,7 @@ class TestDictFields(unittest.TestCase):
                           extrasaction="raised")
 
     def test_write_field_not_in_field_names_raise(self):
+        fileobj = StringIO()
         writer = csv.DictWriter(fileobj, ['f1', 'f2'], extrasaction="raise")
         dictrow = {'f0': 0, 'f1': 1, 'f2': 2, 'f3': 3}
         self.assertRaises(ValueError, csv.DictWriter.writerow, writer, dictrow)
@@ -971,7 +972,7 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
                  (',"123,4",', ('"', False, ',', 0)),   # ,".*?",
                  ('"123,4",',  ('"', False, ',', 0)),   # ".*?",
                  (',"123,4"',  ('"', False, ',', 0)),   # ,".*?"
-                 ('"123,4"',  ('"', False, None, 0))]   # ,".*?"
+                 ('"123,4"',  ('"', False, '', 0))]   # ,".*?"
 
         sniffer = csv.Sniffer()
         for test_input, expected in cases:
