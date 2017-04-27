@@ -1,3 +1,7 @@
+# Two-trick pony for OSX and other case insensitive file systems:
+# Ignore ./python binary on Unix but still look into ./Python/ directory.
+/python
+!/Python/
 *.cover
 *.o
 *.orig
@@ -5,6 +9,7 @@
 *.pyd
 *.pyo
 *.rej
+*.swp
 *~
 *.gc??
 *.profclang?
@@ -39,14 +44,20 @@ Parser/pgen
 Parser/pgen.stamp
 autom4te.cache
 build/
+config.cache
 config.log
 config.status
 libpython*.a
 libpython*.so*
+libpython*.dylib
+libpython*.dll
+pybuilddir.txt
 pyconfig.h
 python$
+python.exe
 python-gdb.py
 tags
+TAGS
 .coverage
 coverage/
 externals/
