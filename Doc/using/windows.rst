@@ -552,7 +552,7 @@ If the first line of a script file starts with ``#!``, it is known as a
 "shebang" line.  Linux and other Unix like operating systems have native
 support for such lines and are commonly used on such systems to indicate how
 a script should be executed.  This launcher allows the same facilities to be
-using with Python scripts on Windows and the examples above demonstrate their
+used with Python scripts on Windows and the examples above demonstrate their
 use.
 
 To allow shebang lines in Python scripts to be portable between Unix and
