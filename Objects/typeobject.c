@@ -5841,41 +5841,6 @@ FUNCNAME(PyObject *self, ARG1TYPE arg1) \
     return call_method(self, &id, stack, 1); \
 }
 
-/* Boolean helper for SLOT1BINFULL().
-   right.__class__ is a nontrivial subclass of left.__class__. */
-static int
-method_is_overloaded(PyObject *left, PyObject *right, struct _Py_Identifier *name)
-{
-    PyObject *a, *b;
-    int ok;
-
-    b = _PyObject_GetAttrId((PyObject *)(Py_TYPE(right)), name);
-    if (b == NULL) {
-        PyErr_Clear();
-        /* If right doesn't have it, it's not overloaded */
-        return 0;
-    }
-
-    a = _PyObject_GetAttrId((PyObject *)(Py_TYPE(left)), name);
-    if (a == NULL) {
-        PyErr_Clear();
-        Py_DECREF(b);
-        /* If right has it but left doesn't, it's overloaded */
-        return 1;
-    }
-
-    ok = PyObject_RichCompareBool(a, b, Py_NE);
-    Py_DECREF(a);
-    Py_DECREF(b);
-    if (ok < 0) {
-        PyErr_Clear();
-        return 0;
-    }
-
-    return ok;
-}
-
-
 #define SLOT1BINFULL(FUNCNAME, TESTFUNC, SLOTNAME, OPSTR, ROPSTR) \
 static PyObject * \
 FUNCNAME(PyObject *self, PyObject *other) \
@@ -5890,8 +5855,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
         Py_TYPE(self)->tp_as_number->SLOTNAME == TESTFUNC) { \
         PyObject *r; \
         if (do_other && \
-            PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self)) && \
-            method_is_overloaded(self, other, &rop_id)) { \
+            PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self))) { \
             stack[0] = self; \
             r = call_maybe(other, &rop_id, stack, 1); \
             if (r != Py_NotImplemented) \

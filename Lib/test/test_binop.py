@@ -1,7 +1,7 @@
 """Tests for binary operators on subtypes of built-in types."""
 
 import unittest
-from operator import eq, le, ne
+from operator import eq, le, ne, add
 from abc import ABCMeta
 
 def gcd(a, b):
@@ -386,6 +386,38 @@ class OperationOrderTests(unittest.TestCase):
         self.assertTrue(issubclass(V, B))
         self.assertEqual(op_sequence(eq, B, V), ['B.__eq__', 'V.__eq__'])
         self.assertEqual(op_sequence(le, B, V), ['B.__le__', 'V.__ge__'])
+
+    def test_arithmetic_orders(self):
+
+        def logged_op(name):
+            def op(self, other):
+                type_name = type(self).__name__
+                self.log_operation(f'{type_name}.__{name}__')
+                return NotImplemented
+            return op
+
+        class A(OperationLogger):
+            __add__ = logged_op('add')
+            __radd__ = logged_op('radd')
+
+        class B(OperationLogger):
+            __add__ = logged_op('add')
+            __radd__ = logged_op('radd')
+
+        class C(A):
+            pass
+
+        class D(OperationLogger):
+            pass
+
+        self.assertEqual(op_sequence(add, A, A), ['A.__add__'])
+        self.assertEqual(op_sequence(add, A, D), ['A.__add__'])
+        self.assertEqual(op_sequence(add, D, A), ['A.__radd__'])
+        self.assertEqual(op_sequence(add, A, B), ['A.__add__', 'B.__radd__'])
+        self.assertEqual(op_sequence(add, B, A), ['B.__add__', 'A.__radd__'])
+        self.assertEqual(op_sequence(add, A, C), ['C.__radd__', 'A.__add__'])
+        self.assertEqual(op_sequence(add, C, A), ['C.__add__', 'A.__radd__'])
+
 
 class SupEq(object):
     """Class that can test equality"""

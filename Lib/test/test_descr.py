@@ -4111,18 +4111,6 @@ order (MRO) for bases """
         self.assertEqual(D() // C(), "D.__floordiv__")
         self.assertEqual(C() // D(), "D.__rfloordiv__")
 
-        # Case 4: this didn't work right in 2.2.2 and 2.3a1
-
-        class E(C):
-            pass
-
-        self.assertEqual(E.__rfloordiv__, C.__rfloordiv__)
-
-        self.assertEqual(E() // 1, "C.__floordiv__")
-        self.assertEqual(1 // E(), "C.__rfloordiv__")
-        self.assertEqual(E() // C(), "C.__floordiv__")
-        self.assertEqual(C() // E(), "C.__floordiv__") # This one would fail
-
     @support.impl_detail("testing an internal kind of method object")
     def test_meth_class_get(self):
         # Testing __get__ method of METH_CLASS C methods...
