@@ -177,7 +177,7 @@ class Profile:
         self.t = self.get_time()
         self.simulate_call('profiler')
 
-    # Heavily optimized dispatch routine for os.times() timer
+    # Heavily optimized dispatch routine for time.process_time() timer
 
     def trace_dispatch(self, frame, event, arg):
         timer = self.timer
