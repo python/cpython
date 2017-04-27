@@ -2109,19 +2109,22 @@ Many of the not-very-useful (private to :class:`Mock` rather than the thing bein
 mocked) underscore and double underscore prefixed attributes have been
 filtered from the result of calling :func:`dir` on a :class:`Mock`. If you dislike this
 behaviour you can switch it off by setting the module level switch
-:data:`FILTER_DIR`::
+:data:`FILTER_DIR`:
 
-    >>> from unittest import mock
-    >>> mock.FILTER_DIR = False
-    >>> dir(mock.Mock())
-    ['_NonCallableMock__get_return_value',
-     '_NonCallableMock__get_side_effect',
-     '_NonCallableMock__return_value_doc',
-     '_NonCallableMock__set_return_value',
-     '_NonCallableMock__set_side_effect',
-     '__call__',
-     '__class__',
-     ...
+.. doctest::
+   :options: +SKIP
+
+   >>> from unittest import mock
+   >>> mock.FILTER_DIR = False
+   >>> dir(mock.Mock())
+   ['_NonCallableMock__get_return_value',
+    '_NonCallableMock__get_side_effect',
+    '_NonCallableMock__return_value_doc',
+    '_NonCallableMock__set_return_value',
+    '_NonCallableMock__set_side_effect',
+    '__call__',
+    '__class__',
+    ...
 
 Alternatively you can just use ``vars(my_mock)`` (instance members) and
 ``dir(type(my_mock))`` (type members) to bypass the filtering irrespective of
