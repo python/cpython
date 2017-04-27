@@ -30,7 +30,6 @@ import time
 import tokenize
 import warnings
 
-import idlelib
 from idlelib.colorizer import ColorDelegator
 from idlelib.config import idleConf
 from idlelib import debugger
@@ -1371,6 +1370,7 @@ echo "import sys; print(sys.argv)" | idle - "foobar"
 def main():
     import getopt
     from platform import system
+    from idlelib import testing  # bool value
     from idlelib import macosx
 
     global flist, root, use_subprocess
@@ -1453,7 +1453,7 @@ def main():
 
     # Setup root.  Don't break user code run in IDLE process.
     # Don't change environment when testing.
-    if use_subprocess and not idlelib.testing:
+    if use_subprocess and not testing:
         NoDefaultRoot()
     root = Tk(className="Idle")
     root.withdraw()
