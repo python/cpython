@@ -317,6 +317,8 @@ Extension Modules
 Library
 -------
 
+- bpo-30193: Allow to load buffer objects with ``json.loads()``
+
 - bpo-30101: Add support for curses.A_ITALIC.
 
 - bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch
