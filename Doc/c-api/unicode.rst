@@ -523,15 +523,15 @@ APIs:
    An unrecognized format character causes all the rest of the format string to be
    copied as-is to the result string, and any extra arguments discarded.
 
-   .. [1] For integer specifiers (d, u, ld, li, lu, lld, lli, llu, zd, zi,
-      zu, i, x): the 0-conversion flag has effect even when a precision is given.
-
    .. note::
       The width formatter unit is number of characters rather than bytes.
       The precision formatter unit is number of bytes for ``"%s"`` and
       ``"%V"`` (if the ``PyObject*`` argument is NULL), and a number of
       characters for ``"%A"``, ``"%U"``, ``"%S"``, ``"%R"`` and ``"%V"``
       (if the ``PyObject*`` argument is not NULL).
+
+   .. [1] For integer specifiers (d, u, ld, li, lu, lld, lli, llu, zd, zi,
+      zu, i, x): the 0-conversion flag has effect even when a precision is given.
 
    .. versionchanged:: 3.2
       Support for ``"%lld"`` and ``"%llu"`` added.
