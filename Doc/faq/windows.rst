@@ -337,8 +337,8 @@ How do I extract the downloaded documentation on Windows?
 
 Sometimes, when you download the documentation package to a Windows machine
 using a web browser, the file extension of the saved file ends up being .EXE.
-This is a mistake; the extension should be .TGZ.
+This is a mistake; the extension should be .tar.gz.
 
-Simply rename the downloaded file to have the .TGZ extension, and 7zip or your
+Simply rename the downloaded file to have the .tar.gz extension, and 7zip or your
 favorite archive program should be able to handle it.  If not look for a newer
 version that does it/this.
