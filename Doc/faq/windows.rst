@@ -339,6 +339,6 @@ Sometimes, when you download the documentation package to a Windows machine
 using a web browser, the file extension of the saved file ends up being .EXE.
 This is a mistake; the extension should be .TGZ.
 
-Simply rename the downloaded file to have the .TGZ extension, and WinZip or your
+Simply rename the downloaded file to have the .TGZ extension, and 7zip or your
 favorite archive program should be able to handle it.  If not look for a newer
 version that does it/this.
