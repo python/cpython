@@ -320,6 +320,11 @@ Library
 - bpo-30024: Circular imports involving absolute imports with binding
   a submodule to a name are now supported.
 
+- bpo-30101: Add support for curses.A_ITALIC.
+
+- bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch
+  by Nate Soares.
+
 - bpo-29960: Preserve generator state when _random.Random.setstate()
   raises an exception.  Patch by Bryan Olson.
 
@@ -512,7 +517,7 @@ Library
 - Issue #29444: Fixed out-of-bounds buffer access in the group() method of
   the match object.  Based on patch by WGH.
 
-- Issue #29377: Add SlotWrapperType, MethodWrapperType, and
+- Issue #29377: Add WrapperDescriptorType, MethodWrapperType, and
   MethodDescriptorType built-in types to types module.
   Original patch by Manuel Krebber.
 

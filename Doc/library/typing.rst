@@ -1041,5 +1041,10 @@ The module defines the following classes, functions and decorators:
       if TYPE_CHECKING:
           import expensive_mod
 
-      def fun():
-          local_var: expensive_mod.some_type = other_fun()
+      def fun(arg: 'expensive_mod.SomeType') -> None:
+          local_var: expensive_mod.AnotherType = other_fun()
+
+   Note that the first type annotation must be enclosed in quotes, making it a
+   "forward reference", to hide the ``expensive_mod`` reference from the
+   interpreter runtime.  Type annotations for local variables are not
+   evaluated, so the second annotation does not need to be enclosed in quotes.
