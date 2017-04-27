@@ -663,7 +663,7 @@ Here are the methods of the :class:`Message` class:
          import email
          from email import message_from_binary_file
          from os.path import join, dirname
-         lib_dir = dirname(email.__file__).rstrip('/email')
+         lib_dir = dirname(dirname(email.__file__))
          file_path = join(lib_dir, 'test/test_email/data/msg_16.txt')
          with open(file_path, 'rb') as f:
              msg = message_from_binary_file(f)
