@@ -984,6 +984,8 @@ C API
 Documentation
 -------------
 
+- bpo-30176: Add missing attribute related constants in curses documentation.
+
 - bpo-26985: Add missing info of code object in inspect documentation.
 
 - bpo-19824, bpo-20314, bpo-12518: Improve the documentation for, and links
