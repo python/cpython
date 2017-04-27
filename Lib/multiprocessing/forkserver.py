@@ -193,11 +193,11 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                 if e.errno != errno.ECONNABORTED:
                     raise
 
-def _serve_one(s, listener, alive_r, old_handlers):
-    # close unnecessary stuff and reset SIGCHLD handler
+def _serve_one(s, listener, alive_r, handlers):
+    # close unnecessary stuff and reset signal handlers
     listener.close()
     os.close(alive_r)
-    for sig, val in old_handlers.items():
+    for sig, val in handlers.items():
         signal.signal(sig, val)
 
     # receive fds from parent process
