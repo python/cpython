@@ -40,11 +40,14 @@ The :mod:`binascii` module defines the following functions:
    data may be followed by whitespace.
 
 
-.. function:: b2a_uu(data)
+.. function:: b2a_uu(data, \*, backtick=False)
 
    Convert binary data to a line of ASCII characters, the return value is the
    converted line, including a newline char. The length of *data* should be at most
-   45.
+   45. If *backtick* is true, zeros are represented by backticks instead of spaces.
+
+   .. versionchanged:: 3.7
+      Added the *backtick* parameter.
 
 
 .. function:: a2b_base64(string)

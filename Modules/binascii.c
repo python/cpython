@@ -334,14 +334,15 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
 binascii.b2a_uu
 
     data: Py_buffer
-    /
+    *
+    backtick: bool(accept={int}) = False
 
 Uuencode line of data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_uu_impl(PyObject *module, Py_buffer *data)
-/*[clinic end generated code: output=0070670e52e4aa6b input=00fdf458ce8b465b]*/
+binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
+/*[clinic end generated code: output=b1b99de62d9bbeb8 input=141f61b6ceb56af6]*/
 {
     unsigned char *ascii_data;
     const unsigned char *bin_data;
@@ -367,7 +368,10 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data)
         return NULL;
 
     /* Store the length */
-    *ascii_data++ = ' ' + (bin_len & 077);
+    if (backtick)
+        *ascii_data++ = bin_len ? ' ' + (bin_len & 077) : '`';
+    else
+        *ascii_data++ = ' ' + (bin_len & 077);
 
     for( ; bin_len > 0 || leftbits != 0 ; bin_len--, bin_data++ ) {
         /* Shift the data (or padding) into our buffer */
@@ -381,7 +385,10 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data)
         while ( leftbits >= 6 ) {
             this_ch = (leftchar >> (leftbits-6)) & 0x3f;
             leftbits -= 6;
-            *ascii_data++ = this_ch + ' ';
+            if (backtick)
+                *ascii_data++ = this_ch ? this_ch + ' ' : '`';
+            else
+                *ascii_data++ = this_ch + ' ';
         }
     }
     *ascii_data++ = '\n';       /* Append a courtesy newline */

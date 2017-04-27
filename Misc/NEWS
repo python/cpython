@@ -317,6 +317,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30103: binascii.b2a_uu() and uu.encode() now support using backtick
+  as zero instead of space.
+
 - bpo-30101: Add support for curses.A_ITALIC.
 
 - bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch
