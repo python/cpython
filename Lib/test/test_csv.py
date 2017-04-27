@@ -632,7 +632,6 @@ class TestDictFields(unittest.TestCase):
                           extrasaction="raised")
 
     def test_write_field_not_in_field_names_raise(self):
-        fileobj = StringIO()
         writer = csv.DictWriter(fileobj, ['f1', 'f2'], extrasaction="raise")
         dictrow = {'f0': 0, 'f1': 1, 'f2': 2, 'f3': 3}
         self.assertRaises(ValueError, csv.DictWriter.writerow, writer, dictrow)
@@ -966,6 +965,18 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
         self.assertEqual(sniffer.has_header(self.sample8), False)
         self.assertEqual(sniffer.has_header(self.header2 + self.sample8),
                          True)
+
+    def test_guess_quote_and_delimiter_regex(self):
+        cases = [('asd',       ('', False, None, 0)),   # No match
+                 (',"123,4",', ('"', False, ',', 0)),   # ,".*?",
+                 ('"123,4",',  ('"', False, ',', 0)),   # ".*?",
+                 (',"123,4"',  ('"', False, ',', 0)),   # ,".*?"
+                 ('"123,4"',  ('"', False, None, 0))]   # ,".*?"
+
+        sniffer = csv.Sniffer()
+        for test_input, expected in cases:
+            guess = sniffer._guess_quote_and_delimiter(test_input, ',')
+            self.assertEqual(guess, expected)
 
     def test_sniff(self):
         sniffer = csv.Sniffer()
