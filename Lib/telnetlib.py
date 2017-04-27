@@ -284,6 +284,8 @@ class Telnet:
         OSError if the connection is closed.
 
         """
+        if not isinstance(buffer, (bytes, bytearray)):
+            raise TypeError('%s must be a bytes-like type.' % buffer)
         if IAC in buffer:
             buffer = buffer.replace(IAC, IAC+IAC)
         self.msg("send %r", buffer)
