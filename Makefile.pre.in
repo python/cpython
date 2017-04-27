@@ -38,10 +38,9 @@ MAINCC=		@MAINCC@
 LINKCC=		@LINKCC@
 AR=		@AR@
 RANLIB=		@RANLIB@
-SVNVERSION=	@SVNVERSION@
-HGVERSION=	@HGVERSION@
-HGTAG=		@HGTAG@
-HGBRANCH=	@HGBRANCH@
+GITVERSION=	@GITVERSION@
+GITTAG=		@GITTAG@
+GITBRANCH=	@GITBRANCH@
 PGO_PROF_GEN_FLAG=@PGO_PROF_GEN_FLAG@
 PGO_PROF_USE_FLAG=@PGO_PROF_USE_FLAG@
 LLVM_PROF_MERGER=@LLVM_PROF_MERGER@
@@ -314,7 +313,7 @@ ASDLGEN=	$(srcdir)/Parser/asdl_c.py
 
 OPCODETARGETS_H= \
 		$(srcdir)/Python/opcode_targets.h
-		
+
 OPCODETARGETGEN= \
 		$(srcdir)/Python/makeopcodetargets.py
 
@@ -656,10 +655,9 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 		$(MODOBJS) \
 		$(srcdir)/Modules/getbuildinfo.c
 	$(CC) -c $(PY_CFLAGS) \
-	      -DSVNVERSION="\"`LC_ALL=C $(SVNVERSION)`\"" \
-	      -DHGVERSION="\"`LC_ALL=C $(HGVERSION)`\"" \
-	      -DHGTAG="\"`LC_ALL=C $(HGTAG)`\"" \
-	      -DHGBRANCH="\"`LC_ALL=C $(HGBRANCH)`\"" \
+	      -DGITVERSION="\"`LC_ALL=C $(GITVERSION)`\"" \
+	      -DGITTAG="\"`LC_ALL=C $(GITTAG)`\"" \
+	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\"" \
 	      -o $@ $(srcdir)/Modules/getbuildinfo.c
 
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
