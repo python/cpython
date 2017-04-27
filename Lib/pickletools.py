@@ -493,8 +493,7 @@ bytes1 = ArgumentDescriptor(
               doc="""A counted bytes string.
 
               The first argument is a 1-byte unsigned int giving the number
-              of bytes in the string, and the second argument is that many
-              bytes.
+              of bytes, and the second argument is that many bytes.
               """)
 
 
