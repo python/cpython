@@ -5470,6 +5470,60 @@ AF_UNIX if defined on the platform; otherwise, the default is AF_INET.");
 #endif /* HAVE_SOCKETPAIR */
 
 
+/* socket.fdtype() function */
+
+#ifndef MS_WINDOWS
+/* set if we can implement fdtype().  On Windows, getsockname() fails with
+   error 10022.  There may be other platforms that have SO_TYPE but also
+   don't provide the necessary functionality. */
+#define HAVE_FDTYPE
+#endif
+
+#ifdef HAVE_FDTYPE
+static PyObject *
+socket_fdtype(PyObject *self, PyObject *fdobj)
+{
+    SOCKET_T fd;
+    int sock_type;
+    struct sockaddr sa;
+    socklen_t l;
+    int protocol;
+
+    fd = PyLong_AsSocket_t(fdobj);
+    if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
+        return NULL;
+
+    l = sizeof(sock_type);
+    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, &sock_type, &l) < 0) {
+        return set_error();
+    }
+
+    l = sizeof(sa);
+    if (getsockname(fd, &sa, &l) < 0) {
+        return set_error();
+    }
+#ifdef SO_PROTOCOL
+    l = sizeof(protocol);
+    if (getsockopt(fd, SOL_SOCKET, SO_PROTOCOL, &protocol, &l) < 0) {
+        return set_error();
+    }
+#else
+    protocol = 0;
+#endif
+    return Py_BuildValue("iii",
+                         sa.sa_family,
+                         sock_type,
+                         protocol);
+}
+
+PyDoc_STRVAR(fdtype_doc,
+"fdtype(integer) -> (family, type, protocol)\n\
+\n\
+Return the family, type and protocol for socket given a file descriptor.\
+");
+#endif /* HAVE_FDTYPE */
+
+
 static PyObject *
 socket_ntohs(PyObject *self, PyObject *args)
 {
@@ -6382,6 +6436,10 @@ static PyMethodDef socket_methods[] = {
     {"socketpair",              socket_socketpair,
      METH_VARARGS, socketpair_doc},
 #endif
+#ifdef HAVE_FDTYPE
+    {"fdtype",                 socket_fdtype,
+     METH_O, fdtype_doc},
+#endif
     {"ntohs",                   socket_ntohs,
      METH_VARARGS, ntohs_doc},
     {"ntohl",                   socket_ntohl,
@@ -6967,11 +7025,17 @@ PyInit__socket(void)
 #ifdef  SO_MARK
     PyModule_AddIntMacro(m, SO_MARK);
 #endif
-#ifdef SO_DOMAIN
+#ifdef  SO_DOMAIN
     PyModule_AddIntMacro(m, SO_DOMAIN);
 #endif
-#ifdef SO_PROTOCOL
+#ifdef  SO_PROTOCOL
     PyModule_AddIntMacro(m, SO_PROTOCOL);
+#endif
+#ifdef  SO_PEERSEC
+    PyModule_AddIntMacro(m, SO_PEERSEC);
+#endif
+#ifdef  SO_PASSSEC
+    PyModule_AddIntMacro(m, SO_PASSSEC);
 #endif
 
     /* Maximum number of connections for "listen" */

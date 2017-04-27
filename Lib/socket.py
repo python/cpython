@@ -12,6 +12,7 @@ Functions:
 socket() -- create a new socket object
 socketpair() -- create a pair of new socket objects [*]
 fromfd() -- create a socket object from an open file descriptor [*]
+fromfd2() -- create a socket object without duplicating a file descriptor [*]
 fromshare() -- create a socket object from data received from socket.share() [*]
 gethostname() -- return the current hostname
 gethostbyname() -- map a hostname to its IP number
@@ -24,6 +25,7 @@ inet_aton() -- convert IP addr string (123.45.67.89) to 32-bit packed format
 inet_ntoa() -- convert 32-bit packed format IP to string (123.45.67.89)
 socket.getdefaulttimeout() -- get the default timeout value
 socket.setdefaulttimeout() -- set the default timeout value
+fdtype() -- get (family, type, protocol) from a socket file descriptor [*]
 create_connection() -- connects to an address, with an optional timeout and
                        optional source address.
 
@@ -459,6 +461,31 @@ def fromfd(fd, family, type, proto=0):
     """
     nfd = dup(fd)
     return socket(family, type, proto, nfd)
+
+if hasattr(_socket, 'fdtype'):
+    def fdtype(fd):
+        """fdtype(fd) -> (family, type, proto)
+
+        Return (family, type, proto) for a socket given a file descriptor.
+        Raises OSError if the file descriptor is not a socket.
+        """
+        family, type, proto = _socket.fdtype(fd)
+        return (_intenum_converter(family, AddressFamily),
+                _intenum_converter(type, SocketKind),
+                proto)
+    __all__.append('fdtype')
+
+    def fromfd2(fd):
+        """fromfd2(fd) -> socket object
+
+        Create a socket object from the given file descriptor.  Unlike fromfd,
+        the descriptor is not duplicated.  The family, type and protocol of
+        the socket is determined using fdtype().  Raises OSError if the file
+        descriptor is not a socket.
+        """
+        family, type, proto = _socket.fdtype(fd)
+        return socket(family, type, proto, fd)
+    __all__.append('fromfd2')
 
 if hasattr(_socket.socket, "share"):
     def fromshare(info):

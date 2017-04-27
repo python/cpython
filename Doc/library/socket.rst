@@ -506,6 +506,22 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       The returned socket is now non-inheritable.
 
 
+.. function:: fromfd2(fd)
+
+   Create a socket object from the file descriptor *fd* (as returned
+   by a file object's :meth:`fileno` method).  The file descriptor
+   is not duplicated.  If the file descriptor is not a socket,
+   :exc:`OSError` is raised.  The family and type of the socket is
+   determined from the file descriptor.  If possible, the protocol
+   is also determined. On some platforms, determining the protocol is
+   not possible and :attr:`socket.proto` is set to zero.  The socket
+   is assumed to be in blocking mode.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.6
+
+
 .. function:: fromshare(data)
 
    Instantiate a socket from data obtained from the :meth:`socket.share`
@@ -872,6 +888,24 @@ The :mod:`socket` module also offers various network-related services:
    Availability: Unix.
 
    .. versionadded:: 3.3
+
+
+.. function:: fdtype(fd)
+
+   Get socket information from a file descriptor.  The return value
+   is a 3-tuple with the following structure:
+
+   ``(family, type, proto)``
+
+   The values of *family*, *type*, *proto* are all integers and are
+   meant to be passed to the :func:`.socket` function.  If the file
+   descriptor is not a socket, :exc:`OSError` is raised.  On some
+   platforms, determining the protocol is not possible and in those
+   cases it is returned as zero.
+
+   Availability: Unix
+
+   .. versionadded:: 3.6
 
 
 .. _socket-objects:
