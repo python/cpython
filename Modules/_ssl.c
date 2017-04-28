@@ -138,6 +138,8 @@ struct py_ssl_library_code {
 #else /* OpenSSL < 1.1.0 */
 #if defined(WITH_THREAD)
 #define HAVE_OPENSSL_CRYPTO_LOCK
+/* For some reason, this function is not declared on OpenSSL's headers */
+void OPENSSL_cpuid_setup(void);
 #endif
 
 #define TLS_method SSLv23_method
@@ -5179,10 +5181,17 @@ PyInit__ssl(void)
     _ssl_locks_count++;
 #endif
 #endif  /* WITH_THREAD */
+
+#ifndef OPENSSL_VERSION_1_1
+    /* "As of version 1.1.0 OpenSSL will automatically allocate all resources
+     * that it needs so no explicit initialisation is required. Similarly it
+     * will also automatically deinitialise as required."
+     * https://www.openssl.org/docs/man1.1.0/crypto/OPENSSL_init_crypto.html */
     OpenSSL_add_all_algorithms();
 
-    /* Load OPENSSL engines to improve performance */
-    ENGINE_load_builtin_engines();
+    /* Detect HW capabilities to improve performance */
+    OPENSSL_cpuid_setup();
+#endif
 
     /* Add symbols to module dict */
     sslerror_type_slots[0].pfunc = PyExc_OSError;
