@@ -2124,7 +2124,7 @@ def swap_attr(obj, attr, new_val):
         real_val = getattr(obj, attr)
         setattr(obj, attr, new_val)
         try:
-            yield
+            yield real_val
         finally:
             setattr(obj, attr, real_val)
     else:
@@ -2132,7 +2132,8 @@ def swap_attr(obj, attr, new_val):
         try:
             yield
         finally:
-            delattr(obj, attr)
+            if hasattr(obj, attr):
+                delattr(obj, attr)
 
 @contextlib.contextmanager
 def swap_item(obj, item, new_val):
@@ -2151,7 +2152,7 @@ def swap_item(obj, item, new_val):
         real_val = obj[item]
         obj[item] = new_val
         try:
-            yield
+            yield real_val
         finally:
             obj[item] = real_val
     else:
@@ -2159,7 +2160,8 @@ def swap_item(obj, item, new_val):
         try:
             yield
         finally:
-            del obj[item]
+            if item in obj:
+                del obj[item]
 
 def strip_python_stderr(stderr):
     """Strip the stderr of a Python process from potential debug output
