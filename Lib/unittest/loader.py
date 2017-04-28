@@ -371,9 +371,15 @@ class TestLoader(object):
         """
         basename = os.path.basename(full_path)
         if os.path.isfile(full_path):
-            if not VALID_MODULE_NAME.match(basename):
-                # valid Python identifiers only
-                return None, False
+            root, ext = os.path.splitext(basename)
+            try:
+                if not (ext == '.py' and root.isidentifier()):
+                    # valid Python identifiers only
+                    return None, False
+            except AttributeError:
+                if not VALID_MODULE_NAME.match(basename):
+                    # valid Python identifiers only
+                    return None, False
             if not self._match_path(basename, full_path, pattern):
                 return None, False
             # if the test file matches, load it

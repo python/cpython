@@ -92,6 +92,57 @@ class TestDiscovery(unittest.TestCase):
                     ('test3', 'test4')])
         self.assertEqual(suite, expected)
 
+    def test_find_tests_with_unicode(self):
+        loader = unittest.TestLoader()
+
+        original_listdir = os.listdir
+        def restore_listdir():
+            os.listdir = original_listdir
+        original_isfile = os.path.isfile
+        def restore_isfile():
+            os.path.isfile = original_isfile
+        original_isdir = os.path.isdir
+        def restore_isdir():
+            os.path.isdir = original_isdir
+
+        path_lists = [['測試2.py', '測試1.py', '不是測試.py', '測試_資料夾',
+                       '測試.付歐歐', '測試-不是-一個-模組.py', '另外的_資料夾'],
+                      ['測試4.py', '測試3.py', ]]
+        os.listdir = lambda path: path_lists.pop(0)
+        self.addCleanup(restore_listdir)
+
+        def isdir(path):
+            return path.endswith('資料夾')
+        os.path.isdir = isdir
+        self.addCleanup(restore_isdir)
+
+        def isfile(path):
+            # another_dir is not a package and so shouldn't be recursed into
+            return not path.endswith('資料夾') and not '另外的_資料夾' in path
+        os.path.isfile = isfile
+        self.addCleanup(restore_isfile)
+
+        loader._get_module_from_name = lambda path: path + ' module'
+        orig_load_tests = loader.loadTestsFromModule
+        def loadTestsFromModule(module, pattern=None):
+            # This is where load_tests is called.
+            base = orig_load_tests(module, pattern=pattern)
+            return base + [module + ' tests']
+        loader.loadTestsFromModule = loadTestsFromModule
+        loader.suiteClass = lambda thing: thing
+
+        top_level = os.path.abspath('/foo')
+        loader._top_level_dir = top_level
+        suite = list(loader._find_tests(top_level, '測試*.py'))
+
+        # The test suites found should be sorted alphabetically for reliable
+        # execution order.
+        expected = [[name + ' module tests'] for name in
+                    ('測試1', '測試2', '測試_資料夾')]
+        expected.extend([[('測試_資料夾.%s' % name) + ' module tests'] for name in
+                    ('測試3', '測試4')])
+        self.assertEqual(suite, expected)
+
     def test_find_tests_socket(self):
         # A socket is neither a directory nor a regular file.
         # https://bugs.python.org/issue25320
