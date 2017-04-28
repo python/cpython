@@ -244,6 +244,7 @@ def coroutine(func):
     # return generator-like objects (for instance generators
     # compiled with Cython).
 
+    # Delay functools and _collections_abc import for speeding up types import.
     import functools
     import _collections_abc
     @functools.wraps(func)

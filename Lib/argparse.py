@@ -608,6 +608,8 @@ class HelpFormatter(object):
 
     def _split_lines(self, text, width):
         text = self._whitespace_matcher.sub(' ', text).strip()
+        # The textwrap module is used only for formatting help.
+        # Delay its import for speeding up the common usage of argparse.
         import textwrap
         return textwrap.wrap(text, width)
 
@@ -948,6 +950,9 @@ class _AppendAction(Action):
         if items is None:
             items = []
         else:
+            # The copy module is used only in the 'append' and 'append_const'
+            # actions.  Delay its import for speeding up the case when they
+            # are not used.
             import copy
             items = copy.copy(items)
         items.append(values)

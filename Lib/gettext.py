@@ -335,6 +335,8 @@ class GNUTranslations(NullTranslations):
 
     def _parse(self, fp):
         """Override this method to support alternative .mo formats."""
+        # Delay struct import for speeding up gettext import when .mo files
+        # are not used.
         from struct import unpack
         filename = getattr(fp, 'name', '')
         # Parse the .mo file header, which consists of 5 little endian 32
@@ -526,6 +528,8 @@ def translation(domain, localedir=None, languages=None,
         # Copy the translation object to allow setting fallbacks and
         # output charset. All other instance data is shared with the
         # cached object.
+        # Delay copy import for speeding up gettext import when .mo files
+        # are not used.
         import copy
         t = copy.copy(t)
         if codeset:
