@@ -3163,6 +3163,7 @@ if hasattr(logging.handlers, 'QueueListener'):
             handler.close()
 
         @patch.object(logging.handlers.QueueListener, 'handle')
+        @support.reap_threads
         def test_handle_called_with_queue_queue(self, mock_handle):
             for i in range(self.repeat):
                 log_queue = queue.Queue()
@@ -3172,10 +3173,13 @@ if hasattr(logging.handlers, 'QueueListener'):
 
         @support.requires_multiprocessing_queue
         @patch.object(logging.handlers.QueueListener, 'handle')
+        @support.reap_threads
         def test_handle_called_with_mp_queue(self, mock_handle):
             for i in range(self.repeat):
                 log_queue = multiprocessing.Queue()
                 self.setup_and_log(log_queue, '%s_%s' % (self.id(), i))
+                log_queue.close()
+                log_queue.join_thread()
             self.assertEqual(mock_handle.call_count, 5 * self.repeat,
                              'correct number of handled log messages')
 
@@ -3188,6 +3192,7 @@ if hasattr(logging.handlers, 'QueueListener'):
                 return []
 
         @support.requires_multiprocessing_queue
+        @support.reap_threads
         def test_no_messages_in_queue_after_stop(self):
             """
             Five messages are logged then the QueueListener is stopped. This
@@ -3200,6 +3205,9 @@ if hasattr(logging.handlers, 'QueueListener'):
                 self.setup_and_log(queue, '%s_%s' %(self.id(), i))
                 # time.sleep(1)
                 items = list(self.get_all_from_queue(queue))
+                queue.close()
+                queue.join_thread()
+
                 expected = [[], [logging.handlers.QueueListener._sentinel]]
                 self.assertIn(items, expected,
                               'Found unexpected messages in queue: %s' % (
