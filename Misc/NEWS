@@ -144,6 +144,12 @@ Build
 Tests
 -----
 
+- bpo-30197: Enhanced function swap_attr() in the test.test_support module.
+  It now works when delete replaced attribute inside the with statement.  The
+  old value of the attribute (or None if it doesn't exist) now will be
+  assigned to the target of the "as" clause, if there is one.
+  Also backported function swap_item().
+
 - bpo-28087: Skip test_asyncore and test_eintr poll failures on macOS.
   Skip some tests of select.poll when running on macOS due to unresolved
   issues with the underlying system poll function on some macOS versions.
