@@ -199,6 +199,12 @@ Build
 Tests
 -----
 
+- bpo-30197: Enhanced functions swap_attr() and swap_item() in the
+  test.support module.  They now work when delete replaced attribute or item
+  inside the with statement.  The old value of the attribute or item (or None
+  if it doesn't exist) now will be assigned to the target of the "as" clause,
+  if there is one.
+
 - Issue #29571: to match the behaviour of the ``re.LOCALE`` flag,
   test_re.test_locale_flag now uses ``locale.getpreferredencoding(False)`` to
   determine the candidate encoding for the test regex (allowing it to correctly
