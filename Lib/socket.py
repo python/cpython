@@ -473,7 +473,6 @@ if hasattr(_socket, 'fdtype'):
         return (_intenum_converter(family, AddressFamily),
                 _intenum_converter(type, SocketKind),
                 proto)
-    __all__.append('fdtype')
 
     def fromfd2(fd):
         """fromfd2(fd) -> socket object
