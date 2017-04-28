@@ -901,7 +901,7 @@ class TestCase(object):
                 safe_repr(first),
                 safe_repr(second),
                 safe_repr(delta),
-                diff)
+                safe_repr(diff))
         else:
             if places is None:
                 places = 7
