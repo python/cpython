@@ -442,12 +442,15 @@ class build_ext(Command):
     def build_extensions(self):
         # First, sanity-check the 'extensions' list
         self.check_extensions_list(self.extensions)
-        if self.parallel:
-            self._build_extensions_parallel()
-        else:
-            self._build_extensions_serial()
 
-    def _build_extensions_parallel(self):
+        extensions = [ext for ext in self.extensions
+                      if self.test_extension(ext)]
+        if self.parallel:
+            self._build_extensions_parallel(extensions)
+        else:
+            self._build_extensions_serial(extensions)
+
+    def _build_extensions_parallel(self, extensions):
         workers = self.parallel
         if self.parallel is True:
             workers = os.cpu_count()  # may return None
@@ -457,18 +460,18 @@ class build_ext(Command):
             workers = None
 
         if workers is None:
-            self._build_extensions_serial()
+            self._build_extensions_serial(extensions)
             return
 
         with ThreadPoolExecutor(max_workers=workers) as executor:
             futures = [executor.submit(self.build_extension, ext)
-                       for ext in self.extensions]
-            for ext, fut in zip(self.extensions, futures):
+                       for ext in extensions]
+            for ext, fut in zip(extensions, futures):
                 with self._filter_build_errors(ext):
                     fut.result()
 
-    def _build_extensions_serial(self):
-        for ext in self.extensions:
+    def _build_extensions_serial(self, extensions):
+        for ext in extensions:
             with self._filter_build_errors(ext):
                 self.build_extension(ext)
 
@@ -482,7 +485,7 @@ class build_ext(Command):
             self.warn('building extension "%s" failed: %s' %
                       (ext.name, e))
 
-    def build_extension(self, ext):
+    def test_extension(self, ext):
         sources = ext.sources
         if sources is None or not isinstance(sources, (list, tuple)):
             raise DistutilsSetupError(
@@ -495,9 +498,22 @@ class build_ext(Command):
         depends = sources + ext.depends
         if not (self.force or newer_group(depends, ext_path, 'newer')):
             log.debug("skipping '%s' extension (up-to-date)", ext.name)
-            return
+            return False
         else:
             log.info("building '%s' extension", ext.name)
+            return True
+
+    def build_extension(self, ext):
+        sources = ext.sources
+        if sources is None or not isinstance(sources, (list, tuple)):
+            raise DistutilsSetupError(
+                  "in 'ext_modules' option (extension '%s'), "
+                  "'sources' must be present and must be "
+                  "a list of source filenames" % ext.name)
+        sources = list(sources)
+
+        depends = sources + ext.depends
+        log.info("building '%s' extension", ext.name)
 
         # First, scan the sources for SWIG definition files (.i), run
         # SWIG on 'em to create .c files, and modify the sources list
