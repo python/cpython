@@ -88,6 +88,8 @@ import os as _os
 import re as _re
 import sys as _sys
 
+from gettext import gettext as _, ngettext
+
 SUPPRESS = '==SUPPRESS=='
 
 OPTIONAL = '?'
@@ -100,14 +102,6 @@ _UNRECOGNIZED_ARGS_ATTR = '_unrecognized_args'
 # =============================
 # Utility functions and classes
 # =============================
-
-def _(*args):
-    import gettext
-    return gettext.gettext(*args)
-
-def ngettext(*args):
-    import gettext
-    return gettext.ngettext(*args)
 
 class _AttributeHolder(object):
     """Abstract base class that provides __repr__.
