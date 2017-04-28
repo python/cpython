@@ -368,8 +368,8 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
         return NULL;
 
     /* Store the length */
-    if (backtick)
-        *ascii_data++ = bin_len ? ' ' + (bin_len & 077) : '`';
+    if (backtick && !bin_len)
+        *ascii_data++ = '`';
     else
         *ascii_data++ = ' ' + (bin_len & 077);
 
@@ -385,8 +385,8 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
         while ( leftbits >= 6 ) {
             this_ch = (leftchar >> (leftbits-6)) & 0x3f;
             leftbits -= 6;
-            if (backtick)
-                *ascii_data++ = this_ch ? this_ch + ' ' : '`';
+            if (backtick && !this_ch)
+                *ascii_data++ = '`';
             else
                 *ascii_data++ = this_ch + ' ';
         }

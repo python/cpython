@@ -10,11 +10,11 @@ import sys, os
 import uu
 import io
 
-plaintext = b"The smooth-scaled python crept over the sleeping dog\n"
+plaintext = b"The symbols on top of your keyboard are !@#$%^&*()_+|~\n"
 
 encodedtext = b"""\
-M5&AE('-M;V]T:\"US8V%L960@<'ET:&]N(&-R97!T(&]V97(@=&AE('-L965P
-(:6YG(&1O9PH """
+M5&AE(\'-Y;6)O;\',@;VX@=&]P(&]F(\'EO=7(@:V5Y8F]A<F0@87)E("% (R0E
+*7B8J*"E?*WQ^"@  """
 
 # Stolen from io.py
 class FakeIO(io.TextIOWrapper):
@@ -68,6 +68,8 @@ class UUTest(unittest.TestCase):
         out = io.BytesIO()
         uu.encode(inp, out, "t1", backtick=True)
         self.assertEqual(out.getvalue(), encodedtextwrapped(0o666, "t1", True))
+        with self.assertRaises(TypeError):
+            uu.encode(inp, out, "t1", 0o644, True)
 
     def test_decode(self):
         for backtick in True, False:
