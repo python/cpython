@@ -282,17 +282,34 @@ class TestSupport(unittest.TestCase):
 
     def test_swap_attr(self):
         class Obj:
-            x = 1
+            pass
         obj = Obj()
-        with support.swap_attr(obj, "x", 5):
+        obj.x = 1
+        with support.swap_attr(obj, "x", 5) as x:
             self.assertEqual(obj.x, 5)
+            self.assertEqual(x, 1)
         self.assertEqual(obj.x, 1)
+        with support.swap_attr(obj, "y", 5) as y:
+            self.assertEqual(obj.y, 5)
+            self.assertIsNone(y)
+        self.assertFalse(hasattr(obj, 'y'))
+        with support.swap_attr(obj, "y", 5):
+            del obj.y
+        self.assertFalse(hasattr(obj, 'y'))
 
     def test_swap_item(self):
-        D = {"item":1}
-        with support.swap_item(D, "item", 5):
-            self.assertEqual(D["item"], 5)
-        self.assertEqual(D["item"], 1)
+        D = {"x":1}
+        with support.swap_item(D, "x", 5) as x:
+            self.assertEqual(D["x"], 5)
+            self.assertEqual(x, 1)
+        self.assertEqual(D["x"], 1)
+        with support.swap_item(D, "y", 5) as y:
+            self.assertEqual(D["y"], 5)
+            self.assertIsNone(y)
+        self.assertNotIn("y", D)
+        with support.swap_item(D, "y", 5):
+            del D["y"]
+        self.assertNotIn("y", D)
 
     class RefClass:
         attribute1 = None
