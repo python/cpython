@@ -1107,6 +1107,12 @@ Tools/Demos
 Tests
 -----
 
+- bpo-30197: Enhanced functions swap_attr() and swap_item() in the
+  test.support module.  They now work when delete replaced attribute or item
+  inside the with statement.  The old value of the attribute or item (or None
+  if it doesn't exist) now will be assigned to the target of the "as" clause,
+  if there is one.
+
 - Issue #24932: Use proper command line parsing in _testembed
 
 - Issue #28950: Disallow -j0 to be combined with -T/-l in regrtest
