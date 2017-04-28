@@ -874,6 +874,24 @@ The :mod:`socket` module also offers various network-related services:
    .. versionadded:: 3.3
 
 
+.. function:: fdtype(fd)
+
+   Get socket information from a file descriptor.  The return value
+   is a 3-tuple with the following structure:
+
+   ``(family, type, proto)``
+
+   The values of *family*, *type*, *proto* are all integers and are
+   meant to be passed to the :func:`.socket` function.  If the file
+   descriptor is not a socket, :exc:`OSError` is raised.  On some
+   platforms, determining the protocol is not possible and in those
+   cases it is returned as zero.
+
+   Availability: Unix
+
+   .. versionadded:: 3.7
+
+
 .. _socket-objects:
 
 Socket Objects

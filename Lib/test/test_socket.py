@@ -5047,6 +5047,43 @@ class NonblockConstantTest(unittest.TestCase):
         socket.setdefaulttimeout(t)
 
 
+@unittest.skipUnless(hasattr(socket, "fdtype"),
+                     "socket.fdtype() not defined")
+class FdTypeTests(unittest.TestCase):
+    TYPES = [
+        (socket.AF_INET, socket.SOCK_STREAM, 0),
+        (socket.AF_INET, socket.SOCK_DGRAM, 0),
+        ]
+    _add = TYPES.append
+    if hasattr(socket, 'IPPROTO_TCP'):
+        _add((socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP))
+    if hasattr(socket, 'AF_UNIX'):
+        _add((socket.AF_UNIX, socket.SOCK_STREAM, 0))
+        _add((socket.AF_UNIX, socket.SOCK_DGRAM, 0))
+    if HAVE_SOCKET_CAN:
+        _add((socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW))
+        # This fails, not sure if Linux bug?
+        #if hasattr(socket, 'CAN_BCM'):
+        #    _add((socket.PF_CAN, socket.SOCK_DGRAM, socket.CAN_BCM))
+    if hasattr(socket, 'IPPROTO_SCTP'):
+        _add((socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_SCTP))
+    if HAVE_SOCKET_RDS:
+        _add((socket.PF_RDS, socket.SOCK_SEQPACKET, 0))
+
+    def test_fdtype(self):
+        for family, kind, proto in self.TYPES:
+            s = socket.socket(family, kind, proto)
+            with s:
+                family2, kind2, proto2 = socket.fdtype(s.fileno())
+                self.assertEqual(family, family2)
+                self.assertEqual(kind, kind2)
+                # depending on platform, we may not be able to find proto,
+                # the returned value could be zero or the actual protocol
+                # used for the socket
+                if proto != 0:
+                    self.assertIn(proto2, {proto, 0})
+
+
 @unittest.skipUnless(os.name == "nt", "Windows specific")
 @unittest.skipUnless(multiprocessing, "need multiprocessing")
 class TestSocketSharing(SocketTCPTest):
@@ -5613,7 +5650,8 @@ def test_main():
         NetworkConnectionBehaviourTest,
         ContextManagersTest,
         InheritanceTest,
-        NonblockConstantTest
+        NonblockConstantTest,
+        FdTypeTests,
     ])
     tests.append(BasicSocketPairTest)
     tests.append(TestUnixDomain)

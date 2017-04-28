@@ -24,6 +24,7 @@ inet_aton() -- convert IP addr string (123.45.67.89) to 32-bit packed format
 inet_ntoa() -- convert 32-bit packed format IP to string (123.45.67.89)
 socket.getdefaulttimeout() -- get the default timeout value
 socket.setdefaulttimeout() -- set the default timeout value
+fdtype() -- get (family, type, protocol) from a socket file descriptor [*]
 create_connection() -- connects to an address, with an optional timeout and
                        optional source address.
 
@@ -459,6 +460,19 @@ def fromfd(fd, family, type, proto=0):
     """
     nfd = dup(fd)
     return socket(family, type, proto, nfd)
+
+if hasattr(_socket, 'fdtype'):
+    def fdtype(fd):
+        """fdtype(fd) -> (family, type, proto)
+
+        Return (family, type, proto) for a socket given a file descriptor.
+        Raises OSError if the file descriptor is not a socket.
+        """
+        family, type, proto = _socket.fdtype(fd)
+        return (_intenum_converter(family, AddressFamily),
+                _intenum_converter(type, SocketKind),
+                proto)
+    __all__.append('fdtype')
 
 if hasattr(_socket.socket, "share"):
     def fromshare(info):
