@@ -15028,7 +15028,7 @@ do
 done
 
 
-SRCDIRS="Parser Grammar Objects Python Modules Mac"
+SRCDIRS="Parser Objects Python Modules"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 $as_echo_n "checking for build directories... " >&6; }
 for dir in $SRCDIRS; do

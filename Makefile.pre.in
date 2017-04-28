@@ -1365,10 +1365,10 @@ autoconf:
 # Create a tags file for vi
 tags::
 	cd $(srcdir); \
-	ctags -w -t Include/*.h; \
-	for i in $(SRCDIRS); do ctags -w -t -a $$i/*.[ch]; \
+	ctags -w Include/*.h; \
+	for i in $(SRCDIRS); do ctags -f tags -w -a $$i/*.[ch]; \
 	done; \
-	sort -o tags tags
+	LC_ALL=C sort -o tags tags
 
 # Create a tags file for GNU Emacs
 TAGS::
