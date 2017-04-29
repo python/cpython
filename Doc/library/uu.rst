@@ -34,7 +34,7 @@ The :mod:`uu` module defines the following functions:
    the header specifying *name* and *mode* as the defaults for the results of
    decoding the file. The default defaults are taken from *in_file*, or ``'-'``
    and ``0o666`` respectively.  If *backtick* is true, zeros are represented by
-   backticks instead of spaces.
+   ``'`'`` instead of spaces.
 
    .. versionchanged:: 3.7
       Added the *backtick* parameter.

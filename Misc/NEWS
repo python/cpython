@@ -10,7 +10,7 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
-- bpo-12414: sys.getsizeof() on a code object now returns the sizes 
+- bpo-12414: sys.getsizeof() on a code object now returns the sizes
   which includes the code struct and sizes of objects which it references.
   Patch by Dong-hee Na.
 
@@ -317,7 +317,7 @@ Extension Modules
 Library
 -------
 
-- bpo-30103: binascii.b2a_uu() and uu.encode() now support using backtick
+- bpo-30103: binascii.b2a_uu() and uu.encode() now support using ``'`'``
   as zero instead of space.
 
 - bpo-30101: Add support for curses.A_ITALIC.
