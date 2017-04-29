@@ -97,7 +97,7 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_b2a_base64__doc__,
-"b2a_base64($module, /, data, *, newline=True)\n"
+"b2a_base64($module, data, /, *, newline=True)\n"
 "--\n"
 "\n"
 "Base64-code line of data.");
@@ -112,7 +112,7 @@ static PyObject *
 binascii_b2a_base64(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"data", "newline", NULL};
+    static const char * const _keywords[] = {"", "newline", NULL};
     static _PyArg_Parser _parser = {"y*|$i:b2a_base64", _keywords, 0};
     Py_buffer data = {NULL, NULL};
     int newline = 1;
@@ -558,4 +558,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=4a418f883ccc79fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=35821bce7e0e4714 input=a9049054013a1b77]*/
