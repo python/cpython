@@ -13,7 +13,7 @@ import io
 plaintext = b"The symbols on top of your keyboard are !@#$%^&*()_+|~\n"
 
 encodedtext = b"""\
-M5&AE(\'-Y;6)O;\',@;VX@=&]P(&]F(\'EO=7(@:V5Y8F]A<F0@87)E("% (R0E
+M5&AE('-Y;6)O;',@;VX@=&]P(&]F('EO=7(@:V5Y8F]A<F0@87)E("% (R0E
 *7B8J*"E?*WQ^"@  """
 
 # Stolen from io.py
@@ -270,8 +270,6 @@ class UUFileTest(unittest.TestCase):
         finally:
             self._kill(f)
 
-def test_main():
-    support.run_unittest(UUTest, UUStdIOTest, UUFileTest)
 
 if __name__=="__main__":
-    test_main()
+    unittest.main()
