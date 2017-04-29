@@ -334,6 +334,7 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
 binascii.b2a_uu
 
     data: Py_buffer
+    /
     *
     backtick: bool(accept={int}) = False
 
@@ -342,7 +343,7 @@ Uuencode line of data.
 
 static PyObject *
 binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
-/*[clinic end generated code: output=b1b99de62d9bbeb8 input=141f61b6ceb56af6]*/
+/*[clinic end generated code: output=b1b99de62d9bbeb8 input=b26bc8d32b6ed2f6]*/
 {
     unsigned char *ascii_data;
     const unsigned char *bin_data;

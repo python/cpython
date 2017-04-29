@@ -34,7 +34,7 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_b2a_uu__doc__,
-"b2a_uu($module, /, data, *, backtick=False)\n"
+"b2a_uu($module, data, /, *, backtick=False)\n"
 "--\n"
 "\n"
 "Uuencode line of data.");
@@ -49,7 +49,7 @@ static PyObject *
 binascii_b2a_uu(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"data", "backtick", NULL};
+    static const char * const _keywords[] = {"", "backtick", NULL};
     static _PyArg_Parser _parser = {"y*|$i:b2a_uu", _keywords, 0};
     Py_buffer data = {NULL, NULL};
     int backtick = 0;
@@ -562,4 +562,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=25820051c57501c7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=45a2defa52613bad input=a9049054013a1b77]*/

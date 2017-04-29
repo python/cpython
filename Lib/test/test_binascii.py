@@ -145,6 +145,8 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.a2b_uu(b'$`$-A=```\n'),
                          binascii.a2b_uu(b'$ $-A=   \n'))
         with self.assertRaises(TypeError):
+            binascii.b2a_uu(data=b"")
+        with self.assertRaises(TypeError):
             binascii.b2a_uu(b"", True)
 
     def test_crc_hqx(self):
