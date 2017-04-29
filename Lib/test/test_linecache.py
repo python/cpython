@@ -3,7 +3,7 @@
 import linecache
 import unittest
 import os.path
-from test import test_support as support
+from test import support
 
 
 FILENAME = linecache.__file__
@@ -11,7 +11,7 @@ INVALID_NAME = '!@$)(!@#_1'
 EMPTY = ''
 TESTS = 'inspect_fodder inspect_fodder2 mapping_tests'
 TESTS = TESTS.split()
-TEST_PATH = os.path.dirname(support.__file__)
+TEST_PATH = support.TEST_HOME_DIR
 MODULES = "linecache abc".split()
 MODULE_PATH = os.path.dirname(FILENAME)
 

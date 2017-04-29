@@ -1,7 +1,7 @@
 """Supporting definitions for the Python regression tests."""
 
-if __name__ != 'test.test_support':
-    raise ImportError('test_support must be imported from the test package')
+if __name__ != 'test.support':
+    raise ImportError('test.support must be imported from the test package')
 
 import contextlib
 import errno
@@ -764,8 +764,15 @@ def temp_cwd(name='tempcwd', quiet=False):
         if is_temporary:
             rmtree(name)
 
+# TEST_HOME_DIR refers to the top level directory of the "test" package
+# that contains Python's regression test suite
+TEST_SUPPORT_DIR = os.path.dirname(os.path.abspath(__file__))
+TEST_HOME_DIR = os.path.dirname(TEST_SUPPORT_DIR)
 
-def findfile(file, here=__file__, subdir=None):
+# TEST_DATA_DIR is used as a target download location for remote resources
+TEST_DATA_DIR = os.path.join(TEST_HOME_DIR, "data")
+
+def findfile(file, subdir=None):
     """Try to find a file on sys.path and the working directory.  If it is not
     found the argument passed to the function is returned (this does not
     necessarily signal failure; could still be the legitimate path)."""
@@ -773,8 +780,7 @@ def findfile(file, here=__file__, subdir=None):
         return file
     if subdir is not None:
         file = os.path.join(subdir, file)
-    path = sys.path
-    path = [os.path.dirname(here)] + path
+    path = [TEST_HOME_DIR] + sys.path
     for dn in path:
         fn = os.path.join(dn, file)
         if os.path.exists(fn): return fn
@@ -809,7 +815,7 @@ def open_urlresource(url, check=None):
 
     filename = urlparse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
 
-    fn = os.path.join(os.path.dirname(__file__), "data", filename)
+    fn = os.path.join(TEST_DATA_DIR, filename)
 
     def check_valid_file(fn):
         f = open(fn)
@@ -1511,7 +1517,7 @@ def run_doctest(module, verbosity=None):
     """Run doctest on the given module.  Return (#failures, #tests).
 
     If optional argument verbosity is not specified (or is None), pass
-    test_support's belief about verbosity on to doctest.  Else doctest's
+    test.support's belief about verbosity on to doctest.  Else doctest's
     usual behavior is used (it searches sys.argv for -v).
     """
 

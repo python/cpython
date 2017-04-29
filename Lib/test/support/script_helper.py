@@ -18,7 +18,7 @@ except ImportError:
     # Most of this module can then still be used.
     pass
 
-from test.test_support import strip_python_stderr
+from test.support import strip_python_stderr
 
 # Executing the interpreter in a subprocess
 def _assert_python(expected_success, *args, **env_vars):
