@@ -102,6 +102,8 @@ Core and Builtins
 
 - bpo-29546: Improve from-import error message with location
 
+- bpo-30157: Fix csv.Sniffer.sniff() regex pattern typo.
+
 - Issue #29319: Prevent RunMainFromImporter overwriting sys.path[0].
 
 - Issue #29337: Fixed possible BytesWarning when compare the code objects.
