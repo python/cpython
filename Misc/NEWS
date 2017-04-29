@@ -317,6 +317,9 @@ Extension Modules
 Library
 -------
 
+- bpo-29621: If telnetlib.write() receive non-byte-like type 
+             then raise TypeError. Patched by Dong-hee Na.
+
 - bpo-30101: Add support for curses.A_ITALIC.
 
 - bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch

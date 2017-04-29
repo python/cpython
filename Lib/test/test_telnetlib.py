@@ -304,6 +304,17 @@ class WriteTests(unittest.TestCase):
             written = b''.join(telnet.sock.writes)
             self.assertEqual(data.replace(tl.IAC,tl.IAC+tl.IAC), written)
 
+
+    def test_write_type_error(self):
+        non_bytes_data_sample = ['data sample with string',
+                                 [b'data sample without IAC'],
+                                 [b'data sample with', tl.IAC, b' one IAC'],
+                                 (b'data sample with', tl.IAC ,b' one IAC'),
+                                 '']
+        for data in non_bytes_data_sample:
+            telnet = test_telnet()
+            self.assertRaises(TypeError, telnet.write, data)
+
 class OptionTests(unittest.TestCase):
     # RFC 854 commands
     cmds = [tl.AO, tl.AYT, tl.BRK, tl.EC, tl.EL, tl.GA, tl.IP, tl.NOP]
