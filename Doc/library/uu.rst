@@ -28,7 +28,7 @@ This code was contributed by Lance Ellinghouse, and modified by Jack Jansen.
 The :mod:`uu` module defines the following functions:
 
 
-.. function:: encode(in_file, out_file, name=None, mode=None, \*, backtick=False)
+.. function:: encode(in_file, out_file, name=None, mode=None, *, backtick=False)
 
    Uuencode file *in_file* into file *out_file*.  The uuencoded file will have
    the header specifying *name* and *mode* as the defaults for the results of
