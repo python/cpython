@@ -204,7 +204,7 @@ SRE(charset_loc_ignore)(SRE_STATE* state, SRE_CODE* set, SRE_CODE ch)
        return 1;
 
     up = state->upper(ch);
-    return up == lo || SRE(charset)(state, set, up);
+    return up != lo && SRE(charset)(state, set, up);
 }
 
 LOCAL(Py_ssize_t) SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int match_all);
