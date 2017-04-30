@@ -1730,6 +1730,24 @@ SUBPATTERN None 0 0
         self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
+    def test_locale_compiled(self):
+        oldlocale = locale.setlocale(locale.LC_CTYPE)
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
+        for loc in 'en_US.iso88591', 'en_US.utf8':
+            try:
+                locale.setlocale(locale.LC_CTYPE, loc)
+            except locale.Error:
+                # Unsupported locale on this system
+                self.skipTest('test needs %s locale' % loc)
+
+        locale.setlocale(locale.LC_CTYPE, 'en_US.iso88591')
+        p = re.compile(b'\xc5\xe5', re.L|re.I)
+
+        locale.setlocale(locale.LC_CTYPE, 'en_US.utf8')
+        self.assertTrue(p.match(b'\xc5\xe5'))
+        self.assertIsNone(p.match(b'\xe5\xe5'))
+        self.assertIsNone(p.match(b'\xc5\xc5'))
+
     def test_error(self):
         with self.assertRaises(re.error) as cm:
             re.compile('(\u20ac))')
