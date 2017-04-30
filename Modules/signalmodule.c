@@ -1606,9 +1606,9 @@ PyOS_AfterFork(void)
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
 #ifdef WITH_THREAD
-    /* PyThread_ReInitTLS() must be called early, to make sure that the TLS API
+    /* PyThread_ReInitTSS() must be called early, to make sure that the TSS API
      * can be called safely. */
-    PyThread_ReInitTLS();
+    PyThread_ReInitTSS();
     _PyGILState_Reinit();
     PyEval_ReInitThreads();
     main_thread = PyThread_get_thread_ident();

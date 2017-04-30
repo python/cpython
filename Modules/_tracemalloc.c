@@ -171,7 +171,7 @@ tracemalloc_error(const char *format, ...)
 #  error "need native thread local storage (TLS)"
 #endif
 
-static int tracemalloc_reentrant_key = -1;
+static Py_tss_t tracemalloc_reentrant_key = Py_tss_NEEDS_INIT;
 
 /* Any non-NULL pointer can be used */
 #define REENTRANT Py_True
@@ -181,8 +181,8 @@ get_reentrant(void)
 {
     void *ptr;
 
-    assert(tracemalloc_reentrant_key != -1);
-    ptr = PyThread_get_key_value(tracemalloc_reentrant_key);
+    assert(PyThread_tss_is_created(tracemalloc_reentrant_key));
+    ptr = PyThread_tss_get(tracemalloc_reentrant_key);
     if (ptr != NULL) {
         assert(ptr == REENTRANT);
         return 1;
@@ -195,15 +195,15 @@ static void
 set_reentrant(int reentrant)
 {
     assert(reentrant == 0 || reentrant == 1);
-    assert(tracemalloc_reentrant_key != -1);
+    assert(PyThread_tss_is_created(tracemalloc_reentrant_key));
 
     if (reentrant) {
         assert(!get_reentrant());
-        PyThread_set_key_value(tracemalloc_reentrant_key, REENTRANT);
+        PyThread_tss_set(tracemalloc_reentrant_key, REENTRANT);
     }
     else {
         assert(get_reentrant());
-        PyThread_set_key_value(tracemalloc_reentrant_key, NULL);
+        PyThread_tss_set(tracemalloc_reentrant_key, NULL);
     }
 }
 
@@ -993,8 +993,7 @@ tracemalloc_init(void)
     PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &allocators.raw);
 
 #ifdef REENTRANT_THREADLOCAL
-    tracemalloc_reentrant_key = PyThread_create_key();
-    if (tracemalloc_reentrant_key == -1) {
+    if (PyThread_tss_create(&tracemalloc_reentrant_key) != 0) {
 #ifdef MS_WINDOWS
         PyErr_SetFromWindowsErr(0);
 #else
@@ -1079,8 +1078,7 @@ tracemalloc_deinit(void)
 #endif
 
 #ifdef REENTRANT_THREADLOCAL
-    PyThread_delete_key(tracemalloc_reentrant_key);
-    tracemalloc_reentrant_key = -1;
+    PyThread_tss_delete(&tracemalloc_reentrant_key);
 #endif
 
     Py_XDECREF(unknown_filename);
