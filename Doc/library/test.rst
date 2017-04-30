@@ -194,8 +194,9 @@ tests.
 
 .. note::
 
-   The :mod:`test.support` module has been renamed to :mod:`test.support`
-   in Python 3.x and 2.7.13.
+   The :mod:`test.test_support` module has been renamed to :mod:`test.support`
+   in Python 3.x and 2.7.13.  The name ``test.test_support`` has been retained
+   as an alias in 2.7.
 
 The :mod:`test.support` module provides support for Python's regression
 tests.
