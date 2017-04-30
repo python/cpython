@@ -1,3 +1,6 @@
+from idlelib.importpath import _fix_import_path
+_fix_import_path()
+
 import io
 import linecache
 import queue

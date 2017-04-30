@@ -2,6 +2,9 @@
 
 import sys
 
+from idlelib.importpath import _fix_import_path
+_fix_import_path()
+
 try:
     from tkinter import *
 except ImportError:
