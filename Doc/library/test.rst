@@ -15,8 +15,8 @@
 
 
 The :mod:`test` package contains all regression tests for Python as well as the
-modules :mod:`test.test_support` and :mod:`test.regrtest`.
-:mod:`test.test_support` is used to enhance your tests while
+modules :mod:`test.support` and :mod:`test.regrtest`.
+:mod:`test.support` is used to enhance your tests while
 :mod:`test.regrtest` drives the testing suite.
 
 Each module in the :mod:`test` package whose name starts with ``test_`` is a
@@ -54,7 +54,7 @@ stated.
 A basic boilerplate is often used::
 
    import unittest
-   from test import test_support
+   from test import support
 
    class MyTestCase1(unittest.TestCase):
 
@@ -82,10 +82,10 @@ A basic boilerplate is often used::
    ... more test classes ...
 
    def test_main():
-       test_support.run_unittest(MyTestCase1,
-                                 MyTestCase2,
-                                 ... list other tests ...
-                                )
+       support.run_unittest(MyTestCase1,
+                            MyTestCase2,
+                            ... list other tests ...
+                            )
 
    if __name__ == '__main__':
        test_main()
@@ -186,18 +186,19 @@ top-level directory where Python was built. On Windows, executing
 tests.
 
 
-:mod:`test.test_support` --- Utility functions for tests
-========================================================
+:mod:`test.support` --- Utility functions for tests
+===================================================
 
-.. module:: test.test_support
+.. module:: test.support
    :synopsis: Support for Python regression tests.
 
 .. note::
 
    The :mod:`test.test_support` module has been renamed to :mod:`test.support`
-   in Python 3.x.
+   in Python 3.x and 2.7.13.  The name ``test.test_support`` has been retained
+   as an alias in 2.7.
 
-The :mod:`test.test_support` module provides support for Python's regression
+The :mod:`test.support` module provides support for Python's regression
 tests.
 
 This module defines the following exceptions:
@@ -216,7 +217,7 @@ This module defines the following exceptions:
    network connection) is not available. Raised by the :func:`requires`
    function.
 
-The :mod:`test.test_support` module defines the following constants:
+The :mod:`test.support` module defines the following constants:
 
 
 .. data:: verbose
@@ -241,7 +242,7 @@ The :mod:`test.test_support` module defines the following constants:
    Set to a name that is safe to use as the name of a temporary file.  Any
    temporary file that is created should be closed and unlinked (removed).
 
-The :mod:`test.test_support` module defines the following functions:
+The :mod:`test.support` module defines the following functions:
 
 
 .. function:: forget(module_name)
@@ -284,7 +285,7 @@ The :mod:`test.test_support` module defines the following functions:
    following :func:`test_main` function::
 
       def test_main():
-          test_support.run_unittest(__name__)
+          support.run_unittest(__name__)
 
    This will run all tests defined in the named module.
 
@@ -433,7 +434,7 @@ The :mod:`test.test_support` module defines the following functions:
    .. versionadded:: 2.7
 
 
-The :mod:`test.test_support` module defines the following classes:
+The :mod:`test.support` module defines the following classes:
 
 .. class:: TransientResource(exc[, **kwargs])
 

@@ -26,7 +26,7 @@ class CompilerTest(unittest.TestCase):
         # warning: if 'os' or 'test_support' are moved in some other dir,
         # they should be changed here.
         libdir = os.path.dirname(os.__file__)
-        testdir = os.path.dirname(test.test_support.__file__)
+        testdir = test.test_support.TEST_HOME_DIR
 
         for dir in [testdir]:
             for basename in "test_os.py",:
