@@ -1,5 +1,5 @@
-from test.support import verbose, run_unittest, gc_collect, bigmemtest, _2G, \
-        cpython_only, captured_stdout
+from test.support import (gc_collect, bigmemtest, _2G,
+                          cpython_only, captured_stdout)
 import locale
 import re
 import sre_compile
@@ -904,7 +904,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"a\s", "a ").group(0), "a ")
 
     def assertMatch(self, pattern, text, match=None, span=None,
-                    matcher=re.match):
+                    matcher=re.fullmatch):
         if match is None and span is None:
             # the pattern matches the whole text
             match = text
@@ -917,37 +917,38 @@ class ReTests(unittest.TestCase):
         self.assertEqual(m.group(), match)
         self.assertEqual(m.span(), span)
 
+    LITERAL_CHARS = string.ascii_letters + string.digits + '!"%&\',/:;<=>@_`~'
+
     def test_re_escape(self):
-        alnum_chars = string.ascii_letters + string.digits + '_'
         p = ''.join(chr(i) for i in range(256))
         for c in p:
-            if c in alnum_chars:
-                self.assertEqual(re.escape(c), c)
-            elif c == '\x00':
-                self.assertEqual(re.escape(c), '\\000')
-            else:
-                self.assertEqual(re.escape(c), '\\' + c)
             self.assertMatch(re.escape(c), c)
+            self.assertMatch('[' + re.escape(c) + ']', c)
+            self.assertMatch('(?x)' + re.escape(c), c)
         self.assertMatch(re.escape(p), p)
+        for c in '-.]{}':
+            self.assertEqual(re.escape(c)[:1], '\\')
+        literal_chars = self.LITERAL_CHARS
+        self.assertEqual(re.escape(literal_chars), literal_chars)
 
-    def test_re_escape_byte(self):
-        alnum_chars = (string.ascii_letters + string.digits + '_').encode('ascii')
+    def test_re_escape_bytes(self):
         p = bytes(range(256))
         for i in p:
             b = bytes([i])
-            if b in alnum_chars:
-                self.assertEqual(re.escape(b), b)
-            elif i == 0:
-                self.assertEqual(re.escape(b), b'\\000')
-            else:
-                self.assertEqual(re.escape(b), b'\\' + b)
             self.assertMatch(re.escape(b), b)
+            self.assertMatch(b'[' + re.escape(b) + b']', b)
+            self.assertMatch(b'(?x)' + re.escape(b), b)
         self.assertMatch(re.escape(p), p)
+        for i in b'-.]{}':
+            b = bytes([i])
+            self.assertEqual(re.escape(b)[:1], b'\\')
+        literal_chars = self.LITERAL_CHARS.encode('ascii')
+        self.assertEqual(re.escape(literal_chars), literal_chars)
 
     def test_re_escape_non_ascii(self):
         s = 'xxx\u2620\u2620\u2620xxx'
         s_escaped = re.escape(s)
-        self.assertEqual(s_escaped, 'xxx\\\u2620\\\u2620\\\u2620xxx')
+        self.assertEqual(s_escaped, s)
         self.assertMatch(s_escaped, s)
         self.assertMatch('.%s+.' % re.escape('\u2620'), s,
                          'x\u2620\u2620\u2620x', (2, 7), re.search)
@@ -955,7 +956,7 @@ class ReTests(unittest.TestCase):
     def test_re_escape_non_ascii_bytes(self):
         b = 'y\u2620y\u2620y'.encode('utf-8')
         b_escaped = re.escape(b)
-        self.assertEqual(b_escaped, b'y\\\xe2\\\x98\\\xa0y\\\xe2\\\x98\\\xa0y')
+        self.assertEqual(b_escaped, b)
         self.assertMatch(b_escaped, b)
         res = re.findall(re.escape('\u2620'.encode('utf-8')), b)
         self.assertEqual(len(res), 2)
@@ -969,6 +970,15 @@ class ReTests(unittest.TestCase):
             self.assertEqual(newpat, oldpat)
         # current pickle expects the _compile() reconstructor in re module
         from re import _compile
+
+    def test_copying(self):
+        import copy
+        p = re.compile(r'(?P<int>\d+)(?:\.(?P<frac>\d*))?')
+        self.assertIs(copy.copy(p), p)
+        self.assertIs(copy.deepcopy(p), p)
+        m = p.match('12.34')
+        self.assertIs(copy.copy(m), m)
+        self.assertIs(copy.deepcopy(m), m)
 
     def test_constants(self):
         self.assertEqual(re.I, re.IGNORECASE)
@@ -1399,7 +1409,7 @@ class ReTests(unittest.TestCase):
 
     def test_locale_flag(self):
         import locale
-        enc = locale.getpreferredencoding(False)
+        _, enc = locale.getlocale(locale.LC_CTYPE)
         # Search non-ASCII letter
         for i in range(128, 256):
             try:

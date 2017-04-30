@@ -14,6 +14,7 @@ to modify the meaning of the API call itself.
 """
 
 import collections
+import collections.abc
 import concurrent.futures
 import heapq
 import itertools
@@ -28,7 +29,6 @@ import sys
 import warnings
 import weakref
 
-from . import compat
 from . import coroutines
 from . import events
 from . import futures
@@ -498,16 +498,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Returns True if the event loop was closed."""
         return self._closed
 
-    # On Python 3.3 and older, objects with a destructor part of a reference
-    # cycle are never destroyed. It's not more the case on Python 3.4 thanks
-    # to the PEP 442.
-    if compat.PY34:
-        def __del__(self):
-            if not self.is_closed():
-                warnings.warn("unclosed event loop %r" % self, ResourceWarning,
-                              source=self)
-                if not self.is_running():
-                    self.close()
+    def __del__(self):
+        if not self.is_closed():
+            warnings.warn("unclosed event loop %r" % self, ResourceWarning,
+                          source=self)
+            if not self.is_running():
+                self.close()
 
     def is_running(self):
         """Returns True if the event loop is running."""
@@ -1001,7 +997,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             if host == '':
                 hosts = [None]
             elif (isinstance(host, str) or
-                  not isinstance(host, collections.Iterable)):
+                  not isinstance(host, collections.abc.Iterable)):
                 hosts = [host]
             else:
                 hosts = host
@@ -1043,7 +1039,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError as err:
                         raise OSError(err.errno, 'error while attempting '
                                       'to bind on address %r: %s'
-                                      % (sa, err.strerror.lower()))
+                                      % (sa, err.strerror.lower())) from None
                 completed = True
             finally:
                 if not completed:

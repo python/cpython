@@ -107,6 +107,8 @@ ARFLAGS=	@ARFLAGS@
 CFLAGSFORSHARED=@CFLAGSFORSHARED@
 # C flags used for building the interpreter object files
 PY_CORE_CFLAGS=	$(PY_CFLAGS) $(PY_CFLAGS_NODIST) $(PY_CPPFLAGS) $(CFLAGSFORSHARED) -DPy_BUILD_CORE
+# Strict or non-strict aliasing flags used to compile dtoa.c, see above
+CFLAGS_ALIASING=@CFLAGS_ALIASING@
 
 
 # Machine-dependent subdirectories
@@ -1536,6 +1538,13 @@ config.status:	$(srcdir)/configure
 .c.o:
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
+# bpo-30104: dtoa.c uses union to cast double to unsigned long[2]. clang 4.0
+# with -O2 or higher and strict aliasing miscompiles the ratio() function
+# causing rounding issues. Compile dtoa.c using -fno-strict-aliasing on clang.
+# https://bugs.llvm.org//show_bug.cgi?id=31928
+Python/dtoa.o: Python/dtoa.c
+	$(CC) -c $(PY_CORE_CFLAGS) $(CFLAGS_ALIASING) -o $@ $<
+
 # Run reindent on the library
 reindent:
 	./$(BUILDPYTHON) $(srcdir)/Tools/scripts/reindent.py -r $(srcdir)/Lib
@@ -1555,7 +1564,7 @@ autoconf:
 tags::
 	cd $(srcdir); \
 	ctags -w Include/*.h; \
-	for i in $(SRCDIRS); do ctags -w -a $$i/*.[ch]; \
+	for i in $(SRCDIRS); do ctags -f tags -w -a $$i/*.[ch]; \
 	done; \
 	LC_ALL=C sort -o tags tags
 

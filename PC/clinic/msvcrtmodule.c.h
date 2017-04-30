@@ -29,7 +29,7 @@ PyDoc_STRVAR(msvcrt_locking__doc__,
 "\n"
 "Lock part of a file based on file descriptor fd from the C runtime.\n"
 "\n"
-"Raises IOError on failure. The locked region of the file extends from\n"
+"Raises OSError on failure. The locked region of the file extends from\n"
 "the current file position for nbytes bytes, and may continue beyond\n"
 "the end of the file. mode must be one of the LK_* constants listed\n"
 "below. Multiple regions in a file may be locked at the same time, but\n"
@@ -155,7 +155,7 @@ PyDoc_STRVAR(msvcrt_get_osfhandle__doc__,
 "\n"
 "Return the file handle for the file descriptor fd.\n"
 "\n"
-"Raises IOError if fd is not recognized.");
+"Raises OSError if fd is not recognized.");
 
 #define MSVCRT_GET_OSFHANDLE_METHODDEF    \
     {"get_osfhandle", (PyCFunction)msvcrt_get_osfhandle, METH_O, msvcrt_get_osfhandle__doc__},
@@ -589,4 +589,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=36f1e78ca8bd3944 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=be516d0e78532ba3 input=a9049054013a1b77]*/

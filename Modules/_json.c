@@ -1654,7 +1654,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
     idx = 0;
     while ((item = PyIter_Next(it)) != NULL) {
         PyObject *encoded, *key, *value;
-        if (!PyTuple_Check(item) || Py_SIZE(item) != 2) {
+        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
             PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
             goto bail;
         }

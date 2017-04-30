@@ -10,6 +10,52 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-12414: sys.getsizeof() on a code object now returns the sizes 
+  which includes the code struct and sizes of objects which it references.
+  Patch by Dong-hee Na.
+
+- bpo-29839: len() now raises ValueError rather than OverflowError if
+  __len__() returned a large negative integer.
+
+- bpo-11913: README.rst is now included in the list of distutils standard
+  READMEs and therefore included in source distributions.
+
+- bpo-29914: Fixed default implementations of __reduce__ and __reduce_ex__().
+  object.__reduce__() no longer takes arguments, object.__reduce_ex__() now
+  requires one argument.
+
+- bpo-29949: Fix memory usage regression of set and frozenset object.
+
+- bpo-29935: Fixed error messages in the index() method of tuple, list and deque
+  when pass indices of wrong type.
+
+- bpo-29816: Shift operation now has less opportunity to raise OverflowError.
+  ValueError always is raised rather than OverflowError for negative counts.
+  Shifting zero with non-negative count always returns zero.
+
+- bpo-24821: Fixed the slowing down to 25 times in the searching of some
+  unlucky Unicode characters.
+
+- bpo-29894: The deprecation warning is emitted if __complex__ returns an
+  instance of a strict subclass of complex.  In a future versions of Python
+  this can be an error.
+
+- bpo-29859: Show correct error messages when any of the pthread_* calls in
+  thread_pthread.h fails.
+
+- bpo-29849: Fix a memory leak when an ImportError is raised during from import.
+
+- bpo-28856: Fix an oversight that %b format for bytes should support objects
+  follow the buffer protocol.
+
+- bpo-29723: The ``sys.path[0]`` initialization change for bpo-29139 caused a
+  regression by revealing an inconsistency in how sys.path is initialized when
+  executing ``__main__`` from a zipfile, directory, or other import location.
+  The interpreter now consistently avoids ever adding the import location's
+  parent directory to ``sys.path``, and ensures no other ``sys.path`` entries
+  are inadvertently modified when inserting the import location named on the
+  command line.
+
 - bpo-29568: Escaped percent "%%" in the format string for classic string
   formatting no longer allows any characters between two percents.
 
@@ -21,6 +67,9 @@ Core and Builtins
 
 - bpo-28893: Set correct __cause__ for errors about invalid awaitables
   returned from __aiter__ and __anext__.
+
+- bpo-28876: ``bool(range)`` works even if ``len(range)``
+  raises :exc:`OverflowError`.
 
 - bpo-29683: Fixes to memory allocation in _PyCode_SetExtra.  Patch by
   Brian Coleman.
@@ -268,17 +317,139 @@ Extension Modules
 Library
 -------
 
+- bpo-30101: Add support for curses.A_ITALIC.
+
+- bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch
+  by Nate Soares.
+
+- bpo-29960: Preserve generator state when _random.Random.setstate()
+  raises an exception.  Patch by Bryan Olson.
+
+- bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
+
+- bpo-22352: Column widths in the output of dis.dis() are now adjusted for
+  large line numbers and instruction offsets.
+
+- bpo-30061: Fixed crashes in IOBase methods __next__() and readlines() when
+  readline() or __next__() respectively return non-sizeable object.
+  Fixed possible other errors caused by not checking results of PyObject_Size(),
+  PySequence_Size(), or PyMapping_Size().
+
+- bpo-10076: Compiled regular expression and match objects in the re module
+  now support copy.copy() and copy.deepcopy() (they are considered atomic).
+
+- bpo-30068: _io._IOBase.readlines will check if it's closed first when
+  hint is present.
+
+- bpo-29694: Fixed race condition in pathlib mkdir with flags
+  parents=True.  Patch by Armin Rigo.
+
+- bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in
+  contextlib.contextmanager.  Patch by Siddharth Velankar.
+
+- bpo-26187: Test that sqlite3 trace callback is not called multiple
+  times when schema is changing.  Indirectly fixed by switching to
+  use sqlite3_prepare_v2() in bpo-9303.  Patch by Aviv Palivoda.
+
+- bpo-30017: Allowed calling the close() method of the zip entry writer object
+  multiple times.  Writing to a closed writer now always produces a ValueError.
+
+- bpo-29998: Pickling and copying ImportError now preserves name and path
+  attributes.
+
+- bpo-29995: re.escape() now escapes only regex special characters.
+
+- bpo-29962: Add math.remainder operation, implementing remainder
+  as specified in IEEE 754.
+
+- bpo-29649: Improve struct.pack_into() exception messages for problems
+  with the buffer size and offset.  Patch by Andrew Nester.
+
+- bpo-29654: Support If-Modified-Since HTTP header (browser cache).  Patch
+  by Pierre Quentel.
+
+- bpo-29931: Fixed comparison check for ipaddress.ip_interface objects.
+  Patch by Sanjay Sundaresan.
+
+- bpo-29953: Fixed memory leaks in the replace() method of datetime and time
+  objects when pass out of bound fold argument.
+
+- bpo-29942: Fix a crash in itertools.chain.from_iterable when encountering
+  long runs of empty iterables.
+
+- bpo-10030: Sped up reading encrypted ZIP files by 2 times.
+
+- bpo-29204: Element.getiterator() and the html parameter of XMLParser() were
+  deprecated only in the documentation (since Python 3.2 and 3.4 correspondintly).
+  Now using them emits a deprecation warning.
+
+- bpo-27863: Fixed multiple crashes in ElementTree caused by race conditions
+  and wrong types.
+
+- bpo-25996: Added support of file descriptors in os.scandir() on Unix.
+  os.fwalk() is sped up by 2 times by using os.scandir().
+
+- bpo-28699: Fixed a bug in pools in multiprocessing.pool that raising an
+  exception at the very first of an iterable may swallow the exception or
+  make the program hang. Patch by Davin Potts and Xiang Zhang.
+
+- bpo-23890: unittest.TestCase.assertRaises() now manually breaks a reference
+  cycle to not keep objects alive longer than expected.
+
+- bpo-29901: The zipapp module now supports general path-like objects, not
+  just pathlib.Path.
+
+- bpo-25803: Avoid incorrect errors raised by Path.mkdir(exist_ok=True)
+  when the OS gives priority to errors such as EACCES over EEXIST.
+
+- bpo-29861: Release references to tasks, their arguments and their results
+  as soon as they are finished in multiprocessing.Pool.
+
+- bpo-19930: The mode argument of os.makedirs() no longer affects the file
+  permission bits of newly-created intermediate-level directories.
+
+- bpo-29884: faulthandler: Restore the old sigaltstack during teardown.
+  Patch by Christophe Zeitouny.
+
+- bpo-25455: Fixed crashes in repr of recursive buffered file-like objects.
+
+- bpo-29800: Fix crashes in partial.__repr__ if the keys of partial.keywords
+  are not strings.  Patch by Michael Seifert.
+
+- bpo-8256: Fixed possible failing or crashing input() if attributes "encoding"
+  or "errors" of sys.stdin or sys.stdout are not set or are not strings.
+
+- bpo-28692: Using non-integer value for selecting a plural form in gettext is
+  now deprecated.
+
+- bpo-26121: Use C library implementation for math functions erf() and erfc().
+
+- bpo-29619: os.stat() and os.DirEntry.inode() now convert inode (st_ino) using
+  unsigned integers.
+
+- bpo-28298: Fix a bug that prevented array 'Q', 'L' and 'I' from accepting big
+  intables (objects that have __int__) as elements.
+
+- bpo-29645: Speed up importing the webbrowser module.  webbrowser.register()
+  is now thread-safe.
+
+- bpo-28231: The zipfile module now accepts path-like objects for external
+  paths.
+
 - bpo-26915: index() and count() methods of collections.abc.Sequence now
   check identity before checking equality when do comparisons.
 
 - bpo-28682: Added support for bytes paths in os.fwalk().
+
+- bpo-29728: Add new :data:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constant.
+  Patch by Nathaniel J. Smith.
 
 - bpo-29623: Allow use of path-like object as a single argument in
   ConfigParser.read().  Patch by David Ellis.
 
 - bpo-9303: Migrate sqlite3 module to _v2 API.  Patch by Aviv Palivoda.
 
-- bpo-28963: Fix out of bound iteration in asyncio.Future.remove_done_callback 
+- bpo-28963: Fix out of bound iteration in asyncio.Future.remove_done_callback
   implemented in C.
 
 - bpo-29704: asyncio.subprocess.SubprocessStreamProtocol no longer closes before
@@ -305,6 +476,9 @@ Library
 - bpo-28518: Start a transaction implicitly before a DML statement.
   Patch by Aviv Palivoda.
 
+- bpo-29742: get_extra_info() raises exception if get called on closed ssl transport.
+  Patch by Nikolay Kim.
+
 - Issue #16285: urrlib.parse.quote is now based on RFC 3986 and hence includes
   '~' in the set of characters that is not quoted by default. Patch by
   Christian Theune and Ratnadeep Debnath.
@@ -325,6 +499,9 @@ Library
 - bpo-29534: Fixed different behaviour of Decimal.from_float()
   for _decimal and _pydecimal. Thanks Andrew Nester.
 
+- bpo-10379: locale.format_string now supports the 'monetary' keyword argument,
+  and locale.format is deprecated.
+
 - Issue #28556: Various updates to typing module: typing.Counter, typing.ChainMap,
   improved ABC caching, etc. Original PRs by Jelle Zijlstra, Ivan Levkivskyi,
   Manuel Krebber, and Łukasz Langa.
@@ -337,7 +514,7 @@ Library
 - Issue #29444: Fixed out-of-bounds buffer access in the group() method of
   the match object.  Based on patch by WGH.
 
-- Issue #29377: Add SlotWrapperType, MethodWrapperType, and
+- Issue #29377: Add WrapperDescriptorType, MethodWrapperType, and
   MethodDescriptorType built-in types to types module.
   Original patch by Manuel Krebber.
 
@@ -409,7 +586,7 @@ Library
 - Issue #28427: old keys should not remove new values from
   WeakValueDictionary when collecting from another thread.
 
-- Issue 28923: Remove editor artifacts from Tix.py.
+- Issue #28923: Remove editor artifacts from Tix.py.
 
 - Issue #28871: Fixed a crash when deallocate deep ElementTree.
 
@@ -722,6 +899,9 @@ Library
 - Issue #24142: Reading a corrupt config file left configparser in an
   invalid state.  Original patch by Florian Höch.
 
+- Issue #29581: ABCMeta.__new__ now accepts ``**kwargs``, allowing abstract base
+  classes to use keyword parameters in __init_subclass__. Patch by Nate Soares.
+
 Windows
 -------
 
@@ -759,6 +939,10 @@ Windows
 
 C API
 -----
+
+- bpo-6532: The type of results of PyThread_start_new_thread() and
+  PyThread_get_thread_ident(), and the id parameter of
+  PyThreadState_SetAsyncExc() changed from "long" to "unsigned long".
 
 - Issue #27867: Function PySlice_GetIndicesEx() is deprecated and replaced with
   a macro if Py_LIMITED_API is not set or set to the value between 0x03050400
@@ -800,6 +984,12 @@ C API
 Documentation
 -------------
 
+- bpo-26985: Add missing info of code object in inspect documentation.
+
+- bpo-19824, bpo-20314, bpo-12518: Improve the documentation for, and links
+  to, template strings by emphasizing their utility for internationalization,
+  and by clarifying some usage constraints.
+
 - bpo-28929: Link the documentation to its source file on GitHub.
 
 - bpo-25008: Document smtpd.py as effectively deprecated and add a pointer to
@@ -819,6 +1009,8 @@ Documentation
 
 Build
 -----
+
+- bpo-29643: Fix ``--enable-optimization`` didn't work.
 
 - bpo-27593: sys.version and the platform module python_build(),
   python_branch(), and python_revision() functions now use
@@ -893,6 +1085,12 @@ Build
 Tools/Demos
 -----------
 
+- bpo-29748: Added the slice index converter in Argument Clinic.
+
+- bpo-24037: Argument Clinic now uses the converter `bool(accept={int})` rather
+  than `int` for semantical booleans.  This avoids repeating the default
+  value for Python and C and will help in converting to `bool` in future.
+
 - Issue #29367: python-gdb.py now supports also ``method-wrapper``
   (``wrapperobject``) objects.
 
@@ -909,14 +1107,11 @@ Tools/Demos
 Tests
 -----
 
-- bpo-28087: Skip test_asyncore and test_eintr poll failures on macOS.
-  Skip some tests of select.poll when running on macOS due to unresolved
-  issues with the underlying system poll function on some macOS versions.
-
-- Issue #29571: to match the behaviour of the ``re.LOCALE`` flag,
-  test_re.test_locale_flag now uses ``locale.getpreferredencoding(False)`` to
-  determine the candidate encoding for the test regex (allowing it to correctly
-  skip the test when the default locale encoding is a multi-byte encoding)
+- bpo-30197: Enhanced functions swap_attr() and swap_item() in the
+  test.support module.  They now work when delete replaced attribute or item
+  inside the with statement.  The old value of the attribute or item (or None
+  if it doesn't exist) now will be assigned to the target of the "as" clause,
+  if there is one.
 
 - Issue #24932: Use proper command line parsing in _testembed
 
@@ -986,7 +1181,7 @@ Library
 - Issue #29085: Allow random.Random.seed() to use high quality OS randomness
   rather than the pid and time.
 
-- Issue 28923: Remove editor artifacts from Tix.py.
+- Issue #28923: Remove editor artifacts from Tix.py.
 
 - Issue #29055:  Neaten-up empty population error on random.choice()
   by suppressing the upstream exception.
@@ -1706,7 +1901,7 @@ Core and Builtins
   alpha releases, where backslashes are allowed anywhere in an
   f-string.  Also, require that expressions inside f-strings be
   enclosed within literal braces, and not escapes like
-  f'\x7b"hi"\x7d'.
+  ``f'\x7b"hi"\x7d'``.
 
 - Issue #28046: Remove platform-specific directories from sys.path.
 
@@ -1925,7 +2120,7 @@ Library
 - Issue #24277: The new email API is no longer provisional, and the docs
   have been reorganized and rewritten to emphasize the new API.
 
-- Issue #22450: urllib now includes an "Accept: */*" header among the
+- Issue #22450: urllib now includes an ``Accept: */*`` header among the
   default headers.  This makes the results of REST API requests more
   consistent and predictable especially when proxy servers are involved.
 
@@ -1944,9 +2139,9 @@ Library
   characters, not on arbitrary unicode line breaks.  This also fixes a bug in
   HTTP header parsing.
 
-- Issue 27331: The email.mime classes now all accept an optional policy keyword.
+- Issue #27331: The email.mime classes now all accept an optional policy keyword.
 
-- Issue 27988: Fix email iter_attachments incorrect mutation of payload list.
+- Issue #27988: Fix email iter_attachments incorrect mutation of payload list.
 
 - Issue #16113: Add SHA-3 and SHAKE support to hashlib module.
 
@@ -3054,7 +3249,7 @@ Core and Builtins
   in ``def f(): 1.0``.
 
 - Issue #4806: Avoid masking the original TypeError exception when using star
-  (*) unpacking in function calls.  Based on patch by Hagen Fürstenau and
+  (``*``) unpacking in function calls.  Based on patch by Hagen Fürstenau and
   Daniel Urban.
 
 - Issue #26146: Add a new kind of AST node: ``ast.Constant``. It can be used
@@ -3612,7 +3807,7 @@ Library
 - Issue #25672: In the ssl module, enable the SSL_MODE_RELEASE_BUFFERS mode
   option if it is safe to do so.
 
-- Issue #26012: Don't traverse into symlinks for ** pattern in
+- Issue #26012: Don't traverse into symlinks for ``**`` pattern in
   pathlib.Path.[r]glob().
 
 - Issue #24120: Ignore PermissionError when traversing a tree with
@@ -3748,7 +3943,7 @@ Library
 
 - Issue #25584: Added "escape" to the __all__ list in the glob module.
 
-- Issue #25584: Fixed recursive glob() with patterns starting with '\*\*'.
+- Issue #25584: Fixed recursive glob() with patterns starting with ``**``.
 
 - Issue #25446: Fix regression in smtplib's AUTH LOGIN support.
 
@@ -4383,7 +4578,7 @@ Library
 - Issue #28427: old keys should not remove new values from
   WeakValueDictionary when collecting from another thread.
 
-- Issue 28923: Remove editor artifacts from Tix.py.
+- Issue #28923: Remove editor artifacts from Tix.py.
 
 - Issue #28871: Fixed a crash when deallocate deep ElementTree.
 
@@ -4506,7 +4701,7 @@ Library
 
 - Issue #27599: Fixed buffer overrun in binascii.b2a_qp() and binascii.a2b_qp().
 
-- Issue #19003:m email.generator now replaces only \r and/or \n line
+- Issue #19003:m email.generator now replaces only ``\r`` and/or ``\n`` line
   endings, per the RFC, instead of all unicode line endings.
 
 - Issue #28019: itertools.count() no longer rounds non-integer step in range
@@ -4529,7 +4724,7 @@ Library
 - Issue #27445: Don't pass str(_charset) to MIMEText.set_payload().
   Patch by Claude Paroz.
 
-- Issue #22450: urllib now includes an "Accept: */*" header among the
+- Issue #22450: urllib now includes an ``Accept: */*`` header among the
   default headers.  This makes the results of REST API requests more
   consistent and predictable especially when proxy servers are involved.
 
@@ -4544,7 +4739,7 @@ Library
   characters, not on arbitrary unicode line breaks.  This also fixes a bug in
   HTTP header parsing.
 
-- Issue 27988: Fix email iter_attachments incorrect mutation of payload list.
+- Issue #27988: Fix email iter_attachments incorrect mutation of payload list.
 
 - Issue #27691: Fix ssl module's parsing of GEN_RID subject alternative name
   fields in X.509 certs.
@@ -4995,7 +5190,7 @@ Core and Builtins
   cookie names.
 
 - Issue #4806: Avoid masking the original TypeError exception when using star
-  (*) unpacking in function calls.  Based on patch by Hagen Fürstenau and
+  (``*``) unpacking in function calls.  Based on patch by Hagen Fürstenau and
   Daniel Urban.
 
 - Issue #27138: Fix the doc comment for FileFinder.find_spec().
@@ -5375,7 +5570,7 @@ Library
 - Issue #25672: In the ssl module, enable the SSL_MODE_RELEASE_BUFFERS mode
   option if it is safe to do so.
 
-- Issue #26012: Don't traverse into symlinks for ** pattern in
+- Issue #26012: Don't traverse into symlinks for ``**`` pattern in
   pathlib.Path.[r]glob().
 
 - Issue #24120: Ignore PermissionError when traversing a tree with
@@ -5785,7 +5980,7 @@ Library
 
 - Issue #25584: Added "escape" to the __all__ list in the glob module.
 
-- Issue #25584: Fixed recursive glob() with patterns starting with '\*\*'.
+- Issue #25584: Fixed recursive glob() with patterns starting with ``**``.
 
 - Issue #25446: Fix regression in smtplib's AUTH LOGIN support.
 
@@ -7328,7 +7523,7 @@ Library
 
 - Issue #23521: Corrected pure python implementation of timedelta division.
 
- * Eliminated OverflowError from timedelta * float for some floats;
+ * Eliminated OverflowError from ``timedelta * float`` for some floats;
  * Corrected rounding in timedlta true division.
 
 - Issue #21619: Popen objects no longer leave a zombie after exit in the with
@@ -8127,7 +8322,7 @@ Library
   character instead of truncating it.  Based on patch by Victor Stinner.
 
 - Issue #13968: The glob module now supports recursive search in
-  subdirectories using the "**" pattern.
+  subdirectories using the ``**`` pattern.
 
 - Issue #21951: Fixed a crash in Tkinter on AIX when called Tcl command with
   empty string or tuple argument.

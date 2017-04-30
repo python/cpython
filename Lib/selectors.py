@@ -6,7 +6,8 @@ This module allows high-level and efficient I/O multiplexing, built upon the
 
 
 from abc import ABCMeta, abstractmethod
-from collections import namedtuple, Mapping
+from collections import namedtuple
+from collections.abc import Mapping
 import math
 import select
 import sys

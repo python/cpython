@@ -6,8 +6,7 @@ import os
 import posixpath
 import re
 import sys
-from collections import Sequence
-from contextlib import contextmanager
+from collections.abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
@@ -384,49 +383,37 @@ class _Accessor:
 
 class _NormalAccessor(_Accessor):
 
-    def _wrap_strfunc(strfunc):
-        @functools.wraps(strfunc)
-        def wrapped(pathobj, *args):
-            return strfunc(str(pathobj), *args)
-        return staticmethod(wrapped)
+    stat = os.stat
 
-    def _wrap_binary_strfunc(strfunc):
-        @functools.wraps(strfunc)
-        def wrapped(pathobjA, pathobjB, *args):
-            return strfunc(str(pathobjA), str(pathobjB), *args)
-        return staticmethod(wrapped)
+    lstat = os.lstat
 
-    stat = _wrap_strfunc(os.stat)
+    open = os.open
 
-    lstat = _wrap_strfunc(os.lstat)
+    listdir = os.listdir
 
-    open = _wrap_strfunc(os.open)
+    scandir = os.scandir
 
-    listdir = _wrap_strfunc(os.listdir)
-
-    scandir = _wrap_strfunc(os.scandir)
-
-    chmod = _wrap_strfunc(os.chmod)
+    chmod = os.chmod
 
     if hasattr(os, "lchmod"):
-        lchmod = _wrap_strfunc(os.lchmod)
+        lchmod = os.lchmod
     else:
         def lchmod(self, pathobj, mode):
             raise NotImplementedError("lchmod() not available on this system")
 
-    mkdir = _wrap_strfunc(os.mkdir)
+    mkdir = os.mkdir
 
-    unlink = _wrap_strfunc(os.unlink)
+    unlink = os.unlink
 
-    rmdir = _wrap_strfunc(os.rmdir)
+    rmdir = os.rmdir
 
-    rename = _wrap_binary_strfunc(os.rename)
+    rename = os.rename
 
-    replace = _wrap_binary_strfunc(os.replace)
+    replace = os.replace
 
     if nt:
         if supports_symlinks:
-            symlink = _wrap_binary_strfunc(os.symlink)
+            symlink = os.symlink
         else:
             def symlink(a, b, target_is_directory):
                 raise NotImplementedError("symlink() not available on this system")
@@ -434,9 +421,9 @@ class _NormalAccessor(_Accessor):
         # Under POSIX, os.symlink() takes two args
         @staticmethod
         def symlink(a, b, target_is_directory):
-            return os.symlink(str(a), str(b))
+            return os.symlink(a, b)
 
-    utime = _wrap_strfunc(os.utime)
+    utime = os.utime
 
     # Helper for resolve()
     def readlink(self, path):
@@ -711,7 +698,7 @@ class PurePath(object):
     def __bytes__(self):
         """Return the bytes representation of the path.  This is only
         recommended to use under Unix."""
-        return os.fsencode(str(self))
+        return os.fsencode(self)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
@@ -1160,7 +1147,7 @@ class Path(PurePath):
         """
         if self._closed:
             self._raise_closed()
-        return io.open(str(self), mode, buffering, encoding, errors, newline,
+        return io.open(self, mode, buffering, encoding, errors, newline,
                        opener=self._opener)
 
     def read_bytes(self):
@@ -1220,25 +1207,23 @@ class Path(PurePath):
         os.close(fd)
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
         if self._closed:
             self._raise_closed()
-        if not parents:
-            try:
-                self._accessor.mkdir(self, mode)
-            except FileExistsError:
-                if not exist_ok or not self.is_dir():
-                    raise
-        else:
-            try:
-                self._accessor.mkdir(self, mode)
-            except FileExistsError:
-                if not exist_ok or not self.is_dir():
-                    raise
-            except OSError as e:
-                if e.errno != ENOENT or self.parent == self:
-                    raise
-                self.parent.mkdir(parents=True)
-                self._accessor.mkdir(self, mode)
+        try:
+            self._accessor.mkdir(self, mode)
+        except FileNotFoundError:
+            if not parents or self.parent == self:
+                raise
+            self.parent.mkdir(parents=True, exist_ok=True)
+            self.mkdir(mode, parents=False, exist_ok=exist_ok)
+        except OSError:
+            # Cannot rely on checking for EEXIST, since the operating system
+            # could give priority to other errors like EACCES or EROFS
+            if not exist_ok or not self.is_dir():
+                raise
 
     def chmod(self, mode):
         """

@@ -4,6 +4,7 @@ approx_equal function.
 """
 
 import collections
+import collections.abc
 import decimal
 import doctest
 import math
@@ -218,8 +219,8 @@ class NumericTestCase(unittest.TestCase):
         if rel is None:
             rel = self.rel
         if (
-                isinstance(first, collections.Sequence) and
-                isinstance(second, collections.Sequence)
+                isinstance(first, collections.abc.Sequence) and
+                isinstance(second, collections.abc.Sequence)
             ):
             check = self._check_approx_seq
         else:

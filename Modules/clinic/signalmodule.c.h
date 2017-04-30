@@ -395,16 +395,17 @@ PyDoc_STRVAR(signal_pthread_kill__doc__,
     {"pthread_kill", (PyCFunction)signal_pthread_kill, METH_FASTCALL, signal_pthread_kill__doc__},
 
 static PyObject *
-signal_pthread_kill_impl(PyObject *module, long thread_id, int signalnum);
+signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
+                         int signalnum);
 
 static PyObject *
 signal_pthread_kill(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    long thread_id;
+    unsigned long thread_id;
     int signalnum;
 
-    if (!_PyArg_ParseStack(args, nargs, "li:pthread_kill",
+    if (!_PyArg_ParseStack(args, nargs, "ki:pthread_kill",
         &thread_id, &signalnum)) {
         goto exit;
     }
@@ -463,4 +464,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=fab3dba32c058588 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1a3f374b2c77e5d input=a9049054013a1b77]*/

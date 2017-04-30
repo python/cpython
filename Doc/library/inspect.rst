@@ -34,185 +34,198 @@ provided as convenient choices for the second argument to :func:`getmembers`.
 They also help you determine when you can expect to find the following special
 attributes:
 
-+-----------+-----------------+---------------------------+
-| Type      | Attribute       | Description               |
-+===========+=================+===========================+
-| module    | __doc__         | documentation string      |
-+-----------+-----------------+---------------------------+
-|           | __file__        | filename (missing for     |
-|           |                 | built-in modules)         |
-+-----------+-----------------+---------------------------+
-| class     | __doc__         | documentation string      |
-+-----------+-----------------+---------------------------+
-|           | __name__        | name with which this      |
-|           |                 | class was defined         |
-+-----------+-----------------+---------------------------+
-|           | __qualname__    | qualified name            |
-+-----------+-----------------+---------------------------+
-|           | __module__      | name of module in which   |
-|           |                 | this class was defined    |
-+-----------+-----------------+---------------------------+
-| method    | __doc__         | documentation string      |
-+-----------+-----------------+---------------------------+
-|           | __name__        | name with which this      |
-|           |                 | method was defined        |
-+-----------+-----------------+---------------------------+
-|           | __qualname__    | qualified name            |
-+-----------+-----------------+---------------------------+
-|           | __func__        | function object           |
-|           |                 | containing implementation |
-|           |                 | of method                 |
-+-----------+-----------------+---------------------------+
-|           | __self__        | instance to which this    |
-|           |                 | method is bound, or       |
-|           |                 | ``None``                  |
-+-----------+-----------------+---------------------------+
-| function  | __doc__         | documentation string      |
-+-----------+-----------------+---------------------------+
-|           | __name__        | name with which this      |
-|           |                 | function was defined      |
-+-----------+-----------------+---------------------------+
-|           | __qualname__    | qualified name            |
-+-----------+-----------------+---------------------------+
-|           | __code__        | code object containing    |
-|           |                 | compiled function         |
-|           |                 | :term:`bytecode`          |
-+-----------+-----------------+---------------------------+
-|           | __defaults__    | tuple of any default      |
-|           |                 | values for positional or  |
-|           |                 | keyword parameters        |
-+-----------+-----------------+---------------------------+
-|           | __kwdefaults__  | mapping of any default    |
-|           |                 | values for keyword-only   |
-|           |                 | parameters                |
-+-----------+-----------------+---------------------------+
-|           | __globals__     | global namespace in which |
-|           |                 | this function was defined |
-+-----------+-----------------+---------------------------+
-|           | __annotations__ | mapping of parameters     |
-|           |                 | names to annotations;     |
-|           |                 | ``"return"`` key is       |
-|           |                 | reserved for return       |
-|           |                 | annotations.              |
-+-----------+-----------------+---------------------------+
-| traceback | tb_frame        | frame object at this      |
-|           |                 | level                     |
-+-----------+-----------------+---------------------------+
-|           | tb_lasti        | index of last attempted   |
-|           |                 | instruction in bytecode   |
-+-----------+-----------------+---------------------------+
-|           | tb_lineno       | current line number in    |
-|           |                 | Python source code        |
-+-----------+-----------------+---------------------------+
-|           | tb_next         | next inner traceback      |
-|           |                 | object (called by this    |
-|           |                 | level)                    |
-+-----------+-----------------+---------------------------+
-| frame     | f_back          | next outer frame object   |
-|           |                 | (this frame's caller)     |
-+-----------+-----------------+---------------------------+
-|           | f_builtins      | builtins namespace seen   |
-|           |                 | by this frame             |
-+-----------+-----------------+---------------------------+
-|           | f_code          | code object being         |
-|           |                 | executed in this frame    |
-+-----------+-----------------+---------------------------+
-|           | f_globals       | global namespace seen by  |
-|           |                 | this frame                |
-+-----------+-----------------+---------------------------+
-|           | f_lasti         | index of last attempted   |
-|           |                 | instruction in bytecode   |
-+-----------+-----------------+---------------------------+
-|           | f_lineno        | current line number in    |
-|           |                 | Python source code        |
-+-----------+-----------------+---------------------------+
-|           | f_locals        | local namespace seen by   |
-|           |                 | this frame                |
-+-----------+-----------------+---------------------------+
-|           | f_restricted    | 0 or 1 if frame is in     |
-|           |                 | restricted execution mode |
-+-----------+-----------------+---------------------------+
-|           | f_trace         | tracing function for this |
-|           |                 | frame, or ``None``        |
-+-----------+-----------------+---------------------------+
-| code      | co_argcount     | number of arguments (not  |
-|           |                 | including \* or \*\*      |
-|           |                 | args)                     |
-+-----------+-----------------+---------------------------+
-|           | co_code         | string of raw compiled    |
-|           |                 | bytecode                  |
-+-----------+-----------------+---------------------------+
-|           | co_consts       | tuple of constants used   |
-|           |                 | in the bytecode           |
-+-----------+-----------------+---------------------------+
-|           | co_filename     | name of file in which     |
-|           |                 | this code object was      |
-|           |                 | created                   |
-+-----------+-----------------+---------------------------+
-|           | co_firstlineno  | number of first line in   |
-|           |                 | Python source code        |
-+-----------+-----------------+---------------------------+
-|           | co_flags        | bitmap of ``CO_*`` flags, |
-|           |                 | read more :ref:`here      |
-|           |                 | <inspect-module-co-flags>`|
-+-----------+-----------------+---------------------------+
-|           | co_lnotab       | encoded mapping of line   |
-|           |                 | numbers to bytecode       |
-|           |                 | indices                   |
-+-----------+-----------------+---------------------------+
-|           | co_name         | name with which this code |
-|           |                 | object was defined        |
-+-----------+-----------------+---------------------------+
-|           | co_names        | tuple of names of local   |
-|           |                 | variables                 |
-+-----------+-----------------+---------------------------+
-|           | co_nlocals      | number of local variables |
-+-----------+-----------------+---------------------------+
-|           | co_stacksize    | virtual machine stack     |
-|           |                 | space required            |
-+-----------+-----------------+---------------------------+
-|           | co_varnames     | tuple of names of         |
-|           |                 | arguments and local       |
-|           |                 | variables                 |
-+-----------+-----------------+---------------------------+
-| generator | __name__        | name                      |
-+-----------+-----------------+---------------------------+
-|           | __qualname__    | qualified name            |
-+-----------+-----------------+---------------------------+
-|           | gi_frame        | frame                     |
-+-----------+-----------------+---------------------------+
-|           | gi_running      | is the generator running? |
-+-----------+-----------------+---------------------------+
-|           | gi_code         | code                      |
-+-----------+-----------------+---------------------------+
-|           | gi_yieldfrom    | object being iterated by  |
-|           |                 | ``yield from``, or        |
-|           |                 | ``None``                  |
-+-----------+-----------------+---------------------------+
-| coroutine | __name__        | name                      |
-+-----------+-----------------+---------------------------+
-|           | __qualname__    | qualified name            |
-+-----------+-----------------+---------------------------+
-|           | cr_await        | object being awaited on,  |
-|           |                 | or ``None``               |
-+-----------+-----------------+---------------------------+
-|           | cr_frame        | frame                     |
-+-----------+-----------------+---------------------------+
-|           | cr_running      | is the coroutine running? |
-+-----------+-----------------+---------------------------+
-|           | cr_code         | code                      |
-+-----------+-----------------+---------------------------+
-| builtin   | __doc__         | documentation string      |
-+-----------+-----------------+---------------------------+
-|           | __name__        | original name of this     |
-|           |                 | function or method        |
-+-----------+-----------------+---------------------------+
-|           | __qualname__    | qualified name            |
-+-----------+-----------------+---------------------------+
-|           | __self__        | instance to which a       |
-|           |                 | method is bound, or       |
-|           |                 | ``None``                  |
-+-----------+-----------------+---------------------------+
++-----------+-------------------+---------------------------+
+| Type      | Attribute         | Description               |
++===========+===================+===========================+
+| module    | __doc__           | documentation string      |
++-----------+-------------------+---------------------------+
+|           | __file__          | filename (missing for     |
+|           |                   | built-in modules)         |
++-----------+-------------------+---------------------------+
+| class     | __doc__           | documentation string      |
++-----------+-------------------+---------------------------+
+|           | __name__          | name with which this      |
+|           |                   | class was defined         |
++-----------+-------------------+---------------------------+
+|           | __qualname__      | qualified name            |
++-----------+-------------------+---------------------------+
+|           | __module__        | name of module in which   |
+|           |                   | this class was defined    |
++-----------+-------------------+---------------------------+
+| method    | __doc__           | documentation string      |
++-----------+-------------------+---------------------------+
+|           | __name__          | name with which this      |
+|           |                   | method was defined        |
++-----------+-------------------+---------------------------+
+|           | __qualname__      | qualified name            |
++-----------+-------------------+---------------------------+
+|           | __func__          | function object           |
+|           |                   | containing implementation |
+|           |                   | of method                 |
++-----------+-------------------+---------------------------+
+|           | __self__          | instance to which this    |
+|           |                   | method is bound, or       |
+|           |                   | ``None``                  |
++-----------+-------------------+---------------------------+
+| function  | __doc__           | documentation string      |
++-----------+-------------------+---------------------------+
+|           | __name__          | name with which this      |
+|           |                   | function was defined      |
++-----------+-------------------+---------------------------+
+|           | __qualname__      | qualified name            |
++-----------+-------------------+---------------------------+
+|           | __code__          | code object containing    |
+|           |                   | compiled function         |
+|           |                   | :term:`bytecode`          |
++-----------+-------------------+---------------------------+
+|           | __defaults__      | tuple of any default      |
+|           |                   | values for positional or  |
+|           |                   | keyword parameters        |
++-----------+-------------------+---------------------------+
+|           | __kwdefaults__    | mapping of any default    |
+|           |                   | values for keyword-only   |
+|           |                   | parameters                |
++-----------+-------------------+---------------------------+
+|           | __globals__       | global namespace in which |
+|           |                   | this function was defined |
++-----------+-------------------+---------------------------+
+|           | __annotations__   | mapping of parameters     |
+|           |                   | names to annotations;     |
+|           |                   | ``"return"`` key is       |
+|           |                   | reserved for return       |
+|           |                   | annotations.              |
++-----------+-------------------+---------------------------+
+| traceback | tb_frame          | frame object at this      |
+|           |                   | level                     |
++-----------+-------------------+---------------------------+
+|           | tb_lasti          | index of last attempted   |
+|           |                   | instruction in bytecode   |
++-----------+-------------------+---------------------------+
+|           | tb_lineno         | current line number in    |
+|           |                   | Python source code        |
++-----------+-------------------+---------------------------+
+|           | tb_next           | next inner traceback      |
+|           |                   | object (called by this    |
+|           |                   | level)                    |
++-----------+-------------------+---------------------------+
+| frame     | f_back            | next outer frame object   |
+|           |                   | (this frame's caller)     |
++-----------+-------------------+---------------------------+
+|           | f_builtins        | builtins namespace seen   |
+|           |                   | by this frame             |
++-----------+-------------------+---------------------------+
+|           | f_code            | code object being         |
+|           |                   | executed in this frame    |
++-----------+-------------------+---------------------------+
+|           | f_globals         | global namespace seen by  |
+|           |                   | this frame                |
++-----------+-------------------+---------------------------+
+|           | f_lasti           | index of last attempted   |
+|           |                   | instruction in bytecode   |
++-----------+-------------------+---------------------------+
+|           | f_lineno          | current line number in    |
+|           |                   | Python source code        |
++-----------+-------------------+---------------------------+
+|           | f_locals          | local namespace seen by   |
+|           |                   | this frame                |
++-----------+-------------------+---------------------------+
+|           | f_restricted      | 0 or 1 if frame is in     |
+|           |                   | restricted execution mode |
++-----------+-------------------+---------------------------+
+|           | f_trace           | tracing function for this |
+|           |                   | frame, or ``None``        |
++-----------+-------------------+---------------------------+
+| code      | co_argcount       | number of arguments (not  |
+|           |                   | including keyword only    |
+|           |                   | arguments, \* or \*\*     |
+|           |                   | args)                     |
++-----------+-------------------+---------------------------+
+|           | co_code           | string of raw compiled    |
+|           |                   | bytecode                  |
++-----------+-------------------+---------------------------+
+|           | co_cellvars       | tuple of names of cell    |
+|           |                   | variables (referenced by  |
+|           |                   | containing scopes)        |
++-----------+-------------------+---------------------------+
+|           | co_consts         | tuple of constants used   |
+|           |                   | in the bytecode           |
++-----------+-------------------+---------------------------+
+|           | co_filename       | name of file in which     |
+|           |                   | this code object was      |
+|           |                   | created                   |
++-----------+-------------------+---------------------------+
+|           | co_firstlineno    | number of first line in   |
+|           |                   | Python source code        |
++-----------+-------------------+---------------------------+
+|           | co_flags          | bitmap of ``CO_*`` flags, |
+|           |                   | read more :ref:`here      |
+|           |                   | <inspect-module-co-flags>`|
++-----------+-------------------+---------------------------+
+|           | co_lnotab         | encoded mapping of line   |
+|           |                   | numbers to bytecode       |
+|           |                   | indices                   |
++-----------+-------------------+---------------------------+
+|           | co_freevars       | tuple of names of free    |
+|           |                   | variables (referenced via |
+|           |                   | a function's closure)     |
++-----------+-------------------+---------------------------+
+|           | co_kwonlyargcount | number of keyword only    |
+|           |                   | arguments (not including  |
+|           |                   | \*\* arg)                 |
++-----------+-------------------+---------------------------+
+|           | co_name           | name with which this code |
+|           |                   | object was defined        |
++-----------+-------------------+---------------------------+
+|           | co_names          | tuple of names of local   |
+|           |                   | variables                 |
++-----------+-------------------+---------------------------+
+|           | co_nlocals        | number of local variables |
++-----------+-------------------+---------------------------+
+|           | co_stacksize      | virtual machine stack     |
+|           |                   | space required            |
++-----------+-------------------+---------------------------+
+|           | co_varnames       | tuple of names of         |
+|           |                   | arguments and local       |
+|           |                   | variables                 |
++-----------+-------------------+---------------------------+
+| generator | __name__          | name                      |
++-----------+-------------------+---------------------------+
+|           | __qualname__      | qualified name            |
++-----------+-------------------+---------------------------+
+|           | gi_frame          | frame                     |
++-----------+-------------------+---------------------------+
+|           | gi_running        | is the generator running? |
++-----------+-------------------+---------------------------+
+|           | gi_code           | code                      |
++-----------+-------------------+---------------------------+
+|           | gi_yieldfrom      | object being iterated by  |
+|           |                   | ``yield from``, or        |
+|           |                   | ``None``                  |
++-----------+-------------------+---------------------------+
+| coroutine | __name__          | name                      |
++-----------+-------------------+---------------------------+
+|           | __qualname__      | qualified name            |
++-----------+-------------------+---------------------------+
+|           | cr_await          | object being awaited on,  |
+|           |                   | or ``None``               |
++-----------+-------------------+---------------------------+
+|           | cr_frame          | frame                     |
++-----------+-------------------+---------------------------+
+|           | cr_running        | is the coroutine running? |
++-----------+-------------------+---------------------------+
+|           | cr_code           | code                      |
++-----------+-------------------+---------------------------+
+| builtin   | __doc__           | documentation string      |
++-----------+-------------------+---------------------------+
+|           | __name__          | original name of this     |
+|           |                   | function or method        |
++-----------+-------------------+---------------------------+
+|           | __qualname__      | qualified name            |
++-----------+-------------------+---------------------------+
+|           | __self__          | instance to which a       |
+|           |                   | method is bound, or       |
+|           |                   | ``None``                  |
++-----------+-------------------+---------------------------+
 
 .. versionchanged:: 3.5
 
@@ -442,7 +455,9 @@ Retrieving source code
 
    Return in a single string any lines of comments immediately preceding the
    object's source code (for a class, function, or method), or at the top of the
-   Python source file (if the object is a module).
+   Python source file (if the object is a module).  If the object's source code
+   is unavailable, return ``None``.  This could happen if the object has been
+   defined in C or the interactive shell.
 
 
 .. function:: getfile(object)
@@ -1266,6 +1281,10 @@ Code Objects Bit Flags
 Python code objects have a ``co_flags`` attribute, which is a bitmap of
 the following flags:
 
+.. data:: CO_OPTIMIZED
+
+   The code object is optimized, using fast locals.
+
 .. data:: CO_NEWLOCALS
 
    If set, a new dict will be created for the frame's ``f_locals`` when
@@ -1278,6 +1297,10 @@ the following flags:
 .. data:: CO_VARKEYWORDS
 
    The code object has a variable keyword parameter (``**kwargs``-like).
+
+.. data:: CO_NESTED
+
+   The flag is set when the code object is a nested function.
 
 .. data:: CO_GENERATOR
 

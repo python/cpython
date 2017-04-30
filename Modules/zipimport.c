@@ -603,7 +603,7 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
         goto error;
     toc_entry = PyDict_GetItem(self->files, key);
     if (toc_entry == NULL) {
-        PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, key);
+        PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, key);
         Py_DECREF(key);
         goto error;
     }
@@ -709,7 +709,7 @@ module, or raises ZipImportError if it wasn't found.");
 PyDoc_STRVAR(doc_get_data,
 "get_data(pathname) -> string with file data.\n\
 \n\
-Return the data associated with 'pathname'. Raise IOError if\n\
+Return the data associated with 'pathname'. Raise OSError if\n\
 the file wasn't found.");
 
 PyDoc_STRVAR(doc_is_package,
@@ -1101,7 +1101,7 @@ get_decompress_func(void)
     _Py_IDENTIFIER(decompress);
 
     if (importing_zlib != 0)
-        /* Someone has a zlib.py[co] in their Zip file;
+        /* Someone has a zlib.pyc in their Zip file;
            let's avoid a stack overflow. */
         return NULL;
     importing_zlib = 1;
@@ -1193,7 +1193,7 @@ get_data(PyObject *archive, PyObject *toc_entry)
         goto file_error;
     }
     if (fread(buf, 1, data_size, fp) != (size_t)data_size) {
-        PyErr_SetString(PyExc_IOError,
+        PyErr_SetString(PyExc_OSError,
                         "zipimport: can't read data");
         goto error;
     }
@@ -1260,7 +1260,7 @@ eq_mtime(time_t t1, time_t t2)
     return d <= 1;
 }
 
-/* Given the contents of a .py[co] file in a buffer, unmarshal the data
+/* Given the contents of a .pyc file in a buffer, unmarshal the data
    and return the code object. Return None if it the magic word doesn't
    match (we do this instead of raising an exception as we fall back
    to .py if available and we don't want to mask other errors).
@@ -1400,7 +1400,7 @@ get_mtime_of_source(ZipImporter *self, PyObject *path)
     PyObject *toc_entry, *stripped;
     time_t mtime;
 
-    /* strip 'c' or 'o' from *.py[co] */
+    /* strip 'c' from *.pyc */
     if (PyUnicode_READY(path) == -1)
         return (time_t)-1;
     stripped = PyUnicode_FromKindAndData(PyUnicode_KIND(path),

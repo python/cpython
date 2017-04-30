@@ -18,7 +18,7 @@ import types
 import unittest
 import warnings
 from operator import neg
-from test.support import TESTFN, unlink,  run_unittest, check_warnings
+from test.support import TESTFN, unlink, check_warnings
 from test.support.script_helper import assert_python_ok
 try:
     import pty, signal
@@ -770,10 +770,18 @@ class BuiltinTest(unittest.TestCase):
             def __len__(self):
                 return 4.5
         self.assertRaises(TypeError, len, FloatLen())
+        class NegativeLen:
+            def __len__(self):
+                return -10
+        self.assertRaises(ValueError, len, NegativeLen())
         class HugeLen:
             def __len__(self):
                 return sys.maxsize + 1
         self.assertRaises(OverflowError, len, HugeLen())
+        class HugeNegativeLen:
+            def __len__(self):
+                return -sys.maxsize-10
+        self.assertRaises(ValueError, len, HugeNegativeLen())
         class NoLenMethod(object): pass
         self.assertRaises(TypeError, len, NoLenMethod())
 
