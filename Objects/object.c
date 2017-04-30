@@ -1313,26 +1313,35 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
 int
 PyObject_IsTrue(PyObject *v)
 {
-    Py_ssize_t res;
+    Py_ssize_t len;
     if (v == Py_True)
         return 1;
     if (v == Py_False)
         return 0;
     if (v == Py_None)
         return 0;
-    else if (v->ob_type->tp_as_number != NULL &&
-             v->ob_type->tp_as_number->nb_bool != NULL)
-        res = (*v->ob_type->tp_as_number->nb_bool)(v);
-    else if (v->ob_type->tp_as_mapping != NULL &&
-             v->ob_type->tp_as_mapping->mp_length != NULL)
-        res = (*v->ob_type->tp_as_mapping->mp_length)(v);
+    if (v->ob_type->tp_as_number != NULL &&
+        v->ob_type->tp_as_number->nb_bool != NULL)
+        return (*v->ob_type->tp_as_number->nb_bool)(v);
+
+    if (v->ob_type->tp_as_mapping != NULL &&
+        v->ob_type->tp_as_mapping->mp_length != NULL)
+        len = (*v->ob_type->tp_as_mapping->mp_length)(v);
     else if (v->ob_type->tp_as_sequence != NULL &&
              v->ob_type->tp_as_sequence->sq_length != NULL)
-        res = (*v->ob_type->tp_as_sequence->sq_length)(v);
+        len = (*v->ob_type->tp_as_sequence->sq_length)(v);
     else
         return 1;
-    /* if it is negative, it should be either -1 or -2 */
-    return (res > 0) ? 1 : Py_SAFE_DOWNCAST(res, Py_ssize_t, int);
+    if (len > 0)
+        return 1;
+    if (len == 0)
+        return 0;
+    assert(PyErr_Occurred());
+    if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        PyErr_Clear();
+        return 1;
+    }
+    return -1;
 }
 
 /* equivalent of 'not v'
