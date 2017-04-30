@@ -958,6 +958,8 @@ def unpack_archive(filename, extract_dir=None, format=None):
     if extract_dir is None:
         extract_dir = os.getcwd()
 
+    filename = os.fspath(filename)
+
     if format is not None:
         try:
             format_info = _UNPACK_FORMATS[format]
