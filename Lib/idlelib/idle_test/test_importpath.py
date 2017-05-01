@@ -41,7 +41,7 @@ class ImportStdlibRandomConflicTest(unittest.TestCase):
 
             # Import and check
             import random
-            self.assertNotEqual(os.path.dirname(random.__file__), tmpdir)
+            self.assertNotEqual(os.path.dirname(random.__file__), tmpdir.name)
 
     def test_import_random_should_import_locals(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -55,7 +55,7 @@ class ImportStdlibRandomConflicTest(unittest.TestCase):
 
             # Import and check
             import random
-            self.assertEqual(os.path.dirname(random.__file__), tmpdir)
+            self.assertEqual(os.path.dirname(random.__file__), tmpdir.name)
 
 
 class ImportStdlibCtypesConflicTest(unittest.TestCase):
@@ -93,7 +93,7 @@ class ImportStdlibCtypesConflicTest(unittest.TestCase):
 
             # Import and check
             import ctypes
-            self.assertNotEqual(os.path.dirname(ctypes.__file__), tmpdir)
+            self.assertNotEqual(os.path.dirname(ctypes.__file__), tmpdir.name)
 
     def test_import_ctypes_should_import_locals(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -107,7 +107,7 @@ class ImportStdlibCtypesConflicTest(unittest.TestCase):
 
             # Import and check
             import ctypes
-            self.assertEqual(os.path.dirname(ctypes.__file__), tmpdir)
+            self.assertEqual(os.path.dirname(ctypes.__file__), tmpdir.name)
 
 
 class ImportLocalsFooTest(unittest.TestCase):
@@ -142,7 +142,7 @@ class ImportLocalsFooTest(unittest.TestCase):
 
             # Import and check
             import foo
-            self.assertEqual(os.path.dirname(foo.__file__), tmpdir)
+            self.assertEqual(os.path.dirname(foo.__file__), tmpdir.name)
 
     def test_import_foo_should_failed(self):
         with tempfile.TemporaryDirectory() as tmpdir:
