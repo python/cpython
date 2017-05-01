@@ -5,6 +5,7 @@ import functools
 import difflib
 import logging
 import pprint
+import pydoc
 import re
 import warnings
 import collections
@@ -338,6 +339,25 @@ class _AssertLogsContext(_BaseTestCaseContext):
                 .format(logging.getLevelName(self.level), self.logger.name))
 
 
+def short_description_from_docstring(text):
+    """
+    Return the test case short description from a docstring.
+
+    Ths docstring is parsed by the standard `pydoc.splitdoc` function
+    into (`synopsis`, `long_description`).
+
+    If there is no `synopsis`, return None.
+    """
+    if text:
+        (synopsis, long_description) = pydoc.splitdoc(text)
+        synopsis = synopsis.strip()
+    else:
+        # The text is either an empty string, or some other false value.
+        synopsis = None
+
+    return synopsis
+
+
 class TestCase(object):
     """A class whose instances are single test cases.
 
@@ -463,15 +483,8 @@ class TestCase(object):
         return result.TestResult()
 
     def shortDescription(self):
-        """Returns a one-line description of the test, or None if no
-        description has been provided.
-
-        The default implementation of this method returns the first line of
-        the specified test method's docstring.
-        """
-        doc = self._testMethodDoc
-        return doc and doc.split("\n")[0].strip() or None
-
+        """ Return a one-line description of the test, if any; otherwise None. """
+        return short_description_from_docstring(self._testMethodDoc)
 
     def id(self):
         return "%s.%s" % (strclass(self.__class__), self._testMethodName)
@@ -1395,8 +1408,7 @@ class FunctionTestCase(TestCase):
     def shortDescription(self):
         if self._description is not None:
             return self._description
-        doc = self._testFunc.__doc__
-        return doc and doc.split("\n")[0].strip() or None
+        return short_description_from_docstring(self._testFunc.__doc__)
 
 
 class _SubTest(TestCase):
