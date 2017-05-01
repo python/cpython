@@ -1440,6 +1440,7 @@ esac
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST(OPT)
+AC_SUBST(CFLAGS_ALIASING)
 if test "${OPT-unset}" = "unset"
 then
     case $GCC in
@@ -1469,13 +1470,9 @@ then
         then
             # Clang also needs -fwrapv
             WRAP="-fwrapv"
-
-            # bpo-30104: Python/dtoa.c requires to be build with
-            # -fno-strict-aliasing to fix compiler issue on the
-            # double/ULong[2] union using clang 4.0 and optimization level
-            # -O2 or higher
-            # https://bugs.llvm.org//show_bug.cgi?id=31928
-            ALIASING="-fno-strict-aliasing"
+            # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
+            # see Makefile.pre.in for more information
+            CFLAGS_ALIASING="-fno-strict-aliasing"
         fi
 
 	case $ac_cv_prog_cc_g in
@@ -1497,7 +1494,7 @@ then
 	    ;;
 	esac
 
-	OPT="$OPT $STRICT_PROTO $ALIASING"
+	OPT="$OPT $STRICT_PROTO"
 
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"

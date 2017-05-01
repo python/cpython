@@ -102,6 +102,12 @@ The :func:`~binascii.b2a_uu` function now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
+contextlib
+----------
+
+:func:`contextlib.asynccontextmanager` has been added. (Contributed by
+Jelle Zijlstra in :issue:`29679`.)
+
 distutils
 ---------
 

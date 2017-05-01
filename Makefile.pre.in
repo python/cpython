@@ -107,6 +107,8 @@ ARFLAGS=	@ARFLAGS@
 CFLAGSFORSHARED=@CFLAGSFORSHARED@
 # C flags used for building the interpreter object files
 PY_CORE_CFLAGS=	$(PY_CFLAGS) $(PY_CFLAGS_NODIST) $(PY_CPPFLAGS) $(CFLAGSFORSHARED) -DPy_BUILD_CORE
+# Strict or non-strict aliasing flags used to compile dtoa.c, see above
+CFLAGS_ALIASING=@CFLAGS_ALIASING@
 
 
 # Machine-dependent subdirectories
@@ -1535,6 +1537,13 @@ config.status:	$(srcdir)/configure
 # Some make's put the object file in the current directory
 .c.o:
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+# bpo-30104: dtoa.c uses union to cast double to unsigned long[2]. clang 4.0
+# with -O2 or higher and strict aliasing miscompiles the ratio() function
+# causing rounding issues. Compile dtoa.c using -fno-strict-aliasing on clang.
+# https://bugs.llvm.org//show_bug.cgi?id=31928
+Python/dtoa.o: Python/dtoa.c
+	$(CC) -c $(PY_CORE_CFLAGS) $(CFLAGS_ALIASING) -o $@ $<
 
 # Run reindent on the library
 reindent:
