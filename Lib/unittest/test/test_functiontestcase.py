@@ -147,6 +147,14 @@ class Test_FunctionTestCase(unittest.TestCase):
         expected_description = "Should use the function docstring."
         self.assertEqual(test.shortDescription(), expected_description)
 
+    def test_shortDescription__singleline_docstring_space_surrounded(self):
+        """ Surrounding space should be stripped to get the shortDescription. """
+        test_function = (lambda: None)
+        test_function.__doc__ = """ Surrounding space should be stripped. """
+        test = unittest.FunctionTestCase(test_function)
+        expected_description = "Surrounding space should be stripped."
+        self.assertEqual(test.shortDescription(), expected_description)
+
 
 if __name__ == "__main__":
     unittest.main()
