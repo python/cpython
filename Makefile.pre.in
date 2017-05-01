@@ -1044,6 +1044,7 @@ LIBSUBDIRS=	lib-tk lib-tk/test lib-tk/test/test_tkinter \
 		test/data test/cjkencodings test/decimaltestdata test/xmltestdata \
 		test/imghdrdata \
 		test/subprocessdata \
+		test/support \
 		test/tracedmodules \
 		encodings compiler hotshot \
 		email email/mime email/test email/test/data \
