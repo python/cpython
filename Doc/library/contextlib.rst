@@ -29,6 +29,15 @@ Functions and classes provided:
    .. versionadded:: 3.6
 
 
+.. class:: AbstractAsyncContextManager
+
+   An :term:`abstract base class` similar to
+   :class:`~contextlib.AbstractContextManager`, but for
+   :ref:`asynchronous context managers <async-context-managers>`, which
+   implement :meth:`object.__aenter__` and :meth:`object.__aexit__`.
+
+   .. versionadded:: 3.7
+
 
 .. decorator:: contextmanager
 

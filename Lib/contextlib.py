@@ -5,7 +5,8 @@ from collections import deque
 from functools import wraps
 
 __all__ = ["asynccontextmanager", "contextmanager", "closing",
-           "AbstractContextManager", "ContextDecorator", "ExitStack",
+           "AbstractContextManager", "AbstractAsyncContextManager",
+           "ContextDecorator", "ExitStack",
            "redirect_stdout", "redirect_stderr", "suppress"]
 
 
@@ -27,6 +28,28 @@ class AbstractContextManager(abc.ABC):
         if cls is AbstractContextManager:
             if (any("__enter__" in B.__dict__ for B in C.__mro__) and
                 any("__exit__" in B.__dict__ for B in C.__mro__)):
+                return True
+        return NotImplemented
+
+
+class AbstractAsyncContextManager(abc.ABC):
+
+    """An abstract base class for asynchronous context managers."""
+
+    async def __aenter__(self):
+        """Return `self` upon entering the runtime context."""
+        return self
+
+    @abc.abstractmethod
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        """Raise any exception triggered within the runtime context."""
+        return None
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is AbstractAsyncContextManager:
+            if (any("__aenter__" in B.__dict__ for B in C.__mro__) and
+                any("__aexit__" in B.__dict__ for B in C.__mro__)):
                 return True
         return NotImplemented
 
@@ -137,7 +160,8 @@ class _GeneratorContextManager(_GeneratorContextManagerBase,
             raise RuntimeError("generator didn't stop after throw()")
 
 
-class _AsyncGeneratorContextManager(_GeneratorContextManagerBase):
+class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
+                                    AbstractAsyncContextManager):
     """Helper for @asynccontextmanager."""
 
     async def __aenter__(self):
