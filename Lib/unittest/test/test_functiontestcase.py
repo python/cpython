@@ -155,6 +155,36 @@ class Test_FunctionTestCase(unittest.TestCase):
         expected_description = "Surrounding space should be stripped."
         self.assertEqual(test.shortDescription(), expected_description)
 
+    def test_shortDescription__singleline_docstring_newline_surrounded(self):
+        """
+        Surrounding newlines should be stripped to get the shortDescription.
+        """
+        test_function = (lambda: None)
+        test_function.__doc__ = """
+            Surrounding newlines should be stripped.
+            """
+        test = unittest.FunctionTestCase(test_function)
+        expected_description = "Surrounding newlines should be stripped."
+        self.assertEqual(test.shortDescription(), expected_description)
+
+    def test_shortDescription__multiline_docstring_newline_surrounded(self):
+        """
+        Surrounding newlines should be stripped to get the shortDescription.
+        """
+        test_function = (lambda: None)
+        test_function.__doc__ = """
+            Surrounding newlines should be stripped.
+
+            The specification of how docstring space should be parsed is at
+            https://www.python.org/dev/peps/pep-0257/#handling-docstring-indentation
+            which requires that “Blank lines should be removed from the
+            beginning and end of the docstring.”
+
+            """
+        test = unittest.FunctionTestCase(test_function)
+        expected_description = "Surrounding newlines should be stripped."
+        self.assertEqual(test.shortDescription(), expected_description)
+
 
 if __name__ == "__main__":
     unittest.main()

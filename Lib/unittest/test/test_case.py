@@ -606,6 +606,38 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             " to get the shortDescription.")
         self.assertEqual(self.shortDescription(), expected_description)
 
+    @unittest.skipIf(
+        sys.flags.optimize >= 2,
+        "Docstrings are omitted with -O2 and above")
+    def testShortDescriptionWithSurroundingNewlineOneLineDocstring(self):
+        """
+        Surrounding newlines should be stripped to get the shortDescription.
+        """
+        expected_description = (
+            "Surrounding newlines should be stripped"
+            " to get the shortDescription.")
+        self.assertEqual(self.shortDescription(), expected_description)
+
+    @unittest.skipIf(
+        sys.flags.optimize >= 2,
+        "Docstrings are omitted with -O2 and above")
+    def testShortDescriptionWithSurroundingNewlineMultiLineDocstring(self):
+        """
+        Surrounding newlines should be stripped to get the shortDescription.
+
+        The specification of how docstring space should be parsed is at
+        https://www.python.org/dev/peps/pep-0257/#handling-docstring-indentation
+        which requires that “Blank lines should be removed from the
+        beginning and end of the docstring.”
+
+        The PEP 257 algorithm is implemented by `pydoc.splitdoc`.
+
+        """
+        expected_description = (
+            "Surrounding newlines should be stripped"
+            " to get the shortDescription.")
+        self.assertEqual(self.shortDescription(), expected_description)
+
     def testAddTypeEqualityFunc(self):
         class SadSnake(object):
             """Dummy class for test_addTypeEqualityFunc."""
