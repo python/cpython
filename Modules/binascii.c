@@ -515,6 +515,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
 binascii.b2a_base64
 
     data: Py_buffer
+    /
     *
     newline: bool(accept={int}) = True
 
@@ -523,7 +524,7 @@ Base64-code line of data.
 
 static PyObject *
 binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
-/*[clinic end generated code: output=4ad62c8e8485d3b3 input=144fd7267a34d51c]*/
+/*[clinic end generated code: output=4ad62c8e8485d3b3 input=6083dac5777fa45d]*/
 {
     unsigned char *ascii_data;
     const unsigned char *bin_data;
