@@ -518,6 +518,8 @@ class _TemporaryFileWrapper:
         for line in self.file:
             yield line
 
+    def __fspath__(self):
+        return str(self.name)
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,
@@ -800,6 +802,9 @@ class TemporaryDirectory(object):
     def __repr__(self):
         return "<{} {!r}>".format(self.__class__.__name__, self.name)
 
+    def __fspath__(self):
+        return str(self.name)
+
     def __enter__(self):
         return self.name
 
@@ -809,3 +814,6 @@ class TemporaryDirectory(object):
     def cleanup(self):
         if self._finalizer.detach():
             _shutil.rmtree(self.name)
+
+_os.PathLike.register(TemporaryDirectory)
+_os.PathLike.register(_TemporaryFileWrapper)
