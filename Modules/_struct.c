@@ -1360,8 +1360,6 @@ prepare_s(PyStructObject *self)
             num = c - '0';
             while ('0' <= (c = *s++) && c <= '9')
                 num = num*10 + (c - '0');
-            if (c == '\0')
-                break;
         }
         else
             num = 1;
@@ -1470,7 +1468,7 @@ s_dealloc(PyStructObject *s)
     if (s->s_codes != NULL) {
         PyMem_FREE(s->s_codes);
     }
-    Py_XDECREF(s->s_format);
+    Py_DECREF(s->s_format);
     Py_TYPE(s)->tp_free((PyObject *)s);
 }
 
@@ -1791,12 +1789,8 @@ s_pack_internal(PyStructObject *soself, PyObject **args, int offset, char* buf)
                     n = 255;
                 *res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
             } else {
-                if (e->pack(res, v, e) < 0) {
-                    if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
-                        PyErr_SetString(StructError,
-                                        "int too large to convert");
+                if (e->pack(res, v, e) < 0)
                     return -1;
-                }
             }
             res += code->size;
         }
@@ -1834,7 +1828,7 @@ s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
         return NULL;
     }
 
-    /* Allocate a new string */
+    /* Allocate a new buffer */
     result = PyBytes_FromStringAndSize((char *)NULL, soself->s_size);
     if (result == NULL)
         return NULL;
