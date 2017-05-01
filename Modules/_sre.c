@@ -60,22 +60,14 @@ static const char copyright[] =
 #undef VERBOSE
 
 /* -------------------------------------------------------------------- */
-/* optional features */
-
-/* enables copy/deepcopy handling (work in progress) */
-#undef USE_BUILTIN_COPY
-
-/* -------------------------------------------------------------------- */
 
 #if defined(_MSC_VER)
 #pragma optimize("agtw", on) /* doesn't seem to make much difference... */
 #pragma warning(disable: 4710) /* who cares if functions are not inlined ;-) */
 /* fastest possible local call under MSVC */
 #define LOCAL(type) static __inline type __fastcall
-#elif defined(USE_INLINE)
-#define LOCAL(type) static inline type
 #else
-#define LOCAL(type) static type
+#define LOCAL(type) static inline type
 #endif
 
 /* error codes */
@@ -695,25 +687,6 @@ call(const char* module, const char* function, PyObject* args)
     return result;
 }
 
-#ifdef USE_BUILTIN_COPY
-static int
-deepcopy(PyObject** object, PyObject* memo)
-{
-    PyObject* copy;
-
-    copy = call(
-        "copy", "deepcopy",
-        PyTuple_Pack(2, *object, memo)
-        );
-    if (!copy)
-        return 0;
-
-    Py_SETREF(*object, copy);
-
-    return 1; /* success */
-}
-#endif
-
 /*[clinic input]
 _sre.SRE_Pattern.findall
 
@@ -1226,60 +1199,24 @@ static PyObject *
 _sre_SRE_Pattern___copy___impl(PatternObject *self)
 /*[clinic end generated code: output=85dedc2db1bd8694 input=a730a59d863bc9f5]*/
 {
-#ifdef USE_BUILTIN_COPY
-    PatternObject* copy;
-    int offset;
-
-    copy = PyObject_NEW_VAR(PatternObject, &Pattern_Type, self->codesize);
-    if (!copy)
-        return NULL;
-
-    offset = offsetof(PatternObject, groups);
-
-    Py_XINCREF(self->groupindex);
-    Py_XINCREF(self->indexgroup);
-    Py_XINCREF(self->pattern);
-
-    memcpy((char*) copy + offset, (char*) self + offset,
-           sizeof(PatternObject) + self->codesize * sizeof(SRE_CODE) - offset);
-    copy->weakreflist = NULL;
-
-    return (PyObject*) copy;
-#else
-    PyErr_SetString(PyExc_TypeError, "cannot copy this pattern object");
-    return NULL;
-#endif
+    Py_INCREF(self);
+    return (PyObject *)self;
 }
 
 /*[clinic input]
 _sre.SRE_Pattern.__deepcopy__
 
     memo: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
-_sre_SRE_Pattern___deepcopy___impl(PatternObject *self, PyObject *memo)
-/*[clinic end generated code: output=75efe69bd12c5d7d input=3959719482c07f70]*/
+_sre_SRE_Pattern___deepcopy__(PatternObject *self, PyObject *memo)
+/*[clinic end generated code: output=2ad25679c1f1204a input=a465b1602f997bed]*/
 {
-#ifdef USE_BUILTIN_COPY
-    PatternObject* copy;
-
-    copy = (PatternObject*) pattern_copy(self);
-    if (!copy)
-        return NULL;
-
-    if (!deepcopy(&copy->groupindex, memo) ||
-        !deepcopy(&copy->indexgroup, memo) ||
-        !deepcopy(&copy->pattern, memo)) {
-        Py_DECREF(copy);
-        return NULL;
-    }
-
-#else
-    PyErr_SetString(PyExc_TypeError, "cannot deepcopy this pattern object");
-    return NULL;
-#endif
+    Py_INCREF(self);
+    return (PyObject *)self;
 }
 
 static PyObject *
@@ -1368,6 +1305,8 @@ PyDoc_STRVAR(pattern_doc, "Compiled regular expression objects");
 static PyObject *
 pattern_groupindex(PatternObject *self)
 {
+    if (self->groupindex == NULL)
+        return PyDict_New();
     return PyDictProxy_New(self->groupindex);
 }
 
@@ -1448,11 +1387,14 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 
     self->groups = groups;
 
-    Py_INCREF(groupindex);
-    self->groupindex = groupindex;
-
-    Py_INCREF(indexgroup);
-    self->indexgroup = indexgroup;
+    if (PyDict_GET_SIZE(groupindex) > 0) {
+        Py_INCREF(groupindex);
+        self->groupindex = groupindex;
+        if (PyTuple_GET_SIZE(indexgroup) > 0) {
+            Py_INCREF(indexgroup);
+            self->indexgroup = indexgroup;
+        }
+    }
 
     if (!_validate(self)) {
         Py_DECREF(self);
@@ -1994,13 +1936,10 @@ match_getindex(MatchObject* self, PyObject* index)
     i = -1;
 
     if (self->pattern->groupindex) {
-        index = PyObject_GetItem(self->pattern->groupindex, index);
-        if (index) {
-            if (PyLong_Check(index))
-                i = PyLong_AsSsize_t(index);
-            Py_DECREF(index);
-        } else
-            PyErr_Clear();
+        index = PyDict_GetItem(self->pattern->groupindex, index);
+        if (index && PyLong_Check(index)) {
+            i = PyLong_AsSsize_t(index);
+        }
     }
 
     return i;
@@ -2118,40 +2057,34 @@ static PyObject *
 _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value)
 /*[clinic end generated code: output=29917c9073e41757 input=0ded7960b23780aa]*/
 {
-    PyObject* result;
-    PyObject* keys;
-    Py_ssize_t index;
+    PyObject *result;
+    PyObject *key;
+    PyObject *value;
+    Py_ssize_t pos = 0;
+    Py_hash_t hash;
 
     result = PyDict_New();
     if (!result || !self->pattern->groupindex)
         return result;
 
-    keys = PyMapping_Keys(self->pattern->groupindex);
-    if (!keys)
-        goto failed;
-
-    for (index = 0; index < PyList_GET_SIZE(keys); index++) {
+    while (_PyDict_Next(self->pattern->groupindex, &pos, &key, &value, &hash)) {
         int status;
-        PyObject* key;
-        PyObject* value;
-        key = PyList_GET_ITEM(keys, index);
-        if (!key)
-            goto failed;
+        Py_INCREF(key);
         value = match_getslice(self, key, default_value);
-        if (!value)
+        if (!value) {
+            Py_DECREF(key);
             goto failed;
-        status = PyDict_SetItem(result, key, value);
+        }
+        status = _PyDict_SetItem_KnownHash(result, key, value, hash);
         Py_DECREF(value);
+        Py_DECREF(key);
         if (status < 0)
             goto failed;
     }
 
-    Py_DECREF(keys);
-
     return result;
 
 failed:
-    Py_XDECREF(keys);
     Py_DECREF(result);
     return NULL;
 }
@@ -2299,63 +2232,24 @@ static PyObject *
 _sre_SRE_Match___copy___impl(MatchObject *self)
 /*[clinic end generated code: output=a779c5fc8b5b4eb4 input=3bb4d30b6baddb5b]*/
 {
-#ifdef USE_BUILTIN_COPY
-    MatchObject* copy;
-    Py_ssize_t slots, offset;
-
-    slots = 2 * (self->pattern->groups+1);
-
-    copy = PyObject_NEW_VAR(MatchObject, &Match_Type, slots);
-    if (!copy)
-        return NULL;
-
-    /* this value a constant, but any compiler should be able to
-       figure that out all by itself */
-    offset = offsetof(MatchObject, string);
-
-    Py_XINCREF(self->pattern);
-    Py_XINCREF(self->string);
-    Py_XINCREF(self->regs);
-
-    memcpy((char*) copy + offset, (char*) self + offset,
-           sizeof(MatchObject) + slots * sizeof(Py_ssize_t) - offset);
-
-    return (PyObject*) copy;
-#else
-    PyErr_SetString(PyExc_TypeError, "cannot copy this match object");
-    return NULL;
-#endif
+    Py_INCREF(self);
+    return (PyObject *)self;
 }
 
 /*[clinic input]
 _sre.SRE_Match.__deepcopy__
 
     memo: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
-_sre_SRE_Match___deepcopy___impl(MatchObject *self, PyObject *memo)
-/*[clinic end generated code: output=2b657578eb03f4a3 input=b65b72489eac64cc]*/
+_sre_SRE_Match___deepcopy__(MatchObject *self, PyObject *memo)
+/*[clinic end generated code: output=ba7cb46d655e4ee2 input=779d12a31c2c325e]*/
 {
-#ifdef USE_BUILTIN_COPY
-    MatchObject* copy;
-
-    copy = (MatchObject*) match_copy(self);
-    if (!copy)
-        return NULL;
-
-    if (!deepcopy((PyObject**) &copy->pattern, memo) ||
-        !deepcopy(&copy->string, memo) ||
-        !deepcopy(&copy->regs, memo)) {
-        Py_DECREF(copy);
-        return NULL;
-    }
-
-#else
-    PyErr_SetString(PyExc_TypeError, "cannot deepcopy this match object");
-    return NULL;
-#endif
+    Py_INCREF(self);
+    return (PyObject *)self;
 }
 
 PyDoc_STRVAR(match_doc,
@@ -2378,13 +2272,14 @@ match_lastindex_get(MatchObject *self)
 static PyObject *
 match_lastgroup_get(MatchObject *self)
 {
-    if (self->pattern->indexgroup && self->lastindex >= 0) {
-        PyObject* result = PySequence_GetItem(
-            self->pattern->indexgroup, self->lastindex
-            );
-        if (result)
-            return result;
-        PyErr_Clear();
+    if (self->pattern->indexgroup &&
+        self->lastindex >= 0 &&
+        self->lastindex < PyTuple_GET_SIZE(self->pattern->indexgroup))
+    {
+        PyObject *result = PyTuple_GET_ITEM(self->pattern->indexgroup,
+                                            self->lastindex);
+        Py_INCREF(result);
+        return result;
     }
     Py_RETURN_NONE;
 }
