@@ -461,7 +461,11 @@ class ASTCompareTest(unittest.TestCase):
 
         for fp in fps:
             with open(fp) as f:
-                source = f.read()
+                try:
+                    source = f.read()
+                except UnicodeDecodeError:
+                    continue
+
             a = ast.parse(source)
             b = ast.parse(source)
             self.assertEqual(a, b)
