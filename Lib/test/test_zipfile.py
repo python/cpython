@@ -734,6 +734,48 @@ class LzmaTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
     compression = zipfile.ZIP_LZMA
 
 
+class AbstractWriterTests:
+
+    def tearDown(self):
+        unlink(TESTFN2)
+
+    def test_close_after_close(self):
+        data = b'content'
+        with zipfile.ZipFile(TESTFN2, "w", self.compression) as zipf:
+            w = zipf.open('test', 'w')
+            w.write(data)
+            w.close()
+            self.assertTrue(w.closed)
+            w.close()
+            self.assertTrue(w.closed)
+            self.assertEqual(zipf.read('test'), data)
+
+    def test_write_after_close(self):
+        data = b'content'
+        with zipfile.ZipFile(TESTFN2, "w", self.compression) as zipf:
+            w = zipf.open('test', 'w')
+            w.write(data)
+            w.close()
+            self.assertTrue(w.closed)
+            self.assertRaises(ValueError, w.write, b'')
+            self.assertEqual(zipf.read('test'), data)
+
+class StoredWriterTests(AbstractWriterTests, unittest.TestCase):
+    compression = zipfile.ZIP_STORED
+
+@requires_zlib
+class DeflateWriterTests(AbstractWriterTests, unittest.TestCase):
+    compression = zipfile.ZIP_DEFLATED
+
+@requires_bz2
+class Bzip2WriterTests(AbstractWriterTests, unittest.TestCase):
+    compression = zipfile.ZIP_BZIP2
+
+@requires_lzma
+class LzmaWriterTests(AbstractWriterTests, unittest.TestCase):
+    compression = zipfile.ZIP_LZMA
+
+
 class PyZipFileTests(unittest.TestCase):
     def assertCompiledIn(self, name, namelist):
         if name + 'o' not in namelist:
@@ -2139,6 +2181,16 @@ class CommandLineTest(unittest.TestCase):
 
     def zipfilecmd_failure(self, *args):
         return script_helper.assert_python_failure('-m', 'zipfile', *args)
+
+    def test_bad_use(self):
+        rc, out, err = self.zipfilecmd_failure()
+        self.assertEqual(out, b'')
+        self.assertIn(b'usage', err.lower())
+        self.assertIn(b'error', err.lower())
+        self.assertIn(b'required', err.lower())
+        rc, out, err = self.zipfilecmd_failure('-l', '')
+        self.assertEqual(out, b'')
+        self.assertNotEqual(err.strip(), b'')
 
     def test_test_command(self):
         zip_name = findfile('zipdir.zip')

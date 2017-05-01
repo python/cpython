@@ -2047,6 +2047,7 @@ cache_struct_converter(PyObject *fmt, PyObject **ptr)
 
     if (fmt == NULL) {
         Py_DECREF(*ptr);
+        *ptr = NULL;
         return 1;
     }
 

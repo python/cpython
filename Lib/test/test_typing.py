@@ -2023,11 +2023,11 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(MMC, typing.Mapping)
 
         self.assertIsInstance(MMB[KT, VT](), typing.Mapping)
-        self.assertIsInstance(MMB[KT, VT](), collections.Mapping)
+        self.assertIsInstance(MMB[KT, VT](), collections_abc.Mapping)
 
-        self.assertIsSubclass(MMA, collections.Mapping)
-        self.assertIsSubclass(MMB, collections.Mapping)
-        self.assertIsSubclass(MMC, collections.Mapping)
+        self.assertIsSubclass(MMA, collections_abc.Mapping)
+        self.assertIsSubclass(MMB, collections_abc.Mapping)
+        self.assertIsSubclass(MMC, collections_abc.Mapping)
 
         self.assertIsSubclass(MMB[str, str], typing.Mapping)
         self.assertIsSubclass(MMC, MMA)
@@ -2039,9 +2039,9 @@ class CollectionsAbcTests(BaseTestCase):
         def g(): yield 0
         self.assertIsSubclass(G, typing.Generator)
         self.assertIsSubclass(G, typing.Iterable)
-        if hasattr(collections, 'Generator'):
-            self.assertIsSubclass(G, collections.Generator)
-        self.assertIsSubclass(G, collections.Iterable)
+        if hasattr(collections_abc, 'Generator'):
+            self.assertIsSubclass(G, collections_abc.Generator)
+        self.assertIsSubclass(G, collections_abc.Iterable)
         self.assertNotIsSubclass(type(g), G)
 
     @skipUnless(PY36, 'Python 3.6 required')
@@ -2057,15 +2057,15 @@ class CollectionsAbcTests(BaseTestCase):
         g = ns['g']
         self.assertIsSubclass(G, typing.AsyncGenerator)
         self.assertIsSubclass(G, typing.AsyncIterable)
-        self.assertIsSubclass(G, collections.AsyncGenerator)
-        self.assertIsSubclass(G, collections.AsyncIterable)
+        self.assertIsSubclass(G, collections_abc.AsyncGenerator)
+        self.assertIsSubclass(G, collections_abc.AsyncIterable)
         self.assertNotIsSubclass(type(g), G)
 
         instance = G()
         self.assertIsInstance(instance, typing.AsyncGenerator)
         self.assertIsInstance(instance, typing.AsyncIterable)
-        self.assertIsInstance(instance, collections.AsyncGenerator)
-        self.assertIsInstance(instance, collections.AsyncIterable)
+        self.assertIsInstance(instance, collections_abc.AsyncGenerator)
+        self.assertIsInstance(instance, collections_abc.AsyncIterable)
         self.assertNotIsInstance(type(g), G)
         self.assertNotIsInstance(g, G)
 
@@ -2102,23 +2102,23 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(D, B)
 
         class M(): ...
-        collections.MutableMapping.register(M)
+        collections_abc.MutableMapping.register(M)
         self.assertIsSubclass(M, typing.Mapping)
 
     def test_collections_as_base(self):
 
-        class M(collections.Mapping): ...
+        class M(collections_abc.Mapping): ...
         self.assertIsSubclass(M, typing.Mapping)
         self.assertIsSubclass(M, typing.Iterable)
 
-        class S(collections.MutableSequence): ...
+        class S(collections_abc.MutableSequence): ...
         self.assertIsSubclass(S, typing.MutableSequence)
         self.assertIsSubclass(S, typing.Iterable)
 
-        class I(collections.Iterable): ...
+        class I(collections_abc.Iterable): ...
         self.assertIsSubclass(I, typing.Iterable)
 
-        class A(collections.Mapping, metaclass=abc.ABCMeta): ...
+        class A(collections_abc.Mapping, metaclass=abc.ABCMeta): ...
         class B: ...
         A.register(B)
         self.assertIsSubclass(B, typing.Mapping)

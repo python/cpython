@@ -123,7 +123,7 @@ internal_close(fileio *self)
     }
     if (err < 0) {
         errno = save_errno;
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
     return 0;
@@ -456,7 +456,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
            directories, so we need a check.  */
         if (S_ISDIR(fdfstat.st_mode)) {
             errno = EISDIR;
-            PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, nameobj);
+            PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
             goto error;
         }
 #endif /* defined(S_ISDIR) */
@@ -910,7 +910,7 @@ portable_lseek(int fd, PyObject *posobj, int whence)
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     if (res < 0)
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
 
 #if defined(HAVE_LARGEFILE_SUPPORT)
     return PyLong_FromLongLong(res);
@@ -1023,7 +1023,7 @@ _io_FileIO_truncate_impl(fileio *self, PyObject *posobj)
 
     if (ret != 0) {
         Py_DECREF(posobj);
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 

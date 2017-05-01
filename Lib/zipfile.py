@@ -980,6 +980,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         return True
 
     def write(self, data):
+        if self.closed:
+            raise ValueError('I/O operation on closed file.')
         nbytes = len(data)
         self._file_size += nbytes
         self._crc = crc32(data, self._crc)
@@ -990,6 +992,8 @@ class _ZipWriteFile(io.BufferedIOBase):
         return nbytes
 
     def close(self):
+        if self.closed:
+            return
         super().close()
         # Flush any data from the compressor, and update header info
         if self._compressor:
@@ -1965,9 +1969,9 @@ class PyZipFile(ZipFile):
 def main(args=None):
     import argparse
 
-    description = 'A simple command line interface for zipfile module.'
+    description = 'A simple command-line interface for zipfile module.'
     parser = argparse.ArgumentParser(description=description)
-    group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-l', '--list', metavar='<zipfile>',
                        help='Show listing of a zipfile')
     group.add_argument('-e', '--extract', nargs=2,
@@ -2021,9 +2025,6 @@ def main(args=None):
                 if zippath in ('', os.curdir, os.pardir):
                     zippath = ''
                 addToZip(zf, path, zippath)
-
-    else:
-        parser.exit(2, parser.format_usage())
 
 if __name__ == "__main__":
     main()

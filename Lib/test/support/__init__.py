@@ -741,7 +741,7 @@ def system_must_validate_cert(f):
     def dec(*args, **kwargs):
         try:
             f(*args, **kwargs)
-        except IOError as e:
+        except OSError as e:
             if "CERTIFICATE_VERIFY_FAILED" in str(e):
                 raise unittest.SkipTest("system does not contain "
                                         "necessary certificates")
@@ -2019,13 +2019,20 @@ def threading_cleanup(*original_values):
     if not _thread:
         return
     _MAX_COUNT = 100
+    t0 = time.monotonic()
     for count in range(_MAX_COUNT):
         values = _thread._count(), threading._dangling
         if values == original_values:
             break
         time.sleep(0.01)
         gc_collect()
-    # XXX print a warning in case of failure?
+    else:
+        dt = time.monotonic() - t0
+        print("Warning -- threading_cleanup() failed to cleanup %s threads "
+              "after %.0f sec (count: %s, dangling: %s)"
+              % (values[0] - original_values[0], dt,
+                 values[0], len(values[1])),
+              file=sys.stderr)
 
 def reap_threads(func):
     """Use this function when threads are being used.  This will
@@ -2112,12 +2119,15 @@ def swap_attr(obj, attr, new_val):
         restoring the old value at the end of the block. If `attr` doesn't
         exist on `obj`, it will be created and then deleted at the end of the
         block.
+
+        The old value (or None if it doesn't exist) will be assigned to the
+        target of the "as" clause, if there is one.
     """
     if hasattr(obj, attr):
         real_val = getattr(obj, attr)
         setattr(obj, attr, new_val)
         try:
-            yield
+            yield real_val
         finally:
             setattr(obj, attr, real_val)
     else:
@@ -2125,7 +2135,8 @@ def swap_attr(obj, attr, new_val):
         try:
             yield
         finally:
-            delattr(obj, attr)
+            if hasattr(obj, attr):
+                delattr(obj, attr)
 
 @contextlib.contextmanager
 def swap_item(obj, item, new_val):
@@ -2139,12 +2150,15 @@ def swap_item(obj, item, new_val):
         restoring the old value at the end of the block. If `item` doesn't
         exist on `obj`, it will be created and then deleted at the end of the
         block.
+
+        The old value (or None if it doesn't exist) will be assigned to the
+        target of the "as" clause, if there is one.
     """
     if item in obj:
         real_val = obj[item]
         obj[item] = new_val
         try:
-            yield
+            yield real_val
         finally:
             obj[item] = real_val
     else:
@@ -2152,7 +2166,8 @@ def swap_item(obj, item, new_val):
         try:
             yield
         finally:
-            del obj[item]
+            if item in obj:
+                del obj[item]
 
 def strip_python_stderr(stderr):
     """Strip the stderr of a Python process from potential debug output
@@ -2440,6 +2455,7 @@ class SuppressCrashReport:
                                        (0, self.old_value[1]))
                 except (ValueError, OSError):
                     pass
+
             if sys.platform == 'darwin':
                 # Check if the 'Crash Reporter' on OSX was configured
                 # in 'Developer' mode and warn that it will get triggered
@@ -2447,10 +2463,14 @@ class SuppressCrashReport:
                 #
                 # This assumes that this context manager is used in tests
                 # that might trigger the next manager.
-                value = subprocess.Popen(['/usr/bin/defaults', 'read',
-                        'com.apple.CrashReporter', 'DialogType'],
-                        stdout=subprocess.PIPE).communicate()[0]
-                if value.strip() == b'developer':
+                cmd = ['/usr/bin/defaults', 'read',
+                       'com.apple.CrashReporter', 'DialogType']
+                proc = subprocess.Popen(cmd,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+                with proc:
+                    stdout = proc.communicate()[0]
+                if stdout.strip() == b'developer':
                     print("this test triggers the Crash Reporter, "
                           "that is intentional", end='', flush=True)
 
@@ -2588,3 +2608,19 @@ def setswitchinterval(interval):
         if _is_android_emulator:
             interval = minimum_interval
     return sys.setswitchinterval(interval)
+
+
+@contextlib.contextmanager
+def disable_faulthandler():
+    # use sys.__stderr__ instead of sys.stderr, since regrtest replaces
+    # sys.stderr with a StringIO which has no file descriptor when a test
+    # is run with -W/--verbose3.
+    fd = sys.__stderr__.fileno()
+
+    is_enabled = faulthandler.is_enabled()
+    try:
+        faulthandler.disable()
+        yield
+    finally:
+        if is_enabled:
+            faulthandler.enable(file=fd, all_threads=True)
