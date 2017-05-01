@@ -126,22 +126,26 @@ class Test_FunctionTestCase(unittest.TestCase):
 
         self.assertIsInstance(test.id(), str)
 
-    # "Returns a one-line description of the test, or None if no description
-    # has been provided. The default implementation of this method returns
-    # the first line of the test method's docstring, if available, or None."
-    def test_shortDescription__no_docstring(self):
+    def test_shortDescription__no_description_no_docstring(self):
+        """ Should return None by default for shortDescription. """
         test = unittest.FunctionTestCase(lambda: None)
 
         self.assertEqual(test.shortDescription(), None)
 
-    # "Returns a one-line description of the test, or None if no description
-    # has been provided. The default implementation of this method returns
-    # the first line of the test method's docstring, if available, or None."
-    def test_shortDescription__singleline_docstring(self):
+    def test_shortDescription__singleline_description(self):
+        """ Should use the specified description for shortDescription. """
         desc = "this tests foo"
         test = unittest.FunctionTestCase(lambda: None, description=desc)
 
         self.assertEqual(test.shortDescription(), "this tests foo")
+
+    def test_shortDescription__no_description_singleline_docstring(self):
+        """ Should use the function docstring for the shortDescription. """
+        test_function = (lambda: None)
+        test_function.__doc__ = """Should use the function docstring."""
+        test = unittest.FunctionTestCase(test_function)
+        expected_description = "Should use the function docstring."
+        self.assertEqual(test.shortDescription(), expected_description)
 
 
 if __name__ == "__main__":
