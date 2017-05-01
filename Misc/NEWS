@@ -10,7 +10,7 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
-- bpo-12414: sys.getsizeof() on a code object now returns the sizes 
+- bpo-12414: sys.getsizeof() on a code object now returns the sizes
   which includes the code struct and sizes of objects which it references.
   Patch by Dong-hee Na.
 
@@ -316,6 +316,10 @@ Extension Modules
 
 Library
 -------
+
+- bpo-30190: unittest's assertAlmostEqual and assertNotAlmostEqual provide a
+  better message in case of failure which includes the difference between
+  left and right arguments.  (patch by Giampaolo Rodola')
 
 - bpo-30101: Add support for curses.A_ITALIC.
 
