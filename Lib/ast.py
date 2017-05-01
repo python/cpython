@@ -24,7 +24,44 @@
     :copyright: Copyright 2008 by Armin Ronacher.
     :license: Python License.
 """
+import _ast
 from _ast import *
+
+
+# Add EQ and NE compare to _ast Nodes
+_NODES = [vars(_ast)[k] for k in filter(
+    lambda x: not x.startswith('_') and x not in ('AST' 'PyCF_ONLY_AST'), vars(_ast))]
+
+
+def ast_eq_compare(a, b):
+    if type(a) != type(b):
+        return False
+    if type(a) not in _NODES:
+        return a == b
+
+    ret = True
+    for field in a._fields:
+        af = vars(a)[field]
+        bf = vars(b)[field]
+        if isinstance(af, list):
+            if len(af) != len(bf):
+                return False
+            for i, j in zip(af, bf):
+                ret &= ast_eq_compare(i, j)
+        elif type(af) in _NODES:
+            ret &= ast_eq_compare(af, bf)
+        elif af != bf:
+            return False
+    return ret
+
+
+def ast_ne_compare(a, b):
+    return not ast_eq_compare(a, b)
+
+
+for n in _NODES:
+    n.__eq__ = ast_eq_compare
+    n.__ne__ = ast_ne_compare
 
 
 def parse(source, filename='<unknown>', mode='exec'):
