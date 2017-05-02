@@ -1647,6 +1647,8 @@ class _ExpectedSkips:
 
 def main_in_temp_cwd():
     """Run main() in a temporary working directory."""
+    global TEMPDIR
+
     # When tests are run from the Python build directory, it is best practice
     # to keep the test files in a subfolder.  It eases the cleanup of leftover
     # files using command "make distclean".
