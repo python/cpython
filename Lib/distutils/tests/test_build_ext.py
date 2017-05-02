@@ -37,6 +37,13 @@ class BuildExtTestCase(TempdirManager,
         from distutils.command import build_ext
         build_ext.USER_BASE = site.USER_BASE
 
+        # bpo-30132: On Windows, a .pdb file may be created in the current
+        # working directory. Create a temporary working directory to cleanup
+        # everything at the end of the test.
+        self.temp_cwd = support.temp_cwd()
+        self.temp_cwd.__enter__()
+        self.addCleanup(self.temp_cwd.__exit__, None, None, None)
+
     def build_ext(self, *args, **kwargs):
         return build_ext(*args, **kwargs)
 
