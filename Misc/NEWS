@@ -148,6 +148,9 @@ Build
 Tests
 -----
 
+- bpo-30236: Backported test.regrtest options -m/--match and -G/--failfast
+  from Python 3.
+
 - bpo-30223: To unify running tests in Python 2.7 and Python 3, the test
   package can be run as a script.  This is equivalent to running the
   test.regrtest module as a script.
