@@ -1645,16 +1645,8 @@ class _ExpectedSkips:
         assert self.isvalid()
         return self.expected
 
-if __name__ == '__main__':
-    # findtestdir() gets the dirname out of __file__, so we have to make it
-    # absolute before changing the working directory.
-    # For example __file__ may be relative when running trace or profile.
-    # See issue #9323.
-    __file__ = os.path.abspath(__file__)
-
-    # sanity check
-    assert __file__ == os.path.abspath(sys.argv[0])
-
+def main_in_temp_cwd():
+    """Run main() in a temporary working directory."""
     # When tests are run from the Python build directory, it is best practice
     # to keep the test files in a subfolder.  It eases the cleanup of leftover
     # files using command "make distclean".
@@ -1677,3 +1669,16 @@ if __name__ == '__main__':
     # available from test_support.SAVEDCWD.
     with test_support.temp_cwd(TESTCWD, quiet=True):
         main()
+
+if __name__ == '__main__':
+    # findtestdir() gets the dirname out of __file__, so we have to make it
+    # absolute before changing the working directory.
+    # For example __file__ may be relative when running trace or profile.
+    # See issue #9323.
+    global __file__
+    __file__ = os.path.abspath(__file__)
+
+    # sanity check
+    assert __file__ == os.path.abspath(sys.argv[0])
+
+    main_in_temp_cwd()
