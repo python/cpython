@@ -2710,7 +2710,7 @@ fi
 
 
 
-if test -e $srcdir/.git/HEAD
+if test -e $srcdir/.git
 then
 # Extract the first word of "git", so it can be a program name with args.
 set dummy git; ac_word=$2
@@ -6801,6 +6801,7 @@ esac
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 
+
 if test "${OPT-unset}" = "unset"
 then
     case $GCC in
@@ -6830,6 +6831,8 @@ then
         then
             # Clang also needs -fwrapv
             WRAP="-fwrapv"
+            # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
+            # see Makefile.pre.in for more information
             CFLAGS_ALIASING="-fno-strict-aliasing"
         fi
 
