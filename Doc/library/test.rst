@@ -185,6 +185,10 @@ top-level directory where Python was built. On Windows, executing
 :program:`rt.bat` from your :file:`PCBuild` directory will run all regression
 tests.
 
+.. versionchanged:: 2.7.14
+   The :mod:`test` package can be run as a script: :program:`python -m test`.
+   This works the same as running the :mod:`test.regrtest` module.
+
 
 :mod:`test.support` --- Utility functions for tests
 ===================================================
@@ -195,7 +199,7 @@ tests.
 .. note::
 
    The :mod:`test.test_support` module has been renamed to :mod:`test.support`
-   in Python 3.x and 2.7.13.  The name ``test.test_support`` has been retained
+   in Python 3.x and 2.7.14.  The name ``test.test_support`` has been retained
    as an alias in 2.7.
 
 The :mod:`test.support` module provides support for Python's regression

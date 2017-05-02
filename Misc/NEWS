@@ -148,6 +148,10 @@ Build
 Tests
 -----
 
+- bpo-30223: To unify running tests in Python 2.7 and Python 3, the test
+  package can be run as a script.  This is equivalent to running the
+  test.regrtest module as a script.
+
 - bpo-30207: To simplify backports from Python 3, the test.test_support
   module was converted into a package and renamed to test.support.  The
   test.script_helper module was moved into the test.support package.
