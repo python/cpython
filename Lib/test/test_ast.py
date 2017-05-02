@@ -436,8 +436,10 @@ class AST_Tests(unittest.TestCase):
 
 class ASTCompareTest(unittest.TestCase):
     def setUp(self):
-        import imp
-        imp.reload(ast)
+        import subprocess
+        p = subprocess.Popen('./python -m unittest test.test_ast'.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        self.assertTrue(False, (out, err))
 
     def test_normal_compare(self):
         self.assertEqual(ast.parse('x = 10'), ast.parse('x = 10'))
