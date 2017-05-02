@@ -752,7 +752,7 @@ ast_richcompare(PyObject *self, PyObject *other, int op)
         if (PyObject_HasAttr(other, key))
             b = PyObject_GetAttr(other, key);
 
-
+        /* Check filed value type */
         if (Py_TYPE(a) != Py_TYPE(b)) {
             if (op == Py_EQ) {
                 Py_RETURN_FALSE;
