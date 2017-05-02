@@ -641,7 +641,7 @@ static PyTypeObject AST_type = {
     0,                       /* tp_doc */
     (traverseproc)ast_traverse, /* tp_traverse */
     (inquiry)ast_clear,      /* tp_clear */
-    0,         /* tp_richcompare */
+    0,                       /* tp_richcompare */
     0,                       /* tp_weaklistoffset */
     0,                       /* tp_iter */
     0,                       /* tp_iternext */
