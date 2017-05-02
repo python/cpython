@@ -49,6 +49,10 @@ Extension Modules
 Library
 -------
 
+- bpo-28556: Various updates to typing module: add typing.NoReturn type, use
+  WrapperDescriptorType, minor bug-fixes.  Original PRs by
+  Jim Fasarakis-Hilliard and Ivan Levkivskyi.
+
 - bpo-30205: Fix getsockname() for unbound AF_UNIX sockets on Linux.
 
 - bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
