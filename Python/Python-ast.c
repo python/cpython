@@ -607,21 +607,11 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     return Py_BuildValue("O()", Py_TYPE(self));
 }
 
-static PyMethodDef ast_type_methods[] = {
-    {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
-    {NULL}
-};
-
-static PyGetSetDef ast_type_getsets[] = {
-    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
-    {NULL}
-};
-
 static PyObject *
 ast_richcompare(PyObject *self, PyObject *other, int op)
 {
     int i, len;
-    PyObject *fields, *key, *a, *b;
+    PyObject *fields, *key, *a = Py_None, *b = Py_None;
 
     /* Check operator */
     if ((op != Py_EQ && op != Py_NE) ||
@@ -643,11 +633,17 @@ ast_richcompare(PyObject *self, PyObject *other, int op)
     len = PySequence_Size(fields);
     for (i = 0; i < len; ++i) {
         key = PySequence_GetItem(fields, i);
-        a = PyObject_GetAttr(self, key);
-        b = PyObject_GetAttr(other, key);
+
+        if (PyObject_HasAttr(self, key))
+            a = PyObject_GetAttr(self, key);
+        if (PyObject_HasAttr(other, key))
+            b = PyObject_GetAttr(other, key);
+
+
         if (Py_TYPE(a) != Py_TYPE(b)) {
-            if (op == Py_EQ)
+            if (op == Py_EQ) {
                 Py_RETURN_FALSE;
+            }
         }
 
         if (op == Py_EQ) {
@@ -667,6 +663,16 @@ ast_richcompare(PyObject *self, PyObject *other, int op)
     else
         Py_RETURN_FALSE;
 }
+
+static PyMethodDef ast_type_methods[] = {
+    {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
+    {NULL}
+};
+
+static PyGetSetDef ast_type_getsets[] = {
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
+    {NULL}
+};
 
 static PyTypeObject AST_type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

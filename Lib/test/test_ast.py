@@ -442,9 +442,11 @@ class ASTCompareTest(unittest.TestCase):
         self.assertNotEqual(ast.parse('x = 10;y = 20'), ast.parse('class C:pass'))
 
     def test_literals_compare(self):
+        self.assertEqual(ast.Num(), ast.Num())
         self.assertEqual(ast.Num(-20), ast.Num(-20))
         self.assertEqual(ast.Num(10), ast.Num(10))
         self.assertEqual(ast.Num(2048), ast.Num(2048))
+        self.assertEqual(ast.Str(), ast.Str())
         self.assertEqual(ast.Str("ABCD"), ast.Str("ABCD"))
         self.assertEqual(ast.Str("中文字"), ast.Str("中文字"))
 
@@ -452,6 +454,9 @@ class ASTCompareTest(unittest.TestCase):
         self.assertNotEqual(ast.Num(-10), ast.Num(10))
         self.assertNotEqual(ast.Str("AAAA"), ast.Str("BBBB"))
         self.assertNotEqual(ast.Str("一二三"), ast.Str("中文字"))
+
+        self.assertNotEqual(ast.Num(10), ast.Num())
+        self.assertNotEqual(ast.Str("AB"), ast.Str())
 
     def test_operator_compare(self):
         self.assertEqual(ast.Add(), ast.Add())
