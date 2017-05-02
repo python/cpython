@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
 import unittest
 import pickle
 import cPickle
@@ -169,7 +167,7 @@ class K(object):
         # Shouldn't support the recursion itself
         return K, (self.value,)
 
-import __main__
+__main__ = sys.modules['__main__']
 __main__.C = C
 C.__module__ = "__main__"
 __main__.D = D
