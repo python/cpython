@@ -983,7 +983,7 @@ AC_SUBST(GITVERSION)
 AC_SUBST(GITTAG)
 AC_SUBST(GITBRANCH)
 
-if test -e $srcdir/.git/HEAD
+if test -e $srcdir/.git
 then
 AC_CHECK_PROG(HAS_GIT, git, found, not-found)
 else
