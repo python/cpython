@@ -25,8 +25,8 @@ from idlelib import help
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
-
 _py_version = ' (%s)' % platform.python_version()
+
 
 def _sphinx_version():
     "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
@@ -92,11 +92,12 @@ class EditorWindow(object):
     from idlelib.Percolator import Percolator
     from idlelib.ColorDelegator import ColorDelegator, color_config
     from idlelib.UndoDelegator import UndoDelegator
-    from idlelib.IOBinding import IOBinding, filesystemencoding, encoding
+    from idlelib.IOBinding import IOBinding, encoding
     from idlelib import Bindings
     from tkinter import Toplevel
     from idlelib.MultiStatusBar import MultiStatusBar
 
+    filesystemencoding = sys.getfilesystemencoding()  # for file names
     help_url = None
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
@@ -1686,5 +1687,8 @@ def _editor_window(parent):  # htest #
     # edit.text.bind("<<close-window>>", edit.close_event)
 
 if __name__ == '__main__':
+    import unittest
+    unittest.main('idlelib.idle_test.test_editor', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_editor_window)
