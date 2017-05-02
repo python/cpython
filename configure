@@ -5691,7 +5691,7 @@ fi
 
 
 
-if test -e $srcdir/.git/HEAD
+if test -e $srcdir/.git
 then
 # Extract the first word of "git", so it can be a program name with args.
 set dummy git; ac_word=$2
