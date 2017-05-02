@@ -618,11 +618,11 @@ np_uint(char *p, PyObject *v, const formatdef *f)
     unsigned int y;
     if (get_ulong(v, &x) < 0)
         return -1;
+    y = (unsigned int)x;
 #if (SIZEOF_LONG > SIZEOF_INT)
     if (x > ((unsigned long)UINT_MAX))
         RANGE_ERROR(y, f, 1, -1);
 #endif
-    y = (unsigned int)x;
     memcpy(p, (char *)&y, sizeof y);
     return 0;
 }
@@ -1789,8 +1789,12 @@ s_pack_internal(PyStructObject *soself, PyObject **args, int offset, char* buf)
                     n = 255;
                 *res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
             } else {
-                if (e->pack(res, v, e) < 0)
+                if (e->pack(res, v, e) < 0) {
+                    if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
+                        PyErr_SetString(StructError,
+                                        "int too large to convert");
                     return -1;
+                }
             }
             res += code->size;
         }
