@@ -617,6 +617,55 @@ static PyGetSetDef ast_type_getsets[] = {
     {NULL}
 };
 
+static PyObject *
+ast_richcompare(PyObject *self, PyObject *other, int op)
+{
+    int i, len;
+    PyObject *fields, *key, *a, *b;
+
+    /* Check operator */
+    if ((op != Py_EQ && op != Py_NE) ||
+         !PyAST_Check(self) ||
+         !PyAST_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (Py_TYPE(self) != Py_TYPE(other)) {
+        if (op == Py_EQ)
+            Py_RETURN_FALSE;
+        else
+            Py_RETURN_TRUE;
+    }
+
+    fields = PyObject_GetAttrString(self, "_fields");
+    len = PySequence_Size(fields);
+    for (i = 0; i < len; ++i) {
+        key = PySequence_GetItem(fields, i);
+        a = PyObject_GetAttr(self, key);
+        b = PyObject_GetAttr(other, key);
+        if (Py_TYPE(a) != Py_TYPE(b)) {
+            if (op == Py_EQ)
+                Py_RETURN_FALSE;
+        }
+
+        if (op == Py_EQ) {
+            if (!PyObject_RichCompareBool(a, b, Py_EQ)) {
+                Py_RETURN_FALSE;
+            }
+        }
+        else if (op == Py_NE) {
+            if (PyObject_RichCompareBool(a, b, Py_NE)) {
+                Py_RETURN_TRUE;
+            }
+        }
+    }
+
+    if (op == Py_EQ)
+        Py_RETURN_TRUE;
+    else
+        Py_RETURN_FALSE;
+}
+
 static PyTypeObject AST_type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_ast.AST",
@@ -641,7 +690,7 @@ static PyTypeObject AST_type = {
     0,                       /* tp_doc */
     (traverseproc)ast_traverse, /* tp_traverse */
     (inquiry)ast_clear,      /* tp_clear */
-    0,                       /* tp_richcompare */
+    ast_richcompare,         /* tp_richcompare */
     0,                       /* tp_weaklistoffset */
     0,                       /* tp_iter */
     0,                       /* tp_iternext */

@@ -435,6 +435,12 @@ class AST_Tests(unittest.TestCase):
 
 
 class ASTCompareTest(unittest.TestCase):
+    def test_normal_compare(self):
+        self.assertEqual(ast.parse('x = 10'), ast.parse('x = 10'))
+        self.assertNotEqual(ast.parse('x = 10'), ast.parse(''))
+        self.assertNotEqual(ast.parse('x = 10'), ast.parse('x'))
+        self.assertNotEqual(ast.parse('x = 10;y = 20'), ast.parse('class C:pass'))
+
     def test_literals_compare(self):
         self.assertEqual(ast.Num(-20), ast.Num(-20))
         self.assertEqual(ast.Num(10), ast.Num(10))
