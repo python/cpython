@@ -4683,8 +4683,8 @@ class TestUnixDomain(unittest.TestCase):
                 raise
 
     def testUnbound(self):
-        # Issue #30205
-        self.assertEqual(self.sock.getsockname(), '')
+        # Issue #30205 (note getsockname() can return None on OS X)
+        self.assertIn(self.sock.getsockname(), ('', None))
 
     def testStrAddr(self):
         # Test binding to and retrieving a normal string pathname.
