@@ -136,9 +136,6 @@ def get_argspec(ob):
     argspec = ""
     try:
         ob_call = ob.__call__
-    except AttributeError:
-        argspec = "Object is not callable"
-        return argspec
     except BaseException:
         return argspec
     if isinstance(ob, type):

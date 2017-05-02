@@ -171,9 +171,6 @@ bytes() -> empty bytes object''')
                             (NoCall(), ''), (Call(), '(ci)')):
             self.assertEqual(signature(meth), mtip)
 
-    def test_non_callables(self):
-        for obj in (0, 0.0, '0', b'0', [], {}):
-            self.assertEqual(signature(obj), 'Object is not callable')
 
 class Get_entityTest(unittest.TestCase):
     def test_bad_entity(self):
