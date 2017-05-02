@@ -1447,6 +1447,7 @@ esac
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST(OPT)
+AC_SUBST(CFLAGS_ALIASING)
 if test "${OPT-unset}" = "unset"
 then
     case $GCC in
@@ -1459,11 +1460,27 @@ then
            WRAP="-fwrapv"
         fi
 
-        # Clang also needs -fwrapv
         case $CC in
-            *clang*) WRAP="-fwrapv"
-            ;;
+            *clang*)
+                cc_is_clang=1
+                ;;
+            *)
+                if $CC --version 2>&1 | grep -q clang
+                then
+                    cc_is_clang=1
+                else
+                    cc_is_clang=
+                fi
         esac
+
+        if test -n "${cc_is_clang}"
+        then
+            # Clang also needs -fwrapv
+            WRAP="-fwrapv"
+            # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
+            # see Makefile.pre.in for more information
+            CFLAGS_ALIASING="-fno-strict-aliasing"
+        fi
 
 	case $ac_cv_prog_cc_g in
 	yes)
@@ -1471,18 +1488,21 @@ then
 		# Optimization messes up debuggers, so turn it off for
 		# debug builds.
                 if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall $STRICT_PROTO"
+                    OPT="-g -Og -Wall"
                 else
-                    OPT="-g -O0 -Wall $STRICT_PROTO"
+                    OPT="-g -O0 -Wall"
                 fi
 	    else
-		OPT="-g $WRAP -O3 -Wall $STRICT_PROTO"
+		OPT="-g $WRAP -O3 -Wall"
 	    fi
 	    ;;
 	*)
-	    OPT="-O3 -Wall $STRICT_PROTO"
+	    OPT="-O3 -Wall"
 	    ;;
 	esac
+
+	OPT="$OPT $STRICT_PROTO"
+
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
 	    ;;
