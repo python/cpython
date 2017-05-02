@@ -399,8 +399,8 @@
     <Message Text="Getting build info from $(_GIT)" Importance="high" />
     <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
     <Exec Command="$(_GIT) name-rev --name-only HEAD &gt; &quot;$(IntDir)gitbranch.txt&quot;" ContinueOnError="true" />
-    <Exec Command="$(_GIT) rev-parse HEAD &gt; &quot;$(IntDir)gitversion.txt&quot;" ContinueOnError="true" />
-    <Exec Command="$(_GIT) name-rev --tags --name-only HEAD &gt; &quot;$(IntDir)gittag.txt&quot;" ContinueOnError="true" />
+    <Exec Command="$(_GIT) rev-parse --short HEAD &gt; &quot;$(IntDir)gitversion.txt&quot;" ContinueOnError="true" />
+    <Exec Command="$(_GIT) describe --all --always --dirty &gt; &quot;$(IntDir)gittag.txt&quot;" ContinueOnError="true" />
     <PropertyGroup>
       <GitBranch Condition="Exists('$(IntDir)gitbranch.txt')">$([System.IO.File]::ReadAllText('$(IntDir)gitbranch.txt').Trim())</GitBranch>
       <GitVersion Condition="Exists('$(IntDir)gitversion.txt')">$([System.IO.File]::ReadAllText('$(IntDir)gitversion.txt').Trim())</GitVersion>
