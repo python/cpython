@@ -136,6 +136,9 @@ def get_argspec(ob):
     argspec = ""
     try:
         ob_call = ob.__call__
+    except AttributeError:
+        argspec = "Object is not callable"
+        return argspec
     except BaseException:
         return argspec
     if isinstance(ob, type):
@@ -145,10 +148,16 @@ def get_argspec(ob):
     else:
         fob = ob
     if isinstance(fob, (types.FunctionType, types.MethodType)):
-        argspec = inspect.formatargspec(*inspect.getfullargspec(fob))
+        try:
+            argspec = str(inspect.signature(fob))
+        except ValueError:
+            argspec = "This function has an invalid method signature"
+            return argspec
+
         if (isinstance(ob, (type, types.MethodType)) or
                 isinstance(ob_call, types.MethodType)):
-            argspec = _first_param.sub("", argspec)
+            if argspec.startswith("(self,"):
+                argspec = _first_param.sub("", argspec)
 
     lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
             if len(argspec) > _MAX_COLS else [argspec] if argspec else [])

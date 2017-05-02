@@ -132,11 +132,19 @@ bytes() -> empty bytes object''')
         # test that starred first parameter is *not* removed from argspec
         class C:
             def m1(*args): pass
-            def m2(**kwds): pass
         c = C()
-        for meth, mtip  in ((C.m1, '(*args)'), (c.m1, "(*args)"),
-                                      (C.m2, "(**kwds)"), (c.m2, "(**kwds)"),):
+        for meth, mtip  in ((C.m1, '(*args)'), (c.m1, "(*args)"),):
             self.assertEqual(signature(meth), mtip)
+
+    def test_invalid_method_signature(self):
+        class C:
+            def m2(**kwargs): pass
+        class Test:
+            def __call__(*, a): pass
+
+        mtip = "This function has an invalid method signature"
+        self.assertEqual(signature(C().m2), mtip)
+        self.assertEqual(signature(Test()), mtip)
 
     def test_non_ascii_name(self):
         # test that re works to delete a first parameter name that
@@ -165,7 +173,7 @@ bytes() -> empty bytes object''')
 
     def test_non_callables(self):
         for obj in (0, 0.0, '0', b'0', [], {}):
-            self.assertEqual(signature(obj), '')
+            self.assertEqual(signature(obj), 'Object is not callable')
 
 class Get_entityTest(unittest.TestCase):
     def test_bad_entity(self):
