@@ -435,6 +435,10 @@ class AST_Tests(unittest.TestCase):
 
 
 class ASTCompareTest(unittest.TestCase):
+    def setUp(self):
+        import imp
+        imp.reload(ast)
+
     def test_normal_compare(self):
         self.assertEqual(ast.parse('x = 10'), ast.parse('x = 10'))
         self.assertNotEqual(ast.parse('x = 10'), ast.parse(''))
