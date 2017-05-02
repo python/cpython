@@ -1955,6 +1955,8 @@ else:
             self.join()
             if support.verbose:
                 sys.stdout.write(" cleanup: successfully joined.\n")
+            # make sure that ConnectionHandler is removed from socket_map
+            asyncore.close_all(ignore_all=True)
 
         def start(self, flag=None):
             self.flag = flag
