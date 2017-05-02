@@ -1454,7 +1454,7 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
         return -1;
     }
 
-    Py_XSETREF(self->s_format, format);
+    Py_SETREF(self->s_format, format);
 
     ret = prepare_s(self);
     return ret;
