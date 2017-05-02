@@ -479,28 +479,28 @@ class ASTCompareTest(unittest.TestCase):
 
             a = ast.parse(source)
             b = ast.parse(source)
-            self.assertEqual(a, b)
+            self.assertEqual(a, b, "%s != %s" % (ast.dump(a), ast.dump(b)))
             self.assertFalse(a != b)
 
     def test_exec_compare(self):
         for source in exec_tests:
             a = ast.parse(source, mode='exec')
             b = ast.parse(source, mode='exec')
-            self.assertEqual(a, b)
+            self.assertEqual(a, b, "%s != %s" % (ast.dump(a), ast.dump(b)))
             self.assertFalse(a != b)
 
     def test_single_compare(self):
         for source in single_tests:
             a = ast.parse(source, mode='single')
             b = ast.parse(source, mode='single')
-            self.assertEqual(a, b)
+            self.assertEqual(a, b, "%s != %s" % (ast.dump(a), ast.dump(b)))
             self.assertFalse(a != b)
 
     def test_eval_compare(self):
         for source in eval_tests:
             a = ast.parse(source, mode='eval')
             b = ast.parse(source, mode='eval')
-            self.assertEqual(a, b)
+            self.assertEqual(a, b, "%s != %s" % (ast.dump(a), ast.dump(b)))
             self.assertFalse(a != b)
 
 
