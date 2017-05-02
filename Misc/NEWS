@@ -36,6 +36,8 @@ Core and Builtins
 Library
 -------
 
+- bpo-30205: Fix getsockname() for unbound AF_UNIX sockets on Linux.
+
 - bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
 
 - bpo-30061: Fixed crashes in IOBase methods __next__() and readlines() when
