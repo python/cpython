@@ -134,6 +134,10 @@ Documentation
 Build
 -----
 
+- bpo-27593: sys.version and the platform module python_build(),
+  python_branch(), and python_revision() functions now use
+  git information rather than hg when building from a repo.
+
 - bpo-29643: Fix ``--enable-optimization`` configure option didn't work.
 
 - bpo-29572: Update Windows build and OS X installers to use OpenSSL 1.0.2k.

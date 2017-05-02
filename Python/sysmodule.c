@@ -1426,9 +1426,9 @@ _PySys_Init(void)
     SET_SYS_FROM_STRING("subversion",
                          Py_BuildValue("(ssz)", "CPython", branch,
                                       svn_revision));
-    SET_SYS_FROM_STRING("_mercurial",
-                        Py_BuildValue("(szz)", "CPython", _Py_hgidentifier(),
-                                      _Py_hgversion()));
+    SET_SYS_FROM_STRING("_git",
+                        Py_BuildValue("(szz)", "CPython", _Py_gitidentifier(),
+                                      _Py_gitversion()));
     SET_SYS_FROM_STRING("dont_write_bytecode",
                          PyBool_FromLong(Py_DontWriteBytecodeFlag));
     SET_SYS_FROM_STRING("api_version",

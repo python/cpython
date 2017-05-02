@@ -979,28 +979,25 @@ then
         ARFLAGS="rc"
 fi
 
-AC_SUBST(SVNVERSION)
-AC_CHECK_PROG(SVNVERSION, svnversion, found, not-found)
-if test $SVNVERSION = found
-then
-	SVNVERSION="svnversion \$(srcdir)"
-else
-	SVNVERSION="echo Unversioned directory"
-fi
+AC_SUBST(GITVERSION)
+AC_SUBST(GITTAG)
+AC_SUBST(GITBRANCH)
 
-AC_SUBST(HGVERSION)
-AC_SUBST(HGTAG)
-AC_SUBST(HGBRANCH)
-AC_CHECK_PROG(HAS_HG, hg, found, not-found)
-if test $HAS_HG = found
+if test -e $srcdir/.git/HEAD
 then
-    HGVERSION="hg id -i \$(srcdir)"
-    HGTAG="hg id -t \$(srcdir)"
-    HGBRANCH="hg id -b \$(srcdir)"
+AC_CHECK_PROG(HAS_GIT, git, found, not-found)
 else
-    HGVERSION=""
-    HGTAG=""
-    HGBRANCH=""
+HAS_GIT=no-repository
+fi
+if test $HAS_GIT = found
+then
+    GITVERSION="git -C \$(srcdir) rev-parse --short HEAD"
+    GITTAG="git -C \$(srcdir) describe --all --always --dirty"
+    GITBRANCH="git -C \$(srcdir) name-rev --name-only HEAD"
+else
+    GITVERSION=""
+    GITTAG=""
+    GITBRANCH=""
 fi
 
 case $MACHDEP in
