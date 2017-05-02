@@ -630,6 +630,7 @@ ast_richcompare(PyObject *self, PyObject *other, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
+    /* Compare types */
     if (Py_TYPE(self) != Py_TYPE(other)) {
         if (op == Py_EQ)
             Py_RETURN_FALSE;
@@ -637,6 +638,7 @@ ast_richcompare(PyObject *self, PyObject *other, int op)
             Py_RETURN_TRUE;
     }
 
+    /* Compare fields */
     fields = PyObject_GetAttrString(self, "_fields");
     len = PySequence_Size(fields);
     for (i = 0; i < len; ++i) {
