@@ -320,6 +320,19 @@ Library
 - bpo-30103: binascii.b2a_uu() and uu.encode() now support using ``'`'``
   as zero instead of space.
 
+- bpo-28556: Various updates to typing module: add typing.NoReturn type, use
+  WrapperDescriptorType, minor bug-fixes.  Original PRs by
+  Jim Fasarakis-Hilliard and Ivan Levkivskyi.
+
+- bpo-30205: Fix getsockname() for unbound AF_UNIX sockets on Linux.
+
+- bpo-30228: The seek() and tell() methods of io.FileIO now set the internal
+  seekable attribute to avoid one syscall on open() (in buffered or text mode).
+
+- bpo-30190: unittest's assertAlmostEqual and assertNotAlmostEqual provide a
+  better message in case of failure which includes the difference between
+  left and right arguments.  (patch by Giampaolo Rodola')
+
 - bpo-30101: Add support for curses.A_ITALIC.
 
 - bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch
