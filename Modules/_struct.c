@@ -1481,7 +1481,8 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
     if (!PyBytes_Check(format)) {
         Py_DECREF(format);
         PyErr_Format(PyExc_TypeError,
-                     "Struct() argument 1 must be a bytes object, not %.200s",
+                     "Struct() argument 1 must be a str or bytes object, "
+                     "not %.200s",
                      Py_TYPE(format)->tp_name);
         return -1;
     }
@@ -1563,7 +1564,7 @@ Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
     assert(self->s_codes != NULL);
     if (buffer->len != self->s_size) {
         PyErr_Format(StructError,
-                     "unpack requires a bytes object of length %zd",
+                     "unpack requires a bytes-like object of length %zd",
                      self->s_size);
         return NULL;
     }
@@ -1734,8 +1735,8 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
     }
     if (iter->buf.len % self->s_size != 0) {
         PyErr_Format(StructError,
-                     "iterative unpacking requires a bytes length "
-                     "multiple of %zd",
+                     "iterative unpacking requires a bytes-like object of "
+                     "length multiple of %zd",
                      self->s_size);
         Py_DECREF(iter);
         return NULL;
