@@ -26,6 +26,7 @@ def _make_ext_name(modname):
 
 
 class InstallTestCase(support.TempdirManager,
+                      support.EnvironGuard,
                       support.LoggingSilencer,
                       unittest.TestCase):
 

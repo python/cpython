@@ -4,10 +4,11 @@ import unittest
 from test.test_support import run_unittest
 
 from distutils.errors import DistutilsByteCompileError
+from distutils.tests import support
 from distutils.util import byte_compile, grok_environment_error
 
 
-class UtilTestCase(unittest.TestCase):
+class UtilTestCase(support.EnvironGuard, unittest.TestCase):
 
     def test_dont_write_bytecode(self):
         # makes sure byte_compile raise a DistutilsError
