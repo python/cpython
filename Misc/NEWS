@@ -33,9 +33,6 @@ Core and Builtins
   ValueError always is raised rather than OverflowError for negative counts.
   Shifting zero with non-negative count always returns zero.
 
-- bpo-30218: Fix PathLike support for shutil.unpack_archive. Patch by Jelle
-  Zijlstra.
-
 - bpo-24821: Fixed the slowing down to 25 times in the searching of some
   unlucky Unicode characters.
 
@@ -337,6 +334,9 @@ Library
   readline() or __next__() respectively return non-sizeable object.
   Fixed possible other errors caused by not checking results of PyObject_Size(),
   PySequence_Size(), or PyMapping_Size().
+
+- bpo-30218: Fix PathLike support for shutil.unpack_archive. Patch by Jelle
+  Zijlstra.
 
 - bpo-10076: Compiled regular expression and match objects in the re module
   now support copy.copy() and copy.deepcopy() (they are considered atomic).
