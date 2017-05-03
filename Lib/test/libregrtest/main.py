@@ -120,18 +120,22 @@ class Regrtest:
     def display_progress(self, test_index, test):
         if self.ns.quiet:
             return
+
+        # "[ 51/405/1] test_tcl passed"
+        line = f"{test_index:{self.test_count_width}}{self.test_count}"
         if self.bad and not self.ns.pgo:
-            fmt = "{time} [{test_index:{count_width}}{test_count}/{nbad}] {test_name}"
-        else:
-            fmt = "{time} [{test_index:{count_width}}{test_count}] {test_name}"
+            line = f"{line}/{len(self.bad)}"
+        line = f"[{line}] {test}"
+
+        # add the system load prefix: "load avg: 1.80 "
+        if hasattr(os, 'getloadavg'):
+            load_avg_1min = os.getloadavg()[0]
+            line = f"load avg: {load_avg_1min:.2f} {line}"
+
+        # add the timestamp prefix:  "0:01:05 "
         test_time = time.monotonic() - self.start_time
         test_time = datetime.timedelta(seconds=int(test_time))
-        line = fmt.format(count_width=self.test_count_width,
-                          test_index=test_index,
-                          test_count=self.test_count,
-                          nbad=len(self.bad),
-                          test_name=test,
-                          time=test_time)
+        line = f"{test_time} {line}"
         print(line, flush=True)
 
     def parse_args(self, kwargs):
