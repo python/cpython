@@ -317,6 +317,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30103: binascii.b2a_uu() and uu.encode() now support using ``'`'``
+  as zero instead of space.
+
 - bpo-28556: Various updates to typing module: add typing.NoReturn type, use
   WrapperDescriptorType, minor bug-fixes.  Original PRs by
   Jim Fasarakis-Hilliard and Ivan Levkivskyi.
