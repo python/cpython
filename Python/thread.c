@@ -245,7 +245,9 @@ find_key(int set_value, int key, void *value)
 
 /* Thread Local Storage (TLS) API, DEPRECATED since Python 3.7
 
-   In the own implementation, TLS API has been changed to call TSS API.
+   While the native thread-local storage implementations have been retained,
+   this fallback implementation is now just a compatibility wrapper around
+   the TSS API.
 */
 
 int
