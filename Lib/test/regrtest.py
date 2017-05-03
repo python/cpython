@@ -37,6 +37,8 @@ Selecting tests
 -f/--fromfile   -- read names of tests to run from a file (see below)
 -x/--exclude    -- arguments are tests to *exclude*
 -s/--single     -- single step through a set of tests (see below)
+-m/--match PAT  -- match test cases and methods with glob pattern PAT
+-G/--failfast   -- fail as soon as a test fails (only with -v or -W)
 -u/--use RES1,RES2,...
                 -- specify which special resource intensive tests to run
 -M/--memlimit LIMIT
@@ -242,7 +244,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False, pgo=False):
+         header=False, pgo=False, failfast=False, match_tests=None):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -268,12 +270,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:j:P',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:j:PGm:',
             ['help', 'verbose', 'verbose2', 'verbose3', 'quiet',
              'exclude', 'single', 'slow', 'randomize', 'fromfile=', 'findleaks',
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
-             'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo'])
+             'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo',
+             'failfast', 'match='])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -291,6 +294,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             verbose2 = True
         elif o in ('-W', '--verbose3'):
             verbose3 = True
+        elif o in ('-G', '--failfast'):
+            failfast = True
         elif o in ('-q', '--quiet'):
             quiet = True;
             verbose = 0
@@ -306,6 +311,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             random_seed = int(a)
         elif o in ('-f', '--fromfile'):
             fromfile = a
+        elif o in ('-m', '--match'):
+            match_tests = a
         elif o in ('-l', '--findleaks'):
             findleaks = True
         elif o in ('-L', '--runleaks'):
@@ -380,6 +387,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         usage(2, "-T and -j don't go together!")
     if use_mp and findleaks:
         usage(2, "-l and -j don't go together!")
+    if failfast and not (verbose or verbose3):
+        usage("-G/--failfast needs either -v or -W")
 
     good = []
     bad = []
@@ -514,6 +523,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 args_tuple = (
                     (test, verbose, quiet),
                     dict(huntrleaks=huntrleaks, use_resources=use_resources,
+                         failfast=failfast,
+                         match_tests=match_tests,
                          pgo=pgo)
                 )
                 yield (test, args_tuple)
@@ -609,7 +620,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                               globals=globals(), locals=vars())
             else:
                 try:
-                    result = runtest(test, verbose, quiet, huntrleaks, None, pgo)
+                    result = runtest(test, verbose, quiet, huntrleaks, None, pgo,
+                                     failfast=failfast,
+                                     match_tests=match_tests)
                     accumulate_result(test, result)
                     if verbose3 and result[0] == FAILED:
                         if not pgo:
@@ -743,7 +756,8 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     return stdtests + sorted(tests)
 
 def runtest(test, verbose, quiet,
-            huntrleaks=False, use_resources=None, pgo=False):
+            huntrleaks=False, use_resources=None, pgo=False,
+            failfast=False, match_tests=None):
     """Run a single test.
 
     test -- the name of the test
@@ -769,6 +783,9 @@ def runtest(test, verbose, quiet,
     if use_resources is not None:
         test_support.use_resources = use_resources
     try:
+        test_support.match_tests = match_tests
+        if failfast:
+            test_support.failfast = True
         return runtest_inner(test, verbose, quiet, huntrleaks, pgo)
     finally:
         cleanup_test_droppings(test, verbose)

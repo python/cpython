@@ -5,6 +5,7 @@ if __name__ != 'test.support':
 
 import contextlib
 import errno
+import fnmatch
 import functools
 import gc
 import socket
@@ -165,6 +166,8 @@ use_resources = None     # Flag set to [] by regrtest.py
 max_memuse = 0           # Disable bigmem tests (they will still be run with
                          # small sizes, to make sure they work.)
 real_max_memuse = 0
+failfast = False
+match_tests = None
 
 # _original_stdout is meant to hold stdout at the time regrtest began.
 # This may be "the real" stdout, or IDLE's emulation of stdout, or whatever.
@@ -1462,11 +1465,23 @@ def check_impl_detail(**guards):
     return guards.get(platform.python_implementation().lower(), default)
 
 
+def _filter_suite(suite, pred):
+    """Recursively filter test cases in a suite based on a predicate."""
+    newtests = []
+    for test in suite._tests:
+        if isinstance(test, unittest.TestSuite):
+            _filter_suite(test, pred)
+            newtests.append(test)
+        else:
+            if pred(test):
+                newtests.append(test)
+    suite._tests = newtests
 
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
     if verbose:
-        runner = unittest.TextTestRunner(sys.stdout, verbosity=2)
+        runner = unittest.TextTestRunner(sys.stdout, verbosity=2,
+                                         failfast=failfast)
     else:
         runner = BasicTestRunner()
 
@@ -1497,6 +1512,14 @@ def run_unittest(*classes):
             suite.addTest(cls)
         else:
             suite.addTest(unittest.makeSuite(cls))
+    def case_pred(test):
+        if match_tests is None:
+            return True
+        for name in test.id().split("."):
+            if fnmatch.fnmatchcase(name, match_tests):
+                return True
+        return False
+    _filter_suite(suite, case_pred)
     _run_suite(suite)
 
 #=======================================================================
