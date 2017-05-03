@@ -170,6 +170,44 @@ it's the base calendar for all computations.
       sheet should be used. *encoding* specifies the encoding to be used for the
       output (defaulting to the system default encoding).
 
+   :class:`HTMLCalendar` has the following attribute you can override to customize the style of your calender:
+
+  .. attribute:: cssclasses
+
+     By default it is a list with containing a style for each name::
+
+        cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+
+     But you can add more styles for each day if you want::
+
+        cssclasses = ["mon text-bold", "tue", "wed", "thu", "fri", "sat", "sun red"]
+
+     Note, the the lenght of this list must be 7 items.
+
+  .. attribute:: noday_classes
+
+  .. attribute:: weekday_head_classes
+
+     This by default the same as ``HTMLCalendar.cssclassess``.
+
+  .. attribute:: month_head_classes
+
+  .. attribute:: month_classes
+
+  .. attribute:: year_head_classes
+
+  .. attribute:: year_classes
+
+Here is an example how you can customize ``HTMLCalendar``::
+
+    class CustomHTMLCal(calendar.HTMLCalendar):
+        cssclasses = [style + " text-nowrap" for style in
+                      calendar.HTMLCalendar.cssclasses]
+        month_head_classes = "text-center month-head"
+        month_classes = "text-center month"
+        year_classes = "lead"
+
+
 
 .. class:: LocaleTextCalendar(firstweekday=0, locale=None)
 
