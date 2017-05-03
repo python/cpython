@@ -304,12 +304,12 @@ algorithms implemented in this module in other circumstances.
    Returns a dictionary just like :func:`urllib.parse.parse_qs`: keys are the
    field names, each value is a list of values for that field. For non-file
    fields, the value is a list of strings.
-   
+
    This is easy to use but not much good if you are expecting megabytes to be
    uploaded --- in that case, use the :class:`FieldStorage` class instead
    which is much more flexible.
 
-   
+
 .. function:: parse_header(string)
 
    Parse a MIME header (such as :mailheader:`Content-Type`) into a main value and a
