@@ -1564,7 +1564,7 @@ Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
     assert(self->s_codes != NULL);
     if (buffer->len != self->s_size) {
         PyErr_Format(StructError,
-                     "unpack requires a bytes-like object of length %zd",
+                     "unpack requires a buffer of %zd bytes",
                      self->s_size);
         return NULL;
     }
@@ -1735,8 +1735,8 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
     }
     if (iter->buf.len % self->s_size != 0) {
         PyErr_Format(StructError,
-                     "iterative unpacking requires a bytes-like object of "
-                     "length multiple of %zd",
+                     "iterative unpacking requires a buffer of "
+                     "multiple of %zd bytes",
                      self->s_size);
         Py_DECREF(iter);
         return NULL;
