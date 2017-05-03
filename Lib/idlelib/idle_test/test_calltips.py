@@ -164,11 +164,15 @@ bytes() -> empty bytes object''')
         class NoCall:
             def __getattr__(self, name):
                 raise BaseException
-        class Call(NoCall):
+        class CallA(NoCall):
+            def __call__(oui, a, b, c):
+                pass
+        class CallB(NoCall):
             def __call__(self, ci):
                 pass
-        for meth, mtip  in ((NoCall, default_tip), (Call, default_tip),
-                            (NoCall(), ''), (Call(), '(ci)')):
+        for meth, mtip  in ((NoCall, default_tip), (CallA, default_tip),
+                            (NoCall(), ''), (CallA(), '(a, b, c)'),
+                            (CallB(), '(ci)')):
             self.assertEqual(signature(meth), mtip)
 
 

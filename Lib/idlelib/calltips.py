@@ -151,10 +151,8 @@ def get_argspec(ob):
             argspec = "This function has an invalid method signature"
             return argspec
 
-        if (isinstance(ob, (type, types.MethodType)) or
-                isinstance(ob_call, types.MethodType)):
-            if argspec.startswith("(self,"):
-                argspec = _first_param.sub("", argspec)
+        if isinstance(ob, type):
+            argspec = _first_param.sub("", argspec)
 
     lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
             if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
