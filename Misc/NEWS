@@ -33,6 +33,9 @@ Core and Builtins
   ValueError always is raised rather than OverflowError for negative counts.
   Shifting zero with non-negative count always returns zero.
 
+- bpo-30218: Fix PathLike support for shutil.unpack_archive. Patch by Jelle
+  Zijlstra.
+
 - bpo-24821: Fixed the slowing down to 25 times in the searching of some
   unlucky Unicode characters.
 
