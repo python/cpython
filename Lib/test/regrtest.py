@@ -1267,10 +1267,9 @@ class saved_test_environment:
                     print("Warning -- {} was modified by {}".format(
                                                  name, self.testname),
                                                  file=sys.stderr)
-                    if self.verbose > 1 and not self.pgo:
-                        print("  Before: {}\n  After:  {} ".format(
-                                                  original, current),
-                                                  file=sys.stderr)
+                    print("  Before: {}\n  After:  {} ".format(
+                                              original, current),
+                                              file=sys.stderr)
         return False
 
 
