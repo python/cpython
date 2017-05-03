@@ -10,7 +10,7 @@ What's New in Python 3.6.2 release candidate 1?
 Core and Builtins
 -----------------
 
-- bpo-12414: sys.getsizeof() on a code object now returns the sizes 
+- bpo-12414: sys.getsizeof() on a code object now returns the sizes
   which includes the code struct and sizes of objects which it references.
   Patch by Dong-hee Na.
 
@@ -115,6 +115,10 @@ Library
 
 Build
 -----
+
+- bpo-23404: Don't regenerate generated files based on file modification time
+  anymore: the action is now explicit. Replace ``make touch`` with
+  ``make regen-all``.
 
 - bpo-29643: Fix ``--enable-optimization`` didn't work.
 
