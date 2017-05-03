@@ -96,6 +96,7 @@ import re
 import warnings
 import io
 import collections
+import collections.abc
 import contextlib
 
 from . import ElementPath
@@ -1231,7 +1232,7 @@ def iterparse(source, events=None, parser=None):
             if close_source:
                 source.close()
 
-    class IterParseIterator(collections.Iterator):
+    class IterParseIterator(collections.abc.Iterator):
         __next__ = iterator().__next__
     it = IterParseIterator()
     it.root = None

@@ -284,7 +284,7 @@ the correct type and value::
    >>> c_int()
    c_long(0)
    >>> c_wchar_p("Hello, World")
-   c_wchar_p('Hello, World')
+   c_wchar_p(140018365411392)
    >>> c_ushort(-3)
    c_ushort(65533)
    >>>
@@ -309,11 +309,15 @@ bytes objects are immutable)::
    >>> s = "Hello, World"
    >>> c_s = c_wchar_p(s)
    >>> print(c_s)
-   c_wchar_p('Hello, World')
+   c_wchar_p(139966785747344)
+   >>> print(c_s.value)
+   Hello World
    >>> c_s.value = "Hi, there"
-   >>> print(c_s)
-   c_wchar_p('Hi, there')
-   >>> print(s)                 # first object is unchanged
+   >>> print(c_s)              # the memory location has changed
+   c_wchar_p(139966783348904)
+   >>> print(c_s.value)
+   Hi, there
+   >>> print(s)                # first object is unchanged
    Hello, World
    >>>
 

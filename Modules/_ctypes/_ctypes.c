@@ -5143,7 +5143,7 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "OOO:COMError", &hresult, &text, &details))
         return -1;
 
-    a = PySequence_GetSlice(args, 1, PySequence_Size(args));
+    a = PySequence_GetSlice(args, 1, PyTuple_GET_SIZE(args));
     if (!a)
         return -1;
     status = PyObject_SetAttrString(self, "args", a);

@@ -102,6 +102,18 @@ cgi
 :class:`~FieldStorage` : for non-file fields, the value associated to a key
 is a list of strings, not bytes.
 (Contributed by Pierre Quentel in :issue:`29979`.)
+binascii
+--------
+
+The :func:`~binascii.b2a_uu` function now accepts an optional *backtick*
+keyword argument.  When it's true, zeros are represented by ``'`'``
+instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
+
+contextlib
+----------
+
+:func:`contextlib.asynccontextmanager` has been added. (Contributed by
+Jelle Zijlstra in :issue:`29679`.)
 
 distutils
 ---------
@@ -160,6 +172,13 @@ urllib.parse
 :func:`urllib.parse.quote` has been updated to from RFC 2396 to RFC 3986,
 adding `~` to the set of characters that is never quoted by default.
 (Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
+
+uu
+--
+
+Function :func:`~uu.encode` now accepts an optional *backtick*
+keyword argument.  When it's true, zeros are represented by ``'`'``
+instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
 
 Optimizations

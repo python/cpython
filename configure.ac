@@ -29,7 +29,7 @@ AC_SUBST(GITVERSION)
 AC_SUBST(GITTAG)
 AC_SUBST(GITBRANCH)
 
-if test -e $srcdir/.git/HEAD
+if test -e $srcdir/.git
 then
 AC_CHECK_PROG(HAS_GIT, git, found, not-found)
 else
@@ -1078,13 +1078,6 @@ case `"$ac_prog" -V 2>&1 < /dev/null` in
 esac
 AC_MSG_RESULT($GNULD)
 
-AC_C_INLINE
-if test "$ac_cv_c_inline" != no ; then
-        AC_DEFINE(USE_INLINE, 1, [Define to use the C99 inline keyword.])
-        AC_SUBST(USE_INLINE)
-fi
-
-
 AC_MSG_CHECKING(for --enable-shared)
 AC_ARG_ENABLE(shared,
               AS_HELP_STRING([--enable-shared], [disable/enable building shared python library]))
@@ -1447,6 +1440,7 @@ esac
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST(OPT)
+AC_SUBST(CFLAGS_ALIASING)
 if test "${OPT-unset}" = "unset"
 then
     case $GCC in
@@ -1459,11 +1453,27 @@ then
            WRAP="-fwrapv"
         fi
 
-        # Clang also needs -fwrapv
         case $CC in
-            *clang*) WRAP="-fwrapv"
-            ;;
+            *clang*)
+                cc_is_clang=1
+                ;;
+            *)
+                if $CC --version 2>&1 | grep -q clang
+                then
+                    cc_is_clang=1
+                else
+                    cc_is_clang=
+                fi
         esac
+
+        if test -n "${cc_is_clang}"
+        then
+            # Clang also needs -fwrapv
+            WRAP="-fwrapv"
+            # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
+            # see Makefile.pre.in for more information
+            CFLAGS_ALIASING="-fno-strict-aliasing"
+        fi
 
 	case $ac_cv_prog_cc_g in
 	yes)
@@ -1471,18 +1481,21 @@ then
 		# Optimization messes up debuggers, so turn it off for
 		# debug builds.
                 if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall $STRICT_PROTO"
+                    OPT="-g -Og -Wall"
                 else
-                    OPT="-g -O0 -Wall $STRICT_PROTO"
+                    OPT="-g -O0 -Wall"
                 fi
 	    else
-		OPT="-g $WRAP -O3 -Wall $STRICT_PROTO"
+		OPT="-g $WRAP -O3 -Wall"
 	    fi
 	    ;;
 	*)
-	    OPT="-O3 -Wall $STRICT_PROTO"
+	    OPT="-O3 -Wall"
 	    ;;
 	esac
+
+	OPT="$OPT $STRICT_PROTO"
+
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
 	    ;;
@@ -2716,7 +2729,8 @@ esac
 
 # check for systems that require aligned memory access
 AC_MSG_CHECKING(aligned memory access is required)
-AC_TRY_RUN([
+AC_CACHE_VAL(ac_cv_aligned_required,
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main()
 {
     char s[16];
@@ -2728,18 +2742,16 @@ int main()
     if (*p1 == *p2)
         return 1;
     return 0;
-}
-              ],
-     [aligned_required=no],
-     [aligned_required=yes],
-     [aligned_required=yes])
-
-if test "$aligned_required" = yes ; then
+}]])],
+[ac_cv_aligned_required=no],
+[ac_cv_aligned_required=yes],
+[ac_cv_aligned_required=yes])
+])
+AC_MSG_RESULT($ac_cv_aligned_required)
+if test "$ac_cv_aligned_required" = yes ; then
   AC_DEFINE([HAVE_ALIGNED_REQUIRED], [1],
     [Define if aligned memory access is required])
 fi
-AC_MSG_RESULT($aligned_required)
-
 
 # str, bytes and memoryview hash algorithm
 AH_TEMPLATE(Py_HASH_ALGORITHM,
