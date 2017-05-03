@@ -175,12 +175,8 @@ class ParseTest(unittest.TestCase):
         with self.assertRaises(SAXException):
             self.check_parse(BytesIO(xml_bytes(self.data, 'iso-8859-1', None)))
         make_xml_file(self.data, 'iso-8859-1', None)
-        with support.check_warnings(('unclosed file', ResourceWarning)):
-            # XXX Failed parser leaks an opened file.
-            with self.assertRaises(SAXException):
-                self.check_parse(TESTFN)
-            # Collect leaked file.
-            gc.collect()
+        with self.assertRaises(SAXException):
+            self.check_parse(TESTFN)
         with open(TESTFN, 'rb') as f:
             with self.assertRaises(SAXException):
                 self.check_parse(f)
