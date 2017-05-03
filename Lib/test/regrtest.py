@@ -901,10 +901,9 @@ class saved_test_environment:
                     print >>sys.stderr, (
                           "Warning -- {} was modified by {}".format(
                                                  name, self.testname))
-                    if self.verbose > 1 and not self.pgo:
-                        print >>sys.stderr, (
-                              "  Before: {}\n  After:  {} ".format(
-                                                  original, current))
+                    print >>sys.stderr, (
+                          "  Before: {}\n  After:  {} ".format(
+                                              original, current))
             # XXX (ncoghlan): for most resources (e.g. sys.path) identity
             # matters at least as much as value. For others (e.g. cwd),
             # identity is irrelevant. Should we add a mechanism to check
