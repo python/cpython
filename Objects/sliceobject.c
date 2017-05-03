@@ -147,6 +147,13 @@ _PySlice_Unpack(PyObject *_r,
                             "slice step cannot be zero");
             return -1;
         }
+        /* Here *step might be -PY_SSIZE_T_MAX-1; in this case we replace it
+         * with -PY_SSIZE_T_MAX.  This doesn't affect the semantics, and it
+         * guards against later undefined behaviour resulting from code that
+         * does "step = -step" as part of a slice reversal.
+         */
+        if (*step < -PY_SSIZE_T_MAX)
+            *step = -PY_SSIZE_T_MAX;
     }
 
     if (r->start == Py_None) {
