@@ -1982,8 +1982,7 @@ _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
     if (operation != PY_ITERSEARCH_INDEX)
         goto Done;
 
-    PyErr_SetString(PyExc_ValueError,
-                    "sequence.index(x): x not in sequence");
+    PyErr_Format(PyExc_ValueError, "'%.100R' not in sequence", obj);
     /* fall into failure code */
 Fail:
     n = -1;

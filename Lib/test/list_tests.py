@@ -317,6 +317,10 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(a, [0])
         a.remove(0)
         self.assertEqual(a, [])
+        # Verify that exception message contains value (issue13349)
+        with self.assertRaises(ValueError) as cm:
+            a.remove(0)
+        self.assertIn("0", str(cm.exception))
 
         self.assertRaises(ValueError, a.remove, 0)
 

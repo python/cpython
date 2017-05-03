@@ -178,6 +178,10 @@ class OperatorTestCase:
         self.assertRaises(TypeError, operator.indexOf, None, None)
         self.assertEqual(operator.indexOf([4, 3, 2, 1], 3), 1)
         self.assertRaises(ValueError, operator.indexOf, [4, 3, 2, 1], 0)
+        # Verify that exception message contains value (issue13349)
+        with self.assertRaises(ValueError) as cm:
+            operator.indexOf([0, 1, 2], None)
+        self.assertIn(repr(None), str(cm.exception))
 
     def test_invert(self):
         operator = self.module

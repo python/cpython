@@ -1599,10 +1599,7 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
 
     if (!self->extra) {
         /* element has no children, so raise exception */
-        PyErr_SetString(
-            PyExc_ValueError,
-            "list.remove(x): x not in list"
-            );
+        PyErr_Format(PyExc_ValueError, "\"%.100R\" not in Element", subelement);
         return NULL;
     }
 
@@ -1618,10 +1615,7 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
 
     if (i >= self->extra->length) {
         /* subelement is not in children, so raise exception */
-        PyErr_SetString(
-            PyExc_ValueError,
-            "list.remove(x): x not in list"
-            );
+        PyErr_Format(PyExc_ValueError, "\"%.100R\" not in Element", subelement);
         return NULL;
     }
 

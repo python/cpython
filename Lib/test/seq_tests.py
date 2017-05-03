@@ -376,7 +376,10 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(u.index(0, 3), 3)
         self.assertEqual(u.index(0, 3, 4), 3)
         self.assertRaises(ValueError, u.index, 2, 0, -10)
-
+        # Verify that exception message contains value (issue13349)
+        with self.assertRaises(ValueError) as cm:
+            u.index(None)
+        self.assertIn(repr(None), str(cm.exception))
         self.assertRaises(TypeError, u.index)
 
         class BadExc(Exception):

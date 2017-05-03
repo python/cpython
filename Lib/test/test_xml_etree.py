@@ -315,9 +315,10 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element, '<tag key="value"><subtag /></tag>') # 4
         element.remove(subelement)
         self.serialize_check(element, '<tag key="value" />') # 5
+        # Verify that exception message contains value (issue13349)
         with self.assertRaises(ValueError) as cm:
             element.remove(subelement)
-        self.assertEqual(str(cm.exception), 'list.remove(x): x not in list')
+        self.assertIn(repr(subelement), str(cm.exception))
         self.serialize_check(element, '<tag key="value" />') # 6
         element[0:0] = [subelement, subelement, subelement]
         self.serialize_check(element[1], '<subtag />')
