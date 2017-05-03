@@ -1045,6 +1045,14 @@ initsite(void)
 static int
 is_valid_fd(int fd)
 {
+#ifdef __APPLE__
+    /* bpo-30225: On macOS Tiger, when stdout is redirected to a pipe
+       and the other side of the pipe is closed, dup(1) succeed, whereas
+       fstat(1, &st) fails with EBADF. Prefer fstat() over dup() to detect
+       such error. */
+    struct stat st;
+    return (fstat(fd, &st) == 0);
+#else
     int fd2;
     if (fd < 0)
         return 0;
@@ -1057,6 +1065,7 @@ is_valid_fd(int fd)
         close(fd2);
     _Py_END_SUPPRESS_IPH
     return fd2 >= 0;
+#endif
 }
 
 /* returns Py_None if the fd is not valid */
