@@ -38,7 +38,7 @@ test_source = """\
 
 import sys
 import time
-from multiprocessing import Pool, set_start_method
+from multiprocessing import Pool, Process, set_start_method
 
 # We use this __main__ defined function in the map call below in order to
 # check that multiprocessing in correctly running the unguarded
@@ -65,6 +65,13 @@ if __name__ == '__main__':
             raise RuntimeError("Timed out waiting for results")
     results.sort()
     print(start_method, "->", results)
+    sys.stdout.close()
+    sys.stderr.close()
+    process = Process(target=f, args=(1,))
+    process.start()
+    process.join(10)
+    if process.is_alive():
+        raise RuntimeError("Timed out waiting for single process")
 """
 
 test_source_main_skipped_in_children = """\
