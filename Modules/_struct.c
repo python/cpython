@@ -552,7 +552,6 @@ static int
 np_ubyte(char *p, PyObject *v, const formatdef *f)
 {
     long x;
-    unsigned char y;
     if (get_long(v, &x) < 0)
         return -1;
     if (x < 0 || x > 255){
@@ -560,8 +559,7 @@ np_ubyte(char *p, PyObject *v, const formatdef *f)
                         "ubyte format requires 0 <= number <= 255");
         return -1;
     }
-    y = (unsigned char)x;
-    *p = *((char *)&y);
+    *(unsigned char *)p = (unsigned char)x;
     return 0;
 }
 
@@ -890,6 +888,7 @@ bp_int(char *p, PyObject *v, const formatdef *f)
 {
     long x;
     Py_ssize_t i;
+    unsigned char *q = (unsigned char *)p;
     if (get_long(v, &x) < 0)
         return -1;
     i = f->size;
@@ -902,8 +901,7 @@ bp_int(char *p, PyObject *v, const formatdef *f)
 #endif
     }
     do {
-        unsigned char y = (unsigned char)(x & 0xffL);
-        p[--i] = *((char *)&y);
+        q[--i] = (unsigned char)(x & 0xffL);
         x >>= 8;
     } while (i > 0);
     return 0;
@@ -914,6 +912,7 @@ bp_uint(char *p, PyObject *v, const formatdef *f)
 {
     unsigned long x;
     Py_ssize_t i;
+    unsigned char *q = (unsigned char *)p;
     if (get_ulong(v, &x) < 0)
         return -1;
     i = f->size;
@@ -924,8 +923,7 @@ bp_uint(char *p, PyObject *v, const formatdef *f)
             RANGE_ERROR(x, f, 1, maxint - 1);
     }
     do {
-        unsigned char y = (unsigned char)(x & 0xffUL);
-        p[--i] = *((char *)&y);
+        q[--i] = (unsigned char)(x & 0xffUL);
         x >>= 8;
     } while (i > 0);
     return 0;
@@ -1111,6 +1109,7 @@ lp_int(char *p, PyObject *v, const formatdef *f)
 {
     long x;
     Py_ssize_t i;
+    unsigned char *q = (unsigned char *)p;
     if (get_long(v, &x) < 0)
         return -1;
     i = f->size;
@@ -1123,8 +1122,7 @@ lp_int(char *p, PyObject *v, const formatdef *f)
 #endif
     }
     do {
-        unsigned char y = (unsigned char)(x & 0xffL);
-        *p++ = *((char *)&y);
+        *q++ = (unsigned char)(x & 0xffL);
         x >>= 8;
     } while (--i > 0);
     return 0;
@@ -1135,6 +1133,7 @@ lp_uint(char *p, PyObject *v, const formatdef *f)
 {
     unsigned long x;
     Py_ssize_t i;
+    unsigned char *q = (unsigned char *)p;
     if (get_ulong(v, &x) < 0)
         return -1;
     i = f->size;
@@ -1145,8 +1144,7 @@ lp_uint(char *p, PyObject *v, const formatdef *f)
             RANGE_ERROR(x, f, 1, maxint - 1);
     }
     do {
-        unsigned char y = (unsigned char)(x & 0xffUL);
-        *p++ = *((char *)&y);
+        *q++ = (unsigned char)(x & 0xffUL);
         x >>= 8;
     } while (--i > 0);
     return 0;
