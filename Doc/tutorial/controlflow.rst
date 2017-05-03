@@ -444,7 +444,7 @@ Here's an example that fails due to this restriction::
    ...
    >>> function(0, a=0)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    TypeError: function() got multiple values for keyword argument 'a'
 
 When a final formal parameter of the form ``**name`` is present, it receives a

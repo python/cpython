@@ -311,7 +311,7 @@ it must be parenthesized. ::
    [(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25)]
    >>> # the tuple must be parenthesized, otherwise an error is raised
    >>> [x, x**2 for x in range(6)]
-     File "<stdin>", line 1
+     File "<stdin>", line 1, in <module>
        [x, x**2 for x in range(6)]
                   ^
    SyntaxError: invalid syntax

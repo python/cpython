@@ -425,7 +425,7 @@ Simple example::
 
    >>> [1, 2, 3].remove(42)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ValueError: list.remove(x): x not in list
 
 That doctest succeeds if :exc:`ValueError` is raised, with the ``list.remove(x):
@@ -449,7 +449,7 @@ multi-line detail::
 
    >>> raise ValueError('multi\n    line\ndetail')
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    ValueError: multi
        line
    detail
@@ -607,7 +607,7 @@ doctest decides whether actual output matches an example's expected output:
 
       >>> (1, 2)[3] = 'moo'
       Traceback (most recent call last):
-        File "<stdin>", line 1, in ?
+        File "<stdin>", line 1, in <module>
       TypeError: object doesn't support item assignment
 
    passes under Python 2.3 and later Python versions with the flag specified,
