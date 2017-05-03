@@ -220,6 +220,7 @@ ENV_CHANGED = -1
 SKIPPED = -2
 RESOURCE_DENIED = -3
 INTERRUPTED = -4
+CHILD_ERROR = -5   # error in a child process
 
 from test import test_support
 
@@ -466,7 +467,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     def accumulate_result(test, result):
         ok, test_time = result
-        test_times.append((test_time, test))
+        if ok not in (CHILD_ERROR, INTERRUPTED):
+            test_times.append((test_time, test))
         if ok == PASSED:
             good.append(test)
         elif ok == FAILED:
@@ -478,6 +480,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif ok == RESOURCE_DENIED:
             skipped.append(test)
             resource_denieds.append(test)
+        else:
+            # CHILD_ERROR
+            bad.append(test)
 
     if forever:
         def test_forever(tests=list(selected)):
@@ -533,9 +538,17 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                                    universal_newlines=True,
                                    close_fds=(os.name != 'nt'))
                     stdout, stderr = popen.communicate()
+                    retcode = popen.wait()
+
                     # Strip last refcount output line if it exists, since it
                     # comes from the shutdown of the interpreter in the subcommand.
                     stderr = debug_output_pat.sub("", stderr)
+
+                    if retcode != 0:
+                        result = (CHILD_ERROR, "Exit code %s" % retcode)
+                        output.put((test, stdout.rstrip(), stderr.rstrip(),
+                                    result))
+
                     stdout, _, result = stdout.strip().rpartition("\n")
                     if not result:
                         output.put((None, None, None, None))
@@ -545,9 +558,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             except BaseException:
                 output.put((None, None, None, None))
                 raise
+
         workers = [Thread(target=work) for i in range(use_mp)]
         for worker in workers:
             worker.start()
+
         finished = 0
         test_index = 1
         try:
@@ -556,21 +571,24 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 if test is None:
                     finished += 1
                     continue
-                if stdout:
-                    print stdout
-                if stderr and not pgo:
-                    print >>sys.stderr, stderr
-                sys.stdout.flush()
-                sys.stderr.flush()
-                if result[0] == INTERRUPTED:
-                    assert result[1] == 'KeyboardInterrupt'
-                    raise KeyboardInterrupt   # What else?
                 accumulate_result(test, result)
                 if not quiet:
                     fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
                     print(fmt.format(
                         test_count_width, test_index, test_count,
                         len(bad), test))
+
+                if stdout:
+                    print stdout
+                sys.stdout.flush()
+                if stderr and not pgo:
+                    print >>sys.stderr, stderr
+                sys.stderr.flush()
+
+                if result[0] == INTERRUPTED:
+                    assert result[1] == 'KeyboardInterrupt'
+                    raise KeyboardInterrupt   # What else?
+
                 test_index += 1
         except KeyboardInterrupt:
             interrupted = True
@@ -738,6 +756,7 @@ def runtest(test, verbose, quiet,
            for Profile Guided Optimization build
 
     Returns one of the test result constants:
+        CHILD_ERROR      Child process crashed
         INTERRUPTED      KeyboardInterrupt when run under -j
         RESOURCE_DENIED  test skipped because resource denied
         SKIPPED          test skipped for some other reason
