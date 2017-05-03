@@ -211,47 +211,9 @@ PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* args)
     return node->data;
 }
 
-PyObject* pysqlite_cache_display(pysqlite_Cache* self, PyObject* args)
-{
-    pysqlite_Node* ptr;
-    PyObject* prevkey;
-    PyObject* nextkey;
-    PyObject* display_str;
-
-    ptr = self->first;
-
-    while (ptr) {
-        if (ptr->prev) {
-            prevkey = ptr->prev->key;
-        } else {
-            prevkey = Py_None;
-        }
-
-        if (ptr->next) {
-            nextkey = ptr->next->key;
-        } else {
-            nextkey = Py_None;
-        }
-
-        display_str = PyUnicode_FromFormat("%S <- %S -> %S\n",
-                                           prevkey, ptr->key, nextkey);
-        if (!display_str) {
-            return NULL;
-        }
-        PyObject_Print(display_str, stdout, Py_PRINT_RAW);
-        Py_DECREF(display_str);
-
-        ptr = ptr->next;
-    }
-
-    Py_RETURN_NONE;
-}
-
 static PyMethodDef cache_methods[] = {
     {"get", (PyCFunction)pysqlite_cache_get, METH_O,
         PyDoc_STR("Gets an entry from the cache or calls the factory function to produce one.")},
-    {"display", (PyCFunction)pysqlite_cache_display, METH_NOARGS,
-        PyDoc_STR("For debugging only.")},
     {NULL, NULL}
 };
 
