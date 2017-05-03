@@ -1,4 +1,4 @@
-version: 3.6.1rc1+.{build}
+version: 3.6.1+.{build}
 clone_depth: 5
 build_script:
 - cmd: PCbuild\build.bat -e
