@@ -317,6 +317,10 @@ Extension Modules
 Library
 -------
 
+- bpo-28087: On macOS, check for broken poll() at runtime on macOS Sierra
+  16.0.x-16.5.x. Disable select.poll() (remove select.poll) if poll() is
+  broken.
+
 - bpo-30103: binascii.b2a_uu() and uu.encode() now support using ``'`'``
   as zero instead of space.
 

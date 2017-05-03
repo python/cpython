@@ -12,11 +12,14 @@
 #include <structmember.h>
 
 #ifdef HAVE_SYS_DEVPOLL_H
-#include <sys/resource.h>
-#include <sys/devpoll.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#  include <sys/resource.h>
+#  include <sys/devpoll.h>
+#  include <sys/types.h>
+#  include <sys/stat.h>
+#  include <fcntl.h>
+#endif
+#ifdef __APPLE__
+#  include <sys/utsname.h>   /* select_have_broken_poll() */
 #endif
 
 #ifdef __APPLE__
@@ -1182,10 +1185,27 @@ select_devpoll(PyObject *self, PyObject *unused)
  */
 static int select_have_broken_poll(void)
 {
-    int poll_test;
     int filedes[2];
-
+    struct utsname u;
     struct pollfd poll_struct = { 0, POLLIN|POLLPRI|POLLOUT, 0 };
+    int res;
+    const char *release;
+
+    res = uname(&u);
+    if (res < 0) {
+        /* unlikely uname() failure: disable poll() */
+        return 1;
+    }
+
+    release = u.release;
+    /* bpo-28087: macOS 16.0.x-16.5.x has a broken poll().
+     * poll() with no file descriptors registered returns immediately,
+     * regardless of the timeout. */
+    if (strncmp(release, "16.", 3) == 0
+       && '0' <= release[3] && release[3] <= '5'
+       && release[4] == '.') {
+        return 1;
+    }
 
     /* Create a file descriptor to make invalid */
     if (pipe(filedes) < 0) {
@@ -1194,10 +1214,12 @@ static int select_have_broken_poll(void)
     poll_struct.fd = filedes[0];
     close(filedes[0]);
     close(filedes[1]);
-    poll_test = poll(&poll_struct, 1, 0);
-    if (poll_test < 0) {
+
+    res = poll(&poll_struct, 1, 0);
+    if (res < 0) {
         return 1;
-    } else if (poll_test == 0 && poll_struct.revents != POLLNVAL) {
+    }
+    else if (res == 0 && poll_struct.revents != POLLNVAL) {
         return 1;
     }
     return 0;
