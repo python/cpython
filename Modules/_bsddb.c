@@ -931,11 +931,13 @@ newDBObject(DBEnvObject* arg, int flags)
     self->sibling_prev_p_txn=NULL;
     self->sibling_next_txn=NULL;
 
-    if (self->myenvobj)
+    if (self->myenvobj) {
         self->moduleFlags = self->myenvobj->moduleFlags;
-    else
+    }
+    else {
         self->moduleFlags.getReturnsNone = DEFAULT_GET_RETURNS_NONE;
         self->moduleFlags.cursorSetReturnsNone = DEFAULT_CURSOR_SET_RETURNS_NONE;
+    }
 
     MYDB_BEGIN_ALLOW_THREADS;
     err = db_create(&self->db, db_env, flags);
