@@ -19,6 +19,7 @@ class FinderTests(abc.FinderTests):
             warnings.simplefilter('ignore', DeprecationWarning)
             return importer.find_module(fullname)
 
+
     def test_module(self):
         self.assertTrue(self.find_module(util.EXTENSIONS.name))
 
@@ -35,9 +36,26 @@ class FinderTests(abc.FinderTests):
         self.assertIsNone(self.find_module('asdfjkl;'))
 
 
+class FinderTestsPathLike(FinderTests):
+
+    """Test the finder with PathLike path """
+
+    def find_module(self, fullname):
+        importer = self.machinery.FileFinder(util.EXTENSIONS.pathlike,
+                                            (self.machinery.ExtensionFileLoader,
+                                             self.machinery.EXTENSION_SUFFIXES))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            return importer.find_module(fullname)
+
+
 (Frozen_FinderTests,
  Source_FinderTests
  ) = util.test_both(FinderTests, machinery=machinery)
+
+(Frozen_FinderTestsPathLike,
+ Source_FinderTestsPathLike
+ ) = util.test_both(FinderTestsPathLike, machinery=machinery)
 
 
 if __name__ == '__main__':

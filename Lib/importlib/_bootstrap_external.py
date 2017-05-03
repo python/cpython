@@ -802,7 +802,7 @@ class FileLoader:
         """Cache the module name and the path to the file found by the
         finder."""
         self.name = fullname
-        self.path = path
+        self.path = path.__fspath__() if hasattr(path, '__fspath__') else path
 
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and
@@ -908,7 +908,7 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
 
     def __init__(self, name, path):
         self.name = name
-        self.path = path
+        self.path = path.__fspath__() if hasattr(path, '__fspath__') else path
 
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and
@@ -960,7 +960,7 @@ class _NamespacePath:
 
     def __init__(self, name, path, path_finder):
         self._name = name
-        self._path = path
+        self._path = path.__fspath__() if hasattr(path, '__fspath__') else path
         self._last_parent_path = tuple(self._get_parent_path())
         self._path_finder = path_finder
 
@@ -1203,7 +1203,7 @@ class FileFinder:
             loaders.extend((suffix, loader) for suffix in suffixes)
         self._loaders = loaders
         # Base (directory) path
-        self.path = path or '.'
+        self.path = path.__fspath__() if hasattr(path, '__fspath__') else path or '.'
         self._path_mtime = -1
         self._path_cache = set()
         self._relaxed_path_cache = set()

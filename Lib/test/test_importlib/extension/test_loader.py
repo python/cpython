@@ -82,6 +82,44 @@ class LoaderTests(abc.LoaderTests):
  Source_LoaderTests
  ) = util.test_both(LoaderTests, machinery=machinery)
 
+
+class LoaderPathLikeTests(LoaderTests):
+
+    """Test load_module() for extension modules."""
+
+    def setUp(self):
+        self.loader = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
+                                                         util.EXTENSIONS.file_pathlike)
+
+    def test_equality(self):
+        other = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
+                                                   util.EXTENSIONS.file_pathlike)
+        self.assertEqual(self.loader, other)
+
+    def test_inequality(self):
+        other = self.machinery.ExtensionFileLoader('_' + util.EXTENSIONS.name,
+                                                   util.EXTENSIONS.file_pathlike)
+        self.assertNotEqual(self.loader, other)
+
+    def test_module(self):
+        with util.uncache(util.EXTENSIONS.name):
+            module = self.load_module(util.EXTENSIONS.name)
+            for attr, value in [('__name__', util.EXTENSIONS.name),
+                                ('__file__', util.EXTENSIONS.file_pathlike),
+                                ('__package__', '')]:
+                if attr == '__file__':
+                    self.assertEqual(getattr(module, attr), os.fspath(value))
+                else:
+                    self.assertEqual(getattr(module, attr), value)
+            self.assertIn(util.EXTENSIONS.name, sys.modules)
+            self.assertIsInstance(module.__loader__,
+                                  self.machinery.ExtensionFileLoader)
+
+(Frozen_LoaderPathLikeTests,
+ Source_LoaderPathLikeTests
+ ) = util.test_both(LoaderPathLikeTests, machinery=machinery)
+
+
 class MultiPhaseExtensionModuleTests(abc.LoaderTests):
     """Test loading extension modules with multi-phase initialization (PEP 489)
     """

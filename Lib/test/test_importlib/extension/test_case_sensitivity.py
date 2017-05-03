@@ -36,9 +36,28 @@ class ExtensionModuleCaseSensitivityTest(util.CASEOKTestBase):
             self.assertTrue(hasattr(loader, 'load_module'))
 
 
+@unittest.skipIf(util.EXTENSIONS.filename is None, '_testcapi not available')
+@util.case_insensitive_tests
+class ExtensionModuleCaseSensitivityPathLikeTest(ExtensionModuleCaseSensitivityTest):
+
+    def find_module(self):
+        good_name = util.EXTENSIONS.name
+        bad_name = good_name.upper()
+        assert good_name != bad_name
+        finder = self.machinery.FileFinder(util.EXTENSIONS.pathlike,
+                                          (self.machinery.ExtensionFileLoader,
+                                           self.machinery.EXTENSION_SUFFIXES))
+        return finder.find_module(bad_name)
+
+
 (Frozen_ExtensionCaseSensitivity,
  Source_ExtensionCaseSensitivity
  ) = util.test_both(ExtensionModuleCaseSensitivityTest, importlib=importlib,
+                    machinery=machinery)
+
+(Frozen_ExtensionCaseSensitivityPathLike,
+ Source_ExtensionCaseSensitivityPathLike,
+ ) = util.test_both(ExtensionModuleCaseSensitivityPathLikeTest, importlib=importlib,
                     machinery=machinery)
 
 
