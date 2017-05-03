@@ -784,7 +784,7 @@ using the :func:`next` built-in function; this example shows how it all works::
    'c'
    >>> next(it)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
        next(it)
    StopIteration
 

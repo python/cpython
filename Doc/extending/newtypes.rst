@@ -124,7 +124,7 @@ our objects and in some error messages, for example::
 
    >>> "" + noddy.new_noddy()
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    TypeError: cannot add type "noddy.Noddy" to string
 
 Note that the name is a dotted name that includes both the module name and the
