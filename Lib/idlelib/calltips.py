@@ -149,7 +149,7 @@ def get_argspec(ob):
         try:
             argspec = str(inspect.signature(fob))
         except ValueError:
-            argspec = "This function has an invalid method signature"
+            argspec = _invalid_method
             return argspec
 
         if isinstance(ob, type):
