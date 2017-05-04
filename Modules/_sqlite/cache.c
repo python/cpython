@@ -65,9 +65,11 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
         return -1;
     }
 
-    /* minimum cache size is 5 entries */
-    if (size < 5) {
-        size = 5;
+    /* minimum cache size is 1 entry */
+    if (size < 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Minimum cache size is 1");
+        return -1;
     }
     self->size = size;
     self->first = NULL;

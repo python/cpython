@@ -144,9 +144,18 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     }
     Py_DECREF(isolation_level);
 
-    self->statement_cache = (pysqlite_Cache*)PyObject_CallFunction((PyObject*)&pysqlite_CacheType, "Oi", self, cached_statements);
-    if (PyErr_Occurred()) {
-        return -1;
+    if (cached_statements != 0) {
+        self->statement_cache = (pysqlite_Cache*)PyObject_CallFunction((PyObject*)&pysqlite_CacheType, "Oi", self, cached_statements);
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        /* By default, the Cache class INCREFs the factory in its initializer, and
+         * decrefs it in its deallocator method. Since this would create a circular
+         * reference here, we're breaking it by decrementing self, and telling the
+         * cache class to not decref the factory (self) in its deallocator.
+         */
+        self->statement_cache->decref_factory = 0;
+        Py_DECREF(self);
     }
 
     self->created_statements = 0;
@@ -158,14 +167,6 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     if (!self->statements || !self->cursors) {
         return -1;
     }
-
-    /* By default, the Cache class INCREFs the factory in its initializer, and
-     * decrefs it in its deallocator method. Since this would create a circular
-     * reference here, we're breaking it by decrementing self, and telling the
-     * cache class to not decref the factory (self) in its deallocator.
-     */
-    self->statement_cache->decref_factory = 0;
-    Py_DECREF(self);
 
     self->detect_types = detect_types;
     self->timeout = timeout;
@@ -238,7 +239,9 @@ void pysqlite_do_all_statements(pysqlite_Connection* self, int action, int reset
 
 void pysqlite_connection_dealloc(pysqlite_Connection* self)
 {
-    Py_XDECREF(self->statement_cache);
+    if (self->statement_cache) {
+        Py_XDECREF(self->statement_cache);
+    }
 
     /* Clean up if user has not called .close() explicitly. */
     if (self->db) {

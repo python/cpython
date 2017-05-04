@@ -487,9 +487,16 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         (void)pysqlite_statement_reset(self->statement);
     }
 
-    Py_XSETREF(self->statement,
-              (pysqlite_Statement *)pysqlite_cache_get(self->connection->statement_cache, func_args));
-    Py_DECREF(func_args);
+    if (self->connection->statement_cache) {
+        /* We look in statment cache */
+        Py_XSETREF(self->statement,
+                  (pysqlite_Statement *)pysqlite_cache_get(self->connection->statement_cache, func_args));
+        Py_DECREF(func_args);
+    } else {
+        /* We don't have statment cache */
+        Py_XSETREF(self->statement,
+                  (pysqlite_Statement *)PyObject_CallFunction((PyObject*)self->connection, "O", func_args));
+    }
 
     if (!self->statement) {
         goto error;
