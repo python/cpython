@@ -101,7 +101,7 @@ SRE(at)(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
 }
 
 LOCAL(int)
-SRE(char_loc_ignore)(SRE_STATE* state, SRE_CODE ch, SRE_CODE pattern)
+SRE(char_loc_ignore)(SRE_STATE* state, SRE_CODE pattern, SRE_CODE ch)
 {
     return ch == pattern
         || (SRE_CODE) state->lower(ch) == pattern
