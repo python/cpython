@@ -122,6 +122,7 @@ _MAX_LINES = 5  # enough for bytes
 _INDENT = ' '*4  # for wrapped signatures
 _first_param = re.compile(r'(?<=\()\w*\,?\s*')
 _default_callable_argspec = "See source or doc"
+_invalid_method = "invalid method signature"
 
 
 def get_argspec(ob):

@@ -66,6 +66,11 @@ class Get_signatureTest(unittest.TestCase):
         gtest(types.MethodType, "method(function, instance)")
         gtest(SB(), default_tip)
 
+        import re
+        p = re.compile('')
+        gtest(re.sub, '(pattern, repl, string, count=0, flags=0')
+        gtest(p.sub, '(repl, string, count=0)')
+
     def test_signature_wrap(self):
         if textwrap.TextWrapper.__doc__ is not None:
             self.assertEqual(signature(textwrap.TextWrapper), '''\
@@ -142,7 +147,7 @@ bytes() -> empty bytes object''')
         class Test:
             def __call__(*, a): pass
 
-        mtip = "This function has an invalid method signature"
+        mtip = ct._invalid_method
         self.assertEqual(signature(C().m2), mtip)
         self.assertEqual(signature(Test()), mtip)
 
