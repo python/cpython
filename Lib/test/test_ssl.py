@@ -2064,7 +2064,7 @@ if _have_threads:
 
         class EchoServer (asyncore.dispatcher):
 
-            class ConnectionHandler (asyncore.dispatcher_with_send):
+            class ConnectionHandler(asyncore.dispatcher_with_send):
 
                 def __init__(self, conn, certfile):
                     self.socket = test_wrap_socket(conn, server_side=True,
@@ -2155,6 +2155,8 @@ if _have_threads:
             self.join()
             if support.verbose:
                 sys.stdout.write(" cleanup: successfully joined.\n")
+            # make sure that ConnectionHandler is removed from socket_map
+            asyncore.close_all(ignore_all=True)
 
         def start (self, flag=None):
             self.flag = flag

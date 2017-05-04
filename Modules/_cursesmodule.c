@@ -3335,6 +3335,9 @@ PyInit__curses(void)
     SetDictInt("A_BLINK",               A_BLINK);
     SetDictInt("A_DIM",                 A_DIM);
     SetDictInt("A_BOLD",                A_BOLD);
+#ifdef A_ITALIC
+    SetDictInt("A_ITALIC",              A_ITALIC);
+#endif
     SetDictInt("A_ALTCHARSET",          A_ALTCHARSET);
 #if !defined(__NetBSD__)
     SetDictInt("A_INVIS",           A_INVIS);

@@ -10,6 +10,10 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-12414: sys.getsizeof() on a code object now returns the sizes
+  which includes the code struct and sizes of objects which it references.
+  Patch by Dong-hee Na.
+
 - bpo-29839: len() now raises ValueError rather than OverflowError if
   __len__() returned a large negative integer.
 
@@ -315,6 +319,40 @@ Library
 
 - bpo-30080: Added the --duplicate option for CLI of timeit.
 
+- bpo-30103: binascii.b2a_uu() and uu.encode() now support using ``'`'``
+  as zero instead of space.
+
+- bpo-28556: Various updates to typing module: add typing.NoReturn type, use
+  WrapperDescriptorType, minor bug-fixes.  Original PRs by
+  Jim Fasarakis-Hilliard and Ivan Levkivskyi.
+
+- bpo-30205: Fix getsockname() for unbound AF_UNIX sockets on Linux.
+
+- bpo-30228: The seek() and tell() methods of io.FileIO now set the internal
+  seekable attribute to avoid one syscall on open() (in buffered or text mode).
+
+- bpo-30190: unittest's assertAlmostEqual and assertNotAlmostEqual provide a
+  better message in case of failure which includes the difference between
+  left and right arguments.  (patch by Giampaolo Rodola')
+
+- bpo-30101: Add support for curses.A_ITALIC.
+
+- bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch
+  by Nate Soares.
+
+- bpo-29960: Preserve generator state when _random.Random.setstate()
+  raises an exception.  Patch by Bryan Olson.
+
+- bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
+
+- bpo-22352: Column widths in the output of dis.dis() are now adjusted for
+  large line numbers and instruction offsets.
+
+- bpo-30061: Fixed crashes in IOBase methods __next__() and readlines() when
+  readline() or __next__() respectively return non-sizeable object.
+  Fixed possible other errors caused by not checking results of PyObject_Size(),
+  PySequence_Size(), or PyMapping_Size().
+
 - bpo-10076: Compiled regular expression and match objects in the re module
   now support copy.copy() and copy.deepcopy() (they are considered atomic).
 
@@ -494,7 +532,7 @@ Library
 - Issue #29444: Fixed out-of-bounds buffer access in the group() method of
   the match object.  Based on patch by WGH.
 
-- Issue #29377: Add SlotWrapperType, MethodWrapperType, and
+- Issue #29377: Add WrapperDescriptorType, MethodWrapperType, and
   MethodDescriptorType built-in types to types module.
   Original patch by Manuel Krebber.
 
@@ -990,6 +1028,10 @@ Documentation
 Build
 -----
 
+- bpo-23404: Don't regenerate generated files based on file modification time
+  anymore: the action is now explicit. Replace ``make touch`` with
+  ``make regen-all``.
+
 - bpo-29643: Fix ``--enable-optimization`` didn't work.
 
 - bpo-27593: sys.version and the platform module python_build(),
@@ -1086,6 +1128,12 @@ Tools/Demos
 
 Tests
 -----
+
+- bpo-30197: Enhanced functions swap_attr() and swap_item() in the
+  test.support module.  They now work when delete replaced attribute or item
+  inside the with statement.  The old value of the attribute or item (or None
+  if it doesn't exist) now will be assigned to the target of the "as" clause,
+  if there is one.
 
 - Issue #24932: Use proper command line parsing in _testembed
 
