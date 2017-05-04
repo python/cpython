@@ -134,6 +134,18 @@ class _AttributeHolder(object):
         return []
 
 
+def _copy_items(items):
+    if items is None:
+        return []
+    # The copy module is used only in the 'append' and 'append_const'
+    # actions, and it is needed only when the default value isn't a list.
+    # Delay its import for speeding up the common case.
+    if type(items) is list:
+        return items[:]
+    import copy
+    items = copy.copy(items)
+
+
 # ===============
 # Formatting Help
 # ===============
@@ -947,14 +959,7 @@ class _AppendAction(Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
-        if items is None:
-            items = []
-        else:
-            # The copy module is used only in the 'append' and 'append_const'
-            # actions.  Delay its import for speeding up the case when they
-            # are not used.
-            import copy
-            items = copy.copy(items)
+        items = _copy_items(items)
         items.append(values)
         setattr(namespace, self.dest, items)
 
@@ -981,11 +986,7 @@ class _AppendConstAction(Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
-        if items is None:
-            items = []
-        else:
-            import copy
-            items = copy.copy(items)
+        items = _copy_items(items)
         items.append(self.const)
         setattr(namespace, self.dest, items)
 
