@@ -31,6 +31,9 @@ class TestAbstractAsyncContextManager(unittest.TestCase):
         manager = DefaultEnter()
         self.assertIs(await manager.__aenter__(), manager)
 
+        async with manager as context:
+            self.assertIs(manager, context)
+
     def test_exit_is_abstract(self):
         class MissingAexit(AbstractAsyncContextManager):
             pass
@@ -52,6 +55,16 @@ class TestAbstractAsyncContextManager(unittest.TestCase):
                 await super().__aexit__(*args)
 
         self.assertTrue(issubclass(DefaultEnter, AbstractAsyncContextManager))
+
+        class NoneAenter(ManagerFromScratch):
+            __aenter__ = None
+
+        self.assertFalse(issubclass(NoneAenter, AbstractAsyncContextManager))
+
+        class NoneAexit(ManagerFromScratch):
+            __aexit__ = None
+
+        self.assertFalse(issubclass(NoneAexit, AbstractAsyncContextManager))
 
 
 class AsyncContextManagerTestCase(unittest.TestCase):
