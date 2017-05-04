@@ -19,6 +19,9 @@ AC_SUBST(host)
 # pybuilddir.txt will be created by --generate-posix-vars in the Makefile
 rm -f pybuilddir.txt
 
+AC_CHECK_PROGS(PYTHON_FOR_REGEN, python$PACKAGE_VERSION python3 python, python3)
+AC_SUBST(PYTHON_FOR_REGEN)
+
 if test "$cross_compiling" = yes; then
     AC_MSG_CHECKING([for python interpreter for cross build])
     if test -z "$PYTHON_FOR_BUILD"; then
@@ -35,16 +38,12 @@ if test "$cross_compiling" = yes; then
         AC_MSG_RESULT($interp)
 	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib:$(srcdir)/Lib/$(PLATDIR) '$interp
     fi
-    # Used to comment out stuff for rebuilding generated files
-    GENERATED_COMMENT='#'
 elif test "$cross_compiling" = maybe; then
     AC_MSG_ERROR([Cross compiling required --host=HOST-TUPLE and --build=ARCH])
 else
     PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
-    GENERATED_COMMENT=''
 fi
 AC_SUBST(PYTHON_FOR_BUILD)
-AC_SUBST(GENERATED_COMMENT)
 
 dnl Ensure that if prefix is specified, it does not end in a slash. If
 dnl it does, we get path names containing '//' which is both ugly and
