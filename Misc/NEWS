@@ -10,7 +10,7 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
-- bpo-12414: sys.getsizeof() on a code object now returns the sizes 
+- bpo-12414: sys.getsizeof() on a code object now returns the sizes
   which includes the code struct and sizes of objects which it references.
   Patch by Dong-hee Na.
 
@@ -320,6 +320,22 @@ Library
 - bpo-30215: Compiled regular expression objects with the re.LOCALE flag no
   longer depend on the locale at compile time.  Only the locale at matching
   time affects the result of matching.
+
+- bpo-30103: binascii.b2a_uu() and uu.encode() now support using ``'`'``
+  as zero instead of space.
+
+- bpo-28556: Various updates to typing module: add typing.NoReturn type, use
+  WrapperDescriptorType, minor bug-fixes.  Original PRs by
+  Jim Fasarakis-Hilliard and Ivan Levkivskyi.
+
+- bpo-30205: Fix getsockname() for unbound AF_UNIX sockets on Linux.
+
+- bpo-30228: The seek() and tell() methods of io.FileIO now set the internal
+  seekable attribute to avoid one syscall on open() (in buffered or text mode).
+
+- bpo-30190: unittest's assertAlmostEqual and assertNotAlmostEqual provide a
+  better message in case of failure which includes the difference between
+  left and right arguments.  (patch by Giampaolo Rodola')
 
 - bpo-30101: Add support for curses.A_ITALIC.
 
@@ -1013,6 +1029,10 @@ Documentation
 
 Build
 -----
+
+- bpo-23404: Don't regenerate generated files based on file modification time
+  anymore: the action is now explicit. Replace ``make touch`` with
+  ``make regen-all``.
 
 - bpo-29643: Fix ``--enable-optimization`` didn't work.
 
