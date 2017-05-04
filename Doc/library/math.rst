@@ -230,7 +230,7 @@ Power and logarithmic functions
 
 .. function:: expm1(x)
 
-   Return *e* raised to the power *x* minus 1, where *e* is the base of natural
+   Return *e* raised to the power *x*, minus 1.  Here *e* is the base of natural
    logarithms.  For small floats *x*, the subtraction in ``exp(x) - 1``
    can result in a `significant loss of precision
    <https://en.wikipedia.org/wiki/Loss_of_significance>`_\; the :func:`expm1`
