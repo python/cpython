@@ -10,6 +10,8 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30271: sqlite3 statement cache is optional.  Patch by Aviv Palivoda.
+
 - bpo-12414: sys.getsizeof() on a code object now returns the sizes
   which includes the code struct and sizes of objects which it references.
   Patch by Dong-hee Na.
