@@ -223,6 +223,9 @@ Module functions and constants
    .. versionchanged:: 3.4
       Added the *uri* parameter.
 
+   .. versionchanged:: 3.7
+      When *cached_statements* is set to 0 there is no statement cache.
+
 
 .. function:: register_converter(typename, callable)
 
