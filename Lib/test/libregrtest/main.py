@@ -380,23 +380,28 @@ class Regrtest:
                 if self.bad:
                     return
 
+    def display_header(self):
+        # Print basic platform information
+        print("==", platform.python_implementation(), *sys.version.split())
+        print("==", platform.platform(aliased=True),
+                      "%s-endian" % sys.byteorder)
+        print("== hash algorithm:", sys.hash_info.algorithm,
+              "64bit" if sys.maxsize > 2**32 else "32bit")
+        print("== cwd:", os.getcwd())
+        cpu_count = os.cpu_count()
+        if cpu_count:
+            print("== CPU count:", cpu_count)
+        print("== encodings: locale=%s, FS=%s"
+              % (locale.getpreferredencoding(False),
+                 sys.getfilesystemencoding()))
+        print("Testing with flags:", sys.flags)
+
     def run_tests(self):
         # For a partial run, we do not need to clutter the output.
-        if (self.ns.verbose
-            or self.ns.header
-            or not (self.ns.pgo or self.ns.quiet or self.ns.single
-                    or self.tests or self.ns.args)):
-            # Print basic platform information
-            print("==", platform.python_implementation(), *sys.version.split())
-            print("==  ", platform.platform(aliased=True),
-                          "%s-endian" % sys.byteorder)
-            print("==  ", "hash algorithm:", sys.hash_info.algorithm,
-                  "64bit" if sys.maxsize > 2**32 else "32bit")
-            print("==  cwd:", os.getcwd())
-            print("==  encodings: locale=%s, FS=%s"
-                  % (locale.getpreferredencoding(False),
-                     sys.getfilesystemencoding()))
-            print("Testing with flags:", sys.flags)
+        if (self.ns.header
+            or not(self.ns.pgo or self.ns.quiet or self.ns.single
+                   or self.tests or self.ns.args)):
+            self.display_header()
 
         if self.ns.randomize:
             print("Using random seed", self.ns.random_seed)

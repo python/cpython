@@ -118,6 +118,9 @@ class ParseArgsTestCase(unittest.TestCase):
         ns = libregrtest._parse_args(['--header'])
         self.assertTrue(ns.header)
 
+        ns = libregrtest._parse_args(['--verbose'])
+        self.assertTrue(ns.header)
+
     def test_randomize(self):
         for opt in '-r', '--randomize':
             with self.subTest(opt=opt):
