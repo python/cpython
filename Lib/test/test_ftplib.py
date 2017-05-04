@@ -218,12 +218,18 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
         threading.Thread.__init__(self)
         asyncore.dispatcher.__init__(self)
         self.create_socket(af, socket.SOCK_STREAM)
-        self.bind(address)
-        self.listen(5)
-        self.active = False
-        self.active_lock = threading.Lock()
-        self.host, self.port = self.socket.getsockname()[:2]
-        self.handler_instance = None
+        try:
+            self.bind(address)
+            self.listen(5)
+            self.active = False
+            self.active_lock = threading.Lock()
+            self.host, self.port = self.socket.getsockname()[:2]
+            self.handler_instance = None
+        except:
+            # unregister the server on bind() error,
+            # needed by TestIPv6Environment.setUpClass()
+            self.del_channel()
+            raise
 
     def start(self):
         assert not self.active
