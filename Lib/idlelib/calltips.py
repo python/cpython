@@ -1,4 +1,4 @@
-"""calltips.py - An IDLE Extension to Jog Your Memory
+b"""calltips.py - An IDLE Extension to Jog Your Memory
 
 Call Tips are floating windows which display function, class, and method
 parameter and docstring information when you type an opening parenthesis, and
@@ -139,21 +139,32 @@ def get_argspec(ob):
         ob_call = ob.__call__
     except BaseException:
         return argspec
-    if isinstance(ob, type):
-        fob = ob.__init__
-    elif isinstance(ob_call, types.MethodType):
+    if isinstance(ob_call, types.MethodType):
         fob = ob_call
     else:
         fob = ob
-    if isinstance(fob, (types.FunctionType, types.MethodType)):
-        try:
-            argspec = str(inspect.signature(fob))
-        except ValueError:
+
+    try:
+        argspec = str(inspect.signature(fob))
+    except ValueError as err:
+        msg = str(err)
+        if msg.startswith(_invalid_method):
             argspec = _invalid_method
             return argspec
+        elif msg.startswith('no signature found for'):
+            """If no signature found for function or method"""
+            pass
+        else:
+            """Callable is not supported by signature"""
+            pass
 
-        if isinstance(ob, type):
-            argspec = _first_param.sub("", argspec)
+    if '/' in argspec:
+        """Argument Clinic positional-only mark, ignore the result of signature
+        """
+        argspec = ''
+    if isinstance(fob, type) and argspec == '()':
+        """fob with no argument, use default callable argspec"""
+        argspec = _default_callable_argspec
 
     lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
             if len(argspec) > _MAX_COLS else [argspec] if argspec else [])

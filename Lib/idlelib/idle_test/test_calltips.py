@@ -46,6 +46,7 @@ class Get_signatureTest(unittest.TestCase):
 
         # Python class that inherits builtin methods
         class List(list): "List() doc"
+
         # Simulate builtin with no docstring for default tip test
         class SB:  __call__ = None
 
@@ -55,26 +56,23 @@ class Get_signatureTest(unittest.TestCase):
         if List.__doc__ is not None:
             gtest(List, List.__doc__)
         gtest(list.__new__,
-               'Create and return a new object.  See help(type) for accurate signature.')
+               '(*args, **kwargs)\nCreate and return a new object.  See help(type) for accurate signature.')
         gtest(list.__init__,
                'Initialize self.  See help(type(self)) for accurate signature.')
         append_doc =  "Append object to the end of the list."
         gtest(list.append, append_doc)
         gtest([].append, append_doc)
         gtest(List.append, append_doc)
-
         gtest(types.MethodType, "method(function, instance)")
         gtest(SB(), default_tip)
-
         import re
         p = re.compile('')
-        gtest(re.sub, '''(pattern, repl, string, count=0, flags=0)
-Return the string obtained by replacing the leftmost
+        gtest(re.sub, '''(pattern, repl, string, count=0, flags=0)\nReturn the string obtained by replacing the leftmost
 non-overlapping occurrences of the pattern in string by the
 replacement repl.  repl can be either a string or a callable;
 if a string, backslash escapes in it are processed.  If it is
 a callable, it's passed the match object and must return''')
-        gtest(p.sub, '(repl, string, count=0)')
+        gtest(p.sub, '''(repl, string, count=0)\nReturn the string obtained by replacing the leftmost non-overlapping occurrences o...''')
 
     def test_signature_wrap(self):
         if textwrap.TextWrapper.__doc__ is not None:
@@ -180,6 +178,7 @@ bytes() -> empty bytes object''')
         class CallB(NoCall):
             def __call__(self, ci):
                 pass
+
         for meth, mtip  in ((NoCall, default_tip), (CallA, default_tip),
                             (NoCall(), ''), (CallA(), '(a, b, c)'),
                             (CallB(), '(ci)')):
