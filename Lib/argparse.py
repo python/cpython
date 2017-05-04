@@ -143,7 +143,7 @@ def _copy_items(items):
     if type(items) is list:
         return items[:]
     import copy
-    items = copy.copy(items)
+    return copy.copy(items)
 
 
 # ===============
