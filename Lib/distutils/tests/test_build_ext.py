@@ -20,6 +20,7 @@ ALREADY_TESTED = False
 
 class BuildExtTestCase(support.TempdirManager,
                        support.LoggingSilencer,
+                       support.EnvironGuard,
                        unittest.TestCase):
     def setUp(self):
         super(BuildExtTestCase, self).setUp()
