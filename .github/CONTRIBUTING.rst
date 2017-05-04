@@ -31,6 +31,9 @@ also suggestions on how you can most effectively help the project.
 Please be aware that our workflow does deviate slightly from the typical GitHub
 project. Details on how to properly submit a pull request are covered in
 `Lifecycle of a Pull Request <https://cpython-devguide.readthedocs.io/pullrequest.html>`_.
+One key point is to keep comments on GitHub to only those related to the reviewing
+the code in the pull request. All other discussions -- e.g. about the issue being
+fixed -- should happen on bugs.python.org.
 
 If you are making a code contribution or large documentation contribution,
 please feel free to add yourself to the ``Misc/ACKS`` file alphabetically.
