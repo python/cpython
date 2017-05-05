@@ -203,6 +203,10 @@ Documentation
 Build
 -----
 
+- bpo-23404: Don't regenerate generated files based on file modification time
+  anymore: the action is now explicit. Replace ``make touch`` with
+  ``make regen-all``.
+
 - bpo-29643: Fix ``--enable-optimization`` didn't work.
 
 Tests
