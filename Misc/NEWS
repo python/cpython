@@ -42,6 +42,8 @@ Extension Modules
 Library
 -------
 
+- Revert bpo-26293 for zipfile breakage. See also bpo-29094.
+
 - bpo-30070: Fixed leaks and crashes in errors handling in the parser module.
 
 - bpo-30061: Fixed crashes in IOBase methods next() and readlines() when
@@ -90,9 +92,6 @@ Library
 - Issue #29142: In urllib, suffixes in no_proxy environment variable with
   leading dots could match related hostnames again (e.g. .b.c matches a.b.c).
   Patch by Milan Oberkirch.
-
-- Issue #29094: Offsets in a ZIP file created with extern file object and mode
-  "w" now are relative to the start of the file.
 
 - Issue #13051: Fixed recursion errors in large or resized
   curses.textpad.Textbox.  Based on patch by Tycho Andersen.
