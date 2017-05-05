@@ -1736,7 +1736,7 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
     if (iter->buf.len % self->s_size != 0) {
         PyErr_Format(StructError,
                      "iterative unpacking requires a buffer of "
-                     "multiple of %zd bytes",
+                     "a multiple of %zd bytes",
                      self->s_size);
         Py_DECREF(iter);
         return NULL;
