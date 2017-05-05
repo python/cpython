@@ -69,17 +69,24 @@ def _compile(code, pattern, flags):
     REPEATING_CODES = _REPEATING_CODES
     SUCCESS_CODES = _SUCCESS_CODES
     ASSERT_CODES = _ASSERT_CODES
-    if (flags & SRE_FLAG_IGNORECASE and
-            not (flags & SRE_FLAG_LOCALE) and
-            flags & SRE_FLAG_UNICODE and
-            not (flags & SRE_FLAG_ASCII)):
-        fixes = _ignorecase_fixes
-    else:
-        fixes = None
+    tolower = None
+    fixes = None
+    if flags & SRE_FLAG_IGNORECASE and not flags & SRE_FLAG_LOCALE:
+        if flags & SRE_FLAG_UNICODE and not flags & SRE_FLAG_ASCII:
+            tolower = _sre.unicode_tolower
+            fixes = _ignorecase_fixes
+        else:
+            tolower = _sre.ascii_tolower
     for op, av in pattern:
         if op in LITERAL_CODES:
-            if flags & SRE_FLAG_IGNORECASE:
-                lo = _sre.getlower(av, flags)
+            if not flags & SRE_FLAG_IGNORECASE:
+                emit(op)
+                emit(av)
+            elif flags & SRE_FLAG_LOCALE:
+                emit(OP_LOC_IGNORE[op])
+                emit(av)
+            else:
+                lo = tolower(av)
                 if fixes and lo in fixes:
                     emit(IN_IGNORE)
                     skip = _len(code); emit(0)
@@ -93,19 +100,15 @@ def _compile(code, pattern, flags):
                 else:
                     emit(OP_IGNORE[op])
                     emit(lo)
-            else:
-                emit(op)
-                emit(av)
         elif op is IN:
-            if flags & SRE_FLAG_IGNORECASE:
-                emit(OP_IGNORE[op])
-                def fixup(literal, flags=flags):
-                    return _sre.getlower(literal, flags)
-            else:
+            if not flags & SRE_FLAG_IGNORECASE:
                 emit(op)
-                fixup = None
+            elif flags & SRE_FLAG_LOCALE:
+                emit(IN_LOC_IGNORE)
+            else:
+                emit(IN_IGNORE)
             skip = _len(code); emit(0)
-            _compile_charset(av, flags, code, fixup, fixes)
+            _compile_charset(av, flags, code, tolower, fixes)
             code[skip] = _len(code) - skip
         elif op is ANY:
             if flags & SRE_FLAG_DOTALL:

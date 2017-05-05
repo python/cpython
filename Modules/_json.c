@@ -89,16 +89,12 @@ static PyObject *
 _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx);
 static PyObject *
 scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
-static int
-scanner_init(PyObject *self, PyObject *args, PyObject *kwds);
 static void
 scanner_dealloc(PyObject *self);
 static int
 scanner_clear(PyObject *self);
 static PyObject *
 encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
-static int
-encoder_init(PyObject *self, PyObject *args, PyObject *kwds);
 static void
 encoder_dealloc(PyObject *self);
 static int
@@ -1191,37 +1187,21 @@ static PyObject *
 scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyScannerObject *s;
-    s = (PyScannerObject *)type->tp_alloc(type, 0);
-    if (s != NULL) {
-        s->object_hook = NULL;
-        s->object_pairs_hook = NULL;
-        s->parse_float = NULL;
-        s->parse_int = NULL;
-        s->parse_constant = NULL;
-    }
-    return (PyObject *)s;
-}
-
-static int
-scanner_init(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    /* Initialize Scanner object */
     PyObject *ctx;
     PyObject *strict;
     static char *kwlist[] = {"context", NULL};
-    PyScannerObject *s;
-
-    assert(PyScanner_Check(self));
-    s = (PyScannerObject *)self;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:make_scanner", kwlist, &ctx))
-        return -1;
+        return NULL;
 
-    if (s->memo == NULL) {
-        s->memo = PyDict_New();
-        if (s->memo == NULL)
-            goto bail;
+    s = (PyScannerObject *)type->tp_alloc(type, 0);
+    if (s == NULL) {
+        return NULL;
     }
+
+    s->memo = PyDict_New();
+    if (s->memo == NULL)
+        goto bail;
 
     /* All of these will fail "gracefully" so we don't need to verify them */
     strict = PyObject_GetAttrString(ctx, "strict");
@@ -1247,16 +1227,11 @@ scanner_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (s->parse_constant == NULL)
         goto bail;
 
-    return 0;
+    return (PyObject *)s;
 
 bail:
-    s->strict = 0;
-    Py_CLEAR(s->object_hook);
-    Py_CLEAR(s->object_pairs_hook);
-    Py_CLEAR(s->parse_float);
-    Py_CLEAR(s->parse_int);
-    Py_CLEAR(s->parse_constant);
-    return -1;
+    Py_DECREF(s);
+    return NULL;
 }
 
 PyDoc_STRVAR(scanner_doc, "JSON scanner object");
@@ -1298,7 +1273,7 @@ PyTypeObject PyScannerType = {
     0,                    /* tp_descr_get */
     0,                    /* tp_descr_set */
     0,                    /* tp_dictoffset */
-    scanner_init,                    /* tp_init */
+    0,                    /* tp_init */
     0,/* PyType_GenericAlloc, */        /* tp_alloc */
     scanner_new,          /* tp_new */
     0,/* PyObject_GC_Del, */              /* tp_free */
@@ -1307,23 +1282,6 @@ PyTypeObject PyScannerType = {
 static PyObject *
 encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyEncoderObject *s;
-    s = (PyEncoderObject *)type->tp_alloc(type, 0);
-    if (s != NULL) {
-        s->markers = NULL;
-        s->defaultfn = NULL;
-        s->encoder = NULL;
-        s->indent = NULL;
-        s->key_separator = NULL;
-        s->item_separator = NULL;
-    }
-    return (PyObject *)s;
-}
-
-static int
-encoder_init(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    /* initialize Encoder object */
     static char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", NULL};
 
     PyEncoderObject *s;
@@ -1331,21 +1289,22 @@ encoder_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *item_separator;
     int sort_keys, skipkeys, allow_nan;
 
-    assert(PyEncoder_Check(self));
-    s = (PyEncoderObject *)self;
-
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUppp:make_encoder", kwlist,
         &markers, &defaultfn, &encoder, &indent,
         &key_separator, &item_separator,
         &sort_keys, &skipkeys, &allow_nan))
-        return -1;
+        return NULL;
 
     if (markers != Py_None && !PyDict_Check(markers)) {
         PyErr_Format(PyExc_TypeError,
                      "make_encoder() argument 1 must be dict or None, "
                      "not %.200s", Py_TYPE(markers)->tp_name);
-        return -1;
+        return NULL;
     }
+
+    s = (PyEncoderObject *)type->tp_alloc(type, 0);
+    if (s == NULL)
+        return NULL;
 
     s->markers = markers;
     s->defaultfn = defaultfn;
@@ -1371,7 +1330,7 @@ encoder_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(s->indent);
     Py_INCREF(s->key_separator);
     Py_INCREF(s->item_separator);
-    return 0;
+    return (PyObject *)s;
 }
 
 static PyObject *
@@ -1892,7 +1851,7 @@ PyTypeObject PyEncoderType = {
     0,                    /* tp_descr_get */
     0,                    /* tp_descr_set */
     0,                    /* tp_dictoffset */
-    encoder_init,         /* tp_init */
+    0,                    /* tp_init */
     0,                    /* tp_alloc */
     encoder_new,          /* tp_new */
     0,                    /* tp_free */
@@ -1935,10 +1894,8 @@ PyInit__json(void)
     PyObject *m = PyModule_Create(&jsonmodule);
     if (!m)
         return NULL;
-    PyScannerType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&PyScannerType) < 0)
         goto fail;
-    PyEncoderType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&PyEncoderType) < 0)
         goto fail;
     Py_INCREF((PyObject*)&PyScannerType);
