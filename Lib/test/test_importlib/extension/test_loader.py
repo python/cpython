@@ -4,6 +4,7 @@ from .. import util
 machinery = util.import_importlib('importlib.machinery')
 
 import os.path
+import pathlib
 import sys
 import types
 import unittest
@@ -14,10 +15,11 @@ import importlib
 class LoaderTests(abc.LoaderTests):
 
     """Test load_module() for extension modules."""
+    PATH = util.EXTENSIONS.file_path
 
     def setUp(self):
         self.loader = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
-                                                         util.EXTENSIONS.file_path)
+                                                         self.PATH)
 
     def load_module(self, fullname):
         return self.loader.load_module(fullname)
@@ -31,19 +33,19 @@ class LoaderTests(abc.LoaderTests):
 
     def test_equality(self):
         other = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
-                                                   util.EXTENSIONS.file_path)
+                                                   self.PATH)
         self.assertEqual(self.loader, other)
 
     def test_inequality(self):
         other = self.machinery.ExtensionFileLoader('_' + util.EXTENSIONS.name,
-                                                   util.EXTENSIONS.file_path)
+                                                   self.PATH)
         self.assertNotEqual(self.loader, other)
 
     def test_module(self):
         with util.uncache(util.EXTENSIONS.name):
             module = self.load_module(util.EXTENSIONS.name)
             for attr, value in [('__name__', util.EXTENSIONS.name),
-                                ('__file__', util.EXTENSIONS.file_path),
+                                ('__file__', self.PATH),
                                 ('__package__', '')]:
                 self.assertEqual(getattr(module, attr), value)
             self.assertIn(util.EXTENSIONS.name, sys.modules)
@@ -87,25 +89,13 @@ class LoaderPathLikeTests(LoaderTests):
 
     """Test load_module() for extension modules."""
 
-    def setUp(self):
-        self.loader = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
-                                                         util.EXTENSIONS.file_pathlike)
-
-    def test_equality(self):
-        other = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
-                                                   util.EXTENSIONS.file_pathlike)
-        self.assertEqual(self.loader, other)
-
-    def test_inequality(self):
-        other = self.machinery.ExtensionFileLoader('_' + util.EXTENSIONS.name,
-                                                   util.EXTENSIONS.file_pathlike)
-        self.assertNotEqual(self.loader, other)
+    PATH = pathlib.Path(util.EXTENSIONS.file_path)
 
     def test_module(self):
         with util.uncache(util.EXTENSIONS.name):
             module = self.load_module(util.EXTENSIONS.name)
             for attr, value in [('__name__', util.EXTENSIONS.name),
-                                ('__file__', util.EXTENSIONS.file_pathlike),
+                                ('__file__', self.PATH),
                                 ('__package__', '')]:
                 if attr == '__file__':
                     self.assertEqual(getattr(module, attr), os.fspath(value))

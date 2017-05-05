@@ -24,11 +24,9 @@ if 'importlib' not in sys.builtin_module_names:
 
 EXTENSIONS = types.SimpleNamespace()
 EXTENSIONS.path = None
-EXTENSIONS.pathlike = None
 EXTENSIONS.ext = None
 EXTENSIONS.filename = None
 EXTENSIONS.file_path = None
-EXTENSIONS.file_pathlike = None
 EXTENSIONS.name = '_testcapi'
 
 def _extension_details():
@@ -39,11 +37,9 @@ def _extension_details():
             file_path = os.path.join(path, filename)
             if os.path.exists(file_path):
                 EXTENSIONS.path = path
-                EXTENSIONS.pathlike = pathlib.Path(path)
                 EXTENSIONS.ext = ext
                 EXTENSIONS.filename = filename
                 EXTENSIONS.file_path = file_path
-                EXTENSIONS.file_pathlike = pathlib.Path(file_path)
                 return
 
 _extension_details()
