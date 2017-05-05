@@ -2,7 +2,8 @@
 # $Id$
 
 from xml.sax import make_parser, ContentHandler, \
-                    SAXException, SAXReaderNotAvailable, SAXParseException
+                    SAXException, SAXReaderNotAvailable, SAXParseException, \
+                    saxutils
 try:
     make_parser()
 except SAXReaderNotAvailable:
@@ -172,6 +173,21 @@ class ParseTest(unittest.TestCase):
             input.setByteStream(f)
             input.setEncoding('iso-8859-1')
             self.check_parse(input)
+
+    def test_parse_close_source(self):
+        builtin_open = open
+        non_local = {'fileobj': None}
+
+        def mock_open(*args):
+            fileobj = builtin_open(*args)
+            non_local['fileobj'] = fileobj
+            return fileobj
+
+        with support.swap_attr(saxutils, 'open', mock_open):
+            make_xml_file(self.data, 'iso-8859-1', None)
+            with self.assertRaises(SAXException):
+                self.check_parse(TESTFN)
+            self.assertTrue(non_local['fileobj'].closed)
 
     def check_parseString(self, s):
         from xml.sax import parseString
