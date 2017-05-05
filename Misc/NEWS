@@ -321,6 +321,10 @@ Library
   Misusing them could cause memory leaks or crashes.  Now scanner and encoder
   objects are completely initialized in the __new__ methods.
 
+- bpo-30215: Compiled regular expression objects with the re.LOCALE flag no
+  longer depend on the locale at compile time.  Only the locale at matching
+  time affects the result of matching.
+
 - bpo-30185: Avoid KeyboardInterrupt tracebacks in forkserver helper process
   when Ctrl-C is received.
 
