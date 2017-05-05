@@ -134,6 +134,10 @@ Documentation
 Build
 -----
 
+- bpo-23404: Don't regenerate generated files based on file modification time
+  anymore: the action is now explicit. Replace ``make touch`` with
+  ``make regen-all``.
+
 - bpo-27593: sys.version and the platform module python_build(),
   python_branch(), and python_revision() functions now use
   git information rather than hg when building from a repo.
