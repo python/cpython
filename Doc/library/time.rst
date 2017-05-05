@@ -181,8 +181,8 @@ Functions
 
 .. function:: clock_settime(clk_id, time)
 
-   Set the time of the specified clock *clk_id*.  Refer to
-   :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
+   Set the time of the specified clock *clk_id*.  Currently,
+   :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
 
    Availability: Unix.
 
@@ -636,14 +636,14 @@ Functions
 Clock ID Constants
 ------------------
 
-These constants are used as parameters for :func:`clock_getres`, :func:`clock_gettime`,
-and :func:`clock_settime`.
+These constants are used as parameters for :func:`clock_getres` and
+:func:`clock_gettime`.
 
 .. data:: CLOCK_HIGHRES
 
-   The Solaris OS has a CLOCK_HIGHRES timer that attempts to use an optimal
-   hardware source, and may give close to nanosecond resolution.  CLOCK_HIGHRES
-   is the nonadjustable, high-resolution clock.
+   The Solaris OS has a ``CLOCK_HIGHRES`` timer that attempts to use an optimal
+   hardware source, and may give close to nanosecond resolution.
+   ``CLOCK_HIGHRES`` is the nonadjustable, high-resolution clock.
 
    Availability: Solaris.
 
@@ -681,8 +681,9 @@ and :func:`clock_settime`.
 
 .. data:: CLOCK_REALTIME
 
-   System-wide real-time clock.  Setting this clock requires appropriate
-   privileges.
+   System-wide real-time clock.  This constant is the only parameter
+   that can be sent to :func:`clock_settime`; setting this clock requires
+   appropriate privileges.
 
    Availability: Unix.
 
