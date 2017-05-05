@@ -1,4 +1,4 @@
-b"""calltips.py - An IDLE Extension to Jog Your Memory
+"""calltips.py - An IDLE Extension to Jog Your Memory
 
 Call Tips are floating windows which display function, class, and method
 parameter and docstring information when you type an opening parenthesis, and
