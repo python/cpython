@@ -555,16 +555,16 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     # comes from the shutdown of the interpreter in the subcommand.
                     stderr = debug_output_pat.sub("", stderr)
 
-                    if retcode != 0:
-                        result = (CHILD_ERROR, "Exit code %s" % retcode)
-                        output.put((test, stdout.rstrip(), stderr.rstrip(),
-                                    result))
+                    if retcode == 0:
+                        stdout, _, result = stdout.strip().rpartition("\n")
+                        if not result:
+                            output.put((None, None, None, None))
+                            return
 
-                    stdout, _, result = stdout.strip().rpartition("\n")
-                    if not result:
-                        output.put((None, None, None, None))
-                        return
-                    result = json.loads(result)
+                        result = json.loads(result)
+                    else:
+                        result = (CHILD_ERROR, "Exit code %s" % retcode)
+
                     output.put((test, stdout.rstrip(), stderr.rstrip(), result))
             except BaseException:
                 output.put((None, None, None, None))
