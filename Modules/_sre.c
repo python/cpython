@@ -274,23 +274,33 @@ _sre_getcodesize_impl(PyObject *module)
 }
 
 /*[clinic input]
-_sre.getlower -> int
+_sre.ascii_tolower -> int
 
     character: int
-    flags: int
     /
 
 [clinic start generated code]*/
 
 static int
-_sre_getlower_impl(PyObject *module, int character, int flags)
-/*[clinic end generated code: output=47eebc4c1214feb5 input=087d2f1c44bbca6f]*/
+_sre_ascii_tolower_impl(PyObject *module, int character)
+/*[clinic end generated code: output=228294ed6ff2a612 input=272c609b5b61f136]*/
 {
-    if (flags & SRE_FLAG_LOCALE)
-        return sre_lower_locale(character);
-    if (flags & SRE_FLAG_UNICODE)
-        return sre_lower_unicode(character);
     return sre_lower(character);
+}
+
+/*[clinic input]
+_sre.unicode_tolower -> int
+
+    character: int
+    /
+
+[clinic start generated code]*/
+
+static int
+_sre_unicode_tolower_impl(PyObject *module, int character)
+/*[clinic end generated code: output=6422272d7d7fee65 input=91d708c5f3c2045a]*/
+{
+    return sre_lower_unicode(character);
 }
 
 LOCAL(void)
@@ -1588,6 +1598,8 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
         case SRE_OP_NOT_LITERAL:
         case SRE_OP_LITERAL_IGNORE:
         case SRE_OP_NOT_LITERAL_IGNORE:
+        case SRE_OP_LITERAL_LOC_IGNORE:
+        case SRE_OP_NOT_LITERAL_LOC_IGNORE:
             GET_ARG;
             /* The arg is just a character, nothing to check */
             break;
@@ -1625,6 +1637,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
 
         case SRE_OP_IN:
         case SRE_OP_IN_IGNORE:
+        case SRE_OP_IN_LOC_IGNORE:
             GET_SKIP;
             /* Stop 1 before the end; we check the FAILURE below */
             if (!_validate_charset(code, code+skip-2))
@@ -2737,7 +2750,8 @@ static PyTypeObject Scanner_Type = {
 static PyMethodDef _functions[] = {
     _SRE_COMPILE_METHODDEF
     _SRE_GETCODESIZE_METHODDEF
-    _SRE_GETLOWER_METHODDEF
+    _SRE_ASCII_TOLOWER_METHODDEF
+    _SRE_UNICODE_TOLOWER_METHODDEF
     {NULL, NULL}
 };
 
