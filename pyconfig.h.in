@@ -1241,6 +1241,9 @@
 /* Define if POSIX semaphores aren't enabled on your system */
 #undef POSIX_SEMAPHORES_NOT_ENABLED
 
+/* Define if pthread_key_t is compatible with int. */
+#undef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
+
 /* Defined if PTHREAD_SCOPE_SYSTEM supported. */
 #undef PTHREAD_SYSTEM_SCHED_SUPPORTED
 
@@ -1295,6 +1298,9 @@
 
 /* The size of `pid_t', as computed by sizeof. */
 #undef SIZEOF_PID_T
+
+/* The size of `pthread_key_t', as computed by sizeof. */
+#undef SIZEOF_PTHREAD_KEY_T
 
 /* The size of `pthread_t', as computed by sizeof. */
 #undef SIZEOF_PTHREAD_T

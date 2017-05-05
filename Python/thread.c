@@ -20,6 +20,9 @@
 #include <stdio.h>
 #endif
 
+#ifdef __CYGWIN__
+#include <stdbool.h>  /* necessary for TSS key */
+#endif
 #include <stdlib.h>
 
 #include "pythread.h"
@@ -125,7 +128,8 @@ PyThread_set_stacksize(size_t size)
    TLS implementation, provide our own.
 
    This code stolen from "thread_sgi.h", where it was the only
-   implementation of an existing Python TLS API.
+   implementation of an existing Python TLS API that has been
+   deprecated on cygwin.
 */
 /* ------------------------------------------------------------------------
 Per-thread data ("key") support.
@@ -133,18 +137,29 @@ Per-thread data ("key") support.
 Use PyThread_create_key() to create a new key.  This is typically shared
 across threads.
 
+On Cygwin use PyThread_tss_create(&thekey) to create a new key instead.
+
 Use PyThread_set_key_value(thekey, value) to associate void* value with
 thekey in the current thread.  Each thread has a distinct mapping of thekey
 to a void* value.  Caution:  if the current thread already has a mapping
 for thekey, value is ignored.
 
+On Cygwin use PyThread_tss_set(thekey, value) to associate void* value with
+thekey in the current thread instead.
+
 Use PyThread_get_key_value(thekey) to retrieve the void* value associated
 with thekey in the current thread.  This returns NULL if no value is
 associated with thekey in the current thread.
 
+On Cygwin use PyThread_tss_get(thekey)  to retrieve the void* value associated
+with thekey in the current thread instead.
+
 Use PyThread_delete_key_value(thekey) to forget the current thread's associated
 value for thekey.  PyThread_delete_key(thekey) forgets the values associated
 with thekey across *all* threads.
+
+On Cygwin use PyThread_tss_delete_value(thekey) to forget the current thread's
+associated value for thekey instead.
 
 While some of these functions have error-return values, none set any
 Python exception.
@@ -155,12 +170,13 @@ happen to be PyObject*, these functions don't do refcount operations on
 them either.
 
 The GIL does not need to be held when calling these functions; they supply
-their own locking.  This isn't true of PyThread_create_key(), though (see
-next paragraph).
+their own locking.  This isn't true of PyThread_create_key() or
+PyThread_tss_create(), though (see next paragraph).
 
-There's a hidden assumption that PyThread_create_key() will be called before
-any of the other functions are called.  There's also a hidden assumption
-that calls to PyThread_create_key() are serialized externally.
+There's a hidden assumption that PyThread_create_key() or PyThread_tss_create()
+will be called before any of the other functions are called.  There's
+also a hidden assumption that calls to PyThread_create_key() or
+PyThread_tss_create() are serialized externally.
 ------------------------------------------------------------------------ */
 
 /* A singly-linked list of struct key objects remembers all the key->value
@@ -181,7 +197,9 @@ struct key {
 
 static struct key *keyhead = NULL;
 static PyThread_type_lock keymutex = NULL;
-static int nkeys = 0;  /* PyThread_create_key() hands out nkeys+1 next */
+/* PyThread_create_key() or PyThread_tss_create()
+hands out nkeys+1 next */
+static int nkeys = 0;
 
 /* Internal helper.
  * If the current thread has a mapping for key, the appropriate struct key*
@@ -200,9 +218,9 @@ static int nkeys = 0;  /* PyThread_create_key() hands out nkeys+1 next */
  * another thread to mutate the list, via key deletion, concurrent with
  * find_key() crawling over the list.  Hilarity ensued.  For example, when
  * the for-loop here does "p = p->next", p could end up pointing at a
- * record that PyThread_delete_key_value() was concurrently free()'ing.
- * That could lead to anything, from failing to find a key that exists, to
- * segfaults.  Now we lock the whole routine.
+ * record that PyThread_delete_key_value() or PyThread_tss_delete_value()
+ * was concurrently free()'ing. That could lead to anything, from failing
+ * to find a key that exists, to segfaults.  Now we lock the whole routine.
  */
 static struct key *
 find_key(int set_value, int key, void *value)
@@ -225,10 +243,18 @@ find_key(int set_value, int key, void *value)
          * in a tight loop with the lock held.  A similar check is done
          * in pystate.c tstate_delete_common().  */
         if (p == prev_p)
+#ifdef __CYGWIN__
+            Py_FatalError("tss find_key: small circular list(!)");
+#else
             Py_FatalError("tls find_key: small circular list(!)");
+#endif
         prev_p = p;
         if (p->next == keyhead)
+#ifdef __CYGWIN__
+            Py_FatalError("tss find_key: circular list(!)");
+#else
             Py_FatalError("tls find_key: circular list(!)");
+#endif
     }
     if (!set_value && value == NULL) {
         assert(p == NULL);
@@ -247,6 +273,188 @@ find_key(int set_value, int key, void *value)
     return p;
 }
 
+#ifdef __CYGWIN__
+/* Thread Local Storage (TLS) API, DEPRECATED since Python 3.7
+
+   In CPython self implementation, TLS API has been changed to call TSS API.
+*/
+
+int
+PyThread_create_key(void)
+{
+    Py_tss_t proxy = Py_tss_NEEDS_INIT;
+    if (PyThread_tss_create(&proxy) != 0)
+        return -1;
+    /* In CPython self implementation, platform-specific key type is int. */
+    return proxy._key;
+}
+
+void
+PyThread_delete_key(int key)
+{
+    Py_tss_t proxy = {._is_initialized = true, ._key = key};
+    PyThread_tss_delete(&proxy);
+}
+
+int
+PyThread_set_key_value(int key, void *value)
+{
+    Py_tss_t proxy = {._is_initialized = true, ._key = key};
+    return PyThread_tss_set(proxy, value);
+}
+
+void *
+PyThread_get_key_value(int key)
+{
+    Py_tss_t proxy = {._is_initialized = true, ._key = key};
+    return PyThread_tss_get(proxy);
+}
+
+void
+PyThread_delete_key_value(int key)
+{
+    Py_tss_t proxy = {._is_initialized = true, ._key = key};
+    PyThread_tss_delete_value(proxy);
+}
+
+
+void
+PyThread_ReInitTLS(void)
+{
+    PyThread_ReInitTSS();
+}
+
+
+/* Thread Specific Storage (TSS) API */
+
+/* Assign a new key.  This must be called before any other functions in
+ * this family, and callers must arrange to serialize calls to this
+ * function.  No violations are detected.
+ */
+int
+PyThread_tss_create(Py_tss_t *key)
+{
+    /* All parts of this function are wrong if it's called by multiple
+     * threads simultaneously.
+     */
+    assert(key != NULL);
+    /* If the key has been created, function is silently skipped. */
+    if (key->_is_initialized)
+        return 0;
+
+    if (keymutex == NULL)
+        keymutex = PyThread_allocate_lock();
+    key->_key = ++nkeys;
+    key->_is_initialized = true;
+    return 0;
+}
+
+/* Forget the associations for key across *all* threads. */
+void
+PyThread_tss_delete(Py_tss_t *key)
+{
+    assert(key != NULL);
+    /* If the key has not been created, function is silently skipped. */
+    if (!key->_is_initialized)
+        return;
+
+    struct key *p, **q;
+
+    PyThread_acquire_lock(keymutex, 1);
+    q = &keyhead;
+    while ((p = *q) != NULL) {
+        if (p->key == key->_key) {
+            *q = p->next;
+            PyMem_RawFree((void *)p);
+            /* NB This does *not* free p->value! */
+        }
+        else
+            q = &p->next;
+    }
+    key->_key = -1;
+    key->_is_initialized = false;
+    PyThread_release_lock(keymutex);
+}
+
+int
+PyThread_tss_set(Py_tss_t key, void *value)
+{
+    struct key *p = find_key(1, key._key, value);
+
+    if (p == NULL)
+        return -1;
+    else
+        return 0;
+}
+
+/* Retrieve the value associated with key in the current thread, or NULL
+ * if the current thread doesn't have an association for key.
+ */
+void *
+PyThread_tss_get(Py_tss_t key)
+{
+    struct key *p = find_key(0, key._key, NULL);
+
+    if (p == NULL)
+        return NULL;
+    else
+        return p->value;
+}
+
+/* Forget the current thread's association for key, if any. */
+void
+PyThread_tss_delete_value(Py_tss_t key)
+{
+    long id = PyThread_get_thread_ident();
+    struct key *p, **q;
+
+    PyThread_acquire_lock(keymutex, 1);
+    q = &keyhead;
+    while ((p = *q) != NULL) {
+        if (p->key == key._key && p->id == id) {
+            *q = p->next;
+            PyMem_RawFree((void *)p);
+            /* NB This does *not* free p->value! */
+            break;
+        }
+        else
+            q = &p->next;
+    }
+    PyThread_release_lock(keymutex);
+}
+
+/* Forget everything not associated with the current thread id.
+ * This function is called from PyOS_AfterFork().  It is necessary
+ * because other thread ids which were in use at the time of the fork
+ * may be reused for new threads created in the forked process.
+ */
+void
+PyThread_ReInitTSS(void)
+{
+    long id = PyThread_get_thread_ident();
+    struct key *p, **q;
+
+    if (!keymutex)
+        return;
+
+    /* As with interpreter_lock in PyEval_ReInitThreads()
+       we just create a new lock without freeing the old one */
+    keymutex = PyThread_allocate_lock();
+
+    /* Delete all keys which do not match the current thread id */
+    q = &keyhead;
+    while ((p = *q) != NULL) {
+        if (p->id != id) {
+            *q = p->next;
+            PyMem_RawFree((void *)p);
+            /* NB This does *not* free p->value! */
+        }
+        else
+            q = &p->next;
+    }
+}
+
+#else /* !CYGWIN */
 /* Return a new key.  This must be called before any other functions in
  * this family, and callers must arrange to serialize calls to this
  * function.  No violations are detected.
@@ -361,6 +569,7 @@ PyThread_ReInitTLS(void)
     }
 }
 
+#endif /* CYGWIN */
 #endif /* Py_HAVE_NATIVE_TLS */
 
 PyDoc_STRVAR(threadinfo__doc__,

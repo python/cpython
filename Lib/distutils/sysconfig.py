@@ -156,7 +156,23 @@ def customize_compiler(compiler):
     Mainly needed on Unix, so we can plug in the information that
     varies across Unices and is stored in Python's Makefile.
     """
-    if compiler.compiler_type == "unix":
+    global _config_vars
+    if compiler.compiler_type in ["cygwin", "mingw32"]:
+        # Note that cygwin use posix build and 'unix' compiler.
+        # If build is not based on posix then we must predefine
+        # some environment variables corresponding to posix
+        # build rules and defaults.
+        if not 'GCC' in sys.version:
+            _config_vars['CC'] = "gcc"
+            _config_vars['CXX'] = "g++"
+            _config_vars['OPT'] = "-fwrapv -O3 -Wall -Wstrict-prototypes"
+            _config_vars['CFLAGS'] = ""
+            _config_vars['CCSHARED'] = ""
+            _config_vars['LDSHARED'] = "gcc -shared -Wl,--enable-auto-image-base"
+            _config_vars['AR'] = "ar"
+            _config_vars['ARFLAGS'] = "rc"
+
+    if compiler.compiler_type in ["unix", "cygwin", "mingw32"]:
         if sys.platform == "darwin":
             # Perform first-time customization of compiler-related
             # config vars on OS X now that we know we need a compiler.
@@ -166,7 +182,6 @@ def customize_compiler(compiler):
             # that Python itself was built on.  Also the user OS
             # version and build tools may not support the same set
             # of CPU architectures for universal builds.
-            global _config_vars
             # Use get_config_var() to ensure _config_vars is initialized.
             if not get_config_var('CUSTOMIZED_OSX_COMPILER'):
                 import _osx_support

@@ -4027,6 +4027,51 @@ dict_get_version(PyObject *self, PyObject *args)
     return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG)version);
 }
 
+#ifdef __CYGWIN__
+#ifdef WITH_THREAD
+static PyObject *
+test_pythread_tss_key_state(PyObject *self, PyObject *args)
+{
+    Py_tss_t tss_key = Py_tss_NEEDS_INIT;
+    if (PyThread_tss_is_created(tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "tss key hasn't been non created state at "
+                              "initialization");
+    }
+    if (PyThread_tss_create(&tss_key) != 0) {
+        PyErr_SetString(PyExc_RuntimeError, "PyThread_tss_create failed");
+        return NULL;
+    }
+    if (!PyThread_tss_is_created(tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_create succeeded, "
+                              "but tss key didn't make created state");
+    }
+    if (PyThread_tss_create(&tss_key) != 0) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_create didn't succeed with "
+                              "created key");
+    }
+#define CHECK_TSS_API(expr) \
+        (void)(expr); \
+        if (!PyThread_tss_is_created(tss_key)) { \
+            return raiseTestError("test_pythread_tss_key_state", \
+                                  "tss key state that has been created " \
+                                  "wasn't kept after calling " #expr); }
+    CHECK_TSS_API(PyThread_tss_set(tss_key, NULL));
+    CHECK_TSS_API(PyThread_tss_get(tss_key));
+    CHECK_TSS_API(PyThread_tss_delete_value(tss_key));
+#undef CHECK_TSS_API
+    PyThread_tss_delete(&tss_key);
+    if (PyThread_tss_is_created(tss_key)) {
+        return raiseTestError("test_pythread_tss_key_state",
+                              "PyThread_tss_delete called, "
+                              "but tss key didn't make non created state");
+    }
+    Py_RETURN_NONE;
+}
+#endif
+#endif
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -4232,6 +4277,11 @@ static PyMethodDef TestMethods[] = {
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
     {"tracemalloc_get_traceback", tracemalloc_get_traceback, METH_VARARGS},
     {"dict_get_version", dict_get_version, METH_VARARGS},
+#ifdef __CYGWIN__
+#ifdef WITH_THREAD
+    {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
+#endif
+#endif
     {NULL, NULL} /* sentinel */
 };
 

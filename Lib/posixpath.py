@@ -42,6 +42,12 @@ def _get_sep(path):
     else:
         return '/'
 
+def _get_altsep(path):
+    if isinstance(path, bytes):
+        return b'\\'
+    else:
+        return '\\'
+
 # Normalize the case of a pathname.  Trivial in Posix, string.lower on Mac.
 # On MS-DOS this may also turn slashes into backslashes; however, other
 # normalizations (such as optimizing '../' away) are not allowed
@@ -63,7 +69,12 @@ def isabs(s):
     """Test whether a path is absolute"""
     s = os.fspath(s)
     sep = _get_sep(s)
-    return s.startswith(sep)
+    altsep = _get_altsep(s)
+    return s.startswith(sep) or \
+           (sys.platform == 'msys' and \
+            len(s) > 2 and \
+            s[1] == ':' and \
+            (s[2] == sep or s[2] == altsep))
 
 
 # Join pathnames.
