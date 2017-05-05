@@ -3,7 +3,6 @@ from .. import util
 
 machinery = util.import_importlib('importlib.machinery')
 
-import pathlib
 import unittest
 import warnings
 
@@ -12,16 +11,13 @@ class FinderTests(abc.FinderTests):
 
     """Test the finder for extension modules."""
 
-    PATH = util.EXTENSIONS.path
-
     def find_module(self, fullname):
-        importer = self.machinery.FileFinder(self.PATH,
+        importer = self.machinery.FileFinder(util.EXTENSIONS.path,
                                             (self.machinery.ExtensionFileLoader,
                                              self.machinery.EXTENSION_SUFFIXES))
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
             return importer.find_module(fullname)
-
 
     def test_module(self):
         self.assertTrue(self.find_module(util.EXTENSIONS.name))
@@ -38,20 +34,10 @@ class FinderTests(abc.FinderTests):
     def test_failure(self):
         self.assertIsNone(self.find_module('asdfjkl;'))
 
+
 (Frozen_FinderTests,
  Source_FinderTests
  ) = util.test_both(FinderTests, machinery=machinery)
-
-
-class FinderTestsPathLike(FinderTests):
-
-    """Test the finder with PathLike path """
-
-    PATH = pathlib.Path(util.EXTENSIONS.path)
-
-(Frozen_FinderTestsPathLike,
- Source_FinderTestsPathLike
- ) = util.test_both(FinderTestsPathLike, machinery=machinery)
 
 
 if __name__ == '__main__':

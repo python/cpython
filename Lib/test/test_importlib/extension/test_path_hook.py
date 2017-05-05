@@ -2,7 +2,6 @@ from .. import util
 
 machinery = util.import_importlib('importlib.machinery')
 
-import pathlib
 import unittest
 
 
@@ -21,7 +20,6 @@ class PathHookTests:
         # Path hook should handle a directory where a known extension module
         # exists.
         self.assertTrue(hasattr(self.hook(util.EXTENSIONS.path), 'find_module'))
-        self.assertTrue(hasattr(self.hook(pathlib.Path(util.EXTENSIONS.path)), 'find_module'))
 
 
 (Frozen_PathHooksTests,
