@@ -49,6 +49,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30243: Removed the __init__ methods of _json's scanner and encoder.
+  Misusing them could cause memory leaks or crashes.  Now scanner and encoder
+  objects are completely initialized in the __new__ methods.
+
 - bpo-30185: Avoid KeyboardInterrupt tracebacks in forkserver helper process
   when Ctrl-C is received.
 
