@@ -960,7 +960,7 @@ class _NamespacePath:
 
     def __init__(self, name, path, path_finder):
         self._name = name
-        self._path = path.__fspath__() if hasattr(path, '__fspath__') else path
+        self._path = path
         self._last_parent_path = tuple(self._get_parent_path())
         self._path_finder = path_finder
 
