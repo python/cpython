@@ -362,6 +362,9 @@ Library
   Fixed possible other errors caused by not checking results of PyObject_Size(),
   PySequence_Size(), or PyMapping_Size().
 
+- bpo-30218: Fix PathLike support for shutil.unpack_archive. Patch by Jelle
+  Zijlstra.
+
 - bpo-10076: Compiled regular expression and match objects in the re module
   now support copy.copy() and copy.deepcopy() (they are considered atomic).
 
