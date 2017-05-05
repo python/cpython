@@ -1207,11 +1207,9 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (s->memo == NULL) {
-        s->memo = PyDict_New();
-        if (s->memo == NULL)
-            goto bail;
-    }
+    s->memo = PyDict_New();
+    if (s->memo == NULL)
+        goto bail;
 
     /* All of these will fail "gracefully" so we don't need to verify them */
     s->strict = PyObject_GetAttrString(ctx, "strict");
