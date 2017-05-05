@@ -321,6 +321,9 @@ Library
   Misusing them could cause memory leaks or crashes.  Now scanner and encoder
   objects are completely initialized in the __new__ methods.
 
+- bpo-30185: Avoid KeyboardInterrupt tracebacks in forkserver helper process
+  when Ctrl-C is received.
+
 - bpo-30103: binascii.b2a_uu() and uu.encode() now support using ``'`'``
   as zero instead of space.
 
@@ -1029,6 +1032,10 @@ Documentation
 
 Build
 -----
+
+- bpo-23404: Don't regenerate generated files based on file modification time
+  anymore: the action is now explicit. Replace ``make touch`` with
+  ``make regen-all``.
 
 - bpo-29643: Fix ``--enable-optimization`` didn't work.
 

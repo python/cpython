@@ -78,7 +78,13 @@ def _compile(code, pattern, flags):
         fixes = None
     for op, av in pattern:
         if op in LITERAL_CODES:
-            if flags & SRE_FLAG_IGNORECASE:
+            if not flags & SRE_FLAG_IGNORECASE:
+                emit(op)
+                emit(av)
+            elif flags & SRE_FLAG_LOCALE:
+                emit(OP_LOC_IGNORE[op])
+                emit(av)
+            else:
                 lo = _sre.getlower(av, flags)
                 if fixes and lo in fixes:
                     emit(IN_IGNORE)
@@ -93,17 +99,17 @@ def _compile(code, pattern, flags):
                 else:
                     emit(OP_IGNORE[op])
                     emit(lo)
-            else:
-                emit(op)
-                emit(av)
         elif op is IN:
-            if flags & SRE_FLAG_IGNORECASE:
-                emit(OP_IGNORE[op])
-                def fixup(literal, flags=flags):
-                    return _sre.getlower(literal, flags)
-            else:
+            if not flags & SRE_FLAG_IGNORECASE:
                 emit(op)
                 fixup = None
+            elif flags & SRE_FLAG_LOCALE:
+                emit(IN_LOC_IGNORE)
+                fixup = None
+            else:
+                emit(IN_IGNORE)
+                def fixup(literal, flags=flags):
+                    return _sre.getlower(literal, flags)
             skip = _len(code); emit(0)
             _compile_charset(av, flags, code, fixup, fixes)
             code[skip] = _len(code) - skip
