@@ -94,16 +94,51 @@ class ProfileTest(unittest.TestCase):
         self.assertTrue(os.path.exists(TESTFN))
 
     def test_regression_30113(self):
-        def foo(self):
+        """Test for profile bad return sentinel
+
+        When a profile.Profile is initialize, it will call simulate_call at the
+        end, simulate_call will do the dispatch_call with fake frame to initialize
+        self.cur. This will be the sentinel for last return, we can't dispatch
+        a return after this sentinel.
+
+        This test will check the sentinel is work, and will catch if the profiler
+        trying to dispatch_return at the sentinel. The problem will occur when
+        profile is set by sys.setprofile, and return back from helper function
+        such as __enter__ to be a context manager.
+        """
+        def bad_return_sentinel():
             pr = self.profilerclass()
             sys.setprofile(pr.dispatcher)
             return 0xDEADBEAF
 
+        def manual_fix_dispatch_call():
+            pr = self.profilerclass()
+            frame = sys._getframe(0)
+            pr.dispatch['call'](pr, frame, 0)
+            sys.setprofile(pr.dispatcher)
+            return 0xDEADBEAF
+
+        def profile_fix_dispatch_call():
+            def _adjust_frame(self):
+                frame = sys._getframe(1)
+                self.dispatch['call'](self, frame, 0)
+
+            pr = self.profilerclass()
+            pr._adjust_frame = _adjust_frame
+            pr._adjust_frame(pr)
+            sys.setprofile(pr.dispatcher)
+            return 0xDEADBEAF
+
+        def test_profile(helper):
+            helper()
+            sys.setprofile(None)
+
         regex = r"\('Bad return', \('profile', 0, 'profiler'\)\)"
         with self.assertRaisesRegex(AssertionError, regex):
-            foo(self)
+            test_profile(bad_return_sentinel)
 
-        sys.setprofile(None)
+        test_profile(manual_fix_dispatch_call)
+        test_profile(profile_fix_dispatch_call)
 
 
 def regenerate_expected_output(filename, cls):
