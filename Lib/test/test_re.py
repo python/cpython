@@ -883,17 +883,23 @@ class ReTests(unittest.TestCase):
     def test_category(self):
         self.assertEqual(re.match(r"(\s)", " ").group(1), " ")
 
-    def test_getlower(self):
+    @cpython_only
+    def test_case_helpers(self):
         import _sre
-        self.assertEqual(_sre.getlower(ord('A'), 0), ord('a'))
-        self.assertEqual(_sre.getlower(ord('A'), re.LOCALE), ord('a'))
-        self.assertEqual(_sre.getlower(ord('A'), re.UNICODE), ord('a'))
-        self.assertEqual(_sre.getlower(ord('A'), re.ASCII), ord('a'))
+        for i in range(128):
+            c = chr(i)
+            lo = ord(c.lower())
+            self.assertEqual(_sre.ascii_tolower(i), lo)
+            self.assertEqual(_sre.unicode_tolower(i), lo)
 
-        self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
-        self.assertEqual(re.match(b"abc", b"ABC", re.I).group(0), b"ABC")
-        self.assertEqual(re.match("abc", "ABC", re.I|re.A).group(0), "ABC")
-        self.assertEqual(re.match(b"abc", b"ABC", re.I|re.L).group(0), b"ABC")
+        for i in list(range(128, 0x1000)) + [0x10400, 0x10428]:
+            c = chr(i)
+            self.assertEqual(_sre.ascii_tolower(i), i)
+            if i != 0x0130:
+                self.assertEqual(_sre.unicode_tolower(i), ord(c.lower()))
+
+        self.assertEqual(_sre.ascii_tolower(0x0130), 0x0130)
+        self.assertEqual(_sre.unicode_tolower(0x0130), ord('i'))
 
     def test_not_literal(self):
         self.assertEqual(re.search(r"\s([^a])", " b").group(1), "b")
