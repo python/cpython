@@ -123,6 +123,7 @@ _INDENT = ' '*4  # for wrapped signatures
 _first_param = re.compile(r'(?<=\()\w*\,?\s*')
 _default_callable_argspec = "See source or doc"
 _invalid_method = "invalid method signature"
+_argument_positional = "('/' marks preceding arguments as positional-only)"
 
 
 def get_argspec(ob):
@@ -159,9 +160,8 @@ def get_argspec(ob):
             pass
 
     if '/' in argspec:
-        """Argument Clinic positional-only mark, ignore the result of signature
-        """
-        argspec = ''
+        """Using AC's positional argument should add the explain"""
+        argspec = '\n'.join([argspec, _argument_positional])
     if isinstance(fob, type) and argspec == '()':
         """fob with no argument, use default callable argspec"""
         argspec = _default_callable_argspec
