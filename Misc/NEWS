@@ -317,6 +317,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30215: Compiled regular expression objects with the re.LOCALE flag no
+  longer depend on the locale at compile time.  Only the locale at matching
+  time affects the result of matching.
+
 - bpo-30185: Avoid KeyboardInterrupt tracebacks in forkserver helper process
   when Ctrl-C is received.
 
