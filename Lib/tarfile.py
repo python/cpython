@@ -610,16 +610,17 @@ class _FileInFile(object):
        object.
     """
 
-    def __init__(self, fileobj, offset, size, blockinfo=None):
+    def __init__(self, fileobj, tarinfo):
         self.fileobj = fileobj
-        self.offset = offset
-        self.size = size
+        self.offset = tarinfo.offset_data
+        self.size = tarinfo.size
         self.position = 0
-        self.name = getattr(fileobj, "name", None)
+        self.name = tarinfo.name
         self.closed = False
+        blockinfo = tarinfo.sparse
 
         if blockinfo is None:
-            blockinfo = [(0, size)]
+            blockinfo = [(0, self.size)]
 
         # Construct a map with data and zero blocks.
         self.map_index = 0
@@ -711,8 +712,7 @@ class _FileInFile(object):
 class ExFileObject(io.BufferedReader):
 
     def __init__(self, tarfile, tarinfo):
-        fileobj = _FileInFile(tarfile.fileobj, tarinfo.offset_data,
-                tarinfo.size, tarinfo.sparse)
+        fileobj = _FileInFile(tarfile.fileobj, tarinfo)
         super().__init__(fileobj)
 #class ExFileObject
 
