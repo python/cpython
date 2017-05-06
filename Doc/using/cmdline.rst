@@ -734,10 +734,13 @@ conflict.
 
    If setting one of these locale categories succeeds, then the matching
    environment variables will be set (both ``LC_ALL`` and ``LANG`` for the
-   ``LC_ALL`` category, and ``LC_CTYPE`` for the ``LC_CTYPE`` category),
-   and (if :envvar:`PYTHONIOENCODING` is not explicitly set), the text encoding
-   and error handling for Python's standard streams in the current process
-   will be set to ``utf-8`` and ``surrogateescape`` respectively.
+   ``LC_ALL`` category, and ``LC_CTYPE`` for the ``LC_CTYPE`` category) in
+   the current process environment before the Python runtime is initialized.
+
+   Configuring one of these locales (either explicitly or via the above
+   implicit locale coercion) will automatically set the error handler for
+   :data:`sys.stdin` and :data:`sys.stdout` to ``surrogateescape``. This
+   behavior can be overridden using :envvar:`PYTHONIOENCODING` as usual.
 
    Availability: \*nix
 

@@ -15,7 +15,7 @@ from test.support.script_helper import (
 )
 
 # In order to get the warning messages to match up as expected, the candidate
-# order here must much the target locale order in Programs/python.c
+# order here must much the target locale order in Python/pylifecycle.c
 _C_UTF8_LOCALES = (
     # Entries: (Target locale, target category, expected env var updates)
     ("C.UTF-8", "LC_ALL", "LC_ALL & LANG"),
@@ -63,9 +63,13 @@ class EncodingDetails(_EncodingDetails):
         return dict(cls(expected_fsencoding, *stream_info)._asdict())
 
     @staticmethod
-    def _replace_ascii_alias(data):
-        """ASCII may be reported as ANSI_X3.4-1968, so replace it in output"""
-        return data.replace(b"ANSI_X3.4-1968", b"ascii")
+    def _handle_output_variations(data):
+        """Adjust the output to handle platform specific idiosyncrasies
+
+        * Some platforms report ASCII as ANSI_X3.4-1968
+        * Some platforms report UTF-8 instead of utf-8
+        """
+        return data.replace(b"ANSI_X3.4-1968", b"ascii").lower()
 
     @classmethod
     def get_child_details(cls, env_vars):
@@ -87,7 +91,7 @@ class EncodingDetails(_EncodingDetails):
         if not result.rc == 0:
             result.fail(py_cmd)
         # All subprocess outputs in this test case should be pure ASCII
-        adjusted_output = cls._replace_ascii_alias(result.out)
+        adjusted_output = cls._handle_output_variations(result.out)
         stdout_lines = adjusted_output.decode("ascii").rstrip().splitlines()
         child_encoding_details = dict(cls(*stdout_lines)._asdict())
         stderr_lines = result.err.decode("ascii").rstrip().splitlines()
@@ -99,15 +103,24 @@ class EncodingDetails(_EncodingDetails):
                      "C locale coercion disabled at build time")
 class LocaleOverrideTests(unittest.TestCase):
 
+    available_targets = []
+
     @classmethod
     def setUpClass(cls):
+        first_target_locale = first_env_updates = None
+        available_targets = cls.available_targets
+        # Find the target locales available in the current system
         for target_locale, target_category, env_updates in _C_UTF8_LOCALES:
             if _set_locale_in_subprocess(target_locale, target_category):
-                break
-        else:
+                available_targets.append(target_locale)
+                if first_target_locale is None:
+                    first_target_locale = target_locale
+                    first_env_updates = env_updates
+        if not available_targets:
             raise unittest.SkipTest("No C-with-UTF-8 locale available")
+        # Expect coercion to use the first available locale
         cls.EXPECTED_COERCION_WARNING = CLI_COERCION_WARNING_FMT.format(
-            env_updates, target_locale
+            first_env_updates, first_target_locale
         )
 
     def _check_child_encoding_details(self,
@@ -141,11 +154,12 @@ class LocaleOverrideTests(unittest.TestCase):
         """
 
         # Check for expected warning on stderr if C locale is coerced
+        self.maxDiff = None
+
         expected_warning = []
         if coerce_c_locale != "0":
             expected_warning.append(self.EXPECTED_COERCION_WARNING)
 
-        self.maxDiff = None
         base_var_dict = {
             "LANG": "",
             "LC_CTYPE": "",
@@ -166,7 +180,7 @@ class LocaleOverrideTests(unittest.TestCase):
 
 
     def test_test_PYTHONCOERCECLOCALE_not_set(self):
-        # This should coerce to the C.UTF-8 locale by default
+        # This should coerce to the first available target locale by default
         self._check_c_locale_coercion("utf-8", coerce_c_locale=None)
 
     def test_PYTHONCOERCECLOCALE_not_zero(self):
@@ -178,6 +192,29 @@ class LocaleOverrideTests(unittest.TestCase):
     def test_PYTHONCOERCECLOCALE_set_to_zero(self):
         # The setting "0" should result in the locale coercion being disabled
         self._check_c_locale_coercion("ascii", coerce_c_locale="0")
+
+    def test_external_target_locale_configuration(self):
+        # Explicitly setting a target locale should give the same behaviour as
+        # is seen when implicitly coercing to that target locale
+        self.maxDiff = None
+
+        expected_warning = []
+        expected_fsencoding = "utf-8"
+
+        base_var_dict = {
+            "LANG": "",
+            "LC_CTYPE": "",
+            "LC_ALL": "",
+        }
+        for env_var in base_var_dict:
+            for locale_to_set in self.available_targets:
+                with self.subTest(env_var=env_var,
+                                  configured_locale=locale_to_set):
+                    var_dict = base_var_dict.copy()
+                    var_dict[env_var] = locale_to_set
+                    self._check_child_encoding_details(var_dict,
+                                                       expected_fsencoding,
+                                                       expected_warning)
 
 
 # Details of the shared library warning emitted at runtime
