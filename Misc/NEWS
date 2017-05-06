@@ -602,9 +602,6 @@ Library
 - Issue #28985: Update authorizer constants in sqlite3 module.
   Patch by Dingyuan Wang.
 
-- Issue #29094: Offsets in a ZIP file created with extern file object and modes
-  "w" and "x" now are relative to the start of the file.
-
 - Issue #29079: Prevent infinite loop in pathlib.resolve() on Windows
 
 - Issue #13051: Fixed recursion errors in large or resized
@@ -783,10 +780,6 @@ Library
   Patch by Eryk Sun.
 
 - Issue #28317: The disassembler now decodes FORMAT_VALUE argument.
-
-- Issue #26293: Fixed writing ZIP files that starts not from the start of the
-  file.  Offsets in ZIP file now are relative to the start of the archive in
-  conforming to the specification.
 
 - Issue #28380: unittest.mock Mock autospec functions now properly support
   assert_called, assert_not_called, and assert_called_once.
