@@ -679,7 +679,10 @@ PyThread_ReInitTLS(void)
 }
 
 
-/* Thread Specific Storage (TSS) API */
+/* Thread Specific Storage (TSS) API
+
+   Implementation part of platform-specific
+*/
 
 int
 PyThread_tss_create(Py_tss_t *key)
@@ -710,22 +713,22 @@ PyThread_tss_delete(Py_tss_t *key)
 }
 
 int
-PyThread_tss_set(Py_tss_t key, void *value)
+PyThread_tss_set(Py_tss_t *key, void *value)
 {
-    int fail = pthread_setspecific(key._key, value);
+    int fail = pthread_setspecific(key->_key, value);
     return fail ? -1 : 0;
 }
 
 void *
-PyThread_tss_get(Py_tss_t key)
+PyThread_tss_get(Py_tss_t *key)
 {
-    return pthread_getspecific(key._key);
+    return pthread_getspecific(key->_key);
 }
 
 void
-PyThread_tss_delete_value(Py_tss_t key)
+PyThread_tss_delete_value(Py_tss_t *key)
 {
-    pthread_setspecific(key._key, NULL);
+    pthread_setspecific(key->_key, NULL);
 }
 
 

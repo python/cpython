@@ -115,6 +115,7 @@ PyThread_set_stacksize(size_t size)
 #endif
 }
 
+
 #ifndef Py_HAVE_NATIVE_TLS
 /* If the platform has not supplied a platform specific
    TLS implementation, provide our own.
@@ -128,16 +129,16 @@ Per-thread data ("key") support.
 Use PyThread_tss_create(&thekey) to create a new key.  This is typically shared
 across threads.
 
-Use PyThread_tss_set(thekey, value) to associate void* value with
+Use PyThread_tss_set(&thekey, value) to associate void* value with
 thekey in the current thread.  Each thread has a distinct mapping of thekey
 to a void* value.  Caution:  if the current thread already has a mapping
 for thekey, value is ignored.
 
-Use PyThread_tss_get(thekey) to retrieve the void* value associated
+Use PyThread_tss_get(&thekey) to retrieve the void* value associated
 with thekey in the current thread.  This returns NULL if no value is
 associated with thekey in the current thread.
 
-Use PyThread_tss_delete_value(thekey) to forget the current thread's associated
+Use PyThread_tss_delete_value(&thekey) to forget the current thread's associated
 value for thekey.  PyThread_tss_delete(&thekey) forgets the values associated
 with thekey across *all* threads.
 
@@ -271,21 +272,21 @@ int
 PyThread_set_key_value(int key, void *value)
 {
     Py_tss_t proxy = {._is_initialized = true, ._key = key};
-    return PyThread_tss_set(proxy, value);
+    return PyThread_tss_set(&proxy, value);
 }
 
 void *
 PyThread_get_key_value(int key)
 {
     Py_tss_t proxy = {._is_initialized = true, ._key = key};
-    return PyThread_tss_get(proxy);
+    return PyThread_tss_get(&proxy);
 }
 
 void
 PyThread_delete_key_value(int key)
 {
     Py_tss_t proxy = {._is_initialized = true, ._key = key};
-    PyThread_tss_delete_value(proxy);
+    PyThread_tss_delete_value(&proxy);
 }
 
 
@@ -296,7 +297,10 @@ PyThread_ReInitTLS(void)
 }
 
 
-/* Thread Specific Storage (TSS) API */
+/* Thread Specific Storage (TSS) API
+
+   Implementation part of platform-specific
+*/
 
 /* Assign a new key.  This must be called before any other functions in
  * this family, and callers must arrange to serialize calls to this
@@ -348,9 +352,9 @@ PyThread_tss_delete(Py_tss_t *key)
 }
 
 int
-PyThread_tss_set(Py_tss_t key, void *value)
+PyThread_tss_set(Py_tss_t *key, void *value)
 {
-    struct key *p = find_key(1, key._key, value);
+    struct key *p = find_key(1, key->_key, value);
 
     if (p == NULL)
         return -1;
@@ -362,9 +366,9 @@ PyThread_tss_set(Py_tss_t key, void *value)
  * if the current thread doesn't have an association for key.
  */
 void *
-PyThread_tss_get(Py_tss_t key)
+PyThread_tss_get(Py_tss_t *key)
 {
-    struct key *p = find_key(0, key._key, NULL);
+    struct key *p = find_key(0, key->_key, NULL);
 
     if (p == NULL)
         return NULL;
@@ -374,7 +378,7 @@ PyThread_tss_get(Py_tss_t key)
 
 /* Forget the current thread's association for key, if any. */
 void
-PyThread_tss_delete_value(Py_tss_t key)
+PyThread_tss_delete_value(Py_tss_t *key)
 {
     unsigned long id = PyThread_get_thread_ident();
     struct key *p, **q;
@@ -382,7 +386,7 @@ PyThread_tss_delete_value(Py_tss_t key)
     PyThread_acquire_lock(keymutex, 1);
     q = &keyhead;
     while ((p = *q) != NULL) {
-        if (p->key == key._key && p->id == id) {
+        if (p->key == key->_key && p->id == id) {
             *q = p->next;
             PyMem_RawFree((void *)p);
             /* NB This does *not* free p->value! */
@@ -427,6 +431,40 @@ PyThread_ReInitTSS(void)
 }
 
 #endif /* Py_HAVE_NATIVE_TLS */
+
+
+/* Thread Specific Storage (TSS) API
+
+   Implementation part of common
+*/
+
+Py_tss_t *
+PyThread_tss_alloc(void)
+{
+    Py_tss_t *new_key = (Py_tss_t *)PyMem_RawMalloc(sizeof(Py_tss_t));
+    if (new_key == NULL) {
+        return NULL;
+    }
+    new_key->_is_initialized = false;
+    return new_key;
+}
+
+void
+PyThread_tss_free(Py_tss_t *key)
+{
+    if (key != NULL) {
+        PyThread_tss_delete(key);
+    }
+    PyMem_RawFree((void *)key);
+}
+
+bool
+PyThread_tss_is_created(Py_tss_t *key)
+{
+    assert(key != NULL);
+    return key->_is_initialized;
+}
+
 
 PyDoc_STRVAR(threadinfo__doc__,
 "sys.thread_info\n\

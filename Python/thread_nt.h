@@ -359,7 +359,7 @@ _pythread_nt_set_stacksize(size_t size)
 int
 PyThread_create_key(void)
 {
-    DWORD result= TlsAlloc();
+    DWORD result = TlsAlloc();
     if (result == TLS_OUT_OF_INDEXES)
         return -1;
     return (int)result;
@@ -412,7 +412,10 @@ PyThread_ReInitTLS(void)
 }
 
 
-/* Thread Specific Storage (TSS) API */
+/* Thread Specific Storage (TSS) API
+
+   Implementation part of platform-specific
+*/
 
 int
 PyThread_tss_create(Py_tss_t *key)
@@ -445,14 +448,14 @@ PyThread_tss_delete(Py_tss_t *key)
 }
 
 int
-PyThread_tss_set(Py_tss_t key, void *value)
+PyThread_tss_set(Py_tss_t *key, void *value)
 {
-    BOOL ok = TlsSetValue(key._key, value);
+    BOOL ok = TlsSetValue(key->_key, value);
     return ok ? 0 : -1;
 }
 
 void *
-PyThread_tss_get(Py_tss_t key)
+PyThread_tss_get(Py_tss_t *key)
 {
     /* because TSS is used in the Py_END_ALLOW_THREAD macro,
      * it is necessary to preserve the windows error state, because
@@ -461,18 +464,18 @@ PyThread_tss_get(Py_tss_t key)
      * do it here.
      */
     DWORD error = GetLastError();
-    void *result = TlsGetValue(key._key);
+    void *result = TlsGetValue(key->_key);
     SetLastError(error);
     return result;
 }
 
 void
-PyThread_tss_delete_value(Py_tss_t key)
+PyThread_tss_delete_value(Py_tss_t *key)
 {
     /* NULL is used as "key missing", and it is also the default
      * given by TlsGetValue() if nothing has been set yet.
      */
-    TlsSetValue(key._key, NULL);
+    TlsSetValue(key->_key, NULL);
 }
 
 

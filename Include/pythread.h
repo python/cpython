@@ -79,6 +79,7 @@ PyAPI_FUNC(int) PyThread_set_stacksize(size_t);
 PyAPI_FUNC(PyObject*) PyThread_GetInfo(void);
 #endif
 
+
 /* Thread Local Storage (TLS) API
    TLS API is DEPRECATED.  Use Thread Specific Storage API.
 */
@@ -91,18 +92,26 @@ PyAPI_FUNC(void) PyThread_delete_key_value(int key) Py_DEPRECATED(3.7);
 /* Cleanup after a fork */
 PyAPI_FUNC(void) PyThread_ReInitTLS(void) Py_DEPRECATED(3.7);
 
+
 /* Thread Specific Storage (TSS) API
 
    POSIX hasn't defined that pthread_key_t is compatible with int
    (for details, see PEP 539).  Therefore, TSS API uses opaque type to cover
    the key details.
 */
+#ifdef Py_LIMITED_API
+typedef struct _py_tss_t Py_tss_t;
+#else
 
 #if defined(_POSIX_THREADS)
+    /* Darwin needs pthread.h to know type name the pthread_key_t. */
+#   include <pthread.h>
 #   define NATIVE_TSS_KEY_T     pthread_key_t
 #elif defined(NT_THREADS)
-#   include <windows.h>
-#   define NATIVE_TSS_KEY_T     DWORD
+    /* In Windows, native TSS key type is DWORD,
+       but hardcode the unsigned long to avoid errors for include directive.
+    */
+#   define NATIVE_TSS_KEY_T     unsigned long
 #else  /* For the platform that has not supplied native TSS */
 #   define NATIVE_TSS_KEY_T     int
 #endif
@@ -110,18 +119,12 @@ PyAPI_FUNC(void) PyThread_ReInitTLS(void) Py_DEPRECATED(3.7);
 /* Py_tss_t is opaque type and you *must not* directly read and write.
    When you'd check whether the key is created, use PyThread_tss_is_created.
 */
-typedef struct {
+typedef struct _py_tss_t {
     bool _is_initialized;
     NATIVE_TSS_KEY_T _key;
 } Py_tss_t;
 
 #undef NATIVE_TSS_KEY_T
-
-static inline bool
-PyThread_tss_is_created(Py_tss_t key)
-{
-    return key._is_initialized;
-}
 
 /* Py_tss_NEEDS_INIT is the defined invalid value, and you *must* initialize
    the Py_tss_t variable by this value to use TSS API.
@@ -131,15 +134,23 @@ PyThread_tss_is_created(Py_tss_t key)
    int fail = PyThread_tss_create(&thekey);
 */
 #define Py_tss_NEEDS_INIT   {._is_initialized = false}
+#endif
 
 PyAPI_FUNC(int) PyThread_tss_create(Py_tss_t *key);
 PyAPI_FUNC(void) PyThread_tss_delete(Py_tss_t *key);
-PyAPI_FUNC(int) PyThread_tss_set(Py_tss_t key, void *value);
-PyAPI_FUNC(void *) PyThread_tss_get(Py_tss_t key);
-PyAPI_FUNC(void) PyThread_tss_delete_value(Py_tss_t key);
+PyAPI_FUNC(int) PyThread_tss_set(Py_tss_t *key, void *value);
+PyAPI_FUNC(void *) PyThread_tss_get(Py_tss_t *key);
+PyAPI_FUNC(void) PyThread_tss_delete_value(Py_tss_t *key);
 
+#ifndef Py_LIMITED_API
 /* Cleanup after a fork */
 PyAPI_FUNC(void) PyThread_ReInitTSS(void);
+#endif
+
+PyAPI_FUNC(Py_tss_t *) PyThread_tss_alloc(void);
+PyAPI_FUNC(void) PyThread_tss_free(Py_tss_t *key);
+
+PyAPI_FUNC(bool) PyThread_tss_is_created(Py_tss_t *key);
 
 #ifdef __cplusplus
 }

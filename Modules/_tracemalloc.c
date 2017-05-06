@@ -181,8 +181,8 @@ get_reentrant(void)
 {
     void *ptr;
 
-    assert(PyThread_tss_is_created(tracemalloc_reentrant_key));
-    ptr = PyThread_tss_get(tracemalloc_reentrant_key);
+    assert(PyThread_tss_is_created(&tracemalloc_reentrant_key));
+    ptr = PyThread_tss_get(&tracemalloc_reentrant_key);
     if (ptr != NULL) {
         assert(ptr == REENTRANT);
         return 1;
@@ -195,15 +195,15 @@ static void
 set_reentrant(int reentrant)
 {
     assert(reentrant == 0 || reentrant == 1);
-    assert(PyThread_tss_is_created(tracemalloc_reentrant_key));
+    assert(PyThread_tss_is_created(&tracemalloc_reentrant_key));
 
     if (reentrant) {
         assert(!get_reentrant());
-        PyThread_tss_set(tracemalloc_reentrant_key, REENTRANT);
+        PyThread_tss_set(&tracemalloc_reentrant_key, REENTRANT);
     }
     else {
         assert(get_reentrant());
-        PyThread_tss_set(tracemalloc_reentrant_key, NULL);
+        PyThread_tss_set(&tracemalloc_reentrant_key, NULL);
     }
 }
 
