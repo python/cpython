@@ -668,6 +668,7 @@ OTHER_LIBTOOL_OPT
 UNIVERSAL_ARCH_FLAGS
 CFLAGS_NODIST
 BASECFLAGS
+CFLAGS_ALIASING
 OPT
 LLVM_PROF_FOUND
 target_os
@@ -695,7 +696,6 @@ ARFLAGS
 ac_ct_AR
 AR
 RANLIB
-USE_INLINE
 GNULD
 LINKCC
 LDVERSION
@@ -749,9 +749,8 @@ UNIVERSALSDK
 CONFIG_ARGS
 SOVERSION
 VERSION
-GENERATED_COMMENT
 PYTHON_FOR_BUILD
-PYTHON_FOR_GEN
+PYTHON_FOR_REGEN
 host_os
 host_vendor
 host_cpu
@@ -784,6 +783,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -896,6 +896,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1148,6 +1149,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1285,7 +1295,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1438,6 +1448,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -2706,7 +2717,7 @@ fi
 
 
 
-if test -e $srcdir/.git/HEAD
+if test -e $srcdir/.git
 then
 # Extract the first word of "git", so it can be a program name with args.
 set dummy git; ac_word=$2
@@ -2751,8 +2762,8 @@ HAS_GIT=no-repository
 fi
 if test $HAS_GIT = found
 then
-    GITVERSION="git -C \$(srcdir) rev-parse HEAD"
-    GITTAG="git -C \$(srcdir) name-rev --tags --name-only HEAD"
+    GITVERSION="git -C \$(srcdir) rev-parse --short HEAD"
+    GITTAG="git -C \$(srcdir) describe --all --always --dirty"
     GITBRANCH="git -C \$(srcdir) name-rev --name-only HEAD"
 else
     GITVERSION=""
@@ -2876,11 +2887,11 @@ do
 set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_PYTHON_FOR_GEN+:} false; then :
+if ${ac_cv_prog_PYTHON_FOR_REGEN+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test -n "$PYTHON_FOR_GEN"; then
-  ac_cv_prog_PYTHON_FOR_GEN="$PYTHON_FOR_GEN" # Let the user override the test.
+  if test -n "$PYTHON_FOR_REGEN"; then
+  ac_cv_prog_PYTHON_FOR_REGEN="$PYTHON_FOR_REGEN" # Let the user override the test.
 else
 as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in $PATH
@@ -2889,7 +2900,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_PYTHON_FOR_GEN="$ac_prog"
+    ac_cv_prog_PYTHON_FOR_REGEN="$ac_prog"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -2899,25 +2910,20 @@ IFS=$as_save_IFS
 
 fi
 fi
-PYTHON_FOR_GEN=$ac_cv_prog_PYTHON_FOR_GEN
-if test -n "$PYTHON_FOR_GEN"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON_FOR_GEN" >&5
-$as_echo "$PYTHON_FOR_GEN" >&6; }
+PYTHON_FOR_REGEN=$ac_cv_prog_PYTHON_FOR_REGEN
+if test -n "$PYTHON_FOR_REGEN"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON_FOR_REGEN" >&5
+$as_echo "$PYTHON_FOR_REGEN" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-  test -n "$PYTHON_FOR_GEN" && break
+  test -n "$PYTHON_FOR_REGEN" && break
 done
-test -n "$PYTHON_FOR_GEN" || PYTHON_FOR_GEN="not-found"
+test -n "$PYTHON_FOR_REGEN" || PYTHON_FOR_REGEN="python3"
 
-if test "$PYTHON_FOR_GEN" = not-found; then
-    PYTHON_FOR_GEN='@echo "Cannot generate $@, python not found !" && \
-    echo "To skip re-generation of $@ run <make touch> or <make -t $@>." && \
-    echo "Otherwise, set python in PATH and run configure or run <make PYTHON_FOR_GEN=python>." && false &&'
-fi
 
 
 if test "$cross_compiling" = yes; then
@@ -2938,15 +2944,11 @@ $as_echo_n "checking for python interpreter for cross build... " >&6; }
 $as_echo "$interp" >&6; }
 	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$interp
     fi
-    # Used to comment out stuff for rebuilding generated files
-    GENERATED_COMMENT='#'
 elif test "$cross_compiling" = maybe; then
     as_fn_error $? "Cross compiling required --host=HOST-TUPLE and --build=ARCH" "$LINENO" 5
 else
     PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
-    GENERATED_COMMENT=''
 fi
-
 
 
 
@@ -5835,56 +5837,6 @@ esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GNULD" >&5
 $as_echo "$GNULD" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inline" >&5
-$as_echo_n "checking for inline... " >&6; }
-if ${ac_cv_c_inline+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_cv_c_inline=no
-for ac_kw in inline __inline__ __inline; do
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#ifndef __cplusplus
-typedef int foo_t;
-static $ac_kw foo_t static_foo () {return 0; }
-$ac_kw foo_t foo () {return 0; }
-#endif
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_c_inline=$ac_kw
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  test "$ac_cv_c_inline" != no && break
-done
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_inline" >&5
-$as_echo "$ac_cv_c_inline" >&6; }
-
-case $ac_cv_c_inline in
-  inline | yes) ;;
-  *)
-    case $ac_cv_c_inline in
-      no) ac_val=;;
-      *) ac_val=$ac_cv_c_inline;;
-    esac
-    cat >>confdefs.h <<_ACEOF
-#ifndef __cplusplus
-#define inline $ac_val
-#endif
-_ACEOF
-    ;;
-esac
-
-if test "$ac_cv_c_inline" != no ; then
-
-$as_echo "#define USE_INLINE 1" >>confdefs.h
-
-
-fi
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-shared" >&5
 $as_echo_n "checking for --enable-shared... " >&6; }
 # Check whether --enable-shared was given.
@@ -6529,7 +6481,7 @@ $as_echo_n "checking for --enable-optimizations... " >&6; }
 # Check whether --enable-optimizations was given.
 if test "${enable_optimizations+set}" = set; then :
   enableval=$enable_optimizations;
-if test "$withval" != no
+if test "$enableval" != no
 then
   Py_OPT='true'
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -6847,6 +6799,7 @@ esac
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 
+
 if test "${OPT-unset}" = "unset"
 then
     case $GCC in
@@ -6859,11 +6812,27 @@ then
            WRAP="-fwrapv"
         fi
 
-        # Clang also needs -fwrapv
         case $CC in
-            *clang*) WRAP="-fwrapv"
-            ;;
+            *clang*)
+                cc_is_clang=1
+                ;;
+            *)
+                if $CC --version 2>&1 | grep -q clang
+                then
+                    cc_is_clang=1
+                else
+                    cc_is_clang=
+                fi
         esac
+
+        if test -n "${cc_is_clang}"
+        then
+            # Clang also needs -fwrapv
+            WRAP="-fwrapv"
+            # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
+            # see Makefile.pre.in for more information
+            CFLAGS_ALIASING="-fno-strict-aliasing"
+        fi
 
 	case $ac_cv_prog_cc_g in
 	yes)
@@ -6871,18 +6840,21 @@ then
 		# Optimization messes up debuggers, so turn it off for
 		# debug builds.
                 if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall $STRICT_PROTO"
+                    OPT="-g -Og -Wall"
                 else
-                    OPT="-g -O0 -Wall $STRICT_PROTO"
+                    OPT="-g -O0 -Wall"
                 fi
 	    else
-		OPT="-g $WRAP -O3 -Wall $STRICT_PROTO"
+		OPT="-g $WRAP -O3 -Wall"
 	    fi
 	    ;;
 	*)
-	    OPT="-O3 -Wall $STRICT_PROTO"
+	    OPT="-O3 -Wall"
 	    ;;
 	esac
+
+	OPT="$OPT $STRICT_PROTO"
+
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
 	    ;;
@@ -9746,8 +9718,11 @@ esac
 # check for systems that require aligned memory access
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking aligned memory access is required" >&5
 $as_echo_n "checking aligned memory access is required... " >&6; }
-if test "$cross_compiling" = yes; then :
-  aligned_required=yes
+if ${ac_cv_aligned_required+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv_aligned_required=yes
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -9764,26 +9739,26 @@ int main()
         return 1;
     return 0;
 }
-
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-  aligned_required=no
+  ac_cv_aligned_required=no
 else
-  aligned_required=yes
+  ac_cv_aligned_required=yes
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
 
-if test "$aligned_required" = yes ; then
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_aligned_required" >&5
+$as_echo "$ac_cv_aligned_required" >&6; }
+if test "$ac_cv_aligned_required" = yes ; then
 
 $as_echo "#define HAVE_ALIGNED_REQUIRED 1" >>confdefs.h
 
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $aligned_required" >&5
-$as_echo "$aligned_required" >&6; }
-
 
 # str, bytes and memoryview hash algorithm
 
@@ -16374,7 +16349,7 @@ do
 done
 
 
-SRCDIRS="Parser Grammar Objects Python Modules Mac Programs"
+SRCDIRS="Parser Objects Python Modules Programs"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 $as_echo_n "checking for build directories... " >&6; }
 for dir in $SRCDIRS; do

@@ -6,7 +6,6 @@ import unittest
 import warnings
 import weakref
 import inspect
-import types
 
 from test import support
 

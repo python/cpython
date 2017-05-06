@@ -1920,7 +1920,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
 
     if (!PyType_Check(arraytype)) {
         PyErr_Format(PyExc_TypeError,
-            "first argument must a type object, not %.200s",
+            "first argument must be a type object, not %.200s",
             Py_TYPE(arraytype)->tp_name);
         return NULL;
     }
@@ -2143,7 +2143,7 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
 
     if (!PyLong_Check(value)) {
         PyErr_SetString(PyExc_TypeError,
-                        "__reduce_ex__ argument should an integer");
+                        "__reduce_ex__ argument should be an integer");
         return NULL;
     }
     protocol = PyLong_AsLong(value);
@@ -2289,10 +2289,11 @@ array_subscr(arrayobject* self, PyObject* item)
         arrayobject* ar;
         int itemsize = self->ob_descr->itemsize;
 
-        if (PySlice_GetIndicesEx(item, Py_SIZE(self),
-                         &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = PySlice_AdjustIndices(Py_SIZE(self), &start, &stop,
+                                            step);
 
         if (slicelength <= 0) {
             return newarrayobject(&Arraytype, 0, self->ob_descr);
@@ -2360,15 +2361,15 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
             return (*self->ob_descr->setitem)(self, i, value);
     }
     else if (PySlice_Check(item)) {
-        if (PySlice_GetIndicesEx(item,
-                                 Py_SIZE(self), &start, &stop,
-                                 &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
+        slicelength = PySlice_AdjustIndices(Py_SIZE(self), &start, &stop,
+                                            step);
     }
     else {
         PyErr_SetString(PyExc_TypeError,
-                        "array indices must be integer");
+                        "array indices must be integers");
         return -1;
     }
     if (value == NULL) {

@@ -451,49 +451,49 @@ APIs:
    | :attr:`%c`        | int                 | A single character,            |
    |                   |                     | represented as a C int.        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%d`        | int                 | Exactly equivalent to          |
-   |                   |                     | ``printf("%d")``.              |
+   | :attr:`%d`        | int                 | Equivalent to                  |
+   |                   |                     | ``printf("%d")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%u`        | unsigned int        | Exactly equivalent to          |
-   |                   |                     | ``printf("%u")``.              |
+   | :attr:`%u`        | unsigned int        | Equivalent to                  |
+   |                   |                     | ``printf("%u")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%ld`       | long                | Exactly equivalent to          |
-   |                   |                     | ``printf("%ld")``.             |
+   | :attr:`%ld`       | long                | Equivalent to                  |
+   |                   |                     | ``printf("%ld")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%li`       | long                | Exactly equivalent to          |
-   |                   |                     | ``printf("%li")``.             |
+   | :attr:`%li`       | long                | Equivalent to                  |
+   |                   |                     | ``printf("%li")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lu`       | unsigned long       | Exactly equivalent to          |
-   |                   |                     | ``printf("%lu")``.             |
+   | :attr:`%lu`       | unsigned long       | Equivalent to                  |
+   |                   |                     | ``printf("%lu")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lld`      | long long           | Exactly equivalent to          |
-   |                   |                     | ``printf("%lld")``.            |
+   | :attr:`%lld`      | long long           | Equivalent to                  |
+   |                   |                     | ``printf("%lld")``. [1]_       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%lli`      | long long           | Exactly equivalent to          |
-   |                   |                     | ``printf("%lli")``.            |
+   | :attr:`%lli`      | long long           | Equivalent to                  |
+   |                   |                     | ``printf("%lli")``. [1]_       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%llu`      | unsigned long long  | Exactly equivalent to          |
-   |                   |                     | ``printf("%llu")``.            |
+   | :attr:`%llu`      | unsigned long long  | Equivalent to                  |
+   |                   |                     | ``printf("%llu")``. [1]_       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zd`       | Py_ssize_t          | Exactly equivalent to          |
-   |                   |                     | ``printf("%zd")``.             |
+   | :attr:`%zd`       | Py_ssize_t          | Equivalent to                  |
+   |                   |                     | ``printf("%zd")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zi`       | Py_ssize_t          | Exactly equivalent to          |
-   |                   |                     | ``printf("%zi")``.             |
+   | :attr:`%zi`       | Py_ssize_t          | Equivalent to                  |
+   |                   |                     | ``printf("%zi")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%zu`       | size_t              | Exactly equivalent to          |
-   |                   |                     | ``printf("%zu")``.             |
+   | :attr:`%zu`       | size_t              | Equivalent to                  |
+   |                   |                     | ``printf("%zu")``. [1]_        |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%i`        | int                 | Exactly equivalent to          |
-   |                   |                     | ``printf("%i")``.              |
+   | :attr:`%i`        | int                 | Equivalent to                  |
+   |                   |                     | ``printf("%i")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%x`        | int                 | Exactly equivalent to          |
-   |                   |                     | ``printf("%x")``.              |
+   | :attr:`%x`        | int                 | Equivalent to                  |
+   |                   |                     | ``printf("%x")``. [1]_         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%s`        | char\*              | A null-terminated C character  |
+   | :attr:`%s`        | const char\*        | A null-terminated C character  |
    |                   |                     | array.                         |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%p`        | void\*              | The hex representation of a C  |
+   | :attr:`%p`        | const void\*        | The hex representation of a C  |
    |                   |                     | pointer. Mostly equivalent to  |
    |                   |                     | ``printf("%p")`` except that   |
    |                   |                     | it is guaranteed to start with |
@@ -506,8 +506,8 @@ APIs:
    +-------------------+---------------------+--------------------------------+
    | :attr:`%U`        | PyObject\*          | A unicode object.              |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%V`        | PyObject\*, char \* | A unicode object (which may be |
-   |                   |                     | *NULL*) and a null-terminated  |
+   | :attr:`%V`        | PyObject\*,         | A unicode object (which may be |
+   |                   | const char\*        | *NULL*) and a null-terminated  |
    |                   |                     | C character array as a second  |
    |                   |                     | parameter (which will be used, |
    |                   |                     | if the first parameter is      |
@@ -529,6 +529,9 @@ APIs:
       ``"%V"`` (if the ``PyObject*`` argument is NULL), and a number of
       characters for ``"%A"``, ``"%U"``, ``"%S"``, ``"%R"`` and ``"%V"``
       (if the ``PyObject*`` argument is not NULL).
+
+   .. [1] For integer specifiers (d, u, ld, li, lu, lld, lli, llu, zd, zi,
+      zu, i, x): the 0-conversion flag has effect even when a precision is given.
 
    .. versionchanged:: 3.2
       Support for ``"%lld"`` and ``"%llu"`` added.
@@ -1399,77 +1402,78 @@ Character Map Codecs
 This codec is special in that it can be used to implement many different codecs
 (and this is in fact what was done to obtain most of the standard codecs
 included in the :mod:`encodings` package). The codec uses mapping to encode and
-decode characters.
-
-Decoding mappings must map single string characters to single Unicode
-characters, integers (which are then interpreted as Unicode ordinals) or ``None``
-(meaning "undefined mapping" and causing an error).
-
-Encoding mappings must map single Unicode characters to single string
-characters, integers (which are then interpreted as Latin-1 ordinals) or ``None``
-(meaning "undefined mapping" and causing an error).
-
-The mapping objects provided must only support the __getitem__ mapping
-interface.
-
-If a character lookup fails with a LookupError, the character is copied as-is
-meaning that its ordinal value will be interpreted as Unicode or Latin-1 ordinal
-resp. Because of this, mappings only need to contain those mappings which map
-characters to different code points.
+decode characters.  The mapping objects provided must support the
+:meth:`__getitem__` mapping interface; dictionaries and sequences work well.
 
 These are the mapping codec APIs:
 
-.. c:function:: PyObject* PyUnicode_DecodeCharmap(const char *s, Py_ssize_t size, \
+.. c:function:: PyObject* PyUnicode_DecodeCharmap(const char *data, Py_ssize_t size, \
                               PyObject *mapping, const char *errors)
 
-   Create a Unicode object by decoding *size* bytes of the encoded string *s* using
-   the given *mapping* object.  Return *NULL* if an exception was raised by the
-   codec. If *mapping* is *NULL* latin-1 decoding will be done. Else it can be a
-   dictionary mapping byte or a unicode string, which is treated as a lookup table.
-   Byte values greater that the length of the string and U+FFFE "characters" are
-   treated as "undefined mapping".
+   Create a Unicode object by decoding *size* bytes of the encoded string *s*
+   using the given *mapping* object.  Return *NULL* if an exception was raised
+   by the codec.
+
+   If *mapping* is *NULL*, Latin-1 decoding will be applied.  Else
+   *mapping* must map bytes ordinals (integers in the range from 0 to 255)
+   to Unicode strings, integers (which are then interpreted as Unicode
+   ordinals) or ``None``.  Unmapped data bytes -- ones which cause a
+   :exc:`LookupError`, as well as ones which get mapped to ``None``,
+   ``0xFFFE`` or ``'\ufffe'``, are treated as undefined mappings and cause
+   an error.
 
 
 .. c:function:: PyObject* PyUnicode_AsCharmapString(PyObject *unicode, PyObject *mapping)
 
-   Encode a Unicode object using the given *mapping* object and return the result
-   as Python string object.  Error handling is "strict".  Return *NULL* if an
+   Encode a Unicode object using the given *mapping* object and return the
+   result as a bytes object.  Error handling is "strict".  Return *NULL* if an
    exception was raised by the codec.
 
-The following codec API is special in that maps Unicode to Unicode.
-
-
-.. c:function:: PyObject* PyUnicode_TranslateCharmap(const Py_UNICODE *s, Py_ssize_t size, \
-                              PyObject *table, const char *errors)
-
-   Translate a :c:type:`Py_UNICODE` buffer of the given *size* by applying a
-   character mapping *table* to it and return the resulting Unicode object.  Return
-   *NULL* when an exception was raised by the codec.
-
-   The *mapping* table must map Unicode ordinal integers to Unicode ordinal
-   integers or ``None`` (causing deletion of the character).
-
-   Mapping tables need only provide the :meth:`__getitem__` interface; dictionaries
-   and sequences work well.  Unmapped character ordinals (ones which cause a
-   :exc:`LookupError`) are left untouched and are copied as-is.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_Translate`. or :ref:`generic codec based API
-      <codec-registry>`
+   The *mapping* object must map Unicode ordinal integers to bytes objects,
+   integers in the range from 0 to 255 or ``None``.  Unmapped character
+   ordinals (ones which cause a :exc:`LookupError`) as well as mapped to
+   ``None`` are treated as "undefined mapping" and cause an error.
 
 
 .. c:function:: PyObject* PyUnicode_EncodeCharmap(const Py_UNICODE *s, Py_ssize_t size, \
                               PyObject *mapping, const char *errors)
 
    Encode the :c:type:`Py_UNICODE` buffer of the given *size* using the given
-   *mapping* object and return a Python string object. Return *NULL* if an
-   exception was raised by the codec.
+   *mapping* object and return the result as a bytes object.  Return *NULL* if
+   an exception was raised by the codec.
 
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsCharmapString` or
       :c:func:`PyUnicode_AsEncodedString`.
+
+
+The following codec API is special in that maps Unicode to Unicode.
+
+.. c:function:: PyObject* PyUnicode_Translate(PyObject *unicode, \
+                              PyObject *mapping, const char *errors)
+
+   Translate a Unicode object using the given *mapping* object and return the
+   resulting Unicode object.  Return *NULL* if an exception was raised by the
+   codec.
+
+   The *mapping* object must map Unicode ordinal integers to Unicode strings,
+   integers (which are then interpreted as Unicode ordinals) or ``None``
+   (causing deletion of the character).  Unmapped character ordinals (ones
+   which cause a :exc:`LookupError`) are left untouched and are copied as-is.
+
+
+.. c:function:: PyObject* PyUnicode_TranslateCharmap(const Py_UNICODE *s, Py_ssize_t size, \
+                              PyObject *mapping, const char *errors)
+
+   Translate a :c:type:`Py_UNICODE` buffer of the given *size* by applying a
+   character *mapping* table to it and return the resulting Unicode object.
+   Return *NULL* when an exception was raised by the codec.
+
+   .. deprecated-removed:: 3.3 4.0
+      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+      :c:func:`PyUnicode_Translate`. or :ref:`generic codec based API
+      <codec-registry>`
 
 
 MBCS codecs for Windows

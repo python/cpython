@@ -754,6 +754,18 @@ class FaultHandlerTests(unittest.TestCase):
                 3,
                 name)
 
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_disable_windows_exc_handler(self):
+        code = dedent("""
+            import faulthandler
+            faulthandler.enable()
+            faulthandler.disable()
+            code = faulthandler._EXCEPTION_ACCESS_VIOLATION
+            faulthandler._raise_exception(code)
+        """)
+        output, exitcode = self.get_output(code)
+        self.assertEqual(output, [])
+        self.assertEqual(exitcode, 0xC0000005)
 
 
 if __name__ == "__main__":

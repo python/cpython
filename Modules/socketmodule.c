@@ -1211,9 +1211,9 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
     {
         struct sockaddr_un *a = (struct sockaddr_un *) addr;
 #ifdef __linux__
-        if (a->sun_path[0] == 0) {  /* Linux abstract namespace */
-            addrlen -= offsetof(struct sockaddr_un, sun_path);
-            return PyBytes_FromStringAndSize(a->sun_path, addrlen);
+        size_t linuxaddrlen = addrlen - offsetof(struct sockaddr_un, sun_path);
+        if (linuxaddrlen > 0 && a->sun_path[0] == 0) {  /* Linux abstract namespace */
+            return PyBytes_FromStringAndSize(a->sun_path, linuxaddrlen);
         }
         else
 #endif /* linux */
@@ -7506,6 +7506,9 @@ PyInit__socket(void)
 #endif
 #ifdef  TCP_USER_TIMEOUT
     PyModule_AddIntMacro(m, TCP_USER_TIMEOUT);
+#endif
+#ifdef  TCP_NOTSENT_LOWAT
+    PyModule_AddIntMacro(m, TCP_NOTSENT_LOWAT);
 #endif
 
     /* IPX options */

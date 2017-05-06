@@ -1282,6 +1282,8 @@ Several constants are available to specify character cell attributes:
 +------------------+-------------------------------+
 | ``A_BOLD``       | Bold mode.                    |
 +------------------+-------------------------------+
+| ``A_ITALIC``     | Italic mode.                  |
++------------------+-------------------------------+
 | ``A_DIM``        | Dim mode.                     |
 +------------------+-------------------------------+
 | ``A_NORMAL``     | Normal attribute.             |
@@ -1293,6 +1295,9 @@ Several constants are available to specify character cell attributes:
 +------------------+-------------------------------+
 | ``A_UNDERLINE``  | Underline mode.               |
 +------------------+-------------------------------+
+
+.. versionadded:: 3.7
+   ``A_ITALIC`` was added.
 
 Keys are referred to by integer constants with names starting with  ``KEY_``.
 The exact keycaps available are system dependent.
@@ -1443,7 +1448,7 @@ The exact keycaps available are system dependent.
 +-------------------+--------------------------------------------+
 | ``KEY_SEOL``      | Shifted Clear line                         |
 +-------------------+--------------------------------------------+
-| ``KEY_SEXIT``     | Shifted Dxit                               |
+| ``KEY_SEXIT``     | Shifted Exit                               |
 +-------------------+--------------------------------------------+
 | ``KEY_SFIND``     | Shifted Find                               |
 +-------------------+--------------------------------------------+
