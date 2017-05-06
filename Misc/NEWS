@@ -321,6 +321,14 @@ Library
   by setting __enter__ = None or __exit__ = None, following the pattern
   introduced in bpo-25958. Patch by Jelle Zijlstra.
 
+- bpo-30243: Removed the __init__ methods of _json's scanner and encoder.
+  Misusing them could cause memory leaks or crashes.  Now scanner and encoder
+  objects are completely initialized in the __new__ methods.
+
+- bpo-30215: Compiled regular expression objects with the re.LOCALE flag no
+  longer depend on the locale at compile time.  Only the locale at matching
+  time affects the result of matching.
+
 - bpo-30185: Avoid KeyboardInterrupt tracebacks in forkserver helper process
   when Ctrl-C is received.
 
@@ -357,6 +365,9 @@ Library
   readline() or __next__() respectively return non-sizeable object.
   Fixed possible other errors caused by not checking results of PyObject_Size(),
   PySequence_Size(), or PyMapping_Size().
+
+- bpo-30218: Fix PathLike support for shutil.unpack_archive. Patch by Jelle
+  Zijlstra.
 
 - bpo-10076: Compiled regular expression and match objects in the re module
   now support copy.copy() and copy.deepcopy() (they are considered atomic).
@@ -595,9 +606,6 @@ Library
 - Issue #28985: Update authorizer constants in sqlite3 module.
   Patch by Dingyuan Wang.
 
-- Issue #29094: Offsets in a ZIP file created with extern file object and modes
-  "w" and "x" now are relative to the start of the file.
-
 - Issue #29079: Prevent infinite loop in pathlib.resolve() on Windows
 
 - Issue #13051: Fixed recursion errors in large or resized
@@ -776,10 +784,6 @@ Library
   Patch by Eryk Sun.
 
 - Issue #28317: The disassembler now decodes FORMAT_VALUE argument.
-
-- Issue #26293: Fixed writing ZIP files that starts not from the start of the
-  file.  Offsets in ZIP file now are relative to the start of the archive in
-  conforming to the specification.
 
 - Issue #28380: unittest.mock Mock autospec functions now properly support
   assert_called, assert_not_called, and assert_called_once.
@@ -1032,6 +1036,10 @@ Documentation
 
 Build
 -----
+
+- bpo-29243: Prevent unnecessary rebuilding of Python during ``make test``,
+  ``make install`` and some other make targets when configured with
+  ``--enable-optimizations``.
 
 - bpo-23404: Don't regenerate generated files based on file modification time
   anymore: the action is now explicit. Replace ``make touch`` with
