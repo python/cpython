@@ -99,12 +99,12 @@ PyAPI_FUNC(void) PyThread_ReInitTLS(void) Py_DEPRECATED(3.7);
 */
 
 #if defined(_POSIX_THREADS)
-#   define NATIVE_TLS_KEY_T     pthread_key_t
+#   define NATIVE_TSS_KEY_T     pthread_key_t
 #elif defined(NT_THREADS)
 #   include <windows.h>
-#   define NATIVE_TLS_KEY_T     DWORD
-#else  /* For the platform that has not supplied native TLS */
-#   define NATIVE_TLS_KEY_T     int
+#   define NATIVE_TSS_KEY_T     DWORD
+#else  /* For the platform that has not supplied native TSS */
+#   define NATIVE_TSS_KEY_T     int
 #endif
 
 /* Py_tss_t is opaque type and you *must not* directly read and write.
@@ -112,10 +112,10 @@ PyAPI_FUNC(void) PyThread_ReInitTLS(void) Py_DEPRECATED(3.7);
 */
 typedef struct {
     bool _is_initialized;
-    NATIVE_TLS_KEY_T _key;
+    NATIVE_TSS_KEY_T _key;
 } Py_tss_t;
 
-#undef NATIVE_TLS_KEY_T
+#undef NATIVE_TSS_KEY_T
 
 static inline bool
 PyThread_tss_is_created(Py_tss_t key)
