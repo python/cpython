@@ -75,6 +75,7 @@ class TestController(unittest.TestCase):
 
     def connect(self):
         self.connection = socket.socket()
+        self.addCleanup(self.connection.close)
         self.connection.connect(
             (self.controller.hostname, self.controller.port))
 
