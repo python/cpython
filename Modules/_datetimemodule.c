@@ -2285,18 +2285,18 @@ static PyObject *
 delta_repr(PyDateTime_Delta *self)
 {
     if (GET_TD_MICROSECONDS(self) != 0)
-        return PyUnicode_FromFormat("%s(%d, %d, %d)",
+        return PyUnicode_FromFormat("%s(days=%d, seconds=%d, microseconds=%d)",
                                     Py_TYPE(self)->tp_name,
                                     GET_TD_DAYS(self),
                                     GET_TD_SECONDS(self),
                                     GET_TD_MICROSECONDS(self));
     if (GET_TD_SECONDS(self) != 0)
-        return PyUnicode_FromFormat("%s(%d, %d)",
+        return PyUnicode_FromFormat("%s(days=%d, seconds=%d)",
                                     Py_TYPE(self)->tp_name,
                                     GET_TD_DAYS(self),
                                     GET_TD_SECONDS(self));
 
-    return PyUnicode_FromFormat("%s(%d)",
+    return PyUnicode_FromFormat("%s(days=%d)",
                                 Py_TYPE(self)->tp_name,
                                 GET_TD_DAYS(self));
 }
