@@ -317,6 +317,12 @@ Extension Modules
 Library
 -------
 
+- bpo-30298: Weaken the condition of deprecation warnings for inline modifiers.
+  Now allowed several subsequential inline modifiers at the start of the
+  pattern (e.g. ``'(?i)(?s)...'``).  In verbose mode whitespaces and comments
+  now are allowed before and between inline modifiers (e.g.
+  ``'(?x) (?i) (?s)...'``).
+
 - bpo-30243: Removed the __init__ methods of _json's scanner and encoder.
   Misusing them could cause memory leaks or crashes.  Now scanner and encoder
   objects are completely initialized in the __new__ methods.
