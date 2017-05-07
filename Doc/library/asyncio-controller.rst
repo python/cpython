@@ -37,7 +37,7 @@ Server controller
 
    *hostname* and *port* are passed directly to your loop's
    :meth:`AbstractEventLoop.create_server` method.  Both of these values are
-   saved as similarly named attributes on the ``Controller` instance.
+   saved as similarly named attributes on the ``Controller`` instance.
 
    *ready_timeout* is float number of seconds that the controller will wait in
    :meth:`Controller.start` for the subthread to start its server.  You can
@@ -45,7 +45,7 @@ Server controller
    seconds, which takes precedence over the *ready_timeout* argument value.
 
    You can optionally pass in your own event *loop* for use by the
-   controller.  If not given, :method:`new_event_loop()` is called to create
+   controller.  If not given, :meth:`new_event_loop()` is called to create
    the event loop.   In either case, the event loop instance is saved as a
    similarly named attribute on the ``Controller`` instance.
 
