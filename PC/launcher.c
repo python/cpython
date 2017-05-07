@@ -370,8 +370,14 @@ find_python_by_version(wchar_t const * wanted_ver)
     size_t wlen = wcslen(wanted_ver);
     int bits = 0;
 
-    if (wcsstr(wanted_ver, L"-32"))
+    if (wcsstr(wanted_ver, L"-32")) {
         bits = 32;
+        wlen -= wcslen(L"-32");
+    }
+    else if (wcsstr(wanted_ver, L"-64")) { /* Added option to select 64 bit explicitly */
+        bits = 64;
+        wlen -= wcslen(L"-64");
+    }
     for (i = 0; i < num_installed_pythons; i++, ip++) {
         n = wcslen(ip->version);
         if (n > wlen)
@@ -1040,32 +1046,47 @@ find_terminator(char * buffer, int len, BOM *bom)
 static BOOL
 validate_version(wchar_t * p)
 {
-    BOOL result = TRUE;
+    /*
+    Version information should start with one of 2 or 3,
+    Optionally followed by a period and a minor version,
+    Optionally followed by a minus and one of 32 or 64.
+    Valid examples:
+      2
+      3
+      2.7
+      3.6
+      2.7-32
+      The intent is to add to the valid patterns:
+      3.10
+      3-32
+      3.6-64
+      3-64
+    */
+    BOOL result = (p != NULL) && *p;  /* Default to false if empty string or null pointer. */
 
-    if (!isdigit(*p))               /* expect major version */
-        result = FALSE;
-    else if (*++p) {                /* more to do */
-        if (*p != L'.')             /* major/minor separator */
+    while (result && isdigit(*p))   /* Require a major version */{
+        ++p;  /* Skip leading digit(s) */}
+    if (result && (*p == L'.'))     /* Allow . for major minor separator.*/
+    {
+        result = isdigit(*++p);     /* Must be at least one digit */
+        while (isdigit(*++p)) ;     /* Skip an more Digits */
+    }
+    if (result && (*p == L'-')) {   /* Allow - for Bits Separator */
+        switch(*++p){
+        case L'3':                            /* 3 is OK */
+            result = (*++p == L'2') && !*++p; /* only if followed by 2 and ended.*/
+            break;
+        case L'6':                            /* 6 is OK */
+            result = (*++p == L'4') && !*++p; /* only if followed by 4 and ended.*/
+            break;
+        default:
             result = FALSE;
-        else {
-            ++p;
-            if (!isdigit(*p))       /* expect minor version */
-                result = FALSE;
-            else {
-                ++p;
-                if (*p) {           /* more to do */
-                    if (*p != L'-')
-                        result = FALSE;
-                    else {
-                        ++p;
-                        if ((*p != '3') && (*++p != '2') && !*++p)
-                            result = FALSE;
-                    }
-                }
-            }
+            break;
         }
     }
+    result = result && !*p; /* Must have reached EOS */
     return result;
+
 }
 
 typedef struct {
