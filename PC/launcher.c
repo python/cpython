@@ -1062,7 +1062,7 @@ validate_version(wchar_t * p)
       3.6-64
       3-64
     */
-    BOOL result = (p != NULL) && *p &&!iswdigit(*p);  /* Default to false if empty string or null pointer. */
+    BOOL result = (p != NULL) && *p && iswdigit(*p);  /* Default to false if empty string or null pointer. */
 
     while (result && iswdigit(*p))   /* Require a major version */{
         ++p;  /* Skip leading digit(s) */}
