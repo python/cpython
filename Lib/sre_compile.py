@@ -107,10 +107,15 @@ def _compile(code, pattern, flags):
                     emit(OP_IGNORE[op])
                     emit(lo)
         elif op is IN:
-            emit(op)
+            charset, hascased = _optimize_charset(av, iscased, tolower, fixes)
+            if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
+                emit(IN_LOC_IGNORE)
+            elif hascased:
+                emit(IN_IGNORE)
+            else:
+                emit(IN)
             skip = _len(code); emit(0)
-            op = _compile_charset(av, flags, code, tolower, fixes)
-            code[skip-1] = op
+            _compile_charset(charset, flags, code)
             code[skip] = _len(code) - skip
         elif op is ANY:
             if flags & SRE_FLAG_DOTALL:
@@ -225,10 +230,9 @@ def _compile(code, pattern, flags):
         else:
             raise error("internal: unsupported operand type %r" % (op,))
 
-def _compile_charset(charset, flags, code, fixup=None, fixes=None):
+def _compile_charset(charset, flags, code):
     # compile charset subprogram
     emit = code.append
-    opcs, charset = _optimize_charset(charset, flags, fixup, fixes)
     for op, av in charset:
         emit(op)
         if op is NEGATE:
@@ -252,16 +256,13 @@ def _compile_charset(charset, flags, code, fixup=None, fixes=None):
         else:
             raise error("internal: unsupported set operator %r" % (op,))
     emit(FAILURE)
-    return opcs
 
-def _optimize_charset(charset, flags, fixup, fixes):
+def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
     # internal: optimize character set
     out = []
     tail = []
     charmap = bytearray(256)
     hascased = False
-    if fixup:
-        iscased = _get_iscased(flags)
     for op, av in charset:
         while True:
             try:
@@ -311,13 +312,6 @@ def _optimize_charset(charset, flags, fixup, fixes):
                 tail.append((op, av))
             break
 
-    if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
-        op = IN_LOC_IGNORE
-    elif hascased:
-        op = IN_IGNORE
-    else:
-        op = IN
-
     # compress character map
     runs = []
     q = 0
@@ -343,16 +337,16 @@ def _optimize_charset(charset, flags, fixup, fixes):
         out += tail
         # if the case was changed or new representation is more compact
         if hascased or len(out) < len(charset):
-            return op, out
+            return out, hascased
         # else original character set is good enough
-        return op, charset
+        return charset, hascased
 
     # use bitmap
     if len(charmap) == 256:
         data = _mk_bitmap(charmap)
         out.append((CHARSET, data))
         out += tail
-        return op, out
+        return out, hascased
 
     # To represent a big charset, first a bitmap of all characters in the
     # set is constructed. Then, this bitmap is sliced into chunks of 256
@@ -391,7 +385,7 @@ def _optimize_charset(charset, flags, fixup, fixes):
     data[0:0] = [block] + _bytes_to_codes(mapping)
     out.append((BIGCHARSET, data))
     out += tail
-    return op, out
+    return out, hascased
 
 _CODEBITS = _sre.CODESIZE * 8
 MAXCODE = (1 << _CODEBITS) - 1
@@ -571,8 +565,9 @@ def _compile_info(code, pattern, flags):
         # generate overlap table
         code.extend(_generate_overlap_table(prefix))
     elif charset:
-        op = _compile_charset(charset, flags, code)
-        assert op is IN
+        charset, hascased = _optimize_charset(charset)
+        assert not hascased
+        _compile_charset(charset, flags, code)
     code[skip] = len(code) - skip
 
 def isstring(obj):
