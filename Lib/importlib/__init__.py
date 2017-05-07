@@ -165,8 +165,7 @@ def reload(module):
         target = module
         spec = module.__spec__ = _bootstrap._find_spec(name, pkgpath, target)
         if spec is None:
-            msg = "spec not found for the module {!r}"
-            raise ModuleNotFoundError(msg.format(name), name=name)
+            raise ModuleNotFoundError(f"spec not found for the module {name!r}", name=name)
         _bootstrap._exec(spec, module)
         # The module may have replaced itself in sys.modules!
         return sys.modules[name]
