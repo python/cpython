@@ -261,10 +261,7 @@ def _optimize_charset(charset, flags, fixup, fixes):
     charmap = bytearray(256)
     hascased = False
     if fixup:
-        if flags & SRE_FLAG_UNICODE and not flags & SRE_FLAG_ASCII:
-            iscased = _sre.unicode_iscased
-        else:
-            iscased = _sre.ascii_iscased
+        iscased = _get_iscased(flags)
     for op, av in charset:
         while True:
             try:
