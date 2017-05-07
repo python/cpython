@@ -1069,7 +1069,7 @@ validate_version(wchar_t * p)
     if (result && (*p == L'.'))     /* Allow . for major minor separator.*/
     {
         result = iswdigit(*++p);     /* Must be at least one digit */
-        while (iswdigit(*++p)) ;     /* Skip an more Digits */
+        while (result && iswdigit(*++p)) ; /* Skip any more Digits */
     }
     if (result && (*p == L'-')) {   /* Allow - for Bits Separator */
         switch(*++p){
