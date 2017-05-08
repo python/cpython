@@ -1,7 +1,7 @@
 #######################################
 #    THIS MODULE WAS WRITTEN          #
 #    BY COCO DE VIENNE                #
-#    IT IS LLICENSED UNDER THE SAME   #
+#    IT IS LICENSED UNDER THE SAME   #
 #    CONDITIONS AS PYTHON ITSSELF!    #
 #######################################
 
