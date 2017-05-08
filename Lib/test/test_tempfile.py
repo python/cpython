@@ -40,14 +40,14 @@ else:
 class TestLowLevelInternals(unittest.TestCase):
     def test_infer_return_type_singles(self):
         self.assertIs(str, tempfile._infer_return_type(''))
-        self.assertIs(str, tempfile._infer_return_type(pathlib.Path('.')))
+        self.assertIs(str, tempfile._infer_return_type(pathlib.Path('')))
         self.assertIs(bytes, tempfile._infer_return_type(b''))
         self.assertIs(str, tempfile._infer_return_type(None))
 
     def test_infer_return_type_multiples(self):
         self.assertIs(str, tempfile._infer_return_type('', ''))
-        self.assertIs(str, tempfile._infer_return_type(pathlib.Path('.'),
-                                                       pathlib.Path('.')))
+        self.assertIs(str, tempfile._infer_return_type(pathlib.Path(''),
+                                                       pathlib.Path('')))
         self.assertIs(bytes, tempfile._infer_return_type(b'', b''))
         with self.assertRaises(TypeError):
             tempfile._infer_return_type('', b'')
