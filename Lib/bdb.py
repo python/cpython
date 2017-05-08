@@ -63,7 +63,7 @@ class Bdb:
         on the type of event (passed in as a string) that is about to be
         executed.
 
-        `event` can be one of the following:
+        event can be one of the following:
             line: A new line of code is going to be executed.
             call: A function is about to be called or another code block is
                   entered.
@@ -76,7 +76,7 @@ class Bdb:
         For the Python events, specialized functions (see the dispatch_*()
         methods) are called.  For the C events, no action is taken.
 
-        The `arg` parameter depends on the previous event.
+        The arg parameter depends on the previous event.
 
         See sys.settrace() for more information on the trace function.  For
         more information on code and frame objects, refer to The Standard
@@ -165,7 +165,7 @@ class Bdb:
 
         If the debugger stops on this function return, invoke the
         user_exception() method.  Raise a BdbQuit exception if the
-        Bdb.quitting flag is set. Return a reference to the trace_dispatch()
+        Bdb.quitting flag is set.  Return a reference to the trace_dispatch()
         method for further tracing in that scope.
         """
         if self.stop_here(frame):
@@ -279,8 +279,8 @@ class Bdb:
     def _set_stopinfo(self, stopframe, returnframe, stoplineno=0):
         """Set the attributes for stopping.
 
-        If `stoplineno` is greater than or equal to 0, then stop at line
-        greater than or equal to the stopline.  If `stoplineno` is -1, then
+        If stoplineno is greater than or equal to 0, then stop at line
+        greater than or equal to the stopline.  If stoplineno is -1, then
         don't stop at all.
         """
         self.stopframe = stopframe
@@ -325,7 +325,7 @@ class Bdb:
             self._set_stopinfo(frame.f_back, frame)
 
     def set_trace(self, frame=None):
-        """Start debugging from `frame`.
+        """Start debugging from frame.
 
         If frame is not specified, debugging starts from caller's frame.
         """
@@ -660,7 +660,7 @@ class Breakpoint:
     breakpoint per line.
 
     When creating a breakpoint, its associated filename should be
-    in canonical form.  If `funcname` is defined, a breakpoint hit will be
+    in canonical form.  If funcname is defined, a breakpoint hit will be
     counted when the first line of that function is executed.  A
     conditional breakpoint always counts a hit.
     """
