@@ -599,6 +599,16 @@ class StructTest(unittest.TestCase):
                 'offset -11 out of range for 10-byte buffer'):
             struct.pack_into('<B', byte_list, -11, 123)
 
+    def test_issue29802(self):
+        # When the second argument of struct.unpack() was of wrong type
+        # the Struct object was decrefed twice and the reference to
+        # deallocated object was left in a cache.
+        with self.assertRaises(TypeError):
+            struct.unpack(b'b', 0)
+        # Shouldn't crash.
+        self.assertEqual(struct.unpack(b'b', b'a'), (b'a'[0],))
+
+
 class UnpackIteratorTest(unittest.TestCase):
     """
     Tests for iterative unpacking (struct.Struct.iter_unpack).

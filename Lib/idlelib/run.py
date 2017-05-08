@@ -52,7 +52,7 @@ def idle_showwarning_subproc(
     try:
         file.write(idle_formatwarning(
                 message, category, filename, lineno, line))
-    except IOError:
+    except OSError:
         pass # the file (probably stderr) is invalid - this warning gets lost.
 
 _warnings_showwarning = None
