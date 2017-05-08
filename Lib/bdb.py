@@ -762,7 +762,13 @@ class Breakpoint:
 
 
 def checkfuncname(b, frame):
-    """Check whether we should break here because of `b.funcname`."""
+    """Return True if break should happen here.
+
+    Whether a break should happen depends on the way that b (the breakpoint)
+    was set.  If it was set via line number, check if b.line is the same as
+    the one in the frame.  If it was set via function name, check if this is
+    the right function and if it is on the first executable line.
+    """
     if not b.funcname:
         # Breakpoint was set via line number.
         if b.line != frame.f_lineno:
@@ -772,7 +778,6 @@ def checkfuncname(b, frame):
         return True
 
     # Breakpoint set via function name.
-
     if frame.f_code.co_name != b.funcname:
         # It's not a function call, but rather execution of def statement.
         return False
@@ -782,7 +787,7 @@ def checkfuncname(b, frame):
         # The function is entered for the 1st time.
         b.func_first_executable_line = frame.f_lineno
 
-    if  b.func_first_executable_line != frame.f_lineno:
+    if b.func_first_executable_line != frame.f_lineno:
         # But we are not at the first line number: don't break.
         return False
     return True
@@ -793,9 +798,10 @@ def checkfuncname(b, frame):
 def effective(file, line, frame):
     """Determine which breakpoint for this file:line is to be acted upon.
 
-    Called only if we know there is a bpt at this
-    location.  Returns breakpoint that was triggered and a flag
-    that indicates if it is ok to delete a temporary bp.
+    Called only if we know there is a breakpoint at this location.  Return
+    the breakpoint that was triggered and a boolean that indicates if it is
+    ok to delete a temporary breakpoint.  Return (None, None) if there is no
+    matching breakpoint.
     """
     possibles = Breakpoint.bplist[file, line]
     for b in possibles:
