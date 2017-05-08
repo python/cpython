@@ -423,10 +423,12 @@ Bitwise Operations on Integer Types
    pair: bitwise; operations
    pair: shifting; operations
    pair: masking; operations
+   operator: |
    operator: ^
    operator: &
    operator: <<
    operator: >>
+   operator: ~
 
 Bitwise operations only make sense for integers.  Negative numbers are treated
 as their 2's complement value (this assumes a sufficiently large number of bits
