@@ -174,29 +174,52 @@ it's the base calendar for all computations.
 
   .. attribute:: cssclasses
 
-     By default it is a list with containing a style for each name::
+    Is a list of CSS styles used for each weekday. The default style list is::
 
         cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
-     But you can add more styles for each day if you want::
+    But you can add more styles for each day if you want::
 
         cssclasses = ["mon text-bold", "tue", "wed", "thu", "fri", "sat", "sun red"]
 
-     Note, the the lenght of this list must be 7 items.
+    Note, that the length of this list must be 7 items.
 
   .. attribute:: noday_classes
 
+     The CSS class for a week day occuring in previous or the coming month.
+
   .. attribute:: weekday_head_classes
 
-     This by default the same as ``HTMLCalendar.cssclassess``.
+     Is a list of CSS styles used for each weekday. The default style list is
+
+     the same as ``HTMLCalendar.cssclassess``.
 
   .. attribute:: month_head_classes
 
+     A space separted list of styles for the month head, for example::
+
+     "text-bold text-red"
+
+     The default value is ``"month"``.
+
   .. attribute:: month_classes
+
+     a space separted list of styles for the whole table.
+
+     the default value is ``"month"``.
+
+  .. attribute:: year_classes
+
+     a space separted list of styles for the table when formatting the year
+     as a table of tables (see: ``HTMLCalendar.formatyear``).
+
+     the default value is ``"year"``.
 
   .. attribute:: year_head_classes
 
-  .. attribute:: year_classes
+     a space separted list of styles for the table head when formatting the year as a table of tables (see: ``HTMLCalendar.formatyear``).
+
+     the default value is ``"year"``.
 
 Here is an example how you can customize ``HTMLCalendar``::
 
