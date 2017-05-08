@@ -66,6 +66,11 @@ The module defines the following user-callable items:
 
       The :py:data:`os.O_TMPFILE` flag is now used if available.
 
+   .. versionchanged:: 3.7
+
+      The ``dir`` argument is now accept a :term:`path-like object`.
+
+
 
 .. function:: NamedTemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, delete=True)
 
@@ -81,6 +86,9 @@ The module defines the following user-callable items:
    The returned object is always a file-like object whose :attr:`!file`
    attribute is the underlying true file object. This file-like object can
    be used in a :keyword:`with` statement, just like a normal file.
+   .. versionchanged:: 3.7
+
+      The ``dir`` argument is now accept a :term:`path-like object`.
 
 
 .. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None)
@@ -104,6 +112,10 @@ The module defines the following user-callable items:
    .. versionchanged:: 3.3
       the truncate method now accepts a ``size`` argument.
 
+   .. versionchanged:: 3.7
+
+      The ``dir`` argument is now accept a :term:`path-like object`.
+
 
 .. function:: TemporaryDirectory(suffix=None, prefix=None, dir=None)
 
@@ -122,6 +134,10 @@ The module defines the following user-callable items:
    :func:`cleanup` method.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.7
+
+      The ``dir`` argument is now accept a :term:`path-like object`.
 
 
 .. function:: mkstemp(suffix=None, prefix=None, dir=None, text=False)
@@ -174,6 +190,10 @@ The module defines the following user-callable items:
       *suffix* and *prefix* now accept and default to ``None`` to cause
       an appropriate default value to be used.
 
+   .. versionchanged:: 3.7
+
+      The ``dir`` argument is now accept a :term:`path-like object`.
+
 
 .. function:: mkdtemp(suffix=None, prefix=None, dir=None)
 
@@ -194,6 +214,10 @@ The module defines the following user-callable items:
       obtain a bytes return value.  Prior to this, only str was allowed.
       *suffix* and *prefix* now accept and default to ``None`` to cause
       an appropriate default value to be used.
+
+   .. versionchanged:: 3.7
+
+      The ``dir`` argument is now accept a :term:`path-like object`.
 
 
 .. function:: gettempdir()

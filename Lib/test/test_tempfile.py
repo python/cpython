@@ -3,6 +3,7 @@ import tempfile
 import errno
 import io
 import os
+import pathlib
 import signal
 import sys
 import re
@@ -39,27 +40,46 @@ else:
 class TestLowLevelInternals(unittest.TestCase):
     def test_infer_return_type_singles(self):
         self.assertIs(str, tempfile._infer_return_type(''))
+        self.assertIs(str, tempfile._infer_return_type(pathlib.Path('.')))
         self.assertIs(bytes, tempfile._infer_return_type(b''))
         self.assertIs(str, tempfile._infer_return_type(None))
 
     def test_infer_return_type_multiples(self):
         self.assertIs(str, tempfile._infer_return_type('', ''))
+        self.assertIs(str, tempfile._infer_return_type(pathlib.Path('.'),
+                                                       pathlib.Path('.')))
         self.assertIs(bytes, tempfile._infer_return_type(b'', b''))
         with self.assertRaises(TypeError):
             tempfile._infer_return_type('', b'')
         with self.assertRaises(TypeError):
             tempfile._infer_return_type(b'', '')
+        with self.assertRaises(TypeError):
+            tempfile._infer_return_type(pathlib.Path(''), b'')
+        with self.assertRaises(TypeError):
+            tempfile._infer_return_type(b'', pathlib.Path(''))
 
     def test_infer_return_type_multiples_and_none(self):
         self.assertIs(str, tempfile._infer_return_type(None, ''))
         self.assertIs(str, tempfile._infer_return_type('', None))
         self.assertIs(str, tempfile._infer_return_type(None, None))
+        self.assertIs(str, tempfile._infer_return_type(pathlib.Path(''), ''))
+        self.assertIs(str, tempfile._infer_return_type('', pathlib.Path('')))
+        self.assertIs(str, tempfile._infer_return_type(None, pathlib.Path('')))
+        self.assertIs(str, tempfile._infer_return_type(pathlib.Path(''), None))
         self.assertIs(bytes, tempfile._infer_return_type(b'', None))
         self.assertIs(bytes, tempfile._infer_return_type(None, b''))
         with self.assertRaises(TypeError):
             tempfile._infer_return_type('', None, b'')
         with self.assertRaises(TypeError):
             tempfile._infer_return_type(b'', None, '')
+        with self.assertRaises(TypeError):
+            self.assertIs(bytes, tempfile._infer_return_type(pathlib.Path(''),
+                                                             None,
+                                                             b''))
+        with self.assertRaises(TypeError):
+            self.assertIs(bytes, tempfile._infer_return_type(b'',
+                                                             None,
+                                                             pathlib.Path('')))
 
 
 # Common functionality.
@@ -85,7 +105,8 @@ class BaseTestCase(unittest.TestCase):
         nsuf  = nbase[len(nbase)-len(suf):]
 
         if dir is not None:
-            self.assertIs(type(name), str if type(dir) is str else bytes,
+            self.assertIs(type(name),
+                          str if isinstance(dir, (str, os.PathLike)) else bytes,
                           "unexpected return type")
         if pre is not None:
             self.assertIs(type(name), str if type(pre) is str else bytes,
@@ -409,6 +430,8 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         with self.assertRaises(TypeError):
             self.do_create(dir="", suf=b"").write(b"blat")
         with self.assertRaises(TypeError):
+            self.do_create(dir=pathlib.Path(""), suf=b"").write(b"blat")
+        with self.assertRaises(TypeError):
             self.do_create(dir=dir_b, pre="").write(b"blat")
         with self.assertRaises(TypeError):
             self.do_create(dir=dir_b, pre=b"", suf="").write(b"blat")
@@ -424,6 +447,14 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir).write(b"blat")
+        finally:
+            os.rmdir(dir)
+
+    def test_choose_pathlike_directory(self):
+        # _mkstemp_inner can create files in a user-selected pathlike directory
+        dir = pathlib.Path(tempfile.mkdtemp())
+        try:
+            self.do_create(dir=dir).write(b'blat')
         finally:
             os.rmdir(dir)
 
@@ -636,6 +667,7 @@ class TestMkstemp(BaseTestCase):
         self.do_create(pre="a", suf="b")
         self.do_create(pre="aa", suf=".txt")
         self.do_create(dir=".")
+        self.do_create(dir=pathlib.Path("."))
 
     def test_basic_with_bytes_names(self):
         # mkstemp can create files when given name parts all
@@ -650,14 +682,23 @@ class TestMkstemp(BaseTestCase):
         with self.assertRaises(TypeError):
             self.do_create(dir=".", pre=b"aa", suf=b".txt")
         with self.assertRaises(TypeError):
+            self.do_create(dir=pathlib.Path("."), pre=b"aa", suf=b".txt")
+        with self.assertRaises(TypeError):
             self.do_create(dir=b".", pre="aa", suf=b".txt")
         with self.assertRaises(TypeError):
             self.do_create(dir=b".", pre=b"aa", suf=".txt")
 
-
     def test_choose_directory(self):
         # mkstemp can create directories in a user-selected directory
         dir = tempfile.mkdtemp()
+        try:
+            self.do_create(dir=dir)
+        finally:
+            os.rmdir(dir)
+
+    def test_choose_pathlike_directory(self):
+        # mkstemp can create directories in a user-selected pathlike directory
+        dir = pathlib.Path(tempfile.mkdtemp())
         try:
             self.do_create(dir=dir)
         finally:
@@ -712,6 +753,8 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
             os.rmdir(self.do_create(dir=d, pre=b"aa", suf=".txt"))
         with self.assertRaises(TypeError):
             os.rmdir(self.do_create(dir="", pre=b"aa", suf=b".txt"))
+        with self.assertRaises(TypeError):
+            os.rmdir(self.do_create(dir=pathlib.Path(""), pre=b"aa", suf=b".txt"))
 
     def test_basic_many(self):
         # mkdtemp can create many directories (stochastic)
@@ -727,6 +770,14 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
     def test_choose_directory(self):
         # mkdtemp can create directories in a user-selected directory
         dir = tempfile.mkdtemp()
+        try:
+            os.rmdir(self.do_create(dir=dir))
+        finally:
+            os.rmdir(dir)
+
+    def test_choose_pathlike_directory(self):
+        # mkdtemp can create directories in a user-selected pathlike directory
+        dir = pathlib.Path(tempfile.mkdtemp())
         try:
             os.rmdir(self.do_create(dir=dir))
         finally:
