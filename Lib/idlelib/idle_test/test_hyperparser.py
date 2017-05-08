@@ -30,7 +30,10 @@ class HyperParserTest(unittest.TestCase):
             "z = ((r'asdf')+('a')))\n"
             '[x for x in\n'
             'for = False\n'
-            'cliché = "this is a string with unicode, what a cliché"'
+            'cliché = "this is a string with unicode, what a cliché"\n'
+            "d['long_key']\n"
+            'd["short"]\n'
+            'd[key]'
             )
 
     @classmethod
@@ -113,6 +116,30 @@ class HyperParserTest(unittest.TestCase):
         self.assertFalse(p.is_in_code())
         p = get('4.14')
         self.assertFalse(p.is_in_code())
+
+    def test_is_in_subscript(self):
+        get = self.get_parser
+
+        p = get('5.0')
+        self.assertFalse(p.is_in_subscript())
+        p = get('7.0')
+        self.assertFalse(p.is_in_subscript())
+        p = get('8.0')
+        self.assertFalse(p.is_in_subscript())
+        p = get('9.6')
+        self.assertFalse(p.is_in_subscript())
+        p = get('13.2')
+        self.assertTrue(p.is_in_subscript())
+        p = get('13.3')
+        self.assertTrue(p.is_in_subscript())
+        p = get('13.15')
+        self.assertFalse(p.is_in_subscript())
+        p = get('14.2')
+        self.assertTrue(p.is_in_subscript())
+        p = get('14.3')
+        self.assertTrue(p.is_in_subscript())
+        p = get('15.2')
+        self.assertTrue(p.is_in_subscript())
 
     def test_get_surrounding_bracket(self):
         get = self.get_parser

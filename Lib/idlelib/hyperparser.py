@@ -113,6 +113,16 @@ class HyperParser:
                 self.rawtext[self.bracketing[self.indexbracket][0]]
                 not in ('#', '"', "'"))
 
+    def is_in_subscript(self):
+        """Is the index given to the HyperParser in subscript?"""
+        if not self.isopener[self.indexbracket]:
+            return False
+        for index, bracket in enumerate(self.bracketing[: self.indexbracket + 1]):
+            if (self.isopener[index] is True and
+                    self.rawtext[bracket[0]] == '['):
+                return True
+        return False
+
     def get_surrounding_brackets(self, openers='([{', mustclose=False):
         """Return bracket indexes or None.
 
