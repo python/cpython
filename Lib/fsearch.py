@@ -11,6 +11,7 @@ def find_phrase(filename, phrase):
     if os.path.isfile(filename) == False:
         return 1
     elif os.path.isfile(filename) == True:
+        # acttual code block that executes the search function
         file_obj = open(filename, "r")
         contents = file_obj.readlines()
         filelength = len(contents)
