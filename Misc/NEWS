@@ -317,8 +317,8 @@ Extension Modules
 Library
 -------
 
-- bpo-30299: Compiling regular expression in debug mode now displays the
-  compiled bytecode in human readable form.
+- bpo-30299: Compiling regular expression in debug mode on CPython now displays
+  the compiled bytecode in human readable form.
 
 - bpo-30243: Removed the __init__ methods of _json's scanner and encoder.
   Misusing them could cause memory leaks or crashes.  Now scanner and encoder
