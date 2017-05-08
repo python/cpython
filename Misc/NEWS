@@ -317,6 +317,10 @@ Extension Modules
 Library
 -------
 
+- bpo-29979: rewrite cgi.parse_multipart, reusing the FieldStorage class and
+  making its results consistent with those of FieldStorage for
+  multipart/form-data requests. Patch by Pierre Quentel.
+
 - bpo-30243: Removed the __init__ methods of _json's scanner and encoder.
   Misusing them could cause memory leaks or crashes.  Now scanner and encoder
   objects are completely initialized in the __new__ methods.
