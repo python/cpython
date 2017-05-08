@@ -9,7 +9,6 @@ What's New in Python 3.7.0 alpha 1?
 
 Core and Builtins
 -----------------
-- bpo-29990: Fix range checking in GB18030 decoder.
 
 - bpo-12414: sys.getsizeof() on a code object now returns the sizes
   which includes the code struct and sizes of objects which it references.
@@ -317,6 +316,8 @@ Extension Modules
 
 Library
 -------
+
+- bpo-29990: Fix range checking in GB18030 decoder.  Original patch by Ma Lin.
 
 - bpo-30243: Removed the __init__ methods of _json's scanner and encoder.
   Misusing them could cause memory leaks or crashes.  Now scanner and encoder
