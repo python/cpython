@@ -268,30 +268,32 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
             try:
                 if op is LITERAL:
                     if fixup:
-                        if not hascased and iscased(av):
-                            hascased = True
                         lo = fixup(av)
                         charmap[lo] = 1
                         if fixes and lo in fixes:
                             for k in fixes[lo]:
                                 charmap[k] = 1
+                        if not hascased and iscased(av):
+                            hascased = True
                     else:
                         charmap[av] = 1
                 elif op is RANGE:
-                    r = r0 = range(av[0], av[1]+1)
+                    r = range(av[0], av[1]+1)
                     if fixup:
-                        r = map(fixup, r)
-                    if fixup and fixes:
-                        for i in r:
-                            charmap[i] = 1
-                            if i in fixes:
-                                for k in fixes[i]:
-                                    charmap[k] = 1
+                        if fixes:
+                            for i in map(fixup, r):
+                                charmap[i] = 1
+                                if i in fixes:
+                                    for k in fixes[i]:
+                                        charmap[k] = 1
+                        else:
+                            for i in map(fixup, r):
+                                charmap[i] = 1
+                        if not hascased:
+                            hascased = any(map(iscased, r))
                     else:
                         for i in r:
                             charmap[i] = 1
-                    if fixup and not hascased:
-                        hascased = any(map(iscased, r0))
                 elif op is NEGATE:
                     out.append((op, av))
                 else:
@@ -302,13 +304,13 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
                     charmap += b'\0' * 0xff00
                     continue
                 # Character set contains non-BMP character codes.
-                # There are only two ranges of cased non-BMP characters:
-                # 10400-1044F (Deseret) and 118A0-118DF (Warang Citi),
-                # and for both ranges RANGE_IGNORE works.
-                if fixup and op is RANGE:
-                    op = RANGE_IGNORE
                 if fixup:
                     hascased = True
+                    # There are only two ranges of cased non-BMP characters:
+                    # 10400-1044F (Deseret) and 118A0-118DF (Warang Citi),
+                    # and for both ranges RANGE_IGNORE works.
+                    if op is RANGE:
+                        op = RANGE_IGNORE
                 tail.append((op, av))
             break
 
