@@ -317,6 +317,8 @@ Extension Modules
 Library
 -------
 
+- bpo-29990: Fix range checking in GB18030 decoder.  Original patch by Ma Lin.
+
 - bpo-29979: rewrite cgi.parse_multipart, reusing the FieldStorage class and
   making its results consistent with those of FieldStorage for
   multipart/form-data requests. Patch by Pierre Quentel.
