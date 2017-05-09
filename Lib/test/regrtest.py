@@ -160,6 +160,7 @@ option '-uall,-bsddb'.
 """
 
 import StringIO
+import datetime
 import getopt
 import json
 import os
@@ -548,6 +549,20 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         test_count = '/{}'.format(len(selected))
         test_count_width = len(test_count) - 1
 
+    def display_progress(test_index, test):
+        # "[ 51/405/1] test_tcl"
+        fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
+        line = fmt.format(test_count_width, test_index, test_count,
+                          len(bad), test)
+
+        # add the timestamp prefix:  "0:01:05 "
+        test_time = time.time() - regrtest_start_time
+        test_time = datetime.timedelta(seconds=int(test_time))
+        line = "%s %s" % (test_time, line)
+
+        print(line)
+        sys.stdout.flush()
+
     if use_mp:
         try:
             from threading import Thread
@@ -627,10 +642,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     continue
                 accumulate_result(test, result)
                 if not quiet:
-                    fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
-                    print(fmt.format(
-                        test_count_width, test_index, test_count,
-                        len(bad), test))
+                    display_progress(test_index, test)
 
                 if stdout:
                     print stdout
@@ -652,10 +664,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     else:
         for test_index, test in enumerate(tests, 1):
             if not quiet:
-                fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
-                print(fmt.format(
-                    test_count_width, test_index, test_count, len(bad), test))
-                sys.stdout.flush()
+                display_progress(test_index, test)
             if trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
