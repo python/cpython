@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30024: Circular imports involving absolute imports with binding
+  a submodule to a name are now supported.
+
 - bpo-12414: sys.getsizeof() on a code object now returns the sizes
   which includes the code struct and sizes of objects which it references.
   Patch by Dong-hee Na.
@@ -319,6 +322,8 @@ Library
 
 - bpo-30285: Optimized case-insensitive matching and searching of regular
   expressions.
+
+- bpo-29990: Fix range checking in GB18030 decoder.  Original patch by Ma Lin.
 
 - bpo-29979: rewrite cgi.parse_multipart, reusing the FieldStorage class and
   making its results consistent with those of FieldStorage for

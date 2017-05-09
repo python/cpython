@@ -1627,7 +1627,8 @@ distclean: clobber
 	done
 	-rm -f core Makefile Makefile.pre config.status \
 		Modules/Setup Modules/Setup.local Modules/Setup.config \
-		Modules/ld_so_aix Modules/python.exp Misc/python.pc
+		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
+		Misc/python-config.sh
 	-rm -f python*-gdb.py
 	# Issue #28258: set LC_ALL to avoid issues with Estonian locale.
 	# Expansion is performed here by shell (spawned by make) itself before
