@@ -139,6 +139,10 @@ Documentation
 Build
 -----
 
+ bpo-29243: Prevent unnecessary rebuilding of Python during ``make test``,
+  ``make install`` and some other make targets when configured with
+  ``--enable-optimizations``.
+
 - bpo-23404: Don't regenerate generated files based on file modification time
   anymore: the action is now explicit. Replace ``make touch`` with
   ``make regen-all``.
