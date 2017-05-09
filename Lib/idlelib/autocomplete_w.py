@@ -201,9 +201,11 @@ class AutoCompleteWindow:
         self._selection_changed()
 
         # bind events
-        self.hideid = self.widget.bind(HIDE_VIRTUAL_EVENT_NAME,
-                                       self.hide_event)
+        self.hideaid = self.autocompletewindow.bind(HIDE_VIRTUAL_EVENT_NAME,
+                                                    self.hide_event)
+        self.hidewid = self.widget.bind(HIDE_VIRTUAL_EVENT_NAME, self.hide_event)
         for seq in HIDE_SEQUENCES:
+            self.autocompletewindow.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
             self.widget.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
         self.keypressid = self.widget.bind(KEYPRESS_VIRTUAL_EVENT_NAME,
                                            self.keypress_event)
@@ -241,8 +243,10 @@ class AutoCompleteWindow:
         acw.wm_geometry("+%d+%d" % (new_x, new_y))
 
     def hide_event(self, event):
+        # This will be trigger when focus on widget or autocompletewindow
         if self.is_active():
-            self.hide_window()
+            if self.widget == self.widget.focus_get() or not self.widget.focus_get():
+                self.hide_window()
 
     def listselect_event(self, event):
         if self.is_active():
@@ -392,9 +396,12 @@ class AutoCompleteWindow:
 
         # unbind events
         for seq in HIDE_SEQUENCES:
+            self.autocompletewindow.event_delete(HIDE_VIRTUAL_EVENT_NAME, seq)
             self.widget.event_delete(HIDE_VIRTUAL_EVENT_NAME, seq)
-        self.widget.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideid)
-        self.hideid = None
+        self.autocompletewindow.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hideaid)
+        self.widget.unbind(HIDE_VIRTUAL_EVENT_NAME, self.hidewid)
+        self.hideaid = None
+        self.hidewid = None
         for seq in KEYPRESS_SEQUENCES:
             self.widget.event_delete(KEYPRESS_VIRTUAL_EVENT_NAME, seq)
         self.widget.unbind(KEYPRESS_VIRTUAL_EVENT_NAME, self.keypressid)
