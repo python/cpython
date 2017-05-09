@@ -149,6 +149,24 @@ Subclass relationships::
            datetime
 
 
+.. method:: datetime_diff(datetime_prior, datetime_current)
+   :noindex:
+
+   Compares two different datetime objects and returns the time
+   elapsed since.
+
+   for example, a datetime object when turned into a string
+   (being 2015-12-03 03:34:57.281000) when compared with a
+   new datetime object (equivalent to the current time) one
+   can determine how many years, months, days, hours,
+   minutes, and seconds ago the prior datetime object was.
+   This returns the data as a string readable by humans denoting
+   how much time has passed since the specified prior datetime
+   object.
+
+   .. versionadded:: 3.7
+
+
 .. _datetime-timedelta:
 
 :class:`timedelta` Objects

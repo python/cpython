@@ -97,6 +97,13 @@ class TestModule(unittest.TestCase):
         self.assertEqual(dar(6, -4), -2)
         self.assertEqual(dar(-6, -4), 2)
 
+    def test_datetime_diff(self):
+        datetime = datetime_module.datetime.new
+        oldnow = datetime()
+        _time.sleep(14)
+        newnow = datetime()
+        self.assertEqual(datetime.datetime_diff(oldnow, newnow), "15 seconds ago.")
+
 
 #############################################################################
 # tzinfo tests
