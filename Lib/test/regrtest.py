@@ -60,6 +60,8 @@ Special runs
                 -- call gc.set_threshold(THRESHOLD)
 -F/--forever    -- run the specified tests in a loop, until an error happens
 -P/--pgo        -- enable Profile Guided Optimization training
+--testdir       -- execute test files in the specified directory
+                   (instead of the Python stdlib test suite)
 
 
 Additional Option Details:
@@ -276,7 +278,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo',
-             'failfast', 'match='])
+             'failfast', 'match=', 'testdir='])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -285,6 +287,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         random_seed = random.randrange(10000000)
     if use_resources is None:
         use_resources = []
+    slaveargs = None
     for o, a in opts:
         if o in ('-h', '--help'):
             usage(0)
@@ -367,16 +370,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif o == '--header':
             header = True
         elif o == '--slaveargs':
-            args, kwargs = json.loads(a)
-            try:
-                result = runtest(*args, **kwargs)
-            except BaseException, e:
-                result = INTERRUPTED, e.__class__.__name__
-            print   # Force a newline (just in case)
-            print json.dumps(result)
-            sys.exit(0)
+            slaveargs = a
         elif o in ('-P', '--pgo'):
             pgo = True
+        elif o in ('--testdir'):
+            testdir = a
         else:
             print >>sys.stderr, ("No handler for option {}.  Please "
                 "report this as a bug at http://bugs.python.org.").format(o)
@@ -389,6 +387,25 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         usage(2, "-l and -j don't go together!")
     if failfast and not (verbose or verbose3):
         usage("-G/--failfast needs either -v or -W")
+
+    if testdir:
+        testdir = os.path.abspath(testdir)
+
+        # Prepend test directory to sys.path, so runtest() will be able
+        # to locate tests
+        sys.path.insert(0, testdir)
+
+    if slaveargs is not None:
+        args, kwargs = json.loads(slaveargs)
+        if testdir:
+            kwargs['testdir'] = testdir
+        try:
+            result = runtest(*args, **kwargs)
+        except BaseException, e:
+            result = INTERRUPTED, e.__class__.__name__
+        print   # Force a newline (just in case)
+        print json.dumps(result)
+        sys.exit(0)
 
     good = []
     bad = []
@@ -544,10 +561,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                         output.put((None, None, None, None))
                         return
                     # -E is needed by some tests, e.g. test_import
-                    popen = Popen(base_cmd + ['--slaveargs', json.dumps(args_tuple)],
-                                   stdout=PIPE, stderr=PIPE,
-                                   universal_newlines=True,
-                                   close_fds=(os.name != 'nt'))
+                    args = base_cmd + ['--slaveargs', json.dumps(args_tuple)]
+                    if testdir:
+                        args.extend(('--testdir', testdir))
+                    popen = Popen(args,
+                                  stdout=PIPE, stderr=PIPE,
+                                  universal_newlines=True,
+                                  close_fds=(os.name != 'nt'))
                     stdout, stderr = popen.communicate()
                     retcode = popen.wait()
 
@@ -616,18 +636,20 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             if trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                tracer.runctx('runtest(test, verbose, quiet)',
+                tracer.runctx('runtest(test, verbose, quiet, testdir=testdir)',
                               globals=globals(), locals=vars())
             else:
                 try:
                     result = runtest(test, verbose, quiet, huntrleaks, None, pgo,
                                      failfast=failfast,
-                                     match_tests=match_tests)
+                                     match_tests=match_tests,
+                                     testdir=testdir)
                     accumulate_result(test, result)
                     if verbose3 and result[0] == FAILED:
                         if not pgo:
                             print "Re-running test %r in verbose mode" % test
-                        runtest(test, True, quiet, huntrleaks, None, pgo)
+                        runtest(test, True, quiet, huntrleaks, None, pgo,
+                                testdir=testdir)
                 except KeyboardInterrupt:
                     interrupted = True
                     break
@@ -695,7 +717,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             sys.stdout.flush()
             try:
                 test_support.verbose = True
-                ok = runtest(test, True, quiet, huntrleaks, None, pgo)
+                ok = runtest(test, True, quiet, huntrleaks, None, pgo,
+                             testdir=testdir)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
                 print
@@ -757,7 +780,7 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
 
 def runtest(test, verbose, quiet,
             huntrleaks=False, use_resources=None, pgo=False,
-            failfast=False, match_tests=None):
+            failfast=False, match_tests=None, testdir=None):
     """Run a single test.
 
     test -- the name of the test
@@ -786,7 +809,7 @@ def runtest(test, verbose, quiet,
         test_support.match_tests = match_tests
         if failfast:
             test_support.failfast = True
-        return runtest_inner(test, verbose, quiet, huntrleaks, pgo)
+        return runtest_inner(test, verbose, quiet, huntrleaks, pgo, testdir)
     finally:
         cleanup_test_droppings(test, verbose)
 
@@ -947,7 +970,7 @@ class saved_test_environment:
         return False
 
 
-def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False):
+def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False, testdir=None):
     test_support.unload(test)
     if verbose:
         capture_stdout = None
@@ -961,7 +984,7 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False):
         try:
             if capture_stdout:
                 sys.stdout = capture_stdout
-            if test.startswith('test.'):
+            if test.startswith('test.') or testdir:
                 abstest = test
             else:
                 # Always import it from the test package
@@ -970,7 +993,10 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False):
             with saved_test_environment(test, verbose, quiet, pgo) as environment:
                 start_time = time.time()
                 the_package = __import__(abstest, globals(), locals(), [])
-                the_module = getattr(the_package, test)
+                if abstest.startswith('test.'):
+                    the_module = getattr(the_package, test)
+                else:
+                    the_module = the_package
                 # Old tests run to completion simply as a side-effect of
                 # being imported.  For tests based on unittest or doctest,
                 # explicitly invoke their test_main() function (if it exists).
