@@ -664,6 +664,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     raise
 
         workers = [MultiprocessThread() for i in range(use_mp)]
+        print("Run tests in parallel using %s child processes"
+              % len(workers))
         for worker in workers:
             worker.start()
 
@@ -717,6 +719,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         for worker in workers:
             worker.join()
     else:
+        print("Run tests sequentially")
+
         previous_test = None
         for test_index, test in enumerate(tests, 1):
             if not quiet:
