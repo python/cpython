@@ -196,7 +196,7 @@ class ProgramsTestCase(BaseTestCase):
         # Create NTEST tests doing nothing
         self.tests = [self.create_test() for index in range(self.NTEST)]
 
-        self.python_args = ['-Wd', '-E', '-bb']
+        self.python_args = ['-Wd', '-3', '-E', '-bb', '-tt']
         self.regrtest_args = ['-uall', '-rwW',
                               '--testdir=%s' % self.tmptestdir]
 
