@@ -47,6 +47,7 @@ _mswindows = (sys.platform == "win32")
 import io
 import os
 import time
+import shlex
 import signal
 import builtins
 import warnings
@@ -1209,7 +1210,8 @@ class Popen(object):
                 # On Android the default shell is at '/system/bin/sh'.
                 unix_shell = ('/system/bin/sh' if
                           hasattr(sys, 'getandroidapilevel') else '/bin/sh')
-                args = [unix_shell, "-c"] + args
+                cmdline = " ".join(shlex.quote(x) for x in args)
+                args = [unix_shell, "-c", cmdline]
                 if executable:
                     args[0] = executable
 
