@@ -137,6 +137,75 @@ class Test_Assertions(unittest.TestCase):
         else:
             self.fail('assertNotRegex should have failed.')
 
+    def test_assertDoesNotRaise(self):
+        def _raise(e):
+            raise e
+        try:
+            self.assertDoesNotRaise(KeyError, lambda: None)
+        except self.failureException:
+            self.fail("AssertDoesNotRaise() failed with no exception raised")
+        else:
+            pass
+        try:
+            self.assertDoesNotRaise(KeyError, _raise, ValueError)
+        except ValueError:
+            pass
+        else:
+            self.fail("assertRaises() didn't let exception pass through")
+        try:
+            with self.assertDoesNotRaise(KeyError) as cm:
+                try:
+                    raise KeyError
+                except Exception as e:
+                    exc = e
+                    raise
+        except AssertionError:
+            pass
+        self.assertIs(cm.exception, exc)
+        try:
+            with self.assertDoesNotRaise(KeyError):
+                raise KeyError("key")
+        except self.failureException:
+            pass
+        with self.assertDoesNotRaise(KeyError):
+            pass
+        try:
+            with self.assertDoesNotRaise(KeyError):
+                raise ValueError
+        except ValueError:
+            pass
+        else:
+            self.fail("assertDoesNotRaise() didn't let exception pass through")
+
+    def test_assertDoesNotRaise_frames_survival(self):
+        # Issue #9815: assertRaises should avoid keeping local variables
+        # in a traceback alive.
+        class A:
+            pass
+        wr = None
+
+        class Foo(unittest.TestCase):
+
+            def foo(self):
+                nonlocal wr
+                a = A()
+                wr = weakref.ref(a)
+                try:
+                    raise ValueError
+                except ValueError:
+                    pass
+
+            def test_functional(self):
+                self.assertDoesNotRaise(ValueError, self.foo)
+
+            def test_with(self):
+                with self.assertDoesNotRaise(ValueError):
+                    self.foo()
+
+        Foo("test_functional").run()
+        self.assertIsNone(wr())
+        Foo("test_with").run()
+        self.assertIsNone(wr())
 
 class TestLongMessage(unittest.TestCase):
     """Test that the individual asserts honour longMessage.
