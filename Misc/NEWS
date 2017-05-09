@@ -10,7 +10,10 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
-- bpo-12414: sys.getsizeof() on a code object now returns the sizes 
+- bpo-30024: Circular imports involving absolute imports with binding
+  a submodule to a name are now supported.
+
+- bpo-12414: sys.getsizeof() on a code object now returns the sizes
   which includes the code struct and sizes of objects which it references.
   Patch by Dong-hee Na.
 
@@ -317,8 +320,43 @@ Extension Modules
 Library
 -------
 
-- bpo-30024: Circular imports involving absolute imports with binding
-  a submodule to a name are now supported.
+- bpo-29990: Fix range checking in GB18030 decoder.  Original patch by Ma Lin.
+
+- bpo-29979: rewrite cgi.parse_multipart, reusing the FieldStorage class and
+  making its results consistent with those of FieldStorage for
+  multipart/form-data requests. Patch by Pierre Quentel.
+
+- bpo-30243: Removed the __init__ methods of _json's scanner and encoder.
+  Misusing them could cause memory leaks or crashes.  Now scanner and encoder
+  objects are completely initialized in the __new__ methods.
+
+- bpo-30215: Compiled regular expression objects with the re.LOCALE flag no
+  longer depend on the locale at compile time.  Only the locale at matching
+  time affects the result of matching.
+
+- bpo-30185: Avoid KeyboardInterrupt tracebacks in forkserver helper process
+  when Ctrl-C is received.
+
+- bpo-30103: binascii.b2a_uu() and uu.encode() now support using ``'`'``
+  as zero instead of space.
+
+- bpo-28556: Various updates to typing module: add typing.NoReturn type, use
+  WrapperDescriptorType, minor bug-fixes.  Original PRs by
+  Jim Fasarakis-Hilliard and Ivan Levkivskyi.
+
+- bpo-30205: Fix getsockname() for unbound AF_UNIX sockets on Linux.
+
+- bpo-30228: The seek() and tell() methods of io.FileIO now set the internal
+  seekable attribute to avoid one syscall on open() (in buffered or text mode).
+
+- bpo-30190: unittest's assertAlmostEqual and assertNotAlmostEqual provide a
+  better message in case of failure which includes the difference between
+  left and right arguments.  (patch by Giampaolo Rodola')
+
+- bpo-30101: Add support for curses.A_ITALIC.
+
+- bpo-29822: inspect.isabstract() now works during __init_subclass__.  Patch
+  by Nate Soares.
 
 - bpo-29960: Preserve generator state when _random.Random.setstate()
   raises an exception.  Patch by Bryan Olson.
@@ -332,6 +370,9 @@ Library
   readline() or __next__() respectively return non-sizeable object.
   Fixed possible other errors caused by not checking results of PyObject_Size(),
   PySequence_Size(), or PyMapping_Size().
+
+- bpo-30218: Fix PathLike support for shutil.unpack_archive. Patch by Jelle
+  Zijlstra.
 
 - bpo-10076: Compiled regular expression and match objects in the re module
   now support copy.copy() and copy.deepcopy() (they are considered atomic).
@@ -512,7 +553,7 @@ Library
 - Issue #29444: Fixed out-of-bounds buffer access in the group() method of
   the match object.  Based on patch by WGH.
 
-- Issue #29377: Add SlotWrapperType, MethodWrapperType, and
+- Issue #29377: Add WrapperDescriptorType, MethodWrapperType, and
   MethodDescriptorType built-in types to types module.
   Original patch by Manuel Krebber.
 
@@ -569,9 +610,6 @@ Library
 
 - Issue #28985: Update authorizer constants in sqlite3 module.
   Patch by Dingyuan Wang.
-
-- Issue #29094: Offsets in a ZIP file created with extern file object and modes
-  "w" and "x" now are relative to the start of the file.
 
 - Issue #29079: Prevent infinite loop in pathlib.resolve() on Windows
 
@@ -751,10 +789,6 @@ Library
   Patch by Eryk Sun.
 
 - Issue #28317: The disassembler now decodes FORMAT_VALUE argument.
-
-- Issue #26293: Fixed writing ZIP files that starts not from the start of the
-  file.  Offsets in ZIP file now are relative to the start of the archive in
-  conforming to the specification.
 
 - Issue #28380: unittest.mock Mock autospec functions now properly support
   assert_called, assert_not_called, and assert_called_once.
@@ -1008,6 +1042,14 @@ Documentation
 Build
 -----
 
+- bpo-29243: Prevent unnecessary rebuilding of Python during ``make test``,
+  ``make install`` and some other make targets when configured with
+  ``--enable-optimizations``.
+
+- bpo-23404: Don't regenerate generated files based on file modification time
+  anymore: the action is now explicit. Replace ``make touch`` with
+  ``make regen-all``.
+
 - bpo-29643: Fix ``--enable-optimization`` didn't work.
 
 - bpo-27593: sys.version and the platform module python_build(),
@@ -1104,6 +1146,12 @@ Tools/Demos
 
 Tests
 -----
+
+- bpo-30197: Enhanced functions swap_attr() and swap_item() in the
+  test.support module.  They now work when delete replaced attribute or item
+  inside the with statement.  The old value of the attribute or item (or None
+  if it doesn't exist) now will be assigned to the target of the "as" clause,
+  if there is one.
 
 - Issue #24932: Use proper command line parsing in _testembed
 
