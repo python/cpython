@@ -62,6 +62,8 @@ Special runs
 -P/--pgo        -- enable Profile Guided Optimization training
 --testdir       -- execute test files in the specified directory
                    (instead of the Python stdlib test suite)
+--list-tests    -- only write the name of tests that will be run,
+                   don't execute them
 
 
 Additional Option Details:
@@ -279,7 +281,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo',
-             'failfast', 'match=', 'testdir='])
+             'failfast', 'match=', 'testdir=', 'list-tests'])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -289,6 +291,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     if use_resources is None:
         use_resources = []
     slaveargs = None
+    list_tests = False
     for o, a in opts:
         if o in ('-h', '--help'):
             usage(0)
@@ -374,8 +377,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             slaveargs = a
         elif o in ('-P', '--pgo'):
             pgo = True
-        elif o in ('--testdir'):
+        elif o == '--testdir':
             testdir = a
+        elif o == '--list-tests':
+            list_tests = True
         else:
             print >>sys.stderr, ("No handler for option {}.  Please "
                 "report this as a bug at http://bugs.python.org.").format(o)
@@ -483,6 +488,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         random.seed(random_seed)
         print "Using random seed", random_seed
         random.shuffle(selected)
+
+    if list_tests:
+        for name in selected:
+            print(name)
+        sys.exit(0)
+
     if trace:
         import trace
         tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix],
