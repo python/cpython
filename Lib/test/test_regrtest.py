@@ -6,6 +6,7 @@ Note: test_regrtest cannot be run twice in parallel.
 from __future__ import print_function
 
 import collections
+import errno
 import os.path
 import platform
 import re
@@ -33,7 +34,8 @@ TEST_INTERRUPTED = textwrap.dedent("""
     """)
 
 
-SubprocssRun = collections.namedtuple('SubprocssRun', 'returncode stdout, stderr')
+SubprocessRun = collections.namedtuple('SubprocessRun',
+                                       'returncode stdout stderr')
 
 
 class BaseTestCase(unittest.TestCase):
@@ -58,13 +60,15 @@ class BaseTestCase(unittest.TestCase):
         path = os.path.join(self.tmptestdir, name + '.py')
 
         self.addCleanup(support.unlink, path)
-        # Use 'x' mode to ensure that we do not override existing tests
+        # Use O_EXCL to ensure that we do not override existing tests
         try:
             fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
-        except PermissionError as exc:
-            if not sysconfig.is_python_build():
+        except OSError as exc:
+            if (exc.errno in (errno.EACCES, errno.EPERM)
+               and not sysconfig.is_python_build()):
                 self.skipTest("cannot write %s: %s" % (path, exc))
-            raise
+            else:
+                raise
         else:
             with os.fdopen(fd, 'w') as fp:
                 fp.write(code)
@@ -81,7 +85,7 @@ class BaseTestCase(unittest.TestCase):
         self.assertRegexpMatches(output, regex)
 
     def parse_executed_tests(self, output):
-        regex = (r'^\[ *[0-9]+(?:/ *[0-9]+)*\] (%s)'
+        regex = (r'^[0-9]+:[0-9]+:[0-9]+ \[ *[0-9]+(?:/ *[0-9]+)*\] (%s)'
                  % self.TESTNAME_REGEX)
         parser = re.finditer(regex, output, re.MULTILINE)
         return list(match.group(1) for match in parser)
@@ -139,6 +143,14 @@ class BaseTestCase(unittest.TestCase):
         if interrupted:
             self.check_line(output, 'Test suite interrupted by signal SIGINT.')
 
+        if nfailed:
+            result = 'FAILURE'
+        elif interrupted:
+            result = 'INTERRUPTED'
+        else:
+            result = 'SUCCESS'
+        self.check_line(output, 'Tests result: %s' % result)
+
     def parse_random_seed(self, output):
         match = self.regex_search(r'Using random seed ([0-9]+)', output)
         randseed = int(match.group(1))
@@ -171,7 +183,7 @@ class BaseTestCase(unittest.TestCase):
                         "---\n"
                         % stderr)
             self.fail(msg)
-        return SubprocssRun(proc.returncode, stdout, stderr)
+        return SubprocessRun(proc.returncode, stdout, stderr)
 
     def run_python(self, args, **kw):
         args = [sys.executable] + list(args)
@@ -193,7 +205,7 @@ class ProgramsTestCase(BaseTestCase):
         # Create NTEST tests doing nothing
         self.tests = [self.create_test() for index in range(self.NTEST)]
 
-        self.python_args = ['-Wd', '-E', '-bb']
+        self.python_args = ['-Wd', '-3', '-E', '-bb', '-tt']
         self.regrtest_args = ['-uall', '-rwW',
                               '--testdir=%s' % self.tmptestdir]
 
@@ -370,13 +382,13 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, test, omitted=test,
                                   interrupted=True)
 
-    def test_slow(self):
+    def test_slowest(self):
         # test --slow
         tests = [self.create_test() for index in range(3)]
-        output = self.run_tests("--slow", *tests)
+        output = self.run_tests("--slowest", *tests)
         self.check_executed_tests(output, tests)
         regex = ('10 slowest tests:\n'
-                 '(?:%s: .*\n){%s}'
+                 '(?:- %s: .*\n){%s}'
                  % (self.TESTNAME_REGEX, len(tests)))
         self.check_line(output, regex)
 
@@ -404,6 +416,13 @@ class ArgsTestCase(BaseTestCase):
         test = self.create_test('forever', code=code)
         output = self.run_tests('--forever', test, exitcode=1)
         self.check_executed_tests(output, [test]*3, failed=test)
+
+    def test_list_tests(self):
+        # test --list-tests
+        tests = [self.create_test() for i in range(5)]
+        output = self.run_tests('--list-tests', *tests)
+        self.assertEqual(output.rstrip().splitlines(),
+                         tests)
 
     def test_crashed(self):
         # Any code which causes a crash

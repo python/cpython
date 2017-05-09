@@ -27,7 +27,7 @@ Verbosity
 -w/--verbose2   -- re-run failed tests in verbose mode
 -W/--verbose3   -- re-run failed tests in verbose mode immediately
 -q/--quiet      -- no output unless one or more tests fail
--S/--slow       -- print the slowest 10 tests
+-S/--slowest    -- print the slowest 10 tests
    --header     -- print header with interpreter info
 
 Selecting tests
@@ -62,6 +62,8 @@ Special runs
 -P/--pgo        -- enable Profile Guided Optimization training
 --testdir       -- execute test files in the specified directory
                    (instead of the Python stdlib test suite)
+--list-tests    -- only write the name of tests that will be run,
+                   don't execute them
 
 
 Additional Option Details:
@@ -158,6 +160,7 @@ option '-uall,-bsddb'.
 """
 
 import StringIO
+import datetime
 import getopt
 import json
 import os
@@ -226,6 +229,13 @@ RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
 
+# Minimum duration of a test to display its duration or to mention that
+# the test is running in background
+PROGRESS_MIN_TIME = 30.0   # seconds
+
+# Display the running tests if nothing happened last N seconds
+PROGRESS_UPDATE = 30.0   # seconds
+
 from test import test_support
 
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
@@ -239,6 +249,32 @@ def usage(code, msg=''):
     print __doc__
     if msg: print msg
     sys.exit(code)
+
+
+def format_duration(seconds):
+    if seconds < 1.0:
+        return '%.0f ms' % (seconds * 1e3)
+    if seconds < 60.0:
+        return '%.0f sec' % seconds
+
+    minutes, seconds = divmod(seconds, 60.0)
+    return '%.0f min %.0f sec' % (minutes, seconds)
+
+
+_FORMAT_TEST_RESULT = {
+    PASSED: '%s passed',
+    FAILED: '%s failed',
+    ENV_CHANGED: '%s failed (env changed)',
+    SKIPPED: '%s skipped',
+    RESOURCE_DENIED: '%s skipped (resource denied)',
+    INTERRUPTED: '%s interrupted',
+    CHILD_ERROR: '%s crashed',
+}
+
+
+def format_test_result(test_name, result):
+    fmt = _FORMAT_TEST_RESULT.get(result, "%s")
+    return fmt % test_name
 
 
 def main(tests=None, testdir=None, verbose=0, quiet=False,
@@ -269,16 +305,18 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     directly to set the values that would normally be set by flags
     on the command line.
     """
+    regrtest_start_time = time.time()
 
     test_support.record_original_stdout(sys.stdout)
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:j:PGm:',
             ['help', 'verbose', 'verbose2', 'verbose3', 'quiet',
-             'exclude', 'single', 'slow', 'randomize', 'fromfile=', 'findleaks',
+             'exclude', 'single', 'slow', 'slowest', 'randomize', 'fromfile=',
+             'findleaks',
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo',
-             'failfast', 'match=', 'testdir='])
+             'failfast', 'match=', 'testdir=', 'list-tests'])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -288,6 +326,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     if use_resources is None:
         use_resources = []
     slaveargs = None
+    list_tests = False
     for o, a in opts:
         if o in ('-h', '--help'):
             usage(0)
@@ -306,7 +345,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             exclude = True
         elif o in ('-s', '--single'):
             single = True
-        elif o in ('-S', '--slow'):
+        elif o in ('-S', '--slow', '--slowest'):
             print_slow = True
         elif o in ('-r', '--randomize'):
             randomize = True
@@ -373,8 +412,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             slaveargs = a
         elif o in ('-P', '--pgo'):
             pgo = True
-        elif o in ('--testdir'):
+        elif o == '--testdir':
             testdir = a
+        elif o == '--list-tests':
+            list_tests = True
         else:
             print >>sys.stderr, ("No handler for option {}.  Please "
                 "report this as a bug at http://bugs.python.org.").format(o)
@@ -482,6 +523,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         random.seed(random_seed)
         print "Using random seed", random_seed
         random.shuffle(selected)
+
+    if list_tests:
+        for name in selected:
+            print(name)
+        sys.exit(0)
+
     if trace:
         import trace
         tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix],
@@ -525,13 +572,27 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         test_count = '/{}'.format(len(selected))
         test_count_width = len(test_count) - 1
 
+    def display_progress(test_index, test):
+        # "[ 51/405/1] test_tcl"
+        fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
+        line = fmt.format(test_count_width, test_index, test_count,
+                          len(bad), test)
+
+        # add the timestamp prefix:  "0:01:05 "
+        test_time = time.time() - regrtest_start_time
+        test_time = datetime.timedelta(seconds=int(test_time))
+        line = "%s %s" % (test_time, line)
+
+        print(line)
+        sys.stdout.flush()
+
     if use_mp:
         try:
             from threading import Thread
         except ImportError:
             print "Multiprocess option requires thread support"
             sys.exit(2)
-        from Queue import Queue
+        from Queue import Queue, Empty
         from subprocess import Popen, PIPE
         debug_output_pat = re.compile(r"\[\d+ refs\]$")
         output = Queue()
@@ -551,63 +612,106 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         # required to spawn a new process with PGO flag on/off
         if pgo:
             base_cmd = base_cmd + ['--pgo']
-        def work():
-            # A worker thread.
-            try:
-                while True:
-                    try:
-                        test, args_tuple = next(pending)
-                    except StopIteration:
-                        output.put((None, None, None, None))
-                        return
-                    # -E is needed by some tests, e.g. test_import
-                    args = base_cmd + ['--slaveargs', json.dumps(args_tuple)]
-                    if testdir:
-                        args.extend(('--testdir', testdir))
+
+        class MultiprocessThread(Thread):
+            current_test = None
+            start_time = None
+
+            def runtest(self):
+                try:
+                    test, args_tuple = next(pending)
+                except StopIteration:
+                    output.put((None, None, None, None))
+                    return True
+
+                # -E is needed by some tests, e.g. test_import
+                args = base_cmd + ['--slaveargs', json.dumps(args_tuple)]
+                if testdir:
+                    args.extend(('--testdir', testdir))
+                try:
+                    self.start_time = time.time()
+                    self.current_test = test
                     popen = Popen(args,
                                   stdout=PIPE, stderr=PIPE,
                                   universal_newlines=True,
                                   close_fds=(os.name != 'nt'))
                     stdout, stderr = popen.communicate()
                     retcode = popen.wait()
+                finally:
+                    self.current_test = None
 
-                    # Strip last refcount output line if it exists, since it
-                    # comes from the shutdown of the interpreter in the subcommand.
-                    stderr = debug_output_pat.sub("", stderr)
+                # Strip last refcount output line if it exists, since it
+                # comes from the shutdown of the interpreter in the subcommand.
+                stderr = debug_output_pat.sub("", stderr)
 
-                    if retcode == 0:
-                        stdout, _, result = stdout.strip().rpartition("\n")
-                        if not result:
-                            output.put((None, None, None, None))
-                            return
+                if retcode == 0:
+                    stdout, _, result = stdout.strip().rpartition("\n")
+                    if not result:
+                        output.put((None, None, None, None))
+                        return True
 
-                        result = json.loads(result)
-                    else:
-                        result = (CHILD_ERROR, "Exit code %s" % retcode)
+                    result = json.loads(result)
+                else:
+                    result = (CHILD_ERROR, "Exit code %s" % retcode)
 
-                    output.put((test, stdout.rstrip(), stderr.rstrip(), result))
-            except BaseException:
-                output.put((None, None, None, None))
-                raise
+                output.put((test, stdout.rstrip(), stderr.rstrip(), result))
+                return False
 
-        workers = [Thread(target=work) for i in range(use_mp)]
+            def run(self):
+                try:
+                    stop = False
+                    while not stop:
+                        stop = self.runtest()
+                except BaseException:
+                    output.put((None, None, None, None))
+                    raise
+
+        workers = [MultiprocessThread() for i in range(use_mp)]
+        print("Run tests in parallel using %s child processes"
+              % len(workers))
         for worker in workers:
             worker.start()
 
+        def get_running(workers):
+            running = []
+            for worker in workers:
+                current_test = worker.current_test
+                if not current_test:
+                    continue
+                dt = time.time() - worker.start_time
+                if dt >= PROGRESS_MIN_TIME:
+                    running.append('%s (%.0f sec)' % (current_test, dt))
+            return running
+
         finished = 0
         test_index = 1
+        get_timeout = max(PROGRESS_UPDATE, PROGRESS_MIN_TIME)
         try:
             while finished < use_mp:
-                test, stdout, stderr, result = output.get()
+                try:
+                    item = output.get(timeout=get_timeout)
+                except Empty:
+                    running = get_running(workers)
+                    if running and not pgo:
+                        print('running: %s' % ', '.join(running))
+                    continue
+
+                test, stdout, stderr, result = item
                 if test is None:
                     finished += 1
                     continue
                 accumulate_result(test, result)
                 if not quiet:
-                    fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
-                    print(fmt.format(
-                        test_count_width, test_index, test_count,
-                        len(bad), test))
+                    ok, test_time = result
+                    text = format_test_result(test, ok)
+                    if (ok not in (CHILD_ERROR, INTERRUPTED)
+                        and test_time >= PROGRESS_MIN_TIME
+                        and not pgo):
+                        text += ' (%.0f sec)' % test_time
+                    running = get_running(workers)
+                    if running and not pgo:
+                        text += ' -- running: %s' % ', '.join(running)
+                    display_progress(test_index, text)
 
                 if stdout:
                     print stdout
@@ -627,18 +731,22 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         for worker in workers:
             worker.join()
     else:
+        print("Run tests sequentially")
+
+        previous_test = None
         for test_index, test in enumerate(tests, 1):
             if not quiet:
-                fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
-                print(fmt.format(
-                    test_count_width, test_index, test_count, len(bad), test))
-                sys.stdout.flush()
+                text = test
+                if previous_test:
+                    text = '%s -- %s' % (text, previous_test)
+                display_progress(test_index, text)
             if trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
                 tracer.runctx('runtest(test, verbose, quiet, testdir=testdir)',
                               globals=globals(), locals=vars())
             else:
+                start_time = time.time()
                 try:
                     result = runtest(test, verbose, quiet, huntrleaks, None, pgo,
                                      failfast=failfast,
@@ -655,6 +763,16 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     break
                 except:
                     raise
+
+                previous_test = format_test_result(test, result[0])
+                test_time = time.time() - start_time
+                if test_time >= PROGRESS_MIN_TIME:
+                    previous_test = "%s in %s" % (previous_test,
+                                                  format_duration(test_time))
+                elif result[0] == PASSED:
+                    # be quiet: say nothing if the test passed shortly
+                    previous_test = None
+
             if findleaks:
                 gc.collect()
                 if gc.garbage:
@@ -683,8 +801,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     if print_slow:
         test_times.sort(reverse=True)
         print "10 slowest tests:"
-        for time, test in test_times[:10]:
-            print "%s: %.1fs" % (test, time)
+        for test_time, test in test_times[:10]:
+            print("- %s: %.1fs" % (test, test_time))
     if bad and not pgo:
         print count(len(bad), "test"), "failed:"
         printlist(bad)
@@ -744,6 +862,18 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     if runleaks:
         os.system("leaks %d" % os.getpid())
+
+    print
+    duration = time.time() - regrtest_start_time
+    print("Total duration: %s" % format_duration(duration))
+
+    if bad:
+        result = "FAILURE"
+    elif interrupted:
+        result = "INTERRUPTED"
+    else:
+        result = "SUCCESS"
+    print("Tests result: %s" % result)
 
     sys.exit(len(bad) > 0 or interrupted)
 
