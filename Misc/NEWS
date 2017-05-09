@@ -371,8 +371,6 @@ Library
 - bpo-30068: _io._IOBase.readlines will check if it's closed first when
   hint is present.
 
-- bpo-29447: tempfile's dir argument is now accept path-like objects.
-
 - bpo-29694: Fixed race condition in pathlib mkdir with flags
   parents=True.  Patch by Armin Rigo.
 
