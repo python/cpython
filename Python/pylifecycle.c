@@ -331,14 +331,14 @@ _Py_LegacyLocaleDetected(void)
 }
 
 typedef struct _CandidateLocale {
-    const char *locale_name;
-    int category;
+    const char *locale_name; /* The locale to try as a coercion target */
+    int set_LANG;            /* Whether to set LANG in addition to LC_CTYPE */
 } _LocaleCoercionTarget;
 
 static _LocaleCoercionTarget _TARGET_LOCALES[] = {
-    { "C.UTF-8", LC_ALL },
-    { "C.utf8", LC_ALL },
-    { "UTF-8", LC_CTYPE },
+    { "C.UTF-8", 1 },
+    { "C.utf8",  1},
+    { "UTF-8", 0 },
     { NULL, 0 }
 };
 
@@ -373,37 +373,27 @@ static const char *_C_LOCALE_COERCION_WARNING =
 static void
 _coerce_default_locale_settings(const _LocaleCoercionTarget *target)
 {
+    const char *env_vars_updated = "LC_CTYPE";
     const char *newloc = target->locale_name;
-    int category = target->category;
 
     /* Reset locale back to currently configured defaults */
     setlocale(LC_ALL, "");
 
     /* Set the relevant locale environment variables */
-    if (category == LC_ALL) {
-        const char *env_vars_updated = "LC_ALL & LANG";
-        if (setenv("LC_ALL", newloc, 1)) {
-            fprintf(stderr,
-                    "Error setting LC_ALL, skipping C locale coercion\n");
-            return;
-        }
-        if (setenv("LANG", newloc, 1)) {
-            fprintf(stderr,
-                    "Error setting LANG during C locale coercion\n");
-            env_vars_updated = "LC_ALL";
-        }
-        fprintf(stderr, _C_LOCALE_COERCION_WARNING, env_vars_updated, newloc);
-    } else if (category == LC_CTYPE) {
-        if (setenv("LC_CTYPE", newloc, 1)) {
-            fprintf(stderr,
-                    "Error setting LC_CTYPE, skipping C locale coercion\n");
-            return;
-        }
-        fprintf(stderr, _C_LOCALE_COERCION_WARNING, "LC_CTYPE", newloc);
-    } else {
-        fprintf(stderr, "Locale coercion must target LC_ALL or LC_CTYPE\n");
+    if (setenv("LC_CTYPE", newloc, 1)) {
+        fprintf(stderr,
+                "Error setting LC_CTYPE, skipping C locale coercion\n");
         return;
     }
+    if (target->set_LANG) {
+        if (setenv("LANG", newloc, 1) == 0) {
+            env_vars_updated = "LC_CTYPE & LANG";
+        } else {
+            fprintf(stderr,
+                    "Error setting LANG during C locale coercion\n");
+        }
+    }
+    fprintf(stderr, _C_LOCALE_COERCION_WARNING, env_vars_updated, newloc);
 
     /* Reconfigure with the overridden environment variables */
     setlocale(LC_ALL, "");
@@ -436,14 +426,18 @@ _Py_CoerceLegacyLocale(void)
     */
     if (c_locale_coercion_is_expected()) {
         /* PYTHONCOERCECLOCALE is not set, or is not set to exactly "0" */
-        const _LocaleCoercionTarget *target = NULL;
-        for (target = _TARGET_LOCALES; target->locale_name; target++) {
-            const char *reconfigured_locale = setlocale(target->category,
-                                                        target->locale_name);
-            if (reconfigured_locale != NULL) {
-                /* Successfully configured locale, so make it the default */
-                _coerce_default_locale_settings(target);
-                return;
+        const char *locale_override = getenv("LC_ALL");
+        if (locale_override == NULL || *locale_override == '\0') {
+            /* LC_ALL is also not set (or is set to an empty string) */
+            const _LocaleCoercionTarget *target = NULL;
+            for (target = _TARGET_LOCALES; target->locale_name; target++) {
+                const char *new_locale = setlocale(LC_CTYPE,
+                                                   target->locale_name);
+                if (new_locale != NULL) {
+                    /* Successfully configured locale, so make it the default */
+                    _coerce_default_locale_settings(target);
+                    return;
+                }
             }
         }
     }

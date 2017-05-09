@@ -127,20 +127,6 @@ static int test_forced_io_encoding(void)
     return 0;
 }
 
-static int test_c_locale_warning(void)
-{
-#ifdef PY_WARN_ON_C_LOCALE
-    /* Force use of the C locale */
-    setenv("LC_ALL", "C", 1);
-
-    _testembed_Py_Initialize();
-    Py_Finalize();
-#else
-    printf("C locale compatibility warning disabled at compile time\n");
-#endif
-    return 0;
-}
-
 /* *********************************************************
  * List of test cases and the function that implements it.
  * 
@@ -162,7 +148,6 @@ struct TestCase
 static struct TestCase TestCases[] = {
     { "forced_io_encoding", test_forced_io_encoding },
     { "repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters },
-    { "c_locale_warning", test_c_locale_warning },
     { NULL, NULL }
 };
 
