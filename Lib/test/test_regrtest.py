@@ -58,7 +58,7 @@ class BaseTestCase(unittest.TestCase):
         path = os.path.join(self.tmptestdir, name + '.py')
 
         self.addCleanup(support.unlink, path)
-        # Use 'x' mode to ensure that we do not override existing tests
+        # Use O_EXCL to ensure that we do not override existing tests
         try:
             fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
         except PermissionError as exc:
