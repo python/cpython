@@ -116,6 +116,8 @@ class Regrtest:
         elif ok == RESOURCE_DENIED:
             self.skipped.append(test)
             self.resource_denieds.append(test)
+        elif ok != INTERRUPTED:
+            raise ValueError("invalid test result: %r" % ok)
 
     def display_progress(self, test_index, test):
         if self.ns.quiet:
