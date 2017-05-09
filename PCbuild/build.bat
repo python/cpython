@@ -116,7 +116,7 @@ if "%kill%"=="true" call :Kill
 
 if "%do_pgo%"=="true" (
     set conf=PGInstrument
-    call :Build
+    call :Build %1 %2 %3 %4 %5 %6 %7 %8 %9
     del /s "%dir%\*.pgc"
     del /s "%dir%\..\Lib\*.pyc"
     echo on
