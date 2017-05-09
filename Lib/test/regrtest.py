@@ -229,6 +229,10 @@ RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
 
+# Minimum duration of a test to display its duration or to mention that
+# the test is running in background
+PROGRESS_MIN_TIME = 30.0   # seconds
+
 from test import test_support
 
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
@@ -252,6 +256,22 @@ def format_duration(seconds):
 
     minutes, seconds = divmod(seconds, 60.0)
     return '%.0f min %.0f sec' % (minutes, seconds)
+
+
+_FORMAT_TEST_RESULT = {
+    PASSED: '%s passed',
+    FAILED: '%s failed',
+    ENV_CHANGED: '%s failed (env changed)',
+    SKIPPED: '%s skipped',
+    RESOURCE_DENIED: '%s skipped (resource denied)',
+    INTERRUPTED: '%s interrupted',
+    CHILD_ERROR: '%s crashed',
+}
+
+
+def format_test_result(test_name, result):
+    fmt = _FORMAT_TEST_RESULT.get(result, "%s")
+    return fmt % test_name
 
 
 def main(tests=None, testdir=None, verbose=0, quiet=False,
@@ -642,7 +662,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     continue
                 accumulate_result(test, result)
                 if not quiet:
-                    display_progress(test_index, test)
+                    ok, test_time = result
+                    text = format_test_result(test, ok)
+                    if (ok not in (CHILD_ERROR, INTERRUPTED)
+                        and test_time >= PROGRESS_MIN_TIME
+                        and not pgo):
+                        text += ' (%.0f sec)' % test_time
+                    display_progress(test_index, text)
 
                 if stdout:
                     print stdout
@@ -662,15 +688,20 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         for worker in workers:
             worker.join()
     else:
+        previous_test = None
         for test_index, test in enumerate(tests, 1):
             if not quiet:
-                display_progress(test_index, test)
+                text = test
+                if previous_test:
+                    text = '%s -- %s' % (text, previous_test)
+                display_progress(test_index, text)
             if trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
                 tracer.runctx('runtest(test, verbose, quiet, testdir=testdir)',
                               globals=globals(), locals=vars())
             else:
+                start_time = time.time()
                 try:
                     result = runtest(test, verbose, quiet, huntrleaks, None, pgo,
                                      failfast=failfast,
@@ -687,6 +718,16 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     break
                 except:
                     raise
+
+                previous_test = format_test_result(test, result[0])
+                test_time = time.time() - start_time
+                if test_time >= PROGRESS_MIN_TIME:
+                    previous_test = "%s in %s" % (previous_test,
+                                                  format_duration(test_time))
+                elif result[0] == PASSED:
+                    # be quiet: say nothing if the test passed shortly
+                    previous_test = None
+
             if findleaks:
                 gc.collect()
                 if gc.garbage:
