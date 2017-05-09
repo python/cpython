@@ -1071,6 +1071,26 @@ PyAPI_FUNC(void)
 _PyObject_DebugTypeStats(FILE *out);
 #endif /* ifndef Py_LIMITED_API */
 
+#ifndef Py_LIMITED_API
+typedef struct _Py_StaticVar {
+    struct _Py_StaticVar *next;
+    PyObject *obj;
+} _Py_StaticVar;
+
+
+PyAPI_FUNC(int) _PyStaticVar_Set(_Py_StaticVar *var, PyObject *obj);
+
+#define _Py_STATICVAR(var) \
+    static _Py_StaticVar var = {.next = NULL, .obj = NULL}
+
+/* Initialized the static variable 'var' once with the expression 'expr'.
+   Return 0 on success, return -1 on failure. */
+#define _PY_STATICVAR_INIT(var, expr) \
+    ((var)->obj == NULL ? _PyStaticVar_Set((var), (expr)) : 0)
+
+PyAPI_DATA(_Py_StaticVar*) _Py_static_variables;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

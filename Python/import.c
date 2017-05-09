@@ -1722,9 +1722,9 @@ PyImport_ReloadModule(PyObject *m)
 PyObject *
 PyImport_Import(PyObject *module_name)
 {
-    static PyObject *silly_list = NULL;
-    static PyObject *builtins_str = NULL;
-    static PyObject *import_str = NULL;
+    _Py_STATICVAR(empty_list);
+    _Py_STATICVAR(builtins_str);
+    _Py_STATICVAR(import_str);
     PyObject *globals = NULL;
     PyObject *import = NULL;
     PyObject *builtins = NULL;
@@ -1732,23 +1732,23 @@ PyImport_Import(PyObject *module_name)
     PyObject *r = NULL;
 
     /* Initialize constant string objects */
-    if (silly_list == NULL) {
-        import_str = PyUnicode_InternFromString("__import__");
-        if (import_str == NULL)
-            return NULL;
-        builtins_str = PyUnicode_InternFromString("__builtins__");
-        if (builtins_str == NULL)
-            return NULL;
-        silly_list = PyList_New(0);
-        if (silly_list == NULL)
-            return NULL;
+    if (_PY_STATICVAR_INIT(&empty_list, PyList_New(0))) {
+        return NULL;
+    }
+    if (_PY_STATICVAR_INIT(&builtins_str,
+                           PyUnicode_InternFromString("__builtins__"))) {
+        return NULL;
+    }
+    if (_PY_STATICVAR_INIT(&import_str,
+                           PyUnicode_InternFromString("__import__"))) {
+        return NULL;
     }
 
     /* Get the builtins from current globals */
     globals = PyEval_GetGlobals();
     if (globals != NULL) {
         Py_INCREF(globals);
-        builtins = PyObject_GetItem(globals, builtins_str);
+        builtins = PyObject_GetItem(globals, builtins_str.obj);
         if (builtins == NULL)
             goto err;
     }
@@ -1758,19 +1758,19 @@ PyImport_Import(PyObject *module_name)
                                               NULL, NULL, NULL, 0);
         if (builtins == NULL)
             return NULL;
-        globals = Py_BuildValue("{OO}", builtins_str, builtins);
+        globals = Py_BuildValue("{OO}", builtins_str.obj, builtins);
         if (globals == NULL)
             goto err;
     }
 
     /* Get the __import__ function from the builtins */
     if (PyDict_Check(builtins)) {
-        import = PyObject_GetItem(builtins, import_str);
+        import = PyObject_GetItem(builtins, import_str.obj);
         if (import == NULL)
-            PyErr_SetObject(PyExc_KeyError, import_str);
+            PyErr_SetObject(PyExc_KeyError, import_str.obj);
     }
     else
-        import = PyObject_GetAttr(builtins, import_str);
+        import = PyObject_GetAttr(builtins, import_str.obj);
     if (import == NULL)
         goto err;
 
@@ -1778,7 +1778,7 @@ PyImport_Import(PyObject *module_name)
        Always use absolute import here.
        Calling for side-effect of import. */
     r = PyObject_CallFunction(import, "OOOOi", module_name, globals,
-                              globals, silly_list, 0, NULL);
+                              globals, empty_list.obj, 0, NULL);
     if (r == NULL)
         goto err;
     Py_DECREF(r);

@@ -162,7 +162,7 @@ sys_displayhook(PyObject *self, PyObject *o)
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     PyObject *modules = interp->modules;
     PyObject *builtins;
-    static PyObject *newline = NULL;
+    _Py_STATICVAR(newline);
     int err;
 
     builtins = _PyDict_GetItemId(modules, &PyId_builtins);
@@ -197,12 +197,10 @@ sys_displayhook(PyObject *self, PyObject *o)
             return NULL;
         }
     }
-    if (newline == NULL) {
-        newline = PyUnicode_FromString("\n");
-        if (newline == NULL)
-            return NULL;
+    if (_PY_STATICVAR_INIT(&newline, PyUnicode_FromString("\n"))) {
+        return NULL;
     }
-    if (PyFile_WriteObject(newline, outf, Py_PRINT_RAW) != 0)
+    if (PyFile_WriteObject(newline.obj, outf, Py_PRINT_RAW) != 0)
         return NULL;
     if (_PyObject_SetAttrId(builtins, &PyId__, o) != 0)
         return NULL;
