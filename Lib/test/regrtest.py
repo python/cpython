@@ -233,6 +233,9 @@ CHILD_ERROR = -5   # error in a child process
 # the test is running in background
 PROGRESS_MIN_TIME = 30.0   # seconds
 
+# Display the running tests if nothing happened last N seconds
+PROGRESS_UPDATE = 30.0   # seconds
+
 from test import test_support
 
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
@@ -589,7 +592,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         except ImportError:
             print "Multiprocess option requires thread support"
             sys.exit(2)
-        from Queue import Queue
+        from Queue import Queue, Empty
         from subprocess import Popen, PIPE
         debug_output_pat = re.compile(r"\[\d+ refs\]$")
         output = Queue()
@@ -682,9 +685,18 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
         finished = 0
         test_index = 1
+        get_timeout = max(PROGRESS_UPDATE, PROGRESS_MIN_TIME)
         try:
             while finished < use_mp:
-                test, stdout, stderr, result = output.get()
+                try:
+                    item = output.get(timeout=get_timeout)
+                except Empty:
+                    running = get_running(workers)
+                    if running and not pgo:
+                        print('running: %s' % ', '.join(running))
+                    continue
+
+                test, stdout, stderr, result = item
                 if test is None:
                     finished += 1
                     continue
