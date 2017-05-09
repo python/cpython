@@ -27,7 +27,7 @@ Verbosity
 -w/--verbose2   -- re-run failed tests in verbose mode
 -W/--verbose3   -- re-run failed tests in verbose mode immediately
 -q/--quiet      -- no output unless one or more tests fail
--S/--slow       -- print the slowest 10 tests
+-S/--slowest    -- print the slowest 10 tests
    --header     -- print header with interpreter info
 
 Selecting tests
@@ -274,7 +274,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:j:PGm:',
             ['help', 'verbose', 'verbose2', 'verbose3', 'quiet',
-             'exclude', 'single', 'slow', 'randomize', 'fromfile=', 'findleaks',
+             'exclude', 'single', 'slow', 'slowest', 'randomize', 'fromfile=',
+             'findleaks',
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo',
@@ -306,7 +307,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             exclude = True
         elif o in ('-s', '--single'):
             single = True
-        elif o in ('-S', '--slow'):
+        elif o in ('-S', '--slow', '--slowest'):
             print_slow = True
         elif o in ('-r', '--randomize'):
             randomize = True
