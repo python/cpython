@@ -685,7 +685,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         test_times.sort(reverse=True)
         print "10 slowest tests:"
         for time, test in test_times[:10]:
-            print "%s: %.1fs" % (test, time)
+            print("- %s: %.1fs" % (test, time))
     if bad and not pgo:
         print count(len(bad), "test"), "failed:"
         printlist(bad)
