@@ -309,7 +309,9 @@ normally suppressed by the interpreter if it would be the only value written.
 You can see it if you really want to using :func:`print`::
 
    >>> fib(0)
+   
    >>> print(fib(0))
+   
    None
 
 It is simple to write a function that returns a list of the numbers of the
