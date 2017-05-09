@@ -5,10 +5,11 @@ import unittest
 import inspect
 import linecache
 import datetime
+import textwrap
 from UserList import UserList
 from UserDict import UserDict
 
-from test.test_support import run_unittest, check_py3k_warnings, have_unicode
+from test.support import run_unittest, check_py3k_warnings, have_unicode
 
 with check_py3k_warnings(
         ("tuple parameter unpacking has been removed", SyntaxWarning),
@@ -502,10 +503,15 @@ class TestClassesAndFunctions(unittest.TestCase):
                                  'g', 'h', (3, (4, (5,))),
                                  '(a, b, c, d=3, (e, (f,))=(4, (5,)), *g, **h)')
 
-        def spam_deref(a, b, c, d=3, (e, (f,))=(4, (5,)), *g, **h):
-            def eggs():
-                return a + b + c + d + e + f + g + h
-            return eggs
+        with check_py3k_warnings(("tuple parameter unpacking has been removed",
+                                  SyntaxWarning),
+                                 quiet=True):
+            exec(textwrap.dedent('''
+                def spam_deref(a, b, c, d=3, (e, (f,))=(4, (5,)), *g, **h):
+                    def eggs():
+                        return a + b + c + d + e + f + g + h
+                    return eggs
+            '''))
         self.assertArgSpecEquals(spam_deref,
                                  ['a', 'b', 'c', 'd', ['e', ['f']]],
                                  'g', 'h', (3, (4, (5,))),
