@@ -757,6 +757,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     if runleaks:
         os.system("leaks %d" % os.getpid())
 
+    if bad:
+        result = "FAILURE"
+    elif interrupted:
+        result = "INTERRUPTED"
+    else:
+        result = "SUCCESS"
+    print("Tests result: %s" % result)
+
     sys.exit(len(bad) > 0 or interrupted)
 
 
