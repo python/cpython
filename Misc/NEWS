@@ -320,6 +320,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30285: Optimized case-insensitive matching and searching of regular
+  expressions.
+
 - bpo-29990: Fix range checking in GB18030 decoder.  Original patch by Ma Lin.
 
 - bpo-29979: rewrite cgi.parse_multipart, reusing the FieldStorage class and
