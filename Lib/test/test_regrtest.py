@@ -6,6 +6,7 @@ Note: test_regrtest cannot be run twice in parallel.
 from __future__ import print_function
 
 import collections
+import errno
 import os.path
 import platform
 import re
@@ -61,10 +62,12 @@ class BaseTestCase(unittest.TestCase):
         # Use O_EXCL to ensure that we do not override existing tests
         try:
             fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
-        except PermissionError as exc:
-            if not sysconfig.is_python_build():
+        except OSError as exc:
+            if (exc.errno in (errno.EACCES, errno.EPERM)
+               and not sysconfig.is_python_build()):
                 self.skipTest("cannot write %s: %s" % (path, exc))
-            raise
+            else:
+                raise
         else:
             with os.fdopen(fd, 'w') as fp:
                 fp.write(code)
