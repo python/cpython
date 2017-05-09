@@ -34,7 +34,8 @@ TEST_INTERRUPTED = textwrap.dedent("""
     """)
 
 
-SubprocssRun = collections.namedtuple('SubprocssRun', 'returncode stdout, stderr')
+SubprocessRun = collections.namedtuple('SubprocessRun',
+                                       'returncode stdout stderr')
 
 
 class BaseTestCase(unittest.TestCase):
@@ -182,7 +183,7 @@ class BaseTestCase(unittest.TestCase):
                         "---\n"
                         % stderr)
             self.fail(msg)
-        return SubprocssRun(proc.returncode, stdout, stderr)
+        return SubprocessRun(proc.returncode, stdout, stderr)
 
     def run_python(self, args, **kw):
         args = [sys.executable] + list(args)
