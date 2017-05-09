@@ -98,7 +98,7 @@ def _infer_return_type(*args):
     """Look at the type of all args and divine their implied return type."""
     return_type = None
     for arg in args:
-        if arg is None:
+        if arg is None or isinstance(arg, _os.PathLike):
             continue
         if isinstance(arg, bytes):
             if return_type is str:
@@ -130,6 +130,11 @@ def _sanitize_params(prefix, suffix, dir):
             dir = gettempdir()
         else:
             dir = gettempdirb()
+    if isinstance(dir, _os.PathLike):
+        if output_type is str:
+            dir = _os.fspath(dir)
+        else:
+            dir = _os.fsencode(dir)
     return prefix, suffix, dir, output_type
 
 
