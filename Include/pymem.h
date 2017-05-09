@@ -12,9 +12,9 @@ extern "C" {
 #endif
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
-PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
-PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
+PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size) Py_GCC_ATTRIBUTE((alloc_size(1)));
+PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize) Py_GCC_ATTRIBUTE((alloc_size(1, 2)));
+PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size) Py_GCC_ATTRIBUTE((alloc_size(2)));
 PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
 
 /* Configure the Python memory allocators. Pass NULL to use default
@@ -100,11 +100,12 @@ PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
    performed on failure (no exception is set, no warning is printed, etc).
 */
 
-PyAPI_FUNC(void *) PyMem_Malloc(size_t size);
+PyAPI_FUNC(void *) PyMem_Malloc(size_t size) Py_GCC_ATTRIBUTE((alloc_size(1)));
+
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
-PyAPI_FUNC(void *) PyMem_Calloc(size_t nelem, size_t elsize);
+PyAPI_FUNC(void *) PyMem_Calloc(size_t nelem, size_t elsize) Py_GCC_ATTRIBUTE((alloc_size(1, 2)));
 #endif
-PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
+PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size) Py_GCC_ATTRIBUTE((alloc_size(2)));
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
 
 #ifndef Py_LIMITED_API
