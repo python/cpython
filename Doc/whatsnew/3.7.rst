@@ -208,6 +208,10 @@ Optimizations
   using the :func:`os.scandir` function.
   (Contributed by Serhiy Storchaka in :issue:`25996`.)
 
+* Optimized case-insensitive matching and searching of :mod:`regular
+  expressions <re>`.  Searching some patterns can now be up to 20 times faster.
+  (Contributed by Serhiy Storchaka in :issue:`30285`.)
+
 
 Build and C API Changes
 =======================

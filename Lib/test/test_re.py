@@ -891,15 +891,24 @@ class ReTests(unittest.TestCase):
             lo = ord(c.lower())
             self.assertEqual(_sre.ascii_tolower(i), lo)
             self.assertEqual(_sre.unicode_tolower(i), lo)
+            iscased = c in string.ascii_letters
+            self.assertEqual(_sre.ascii_iscased(i), iscased)
+            self.assertEqual(_sre.unicode_iscased(i), iscased)
 
         for i in list(range(128, 0x1000)) + [0x10400, 0x10428]:
             c = chr(i)
             self.assertEqual(_sre.ascii_tolower(i), i)
             if i != 0x0130:
                 self.assertEqual(_sre.unicode_tolower(i), ord(c.lower()))
+            iscased = c != c.lower() or c != c.upper()
+            self.assertFalse(_sre.ascii_iscased(i))
+            self.assertEqual(_sre.unicode_iscased(i),
+                             c != c.lower() or c != c.upper())
 
         self.assertEqual(_sre.ascii_tolower(0x0130), 0x0130)
         self.assertEqual(_sre.unicode_tolower(0x0130), ord('i'))
+        self.assertFalse(_sre.ascii_iscased(0x0130))
+        self.assertTrue(_sre.unicode_iscased(0x0130))
 
     def test_not_literal(self):
         self.assertEqual(re.search(r"\s([^a])", " b").group(1), "b")
