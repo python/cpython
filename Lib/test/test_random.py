@@ -8,10 +8,6 @@ from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
 from fractions import Fraction
-try:
-    from secrets import randbelow as secrets_randbelow
-except ImportError:
-    secrets_randbelow = partial(random.uniform, 0.0)
 
 
 class TestBasicOps:
@@ -55,7 +51,7 @@ class TestBasicOps:
     @unittest.mock.patch('random._urandom') # os.urandom
     def test_seed_when_randomness_source_not_found(self, urandom_mock):
         # Random.seed() uses time.time() when an operating system specific
-        # randomness source is not found. To test this on machines were it
+        # randomness source is not found. To test this on machines where it
         # exists, run the above test, test_seedargs(), again after mocking
         # os.urandom() so that it raises the exception expected when the
         # randomness source is not available.
@@ -98,28 +94,20 @@ class TestBasicOps:
         self.assertRaises(TypeError, shuffle, 'shuffle')
         self.assertRaises(KeyError, shuffle, dict(a=1, b=2))
 
-    def test_shuffle_random_argument(self):
-        # Test random argument.
+    @unittest.expectedFailure
+    def test_shuffle_dict_with_numeric_keys(self):
         shuffle = self.gen.shuffle
-        seq = list(range(10))
-        shuffled_seq = list(range(10))
-        shuffle(shuffled_seq, random=partial(secrets_randbelow, 1))
-        self.assertEqual(len(seq), len(shuffled_seq))
-        self.assertEqual(set(seq), set(shuffled_seq))
-        self.assertRaises(IndexError, shuffle, seq, random=lambda: 1.0)
-        # The docs state that the random argument should be a function
-        # that returns a float in the range [0, 1).  However, the negative
-        # values to over -1.0 currently work.
-        seq = bytearray(b'abcdefghijk')
-        shuffle(seq, random=lambda: -1.0)
-        self.assertEqual(seq, b'kbcdefghija')
-        self.assertRaises(IndexError, shuffle, seq, random=lambda: -1.1)
-        self.assertRaises(TypeError, shuffle, seq, random=lambda x: x)
-        # Interesting result
         seq = dict(zip(range(9), 'abcdefghi'))
-        shuffle(seq, lambda: 0.5)
-        self.assertEqual(seq, {0: 'a', 1: 'f', 2: 'b', 3: 'h', 4: 'c', 5: 'g',
-                               6: 'd', 7: 'i', 8: 'e'})
+        self.assertRaises(KeyError, shuffle, seq)
+
+    def test_shuffle_random_argument(self):
+        # Test random argument to shuffle.
+        shuffle = self.gen.shuffle
+        mock_random = unittest.mock.Mock(return_value=0.5)
+        seq = bytearray(b'abcdefghijk')
+        shuffle(seq, mock_random)
+        self.assertEqual(seq, b'ajbhcgdiekf')
+        mock_random.assert_called_with()
 
     def test_choice(self):
         choice = self.gen.choice
