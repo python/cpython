@@ -128,11 +128,12 @@ class Test_FunctionTestCase(unittest.TestCase):
 
     # "Returns a one-line description of the test, or None if no description
     # has been provided. The default implementation of this method returns
-    # the first line of the test method's docstring, if available, or None."
+    # the first line of the test method's docstring, if available, or empty
+    # string."
     def test_shortDescription__no_docstring(self):
         test = unittest.FunctionTestCase(lambda: None)
 
-        self.assertEqual(test.shortDescription(), None)
+        self.assertEqual(test.shortDescription(), '')
 
     # "Returns a one-line description of the test, or None if no description
     # has been provided. The default implementation of this method returns
