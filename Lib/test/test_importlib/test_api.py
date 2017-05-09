@@ -361,6 +361,20 @@ class ReloadTests:
             reloaded = self.init.reload(ham)
             self.assertIs(reloaded, ham)
 
+    def test_reload_faliure(self):
+        #Test that reload throws ModuleNotFounderror if reloading
+        #a module whose spec cannot be found.
+        name = 'spam'
+        subname = 'ham'
+        with test_util.temp_module(name, pkg=True) as pkg_dir:
+            fullname, _ = test_util.submodule(name, subname, pkg_dir)
+            module = self.init.import_module(fullname)
+            module.__spec__ = None
+            module.__name__ = 'destroyed_spam'
+            sys.modules[module.__name__] = module
+            with self.assertRaises(ModuleNotFoundError):
+                self.init.reload(module)
+
 
 (Frozen_ReloadTests,
  Source_ReloadTests

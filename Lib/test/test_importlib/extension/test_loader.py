@@ -145,21 +145,6 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             importlib.reload(module)
             self.assertIs(ex_class, module.Example)
 
-    def test_reload_faliure(self):
-        #Test that reload throws ModuleNotFounderror if reloading
-        #a module whose spec cannot be found.
-        name = 'spam'
-        subname = 'ham'
-        with util.temp_module(name, pkg=True) as pkg_dir:
-            fullname, _ = util.submodule(name, subname, pkg_dir)
-            module = importlib.import_module(fullname)
-            module.__spec__ = None
-            module.__name__ = 'destroyed_spam'
-            sys.modules[module.__name__] = module
-            with self.assertRaises(ModuleNotFoundError):
-                importlib.reload(module)
-                util.uncache(module.__name)
-
     def test_try_registration(self):
         '''Assert that the PyState_{Find,Add,Remove}Module C API doesn't work'''
         module = self.load_module()
