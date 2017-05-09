@@ -243,6 +243,16 @@ def usage(code, msg=''):
     sys.exit(code)
 
 
+def format_duration(seconds):
+    if seconds < 1.0:
+        return '%.0f ms' % (seconds * 1e3)
+    if seconds < 60.0:
+        return '%.0f sec' % seconds
+
+    minutes, seconds = divmod(seconds, 60.0)
+    return '%.0f min %.0f sec' % (minutes, seconds)
+
+
 def main(tests=None, testdir=None, verbose=0, quiet=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
@@ -271,6 +281,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     directly to set the values that would normally be set by flags
     on the command line.
     """
+    regrtest_start_time = time.time()
 
     test_support.record_original_stdout(sys.stdout)
     try:
@@ -695,8 +706,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     if print_slow:
         test_times.sort(reverse=True)
         print "10 slowest tests:"
-        for time, test in test_times[:10]:
-            print("- %s: %.1fs" % (test, time))
+        for test_time, test in test_times[:10]:
+            print("- %s: %.1fs" % (test, test_time))
     if bad and not pgo:
         print count(len(bad), "test"), "failed:"
         printlist(bad)
@@ -756,6 +767,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     if runleaks:
         os.system("leaks %d" % os.getpid())
+
+    print
+    duration = time.time() - regrtest_start_time
+    print("Total duration: %s" % format_duration(duration))
 
     if bad:
         result = "FAILURE"
