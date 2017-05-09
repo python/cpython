@@ -609,48 +609,74 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         # required to spawn a new process with PGO flag on/off
         if pgo:
             base_cmd = base_cmd + ['--pgo']
-        def work():
-            # A worker thread.
-            try:
-                while True:
-                    try:
-                        test, args_tuple = next(pending)
-                    except StopIteration:
-                        output.put((None, None, None, None))
-                        return
-                    # -E is needed by some tests, e.g. test_import
-                    args = base_cmd + ['--slaveargs', json.dumps(args_tuple)]
-                    if testdir:
-                        args.extend(('--testdir', testdir))
+
+        class MultiprocessThread(Thread):
+            current_test = None
+            start_time = None
+
+            def runtest(self):
+                try:
+                    test, args_tuple = next(pending)
+                except StopIteration:
+                    output.put((None, None, None, None))
+                    return True
+
+                # -E is needed by some tests, e.g. test_import
+                args = base_cmd + ['--slaveargs', json.dumps(args_tuple)]
+                if testdir:
+                    args.extend(('--testdir', testdir))
+                try:
+                    self.start_time = time.time()
+                    self.current_test = test
                     popen = Popen(args,
                                   stdout=PIPE, stderr=PIPE,
                                   universal_newlines=True,
                                   close_fds=(os.name != 'nt'))
                     stdout, stderr = popen.communicate()
                     retcode = popen.wait()
+                finally:
+                    self.current_test = None
 
-                    # Strip last refcount output line if it exists, since it
-                    # comes from the shutdown of the interpreter in the subcommand.
-                    stderr = debug_output_pat.sub("", stderr)
+                # Strip last refcount output line if it exists, since it
+                # comes from the shutdown of the interpreter in the subcommand.
+                stderr = debug_output_pat.sub("", stderr)
 
-                    if retcode == 0:
-                        stdout, _, result = stdout.strip().rpartition("\n")
-                        if not result:
-                            output.put((None, None, None, None))
-                            return
+                if retcode == 0:
+                    stdout, _, result = stdout.strip().rpartition("\n")
+                    if not result:
+                        output.put((None, None, None, None))
+                        return True
 
-                        result = json.loads(result)
-                    else:
-                        result = (CHILD_ERROR, "Exit code %s" % retcode)
+                    result = json.loads(result)
+                else:
+                    result = (CHILD_ERROR, "Exit code %s" % retcode)
 
-                    output.put((test, stdout.rstrip(), stderr.rstrip(), result))
-            except BaseException:
-                output.put((None, None, None, None))
-                raise
+                output.put((test, stdout.rstrip(), stderr.rstrip(), result))
+                return False
 
-        workers = [Thread(target=work) for i in range(use_mp)]
+            def run(self):
+                try:
+                    stop = False
+                    while not stop:
+                        stop = self.runtest()
+                except BaseException:
+                    output.put((None, None, None, None))
+                    raise
+
+        workers = [MultiprocessThread() for i in range(use_mp)]
         for worker in workers:
             worker.start()
+
+        def get_running(workers):
+            running = []
+            for worker in workers:
+                current_test = worker.current_test
+                if not current_test:
+                    continue
+                dt = time.time() - worker.start_time
+                if dt >= PROGRESS_MIN_TIME:
+                    running.append('%s (%.0f sec)' % (current_test, dt))
+            return running
 
         finished = 0
         test_index = 1
@@ -668,6 +694,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                         and test_time >= PROGRESS_MIN_TIME
                         and not pgo):
                         text += ' (%.0f sec)' % test_time
+                    running = get_running(workers)
+                    if running and not pgo:
+                        text += ' -- running: %s' % ', '.join(running)
                     display_progress(test_index, text)
 
                 if stdout:
