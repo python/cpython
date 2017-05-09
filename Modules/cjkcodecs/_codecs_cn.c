@@ -266,7 +266,9 @@ DECODER(gb18030)
             REQUIRE_INBUF(4)
             c3 = IN3;
             c4 = IN4;
-            if (c < 0x81 || c3 < 0x81 || c4 < 0x30 || c4 > 0x39)
+            if (c  < 0x81 || c  > 0xFE ||
+                c3 < 0x81 || c3 > 0xFE ||
+                c4 < 0x30 || c4 > 0x39)
                 return 4;
             c -= 0x81;  c2 -= 0x30;
             c3 -= 0x81; c4 -= 0x30;
