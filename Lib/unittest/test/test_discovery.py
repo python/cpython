@@ -54,7 +54,7 @@ class TestDiscovery(unittest.TestCase):
 
         path_lists = [['test2.py', 'test1.py', 'not_a_test.py', 'test_dir',
                        'test.foo', 'test-not-a-module.py', 'another_dir'],
-                      ['test4.py', 'test3.py', ]]
+                      [], ['test4.py', 'test3.py']]
         os.listdir = lambda path: path_lists.pop(0)
         self.addCleanup(restore_listdir)
 
@@ -65,7 +65,7 @@ class TestDiscovery(unittest.TestCase):
 
         def isfile(path):
             # another_dir is not a package and so shouldn't be recursed into
-            return not path.endswith('dir') and not 'another_dir' in path
+            return not path.endswith('dir') and 'another_dir' not in path
         os.path.isfile = isfile
         self.addCleanup(restore_isfile)
 
@@ -85,7 +85,7 @@ class TestDiscovery(unittest.TestCase):
         # The test suites found should be sorted alphabetically for reliable
         # execution order.
         expected = [[name + ' module tests'] for name in
-                    ('test1', 'test2', 'test_dir')]
+                    ('another_dir', 'test1', 'test2', 'test_dir')]
         expected.extend([[('test_dir.%s' % name) + ' module tests'] for name in
                     ('test3', 'test4')])
         self.assertEqual(suite, expected)
