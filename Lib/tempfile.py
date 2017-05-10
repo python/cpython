@@ -98,8 +98,10 @@ def _infer_return_type(*args):
     """Look at the type of all args and divine their implied return type."""
     return_type = None
     for arg in args:
-        if arg is None or isinstance(arg, _os.PathLike):
+        if arg is None:
             continue
+        elif isinstance(arg, _os.PathLike):
+            raise TypeError("Arguments only allow str or bytes.")
         if isinstance(arg, bytes):
             if return_type is str:
                 raise TypeError("Can't mix bytes and non-bytes in "
@@ -117,6 +119,7 @@ def _infer_return_type(*args):
 
 def _sanitize_params(prefix, suffix, dir):
     """Common parameter processing for most APIs in this module."""
+    dir = _os.fspath(dir) if isinstance(dir, _os.PathLike) else dir
     output_type = _infer_return_type(prefix, suffix, dir)
     if suffix is None:
         suffix = output_type()
@@ -130,11 +133,6 @@ def _sanitize_params(prefix, suffix, dir):
             dir = gettempdir()
         else:
             dir = gettempdirb()
-    if isinstance(dir, _os.PathLike):
-        if output_type is str:
-            dir = _os.fspath(dir)
-        else:
-            dir = _os.fsencode(dir)
     return prefix, suffix, dir, output_type
 
 
