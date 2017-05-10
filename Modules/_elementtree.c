@@ -1740,11 +1740,11 @@ element_subscr(PyObject* self_, PyObject* item)
         if (!self->extra)
             return PyList_New(0);
 
-        if (PySlice_GetIndicesEx(item,
-                self->extra->length,
-                &start, &stop, &step, &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
+                                         step);
 
         if (slicelen <= 0)
             return PyList_New(0);
@@ -1796,11 +1796,11 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
                 return -1;
         }
 
-        if (PySlice_GetIndicesEx(item,
-                self->extra->length,
-                &start, &stop, &step, &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
+        slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
+                                         step);
 
         if (value == NULL) {
             /* Delete slice */
@@ -1878,7 +1878,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
                 );
             return -1;
         }
-        newlen = PySequence_Size(seq);
+        newlen = PySequence_Fast_GET_SIZE(seq);
 
         if (step !=  1 && newlen != slicelen)
         {
@@ -3660,7 +3660,7 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
         return NULL;
     }
 
-    for (i = 0; i < PySequence_Size(events_seq); ++i) {
+    for (i = 0; i < PySequence_Fast_GET_SIZE(events_seq); ++i) {
         PyObject *event_name_obj = PySequence_Fast_GET_ITEM(events_seq, i);
         const char *event_name = NULL;
         if (PyUnicode_Check(event_name_obj)) {
