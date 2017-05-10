@@ -9,7 +9,6 @@ sub-second periodicity (contrarily to signal()).
 """
 
 import contextlib
-import io
 import os
 import select
 import signal
