@@ -1559,7 +1559,8 @@ installed", &p[1]);
             fwprintf(stdout, L"\
 Python Launcher for Windows Version %ls\n\n", version_text);
             fwprintf(stdout, L"\
-usage: %ls [ launcher-arguments ] [ python-arguments ] script [ script-arguments ]\n\n", argv[0]);
+usage:\n\
+%ls [launcher-args] [python-args] script [script-args]\n\n", argv[0]);
             fputws(L"\
 Launcher arguments:\n\n\
 -2     : Launch the latest Python 2.x version\n\
@@ -1567,7 +1568,7 @@ Launcher arguments:\n\n\
 -X.Y   : Launch the specified Python version\n", stdout);
             if (canDo64bit) {
                 fputws(L"\
-         (N.B. The above will default to 64 bit if a 64 bit match is present)\n\
+     The above all default to 64 bit if a matching 64 bit python is present.\n\
 -X.Y-32: Launch the specified 32bit Python version\n\
 -X-32  : Launch the latest 32bit Python X version\n\
 -X.Y-64: Launch the specified 64bit Python version\n\
