@@ -1,7 +1,5 @@
 import os
 import signal
-import subprocess
-import sys
 import unittest
 
 from test import support
@@ -16,14 +14,8 @@ class EINTRTests(unittest.TestCase):
         # Run the tester in a sub-process, to make sure there is only one
         # thread (for reliable signal delivery).
         tester = support.findfile("eintr_tester.py", subdir="eintrdata")
-
-        if support.verbose:
-            args = [sys.executable, tester]
-            with subprocess.Popen(args) as proc:
-                exitcode = proc.wait()
-            self.assertEqual(exitcode, 0)
-        else:
-            script_helper.assert_python_ok(tester)
+        # use -u to try to get the full output if the test hangs or crash
+        script_helper.assert_python_ok("-u", tester)
 
 
 if __name__ == "__main__":
