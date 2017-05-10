@@ -134,6 +134,8 @@ class BaseTestCase(unittest.TestCase):
         npre = nbase[:len(pre)]
         nsuf = nbase[len(nbase) - len(suf):]
 
+        if isinstance(dir, os.PathLike):
+            dir = os.fspath(dir)
         if dir is not None:
             self.assertIs(type(name), str if type(dir) is str else bytes,
                           "unexpected return type")
@@ -412,7 +414,8 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             if bin: flags = self._bflags
             else:   flags = self._tflags
 
-            output_type = tempfile._infer_return_type(pre, suf, dir)
+            fdir = os.fspath(dir) if isinstance(dir, os.PathLike) else dir
+            output_type = tempfile._infer_return_type(pre, suf, fdir)
             (self.fd, self.name) = tempfile._mkstemp_inner(dir, pre, suf, flags, output_type)
 
         def write(self, str):
@@ -423,7 +426,8 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             self._unlink(self.name)
 
     def do_create(self, dir=None, pre=None, suf=None, bin=1):
-        output_type = tempfile._infer_return_type(dir, pre, suf)
+        fdir = os.fspath(dir) if isinstance(dir, os.PathLike) else dir
+        output_type = tempfile._infer_return_type(fdir, pre, suf)
         if dir is None:
             if output_type is str:
                 dir = tempfile.gettempdir()
@@ -434,7 +438,6 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         if suf is None:
             suf = output_type()
         file = self.mkstemped(dir, pre, suf, bin)
-
         self.nameCheck(file.name, dir, pre, suf)
         return file
 
@@ -465,8 +468,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             self.do_create(dir=dir_b, pre=b"", suf="").write(b"blat")
 
         # Can't accept path-like objects
-        with self.assertRaises(TypeError):
-            self.do_create(dir=_PathLikeObj(b""), suf=b"").write(b"blat")
+        self.do_create(dir=_PathLikeObj(b""), suf=b"").write(b"blat")
 
 
     def test_basic_many(self):
@@ -487,9 +489,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         # _mkstemp_inner can create files in a user-selected pathlike directory
         dir = _PathLikeObj(tempfile.mkdtemp())
         self.addCleanup(os.rmdir, dir)
-
-        with self.assertRaises(TypeError):
-            self.do_create(dir=dir).write(b'blat')
+        self.do_create(dir=dir).write(b'blat')
 
     @unittest.skipUnless(has_stat, 'os.stat not available')
     def test_file_mode(self):
@@ -670,7 +670,8 @@ class TestMkstemp(BaseTestCase):
     """Test mkstemp()."""
 
     def do_create(self, dir=None, pre=None, suf=None):
-        pre, suf, dir, output_type = tempfile._sanitize_params(pre, suf, dir)
+        fdir = os.fspath(dir) if isinstance(dir, os.PathLike) else dir
+        output_type = tempfile._infer_return_type(fdir, pre, suf)
         if dir is None:
             if output_type is str:
                 dir = tempfile.gettempdir()
@@ -683,8 +684,6 @@ class TestMkstemp(BaseTestCase):
         (fd, name) = tempfile.mkstemp(dir=dir, prefix=pre, suffix=suf)
         (ndir, nbase) = os.path.split(name)
         adir = os.path.abspath(dir)
-        if output_type is bytes:
-            adir = os.fsencode(adir)
         self.assertEqual(adir, ndir,
             "Directory '%s' incorrectly returned as '%s'" % (adir, ndir))
 
@@ -747,7 +746,8 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         return tempfile.mkdtemp()
 
     def do_create(self, dir=None, pre=None, suf=None):
-        pre, suf, dir, output_type = tempfile._sanitize_params(pre, suf, dir)
+        fdir = os.fspath(dir) if isinstance(dir, os.PathLike) else dir
+        output_type = tempfile._infer_return_type(fdir, pre, suf)
         if dir is None:
             if output_type is str:
                 dir = tempfile.gettempdir()
@@ -919,8 +919,6 @@ class TestNamedTemporaryFile(BaseTestCase):
     """Test NamedTemporaryFile()."""
 
     def do_create(self, dir=None, pre="", suf="", delete=True):
-        pre, suf, dir, output_type = tempfile._sanitize_params(pre, suf, dir)
-
         if dir is None:
             dir = tempfile.gettempdir()
         file = tempfile.NamedTemporaryFile(dir=dir, prefix=pre, suffix=suf,
@@ -1378,8 +1376,6 @@ class TestTemporaryDirectory(BaseTestCase):
     """Test TemporaryDirectory()."""
 
     def do_create(self, dir=None, pre="", suf="", recurse=1):
-        pre, suf, dir, output_type = tempfile._sanitize_params(pre, suf, dir)
-
         if dir is None:
             dir = tempfile.gettempdir()
         tmp = tempfile.TemporaryDirectory(dir=dir, prefix=pre, suffix=suf)
