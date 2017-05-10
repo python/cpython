@@ -137,7 +137,7 @@ _PySlice_Unpack(PyObject *_r,
     PySliceObject *r = (PySliceObject *)_r;
     /* this is harder to get right than you might think */
 
-    Py_BUILD_ASSERT(PY_SSIZE_T_MIN + 1 <= -PY_SSIZE_T_MAX);
+    assert(PY_SSIZE_T_MIN + 1 <= -PY_SSIZE_T_MAX);
 
     if (r->step == Py_None) {
         *step = 1;
