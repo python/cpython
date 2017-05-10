@@ -120,10 +120,8 @@ class Future:
         clears the callback list.
         """
         callbacks = self._callbacks[:]
-        if not callbacks:
-            return
-
         self._callbacks[:] = []
+
         for callback in callbacks:
             self._loop.call_soon(callback, self)
 
