@@ -228,7 +228,7 @@ Note also that the :c:data:`SpamError` variable retains a reference to the newly
 created exception class; this is intentional!  Since the exception could be
 removed from the module by external code, an owned reference to the class is
 needed to ensure that it will not be discarded, causing :c:data:`SpamError` to
-become a dangling pointer. Should it become a dangling pointer, C code which
+become a dangling pointer. If it becomes a dangling pointer, C code which
 raises the exception could cause a core dump or other unintended side effects.
 
 We discuss the use of ``PyMODINIT_FUNC`` as a function return type later in this
