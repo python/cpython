@@ -1051,6 +1051,9 @@ Documentation
 Build
 -----
 
+- bpo-28787: Fix out-of-tree builds of Python when configured with
+  ``--with--dtrace``.
+
 - bpo-29243: Prevent unnecessary rebuilding of Python during ``make test``,
   ``make install`` and some other make targets when configured with
   ``--enable-optimizations``.

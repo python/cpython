@@ -872,6 +872,7 @@ Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_externa
 # follow our naming conventions. dtrace(1) uses the output filename to generate
 # an include guard, so we can't use a pipeline to transform its output.
 Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
+	$(MKDIR_P) Include
 	$(DTRACE) $(DFLAGS) -o $@ -h -s $<
 	: sed in-place edit with POSIX-only tools
 	sed 's/PYTHON_/PyDTrace_/' $@ > $@.tmp
