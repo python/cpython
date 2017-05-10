@@ -170,56 +170,54 @@ it's the base calendar for all computations.
       sheet should be used. *encoding* specifies the encoding to be used for the
       output (defaulting to the system default encoding).
 
-   :class:`HTMLCalendar` has the following attribute you can override to customize the style of your calender:
+   :class:`HTMLCalendar` has the following attributes you can override to
+   customize the style of your calender:
 
-  .. attribute:: cssclasses
+   .. attribute:: cssclasses
 
-    A list of CSS styles used for each weekday. The default style list is::
+      A list of CSS styles used for each weekday. The default style list is::
 
-        cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+         cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
-    But you can add more styles for each day if you want::
+      But you can add more styles for each day if you want::
 
-        cssclasses = ["mon text-bold", "tue", "wed", "thu", "fri", "sat", "sun red"]
+         cssclasses = ["mon text-bold", "tue", "wed", "thu", "fri", "sat", "sun red"]
 
-    Note that the length of this list must be 7 items.
+      Note that the length of this list must be 7 items.
 
-  .. attribute:: noday_classes
+   .. attribute:: noday_classes
 
-     The CSS class for a week day occurring in previous or the coming month.
+      The CSS class for a week day occurring in previous or the coming month.
 
-  .. attribute:: weekday_head_classes
+   .. attribute:: weekday_head_classes
 
-     A list of CSS styles used for each weekday. The default style list is 
-     the same as ``HTMLCalendar.cssclasses``.
+      A list of CSS styles used for each weekday. The default style list is
+      the same as ``HTMLCalendar.cssclasses``.
 
-  .. attribute:: month_head_classes
+   .. attribute:: month_head_classes
 
-     A space separated list of styles for the month head, for example::
-     
-     "text-bold text-red"
+      A space separated list of styles for the month head, for example::
 
-     The default value is ``"month"``.
+      "text-bold text-red"
 
-  .. attribute:: month_classes
+      The default value is ``"month"``.
 
-     A space separated list of styles for the whole table.
+   .. attribute:: month_classes
 
-     the default value is ``"month"``.
+      A space separated list of styles for the whole table.
+      The default value is ``"month"``.
 
-  .. attribute:: year_classes
+   .. attribute:: year_classes
 
-     A space separated list of styles for the table when formatting the year
-     as a table of tables (see: ``HTMLCalendar.formatyear``).
+      A space separated list of styles for the table when formatting the year
+      as a table of tables (see: ``HTMLCalendar.formatyear``).
+      The default value is ``"year"``.
 
-     the default value is ``"year"``.
+   .. attribute:: year_head_classes
 
-  .. attribute:: year_head_classes
-
-     A space separated list of styles for the table head when formatting the year as a
-     table of tables (see: ``HTMLCalendar.formatyear``).
-
-     the default value is ``"year"``.
+      A space separated list of styles for the table head when formatting the
+      year as a table of tables (see: ``HTMLCalendar.formatyear``).
+      The default value is ``"year"``.
 
 Here is an example how you can customize ``HTMLCalendar``::
 
@@ -229,7 +227,6 @@ Here is an example how you can customize ``HTMLCalendar``::
         month_head_classes = "text-center month-head"
         month_classes = "text-center month"
         year_classes = "lead"
-
 
 
 .. class:: LocaleTextCalendar(firstweekday=0, locale=None)
