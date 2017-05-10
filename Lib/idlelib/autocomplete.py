@@ -9,7 +9,7 @@ import sys
 
 # These constants represent the two different types of completions.
 # They must be defined here so autocomple_w can import them.
-COMPLETE_ATTRIBUTES, COMPLETE_FILES, COMPLETE_DICTIONARY_KEY = range(1, 3+1)
+COMPLETE_ATTRIBUTES, COMPLETE_FILES, COMPLETE_DICTIONARY_STRING_KEY = range(1, 3+1)
 
 from idlelib import autocomplete_w
 from idlelib.config import idleConf
@@ -119,15 +119,13 @@ class AutoComplete:
         hp = HyperParser(self.editwin, "insert")
         curline = self.text.get("insert linestart", "insert")
         i = j = len(curline)
-        if hp.is_in_subscript() and (not mode or mode==COMPLETE_DICTIONARY_KEY):
+        if hp.is_in_subscript_string_key() and (not mode or mode==COMPLETE_DICTIONARY_STRING_KEY):
             self._remove_autocomplete_window()
-            mode = COMPLETE_DICTIONARY_KEY
-            while i and (curline[i-1] not in '[\'"'):
+            mode = COMPLETE_DICTIONARY_STRING_KEY
+            while i and (curline[i-1] not in '\'"'):
                 i -= 1
             comp_start = curline[i:j]
             if i > 1:
-                if curline[i - 1] == '[':
-                    i += 1
                 hp.set_index('insert-%dc' % (len(curline) - (i - 2)))
                 comp_what = hp.get_expression()
             else:
@@ -230,14 +228,14 @@ class AutoComplete:
                 except OSError:
                     return [], []
 
-            elif mode == COMPLETE_DICTIONARY_KEY:
+            elif mode == COMPLETE_DICTIONARY_STRING_KEY:
                 try:
                     entity = self.get_entity(what)
 
                     # Check the entity is dict
                     if not isinstance(entity, dict):
                         return [], []
-                    bigl = [str(s) for s in entity]
+                    bigl = [s for s in entity if isinstance(s, str)]
                     bigl.sort()
                 except:
                     return [], []

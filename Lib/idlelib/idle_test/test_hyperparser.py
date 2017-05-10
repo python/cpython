@@ -117,29 +117,29 @@ class HyperParserTest(unittest.TestCase):
         p = get('4.14')
         self.assertFalse(p.is_in_code())
 
-    def test_is_in_subscript(self):
+    def test_is_in_subscript_string_key(self):
         get = self.get_parser
 
         p = get('5.0')
-        self.assertFalse(p.is_in_subscript())
+        self.assertFalse(p.is_in_subscript_string_key())
         p = get('7.0')
-        self.assertFalse(p.is_in_subscript())
+        self.assertFalse(p.is_in_subscript_string_key())
         p = get('8.0')
-        self.assertFalse(p.is_in_subscript())
+        self.assertFalse(p.is_in_subscript_string_key())
         p = get('9.6')
-        self.assertFalse(p.is_in_subscript())
+        self.assertFalse(p.is_in_subscript_string_key())
         p = get('13.2')
-        self.assertTrue(p.is_in_subscript())
+        self.assertFalse(p.is_in_subscript_string_key())
         p = get('13.3')
-        self.assertTrue(p.is_in_subscript())
+        self.assertTrue(p.is_in_subscript_string_key())
         p = get('13.15')
-        self.assertFalse(p.is_in_subscript())
+        self.assertFalse(p.is_in_subscript_string_key())
         p = get('14.2')
-        self.assertTrue(p.is_in_subscript())
+        self.assertFalse(p.is_in_subscript_string_key())
         p = get('14.3')
-        self.assertTrue(p.is_in_subscript())
+        self.assertTrue(p.is_in_subscript_string_key())
         p = get('15.2')
-        self.assertTrue(p.is_in_subscript())
+        self.assertFalse(p.is_in_subscript_string_key())
 
     def test_get_surrounding_bracket(self):
         get = self.get_parser
