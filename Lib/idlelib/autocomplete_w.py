@@ -415,7 +415,7 @@ class AutoCompleteWindow:
         self.autocompletewindow.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
         self.winconfigid = None
 
-        # Re-focusOn frame.text (issue15786)
+        # Re-focusOn frame.text (See issue #15786)
         self.widget.focus_set()
 
         # destroy widgets
