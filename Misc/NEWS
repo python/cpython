@@ -36,6 +36,12 @@ Core and Builtins
 Library
 -------
 
+- bpo-30298: Weaken the condition of deprecation warnings for inline modifiers.
+  Now allowed several subsequential inline modifiers at the start of the
+  pattern (e.g. ``'(?i)(?s)...'``).  In verbose mode whitespaces and comments
+  now are allowed before and between inline modifiers (e.g.
+  ``'(?x) (?i) (?s)...'``).
+
 - bpo-29990: Fix range checking in GB18030 decoder.  Original patch by Ma Lin.
 
 - Revert bpo-26293 for zipfile breakage. See also bpo-29094.

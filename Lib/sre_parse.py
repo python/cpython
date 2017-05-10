@@ -412,7 +412,7 @@ def _parse_sub(source, state, verbose, nested=True):
     sourcematch = source.match
     start = source.tell()
     while True:
-        itemsappend(_parse(source, state, verbose))
+        itemsappend(_parse(source, state, verbose, not nested and not items))
         if not sourcematch("|"):
             break
 
@@ -466,7 +466,7 @@ def _parse_sub_cond(source, state, condgroup, verbose):
     subpattern.append((GROUPREF_EXISTS, (condgroup, item_yes, item_no)))
     return subpattern
 
-def _parse(source, state, verbose):
+def _parse(source, state, verbose, first=False):
     # parse a simple pattern
     subpattern = SubPattern(state)
 
@@ -730,10 +730,9 @@ def _parse(source, state, verbose):
                     state.checklookbehindgroup(condgroup, source)
                 elif char in FLAGS or char == "-":
                     # flags
-                    pos = source.pos
                     flags = _parse_flags(source, state, char)
                     if flags is None:  # global flags
-                        if pos != 3:  # "(?x"
+                        if not first or subpattern:
                             import warnings
                             warnings.warn(
                                 'Flags not at the start of the expression %s%s' % (
@@ -742,6 +741,8 @@ def _parse(source, state, verbose):
                                 ),
                                 DeprecationWarning, stacklevel=7
                             )
+                        if (state.flags & SRE_FLAG_VERBOSE) and not verbose:
+                            raise Verbose
                         continue
                     add_flags, del_flags = flags
                     group = None
@@ -795,9 +796,6 @@ def _parse_flags(source, state, char):
                 msg = "unknown flag" if char.isalpha() else "missing -, : or )"
                 raise source.error(msg, len(char))
     if char == ")":
-        if ((add_flags & SRE_FLAG_VERBOSE) and
-            not (state.flags & SRE_FLAG_VERBOSE)):
-            raise Verbose
         state.flags |= add_flags
         return None
     if add_flags & GLOBAL_FLAGS:
