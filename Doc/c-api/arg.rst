@@ -368,9 +368,7 @@ inside nested parentheses.  They are:
 ``$``
    :c:func:`PyArg_ParseTupleAndKeywords` only:
    Indicates that the remaining arguments in the Python argument list are
-   keyword-only.  Currently, all keyword-only arguments must also be optional
-   arguments, so ``|`` must always be specified before ``$`` in the format
-   string.
+   keyword-only.
 
    .. versionadded:: 3.3
 
