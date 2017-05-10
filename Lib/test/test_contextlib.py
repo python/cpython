@@ -246,6 +246,25 @@ def woohoo():
         with self.assertRaises(TypeError):
             woohoo(b=3)
 
+    def test_recursive(self):
+        depth = 0
+        @contextmanager
+        def woohoo():
+            nonlocal depth
+            before = depth
+            depth += 1
+            yield
+            depth -= 1
+            self.assertEqual(depth, before)
+
+        @woohoo()
+        def recursive():
+            if depth < 10:
+                recursive()
+
+        recursive()
+        self.assertEqual(depth, 0)
+
 
 class ClosingTestCase(unittest.TestCase):
 
