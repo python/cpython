@@ -3,7 +3,6 @@ import tempfile
 import errno
 import io
 import os
-import pathlib
 import signal
 import sys
 import re
@@ -33,6 +32,14 @@ if sys.platform.startswith('openbsd'):
 else:
     TEST_FILES = 100
 
+
+class _PathLikeObj(object):
+    def __init__(self, path):
+        self.path = path
+
+    def __fspath__(self):
+        return self.path
+
 # This is organized as one test for each chunk of code in tempfile.py,
 # in order of their appearance in the file.  Testing which requires
 # threads is not done here.
@@ -40,39 +47,34 @@ else:
 class TestLowLevelInternals(unittest.TestCase):
     def test_infer_return_type_singles(self):
         self.assertIs(str, tempfile._infer_return_type(''))
-        self.assertIs(str, tempfile._infer_return_type(pathlib.Path('')))
         self.assertIs(bytes, tempfile._infer_return_type(b''))
         self.assertIs(str, tempfile._infer_return_type(None))
 
+        with self.assertRaises(TypeError):
+            tempfile._infer_return_type(_PathLikeObj(''))
+        with self.assertRaises(TypeError):
+            tempfile._infer_return_type(_PathLikeObj(b''))
+
     def test_infer_return_type_multiples(self):
         self.assertIs(str, tempfile._infer_return_type('', ''))
-        self.assertIs(str, tempfile._infer_return_type(pathlib.Path(''),
-                                                       pathlib.Path('')))
         self.assertIs(bytes, tempfile._infer_return_type(b'', b''))
-        self.assertIs(bytes, tempfile._infer_return_type(pathlib.Path(''), b''))
-        self.assertIs(bytes, tempfile._infer_return_type(b'', pathlib.Path('')))
 
         with self.assertRaises(TypeError):
             tempfile._infer_return_type('', b'')
         with self.assertRaises(TypeError):
             tempfile._infer_return_type(b'', '')
+        with self.assertRaises(TypeError):
+            # path-like objects isn't bytes or str, should raise
+            # TypeError when using in _infer_return_type
+            tempfile._infer_return_type(b'', _PathLikeObj(b'.'))
 
     def test_infer_return_type_multiples_and_none(self):
         self.assertIs(str, tempfile._infer_return_type(None, ''))
         self.assertIs(str, tempfile._infer_return_type('', None))
         self.assertIs(str, tempfile._infer_return_type(None, None))
-        self.assertIs(str, tempfile._infer_return_type(pathlib.Path(''), ''))
-        self.assertIs(str, tempfile._infer_return_type('', pathlib.Path('')))
-        self.assertIs(str, tempfile._infer_return_type(None, pathlib.Path('')))
-        self.assertIs(str, tempfile._infer_return_type(pathlib.Path(''), None))
         self.assertIs(bytes, tempfile._infer_return_type(b'', None))
         self.assertIs(bytes, tempfile._infer_return_type(None, b''))
-        self.assertIs(bytes, tempfile._infer_return_type(pathlib.Path(''),
-                                                         None,
-                                                         b''))
-        self.assertIs(bytes, tempfile._infer_return_type(b'',
-                                                         None,
-                                                         pathlib.Path('')))
+
         with self.assertRaises(TypeError):
             tempfile._infer_return_type('', None, b'')
         with self.assertRaises(TypeError):
@@ -89,10 +91,10 @@ class TestLowLevelInternals(unittest.TestCase):
         sp = tempfile._sanitize_params
         self.sanitize_check(str, sp(prefix='', suffix='', dir=''))
         self.sanitize_check(str, sp(prefix='a', suffix='b', dir='c'))
-        self.sanitize_check(str, sp(prefix='foo', suffix='bar', dir=pathlib.Path('.')))
+        self.sanitize_check(str, sp(prefix='foo', suffix='bar', dir=_PathLikeObj('.')))
         self.sanitize_check(bytes, sp(prefix=b'', suffix=b'', dir=b''))
         self.sanitize_check(bytes, sp(prefix=b'a', suffix=b'b', dir=b'c'))
-        self.sanitize_check(bytes, sp(prefix=b'foo', suffix=b'bar', dir=pathlib.Path('.')))
+        self.sanitize_check(bytes, sp(prefix=b'foo', suffix=b'bar', dir=_PathLikeObj(b'.')))
 
         with self.assertRaises(TypeError):
             sp(prefix='', suffix=b'', dir='')
@@ -101,9 +103,13 @@ class TestLowLevelInternals(unittest.TestCase):
         with self.assertRaises(TypeError):
             sp(prefix=b'', suffix='', dir=b'')
         with self.assertRaises(TypeError):
-            sp(prefix=b'', suffix='', dir=pathlib.Path(''))
+            sp(prefix=b'', suffix='', dir=_PathLikeObj(b''))
         with self.assertRaises(TypeError):
-            sp(prefix='', suffix=b'', dir=pathlib.Path(''))
+            sp(prefix='', suffix=b'', dir=_PathLikeObj(''))
+        with self.assertRaises(TypeError):
+            sp(prefix=b'', suffix=b'', dir=_PathLikeObj(''))
+        with self.assertRaises(TypeError):
+            sp(prefix='', suffix='', dir=_PathLikeObj(b''))
 
 
 # Common functionality.
@@ -123,13 +129,13 @@ class BaseTestCase(unittest.TestCase):
         self._warnings_manager.__exit__(None, None, None)
 
     def nameCheck(self, name, dir, pre, suf):
-        output_type = tempfile._infer_return_type(pre, suf, dir)
+        # Assume dir is str or bytes, not path-like objects
         (ndir, nbase) = os.path.split(name)
         npre = nbase[:len(pre)]
         nsuf = nbase[len(nbase) - len(suf):]
 
         if dir is not None:
-            self.assertIs(type(name), output_type,
+            self.assertIs(type(name), str if type(dir) is str else bytes,
                           "unexpected return type")
         if pre is not None:
             self.assertIs(type(name), str if type(pre) is str else bytes,
@@ -141,10 +147,7 @@ class BaseTestCase(unittest.TestCase):
             self.assertIs(type(name), str, "default return type must be str")
 
         # check for equality of the absolute paths!
-        adir = os.path.abspath(dir)
-        if output_type == bytes:
-            adir = os.fsencode(adir)
-        self.assertEqual(os.path.abspath(ndir), adir,
+        self.assertEqual(os.path.abspath(ndir), os.path.abspath(dir),
                          "file %r not in directory %r" % (name, dir))
         self.assertEqual(npre, pre,
                          "file %r does not begin with %r" % (nbase, pre))
@@ -409,7 +412,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             if bin: flags = self._bflags
             else:   flags = self._tflags
 
-            pre, suf, dir, output_type = tempfile._sanitize_params(pre, suf, dir)
+            output_type = tempfile._infer_return_type(pre, suf, dir)
             (self.fd, self.name) = tempfile._mkstemp_inner(dir, pre, suf, flags, output_type)
 
         def write(self, str):
@@ -452,7 +455,6 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         self.do_create(dir=dir_b, suf=b"b").write(b"blat")
         self.do_create(dir=dir_b, pre=b"a", suf=b"b").write(b"blat")
         self.do_create(dir=dir_b, pre=b"aa", suf=b".txt").write(b"blat")
-        self.do_create(dir=pathlib.Path(""), suf=b"").write(b"blat")
 
         # Can't mix str & binary types in the args.
         with self.assertRaises(TypeError):
@@ -461,6 +463,11 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             self.do_create(dir=dir_b, pre="").write(b"blat")
         with self.assertRaises(TypeError):
             self.do_create(dir=dir_b, pre=b"", suf="").write(b"blat")
+
+        # Can't accept path-like objects
+        with self.assertRaises(TypeError):
+            self.do_create(dir=_PathLikeObj(b""), suf=b"").write(b"blat")
+
 
     def test_basic_many(self):
         # _mkstemp_inner can create many files (stochastic)
@@ -478,9 +485,11 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
 
     def test_choose_pathlike_directory(self):
         # _mkstemp_inner can create files in a user-selected pathlike directory
-        dir = pathlib.Path(tempfile.mkdtemp())
+        dir = _PathLikeObj(tempfile.mkdtemp())
         self.addCleanup(os.rmdir, dir)
-        self.do_create(dir=dir).write(b'blat')
+
+        with self.assertRaises(TypeError):
+            self.do_create(dir=dir).write(b'blat')
 
     @unittest.skipUnless(has_stat, 'os.stat not available')
     def test_file_mode(self):
@@ -661,7 +670,7 @@ class TestMkstemp(BaseTestCase):
     """Test mkstemp()."""
 
     def do_create(self, dir=None, pre=None, suf=None):
-        output_type = tempfile._infer_return_type(dir, pre, suf)
+        pre, suf, dir, output_type = tempfile._sanitize_params(pre, suf, dir)
         if dir is None:
             if output_type is str:
                 dir = tempfile.gettempdir()
@@ -693,9 +702,9 @@ class TestMkstemp(BaseTestCase):
         self.do_create(pre="a", suf="b")
         self.do_create(pre="aa", suf=".txt")
         self.do_create(dir=".")
-        self.do_create(dir=pathlib.Path("."))
-        self.do_create(dir=pathlib.Path("."), pre=b"a", suf=b"b")
-        self.do_create(dir=pathlib.Path("."), pre=b"aa", suf=b".txt")
+        self.do_create(dir=_PathLikeObj("."))
+        self.do_create(dir=_PathLikeObj(b"."), pre=b"a", suf=b"b")
+        self.do_create(dir=_PathLikeObj(b"."), pre=b"aa", suf=b".txt")
 
     def test_basic_with_bytes_names(self):
         # mkstemp can create files when given name parts all
@@ -707,7 +716,7 @@ class TestMkstemp(BaseTestCase):
         self.do_create(dir=d, pre=b"a", suf=b"b")
         self.do_create(dir=d, pre=b"aa", suf=b".txt")
         self.do_create(dir=b".")
-        self.do_create(dir=pathlib.Path("."), pre=b"aa", suf=b".txt")
+        self.do_create(dir=_PathLikeObj(b"."), pre=b"aa", suf=b".txt")
 
         with self.assertRaises(TypeError):
             self.do_create(dir=".", pre=b"aa", suf=b".txt")
@@ -726,7 +735,7 @@ class TestMkstemp(BaseTestCase):
 
     def test_choose_pathlike_directory(self):
         # mkstemp can create directories in a user-selected pathlike directory
-        dir = pathlib.Path(tempfile.mkdtemp())
+        dir = _PathLikeObj(tempfile.mkdtemp())
         self.addCleanup(os.rmdir, dir)
         self.do_create(dir=dir)
 
@@ -738,7 +747,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         return tempfile.mkdtemp()
 
     def do_create(self, dir=None, pre=None, suf=None):
-        output_type = tempfile._infer_return_type(dir, pre, suf)
+        pre, suf, dir, output_type = tempfile._sanitize_params(pre, suf, dir)
         if dir is None:
             if output_type is str:
                 dir = tempfile.gettempdir()
@@ -779,7 +788,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
             os.rmdir(self.do_create(dir=d, pre=b"aa", suf=".txt"))
         with self.assertRaises(TypeError):
             os.rmdir(self.do_create(dir="", pre=b"aa", suf=b".txt"))
-        os.rmdir(self.do_create(dir=pathlib.Path(""), pre=b"aa", suf=b".txt"))
+        os.rmdir(self.do_create(dir=_PathLikeObj(b""), pre=b"aa", suf=b".txt"))
 
     def test_basic_many(self):
         # mkdtemp can create many directories (stochastic)
@@ -802,7 +811,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
 
     def test_choose_pathlike_directory(self):
         # mkdtemp can create directories in a user-selected pathlike directory
-        dir = pathlib.Path(tempfile.mkdtemp())
+        dir = _PathLikeObj(tempfile.mkdtemp())
         self.addCleanup(os.rmdir, dir)
         os.rmdir(self.do_create(dir=dir))
 
@@ -910,6 +919,8 @@ class TestNamedTemporaryFile(BaseTestCase):
     """Test NamedTemporaryFile()."""
 
     def do_create(self, dir=None, pre="", suf="", delete=True):
+        pre, suf, dir, output_type = tempfile._sanitize_params(pre, suf, dir)
+
         if dir is None:
             dir = tempfile.gettempdir()
         file = tempfile.NamedTemporaryFile(dir=dir, prefix=pre, suffix=suf,
@@ -1367,6 +1378,8 @@ class TestTemporaryDirectory(BaseTestCase):
     """Test TemporaryDirectory()."""
 
     def do_create(self, dir=None, pre="", suf="", recurse=1):
+        pre, suf, dir, output_type = tempfile._sanitize_params(pre, suf, dir)
+
         if dir is None:
             dir = tempfile.gettempdir()
         tmp = tempfile.TemporaryDirectory(dir=dir, prefix=pre, suffix=suf)
