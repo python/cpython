@@ -90,15 +90,6 @@ class TestBasicOps:
         shuffle(lst)
         self.assertTrue(lst != shuffled_lst)
         self.assertRaises(TypeError, shuffle, (1, 2, 3))
-        self.assertRaises(TypeError, shuffle, {1, 2, 3})
-        self.assertRaises(TypeError, shuffle, 'shuffle')
-        self.assertRaises(KeyError, shuffle, dict(a=1, b=2))
-
-    @unittest.expectedFailure
-    def test_shuffle_dict_with_numeric_keys(self):
-        shuffle = self.gen.shuffle
-        seq = dict(zip(range(9), 'abcdefghi'))
-        self.assertRaises(KeyError, shuffle, seq)
 
     def test_shuffle_random_argument(self):
         # Test random argument to shuffle.
@@ -106,7 +97,6 @@ class TestBasicOps:
         mock_random = unittest.mock.Mock(return_value=0.5)
         seq = bytearray(b'abcdefghijk')
         shuffle(seq, mock_random)
-        self.assertEqual(seq, b'ajbhcgdiekf')
         mock_random.assert_called_with()
 
     def test_choice(self):
