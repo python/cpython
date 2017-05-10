@@ -543,7 +543,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             test_times.append((test_time, test))
         if ok == PASSED:
             good.append(test)
-        elif ok == FAILED:
+        elif ok in (FAILED, CHILD_ERROR):
             bad.append(test)
         elif ok == ENV_CHANGED:
             environment_changed.append(test)
@@ -552,9 +552,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif ok == RESOURCE_DENIED:
             skipped.append(test)
             resource_denieds.append(test)
-        else:
-            # CHILD_ERROR
-            bad.append(test)
+        elif ok != INTERRUPTED:
+            raise ValueError("invalid test result: %r" % ok)
 
     if forever:
         def test_forever(tests=list(selected)):

@@ -406,6 +406,28 @@ class ArgsTestCase(BaseTestCase):
                  % (self.TESTNAME_REGEX, len(tests)))
         self.check_line(output, regex)
 
+    def test_slow_interrupted(self):
+        # Issue #25373: test --slowest with an interrupted test
+        code = TEST_INTERRUPTED
+        test = self.create_test("sigint", code=code)
+
+        try:
+            import threading
+            tests = (False, True)
+        except ImportError:
+            tests = (False,)
+        for multiprocessing in tests:
+            if multiprocessing:
+                args = ("--slowest", "-j2", test)
+            else:
+                args = ("--slowest", test)
+            output = self.run_tests(*args, exitcode=1)
+            self.check_executed_tests(output, test,
+                                      omitted=test, interrupted=True)
+
+            regex = ('10 slowest tests:\n')
+            self.check_line(output, regex)
+
     def test_coverage(self):
         # test --coverage
         test = self.create_test('coverage')
