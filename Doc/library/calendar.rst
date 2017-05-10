@@ -174,7 +174,7 @@ it's the base calendar for all computations.
 
   .. attribute:: cssclasses
 
-    Is a list of CSS styles used for each weekday. The default style list is::
+    A list of CSS styles used for each weekday. The default style list is::
 
         cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
@@ -182,42 +182,42 @@ it's the base calendar for all computations.
 
         cssclasses = ["mon text-bold", "tue", "wed", "thu", "fri", "sat", "sun red"]
 
-    Note, that the length of this list must be 7 items.
+    Note that the length of this list must be 7 items.
 
   .. attribute:: noday_classes
 
-     The CSS class for a week day occuring in previous or the coming month.
+     The CSS class for a week day occurring in previous or the coming month.
 
   .. attribute:: weekday_head_classes
 
-     Is a list of CSS styles used for each weekday. The default style list is
-
-     the same as ``HTMLCalendar.cssclassess``.
+     A list of CSS styles used for each weekday. The default style list is 
+     the same as ``HTMLCalendar.cssclasses``.
 
   .. attribute:: month_head_classes
 
-     A space separted list of styles for the month head, for example::
-
+     A space separated list of styles for the month head, for example::
+     
      "text-bold text-red"
 
      The default value is ``"month"``.
 
   .. attribute:: month_classes
 
-     a space separted list of styles for the whole table.
+     A space separated list of styles for the whole table.
 
      the default value is ``"month"``.
 
   .. attribute:: year_classes
 
-     a space separted list of styles for the table when formatting the year
+     A space separated list of styles for the table when formatting the year
      as a table of tables (see: ``HTMLCalendar.formatyear``).
 
      the default value is ``"year"``.
 
   .. attribute:: year_head_classes
 
-     a space separted list of styles for the table head when formatting the year as a table of tables (see: ``HTMLCalendar.formatyear``).
+     A space separated list of styles for the table head when formatting the year as a
+     table of tables (see: ``HTMLCalendar.formatyear``).
 
      the default value is ``"year"``.
 
