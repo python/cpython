@@ -406,6 +406,15 @@ class ArgsTestCase(BaseTestCase):
                  % (self.TESTNAME_REGEX, len(tests)))
         self.check_line(output, regex)
 
+    def test_coverage(self):
+        # test --coverage
+        test = self.create_test('coverage')
+        output = self.run_tests("--coverage", test)
+        self.check_executed_tests(output, [test])
+        regex = (r'lines +cov% +module +\(path\)\n'
+                 r'(?: *[0-9]+ *[0-9]{1,2}% *[^ ]+ +\([^)]+\)+)+')
+        self.check_line(output, regex)
+
     def test_forever(self):
         # test --forever
         code = textwrap.dedent("""
