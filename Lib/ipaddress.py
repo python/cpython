@@ -852,11 +852,6 @@ class _BaseNetwork(_IPAddressBase):
             return -1
         if self.network_address > other.network_address:
             return 1
-        # self.network_address == other.network_address below here:
-        if self.netmask < other.netmask:
-            return -1
-        if self.netmask > other.netmask:
-            return 1
         return 0
 
     def _get_networks_key(self):
