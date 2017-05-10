@@ -234,6 +234,18 @@ def woohoo():
         with woohoo(A(), b=A()):
             pass
 
+    def test_param_errors(self):
+        @contextmanager
+        def woohoo(a, *, b):
+            yield
+
+        with self.assertRaises(TypeError):
+            woohoo()
+        with self.assertRaises(TypeError):
+            woohoo(3, 5)
+        with self.assertRaises(TypeError):
+            woohoo(b=3)
+
 
 class ClosingTestCase(unittest.TestCase):
 
