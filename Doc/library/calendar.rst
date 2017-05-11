@@ -171,7 +171,7 @@ it's the base calendar for all computations.
       output (defaulting to the system default encoding).
 
    :class:`HTMLCalendar` has the following attributes you can override to
-   customize the style of your calender:
+   customize the style of the calendar:
 
    .. attribute:: cssclasses
 
@@ -179,20 +179,20 @@ it's the base calendar for all computations.
 
          cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
-      But you can add more styles for each day if you want::
+      more styles can be added for each day::
 
          cssclasses = ["mon text-bold", "tue", "wed", "thu", "fri", "sat", "sun red"]
 
-      Note that the length of this list must be 7 items.
+      Note that the length of this list must be seven items.
 
    .. attribute:: noday_classes
 
-      The CSS class for a week day occurring in previous or the coming month.
+      The CSS class for a weekday occurring in the previous or coming month.
 
    .. attribute:: weekday_head_classes
 
       A list of CSS styles used for each weekday. The default style list is
-      the same as ``HTMLCalendar.cssclasses``.
+      the same as :attr:`cssclasses`.
 
    .. attribute:: month_head_classes
 
@@ -210,16 +210,16 @@ it's the base calendar for all computations.
    .. attribute:: year_classes
 
       A space separated list of styles for the table when formatting the year
-      as a table of tables (see: ``HTMLCalendar.formatyear``).
+      as a table of tables (see: :meth:`formatyear`).
       The default value is ``"year"``.
 
    .. attribute:: year_head_classes
 
       A space separated list of styles for the table head when formatting the
-      year as a table of tables (see: ``HTMLCalendar.formatyear``).
+      year as a table of tables (see: :meth:`formatyear`).
       The default value is ``"year"``.
 
-Here is an example how you can customize ``HTMLCalendar``::
+Here is an example how one can customize ``HTMLCalendar``::
 
     class CustomHTMLCal(calendar.HTMLCalendar):
         cssclasses = [style + " text-nowrap" for style in
