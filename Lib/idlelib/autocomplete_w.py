@@ -251,10 +251,11 @@ class AutoCompleteWindow:
             self.winconfigid = None
 
     def hide_event(self, event):
-        # This will be trigger when focus on widget or autocompletewindow
-        if self.is_active():
-            if self.widget == self.widget.focus_get() or not self.widget.focus_get():
-                self.hide_window()
+        # Hide autocomplete list if it exists and does not have focus
+        if (self.is_active() and
+            (self.widget == self.widget.focus_get() or
+             not self.widget.focus_get())):
+            self.hide_window()
 
     def listselect_event(self, event):
         if self.is_active():
