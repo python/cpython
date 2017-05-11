@@ -1,6 +1,8 @@
 """
 An auto-completion window for IDLE, used by the autocomplete extension
 """
+import platform
+
 from tkinter import *
 from tkinter.ttk import Scrollbar
 
@@ -242,6 +244,13 @@ class AutoCompleteWindow:
             new_y -= acw_height
         acw.wm_geometry("+%d+%d" % (new_x, new_y))
 
+        if platform.system().startswith('Windows'):
+            # See issue 15786. When on windows platform, Tk will misbehaive
+            # to call winconfig_event multiple times, we need to prevent this,
+            # otherwise mouse button double click will not be able to used.
+            acw.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
+            self.winconfigid = None
+
     def hide_event(self, event):
         # This will be trigger when focus on widget or autocompletewindow
         if self.is_active():
@@ -412,8 +421,9 @@ class AutoCompleteWindow:
         self.keyreleaseid = None
         self.listbox.unbind(LISTUPDATE_SEQUENCE, self.listupdateid)
         self.listupdateid = None
-        self.autocompletewindow.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
-        self.winconfigid = None
+        if self.winconfigid:
+            self.autocompletewindow.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
+            self.winconfigid = None
 
         # Re-focusOn frame.text (See issue #15786)
         self.widget.focus_set()
