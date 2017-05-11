@@ -29,13 +29,12 @@ You might want to replace a method on an object to check that
 it is called with the correct arguments by another part of the system:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> from unittest.mock import MagicMock
-   >>> real = SomeClass()
-   >>> real.method = MagicMock(name='method')
-   >>> real.method(3, 4, 5, key='value')
-   <MagicMock name='method()' id='...'>
+    >>> real = SomeClass()
+    >>> real.method = MagicMock(name='method')
+    >>> real.method(3, 4, 5, key='value')
+    <MagicMock name='method()' id='...'>
 
 Once our mock has been used (``real.method`` in this example) it has methods
 and attributes that allow you to make assertions about how it has been used.
@@ -112,18 +111,17 @@ mock. The ``Foo`` instance is the result of calling the mock, so it is configure
 by modifying the mock :attr:`~Mock.return_value`.
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> def some_function():
-   ...     instance = mymodule.Foo()
-   ...     return instance.method()
-   ...
-   >>> from unittest.mock import patch
-   >>> with patch('mymodule.Foo') as mock:
-   ...     instance = mock.return_value
-   ...     instance.method.return_value = 'the result'
-   ...     result = some_function()
-   ...     assert result == 'the result'
+    >>> def some_function():
+    ...     instance = module.Foo()
+    ...     return instance.method()
+    ...
+    >>> with patch('module.Foo') as mock:
+    ...     instance = mock.return_value
+    ...     instance.method.return_value = 'the result'
+    ...     result = some_function()
+    ...     assert result == 'the result'
 
 
 Naming your mocks
@@ -287,13 +285,13 @@ tests that use that class will start failing immediately without you having to
 instantiate the class in those tests.
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> mock = Mock(spec=SomeClass)
-   >>> mock.old_method()
-   Traceback (most recent call last):
-      ...
-   AttributeError: object has no attribute 'old_method'
+    >>> mock = Mock(spec=SomeClass)
+    >>> mock.old_method()
+    Traceback (most recent call last):
+       ...
+    AttributeError: object has no attribute 'old_method'
 
 Using a specification also enables a smarter matching of calls made to the
 mock, regardless of whether some parameters were passed as positional or
@@ -342,77 +340,76 @@ with.
 ``patch.object``:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> from unittest.mock import sentinel
-   >>> original = SomeClass.attribute
-   >>> @patch.object(SomeClass, 'attribute', sentinel.attribute)
-   ... def test():
-   ...     assert SomeClass.attribute == sentinel.attribute
-   ...
-   >>> test()
-   >>> assert SomeClass.attribute == original
+    >>> original = SomeClass.attribute
+    >>> @patch.object(SomeClass, 'attribute', sentinel.attribute)
+    ... def test():
+    ...     assert SomeClass.attribute == sentinel.attribute
+    ...
+    >>> test()
+    >>> assert SomeClass.attribute == original
 
-   >>> @patch('package.module.attribute', sentinel.attribute)
-   ... def test():
-   ...     from package.module import attribute
-   ...     assert attribute is sentinel.attribute
-   ...
-   >>> test()
+    >>> @patch('package.module.attribute', sentinel.attribute)
+    ... def test():
+    ...     from package.module import attribute
+    ...     assert attribute is sentinel.attribute
+    ...
+    >>> test()
 
 If you are patching a module (including :mod:`builtins`) then use :func:`patch`
 instead of :func:`patch.object`:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> mock = MagicMock(return_value=sentinel.file_handle)
-   >>> with patch('builtins.open', mock):
-   ...     handle = open('filename', 'r')
-   ...
-   >>> mock.assert_called_with('filename', 'r')
-   >>> assert handle == sentinel.file_handle, "incorrect file handle returned"
+    >>> mock = MagicMock(return_value=sentinel.file_handle)
+    >>> with patch('builtins.open', mock):
+    ...     handle = open('filename', 'r')
+    ...
+    >>> mock.assert_called_with('filename', 'r')
+    >>> assert handle == sentinel.file_handle, "incorrect file handle returned"
 
 The module name can be 'dotted', in the form ``package.module`` if needed:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> @patch('package.module.ClassName.attribute', sentinel.attribute)
-   ... def test():
-   ...     from package.module import ClassName
-   ...     assert ClassName.attribute == sentinel.attribute
-   ...
-   >>> test()
+    >>> @patch('package.module.ClassName.attribute', sentinel.attribute)
+    ... def test():
+    ...     from package.module import ClassName
+    ...     assert ClassName.attribute == sentinel.attribute
+    ...
+    >>> test()
 
 A nice pattern is to actually decorate test methods themselves:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> class MyTest(unittest.TestCase):
-   ...     @patch.object(SomeClass, 'attribute', sentinel.attribute)
-   ...     def test_something(self):
-   ...         self.assertEqual(SomeClass.attribute, sentinel.attribute)
-   ...
-   >>> original = SomeClass.attribute
-   >>> MyTest('test_something').test_something()
-   >>> assert SomeClass.attribute == original
+    >>> class MyTest(unittest.TestCase):
+    ...     @patch.object(SomeClass, 'attribute', sentinel.attribute)
+    ...     def test_something(self):
+    ...         self.assertEqual(SomeClass.attribute, sentinel.attribute)
+    ...
+    >>> original = SomeClass.attribute
+    >>> MyTest('test_something').test_something()
+    >>> assert SomeClass.attribute == original
 
 If you want to patch with a Mock, you can use :func:`patch` with only one argument
 (or :func:`patch.object` with two arguments). The mock will be created for you and
 passed into the test function / method:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> class MyTest(unittest.TestCase):
-   ...     @patch.object(SomeClass, 'static_method')
-   ...     def test_something(self, mock_method):
-   ...         SomeClass.static_method()
-   ...         mock_method.assert_called_with()
-   ...
-   >>> MyTest('test_something').test_something()
+    >>> class MyTest(unittest.TestCase):
+    ...     @patch.object(SomeClass, 'static_method')
+    ...     def test_something(self, mock_method):
+    ...         SomeClass.static_method()
+    ...         mock_method.assert_called_with()
+    ...
+    >>> MyTest('test_something').test_something()
 
 You can stack up multiple patch decorators using this pattern:
 
@@ -495,14 +492,14 @@ testable way in the first place...
 So, suppose we have some code that looks a little bit like this:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> class Something:
-   ...     def __init__(self):
-   ...         self.backend = BackendProvider()
-   ...     def method(self):
-   ...         response = self.backend.get_endpoint('foobar').create_call('spam', 'eggs').start_call()
-   ...         # more code
+    >>> class Something:
+    ...     def __init__(self):
+    ...         self.backend = BackendProvider()
+    ...     def method(self):
+    ...         response = self.backend.get_endpoint('foobar').create_call('spam', 'eggs').start_call()
+    ...         # more code
 
 Assuming that ``BackendProvider`` is already well tested, how do we test
 ``method()``? Specifically, we want to test that the code section ``# more
@@ -525,22 +522,22 @@ We can do that in a slightly nicer way using the :meth:`~Mock.configure_mock`
 method to directly set the return value for us:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> something = Something()
-   >>> mock_response = Mock(spec=open)
-   >>> mock_backend = Mock()
-   >>> config = {'get_endpoint.return_value.create_call.return_value.start_call.return_value': mock_response}
-   >>> mock_backend.configure_mock(**config)
+    >>> something = Something()
+    >>> mock_response = Mock(spec=open)
+    >>> mock_backend = Mock()
+    >>> config = {'get_endpoint.return_value.create_call.return_value.start_call.return_value': mock_response}
+    >>> mock_backend.configure_mock(**config)
 
 With these we monkey patch the "mock backend" in place and can make the real
 call:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> something.backend = mock_backend
-   >>> something.method()
+    >>> something.backend = mock_backend
+    >>> something.method()
 
 Using :attr:`~Mock.mock_calls` we can check the chained call with a single
 assert. A chained call is several calls in one line of code, so there will be
@@ -548,11 +545,11 @@ several entries in ``mock_calls``. We can use :meth:`call.call_list` to create
 this list of calls for us:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> chained = call.get_endpoint('foobar').create_call('spam', 'eggs').start_call()
-   >>> call_list = chained.call_list()
-   >>> assert mock_backend.mock_calls == call_list
+    >>> chained = call.get_endpoint('foobar').create_call('spam', 'eggs').start_call()
+    >>> call_list = chained.call_list()
+    >>> assert mock_backend.mock_calls == call_list
 
 
 Partial mocking
@@ -574,16 +571,16 @@ a real date. When the mock date class is called a real date will be
 constructed and returned by ``side_effect``.
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> from datetime import date
-   >>> with patch('mymodule.date') as mock_date:
-   ...     mock_date.today.return_value = date(2010, 10, 8)
-   ...     mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
-   ...
-   ...     assert mymodule.date.today() == date(2010, 10, 8)
-   ...     assert mymodule.date(2009, 6, 8) == date(2009, 6, 8)
-   ...
+    >>> from datetime import date
+    >>> with patch('mymodule.date') as mock_date:
+    ...     mock_date.today.return_value = date(2010, 10, 8)
+    ...     mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+    ...
+    ...     assert mymodule.date.today() == date(2010, 10, 8)
+    ...     assert mymodule.date(2009, 6, 8) == date(2009, 6, 8)
+    ...
 
 Note that we don't patch :class:`datetime.date` globally, we patch ``date`` in the
 module that *uses* it. See :ref:`where to patch <where-to-patch>`.
@@ -652,24 +649,24 @@ methods on the class. A test method is identified by methods whose names start
 with ``test``:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> @patch('mymodule.SomeClass')
-   >>> class MyTest(unittest.TestCase):
-   ...
-   ...     def test_one(self, MockSomeClass):
-   ...         self.assertIs(mymodule.SomeClass, MockSomeClass)
-   ...
-   ...     def test_two(self, MockSomeClass):
-   ...         self.assertIs(mymodule.SomeClass, MockSomeClass)
-   ...
-   ...     def not_a_test(self):
-   ...         return 'something'
-   ...
-   >>> MyTest('test_one').test_one()
-   >>> MyTest('test_two').test_two()
-   >>> MyTest('test_two').not_a_test()
-   'something'
+    >>> @patch('mymodule.SomeClass')
+    ... class MyTest(TestCase):
+    ...
+    ...     def test_one(self, MockSomeClass):
+    ...         self.assertIs(mymodule.SomeClass, MockSomeClass)
+    ...
+    ...     def test_two(self, MockSomeClass):
+    ...         self.assertIs(mymodule.SomeClass, MockSomeClass)
+    ...
+    ...     def not_a_test(self):
+    ...         return 'something'
+    ...
+    >>> MyTest('test_one').test_one()
+    >>> MyTest('test_two').test_two()
+    >>> MyTest('test_two').not_a_test()
+    'something'
 
 An alternative way of managing patches is to use the :ref:`start-and-stop`.
 These allow you to move the patching into your ``setUp`` and ``tearDown`` methods.
@@ -808,19 +805,19 @@ When we try to test that ``grob`` calls ``frob`` with the correct argument look
 what happens:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> with patch('mymodule.frob') as mock_frob:
-   ...     val = {6}
-   ...     mymodule.grob(val)
-   ...
-   >>> val
-   set()
-   >>> mock_frob.assert_called_with({6})
-   Traceback (most recent call last):
-       ...
-   AssertionError: Expected: (({6},), {})
-   Called with: ((set(),), {})
+    >>> with patch('mymodule.frob') as mock_frob:
+    ...     val = {6}
+    ...     mymodule.grob(val)
+    ...
+    >>> val
+    set()
+    >>> mock_frob.assert_called_with({6})
+    Traceback (most recent call last):
+        ...
+    AssertionError: Expected: (({6},), {})
+    Called with: ((set(),), {})
 
 One possibility would be for mock to copy the arguments you pass in. This
 could then cause problems if you do assertions that rely on object identity
@@ -835,28 +832,28 @@ mock methods for doing the assertion. Again a helper function sets this up for
 me.
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> from copy import deepcopy
-   >>> from unittest.mock import Mock, patch, DEFAULT
-   >>> def copy_call_args(mock):
-   ...     new_mock = Mock()
-   ...     def side_effect(*args, **kwargs):
-   ...         args = deepcopy(args)
-   ...         kwargs = deepcopy(kwargs)
-   ...         new_mock(*args, **kwargs)
-   ...         return DEFAULT
-   ...     mock.side_effect = side_effect
-   ...     return new_mock
-   ...
-   >>> with patch('mymodule.frob') as mock_frob:
-   ...     new_mock = copy_call_args(mock_frob)
-   ...     val = {6}
-   ...     mymodule.grob(val)
-   ...
-   >>> new_mock.assert_called_with({6})
-   >>> new_mock.call_args
-   call({6})
+    >>> from copy import deepcopy
+    >>> from unittest.mock import Mock, patch, DEFAULT
+    >>> def copy_call_args(mock):
+    ...     new_mock = Mock()
+    ...     def side_effect(*args, **kwargs):
+    ...         args = deepcopy(args)
+    ...         kwargs = deepcopy(kwargs)
+    ...         new_mock(*args, **kwargs)
+    ...         return DEFAULT
+    ...     mock.side_effect = side_effect
+    ...     return new_mock
+    ...
+    >>> with patch('mymodule.frob') as mock_frob:
+    ...     new_mock = copy_call_args(mock_frob)
+    ...     val = {6}
+    ...     mymodule.grob(val)
+    ...
+    >>> new_mock.assert_called_with({6})
+    >>> new_mock.call_args
+    call({6})
 
 ``copy_call_args`` is called with the mock that will be called. It returns a new
 mock that we do the assertion on. The ``side_effect`` function makes a copy of
@@ -915,21 +912,21 @@ can end up with nested with statements indenting further and further to the
 right:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> class MyTest(unittest.TestCase):
-   ...
-   ...     def test_foo(self):
-   ...         with patch('mymodule.Foo') as mock_foo:
-   ...             with patch('mymodule.Bar') as mock_bar:
-   ...                 with patch('mymodule.Spam') as mock_spam:
-   ...                     assert mymodule.Foo is mock_foo
-   ...                     assert mymodule.Bar is mock_bar
-   ...                     assert mymodule.Spam is mock_spam
-   ...
-   >>> original = mymodule.Foo
-   >>> MyTest('test_foo').test_foo()
-   >>> assert mymodule.Foo is original
+    >>> class MyTest(unittest.TestCase):
+    ...
+    ...     def test_foo(self):
+    ...         with patch('mymodule.Foo') as mock_foo:
+    ...             with patch('mymodule.Bar') as mock_bar:
+    ...                 with patch('mymodule.Spam') as mock_spam:
+    ...                     assert mymodule.Foo is mock_foo
+    ...                     assert mymodule.Bar is mock_bar
+    ...                     assert mymodule.Spam is mock_spam
+    ...
+    >>> original = mymodule.Foo
+    >>> MyTest('test_foo').test_foo()
+    >>> assert mymodule.Foo is original
 
 With unittest ``cleanup`` functions and the :ref:`start-and-stop` we can
 achieve the same effect without the nested indentation. A simple helper
@@ -937,28 +934,28 @@ method, ``create_patch``, puts the patch in place and returns the created mock
 for us:
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> class MyTest(unittest.TestCase):
-   ...
-   ...     def create_patch(self, name):
-   ...         patcher = patch(name)
-   ...         thing = patcher.start()
-   ...         self.addCleanup(patcher.stop)
-   ...         return thing
-   ...
-   ...     def test_foo(self):
-   ...         mock_foo = self.create_patch('mymodule.Foo')
-   ...         mock_bar = self.create_patch('mymodule.Bar')
-   ...         mock_spam = self.create_patch('mymodule.Spam')
-   ...
-   ...         assert mymodule.Foo is mock_foo
-   ...         assert mymodule.Bar is mock_bar
-   ...         assert mymodule.Spam is mock_spam
-   ...
-   >>> original = mymodule.Foo
-   >>> MyTest('test_foo').run()
-   >>> assert mymodule.Foo is original
+    >>> class MyTest(unittest.TestCase):
+    ...
+    ...     def create_patch(self, name):
+    ...         patcher = patch(name)
+    ...         thing = patcher.start()
+    ...         self.addCleanup(patcher.stop)
+    ...         return thing
+    ...
+    ...     def test_foo(self):
+    ...         mock_foo = self.create_patch('mymodule.Foo')
+    ...         mock_bar = self.create_patch('mymodule.Bar')
+    ...         mock_spam = self.create_patch('mymodule.Spam')
+    ...
+    ...         assert mymodule.Foo is mock_foo
+    ...         assert mymodule.Bar is mock_bar
+    ...         assert mymodule.Spam is mock_spam
+    ...
+    >>> original = mymodule.Foo
+    >>> MyTest('test_foo').run()
+    >>> assert mymodule.Foo is original
 
 
 Mocking a dictionary with MagicMock
@@ -1200,23 +1197,23 @@ them to a manager mock using the :meth:`~Mock.attach_mock` method. After
 attaching calls will be recorded in ``mock_calls`` of the manager.
 
 .. doctest::
-   :options: +SKIP
+    :options: +SKIP
 
-   >>> manager = MagicMock()
-   >>> with patch('mymodule.Class1') as MockClass1:
-   ...     with patch('mymodule.Class2') as MockClass2:
-   ...         manager.attach_mock(MockClass1, 'MockClass1')
-   ...         manager.attach_mock(MockClass2, 'MockClass2')
-   ...         MockClass1().foo()
-   ...         MockClass2().bar()
-   ...
-   <MagicMock name='mock.MockClass1().foo()' id='...'>
-   <MagicMock name='mock.MockClass2().bar()' id='...'>
-   >>> manager.mock_calls
-   [call.MockClass1(),
-    call.MockClass1().foo(),
-    call.MockClass2(),
-    call.MockClass2().bar()]
+    >>> manager = MagicMock()
+    >>> with patch('mymodule.Class1') as MockClass1:
+    ...     with patch('mymodule.Class2') as MockClass2:
+    ...         manager.attach_mock(MockClass1, 'MockClass1')
+    ...         manager.attach_mock(MockClass2, 'MockClass2')
+    ...         MockClass1().foo()
+    ...         MockClass2().bar()
+    ...
+    <MagicMock name='mock.MockClass1().foo()' id='...'>
+    <MagicMock name='mock.MockClass2().bar()' id='...'>
+    >>> manager.mock_calls
+    [call.MockClass1(),
+     call.MockClass1().foo(),
+     call.MockClass2(),
+     call.MockClass2().bar()]
 
 If many calls have been made, but you're only interested in a particular
 sequence of them then an alternative is to use the
