@@ -49,6 +49,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
+  running coroutine and the coroutine returned without any more ``await``.
+
 - bpo-29990: Fix range checking in GB18030 decoder.  Original patch by Ma Lin.
 
 - Revert bpo-26293 for zipfile breakage. See also bpo-29094.
