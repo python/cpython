@@ -306,6 +306,10 @@ Extension Modules
 
 Library
 -------
+
+- bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
+  running coroutine and the coroutine returned without any more ``await``.
+
 - bpo-29692: Fixed arbitrary unchaining of RuntimeError exceptions in 
   contextlib.contextmanager.
   Patch by Siddharth Velankar.
