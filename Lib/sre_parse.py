@@ -440,7 +440,6 @@ def _escape(source, escape, state):
     raise source.error("bad escape %s" % escape, len(escape))
 
 def _uniq(items):
-    return items
     if len(set(items)) == len(items):
         return items
     newitems = []
