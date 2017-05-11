@@ -2107,10 +2107,16 @@ _PyTrash_thread_destroy_chain(void)
          * up distorting allocation statistics.
          */
         assert(op->ob_refcnt == 0);
-        /* The deallocator executing this function still occupies
-           the stack.  We need to increase trash_delete_nesting
-           here, otherwise, _PyTrash_thread_destroy_chain will be
-           called recursively and then possibly crash.
+        /* We need to increase trash_delete_nesting here, otherwise,
+           _PyTrash_thread_destroy_chain will be called recursively
+           and then possibly crash.  An example that may crash without
+           increase:
+               N = 500000  # need to be large enough
+               ob = object()
+               tups = [(ob,) for i in range(N)]
+               for i in range(49):
+                   tups = [(tup,) for tup in tups]
+               del tups
         */
         assert(tstate->trash_delete_nesting == 0);
         ++tstate->trash_delete_nesting;
