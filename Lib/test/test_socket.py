@@ -1452,6 +1452,10 @@ class GeneralModuleTests(unittest.TestCase):
         # socketpair() is not strictly required, but it makes things easier.
         if not hasattr(signal, 'alarm') or not hasattr(socket, 'socketpair'):
             self.skipTest("signal.alarm and socket.socketpair required for this test")
+
+        if not with_timeout and sys.platform == 'cygwin':
+            self.skipTest("this test blocks due to a bug in Cygwin")
+
         # Our signal handlers clobber the C errno by calling a math function
         # with an invalid domain value.
         def ok_handler(*args):
