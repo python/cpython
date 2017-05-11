@@ -203,11 +203,10 @@ class AutoCompleteWindow:
         self._selection_changed()
 
         # bind events
-        self.hideaid = self.autocompletewindow.bind(HIDE_VIRTUAL_EVENT_NAME,
-                                                    self.hide_event)
+        self.hideaid = acw.bind(HIDE_VIRTUAL_EVENT_NAME, self.hide_event)
         self.hidewid = self.widget.bind(HIDE_VIRTUAL_EVENT_NAME, self.hide_event)
         for seq in HIDE_SEQUENCES:
-            self.autocompletewindow.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
+            acw.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
             self.widget.event_add(HIDE_VIRTUAL_EVENT_NAME, seq)
         self.keypressid = self.widget.bind(KEYPRESS_VIRTUAL_EVENT_NAME,
                                            self.keypress_event)
