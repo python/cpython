@@ -32,7 +32,7 @@ matrix:
   include:
     - os: linux
       language: python
-      python: 3.6
+      python: nightly
       env:
         - TESTING=docs
       before_script:
