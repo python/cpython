@@ -905,7 +905,7 @@ keyword arguments (and any ``**expression`` arguments -- see below).  So::
    2 1
    >>> f(a=1, *(2,))
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    TypeError: f() got multiple values for keyword argument 'a'
    >>> f(1, *(2,))
    1 2
@@ -1173,11 +1173,6 @@ the left or right by the number of bits given by the second argument.
 A right shift by *n* bits is defined as floor division by ``pow(2,n)``.  A left
 shift by *n* bits is defined as multiplication with ``pow(2,n)``.
 
-.. note::
-
-   In the current implementation, the right-hand operand is required
-   to be at most :attr:`sys.maxsize`.  If the right-hand operand is larger than
-   :attr:`sys.maxsize` an :exc:`OverflowError` exception is raised.
 
 .. _bitwise:
 

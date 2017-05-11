@@ -1209,10 +1209,6 @@ _get_crl_dp(X509 *certificate) {
     int i, j;
     PyObject *lst, *res = NULL;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10001000L
-    /* Calls x509v3_cache_extensions and sets up crldp */
-    X509_check_ca(certificate);
-#endif
     dps = X509_get_ext_d2i(certificate, NID_crl_distribution_points, NULL, NULL);
 
     if (dps == NULL)
@@ -1257,9 +1253,7 @@ _get_crl_dp(X509 *certificate) {
 
   done:
     Py_XDECREF(lst);
-#if OPENSSL_VERSION_NUMBER < 0x10001000L
-    sk_DIST_POINT_free(dps);
-#endif
+    CRL_DIST_POINTS_free(dps);
     return res;
 }
 
@@ -3281,7 +3275,7 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
         }
         else if (errno != 0) {
             ERR_clear_error();
-            PyErr_SetFromErrno(PyExc_IOError);
+            PyErr_SetFromErrno(PyExc_OSError);
         }
         else {
             _setSSLError(NULL, 0, __FILE__, __LINE__);
@@ -3302,7 +3296,7 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
         }
         else if (errno != 0) {
             ERR_clear_error();
-            PyErr_SetFromErrno(PyExc_IOError);
+            PyErr_SetFromErrno(PyExc_OSError);
         }
         else {
             _setSSLError(NULL, 0, __FILE__, __LINE__);
@@ -3510,7 +3504,7 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
             ok = 0;
             if (errno != 0) {
                 ERR_clear_error();
-                PyErr_SetFromErrno(PyExc_IOError);
+                PyErr_SetFromErrno(PyExc_OSError);
             }
             else {
                 _setSSLError(NULL, 0, __FILE__, __LINE__);

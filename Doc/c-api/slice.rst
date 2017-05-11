@@ -75,7 +75,7 @@ Slice Objects
    Extract the start, stop and step data members from a slice object as
    C integers.  Silently reduce values larger than ``PY_SSIZE_T_MAX`` to
    ``PY_SSIZE_T_MAX``, silently boost the start and stop values less than
-   ``-PY_SSIZE_T_MAX-1`` to ``-PY_SSIZE_T_MAX-1``, and silently boost the step
+   ``PY_SSIZE_T_MIN`` to ``PY_SSIZE_T_MIN``, and silently boost the step
    values less than ``-PY_SSIZE_T_MAX`` to ``-PY_SSIZE_T_MAX``.
 
    Return ``-1`` on error, ``0`` on success.
@@ -93,3 +93,14 @@ Slice Objects
    code.
 
    .. versionadded:: 3.6.1
+
+
+Ellipsis Object
+---------------
+
+
+.. c:var:: PyObject *Py_Ellipsis
+
+   The Python ``Ellipsis`` object.  This object has no methods.  It needs to be
+   treated just like any other object with respect to reference counts.  Like
+   :c:data:`Py_None` it is a singleton object.
