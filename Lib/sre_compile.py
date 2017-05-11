@@ -125,7 +125,7 @@ def _compile(code, pattern, flags):
         elif op in REPEATING_CODES:
             if flags & SRE_FLAG_TEMPLATE:
                 raise error("internal: unsupported template operator %r" % (op,))
-            elif _simple(av) and op is not REPEAT:
+            if av[2].getwidth() == (1, 1) and not av[2].hasgroups():
                 if op is MAX_REPEAT:
                     emit(REPEAT_ONE)
                 else:
@@ -403,11 +403,6 @@ def _bytes_to_codes(b):
     assert a.itemsize == _sre.CODESIZE
     assert len(a) * a.itemsize == len(b)
     return a.tolist()
-
-def _simple(av):
-    # check if av is a "simple" operator
-    lo, hi = av[2].getwidth()
-    return lo == hi == 1 and av[2][0][0] != SUBPATTERN
 
 def _generate_overlap_table(prefix):
     """

@@ -1695,20 +1695,18 @@ class ReTests(unittest.TestCase):
         dump = '''\
 SUBPATTERN 1 0 0
   LITERAL 46
-SUBPATTERN None 0 0
-  BRANCH
-    IN
-      LITERAL 99
-      LITERAL 104
-  OR
-    LITERAL 112
-    LITERAL 121
-SUBPATTERN None 0 0
-  GROUPREF_EXISTS 1
-    AT AT_END
-  ELSE
-    LITERAL 58
-    LITERAL 32
+BRANCH
+  IN
+    LITERAL 99
+    LITERAL 104
+OR
+  LITERAL 112
+  LITERAL 121
+GROUPREF_EXISTS 1
+  AT AT_END
+ELSE
+  LITERAL 58
+  LITERAL 32
 '''
         self.assertEqual(out.getvalue(), dump)
         # Debug output is output again even a second time (bypassing
