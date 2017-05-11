@@ -171,8 +171,8 @@ static wchar_t * location_checks[] = {
     L"\\",
     L"\\PCBuild\\win32\\",
     L"\\PCBuild\\amd64\\",
-    // To support early 32bit versions of Python that stuck the build binaries
-    // directly in PCBuild...
+    /* To support early 32bit versions of Python that stuck the build binaries
+    * directly in PCBuild... */
     L"\\PCBuild\\",
     NULL
 };
@@ -234,7 +234,7 @@ locate_pythons_for_key(HKEY root, REGSAM flags)
                 status = RegOpenKeyExW(root, ip_path, 0, flags, &ip_key);
                 if (status != ERROR_SUCCESS) {
                     winerror(status, message, MSGSIZE);
-                    // Note: 'message' already has a trailing \n
+                    /* Note: 'message' already has a trailing \n*/
                     debug(L"%ls\\%ls: %ls", key_name, ip_path, message);
                     continue;
                 }
@@ -340,12 +340,12 @@ static void
 locate_all_pythons()
 {
 #if defined(_M_X64)
-    // If we are a 64bit process, first hit the 32bit keys.
+    /* If we are a 64bit process, first hit the 32bit keys. */
     debug(L"locating Pythons in 32bit registry\n");
     locate_pythons_for_key(HKEY_CURRENT_USER, KEY_READ | KEY_WOW64_32KEY);
     locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ | KEY_WOW64_32KEY);
 #else
-    // If we are a 32bit process on a 64bit Windows, first hit the 64bit keys.
+    /* If we are a 32bit process on a 64bit Windows, first hit the 64bit keys.*/
     BOOL f64 = FALSE;
     if (IsWow64Process(GetCurrentProcess(), &f64) && f64) {
         debug(L"locating Pythons in 64bit registry\n");
@@ -353,7 +353,7 @@ locate_all_pythons()
         locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ | KEY_WOW64_64KEY);
     }
 #endif
-    // now hit the "native" key for this process bittedness.
+    /* now hit the "native" key for this process bittedness. */
     debug(L"locating Pythons in native registry\n");
     locate_pythons_for_key(HKEY_CURRENT_USER, KEY_READ);
     locate_pythons_for_key(HKEY_LOCAL_MACHINE, KEY_READ);
@@ -614,14 +614,16 @@ run_child(wchar_t * cmdline)
     PROCESS_INFORMATION pi;
 
 #if defined(_WINDOWS)
-    // When explorer launches a Windows (GUI) application, it displays
-    // the "app starting" (the "pointer + hourglass") cursor for a number
-    // of seconds, or until the app does something UI-ish (eg, creating a
-    // window, or fetching a message).  As this launcher doesn't do this
-    // directly, that cursor remains even after the child process does these
-    // things.  We avoid that by doing a simple post+get message.
-    // See http://bugs.python.org/issue17290 and
-    // https://bitbucket.org/vinay.sajip/pylauncher/issue/20/busy-cursor-for-a-long-time-when-running
+    /*
+    When explorer launches a Windows (GUI) application, it displays
+    the "app starting" (the "pointer + hourglass") cursor for a number
+    of seconds, or until the app does something UI-ish (eg, creating a
+    window, or fetching a message).  As this launcher doesn't do this
+    directly, that cursor remains even after the child process does these
+    things.  We avoid that by doing a simple post+get message.
+    See http://bugs.python.org/issue17290 and
+    https://bitbucket.org/vinay.sajip/pylauncher/issue/20/busy-cursor-for-a-long-time-when-running
+    */
     MSG msg;
 
     PostMessage(0, 0, 0, 0);
@@ -1062,7 +1064,9 @@ validate_version(wchar_t * p)
       3.6-64
       3-64
     */
-    BOOL result = (p != NULL) && *p && iswdigit(*p);  /* Default to false if empty string or null pointer. */
+    BOOL result = p != NULL; /* Default to false if null pointer. */
+
+    result = result && iswdigit(*p);  /* Result = False if fist string element is not a digit. */
 
     while (result && iswdigit(*p))   /* Require a major version */{
         ++p;  /* Skip leading digit(s) */}
@@ -1550,7 +1554,7 @@ installed", &p[1]);
 #if defined(_M_X64)
             BOOL canDo64bit = TRUE;
 #else
-    // If we are a 32bit process on a 64bit Windows, first hit the 64bit keys.
+    /* If we are a 32bit process on a 64bit Windows, first hit the 64bit keys. */
             BOOL canDo64bit = FALSE;
             IsWow64Process(GetCurrentProcess(), &canDo64bit);
 #endif
