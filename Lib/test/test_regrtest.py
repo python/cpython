@@ -255,10 +255,22 @@ class ProgramsTestCase(BaseTestCase):
         proc = self.run_command(args)
         self.check_output(proc.stdout)
 
-    @unittest.skipUnless(sysconfig.is_python_build(),
-                         'test.bat script is not installed')
+    def need_pcbuild(self):
+        exe = os.path.normpath(os.path.abspath(sys.executable))
+        parts = exe.split(os.path.sep)
+        if len(parts) < 3:
+            # it's not a python build, python is likely to be installed
+            return
+
+        build_dir = parts[-3]
+        if build_dir.lower() != 'pcbuild':
+            self.skipTest("Tools/buildbot/test.bat requires PCbuild build, "
+                          "found %s" % build_dir)
+
     @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
     def test_tools_buildbot_test(self):
+        self.need_pcbuild()
+
         # Tools\buildbot\test.bat
         script = os.path.join(ROOT_DIR, 'Tools', 'buildbot', 'test.bat')
         test_args = ['--testdir=%s' % self.tmptestdir]
@@ -272,6 +284,8 @@ class ProgramsTestCase(BaseTestCase):
 
     @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
     def test_pcbuild_rt(self):
+        self.need_pcbuild()
+
         # PCbuild\rt.bat
         script = os.path.join(ROOT_DIR, r'PCbuild\rt.bat')
         rt_args = ["-q"]             # Quick, don't run tests twice
@@ -390,6 +404,37 @@ class ArgsTestCase(BaseTestCase):
         regex = ('10 slowest tests:\n'
                  '(?:- %s: .*\n){%s}'
                  % (self.TESTNAME_REGEX, len(tests)))
+        self.check_line(output, regex)
+
+    def test_slow_interrupted(self):
+        # Issue #25373: test --slowest with an interrupted test
+        code = TEST_INTERRUPTED
+        test = self.create_test("sigint", code=code)
+
+        try:
+            import threading
+            tests = (False, True)
+        except ImportError:
+            tests = (False,)
+        for multiprocessing in tests:
+            if multiprocessing:
+                args = ("--slowest", "-j2", test)
+            else:
+                args = ("--slowest", test)
+            output = self.run_tests(*args, exitcode=1)
+            self.check_executed_tests(output, test,
+                                      omitted=test, interrupted=True)
+
+            regex = ('10 slowest tests:\n')
+            self.check_line(output, regex)
+
+    def test_coverage(self):
+        # test --coverage
+        test = self.create_test('coverage')
+        output = self.run_tests("--coverage", test)
+        self.check_executed_tests(output, [test])
+        regex = (r'lines +cov% +module +\(path\)\n'
+                 r'(?: *[0-9]+ *[0-9]{1,2}% *[^ ]+ +\([^)]+\)+)+')
         self.check_line(output, regex)
 
     def test_forever(self):

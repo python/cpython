@@ -316,7 +316,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
              'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo',
-             'failfast', 'match=', 'testdir=', 'list-tests'])
+             'failfast', 'match=', 'testdir=', 'list-tests', 'coverage'])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -531,8 +531,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     if trace:
         import trace
-        tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix],
-                             trace=False, count=True)
+        tracer = trace.Trace(trace=False, count=True)
 
     test_times = []
     test_support.use_resources = use_resources
@@ -544,7 +543,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             test_times.append((test_time, test))
         if ok == PASSED:
             good.append(test)
-        elif ok == FAILED:
+        elif ok in (FAILED, CHILD_ERROR):
             bad.append(test)
         elif ok == ENV_CHANGED:
             environment_changed.append(test)
@@ -553,9 +552,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif ok == RESOURCE_DENIED:
             skipped.append(test)
             resource_denieds.append(test)
-        else:
-            # CHILD_ERROR
-            bad.append(test)
+        elif ok != INTERRUPTED:
+            raise ValueError("invalid test result: %r" % ok)
 
     if forever:
         def test_forever(tests=list(selected)):
@@ -740,19 +738,26 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 if previous_test:
                     text = '%s -- %s' % (text, previous_test)
                 display_progress(test_index, text)
+
+            def local_runtest():
+                result = runtest(test, verbose, quiet, huntrleaks, None, pgo,
+                                 failfast=failfast,
+                                 match_tests=match_tests,
+                                 testdir=testdir)
+                accumulate_result(test, result)
+                return result
+
+            start_time = time.time()
             if trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                tracer.runctx('runtest(test, verbose, quiet, testdir=testdir)',
-                              globals=globals(), locals=vars())
+                ns = dict(locals())
+                tracer.runctx('result = local_runtest()',
+                              globals=globals(), locals=ns)
+                result = ns['result']
             else:
-                start_time = time.time()
                 try:
-                    result = runtest(test, verbose, quiet, huntrleaks, None, pgo,
-                                     failfast=failfast,
-                                     match_tests=match_tests,
-                                     testdir=testdir)
-                    accumulate_result(test, result)
+                    result = local_runtest()
                     if verbose3 and result[0] == FAILED:
                         if not pgo:
                             print "Re-running test %r in verbose mode" % test
@@ -764,14 +769,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 except:
                     raise
 
-                previous_test = format_test_result(test, result[0])
-                test_time = time.time() - start_time
-                if test_time >= PROGRESS_MIN_TIME:
-                    previous_test = "%s in %s" % (previous_test,
-                                                  format_duration(test_time))
-                elif result[0] == PASSED:
-                    # be quiet: say nothing if the test passed shortly
-                    previous_test = None
+            test_time = time.time() - start_time
+            previous_test = format_test_result(test, result[0])
+            if test_time >= PROGRESS_MIN_TIME:
+                previous_test = "%s in %s" % (previous_test,
+                                              format_duration(test_time))
+            elif result[0] == PASSED:
+                # be quiet: say nothing if the test passed shortly
+                previous_test = None
 
             if findleaks:
                 gc.collect()
