@@ -584,7 +584,7 @@ class TaskTests(test_utils.TestCase):
             self.assertTrue(t._must_cancel)  # White-box test.
             return 12
 
-        t = self.new_task(loop, task())
+        t = asyncio.Task(task(), loop=loop)
         self.assertRaises(
             asyncio.CancelledError, loop.run_until_complete, t)
         self.assertTrue(t.done())
