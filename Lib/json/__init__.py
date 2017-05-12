@@ -76,13 +76,13 @@ Specializing JSON object encoding::
     >>> def encode_complex(obj):
     ...     if isinstance(obj, complex):
     ...         return [obj.real, obj.imag]
-    ...     raise TypeError(repr(o) + " is not JSON serializable")
+    ...     return obj
     ...
-    >>> json.dumps(2 + 1j, default=encode_complex)
+    >>> json.dumps(2 + 1j, transform=encode_complex)
     '[2.0, 1.0]'
-    >>> json.JSONEncoder(default=encode_complex).encode(2 + 1j)
+    >>> json.JSONEncoder(transform=encode_complex).encode(2 + 1j)
     '[2.0, 1.0]'
-    >>> ''.join(json.JSONEncoder(default=encode_complex).iterencode(2 + 1j))
+    >>> ''.join(json.JSONEncoder(transform=encode_complex).iterencode(2 + 1j))
     '[2.0, 1.0]'
 
 
@@ -95,7 +95,7 @@ Using json.tool from the shell to validate and pretty-print::
     $ echo '{ 1.2:3.4}' | python -m json.tool
     Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
 """
-__version__ = '2.0.9'
+__version__ = '2.1.0'
 __all__ = [
     'dump', 'dumps', 'load', 'loads',
     'JSONDecoder', 'JSONDecodeError', 'JSONEncoder',
@@ -106,6 +106,7 @@ __author__ = 'Bob Ippolito <bob@redivi.com>'
 from .decoder import JSONDecoder, JSONDecodeError
 from .encoder import JSONEncoder
 import codecs
+import warnings
 
 _default_encoder = JSONEncoder(
     skipkeys=False,
@@ -114,12 +115,13 @@ _default_encoder = JSONEncoder(
     allow_nan=True,
     indent=None,
     separators=None,
+    transform=None,
     default=None,
 )
 
 def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
-        default=None, sort_keys=False, **kw):
+        transform=None, default=None, sort_keys=False, **kw):
     """Serialize ``obj`` as a JSON formatted stream to ``fp`` (a
     ``.write()``-supporting file-like object).
 
@@ -150,14 +152,19 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
     you should specify ``(',', ':')`` to eliminate whitespace.
 
+    ``transform(obj)`` is a function that should return a serializable version
+    of obj or pass it through unaffected.  The default simply passes the
+    original input through.
+
     ``default(obj)`` is a function that should return a serializable version
-    of obj or raise TypeError. The default simply raises TypeError.
+    of obj or raise TypeError. The default simply raises TypeError.  This
+    argument is deprecated; the transform argument should be used instead.
 
     If *sort_keys* is true (default: ``False``), then the output of
     dictionaries will be sorted by key.
 
     To use a custom ``JSONEncoder`` subclass (e.g. one that overrides the
-    ``.default()`` method to serialize additional types), specify it with
+    ``.transform()`` method to serialize additional types), specify it with
     the ``cls`` kwarg; otherwise ``JSONEncoder`` is used.
 
     """
@@ -165,15 +172,17 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     if (not skipkeys and ensure_ascii and
         check_circular and allow_nan and
         cls is None and indent is None and separators is None and
-        default is None and not sort_keys and not kw):
+        transform is None and default is None and not sort_keys and not kw):
         iterable = _default_encoder.iterencode(obj)
     else:
         if cls is None:
             cls = JSONEncoder
+        if default:
+            warnings.warn("default is deprecated; use transform, instead", DeprecationWarning)
         iterable = cls(skipkeys=skipkeys, ensure_ascii=ensure_ascii,
             check_circular=check_circular, allow_nan=allow_nan, indent=indent,
-            separators=separators,
-            default=default, sort_keys=sort_keys, **kw).iterencode(obj)
+            separators=separators, transform=transform, default=default,
+            sort_keys=sort_keys, **kw).iterencode(obj)
     # could accelerate with writelines in some versions of Python, at
     # a debuggability cost
     for chunk in iterable:
@@ -182,7 +191,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
 def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
-        default=None, sort_keys=False, **kw):
+        transform=None, default=None, sort_keys=False, **kw):
     """Serialize ``obj`` to a JSON formatted ``str``.
 
     If ``skipkeys`` is true then ``dict`` keys that are not basic types
@@ -212,14 +221,19 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
     you should specify ``(',', ':')`` to eliminate whitespace.
 
+    ``transform(obj)`` is a function that should return a serializable version
+    of obj or pass it through unaffected.  The default simply passes the
+    original input through.
+
     ``default(obj)`` is a function that should return a serializable version
-    of obj or raise TypeError. The default simply raises TypeError.
+    of obj or raise TypeError. The default simply raises TypeError.  This
+    argument is deprecated; the transform argument should be used instead.
 
     If *sort_keys* is true (default: ``False``), then the output of
     dictionaries will be sorted by key.
 
     To use a custom ``JSONEncoder`` subclass (e.g. one that overrides the
-    ``.default()`` method to serialize additional types), specify it with
+    ``.transform()`` method to serialize additional types), specify it with
     the ``cls`` kwarg; otherwise ``JSONEncoder`` is used.
 
     """
@@ -227,15 +241,17 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     if (not skipkeys and ensure_ascii and
         check_circular and allow_nan and
         cls is None and indent is None and separators is None and
-        default is None and not sort_keys and not kw):
+        transform is None and default is None and not sort_keys and not kw):
         return _default_encoder.encode(obj)
     if cls is None:
         cls = JSONEncoder
+    if default:
+        warnings.warn("default is deprecated; use transform, instead", DeprecationWarning)
     return cls(
         skipkeys=skipkeys, ensure_ascii=ensure_ascii,
         check_circular=check_circular, allow_nan=allow_nan, indent=indent,
-        separators=separators, default=default, sort_keys=sort_keys,
-        **kw).encode(obj)
+        separators=separators, transform=transform, default=default,
+        sort_keys=sort_keys, **kw).encode(obj)
 
 
 _default_decoder = JSONDecoder(object_hook=None, object_pairs_hook=None)
