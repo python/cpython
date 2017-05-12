@@ -86,11 +86,11 @@ Extending :class:`JSONEncoder`::
 
     >>> import json
     >>> class ComplexEncoder(json.JSONEncoder):
-    ...     def default(self, obj):
+    ...     def transform(self, obj):
     ...         if isinstance(obj, complex):
     ...             return [obj.real, obj.imag]
-    ...         # Let the base class default method raise the TypeError
-    ...         return json.JSONEncoder.default(self, obj)
+    ...         # Pass-through everything else
+    ...         return obj
     ...
     >>> json.dumps(2 + 1j, cls=ComplexEncoder)
     '[2.0, 1.0]'
@@ -128,8 +128,8 @@ Basic Usage
 
 .. function:: dump(obj, fp, *, skipkeys=False, ensure_ascii=True, \
                    check_circular=True, allow_nan=True, cls=None, \
-                   indent=None, separators=None, default=None, \
-                   sort_keys=False, **kw)
+                   indent=None, separators=None, transform=None, \
+                   default=None, sort_keys=False, **kw)
 
    Serialize *obj* as a JSON formatted stream to *fp* (a ``.write()``-supporting
    :term:`file-like object`) using this :ref:`conversion table
@@ -175,16 +175,24 @@ Basic Usage
    .. versionchanged:: 3.4
       Use ``(',', ': ')`` as default if *indent* is not ``None``.
 
+   If specified, *transform* should be a function that first gets called on
+   objects to transform them into something that is serializable.  It should
+   return a JSON encodable version of the object, passing-through anything
+   it can't match against in its original, untransformed state.
+
    If specified, *default* should be a function that gets called for objects that
    can't otherwise be serialized.  It should return a JSON encodable version of
    the object or raise a :exc:`TypeError`.  If not specified, :exc:`TypeError`
-   is raised.
+   is raised.  This method is deprecated; an implementation of the transform
+   method should be used, instead.
+
+   .. deprecated:: 3.7
 
    If *sort_keys* is true (default: ``False``), then the output of
    dictionaries will be sorted by key.
 
    To use a custom :class:`JSONEncoder` subclass (e.g. one that overrides the
-   :meth:`default` method to serialize additional types), specify it with the
+   :meth:`transform` method to serialize additional types), specify it with the
    *cls* kwarg; otherwise :class:`JSONEncoder` is used.
 
    .. versionchanged:: 3.6
@@ -193,8 +201,8 @@ Basic Usage
 
 .. function:: dumps(obj, *, skipkeys=False, ensure_ascii=True, \
                     check_circular=True, allow_nan=True, cls=None, \
-                    indent=None, separators=None, default=None, \
-                    sort_keys=False, **kw)
+                    indent=None, separators=None, transform=None,
+                    default=None, sort_keys=False, **kw)
 
    Serialize *obj* to a JSON formatted :class:`str` using this :ref:`conversion
    table <py-to-json-table>`.  The arguments have the same meaning as in
@@ -377,7 +385,7 @@ Encoders and Decoders
       extraneous data at the end.
 
 
-.. class:: JSONEncoder(*, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, sort_keys=False, indent=None, separators=None, default=None)
+.. class:: JSONEncoder(*, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, sort_keys=False, indent=None, separators=None, transform=None, default=None)
 
    Extensible JSON encoder for Python data structures.
 
@@ -407,9 +415,8 @@ Encoders and Decoders
       Added support for int- and float-derived Enum classes.
 
    To extend this to recognize other objects, subclass and implement a
-   :meth:`default` method with another method that returns a serializable object
-   for ``o`` if possible, otherwise it should call the superclass implementation
-   (to raise :exc:`TypeError`).
+   :meth:`transform` method that returns a serializable object for ``o``
+   if possible.
 
    If *skipkeys* is false (the default), then it is a :exc:`TypeError` to
    attempt encoding of keys that are not :class:`str`, :class:`int`,
@@ -453,14 +460,41 @@ Encoders and Decoders
    .. versionchanged:: 3.4
       Use ``(',', ': ')`` as default if *indent* is not ``None``.
 
+   If specified, *transform* should be a function that first gets called on
+   objects to transform them into something that is serializable.  It should
+   return a JSON encodable version of the object, passing-through anything
+   it can't match against in its original, untransformed state.
+
    If specified, *default* should be a function that gets called for objects that
    can't otherwise be serialized.  It should return a JSON encodable version of
    the object or raise a :exc:`TypeError`.  If not specified, :exc:`TypeError`
-   is raised.
+   is raised.  This method is deprecated; an implementation of the transform
+   method should be used, instead.
+
+   .. deprecated:: 3.7
 
    .. versionchanged:: 3.6
       All parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
+   .. method:: transform(o)
+
+      Implement this method in a subclass such that it returns a JSON
+      serializable version of *o*, whenever possible, or otherwise pass-through
+      the original input.
+
+      For example, to support arbitrary iterators, you could implement
+      transform like this::
+
+            def transform(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+
+                # Pass-through everything else
+                return o
 
    .. method:: default(o)
 
@@ -468,19 +502,8 @@ Encoders and Decoders
       object for *o*, or calls the base implementation (to raise a
       :exc:`TypeError`).
 
-      For example, to support arbitrary iterators, you could implement default
-      like this::
-
-         def default(self, o):
-            try:
-                iterable = iter(o)
-            except TypeError:
-                pass
-            else:
-                return list(iterable)
-            # Let the base class default method raise the TypeError
-            return json.JSONEncoder.default(self, o)
-
+      This method is deprecated; an implementation of the transform method
+      should be used, instead.
 
    .. method:: encode(o)
 
