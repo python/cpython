@@ -193,11 +193,16 @@ Miscellaneous options
 
 .. cmdoption:: -b
 
-   Issue a warning when comparing :class:`bytes` with :class:`bytearray`.
+   Issue a warning when comparing :class:`unicode` with :class:`bytearray`.
    Issue an error when the option is given twice (:option:`!-bb`).
 
-   .. versionchanged:: 3.5
-      Affects comparisons of :class:`bytes` with :class:`int`.
+   Note that, unlike the corresponding Python 3.x flag, this will **not** emit
+   warnings for comparisons between :class:`str` and :class:`unicode`.
+   Instead, the ``str`` instance will be implicitly decoded to ``unicode`` and
+   Unicode comparison used.
+
+   .. versionadded:: 2.6
+
 
 .. cmdoption:: -B
 
