@@ -2,7 +2,9 @@
 
 Coverage of autocomple: 56%
 '''
+import os
 import unittest
+from unittest.mock import Mock, patch
 from test.support import requires
 from tkinter import Tk, Text
 
@@ -137,12 +139,65 @@ class AutoCompleteTest(unittest.TestCase):
         # a small list containing non-private variables.
         # For file completion, a large list containing all files in the path,
         # and a small list containing files that do not start with '.'
-        pass
+        autocomplete = self.autocomplete
+
+        # Test attributes
+        s, b = autocomplete.fetch_completions('', ac.COMPLETE_ATTRIBUTES)
+        self.assertTrue(all(filter(lambda x: x.startswith('_'), s)))
+        self.assertTrue(any(filter(lambda x: x.startswith('_'), b)))
+
+        # Test smalll should respect to __all__
+        with patch.dict('__main__.__dict__', {'__all__': ['a', 'b']}):
+            s, b = autocomplete.fetch_completions('', ac.COMPLETE_ATTRIBUTES)
+            self.assertEqual(s, ['a', 'b'])
+            self.assertIn('__name__', b)    # From __main__.__dict__
+            self.assertIn('sum', b)         # From __main__.__builtins__.__dict__
+
+        # Test attributes with name entity
+        mock = Mock()
+        mock._private = Mock()
+        with patch.dict('__main__.__dict__', {'foo': mock}):
+            s, b = autocomplete.fetch_completions('foo', ac.COMPLETE_ATTRIBUTES)
+            self.assertNotIn('_private', s)
+            self.assertIn('_private', b)
+            self.assertEqual(s, [i for i in sorted(dir(mock)) if i[:1] != '_'])
+            self.assertEqual(b, sorted(dir(mock)))
+
+        # Test files
+        def _listdir(path):
+            if path == '.':
+                return ['foo', 'bar', '.hidden']
+            return ['monty', 'python', '.hidden']
+
+        with patch.object(os, 'listdir', _listdir):
+            s, b = autocomplete.fetch_completions('', ac.COMPLETE_FILES)
+            self.assertEqual(s, ['bar', 'foo'])
+            self.assertEqual(b, ['.hidden', 'bar', 'foo'])
+
+            s, b = autocomplete.fetch_completions('~', ac.COMPLETE_FILES)
+            self.assertEqual(s, ['monty', 'python'])
+            self.assertEqual(b, ['.hidden', 'monty', 'python'])
 
     def test_get_entity(self):
         # Test that a name is in the namespace of sys.modules and
         # __main__.__dict__
-        pass
+        autocomplete = self.autocomplete
+        Equal = self.assertEqual
+
+        # Test name from sys.modules
+        mock = Mock()
+        with patch.dict('sys.modules', {'tempfile': mock}):
+            Equal(autocomplete.get_entity('tempfile'), mock)
+
+        # Test name from __main__.__dict__
+        di = {'foo': 10, 'bar': 20}
+        with patch.dict('__main__.__dict__', {'d': di}):
+            Equal(autocomplete.get_entity('d'), di)
+
+        # Test name not in namespace
+        with patch.dict('__main__.__dict__', {}):
+            with self.assertRaises(NameError):
+                autocomplete.get_entity('not_exist')
 
 
 if __name__ == '__main__':
