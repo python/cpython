@@ -24,7 +24,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-BdEiOQsRStuUvVWxX3?] [-c command | -m module-name | script | - ] [args]
+    python [-bBdEiOQsRStuUvVWxX3?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -190,6 +190,14 @@ Generic options
 
 Miscellaneous options
 ~~~~~~~~~~~~~~~~~~~~~
+
+.. cmdoption:: -b
+
+   Issue a warning when comparing :class:`bytes` with :class:`bytearray`.
+   Issue an error when the option is given twice (:option:`!-bb`).
+
+   .. versionchanged:: 3.5
+      Affects comparisons of :class:`bytes` with :class:`int`.
 
 .. cmdoption:: -B
 
