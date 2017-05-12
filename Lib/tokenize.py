@@ -179,7 +179,7 @@ Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"!=",
                  r"[+\-*/%&@|^=<>]=?",
                  r"~")
 
-Bracket = '[][(){}]'
+Bracket = r'[]\[(){}]'
 Special = group(r'\r?\n', r'\.\.\.', r'[:;.,@]')
 Funny = group(Operator, Bracket, Special)
 

@@ -45,7 +45,7 @@ UEMPTYSTRING = ''
 CRLF = '\r\n'
 TICK = "'"
 
-specialsre = re.compile(r'[][\\()<>@,:;".]')
+specialsre = re.compile(r'[]\[\\()<>@,:;".]')
 escapesre = re.compile(r'[\\"]')
 
 def _has_surrogates(s):

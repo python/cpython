@@ -525,6 +525,24 @@ def _parse(source, state, verbose, first=False):
                 elif this[0] == "\\":
                     code1 = _class_escape(source, this)
                 else:
+                    if this == '[':
+                        import warnings
+                        warnings.warn(
+                            'Possible nested set at position %d' % (
+                                source.tell() - 1),
+                            FutureWarning, stacklevel=7
+                        )
+                    elif set != start and this in '-&~|' and source.next == this:
+                        import warnings
+                        warnings.warn(
+                            'Possible set %s at position %d' % (
+                                'difference' if this == '-' else
+                                'intersection' if this == '&' else
+                                'symmetric difference' if this == '~' else
+                                'union',
+                                source.tell() - 1),
+                            FutureWarning, stacklevel=7
+                        )
                     code1 = LITERAL, _ord(this)
                 if sourcematch("-"):
                     # potential range
@@ -541,6 +559,20 @@ def _parse(source, state, verbose, first=False):
                     if that[0] == "\\":
                         code2 = _class_escape(source, that)
                     else:
+                        if that == '[':
+                            import warnings
+                            warnings.warn(
+                                'Possible nested set at position %d' % (
+                                    source.tell() - 1),
+                                FutureWarning, stacklevel=7
+                            )
+                        elif that == '-':
+                            import warnings
+                            warnings.warn(
+                                'Possible set difference at position %d' % (
+                                    source.tell() - 2),
+                                FutureWarning, stacklevel=7
+                            )
                         code2 = LITERAL, _ord(that)
                     if code1[0] != LITERAL or code2[0] != LITERAL:
                         msg = "bad character range %s-%s" % (this, that)

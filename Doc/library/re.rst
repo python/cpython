@@ -201,6 +201,18 @@ The special characters are:
      place it at the beginning of the set.  For example, both ``[()[\]{}]`` and
      ``[]()[{}]`` will both match a parenthesis.
 
+   * Future versions of Python will support nested sets and set operations,
+     but this can break backward compatibility since that syntax can be treated
+     differently in older versions of Python.  For avoiding a breakage a
+     :exc:`FutureWarning` will be raised in the meanwhile in ambiguous cases.
+     That incluse sets containing a literal ``'['`` and literal character
+     sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  For avoiding a
+     warning escape them with a backslash.
+
+   .. versionchanged:: 3.7
+      :exc:`FutureWarning` is raised if a character set contains constructs
+      that will change semantically in the future.
+
 ``'|'``
    ``A|B``, where A and B can be arbitrary REs, creates a regular expression that
    will match either A or B.  An arbitrary number of REs can be separated by the
@@ -800,7 +812,7 @@ form.
 
       >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
       >>> print('[%s]+' % re.escape(legal_chars))
-      [abcdefghijklmnopqrstuvwxyz0123456789!\#\$%&'\*\+\-\.\^_`\|~:]+
+      [abcdefghijklmnopqrstuvwxyz0123456789!\#\$%\&'\*\+\-\.\^_`\|\~:]+
 
       >>> operators = ['+', '-', '*', '/', '**']
       >>> print('|'.join(map(re.escape, sorted(operators, reverse=True))))

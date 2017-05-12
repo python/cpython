@@ -320,6 +320,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30349: FutureWarning is raised if a regular expression contains character
+  set constructs that will change semantically in the future (nested sets and
+  set operations).
+
 - bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
   running coroutine and the coroutine returned without any more ``await``.
 

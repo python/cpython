@@ -330,6 +330,15 @@ Changes in the Python API
   ``makedirs()``.
   (Contributed by Serhiy Storchaka in :issue:`19930`.)
 
+* Future versions of Python will support nested sets and set operations in
+  regular expressions, but this can break backward compatibility since that
+  syntax can be treated differently in older versions of Python.  For avoiding
+  a breakage a :exc:`FutureWarning` will be raised in the meanwhile in
+  ambiguous cases.  That incluse sets containing a literal ``'['`` and literal
+  character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  For
+  avoiding a warning escape them with a backslash.
+  (Contributed by Serhiy Storchaka in :issue:`30349`.)
+
 
 CPython bytecode changes
 ------------------------
