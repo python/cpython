@@ -40,6 +40,7 @@ static PyMemberDef scanner_members[] = {
 typedef struct _PyEncoderObject {
     PyObject_HEAD
     PyObject *markers;
+    PyObject *transformfn;
     PyObject *defaultfn;
     PyObject *encoder;
     PyObject *indent;
@@ -53,6 +54,7 @@ typedef struct _PyEncoderObject {
 
 static PyMemberDef encoder_members[] = {
     {"markers", T_OBJECT, offsetof(PyEncoderObject, markers), READONLY, "markers"},
+    {"transform", T_OBJECT, offsetof(PyEncoderObject, transformfn), READONLY, "default"},
     {"default", T_OBJECT, offsetof(PyEncoderObject, defaultfn), READONLY, "default"},
     {"encoder", T_OBJECT, offsetof(PyEncoderObject, encoder), READONLY, "encoder"},
     {"indent", T_OBJECT, offsetof(PyEncoderObject, indent), READONLY, "indent"},
@@ -1286,15 +1288,15 @@ PyTypeObject PyScannerType = {
 static PyObject *
 encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", NULL};
+    static char *kwlist[] = {"markers", "transform", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", NULL};
 
     PyEncoderObject *s;
-    PyObject *markers, *defaultfn, *encoder, *indent, *key_separator;
+    PyObject *markers, *transformfn, *defaultfn, *encoder, *indent, *key_separator;
     PyObject *item_separator, *sort_keys, *skipkeys;
     int allow_nan;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUOOp:make_encoder", kwlist,
-        &markers, &defaultfn, &encoder, &indent,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOOUUOOp:make_encoder", kwlist,
+        &markers, &transformfn, &defaultfn, &encoder, &indent,
         &key_separator, &item_separator,
         &sort_keys, &skipkeys, &allow_nan))
         return NULL;
@@ -1311,6 +1313,7 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
 
     s->markers = markers;
+    s->transformfn = transformfn;
     s->defaultfn = defaultfn;
     s->encoder = encoder;
     s->indent = indent;
@@ -1329,6 +1332,7 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     s->allow_nan = allow_nan;
 
     Py_INCREF(s->markers);
+    Py_INCREF(s->transformfn);
     Py_INCREF(s->defaultfn);
     Py_INCREF(s->encoder);
     Py_INCREF(s->indent);
@@ -1447,45 +1451,55 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
                        PyObject *obj, Py_ssize_t indent_level)
 {
     /* Encode Python object obj to a JSON term */
-    PyObject *newobj;
+    PyObject *transobj, *newobj;
     int rv;
 
-    if (obj == Py_None || obj == Py_True || obj == Py_False) {
-        PyObject *cstr = _encoded_const(obj);
+    /* Transform object, if appropriate */
+    if (s->transformfn != Py_None) {
+        transobj = PyObject_CallFunctionObjArgs(s->transformfn, obj, NULL);
+        if (transobj == NULL) {
+            return -1;
+        }
+    } else {
+        transobj = obj;
+    }
+
+    if (transobj == Py_None || transobj == Py_True || transobj == Py_False) {
+        PyObject *cstr = _encoded_const(transobj);
         if (cstr == NULL)
             return -1;
         return _steal_accumulate(acc, cstr);
     }
-    else if (PyUnicode_Check(obj))
+    else if (PyUnicode_Check(transobj))
     {
-        PyObject *encoded = encoder_encode_string(s, obj);
+        PyObject *encoded = encoder_encode_string(s, transobj);
         if (encoded == NULL)
             return -1;
         return _steal_accumulate(acc, encoded);
     }
-    else if (PyLong_Check(obj)) {
-        PyObject *encoded = PyLong_Type.tp_str(obj);
+    else if (PyLong_Check(transobj)) {
+        PyObject *encoded = PyLong_Type.tp_str(transobj);
         if (encoded == NULL)
             return -1;
         return _steal_accumulate(acc, encoded);
     }
-    else if (PyFloat_Check(obj)) {
-        PyObject *encoded = encoder_encode_float(s, obj);
+    else if (PyFloat_Check(transobj)) {
+        PyObject *encoded = encoder_encode_float(s, transobj);
         if (encoded == NULL)
             return -1;
         return _steal_accumulate(acc, encoded);
     }
-    else if (PyList_Check(obj) || PyTuple_Check(obj)) {
+    else if (PyList_Check(transobj) || PyTuple_Check(transobj)) {
         if (Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
-        rv = encoder_listencode_list(s, acc, obj, indent_level);
+        rv = encoder_listencode_list(s, acc, transobj, indent_level);
         Py_LeaveRecursiveCall();
         return rv;
     }
-    else if (PyDict_Check(obj)) {
+    else if (PyDict_Check(transobj)) {
         if (Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
-        rv = encoder_listencode_dict(s, acc, obj, indent_level);
+        rv = encoder_listencode_dict(s, acc, transobj, indent_level);
         Py_LeaveRecursiveCall();
         return rv;
     }
@@ -1493,7 +1507,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
         PyObject *ident = NULL;
         if (s->markers != Py_None) {
             int has_key;
-            ident = PyLong_FromVoidPtr(obj);
+            ident = PyLong_FromVoidPtr(transobj);
             if (ident == NULL)
                 return -1;
             has_key = PyDict_Contains(s->markers, ident);
@@ -1503,12 +1517,12 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
                 Py_DECREF(ident);
                 return -1;
             }
-            if (PyDict_SetItem(s->markers, ident, obj)) {
+            if (PyDict_SetItem(s->markers, ident, transobj)) {
                 Py_DECREF(ident);
                 return -1;
             }
         }
-        newobj = PyObject_CallFunctionObjArgs(s->defaultfn, obj, NULL);
+        newobj = PyObject_CallFunctionObjArgs(s->defaultfn, transobj, NULL);
         if (newobj == NULL) {
             Py_XDECREF(ident);
             return -1;
@@ -1800,6 +1814,7 @@ encoder_traverse(PyObject *self, visitproc visit, void *arg)
     assert(PyEncoder_Check(self));
     s = (PyEncoderObject *)self;
     Py_VISIT(s->markers);
+    Py_VISIT(s->transformfn);
     Py_VISIT(s->defaultfn);
     Py_VISIT(s->encoder);
     Py_VISIT(s->indent);
@@ -1818,6 +1833,7 @@ encoder_clear(PyObject *self)
     assert(PyEncoder_Check(self));
     s = (PyEncoderObject *)self;
     Py_CLEAR(s->markers);
+    Py_CLEAR(s->transformfn);
     Py_CLEAR(s->defaultfn);
     Py_CLEAR(s->encoder);
     Py_CLEAR(s->indent);
