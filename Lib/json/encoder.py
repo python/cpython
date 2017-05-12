@@ -322,6 +322,10 @@ def _make_iterencode(markers, _transform, _default, _encoder, _indent,
                 first = False
             else:
                 buf = separator
+
+            if _transform is not None:
+                value = _transform(value)
+
             if isinstance(value, str):
                 yield buf + _encoder(value)
             elif value is None:
@@ -404,6 +408,10 @@ def _make_iterencode(markers, _transform, _default, _encoder, _indent,
                 yield item_separator
             yield _encoder(key)
             yield _key_separator
+
+            if _transform is not None:
+                value = _transform(value)
+
             if isinstance(value, str):
                 yield _encoder(value)
             elif value is None:
