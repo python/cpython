@@ -183,8 +183,8 @@ Basic Usage
    If specified, *default* should be a function that gets called for objects that
    can't otherwise be serialized.  It should return a JSON encodable version of
    the object or raise a :exc:`TypeError`.  If not specified, :exc:`TypeError`
-   is raised.  This method is deprecated; an implementation of the transform
-   method should be used, instead.
+   is raised.  This argument is deprecated; an implementation of the transform
+   argument should be used, instead.
 
    .. deprecated:: 3.7
 
