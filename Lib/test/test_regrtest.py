@@ -267,6 +267,8 @@ class ProgramsTestCase(BaseTestCase):
             self.skipTest("Tools/buildbot/test.bat requires PCbuild build, "
                           "found %s" % build_dir)
 
+    @unittest.skipUnless(sysconfig.is_python_build(),
+                         'test.bat script is not installed')
     @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
     def test_tools_buildbot_test(self):
         self.need_pcbuild()

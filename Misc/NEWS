@@ -42,6 +42,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30342: Fix sysconfig.is_python_build() if Python is built with Visual
+  Studio 2008 (VS 9.0).
+
 - bpo-29990: Fix range checking in GB18030 decoder.  Original patch by Ma Lin.
 
 - bpo-30243: Removed the __init__ methods of _json's scanner and encoder.
