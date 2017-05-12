@@ -1,6 +1,7 @@
 """Implementation of JSONEncoder
 """
 import re
+import warnings
 
 try:
     from _json import encode_basestring_ascii as c_encode_basestring_ascii
@@ -94,16 +95,14 @@ class JSONEncoder(object):
     +-------------------+---------------+
 
     To extend this to recognize other objects, subclass and implement a
-    ``.default()`` method with another method that returns a serializable
-    object for ``o`` if possible, otherwise it should call the superclass
-    implementation (to raise ``TypeError``).
-
+    ``.transform()`` method that returns a serializable object for ``o``
+    if possible.
     """
     item_separator = ', '
     key_separator = ': '
     def __init__(self, *, skipkeys=False, ensure_ascii=True,
             check_circular=True, allow_nan=True, sort_keys=False,
-            indent=None, separators=None, default=None):
+            indent=None, separators=None, transform=None, default=None):
         """Constructor for JSONEncoder, with sensible defaults.
 
         If skipkeys is false, then it is a TypeError to attempt
@@ -138,9 +137,15 @@ class JSONEncoder(object):
         (',', ': ') otherwise.  To get the most compact JSON representation,
         you should specify (',', ':') to eliminate whitespace.
 
+        If specified, transform is a function that gets called on objects to
+        transform them into something that is serializable.  It should return
+        a JSON encodable version of the object, passing-through anything it
+        can't match against in its original, untransformed state.
+
         If specified, default is a function that gets called for objects
         that can't otherwise be serialized.  It should return a JSON encodable
-        version of the object or raise a ``TypeError``.
+        version of the object or raise a ``TypeError``. Note that this method
+        is deprecated and the ``transform`` argument should be used instead.
 
         """
 
@@ -154,27 +159,41 @@ class JSONEncoder(object):
             self.item_separator, self.key_separator = separators
         elif indent is not None:
             self.item_separator = ','
+        if transform is not None:
+            self.transform = transform
         if default is not None:
+            warnings.warn("default is deprecated; use transform, instead", DeprecationWarning)
             self.default = default
 
-    def default(self, o):
-        """Implement this method in a subclass such that it returns
-        a serializable object for ``o``, or calls the base implementation
-        (to raise a ``TypeError``).
+    def transform(self, o):
+        """Implement this method in a subclass such that it returns a
+        JSON serializable version of ``o``, whenever possible, or
+        otherwise pass-through the original input.
 
-        For example, to support arbitrary iterators, you could
-        implement default like this::
+        For example, to support arbitrary iterators, you could implement
+        transform like this::
 
-            def default(self, o):
+            def transform(self, o):
                 try:
                     iterable = iter(o)
                 except TypeError:
                     pass
                 else:
                     return list(iterable)
-                # Let the base class default method raise the TypeError
-                return JSONEncoder.default(self, o)
 
+                # Pass-through everything else
+                return o
+
+        """
+        return o
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+
+        This method is deprecated; an implementation of the transform
+        method should be used, instead.
         """
         raise TypeError("Object of type '%s' is not JSON serializable" %
                         o.__class__.__name__)
@@ -246,18 +265,20 @@ class JSONEncoder(object):
         if (_one_shot and c_make_encoder is not None
                 and self.indent is None):
             _iterencode = c_make_encoder(
-                markers, self.default, _encoder, self.indent,
-                self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, self.allow_nan)
+                markers, self.transform, self.default, _encoder,
+                self.indent, self.key_separator, self.item_separator,
+                self.sort_keys, self.skipkeys, self.allow_nan)
         else:
             _iterencode = _make_iterencode(
-                markers, self.default, _encoder, self.indent, floatstr,
-                self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, _one_shot)
+                markers, self.transform, self.default, _encoder,
+                self.indent, floatstr, self.key_separator,
+                self.item_separator, self.sort_keys, self.skipkeys,
+                _one_shot)
         return _iterencode(o, 0)
 
-def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
-        _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
+def _make_iterencode(markers, _transform, _default, _encoder, _indent,
+        _floatstr, _key_separator, _item_separator, _sort_keys,
+        _skipkeys, _one_shot,
         ## HACK: hand-optimized bytecode; turn globals into locals
         ValueError=ValueError,
         dict=dict,
@@ -270,6 +291,9 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         tuple=tuple,
         _intstr=int.__str__,
     ):
+
+    if _default is not None:
+        warnings.warn("default is deprecated; use transform, instead", DeprecationWarning)
 
     if _indent is not None and not isinstance(_indent, str):
         _indent = ' ' * _indent
@@ -410,6 +434,9 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             del markers[markerid]
 
     def _iterencode(o, _current_indent_level):
+        if _transform is not None:
+            o = _transform(o)
+
         if isinstance(o, str):
             yield _encoder(o)
         elif o is None:
@@ -434,8 +461,13 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 if markerid in markers:
                     raise ValueError("Circular reference detected")
                 markers[markerid] = o
+
+            # Deprecated: In future, this should just raise a TypeError
+            # and remove the call to _default, rather than it being the
+            # responsibility of the subclass
             o = _default(o)
             yield from _iterencode(o, _current_indent_level)
+
             if markers is not None:
                 del markers[markerid]
     return _iterencode

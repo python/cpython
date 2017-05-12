@@ -177,7 +177,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     else:
         if cls is None:
             cls = JSONEncoder
-        if default:
+        if default is not None:
             warnings.warn("default is deprecated; use transform, instead", DeprecationWarning)
         iterable = cls(skipkeys=skipkeys, ensure_ascii=ensure_ascii,
             check_circular=check_circular, allow_nan=allow_nan, indent=indent,
@@ -245,7 +245,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         return _default_encoder.encode(obj)
     if cls is None:
         cls = JSONEncoder
-    if default:
+    if default is not None:
         warnings.warn("default is deprecated; use transform, instead", DeprecationWarning)
     return cls(
         skipkeys=skipkeys, ensure_ascii=ensure_ascii,
