@@ -1123,6 +1123,14 @@ PyObject *_ctypes_callproc(PPROC pProc,
                 goto cleanup; /* leaking ? */
             }
         }
+#if defined(__x86_64__) && (defined(__MINGW64__) || defined(__CYGWIN__))
+        void *tmp;
+        if (pa->ffi_type->type == FFI_TYPE_STRUCT) {
+            tmp = alloca(pa->ffi_type->size);
+            memcpy(tmp, pa->value.p, pa->ffi_type->size);
+            pa->value.p = tmp;
+        }
+#endif
     }
 
     rtype = _ctypes_get_ffi_type(restype);
