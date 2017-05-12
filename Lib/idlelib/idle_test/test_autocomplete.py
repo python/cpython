@@ -2,7 +2,9 @@
 
 Coverage of autocomple: 56%
 '''
+import os
 import unittest
+from unittest.mock import Mock, patch
 from test.support import requires
 from tkinter import Tk, Text
 
@@ -118,18 +120,55 @@ class AutoCompleteTest(unittest.TestCase):
 
     def test_open_completions_later(self):
         # Test that autocomplete._delayed_completion_id is set
-        pass
+
+        # Test complete attrubites
+        self.autocomplete._delayed_completion_id = None
+        self.autocomplete._open_completions_later(False, False, False, ac.COMPLETE_ATTRIBUTES)
+        self.assertTrue(self.autocomplete._delayed_completion_id)
+
+        # Test complete files
+        self.autocomplete._delayed_completion_id = None
+        self.autocomplete._open_completions_later(False, False, False, ac.COMPLETE_FILES)
+        self.assertTrue(self.autocomplete._delayed_completion_id)
 
     def test_delayed_open_completions(self):
         # Test that autocomplete._delayed_completion_id set to None and that
         # open_completions only called if insertion index is the same as
         # _delayed_completion_index
-        pass
+
+        # Test complete attrubites
+        self.autocomplete._delayed_completion_id = None
+        self.autocomplete._open_completions_later(False, False, False, ac.COMPLETE_ATTRIBUTES)
+        self.assertTrue(self.autocomplete._delayed_completion_id)
+        self.autocomplete._delayed_open_completions(False, False, False, ac.COMPLETE_ATTRIBUTES)
+        self.assertIsNone(self.autocomplete._delayed_completion_id)
+
+        # Test complete files
+        self.autocomplete._delayed_completion_id = None
+        self.autocomplete._open_completions_later(False, False, False, ac.COMPLETE_FILES)
+        self.assertTrue(self.autocomplete._delayed_completion_id)
+        self.autocomplete._delayed_open_completions(False, False, False, ac.COMPLETE_FILES)
+        self.assertIsNone(self.autocomplete._delayed_completion_id)
 
     def test_open_completions(self):
         # Test completions of files and attributes as well as non-completion
         # of errors
-        pass
+        self.text.insert('1.0', 'pr')
+        self.assertTrue(self.autocomplete.open_completions(False, True, True))
+        self.text.delete('1.0', 'end')
+
+        # Test files
+        self.text.insert('1.0', '"t')
+        self.assertTrue(self.autocomplete.open_completions(False, True, True))
+        self.text.delete('1.0', 'end')
+
+        # Test with blank will failed
+        self.assertFalse(self.autocomplete.open_completions(False, True, True))
+
+        # Test with only string quote will failed
+        self.text.insert('1.0', '"')
+        self.assertFalse(self.autocomplete.open_completions(False, True, True))
+        self.text.delete('1.0', 'end')
 
     def test_fetch_completions(self):
         # Test that fetch_completions returns 2 lists:
@@ -137,12 +176,66 @@ class AutoCompleteTest(unittest.TestCase):
         # a small list containing non-private variables.
         # For file completion, a large list containing all files in the path,
         # and a small list containing files that do not start with '.'
-        pass
+        autocomplete = self.autocomplete
+
+        # Test attributes
+        s, b = autocomplete.fetch_completions('', ac.COMPLETE_ATTRIBUTES)
+        self.assertTrue(all(filter(lambda x: x.startswith('_'), s)))
+        self.assertTrue(any(filter(lambda x: x.startswith('_'), b)))
+
+        # Test smalll should respect to __all__
+        with patch.dict('__main__.__dict__', {'__all__': ['a', 'b']}):
+            s, b = autocomplete.fetch_completions('', ac.COMPLETE_ATTRIBUTES)
+            self.assertEqual(s, ['a', 'b'])
+            self.assertIn('__name__', b)    # From __main__.__dict__
+            self.assertIn('sum', b)         # From __main__.__builtins__.__dict__
+
+        # Test attributes with name entity
+        mock = Mock()
+        mock._private = Mock()
+        with patch.dict('__main__.__dict__', {'foo': mock}):
+            s, b = autocomplete.fetch_completions('foo', ac.COMPLETE_ATTRIBUTES)
+            self.assertNotIn('_private', s)
+            self.assertIn('_private', b)
+            self.assertEqual(s, [i for i in sorted(dir(mock)) if i[:1] != '_'])
+            self.assertEqual(b, sorted(dir(mock)))
+
+        # Test files
+        def _listdir(path):
+            # This will be patch and used in fetch_completions
+            if path == '.':
+                return ['foo', 'bar', '.hidden']
+            return ['monty', 'python', '.hidden']
+
+        with patch.object(os, 'listdir', _listdir):
+            s, b = autocomplete.fetch_completions('', ac.COMPLETE_FILES)
+            self.assertEqual(s, ['bar', 'foo'])
+            self.assertEqual(b, ['.hidden', 'bar', 'foo'])
+
+            s, b = autocomplete.fetch_completions('~', ac.COMPLETE_FILES)
+            self.assertEqual(s, ['monty', 'python'])
+            self.assertEqual(b, ['.hidden', 'monty', 'python'])
 
     def test_get_entity(self):
         # Test that a name is in the namespace of sys.modules and
         # __main__.__dict__
-        pass
+        autocomplete = self.autocomplete
+        Equal = self.assertEqual
+
+        # Test name from sys.modules
+        mock = Mock()
+        with patch.dict('sys.modules', {'tempfile': mock}):
+            Equal(autocomplete.get_entity('tempfile'), mock)
+
+        # Test name from __main__.__dict__
+        di = {'foo': 10, 'bar': 20}
+        with patch.dict('__main__.__dict__', {'d': di}):
+            Equal(autocomplete.get_entity('d'), di)
+
+        # Test name not in namespace
+        with patch.dict('__main__.__dict__', {}):
+            with self.assertRaises(NameError):
+                autocomplete.get_entity('not_exist')
 
 
 if __name__ == '__main__':
