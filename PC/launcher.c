@@ -1064,12 +1064,12 @@ validate_version(wchar_t * p)
       3.6-64
       3-64
     */
-    BOOL result = p != NULL; /* Default to false if null pointer. */
+    BOOL result = (p != NULL); /* Default to False if null pointer. */
 
     result = result && iswdigit(*p);  /* Result = False if fist string element is not a digit. */
 
-    while (result && iswdigit(*p))   /* Require a major version */{
-        ++p;  /* Skip leading digit(s) */}
+    while (result && iswdigit(*p))   /* Require a major version */
+        ++p;  /* Skip all leading digit(s) */
     if (result && (*p == L'.'))     /* Allow . for major minor separator.*/
     {
         result = iswdigit(*++p);     /* Must be at least one digit */
