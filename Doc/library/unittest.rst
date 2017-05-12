@@ -1168,6 +1168,8 @@ Test cases
       .. versionchanged:: 3.2
          The method ``assertRegexpMatches()`` has been renamed to
          :meth:`.assertRegex`.
+      .. versionadded:: 3.2
+         :meth:`.assertNotRegex`.
       .. versionadded:: 3.5
          The name ``assertNotRegexpMatches`` as a deprecated alias
          for :meth:`.assertNotRegex`.
