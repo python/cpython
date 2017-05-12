@@ -1357,8 +1357,6 @@ tok_decimal_tail(struct tok_state *tok)
     return c;
 }
 
-/* Get next token, after space stripping etc. */
-
 static int
 tok_get(struct tok_state *tok, char **p_start, char **p_end)
 {
@@ -1373,8 +1371,10 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     /* Get indentation level */
     if (tok->atbol) {
         int col = 0;
-        int altcol = 0;
+        int altcol = 0; /* Checking for inconsistent tab usage */
         tok->atbol = 0;
+
+        /* Counting col and altcol */
         for (;;) {
             c = tok_nextc(tok);
             if (c == ' ') {
@@ -1393,6 +1393,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             }
         }
         tok_backup(tok, c);
+
         if (c == '#' || c == '\n') {
             /* Lines with only whitespace and/or comments
                shouldn't affect the indentation and are
@@ -1893,6 +1894,14 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     return PyToken_OneChar(c);
 }
 
+/*
+ * PyTokenizer_Get - Get next token, after space stripping etc.
+ * @tok: a tok_state which intent to get next token
+ * @p_start: start position of the token to update
+ * @p_end: end position of the token to update
+ *
+ * Return: (int)token type, define from Include/token.h
+ */
 int
 PyTokenizer_Get(struct tok_state *tok, char **p_start, char **p_end)
 {
