@@ -320,6 +320,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30347: Fixed a crash in itertools.groupby() when use the grouper iterator
+  in the key function.
+
 - bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
   running coroutine and the coroutine returned without any more ``await``.
 
