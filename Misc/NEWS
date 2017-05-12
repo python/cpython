@@ -151,6 +151,12 @@ Documentation
 
 - bpo-26985: Add missing info of code object in inspect documentation.
 
+Tools/Demos
+-----------
+
+- Issue #29367: python-gdb.py now supports also ``method-wrapper``
+  (``wrapperobject``) objects.
+
 Tests
 -----
 
