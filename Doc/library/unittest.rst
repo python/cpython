@@ -1164,10 +1164,13 @@ Test cases
       expression suitable for use by :func:`re.search`.
 
       .. versionadded:: 3.1
-         under the names ``assertRegexpMatches`` and ``assertNotRegexpMatches``.
+         under the name ``assertRegexpMatches``.
       .. versionchanged:: 3.2
-         The methods ``assertRegexpMatches()`` and ``assertNotRegexpMatches``
-         have been renamed to :meth:`.assertRegex` and :meth:`.assertNotRegex`.
+         The method ``assertRegexpMatches()`` has been renamed to
+         :meth:`.assertRegex`.
+      .. versionadded:: 3.5
+         The name ``assertNotRegexpMatches`` as a deprecated alias
+         for :meth:`.assertNotRegex`.
 
 
    .. method:: assertCountEqual(first, second, msg=None)
@@ -1453,10 +1456,10 @@ along with their deprecated aliases:
    .. deprecated:: 3.2
          the assert* aliases listed in the third column.
    .. deprecated:: 3.2
-         ``assertRegexpMatches``, ``assertNotRegexpMatches`` and
-         ``assertRaisesRegexp`` have been renamed to :meth:`.assertRegex`,
-         :meth:`.assertNotRegex` and :meth:`.assertRaisesRegex`.
-
+         ``assertRegexpMatches`` and ``assertRaisesRegexp`` have been renamed to
+         :meth:`.assertRegex` and :meth:`.assertRaisesRegex`.
+   .. deprecated:: 3.5
+         the ``assertNotRegexpMatches`` name in favor of :meth:`.assertNotRegex`.
 
 .. _testsuite-objects:
 
