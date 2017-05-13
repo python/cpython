@@ -397,6 +397,14 @@ class RegressionTests(unittest.TestCase):
         del ref
         support.gc_collect()
 
+    def CheckCacheDeprecationWarning(self):
+        with self.assertWarns(DeprecationWarning):
+            sqlite.Cache(int)
+
+    def CheckStatementDeprecationWarning(self):
+        with self.assertWarns(DeprecationWarning):
+            sqlite.Statement()
+
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
