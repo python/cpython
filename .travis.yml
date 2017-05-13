@@ -26,8 +26,8 @@ matrix:
       python: 2.7
       env:
         - TESTING=docs
-      before_script:
-        - pip install -U Sphinx
+      install:
+        - Sphinx
       script:
         - make check suspicious html SPHINXOPTS="-q -W"
 
