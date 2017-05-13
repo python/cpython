@@ -752,6 +752,16 @@ class _TestQueue(BaseTestCase):
         # Windows (usually 15.6 ms)
         self.assertGreaterEqual(delta, 0.170)
 
+    def test_queue_feder_donot_stop_onexc(self):
+        class NotSerializable(object):
+            def __reduce__(self):
+                raise AttributeError
+        with test.support.captured_stderr():
+            q = multiprocessing.Queue()
+            q.put(NotSerializable())
+            q.put(True)
+            self.assertTrue(q.get(timeout=0.1))
+
 #
 #
 #
