@@ -237,7 +237,7 @@ _io_TextIOWrapper_read(textio *self, PyObject **args, Py_ssize_t nargs, PyObject
     Py_ssize_t n = -1;
 
     if (!_PyArg_ParseStack(args, nargs, "|O&:read",
-        _PyIO_ConvertSsize_t, &n)) {
+        _Py_convert_optional_to_ssize_t, &n)) {
         goto exit;
     }
 
@@ -480,4 +480,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=67eba50449900a96 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8e5c21c88c7c70bc input=a9049054013a1b77]*/

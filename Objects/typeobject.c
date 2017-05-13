@@ -128,7 +128,7 @@ skip_signature(const char *doc)
     return NULL;
 }
 
-#ifdef Py_DEBUG
+#ifndef NDEBUG
 static int
 _PyType_CheckConsistency(PyTypeObject *type)
 {
@@ -4022,7 +4022,7 @@ _PyObject_GetState(PyObject *obj, int required)
             if (obj->ob_type->tp_weaklistoffset)
                 basicsize += sizeof(PyObject *);
             if (slotnames != Py_None)
-                basicsize += sizeof(PyObject *) * Py_SIZE(slotnames);
+                basicsize += sizeof(PyObject *) * PyList_GET_SIZE(slotnames);
             if (obj->ob_type->tp_basicsize > basicsize) {
                 Py_DECREF(slotnames);
                 Py_DECREF(state);
@@ -4033,7 +4033,7 @@ _PyObject_GetState(PyObject *obj, int required)
             }
         }
 
-        if (slotnames != Py_None && Py_SIZE(slotnames) > 0) {
+        if (slotnames != Py_None && PyList_GET_SIZE(slotnames) > 0) {
             PyObject *slots;
             Py_ssize_t slotnames_size, i;
 
@@ -4044,7 +4044,7 @@ _PyObject_GetState(PyObject *obj, int required)
                 return NULL;
             }
 
-            slotnames_size = Py_SIZE(slotnames);
+            slotnames_size = PyList_GET_SIZE(slotnames);
             for (i = 0; i < slotnames_size; i++) {
                 PyObject *name, *value;
 
@@ -4070,7 +4070,7 @@ _PyObject_GetState(PyObject *obj, int required)
 
                 /* The list is stored on the class so it may mutate while we
                    iterate over it */
-                if (slotnames_size != Py_SIZE(slotnames)) {
+                if (slotnames_size != PyList_GET_SIZE(slotnames)) {
                     PyErr_Format(PyExc_RuntimeError,
                                  "__slotsname__ changed size during iteration");
                     goto error;
@@ -4142,10 +4142,10 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
             Py_DECREF(newargs);
             return -1;
         }
-        if (Py_SIZE(newargs) != 2) {
+        if (PyTuple_GET_SIZE(newargs) != 2) {
             PyErr_Format(PyExc_ValueError,
                          "__getnewargs_ex__ should return a tuple of "
-                         "length 2, not %zd", Py_SIZE(newargs));
+                         "length 2, not %zd", PyTuple_GET_SIZE(newargs));
             Py_DECREF(newargs);
             return -1;
         }
@@ -4393,23 +4393,20 @@ _common_reduce(PyObject *self, int proto)
 /*[clinic input]
 object.__reduce__
 
-  protocol: int = 0
-  /
-
 Helper for pickle.
 [clinic start generated code]*/
 
 static PyObject *
-object___reduce___impl(PyObject *self, int protocol)
-/*[clinic end generated code: output=5572e699c467dd5b input=227f37ed68bd938a]*/
+object___reduce___impl(PyObject *self)
+/*[clinic end generated code: output=d4ca691f891c6e2f input=11562e663947e18b]*/
 {
-    return _common_reduce(self, protocol);
+    return _common_reduce(self, 0);
 }
 
 /*[clinic input]
 object.__reduce_ex__
 
-  protocol: int = 0
+  protocol: int
   /
 
 Helper for pickle.
@@ -4417,7 +4414,7 @@ Helper for pickle.
 
 static PyObject *
 object___reduce_ex___impl(PyObject *self, int protocol)
-/*[clinic end generated code: output=2e157766f6b50094 input=8dd6a9602a12749e]*/
+/*[clinic end generated code: output=2e157766f6b50094 input=f326b43fb8a4c5ff]*/
 {
     static PyObject *objreduce;
     PyObject *reduce, *res;
@@ -5422,8 +5419,10 @@ getindex(PyObject *self, PyObject *arg)
         PySequenceMethods *sq = Py_TYPE(self)->tp_as_sequence;
         if (sq && sq->sq_length) {
             Py_ssize_t n = (*sq->sq_length)(self);
-            if (n < 0)
+            if (n < 0) {
+                assert(PyErr_Occurred());
                 return -1;
+            }
             i += n;
         }
     }
@@ -5917,14 +5916,22 @@ slot_sq_length(PyObject *self)
 
     if (res == NULL)
         return -1;
-    len = PyNumber_AsSsize_t(res, PyExc_OverflowError);
-    Py_DECREF(res);
-    if (len < 0) {
-        if (!PyErr_Occurred())
-            PyErr_SetString(PyExc_ValueError,
-                            "__len__() should return >= 0");
+
+    Py_SETREF(res, PyNumber_Index(res));
+    if (res == NULL)
+        return -1;
+
+    assert(PyLong_Check(res));
+    if (Py_SIZE(res) < 0) {
+        Py_DECREF(res);
+        PyErr_SetString(PyExc_ValueError,
+                        "__len__() should return >= 0");
         return -1;
     }
+
+    len = PyNumber_AsSsize_t(res, PyExc_OverflowError);
+    assert(len >= 0 || PyErr_ExceptionMatches(PyExc_OverflowError));
+    Py_DECREF(res);
     return len;
 }
 

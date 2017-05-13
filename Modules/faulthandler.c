@@ -55,6 +55,9 @@ static struct {
     int fd;
     int all_threads;
     PyInterpreterState *interp;
+#ifdef MS_WINDOWS
+    void *exc_handler;
+#endif
 } fatal_error = {0, NULL, -1, 0};
 
 #ifdef FAULTHANDLER_LATER
@@ -124,6 +127,7 @@ static const size_t faulthandler_nsignals = \
 
 #ifdef HAVE_SIGALTSTACK
 static stack_t stack;
+static stack_t old_stack;
 #endif
 
 
@@ -394,8 +398,7 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
 
     if (code == EXCEPTION_ACCESS_VIOLATION) {
         /* disable signal handler for SIGSEGV */
-        size_t i;
-        for (i=0; i < faulthandler_nsignals; i++) {
+        for (size_t i=0; i < faulthandler_nsignals; i++) {
             fault_handler_t *handler = &faulthandler_handlers[i];
             if (handler->signum == SIGSEGV) {
                 faulthandler_disable_fatal_handler(handler);
@@ -417,14 +420,12 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
 static int
 faulthandler_enable(void)
 {
-    size_t i;
-
     if (fatal_error.enabled) {
         return 0;
     }
     fatal_error.enabled = 1;
 
-    for (i=0; i < faulthandler_nsignals; i++) {
+    for (size_t i=0; i < faulthandler_nsignals; i++) {
         fault_handler_t *handler;
 #ifdef HAVE_SIGACTION
         struct sigaction action;
@@ -461,7 +462,8 @@ faulthandler_enable(void)
     }
 
 #ifdef MS_WINDOWS
-    AddVectoredExceptionHandler(1, faulthandler_exc_handler);
+    assert(fatal_error.exc_handler == NULL);
+    fatal_error.exc_handler = AddVectoredExceptionHandler(1, faulthandler_exc_handler);
 #endif
     return 0;
 }
@@ -503,17 +505,20 @@ faulthandler_py_enable(PyObject *self, PyObject *args, PyObject *kwargs)
 static void
 faulthandler_disable(void)
 {
-    unsigned int i;
-    fault_handler_t *handler;
-
     if (fatal_error.enabled) {
         fatal_error.enabled = 0;
-        for (i=0; i < faulthandler_nsignals; i++) {
+        for (size_t i=0; i < faulthandler_nsignals; i++) {
+            fault_handler_t *handler;
             handler = &faulthandler_handlers[i];
             faulthandler_disable_fatal_handler(handler);
         }
     }
-
+#ifdef MS_WINDOWS
+    if (fatal_error.exc_handler != NULL) {
+        RemoveVectoredExceptionHandler(fatal_error.exc_handler);
+        fatal_error.exc_handler = NULL;
+    }
+#endif
     Py_CLEAR(fatal_error.file);
 }
 
@@ -678,7 +683,7 @@ faulthandler_dump_traceback_later(PyObject *self,
     /* Arm these locks to serve as events when released */
     PyThread_acquire_lock(thread.running, 1);
 
-    if (PyThread_start_new_thread(faulthandler_thread, NULL) == -1) {
+    if (PyThread_start_new_thread(faulthandler_thread, NULL) == PYTHREAD_INVALID_THREAD_ID) {
         PyThread_release_lock(thread.running);
         Py_CLEAR(thread.file);
         PyMem_Free(header);
@@ -776,9 +781,7 @@ faulthandler_user(int signum)
 static int
 check_signum(int signum)
 {
-    unsigned int i;
-
-    for (i=0; i < faulthandler_nsignals; i++) {
+    for (size_t i=0; i < faulthandler_nsignals; i++) {
         if (faulthandler_handlers[i].signum == signum) {
             PyErr_Format(PyExc_RuntimeError,
                          "signal %i cannot be registered, "
@@ -1121,16 +1124,12 @@ faulthandler_stack_overflow(PyObject *self)
 static int
 faulthandler_traverse(PyObject *module, visitproc visit, void *arg)
 {
-#ifdef FAULTHANDLER_USER
-    unsigned int signum;
-#endif
-
 #ifdef FAULTHANDLER_LATER
     Py_VISIT(thread.file);
 #endif
 #ifdef FAULTHANDLER_USER
     if (user_signals != NULL) {
-        for (signum=0; signum < NSIG; signum++)
+        for (size_t signum=0; signum < NSIG; signum++)
             Py_VISIT(user_signals[signum].file);
     }
 #endif
@@ -1317,7 +1316,7 @@ int _PyFaulthandler_Init(void)
     stack.ss_size = SIGSTKSZ;
     stack.ss_sp = PyMem_Malloc(stack.ss_size);
     if (stack.ss_sp != NULL) {
-        err = sigaltstack(&stack, NULL);
+        err = sigaltstack(&stack, &old_stack);
         if (err) {
             PyMem_Free(stack.ss_sp);
             stack.ss_sp = NULL;
@@ -1341,10 +1340,6 @@ int _PyFaulthandler_Init(void)
 
 void _PyFaulthandler_Fini(void)
 {
-#ifdef FAULTHANDLER_USER
-    unsigned int signum;
-#endif
-
 #ifdef FAULTHANDLER_LATER
     /* later */
     if (thread.cancel_event) {
@@ -1362,8 +1357,9 @@ void _PyFaulthandler_Fini(void)
 #ifdef FAULTHANDLER_USER
     /* user */
     if (user_signals != NULL) {
-        for (signum=0; signum < NSIG; signum++)
+        for (size_t signum=0; signum < NSIG; signum++) {
             faulthandler_unregister(&user_signals[signum], signum);
+        }
         PyMem_Free(user_signals);
         user_signals = NULL;
     }
@@ -1373,6 +1369,20 @@ void _PyFaulthandler_Fini(void)
     faulthandler_disable();
 #ifdef HAVE_SIGALTSTACK
     if (stack.ss_sp != NULL) {
+        /* Fetch the current alt stack */
+        stack_t current_stack;
+        if (sigaltstack(NULL, &current_stack) == 0) {
+            if (current_stack.ss_sp == stack.ss_sp) {
+                /* The current alt stack is the one that we installed.
+                 It is safe to restore the old stack that we found when
+                 we installed ours */
+                sigaltstack(&old_stack, NULL);
+            } else {
+                /* Someone switched to a different alt stack and didn't
+                   restore ours when they were done (if they're done).
+                   There's not much we can do in this unlikely case */
+            }
+        }
         PyMem_Free(stack.ss_sp);
         stack.ss_sp = NULL;
     }

@@ -1378,7 +1378,7 @@ Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
 
     else if (!(PyTuple_Check(args) || PyList_Check(args))) {
         objv[0] = AsObj(args);
-        if (objv[0] == 0)
+        if (objv[0] == NULL)
             goto finally;
         objc = 1;
         Tcl_IncrRefCount(objv[0]);

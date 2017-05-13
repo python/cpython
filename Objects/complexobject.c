@@ -274,7 +274,8 @@ PyComplex_ImagAsDouble(PyObject *op)
 }
 
 static PyObject *
-try_complex_special_method(PyObject *op) {
+try_complex_special_method(PyObject *op)
+{
     PyObject *f;
     _Py_IDENTIFIER(__complex__);
 
@@ -282,9 +283,22 @@ try_complex_special_method(PyObject *op) {
     if (f) {
         PyObject *res = _PyObject_CallNoArg(f);
         Py_DECREF(f);
-        if (res != NULL && !PyComplex_Check(res)) {
-            PyErr_SetString(PyExc_TypeError,
-                "__complex__ should return a complex object");
+        if (!res || PyComplex_CheckExact(res)) {
+            return res;
+        }
+        if (!PyComplex_Check(res)) {
+            PyErr_Format(PyExc_TypeError,
+                "__complex__ returned non-complex (type %.200s)",
+                res->ob_type->tp_name);
+            Py_DECREF(res);
+            return NULL;
+        }
+        /* Issue #29894: warn if 'res' not of exact type complex. */
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "__complex__ returned non-complex (type %.200s).  "
+                "The ability to return an instance of a strict subclass of complex "
+                "is deprecated, and may be removed in a future version of Python.",
+                res->ob_type->tp_name)) {
             Py_DECREF(res);
             return NULL;
         }
@@ -922,7 +936,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 /*[clinic input]
 @classmethod
 complex.__new__ as complex_new
-    real as r: object(c_default="Py_False") = 0
+    real as r: object(c_default="_PyLong_Zero") = 0
     imag as i: object(c_default="NULL") = 0
 
 Create a complex number from a real part and an optional imaginary part.
@@ -932,7 +946,7 @@ This is equivalent to (real + imag*1j) where imag defaults to 0.
 
 static PyObject *
 complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
-/*[clinic end generated code: output=b6c7dd577b537dc1 input=e3d6b77ddcf280da]*/
+/*[clinic end generated code: output=b6c7dd577b537dc1 input=6f6b0bedba29bcb5]*/
 {
     PyObject *tmp;
     PyNumberMethods *nbr, *nbi = NULL;
@@ -1030,12 +1044,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         }
         if (tmp == NULL)
             return NULL;
-        if (!PyFloat_Check(tmp)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "float(r) didn't return a float");
-            Py_DECREF(tmp);
-            return NULL;
-        }
+        assert(PyFloat_Check(tmp));
         cr.real = PyFloat_AsDouble(tmp);
         cr.imag = 0.0;
         Py_DECREF(tmp);

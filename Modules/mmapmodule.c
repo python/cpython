@@ -240,29 +240,6 @@ mmap_read_line_method(mmap_object *self,
     return result;
 }
 
-/* Basically the "n" format code with the ability to turn None into -1. */
-static int
-mmap_convert_ssize_t(PyObject *obj, void *result) {
-    Py_ssize_t limit;
-    if (obj == Py_None) {
-        limit = -1;
-    }
-    else if (PyIndex_Check(obj)) {
-        limit = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
-        if (limit == -1 && PyErr_Occurred()) {
-            return 0;
-        }
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "argument should be integer or None, not '%.200s'",
-                     Py_TYPE(obj)->tp_name);
-        return 0;
-    }
-    *((Py_ssize_t *)result) = limit;
-    return 1;
-}
-
 static PyObject *
 mmap_read_method(mmap_object *self,
                  PyObject *args)
@@ -271,7 +248,7 @@ mmap_read_method(mmap_object *self,
     PyObject *result;
 
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "|O&:read", mmap_convert_ssize_t, &num_bytes))
+    if (!PyArg_ParseTuple(args, "|O&:read", _Py_convert_optional_to_ssize_t, &num_bytes))
         return(NULL);
 
     /* silently 'adjust' out-of-range requests */
@@ -801,10 +778,10 @@ mmap_subscript(mmap_object *self, PyObject *item)
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen;
 
-        if (PySlice_GetIndicesEx(item, self->size,
-                         &start, &stop, &step, &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelen = PySlice_AdjustIndices(self->size, &start, &stop, step);
 
         if (slicelen <= 0)
             return PyBytes_FromStringAndSize("", 0);
@@ -927,11 +904,10 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
         Py_ssize_t start, stop, step, slicelen;
         Py_buffer vbuf;
 
-        if (PySlice_GetIndicesEx(item,
-                                 self->size, &start, &stop,
-                                 &step, &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
+        slicelen = PySlice_AdjustIndices(self->size, &start, &stop, step);
         if (value == NULL) {
             PyErr_SetString(PyExc_TypeError,
                 "mmap object doesn't support slice deletion");
