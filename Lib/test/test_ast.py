@@ -6,6 +6,8 @@ import unittest
 import weakref
 
 from test import support
+from test.support import findfile
+
 
 def to_tuple(t):
     if t is None or isinstance(t, (str, int, complex)):
@@ -430,6 +432,80 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             compile(empty_yield_from, "<test>", "exec")
         self.assertIn("field value is required", str(cm.exception))
+
+
+class ASTCompareTest(unittest.TestCase):
+    def setUp(self):
+        import imp
+        imp.reload(ast)
+
+    def test_normal_compare(self):
+        self.assertEqual(ast.parse('x = 10'), ast.parse('x = 10'))
+        self.assertNotEqual(ast.parse('x = 10'), ast.parse(''))
+        self.assertNotEqual(ast.parse('x = 10'), ast.parse('x'))
+        self.assertNotEqual(ast.parse('x = 10;y = 20'), ast.parse('class C:pass'))
+
+    def test_literals_compare(self):
+        self.assertEqual(ast.Num(), ast.Num())
+        self.assertEqual(ast.Num(-20), ast.Num(-20))
+        self.assertEqual(ast.Num(10), ast.Num(10))
+        self.assertEqual(ast.Num(2048), ast.Num(2048))
+        self.assertEqual(ast.Str(), ast.Str())
+        self.assertEqual(ast.Str("ABCD"), ast.Str("ABCD"))
+        self.assertEqual(ast.Str("中文字"), ast.Str("中文字"))
+
+        self.assertNotEqual(ast.Num(10), ast.Num(20))
+        self.assertNotEqual(ast.Num(-10), ast.Num(10))
+        self.assertNotEqual(ast.Str("AAAA"), ast.Str("BBBB"))
+        self.assertNotEqual(ast.Str("一二三"), ast.Str("中文字"))
+
+        self.assertNotEqual(ast.Num(10), ast.Num())
+        self.assertNotEqual(ast.Str("AB"), ast.Str())
+
+    def test_operator_compare(self):
+        self.assertEqual(ast.Add(), ast.Add())
+        self.assertEqual(ast.Sub(), ast.Sub())
+
+        self.assertNotEqual(ast.Add(), ast.Sub())
+        self.assertNotEqual(ast.Add(), ast.Num())
+
+    def test_complex_ast(self):
+        fps = [findfile('test_asyncgen.py'),
+               findfile('test_generators.py'),
+               findfile('test_unicode.py')]
+
+        for fp in fps:
+            with open(fp) as f:
+                try:
+                    source = f.read()
+                except UnicodeDecodeError:
+                    continue
+
+            a = ast.parse(source)
+            b = ast.parse(source)
+            self.assertEqual(a, b, "%s != %s" % (ast.dump(a), ast.dump(b)))
+            self.assertFalse(a != b)
+
+    def test_exec_compare(self):
+        for source in exec_tests:
+            a = ast.parse(source, mode='exec')
+            b = ast.parse(source, mode='exec')
+            self.assertEqual(a, b, "%s != %s" % (ast.dump(a), ast.dump(b)))
+            self.assertFalse(a != b)
+
+    def test_single_compare(self):
+        for source in single_tests:
+            a = ast.parse(source, mode='single')
+            b = ast.parse(source, mode='single')
+            self.assertEqual(a, b, "%s != %s" % (ast.dump(a), ast.dump(b)))
+            self.assertFalse(a != b)
+
+    def test_eval_compare(self):
+        for source in eval_tests:
+            a = ast.parse(source, mode='eval')
+            b = ast.parse(source, mode='eval')
+            self.assertEqual(a, b, "%s != %s" % (ast.dump(a), ast.dump(b)))
+            self.assertFalse(a != b)
 
 
 class ASTHelpers_Test(unittest.TestCase):

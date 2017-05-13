@@ -607,6 +607,63 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     return Py_BuildValue("O()", Py_TYPE(self));
 }
 
+static PyObject *
+ast_richcompare(PyObject *self, PyObject *other, int op)
+{
+    int i, len;
+    PyObject *fields, *key, *a = Py_None, *b = Py_None;
+
+    /* Check operator */
+    if ((op != Py_EQ && op != Py_NE) ||
+         !PyAST_Check(self) ||
+         !PyAST_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    /* Compare types */
+    if (Py_TYPE(self) != Py_TYPE(other)) {
+        if (op == Py_EQ)
+            Py_RETURN_FALSE;
+        else
+            Py_RETURN_TRUE;
+    }
+
+    /* Compare fields */
+    fields = PyObject_GetAttrString(self, "_fields");
+    len = PySequence_Size(fields);
+    for (i = 0; i < len; ++i) {
+        key = PySequence_GetItem(fields, i);
+
+        if (PyObject_HasAttr(self, key))
+            a = PyObject_GetAttr(self, key);
+        if (PyObject_HasAttr(other, key))
+            b = PyObject_GetAttr(other, key);
+
+
+        if (Py_TYPE(a) != Py_TYPE(b)) {
+            if (op == Py_EQ) {
+                Py_RETURN_FALSE;
+            }
+        }
+
+        if (op == Py_EQ) {
+            if (!PyObject_RichCompareBool(a, b, Py_EQ)) {
+                Py_RETURN_FALSE;
+            }
+        }
+        else if (op == Py_NE) {
+            if (PyObject_RichCompareBool(a, b, Py_NE)) {
+                Py_RETURN_TRUE;
+            }
+        }
+    }
+
+    if (op == Py_EQ)
+        Py_RETURN_TRUE;
+    else
+        Py_RETURN_FALSE;
+}
+
 static PyMethodDef ast_type_methods[] = {
     {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
     {NULL}
@@ -641,7 +698,7 @@ static PyTypeObject AST_type = {
     0,                       /* tp_doc */
     (traverseproc)ast_traverse, /* tp_traverse */
     (inquiry)ast_clear,      /* tp_clear */
-    0,                       /* tp_richcompare */
+    ast_richcompare,         /* tp_richcompare */
     0,                       /* tp_weaklistoffset */
     0,                       /* tp_iter */
     0,                       /* tp_iternext */
