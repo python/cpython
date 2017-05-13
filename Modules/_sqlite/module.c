@@ -330,6 +330,43 @@ static const IntConstantPair _int_constants[] = {
 };
 
 
+static PyObject *pysqlite_cache_deprecated_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    pysqlite_Cache *self;
+
+    /* print deprecation warning */
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "Cache object has been deprecated",
+                     1))
+        return NULL;
+
+    self = (pysqlite_Cache *) pysqlite_CacheType.tp_alloc(&pysqlite_CacheType, 0);
+    if (!self) {
+        return NULL;
+    }
+
+    if (pysqlite_cache_init(self, args, kwargs) != 0) {
+        Py_TYPE(self)->tp_free((PyObject*)self);
+        return NULL;
+    }
+    return self;
+}
+
+static void pysqlite_cache_deprecated_dealloc(PyObject* self)
+{
+    Py_TYPE(self)->tp_free((PyObject*)self);
+}
+
+/* classes for statement and cache deprecation */
+static PyTypeObject pysqlite_CacheDeprecatedType = {
+        PyVarObject_HEAD_INIT(NULL, 0)
+        MODULE_NAME ".CacheDeprecated",                 /* tp_name */
+        sizeof(pysqlite_CacheDeprecatedType),           /* tp_basicsize */
+        .tp_dealloc = (destructor)pysqlite_cache_deprecated_dealloc,
+        .tp_new = pysqlite_cache_deprecated_new,
+        .tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE,
+};
+
 static struct PyModuleDef _sqlite3module = {
         PyModuleDef_HEAD_INIT,
         "_sqlite3",
@@ -362,6 +399,8 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         return NULL;
     }
 
+    PyType_Ready(&pysqlite_CacheDeprecatedType);
+
     Py_INCREF(&pysqlite_ConnectionType);
     PyModule_AddObject(module, "Connection", (PyObject*) &pysqlite_ConnectionType);
     Py_INCREF(&pysqlite_CursorType);
@@ -369,7 +408,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     Py_INCREF(&pysqlite_CacheType);
     PyModule_AddObject(module, "Statement", (PyObject*)&pysqlite_StatementType);
     Py_INCREF(&pysqlite_StatementType);
-    PyModule_AddObject(module, "Cache", (PyObject*) &pysqlite_CacheType);
+    PyModule_AddObject(module, "Cache", (PyObject*) &pysqlite_CacheDeprecatedType);
     Py_INCREF(&pysqlite_PrepareProtocolType);
     PyModule_AddObject(module, "PrepareProtocol", (PyObject*) &pysqlite_PrepareProtocolType);
     Py_INCREF(&pysqlite_RowType);
