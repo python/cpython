@@ -222,38 +222,6 @@ class SubPattern:
         self.width = min(lo, MAXREPEAT - 1), min(hi, MAXREPEAT)
         return self.width
 
-    def hasgroups(self):
-        # determine whether this subpattern contains capturing groups
-        if self._hasgroups is not None:
-            return self._hasgroups
-        v = False
-        for op, av in self.data:
-            if op is BRANCH:
-                for av in av[1]:
-                    v = av.hasgroups()
-                    if v:
-                        break
-            elif op is CALL:
-                v = av.hasgroups()
-            elif op is SUBPATTERN:
-                v = av[0] is not None or av[-1].hasgroups()
-            elif op in _REPEATCODES:
-                v = av[2].hasgroups()
-            elif op in _ASSERT_CODES:
-                v = av[1].hasgroups()
-            elif op is GROUPREF_EXISTS:
-                v = av[1].hasgroups()
-                if not v and av[2] is not None:
-                    v = av[2].hasgroups()
-            elif op is SUCCESS:
-                break
-            else:
-                continue
-            if v:
-                break
-        self._hasgroups = v
-        return v
-
 class Tokenizer:
     def __init__(self, string):
         self.istext = isinstance(string, str)

@@ -20,6 +20,7 @@ _LITERAL_CODES = {LITERAL, NOT_LITERAL}
 _REPEATING_CODES = {REPEAT, MIN_REPEAT, MAX_REPEAT}
 _SUCCESS_CODES = {SUCCESS, FAILURE}
 _ASSERT_CODES = {ASSERT, ASSERT_NOT}
+_UNIT_CODES = _LITERAL_CODES | {ANY, IN}
 
 # Sets of lowercase characters which have the same uppercase.
 _equivalences = (
@@ -125,7 +126,7 @@ def _compile(code, pattern, flags):
         elif op in REPEATING_CODES:
             if flags & SRE_FLAG_TEMPLATE:
                 raise error("internal: unsupported template operator %r" % (op,))
-            if av[2].getwidth() == (1, 1) and not av[2].hasgroups():
+            if _simple(av[2]):
                 if op is MAX_REPEAT:
                     emit(REPEAT_ONE)
                 else:
@@ -403,6 +404,15 @@ def _bytes_to_codes(b):
     assert a.itemsize == _sre.CODESIZE
     assert len(a) * a.itemsize == len(b)
     return a.tolist()
+
+def _simple(p):
+    # check if this subpattern is a "simple" operator
+    if len(p) != 1:
+        return False
+    op, av = p[0]
+    if op is SUBPATTERN:
+        return av[0] is None and _simple(av[-1])
+    return op in _UNIT_CODES
 
 def _generate_overlap_table(prefix):
     """
