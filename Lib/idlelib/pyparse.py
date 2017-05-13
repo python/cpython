@@ -89,7 +89,7 @@ _closere = re.compile(r"""
 # interesting char.
 
 _chew_ordinaryre = re.compile(r"""
-    [^[\](){}#'"\\]+
+    [^\[\](){}#'"\\]+
 """, re.VERBOSE).match
 
 
