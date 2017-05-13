@@ -349,12 +349,31 @@ static PyObject *pysqlite_cache_deprecated_new(PyTypeObject *type, PyObject *arg
         Py_TYPE(self)->tp_free((PyObject*)self);
         return NULL;
     }
-    return self;
+    return (PyObject *)self;
 }
 
-static void pysqlite_cache_deprecated_dealloc(PyObject* self)
+static void pysqlite_deprecated_dealloc(PyObject* self)
 {
     Py_TYPE(self)->tp_free((PyObject*)self);
+}
+
+
+static PyObject *pysqlite_statement_deprecated_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    pysqlite_Statement *self;
+
+    /* print deprecation warning */
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "Statement object has been deprecated",
+                     1))
+        return NULL;
+
+    self = (pysqlite_Statement *) pysqlite_StatementType.tp_alloc(&pysqlite_StatementType, 0);
+    if (!self) {
+        return NULL;
+    }
+
+    return (PyObject *)self;
 }
 
 /* classes for statement and cache deprecation */
@@ -362,9 +381,18 @@ static PyTypeObject pysqlite_CacheDeprecatedType = {
         PyVarObject_HEAD_INIT(NULL, 0)
         MODULE_NAME ".CacheDeprecated",                 /* tp_name */
         sizeof(pysqlite_CacheDeprecatedType),           /* tp_basicsize */
-        .tp_dealloc = (destructor)pysqlite_cache_deprecated_dealloc,
+        .tp_dealloc = (destructor)pysqlite_deprecated_dealloc,
         .tp_new = pysqlite_cache_deprecated_new,
         .tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE,
+};
+
+static PyTypeObject pysqlite_StatementDeprecatedType = {
+        PyVarObject_HEAD_INIT(NULL, 0)
+        MODULE_NAME ".StatementDeprecated",                 /* tp_name */
+        sizeof(pysqlite_StatementDeprecatedType),           /* tp_basicsize */
+        .tp_dealloc = (destructor)pysqlite_deprecated_dealloc,
+        .tp_new = pysqlite_statement_deprecated_new,
+        .tp_flags = Py_TPFLAGS_DEFAULT,
 };
 
 static struct PyModuleDef _sqlite3module = {
@@ -393,21 +421,21 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         (pysqlite_connection_setup_types() < 0) ||
         (pysqlite_cache_setup_types() < 0) ||
         (pysqlite_statement_setup_types() < 0) ||
-        (pysqlite_prepare_protocol_setup_types() < 0)
+        (pysqlite_prepare_protocol_setup_types() < 0) ||
+        (PyType_Ready(&pysqlite_CacheDeprecatedType) < 0) ||
+        (PyType_Ready(&pysqlite_StatementDeprecatedType) < 0)
        ) {
         Py_XDECREF(module);
         return NULL;
     }
 
-    PyType_Ready(&pysqlite_CacheDeprecatedType);
-
     Py_INCREF(&pysqlite_ConnectionType);
     PyModule_AddObject(module, "Connection", (PyObject*) &pysqlite_ConnectionType);
     Py_INCREF(&pysqlite_CursorType);
     PyModule_AddObject(module, "Cursor", (PyObject*) &pysqlite_CursorType);
-    Py_INCREF(&pysqlite_CacheType);
-    PyModule_AddObject(module, "Statement", (PyObject*)&pysqlite_StatementType);
-    Py_INCREF(&pysqlite_StatementType);
+    Py_INCREF(&pysqlite_StatementDeprecatedType);
+    PyModule_AddObject(module, "Statement", (PyObject*)&pysqlite_StatementDeprecatedType);
+    Py_INCREF(&pysqlite_CacheDeprecatedType);
     PyModule_AddObject(module, "Cache", (PyObject*) &pysqlite_CacheDeprecatedType);
     Py_INCREF(&pysqlite_PrepareProtocolType);
     PyModule_AddObject(module, "PrepareProtocol", (PyObject*) &pysqlite_PrepareProtocolType);
