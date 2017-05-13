@@ -1171,7 +1171,7 @@ Test cases
       .. versionadded:: 3.2
          :meth:`.assertNotRegex`.
       .. versionadded:: 3.5
-         The name ``assertNotRegexpMatches`` as a deprecated alias
+         The name ``assertNotRegexpMatches`` is a deprecated alias
          for :meth:`.assertNotRegex`.
 
 
