@@ -89,6 +89,10 @@ Other Language Changes
   a name are now supported.
   (Contributed by Serhiy Storchaka in :issue:`30024`.)
 
+* ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather than
+  ``format(str(self), '')``.
+  (Contributed by Serhiy Storchaka in :issue:`28974`.)
+
 
 New Modules
 ===========
