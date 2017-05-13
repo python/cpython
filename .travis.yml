@@ -29,7 +29,7 @@ matrix:
       install:
         - pip install -U Sphinx
       script:
-        - make check suspicious html SPHINXOPTS="-q -W"
+        - make -C Doc check suspicious html SPHINXOPTS="-q -W"
 
 # Travis provides only 2 cores, so don't overdue the parallelism and waste memory.
 before_script:
