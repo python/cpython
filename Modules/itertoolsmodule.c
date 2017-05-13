@@ -17,6 +17,7 @@ typedef struct {
     PyObject *tgtkey;
     PyObject *currkey;
     PyObject *currvalue;
+    const void *currgrouper;  /* borrowed reference */
 } groupbyobject;
 
 static PyTypeObject groupby_type;
@@ -77,6 +78,7 @@ groupby_next(groupbyobject *gbo)
 {
     PyObject *newvalue, *newkey, *r, *grouper;
 
+    gbo->currgrouper = NULL;
     /* skip to next iteration group */
     for (;;) {
         if (gbo->currkey == NULL)
@@ -255,6 +257,7 @@ _grouper_create(groupbyobject *parent, PyObject *tgtkey)
     Py_INCREF(parent);
     igo->tgtkey = tgtkey;
     Py_INCREF(tgtkey);
+    parent->currgrouper = igo;  /* borrowed reference */
 
     PyObject_GC_Track(igo);
     return (PyObject *)igo;
@@ -284,6 +287,10 @@ _grouper_next(_grouperobject *igo)
     PyObject *newvalue, *newkey, *r;
     int rcmp;
 
+    if (gbo->currgrouper != igo) {
+        PyErr_SetString(PyExc_RuntimeError, "group changed during iteration");
+        return NULL;
+    }
     if (gbo->currvalue == NULL) {
         newvalue = PyIter_Next(gbo->it);
         if (newvalue == NULL)
@@ -321,6 +328,10 @@ _grouper_next(_grouperobject *igo)
 static PyObject *
 _grouper_reduce(_grouperobject *lz)
 {
+    if (((groupbyobject *)lz->parent)->currgrouper != lz) {
+        PyErr_SetString(PyExc_RuntimeError, "group changed during iteration");
+        return NULL;
+    }
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
 }
 

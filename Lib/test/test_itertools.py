@@ -751,6 +751,26 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(set(keys), expectedkeys)
         self.assertEqual(len(keys), len(expectedkeys))
 
+        # Check case where inner iterator is used after advancing the groupby
+        # iterator
+        s = list(zip('AABBBAAAA', range(9)))
+        it = groupby(s, testR)
+        _, g1 = next(it)
+        _, g2 = next(it)
+        _, g3 = next(it)
+        self.assertRaises(RuntimeError, next, g1)
+        self.assertRaises(RuntimeError, next, g2)
+        self.assertEqual(list(g3), s[5:])
+        list(it)  # exhaust the groupby iterator
+        self.assertRaises(RuntimeError, next, g3)
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            it = groupby(s, testR)
+            _, g = next(it)
+            next(it)
+            next(it)
+            self.assertRaises(RuntimeError, pickle.dumps, g, proto)
+
         # Exercise pipes and filters style
         s = 'abracadabra'
         # sort s | uniq

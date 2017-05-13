@@ -320,6 +320,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30346: An iterator produced by itertools.groupby() iterator now becames
+  invalid after advancing the groupby iterator.
+
 - bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
   running coroutine and the coroutine returned without any more ``await``.
 
