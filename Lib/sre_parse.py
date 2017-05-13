@@ -27,7 +27,6 @@ WHITESPACE = frozenset(" \t\n\r\v\f")
 
 _REPEATCODES = frozenset({MIN_REPEAT, MAX_REPEAT})
 _UNITCODES = frozenset({ANY, RANGE, IN, LITERAL, NOT_LITERAL, CATEGORY})
-_ASSERT_CODES = frozenset({ASSERT, ASSERT_NOT})
 
 ESCAPES = {
     r"\a": (LITERAL, ord("\a")),
@@ -115,7 +114,6 @@ class SubPattern:
             data = []
         self.data = data
         self.width = None
-        self._hasgroups = None
 
     def dump(self, level=0):
         nl = True
