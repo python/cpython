@@ -173,12 +173,9 @@ typedef int Py_ssize_clean_t;
 /* fastest possible local call under MSVC */
 #define Py_LOCAL(type) static type __fastcall
 #define Py_LOCAL_INLINE(type) static __inline type __fastcall
-#elif defined(USE_INLINE)
-#define Py_LOCAL(type) static type
-#define Py_LOCAL_INLINE(type) static inline type
 #else
 #define Py_LOCAL(type) static type
-#define Py_LOCAL_INLINE(type) static type
+#define Py_LOCAL_INLINE(type) static inline type
 #endif
 
 /* Py_MEMCPY is kept for backwards compatibility,

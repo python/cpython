@@ -1878,7 +1878,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
                 );
             return -1;
         }
-        newlen = PySequence_Size(seq);
+        newlen = PySequence_Fast_GET_SIZE(seq);
 
         if (step !=  1 && newlen != slicelen)
         {
@@ -3660,7 +3660,7 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
         return NULL;
     }
 
-    for (i = 0; i < PySequence_Size(events_seq); ++i) {
+    for (i = 0; i < PySequence_Fast_GET_SIZE(events_seq); ++i) {
         PyObject *event_name_obj = PySequence_Fast_GET_ITEM(events_seq, i);
         const char *event_name = NULL;
         if (PyUnicode_Check(event_name_obj)) {

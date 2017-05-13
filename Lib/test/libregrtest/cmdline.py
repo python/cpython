@@ -343,5 +343,7 @@ def _parse_args(args, **kwargs):
                     ns.use_resources.append(r)
     if ns.random_seed is not None:
         ns.randomize = True
+    if ns.verbose:
+        ns.header = True
 
     return ns

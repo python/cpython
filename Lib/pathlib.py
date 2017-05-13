@@ -6,7 +6,7 @@ import os
 import posixpath
 import re
 import sys
-from collections import Sequence
+from collections.abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
@@ -1217,8 +1217,8 @@ class Path(PurePath):
         except FileNotFoundError:
             if not parents or self.parent == self:
                 raise
-            self.parent.mkdir(parents=True)
-            self._accessor.mkdir(self, mode)
+            self.parent.mkdir(parents=True, exist_ok=True)
+            self.mkdir(mode, parents=False, exist_ok=exist_ok)
         except OSError:
             # Cannot rely on checking for EEXIST, since the operating system
             # could give priority to other errors like EACCES or EROFS

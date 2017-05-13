@@ -320,9 +320,9 @@ Sequences
 
          A bytes object is an immutable array.  The items are 8-bit bytes,
          represented by integers in the range 0 <= x < 256.  Bytes literals
-         (like ``b'abc'``) and the built-in function :func:`bytes` can be used to
-         construct bytes objects.  Also, bytes objects can be decoded to strings
-         via the :meth:`~bytes.decode` method.
+         (like ``b'abc'``) and the built-in :func:`bytes()` constructor
+         can be used to create bytes objects.  Also, bytes objects can be
+         decoded to strings via the :meth:`~bytes.decode` method.
 
    Mutable sequences
       .. index::
@@ -349,9 +349,9 @@ Sequences
          .. index:: bytearray
 
          A bytearray object is a mutable array. They are created by the built-in
-         :func:`bytearray` constructor.  Aside from being mutable (and hence
-         unhashable), byte arrays otherwise provide the same interface and
-         functionality as immutable bytes objects.
+         :func:`bytearray` constructor.  Aside from being mutable
+         (and hence unhashable), byte arrays otherwise provide the same interface
+         and functionality as immutable :class:`bytes` objects.
 
       .. index:: module: array
 
@@ -1253,8 +1253,8 @@ Basic customization
 
    .. index:: builtin: bytes
 
-   Called by :func:`bytes` to compute a byte-string representation of an
-   object. This should return a ``bytes`` object.
+   Called by :ref:`bytes <func-bytes>` to compute a byte-string representation
+   of an object. This should return a :class:`bytes` object.
 
    .. index::
       single: string; __format__() (object method)
@@ -1375,7 +1375,7 @@ Basic customization
    :meth:`__hash__` method of a class is ``None``, instances of the class will
    raise an appropriate :exc:`TypeError` when a program attempts to retrieve
    their hash value, and will also be correctly identified as unhashable when
-   checking ``isinstance(obj, collections.Hashable)``.
+   checking ``isinstance(obj, collections.abc.Hashable)``.
 
    If a class that overrides :meth:`__eq__` needs to retain the implementation
    of :meth:`__hash__` from a parent class, the interpreter must be told this
@@ -1385,7 +1385,7 @@ Basic customization
    support, it should include ``__hash__ = None`` in the class definition.
    A class which defines its own :meth:`__hash__` that explicitly raises
    a :exc:`TypeError` would be incorrectly identified as hashable by
-   an ``isinstance(obj, collections.Hashable)`` call.
+   an ``isinstance(obj, collections.abc.Hashable)`` call.
 
 
    .. note::
@@ -1981,7 +1981,7 @@ range of items.  It is also recommended that mappings provide the methods
 :meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`,
 :meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`!copy`, and
 :meth:`update` behaving similar to those for Python's standard dictionary
-objects.  The :mod:`collections` module provides a
+objects.  The :mod:`collections.abc` module provides a
 :class:`~collections.abc.MutableMapping`
 abstract base class to help create those methods from a base set of
 :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__`, and :meth:`keys`.
@@ -2011,6 +2011,14 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    :meth:`__bool__` method and whose :meth:`__len__` method returns zero is
    considered to be false in a Boolean context.
 
+   .. impl-detail::
+
+      In CPython, the length is required to be at most :attr:`sys.maxsize`.
+      If the length is larger than :attr:`!sys.maxsize` some features (such as
+      :func:`len`) may raise :exc:`OverflowError`.  To prevent raising
+      :exc:`!OverflowError` by truth value testing, an object must define a
+      :meth:`__bool__` method.
+
 
 .. method:: object.__length_hint__(self)
 
@@ -2020,6 +2028,7 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    optimization and is never required for correctness.
 
    .. versionadded:: 3.4
+
 
 .. note::
 
@@ -2565,6 +2574,8 @@ An example of an asynchronous iterable object::
       In CPython 3.7, returning an awaitable from ``__aiter__`` will
       result in a :exc:`RuntimeError`.
 
+
+.. _async-context-managers:
 
 Asynchronous Context Managers
 -----------------------------

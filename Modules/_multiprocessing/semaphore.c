@@ -135,7 +135,7 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
         Py_RETURN_TRUE;
     case WAIT_OBJECT_0 + 1:
         errno = EINTR;
-        return PyErr_SetFromErrno(PyExc_IOError);
+        return PyErr_SetFromErrno(PyExc_OSError);
     case WAIT_FAILED:
         return PyErr_SetFromWindowsErr(0);
     default:

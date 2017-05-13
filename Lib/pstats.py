@@ -579,7 +579,7 @@ if __name__ == '__main__':
             if self.stats:
                 try:
                     self.stats.add(line)
-                except IOError as e:
+                except OSError as e:
                     print("Failed to load statistics for %s: %s" % (line, e), file=self.stream)
             else:
                 print("No statistics object is loaded.", file=self.stream)
