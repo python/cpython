@@ -374,7 +374,8 @@ class EnsurePipTest(BaseTest):
                     self.fail(msg.format(exc, details))
         # Ensure pip is available in the virtual environment
         envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
-        cmd = [envpy, '-Im', 'pip', '--version']
+        opts = ['-W', 'ignore:Possible nested set:FutureWarning']
+        cmd = [envpy, *opts, '-Im', 'pip', '--version']
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
         out, err = p.communicate()
@@ -391,7 +392,7 @@ class EnsurePipTest(BaseTest):
         # http://bugs.python.org/issue19728
         # Check the private uninstall command provided for the Windows
         # installers works (at least in a virtual environment)
-        cmd = [envpy, '-Im', 'ensurepip._uninstall']
+        cmd = [envpy, *opts, '-Im', 'ensurepip._uninstall']
         with EnvironmentVarGuard() as envvars:
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE)
