@@ -27,17 +27,10 @@ matrix:
       env:
         - TESTING=docs
       before_script:
-        - |
-            if git diff --name-only $TRAVIS_COMMIT_RANGE | grep -qvE '^Doc/'
-            then
-              echo "Docs weren't updated, stopping build process."
-              exit
-            fi
-            cd Doc
+        - cd Doc
         - pip install -U Sphinx
       script:
-        - make html SPHINXOPTS="-q"
-        - make check
+        - make check suspicious html SPHINXOPTS="-q -W"
 
 # Travis provides only 2 cores, so don't overdue the parallelism and waste memory.
 before_script:
