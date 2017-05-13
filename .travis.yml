@@ -26,10 +26,11 @@ matrix:
       python: 2.7
       env:
         - TESTING=docs
-      install:
+      before_script:
+        - cd Doc
         - pip install -U Sphinx
       script:
-        - make -C Doc check suspicious html SPHINXOPTS="-q -W"
+        - make check suspicious html SPHINXOPTS="-q -W"
 
 # Travis provides only 2 cores, so don't overdue the parallelism and waste memory.
 before_script:
