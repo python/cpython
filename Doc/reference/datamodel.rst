@@ -1282,6 +1282,10 @@ Basic customization
       The __format__ method of ``object`` itself raises a :exc:`TypeError`
       if passed any non-empty string.
 
+   .. versionchanged:: 3.7
+      ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather
+      than ``format(str(self), '')``.
+
 
 .. _richcmpfuncs:
 .. method:: object.__lt__(self, other)

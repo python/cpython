@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-28974: ``object.__format__(x, '')`` is now equivalent to ``str(x)``
+  rather than ``format(str(self), '')``.
+
 - bpo-30024: Circular imports involving absolute imports with binding
   a submodule to a name are now supported.
 
