@@ -27,7 +27,7 @@ matrix:
       env:
         - TESTING=docs
       install:
-        - Sphinx
+        - pip install -U Sphinx
       script:
         - make check suspicious html SPHINXOPTS="-q -W"
 
