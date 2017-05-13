@@ -32,6 +32,7 @@ matrix:
   include:
     - os: linux
       language: python
+      # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
       python: 3.6
       env:
         - TESTING=docs
