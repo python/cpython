@@ -42,6 +42,8 @@ Extension Modules
 Library
 -------
 
+- bpo-30310: tkFont now supports unicode options (e.g. font family).
+
 - bpo-30342: Fix sysconfig.is_python_build() if Python is built with Visual
   Studio 2008 (VS 9.0).
 
