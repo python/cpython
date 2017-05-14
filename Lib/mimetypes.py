@@ -348,7 +348,7 @@ def init(files=None):
     global inited, _db
     inited = True    # so that MimeTypes.__init__() doesn't call us again
 
-    if files is None:
+    if files is None or _db is None:
         db = MimeTypes()
         if _winreg:
             db.read_windows_registry()
