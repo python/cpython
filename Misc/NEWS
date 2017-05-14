@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-28974: ``object.__format__(x, '')`` is now equivalent to ``str(x)``
+  rather than ``format(str(self), '')``.
+
 - bpo-30024: Circular imports involving absolute imports with binding
   a submodule to a name are now supported.
 
@@ -322,6 +325,12 @@ Library
 
 - bpo-30299: Compiling regular expression in debug mode on CPython now displays
   the compiled bytecode in human readable form.
+
+- bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
+  running coroutine and the coroutine returned without any more ``await``.
+
+- bpo-30340: Enhanced regular expressions optimization. This increased
+  the performance of matching some patterns up to 25 times.
 
 - bpo-30298: Weaken the condition of deprecation warnings for inline modifiers.
   Now allowed several subsequential inline modifiers at the start of the
@@ -1053,6 +1062,9 @@ Documentation
 
 Build
 -----
+
+- bpo-28787: Fix out-of-tree builds of Python when configured with
+  ``--with--dtrace``.
 
 - bpo-29243: Prevent unnecessary rebuilding of Python during ``make test``,
   ``make install`` and some other make targets when configured with
