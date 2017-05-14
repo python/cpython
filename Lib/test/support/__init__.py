@@ -155,8 +155,12 @@ def get_attribute(obj, name):
     try:
         attribute = getattr(obj, name)
     except AttributeError:
-        raise unittest.SkipTest("module %s has no attribute %s" % (
-            obj.__name__, name))
+        if isinstance(obj, type(sys)):
+            raise unittest.SkipTest("module %s has no attribute %r" % (
+                obj.__name__, name))
+        else:
+            raise unittest.SkipTest("object %r has no attribute %r" % (
+                obj, name))
     else:
         return attribute
 
@@ -706,6 +710,49 @@ TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
 SAVEDCWD = os.getcwd()
 
 @contextlib.contextmanager
+def temp_dir(path=None, quiet=False):
+    """Return a context manager that creates a temporary directory.
+
+    Arguments:
+
+      path: the directory to create temporarily.  If omitted or None,
+        defaults to creating a temporary directory using tempfile.mkdtemp.
+
+      quiet: if False (the default), the context manager raises an exception
+        on error.  Otherwise, if the path is specified and cannot be
+        created, only a warning is issued.
+
+    """
+    dir_created = False
+    if path is None:
+        import tempfile
+        path = tempfile.mkdtemp()
+        dir_created = True
+        path = os.path.realpath(path)
+    else:
+        if (have_unicode and isinstance(path, unicode) and
+            not os.path.supports_unicode_filenames):
+            try:
+                path = path.encode(sys.getfilesystemencoding() or 'ascii')
+            except UnicodeEncodeError:
+                if not quiet:
+                    raise unittest.SkipTest('unable to encode the cwd name with '
+                                            'the filesystem encoding.')
+        try:
+            os.mkdir(path)
+            dir_created = True
+        except OSError:
+            if not quiet:
+                raise
+            warnings.warn('tests may fail, unable to create temp dir: ' + path,
+                          RuntimeWarning, stacklevel=3)
+    try:
+        yield path
+    finally:
+        if dir_created:
+            rmtree(path)
+
+@contextlib.contextmanager
 def change_cwd(path, quiet=False):
     """Return a context manager that changes the current working directory.
 
@@ -735,38 +782,21 @@ def change_cwd(path, quiet=False):
 @contextlib.contextmanager
 def temp_cwd(name='tempcwd', quiet=False):
     """
-    Context manager that creates a temporary directory and set it as CWD.
+    Context manager that temporarily creates and changes the CWD.
 
-    The new CWD is created in the current directory and it's named *name*.
-    If *quiet* is False (default) and it's not possible to create or change
-    the CWD, an error is raised.  If it's True, only a warning is raised
-    and the original CWD is used.
+    The function temporarily changes the current working directory
+    after creating a temporary directory in the current directory with
+    name *name*.  If *name* is None, the temporary directory is
+    created using tempfile.mkdtemp.
+
+    If *quiet* is False (default) and it is not possible to
+    create or change the CWD, an error is raised.  If *quiet* is True,
+    only a warning is raised and the original CWD is used.
+
     """
-    if (have_unicode and isinstance(name, unicode) and
-        not os.path.supports_unicode_filenames):
-        try:
-            name = name.encode(sys.getfilesystemencoding() or 'ascii')
-        except UnicodeEncodeError:
-            if not quiet:
-                raise unittest.SkipTest('unable to encode the cwd name with '
-                                        'the filesystem encoding.')
-    saved_dir = os.getcwd()
-    is_temporary = False
-    try:
-        os.mkdir(name)
-        os.chdir(name)
-        is_temporary = True
-    except OSError:
-        if not quiet:
-            raise
-        warnings.warn('tests may fail, unable to change the CWD to ' + name,
-                      RuntimeWarning, stacklevel=3)
-    try:
-        yield os.getcwd()
-    finally:
-        os.chdir(saved_dir)
-        if is_temporary:
-            rmtree(name)
+    with temp_dir(path=name, quiet=quiet) as temp_path:
+        with change_cwd(temp_path, quiet=quiet) as cwd_dir:
+            yield cwd_dir
 
 # TEST_HOME_DIR refers to the top level directory of the "test" package
 # that contains Python's regression test suite
@@ -810,9 +840,16 @@ def make_bad_fd():
         file.close()
         unlink(TESTFN)
 
-def check_syntax_error(testcase, statement):
-    testcase.assertRaises(SyntaxError, compile, statement,
-                          '<test string>', 'exec')
+def check_syntax_error(testcase, statement, lineno=None, offset=None):
+    with testcase.assertRaises(SyntaxError) as cm:
+        compile(statement, '<test string>', 'exec')
+    err = cm.exception
+    testcase.assertIsNotNone(err.lineno)
+    if lineno is not None:
+        testcase.assertEqual(err.lineno, lineno)
+    testcase.assertIsNotNone(err.offset)
+    if offset is not None:
+        testcase.assertEqual(err.offset, offset)
 
 def open_urlresource(url, check=None):
     import urlparse, urllib2
@@ -1785,3 +1822,13 @@ def disable_gc():
     finally:
         if have_gc:
             gc.enable()
+
+
+def python_is_optimized():
+    """Find if Python was built with optimizations."""
+    cflags = sysconfig.get_config_var('PY_CFLAGS') or ''
+    final_opt = ""
+    for opt in cflags.split():
+        if opt.startswith('-O'):
+            final_opt = opt
+    return final_opt not in ('', '-O0', '-Og')
