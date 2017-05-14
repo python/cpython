@@ -365,10 +365,8 @@ class ReloadTests:
         #Test that reload throws ModuleNotFounderror if reloading
         #a module whose spec cannot be found.
         name = 'spam'
-        subname = 'ham'
         with test_util.temp_module(name, pkg=True) as pkg_dir:
-            fullname, _ = test_util.submodule(name, subname, pkg_dir)
-            module = self.init.import_module(fullname)
+            module = self.init.import_module(name, pkg_dir)
             module.__spec__ = None
             module.__name__ = 'destroyed_spam'
             sys.modules[module.__name__] = module
