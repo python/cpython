@@ -42,6 +42,15 @@ Extension Modules
 Library
 -------
 
+- bpo-30365: Running Python with the -3 option now emits deprecation warnings
+  for getchildren() and getiterator() methods of the Element class in the
+  xml.etree.cElementTree module and when pass the html argument to
+  xml.etree.ElementTree.XMLParser().
+
+- bpo-30365: Fixed a deprecation warning about the doctype() method of the
+  xml.etree.ElementTree.XMLParser class.  Now it is emitted only when define
+  the doctype() method in the subclass of XMLParser.
+
 - bpo-30342: Fix sysconfig.is_python_build() if Python is built with Visual
   Studio 2008 (VS 9.0).
 

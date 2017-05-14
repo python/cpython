@@ -962,7 +962,11 @@ element_getchildren(ElementObject* self, PyObject* args)
     int i;
     PyObject* list;
 
-    /* FIXME: report as deprecated? */
+    if (PyErr_WarnPy3k("This method will be removed in future versions.  "
+                       "Use 'list(elem)' or iteration over elem instead.",
+                       1) < 0) {
+        return NULL;
+    }
 
     if (!PyArg_ParseTuple(args, ":getchildren"))
         return NULL;
@@ -984,13 +988,10 @@ element_getchildren(ElementObject* self, PyObject* args)
 }
 
 static PyObject*
-element_iter(ElementObject* self, PyObject* args)
+element_iter_impl(ElementObject* self, PyObject* tag)
 {
+    PyObject* args;
     PyObject* result;
-    
-    PyObject* tag = Py_None;
-    if (!PyArg_ParseTuple(args, "|O:iter", &tag))
-        return NULL;
 
     if (!elementtree_iter_obj) {
         PyErr_SetString(
@@ -1012,6 +1013,34 @@ element_iter(ElementObject* self, PyObject* args)
     Py_DECREF(args);
 
     return result;
+}
+
+static PyObject*
+element_iter(ElementObject* self, PyObject* args)
+{
+    PyObject* tag = Py_None;
+    if (!PyArg_ParseTuple(args, "|O:iter", &tag))
+        return NULL;
+
+    return element_iter_impl(self, tag);
+}
+
+static PyObject*
+element_getiterator(ElementObject* self, PyObject* args)
+{
+    PyObject* tag = Py_None;
+    if (!PyArg_ParseTuple(args, "|O:getiterator", &tag))
+        return NULL;
+
+    /* Change for a DeprecationWarning in 1.4 */
+    if (Py_Py3kWarningFlag &&
+        PyErr_WarnEx(PyExc_PendingDeprecationWarning,
+                     "This method will be removed in future versions.  "
+                     "Use 'tree.iter()' or 'list(tree.iter())' instead.",
+                     1) < 0) {
+        return NULL;
+    }
+    return element_iter_impl(self, tag);
 }
 
 
@@ -1510,7 +1539,7 @@ static PyMethodDef element_methods[] = {
     {"itertext", (PyCFunction) element_itertext, METH_VARARGS},
     {"iterfind", (PyCFunction) element_iterfind, METH_VARARGS},
 
-    {"getiterator", (PyCFunction) element_iter, METH_VARARGS},
+    {"getiterator", (PyCFunction) element_getiterator, METH_VARARGS},
     {"getchildren", (PyCFunction) element_getchildren, METH_VARARGS},
 
     {"items", (PyCFunction) element_items, METH_VARARGS},
