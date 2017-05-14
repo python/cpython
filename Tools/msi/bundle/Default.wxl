@@ -105,7 +105,7 @@ Select Customize to review current options.</String>
   <String Id="SuccessLaunchButton">&amp;Launch</String>
   <String Id="SuccessRestartText">You may need to restart your computer to finish updating files.</String>
   <String Id="SuccessRestartButton">&amp;Restart</String>
-  <String Id="SuccessInstallMessage">Special thanks to Mark Hammond, without whose years of freely shared Windows expertise, Python for Windows would still be Python for DOS.
+  <String Id="SuccessInstallMessage">Special thanks to Mark Hammond. Without his years of freely shared Windows expertise, Python for Windows would still be Python for DOS.
 
 New to Python? Start with the &lt;a href="https://docs.python.org/[ShortVersion]/tutorial/index.html"&gt;online tutorial&lt;/a&gt; and &lt;a href="https://docs.python.org/[ShortVersion]/index.html"&gt;documentation&lt;/a&gt;.
 
