@@ -891,15 +891,24 @@ class ReTests(unittest.TestCase):
             lo = ord(c.lower())
             self.assertEqual(_sre.ascii_tolower(i), lo)
             self.assertEqual(_sre.unicode_tolower(i), lo)
+            iscased = c in string.ascii_letters
+            self.assertEqual(_sre.ascii_iscased(i), iscased)
+            self.assertEqual(_sre.unicode_iscased(i), iscased)
 
         for i in list(range(128, 0x1000)) + [0x10400, 0x10428]:
             c = chr(i)
             self.assertEqual(_sre.ascii_tolower(i), i)
             if i != 0x0130:
                 self.assertEqual(_sre.unicode_tolower(i), ord(c.lower()))
+            iscased = c != c.lower() or c != c.upper()
+            self.assertFalse(_sre.ascii_iscased(i))
+            self.assertEqual(_sre.unicode_iscased(i),
+                             c != c.lower() or c != c.upper())
 
         self.assertEqual(_sre.ascii_tolower(0x0130), 0x0130)
         self.assertEqual(_sre.unicode_tolower(0x0130), ord('i'))
+        self.assertFalse(_sre.ascii_iscased(0x0130))
+        self.assertTrue(_sre.unicode_iscased(0x0130))
 
     def test_not_literal(self):
         self.assertEqual(re.search(r"\s([^a])", " b").group(1), "b")
@@ -1316,32 +1325,43 @@ class ReTests(unittest.TestCase):
         upper_char = '\u1ea0' # Latin Capital Letter A with Dot Below
         lower_char = '\u1ea1' # Latin Small Letter A with Dot Below
 
-        p = re.compile(upper_char, re.I | re.U)
-        q = p.match(lower_char)
+        p = re.compile('.' + upper_char, re.I | re.S)
+        q = p.match('\n' + lower_char)
         self.assertTrue(q)
 
-        p = re.compile(lower_char, re.I | re.U)
-        q = p.match(upper_char)
+        p = re.compile('.' + lower_char, re.I | re.S)
+        q = p.match('\n' + upper_char)
         self.assertTrue(q)
 
-        p = re.compile('(?i)' + upper_char, re.U)
-        q = p.match(lower_char)
+        p = re.compile('(?i).' + upper_char, re.S)
+        q = p.match('\n' + lower_char)
         self.assertTrue(q)
 
-        p = re.compile('(?i)' + lower_char, re.U)
-        q = p.match(upper_char)
+        p = re.compile('(?i).' + lower_char, re.S)
+        q = p.match('\n' + upper_char)
         self.assertTrue(q)
 
-        p = re.compile('(?iu)' + upper_char)
-        q = p.match(lower_char)
+        p = re.compile('(?is).' + upper_char)
+        q = p.match('\n' + lower_char)
         self.assertTrue(q)
 
-        p = re.compile('(?iu)' + lower_char)
-        q = p.match(upper_char)
+        p = re.compile('(?is).' + lower_char)
+        q = p.match('\n' + upper_char)
         self.assertTrue(q)
 
-        self.assertTrue(re.match('(?ixu) ' + upper_char, lower_char))
-        self.assertTrue(re.match('(?ixu) ' + lower_char, upper_char))
+        p = re.compile('(?s)(?i).' + upper_char)
+        q = p.match('\n' + lower_char)
+        self.assertTrue(q)
+
+        p = re.compile('(?s)(?i).' + lower_char)
+        q = p.match('\n' + upper_char)
+        self.assertTrue(q)
+
+        self.assertTrue(re.match('(?ix) ' + upper_char, lower_char))
+        self.assertTrue(re.match('(?ix) ' + lower_char, upper_char))
+        self.assertTrue(re.match(' (?i) ' + upper_char, lower_char, re.X))
+        self.assertTrue(re.match('(?x) (?i) ' + upper_char, lower_char))
+        self.assertTrue(re.match(' (?x) (?i) ' + upper_char, lower_char, re.X))
 
         p = upper_char + '(?i)'
         with self.assertWarns(DeprecationWarning) as warns:
@@ -1358,6 +1378,26 @@ class ReTests(unittest.TestCase):
             str(warns.warnings[0].message),
             'Flags not at the start of the expression %s (truncated)' % p[:20]
         )
+
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('(?s).(?i)' + upper_char, '\n' + lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('(?i) ' + upper_char + ' (?x)', lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match(' (?x) (?i) ' + upper_char, lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('^(?i)' + upper_char, lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('$|(?i)' + upper_char, lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('(?:(?i)' + upper_char + ')', lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.fullmatch('(^)?(?(1)(?i)' + upper_char + ')',
+                                         lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.fullmatch('($)?(?(1)|(?i)' + upper_char + ')',
+                                         lower_char))
+
 
     def test_dollar_matches_twice(self):
         "$ matches the end of string, and just before the terminating \n"
@@ -1648,27 +1688,52 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(m.group(1), "")
                 self.assertEqual(m.group(2), "y")
 
+    @cpython_only
     def test_debug_flag(self):
         pat = r'(\.)(?:[ch]|py)(?(1)$|: )'
         with captured_stdout() as out:
             re.compile(pat, re.DEBUG)
+        self.maxDiff = None
         dump = '''\
 SUBPATTERN 1 0 0
   LITERAL 46
-SUBPATTERN None 0 0
-  BRANCH
-    IN
-      LITERAL 99
-      LITERAL 104
-  OR
-    LITERAL 112
-    LITERAL 121
-SUBPATTERN None 0 0
-  GROUPREF_EXISTS 1
-    AT AT_END
-  ELSE
-    LITERAL 58
-    LITERAL 32
+BRANCH
+  IN
+    LITERAL 99
+    LITERAL 104
+OR
+  LITERAL 112
+  LITERAL 121
+GROUPREF_EXISTS 1
+  AT AT_END
+ELSE
+  LITERAL 58
+  LITERAL 32
+
+ 0. INFO 8 0b1 2 5 (to 9)
+      prefix_skip 0
+      prefix [0x2e] ('.')
+      overlap [0]
+ 9: MARK 0
+11. LITERAL 0x2e ('.')
+13. MARK 1
+15. BRANCH 10 (to 26)
+17.   IN 6 (to 24)
+19.     LITERAL 0x63 ('c')
+21.     LITERAL 0x68 ('h')
+23.     FAILURE
+24:   JUMP 9 (to 34)
+26: branch 7 (to 33)
+27.   LITERAL 0x70 ('p')
+29.   LITERAL 0x79 ('y')
+31.   JUMP 2 (to 34)
+33: FAILURE
+34: GROUPREF_EXISTS 0 6 (to 41)
+37. AT END
+39. JUMP 5 (to 45)
+41: LITERAL 0x3a (':')
+43. LITERAL 0x20 (' ')
+45: SUCCESS
 '''
         self.assertEqual(out.getvalue(), dump)
         # Debug output is output again even a second time (bypassing

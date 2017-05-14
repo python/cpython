@@ -85,6 +85,14 @@ Other Language Changes
 * :exc:`ImportError` now displays module name and module ``__file__`` path when
   ``from ... import ...`` fails. (Contributed by Matthias Bussonnier in :issue:`29546`.)
 
+* Circular imports involving absolute imports with binding a submodule to
+  a name are now supported.
+  (Contributed by Serhiy Storchaka in :issue:`30024`.)
+
+* ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather than
+  ``format(str(self), '')``.
+  (Contributed by Serhiy Storchaka in :issue:`28974`.)
+
 
 New Modules
 ===========
@@ -210,6 +218,10 @@ Optimizations
 * The :func:`os.fwalk` function has been sped up by 2 times.  This was done
   using the :func:`os.scandir` function.
   (Contributed by Serhiy Storchaka in :issue:`25996`.)
+
+* Optimized case-insensitive matching and searching of :mod:`regular
+  expressions <re>`.  Searching some patterns can now be up to 20 times faster.
+  (Contributed by Serhiy Storchaka in :issue:`30285`.)
 
 
 Build and C API Changes
