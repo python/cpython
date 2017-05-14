@@ -1371,6 +1371,83 @@ get_version_info(wchar_t * version_text, size_t size)
     }
 }
 
+static void
+show_help_text(wchar_t ** argv)
+{
+    wchar_t version_text [MAX_PATH];
+#if defined(_M_X64)
+            BOOL canDo64bit = TRUE;
+#else
+    /* If we are a 32bit process on a 64bit Windows, first hit the 64bit keys. */
+            BOOL canDo64bit = FALSE;
+            IsWow64Process(GetCurrentProcess(), &canDo64bit);
+#endif
+
+            get_version_info(version_text, MAX_PATH);
+            fwprintf(stdout, L"\
+Python Launcher for Windows Version %ls\n\n", version_text);
+            fwprintf(stdout, L"\
+usage:\n\
+%ls [launcher-args] [python-args] script [script-args]\n\n", argv[0]);
+            fputws(L"\
+Launcher arguments:\n\n\
+-2     : Launch the latest Python 2.x version\n\
+-3     : Launch the latest Python 3.x version\n\
+-X.Y   : Launch the specified Python version\n", stdout);
+            if (canDo64bit) {
+                fputws(L"\
+     The above all default to 64 bit if a matching 64 bit python is present.\n\
+-X.Y-32: Launch the specified 32bit Python version\n\
+-X-32  : Launch the latest 32bit Python X version\n\
+-X.Y-64: Launch the specified 64bit Python version\n\
+-X-64  : Launch the latest 64bit Python X version", stdout);
+            }
+            fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
+            fflush(stdout);
+}
+
+static void
+show_python_list(wchar_t ** argv)
+{
+    INSTALLED_PYTHON * result = NULL;
+    INSTALLED_PYTHON * ip = installed_pythons;
+    size_t i = 0;
+    wchar_t *fmt = L"\n -%s-%d";
+
+    /*
+    * Output informational messages to stderr to keep output
+    * clean for use in pipes, etc.
+    */
+    fwprintf(stderr,
+             L"Installed Pythons found by %s Launcher for Windows", argv[0]);
+    if (!wcscmp(argv[1], L"-L") || !_wcsicmp(argv[1], L"--long-list"))
+    {
+        fmt = L"\n -%s-%d\t%s";
+        fwprintf(stderr, L" with Paths");
+    }
+
+    if (num_installed_pythons == 0)
+        locate_all_pythons();
+
+    if (num_installed_pythons == 0)
+        fwprintf(stderr, L"\nNo Installed Pythons Found!");
+    else
+    {
+        for (i = 0; i < num_installed_pythons; i++, ip++) {
+            fwprintf(stdout, fmt, ip->version, ip->bits, ip->executable);
+        }
+    }
+
+    ip = locate_python(L"", FALSE);
+    if (ip == NULL)
+        fwprintf(stderr, L"\n\nCan't find a Default Python.\n\n");
+    else
+        fwprintf(stderr, \
+                 L"\n\nDefault Python Version %s (%d Bit) from %s\n\n", \
+                 ip->version, ip->bits, ip->executable);
+    exit(0);
+}
+
 static int
 process(int argc, wchar_t ** argv)
 {
@@ -1385,7 +1462,6 @@ process(int argc, wchar_t ** argv)
     DWORD size, attrs;
     HRESULT hr;
     wchar_t message[MSGSIZE];
-    wchar_t version_text [MAX_PATH];
     void * version_data;
     VS_FIXEDFILEINFO * file_info;
     UINT block_size;
@@ -1550,37 +1626,11 @@ installed", &p[1]);
                 error(RC_NO_PYTHON, L"Can't find a default Python.");
             executable = ip->executable;
         }
-        if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help"))) {
-#if defined(_M_X64)
-            BOOL canDo64bit = TRUE;
-#else
-    /* If we are a 32bit process on a 64bit Windows, first hit the 64bit keys. */
-            BOOL canDo64bit = FALSE;
-            IsWow64Process(GetCurrentProcess(), &canDo64bit);
-#endif
-
-            get_version_info(version_text, MAX_PATH);
-            fwprintf(stdout, L"\
-Python Launcher for Windows Version %ls\n\n", version_text);
-            fwprintf(stdout, L"\
-usage:\n\
-%ls [launcher-args] [python-args] script [script-args]\n\n", argv[0]);
-            fputws(L"\
-Launcher arguments:\n\n\
--2     : Launch the latest Python 2.x version\n\
--3     : Launch the latest Python 3.x version\n\
--X.Y   : Launch the specified Python version\n", stdout);
-            if (canDo64bit) {
-                fputws(L"\
-     The above all default to 64 bit if a matching 64 bit python is present.\n\
--X.Y-32: Launch the specified 32bit Python version\n\
--X-32  : Launch the latest 32bit Python X version\n\
--X.Y-64: Launch the specified 64bit Python version\n\
--X-64  : Launch the latest 64bit Python X version", stdout);
-            }
-            fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
-            fflush(stdout);
-        }
+        if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help")))
+            show_help_text(argv);
+        if ((argc == 2) && (!_wcsicmp(p, L"-l") || !_wcsicmp(p, L"--list") ||\
+                            !_wcsicmp(p, L"--long-list")))
+            show_python_list(argv);
     }
     invoke_child(executable, NULL, command);
     return rc;
