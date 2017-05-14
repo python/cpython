@@ -1376,34 +1376,36 @@ show_help_text(wchar_t ** argv)
 {
     wchar_t version_text [MAX_PATH];
 #if defined(_M_X64)
-            BOOL canDo64bit = TRUE;
+    BOOL canDo64bit = TRUE;
 #else
     /* If we are a 32bit process on a 64bit Windows, first hit the 64bit keys. */
-            BOOL canDo64bit = FALSE;
-            IsWow64Process(GetCurrentProcess(), &canDo64bit);
+    BOOL canDo64bit = FALSE;
+    IsWow64Process(GetCurrentProcess(), &canDo64bit);
 #endif
 
-            get_version_info(version_text, MAX_PATH);
-            fwprintf(stdout, L"\
+    get_version_info(version_text, MAX_PATH);
+    fwprintf(stdout, L"\
 Python Launcher for Windows Version %ls\n\n", version_text);
-            fwprintf(stdout, L"\
+    fwprintf(stdout, L"\
 usage:\n\
 %ls [launcher-args] [python-args] script [script-args]\n\n", argv[0]);
-            fputws(L"\
+    fputws(L"\
 Launcher arguments:\n\n\
 -2     : Launch the latest Python 2.x version\n\
 -3     : Launch the latest Python 3.x version\n\
 -X.Y   : Launch the specified Python version\n", stdout);
-            if (canDo64bit) {
-                fputws(L"\
+    if (canDo64bit) {
+        fputws(L"\
      The above all default to 64 bit if a matching 64 bit python is present.\n\
 -X.Y-32: Launch the specified 32bit Python version\n\
 -X-32  : Launch the latest 32bit Python X version\n\
 -X.Y-64: Launch the specified 64bit Python version\n\
 -X-64  : Launch the latest 64bit Python X version", stdout);
-            }
-            fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
-            fflush(stdout);
+    }
+    fputws(L"\n-l/--list      : List the available pythons", stdout);
+    fputws(L"\n-L/--long-list : List with paths", stdout);
+    fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
+    fflush(stdout);
 }
 
 static void
