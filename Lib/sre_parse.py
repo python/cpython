@@ -23,6 +23,7 @@ DIGITS = set("0123456789")
 
 OCTDIGITS = set("01234567")
 HEXDIGITS = set("0123456789abcdefABCDEF")
+ASCIILETTERS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 WHITESPACE = set(" \t\n\r\v\f")
 
@@ -233,7 +234,7 @@ def isname(name):
             return False
     return True
 
-def _class_escape(source, escape):
+def _class_escape(source, escape, state):
     # handle escape code inside character class
     code = ESCAPES.get(escape)
     if code:
@@ -260,6 +261,14 @@ def _class_escape(source, escape):
         elif c in DIGITS:
             raise error, "bogus escape: %s" % repr(escape)
         if len(escape) == 2:
+            if sys.py3kwarning and c in ASCIILETTERS:
+                import warnings
+                if c in 'Uu' and state.flags & SRE_FLAG_UNICODE:
+                    warnings.warn('unicode escape %s' % escape,
+                                  FutureWarning, stacklevel=8)
+                else:
+                    warnings.warnpy3k('bad escape %s' % escape,
+                                      DeprecationWarning, stacklevel=8)
             return LITERAL, ord(escape[1])
     except ValueError:
         pass
@@ -309,6 +318,14 @@ def _escape(source, escape, state):
                 return GROUPREF, group
             raise ValueError
         if len(escape) == 2:
+            if sys.py3kwarning and c in ASCIILETTERS:
+                import warnings
+                if c in 'Uu' and state.flags & SRE_FLAG_UNICODE:
+                    warnings.warn('unicode escape %s' % escape,
+                                  FutureWarning, stacklevel=8)
+                else:
+                    warnings.warnpy3k('bad escape %s' % escape,
+                                      DeprecationWarning, stacklevel=8)
             return LITERAL, ord(escape[1])
     except ValueError:
         pass
@@ -443,7 +460,7 @@ def _parse(source, state):
                 if this == "]" and set != start:
                     break
                 elif this and this[0] == "\\":
-                    code1 = _class_escape(source, this)
+                    code1 = _class_escape(source, this, state)
                 elif this:
                     code1 = LITERAL, ord(this)
                 else:
@@ -459,7 +476,7 @@ def _parse(source, state):
                         break
                     elif this:
                         if this[0] == "\\":
-                            code2 = _class_escape(source, this)
+                            code2 = _class_escape(source, this, state)
                         else:
                             code2 = LITERAL, ord(this)
                         if code1[0] != LITERAL or code2[0] != LITERAL:
@@ -714,6 +731,12 @@ def parse(str, flags=0, pattern=None):
     pattern.str = str
 
     p = _parse_sub(source, pattern, 0)
+    if (sys.py3kwarning and
+        (p.pattern.flags & SRE_FLAG_LOCALE) and
+        (p.pattern.flags & SRE_FLAG_UNICODE)):
+        import warnings
+        warnings.warnpy3k("LOCALE and UNICODE flags are incompatible",
+                          DeprecationWarning, stacklevel=5)
 
     tail = source.get()
     if tail == ")":
@@ -801,7 +824,10 @@ def parse_template(source, pattern):
                 try:
                     this = makechar(ESCAPES[this][1])
                 except KeyError:
-                    pass
+                    if sys.py3kwarning and c in ASCIILETTERS:
+                        import warnings
+                        warnings.warnpy3k('bad escape %s' % this,
+                                          DeprecationWarning, stacklevel=4)
                 literal(this)
         else:
             literal(this)

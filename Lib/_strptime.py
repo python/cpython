@@ -254,8 +254,8 @@ class TimeRE(dict):
         # format directives (%m, etc.).
         regex_chars = re_compile(r"([\\.^$*+?\(\){}\[\]|])")
         format = regex_chars.sub(r"\\\1", format)
-        whitespace_replacement = re_compile('\s+')
-        format = whitespace_replacement.sub('\s+', format)
+        whitespace_replacement = re_compile(r'\s+')
+        format = whitespace_replacement.sub(r'\\s+', format)
         while '%' in format:
             directive_index = format.index('%')+1
             processed_format = "%s%s%s" % (processed_format,
