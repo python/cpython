@@ -1688,10 +1688,12 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(m.group(1), "")
                 self.assertEqual(m.group(2), "y")
 
+    @cpython_only
     def test_debug_flag(self):
         pat = r'(\.)(?:[ch]|py)(?(1)$|: )'
         with captured_stdout() as out:
             re.compile(pat, re.DEBUG)
+        self.maxDiff = None
         dump = '''\
 SUBPATTERN 1 0 0
   LITERAL 46
@@ -1707,6 +1709,31 @@ GROUPREF_EXISTS 1
 ELSE
   LITERAL 58
   LITERAL 32
+
+ 0. INFO 8 0b1 2 5 (to 9)
+      prefix_skip 0
+      prefix [0x2e] ('.')
+      overlap [0]
+ 9: MARK 0
+11. LITERAL 0x2e ('.')
+13. MARK 1
+15. BRANCH 10 (to 26)
+17.   IN 6 (to 24)
+19.     LITERAL 0x63 ('c')
+21.     LITERAL 0x68 ('h')
+23.     FAILURE
+24:   JUMP 9 (to 34)
+26: branch 7 (to 33)
+27.   LITERAL 0x70 ('p')
+29.   LITERAL 0x79 ('y')
+31.   JUMP 2 (to 34)
+33: FAILURE
+34: GROUPREF_EXISTS 0 6 (to 41)
+37. AT END
+39. JUMP 5 (to 45)
+41: LITERAL 0x3a (':')
+43. LITERAL 0x20 (' ')
+45: SUCCESS
 '''
         self.assertEqual(out.getvalue(), dump)
         # Debug output is output again even a second time (bypassing
