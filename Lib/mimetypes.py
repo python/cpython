@@ -352,7 +352,11 @@ def init(files=None):
         db = MimeTypes()
         if _winreg:
             db.read_windows_registry()
-        files = knownfiles
+
+        if files is None:
+            files = knownfiles
+        else:
+            files = knownfiles + list(files)
     else:
         db = _db
 
