@@ -323,6 +323,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30299: Compiling regular expression in debug mode on CPython now displays
+  the compiled bytecode in human readable form.
+
 - bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
   running coroutine and the coroutine returned without any more ``await``.
 
