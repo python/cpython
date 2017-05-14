@@ -326,6 +326,9 @@ Library
 - bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
   running coroutine and the coroutine returned without any more ``await``.
 
+- bpo-30340: Enhanced regular expressions optimization. This increased
+  the performance of matching some patterns up to 25 times.
+
 - bpo-30298: Weaken the condition of deprecation warnings for inline modifiers.
   Now allowed several subsequential inline modifiers at the start of the
   pattern (e.g. ``'(?i)(?s)...'``).  In verbose mode whitespaces and comments
