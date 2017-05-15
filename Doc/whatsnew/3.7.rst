@@ -299,6 +299,12 @@ API and Feature Removals
   longer take keyword arguments.  The first argument of :func:`int` can now
   be passes only as positional argument.
 
+* Removed previously deprecated in Python 2.4 classes ``Plist``, ``Dict`` and
+  ``_InternalDict`` in the :mod:`plistlib` module.  Dict values in the result
+  of functions :func:`~plistlib.readPlist` and
+  :func:`~plistlib.readPlistFromBytes` are now normal dicts.  You no longer
+  can use attribute access to access items of these dictionaries.
+
 
 Porting to Python 3.7
 =====================
