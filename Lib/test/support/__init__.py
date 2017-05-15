@@ -22,6 +22,7 @@ import re
 import time
 import struct
 import sysconfig
+import types
 try:
     import thread
 except ImportError:
@@ -155,12 +156,17 @@ def get_attribute(obj, name):
     try:
         attribute = getattr(obj, name)
     except AttributeError:
-        if isinstance(obj, type(sys)):
-            raise unittest.SkipTest("module %s has no attribute %r" % (
-                obj.__name__, name))
+        if isinstance(obj, types.ModuleType):
+            msg = "module %r has no attribute %r" % (obj.__name__, name)
+        elif isinstance(obj, types.ClassType):
+            msg = "class %s has no attribute %r" % (obj.__name__, name)
+        elif isinstance(obj, types.InstanceType):
+            msg = "%s instance has no attribute %r" % (obj.__class__.__name__, name)
+        elif isinstance(obj, type):
+            msg = "type object %r has no attribute %r" % (obj.__name__, name)
         else:
-            raise unittest.SkipTest("object %r has no attribute %r" % (
-                obj, name))
+            msg = "%r object has no attribute %r" % (type(obj).__name__, name)
+        raise unittest.SkipTest(msg)
     else:
         return attribute
 

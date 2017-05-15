@@ -12,6 +12,13 @@ from test import support
 TESTFN = support.TESTFN
 
 
+class ClassicClass:
+    pass
+
+class NewStyleClass(object):
+    pass
+
+
 class TestSupport(unittest.TestCase):
 
     def test_import_module(self):
@@ -25,7 +32,16 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(support.get_attribute(self, "test_get_attribute"),
                         self.test_get_attribute)
         self.assertRaises(unittest.SkipTest, support.get_attribute, self, "foo")
-        self.assertRaises(unittest.SkipTest, support.get_attribute, os, "foo")
+        with self.assertRaisesRegexp(unittest.SkipTest, 'unittest'):
+            support.get_attribute(unittest, 'foo')
+        with self.assertRaisesRegexp(unittest.SkipTest, 'ClassicClass'):
+            support.get_attribute(ClassicClass, 'foo')
+        with self.assertRaisesRegexp(unittest.SkipTest, 'ClassicClass'):
+            support.get_attribute(ClassicClass(), 'foo')
+        with self.assertRaisesRegexp(unittest.SkipTest, 'NewStyleClass'):
+            support.get_attribute(NewStyleClass, 'foo')
+        with self.assertRaisesRegexp(unittest.SkipTest, 'NewStyleClass'):
+            support.get_attribute(NewStyleClass(), 'foo')
 
     @unittest.skip("failing buildbots")
     def test_get_original_stdout(self):
