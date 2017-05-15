@@ -79,7 +79,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
             ret = fcntl(fd, code, buf);
             Py_END_ALLOW_THREADS
             if (ret < 0) {
-                PyErr_SetFromErrno(PyExc_IOError);
+                PyErr_SetFromErrno(PyExc_OSError);
                 return NULL;
             }
             return PyBytes_FromStringAndSize(buf, len);
@@ -99,7 +99,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
     ret = fcntl(fd, code, (int)int_arg);
     Py_END_ALLOW_THREADS
     if (ret < 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     return PyLong_FromLong((long)ret);
@@ -210,7 +210,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             }
             PyBuffer_Release(&pstr); /* No further access to str below this point */
             if (ret < 0) {
-                PyErr_SetFromErrno(PyExc_IOError);
+                PyErr_SetFromErrno(PyExc_OSError);
                 return NULL;
             }
             if (mutate_arg) {
@@ -238,7 +238,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             Py_END_ALLOW_THREADS
             if (ret < 0) {
                 PyBuffer_Release(&pstr);
-                PyErr_SetFromErrno(PyExc_IOError);
+                PyErr_SetFromErrno(PyExc_OSError);
                 return NULL;
             }
             PyBuffer_Release(&pstr);
@@ -258,7 +258,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
     ret = ioctl(fd, code, arg);
     Py_END_ALLOW_THREADS
     if (ret < 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     return PyLong_FromLong((long)ret);
@@ -316,7 +316,7 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
     }
 #endif /* HAVE_FLOCK */
     if (ret < 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     Py_RETURN_NONE;
@@ -412,7 +412,7 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
         Py_END_ALLOW_THREADS
     }
     if (ret < 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     Py_RETURN_NONE;

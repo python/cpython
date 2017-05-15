@@ -173,7 +173,6 @@ class TestPlistlib(unittest.TestCase):
         pl = self._create()
         data = plistlib.dumps(pl)
         pl2 = plistlib.loads(data)
-        self.assertEqual(pl, pl2)
         self.assertEqual(dict(pl), dict(pl2))
         data2 = plistlib.dumps(pl2)
         self.assertEqual(data, data2)

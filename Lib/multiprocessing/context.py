@@ -189,7 +189,7 @@ class BaseContext(object):
         try:
             ctx = _concrete_contexts[method]
         except KeyError:
-            raise ValueError('cannot find context for %r' % method)
+            raise ValueError('cannot find context for %r' % method) from None
         ctx._check_available()
         return ctx
 

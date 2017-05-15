@@ -1221,7 +1221,7 @@ Instance methods:
 
 
       >>> from datetime import datetime
-      >>> datetime.now().isoformat(timespec='minutes')
+      >>> datetime.now().isoformat(timespec='minutes')   # doctest: +SKIP
       '2002-12-25T00:00'
       >>> dt = datetime(2015, 1, 1, 12, 30, 59, 0)
       >>> dt.isoformat(timespec='microseconds')
@@ -1781,9 +1781,11 @@ There is one more :class:`tzinfo` method that a subclass may wish to override:
           else:
               return dt
 
-Example :class:`tzinfo` classes:
+In the following :download:`tzinfo_examples.py
+<../includes/tzinfo_examples.py>` file there are some examples of
+:class:`tzinfo` classes:
 
-.. literalinclude:: ../includes/tzinfo-examples.py
+.. literalinclude:: ../includes/tzinfo_examples.py
 
 Note that there are unavoidable subtleties twice per year in a :class:`tzinfo`
 subclass accounting for both standard and daylight time, at the DST transition
@@ -1804,6 +1806,8 @@ When DST starts (the "start" line), the local wall clock leaps from 1:59 to
 ``astimezone(Eastern)`` won't deliver a result with ``hour == 2`` on the day DST
 begins.  For example, at the Spring forward transition of 2016, we get
 
+    >>> from datetime import datetime, timezone
+    >>> from tzinfo_examples import HOUR, Eastern
     >>> u0 = datetime(2016, 3, 13, 5, tzinfo=timezone.utc)
     >>> for i in range(4):
     ...     u = u0 + i*HOUR
