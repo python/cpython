@@ -34,8 +34,8 @@ class BasicThreadTest(unittest.TestCase):
         self.running = 0
         self.next_ident = 0
 
-        key = support.threading_setup()
-        self.addCleanup(support.threading_cleanup, *key)
+        key = test_support.threading_setup()
+        self.addCleanup(test_support.threading_cleanup, *key)
 
 
 class ThreadRunningTests(BasicThreadTest):
