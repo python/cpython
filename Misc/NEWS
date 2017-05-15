@@ -12109,6 +12109,10 @@ IDLE
 
 Tests
 -----
+- bpo-30357: test_thread: setUp() now uses support.threading_setup() and
+  support.threading_cleanup() to wait until threads complete to avoid
+  random side effects on following tests. Initial patch written by Grzegorz
+  Grzywacz.
 
 - Refactor test_logging to use unittest.
 
