@@ -323,6 +323,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30375: Warnings emitted when compile a regular expression now always
+  point to the line in the user code.  Previously they could point into inners
+  of the re module if emitted from inside of groups or conditionals.
+
 - bpo-30329: imaplib and poplib now catch the Windows socket WSAEINVAL error
   (code 10022) on shutdown(SHUT_RDWR): An invalid operation was attempted.
   This error occurs sometimes on SSL connections.
