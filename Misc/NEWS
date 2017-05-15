@@ -323,6 +323,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30329: imaplib and poplib now catch the Windows socket WSAEINVAL error
+  (code 10022) on shutdown(SHUT_RDWR): An invalid operation was attempted.
+  This error occurs sometimes on SSL connections.
+
 - bpo-29196: Removed previously deprecated in Python 2.4 classes Plist, Dict
   and _InternalDict in the plistlib module.  Dict values in the result of
   functions readPlist() and readPlistFromBytes() are now normal dicts.  You
