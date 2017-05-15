@@ -22,6 +22,7 @@ def verbose_print(arg):
             print arg
 
 
+
 class BasicThreadTest(unittest.TestCase):
 
     def setUp(self):
@@ -32,10 +33,9 @@ class BasicThreadTest(unittest.TestCase):
         self.created = 0
         self.running = 0
         self.next_ident = 0
-        self._threads = test_support.threading_setup()
 
-    def tearDown(self):
-        test_support.threading_cleanup(*self._threads)
+        key = support.threading_setup()
+        self.addCleanup(support.threading_cleanup, *key)
 
 
 class ThreadRunningTests(BasicThreadTest):
