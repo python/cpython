@@ -22,6 +22,8 @@ import tabnanny
 import tokenize
 
 import tkinter.messagebox as tkMessageBox
+from tkinter import Frame, Button, Label, Entry, Toplevel
+from tkinter import TOP, TRUE, FALSE, BOTH, LEFT, BOTTOM
 
 from idlelib.config import idleConf
 from idlelib import macosx
@@ -38,12 +40,78 @@ by Format->Untabify Region and specify the number of columns used by each tab.
 """
 
 
+class ArgumentsInputBox(Toplevel):
+
+    def __init__(self, parent, title, _htest=False):
+        """
+        _htest - bool, change box location when running htest
+        """
+        Toplevel.__init__(self, parent)
+        self.parent = parent
+        self.title(title)
+        self.resizable(height=False, width=True)
+        self.grab_set()
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+
+        self.geometry(
+                "+%d+%d" % (parent.winfo_rootx() + parent.winfo_width() / 2 - 150,
+                parent.winfo_rooty() + (30 if not _htest else 150)))
+        self.minsize(width=300, height=50)
+
+    def set_callback(self, callback):
+        self.callback = callback
+
+    def show_input_box(self):
+        self.create_input_box()
+        self.create_action_buttons().pack(side=BOTTOM)
+
+    def create_input_box(self):
+        self.frameMain = frameMain = Frame(self)
+        frameMain.pack(side=TOP, expand=TRUE, fill=BOTH)
+
+        self.label = label = Label(frameMain, text="Command-line arguments: ")
+        label.pack(expand=TRUE, fill=BOTH)
+
+        self.entry = entry = Entry(frameMain)
+        entry.bind("<Return>", lambda event: self.run())
+        entry.pack(expand=TRUE, fill=BOTH)
+        entry.focus_set()
+
+    def create_action_buttons(self):
+        if macosx.isAquaTk():
+            # Changing the default padding on OSX results in unreadable
+            # text in the buttons
+            paddingArgs = {}
+        else:
+            paddingArgs = {'padx': 6, 'pady': 3}
+        outer = Frame(self, pady=2)
+        buttons = Frame(outer, pady=2)
+        for txt, cmd in (
+            ('Run', self.run),
+            ('Cancel', self.cancel)):
+            Button(buttons, text=txt, command=cmd, takefocus=FALSE,
+                   **paddingArgs).pack(side=LEFT, padx=5)
+        # add space above buttons
+        Frame(outer, height=2, borderwidth=0).pack(side=TOP)
+        buttons.pack(side=BOTTOM)
+        return outer
+
+    def run(self):
+        args = self.entry.get()
+        self.destroy()
+        self.callback(None, args)
+
+    def cancel(self):
+        self.destroy()
+
+
 class ScriptBinding:
 
     menudefs = [
         ('run', [None,
                  ('Check Module', '<<check-module>>'),
-                 ('Run Module', '<<run-module>>'), ]), ]
+                 ('Run Module', '<<run-module>>'),
+                 ('Run Module with Arguments', '<<run-module-arguments>>'), ]), ]
 
     def __init__(self, editwin):
         self.editwin = editwin
@@ -54,6 +122,11 @@ class ScriptBinding:
 
         if macosx.isCocoaTk():
             self.editwin.text_frame.bind('<<run-module-event-2>>', self._run_module_event)
+
+    def run_module_arguments_event(self, event):
+        aw = ArgumentsInputBox(event.widget, 'Run with arguments')
+        aw.set_callback(self.run_module_event)
+        aw.show_input_box()
 
     def check_module_event(self, event):
         filename = self.getfilename()
@@ -112,7 +185,7 @@ class ScriptBinding:
         finally:
             shell.set_warning_stream(saved_stream)
 
-    def run_module_event(self, event):
+    def run_module_event(self, event, args=None):
         if macosx.isCocoaTk():
             # Tk-Cocoa in MacOSX is broken until at least
             # Tk 8.5.9, and without this rather
@@ -123,9 +196,9 @@ class ScriptBinding:
                 lambda: self.editwin.text_frame.event_generate('<<run-module-event-2>>'))
             return 'break'
         else:
-            return self._run_module_event(event)
+            return self._run_module_event(event, args)
 
-    def _run_module_event(self, event):
+    def _run_module_event(self, event, args=None):
         """Run the module after setting up the environment.
 
         First check the syntax.  If OK, make sure the shell is active and
@@ -148,7 +221,7 @@ class ScriptBinding:
                         self.editwin._filename_to_unicode(filename))
         dirname = os.path.dirname(filename)
         # XXX Too often this discards arguments the user just set...
-        interp.runcommand("""if 1:
+        command = """if 1:
             __file__ = {filename!r}
             import sys as _sys
             from os.path import basename as _basename
@@ -157,8 +230,12 @@ class ScriptBinding:
                 _sys.argv = [__file__]
             import os as _os
             _os.chdir({dirname!r})
-            del _sys, _basename, _os
-            \n""".format(filename=filename, dirname=dirname))
+            \n""".format(filename=filename, dirname=dirname)
+        if args:
+            for arg in args.split():
+                command += '_sys.argv.append({arg})\n'.format(arg=repr(arg))
+        command += 'del _sys, _basename, _os\n'
+        interp.runcommand(command)
         interp.prepend_syspath(filename)
         # XXX KBK 03Jul04 When run w/o subprocess, runtime warnings still
         #         go to __stderr__.  With subprocess, they go to the shell.
