@@ -164,6 +164,9 @@ Build
 Tests
 -----
 
+- bpo-11790: Fix sporadic failures in
+  test_multiprocessing.WithProcessesTestCondition.
+
 - bpo-30236: Backported test.regrtest options -m/--match and -G/--failfast
   from Python 3.
 
