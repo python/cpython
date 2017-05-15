@@ -32,11 +32,10 @@ class BasicThreadTest(unittest.TestCase):
         self.created = 0
         self.running = 0
         self.next_ident = 0
-        self.thread_count = thread._count()
+        self._threads = test_support.threading_setup()
 
     def tearDown(self):
-        while self.thread_count != thread._count():
-            time.sleep(0.01)
+        test_support.threading_cleanup(*self._threads)
 
 
 class ThreadRunningTests(BasicThreadTest):
