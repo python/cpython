@@ -265,6 +265,8 @@ Deprecated
   now deprecated.  It never correctly worked. (Contributed by Serhiy Storchaka
   in :issue:`28692`.)
 
+- The :mod:`macpath` is now deprecated and will be removed in Python 3.8.
+
 
 Changes in the C API
 --------------------
