@@ -328,6 +328,9 @@ Library
   functions readPlist() and readPlistFromBytes() are now normal dicts.  You
   no longer can use attribute access to access items of these dictionaries.
 
+- bpo-9850: The :mod:`macpath` is now deprecated and will be removed
+  in Python 3.8.
+
 - bpo-30299: Compiling regular expression in debug mode on CPython now displays
   the compiled bytecode in human readable form.
 
