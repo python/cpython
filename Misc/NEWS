@@ -235,6 +235,11 @@ Build
 Tests
 -----
 
+- bpo-30357: test_thread: setUp() now uses support.threading_setup() and
+  support.threading_cleanup() to wait until threads complete to avoid
+  random side effects on following tests. Initial patch written by Grzegorz
+  Grzywacz.
+
 - bpo-28087: Skip test_asyncore and test_eintr poll failures on macOS.
   Skip some tests of select.poll when running on macOS due to unresolved
   issues with the underlying system poll function on some macOS versions.
