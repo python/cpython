@@ -11,6 +11,7 @@ import sys
 import site
 import os
 import winreg
+from ctypes import windll
 
 HKCU = winreg.HKEY_CURRENT_USER
 ENV = "Environment"
@@ -43,9 +44,22 @@ def modify():
         winreg.SetValueEx(key, PATH, 0, winreg.REG_EXPAND_SZ, envpath)
         return paths, envpath
 
+def refresh_environment_variables():
+        HWND_BROADCAST = 0xFFFF
+        WM_SETTINGCHANGE = 0x001A
+        SMTO_ABORTIFHUNG = 0x0002
+        windll.user32.SendMessageTimeoutW(
+            HWND_BROADCAST,
+            WM_SETTINGCHANGE,
+            0,
+            ENV,
+            SMTO_ABORTIFHUNG,
+            1000)
+
 def main():
     paths, envpath = modify()
     if len(paths) > 1:
+        refresh_environment_variables()
         print("Path(s) added:")
         print('\n'.join(paths[1:]))
     else:
