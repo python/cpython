@@ -423,13 +423,7 @@ nu_uint(const char *p, const formatdef *f)
 {
     unsigned int x;
     memcpy((char *)&x, p, sizeof x);
-#if (SIZEOF_LONG > SIZEOF_INT)
-    return PyLong_FromLong((long)x);
-#else
-    if (x <= ((unsigned int)LONG_MAX))
-        return PyLong_FromLong((long)x);
     return PyLong_FromUnsignedLong((unsigned long)x);
-#endif
 }
 
 static PyObject *
@@ -445,8 +439,6 @@ nu_ulong(const char *p, const formatdef *f)
 {
     unsigned long x;
     memcpy((char *)&x, p, sizeof x);
-    if (x <= LONG_MAX)
-        return PyLong_FromLong((long)x);
     return PyLong_FromUnsignedLong(x);
 }
 
@@ -466,17 +458,11 @@ nu_size_t(const char *p, const formatdef *f)
     return PyLong_FromSize_t(x);
 }
 
-
-/* Native mode doesn't support q or Q unless the platform C supports
-   long long (or, on Windows, __int64). */
-
 static PyObject *
 nu_longlong(const char *p, const formatdef *f)
 {
     long long x;
     memcpy((char *)&x, p, sizeof x);
-    if (x >= LONG_MIN && x <= LONG_MAX)
-        return PyLong_FromLong(Py_SAFE_DOWNCAST(x, long long, long));
     return PyLong_FromLongLong(x);
 }
 
@@ -485,8 +471,6 @@ nu_ulonglong(const char *p, const formatdef *f)
 {
     unsigned long long x;
     memcpy((char *)&x, p, sizeof x);
-    if (x <= LONG_MAX)
-        return PyLong_FromLong(Py_SAFE_DOWNCAST(x, unsigned long long, long));
     return PyLong_FromUnsignedLongLong(x);
 }
 
@@ -539,7 +523,7 @@ np_byte(char *p, PyObject *v, const formatdef *f)
     long x;
     if (get_long(v, &x) < 0)
         return -1;
-    if (x < -128 || x > 127){
+    if (x < -128 || x > 127) {
         PyErr_SetString(StructError,
                         "byte format requires -128 <= number <= 127");
         return -1;
@@ -554,7 +538,7 @@ np_ubyte(char *p, PyObject *v, const formatdef *f)
     long x;
     if (get_long(v, &x) < 0)
         return -1;
-    if (x < 0 || x > 255){
+    if (x < 0 || x > 255) {
         PyErr_SetString(StructError,
                         "ubyte format requires 0 <= number <= 255");
         return -1;
@@ -566,12 +550,12 @@ np_ubyte(char *p, PyObject *v, const formatdef *f)
 static int
 np_char(char *p, PyObject *v, const formatdef *f)
 {
-    if (!PyBytes_Check(v) || PyBytes_Size(v) != 1) {
+    if (!PyBytes_Check(v) || PyBytes_GET_SIZE(v) != 1) {
         PyErr_SetString(StructError,
                         "char format requires a bytes object of length 1");
         return -1;
     }
-    *p = *PyBytes_AsString(v);
+    *p = *PyBytes_AS_STRING(v);
     return 0;
 }
 
@@ -582,7 +566,7 @@ np_short(char *p, PyObject *v, const formatdef *f)
     short y;
     if (get_long(v, &x) < 0)
         return -1;
-    if (x < SHRT_MIN || x > SHRT_MAX){
+    if (x < SHRT_MIN || x > SHRT_MAX) {
         PyErr_SetString(StructError,
                         "short format requires " Py_STRINGIFY(SHRT_MIN)
                         " <= number <= " Py_STRINGIFY(SHRT_MAX));
@@ -600,7 +584,7 @@ np_ushort(char *p, PyObject *v, const formatdef *f)
     unsigned short y;
     if (get_long(v, &x) < 0)
         return -1;
-    if (x < 0 || x > USHRT_MAX){
+    if (x < 0 || x > USHRT_MAX) {
         PyErr_SetString(StructError,
                         "ushort format requires 0 <= number <= "
                         Py_STRINGIFY(USHRT_MAX));
@@ -821,8 +805,6 @@ bu_uint(const char *p, const formatdef *f)
     do {
         x = (x<<8) | *bytes++;
     } while (--i > 0);
-    if (x <= LONG_MAX)
-        return PyLong_FromLong((long)x);
     return PyLong_FromUnsignedLong(x);
 }
 
@@ -838,8 +820,6 @@ bu_longlong(const char *p, const formatdef *f)
     /* Extend the sign bit. */
     if (SIZEOF_LONG_LONG > f->size)
         x |= -(x & ((long long)1 << ((8 * f->size) - 1)));
-    if (x >= LONG_MIN && x <= LONG_MAX)
-        return PyLong_FromLong(Py_SAFE_DOWNCAST(x, long long, long));
     return PyLong_FromLongLong(x);
 }
 
@@ -852,8 +832,6 @@ bu_ulonglong(const char *p, const formatdef *f)
     do {
         x = (x<<8) | *bytes++;
     } while (--i > 0);
-    if (x <= LONG_MAX)
-        return PyLong_FromLong(Py_SAFE_DOWNCAST(x, unsigned long long, long));
     return PyLong_FromUnsignedLongLong(x);
 }
 
@@ -878,9 +856,7 @@ bu_double(const char *p, const formatdef *f)
 static PyObject *
 bu_bool(const char *p, const formatdef *f)
 {
-    char x;
-    memcpy((char *)&x, p, sizeof x);
-    return PyBool_FromLong(x != 0);
+    return PyBool_FromLong(*p != 0);
 }
 
 static int
@@ -938,7 +914,7 @@ bp_longlong(char *p, PyObject *v, const formatdef *f)
                               (unsigned char *)p,
                               8,
                               0, /* little_endian */
-                  1  /* signed */);
+                              1  /* signed */);
     Py_DECREF(v);
     return res;
 }
@@ -954,7 +930,7 @@ bp_ulonglong(char *p, PyObject *v, const formatdef *f)
                               (unsigned char *)p,
                               8,
                               0, /* little_endian */
-                  0  /* signed */);
+                              0  /* signed */);
     Py_DECREF(v);
     return res;
 }
@@ -1048,9 +1024,7 @@ lu_uint(const char *p, const formatdef *f)
     do {
         x = (x<<8) | bytes[--i];
     } while (i > 0);
-    if (x <= LONG_MAX)
-        return PyLong_FromLong((long)x);
-    return PyLong_FromUnsignedLong((long)x);
+    return PyLong_FromUnsignedLong(x);
 }
 
 static PyObject *
@@ -1065,8 +1039,6 @@ lu_longlong(const char *p, const formatdef *f)
     /* Extend the sign bit. */
     if (SIZEOF_LONG_LONG > f->size)
         x |= -(x & ((long long)1 << ((8 * f->size) - 1)));
-    if (x >= LONG_MIN && x <= LONG_MAX)
-        return PyLong_FromLong(Py_SAFE_DOWNCAST(x, long long, long));
     return PyLong_FromLongLong(x);
 }
 
@@ -1079,8 +1051,6 @@ lu_ulonglong(const char *p, const formatdef *f)
     do {
         x = (x<<8) | bytes[--i];
     } while (i > 0);
-    if (x <= LONG_MAX)
-        return PyLong_FromLong(Py_SAFE_DOWNCAST(x, unsigned long long, long));
     return PyLong_FromUnsignedLongLong(x);
 }
 
@@ -1157,7 +1127,7 @@ lp_longlong(char *p, PyObject *v, const formatdef *f)
                               (unsigned char *)p,
                               8,
                               1, /* little_endian */
-                  1  /* signed */);
+                              1  /* signed */);
     Py_DECREF(v);
     return res;
 }
@@ -1173,7 +1143,7 @@ lp_ulonglong(char *p, PyObject *v, const formatdef *f)
                               (unsigned char *)p,
                               8,
                               1, /* little_endian */
-                  0  /* signed */);
+                              0  /* signed */);
     Py_DECREF(v);
     return res;
 }
@@ -1390,8 +1360,6 @@ prepare_s(PyStructObject *self)
             num = c - '0';
             while ('0' <= (c = *s++) && c <= '9')
                 num = num*10 + (c - '0');
-            if (c == '\0')
-                break;
         }
         else
             num = 1;
@@ -1486,7 +1454,7 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
         return -1;
     }
 
-    Py_XSETREF(self->s_format, format);
+    Py_SETREF(self->s_format, format);
 
     ret = prepare_s(self);
     return ret;
@@ -1500,7 +1468,7 @@ s_dealloc(PyStructObject *s)
     if (s->s_codes != NULL) {
         PyMem_FREE(s->s_codes);
     }
-    Py_XDECREF(s->s_format);
+    Py_DECREF(s->s_format);
     Py_TYPE(s)->tp_free((PyObject *)s);
 }
 
@@ -1864,7 +1832,7 @@ s_pack(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
         return NULL;
     }
 
-    /* Allocate a new string */
+    /* Allocate a new buffer */
     result = PyBytes_FromStringAndSize((char *)NULL, soself->s_size);
     if (result == NULL)
         return NULL;
