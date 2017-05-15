@@ -42,6 +42,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30329: imaplib now catchs the Windows socket WSAEINVAL error
+  (code 10022) on shutdown(SHUT_RDWR): An invalid operation was attempted.
+  This error occurs sometimes on SSL connections.
+
 - bpo-30342: Fix sysconfig.is_python_build() if Python is built with Visual
   Studio 2008 (VS 9.0).
 
