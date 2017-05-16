@@ -1168,9 +1168,6 @@ def buildPython():
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
-    print("Running make touch")
-    runCommand("make touch")
-
     print("Running make")
     runCommand("make")
 

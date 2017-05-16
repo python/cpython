@@ -1176,7 +1176,7 @@ _PyObject_Alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
 
     _Py_AllocatedBlocks++;
 
-    assert(nelem <= PY_SSIZE_T_MAX / elsize);
+    assert(elsize == 0 || nelem <= PY_SSIZE_T_MAX / elsize);
     nbytes = nelem * elsize;
 
 #ifdef WITH_VALGRIND
@@ -2233,7 +2233,9 @@ _PyObject_DebugMallocStats(FILE *out)
 
             if (p->ref.count == 0) {
                 /* currently unused */
+#ifdef Py_DEBUG
                 assert(pool_is_in_list(p, arenas[i].freepools));
+#endif
                 continue;
             }
             ++numpools[sz];

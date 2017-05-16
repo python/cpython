@@ -76,7 +76,7 @@ The typical usage to inspect a crashed program is::
    >>> import mymodule
    >>> mymodule.test()
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
      File "./mymodule.py", line 4, in test
        test2()
      File "./mymodule.py", line 3, in test2

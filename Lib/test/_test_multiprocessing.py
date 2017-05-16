@@ -18,6 +18,7 @@ import random
 import logging
 import struct
 import operator
+import weakref
 import test.support
 import test.support.script_helper
 
@@ -1668,13 +1669,29 @@ def sqr(x, wait=0.0):
 def mul(x, y):
     return x*y
 
+def identity(x):
+    return x
+
+class CountedObject(object):
+    n_instances = 0
+
+    def __new__(cls):
+        cls.n_instances += 1
+        return object.__new__(cls)
+
+    def __del__(self):
+        type(self).n_instances -= 1
+
 class SayWhenError(ValueError): pass
 
 def exception_throwing_generator(total, when):
+    if when == -1:
+        raise SayWhenError("Somebody said when")
     for i in range(total):
         if i == when:
             raise SayWhenError("Somebody said when")
         yield i
+
 
 class _TestPool(BaseTestCase):
 
@@ -1748,6 +1765,32 @@ class _TestPool(BaseTestCase):
         except multiprocessing.TimeoutError:
             self.fail("pool.map_async with chunksize stalled on null list")
 
+    def test_map_handle_iterable_exception(self):
+        if self.TYPE == 'manager':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        # SayWhenError seen at the very first of the iterable
+        with self.assertRaises(SayWhenError):
+            self.pool.map(sqr, exception_throwing_generator(1, -1), 1)
+        # again, make sure it's reentrant
+        with self.assertRaises(SayWhenError):
+            self.pool.map(sqr, exception_throwing_generator(1, -1), 1)
+
+        with self.assertRaises(SayWhenError):
+            self.pool.map(sqr, exception_throwing_generator(10, 3), 1)
+
+        class SpecialIterable:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                raise SayWhenError
+            def __len__(self):
+                return 1
+        with self.assertRaises(SayWhenError):
+            self.pool.map(sqr, SpecialIterable(), 1)
+        with self.assertRaises(SayWhenError):
+            self.pool.map(sqr, SpecialIterable(), 1)
+
     def test_async(self):
         res = self.pool.apply_async(sqr, (7, TIMEOUT1,))
         get = TimingWrapper(res.get)
@@ -1778,6 +1821,13 @@ class _TestPool(BaseTestCase):
         if self.TYPE == 'manager':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
+        # SayWhenError seen at the very first of the iterable
+        it = self.pool.imap(sqr, exception_throwing_generator(1, -1), 1)
+        self.assertRaises(SayWhenError, it.__next__)
+        # again, make sure it's reentrant
+        it = self.pool.imap(sqr, exception_throwing_generator(1, -1), 1)
+        self.assertRaises(SayWhenError, it.__next__)
+
         it = self.pool.imap(sqr, exception_throwing_generator(10, 3), 1)
         for i in range(3):
             self.assertEqual(next(it), i*i)
@@ -1803,6 +1853,17 @@ class _TestPool(BaseTestCase):
     def test_imap_unordered_handle_iterable_exception(self):
         if self.TYPE == 'manager':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        # SayWhenError seen at the very first of the iterable
+        it = self.pool.imap_unordered(sqr,
+                                      exception_throwing_generator(1, -1),
+                                      1)
+        self.assertRaises(SayWhenError, it.__next__)
+        # again, make sure it's reentrant
+        it = self.pool.imap_unordered(sqr,
+                                      exception_throwing_generator(1, -1),
+                                      1)
+        self.assertRaises(SayWhenError, it.__next__)
 
         it = self.pool.imap_unordered(sqr,
                                       exception_throwing_generator(10, 3),
@@ -1885,7 +1946,7 @@ class _TestPool(BaseTestCase):
                 except Exception as e:
                     exc = e
                 else:
-                    raise AssertionError('expected RuntimeError')
+                    self.fail('expected RuntimeError')
             self.assertIs(type(exc), RuntimeError)
             self.assertEqual(exc.args, (123,))
             cause = exc.__cause__
@@ -1899,6 +1960,17 @@ class _TestPool(BaseTestCase):
                     sys.excepthook(*sys.exc_info())
             self.assertIn('raise RuntimeError(123) # some comment',
                           f1.getvalue())
+            # _helper_reraises_exception should not make the error
+            # a remote exception
+            with self.Pool(1) as p:
+                try:
+                    p.map(sqr, exception_throwing_generator(1, -1), 1)
+                except Exception as e:
+                    exc = e
+                else:
+                    self.fail('expected SayWhenError')
+                self.assertIs(type(exc), SayWhenError)
+                self.assertIs(exc.__cause__, None)
 
     @classmethod
     def _test_wrapped_exception(cls):
@@ -1909,6 +1981,20 @@ class _TestPool(BaseTestCase):
         with self.Pool(1) as p:
             with self.assertRaises(RuntimeError):
                 p.apply(self._test_wrapped_exception)
+
+    def test_release_task_refs(self):
+        # Issue #29861: task arguments and results should not be kept
+        # alive after we are done with them.
+        objs = [CountedObject() for i in range(10)]
+        refs = [weakref.ref(o) for o in objs]
+        self.pool.map(identity, objs)
+
+        del objs
+        time.sleep(DELTA)  # let threaded cleanup code run
+        self.assertEqual(set(wr() for wr in refs), {None})
+        # With a process pool, copies of the objects are returned, check
+        # they were released too.
+        self.assertEqual(CountedObject.n_instances, 0)
 
 
 def raising():

@@ -633,6 +633,11 @@ Cursor Objects
       method. For operations other than ``INSERT`` or when :meth:`executemany` is
       called, :attr:`lastrowid` is set to :const:`None`.
 
+   .. attribute:: arraysize
+
+      Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
+      The default value is 1 which means a single row would be fetched per call.
+
    .. attribute:: description
 
       This read-only attribute provides the column names of the last query. To

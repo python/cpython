@@ -34,8 +34,8 @@ can be customized by end users easily.
 .. seealso::
 
    Module :mod:`shlex`
-      Support for a creating Unix shell-like mini-languages which can be used
-      as an alternate format for application configuration files.
+      Support for creating Unix shell-like mini-languages which can be used as
+      an alternate format for application configuration files.
 
    Module :mod:`json`
       The json module implements a subset of JavaScript syntax which can also

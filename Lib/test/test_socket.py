@@ -876,6 +876,7 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(swapped & mask, mask)
             self.assertRaises(OverflowError, func, 1<<34)
 
+    @support.cpython_only
     def testNtoHErrors(self):
         good_values = [ 1, 2, 3, 1, 2, 3 ]
         bad_values = [ -1, -2, -3, -1, -2, -3 ]
@@ -2843,6 +2844,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             nbytes = self.sendmsgToServer([msg])
         self.assertEqual(nbytes, len(msg))
 
+    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #24725")
     def testFDPassEmpty(self):
         # Try to pass an empty FD array.  Can receive either no array
         # or an empty array.
@@ -4587,6 +4589,10 @@ class TestUnixDomain(unittest.TestCase):
                     .format(path))
             else:
                 raise
+
+    def testUnbound(self):
+        # Issue #30205
+        self.assertIn(self.sock.getsockname(), (None, ''))
 
     def testStrAddr(self):
         # Test binding to and retrieving a normal string pathname.

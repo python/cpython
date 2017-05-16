@@ -638,14 +638,18 @@ class ReTests(unittest.TestCase):
         re.purge()  # for warnings
         for c in 'ceghijklmopqyzCEFGHIJKLMNOPQRTVXY':
             with self.subTest(c):
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarns(DeprecationWarning) as warns:
                     self.assertEqual(re.fullmatch('\\%c' % c, c).group(), c)
                     self.assertIsNone(re.match('\\%c' % c, 'a'))
+                self.assertRegex(str(warns.warnings[0].message), 'bad escape')
+                self.assertEqual(warns.warnings[0].filename, __file__)
         for c in 'ceghijklmopqyzABCEFGHIJKLMNOPQRTVXYZ':
             with self.subTest(c):
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarns(DeprecationWarning) as warns:
                     self.assertEqual(re.fullmatch('[\\%c]' % c, c).group(), c)
                     self.assertIsNone(re.match('[\\%c]' % c, 'a'))
+                self.assertRegex(str(warns.warnings[0].message), 'bad escape')
+                self.assertEqual(warns.warnings[0].filename, __file__)
 
     def test_string_boundaries(self):
         # See http://bugs.python.org/issue10713

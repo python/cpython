@@ -1272,7 +1272,7 @@ bytes_concat(PyObject *a, PyObject *b)
     if (PyObject_GetBuffer(a, &va, PyBUF_SIMPLE) != 0 ||
         PyObject_GetBuffer(b, &vb, PyBUF_SIMPLE) != 0) {
         PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
-                     Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
+                     Py_TYPE(b)->tp_name, Py_TYPE(a)->tp_name);
         goto done;
     }
 
@@ -1534,11 +1534,11 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
         char* result_buf;
         PyObject* result;
 
-        if (PySlice_GetIndicesEx(item,
-                         PyBytes_GET_SIZE(self),
-                         &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = PySlice_AdjustIndices(PyBytes_GET_SIZE(self), &start,
+                                            &stop, step);
 
         if (slicelength <= 0) {
             return PyBytes_FromStringAndSize("", 0);

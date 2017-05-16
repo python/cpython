@@ -149,8 +149,15 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
 
     util._close_stdin()
 
-    # ignoring SIGCHLD means no need to reap zombie processes
-    handler = signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+    # ignoring SIGCHLD means no need to reap zombie processes;
+    # letting SIGINT through avoids KeyboardInterrupt tracebacks
+    handlers = {
+        signal.SIGCHLD: signal.SIG_IGN,
+        signal.SIGINT: signal.SIG_DFL,
+        }
+    old_handlers = {sig: signal.signal(sig, val)
+                    for (sig, val) in handlers.items()}
+
     with socket.socket(socket.AF_UNIX, fileno=listener_fd) as listener, \
          selectors.DefaultSelector() as selector:
         _forkserver._forkserver_address = listener.getsockname()
@@ -175,7 +182,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                     code = 1
                     if os.fork() == 0:
                         try:
-                            _serve_one(s, listener, alive_r, handler)
+                            _serve_one(s, listener, alive_r, old_handlers)
                         except Exception:
                             sys.excepthook(*sys.exc_info())
                             sys.stderr.flush()
@@ -186,11 +193,12 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                 if e.errno != errno.ECONNABORTED:
                     raise
 
-def _serve_one(s, listener, alive_r, handler):
-    # close unnecessary stuff and reset SIGCHLD handler
+def _serve_one(s, listener, alive_r, handlers):
+    # close unnecessary stuff and reset signal handlers
     listener.close()
     os.close(alive_r)
-    signal.signal(signal.SIGCHLD, handler)
+    for sig, val in handlers.items():
+        signal.signal(sig, val)
 
     # receive fds from parent process
     fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
