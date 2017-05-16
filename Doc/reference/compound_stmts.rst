@@ -54,7 +54,7 @@ Summarizing:
                 : | `async_with_stmt`
                 : | `async_for_stmt`
                 : | `async_funcdef`
-   suite: `stmt_list` NEWLINE | NEWLINE INDENT `statement`+ DEDENT
+   suite: `stmt_list` NEWLINE | (NEWLINE INDENT `statement`)+ DEDENT
    statement: `stmt_list` NEWLINE | `compound_stmt`
    stmt_list: `simple_stmt` (";" `simple_stmt`)* [";"]
 
