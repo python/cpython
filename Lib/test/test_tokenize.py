@@ -1,7 +1,7 @@
 from test import support
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
-                     open as tokenize_open, Untokenizer)
+                     open as tokenize_open, Untokenizer, tok_name as tokenize_tok_name)
 from io import BytesIO
 from unittest import TestCase, mock
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
@@ -1343,13 +1343,13 @@ class TestTokenize(TestCase):
         tokens = list(tokenize(BytesIO(opstr.encode('utf-8')).readline))
         num_optypes = len(optypes)
         self.assertEqual(len(tokens), 2 + num_optypes)
-        self.assertEqual(token.tok_name[tokens[0].exact_type],
-                         token.tok_name[ENCODING])
+        self.assertEqual(tokenize_tok_name[tokens[0].exact_type],
+                         tokenize_tok_name[ENCODING])
         for i in range(num_optypes):
-            self.assertEqual(token.tok_name[tokens[i + 1].exact_type],
-                             token.tok_name[optypes[i]])
-        self.assertEqual(token.tok_name[tokens[1 + num_optypes].exact_type],
-                         token.tok_name[token.ENDMARKER])
+            self.assertEqual(tokenize_tok_name[tokens[i + 1].exact_type],
+                             tokenize_tok_name[optypes[i]])
+        self.assertEqual(tokenize_tok_name[tokens[1 + num_optypes].exact_type],
+                         tokenize_tok_name[token.ENDMARKER])
 
     def test_exact_type(self):
         self.assertExactTypeEqual('()', token.LPAR, token.RPAR)
@@ -1419,6 +1419,9 @@ class TestTokenize(TestCase):
         # See http://bugs.python.org/issue16152
         self.assertExactTypeEqual('@          ', token.AT)
 
+    def test_should_not_alter_token_tok_name(self):
+        token_tok_name_len = len(token.tok_name)
+        self.assertNotEqual(token_tok_name_len, len(tokenize_tok_name))
 
 class UntokenizeTest(TestCase):
 
