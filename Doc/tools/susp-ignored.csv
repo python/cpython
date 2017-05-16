@@ -316,8 +316,8 @@ library/xml.etree.elementtree,,:actor,"for actor in root.findall('real_person:ac
 library/xml.etree.elementtree,,:name,"name = actor.find('real_person:name', ns)"
 library/xml.etree.elementtree,,:character,"for char in actor.findall('role:character', ns):"
 library/zipapp,,:main,"$ python -m zipapp myapp -m ""myapp:main"""
-library/zipapp,,:fn,"argument should have the form ""pkg.mod:fn"", where ""pkg.mod"" is a"
-library/zipapp,,:callable,"""pkg.module:callable"" and the archive will be run by importing"
+library/zipapp,,:fn,"pkg.mod:fn"
+library/zipapp,,:callable,"pkg.module:callable"
 library/stdtypes,,::,>>> m[::2].tolist()
 library/sys,,`,# ``wrapper`` creates a ``wrap(coro)`` coroutine:
 whatsnew/3.5,,:root,'WARNING:root:warning\n'
