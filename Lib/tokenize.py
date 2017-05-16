@@ -42,6 +42,8 @@ __all__ = token.__all__ + ["COMMENT", "tokenize", "detect_encoding",
                            "NL", "untokenize", "ENCODING", "TokenInfo"]
 del token
 
+tok_name = tok_name.copy()
+
 COMMENT = N_TOKENS
 tok_name[COMMENT] = 'COMMENT'
 NL = N_TOKENS + 1
