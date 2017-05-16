@@ -82,7 +82,7 @@ howto/pyporting,,::,Programming Language :: Python :: 2
 howto/pyporting,,::,Programming Language :: Python :: 3
 howto/regex,,::,
 howto/regex,,:foo,(?:foo)
-howto/urllib2,,:password,"for example ""joe:password@example.com"""
+howto/urllib2,,:password,"""joe:password@example.com"""
 library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
 library/bisect,32,:hi,all(val >= x for val in a[i:hi])
 library/bisect,42,:hi,all(val > x for val in a[i:hi])
@@ -288,8 +288,8 @@ library/xml.etree.elementtree,,:actor,"for actor in root.findall('real_person:ac
 library/xml.etree.elementtree,,:name,"name = actor.find('real_person:name', ns)"
 library/xml.etree.elementtree,,:character,"for char in actor.findall('role:character', ns):"
 library/zipapp,31,:main,"$ python -m zipapp myapp -m ""myapp:main"""
-library/zipapp,82,:fn,"argument should have the form ""pkg.mod:fn"", where ""pkg.mod"" is a"
-library/zipapp,155,:callable,"""pkg.module:callable"" and the archive will be run by importing"
+library/zipapp,,:fn,"pkg.mod:fn"
+library/zipapp,,:callable,"pkg.module:callable"
 library/stdtypes,,::,>>> m[::2].tolist()
 library/sys,,`,# ``wrapper`` creates a ``wrap(coro)`` coroutine:
 tutorial/venv,77,:c7b9645a6f35,"Python 3.4.3+ (3.4:c7b9645a6f35+, May 22 2015, 09:31:25)"
