@@ -107,7 +107,7 @@ clean:
 
 venv:
 	$(PYTHON) -m venv venv
-	./venv/bin/python3 -m pip install sphinx~=1.5.6
+	./venv/bin/python3 -m pip install -U sphinx
 
 dist:
 	rm -rf dist
