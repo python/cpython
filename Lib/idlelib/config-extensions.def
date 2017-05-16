@@ -85,6 +85,10 @@ enable=True
 enable_shell=False
 enable_editor=True
 
+[TrimExtension]
+enable=True
+enable_trim_on_save=True
+
 [ScriptBinding]
 enable=True
 enable_shell=False
