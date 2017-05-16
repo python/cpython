@@ -769,7 +769,7 @@ def _parse(source, state, verbose, nested, first=False):
                                     source.string[:20],  # truncate long regexes
                                     ' (truncated)' if len(source.string) > 20 else '',
                                 ),
-                                DeprecationWarning, stacklevel=6+nested
+                                DeprecationWarning, stacklevel=nested + 6
                             )
                         if (state.flags & SRE_FLAG_VERBOSE) and not verbose:
                             raise Verbose
