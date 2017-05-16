@@ -309,7 +309,7 @@ def isname(name):
             return False
     return True
 
-def _class_escape(source, escape):
+def _class_escape(source, escape, nested):
     # handle escape code inside character class
     code = ESCAPES.get(escape)
     if code:
@@ -353,13 +353,13 @@ def _class_escape(source, escape):
             if c in ASCIILETTERS:
                 import warnings
                 warnings.warn('bad escape %s' % escape,
-                              DeprecationWarning, stacklevel=8)
+                              DeprecationWarning, stacklevel=nested + 6)
             return LITERAL, ord(escape[1])
     except ValueError:
         pass
     raise source.error("bad escape %s" % escape, len(escape))
 
-def _escape(source, escape, state):
+def _escape(source, escape, state, nested):
     # handle escape code in expression
     code = CATEGORIES.get(escape)
     if code:
@@ -420,13 +420,13 @@ def _escape(source, escape, state):
             if c in ASCIILETTERS:
                 import warnings
                 warnings.warn('bad escape %s' % escape,
-                              DeprecationWarning, stacklevel=8)
+                              DeprecationWarning, stacklevel=nested + 6)
             return LITERAL, ord(escape[1])
     except ValueError:
         pass
     raise source.error("bad escape %s" % escape, len(escape))
 
-def _parse_sub(source, state, nested=True):
+def _parse_sub(source, state, nested):
     # parse an alternation: a|b|c
 
     items = []
@@ -434,7 +434,7 @@ def _parse_sub(source, state, nested=True):
     sourcematch = source.match
     start = source.tell()
     while True:
-        itemsappend(_parse(source, state))
+        itemsappend(_parse(source, state, nested + 1))
         if not sourcematch("|"):
             break
 
@@ -476,10 +476,10 @@ def _parse_sub(source, state, nested=True):
     subpattern.append((BRANCH, (None, items)))
     return subpattern
 
-def _parse_sub_cond(source, state, condgroup):
-    item_yes = _parse(source, state)
+def _parse_sub_cond(source, state, condgroup, nested):
+    item_yes = _parse(source, state, nested + 1)
     if source.match("|"):
-        item_no = _parse(source, state)
+        item_no = _parse(source, state, nested + 1)
         if source.next == "|":
             raise source.error("conditional backref with more than two branches")
     else:
@@ -488,7 +488,7 @@ def _parse_sub_cond(source, state, condgroup):
     subpattern.append((GROUPREF_EXISTS, (condgroup, item_yes, item_no)))
     return subpattern
 
-def _parse(source, state):
+def _parse(source, state, nested):
     # parse a simple pattern
     subpattern = SubPattern(state)
 
@@ -521,7 +521,7 @@ def _parse(source, state):
                 continue
 
         if this[0] == "\\":
-            code = _escape(source, this, state)
+            code = _escape(source, this, state, nested + 1)
             subpatternappend(code)
 
         elif this not in SPECIAL_CHARS:
@@ -546,7 +546,7 @@ def _parse(source, state):
                 if this == "]" and set != start:
                     break
                 elif this[0] == "\\":
-                    code1 = _class_escape(source, this)
+                    code1 = _class_escape(source, this, nested + 1)
                 else:
                     code1 = LITERAL, _ord(this)
                 if sourcematch("-"):
@@ -562,7 +562,7 @@ def _parse(source, state):
                         setappend((LITERAL, _ord("-")))
                         break
                     if that[0] == "\\":
-                        code2 = _class_escape(source, that)
+                        code2 = _class_escape(source, that, nested + 1)
                     else:
                         code2 = LITERAL, _ord(that)
                     if code1[0] != LITERAL or code2[0] != LITERAL:
@@ -713,7 +713,7 @@ def _parse(source, state):
                         lookbehindgroups = state.lookbehindgroups
                         if lookbehindgroups is None:
                             state.lookbehindgroups = state.groups
-                    p = _parse_sub(source, state)
+                    p = _parse_sub(source, state, nested + 1)
                     if dir < 0:
                         if lookbehindgroups is None:
                             state.lookbehindgroups = None
@@ -773,9 +773,9 @@ def _parse(source, state):
                 except error as err:
                     raise source.error(err.msg, len(name) + 1) from None
             if condgroup:
-                p = _parse_sub_cond(source, state, condgroup)
+                p = _parse_sub_cond(source, state, condgroup, nested + 1)
             else:
-                p = _parse_sub(source, state)
+                p = _parse_sub(source, state, nested + 1)
             if not source.match(")"):
                 raise source.error("missing ), unterminated subpattern",
                                    source.tell() - start)
