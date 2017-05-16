@@ -769,7 +769,7 @@ Library
   non-None value is passed to it.send(val).
 
 - Issue #27025: Generated names for Tkinter widgets now start by the "!" prefix
-  for readability (was "`").
+  for readability.
 
 - Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
   a workaround to Tix library bug.
@@ -1624,7 +1624,7 @@ Library
   non-None value is passed to it.send(val).
 
 - Issue #27025: Generated names for Tkinter widgets now start by the "!" prefix
-  for readability (was "`").
+  for readability.
 
 - Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
   a workaround to Tix library bug.
