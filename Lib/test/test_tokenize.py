@@ -1,7 +1,8 @@
 from test import support
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
-                     open as tokenize_open, Untokenizer, tok_name as tokenize_tok_name)
+                     open as tokenize_open, Untokenizer,
+                     tok_name as tokenize_tok_name)
 from io import BytesIO
 from unittest import TestCase, mock
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
