@@ -265,6 +265,8 @@ Deprecated
   now deprecated.  It never correctly worked. (Contributed by Serhiy Storchaka
   in :issue:`28692`.)
 
+- The :mod:`macpath` is now deprecated and will be removed in Python 3.8.
+
 
 Changes in the C API
 --------------------
@@ -296,6 +298,12 @@ API and Feature Removals
 * Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
   longer take keyword arguments.  The first argument of :func:`int` can now
   be passes only as positional argument.
+
+* Removed previously deprecated in Python 2.4 classes ``Plist``, ``Dict`` and
+  ``_InternalDict`` in the :mod:`plistlib` module.  Dict values in the result
+  of functions :func:`~plistlib.readPlist` and
+  :func:`~plistlib.readPlistFromBytes` are now normal dicts.  You no longer
+  can use attribute access to access items of these dictionaries.
 
 
 Porting to Python 3.7

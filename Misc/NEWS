@@ -326,6 +326,18 @@ Library
 - bpo-30301: Fix AttributeError when using SimpleQueue.empty() under
   *spawn* start method.
 
+- bpo-30329: imaplib and poplib now catch the Windows socket WSAEINVAL error
+  (code 10022) on shutdown(SHUT_RDWR): An invalid operation was attempted.
+  This error occurs sometimes on SSL connections.
+
+- bpo-29196: Removed previously deprecated in Python 2.4 classes Plist, Dict
+  and _InternalDict in the plistlib module.  Dict values in the result of
+  functions readPlist() and readPlistFromBytes() are now normal dicts.  You
+  no longer can use attribute access to access items of these dictionaries.
+
+- bpo-9850: The :mod:`macpath` is now deprecated and will be removed
+  in Python 3.8.
+
 - bpo-30299: Compiling regular expression in debug mode on CPython now displays
   the compiled bytecode in human readable form.
 
@@ -1173,6 +1185,11 @@ Tools/Demos
 
 Tests
 -----
+
+* bpo-30357: test_thread: setUp() now uses support.threading_setup() and
+  support.threading_cleanup() to wait until threads complete to avoid
+  random side effects on following tests. Initial patch written by Grzegorz
+  Grzywacz.
 
 - bpo-30197: Enhanced functions swap_attr() and swap_item() in the
   test.support module.  They now work when delete replaced attribute or item
