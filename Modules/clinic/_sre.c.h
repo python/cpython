@@ -29,34 +29,121 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_sre_getlower__doc__,
-"getlower($module, character, flags, /)\n"
+PyDoc_STRVAR(_sre_ascii_iscased__doc__,
+"ascii_iscased($module, character, /)\n"
 "--\n"
 "\n");
 
-#define _SRE_GETLOWER_METHODDEF    \
-    {"getlower", (PyCFunction)_sre_getlower, METH_FASTCALL, _sre_getlower__doc__},
+#define _SRE_ASCII_ISCASED_METHODDEF    \
+    {"ascii_iscased", (PyCFunction)_sre_ascii_iscased, METH_O, _sre_ascii_iscased__doc__},
 
 static int
-_sre_getlower_impl(PyObject *module, int character, int flags);
+_sre_ascii_iscased_impl(PyObject *module, int character);
 
 static PyObject *
-_sre_getlower(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_ascii_iscased(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int character;
-    int flags;
     int _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:getlower",
-        &character, &flags)) {
+    if (!PyArg_Parse(arg, "i:ascii_iscased", &character)) {
         goto exit;
     }
+    _return_value = _sre_ascii_iscased_impl(module, character);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
-    if (!_PyArg_NoStackKeywords("getlower", kwnames)) {
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_sre_unicode_iscased__doc__,
+"unicode_iscased($module, character, /)\n"
+"--\n"
+"\n");
+
+#define _SRE_UNICODE_ISCASED_METHODDEF    \
+    {"unicode_iscased", (PyCFunction)_sre_unicode_iscased, METH_O, _sre_unicode_iscased__doc__},
+
+static int
+_sre_unicode_iscased_impl(PyObject *module, int character);
+
+static PyObject *
+_sre_unicode_iscased(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int character;
+    int _return_value;
+
+    if (!PyArg_Parse(arg, "i:unicode_iscased", &character)) {
         goto exit;
     }
-    _return_value = _sre_getlower_impl(module, character, flags);
+    _return_value = _sre_unicode_iscased_impl(module, character);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_sre_ascii_tolower__doc__,
+"ascii_tolower($module, character, /)\n"
+"--\n"
+"\n");
+
+#define _SRE_ASCII_TOLOWER_METHODDEF    \
+    {"ascii_tolower", (PyCFunction)_sre_ascii_tolower, METH_O, _sre_ascii_tolower__doc__},
+
+static int
+_sre_ascii_tolower_impl(PyObject *module, int character);
+
+static PyObject *
+_sre_ascii_tolower(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int character;
+    int _return_value;
+
+    if (!PyArg_Parse(arg, "i:ascii_tolower", &character)) {
+        goto exit;
+    }
+    _return_value = _sre_ascii_tolower_impl(module, character);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_sre_unicode_tolower__doc__,
+"unicode_tolower($module, character, /)\n"
+"--\n"
+"\n");
+
+#define _SRE_UNICODE_TOLOWER_METHODDEF    \
+    {"unicode_tolower", (PyCFunction)_sre_unicode_tolower, METH_O, _sre_unicode_tolower__doc__},
+
+static int
+_sre_unicode_tolower_impl(PyObject *module, int character);
+
+static PyObject *
+_sre_unicode_tolower(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int character;
+    int _return_value;
+
+    if (!PyArg_Parse(arg, "i:unicode_tolower", &character)) {
+        goto exit;
+    }
+    _return_value = _sre_unicode_tolower_impl(module, character);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -690,4 +777,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=e6dab3ba8864da9e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5fe47c49e475cccb input=a9049054013a1b77]*/

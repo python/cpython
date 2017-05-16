@@ -320,9 +320,9 @@ Sequences
 
          A bytes object is an immutable array.  The items are 8-bit bytes,
          represented by integers in the range 0 <= x < 256.  Bytes literals
-         (like ``b'abc'``) and the built-in function :func:`bytes` can be used to
-         construct bytes objects.  Also, bytes objects can be decoded to strings
-         via the :meth:`~bytes.decode` method.
+         (like ``b'abc'``) and the built-in :func:`bytes()` constructor
+         can be used to create bytes objects.  Also, bytes objects can be
+         decoded to strings via the :meth:`~bytes.decode` method.
 
    Mutable sequences
       .. index::
@@ -349,9 +349,9 @@ Sequences
          .. index:: bytearray
 
          A bytearray object is a mutable array. They are created by the built-in
-         :func:`bytearray` constructor.  Aside from being mutable (and hence
-         unhashable), byte arrays otherwise provide the same interface and
-         functionality as immutable bytes objects.
+         :func:`bytearray` constructor.  Aside from being mutable
+         (and hence unhashable), byte arrays otherwise provide the same interface
+         and functionality as immutable :class:`bytes` objects.
 
       .. index:: module: array
 
@@ -1119,9 +1119,9 @@ Basic customization
    (usually an instance of *cls*).
 
    Typical implementations create a new instance of the class by invoking the
-   superclass's :meth:`__new__` method using ``super(currentclass,
-   cls).__new__(cls[, ...])`` with appropriate arguments and then modifying the
-   newly-created instance as necessary before returning it.
+   superclass's :meth:`__new__` method using ``super().__new__(cls[, ...])``
+   with appropriate arguments and then modifying the newly-created instance
+   as necessary before returning it.
 
    If :meth:`__new__` returns an instance of *cls*, then the new instance's
    :meth:`__init__` method will be invoked like ``__init__(self[, ...])``, where
@@ -1145,7 +1145,7 @@ Basic customization
    class constructor expression.  If a base class has an :meth:`__init__`
    method, the derived class's :meth:`__init__` method, if any, must explicitly
    call it to ensure proper initialization of the base class part of the
-   instance; for example: ``BaseClass.__init__(self, [args...])``.
+   instance; for example: ``super().__init__([args...])``.
 
    Because :meth:`__new__` and :meth:`__init__` work together in constructing
    objects (:meth:`__new__` to create it, and :meth:`__init__` to customize it),
@@ -1253,8 +1253,8 @@ Basic customization
 
    .. index:: builtin: bytes
 
-   Called by :func:`bytes` to compute a byte-string representation of an
-   object. This should return a ``bytes`` object.
+   Called by :ref:`bytes <func-bytes>` to compute a byte-string representation
+   of an object. This should return a :class:`bytes` object.
 
    .. index::
       single: string; __format__() (object method)
@@ -1281,6 +1281,10 @@ Basic customization
    .. versionchanged:: 3.4
       The __format__ method of ``object`` itself raises a :exc:`TypeError`
       if passed any non-empty string.
+
+   .. versionchanged:: 3.7
+      ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather
+      than ``format(str(self), '')``.
 
 
 .. _richcmpfuncs:
@@ -1578,8 +1582,8 @@ Class Binding
    ``A.__dict__['x'].__get__(None, A)``.
 
 Super Binding
-   If ``a`` is an instance of :class:`super`, then the binding ``super(B,
-   obj).m()`` searches ``obj.__class__.__mro__`` for the base class ``A``
+   If ``a`` is an instance of :class:`super`, then the binding ``super(B, obj).m()``
+   searches ``obj.__class__.__mro__`` for the base class ``A``
    immediately preceding ``B`` and then invokes the descriptor with the call:
    ``A.__dict__['m'].__get__(obj, obj.__class__)``.
 
@@ -2574,6 +2578,8 @@ An example of an asynchronous iterable object::
       In CPython 3.7, returning an awaitable from ``__aiter__`` will
       result in a :exc:`RuntimeError`.
 
+
+.. _async-context-managers:
 
 Asynchronous Context Managers
 -----------------------------

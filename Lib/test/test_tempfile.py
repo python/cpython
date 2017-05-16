@@ -273,13 +273,12 @@ class TestGetDefaultTempdir(BaseTestCase):
                         tempfile._get_default_tempdir()
                     self.assertEqual(os.listdir(our_temp_directory), [])
 
-                open = io.open
                 def bad_writer(*args, **kwargs):
-                    fp = open(*args, **kwargs)
+                    fp = orig_open(*args, **kwargs)
                     fp.write = raise_OSError
                     return fp
 
-                with support.swap_attr(io, "open", bad_writer):
+                with support.swap_attr(io, "open", bad_writer) as orig_open:
                     # test again with failing write()
                     with self.assertRaises(FileNotFoundError):
                         tempfile._get_default_tempdir()
