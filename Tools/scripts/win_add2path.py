@@ -36,6 +36,9 @@ def modify():
             usersite = site.USER_SITE.replace(appdata, "%APPDATA%")
             userpath = os.path.dirname(usersite)
             userscripts = os.path.join(userpath, "Scripts")
+        elif dtype == winreg.REG_SZ:
+            userpath = site.USER_SITE
+            userscripts = os.path.join(userpath, "Scripts")
         else:
             userscripts = None
 
