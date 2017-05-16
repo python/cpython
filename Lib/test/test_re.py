@@ -1348,6 +1348,7 @@ class ReTests(unittest.TestCase):
             str(warns.warnings[0].message),
             'Flags not at the start of the expression %s' % p
         )
+        self.assertEqual(warns.warnings[0].filename, __file__)
 
         p = upper_char + '(?i)%s' % ('.?' * 100)
         with self.assertWarns(DeprecationWarning) as warns:
@@ -1356,6 +1357,7 @@ class ReTests(unittest.TestCase):
             str(warns.warnings[0].message),
             'Flags not at the start of the expression %s (truncated)' % p[:20]
         )
+        self.assertEqual(warns.warnings[0].filename, __file__)
 
         with self.assertWarns(DeprecationWarning):
             self.assertTrue(re.match('(?s).(?i)' + upper_char, '\n' + lower_char))
@@ -1367,14 +1369,23 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match('^(?i)' + upper_char, lower_char))
         with self.assertWarns(DeprecationWarning):
             self.assertTrue(re.match('$|(?i)' + upper_char, lower_char))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(DeprecationWarning) as warns:
             self.assertTrue(re.match('(?:(?i)' + upper_char + ')', lower_char))
-        with self.assertWarns(DeprecationWarning):
+        self.assertRegex(str(warns.warnings[0].message),
+                         'Flags not at the start')
+        self.assertEqual(warns.warnings[0].filename, __file__)
+        with self.assertWarns(DeprecationWarning) as warns:
             self.assertTrue(re.fullmatch('(^)?(?(1)(?i)' + upper_char + ')',
                                          lower_char))
-        with self.assertWarns(DeprecationWarning):
+        self.assertRegex(str(warns.warnings[0].message),
+                         'Flags not at the start')
+        self.assertEqual(warns.warnings[0].filename, __file__)
+        with self.assertWarns(DeprecationWarning) as warns:
             self.assertTrue(re.fullmatch('($)?(?(1)|(?i)' + upper_char + ')',
                                          lower_char))
+        self.assertRegex(str(warns.warnings[0].message),
+                         'Flags not at the start')
+        self.assertEqual(warns.warnings[0].filename, __file__)
 
 
     def test_dollar_matches_twice(self):
