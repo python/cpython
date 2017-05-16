@@ -243,7 +243,7 @@ class Bdb:
         raise NotImplementedError("subclass of bdb must implement do_clear()")
 
     def break_anywhere(self, frame):
-        """Return True if there any breakpoint for frame's filename.
+        """Return True if there is any breakpoint for frame's filename.
         """
         return self.canonic(frame.f_code.co_filename) in self.breaks
 
