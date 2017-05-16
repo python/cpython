@@ -557,17 +557,18 @@ def _tokenize(readline, encoding):
             if pos == max:
                 break
 
-            if line[pos] in '#\r\n':           # skip comments or blank lines
-                if line[pos] == '#':
-                    comment_token = line[pos:].rstrip('\r\n')
-                    nl_pos = pos + len(comment_token)
-                    yield TokenInfo(COMMENT, comment_token,
-                           (lnum, pos), (lnum, pos + len(comment_token)), line)
-                    yield TokenInfo(NL, line[nl_pos:],
-                           (lnum, nl_pos), (lnum, len(line)), line)
-                else:
-                    yield TokenInfo((NL, COMMENT)[line[pos] == '#'], line[pos:],
-                           (lnum, pos), (lnum, len(line)), line)
+            if line[pos] in '\r\n':           # skip blank lines
+                yield TokenInfo(NL, line[pos:], (lnum, pos),
+                                (lnum, len(line)), line)
+                continue
+
+            if line[pos] == '#':              # skip comment lines
+                comment_token = line[pos:].rstrip('\r\n')
+                nl_pos = pos + len(comment_token)
+                yield TokenInfo(COMMENT, comment_token,
+                                (lnum, pos), (lnum, pos + len(comment_token)), line)
+                yield TokenInfo(NL, line[nl_pos:],
+                                (lnum, nl_pos), (lnum, len(line)), line)
                 continue
 
             if column > indents[-1]:           # count indents or dedents
