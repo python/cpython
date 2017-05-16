@@ -117,6 +117,9 @@ or on combining URL components into a URL string.
    See section :ref:`urlparse-result-object` for more information on the result
    object.
 
+   Unmatched square brackets in the :attr:`netloc` attribute will raise a
+   :exc:`ValueError`.
+
    .. versionchanged:: 3.2
       Added IPv6 URL parsing capabilities.
 
@@ -229,6 +232,9 @@ or on combining URL components into a URL string.
 
    See section :ref:`urlparse-result-object` for more information on the result
    object.
+
+   Unmatched square brackets in the :attr:`netloc` attribute will raise a
+   :exc:`ValueError`.
 
 
 .. function:: urlunsplit(parts)
