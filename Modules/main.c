@@ -53,7 +53,7 @@ static const char usage_1[] = "\
 Options and arguments (and corresponding environment variables):\n\
 -b     : issue warnings about str(bytes_instance), str(bytearray_instance)\n\
          and comparing bytes/bytearray with str. (-bb: issue errors)\n\
--B     : don't write .py[co] files on import; also PYTHONDONTWRITEBYTECODE=x\n\
+-B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : debug output from parser; also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
@@ -225,55 +225,60 @@ static int RunModule(wchar_t *modname, int set_argv0)
     return 0;
 }
 
-static int
-RunMainFromImporter(wchar_t *filename)
+static PyObject *
+AsImportPathEntry(wchar_t *filename)
 {
-    PyObject *argv0 = NULL, *importer, *sys_path, *sys_path0;
-    int sts;
+    PyObject *sys_path0 = NULL, *importer;
 
-    argv0 = PyUnicode_FromWideChar(filename, wcslen(filename));
-    if (argv0 == NULL)
+    sys_path0 = PyUnicode_FromWideChar(filename, wcslen(filename));
+    if (sys_path0 == NULL)
         goto error;
 
-    importer = PyImport_GetImporter(argv0);
+    importer = PyImport_GetImporter(sys_path0);
     if (importer == NULL)
         goto error;
 
     if (importer == Py_None) {
-        Py_DECREF(argv0);
+        Py_DECREF(sys_path0);
         Py_DECREF(importer);
-        return -1;
+        return NULL;
     }
     Py_DECREF(importer);
+    return sys_path0;
 
-    /* argv0 is usable as an import source, so put it in sys.path[0]
-       and import __main__ */
+error:
+    Py_XDECREF(sys_path0);
+    PySys_WriteStderr("Failed checking if argv[0] is an import path entry\n");
+    PyErr_Print();
+    PyErr_Clear();
+    return NULL;
+}
+
+
+static int
+RunMainFromImporter(PyObject *sys_path0)
+{
+    PyObject *sys_path;
+    int sts;
+
+    /* Assume sys_path0 has already been checked by AsImportPathEntry,
+     * so put it in sys.path[0] and import __main__ */
     sys_path = PySys_GetObject("path");
     if (sys_path == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.path");
         goto error;
     }
-    sys_path0 = PyList_GetItem(sys_path, 0);
-    sts = 0;
-    if (!sys_path0) {
-        PyErr_Clear();
-        sts = PyList_Append(sys_path, argv0);
-    } else if (PyObject_IsTrue(sys_path0)) {
-        sts = PyList_Insert(sys_path, 0, argv0);
-    } else {
-        sts = PyList_SetItem(sys_path, 0, argv0);
-    }
+    sts = PyList_Insert(sys_path, 0, sys_path0);
     if (sts) {
-        argv0 = NULL;
+        sys_path0 = NULL;
         goto error;
     }
-    Py_INCREF(argv0);
 
     sts = RunModule(L"__main__", 0);
     return sts != 0;
 
 error:
-    Py_XDECREF(argv0);
+    Py_XDECREF(sys_path0);
     PyErr_Print();
     return 1;
 }
@@ -358,6 +363,7 @@ Py_Main(int argc, wchar_t **argv)
     int saw_unbuffered_flag = 0;
     char *opt;
     PyCompilerFlags cf;
+    PyObject *main_importer_path = NULL;
     PyObject *warning_option = NULL;
     PyObject *warning_options = NULL;
 
@@ -714,7 +720,17 @@ Py_Main(int argc, wchar_t **argv)
         argv[_PyOS_optind] = L"-m";
     }
 
-    PySys_SetArgv(argc-_PyOS_optind, argv+_PyOS_optind);
+    if (filename != NULL) {
+        main_importer_path = AsImportPathEntry(filename);
+    }
+
+    if (main_importer_path != NULL) {
+        /* Let RunMainFromImporter adjust sys.path[0] later */
+        PySys_SetArgvEx(argc-_PyOS_optind, argv+_PyOS_optind, 0);
+    } else {
+        /* Use config settings to decide whether or not to update sys.path[0] */
+        PySys_SetArgv(argc-_PyOS_optind, argv+_PyOS_optind);
+    }
 
     if ((Py_InspectFlag || (command == NULL && filename == NULL && module == NULL)) &&
         isatty(fileno(stdin)) &&
@@ -744,11 +760,11 @@ Py_Main(int argc, wchar_t **argv)
 
         sts = -1;               /* keep track of whether we've already run __main__ */
 
-        if (filename != NULL) {
-            sts = RunMainFromImporter(filename);
+        if (main_importer_path != NULL) {
+            sts = RunMainFromImporter(main_importer_path);
         }
 
-        if (sts==-1 && filename!=NULL) {
+        if (sts==-1 && filename != NULL) {
             fp = _Py_wfopen(filename, L"r");
             if (fp == NULL) {
                 char *cfilename_buffer;

@@ -436,7 +436,7 @@ static PyObject *empty_values[1] = { NULL };
 /* #define DEBUG_PYDICT */
 
 
-#ifdef Py_DEBUG
+#ifndef NDEBUG
 static int
 _PyDict_CheckConsistency(PyDictObject *mp)
 {
@@ -1929,7 +1929,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             PyObject *key;
             Py_hash_t hash;
 
-            if (dictresize(mp, ESTIMATE_SIZE(Py_SIZE(iterable)))) {
+            if (dictresize(mp, ESTIMATE_SIZE(((PyDictObject *)iterable)->ma_used))) {
                 Py_DECREF(d);
                 return NULL;
             }

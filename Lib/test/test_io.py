@@ -543,6 +543,22 @@ class IOTest(unittest.TestCase):
         with self.open(support.TESTFN, "r") as f:
             self.assertRaises(TypeError, f.readline, 5.3)
 
+    def test_readline_nonsizeable(self):
+        # Issue #30061
+        # Crash when readline() returns an object without __len__
+        class R(self.IOBase):
+            def readline(self):
+                return None
+        self.assertRaises((TypeError, StopIteration), next, R())
+
+    def test_next_nonsizeable(self):
+        # Issue #30061
+        # Crash when __next__() returns an object without __len__
+        class R(self.IOBase):
+            def __next__(self):
+                return None
+        self.assertRaises(TypeError, R().readlines, 1)
+
     def test_raw_bytes_io(self):
         f = self.BytesIO()
         self.write_ops(f)
@@ -1013,6 +1029,16 @@ class CommonBufferedTests:
         self.assertEqual(repr(b), "<%s name='dummy'>" % clsname)
         raw.name = b"dummy"
         self.assertEqual(repr(b), "<%s name=b'dummy'>" % clsname)
+
+    def test_recursive_repr(self):
+        # Issue #25455
+        raw = self.MockRawIO()
+        b = self.tp(raw)
+        with support.swap_attr(raw, 'name', b):
+            try:
+                repr(b)  # Should not crash
+            except RuntimeError:
+                pass
 
     def test_flush_error_on_close(self):
         # Test that buffered file is closed despite failed flush
@@ -2424,6 +2450,16 @@ class TextIOWrapperTest(unittest.TestCase):
         t.buffer.detach()
         repr(t)  # Should not raise an exception
 
+    def test_recursive_repr(self):
+        # Issue #25455
+        raw = self.BytesIO()
+        t = self.TextIOWrapper(raw)
+        with support.swap_attr(raw, 'name', t):
+            try:
+                repr(t)  # Should not crash
+            except RuntimeError:
+                pass
+
     def test_line_buffering(self):
         r = self.BytesIO()
         b = self.BufferedWriter(r, 1000)
@@ -3478,6 +3514,7 @@ class MiscIOTest(unittest.TestCase):
                 self.assertRaises(ValueError, f.readinto1, bytearray(1024))
             self.assertRaises(ValueError, f.readline)
             self.assertRaises(ValueError, f.readlines)
+            self.assertRaises(ValueError, f.readlines, 1)
             self.assertRaises(ValueError, f.seek, 0)
             self.assertRaises(ValueError, f.tell)
             self.assertRaises(ValueError, f.truncate)
@@ -3683,6 +3720,7 @@ class CMiscIOTest(MiscIOTest):
             import sys
             import time
             import threading
+            from test.support import SuppressCrashReport
 
             file = sys.{stream_name}
 
@@ -3690,6 +3728,10 @@ class CMiscIOTest(MiscIOTest):
                 while True:
                     file.write('.')
                     file.flush()
+
+            crash = SuppressCrashReport()
+            crash.__enter__()
+            # don't call __exit__(): the crash occurs at Python shutdown
 
             thread = threading.Thread(target=run)
             thread.daemon = True

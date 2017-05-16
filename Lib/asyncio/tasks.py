@@ -180,7 +180,12 @@ class Task(futures.Future):
             else:
                 result = coro.throw(exc)
         except StopIteration as exc:
-            self.set_result(exc.value)
+            if self._must_cancel:
+                # Task is cancelled right before coro stops.
+                self._must_cancel = False
+                self.set_exception(futures.CancelledError())
+            else:
+                self.set_result(exc.value)
         except futures.CancelledError:
             super().cancel()  # I.e., Future.cancel(self).
         except Exception as exc:
@@ -517,7 +522,8 @@ def ensure_future(coro_or_future, *, loop=None):
     elif compat.PY35 and inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
     else:
-        raise TypeError('A Future, a coroutine or an awaitable is required')
+        raise TypeError('An asyncio.Future, a coroutine or an awaitable is '
+                        'required')
 
 
 @coroutine

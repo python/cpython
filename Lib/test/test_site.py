@@ -27,14 +27,27 @@ if sys.flags.no_site:
 
 import site
 
-if site.ENABLE_USER_SITE and not os.path.isdir(site.USER_SITE):
-    # need to add user site directory for tests
-    try:
-        os.makedirs(site.USER_SITE)
-        site.addsitedir(site.USER_SITE)
-    except PermissionError as exc:
-        raise unittest.SkipTest('unable to create user site directory (%r): %s'
-                                % (site.USER_SITE, exc))
+
+OLD_SYS_PATH = None
+
+
+def setUpModule():
+    global OLD_SYS_PATH
+    OLD_SYS_PATH = sys.path[:]
+
+    if site.ENABLE_USER_SITE and not os.path.isdir(site.USER_SITE):
+        # need to add user site directory for tests
+        try:
+            os.makedirs(site.USER_SITE)
+            # modify sys.path: will be restored by tearDownModule()
+            site.addsitedir(site.USER_SITE)
+        except PermissionError as exc:
+            raise unittest.SkipTest('unable to create user site directory (%r): %s'
+                                    % (site.USER_SITE, exc))
+
+
+def tearDownModule():
+    sys.path[:] = OLD_SYS_PATH
 
 
 class HelperFunctionsTests(unittest.TestCase):
@@ -501,15 +514,15 @@ class StartupImportTests(unittest.TestCase):
                     print(line, file=f)
             return exe_file
         except:
-            os.unlink(_pth_file)
-            os.unlink(exe_file)
+            test.support.unlink(_pth_file)
+            test.support.unlink(exe_file)
             raise
 
     @classmethod
     def _cleanup_underpth_exe(self, exe_file):
         _pth_file = os.path.splitext(exe_file)[0] + '._pth'
-        os.unlink(_pth_file)
-        os.unlink(exe_file)
+        test.support.unlink(_pth_file)
+        test.support.unlink(exe_file)
 
     @classmethod
     def _calc_sys_path_for_underpth_nosite(self, sys_prefix, lines):

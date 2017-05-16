@@ -1303,32 +1303,43 @@ class ReTests(unittest.TestCase):
         upper_char = '\u1ea0' # Latin Capital Letter A with Dot Below
         lower_char = '\u1ea1' # Latin Small Letter A with Dot Below
 
-        p = re.compile(upper_char, re.I | re.U)
-        q = p.match(lower_char)
+        p = re.compile('.' + upper_char, re.I | re.S)
+        q = p.match('\n' + lower_char)
         self.assertTrue(q)
 
-        p = re.compile(lower_char, re.I | re.U)
-        q = p.match(upper_char)
+        p = re.compile('.' + lower_char, re.I | re.S)
+        q = p.match('\n' + upper_char)
         self.assertTrue(q)
 
-        p = re.compile('(?i)' + upper_char, re.U)
-        q = p.match(lower_char)
+        p = re.compile('(?i).' + upper_char, re.S)
+        q = p.match('\n' + lower_char)
         self.assertTrue(q)
 
-        p = re.compile('(?i)' + lower_char, re.U)
-        q = p.match(upper_char)
+        p = re.compile('(?i).' + lower_char, re.S)
+        q = p.match('\n' + upper_char)
         self.assertTrue(q)
 
-        p = re.compile('(?iu)' + upper_char)
-        q = p.match(lower_char)
+        p = re.compile('(?is).' + upper_char)
+        q = p.match('\n' + lower_char)
         self.assertTrue(q)
 
-        p = re.compile('(?iu)' + lower_char)
-        q = p.match(upper_char)
+        p = re.compile('(?is).' + lower_char)
+        q = p.match('\n' + upper_char)
         self.assertTrue(q)
 
-        self.assertTrue(re.match('(?ixu) ' + upper_char, lower_char))
-        self.assertTrue(re.match('(?ixu) ' + lower_char, upper_char))
+        p = re.compile('(?s)(?i).' + upper_char)
+        q = p.match('\n' + lower_char)
+        self.assertTrue(q)
+
+        p = re.compile('(?s)(?i).' + lower_char)
+        q = p.match('\n' + upper_char)
+        self.assertTrue(q)
+
+        self.assertTrue(re.match('(?ix) ' + upper_char, lower_char))
+        self.assertTrue(re.match('(?ix) ' + lower_char, upper_char))
+        self.assertTrue(re.match(' (?i) ' + upper_char, lower_char, re.X))
+        self.assertTrue(re.match('(?x) (?i) ' + upper_char, lower_char))
+        self.assertTrue(re.match(' (?x) (?i) ' + upper_char, lower_char, re.X))
 
         p = upper_char + '(?i)'
         with self.assertWarns(DeprecationWarning) as warns:
@@ -1337,6 +1348,7 @@ class ReTests(unittest.TestCase):
             str(warns.warnings[0].message),
             'Flags not at the start of the expression %s' % p
         )
+        self.assertEqual(warns.warnings[0].filename, __file__)
 
         p = upper_char + '(?i)%s' % ('.?' * 100)
         with self.assertWarns(DeprecationWarning) as warns:
@@ -1345,6 +1357,36 @@ class ReTests(unittest.TestCase):
             str(warns.warnings[0].message),
             'Flags not at the start of the expression %s (truncated)' % p[:20]
         )
+        self.assertEqual(warns.warnings[0].filename, __file__)
+
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('(?s).(?i)' + upper_char, '\n' + lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('(?i) ' + upper_char + ' (?x)', lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match(' (?x) (?i) ' + upper_char, lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('^(?i)' + upper_char, lower_char))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(re.match('$|(?i)' + upper_char, lower_char))
+        with self.assertWarns(DeprecationWarning) as warns:
+            self.assertTrue(re.match('(?:(?i)' + upper_char + ')', lower_char))
+        self.assertRegex(str(warns.warnings[0].message),
+                         'Flags not at the start')
+        self.assertEqual(warns.warnings[0].filename, __file__)
+        with self.assertWarns(DeprecationWarning) as warns:
+            self.assertTrue(re.fullmatch('(^)?(?(1)(?i)' + upper_char + ')',
+                                         lower_char))
+        self.assertRegex(str(warns.warnings[0].message),
+                         'Flags not at the start')
+        self.assertEqual(warns.warnings[0].filename, __file__)
+        with self.assertWarns(DeprecationWarning) as warns:
+            self.assertTrue(re.fullmatch('($)?(?(1)|(?i)' + upper_char + ')',
+                                         lower_char))
+        self.assertRegex(str(warns.warnings[0].message),
+                         'Flags not at the start')
+        self.assertEqual(warns.warnings[0].filename, __file__)
+
 
     def test_dollar_matches_twice(self):
         "$ matches the end of string, and just before the terminating \n"
@@ -1402,7 +1444,7 @@ class ReTests(unittest.TestCase):
 
     def test_locale_flag(self):
         import locale
-        enc = locale.getpreferredencoding(False)
+        _, enc = locale.getlocale(locale.LC_CTYPE)
         # Search non-ASCII letter
         for i in range(128, 256):
             try:

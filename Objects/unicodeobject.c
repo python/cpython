@@ -3902,6 +3902,7 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
     PyObject *output = NULL;
     if (arg == NULL) {
         Py_DECREF(*(PyObject**)addr);
+        *(PyObject**)addr = NULL;
         return 1;
     }
 
@@ -11701,7 +11702,11 @@ unicode_hash(PyObject *self)
 PyDoc_STRVAR(index__doc__,
              "S.index(sub[, start[, end]]) -> int\n\
 \n\
-Like S.find() but raise ValueError when the substring is not found.");
+Return the lowest index in S where substring sub is found, \n\
+such that sub is contained within S[start:end].  Optional\n\
+arguments start and end are interpreted as in slice notation.\n\
+\n\
+Raises ValueError when the substring is not found.");
 
 static PyObject *
 unicode_index(PyObject *self, PyObject *args)
@@ -12758,7 +12763,11 @@ unicode_rfind(PyObject *self, PyObject *args)
 PyDoc_STRVAR(rindex__doc__,
              "S.rindex(sub[, start[, end]]) -> int\n\
 \n\
-Like S.rfind() but raise ValueError when the substring is not found.");
+Return the highest index in S where substring sub is found,\n\
+such that sub is contained within S[start:end].  Optional\n\
+arguments start and end are interpreted as in slice notation.\n\
+\n\
+Raises ValueError when the substring is not found.");
 
 static PyObject *
 unicode_rindex(PyObject *self, PyObject *args)
@@ -13915,10 +13924,11 @@ unicode_subscript(PyObject* self, PyObject* item)
         int src_kind, dest_kind;
         Py_UCS4 ch, max_char, kind_limit;
 
-        if (PySlice_GetIndicesEx(item, PyUnicode_GET_LENGTH(self),
-                                 &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = PySlice_AdjustIndices(PyUnicode_GET_LENGTH(self),
+                                            &start, &stop, step);
 
         if (slicelength <= 0) {
             _Py_RETURN_UNICODE_EMPTY();

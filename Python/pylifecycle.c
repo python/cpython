@@ -88,7 +88,7 @@ int Py_BytesWarningFlag; /* Warn on str(bytes) and str(buffer) */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
 int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
-int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.py[co]) */
+int Py_DontWriteBytecodeFlag; /* Suppress writing bytecode files (*.pyc) */
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
 int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
@@ -1044,6 +1044,14 @@ initsite(void)
 static int
 is_valid_fd(int fd)
 {
+#ifdef __APPLE__
+    /* bpo-30225: On macOS Tiger, when stdout is redirected to a pipe
+       and the other side of the pipe is closed, dup(1) succeed, whereas
+       fstat(1, &st) fails with EBADF. Prefer fstat() over dup() to detect
+       such error. */
+    struct stat st;
+    return (fstat(fd, &st) == 0);
+#else
     int fd2;
     if (fd < 0)
         return 0;
@@ -1056,6 +1064,7 @@ is_valid_fd(int fd)
         close(fd2);
     _Py_END_SUPPRESS_IPH
     return fd2 >= 0;
+#endif
 }
 
 /* returns Py_None if the fd is not valid */

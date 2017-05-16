@@ -522,8 +522,8 @@ tupleindex(PyTupleObject *self, PyObject *args)
     PyObject *v;
 
     if (!PyArg_ParseTuple(args, "O|O&O&:index", &v,
-                                _PyEval_SliceIndex, &start,
-                                _PyEval_SliceIndex, &stop))
+                                _PyEval_SliceIndexNotNone, &start,
+                                _PyEval_SliceIndexNotNone, &stop))
         return NULL;
     if (start < 0) {
         start += Py_SIZE(self);
@@ -720,11 +720,11 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
         PyObject* it;
         PyObject **src, **dest;
 
-        if (PySlice_GetIndicesEx(item,
-                         PyTuple_GET_SIZE(self),
-                         &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = PySlice_AdjustIndices(PyTuple_GET_SIZE(self), &start,
+                                            &stop, step);
 
         if (slicelength <= 0) {
             return PyTuple_New(0);

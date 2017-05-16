@@ -4,8 +4,8 @@ rem Usage:  rt [-d] [-O] [-q] [-x64] regrtest_args
 rem -d   Run Debug build (python_d.exe).  Else release build.
 rem -O   Run python.exe or python_d.exe (see -d) with -O.
 rem -q   "quick" -- normally the tests are run twice, the first time
-rem      after deleting all the .py[co] files reachable from Lib/.
-rem      -q runs the tests just once, and without deleting .py[co] files.
+rem      after deleting all the .pyc files reachable from Lib/.
+rem      -q runs the tests just once, and without deleting .pyc files.
 rem -x64 Run the 64-bit build of python (or python_d if -d was specified)
 rem      from the 'amd64' dir instead of the 32-bit build in this dir.
 rem All leading instances of these switches are shifted off, and
@@ -45,7 +45,7 @@ set exe=%prefix%python%suffix%.exe
 set cmd="%exe%" %dashO% -Wd -E -bb -m test %regrtestargs%
 if defined qmode goto Qmode
 
-echo Deleting .pyc/.pyo files ...
+echo Deleting .pyc files ...
 "%exe%" "%pcbuild%rmpyc.py"
 
 echo Cleaning _pth files ...
@@ -55,7 +55,7 @@ echo on
 %cmd%
 @echo off
 
-echo About to run again without deleting .pyc/.pyo first:
+echo About to run again without deleting .pyc first:
 pause
 
 :Qmode

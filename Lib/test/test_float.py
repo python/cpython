@@ -119,15 +119,27 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertEqual(float(memoryview(b'12.34')[1:4]), 2.3)
 
     def test_error_message(self):
-        testlist = ('\xbd', '123\xbd', '  123 456  ')
-        for s in testlist:
-            try:
+        def check(s):
+            with self.assertRaises(ValueError, msg='float(%r)' % (s,)) as cm:
                 float(s)
-            except ValueError as e:
-                self.assertIn(s.strip(), e.args[0])
-            else:
-                self.fail("Expected int(%r) to raise a ValueError", s)
+            self.assertEqual(str(cm.exception),
+                'could not convert string to float: %r' % (s,))
 
+        check('\xbd')
+        check('123\xbd')
+        check('  123 456  ')
+        check(b'  123 456  ')
+
+        # non-ascii digits (error came from non-digit '!')
+        check('\u0663\u0661\u0664!')
+        # embedded NUL
+        check('123\x00')
+        check('123\x00 245')
+        check('123\x00245')
+        # byte string with embedded NUL
+        check(b'123\x00')
+        # non-UTF-8 byte string
+        check(b'123\xa0')
 
     @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):

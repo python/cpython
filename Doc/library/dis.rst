@@ -20,6 +20,10 @@ interpreter.
    between versions of Python.  Use of this module should not be considered to
    work across Python VMs or Python releases.
 
+   .. versionchanged:: 3.6
+      Use 2 bytes for each instruction. Previously the number of bytes varied
+      by instruction.
+
 
 Example: Given the function :func:`myfunc`::
 
@@ -210,6 +214,11 @@ operation is being performed, so the intermediate analysis object isn't useful:
    This generator function uses the ``co_firstlineno`` and ``co_lnotab``
    attributes of the code object *code* to find the offsets which are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
+   See :source:`Objects/lnotab_notes.txt` for the ``co_lnotab`` format and
+   how to decode it.
+
+   .. versionchanged:: 3.6
+      Line numbers can be decreasing. Before, they were always increasing.
 
 
 .. function:: findlabels(code)
@@ -807,6 +816,15 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.5
 
 
+.. opcode:: BUILD_TUPLE_UNPACK_WITH_CALL (count)
+
+   This is similar to :opcode:`BUILD_TUPLE_UNPACK`,
+   but is used for ``f(*x, *y, *z)`` call syntax. The stack item at position
+   ``count + 1`` should be the corresponding callable ``f``.
+
+   .. versionadded:: 3.6
+
+
 .. opcode:: BUILD_LIST_UNPACK (count)
 
    This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a list
@@ -834,14 +852,16 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.5
 
 
-.. opcode:: BUILD_MAP_UNPACK_WITH_CALL (oparg)
+.. opcode:: BUILD_MAP_UNPACK_WITH_CALL (count)
 
    This is similar to :opcode:`BUILD_MAP_UNPACK`,
-   but is used for ``f(**x, **y, **z)`` call syntax.  The lowest byte of
-   *oparg* is the count of mappings, the relative position of the
-   corresponding callable ``f`` is encoded in the second byte of *oparg*.
+   but is used for ``f(**x, **y, **z)`` call syntax.  The stack item at
+   position ``count + 2`` should be the corresponding callable ``f``.
 
    .. versionadded:: 3.5
+   .. versionchanged:: 3.6
+      The position of the callable is determined by adding 2 to the opcode
+      argument instead of encoding it in the second byte of the argument.
 
 
 .. opcode:: LOAD_ATTR (namei)
@@ -998,14 +1018,45 @@ All of the following opcodes use their arguments.
 
 .. opcode:: CALL_FUNCTION (argc)
 
-   Calls a function.  The low byte of *argc* indicates the number of positional
-   parameters, the high byte the number of keyword parameters. On the stack, the
-   opcode finds the keyword parameters first.  For each keyword argument, the
-   value is on top of the key.  Below the keyword parameters, the positional
-   parameters are on the stack, with the right-most parameter on top.  Below the
-   parameters, the function object to call is on the stack.  Pops all function
-   arguments, and the function itself off the stack, and pushes the return
-   value.
+   Calls a function.  *argc* indicates the number of positional arguments.
+   The positional arguments are on the stack, with the right-most argument
+   on top.  Below the arguments, the function object to call is on the stack.
+   Pops all function arguments, and the function itself off the stack, and
+   pushes the return value.
+
+   .. versionchanged:: 3.6
+      This opcode is used only for calls with positional arguments.
+
+
+.. opcode:: CALL_FUNCTION_KW (argc)
+
+   Calls a function.  *argc* indicates the number of arguments (positional
+   and keyword).  The top element on the stack contains a tuple of keyword
+   argument names.  Below the tuple, keyword arguments are on the stack, in
+   the order corresponding to the tuple.  Below the keyword arguments, the
+   positional arguments are on the stack, with the right-most parameter on
+   top.  Below the arguments, the function object to call is on the stack.
+   Pops all function arguments, and the function itself off the stack, and
+   pushes the return value.
+
+   .. versionchanged:: 3.6
+      Keyword arguments are packed in a tuple instead of a dictionary,
+      *argc* indicates the total number of arguments
+
+
+.. opcode:: CALL_FUNCTION_EX (flags)
+
+   Calls a function. The lowest bit of *flags* indicates whether the
+   var-keyword argument is placed at the top of the stack.  Below the
+   var-keyword argument, the var-positional argument is on the stack.
+   Below the arguments, the function object to call is placed.
+   Pops all function arguments, and the function itself off the stack, and
+   pushes the return value. Note that this opcode pops at most three items
+   from the stack. Var-positional and var-keyword arguments are packed
+   by :opcode:`BUILD_MAP_UNPACK_WITH_CALL` and
+   :opcode:`BUILD_MAP_UNPACK_WITH_CALL`.
+
+   .. versionadded:: 3.6
 
 
 .. opcode:: MAKE_FUNCTION (argc)
@@ -1038,28 +1089,6 @@ All of the following opcodes use their arguments.
    two most-significant bytes.
 
 
-.. opcode:: CALL_FUNCTION_VAR (argc)
-
-   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The
-   top element on the stack contains the variable argument list, followed by
-   keyword and positional arguments.
-
-
-.. opcode:: CALL_FUNCTION_KW (argc)
-
-   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`. The
-   top element on the stack contains the keyword arguments dictionary, followed
-   by explicit keyword and positional arguments.
-
-
-.. opcode:: CALL_FUNCTION_VAR_KW (argc)
-
-   Calls a function. *argc* is interpreted as in :opcode:`CALL_FUNCTION`.  The
-   top element on the stack contains the keyword arguments dictionary, followed
-   by the variable-arguments tuple, followed by explicit keyword and positional
-   arguments.
-
-
 .. opcode:: FORMAT_VALUE (flags)
 
    Used for implementing formatted literal strings (f-strings).  Pops
@@ -1085,8 +1114,13 @@ All of the following opcodes use their arguments.
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
-   opcodes which don't take arguments ``< HAVE_ARGUMENT`` and those which do
-   ``>= HAVE_ARGUMENT``.
+   opcodes which don't use their argument and those that do
+   (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
+
+   .. versionchanged:: 3.6
+      Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
+      ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
+
 
 .. _opcode_collections:
 

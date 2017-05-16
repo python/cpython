@@ -1932,11 +1932,13 @@ _pystat_fromstructstat(STRUCT_STAT *st)
         return NULL;
 
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
-#ifdef HAVE_LARGEFILE_SUPPORT
+#if defined(HAVE_LARGEFILE_SUPPORT) || defined(MS_WINDOWS)
+    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(st->st_ino));
     PyStructSequence_SET_ITEM(v, 1,
-                              PyLong_FromLongLong((long long)st->st_ino));
+                              PyLong_FromUnsignedLongLong(st->st_ino));
 #else
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long)st->st_ino));
+    Py_BUILD_ASSERT(sizeof(unsigned long) >= sizeof(st->st_ino));
+    PyStructSequence_SET_ITEM(v, 1, PyLong_FromUnsignedLong(st->st_ino));
 #endif
 #ifdef MS_WINDOWS
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLong(st->st_dev));
@@ -6648,7 +6650,7 @@ static PyObject *
 os_setgroups(PyObject *module, PyObject *groups)
 /*[clinic end generated code: output=3fcb32aad58c5ecd input=fa742ca3daf85a7e]*/
 {
-    int i, len;
+    Py_ssize_t i, len;
     gid_t grouplist[MAX_GROUPS];
 
     if (!PySequence_Check(groups)) {
@@ -6656,6 +6658,9 @@ os_setgroups(PyObject *module, PyObject *groups)
         return NULL;
     }
     len = PySequence_Size(groups);
+    if (len < 0) {
+        return NULL;
+    }
     if (len > MAX_GROUPS) {
         PyErr_SetString(PyExc_ValueError, "too many groups");
         return NULL;
@@ -7884,9 +7889,9 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 #if (defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__) \
     || defined(__APPLE__))) || defined(HAVE_READV) || defined(HAVE_WRITEV)
 static Py_ssize_t
-iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, int cnt, int type)
+iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, Py_ssize_t cnt, int type)
 {
-    int i, j;
+    Py_ssize_t i, j;
     Py_ssize_t blen, total = 0;
 
     *iov = PyMem_New(struct iovec, cnt);
@@ -7963,8 +7968,7 @@ static Py_ssize_t
 os_readv_impl(PyObject *module, int fd, PyObject *buffers)
 /*[clinic end generated code: output=792da062d3fcebdb input=e679eb5dbfa0357d]*/
 {
-    int cnt;
-    Py_ssize_t n;
+    Py_ssize_t cnt, n;
     int async_err = 0;
     struct iovec *iov;
     Py_buffer *buf;
@@ -7976,6 +7980,8 @@ os_readv_impl(PyObject *module, int fd, PyObject *buffers)
     }
 
     cnt = PySequence_Size(buffers);
+    if (cnt < 0)
+        return -1;
 
     if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0)
         return -1;
@@ -8114,15 +8120,24 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
                 "sendfile() headers must be a sequence");
             return NULL;
         } else {
-            Py_ssize_t i = 0; /* Avoid uninitialized warning */
-            sf.hdr_cnt = PySequence_Size(headers);
-            if (sf.hdr_cnt > 0 &&
-                (i = iov_setup(&(sf.headers), &hbuf,
-                                headers, sf.hdr_cnt, PyBUF_SIMPLE)) < 0)
+            Py_ssize_t i = PySequence_Size(headers);
+            if (i < 0)
                 return NULL;
+            if (i > INT_MAX) {
+                PyErr_SetString(PyExc_OverflowError,
+                    "sendfile() header is too large");
+                return NULL;
+            }
+            if (i > 0) {
+                sf.hdr_cnt = (int)i;
+                i = iov_setup(&(sf.headers), &hbuf,
+                              headers, sf.hdr_cnt, PyBUF_SIMPLE);
+                if (i < 0)
+                    return NULL;
 #ifdef __APPLE__
-            sbytes += i;
+                sbytes += i;
 #endif
+            }
         }
     }
     if (trailers != NULL) {
@@ -8131,15 +8146,24 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
                 "sendfile() trailers must be a sequence");
             return NULL;
         } else {
-            Py_ssize_t i = 0; /* Avoid uninitialized warning */
-            sf.trl_cnt = PySequence_Size(trailers);
-            if (sf.trl_cnt > 0 &&
-                (i = iov_setup(&(sf.trailers), &tbuf,
-                                trailers, sf.trl_cnt, PyBUF_SIMPLE)) < 0)
+            Py_ssize_t i = PySequence_Size(trailers);
+            if (i < 0)
                 return NULL;
+            if (i > INT_MAX) {
+                PyErr_SetString(PyExc_OverflowError,
+                    "sendfile() trailer is too large");
+                return NULL;
+            }
+            if (i > 0) {
+                sf.trl_cnt = (int)i;
+                i = iov_setup(&(sf.trailers), &tbuf,
+                              trailers, sf.trl_cnt, PyBUF_SIMPLE);
+                if (i < 0)
+                    return NULL;
 #ifdef __APPLE__
-            sbytes += i;
+                sbytes += i;
 #endif
+            }
         }
     }
 
@@ -8409,7 +8433,7 @@ static Py_ssize_t
 os_writev_impl(PyObject *module, int fd, PyObject *buffers)
 /*[clinic end generated code: output=56565cfac3aac15b input=5b8d17fe4189d2fe]*/
 {
-    int cnt;
+    Py_ssize_t cnt;
     Py_ssize_t result;
     int async_err = 0;
     struct iovec *iov;
@@ -8421,6 +8445,8 @@ os_writev_impl(PyObject *module, int fd, PyObject *buffers)
         return -1;
     }
     cnt = PySequence_Size(buffers);
+    if (cnt < 0)
+        return -1;
 
     if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_SIMPLE) < 0) {
         return -1;
@@ -11156,7 +11182,7 @@ typedef struct {
     PyObject *lstat;
 #ifdef MS_WINDOWS
     struct _Py_stat_struct win32_lstat;
-    __int64 win32_file_index;
+    uint64_t win32_file_index;
     int got_file_index;
 #else /* POSIX */
 #ifdef HAVE_DIRENT_D_TYPE
@@ -11419,7 +11445,8 @@ DirEntry_inode(DirEntry *self)
         self->win32_file_index = stat.st_ino;
         self->got_file_index = 1;
     }
-    return PyLong_FromLongLong((long long)self->win32_file_index);
+    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(self->win32_file_index));
+    return PyLong_FromUnsignedLongLong(self->win32_file_index);
 #else /* POSIX */
 #ifdef HAVE_LARGEFILE_SUPPORT
     return PyLong_FromLongLong((long long)self->d_ino);

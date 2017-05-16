@@ -2,6 +2,7 @@ import contextlib
 import io
 import os
 import importlib.util
+import pathlib
 import posixpath
 import time
 import struct
@@ -13,7 +14,7 @@ from tempfile import TemporaryFile
 from random import randint, random, getrandbits
 
 from test.support import script_helper
-from test.support import (TESTFN, findfile, unlink, rmtree, temp_dir,
+from test.support import (TESTFN, findfile, unlink, rmtree, temp_dir, temp_cwd,
                           requires_zlib, requires_bz2, requires_lzma,
                           captured_stdout, check_warnings)
 
@@ -147,6 +148,12 @@ class AbstractTestsWithSourceFile:
     def test_open(self):
         for f in get_files(self):
             self.zip_open_test(f, self.compression)
+
+    def test_open_with_pathlike(self):
+        path = pathlib.Path(TESTFN2)
+        self.zip_open_test(path, self.compression)
+        with zipfile.ZipFile(path, "r", self.compression) as zipfp:
+            self.assertIsInstance(zipfp.filename, str)
 
     def zip_random_open_test(self, f, compression):
         self.make_test_archive(f, compression)
@@ -727,6 +734,48 @@ class LzmaTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
     compression = zipfile.ZIP_LZMA
 
 
+class AbstractWriterTests:
+
+    def tearDown(self):
+        unlink(TESTFN2)
+
+    def test_close_after_close(self):
+        data = b'content'
+        with zipfile.ZipFile(TESTFN2, "w", self.compression) as zipf:
+            w = zipf.open('test', 'w')
+            w.write(data)
+            w.close()
+            self.assertTrue(w.closed)
+            w.close()
+            self.assertTrue(w.closed)
+            self.assertEqual(zipf.read('test'), data)
+
+    def test_write_after_close(self):
+        data = b'content'
+        with zipfile.ZipFile(TESTFN2, "w", self.compression) as zipf:
+            w = zipf.open('test', 'w')
+            w.write(data)
+            w.close()
+            self.assertTrue(w.closed)
+            self.assertRaises(ValueError, w.write, b'')
+            self.assertEqual(zipf.read('test'), data)
+
+class StoredWriterTests(AbstractWriterTests, unittest.TestCase):
+    compression = zipfile.ZIP_STORED
+
+@requires_zlib
+class DeflateWriterTests(AbstractWriterTests, unittest.TestCase):
+    compression = zipfile.ZIP_DEFLATED
+
+@requires_bz2
+class Bzip2WriterTests(AbstractWriterTests, unittest.TestCase):
+    compression = zipfile.ZIP_BZIP2
+
+@requires_lzma
+class LzmaWriterTests(AbstractWriterTests, unittest.TestCase):
+    compression = zipfile.ZIP_LZMA
+
+
 class PyZipFileTests(unittest.TestCase):
     def assertCompiledIn(self, name, namelist):
         if name + 'o' not in namelist:
@@ -906,22 +955,56 @@ class PyZipFileTests(unittest.TestCase):
         finally:
             rmtree(TESTFN2)
 
+    def test_write_pathlike(self):
+        os.mkdir(TESTFN2)
+        try:
+            with open(os.path.join(TESTFN2, "mod1.py"), "w") as fp:
+                fp.write("print(42)\n")
+
+            with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
+                zipfp.writepy(pathlib.Path(TESTFN2) / "mod1.py")
+                names = zipfp.namelist()
+                self.assertCompiledIn('mod1.py', names)
+        finally:
+            rmtree(TESTFN2)
+
 
 class ExtractTests(unittest.TestCase):
-    def test_extract(self):
+
+    def make_test_file(self):
         with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED) as zipfp:
             for fpath, fdata in SMALL_TEST_DATA:
                 zipfp.writestr(fpath, fdata)
 
+    def test_extract(self):
+        with temp_cwd():
+            self.make_test_file()
+            with zipfile.ZipFile(TESTFN2, "r") as zipfp:
+                for fpath, fdata in SMALL_TEST_DATA:
+                    writtenfile = zipfp.extract(fpath)
+
+                    # make sure it was written to the right place
+                    correctfile = os.path.join(os.getcwd(), fpath)
+                    correctfile = os.path.normpath(correctfile)
+
+                    self.assertEqual(writtenfile, correctfile)
+
+                    # make sure correct data is in correct file
+                    with open(writtenfile, "rb") as f:
+                        self.assertEqual(fdata.encode(), f.read())
+
+                    unlink(writtenfile)
+
+    def _test_extract_with_target(self, target):
+        self.make_test_file()
         with zipfile.ZipFile(TESTFN2, "r") as zipfp:
             for fpath, fdata in SMALL_TEST_DATA:
-                writtenfile = zipfp.extract(fpath)
+                writtenfile = zipfp.extract(fpath, target)
 
                 # make sure it was written to the right place
-                correctfile = os.path.join(os.getcwd(), fpath)
+                correctfile = os.path.join(target, fpath)
                 correctfile = os.path.normpath(correctfile)
-
-                self.assertEqual(writtenfile, correctfile)
+                self.assertTrue(os.path.samefile(writtenfile, correctfile), (writtenfile, target))
 
                 # make sure correct data is in correct file
                 with open(writtenfile, "rb") as f:
@@ -929,26 +1012,50 @@ class ExtractTests(unittest.TestCase):
 
                 unlink(writtenfile)
 
-        # remove the test file subdirectories
-        rmtree(os.path.join(os.getcwd(), 'ziptest2dir'))
+        unlink(TESTFN2)
+
+    def test_extract_with_target(self):
+        with temp_dir() as extdir:
+            self._test_extract_with_target(extdir)
+
+    def test_extract_with_target_pathlike(self):
+        with temp_dir() as extdir:
+            self._test_extract_with_target(pathlib.Path(extdir))
 
     def test_extract_all(self):
-        with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED) as zipfp:
-            for fpath, fdata in SMALL_TEST_DATA:
-                zipfp.writestr(fpath, fdata)
+        with temp_cwd():
+            self.make_test_file()
+            with zipfile.ZipFile(TESTFN2, "r") as zipfp:
+                zipfp.extractall()
+                for fpath, fdata in SMALL_TEST_DATA:
+                    outfile = os.path.join(os.getcwd(), fpath)
 
+                    with open(outfile, "rb") as f:
+                        self.assertEqual(fdata.encode(), f.read())
+
+                    unlink(outfile)
+
+    def _test_extract_all_with_target(self, target):
+        self.make_test_file()
         with zipfile.ZipFile(TESTFN2, "r") as zipfp:
-            zipfp.extractall()
+            zipfp.extractall(target)
             for fpath, fdata in SMALL_TEST_DATA:
-                outfile = os.path.join(os.getcwd(), fpath)
+                outfile = os.path.join(target, fpath)
 
                 with open(outfile, "rb") as f:
                     self.assertEqual(fdata.encode(), f.read())
 
                 unlink(outfile)
 
-        # remove the test file subdirectories
-        rmtree(os.path.join(os.getcwd(), 'ziptest2dir'))
+        unlink(TESTFN2)
+
+    def test_extract_all_with_target(self):
+        with temp_dir() as extdir:
+            self._test_extract_all_with_target(extdir)
+
+    def test_extract_all_with_target_pathlike(self):
+        with temp_dir() as extdir:
+            self._test_extract_all_with_target(pathlib.Path(extdir))
 
     def check_file(self, filename, content):
         self.assertTrue(os.path.isfile(filename))
@@ -1188,6 +1295,8 @@ class OtherTests(unittest.TestCase):
         with open(TESTFN, "w") as fp:
             fp.write("this is not a legal zip file\n")
         self.assertFalse(zipfile.is_zipfile(TESTFN))
+        # - passing a path-like object
+        self.assertFalse(zipfile.is_zipfile(pathlib.Path(TESTFN)))
         # - passing a file object
         with open(TESTFN, "rb") as fp:
             self.assertFalse(zipfile.is_zipfile(fp))
@@ -2033,6 +2142,26 @@ class ZipInfoTests(unittest.TestCase):
         zi = zipfile.ZipInfo.from_file(__file__)
         self.assertEqual(posixpath.basename(zi.filename), 'test_zipfile.py')
         self.assertFalse(zi.is_dir())
+        self.assertEqual(zi.file_size, os.path.getsize(__file__))
+
+    def test_from_file_pathlike(self):
+        zi = zipfile.ZipInfo.from_file(pathlib.Path(__file__))
+        self.assertEqual(posixpath.basename(zi.filename), 'test_zipfile.py')
+        self.assertFalse(zi.is_dir())
+        self.assertEqual(zi.file_size, os.path.getsize(__file__))
+
+    def test_from_file_bytes(self):
+        zi = zipfile.ZipInfo.from_file(os.fsencode(__file__), 'test')
+        self.assertEqual(posixpath.basename(zi.filename), 'test')
+        self.assertFalse(zi.is_dir())
+        self.assertEqual(zi.file_size, os.path.getsize(__file__))
+
+    def test_from_file_fileno(self):
+        with open(__file__, 'rb') as f:
+            zi = zipfile.ZipInfo.from_file(f.fileno(), 'test')
+            self.assertEqual(posixpath.basename(zi.filename), 'test')
+            self.assertFalse(zi.is_dir())
+            self.assertEqual(zi.file_size, os.path.getsize(__file__))
 
     def test_from_dir(self):
         dirpath = os.path.dirname(os.path.abspath(__file__))

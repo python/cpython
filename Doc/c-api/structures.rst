@@ -241,7 +241,7 @@ definition with the same method name.
    +==================+=============+===============================+
    | :attr:`name`     | char \*     | name of the member            |
    +------------------+-------------+-------------------------------+
-   | :attr:`type`     | int         | the type of the member in the |
+   | :attr:`!type`    | int         | the type of the member in the |
    |                  |             | C struct                      |
    +------------------+-------------+-------------------------------+
    | :attr:`offset`   | Py_ssize_t  | the offset in bytes that the  |
@@ -256,7 +256,7 @@ definition with the same method name.
    |                  |             | docstring                     |
    +------------------+-------------+-------------------------------+
 
-   :attr:`type` can be one of many ``T_`` macros corresponding to various C
+   :attr:`!type` can be one of many ``T_`` macros corresponding to various C
    types.  When the member is accessed in Python, it will be converted to the
    equivalent Python type.
 

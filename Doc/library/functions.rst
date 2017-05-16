@@ -610,7 +610,7 @@ are always available.  They are listed here in alphabetical order.
 
   .. note::
 
-    For object's with custom :meth:`__hash__` methods, note that :func:`hash`
+    For objects with custom :meth:`__hash__` methods, note that :func:`hash`
     truncates the return value based on the bit width of the host machine.
     See :meth:`__hash__` for details.
 
@@ -1072,7 +1072,7 @@ are always available.  They are listed here in alphabetical order.
          * The ``'x'`` mode was added.
          * :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
          * :exc:`FileExistsError` is now raised if the file opened in exclusive
-         * creation mode (``'x'``) already exists.
+           creation mode (``'x'``) already exists.
 
    .. versionchanged::
       3.4
@@ -1125,7 +1125,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
 
    Print *objects* to the text stream *file*, separated by *sep* and followed
-   by *end*.  *sep*, *end* and *file*, if present, must be given as keyword
+   by *end*.  *sep*, *end*, *file* and *flush*, if present, must be given as keyword
    arguments.
 
    All non-keyword arguments are converted to strings like :func:`str` does and
@@ -1254,16 +1254,20 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: round(number[, ndigits])
 
-   Return the floating point value *number* rounded to *ndigits* digits after
-   the decimal point.  If *ndigits* is omitted or is ``None``, it returns the
-   nearest integer to its input.  Delegates to ``number.__round__(ndigits)``.
+   Return *number* rounded to *ndigits* precision after the decimal
+   point.  If *ndigits* is omitted or is ``None``, it returns the
+   nearest integer to its input.
 
    For the built-in types supporting :func:`round`, values are rounded to the
    closest multiple of 10 to the power minus *ndigits*; if two multiples are
    equally close, rounding is done toward the even choice (so, for example,
    both ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is
-   ``2``).  The return value is an integer if called with one argument,
+   ``2``).  Any integer value is valid for *ndigits* (positive, zero, or
+   negative).  The return value is an integer if called with one argument,
    otherwise of the same type as *number*.
+
+   For a general Python object ``number``, ``round(number, ndigits)`` delegates to
+   ``number.__round__(ndigits)``.
 
    .. note::
 

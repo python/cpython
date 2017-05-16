@@ -528,6 +528,8 @@ byte_converter(PyObject *arg, char *p)
     return 0;
 }
 
+static PyObject *_PyBytes_FromBuffer(PyObject *x);
+
 static PyObject *
 format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
 {
@@ -564,8 +566,19 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         *plen = PyBytes_GET_SIZE(result);
         return result;
     }
+    /* does it support buffer protocol? */
+    if (PyObject_CheckBuffer(v)) {
+        /* maybe we can avoid making a copy of the buffer object here? */
+        result = _PyBytes_FromBuffer(v);
+        if (result == NULL)
+            return NULL;
+        *pbuf = PyBytes_AS_STRING(result);
+        *plen = PyBytes_GET_SIZE(result);
+        return result;
+    }
     PyErr_Format(PyExc_TypeError,
-                 "%%b requires bytes, or an object that implements __bytes__, not '%.100s'",
+                 "%%b requires a bytes-like object, "
+                 "or an object that implements __bytes__, not '%.100s'",
                  Py_TYPE(v)->tp_name);
     return NULL;
 }
@@ -619,11 +632,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             Py_ssize_t len;
             char *pos;
 
-            pos = strchr(fmt + 1, '%');
+            pos = (char *)memchr(fmt + 1, '%', fmtcnt);
             if (pos != NULL)
                 len = pos - fmt;
             else
-                len = format_len - (fmt - format);
+                len = fmtcnt + 1;
             assert(len != 0);
 
             memcpy(res, fmt, len);
@@ -1425,7 +1438,7 @@ bytes_concat(PyObject *a, PyObject *b)
     if (PyObject_GetBuffer(a, &va, PyBUF_SIMPLE) != 0 ||
         PyObject_GetBuffer(b, &vb, PyBUF_SIMPLE) != 0) {
         PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
-                     Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
+                     Py_TYPE(b)->tp_name, Py_TYPE(a)->tp_name);
         goto done;
     }
 
@@ -1670,11 +1683,11 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
         char* result_buf;
         PyObject* result;
 
-        if (PySlice_GetIndicesEx(item,
-                         PyBytes_GET_SIZE(self),
-                         &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = PySlice_AdjustIndices(PyBytes_GET_SIZE(self), &start,
+                                            &stop, step);
 
         if (slicelength <= 0) {
             return PyBytes_FromStringAndSize("", 0);

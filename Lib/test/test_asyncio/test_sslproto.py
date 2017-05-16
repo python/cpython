@@ -95,5 +95,17 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionAbortedError)
 
+    def test_get_extra_info_on_closed_connection(self):
+        waiter = asyncio.Future(loop=self.loop)
+        ssl_proto = self.ssl_protocol(waiter)
+        self.assertIsNone(ssl_proto._get_extra_info('socket'))
+        default = object()
+        self.assertIs(ssl_proto._get_extra_info('socket', default), default)
+        self.connection_made(ssl_proto)
+        self.assertIsNotNone(ssl_proto._get_extra_info('socket'))
+        ssl_proto.connection_lost(None)
+        self.assertIsNone(ssl_proto._get_extra_info('socket'))
+
+
 if __name__ == '__main__':
     unittest.main()

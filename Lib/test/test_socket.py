@@ -803,11 +803,6 @@ class GeneralModuleTests(unittest.TestCase):
             self.fail("Error testing host resolution mechanisms. (fqdn: %s, all: %s)" % (fqhn, repr(all_host_names)))
 
     def test_host_resolution(self):
-        for addr in ['0.1.1.~1', '1+.1.1.1', '::1q', '::1::2',
-                     '1:1:1:1:1:1:1:1:1']:
-            self.assertRaises(OSError, socket.gethostbyname, addr)
-            self.assertRaises(OSError, socket.gethostbyaddr, addr)
-
         for addr in [support.HOST, '10.0.0.1', '255.255.255.255']:
             self.assertEqual(socket.gethostbyname(addr), addr)
 
@@ -815,6 +810,21 @@ class GeneralModuleTests(unittest.TestCase):
         # a matching name entry (e.g. 'ip6-localhost')
         for host in [support.HOST]:
             self.assertIn(host, socket.gethostbyaddr(host)[2])
+
+    def test_host_resolution_bad_address(self):
+        # These are all malformed IP addresses and expected not to resolve to
+        # any result.  But some ISPs, e.g. AWS, may successfully resolve these
+        # IPs.
+        explanation = (
+            "resolving an invalid IP address did not raise OSError; "
+            "can be caused by a broken DNS server"
+        )
+        for addr in ['0.1.1.~1', '1+.1.1.1', '::1q', '::1::2',
+                     '1:1:1:1:1:1:1:1:1']:
+            with self.assertRaises(OSError):
+                socket.gethostbyname(addr)
+            with self.assertRaises(OSError, msg=explanation):
+                socket.gethostbyaddr(addr)
 
     @unittest.skipUnless(hasattr(socket, 'sethostname'), "test needs socket.sethostname()")
     @unittest.skipUnless(hasattr(socket, 'gethostname'), "test needs socket.gethostname()")
@@ -896,6 +906,7 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(swapped & mask, mask)
             self.assertRaises(OverflowError, func, 1<<34)
 
+    @support.cpython_only
     def testNtoHErrors(self):
         good_values = [ 1, 2, 3, 1, 2, 3 ]
         bad_values = [ -1, -2, -3, -1, -2, -3 ]
@@ -4649,6 +4660,10 @@ class TestUnixDomain(unittest.TestCase):
             else:
                 raise
 
+    def testUnbound(self):
+        # Issue #30205
+        self.assertIn(self.sock.getsockname(), ('', None))
+
     def testStrAddr(self):
         # Test binding to and retrieving a normal string pathname.
         path = os.path.abspath(support.TESTFN)
@@ -5469,7 +5484,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             self.assertEqual(len(dec), msglen * multiplier)
             self.assertEqual(dec, msg * multiplier)
 
-    @support.requires_linux_version(4, 3)  # see test_aes_cbc
+    @support.requires_linux_version(4, 9)  # see issue29324
     def test_aead_aes_gcm(self):
         key = bytes.fromhex('c939cc13397c1d37de6ae0e1cb7c423c')
         iv = bytes.fromhex('b3d8cc017cbb89b39e0f67e2')
@@ -5492,8 +5507,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                 op.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, iv=iv,
                                  assoclen=assoclen, flags=socket.MSG_MORE)
                 op.sendall(assoc, socket.MSG_MORE)
-                op.sendall(plain, socket.MSG_MORE)
-                op.sendall(b'\x00' * taglen)
+                op.sendall(plain)
                 res = op.recv(assoclen + len(plain) + taglen)
                 self.assertEqual(expected_ct, res[assoclen:-taglen])
                 self.assertEqual(expected_tag, res[-taglen:])
@@ -5501,7 +5515,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             # now with msg
             op, _ = algo.accept()
             with op:
-                msg = assoc + plain + b'\x00' * taglen
+                msg = assoc + plain
                 op.sendmsg_afalg([msg], op=socket.ALG_OP_ENCRYPT, iv=iv,
                                  assoclen=assoclen)
                 res = op.recv(assoclen + len(plain) + taglen)
@@ -5512,7 +5526,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             pack_uint32 = struct.Struct('I').pack
             op, _ = algo.accept()
             with op:
-                msg = assoc + plain + b'\x00' * taglen
+                msg = assoc + plain
                 op.sendmsg(
                     [msg],
                     ([socket.SOL_ALG, socket.ALG_SET_OP, pack_uint32(socket.ALG_OP_ENCRYPT)],
@@ -5520,7 +5534,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                      [socket.SOL_ALG, socket.ALG_SET_AEAD_ASSOCLEN, pack_uint32(assoclen)],
                     )
                 )
-                res = op.recv(len(msg))
+                res = op.recv(len(msg) + taglen)
                 self.assertEqual(expected_ct, res[assoclen:-taglen])
                 self.assertEqual(expected_tag, res[-taglen:])
 
@@ -5530,8 +5544,8 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                 msg = assoc + expected_ct + expected_tag
                 op.sendmsg_afalg([msg], op=socket.ALG_OP_DECRYPT, iv=iv,
                                  assoclen=assoclen)
-                res = op.recv(len(msg))
-                self.assertEqual(plain, res[assoclen:-taglen])
+                res = op.recv(len(msg) - taglen)
+                self.assertEqual(plain, res[assoclen:])
 
     @support.requires_linux_version(4, 3)  # see test_aes_cbc
     def test_drbg_pr_sha256(self):

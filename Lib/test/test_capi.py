@@ -98,7 +98,7 @@ class CAPITest(unittest.TestCase):
             def __len__(self):
                 return 1
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          1,Z(),3,[1, 2],5,6,7,8,9,10,11,12,13,14,15,16,17)
+                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17)
         # Issue #15736: overflow in _PySequence_BytesToCharpArray()
         class Z(object):
             def __len__(self):
@@ -106,7 +106,7 @@ class CAPITest(unittest.TestCase):
             def __getitem__(self, i):
                 return b'x'
         self.assertRaises(MemoryError, _posixsubprocess.fork_exec,
-                          1,Z(),3,[1, 2],5,6,7,8,9,10,11,12,13,14,15,16,17)
+                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_subprocess_fork_exec(self):
@@ -116,7 +116,7 @@ class CAPITest(unittest.TestCase):
 
         # Issue #15738: crash in subprocess_fork_exec()
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          Z(),[b'1'],3,[1, 2],5,6,7,8,9,10,11,12,13,14,15,16,17)
+                          Z(),[b'1'],3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -490,9 +490,8 @@ class SkipitemTest(unittest.TestCase):
             # test the format unit when not skipped
             format = c + "i"
             try:
-                # (note: the format string must be bytes!)
                 _testcapi.parse_tuple_and_keywords(tuple_1, dict_b,
-                    format.encode("ascii"), keywords)
+                    format, keywords)
                 when_not_skipped = False
             except SystemError as e:
                 s = "argument 1 (impossible<bad format char>)"
@@ -504,7 +503,7 @@ class SkipitemTest(unittest.TestCase):
             optional_format = "|" + format
             try:
                 _testcapi.parse_tuple_and_keywords(empty_tuple, dict_b,
-                    optional_format.encode("ascii"), keywords)
+                    optional_format, keywords)
                 when_skipped = False
             except SystemError as e:
                 s = "impossible<bad format char>: '{}'".format(format)
@@ -517,40 +516,64 @@ class SkipitemTest(unittest.TestCase):
             self.assertIs(when_skipped, when_not_skipped, message)
 
     def test_parse_tuple_and_keywords(self):
-        # parse_tuple_and_keywords error handling tests
+        # Test handling errors in the parse_tuple_and_keywords helper itself
         self.assertRaises(TypeError, _testcapi.parse_tuple_and_keywords,
                           (), {}, 42, [])
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, b'', 42)
+                          (), {}, '', 42)
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, b'', [''] * 42)
+                          (), {}, '', [''] * 42)
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, b'', [42])
+                          (), {}, '', [42])
+
+    def test_bad_use(self):
+        # Test handling invalid format and keywords in
+        # PyArg_ParseTupleAndKeywords()
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1,), {}, '||O', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1, 2), {}, '|O|O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1}, '$$O', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1, 'b': 2}, '$O$O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1}, '$|O', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1, 'b': 2}, '$O|O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1,), {}, '|O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1,), {}, '|OO', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, '|$O', [''])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, '|OO', ['a', ''])
 
     def test_positional_only(self):
         parse = _testcapi.parse_tuple_and_keywords
 
-        parse((1, 2, 3), {}, b'OOO', ['', '', 'a'])
-        parse((1, 2), {'a': 3}, b'OOO', ['', '', 'a'])
+        parse((1, 2, 3), {}, 'OOO', ['', '', 'a'])
+        parse((1, 2), {'a': 3}, 'OOO', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
                r'Function takes at least 2 positional arguments \(1 given\)'):
-            parse((1,), {'a': 3}, b'OOO', ['', '', 'a'])
-        parse((1,), {}, b'O|OO', ['', '', 'a'])
+            parse((1,), {'a': 3}, 'OOO', ['', '', 'a'])
+        parse((1,), {}, 'O|OO', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
                r'Function takes at least 1 positional arguments \(0 given\)'):
-            parse((), {}, b'O|OO', ['', '', 'a'])
-        parse((1, 2), {'a': 3}, b'OO$O', ['', '', 'a'])
+            parse((), {}, 'O|OO', ['', '', 'a'])
+        parse((1, 2), {'a': 3}, 'OO$O', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
                r'Function takes exactly 2 positional arguments \(1 given\)'):
-            parse((1,), {'a': 3}, b'OO$O', ['', '', 'a'])
-        parse((1,), {}, b'O|O$O', ['', '', 'a'])
+            parse((1,), {'a': 3}, 'OO$O', ['', '', 'a'])
+        parse((1,), {}, 'O|O$O', ['', '', 'a'])
         with self.assertRaisesRegex(TypeError,
                r'Function takes at least 1 positional arguments \(0 given\)'):
-            parse((), {}, b'O|O$O', ['', '', 'a'])
+            parse((), {}, 'O|O$O', ['', '', 'a'])
         with self.assertRaisesRegex(SystemError, r'Empty parameter name after \$'):
-            parse((1,), {}, b'O|$OO', ['', '', 'a'])
+            parse((1,), {}, 'O|$OO', ['', '', 'a'])
         with self.assertRaisesRegex(SystemError, 'Empty keyword'):
-            parse((1,), {}, b'O|OO', ['', 'a', ''])
+            parse((1,), {}, 'O|OO', ['', 'a', ''])
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')

@@ -1,9 +1,13 @@
-This is Python version 3.6.1 release candidate 1
-================================================
+This is Python version 3.6.1+
+=============================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=3.6
    :alt: CPython build status on Travis CI
    :target: https://travis-ci.org/python/cpython
+
+.. image:: https://ci.appveyor.com/api/projects/status/4mew1a93xdkbf5ua/branch/3.6?svg=true
+   :alt: CPython build status on Appveyor
+   :target: https://ci.appveyor.com/project/python/cpython/branch/3.6
 
 .. image:: https://codecov.io/gh/python/cpython/branch/3.6/graph/badge.svg
    :alt: CPython code coverage on Codecov
