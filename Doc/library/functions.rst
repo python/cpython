@@ -741,6 +741,7 @@ section.
 
 
 .. class:: list([iterable])
+   :noindex:
 
    Return a list whose items are the same and in the same order as *iterable*'s
    items.  *iterable* may be either a sequence, a container that supports

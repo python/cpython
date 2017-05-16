@@ -152,7 +152,7 @@ reference/datamodel,,:step,a[i:j:step]
 reference/datamodel,,:max,
 reference/expressions,,:index,x[index:index]
 reference/expressions,,`,`expressions...`
-reference/expressions,,`,"""`"""
+reference/expressions,350,`,`
 reference/grammar,,`,'`' testlist1 '`'
 reference/lexical_analysis,,:fileencoding,# vim:fileencoding=<encoding-name>
 reference/lexical_analysis,,`,",       :       .       `       =       ;"
