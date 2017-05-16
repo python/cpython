@@ -238,7 +238,7 @@ class Bdb:
     def do_clear(self, arg):
         """Remove temporary breakpoint.
 
-        If not implemented in derived classe, raise NotImplementedError.
+        Must implement in derived classes or get NotImplementedError.
         """
         raise NotImplementedError("subclass of bdb must implement do_clear()")
 
