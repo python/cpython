@@ -1402,8 +1402,8 @@ Launcher arguments:\n\n\
 -X.Y-64: Launch the specified 64bit Python version\n\
 -X-64  : Launch the latest 64bit Python X version", stdout);
     }
-    fputws(L"\n-l/--list      : List the available pythons", stdout);
-    fputws(L"\n-L/--long-list : List with paths", stdout);
+    fputws(L"\n--launcher-list       : List the available pythons", stdout);
+    fputws(L"\n--launcher-list-paths : List with paths", stdout);
     fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
     fflush(stdout);
 }
@@ -1422,7 +1422,7 @@ show_python_list(wchar_t ** argv)
     */
     fwprintf(stderr,
              L"Installed Pythons found by %s Launcher for Windows", argv[0]);
-    if (!wcscmp(argv[1], L"-L") || !_wcsicmp(argv[1], L"--long-list"))
+    if (!_wcsicmp(argv[1], L"--launcher-list-paths"))
     {
         fmt = L"\n -%s-%d\t%s";
         fwprintf(stderr, L" with Paths");
@@ -1630,8 +1630,8 @@ installed", &p[1]);
         }
         if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help")))
             show_help_text(argv);
-        if ((argc == 2) && (!_wcsicmp(p, L"-l") || !_wcsicmp(p, L"--list") ||\
-                            !_wcsicmp(p, L"--long-list")))
+        if ((argc == 2) && (!_wcsicmp(p, L"--launcher-list") ||\
+                            !_wcsicmp(p, L"--launcher-list-paths")))
             show_python_list(argv);
     }
     invoke_child(executable, NULL, command);
