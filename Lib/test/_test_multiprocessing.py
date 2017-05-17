@@ -3958,6 +3958,42 @@ class TestSemaphoreTracker(unittest.TestCase):
         self.assertRegex(err, expected)
         self.assertRegex(err, r'semaphore_tracker: %r: \[Errno' % name1)
 
+class TestSimpleQueue(unittest.TestCase):
+
+    @classmethod
+    def _test_empty(cls, queue, child_can_start, parent_can_continue):
+        child_can_start.wait()
+        # issue 30301, could fail under spawn and forkserver
+        try:
+            queue.put(queue.empty())
+            queue.put(queue.empty())
+        finally:
+            parent_can_continue.set()
+
+    def test_empty(self):
+        queue = multiprocessing.SimpleQueue()
+        child_can_start = multiprocessing.Event()
+        parent_can_continue = multiprocessing.Event()
+
+        proc = multiprocessing.Process(
+            target=self._test_empty,
+            args=(queue, child_can_start, parent_can_continue)
+        )
+        proc.daemon = True
+        proc.start()
+
+        self.assertTrue(queue.empty())
+
+        child_can_start.set()
+        parent_can_continue.wait()
+
+        self.assertFalse(queue.empty())
+        self.assertEqual(queue.get(), True)
+        self.assertEqual(queue.get(), False)
+        self.assertTrue(queue.empty())
+
+        proc.join()
+
 #
 # Mixins
 #
