@@ -8,7 +8,7 @@ information about calls.
 Coverage: 94%.
 '''
 from idlelib import textview as tv
-from test.support import requires, findfile
+from test.support import requires
 requires('gui')
 
 import unittest
