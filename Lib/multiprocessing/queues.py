@@ -337,6 +337,7 @@ class SimpleQueue(object):
 
     def __setstate__(self, state):
         (self._reader, self._writer, self._rlock, self._wlock) = state
+        self._poll = self._reader.poll
 
     def get(self):
         with self._rlock:
