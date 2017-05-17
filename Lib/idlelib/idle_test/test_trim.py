@@ -1,12 +1,15 @@
 import unittest
 import idlelib.trim as trim
-from idlelib.idle_test.mock_idle import Editor
+from test.support import requires
+requires('gui')
+from idlelib.editor import EditorWindow as Editor
+from tkinter import Tk
 
 
 class trimTest(unittest.TestCase):
 
     def test_trim_line(self):
-        editor = Editor()
+        editor = Editor(root=Tk())
         text = editor.text
         do_trim = trim.TrimExtension(editor).do_trim
 
@@ -17,14 +20,10 @@ class trimTest(unittest.TestCase):
         self.assertEqual(text.get('1.0', 'insert'), '')
         text.insert('1.0', '     \n')
         do_trim()
-        self.assertEqual(text.get('1.0', 'insert'), '\n')
+        self.assertEqual(text.get('1.0', 'insert'), '')
 
     def test_trim_multiple(self):
-        editor = Editor()
-        #  Uncomment following to verify that test passes with real widgets.
-##        from idlelib.editor import EditorWindow as Editor
-##        from tkinter import Tk
-##        editor = Editor(root=Tk())
+        editor = Editor(root=Tk())
         text = editor.text
         do_trim = trim.TrimExtension(editor).do_trim
 
