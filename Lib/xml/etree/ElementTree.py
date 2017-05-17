@@ -1450,6 +1450,8 @@ class TreeBuilder(object):
         self._tail = 1
         return self._last
 
+_sentinel = ['sentinel']
+
 ##
 # Element structure builder for XML source data, based on the
 # <b>expat</b> parser.
@@ -1465,7 +1467,11 @@ class TreeBuilder(object):
 
 class XMLParser(object):
 
-    def __init__(self, html=0, target=None, encoding=None):
+    def __init__(self, html=_sentinel, target=None, encoding=None):
+        if html is not _sentinel:
+            warnings.warnpy3k(
+                "The html argument of XMLParser() is deprecated",
+                DeprecationWarning, stacklevel=2)
         try:
             from xml.parsers import expat
         except ImportError:
@@ -1617,7 +1623,7 @@ class XMLParser(object):
                     pubid = pubid[1:-1]
                 if hasattr(self.target, "doctype"):
                     self.target.doctype(name, pubid, system[1:-1])
-                elif self.doctype is not self._XMLParser__doctype:
+                elif self.doctype != self._XMLParser__doctype:
                     # warn about deprecated call
                     self._XMLParser__doctype(name, pubid, system[1:-1])
                     self.doctype(name, pubid, system[1:-1])
