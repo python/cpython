@@ -9,15 +9,15 @@ from tkinter.messagebox import showerror
 class TextViewer(Toplevel):
     "A simple text viewer dialog for IDLE."
 
-    def __init__(self, parent, title, text, modal=True, _htest=False, _utest=False):
-        """Show the given text in a scrollable window with a 'close' button
+    def __init__(self, parent, title, text, modal=True,
+                 _htest=False, _utest=False):
+        """Show the given text in a scrollable window with a 'close' button.
 
-        If modal option set to False, user can interact with other windows,
-        otherwise they will be unable to interact with other windows until
-        the textview window is closed.
+        If modal is left True, users cannot interact with other windows
+        until the textview window is closed.
 
         _htest - bool; change box location when running htest.
-        _utest - bool; don't wait_window when running unittest
+        _utest - bool; don't wait_window when running unittest.
         """
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
@@ -43,11 +43,11 @@ class TextViewer(Toplevel):
         if modal:
             self.transient(parent)
             self.grab_set()
-
             if not _utest:
                 self.wait_window()
 
     def CreateWidgets(self):
+        "Create Frame with Text (with vertical Scrollbar) and Button."
         frameText = Frame(self, relief=SUNKEN, height=700)
         frameButtons = Frame(self)
         self.buttonOk = Button(frameButtons, text='Close',
@@ -69,10 +69,11 @@ class TextViewer(Toplevel):
 
 
 def view_text(parent, title, text, modal=True, _utest=False):
+    "Display text in a TextViewer."
     return TextViewer(parent, title, text, modal, _utest=_utest)
 
-
 def view_file(parent, title, filename, encoding=None, modal=True, _utest=False):
+    "Display file in a TextViever or show error message."
     try:
         with open(filename, 'r', encoding=encoding) as file:
             contents = file.read()

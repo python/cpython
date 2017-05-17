@@ -97,7 +97,6 @@ class ViewFunctionTest(unittest.TestCase):
 
 
 class ButtonClickTextViewTest(unittest.TestCase):
-    _utest = True
 
     def setUp(self):
         self.view = None
@@ -110,7 +109,7 @@ class ButtonClickTextViewTest(unittest.TestCase):
     def test_view_text_bind_with_button(self):
         def _command():
             self.called = True
-            self.view = tv.view_text(root, 'TITLE_TEXT', 'COMMAND', _utest=self._utest)
+            self.view = tv.view_text(root, 'TITLE_TEXT', 'COMMAND', _utest=True)
         button = Button(root, text='BUTTON', command=_command)
         button.invoke()
         self.addCleanup(button.destroy)
@@ -122,7 +121,7 @@ class ButtonClickTextViewTest(unittest.TestCase):
     def test_view_file_bind_with_button(self):
         def _command():
             self.called = True
-            self.view = tv.view_file(root, 'TITLE_FILE', __file__, _utest=self._utest)
+            self.view = tv.view_file(root, 'TITLE_FILE', __file__, _utest=True)
         button = Button(root, text='BUTTON', command=_command)
         button.invoke()
         self.addCleanup(button.destroy)
@@ -132,7 +131,8 @@ class ButtonClickTextViewTest(unittest.TestCase):
         with open(__file__) as f:
             self.assertEqual(self.view.textView.get('1.0', '1.end'),
                              f.readline().strip())
-            self.assertEqual(self.view.textView.get('2.0', '2.end'),
+            f.readline()
+            self.assertEqual(self.view.textView.get('3.0', '3.end'),
                              f.readline().strip())
 
 
