@@ -3963,9 +3963,12 @@ class TestSimpleQueue(unittest.TestCase):
     @classmethod
     def _test_empty(cls, queue, child_can_start, parent_can_continue):
         child_can_start.wait()
-        queue.put(1)
-        queue.put(2)
-        parent_can_continue.set()
+        # issue 30301, could fail under spawn and forkserver
+        try:
+            queue.put(queue.empty())
+            queue.put(queue.empty())
+        finally:
+            parent_can_continue.set()
 
     def test_empty(self):
         queue = multiprocessing.SimpleQueue()
@@ -3985,8 +3988,8 @@ class TestSimpleQueue(unittest.TestCase):
         parent_can_continue.wait()
 
         self.assertFalse(queue.empty())
-        self.assertEqual(queue.get(), 1)
-        self.assertEqual(queue.get(), 2)
+        self.assertEqual(queue.get(), True)
+        self.assertEqual(queue.get(), False)
         self.assertTrue(queue.empty())
 
         proc.join()
