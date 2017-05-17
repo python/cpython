@@ -17,6 +17,7 @@ import os
 import shutil
 import stat
 import subprocess
+import winreg
 
 from distutils.errors import DistutilsExecError, DistutilsPlatformError, \
                              CompileError, LibError, LinkError
@@ -24,10 +25,9 @@ from distutils.ccompiler import CCompiler, gen_lib_options
 from distutils import log
 from distutils.util import get_platform
 
-import winreg
 from itertools import count
 
-def _find_vcvarsall(plat_spec):
+def _find_vc2015():
     try:
         key = winreg.OpenKeyEx(
             winreg.HKEY_LOCAL_MACHINE,
@@ -38,9 +38,9 @@ def _find_vcvarsall(plat_spec):
         log.debug("Visual C++ is not registered")
         return None, None
 
+    best_version = 0
+    best_dir = None
     with key:
-        best_version = 0
-        best_dir = None
         for i in count():
             try:
                 v, vc_dir, vt = winreg.EnumValue(key, i)
@@ -53,25 +53,52 @@ def _find_vcvarsall(plat_spec):
                     continue
                 if version >= 14 and version > best_version:
                     best_version, best_dir = version, vc_dir
-        if not best_version:
-            log.debug("No suitable Visual C++ version found")
-            return None, None
+    return best_version, best_dir
 
-        vcvarsall = os.path.join(best_dir, "vcvarsall.bat")
-        if not os.path.isfile(vcvarsall):
-            log.debug("%s cannot be found", vcvarsall)
-            return None, None
+def _find_vc2017():
+    import _findvs
+    best_version = 0,   # tuple for full version comparisons
+    best_dir = None
+    for name, version_str, path, packages in _findvs.findall():
+        if 'Microsoft.VisualCpp.Tools.Core' in packages:
+            vc_dir = os.path.join(path, 'VC', 'Auxiliary', 'Build')
+            if not os.path.isdir(vc_dir):
+                continue
+            try:
+                version = tuple(int(i) for i in version_str.partition('.'))
+            except (ValueError, TypeError):
+                continue
+            if version > best_version:
+                best_version, best_dir = version, vc_dir
+    try:
+        best_version = best_version[0]
+    except IndexError:
+        best_version = None
+    return best_version, best_dir
 
-        vcruntime = None
-        vcruntime_spec = _VCVARS_PLAT_TO_VCRUNTIME_REDIST.get(plat_spec)
-        if vcruntime_spec:
-            vcruntime = os.path.join(best_dir,
-                vcruntime_spec.format(best_version))
-            if not os.path.isfile(vcruntime):
-                log.debug("%s cannot be found", vcruntime)
-                vcruntime = None
+def _find_vcvarsall(plat_spec):
+    best_version, best_dir = _find_vc2017()
+    if not best_version:
+        best_version, best_dir = _find_vc2015()
+    if not best_version:
+        log.debug("No suitable Visual C++ version found")
+        return None, None
 
-        return vcvarsall, vcruntime
+    vcvarsall = os.path.join(best_dir, "vcvarsall.bat")
+    if not os.path.isfile(vcvarsall):
+        log.debug("%s cannot be found", vcvarsall)
+        return None, None
+
+    vcruntime = None
+    vcruntime_spec = _VCVARS_PLAT_TO_VCRUNTIME_REDIST.get(plat_spec)
+    if vcruntime_spec:
+        vcruntime = os.path.join(best_dir,
+            vcruntime_spec.format(best_version))
+        if not os.path.isfile(vcruntime):
+            log.debug("%s cannot be found", vcruntime)
+            vcruntime = None
+
+    return vcvarsall, vcruntime
 
 def _get_vc_env(plat_spec):
     if os.getenv("DISTUTILS_USE_SDK"):
