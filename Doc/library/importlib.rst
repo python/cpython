@@ -203,6 +203,7 @@ Functions
    classes.
 
    .. versionadded:: 3.4
+   .. versionchanged:: 3.7
 
 
 :mod:`importlib.abc` -- Abstract base classes related to import

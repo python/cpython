@@ -372,6 +372,7 @@ class ReloadTests:
             sys.modules[module.__name__] = module
             with self.assertRaises(ModuleNotFoundError):
                 self.init.reload(module)
+                test_util.uncache(module.__name__)
 
 
 (Frozen_ReloadTests,
