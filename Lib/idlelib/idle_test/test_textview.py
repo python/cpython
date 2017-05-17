@@ -121,9 +121,8 @@ class ButtonClickTextViewTest(unittest.TestCase):
 
     def test_view_file_bind_with_button(self):
         def _command():
-            fn = findfile('CREDITS.txt', 'idlelib')
             self.called = True
-            self.view = tv.view_file(root, 'TITLE_FILE', fn, _utest=self._utest)
+            self.view = tv.view_file(root, 'TITLE_FILE', __file__, _utest=self._utest)
         button = Button(root, text='BUTTON', command=_command)
         button.invoke()
         self.addCleanup(button.destroy)
@@ -131,8 +130,7 @@ class ButtonClickTextViewTest(unittest.TestCase):
         self.assertEqual(self.called, True)
         self.assertEqual(self.view.title(), 'TITLE_FILE')
         self.assertEqual(self.view.textView.get('1.0', '1.end'),
-                         'Guido van Rossum, as well as being the creator of the '
-                         'Python language, is the')
+                         "'''Test idlelib.textview.")
 
 
 if __name__ == '__main__':
