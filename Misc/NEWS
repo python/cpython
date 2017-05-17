@@ -36,6 +36,10 @@ Core and Builtins
 Library
 -------
 
+- bpo-30149: inspect.signature() now supports callables with
+  variable-argument parameters wrapped with partialmethod.
+  Patch by Dong-hee Na.
+
 - bpo-30301: Fix AttributeError when using SimpleQueue.empty() under
   *spawn* and *forkserver* start methods.
 
