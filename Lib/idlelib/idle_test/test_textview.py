@@ -97,17 +97,7 @@ class ViewFunctionTest(unittest.TestCase):
 
 
 class ButtonClickTextViewTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.root = Tk()
-        cls.root.withdraw()
-        cls._utest = True
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.root.update_idletasks()
-        cls.root.destroy()
-        del cls.root
+    _utest = True
 
     def setUp(self):
         self.view = None
@@ -120,8 +110,8 @@ class ButtonClickTextViewTest(unittest.TestCase):
     def test_view_text_bind_with_button(self):
         def _command():
             self.called = True
-            self.view = tv.view_text(self.root, 'TITLE_TEXT', 'COMMAND', _utest=self._utest)
-        button = Button(self.root, text='BUTTON', command=_command)
+            self.view = tv.view_text(root, 'TITLE_TEXT', 'COMMAND', _utest=self._utest)
+        button = Button(root, text='BUTTON', command=_command)
         button.invoke()
 
         self.assertEqual(self.called, True)
@@ -132,8 +122,8 @@ class ButtonClickTextViewTest(unittest.TestCase):
         def _command():
             fn = findfile('CREDITS.txt', 'idlelib')
             self.called = True
-            self.view = tv.view_file(self.root, 'TITLE_FILE', fn, _utest=self._utest)
-        button = Button(self.root, text='BUTTON', command=_command)
+            self.view = tv.view_file(root, 'TITLE_FILE', fn, _utest=self._utest)
+        button = Button(root, text='BUTTON', command=_command)
         button.invoke()
 
         self.assertEqual(self.called, True)
