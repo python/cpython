@@ -2241,11 +2241,16 @@ def _signature_from_callable(obj, *,
                 sigcls=sigcls)
 
             sig = _signature_get_partial(wrapped_sig, partialmethod, (None,))
-
             first_wrapped_param = tuple(wrapped_sig.parameters.values())[0]
-            new_params = (first_wrapped_param,) + tuple(sig.parameters.values())
-
-            return sig.replace(parameters=new_params)
+            if first_wrapped_param.kind is Parameter.VAR_POSITIONAL:
+                # First argument of the wrapped callable is `*args`, as in
+                # `partialmethod(lambda *args)`.
+                return sig
+            else:
+                sig_params = tuple(sig.parameters.values())
+                assert first_wrapped_param is not sig_params[0]
+                new_params = (first_wrapped_param,) + sig_params
+                return sig.replace(parameters=new_params)
 
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
