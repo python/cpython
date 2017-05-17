@@ -10,6 +10,12 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-28974: ``object.__format__(x, '')`` is now equivalent to ``str(x)``
+  rather than ``format(str(self), '')``.
+
+- bpo-30024: Circular imports involving absolute imports with binding
+  a submodule to a name are now supported.
+
 - bpo-12414: sys.getsizeof() on a code object now returns the sizes
   which includes the code struct and sizes of objects which it references.
   Patch by Dong-hee Na.
@@ -321,6 +327,49 @@ Library
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.
 
+- bpo-30301: Fix AttributeError when using SimpleQueue.empty() under
+  *spawn* and *forkserver* start methods.
+
+- bpo-30375: Warnings emitted when compile a regular expression now always
+  point to the line in the user code.  Previously they could point into inners
+  of the re module if emitted from inside of groups or conditionals.
+
+- bpo-30329: imaplib and poplib now catch the Windows socket WSAEINVAL error
+  (code 10022) on shutdown(SHUT_RDWR): An invalid operation was attempted.
+  This error occurs sometimes on SSL connections.
+
+- bpo-29196: Removed previously deprecated in Python 2.4 classes Plist, Dict
+  and _InternalDict in the plistlib module.  Dict values in the result of
+  functions readPlist() and readPlistFromBytes() are now normal dicts.  You
+  no longer can use attribute access to access items of these dictionaries.
+
+- bpo-9850: The :mod:`macpath` is now deprecated and will be removed
+  in Python 3.8.
+
+- bpo-30299: Compiling regular expression in debug mode on CPython now displays
+  the compiled bytecode in human readable form.
+
+- bpo-30048: Fixed ``Task.cancel()`` can be ignored when the task is
+  running coroutine and the coroutine returned without any more ``await``.
+
+- bpo-30340: Enhanced regular expressions optimization. This increased
+  the performance of matching some patterns up to 25 times.
+
+- bpo-30298: Weaken the condition of deprecation warnings for inline modifiers.
+  Now allowed several subsequential inline modifiers at the start of the
+  pattern (e.g. ``'(?i)(?s)...'``).  In verbose mode whitespaces and comments
+  now are allowed before and between inline modifiers (e.g.
+  ``'(?x) (?i) (?s)...'``).
+
+- bpo-30285: Optimized case-insensitive matching and searching of regular
+  expressions.
+
+- bpo-29990: Fix range checking in GB18030 decoder.  Original patch by Ma Lin.
+
+- bpo-29979: rewrite cgi.parse_multipart, reusing the FieldStorage class and
+  making its results consistent with those of FieldStorage for
+  multipart/form-data requests. Patch by Pierre Quentel.
+
 - bpo-30243: Removed the __init__ methods of _json's scanner and encoder.
   Misusing them could cause memory leaks or crashes.  Now scanner and encoder
   objects are completely initialized in the __new__ methods.
@@ -365,6 +414,9 @@ Library
   readline() or __next__() respectively return non-sizeable object.
   Fixed possible other errors caused by not checking results of PyObject_Size(),
   PySequence_Size(), or PyMapping_Size().
+
+- bpo-30218: Fix PathLike support for shutil.unpack_archive. Patch by Jelle
+  Zijlstra.
 
 - bpo-10076: Compiled regular expression and match objects in the re module
   now support copy.copy() and copy.deepcopy() (they are considered atomic).
@@ -603,9 +655,6 @@ Library
 - Issue #28985: Update authorizer constants in sqlite3 module.
   Patch by Dingyuan Wang.
 
-- Issue #29094: Offsets in a ZIP file created with extern file object and modes
-  "w" and "x" now are relative to the start of the file.
-
 - Issue #29079: Prevent infinite loop in pathlib.resolve() on Windows
 
 - Issue #13051: Fixed recursion errors in large or resized
@@ -727,7 +776,7 @@ Library
   non-None value is passed to it.send(val).
 
 - Issue #27025: Generated names for Tkinter widgets now start by the "!" prefix
-  for readability (was "`").
+  for readability.
 
 - Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
   a workaround to Tix library bug.
@@ -784,10 +833,6 @@ Library
   Patch by Eryk Sun.
 
 - Issue #28317: The disassembler now decodes FORMAT_VALUE argument.
-
-- Issue #26293: Fixed writing ZIP files that starts not from the start of the
-  file.  Offsets in ZIP file now are relative to the start of the archive in
-  conforming to the specification.
 
 - Issue #28380: unittest.mock Mock autospec functions now properly support
   assert_called, assert_not_called, and assert_called_once.
@@ -1041,6 +1086,13 @@ Documentation
 Build
 -----
 
+- bpo-28787: Fix out-of-tree builds of Python when configured with
+  ``--with--dtrace``.
+
+- bpo-29243: Prevent unnecessary rebuilding of Python during ``make test``,
+  ``make install`` and some other make targets when configured with
+  ``--enable-optimizations``.
+
 - bpo-23404: Don't regenerate generated files based on file modification time
   anymore: the action is now explicit. Replace ``make touch`` with
   ``make regen-all``.
@@ -1141,6 +1193,11 @@ Tools/Demos
 
 Tests
 -----
+
+* bpo-30357: test_thread: setUp() now uses support.threading_setup() and
+  support.threading_cleanup() to wait until threads complete to avoid
+  random side effects on following tests. Initial patch written by Grzegorz
+  Grzywacz.
 
 - bpo-30197: Enhanced functions swap_attr() and swap_item() in the
   test.support module.  They now work when delete replaced attribute or item
@@ -1574,7 +1631,7 @@ Library
   non-None value is passed to it.send(val).
 
 - Issue #27025: Generated names for Tkinter widgets now start by the "!" prefix
-  for readability (was "`").
+  for readability.
 
 - Issue #25464: Fixed HList.header_exists() in tkinter.tix module by addin
   a workaround to Tix library bug.
