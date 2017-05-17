@@ -129,8 +129,11 @@ class ButtonClickTextViewTest(unittest.TestCase):
 
         self.assertEqual(self.called, True)
         self.assertEqual(self.view.title(), 'TITLE_FILE')
-        self.assertEqual(self.view.textView.get('1.0', '1.end'),
-                         "'''Test idlelib.textview.")
+        with open(__file__) as f:
+            self.assertEqual(self.view.textView.get('1.0', '1.end'),
+                             f.readline().strip())
+            self.assertEqual(self.view.textView.get('2.0', '2.end'),
+                             f.readline().strip())
 
 
 if __name__ == '__main__':
