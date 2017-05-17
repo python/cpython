@@ -59,10 +59,9 @@ class _ModifiedArgv0(object):
         sys.argv[0] = self._saved_value
 
 # TODO: Replace these helpers with importlib._bootstrap_external functions.
-def _run_code(code, run_globals, init_globals=None,
+def _init_module_globals(run_globals, init_globals=None,
               mod_name=None, mod_spec=None,
               pkg_name=None, script_name=None):
-    """Helper to run code in nominated namespace"""
     if init_globals is not None:
         run_globals.update(init_globals)
     if mod_spec is None:
@@ -82,6 +81,15 @@ def _run_code(code, run_globals, init_globals=None,
                        __loader__ = loader,
                        __package__ = pkg_name,
                        __spec__ = mod_spec)
+    return run_globals
+
+def _run_code(code, run_globals, init_globals=None,
+              mod_name=None, mod_spec=None,
+              pkg_name=None, script_name=None):
+    """Helper to run code in nominated namespace"""
+    run_globals = _init_module_globals(run_globals, init_globals,
+                                          mod_name, mod_spec,
+                                          pkg_name, script_name)
     exec(code, run_globals)
     return run_globals
 
@@ -149,13 +157,16 @@ def _get_module_details(mod_name, error=ImportError):
     if loader is None:
         raise error("%r is a namespace package and cannot be executed"
                                                                  % mod_name)
+    return mod_name, spec
+
+def _get_code(mod_name, loader, error=ImportError):
     try:
         code = loader.get_code(mod_name)
     except ImportError as e:
         raise error(format(e)) from e
     if code is None:
         raise error("No code object available for %s" % mod_name)
-    return mod_name, spec, code
+    return code
 
 class _Error(Exception):
     """Error that _run_module_as_main() should report without a traceback"""
@@ -180,15 +191,29 @@ def _run_module_as_main(mod_name, alter_argv=True):
     """
     try:
         if alter_argv or mod_name != "__main__": # i.e. -m switch
-            mod_name, mod_spec, code = _get_module_details(mod_name, _Error)
+            mod_name, mod_spec = _get_module_details(mod_name, _Error)
         else:          # i.e. directory or zipfile execution
-            mod_name, mod_spec, code = _get_main_module_details(_Error)
+            mod_name, mod_spec = _get_main_module_details(_Error)
     except _Error as exc:
         msg = "%s: %s" % (sys.executable, exc)
         sys.exit(msg)
     main_globals = sys.modules["__main__"].__dict__
     if alter_argv:
         sys.argv[0] = mod_spec.origin
+    if mod_spec.loader is not None and hasattr(mod_spec.loader, "exec_as_main"):
+        main_globals = _init_module_globals(main_globals, None,
+                                           "__main__", mod_spec)
+        try:
+            mod_spec.loader.exec_as_main(mod_spec, sys.modules["__main__"])
+        except ImportError as exc:
+            msg = "%s: %s" % (sys.executable, exc)
+            sys.exit(msg)
+        return main_globals
+    try:
+        code = _get_code(mod_name, mod_spec.loader, error=_Error)
+    except _Error as exc:
+        msg = "%s: %s" % (sys.executable, exc)
+        sys.exit(msg)
     return _run_code(code, main_globals, None,
                      "__main__", mod_spec)
 
@@ -198,7 +223,8 @@ def run_module(mod_name, init_globals=None,
 
        Returns the resulting top level namespace dictionary
     """
-    mod_name, mod_spec, code = _get_module_details(mod_name)
+    mod_name, mod_spec = _get_module_details(mod_name)
+    code = _get_code(mod_name, mod_spec.loader)
     if run_name is None:
         run_name = mod_name
     if alter_sys:
@@ -216,7 +242,8 @@ def _get_main_module_details(error=ImportError):
     saved_main = sys.modules[main_name]
     del sys.modules[main_name]
     try:
-        return _get_module_details(main_name)
+        main_name, mod_spec = _get_module_details(main_name)
+        return main_name, mod_spec
     except ImportError as exc:
         if main_name in str(exc):
             raise error("can't find %r module in %r" %
@@ -272,7 +299,8 @@ def run_path(path_name, init_globals=None, run_name=None):
             # have no choice and we have to remove it even while we read the
             # code. If we don't do this, a __loader__ attribute in the
             # existing __main__ module may prevent location of the new module.
-            mod_name, mod_spec, code = _get_main_module_details()
+            mod_name, mod_spec = _get_main_module_details()
+            code = _get_code(mod_name, mod_spec.loader)
             with _TempModule(run_name) as temp_module, \
                  _ModifiedArgv0(path_name):
                 mod_globals = temp_module.module.__dict__

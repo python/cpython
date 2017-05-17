@@ -3,6 +3,7 @@
  */
 
 #include "Python.h"
+#include <stdio.h>
 
 /* Example objects */
 typedef struct {
@@ -217,6 +218,13 @@ static int execfunc(PyObject *m)
     return -1;
 }
 
+static int mainfunc(PyObject *m)
+{
+    const char *name = PyModule_GetName(m);
+    printf("This is a test module named %s.\n", name);
+    return 0;
+}
+
 /* Helper for module definitions; there'll be a lot of them */
 #define TEST_MODULE_DEF(name, slots, methods) { \
     PyModuleDef_HEAD_INIT,                      /* m_base */ \
@@ -232,6 +240,7 @@ static int execfunc(PyObject *m)
 
 PyModuleDef_Slot main_slots[] = {
     {Py_mod_exec, execfunc},
+    {Py_mod_main, mainfunc},
     {0, NULL},
 };
 

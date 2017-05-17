@@ -351,6 +351,11 @@ class CmdLineTest(unittest.TestCase):
             launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
             self._check_import_error(launch_name, msg)
 
+    def test_extension(self):
+        rc, out, err = assert_python_ok('-m', '_testmultiphase', *example_args, __isolated=False)
+        expected = "This is a test module named __main__.\n"
+        self.assertEqual(expected.encode('utf-8'), out)
+
     def test_issue8202(self):
         # Make sure package __init__ modules see "-m" in sys.argv0 while
         # searching for the module to execute
@@ -426,6 +431,7 @@ class CmdLineTest(unittest.TestCase):
         # Exercise error reporting for various invalid package executions
         tests = (
             ('builtins', br'No code object available'),
+            ('math', br'This module cannot be directly executed'),
             ('builtins.x', br'Error while finding module specification.*'
                 br'ModuleNotFoundError'),
             ('builtins.x.y', br'Error while finding module specification.*'

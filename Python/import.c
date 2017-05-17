@@ -2076,6 +2076,38 @@ exec_builtin_or_dynamic(PyObject *mod) {
     return PyModule_ExecDef(mod, def);
 }
 
+/*[clinic input]
+_imp.exec_as_main
+
+    spec: object
+    main_module: object
+    /
+
+Execute an extension module as main module.
+[clinic start generated code]*/
+
+static PyObject *
+_imp_exec_as_main_impl(PyObject *module, PyObject *spec,
+                       PyObject *main_module)
+/*[clinic end generated code: output=c5752b9c9780fc89 input=ec723aa2cfb8452b]*/
+{
+    PyModuleDef *m_def;
+
+    m_def = _PyImport_LoadDynamicModuleDef(spec, NULL);
+
+    if (!PyObject_TypeCheck(m_def, &PyModuleDef_Type)) {
+        PyErr_Format(PyExc_ImportError,
+                     "This module cannot be directly executed");
+        return NULL;
+    }
+
+    if (PyModule_ExecMain(main_module, m_def)) {
+        return NULL;
+    };
+
+    Py_RETURN_NONE;
+}
+
 #ifdef HAVE_DYNAMIC_LOADING
 
 /*[clinic input]
@@ -2188,6 +2220,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF
     _IMP__FIX_CO_FILENAME_METHODDEF
+    _IMP_EXEC_AS_MAIN_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 

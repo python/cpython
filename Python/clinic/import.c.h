@@ -260,6 +260,37 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp_exec_as_main__doc__,
+"exec_as_main($module, spec, main_module, /)\n"
+"--\n"
+"\n"
+"Execute an extension module as main module.");
+
+#define _IMP_EXEC_AS_MAIN_METHODDEF    \
+    {"exec_as_main", (PyCFunction)_imp_exec_as_main, METH_FASTCALL, _imp_exec_as_main__doc__},
+
+static PyObject *
+_imp_exec_as_main_impl(PyObject *module, PyObject *spec,
+                       PyObject *main_module);
+
+static PyObject *
+_imp_exec_as_main(PyObject *module, PyObject **args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *spec;
+    PyObject *main_module;
+
+    if (!_PyArg_UnpackStack(args, nargs, "exec_as_main",
+        2, 2,
+        &spec, &main_module)) {
+        goto exit;
+    }
+    return_value = _imp_exec_as_main_impl(module, spec, main_module);
+
+exit:
+    return return_value;
+}
+
 #if defined(HAVE_DYNAMIC_LOADING)
 
 PyDoc_STRVAR(_imp_create_dynamic__doc__,
@@ -361,4 +392,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=d068dd493e513604 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=478e4884d4f3a652 input=a9049054013a1b77]*/

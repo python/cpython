@@ -64,9 +64,13 @@ typedef struct PyModuleDef_Slot{
 
 #define Py_mod_create 1
 #define Py_mod_exec 2
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+/* New in 3.7 */
+#define Py_mod_main 3
+#endif
 
 #ifndef Py_LIMITED_API
-#define _Py_mod_LAST_SLOT 2
+#define _Py_mod_LAST_SLOT 3
 #endif
 
 #endif /* New in 3.5 */
