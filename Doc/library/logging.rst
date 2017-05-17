@@ -71,11 +71,11 @@ is the module's name in the Python package namespace.
 
    .. attribute:: Logger.propagate
 
-      If this evaluates to true, events logged to this logger will be passed to the
-      handlers of higher level (ancestor) loggers, in addition to any handlers
-      attached to this logger. Messages are passed directly to the ancestor
-      loggers' handlers - neither the level nor filters of the ancestor loggers in
-      question are considered.
+      If this attribute evaluates to true, events logged to this logger will be
+      passed to the handlers of higher level (ancestor) loggers, in addition to
+      any handlers attached to this logger. Messages are passed directly to the
+      ancestor loggers' handlers - neither the level nor filters of the ancestor
+      loggers in question are considered.
 
       If this evaluates to false, logging messages are not passed to the handlers
       of ancestor loggers.
@@ -362,113 +362,114 @@ is never instantiated directly; this class acts as a base for more useful
 subclasses. However, the :meth:`__init__` method in subclasses needs to call
 :meth:`Handler.__init__`.
 
+.. class:: Handler
 
-.. method:: Handler.__init__(level=NOTSET)
+   .. method:: Handler.__init__(level=NOTSET)
 
-   Initializes the :class:`Handler` instance by setting its level, setting the list
-   of filters to the empty list and creating a lock (using :meth:`createLock`) for
-   serializing access to an I/O mechanism.
-
-
-.. method:: Handler.createLock()
-
-   Initializes a thread lock which can be used to serialize access to underlying
-   I/O functionality which may not be threadsafe.
+      Initializes the :class:`Handler` instance by setting its level, setting the list
+      of filters to the empty list and creating a lock (using :meth:`createLock`) for
+      serializing access to an I/O mechanism.
 
 
-.. method:: Handler.acquire()
+   .. method:: Handler.createLock()
 
-   Acquires the thread lock created with :meth:`createLock`.
-
-
-.. method:: Handler.release()
-
-   Releases the thread lock acquired with :meth:`acquire`.
+      Initializes a thread lock which can be used to serialize access to underlying
+      I/O functionality which may not be threadsafe.
 
 
-.. method:: Handler.setLevel(lvl)
+   .. method:: Handler.acquire()
 
-   Sets the threshold for this handler to *lvl*. Logging messages which are less
-   severe than *lvl* will be ignored. When a handler is created, the level is set
-   to :const:`NOTSET` (which causes all messages to be processed).
-
-   See :ref:`levels` for a list of levels.
-
-   .. versionchanged:: 3.2
-      The *lvl* parameter now accepts a string representation of the
-      level such as 'INFO' as an alternative to the integer constants
-      such as :const:`INFO`.
+      Acquires the thread lock created with :meth:`createLock`.
 
 
-.. method:: Handler.setFormatter(form)
+   .. method:: Handler.release()
 
-   Sets the :class:`Formatter` for this handler to *form*.
-
-
-.. method:: Handler.addFilter(filt)
-
-   Adds the specified filter *filt* to this handler.
+      Releases the thread lock acquired with :meth:`acquire`.
 
 
-.. method:: Handler.removeFilter(filt)
+   .. method:: Handler.setLevel(lvl)
 
-   Removes the specified filter *filt* from this handler.
+      Sets the threshold for this handler to *lvl*. Logging messages which are less
+      severe than *lvl* will be ignored. When a handler is created, the level is set
+      to :const:`NOTSET` (which causes all messages to be processed).
 
+      See :ref:`levels` for a list of levels.
 
-.. method:: Handler.filter(record)
-
-   Applies this handler's filters to the record and returns a true value if the
-   record is to be processed. The filters are consulted in turn, until one of
-   them returns a false value. If none of them return a false value, the record
-   will be emitted. If one returns a false value, the handler will not emit the
-   record.
-
-
-.. method:: Handler.flush()
-
-   Ensure all logging output has been flushed. This version does nothing and is
-   intended to be implemented by subclasses.
+      .. versionchanged:: 3.2
+         The *lvl* parameter now accepts a string representation of the
+         level such as 'INFO' as an alternative to the integer constants
+         such as :const:`INFO`.
 
 
-.. method:: Handler.close()
+   .. method:: Handler.setFormatter(form)
 
-   Tidy up any resources used by the handler. This version does no output but
-   removes the handler from an internal list of handlers which is closed when
-   :func:`shutdown` is called. Subclasses should ensure that this gets called
-   from overridden :meth:`close` methods.
+      Sets the :class:`Formatter` for this handler to *form*.
 
 
-.. method:: Handler.handle(record)
+   .. method:: Handler.addFilter(filt)
 
-   Conditionally emits the specified logging record, depending on filters which may
-   have been added to the handler. Wraps the actual emission of the record with
-   acquisition/release of the I/O thread lock.
+      Adds the specified filter *filt* to this handler.
 
 
-.. method:: Handler.handleError(record)
+   .. method:: Handler.removeFilter(filt)
 
-   This method should be called from handlers when an exception is encountered
-   during an :meth:`emit` call. If the module-level attribute
-   ``raiseExceptions`` is ``False``, exceptions get silently ignored. This is
-   what is mostly wanted for a logging system - most users will not care about
-   errors in the logging system, they are more interested in application
-   errors. You could, however, replace this with a custom handler if you wish.
-   The specified record is the one which was being processed when the exception
-   occurred. (The default value of ``raiseExceptions`` is ``True``, as that is
-   more useful during development).
+      Removes the specified filter *filt* from this handler.
 
 
-.. method:: Handler.format(record)
+   .. method:: Handler.filter(record)
 
-   Do formatting for a record - if a formatter is set, use it. Otherwise, use the
-   default formatter for the module.
+      Applies this handler's filters to the record and returns a true value if the
+      record is to be processed. The filters are consulted in turn, until one of
+      them returns a false value. If none of them return a false value, the record
+      will be emitted. If one returns a false value, the handler will not emit the
+      record.
 
 
-.. method:: Handler.emit(record)
+   .. method:: Handler.flush()
 
-   Do whatever it takes to actually log the specified logging record. This version
-   is intended to be implemented by subclasses and so raises a
-   :exc:`NotImplementedError`.
+      Ensure all logging output has been flushed. This version does nothing and is
+      intended to be implemented by subclasses.
+
+
+   .. method:: Handler.close()
+
+      Tidy up any resources used by the handler. This version does no output but
+      removes the handler from an internal list of handlers which is closed when
+      :func:`shutdown` is called. Subclasses should ensure that this gets called
+      from overridden :meth:`close` methods.
+
+
+   .. method:: Handler.handle(record)
+
+      Conditionally emits the specified logging record, depending on filters which may
+      have been added to the handler. Wraps the actual emission of the record with
+      acquisition/release of the I/O thread lock.
+
+
+   .. method:: Handler.handleError(record)
+
+      This method should be called from handlers when an exception is encountered
+      during an :meth:`emit` call. If the module-level attribute
+      ``raiseExceptions`` is ``False``, exceptions get silently ignored. This is
+      what is mostly wanted for a logging system - most users will not care about
+      errors in the logging system, they are more interested in application
+      errors. You could, however, replace this with a custom handler if you wish.
+      The specified record is the one which was being processed when the exception
+      occurred. (The default value of ``raiseExceptions`` is ``True``, as that is
+      more useful during development).
+
+
+   .. method:: Handler.format(record)
+
+      Do formatting for a record - if a formatter is set, use it. Otherwise, use the
+      default formatter for the module.
+
+
+   .. method:: Handler.emit(record)
+
+      Do whatever it takes to actually log the specified logging record. This version
+      is intended to be implemented by subclasses and so raises a
+      :exc:`NotImplementedError`.
 
 For a list of handlers included as standard, see :mod:`logging.handlers`.
 
