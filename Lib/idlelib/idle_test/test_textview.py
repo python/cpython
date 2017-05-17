@@ -113,6 +113,7 @@ class ButtonClickTextViewTest(unittest.TestCase):
             self.view = tv.view_text(root, 'TITLE_TEXT', 'COMMAND', _utest=self._utest)
         button = Button(root, text='BUTTON', command=_command)
         button.invoke()
+        self.addCleanup(button.destroy)
 
         self.assertEqual(self.called, True)
         self.assertEqual(self.view.title(), 'TITLE_TEXT')
@@ -125,6 +126,7 @@ class ButtonClickTextViewTest(unittest.TestCase):
             self.view = tv.view_file(root, 'TITLE_FILE', fn, _utest=self._utest)
         button = Button(root, text='BUTTON', command=_command)
         button.invoke()
+        self.addCleanup(button.destroy)
 
         self.assertEqual(self.called, True)
         self.assertEqual(self.view.title(), 'TITLE_FILE')
