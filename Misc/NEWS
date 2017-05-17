@@ -323,6 +323,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30301: Fix AttributeError when using SimpleQueue.empty() under
+  *spawn* and *forkserver* start methods.
+
 - bpo-30375: Warnings emitted when compile a regular expression now always
   point to the line in the user code.  Previously they could point into inners
   of the re module if emitted from inside of groups or conditionals.
