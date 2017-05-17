@@ -1,0 +1,33 @@
+#! /bin/sh
+# A wrapper around the Python configure script to set the Android build
+# variables and invoke configure.
+
+# Source the Android variables.
+PY_SRCDIR="$(cd "$(dirname "$0")" && pwd)"
+. $PY_SRCDIR/Android/build-config
+
+# The 'ac_cv_little_endian_double=yes' configure options have been verified by
+# running the following Python configure.ac code snippet on each Android
+# architecture and examining its exit status:
+#    #include <string.h>
+#    int main() {
+#        double x = 9006104071832581.0;
+#        if (memcmp(&x, "\x05\x04\x03\x02\x01\xff\x3f\x43", 8) == 0)
+#            return 0;
+#        else
+#            return 1;
+#    }
+case "$ANDROID_ARCH" in
+    x86*|arm*)
+        little_endian_double="ac_cv_little_endian_double=yes"
+        ;;
+esac
+
+# Run Python configure.
+$PY_SRCDIR/configure \
+    CC="$CC" AR="$AR" LD="$LD" RANLIB="$RANLIB" READELF="$READELF" \
+    CFLAGS="$CFLAGS" \
+    --host=$ANDROID_HOST --build=$ANDROID_BUILD --enable-shared \
+    --enable-ipv6 ac_cv_file__dev_ptmx=yes ac_cv_file__dev_ptc=no \
+    $little_endian_double \
+    "$@"

@@ -1082,6 +1082,10 @@ Documentation
 Build
 -----
 
+- bpo-30386: Add a build infrastructure for Android to cross-compile Python
+  using the Android NDK and allowing to run python interactively on the
+  emulator or to run the Python test suite using the Android SDK.
+
 - bpo-28787: Fix out-of-tree builds of Python when configured with
   ``--with--dtrace``.
 

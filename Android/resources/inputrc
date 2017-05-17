@@ -1,0 +1,12 @@
+# 'linux' terminal:
+#   Page up, page down.
+"\e[5~": beginning-of-history
+"\e[6~": end-of-history
+#   <Ctl-left>, <Ctl-right>.
+"\e[1;5D": backward-word
+"\e[1;5C": forward-word
+
+# <Ctl-p>, <Ctl-n>.
+"\C-p":reverse-search-history
+"\C-n":forward-search-history
+set completion-query-items 100

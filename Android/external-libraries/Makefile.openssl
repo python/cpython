@@ -1,0 +1,47 @@
+# Android/external-libraries/Makefile.openssl
+
+OPENSSL := openssl-1.0.2g
+
+# See https://wiki.openssl.org/index.php/Android for the definition of these
+# variables.
+export RELEASE := 2.6.37
+export ANDROID_SYSROOT := $(SYSROOT)
+export NDK_SYSROOT := $(SYSROOT)
+export ANDROID_NDK_SYSROOT := $(SYSROOT)
+export ANDROID_DEV := $(SYSROOT)/usr
+export SYSTEM := android
+export HOSTCC := gcc
+export CROSS_COMPILE := $(ANDROID_HOST)-
+
+BUILD_DIR := $(BUILD_DIR)/external-libraries
+py_install_dir := $(PY_DESTDIR)/$(SYS_EXEC_PREFIX)
+BUILD_OPENSSL := $(py_install_dir)/lib/libcrypto.so
+ifeq ($(ANDROID_ARCH), x86)
+    export MACHINE := i686
+else ifeq ($(ANDROID_ARCH), arm)
+    undefine BUILD_OPENSSL
+else
+    export MACHINE := $(ANDROID_ARCH)
+endif
+
+all: $(BUILD_OPENSSL)
+
+$(BUILD_DIR)/$(OPENSSL).tar.gz:
+	cd $(BUILD_DIR); \
+	    $(DOWNLOAD) https://www.openssl.org/source/$(OPENSSL).tar.gz
+
+$(BUILD_OPENSSL): export PATH := $(shell dirname $(subst ccache ,,$(GCC))):$(PATH)
+$(BUILD_OPENSSL): $(BUILD_DIR)/$(OPENSSL).tar.gz
+	rm -rf $(BUILD_DIR)/$(OPENSSL)-$(BUILD_TYPE)
+	tar xzf $<
+	mv $(OPENSSL) $(BUILD_DIR)/$(OPENSSL)-$(BUILD_TYPE)
+	cd $(BUILD_DIR)/$(OPENSSL)-$(BUILD_TYPE); \
+	    cat Makefile.org | sed 's/^install:.*$$/install: install_sw/' > Makefile.tmp; \
+	        mv Makefile.tmp Makefile.org; \
+	    ./config shared no-ssl2 no-ssl3 no-comp no-hw no-engine \
+	        --openssldir=$(py_install_dir); \
+	    $(MAKE) depend; \
+	    $(MAKE) all; \
+	    $(MAKE) install CC=$(GCC) RANLIB=$(RANLIB)
+
+.PHONY: all

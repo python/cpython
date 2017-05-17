@@ -1,0 +1,66 @@
+#! /bin/sh
+# Build a Makefile to be used to build Python and to run Python on the Android
+# emulator.
+
+makefile_header ()
+{
+	cat > $makefile <<-EOF
+	# Makefile for Android API $ANDROID_API and architecture $ANDROID_ARCH.
+	# Generated automatically by Android/makesetup.
+
+	# Variables defining where Python is installed on Android.
+	#   1. Machine-specific binaries are installed in the Android application
+	#      directory on /data. We do not build an Android application (this
+	#      requires java), so we use /data/local/tmp, a writable directory.
+	#   2. The Python standard library is installed on /sdcard.
+	export ZIPBASE_DIR := python
+	export ANDROID_APP_DIR := /data/local/tmp
+	export SYS_EXEC_PREFIX := \$(ANDROID_APP_DIR)/\$(ZIPBASE_DIR)
+	export SDCARD := /sdcard
+	export PACKAGE_NAME := org.python
+	export SYS_PREFIX := \$(SDCARD)/\$(PACKAGE_NAME)
+
+	EOF
+}
+
+makefile_footer ()
+{
+	cat >> $makefile <<-EOF
+
+	config_args := $@
+	py_srcdir := $PY_SRCDIR
+	makefile := $makefile
+	include \$(py_srcdir)/Android/build.mk
+	EOF
+}
+
+# Source the Android variables.
+PY_SRCDIR="$(cd "$(dirname "$0")/.." && pwd)"
+. $PY_SRCDIR/Android/build-config
+
+defined_variables="APP_ABI CC GCC AR LD RANLIB READELF STRIP \
+                   SYSROOT CFLAGS"
+exported_variables="ANDROID_NDK_ROOT ANDROID_SDK_ROOT \
+                    ANDROID_API ANDROID_ARCH \
+                    ANDROID_HOST ANDROID_BUILD"
+makefile=Makefile-android-$ANDROID_API-$ANDROID_ARCH
+if test -f Makefile; then
+    test ! -h Makefile && build_config_error \
+        "Refusing to remove the Makefile, this is not a symlink."
+fi
+rm -f Makefile
+
+# Build the Makefile.
+makefile_header
+for var in $defined_variables; do
+    eval value=\$$var
+    echo "$var := $value" >> $makefile
+done
+for var in $exported_variables; do
+    eval value=\$$var
+    echo "export $var := $value" >> $makefile
+done
+makefile_footer "$@"
+
+ln -s $makefile Makefile
+echo "Makefile and $makefile built successfully."

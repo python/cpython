@@ -1,0 +1,91 @@
+# Android/build-config
+
+# Set default values if not defined.
+: ${ANDROID_NDK_ROOT:=/opt/android-ndk}
+: ${ANDROID_SDK_ROOT:=/opt/android-sdk}
+: ${ANDROID_API:=21}
+: ${ANDROID_ARCH:=x86_64}
+
+build_config_error ()
+{
+    echo "Error: $1" >&2
+    exit 1
+}
+
+! test -d "$ANDROID_NDK_ROOT" && build_config_error "\$ANDROID_NDK_ROOT ($ANDROID_NDK_ROOT) is not a directory."
+ndk_version=$(cat "$ANDROID_NDK_ROOT/source.properties" | \
+    sed -e "s/^.*Pkg.Revision[ \t]*=[ \t]*\([0-9]\+\).*$\|^.*$/\1/" -e "/^$/d")
+test $((ndk_version)) -lt 13 &&
+    build_config_error "The installed NDK version is $ndk_version but at least version 13 is required."
+unset ndk_version
+
+test $((ANDROID_API)) -lt 21 && \
+    build_config_error "\$ANDROID_API ($ANDROID_API) must be 21 or greater."
+test $((ANDROID_API)) -lt 24 && test "$ANDROID_ARCH" = arm64 && \
+    build_config_error "Cannot build or run arm64 at an API level less than 24."
+
+# No NDK has been released at SDK API level 22, use NDK API 21 instead.
+test "$ANDROID_API" = 22 && ANDROID_API=21
+
+test -n "$PY_SRCDIR" && ANDROID_BUILD=$($PY_SRCDIR/config.guess)
+gcc_version=4.9
+case "$ANDROID_ARCH" in
+    arm|armv7)
+        ANDROID_HOST=arm-linux-androideabi
+        APP_ABI=armeabi
+        target=armv5te-none-linux-androideabi
+        toolchain=$ANDROID_HOST-$gcc_version
+        ;;
+    arm64)
+        ANDROID_HOST=aarch64-linux-android
+        APP_ABI=arm64-v8a
+        target=aarch64-none-linux-android
+        toolchain=$ANDROID_HOST-$gcc_version
+        ;;
+    x86)
+        ANDROID_HOST=i686-linux-android
+        APP_ABI=x86
+        target=i686-none-linux-androideabi
+        toolchain=x86-$gcc_version
+        ;;
+    x86_64)
+        ANDROID_HOST=x86_64-linux-android
+        APP_ABI=x86_64
+        target=x86_64-none-linux-androideabi
+        toolchain=x86_64-$gcc_version
+        ;;
+    *)
+        build_config_error "ANDROID_ARCH must be set to arm, armv7, arm64, x86 or x86_64."
+        ;;
+esac
+unset gcc_version
+if test "$ANDROID_ARCH" = armv7; then
+    APP_ABI=armeabi-v7a
+    target=armv7-none-linux-androideabi
+    SYSROOT="$ANDROID_NDK_ROOT/platforms/android-$ANDROID_API/arch-arm"
+else
+    SYSROOT="$ANDROID_NDK_ROOT/platforms/android-$ANDROID_API/arch-$ANDROID_ARCH"
+fi
+
+machine=$(uname -m)
+kernel=$(uname -s | tr A-Z a-z)
+tool_path ()
+{
+    echo "$ANDROID_NDK_ROOT/toolchains/$1/prebuilt/${kernel}-${machine}"
+}
+toolchain=$(tool_path $toolchain)
+
+# Build variables.
+CC="$(tool_path llvm)/bin/clang --sysroot=$SYSROOT -target $target -gcc-toolchain $toolchain"
+GCC="$toolchain/bin/$ANDROID_HOST-gcc"
+AR="$toolchain/bin/$ANDROID_HOST-ar"
+LD="$toolchain/bin/$ANDROID_HOST-ld"
+RANLIB="$toolchain/bin/$ANDROID_HOST-ranlib"
+READELF="$toolchain/bin/$ANDROID_HOST-readelf"
+STRIP="$toolchain/bin/$ANDROID_HOST-strip --strip-debug --strip-unneeded"
+unset target toolchain machine kernel tool_path
+
+CFLAGS="$CFLAGS -Wno-unused-value -Wno-empty-body -Qunused-arguments"
+
+ccache -V >/dev/null 2>&1 && { CC="ccache $CC"; GCC="ccache $GCC"; \
+                               CFLAGS="$CFLAGS -Wno-parentheses-equality"; }
