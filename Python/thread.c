@@ -92,12 +92,6 @@ static size_t _pythread_stacksize = 0;
 #endif
 
 
-/*
-#ifdef FOOBAR_THREADS
-#include "thread_foobar.h"
-#endif
-*/
-
 /* return the current thread stack size */
 size_t
 PyThread_get_stacksize(void)

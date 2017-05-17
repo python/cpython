@@ -75,7 +75,7 @@ Slice Objects
    Extract the start, stop and step data members from a slice object as
    C integers.  Silently reduce values larger than ``PY_SSIZE_T_MAX`` to
    ``PY_SSIZE_T_MAX``, silently boost the start and stop values less than
-   ``-PY_SSIZE_T_MAX-1`` to ``-PY_SSIZE_T_MAX-1``, and silently boost the step
+   ``PY_SSIZE_T_MIN`` to ``PY_SSIZE_T_MIN``, and silently boost the step
    values less than ``-PY_SSIZE_T_MAX`` to ``-PY_SSIZE_T_MAX``.
 
    Return ``-1`` on error, ``0`` on success.

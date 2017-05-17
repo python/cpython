@@ -559,6 +559,11 @@ form.
       :const:`re.LOCALE` can be used only with bytes patterns and is
       not compatible with :const:`re.ASCII`.
 
+   .. versionchanged:: 3.7
+      Compiled regular expression objects with the :const:`re.LOCALE` flag no
+      longer depend on the locale at compile time.  Only the locale at
+      matching time affects the result of matching.
+
 
 .. data:: M
           MULTILINE

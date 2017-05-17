@@ -2546,7 +2546,7 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
        merely needs to bind the result to a name.
 
        If there is a dot in name, we need to split it and emit a
-       LOAD_ATTR for each name.
+       IMPORT_FROM for each name.
     */
     Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
                                         PyUnicode_GET_LENGTH(name), 1);
@@ -2566,7 +2566,7 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
                                        PyUnicode_GET_LENGTH(name));
             if (!attr)
                 return 0;
-            ADDOP_O(c, LOAD_ATTR, attr, names);
+            ADDOP_O(c, IMPORT_FROM, attr, names);
             Py_DECREF(attr);
             pos = dot + 1;
         }
