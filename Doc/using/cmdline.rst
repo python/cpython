@@ -24,7 +24,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-BdEiOQsRStuUvVWxX3?] [-c command | -m module-name | script | - ] [args]
+    python [-bBdEiOQsRStuUvVWxX3?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -190,6 +190,19 @@ Generic options
 
 Miscellaneous options
 ~~~~~~~~~~~~~~~~~~~~~
+
+.. cmdoption:: -b
+
+   Issue a warning when comparing :class:`unicode` with :class:`bytearray`.
+   Issue an error when the option is given twice (:option:`!-bb`).
+
+   Note that, unlike the corresponding Python 3.x flag, this will **not** emit
+   warnings for comparisons between :class:`str` and :class:`unicode`.
+   Instead, the ``str`` instance will be implicitly decoded to ``unicode`` and
+   Unicode comparison used.
+
+   .. versionadded:: 2.6
+
 
 .. cmdoption:: -B
 
