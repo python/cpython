@@ -38,9 +38,11 @@ matrix:
         - TESTING=docs
       before_script:
         - cd Doc
-        - make venv
+        # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
+        # (Updating the version is fine as long as no warnings are raised by doing so.)
+        - python -m pip install sphinx~=1.6.1
       script:
-        - make check suspicious html PYTHON="./venv/bin/python" SPHINXBUILD="./venv/bin/python -m sphinx" SPHINXOPTS="-q -W"
+        - make check suspicious html SPHINXOPTS="-q -W"
     - os: linux
       language: c
       compiler: gcc

@@ -414,7 +414,7 @@ def _uniq(items):
             newitems.append(item)
     return newitems
 
-def _parse_sub(source, state, verbose, nested=True):
+def _parse_sub(source, state, verbose, nested):
     # parse an alternation: a|b|c
 
     items = []
@@ -422,7 +422,8 @@ def _parse_sub(source, state, verbose, nested=True):
     sourcematch = source.match
     start = source.tell()
     while True:
-        itemsappend(_parse(source, state, verbose, not nested and not items))
+        itemsappend(_parse(source, state, verbose, nested + 1,
+                           not nested and not items))
         if not sourcematch("|"):
             break
 
@@ -471,7 +472,7 @@ def _parse_sub(source, state, verbose, nested=True):
     subpattern.append((BRANCH, (None, items)))
     return subpattern
 
-def _parse(source, state, verbose, first=False):
+def _parse(source, state, verbose, nested, first=False):
     # parse a simple pattern
     subpattern = SubPattern(state)
 
@@ -708,7 +709,7 @@ def _parse(source, state, verbose, first=False):
                         lookbehindgroups = state.lookbehindgroups
                         if lookbehindgroups is None:
                             state.lookbehindgroups = state.groups
-                    p = _parse_sub(source, state, verbose)
+                    p = _parse_sub(source, state, verbose, nested + 1)
                     if dir < 0:
                         if lookbehindgroups is None:
                             state.lookbehindgroups = None
@@ -744,9 +745,9 @@ def _parse(source, state, verbose, first=False):
                             msg = "invalid group reference %d" % condgroup
                             raise source.error(msg, len(condname) + 1)
                     state.checklookbehindgroup(condgroup, source)
-                    item_yes = _parse(source, state, verbose)
+                    item_yes = _parse(source, state, verbose, nested + 1)
                     if source.match("|"):
-                        item_no = _parse(source, state, verbose)
+                        item_no = _parse(source, state, verbose, nested + 1)
                         if source.next == "|":
                             raise source.error("conditional backref with more than two branches")
                     else:
@@ -768,7 +769,7 @@ def _parse(source, state, verbose, first=False):
                                     source.string[:20],  # truncate long regexes
                                     ' (truncated)' if len(source.string) > 20 else '',
                                 ),
-                                DeprecationWarning, stacklevel=7
+                                DeprecationWarning, stacklevel=nested + 6
                             )
                         if (state.flags & SRE_FLAG_VERBOSE) and not verbose:
                             raise Verbose
@@ -788,7 +789,7 @@ def _parse(source, state, verbose, first=False):
                     raise source.error(err.msg, len(name) + 1) from None
             sub_verbose = ((verbose or (add_flags & SRE_FLAG_VERBOSE)) and
                            not (del_flags & SRE_FLAG_VERBOSE))
-            p = _parse_sub(source, state, sub_verbose)
+            p = _parse_sub(source, state, sub_verbose, nested + 1)
             if not source.match(")"):
                 raise source.error("missing ), unterminated subpattern",
                                    source.tell() - start)
@@ -886,7 +887,7 @@ def parse(str, flags=0, pattern=None):
     pattern.str = str
 
     try:
-        p = _parse_sub(source, pattern, flags & SRE_FLAG_VERBOSE, False)
+        p = _parse_sub(source, pattern, flags & SRE_FLAG_VERBOSE, 0)
     except Verbose:
         # the VERBOSE flag was switched on inside the pattern.  to be
         # on the safe side, we'll parse the whole thing again...
@@ -894,7 +895,7 @@ def parse(str, flags=0, pattern=None):
         pattern.flags = flags | SRE_FLAG_VERBOSE
         pattern.str = str
         source.seek(0)
-        p = _parse_sub(source, pattern, True, False)
+        p = _parse_sub(source, pattern, True, 0)
 
     p.pattern.flags = fix_flags(str, p.pattern.flags)
 
