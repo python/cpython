@@ -163,11 +163,11 @@ PyObject *
 PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 {
     _PyImport_EnsureInitialized(PyThreadState_GET()->interp);
-    return _PyModule_Create2(module, module_api_version);
+    return _PyModule_CreateInitialized(module, module_api_version);
 }
 
 PyObject *
-_PyModule_Create2(struct PyModuleDef* module, int module_api_version)
+_PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
 {
     const char* name;
     PyModuleObject *m;
