@@ -693,12 +693,15 @@ typedef struct
     PyObject *pending_bytes;       /* list of bytes objects waiting to be
                                       written, or NULL */
     Py_ssize_t pending_bytes_count;
-    PyObject *snapshot;
     /* snapshot is either None, or a tuple (dec_flags, next_input) where
      * dec_flags is the second (integer) item of the decoder state and
      * next_input is the chunk of input bytes that comes next after the
      * snapshot point.  We use this to reconstruct decoder states in tell().
      */
+    PyObject *snapshot;
+    /* Bytes-to-characters ratio for the current chunk. Serves as input for
+       the heuristic in tell(). */
+    double b2cratio;
 
     /* Cache raw object if it's a FileIO object */
     PyObject *raw;
@@ -865,6 +868,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     self->pending_bytes_count = 0;
     self->encodefunc = NULL;
     self->writenl = NULL;
+    self->b2cratio = 0.0;
 
     if (encoding == NULL && self->encoding == NULL) {
         if (_PyIO_locale_module == NULL) {
@@ -1391,6 +1395,7 @@ textiowrapper_read_chunk(textio *self)
     PyObject *dec_flags = NULL;
     PyObject *input_chunk = NULL;
     PyObject *decoded_chars, *chunk_size;
+    Py_ssize_t nbytes, nchars;
     int eof;
 
     /* The return value is True unless EOF was reached.  The decoded string is
@@ -1441,7 +1446,8 @@ textiowrapper_read_chunk(textio *self)
         goto fail;
     }
 
-    eof = (PyBytes_Size(input_chunk) == 0);
+    nbytes = PyBytes_Size(input_chunk);
+    eof = (nbytes == 0);
 
     if (Py_TYPE(self->decoder) == &PyIncrementalNewlineDecoder_Type) {
         decoded_chars = _PyIncrementalNewlineDecoder_decode(
@@ -1455,7 +1461,12 @@ textiowrapper_read_chunk(textio *self)
     if (check_decoded(decoded_chars) < 0)
         goto fail;
     textiowrapper_set_decoded_chars(self, decoded_chars);
-    if (PyUnicode_GET_SIZE(decoded_chars) > 0)
+    nchars = PyUnicode_GET_SIZE(decoded_chars);
+    if (nchars > 0)
+        self->b2cratio = (double) nbytes / nchars;
+    else
+        self->b2cratio = 0.0;
+    if (nchars > 0)
         eof = 0;
 
     if (self->telling) {
@@ -2191,8 +2202,11 @@ textiowrapper_tell(textio *self, PyObject *args)
     cookie_type cookie = {0,0,0,0,0};
     PyObject *next_input;
     Py_ssize_t chars_to_skip, chars_decoded;
+    Py_ssize_t skip_bytes, skip_back;
     PyObject *saved_state = NULL;
     char *input, *input_end;
+    Py_ssize_t dec_buffer_len;
+    int dec_flags;
 
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
@@ -2229,11 +2243,12 @@ textiowrapper_tell(textio *self, PyObject *args)
 #else
     cookie.start_pos = PyLong_AsLong(posobj);
 #endif
+    Py_DECREF(posobj);
     if (PyErr_Occurred())
         goto fail;
 
     /* Skip backward to the snapshot point (see _read_chunk). */
-    if (!PyArg_Parse(self->snapshot, "(iO)", &cookie.dec_flags, &next_input))
+    if (!PyArg_ParseTuple(self->snapshot, "iO", &cookie.dec_flags, &next_input))
         goto fail;
 
     assert (PyBytes_Check(next_input));
@@ -2243,56 +2258,107 @@ textiowrapper_tell(textio *self, PyObject *args)
     /* How many decoded characters have been used up since the snapshot? */
     if (self->decoded_chars_used == 0)  {
         /* We haven't moved from the snapshot point. */
-        Py_DECREF(posobj);
         return textiowrapper_build_cookie(&cookie);
     }
 
     chars_to_skip = self->decoded_chars_used;
 
-    /* Starting from the snapshot position, we will walk the decoder
-     * forward until it gives us enough decoded characters.
-     */
+    /* Decoder state will be restored at the end */
     saved_state = PyObject_CallMethodObjArgs(self->decoder,
                                              _PyIO_str_getstate, NULL);
     if (saved_state == NULL)
         goto fail;
 
-    /* Note our initial start point. */
-    if (_textiowrapper_decoder_setstate(self, &cookie) < 0)
-        goto fail;
+#define DECODER_GETSTATE() do { \
+        char *dec_buffer; \
+        PyObject *_state = PyObject_CallMethodObjArgs(self->decoder, \
+            _PyIO_str_getstate, NULL); \
+        if (_state == NULL) \
+            goto fail; \
+        if (!PyArg_ParseTuple(_state, "Oi", &dec_buffer, &dec_flags)) { \
+            Py_DECREF(_state); \
+            goto fail; \
+        } \
+        if (!PyBytes_Check(dec_buffer)) { \
+            PyErr_Format(PyExc_TypeError, \
+                         "decoder getstate() should have returned a bytes " \
+                         "object, not '%.200s'", \
+                         Py_TYPE(dec_buffer)->tp_name); \
+            Py_DECREF(_state); \
+            goto fail; \
+        } \
+        dec_buffer_len = PyBytes_GET_SIZE(dec_buffer); \
+        Py_DECREF(_state); \
+    } while (0)
 
-    /* Feed the decoder one byte at a time.  As we go, note the
-     * nearest "safe start point" before the current location
-     * (a point where the decoder has nothing buffered, so seek()
+#define DECODER_DECODE(start, len, res) do { \
+        PyObject *_decoded = PyObject_CallMethod( \
+            self->decoder, "decode", "s#", start, len); \
+        if (check_decoded(_decoded) < 0)  \
+            goto fail; \
+        res = PyUnicode_GET_SIZE(_decoded); \
+        Py_DECREF(_decoded); \
+    } while (0)
+
+    /* Fast search for an acceptable start point, close to our
+       current pos */
+    skip_bytes = (Py_ssize_t) (self->b2cratio * chars_to_skip);
+    skip_back = 1;
+    assert(skip_back <= PyBytes_GET_SIZE(next_input));
+    input = PyBytes_AS_STRING(next_input);
+    while (skip_bytes > 0) {
+        /* Decode up to temptative start point */
+        if (_textiowrapper_decoder_setstate(self, &cookie) < 0)
+            goto fail;
+        DECODER_DECODE(input, skip_bytes, chars_decoded);
+        if (chars_decoded <= chars_to_skip) {
+            DECODER_GETSTATE();
+            if (dec_buffer_len == 0) {
+                /* Before pos and no bytes buffered in decoder => OK */
+                cookie.dec_flags = dec_flags;
+                chars_to_skip -= chars_decoded;
+                break;
+            }
+            /* Skip back by buffered amount and reset heuristic */
+            skip_bytes -= dec_buffer_len;
+            skip_back = 1;
+        }
+        else {
+            /* We're too far ahead, skip back a bit */
+            skip_bytes -= skip_back;
+            skip_back *= 2;
+        }
+    }
+    if (skip_bytes <= 0) {
+        skip_bytes = 0;
+        if (_textiowrapper_decoder_setstate(self, &cookie) < 0)
+            goto fail;
+    }
+
+    /* Note our initial start point. */
+    cookie.start_pos += skip_bytes;
+    cookie.chars_to_skip = Py_SAFE_DOWNCAST(chars_to_skip, Py_ssize_t, int);
+    if (chars_to_skip == 0)
+        goto finally;
+ 
+    /* We should be close to the desired position.  Now feed the decoder one
+     * byte at a time until we reach the `chars_to_skip` target.
+     * As we go, note the nearest "safe start point" before the current
+     * location (a point where the decoder has nothing buffered, so seek()
      * can safely start from there and advance to this location).
      */
     chars_decoded = 0;
     input = PyBytes_AS_STRING(next_input);
     input_end = input + PyBytes_GET_SIZE(next_input);
+    input += skip_bytes;
     while (input < input_end) {
-        PyObject *state;
-        char *dec_buffer;
-        Py_ssize_t dec_buffer_len;
-        int dec_flags;
+        Py_ssize_t n;
 
-        PyObject *decoded = PyObject_CallMethod(
-            self->decoder, "decode", "s#", input, (Py_ssize_t)1);
-        if (check_decoded(decoded) < 0)
-            goto fail;
-        chars_decoded += PyUnicode_GET_SIZE(decoded);
-        Py_DECREF(decoded);
-
+        DECODER_DECODE(input, (Py_ssize_t)1, n);
+        /* We got n chars for 1 byte */
+        chars_decoded += n;
         cookie.bytes_to_feed += 1;
-
-        state = PyObject_CallMethodObjArgs(self->decoder,
-                                           _PyIO_str_getstate, NULL);
-        if (state == NULL)
-            goto fail;
-        if (!PyArg_Parse(state, "(s#i)", &dec_buffer, &dec_buffer_len, &dec_flags)) {
-            Py_DECREF(state);
-            goto fail;
-        }
-        Py_DECREF(state);
+        DECODER_GETSTATE();
 
         if (dec_buffer_len == 0 && chars_decoded <= chars_to_skip) {
             /* Decoder buffer is empty, so this is a safe start point. */
@@ -2323,8 +2389,8 @@ textiowrapper_tell(textio *self, PyObject *args)
         }
     }
 
-    /* finally */
-    Py_XDECREF(posobj);
+
+finally:
     res = PyObject_CallMethod(self->decoder, "setstate", "(O)", saved_state);
     Py_DECREF(saved_state);
     if (res == NULL)
@@ -2335,12 +2401,10 @@ textiowrapper_tell(textio *self, PyObject *args)
     cookie.chars_to_skip = Py_SAFE_DOWNCAST(chars_to_skip, Py_ssize_t, int);
     return textiowrapper_build_cookie(&cookie);
 
-  fail:
-    Py_XDECREF(posobj);
+fail:
     if (saved_state) {
         PyObject *type, *value, *traceback;
         PyErr_Fetch(&type, &value, &traceback);
-
         res = PyObject_CallMethod(self->decoder, "setstate", "(O)", saved_state);
         _PyErr_ReplaceException(type, value, traceback);
         Py_DECREF(saved_state);
