@@ -56,17 +56,13 @@ class TestBase:
             if expected:
                 result = func(source, scheme)[0]
                 if func is self.decode:
-                    self.assertTrue(type(result) is str, type(result))
-                    self.assertEqual(result, expected,
-                                     '%a.decode(%r, %r)=%a != %a'
-                                     % (source, self.encoding, scheme, result,
-                                        expected))
+                    msg = '%a.decode(%r, %r)' % (source, self.encoding, scheme)
+                    self.assertIs(type(result), str, msg)
+                    self.assertEqual(result, expected, msg)
                 else:
-                    self.assertTrue(type(result) is bytes, type(result))
-                    self.assertEqual(result, expected,
-                                     '%a.encode(%r, %r)=%a != %a'
-                                     % (source, self.encoding, scheme, result,
-                                        expected))
+                    msg = '%a.encode(%r, %r)' % (source, self.encoding, scheme)
+                    self.assertIs(type(result), bytes, msg)
+                    self.assertEqual(result, expected, msg)
             else:
                 self.assertRaises(UnicodeError, func, source, scheme)
 
@@ -360,18 +356,14 @@ class TestBase_Mapping(unittest.TestCase):
             if expected:
                 if isinstance(source, bytes):
                     result = func(self.encoding, scheme)
-                    self.assertTrue(type(result) is str, type(result))
-                    self.assertEqual(result, expected,
-                                     '%a.decode(%r, %r)=%a != %a'
-                                     % (source, self.encoding, scheme, result,
-                                        expected))
+                    msg = '%a.decode(%r, %r)' % (source, self.encoding, scheme)
+                    self.assertIs(type(result), str, msg)
+                    self.assertEqual(result, expected, msg)
                 else:
                     result = func(self.encoding, scheme)
-                    self.assertTrue(type(result) is bytes, type(result))
-                    self.assertEqual(result, expected,
-                                     '%a.encode(%r, %r)=%a != %a'
-                                     % (source, self.encoding, scheme, result,
-                                        expected))
+                    msg = '%a.encode(%r, %r)' % (source, self.encoding, scheme)
+                    self.assertIs(type(result), bytes, msg)
+                    self.assertEqual(result, expected, msg)
             else:
                 self.assertRaises(UnicodeError, func, self.encoding, scheme)
 

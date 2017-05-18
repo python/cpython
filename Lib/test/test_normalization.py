@@ -77,16 +77,26 @@ class NormalizationTest(unittest.TestCase):
                 continue
 
             # Perform tests
-            self.assertTrue(c2 ==  NFC(c1) ==  NFC(c2) ==  NFC(c3), line)
-            self.assertTrue(c4 ==  NFC(c4) ==  NFC(c5), line)
-            self.assertTrue(c3 ==  NFD(c1) ==  NFD(c2) ==  NFD(c3), line)
-            self.assertTrue(c5 ==  NFD(c4) ==  NFD(c5), line)
-            self.assertTrue(c4 == NFKC(c1) == NFKC(c2) == \
-                            NFKC(c3) == NFKC(c4) == NFKC(c5),
-                            line)
-            self.assertTrue(c5 == NFKD(c1) == NFKD(c2) == \
-                            NFKD(c3) == NFKD(c4) == NFKD(c5),
-                            line)
+            self.assertEqual(NFC(c1), c2, line)
+            self.assertEqual(NFC(c2), c2, line)
+            self.assertEqual(NFC(c3), c2, line)
+            self.assertEqual(NFC(c4), c4, line)
+            self.assertEqual(NFC(c5), c4, line)
+            self.assertEqual(NFD(c1), c3, line)
+            self.assertEqual(NFD(c2), c3, line)
+            self.assertEqual(NFD(c3), c3, line)
+            self.assertEqual(NFD(c4), c5, line)
+            self.assertEqual(NFD(c5), c5, line)
+            self.assertEqual(NFKC(c1), c4, line)
+            self.assertEqual(NFKC(c2), c4, line)
+            self.assertEqual(NFKC(c3), c4, line)
+            self.assertEqual(NFKC(c4), c4, line)
+            self.assertEqual(NFKC(c5), c4, line)
+            self.assertEqual(NFKD(c1), c5, line)
+            self.assertEqual(NFKD(c2), c5, line)
+            self.assertEqual(NFKD(c3), c5, line)
+            self.assertEqual(NFKD(c4), c5, line)
+            self.assertEqual(NFKD(c5), c5, line)
 
             # Record part 1 data
             if part == "@Part1":
@@ -97,7 +107,10 @@ class NormalizationTest(unittest.TestCase):
             X = chr(c)
             if X in part1_data:
                 continue
-            self.assertTrue(X == NFC(X) == NFD(X) == NFKC(X) == NFKD(X), c)
+            self.assertEqual(NFC(X), X, c)
+            self.assertEqual(NFD(X), X, c)
+            self.assertEqual(NFKC(X), X, c)
+            self.assertEqual(NFKD(X), X, c)
 
     def test_bug_834676(self):
         # Check for bug 834676
