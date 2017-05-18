@@ -234,7 +234,7 @@ def isname(name):
             return False
     return True
 
-def _class_escape(source, escape, state):
+def _class_escape(source, escape):
     # handle escape code inside character class
     code = ESCAPES.get(escape)
     if code:
@@ -263,8 +263,9 @@ def _class_escape(source, escape, state):
         if len(escape) == 2:
             if sys.py3kwarning and c in ASCIILETTERS:
                 import warnings
-                if c in 'Uu' and state.flags & SRE_FLAG_UNICODE:
-                    warnings.warn('unicode escape %s' % escape,
+                if c in 'Uu':
+                    warnings.warn('bad escape %s; Unicode escapes are '
+                                  'supported only since Python 3.3' % escape,
                                   FutureWarning, stacklevel=8)
                 else:
                     warnings.warnpy3k('bad escape %s' % escape,
@@ -320,8 +321,9 @@ def _escape(source, escape, state):
         if len(escape) == 2:
             if sys.py3kwarning and c in ASCIILETTERS:
                 import warnings
-                if c in 'Uu' and state.flags & SRE_FLAG_UNICODE:
-                    warnings.warn('unicode escape %s' % escape,
+                if c in 'Uu':
+                    warnings.warn('bad escape %s; Unicode escapes are '
+                                  'supported only since Python 3.3' % escape,
                                   FutureWarning, stacklevel=8)
                 else:
                     warnings.warnpy3k('bad escape %s' % escape,
@@ -460,7 +462,7 @@ def _parse(source, state):
                 if this == "]" and set != start:
                     break
                 elif this and this[0] == "\\":
-                    code1 = _class_escape(source, this, state)
+                    code1 = _class_escape(source, this)
                 elif this:
                     code1 = LITERAL, ord(this)
                 else:
@@ -476,7 +478,7 @@ def _parse(source, state):
                         break
                     elif this:
                         if this[0] == "\\":
-                            code2 = _class_escape(source, this, state)
+                            code2 = _class_escape(source, this)
                         else:
                             code2 = LITERAL, ord(this)
                         if code1[0] != LITERAL or code2[0] != LITERAL:

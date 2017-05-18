@@ -66,7 +66,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub('(?P<unk>x)', '\g<unk>\g<unk>', 'xx'), 'xxxx')
         self.assertEqual(re.sub('(?P<unk>x)', '\g<1>\g<1>', 'xx'), 'xxxx')
 
-        self.assertEqual(re.sub('a',r'\t\n\v\r\f\a\b','a'), '\t\n\v\r\f\a\b')
+        self.assertEqual(re.sub('a', r'\t\n\v\r\f\a\b', 'a'), '\t\n\v\r\f\a\b')
         self.assertEqual(re.sub('a', '\t\n\v\r\f\a\b', 'a'), '\t\n\v\r\f\a\b')
         self.assertEqual(re.sub('a', '\t\n\v\r\f\a\b', 'a'),
                          (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)+chr(8)))
@@ -440,23 +440,15 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(r"[\^a]+", 'b'))
         re.purge()  # for warnings
         for c in 'ceghijklmopquyzCEFGHIJKLMNOPQRTUVXY':
-            with check_py3k_warnings():
+            warn = FutureWarning if c in 'Uu' else DeprecationWarning
+            with check_py3k_warnings(('', warn)):
                 self.assertEqual(re.match('\\%c$' % c, c).group(), c)
                 self.assertIsNone(re.match('\\%c' % c, 'a'))
-            if have_unicode:
-                warn = FutureWarning if c in 'Uu' else DeprecationWarning
-                with check_py3k_warnings(('', warn)):
-                    self.assertEqual(re.match('\\%c$' % c, c, re.UNICODE).group(), c)
-                    self.assertIsNone(re.match('\\%c' % c, 'a', re.UNICODE))
         for c in 'ceghijklmopquyzABCEFGHIJKLMNOPQRTUVXYZ':
-            with check_py3k_warnings():
+            warn = FutureWarning if c in 'Uu' else DeprecationWarning
+            with check_py3k_warnings(('', warn)):
                 self.assertEqual(re.match('[\\%c]$' % c, c).group(), c)
                 self.assertIsNone(re.match('[\\%c]' % c, 'a'))
-            if have_unicode:
-                warn = FutureWarning if c in 'Uu' else DeprecationWarning
-                with check_py3k_warnings(('', warn)):
-                    self.assertEqual(re.match('[\\%c]$' % c, c, re.UNICODE).group(), c)
-                    self.assertIsNone(re.match('[\\%c]' % c, 'a', re.UNICODE))
 
     def test_string_boundaries(self):
         # See http://bugs.python.org/issue10713
