@@ -398,8 +398,8 @@ class EmbeddingTests(unittest.TestCase):
         # --- Pass 1 ---
         # ...
 
-        interp_pat = (r"^interp (\d+) <(0x[\da-f]+)>, "
-                      r"thread state <(0x[\da-f]+)>: "
+        interp_pat = (r"^interp (\d+) <((?:0x)?[\da-fA-F]+)>, "
+                      r"thread state <((?:0x)?[\da-fA-F]+)>: "
                       r"id\(modules\) = ([\d]+)$")
         Interp = namedtuple("Interp", "id interp tstate modules")
 
