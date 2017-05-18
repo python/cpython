@@ -338,10 +338,13 @@ _PyImport_GetModule(PyObject *name)
         return PyDict_GetItem(modules, name);
 
     PyObject *mod = PyObject_GetItem(modules, name);
-    if (mod == NULL && PyErr_Occurred())
-        // For backward-comaptibility we copy the behavior
-        // of PyDict_GetItem().
-        PyErr_Clear();
+    // For backward-comaptibility we copy the behavior of PyDict_GetItem().
+    if (mod == NULL) {
+        if (PyErr_Occurred())
+            PyErr_Clear();
+    } else {
+        Py_DECREF(mod);
+    }
     return mod;
 }
 
@@ -353,9 +356,9 @@ _PyImport_GetModuleWithError(PyObject *name)
         return PyDict_GetItemWithError(modules, name);
 
     PyObject *mod = PyObject_GetItem(modules, name);
+    // For backward-comaptibility we copy the behavior
+    // of PyDict_GetItemWithError().
     if (mod == NULL && !PyMapping_HasKey(modules, name))
-        // For backward-comaptibility we copy the behavior
-        // of PyDict_GetItemWithError().
         PyErr_Clear();
     return mod;
 }
@@ -368,10 +371,14 @@ _PyImport_GetModuleString(const char *name)
         return PyDict_GetItemString(modules, name);
 
     PyObject *mod = PyMapping_GetItemString(modules, name);
-    if (mod == NULL && PyErr_Occurred())
-        // For backward-comaptibility we copy the behavior
-        // of PyDict_GetItemString().
-        PyErr_Clear();
+    // For backward-comaptibility we copy the behavior
+    // of PyDict_GetItemString().
+    if (mod == NULL) {
+        if (PyErr_Occurred())
+            PyErr_Clear();
+    } else {
+        Py_DECREF(mod);
+    }
     return mod;
 }
 
