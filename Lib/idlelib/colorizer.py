@@ -20,6 +20,7 @@ def make_pat():
     # self.file = open("file") :
     # 1st 'file' colorized normal, 2nd as builtin, 3rd as string
     builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
+    trailing_space = any("TRAILINGSPACE", [r"[ \t]+(?=\n)"])
     comment = any("COMMENT", [r"#[^\n]*"])
     stringprefix = r"(?i:\br|u|f|fr|rf|b|br|rb)?"
     sqstring = stringprefix + r"'[^'\\\n]*(\\.[^'\\\n]*)*'?"
@@ -27,8 +28,8 @@ def make_pat():
     sq3string = stringprefix + r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
     dq3string = stringprefix + r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
-    return kw + "|" + builtin + "|" + comment + "|" + string +\
-           "|" + any("SYNC", [r"\n"])
+    return kw + "|" + builtin + "|" + trailing_space + "|" + comment +\
+           "|" + string + "|" + any("SYNC", [r"\n"])
 
 prog = re.compile(make_pat(), re.S)
 idprog = re.compile(r"\s+(\w+)", re.S)
@@ -56,6 +57,7 @@ class ColorDelegator(Delegator):
 
     def __init__(self):
         Delegator.__init__(self)
+        self.delay_render_trailing_space = None
         self.prog = prog
         self.idprog = idprog
         self.LoadTagDefs()
@@ -90,6 +92,7 @@ class ColorDelegator(Delegator):
             "SYNC": {'background':None,'foreground':None},
             "TODO": {'background':None,'foreground':None},
             "ERROR": idleConf.GetHighlight(theme, "error"),
+            "TRAILINGSPACE": idleConf.GetHighlight(theme, "error"),
             # The following is used by ReplaceDialog:
             "hit": idleConf.GetHighlight(theme, "hit"),
             }
@@ -157,6 +160,9 @@ class ColorDelegator(Delegator):
 
     def recolorize(self):
         self.after_id = None
+        if self.delay_render_trailing_space is not None:
+            self.after_cancel(self.delay_render_trailing_space)
+            self.delay_render_trailing_space = None
         if not self.delegate:
             if DEBUG: print("no delegate")
             return
@@ -220,9 +226,17 @@ class ColorDelegator(Delegator):
                     for key, value in m.groupdict().items():
                         if value:
                             a, b = m.span(key)
-                            self.tag_add(key,
-                                         head + "+%dc" % a,
-                                         head + "+%dc" % b)
+                            if key == "TRAILINGSPACE" and b - a == 1:
+                                self.delay_render_trailing_space = self.after(
+                                    1000,
+                                    self.tag_add,
+                                    key,
+                                    head + "+%dc" % a,
+                                    head + "+%dc" % b)
+                            else:
+                                self.tag_add(key,
+                                             head + "+%dc" % a,
+                                             head + "+%dc" % b)
                             if value in ("def", "class"):
                                 m1 = self.idprog.match(chars, b)
                                 if m1:
