@@ -42,6 +42,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30363: Running Python with the -3 option now warns about regular
+  expression syntax that is invalid or has different semantic in Python 3
+  or will change the behavior in future Python versions.
+
 - bpo-30365: Running Python with the -3 option now emits deprecation warnings
   for getchildren() and getiterator() methods of the Element class in the
   xml.etree.cElementTree module and when pass the html argument to

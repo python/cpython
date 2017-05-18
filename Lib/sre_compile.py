@@ -435,7 +435,7 @@ def _compile_info(code, pattern, flags):
     # this contains min/max pattern width, and an optional literal
     # prefix or a character map
     lo, hi = pattern.getwidth()
-    if lo == 0:
+    if not lo and hi:
         return # not worth it
     # look for a literal prefix
     prefix = []

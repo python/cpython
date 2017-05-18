@@ -23,6 +23,7 @@ DIGITS = set("0123456789")
 
 OCTDIGITS = set("01234567")
 HEXDIGITS = set("0123456789abcdefABCDEF")
+ASCIILETTERS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 WHITESPACE = set(" \t\n\r\v\f")
 
@@ -260,6 +261,15 @@ def _class_escape(source, escape):
         elif c in DIGITS:
             raise error, "bogus escape: %s" % repr(escape)
         if len(escape) == 2:
+            if sys.py3kwarning and c in ASCIILETTERS:
+                import warnings
+                if c in 'Uu':
+                    warnings.warn('bad escape %s; Unicode escapes are '
+                                  'supported only since Python 3.3' % escape,
+                                  FutureWarning, stacklevel=8)
+                else:
+                    warnings.warnpy3k('bad escape %s' % escape,
+                                      DeprecationWarning, stacklevel=8)
             return LITERAL, ord(escape[1])
     except ValueError:
         pass
@@ -309,6 +319,15 @@ def _escape(source, escape, state):
                 return GROUPREF, group
             raise ValueError
         if len(escape) == 2:
+            if sys.py3kwarning and c in ASCIILETTERS:
+                import warnings
+                if c in 'Uu':
+                    warnings.warn('bad escape %s; Unicode escapes are '
+                                  'supported only since Python 3.3' % escape,
+                                  FutureWarning, stacklevel=8)
+                else:
+                    warnings.warnpy3k('bad escape %s' % escape,
+                                      DeprecationWarning, stacklevel=8)
             return LITERAL, ord(escape[1])
     except ValueError:
         pass
@@ -714,6 +733,12 @@ def parse(str, flags=0, pattern=None):
     pattern.str = str
 
     p = _parse_sub(source, pattern, 0)
+    if (sys.py3kwarning and
+        (p.pattern.flags & SRE_FLAG_LOCALE) and
+        (p.pattern.flags & SRE_FLAG_UNICODE)):
+        import warnings
+        warnings.warnpy3k("LOCALE and UNICODE flags are incompatible",
+                          DeprecationWarning, stacklevel=5)
 
     tail = source.get()
     if tail == ")":
@@ -801,7 +826,10 @@ def parse_template(source, pattern):
                 try:
                     this = makechar(ESCAPES[this][1])
                 except KeyError:
-                    pass
+                    if sys.py3kwarning and c in ASCIILETTERS:
+                        import warnings
+                        warnings.warnpy3k('bad escape %s' % this,
+                                          DeprecationWarning, stacklevel=4)
                 literal(this)
         else:
             literal(this)

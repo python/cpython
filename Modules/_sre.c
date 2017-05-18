@@ -2267,6 +2267,20 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
     if (!string)
         return NULL;
 
+    if (Py_Py3kWarningFlag &&
+        (self->code[0] != SRE_OP_INFO || self->code[3] == 0))
+    {
+        if (self->code[0] == SRE_OP_INFO && self->code[4] == 0) {
+            if (PyErr_WarnPy3k("split() requires a non-empty pattern match.",
+                               1) < 0)
+                return NULL;
+        }
+        else if (PyErr_WarnEx(PyExc_FutureWarning,
+                              "split() requires a non-empty pattern match.",
+                              1) < 0)
+            return NULL;
+    }
+
     string = state_init(&state, self, string, 0, PY_SSIZE_T_MAX);
     if (!string)
         return NULL;
