@@ -347,6 +347,19 @@ _PyImport_GetModuleId(struct _Py_Identifier *nameid)
     return _PyImport_GetModule(name);
 }
 
+int
+_PyImport_SetModule(PyObject *name, PyObject *m) {
+    PyObject *modules = PyImport_GetModuleDict();
+    return PyObject_SetItem(modules, name, m);
+}
+
+int
+_PyImport_SetModuleString(const char *name, PyObject *m) {
+    PyObject *modules = PyImport_GetModuleDict();
+    return PyMapping_SetItemString(modules, name, m);
+}
+
+
 /* List of names to clear in sys */
 static const char * const sys_deletes[] = {
     "path", "argv", "ps1", "ps2",
