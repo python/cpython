@@ -46,6 +46,19 @@ Library
   expression syntax that is invalid or has different semantic in Python 3
   or will change the behavior in future Python versions.
 
+- bpo-30365: Running Python with the -3 option now emits deprecation warnings
+  for getchildren() and getiterator() methods of the Element class in the
+  xml.etree.cElementTree module and when pass the html argument to
+  xml.etree.ElementTree.XMLParser().
+
+- bpo-30365: Fixed a deprecation warning about the doctype() method of the
+  xml.etree.ElementTree.XMLParser class.  Now it is emitted only when define
+  the doctype() method in the subclass of XMLParser.
+
+- bpo-30329: imaplib now catchs the Windows socket WSAEINVAL error
+  (code 10022) on shutdown(SHUT_RDWR): An invalid operation was attempted.
+  This error occurs sometimes on SSL connections.
+
 - bpo-30342: Fix sysconfig.is_python_build() if Python is built with Visual
   Studio 2008 (VS 9.0).
 
@@ -167,6 +180,9 @@ Build
 
 Tests
 -----
+
+- bpo-11790: Fix sporadic failures in
+  test_multiprocessing.WithProcessesTestCondition.
 
 - bpo-30236: Backported test.regrtest options -m/--match and -G/--failfast
   from Python 3.
@@ -12110,6 +12126,10 @@ IDLE
 
 Tests
 -----
+- bpo-30357: test_thread: setUp() now uses support.threading_setup() and
+  support.threading_cleanup() to wait until threads complete to avoid
+  random side effects on following tests. Initial patch written by Grzegorz
+  Grzywacz.
 
 - Refactor test_logging to use unittest.
 
