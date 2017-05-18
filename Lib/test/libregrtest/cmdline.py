@@ -343,5 +343,10 @@ def _parse_args(args, **kwargs):
                     ns.use_resources.append(r)
     if ns.random_seed is not None:
         ns.randomize = True
+    if ns.huntrleaks and ns.verbose3:
+        ns.verbose3 = False
+        print("WARNING: Disable --verbose3 because it's incompatible with "
+              "--huntrleaks: see http://bugs.python.org/issue27103",
+              file=sys.stderr)
 
     return ns
