@@ -312,21 +312,39 @@ PyObject *
 _PyImport_GetModule(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    return PyDict_GetItem(modules, name);
+    if (PyDict_Check(modules))
+        return PyDict_GetItem(modules, name);
+
+    PyObject *mod = PyObject_GetItem(modules, name);
+    if (mod == NULL && PyErr_Occurred())
+        // For backward-comaptibility we copy the behavior
+        // of PyDict_GetItem().
+        PyErr_Clear();
+    return mod;
 }
 
 PyObject *
 _PyImport_GetModuleString(const char *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    return PyDict_GetItemString(modules, name);
+    if (PyDict_Check(modules))
+        return PyDict_GetItemString(modules, name);
+
+    PyObject *mod = PyMapping_GetItemString(modules, name);
+    if (mod == NULL && PyErr_Occurred())
+        // For backward-comaptibility we copy the behavior
+        // of PyDict_GetItemString().
+        PyErr_Clear();
+    return mod;
 }
 
 PyObject *
-_PyImport_GetModuleId(struct _Py_Identifier *name)
+_PyImport_GetModuleId(struct _Py_Identifier *nameid)
 {
-    PyObject *modules = PyImport_GetModuleDict();
-    return _PyDict_GetItemId(modules, name);
+    PyObject *name = _PyUnicode_FromId(nameid); /* borrowed */
+    if (name == NULL)
+        return NULL;
+    return _PyImport_GetModule(name);
 }
 
 /* List of names to clear in sys */
@@ -417,7 +435,7 @@ PyImport_Cleanup(void)
             if (Py_VerboseFlag && PyUnicode_Check(key))
                 PySys_FormatStderr("# cleanup[2] removing %U\n", key);
             STORE_MODULE_WEAKREF(key, value);
-            PyDict_SetItem(modules, key, Py_None);
+            PyObject_SetItem(modules, key, Py_None);
         }
     }
 
@@ -562,10 +580,10 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         PyErr_BadInternalCall();
         return -1;
     }
-    if (PyDict_SetItem(modules, name, mod) < 0)
+    if (PyObject_SetItem(modules, name, mod) < 0)
         return -1;
     if (_PyState_AddModule(mod, def) < 0) {
-        PyDict_DelItem(modules, name);
+        PyMapping_DelItem(modules, name);
         return -1;
     }
     if (def->m_size == -1) {
@@ -646,14 +664,14 @@ _PyImport_FindExtensionObjectEx(PyObject *name, PyObject *filename,
         mod = def->m_base.m_init();
         if (mod == NULL)
             return NULL;
-        if (PyDict_SetItem(modules, name, mod) == -1) {
+        if (PyObject_SetItem(modules, name, mod) == -1) {
             Py_DECREF(mod);
             return NULL;
         }
         Py_DECREF(mod);
     }
     if (_PyState_AddModule(mod, def) < 0) {
-        PyDict_DelItem(modules, name);
+        PyMapping_DelItem(modules, name);
         Py_DECREF(mod);
         return NULL;
     }
@@ -694,8 +712,16 @@ _PyImport_AddModuleObject(PyObject *name, PyObject *modules)
 {
     PyObject *m;
 
-    if ((m = PyDict_GetItemWithError(modules, name)) != NULL &&
-        PyModule_Check(m)) {
+    if (PyDict_Check(modules))
+        m = PyDict_GetItemWithError(modules, name);
+    else {
+        m = PyObject_GetItem(modules, name);
+        if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_KeyError))
+            // For backward-comaptibility we copy the behavior
+            // of PyDict_GetItemWithError().
+            PyErr_Clear();
+    }
+    if (m != NULL && PyModule_Check(m)) {
         return m;
     }
     if (PyErr_Occurred()) {
@@ -704,7 +730,7 @@ _PyImport_AddModuleObject(PyObject *name, PyObject *modules)
     m = PyModule_NewObject(name);
     if (m == NULL)
         return NULL;
-    if (PyDict_SetItem(modules, name, m) != 0) {
+    if (PyObject_SetItem(modules, name, m) != 0) {
         Py_DECREF(m);
         return NULL;
     }
@@ -731,9 +757,9 @@ static void
 remove_module(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_GetItem(modules, name) == NULL)
+    if (!PyMapping_HasKey(modules, name))
         return;
-    if (PyDict_DelItem(modules, name) < 0)
+    if (PyMapping_DelItem(modules, name) < 0)
         Py_FatalError("import:  deleting existing key in"
                       "sys.modules failed");
 }

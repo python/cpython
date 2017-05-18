@@ -318,7 +318,7 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
     if (Py_VerboseFlag) {
         PySys_FormatStderr("import sys # builtin\n");
     }
-    if (PyDict_SetItemString(sys_modules, "_imp", impmod) < 0) {
+    if (PyMapping_SetItemString(sys_modules, "_imp", impmod) < 0) {
         Py_FatalError("Py_Initialize: can't save _imp to sys.modules");
     }
 

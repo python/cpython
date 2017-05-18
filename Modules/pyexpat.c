@@ -1707,7 +1707,7 @@ MODULE_INITFUNC(void)
     if (errors_module == NULL) {
         errors_module = PyModule_New(MODULE_NAME ".errors");
         if (errors_module != NULL) {
-            PyDict_SetItem(sys_modules, errmod_name, errors_module);
+            PyObject_SetItem(sys_modules, errmod_name, errors_module);
             /* gives away the reference to errors_module */
             PyModule_AddObject(m, "errors", errors_module);
         }
@@ -1717,7 +1717,7 @@ MODULE_INITFUNC(void)
     if (model_module == NULL) {
         model_module = PyModule_New(MODULE_NAME ".model");
         if (model_module != NULL) {
-            PyDict_SetItem(sys_modules, modelmod_name, model_module);
+            PyObject_SetItem(sys_modules, modelmod_name, model_module);
             /* gives away the reference to model_module */
             PyModule_AddObject(m, "model", model_module);
         }

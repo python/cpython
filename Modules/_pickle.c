@@ -6490,7 +6490,16 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
         return NULL;
     }
 
-    module = PyDict_GetItemWithError(modules_dict, module_name);
+    module = PyObject_GetItem(modules_dict, module_name);
+    if (PyDict_Check(modules_dict)) {
+        module = PyDict_GetItemWithError(modules_dict, module_name);
+    } else {
+        module = PyObject_GetItem(modules_dict, module_name);
+        if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_KeyError))
+            // For backward-comaptibility we copy the behavior
+            // of PyDict_GetItemWithError().
+            PyErr_Clear();
+    }
     if (module == NULL) {
         if (PyErr_Occurred())
             return NULL;
