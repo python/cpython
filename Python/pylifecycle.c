@@ -1916,13 +1916,13 @@ wait_for_thread_shutdown(void)
 {
     _Py_IDENTIFIER(_shutdown);
     PyObject *result;
-    PyObject *modules = PyImport_GetModuleDict();
-    PyObject *threading = PyMapping_GetItemString(modules, "threading");
+    PyObject *threading = _PyImport_GetModuleString("threading");
     if (threading == NULL) {
         /* threading not imported */
         PyErr_Clear();
         return;
     }
+    Py_INCREF(threading);
     result = _PyObject_CallMethodId(threading, &PyId__shutdown, NULL);
     if (result == NULL) {
         PyErr_WriteUnraisable(threading);

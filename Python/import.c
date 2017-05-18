@@ -308,6 +308,27 @@ _PyImport_IsInitialized(PyInterpreterState *interp)
     return 1;
 }
 
+PyObject *
+_PyImport_GetModule(PyObject *name)
+{
+    PyObject *modules = PyImport_GetModuleDict();
+    return PyDict_GetItem(modules, name);
+}
+
+PyObject *
+_PyImport_GetModuleString(const char *name)
+{
+    PyObject *modules = PyImport_GetModuleDict();
+    return PyDict_GetItemString(modules, name);
+}
+
+PyObject *
+_PyImport_GetModuleId(struct _Py_Identifier *name)
+{
+    PyObject *modules = PyImport_GetModuleDict();
+    return _PyDict_GetItemId(modules, name);
+}
+
 /* List of names to clear in sys */
 static const char * const sys_deletes[] = {
     "path", "argv", "ps1", "ps2",
@@ -823,7 +844,6 @@ module_dict_for_exec(PyObject *name)
 static PyObject *
 exec_code_in_module(PyObject *name, PyObject *module_dict, PyObject *code_object)
 {
-    PyObject *modules = PyImport_GetModuleDict();
     PyObject *v, *m;
 
     v = PyEval_EvalCode(code_object, module_dict, module_dict);
@@ -833,7 +853,8 @@ exec_code_in_module(PyObject *name, PyObject *module_dict, PyObject *code_object
     }
     Py_DECREF(v);
 
-    if ((m = PyDict_GetItem(modules, name)) == NULL) {
+    m = _PyImport_GetModule(name);
+    if (m == NULL) {
         PyErr_Format(PyExc_ImportError,
                      "Loaded module %R not found in sys.modules",
                      name);
@@ -1540,8 +1561,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         Py_INCREF(abs_name);
     }
 
-    PyObject *modules = PyImport_GetModuleDict();
-    mod = PyDict_GetItem(modules, abs_name);
+    mod = _PyImport_GetModule(abs_name);
     if (mod != NULL && mod != Py_None) {
         _Py_IDENTIFIER(__spec__);
         _Py_IDENTIFIER(_initializing);
@@ -1628,8 +1648,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                     goto error;
                 }
 
-                PyObject *modules = PyImport_GetModuleDict();
-                final_mod = PyDict_GetItem(modules, to_return);
+                final_mod = _PyImport_GetModule(to_return);
                 Py_DECREF(to_return);
                 if (final_mod == NULL) {
                     PyErr_Format(PyExc_KeyError,
@@ -1684,8 +1703,7 @@ PyImport_ReloadModule(PyObject *m)
 {
     _Py_IDENTIFIER(reload);
     PyObject *reloaded_module = NULL;
-    PyObject *modules = PyImport_GetModuleDict();
-    PyObject *imp = PyDict_GetItemString(modules, "imp");
+    PyObject *imp = _PyImport_GetModuleString("imp");
     if (imp == NULL) {
         imp = PyImport_ImportModule("imp");
         if (imp == NULL) {
@@ -1720,7 +1738,6 @@ PyImport_Import(PyObject *module_name)
     PyObject *globals = NULL;
     PyObject *import = NULL;
     PyObject *builtins = NULL;
-    PyObject *modules = NULL;
     PyObject *r = NULL;
 
     /* Initialize constant string objects */
@@ -1775,8 +1792,7 @@ PyImport_Import(PyObject *module_name)
         goto err;
     Py_DECREF(r);
 
-    modules = PyImport_GetModuleDict();
-    r = PyDict_GetItemWithError(modules, module_name);
+    r = _PyImport_GetModule(module_name);
     if (r != NULL) {
         Py_INCREF(r);
     }
