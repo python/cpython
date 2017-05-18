@@ -763,7 +763,16 @@ PyImport_AddModuleObject(PyObject *name)
 PyObject *
 _PyImport_AddModuleObject(PyObject *name, PyObject *modules)
 {
-    PyObject *m = _PyImport_GetModuleWithError(name);
+    PyObject *m;
+    if (PyDict_Check(modules)) {
+        m = PyDict_GetItemWithError(modules, name);
+    } else {
+        m = PyObject_GetItem(modules, name);
+        // For backward-comaptibility we copy the behavior
+        // of PyDict_GetItemWithError().
+        if (m == NULL && !PyMapping_HasKey(modules, name))
+            PyErr_Clear();
+    }
     if (m != NULL && PyModule_Check(m)) {
         return m;
     }
