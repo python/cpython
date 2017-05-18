@@ -39,7 +39,7 @@ PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleObject(
 #endif
 PyAPI_FUNC(PyObject *) PyImport_GetModuleDict(void);
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyImport_EnsureInitialized(PyInterpreterState *);
+PyAPI_FUNC(int) _PyImport_IsInitialized(PyInterpreterState *);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject *) PyImport_AddModuleObject(

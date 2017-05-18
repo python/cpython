@@ -318,19 +318,16 @@ PyImport_GetModuleDict(void)
    machinery has been initialized (or not cleaned up yet).  For
    example, see issue #4236 and PyModule_Create2(). */
 
-void
-_PyImport_EnsureInitialized(PyInterpreterState *interp)
+int
+_PyImport_IsInitialized(PyInterpreterState *interp)
 {
     if (interp->sysdict == NULL)
-        goto notinitialized;
+        return 0;
     _Py_IDENTIFIER(modules);
     PyObject *modules = _PyDict_GetItemId(interp->sysdict, &PyId_modules);
     if (modules == NULL)
-        goto notinitialized;
-    return;
-
-notinitialized:
-    Py_FatalError("Python import machinery not initialized");
+        return 0;
+    return 1;
 }
 
 
