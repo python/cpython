@@ -1,0 +1,2 @@
+Fix race condition in shutil.copyfile() by ensuring the inode of the source
+file does not change while it is being copied.  Patch by Preston Moore.
