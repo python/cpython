@@ -261,7 +261,7 @@ class DefaultContext(BaseContext):
             else:
                 return ['fork', 'spawn']
 
-DefaultContext.__all__ = list(x for x in dir(DefaultContext) if x[0] != '_')
+DefaultContext.__all__ = [x for x in dir(DefaultContext) if x[0] != '_']
 
 #
 # Context types for fixed start method
