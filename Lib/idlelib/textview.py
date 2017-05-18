@@ -87,6 +87,7 @@ def view_file(parent, title, filename, encoding=None, modal=True, _utest=False):
                   parent=parent)
     else:
         return view_text(parent, title, contents, modal, _utest=_utest)
+    return None
 
 
 if __name__ == '__main__':
