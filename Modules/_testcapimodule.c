@@ -2188,6 +2188,7 @@ test_set_exc_info(PyObject *self, PyObject *args)
     return orig_exc;
 }
 
+#if defined(Py_USING_UNICODE) && !defined(Py_BUILD_CORE)
 static int test_run_counter = 0;
 
 static PyObject *
@@ -2210,7 +2211,7 @@ test_datetime_capi(PyObject *self, PyObject *args) {
     else
         return NULL;
 }
-
+#endif
 
 #ifdef WITH_THREAD
 
@@ -4057,7 +4058,9 @@ static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             (PyCFunction)test_config,        METH_NOARGS},
     {"test_sizeof_c_types",     (PyCFunction)test_sizeof_c_types, METH_NOARGS},
+#if defined(Py_USING_UNICODE) && !defined(Py_BUILD_CORE)
     {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
+#endif
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
