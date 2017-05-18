@@ -1461,6 +1461,21 @@ class TestShutil(unittest.TestCase):
         # Make sure file is not corrupted.
         self.assertEqual(read_file(src_file), 'foo')
 
+    def test_copyfile_dst_exists_as_fifo(self):
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'foo')
+        write_file(src_file, 'foo')
+        dst_dir = src_dir
+        dst_file = os.path.join(dst_dir, 'bar_pipe')
+        try:
+            os.mkfifo(dst_file)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
+        self.assertRaises(shutil.SpecialFileError,
+                          shutil.copyfile,
+                          src_file,
+                          dst_file)
+
     def test_copytree_return_value(self):
         # copytree returns its destination path.
         src_dir = self.mkdtemp()
@@ -1799,7 +1814,7 @@ class TestCopyFile(unittest.TestCase):
         self._delete = True
 
     def test_w_source_open_fails(self):
-        def _open(filename, mode='r'):
+        def _open(filename, mode='r', opener=None):
             if filename == 'srcfile':
                 raise OSError('Cannot open "srcfile"')
             assert 0  # shouldn't reach here.
@@ -1813,7 +1828,7 @@ class TestCopyFile(unittest.TestCase):
 
         srcfile = self.Faux()
 
-        def _open(filename, mode='r'):
+        def _open(filename, mode='r', opener=None):
             if filename == 'srcfile':
                 return srcfile
             if filename == 'destfile':
@@ -1834,7 +1849,7 @@ class TestCopyFile(unittest.TestCase):
         srcfile = self.Faux()
         destfile = self.Faux(True)
 
-        def _open(filename, mode='r'):
+        def _open(filename, mode='r', opener=None):
             if filename == 'srcfile':
                 return srcfile
             if filename == 'destfile':
@@ -1857,7 +1872,7 @@ class TestCopyFile(unittest.TestCase):
         srcfile = self.Faux(True)
         destfile = self.Faux()
 
-        def _open(filename, mode='r'):
+        def _open(filename, mode='r', opener=None):
             if filename == 'srcfile':
                 return srcfile
             if filename == 'destfile':
