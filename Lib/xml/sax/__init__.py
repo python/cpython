@@ -28,9 +28,16 @@ from ._exceptions import SAXException, SAXNotRecognizedException, \
 
 def parse(source, handler, errorHandler=ErrorHandler()):
     parser = make_parser()
-    parser.setContentHandler(handler)
-    parser.setErrorHandler(errorHandler)
-    parser.parse(source)
+    try:
+        parser.setContentHandler(handler)
+        parser.setErrorHandler(errorHandler)
+        parser.parse(source)
+    except:
+        # Third party parsers can have no close() method
+        if hasattr(parser, 'close'):
+            # On error, close the parser to not leak resources like open files
+            parser.close()
+        raise
 
 def parseString(string, handler, errorHandler=ErrorHandler()):
     import io
