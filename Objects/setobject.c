@@ -642,7 +642,7 @@ set_merge(PySetObject *so, PyObject *otherset)
      * that there will be no (or few) overlapping keys.
      */
     if ((so->fill + other->used)*5 >= so->mask*3) {
-        if (set_table_resize(so, (so->used + other->used)*2) != 0)
+        if (set_table_resize(so, (so->used + other->used)*5/3 + 1) != 0)
             return -1;
     }
     so_entry = so->table;
@@ -986,7 +986,7 @@ set_update_internal(PySetObject *so, PyObject *other)
         if (dictsize < 0)
             return -1;
         if ((so->fill + dictsize)*5 >= so->mask*3) {
-            if (set_table_resize(so, (so->used + dictsize)*2) != 0)
+            if (set_table_resize(so, (so->used + dictsize)*5/3 + 1) != 0)
                 return -1;
         }
         while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
