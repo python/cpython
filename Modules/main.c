@@ -71,9 +71,9 @@ static const char usage_2[] = "\
 -S     : don't imply 'import site' on initialization\n\
 ";
 static const char usage_3[] = "\
--u     : unbuffered binary stdout and stderr, stdin always buffered;\n\
+-u     : force the binary I/O layers of stdout and stderr to be unbuffered;\n\
+         stdin is always buffered; text I/O layer will be line-buffered;\n\
          also PYTHONUNBUFFERED=x\n\
-         see man page for details on internal buffering relating to '-u'\n\
 -v     : verbose (trace import statements); also PYTHONVERBOSE=x\n\
          can be supplied multiple times to increase verbosity\n\
 -V     : print the Python version number and exit (also --version)\n\
