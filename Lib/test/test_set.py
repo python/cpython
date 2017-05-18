@@ -360,7 +360,7 @@ class TestJointOps:
         obj.x = iter(container)
         del obj, container
         gc.collect()
-        self.assertTrue(ref() is None, "Cycle was not collected")
+        self.assertIsNone(ref(), "Cycle was not collected")
 
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, self.thetype)
@@ -452,7 +452,7 @@ class TestSet(TestJointOps, unittest.TestCase):
         try:
             self.s.remove(key)
         except KeyError as e:
-            self.assertTrue(e.args[0] is key,
+            self.assertIs(e.args[0], key,
                          "KeyError should be {0}, not {1}".format(key,
                                                                   e.args[0]))
         else:
@@ -1531,7 +1531,7 @@ class TestCopying:
         set_list = sorted(self.set, key=repr)
         self.assertEqual(len(dup_list), len(set_list))
         for i in range(len(dup_list)):
-            self.assertTrue(dup_list[i] is set_list[i])
+            self.assertIs(dup_list[i], set_list[i])
 
     def test_deep_copy(self):
         dup = copy.deepcopy(self.set)

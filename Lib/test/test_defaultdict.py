@@ -68,7 +68,7 @@ class TestDefaultDict(unittest.TestCase):
         self.assertEqual(repr(d2), "defaultdict(<class 'int'>, {12: 42})")
         def foo(): return 43
         d3 = defaultdict(foo)
-        self.assertTrue(d3.default_factory is foo)
+        self.assertIs(d3.default_factory, foo)
         d3[13]
         self.assertEqual(repr(d3), "defaultdict(%s, {13: 43})" % repr(foo))
 
@@ -133,7 +133,7 @@ class TestDefaultDict(unittest.TestCase):
         d2 = copy.deepcopy(d1)
         self.assertEqual(d2.default_factory, foobar)
         self.assertEqual(d2, d1)
-        self.assertTrue(d1[1] is not d2[1])
+        self.assertIsNot(d1[1], d2[1])
         d1.default_factory = list
         d2 = copy.deepcopy(d1)
         self.assertEqual(d2.default_factory, list)

@@ -108,7 +108,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for i in range(QUEUE_SIZE-1):
             q.put(i)
             self.assertTrue(q.qsize(), "Queue should not be empty")
-        self.assertTrue(not qfull(q), "Queue should not be full")
+        self.assertFalse(qfull(q), "Queue should not be full")
         last = 2 * QUEUE_SIZE
         full = 3 * 2 * QUEUE_SIZE
         q.put(last)
@@ -131,7 +131,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         # Empty it
         for i in range(QUEUE_SIZE):
             q.get()
-        self.assertTrue(not q.qsize(), "Queue should be empty")
+        self.assertFalse(q.qsize(), "Queue should be empty")
         try:
             q.get(block=0)
             self.fail("Didn't appear to block with an empty queue")
@@ -308,7 +308,7 @@ class FailingQueueTest(BlockingTestMixin, unittest.TestCase):
         q.put("last")
         self.assertTrue(qfull(q), "Queue should be full")
         q.get()
-        self.assertTrue(not qfull(q), "Queue should not be full")
+        self.assertFalse(qfull(q), "Queue should not be full")
         q.put("last")
         self.assertTrue(qfull(q), "Queue should be full")
         # Test a blocking put
@@ -316,7 +316,7 @@ class FailingQueueTest(BlockingTestMixin, unittest.TestCase):
         # Empty it
         for i in range(QUEUE_SIZE):
             q.get()
-        self.assertTrue(not q.qsize(), "Queue should be empty")
+        self.assertFalse(q.qsize(), "Queue should be empty")
         q.put("first")
         q.fail_next_get = True
         try:
@@ -333,7 +333,7 @@ class FailingQueueTest(BlockingTestMixin, unittest.TestCase):
             pass
         self.assertTrue(q.qsize(), "Queue should not be empty")
         q.get()
-        self.assertTrue(not q.qsize(), "Queue should be empty")
+        self.assertFalse(q.qsize(), "Queue should be empty")
         q.fail_next_get = True
         try:
             self.do_exceptional_blocking_test(q.get, (), q.put, ('empty',),
@@ -344,7 +344,7 @@ class FailingQueueTest(BlockingTestMixin, unittest.TestCase):
         # put succeeded, but get failed.
         self.assertTrue(q.qsize(), "Queue should not be empty")
         q.get()
-        self.assertTrue(not q.qsize(), "Queue should be empty")
+        self.assertFalse(q.qsize(), "Queue should be empty")
 
     def test_failing_queue(self):
         # Test to make sure a queue is functioning correctly.
