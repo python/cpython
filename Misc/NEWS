@@ -327,6 +327,10 @@ Extension Modules
 Library
 -------
 
+- bpo-30397: Types of compiled regular objects and match objects are exposed
+  as re.Pattern and re.Match.  This adds information in pydoc output for the
+  re module.
+
 - bpo-30149: inspect.signature() now supports callables with
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.

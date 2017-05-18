@@ -132,7 +132,7 @@ except ImportError:
 __all__ = [
     "match", "fullmatch", "search", "sub", "subn", "split",
     "findall", "finditer", "compile", "purge", "template", "escape",
-    "error", "A", "I", "L", "M", "S", "X", "U",
+    "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
     "UNICODE",
 ]
@@ -257,12 +257,13 @@ def escape(pattern):
         pattern = str(pattern, 'latin1')
         return pattern.translate(_special_chars_map).encode('latin1')
 
+Pattern = type(sre_compile.compile('', 0))
+Match = type(sre_compile.compile('', 0).match(''))
+
 # --------------------------------------------------------------------
 # internals
 
 _cache = {}
-
-_pattern_type = type(sre_compile.compile("", 0))
 
 _MAXCACHE = 512
 def _compile(pattern, flags):
@@ -271,7 +272,7 @@ def _compile(pattern, flags):
         return _cache[type(pattern), pattern, flags]
     except KeyError:
         pass
-    if isinstance(pattern, _pattern_type):
+    if isinstance(pattern, Pattern):
         if flags:
             raise ValueError(
                 "cannot process flags argument with a compiled pattern")
@@ -312,7 +313,7 @@ import copyreg
 def _pickle(p):
     return _compile, (p.pattern, p.flags)
 
-copyreg.pickle(_pattern_type, _pickle, _compile)
+copyreg.pickle(Pattern, _pickle, _compile)
 
 # --------------------------------------------------------------------
 # experimental stuff (see python-dev discussions for details)
