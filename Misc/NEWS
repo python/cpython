@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-30399: Standard repr() of BaseException with a single argument no longer
+  contains redundant trailing comma.
+
 - bpo-30039: If a KeyboardInterrupt happens when the interpreter is in
   the middle of resuming a chain of nested 'yield from' or 'await'
   calls, it's now correctly delivered to the innermost frame.
