@@ -3913,16 +3913,7 @@ import_copyreg(void)
        by storing a reference to the cached module in a static variable, but
        this broke when multiple embedded interpreters were in use (see issue
        #17408 and #19088). */
-    PyObject *modules = PyImport_GetModuleDict();
-    if (PyDict_Check(modules)) {
-        copyreg_module = PyDict_GetItemWithError(modules, copyreg_str);
-    } else {
-        copyreg_module = PyObject_GetItem(modules, copyreg_str);
-        if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_KeyError))
-            // For backward-comaptibility we copy the behavior
-            // of PyDict_GetItemWithError().
-            PyErr_Clear();
-    }
+    copyreg_module = _PyImport_GetModuleWithError(copyreg_str);
     if (copyreg_module != NULL) {
         Py_INCREF(copyreg_module);
         return copyreg_module;

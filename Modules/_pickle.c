@@ -6425,9 +6425,7 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
 /*[clinic end generated code: output=becc08d7f9ed41e3 input=e2e6a865de093ef4]*/
 {
     PyObject *global;
-    PyObject *modules_dict;
     PyObject *module;
-    _Py_IDENTIFIER(modules);
 
     /* Try to map the old names used in Python 2.x to the new ones used in
        Python 3.x.  We do this only with old pickle protocols and when the
@@ -6484,22 +6482,7 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
         }
     }
 
-    modules_dict = _PySys_GetObjectId(&PyId_modules);
-    if (modules_dict == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
-        return NULL;
-    }
-
-    module = PyObject_GetItem(modules_dict, module_name);
-    if (PyDict_Check(modules_dict)) {
-        module = PyDict_GetItemWithError(modules_dict, module_name);
-    } else {
-        module = PyObject_GetItem(modules_dict, module_name);
-        if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_KeyError))
-            // For backward-comaptibility we copy the behavior
-            // of PyDict_GetItemWithError().
-            PyErr_Clear();
-    }
+    module = PyImport_GetModule(module_name);
     if (module == NULL) {
         if (PyErr_Occurred())
             return NULL;

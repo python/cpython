@@ -204,6 +204,11 @@ Importing Modules
    Return the dictionary used for the module administration (a.k.a.
    ``sys.modules``).  Note that this is a per-interpreter variable.
 
+.. c:function:: PyObject* PyImport_GetModule(PyObject *name)
+
+   Return the already imported module with the given name.
+
+   .. versionadded:: 3.7
 
 .. c:function:: PyObject* PyImport_GetImporter(PyObject *path)
 

@@ -324,6 +324,21 @@ _PyImport_GetModule(PyObject *name)
 }
 
 PyObject *
+_PyImport_GetModuleWithError(PyObject *name)
+{
+    PyObject *modules = PyImport_GetModuleDict();
+    if (PyDict_Check(modules))
+        return PyDict_GetItemWithError(modules, name);
+
+    PyObject *mod = PyObject_GetItem(modules, name);
+    if (mod == NULL && !PyMapping_HasKey(modules, name))
+        // For backward-comaptibility we copy the behavior
+        // of PyDict_GetItemWithError().
+        PyErr_Clear();
+    return mod;
+}
+
+PyObject *
 _PyImport_GetModuleString(const char *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
@@ -357,6 +372,24 @@ int
 _PyImport_SetModuleString(const char *name, PyObject *m) {
     PyObject *modules = PyImport_GetModuleDict();
     return PyMapping_SetItemString(modules, name, m);
+}
+
+PyObject *
+PyImport_GetModule(PyObject *name)
+{
+    _Py_IDENTIFIER(modules);
+    PyObject *modules = _PySys_GetObjectId(&PyId_modules);
+    if (modules == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
+        return NULL;
+    }
+    if (PyDict_Check(modules))
+        return PyDict_GetItemWithError(modules, name);
+
+    PyObject *m = PyObject_GetItem(modules, name);
+    if (m == NULL && !PyMapping_HasKey(modules, name))
+        PyErr_Clear();
+    return m;
 }
 
 
@@ -723,17 +756,7 @@ PyImport_AddModuleObject(PyObject *name)
 PyObject *
 _PyImport_AddModuleObject(PyObject *name, PyObject *modules)
 {
-    PyObject *m;
-
-    if (PyDict_Check(modules))
-        m = PyDict_GetItemWithError(modules, name);
-    else {
-        m = PyObject_GetItem(modules, name);
-        if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_KeyError))
-            // For backward-comaptibility we copy the behavior
-            // of PyDict_GetItemWithError().
-            PyErr_Clear();
-    }
+    PyObject *m = _PyImport_GetModuleWithError(name);
     if (m != NULL && PyModule_Check(m)) {
         return m;
     }
