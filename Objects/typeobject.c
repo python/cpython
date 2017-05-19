@@ -3130,7 +3130,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
 static int
 type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 {
-    int res, copied = 0;
+    int res;
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         PyErr_Format(
             PyExc_TypeError,
@@ -3149,24 +3149,24 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             if (name == NULL)
                 return -1;
         }
-        copied = 1;
-        assert(PyUnicode_CheckExact(name));
         PyUnicode_InternInPlace(&name);
         if (!PyUnicode_CHECK_INTERNED(name)) {
             PyErr_SetString(PyExc_MemoryError,
                             "Out of memory interning an attribute name");
-            if (copied)
-                Py_DECREF(name);
+            Py_DECREF(name);
             return -1;
         }
+    }
+    else {
+        /* Will fail in _PyObject_GenericSetAttrWithDict. */
+        Py_INCREF(name);
     }
     res = _PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL);
     if (res == 0) {
         res = update_slot(type, name);
         assert(_PyType_CheckConsistency(type));
     }
-    if (copied)
-        Py_DECREF(name);
+    Py_DECREF(name);
     return res;
 }
 
@@ -7128,7 +7128,6 @@ update_slot(PyTypeObject *type, PyObject *name)
     init_slotdefs();
     pp = ptrs;
     for (p = slotdefs; p->name; p++) {
-        /* XXX assume name is interned! */
         if (p->name_strobj == name)
             *pp++ = p;
     }
