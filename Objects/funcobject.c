@@ -772,6 +772,19 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
+static PyObject *
+bad_getstate(PyObject *self, PyObject *args)
+{
+    PyErr_Format(PyExc_TypeError,
+                 "cannot serialize '%s' object", Py_TYPE(self)->tp_name);
+    return NULL;
+}
+
+static PyMethodDef cm_methods[] = {
+    {"__getstate__", bad_getstate, METH_NOARGS, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyMemberDef cm_memberlist[] = {
     {"__func__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
     {NULL}  /* Sentinel */
@@ -849,8 +862,8 @@ PyTypeObject PyClassMethod_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    cm_memberlist,              /* tp_members */
+    cm_methods,                                 /* tp_methods */
+    cm_memberlist,                              /* tp_members */
     cm_getsetlist,                              /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
@@ -953,6 +966,11 @@ sm_init(PyObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
+static PyMethodDef sm_methods[] = {
+    {"__getstate__", bad_getstate, METH_NOARGS, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyMemberDef sm_memberlist[] = {
     {"__func__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
     {NULL}  /* Sentinel */
@@ -1027,8 +1045,8 @@ PyTypeObject PyStaticMethod_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    sm_memberlist,              /* tp_members */
+    sm_methods,                                 /* tp_methods */
+    sm_memberlist,                              /* tp_members */
     sm_getsetlist,                              /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */

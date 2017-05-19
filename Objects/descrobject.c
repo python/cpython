@@ -1348,10 +1348,19 @@ property_deleter(PyObject *self, PyObject *deleter)
 }
 
 
+static PyObject *
+property_getstate(PyObject *self, PyObject *args)
+{
+    PyErr_Format(PyExc_TypeError,
+                 "cannot serialize '%s' object", Py_TYPE(self)->tp_name);
+    return NULL;
+}
+
 static PyMethodDef property_methods[] = {
     {"getter", property_getter, METH_O, getter_doc},
     {"setter", property_setter, METH_O, setter_doc},
     {"deleter", property_deleter, METH_O, deleter_doc},
+    {"__getstate__", property_getstate, METH_NOARGS, NULL},
     {0}
 };
 

@@ -1,4 +1,5 @@
 import builtins
+import copy
 import copyreg
 import gc
 import itertools
@@ -12,6 +13,10 @@ import weakref
 
 from copy import deepcopy
 from test import support
+
+
+def func(*args):
+    return args
 
 
 class OperatorsTest(unittest.TestCase):
@@ -1519,6 +1524,13 @@ order (MRO) for bases """
         del cm.x
         self.assertNotHasAttr(cm, "x")
 
+    def test_classmethod_copy_pickle(self):
+        cm = classmethod(func)
+        self.assertRaises(TypeError, copy.copy, cm)
+        self.assertRaises(TypeError, copy.deepcopy, cm)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            self.assertRaises(TypeError, pickle.dumps, cm, proto)
+
     @support.impl_detail("the module 'xxsubtype' is internal")
     def test_classmethods_in_c(self):
         # Testing C-based class methods...
@@ -1573,6 +1585,13 @@ order (MRO) for bases """
         self.assertEqual(sm.__dict__, {"x" : 42})
         del sm.x
         self.assertNotHasAttr(sm, "x")
+
+    def test_staticmethod_copy_pickle(self):
+        sm = staticmethod(func)
+        self.assertRaises(TypeError, copy.copy, sm)
+        self.assertRaises(TypeError, copy.deepcopy, sm)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            self.assertRaises(TypeError, pickle.dumps, sm, proto)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
     def test_staticmethods_in_c(self):
@@ -2164,6 +2183,13 @@ order (MRO) for bases """
             pass
         else:
             self.fail("expected ZeroDivisionError from bad property")
+
+    def test_property_copy_pickle(self):
+        p = property(func)
+        self.assertRaises(TypeError, copy.copy, p)
+        self.assertRaises(TypeError, copy.deepcopy, p)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            self.assertRaises(TypeError, pickle.dumps, p, proto)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
