@@ -1130,7 +1130,7 @@ class DictTest(unittest.TestCase):
                 return False
 
         d = {}  # this is required to exist so that d can be constructed!
-        d = {X(1): 1, X(2): 2}
+        d = {X(1), X(2)}
         with self.assertRaises(RuntimeError):
             dict.fromkeys(d)
 
