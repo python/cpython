@@ -211,12 +211,12 @@ print("history", ascii(readline.get_history_item(1)))
         self.assertIn(b"history " + expected + b"\r\n", output)
 
 
-def run_pty(script, input=b"dummy input\r"):
+def run_pty(script, input=b"dummy input\r", env=None):
     pty = import_module('pty')
     output = bytearray()
     [master, slave] = pty.openpty()
     args = (sys.executable, '-c', script)
-    proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave)
+    proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave, env=env)
     os.close(slave)
     with ExitStack() as cleanup:
         cleanup.enter_context(proc)
