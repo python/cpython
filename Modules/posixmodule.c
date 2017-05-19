@@ -1927,12 +1927,14 @@ _pystat_fromstructstat(STRUCT_STAT *st)
         return NULL;
 
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
-    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(st->st_ino));
-    if (sizeof(unsigned long) >= sizeof(st->st_ino))
+    if (sizeof(unsigned long) >= sizeof(st->st_ino)) {
         PyStructSequence_SET_ITEM(v, 1, PyLong_FromUnsignedLong(st->st_ino));
-    else
+    }
+    else {
+        Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(st->st_ino));
         PyStructSequence_SET_ITEM(v, 1,
                               PyLong_FromUnsignedLongLong(st->st_ino));
+    }
 #ifdef MS_WINDOWS
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLong(st->st_dev));
 #else
@@ -1946,12 +1948,14 @@ _pystat_fromstructstat(STRUCT_STAT *st)
     PyStructSequence_SET_ITEM(v, 4, _PyLong_FromUid(st->st_uid));
     PyStructSequence_SET_ITEM(v, 5, _PyLong_FromGid(st->st_gid));
 #endif
-    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(st->st_size));
-    if (sizeof(long) >= sizeof(st->st_size))
+    if (sizeof(long) >= sizeof(st->st_size)) {
         PyStructSequence_SET_ITEM(v, 6, PyLong_FromLong(st->st_size));
-    else
+    }
+    else {
+        Py_BUILD_ASSERT(sizeof(long long) >= sizeof(st->st_size));
         PyStructSequence_SET_ITEM(v, 6,
                               PyLong_FromLongLong((long long)st->st_size));
+    }
 
 #if defined(HAVE_STAT_TV_NSEC)
     ansec = st->st_atim.tv_nsec;
@@ -11449,11 +11453,13 @@ os_DirEntry_inode_impl(DirEntry *self)
     Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(self->win32_file_index));
     return PyLong_FromUnsignedLongLong(self->win32_file_index);
 #else /* POSIX */
-    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(self->d_ino));
-    if (sizeof(long) >= sizeof(self->d_ino))
+    if (sizeof(long) >= sizeof(self->d_ino)) {
         return PyLong_FromLong((long)self->d_ino);
-    else
+    }
+    else {
+        Py_BUILD_ASSERT(sizeof(long long) >= sizeof(self->d_ino));
         return PyLong_FromLongLong((long long)self->d_ino);
+    }
 #endif
 }
 
