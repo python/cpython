@@ -1,5 +1,7 @@
 # Android/build-config
 
+ndk_version=14
+
 # Set default values if not defined.
 : ${ANDROID_NDK_ROOT:=/opt/android-ndk}
 : ${ANDROID_SDK_ROOT:=/opt/android-sdk}
@@ -13,11 +15,11 @@ build_config_error ()
 }
 
 ! test -d "$ANDROID_NDK_ROOT" && build_config_error "\$ANDROID_NDK_ROOT ($ANDROID_NDK_ROOT) is not a directory."
-ndk_version=$(cat "$ANDROID_NDK_ROOT/source.properties" | \
+version=$(cat "$ANDROID_NDK_ROOT/source.properties" | \
     sed -e "s/^.*Pkg.Revision[ \t]*=[ \t]*\([0-9]\+\).*$\|^.*$/\1/" -e "/^$/d")
-test $((ndk_version)) -lt 13 &&
-    build_config_error "The installed NDK version is $ndk_version but at least version 13 is required."
-unset ndk_version
+test "$version" != $ndk_version &&
+    build_config_error "The installed NDK version is $version but version $ndk_version is required."
+unset ndk_version version
 
 test $((ANDROID_API)) -lt 21 && \
     build_config_error "\$ANDROID_API ($ANDROID_API) must be 21 or greater."
@@ -76,7 +78,7 @@ tool_path ()
 toolchain=$(tool_path $toolchain)
 
 # Build variables.
-CC="$(tool_path llvm)/bin/clang --sysroot=$SYSROOT -target $target -gcc-toolchain $toolchain"
+CC="$(tool_path llvm)/bin/clang -target $target -gcc-toolchain $toolchain"
 GCC="$toolchain/bin/$ANDROID_HOST-gcc"
 AR="$toolchain/bin/$ANDROID_HOST-ar"
 LD="$toolchain/bin/$ANDROID_HOST-ld"
@@ -85,7 +87,14 @@ READELF="$toolchain/bin/$ANDROID_HOST-readelf"
 STRIP="$toolchain/bin/$ANDROID_HOST-strip --strip-debug --strip-unneeded"
 unset target toolchain machine kernel tool_path
 
-CFLAGS="$CFLAGS -Wno-unused-value -Wno-empty-body -Qunused-arguments"
+# configure needs to have '--sysroot' set in CPPFLAGS and setup.py ignores
+# entirely CPPFLAGS except for the '-I' options, so we need to set '--sysroot'
+# both in CPPFLAGS and in CFLAGS :(
+ndk_flags="--sysroot=$ANDROID_NDK_ROOT/sysroot -D__ANDROID_API__=$ANDROID_API -isystem $ANDROID_NDK_ROOT/sysroot/usr/include/$ANDROID_HOST"
+CPPFLAGS="$CPPFLAGS $ndk_flags"
+CFLAGS="$CFLAGS $ndk_flags -Wno-unused-value -Wno-empty-body -Qunused-arguments -Wno-nullability-completeness"
+LDFLAGS="$LDFLAGS --sysroot=$SYSROOT"
+unset ndk_flags
 
 ccache -V >/dev/null 2>&1 && { CC="ccache $CC"; GCC="ccache $GCC"; \
                                CFLAGS="$CFLAGS -Wno-parentheses-equality"; }

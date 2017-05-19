@@ -49,6 +49,7 @@ external_libraries openssl: export LD := $(LD)
 external_libraries openssl: export RANLIB := $(RANLIB)
 external_libraries openssl: export READELF := $(READELF)
 external_libraries openssl: export CFLAGS := $(CFLAGS)
+external_libraries openssl: export LDFLAGS := $(LDFLAGS)
 openssl:                    export GCC := $(GCC)
 openssl:                    export SYSROOT := $(SYSROOT)
 openssl:                    export ANDROID_ARCH := $(ANDROID_ARCH)
@@ -69,8 +70,11 @@ ifneq ($(ANDROID_ARCH), x86_64)
 endif
 
 $(config_status): $(makefile) $(py_srcdir)/configure
-	@echo "---> Run configure for $(BUILD_TYPE)."
 	mkdir -p $(py_host_dir)
+	@echo "---> Ensure that nl_langinfo is broken."
+	@cd $(py_host_dir); \
+	    PY_SRCDIR=$(py_srcdir) $(py_srcdir)/Android/tools/nl_langinfo.sh
+	@echo "---> Run configure for $(BUILD_TYPE)."
 	cd $(py_host_dir); $(py_srcdir)/configure-android \
 	    --prefix=$(SYS_PREFIX) --exec-prefix=$(SYS_EXEC_PREFIX) \
 	    $(config_args)

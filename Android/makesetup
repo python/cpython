@@ -39,7 +39,7 @@ PY_SRCDIR="$(cd "$(dirname "$0")/.." && pwd)"
 . $PY_SRCDIR/Android/build-config
 
 defined_variables="APP_ABI CC GCC AR LD RANLIB READELF STRIP \
-                   SYSROOT CFLAGS"
+                   SYSROOT CPPFLAGS LDFLAGS CFLAGS"
 exported_variables="ANDROID_NDK_ROOT ANDROID_SDK_ROOT \
                     ANDROID_API ANDROID_ARCH \
                     ANDROID_HOST ANDROID_BUILD"

@@ -26,7 +26,7 @@ esac
 # Run Python configure.
 $PY_SRCDIR/configure \
     CC="$CC" AR="$AR" LD="$LD" RANLIB="$RANLIB" READELF="$READELF" \
-    CFLAGS="$CFLAGS" \
+    CPPFLAGS="$CPPFLAGS" LDFLAGS="$LDFLAGS" CFLAGS="$CFLAGS" \
     --host=$ANDROID_HOST --build=$ANDROID_BUILD --enable-shared \
     --enable-ipv6 ac_cv_file__dev_ptmx=yes ac_cv_file__dev_ptc=no \
     $little_endian_double \

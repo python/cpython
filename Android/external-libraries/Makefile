@@ -35,7 +35,7 @@ $(py_install_dir)/lib/libncursesw.a: $(BUILD_DIR)/$(NCURSES).tar.gz
 	    --without-ada --without-cxx --without-manpages \
 	    --without-progs --without-tests \
 	    --without-termlib --enable-widec \
-	    --with-shared --without-shlib-version
+	    --with-shared --without-shlib-version --without-gpm
 	$(MAKE) -C $(BUILD_DIR)/$(NCURSES)-$(BUILD_TYPE) all install
 	@echo Fix symlinks for Python _curses and _curses_panel extensions.
 	cd $(py_install_dir)/include; cp -lf ncursesw/*.h .

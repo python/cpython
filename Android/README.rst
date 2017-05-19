@@ -308,10 +308,10 @@ Requirements
    is specific to an (api, architecture) and it holds also the configuration for
    the emulator.
 
-.. [3] Supported NDK versions are android-ndk-r13 and android-ndk-r14. The NDK
-   is distributed by Android as a zip file at `NDK downloads`_.
+.. [3] android-ndk-r14 is required. The NDK is distributed by Android as a zip
+   file at `NDK downloads`_.
 
-   android-ndk-r14 requires 2.8 Gb of disk space.
+   android-ndk-r14 needs 2.8 Gb of disk space.
 
 .. [4] There is currently no support for multiple concurrent emulator sessions
    in this build system.
