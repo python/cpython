@@ -307,7 +307,7 @@ Miscellaneous options
 
    See also :envvar:`PYTHONUNBUFFERED`.
 
-   .. versionchanged: 3.7
+   .. versionchanged:: 3.7
       The text layer of the stdout and stderr streams now is unbuffered.
 
 
