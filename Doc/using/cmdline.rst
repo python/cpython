@@ -303,12 +303,12 @@ Miscellaneous options
 
 .. cmdoption:: -u
 
-   Force the binary layer of the stdout and stderr streams (which is
-   available as their ``buffer`` attribute) to be unbuffered. The text I/O
-   layer will still be line-buffered if writing to the console, or
-   block-buffered if redirected to a non-interactive file.
+   Force the stdout and stderr streams to be unbuffered.
 
    See also :envvar:`PYTHONUNBUFFERED`.
+
+   .. versionchanged: 3.7
+      The text layer of the stdout and stderr streams now is unbuffered.
 
 
 .. cmdoption:: -v
