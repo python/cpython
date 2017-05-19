@@ -1912,7 +1912,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         if (PyDict_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
             PyObject *oldvalue;
-            Py_ssize_t pos = 0, it_size;
+            Py_ssize_t pos = 0;
             PyObject *key;
             Py_hash_t hash;
 
@@ -1921,16 +1921,9 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
                 return NULL;
             }
 
-            it_size = PyDict_GET_SIZE(iterable);
             while (_PyDict_Next(iterable, &pos, &key, &oldvalue, &hash)) {
                 if (insertdict(mp, key, hash, value)) {
                     Py_DECREF(d);
-                    return NULL;
-                }
-                if (PyDict_GET_SIZE(iterable) != it_size) {
-                    Py_DECREF(d);
-                    PyErr_SetString(PyExc_RuntimeError,
-                        "dictionary changed size during iteration");
                     return NULL;
                 }
             }
@@ -1938,7 +1931,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         }
         if (PyAnySet_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
-            Py_ssize_t pos = 0, it_size;
+            Py_ssize_t pos = 0;
             PyObject *key;
             Py_hash_t hash;
 
@@ -1947,16 +1940,9 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
                 return NULL;
             }
 
-            it_size = PySet_GET_SIZE(iterable);
             while (_PySet_NextEntry(iterable, &pos, &key, &hash)) {
                 if (insertdict(mp, key, hash, value)) {
                     Py_DECREF(d);
-                    return NULL;
-                }
-                if (PySet_GET_SIZE(iterable) != it_size) {
-                    Py_DECREF(d);
-                    PyErr_SetString(PyExc_RuntimeError,
-                        "set changed size during iteration");
                     return NULL;
                 }
             }

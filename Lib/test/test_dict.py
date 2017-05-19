@@ -1115,8 +1115,10 @@ class DictTest(unittest.TestCase):
 
         d = {}  # this is required to exist so that d can be constructed!
         d = {X(1): 1, X(2): 2}
-        with self.assertRaises(RuntimeError):
-            dict.fromkeys(d)
+        try:
+            dict.fromkeys(d)  # shouldn't crash
+        except RuntimeError:  # implementation defined
+            pass
 
     def test_fromkeys_operator_modifying_set_operand(self):
         # test fix for seg fault reported in issue 27945 part 4b.
@@ -1131,8 +1133,10 @@ class DictTest(unittest.TestCase):
 
         d = {}  # this is required to exist so that d can be constructed!
         d = {X(1), X(2)}
-        with self.assertRaises(RuntimeError):
-            dict.fromkeys(d)
+        try:
+            dict.fromkeys(d)  # shouldn't crash
+        except RuntimeError:  # implementation defined
+            pass
 
     def test_dictitems_contains_use_after_free(self):
         class X:
