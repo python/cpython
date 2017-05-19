@@ -396,6 +396,7 @@ Currently the email package provides only one concrete content manager,
        MIME charset name, use the standard charset instead.
 
        If *cte* is set, encode the payload using the specified content transfer
+<<<<<<< HEAD
        encoding, and set the :mailheader:`Content-Transfer-Endcoding` header to
        that value.  For ``str`` objects, if it is not set use heuristics to
        determine the most compact encoding.  Possible values for *cte* are
@@ -407,6 +408,23 @@ Currently the email package provides only one concrete content manager,
        other than ``7bit`` for *subtype* ``external-body``.  For
        ``message/rfc822``, use ``8bit`` if *cte* is not specified.  For all
        other values of *subtype*, use ``7bit``.
+=======
+       encoding, and set the :mailheader:`Content-Transfer-Encoding` header to
+       that value.  Possible values for *cte* are ``quoted-printable``,
+       ``base64``, ``7bit``, ``8bit``, and ``binary``.  If the input cannot be
+       encoded in the specified encoding (for example, specifying a *cte* of
+       ``7bit`` for an input that contains non-ASCII values), raise a
+       :exc:`ValueError`.
+
+            * For ``str`` objects, if *cte* is not set use heuristics to
+              determine the most compact encoding.
+            * For :class:`~email.message.EmailMessage`, per :rfc:`2046`, raise
+              an error if a *cte* of ``quoted-printable`` or ``base64`` is
+              requested for *subtype* ``rfc822``, and for any *cte* other than
+              ``7bit`` for *subtype* ``external-body``.  For
+              ``message/rfc822``, use ``8bit`` if *cte* is not specified.  For
+              all other values of *subtype*, use ``7bit``.
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
 
        .. note:: A *cte* of ``binary`` does not actually work correctly yet.
           The ``Message`` object as modified by ``set_content`` is correct, but
@@ -435,3 +453,12 @@ Currently the email package provides only one concrete content manager,
        ``headername: headervalue`` or a list of ``header`` objects
        (distinguished from strings by having a ``name`` attribute), add the
        headers to *msg*.
+<<<<<<< HEAD
+=======
+
+
+.. rubric:: Footnotes
+
+.. [1] Originally added in 3.4 as a :term:`provisional module <provisional
+       package>`
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)

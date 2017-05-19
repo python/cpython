@@ -119,7 +119,13 @@ have the same API as the :class:`Parser` and :class:`BytesParser` classes.
    The BytesHeaderParser class.
 
 
+<<<<<<< HEAD
 .. class:: Parser(_class=email.message.Message, *, policy=policy.compat32)
+=======
+   Create a :class:`BytesParser` instance.  The *_class* and *policy*
+   arguments have the same meaning and semantics as the *_factory*
+   and *policy* arguments of :class:`BytesFeedParser`.
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
 
    The constructor for the :class:`Parser` class takes an optional argument
    *_class*.  This must be a callable factory (such as a function or a class), and

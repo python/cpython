@@ -68,6 +68,7 @@ Here are the public methods of the :class:`Generator` class, imported from the
 
    .. method:: flatten(msg, unixfrom=False, linesep=None)
 
+<<<<<<< HEAD
       Print the textual representation of the message object structure rooted at
       *msg* to the output file specified when the :class:`Generator` instance
       was created.  Subparts are visited depth-first and the resulting text will
@@ -79,6 +80,33 @@ Here are the public methods of the :class:`Generator` class, imported from the
       crafted.  By default, this is set to ``False`` to inhibit the printing of
       the envelope delimiter.
 
+=======
+      Print the textual representation of the message object structure rooted
+      at *msg* to the output file specified when the :class:`BytesGenerator`
+      instance was created.
+
+      If the :mod:`~email.policy` option :attr:`~email.policy.Policy.cte_type`
+      is ``8bit`` (the default), copy any headers in the original parsed
+      message that have not been modified to the output with any bytes with the
+      high bit set reproduced as in the original, and preserve the non-ASCII
+      :mailheader:`Content-Transfer-Encoding` of any body parts that have them.
+      If ``cte_type`` is ``7bit``, convert the bytes with the high bit set as
+      needed using an ASCII-compatible :mailheader:`Content-Transfer-Encoding`.
+      That is, transform parts with non-ASCII
+      :mailheader:`Content-Transfer-Encoding`
+      (:mailheader:`Content-Transfer-Encoding: 8bit`) to an ASCII compatible
+      :mailheader:`Content-Transfer-Encoding`, and encode RFC-invalid non-ASCII
+      bytes in headers using the MIME ``unknown-8bit`` character set, thus
+      rendering them RFC-compliant.
+
+      .. XXX: There should be an option that just does the RFC
+         compliance transformation on headers but leaves CTE 8bit parts alone.
+
+      If *unixfrom* is ``True``, print the envelope header delimiter used by
+      the Unix mailbox format (see :mod:`mailbox`) before the first of the
+      :rfc:`5322` headers of the root message object.  If the root object has
+      no envelope header, craft a standard one.  The default is ``False``.
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
       Note that for subparts, no envelope header is ever printed.
 
       Optional *linesep* specifies the line separator character used to

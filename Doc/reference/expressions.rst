@@ -496,6 +496,137 @@ generator functions::
 For examples using ``yield from``, see :ref:`pep-380` in "What's New in
 Python."
 
+<<<<<<< HEAD
+=======
+.. _asynchronous-generator-functions:
+
+Asynchronous generator functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The presence of a yield expression in a function or method defined using
+:keyword:`async def` further defines the function as a
+:term:`asynchronous generator` function.
+
+When an asynchronous generator function is called, it returns an
+asynchronous iterator known as an asynchronous generator object.
+That object then controls the execution of the generator function.
+An asynchronous generator object is typically used in an
+:keyword:`async for` statement in a coroutine function analogously to
+how a generator object would be used in a :keyword:`for` statement.
+
+Calling one of the asynchronous generator's methods returns an
+:term:`awaitable` object, and the execution starts when this object
+is awaited on. At that time, the execution proceeds to the first yield
+expression, where it is suspended again, returning the value of
+:token:`expression_list` to the awaiting coroutine. As with a generator,
+suspension means that all local state is retained, including the
+current bindings of local variables, the instruction pointer, the internal
+evaluation stack, and the state of any exception handling.  When the execution
+is resumed by awaiting on the next object returned by the asynchronous
+generator's methods, the function can proceed exactly as if the yield
+expression were just another external call. The value of the yield expression
+after resuming depends on the method which resumed the execution.  If
+:meth:`~agen.__anext__` is used then the result is :const:`None`. Otherwise, if
+:meth:`~agen.asend` is used, then the result will be the value passed in to
+that method.
+
+In an asynchronous generator function, yield expressions are allowed anywhere
+in a :keyword:`try` construct. However, if an asynchronous generator is not
+resumed before it is finalized (by reaching a zero reference count or by
+being garbage collected), then a yield expression within a :keyword:`try`
+construct could result in a failure to execute pending :keyword:`finally`
+clauses.  In this case, it is the responsibility of the event loop or
+scheduler running the asynchronous generator to call the asynchronous
+generator-iterator's :meth:`~agen.aclose` method and run the resulting
+coroutine object, thus allowing any pending :keyword:`finally` clauses
+to execute.
+
+To take care of finalization, an event loop should define
+a *finalizer* function which takes an asynchronous generator-iterator
+and presumably calls :meth:`~agen.aclose` and executes the coroutine.
+This  *finalizer* may be registered by calling :func:`sys.set_asyncgen_hooks`.
+When first iterated over, an asynchronous generator-iterator will store the
+registered *finalizer* to be called upon finalization. For a reference example
+of a *finalizer* method see the implementation of
+``asyncio.Loop.shutdown_asyncgens`` in :source:`Lib/asyncio/base_events.py`.
+
+The expression ``yield from <expr>`` is a syntax error when used in an
+asynchronous generator function.
+
+.. index:: object: asynchronous-generator
+.. _asynchronous-generator-methods:
+
+Asynchronous generator-iterator methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This subsection describes the methods of an asynchronous generator iterator,
+which are used to control the execution of a generator function.
+
+
+.. index:: exception: StopAsyncIteration
+
+.. coroutinemethod:: agen.__anext__()
+
+   Returns an awaitable which when run starts to execute the asynchronous
+   generator or resumes it at the last executed yield expression.  When an
+   asynchronous generator function is resumed with a :meth:`~agen.__anext__`
+   method, the current yield expression always evaluates to :const:`None` in
+   the returned awaitable, which when run will continue to the next yield
+   expression. The value of the :token:`expression_list` of the yield
+   expression is the value of the :exc:`StopIteration` exception raised by
+   the completing coroutine.  If the asynchronous generator exits without
+   yielding another value, the awaitable instead raises an
+   :exc:`StopAsyncIteration` exception, signalling that the asynchronous
+   iteration has completed.
+
+   This method is normally called implicitly by a :keyword:`async for` loop.
+
+
+.. coroutinemethod:: agen.asend(value)
+
+   Returns an awaitable which when run resumes the execution of the
+   asynchronous generator. As with the :meth:`~generator.send()` method for a
+   generator, this "sends" a value into the asynchronous generator function,
+   and the *value* argument becomes the result of the current yield expression.
+   The awaitable returned by the :meth:`asend` method will return the next
+   value yielded by the generator as the value of the raised
+   :exc:`StopIteration`, or raises :exc:`StopAsyncIteration` if the
+   asynchronous generator exits without yielding another value.  When
+   :meth:`asend` is called to start the asynchronous
+   generator, it must be called with :const:`None` as the argument,
+   because there is no yield expression that could receive the value.
+
+
+.. coroutinemethod:: agen.athrow(type[, value[, traceback]])
+
+   Returns an awaitable that raises an exception of type ``type`` at the point
+   where the asynchronous generator was paused, and returns the next value
+   yielded by the generator function as the value of the raised
+   :exc:`StopIteration` exception.  If the asynchronous generator exits
+   without yielding another value, an :exc:`StopAsyncIteration` exception is
+   raised by the awaitable.
+   If the generator function does not catch the passed-in exception, or
+   raises a different exception, then when the awaitable is run that exception
+   propagates to the caller of the awaitable.
+
+.. index:: exception: GeneratorExit
+
+
+.. coroutinemethod:: agen.aclose()
+
+   Returns an awaitable that when run will throw a :exc:`GeneratorExit` into
+   the asynchronous generator function at the point where it was paused.
+   If the asynchronous generator function then exits gracefully, is already
+   closed, or raises :exc:`GeneratorExit` (by not catching the exception),
+   then the returned awaitable will raise a :exc:`StopIteration` exception.
+   Any further awaitables returned by subsequent calls to the asynchronous
+   generator will raise a :exc:`StopAsyncIteration` exception.  If the
+   asynchronous generator yields a value, a :exc:`RuntimeError` is raised
+   by the awaitable.  If the asynchronous generator raises any other exception,
+   it is propagated to the caller of the awaitable.  If the asynchronous
+   generator has already exited due to an exception or normal exit, then
+   further calls to :meth:`aclose` will return an awaitable that does nothing.
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
 
 .. _primaries:
 
