@@ -25,9 +25,10 @@ static void print_subinterp(void)
     /* Output information about the interpreter in the format
        expected in Lib/test/test_capi.py (test_subinterps). */
     PyThreadState *ts = PyThreadState_Get();
-    int64_t id = PyInterpreterState_GetID(ts->interp);
+    PyInterpreterState *interp = ts->interp;
+    int64_t id = PyInterpreterState_GetID(interp);
     printf("interp %lu <%p>, thread state <%p>: ",
-            id, ts->interp, ts);
+            id, interp, ts);
     fflush(stdout);
     PyRun_SimpleString(
         "import sys;"
