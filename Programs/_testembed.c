@@ -1,4 +1,5 @@
 #include <Python.h>
+#include <inttypes.h>
 #include <stdio.h>
 
 /*********************************************************
@@ -27,8 +28,8 @@ static void print_subinterp(void)
     PyThreadState *ts = PyThreadState_Get();
     PyInterpreterState *interp = ts->interp;
     int64_t id = PyInterpreterState_GetID(interp);
-    printf("interp %lu <%p>, thread state <%p>: ",
-            id, interp, ts);
+    printf("interp %lu <0x%" PRIXPTR ">, thread state <0x%" PRIXPTR ">: ",
+            id, (uintptr_t)interp, (uintptr_t)ts);
     fflush(stdout);
     PyRun_SimpleString(
         "import sys;"
