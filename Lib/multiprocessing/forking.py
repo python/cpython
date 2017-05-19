@@ -405,7 +405,8 @@ else:
         if _logger is not None:
             d['log_level'] = _logger.getEffectiveLevel()
 
-        if not WINEXE and not WINSERVICE:
+        if not WINEXE and not WINSERVICE and \
+           not d['sys_argv'][0].lower().endswith('pythonservice.exe'):
             main_path = getattr(sys.modules['__main__'], '__file__', None)
             if not main_path and sys.argv[0] not in ('', '-c'):
                 main_path = sys.argv[0]
