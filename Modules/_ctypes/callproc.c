@@ -1123,7 +1123,8 @@ PyObject *_ctypes_callproc(PPROC pProc,
                 goto cleanup; /* leaking ? */
             }
         }
-#if defined(__x86_64__) && (defined(__MINGW64__) || defined(__CYGWIN__))
+#if (defined(__x86_64__) && (defined(__MINGW64__) || defined(__CYGWIN__))) || \
+        defined(__aarch64__)
         void *tmp;
         if (pa->ffi_type->type == FFI_TYPE_STRUCT) {
             tmp = alloca(pa->ffi_type->size);
