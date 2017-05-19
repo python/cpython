@@ -241,6 +241,12 @@ The following exceptions are the exceptions that are actually raised.
 
    .. versionadded:: 1.5.2
 
+<<<<<<< HEAD
+=======
+      It should not be used to indicate that an operator or method is not
+      meant to be supported at all -- in that case either leave the operator /
+      method undefined or, if a subclass, set it to :data:`None`.
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
 
 .. exception:: OSError
 

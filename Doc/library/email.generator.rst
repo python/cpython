@@ -4,6 +4,107 @@
 .. module:: email.generator
    :synopsis: Generate flat text email messages from a message structure.
 
+<<<<<<< HEAD
+=======
+**Source code:** :source:`Lib/email/generator.py`
+
+--------------
+
+One of the most common tasks is to generate the flat (serialized) version of
+the email message represented by a message object structure.  You will need to
+do this if you want to send your message via :meth:`smtplib.SMTP.sendmail` or
+the :mod:`nntplib` module, or print the message on the console.  Taking a
+message object structure and producing a serialized representation is the job
+of the generator classes.
+
+As with the :mod:`email.parser` module, you aren't limited to the functionality
+of the bundled generator; you could write one from scratch yourself.  However
+the bundled generator knows how to generate most email in a standards-compliant
+way, should handle MIME and non-MIME email messages just fine, and is designed
+so that the bytes-oriented parsing and generation operations are inverses,
+assuming the same non-transforming :mod:`~email.policy` is used for both.  That
+is, parsing the serialized byte stream via the
+:class:`~email.parser.BytesParser` class and then regenerating the serialized
+byte stream using :class:`BytesGenerator` should produce output identical to
+the input [#]_.  (On the other hand, using the generator on an
+:class:`~email.message.EmailMessage` constructed by program may result in
+changes to the :class:`~email.message.EmailMessage` object as defaults are
+filled in.)
+
+The :class:`Generator` class can be used to flatten a message into a text (as
+opposed to binary) serialized representation, but since Unicode cannot
+represent binary data directly, the message is of necessity transformed into
+something that contains only ASCII characters, using the standard email RFC
+Content Transfer Encoding techniques for encoding email messages for transport
+over channels that are not "8 bit clean".
+
+
+.. class:: BytesGenerator(outfp, mangle_from_=None, maxheaderlen=None, *, \
+                          policy=None)
+
+   Return a :class:`BytesGenerator` object that will write any message provided
+   to the :meth:`flatten` method, or any surrogateescape encoded text provided
+   to the :meth:`write` method, to the :term:`file-like object` *outfp*.
+   *outfp* must support a ``write`` method that accepts binary data.
+
+   If optional *mangle_from_* is ``True``, put a ``>`` character in front of
+   any line in the body that starts with the exact string ``"From "``, that is
+   ``From`` followed by a space at the beginning of a line.  *mangle_from_*
+   defaults to the value of the :attr:`~email.policy.Policy.mangle_from_`
+   setting of the *policy* (which is ``True`` for the
+   :data:`~email.policy.compat32` policy and ``False`` for all others).
+   *mangle_from_* is intended for use when messages are stored in unix mbox
+   format (see :mod:`mailbox` and `WHY THE CONTENT-LENGTH FORMAT IS BAD
+   <http://www.jwz.org/doc/content-length.html>`_).
+
+   If *maxheaderlen* is not ``None``, refold any header lines that are longer
+   than *maxheaderlen*, or if ``0``, do not rewrap any headers.  If
+   *manheaderlen* is ``None`` (the default), wrap headers and other message
+   lines according to the *policy* settings.
+
+   If *policy* is specified, use that policy to control message generation.  If
+   *policy* is ``None`` (the default), use the policy associated with the
+   :class:`~email.message.Message` or :class:`~email.message.EmailMessage`
+   object passed to ``flatten`` to control the message generation.  See
+   :mod:`email.policy` for details on what *policy* controls.
+
+   .. versionadded:: 3.2
+
+   .. versionchanged:: 3.3 Added the *policy* keyword.
+
+   .. versionchanged:: 3.6 The default behavior of the *mangle_from_*
+      and *maxheaderlen* parameters is to follow the policy.
+
+
+   .. method:: flatten(msg, unixfrom=False, linesep=None)
+
+      Print the textual representation of the message object structure rooted
+      at *msg* to the output file specified when the :class:`BytesGenerator`
+      instance was created.
+
+      If the :mod:`~email.policy` option :attr:`~email.policy.Policy.cte_type`
+      is ``8bit`` (the default), copy any headers in the original parsed
+      message that have not been modified to the output with any bytes with the
+      high bit set reproduced as in the original, and preserve the non-ASCII
+      :mailheader:`Content-Transfer-Encoding` of any body parts that have them.
+      If ``cte_type`` is ``7bit``, convert the bytes with the high bit set as
+      needed using an ASCII-compatible :mailheader:`Content-Transfer-Encoding`.
+      That is, transform parts with non-ASCII
+      :mailheader:`Content-Transfer-Encoding`
+      (:mailheader:`Content-Transfer-Encoding: 8bit`) to an ASCII compatible
+      :mailheader:`Content-Transfer-Encoding`, and encode RFC-invalid non-ASCII
+      bytes in headers using the MIME ``unknown-8bit`` character set, thus
+      rendering them RFC-compliant.
+
+      .. XXX: There should be an option that just does the RFC
+         compliance transformation on headers but leaves CTE 8bit parts alone.
+
+      If *unixfrom* is ``True``, print the envelope header delimiter used by
+      the Unix mailbox format (see :mod:`mailbox`) before the first of the
+      :rfc:`5322` headers of the root message object.  If the root object has
+      no envelope header, craft a standard one.  The default is ``False``.
+      Note that for subparts, no envelope header is ever printed.
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
 
 One of the most common tasks is to generate the flat text of the email message
 represented by a message object structure.  You will need to do this if you want
