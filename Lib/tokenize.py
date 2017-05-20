@@ -142,7 +142,7 @@ def _all_string_prefixes():
     #  'rf'). The various permutations will be generated.
     _valid_string_prefixes = ['b', 'r', 'u', 'f', 'br', 'fr']
     # if we add binary f-strings, add: ['fb', 'fbr']
-    result = set([''])
+    result = {''}
     for prefix in _valid_string_prefixes:
         for t in _itertools.permutations(prefix):
             # create a list with upper and lower versions of each
