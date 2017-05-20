@@ -1929,7 +1929,6 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
 
     /* Check boundaries */
     if ((buffer.len - offset) < soself->s_size) {
-
         assert(offset >= 0);
         assert(soself->s_size >= 0);
 
