@@ -1750,11 +1750,11 @@ class IPv6SysLogHandlerTest(SysLogHandlerTest):
 
     def setUp(self):
         self.server_class.address_family = socket.AF_INET6
-        super(IPv6SyslogHandlerTest, self).setUp()
+        super(IPv6SysLogHandlerTest, self).setUp()
 
     def tearDown(self):
         self.server_class.address_family = socket.AF_INET
-        super(IPv6SyslogHandlerTest, self).tearDown()
+        super(IPv6SysLogHandlerTest, self).tearDown()
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class HTTPHandlerTest(BaseTest):
