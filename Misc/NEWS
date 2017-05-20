@@ -10,6 +10,9 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- bpo-25794: Fixed type.__setattr__() and type.__delattr__() for
+  non-interned attribute names.  Based on patch by Eryk Sun.
+
 - bpo-29935: Fixed error messages in the index() method of tuple, list and deque
   when pass indices of wrong type.
 
