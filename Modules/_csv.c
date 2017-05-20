@@ -1213,6 +1213,19 @@ csv_writerow(WriterObj *self, PyObject *seq)
             append_ok = join_append(self, field, quoted);
             Py_DECREF(field);
         }
+        else if (PyBool_Check(field)) {
+            PyObject *str;
+            double d = PyFloat_AsDouble(field);
+            str = PyFloat_FromDouble(d);
+            str = PyObject_Str(str);
+            Py_DECREF(field);
+            if (str == NULL) {
+                Py_DECREF(iter);
+                return NULL;
+            }
+            append_ok = join_append(self, str, quoted);
+            Py_DECREF(str);
+        }
         else if (field == Py_None) {
             append_ok = join_append(self, NULL, quoted);
             Py_DECREF(field);
