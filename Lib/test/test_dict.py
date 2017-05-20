@@ -749,6 +749,8 @@ class DictTest(unittest.TestCase):
                 d.clear()
                 return NotImplemented
 
+            __hash__ = object.__hash__  # silence Py3k warning
+
         d = {0: set()}
         try:
             (0, X()) in d.iteritems()  # shouldn't crash
