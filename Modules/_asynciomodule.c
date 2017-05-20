@@ -1985,6 +1985,16 @@ task_step_impl(TaskObj *task, PyObject *exc)
         if (_PyGen_FetchStopIterationValue(&o) == 0) {
             /* The error is StopIteration and that means that
                the underlying coroutine has resolved */
+            if (task->task_must_cancel) {
+                // Task is cancelled right before coro stops.
+                Py_DECREF(o);
+                task->task_must_cancel = 0;
+                et = asyncio_CancelledError;
+                Py_INCREF(et);
+                ev = NULL;
+                tb = NULL;
+                goto set_exception;
+            }
             PyObject *res = future_set_result((FutureObj*)task, o);
             Py_DECREF(o);
             if (res == NULL) {
@@ -2002,6 +2012,8 @@ task_step_impl(TaskObj *task, PyObject *exc)
 
         /* Some other exception; pop it and call Task.set_exception() */
         PyErr_Fetch(&et, &ev, &tb);
+
+set_exception:
         assert(et);
         if (!ev || !PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
             PyErr_NormalizeException(&et, &ev, &tb);
