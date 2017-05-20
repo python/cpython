@@ -812,7 +812,6 @@ class SysLogHandler(logging.Handler):
         self.address = address
         self.facility = facility
         self.socktype = socktype
-        self.formatter = None
 
         if isinstance(address, str):
             self.unixsocket = True
@@ -831,7 +830,7 @@ class SysLogHandler(logging.Handler):
             host, port = address
             err = None
             for res in socket.getaddrinfo(host, port, 0, socktype):
-                af, socktype, proto, cannonname, sa = res
+                af, socktype, proto, _, sa = res
                 sock = None
                 try:
                     sock = socket.socket(af, socktype, proto)
@@ -886,7 +885,7 @@ class SysLogHandler(logging.Handler):
             priority = self.priority_names[priority]
         return (facility << 3) | priority
 
-    def close (self):
+    def close(self):
         """
         Closes the socket.
         """
