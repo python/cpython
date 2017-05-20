@@ -10,6 +10,9 @@ What's New in Python 2.7.14?
 Core and Builtins
 -----------------
 
+- bpo-25794: Fixed type.__setattr__() and type.__delattr__() for
+  non-interned or unicode attribute names.  Based on patch by Eryk Sun.
+
 - bpo-29935: Fixed error messages in the index() method of tuple and list
   when pass indices of wrong type.
 
