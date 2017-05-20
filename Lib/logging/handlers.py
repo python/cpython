@@ -847,7 +847,7 @@ class SysLogHandler(logging.Handler):
             if err is not None:
                 raise err
             else:
-                raise socket.error("getaddrinfo returns an empty list")
+                raise OSError("getaddrinfo returns an empty list")
 
     def _connect_unixsocket(self, address):
         use_socktype = self.socktype
