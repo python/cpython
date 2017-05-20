@@ -1402,8 +1402,7 @@ Launcher arguments:\n\n\
 -X.Y-64: Launch the specified 64bit Python version\n\
 -X-64  : Launch the latest 64bit Python X version", stdout);
     }
-    fputws(L"\n--launcher-list       : List the available pythons", stdout);
-    fputws(L"\n--launcher-list-paths : List with paths", stdout);
+    fputws(L"\n-0     : List the available pythons", stdout);
     fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
     fflush(stdout);
 }
@@ -1414,7 +1413,7 @@ show_python_list(wchar_t ** argv)
     INSTALLED_PYTHON * result = NULL;
     INSTALLED_PYTHON * ip = installed_pythons;
     size_t i = 0;
-    wchar_t *fmt = L"\n -%s-%d";
+    wchar_t *fmt = L"\n -%ls-%d\t%ls";
 
     /*
     * Output informational messages to stderr to keep output
@@ -1422,11 +1421,6 @@ show_python_list(wchar_t ** argv)
     */
     fwprintf(stderr,
              L"Installed Pythons found by %s Launcher for Windows", argv[0]);
-    if (!_wcsicmp(argv[1], L"--launcher-list-paths"))
-    {
-        fmt = L"\n -%s-%d\t%s";
-        fwprintf(stderr, L" with Paths");
-    }
 
     if (num_installed_pythons == 0)
         locate_all_pythons();
@@ -1445,7 +1439,7 @@ show_python_list(wchar_t ** argv)
         fwprintf(stderr, L"\n\nCan't find a Default Python.\n\n");
     else
         fwprintf(stderr, \
-                 L"\n\nDefault Python Version %s (%d Bit) from %s\n\n", \
+                 L"\n\nDefault Python Version %ls (%d Bit) from %ls\n\n", \
                  ip->version, ip->bits, ip->executable);
     exit(0);
 }
@@ -1594,12 +1588,14 @@ process(int argc, wchar_t ** argv)
     else {
         p = argv[1];
         plen = wcslen(p);
+        if ((argc == 2) && !_wcsicmp(p, L"-0"))
+            show_python_list(argv); /* Check for -0 FIRST */
         valid = (*p == L'-') && validate_version(&p[1]);
         if (valid) {
             ip = locate_python(&p[1], FALSE);
             if (ip == NULL)
                 error(RC_NO_PYTHON, L"Requested Python version (%ls) not \
-installed", &p[1]);
+installed, use -0 for available pythons", &p[1]);
             executable = ip->executable;
             command += wcslen(p);
             command = skip_whitespace(command);
@@ -1618,6 +1614,8 @@ installed", &p[1]);
 #endif
 
     if (!valid) {
+        if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help")))
+            show_help_text(argv);
         /* Look for an active virtualenv */
         executable = find_python_by_venv();
 
@@ -1628,11 +1626,6 @@ installed", &p[1]);
                 error(RC_NO_PYTHON, L"Can't find a default Python.");
             executable = ip->executable;
         }
-        if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help")))
-            show_help_text(argv);
-        if ((argc == 2) && (!_wcsicmp(p, L"--launcher-list") ||\
-                            !_wcsicmp(p, L"--launcher-list-paths")))
-            show_python_list(argv);
     }
     invoke_child(executable, NULL, command);
     return rc;
