@@ -291,16 +291,11 @@ an error value).
    is the function calling :c:func:`PyErr_WarnEx`, 2 is  the function above that,
    and so forth.
 
-   Warning categories must be subclasses of :c:data:`Warning`; the default warning
-   category is :c:data:`RuntimeWarning`.  The standard Python warning categories are
-   available as global variables whose names are ``PyExc_`` followed by the Python
-   exception name. These have the type :c:type:`PyObject\*`; they are all class
-   objects. Their names are :c:data:`PyExc_Warning`, :c:data:`PyExc_UserWarning`,
-   :c:data:`PyExc_UnicodeWarning`, :c:data:`PyExc_DeprecationWarning`,
-   :c:data:`PyExc_SyntaxWarning`, :c:data:`PyExc_RuntimeWarning`, and
-   :c:data:`PyExc_FutureWarning`.  :c:data:`PyExc_Warning` is a subclass of
-   :c:data:`PyExc_Exception`; the other warning categories are subclasses of
-   :c:data:`PyExc_Warning`.
+   Warning categories must be subclasses of :c:data:`PyExc_Warning`;
+   :c:data:`PyExc_Warning` is a subclass of :c:data:`PyExc_Exception`;
+   the default warning category is :c:data:`PyExc_RuntimeWarning`. The standard
+   Python warning categories are available as global variables whose names are
+   enumerated at :ref:`standardwarningcategories`.
 
    For information about warning control, see the documentation for the
    :mod:`warnings` module and the :option:`-W` option in the command line
@@ -963,8 +958,10 @@ Notes:
    Only defined on Windows; protect code that uses this by testing that the
    preprocessor macro ``MS_WINDOWS`` is defined.
 
-Standard Warnings
-=================
+.. _standardwarningcategories:
+
+Standard Warning Categories
+===========================
 
 All standard Python warning categories are available as global variables whose
 names are ``PyExc_`` followed by the Python exception name. These have the type
@@ -974,7 +971,7 @@ the variables:
 .. index::
    single: PyExc_Warning
    single: PyExc_BytesWarning
-   single: PyExc_DepricationWarning
+   single: PyExc_DeprecationWarning
    single: PyExc_FutureWarning
    single: PyExc_ImportWarning
    single: PyExc_PendingDeprecationWarning
@@ -997,7 +994,7 @@ the variables:
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ImportWarning`            | :exc:`ImportWarning`            |          |
 +------------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_PendingDepricationWarning`| :exc:`PendingDeprecationWarning`|          |
+| :c:data:`PyExc_PendingDeprecationWarning`| :exc:`PendingDeprecationWarning`|          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ResourceWarning`          | :exc:`ResourceWarning`          |          |
 +------------------------------------------+---------------------------------+----------+

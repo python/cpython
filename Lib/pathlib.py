@@ -6,7 +6,7 @@ import os
 import posixpath
 import re
 import sys
-from collections import Sequence
+from collections.abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
@@ -114,10 +114,7 @@ class _WindowsFlavour(_Flavour):
 
     is_supported = (os.name == 'nt')
 
-    drive_letters = (
-        set(chr(x) for x in range(ord('a'), ord('z') + 1)) |
-        set(chr(x) for x in range(ord('A'), ord('Z') + 1))
-    )
+    drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     ext_namespace_prefix = '\\\\?\\'
 
     reserved_names = (
@@ -1217,8 +1214,8 @@ class Path(PurePath):
         except FileNotFoundError:
             if not parents or self.parent == self:
                 raise
-            self.parent.mkdir(parents=True)
-            self._accessor.mkdir(self, mode)
+            self.parent.mkdir(parents=True, exist_ok=True)
+            self.mkdir(mode, parents=False, exist_ok=exist_ok)
         except OSError:
             # Cannot rely on checking for EEXIST, since the operating system
             # could give priority to other errors like EACCES or EROFS

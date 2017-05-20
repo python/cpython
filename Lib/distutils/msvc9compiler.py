@@ -255,7 +255,7 @@ def query_vcvarsall(version, arch="x86"):
     """Launch vcvarsall.bat and read the settings from its environment
     """
     vcvarsall = find_vcvarsall(version)
-    interesting = set(("include", "lib", "libpath", "path"))
+    interesting = {"include", "lib", "libpath", "path"}
     result = {}
 
     if vcvarsall is None:

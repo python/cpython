@@ -5,7 +5,7 @@ is a widget containing multiple widgets, all tests must be gui tests.
 Using mock Text would not change this.  Other mocks are used to retrieve
 information about calls.
 
-Coverage: 94%.
+Coverage: 100%.
 '''
 from idlelib import textview as tv
 from test.support import requires
@@ -13,7 +13,7 @@ requires('gui')
 
 import unittest
 import os
-from tkinter import Tk
+from tkinter import Tk, Button
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
 
@@ -28,14 +28,20 @@ def tearDownModule():
     root.destroy()  # Pyflakes falsely sees root as undefined.
     del root
 
+# If we call TextViewer or wrapper functions with defaults
+# modal=True, _utest=False, test hangs on call to wait_window.
+# Have also gotten tk error 'can't invoke "event" command'.
+
 
 class TV(tv.TextViewer):  # Used in TextViewTest.
     transient = Func()
     grab_set = Func()
     wait_window = Func()
 
-class TextViewTest(unittest.TestCase):
 
+# Call wrapper class with mock wait_window.
+class TextViewTest(unittest.TestCase):
+    
     def setUp(self):
         TV.transient.__init__()
         TV.grab_set.__init__()
@@ -64,6 +70,7 @@ class TextViewTest(unittest.TestCase):
         view.destroy()
 
 
+# Call TextViewer with modal=False.
 class ViewFunctionTest(unittest.TestCase):
 
     @classmethod
@@ -77,23 +84,71 @@ class ViewFunctionTest(unittest.TestCase):
         del cls.orig_error
 
     def test_view_text(self):
-        # If modal True, get tk error 'can't invoke "event" command'.
         view = tv.view_text(root, 'Title', 'test text', modal=False)
         self.assertIsInstance(view, tv.TextViewer)
         view.Ok()
 
     def test_view_file(self):
-        test_dir = os.path.dirname(__file__)
-        testfile = os.path.join(test_dir, 'test_textview.py')
-        view = tv.view_file(root, 'Title', testfile, modal=False)
+        view = tv.view_file(root, 'Title', __file__, modal=False)
         self.assertIsInstance(view, tv.TextViewer)
         self.assertIn('Test', view.textView.get('1.0', '1.end'))
         view.Ok()
 
+    def test_bad_file(self):
         # Mock showerror will be used; view_file will return None.
-        testfile = os.path.join(test_dir, '../notthere.py')
-        view = tv.view_file(root, 'Title', testfile, modal=False)
+        view = tv.view_file(root, 'Title', 'abc.xyz', modal=False)
         self.assertIsNone(view)
+        self.assertEqual(tv.showerror.title, 'File Load Error')
+
+    def test_bad_encoding(self):
+        p = os.path
+        fn = p.abspath(p.join(p.dirname(__file__), '..', 'CREDITS.txt'))
+        tv.showerror.title = None
+        view = tv.view_file(root, 'Title', fn, 'ascii', modal=False)
+        self.assertIsNone(view)
+        self.assertEqual(tv.showerror.title, 'Unicode Decode Error')
+
+
+
+# Call TextViewer with _utest=True.
+class ButtonClickTest(unittest.TestCase):
+
+    def setUp(self):
+        self.view = None
+        self.called = False
+
+    def tearDown(self):
+        if self.view:
+            self.view.destroy()
+
+    def test_view_text_bind_with_button(self):
+        def _command():
+            self.called = True
+            self.view = tv.view_text(root, 'TITLE_TEXT', 'COMMAND', _utest=True)
+        button = Button(root, text='BUTTON', command=_command)
+        button.invoke()
+        self.addCleanup(button.destroy)
+
+        self.assertEqual(self.called, True)
+        self.assertEqual(self.view.title(), 'TITLE_TEXT')
+        self.assertEqual(self.view.textView.get('1.0', '1.end'), 'COMMAND')
+
+    def test_view_file_bind_with_button(self):
+        def _command():
+            self.called = True
+            self.view = tv.view_file(root, 'TITLE_FILE', __file__, _utest=True)
+        button = Button(root, text='BUTTON', command=_command)
+        button.invoke()
+        self.addCleanup(button.destroy)
+
+        self.assertEqual(self.called, True)
+        self.assertEqual(self.view.title(), 'TITLE_FILE')
+        with open(__file__) as f:
+            self.assertEqual(self.view.textView.get('1.0', '1.end'),
+                             f.readline().strip())
+            f.readline()
+            self.assertEqual(self.view.textView.get('3.0', '3.end'),
+                             f.readline().strip())
 
 
 if __name__ == '__main__':

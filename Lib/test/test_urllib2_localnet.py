@@ -664,7 +664,7 @@ def setUpModule():
 
 def tearDownModule():
     if threads_key:
-        support.threading_cleanup(threads_key)
+        support.threading_cleanup(*threads_key)
 
 if __name__ == "__main__":
     unittest.main()

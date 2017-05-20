@@ -31,6 +31,7 @@ Here are some of the useful functions provided by this module:
 __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
+import abc
 import ast
 import dis
 import collections.abc
@@ -253,18 +254,24 @@ def iscode(object):
     """Return true if the object is a code object.
 
     Code objects provide these attributes:
-        co_argcount     number of arguments (not including * or ** args)
-        co_code         string of raw compiled bytecode
-        co_consts       tuple of constants used in the bytecode
-        co_filename     name of file in which this code object was created
-        co_firstlineno  number of first line in Python source code
-        co_flags        bitmap: 1=optimized | 2=newlocals | 4=*arg | 8=**arg
-        co_lnotab       encoded mapping of line numbers to bytecode indices
-        co_name         name with which this code object was defined
-        co_names        tuple of names of local variables
-        co_nlocals      number of local variables
-        co_stacksize    virtual machine stack space required
-        co_varnames     tuple of names of arguments and local variables"""
+        co_argcount         number of arguments (not including *, ** args
+                            or keyword only arguments)
+        co_code             string of raw compiled bytecode
+        co_cellvars         tuple of names of cell variables
+        co_consts           tuple of constants used in the bytecode
+        co_filename         name of file in which this code object was created
+        co_firstlineno      number of first line in Python source code
+        co_flags            bitmap: 1=optimized | 2=newlocals | 4=*arg | 8=**arg
+                            | 16=nested | 32=generator | 64=nofree | 128=coroutine
+                            | 256=iterable_coroutine | 512=async_generator
+        co_freevars         tuple of names of free variables
+        co_kwonlyargcount   number of keyword only arguments (not including ** arg)
+        co_lnotab           encoded mapping of line numbers to bytecode indices
+        co_name             name with which this code object was defined
+        co_names            tuple of names of local variables
+        co_nlocals          number of local variables
+        co_stacksize        virtual machine stack space required
+        co_varnames         tuple of names of arguments and local variables"""
     return isinstance(object, types.CodeType)
 
 def isbuiltin(object):
@@ -285,7 +292,27 @@ def isroutine(object):
 
 def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
-    return bool(isinstance(object, type) and object.__flags__ & TPFLAGS_IS_ABSTRACT)
+    if not isinstance(object, type):
+        return False
+    if object.__flags__ & TPFLAGS_IS_ABSTRACT:
+        return True
+    if not issubclass(type(object), abc.ABCMeta):
+        return False
+    if hasattr(object, '__abstractmethods__'):
+        # It looks like ABCMeta.__new__ has finished running;
+        # TPFLAGS_IS_ABSTRACT should have been accurate.
+        return False
+    # It looks like ABCMeta.__new__ has not finished running yet; we're
+    # probably in __init_subclass__. We'll look for abstractmethods manually.
+    for name, value in object.__dict__.items():
+        if getattr(value, "__isabstractmethod__", False):
+            return True
+    for base in object.__bases__:
+        for name in getattr(base, "__abstractmethods__", ()):
+            value = getattr(object, name, None)
+            if getattr(value, "__isabstractmethod__", False):
+                return True
+    return False
 
 def getmembers(object, predicate=None):
     """Return all members of an object as (name, value) pairs sorted by name.
@@ -362,7 +389,7 @@ def classify_class_attrs(cls):
 
     mro = getmro(cls)
     metamro = getmro(type(cls)) # for attributes stored in the metaclass
-    metamro = tuple([cls for cls in metamro if cls not in (type, object)])
+    metamro = tuple(cls for cls in metamro if cls not in (type, object))
     class_bases = (cls,) + mro
     all_bases = class_bases + metamro
     names = dir(cls)
@@ -2214,11 +2241,16 @@ def _signature_from_callable(obj, *,
                 sigcls=sigcls)
 
             sig = _signature_get_partial(wrapped_sig, partialmethod, (None,))
-
             first_wrapped_param = tuple(wrapped_sig.parameters.values())[0]
-            new_params = (first_wrapped_param,) + tuple(sig.parameters.values())
-
-            return sig.replace(parameters=new_params)
+            if first_wrapped_param.kind is Parameter.VAR_POSITIONAL:
+                # First argument of the wrapped callable is `*args`, as in
+                # `partialmethod(lambda *args)`.
+                return sig
+            else:
+                sig_params = tuple(sig.parameters.values())
+                assert first_wrapped_param is not sig_params[0]
+                new_params = (first_wrapped_param,) + sig_params
+                return sig.replace(parameters=new_params)
 
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type

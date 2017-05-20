@@ -34,27 +34,31 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_b2a_uu__doc__,
-"b2a_uu($module, data, /)\n"
+"b2a_uu($module, data, /, *, backtick=False)\n"
 "--\n"
 "\n"
 "Uuencode line of data.");
 
 #define BINASCII_B2A_UU_METHODDEF    \
-    {"b2a_uu", (PyCFunction)binascii_b2a_uu, METH_O, binascii_b2a_uu__doc__},
+    {"b2a_uu", (PyCFunction)binascii_b2a_uu, METH_FASTCALL, binascii_b2a_uu__doc__},
 
 static PyObject *
-binascii_b2a_uu_impl(PyObject *module, Py_buffer *data);
+binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick);
 
 static PyObject *
-binascii_b2a_uu(PyObject *module, PyObject *arg)
+binascii_b2a_uu(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "backtick", NULL};
+    static _PyArg_Parser _parser = {"y*|$i:b2a_uu", _keywords, 0};
     Py_buffer data = {NULL, NULL};
+    int backtick = 0;
 
-    if (!PyArg_Parse(arg, "y*:b2a_uu", &data)) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &data, &backtick)) {
         goto exit;
     }
-    return_value = binascii_b2a_uu_impl(module, &data);
+    return_value = binascii_b2a_uu_impl(module, &data, backtick);
 
 exit:
     /* Cleanup for data */
@@ -97,7 +101,7 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_b2a_base64__doc__,
-"b2a_base64($module, /, data, *, newline=True)\n"
+"b2a_base64($module, data, /, *, newline=True)\n"
 "--\n"
 "\n"
 "Base64-code line of data.");
@@ -112,7 +116,7 @@ static PyObject *
 binascii_b2a_base64(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"data", "newline", NULL};
+    static const char * const _keywords[] = {"", "newline", NULL};
     static _PyArg_Parser _parser = {"y*|$i:b2a_base64", _keywords, 0};
     Py_buffer data = {NULL, NULL};
     int newline = 1;
@@ -558,4 +562,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=4a418f883ccc79fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9db57e86dbe7b2fa input=a9049054013a1b77]*/

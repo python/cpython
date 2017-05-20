@@ -545,7 +545,7 @@ The :mod:`xmlrpc.client` module contains the following notice::
 test_epoll
 ----------
 
-The :mod:`test_epoll` contains the following notice::
+The :mod:`test_epoll` module contains the following notice::
 
   Copyright (c) 2001-2006 Twisted Matrix Laboratories.
 
@@ -571,7 +571,8 @@ The :mod:`test_epoll` contains the following notice::
 Select kqueue
 -------------
 
-The :mod:`select` and contains the following notice for the kqueue interface::
+The :mod:`select` module contains the following notice for the kqueue
+interface::
 
   Copyright (c) 2000 Doug White, 2006 James Knight, 2007 Christian Heimes
   All rights reserved.
@@ -927,7 +928,7 @@ on the cfuhash project::
 libmpdec
 --------
 
-The :mod:`_decimal` Module is built using an included copy of the libmpdec
+The :mod:`_decimal` module is built using an included copy of the libmpdec
 library unless the build is configured ``--with-system-libmpdec``::
 
    Copyright (c) 2008-2016 Stefan Krah. All rights reserved.

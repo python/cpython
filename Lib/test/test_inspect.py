@@ -229,6 +229,30 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.isabstract(int))
         self.assertFalse(inspect.isabstract(5))
 
+    def test_isabstract_during_init_subclass(self):
+        from abc import ABCMeta, abstractmethod
+        isabstract_checks = []
+        class AbstractChecker(metaclass=ABCMeta):
+            def __init_subclass__(cls):
+                isabstract_checks.append(inspect.isabstract(cls))
+        class AbstractClassExample(AbstractChecker):
+            @abstractmethod
+            def foo(self):
+                pass
+        class ClassExample(AbstractClassExample):
+            def foo(self):
+                pass
+        self.assertEqual(isabstract_checks, [True, False])
+
+        isabstract_checks.clear()
+        class AbstractChild(AbstractClassExample):
+            pass
+        class AbstractGrandchild(AbstractChild):
+            pass
+        class ConcreteGrandchild(ClassExample):
+            pass
+        self.assertEqual(isabstract_checks, [True, True, False])
+
 
 class TestInterpreterStack(IsTestBase):
     def __init__(self, *args, **kwargs):
@@ -1962,6 +1986,41 @@ class TestSignatureObject(unittest.TestCase):
                            ('kwargs', ..., int, "var_keyword")),
                           ...))
 
+    def test_signature_without_self(self):
+        def test_args_only(*args):  # NOQA
+            pass
+
+        def test_args_kwargs_only(*args, **kwargs):  # NOQA
+            pass
+
+        class A:
+            @classmethod
+            def test_classmethod(*args):  # NOQA
+                pass
+
+            @staticmethod
+            def test_staticmethod(*args):  # NOQA
+                pass
+
+            f1 = functools.partialmethod((test_classmethod), 1)
+            f2 = functools.partialmethod((test_args_only), 1)
+            f3 = functools.partialmethod((test_staticmethod), 1)
+            f4 = functools.partialmethod((test_args_kwargs_only),1)
+
+        self.assertEqual(self.signature(test_args_only),
+                         ((('args', ..., ..., 'var_positional'),), ...))
+        self.assertEqual(self.signature(test_args_kwargs_only),
+                         ((('args', ..., ..., 'var_positional'),
+                           ('kwargs', ..., ..., 'var_keyword')), ...))
+        self.assertEqual(self.signature(A.f1),
+                         ((('args', ..., ..., 'var_positional'),), ...))
+        self.assertEqual(self.signature(A.f2),
+                         ((('args', ..., ..., 'var_positional'),), ...))
+        self.assertEqual(self.signature(A.f3),
+                         ((('args', ..., ..., 'var_positional'),), ...))
+        self.assertEqual(self.signature(A.f4), 
+                         ((('args', ..., ..., 'var_positional'),
+                            ('kwargs', ..., ..., 'var_keyword')), ...))
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")

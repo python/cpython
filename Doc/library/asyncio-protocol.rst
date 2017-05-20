@@ -384,7 +384,7 @@ The following callbacks are called on :class:`Protocol` instances:
 
 .. method:: Protocol.eof_received()
 
-   Calls when the other end signals it won't send any more data
+   Called when the other end signals it won't send any more data
    (for example by calling :meth:`write_eof`, if the other end also uses
    asyncio).
 

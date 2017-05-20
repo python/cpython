@@ -153,7 +153,7 @@ PyAPI_FUNC(PyObject *) _PyEval_EvalFrameDefault(struct _frame *f, int exc);
 
     if (...premature_exit...) {
         Py_BLOCK_THREADS
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -161,7 +161,7 @@ PyAPI_FUNC(PyObject *) _PyEval_EvalFrameDefault(struct _frame *f, int exc);
 
     Py_BLOCK_THREADS
     if (...premature_exit...) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
     Py_UNBLOCK_THREADS

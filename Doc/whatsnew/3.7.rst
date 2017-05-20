@@ -85,6 +85,14 @@ Other Language Changes
 * :exc:`ImportError` now displays module name and module ``__file__`` path when
   ``from ... import ...`` fails. (Contributed by Matthias Bussonnier in :issue:`29546`.)
 
+* Circular imports involving absolute imports with binding a submodule to
+  a name are now supported.
+  (Contributed by Serhiy Storchaka in :issue:`30024`.)
+
+* ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather than
+  ``format(str(self), '')``.
+  (Contributed by Serhiy Storchaka in :issue:`28974`.)
+
 
 New Modules
 ===========
@@ -94,6 +102,34 @@ New Modules
 
 Improved Modules
 ================
+
+cgi
+---
+
+:func:`~cgi.parse_multipart` returns the same results as
+:class:`~FieldStorage` : for non-file fields, the value associated to a key
+is a list of strings, not bytes.
+(Contributed by Pierre Quentel in :issue:`29979`.)
+
+binascii
+--------
+
+The :func:`~binascii.b2a_uu` function now accepts an optional *backtick*
+keyword argument.  When it's true, zeros are represented by ``'`'``
+instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
+
+contextlib
+----------
+
+:func:`contextlib.asynccontextmanager` has been added. (Contributed by
+Jelle Zijlstra in :issue:`29679`.)
+
+distutils
+---------
+
+README.rst is now included in the list of distutils standard READMEs and
+therefore included in source distributions.
+(Contributed by Ryan Gonzalez in :issue:`11913`.)
 
 http.server
 -----------
@@ -146,6 +182,13 @@ urllib.parse
 adding `~` to the set of characters that is never quoted by default.
 (Contributed by Christian Theune and Ratnadeep Debnath in :issue:`16285`.)
 
+uu
+--
+
+Function :func:`~uu.encode` now accepts an optional *backtick*
+keyword argument.  When it's true, zeros are represented by ``'`'``
+instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
+
 
 Optimizations
 =============
@@ -168,6 +211,10 @@ Optimizations
 * The :func:`os.fwalk` function has been sped up by 2 times.  This was done
   using the :func:`os.scandir` function.
   (Contributed by Serhiy Storchaka in :issue:`25996`.)
+
+* Optimized case-insensitive matching and searching of :mod:`regular
+  expressions <re>`.  Searching some patterns can now be up to 20 times faster.
+  (Contributed by Serhiy Storchaka in :issue:`30285`.)
 
 * :meth:`selectors.EpollSelector.modify`, :meth:`selectors.PollSelector.modify`
   and :meth:`selectors.DevpollSelector.modify` are around 1.5x faster.
@@ -221,6 +268,8 @@ Deprecated
   now deprecated.  It never correctly worked. (Contributed by Serhiy Storchaka
   in :issue:`28692`.)
 
+- The :mod:`macpath` is now deprecated and will be removed in Python 3.8.
+
 
 Changes in the C API
 --------------------
@@ -252,6 +301,12 @@ API and Feature Removals
 * Functions :func:`bool`, :func:`float`, :func:`list` and :func:`tuple` no
   longer take keyword arguments.  The first argument of :func:`int` can now
   be passes only as positional argument.
+
+* Removed previously deprecated in Python 2.4 classes ``Plist``, ``Dict`` and
+  ``_InternalDict`` in the :mod:`plistlib` module.  Dict values in the result
+  of functions :func:`~plistlib.readPlist` and
+  :func:`~plistlib.readPlistFromBytes` are now normal dicts.  You no longer
+  can use attribute access to access items of these dictionaries.
 
 
 Porting to Python 3.7
