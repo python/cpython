@@ -339,12 +339,9 @@ _PyImport_GetModule(PyObject *name)
 
     PyObject *mod = PyObject_GetItem(modules, name);
     // For backward-comaptibility we copy the behavior of PyDict_GetItem().
-    if (mod == NULL) {
-        if (PyErr_Occurred())
-            PyErr_Clear();
-    } else {
-        Py_DECREF(mod);
-    }
+    if (PyErr_Occurred())
+        PyErr_Clear();
+    Py_XDECREF(mod);
     return mod;
 }
 
@@ -358,7 +355,7 @@ _PyImport_GetModuleWithError(PyObject *name)
     PyObject *mod = PyObject_GetItem(modules, name);
     // For backward-comaptibility we copy the behavior
     // of PyDict_GetItemWithError().
-    if (mod == NULL && !PyMapping_HasKey(modules, name))
+    if (PyErr_Occurred() && !PyMapping_HasKey(modules, name))
         PyErr_Clear();
     return mod;
 }
@@ -373,12 +370,9 @@ _PyImport_GetModuleString(const char *name)
     PyObject *mod = PyMapping_GetItemString(modules, name);
     // For backward-comaptibility we copy the behavior
     // of PyDict_GetItemString().
-    if (mod == NULL) {
-        if (PyErr_Occurred())
-            PyErr_Clear();
-    } else {
-        Py_DECREF(mod);
-    }
+    if (PyErr_Occurred())
+        PyErr_Clear();
+    Py_XDECREF(mod);
     return mod;
 }
 
@@ -416,7 +410,7 @@ PyImport_GetModule(PyObject *name)
         return PyDict_GetItemWithError(modules, name);
 
     PyObject *m = PyObject_GetItem(modules, name);
-    if (m == NULL && !PyMapping_HasKey(modules, name))
+    if (PyErr_Occurred() && !PyMapping_HasKey(modules, name))
         PyErr_Clear();
     return m;
 }
@@ -799,14 +793,14 @@ _PyImport_AddModuleObject(PyObject *name, PyObject *modules)
         m = PyObject_GetItem(modules, name);
         // For backward-comaptibility we copy the behavior
         // of PyDict_GetItemWithError().
-        if (m == NULL && !PyMapping_HasKey(modules, name))
+        if (PyErr_Occurred() && !PyMapping_HasKey(modules, name))
             PyErr_Clear();
-    }
-    if (m != NULL && PyModule_Check(m)) {
-        return m;
     }
     if (PyErr_Occurred()) {
         return NULL;
+    }
+    if (m != NULL && PyModule_Check(m)) {
+        return m;
     }
     m = PyModule_NewObject(name);
     if (m == NULL)
@@ -838,11 +832,12 @@ static void
 remove_module(PyObject *name)
 {
     PyObject *modules = PyImport_GetModuleDict();
-    if (!PyMapping_HasKey(modules, name))
-        return;
-    if (PyMapping_DelItem(modules, name) < 0)
+    if (PyMapping_DelItem(modules, name) < 0) {
+        if (!PyMapping_HasKey(modules, name))
+            return;
         Py_FatalError("import:  deleting existing key in"
                       "sys.modules failed");
+    }
 }
 
 
