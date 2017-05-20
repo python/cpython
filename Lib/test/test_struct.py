@@ -602,11 +602,10 @@ class StructTest(unittest.TestCase):
     def test_boundary_error_message_with_large_offset(self):
         # Test overflows cause by large offset and value size (issue 30245)
         regex = (
-            "pack_into requires a buffer of at least " + str(sys.maxsize + 4) +
-            " bytes for packing 4 bytes at offset " + str(sys.maxsize) +
-            " \(actual buffer size is 10\)"
+            r'pack_into requires a buffer of at least ' + str(sys.maxsize + 4) +
+            r' bytes for packing 4 bytes at offset ' + str(sys.maxsize) +
+            r' \(actual buffer size is 10\)'
         )
-
         with self.assertRaisesRegex(struct.error, regex):
             struct.pack_into('<I', bytearray(10), sys.maxsize, 1)
 
