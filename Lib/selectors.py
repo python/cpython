@@ -466,7 +466,7 @@ if hasattr(select, 'devpoll'):
         _EVENT_WRITE = select.POLLOUT
 
         def fileno(self):
-            return self._devpoll.fileno()
+            return self._selector.fileno()
 
         def close(self):
             self._selector.close()
