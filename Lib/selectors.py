@@ -399,11 +399,6 @@ class _PollLikeSelector(_BaseSelectorImpl):
                 ready.append((key, events & key.events))
         return ready
 
-    def close(self):
-        if hasattr(self._selector, "close"):
-            self._selector.close()
-        super().close()
-
 
 if hasattr(select, 'poll'):
 
@@ -457,6 +452,10 @@ if hasattr(select, 'epoll'):
                     ready.append((key, events & key.events))
             return ready
 
+        def close(self):
+            self._selector.close()
+            super().close()
+
 
 if hasattr(select, 'devpoll'):
 
@@ -468,6 +467,10 @@ if hasattr(select, 'devpoll'):
 
         def fileno(self):
             return self._devpoll.fileno()
+
+        def close(self):
+            self._selector.close()
+            super().close()
 
 
 if hasattr(select, 'kqueue'):
