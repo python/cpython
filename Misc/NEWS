@@ -10,6 +10,9 @@ What's New in Python 3.7.0 alpha 1?
 Core and Builtins
 -----------------
 
+- bpo-25794: Fixed type.__setattr__() and type.__delattr__() for
+  non-interned attribute names.  Based on patch by Eryk Sun.
+
 - bpo-30039: If a KeyboardInterrupt happens when the interpreter is in
   the middle of resuming a chain of nested 'yield from' or 'await'
   calls, it's now correctly delivered to the innermost frame.
