@@ -10,6 +10,9 @@ What's New in Python 3.6.2 release candidate 1?
 Core and Builtins
 -----------------
 
+- bpo-25794: Fixed type.__setattr__() and type.__delattr__() for
+  non-interned attribute names.  Based on patch by Eryk Sun.
+
 - bpo-12414: sys.getsizeof() on a code object now returns the sizes
   which includes the code struct and sizes of objects which it references.
   Patch by Dong-hee Na.
