@@ -617,22 +617,19 @@ else:
                 except Error:
                     pass
                 result = nl_langinfo(CODESET)
-                if not result and sys.platform == 'darwin':
-                    # nl_langinfo can return an empty string
-                    # when the setting has an invalid value.
-                    # Default to UTF-8 in that case because
-                    # UTF-8 is the default charset on OSX and
-                    # returning nothing will crash the
-                    # interpreter.
-                    result = 'UTF-8'
-
                 setlocale(LC_CTYPE, oldloc)
-                return result
             else:
                 result = nl_langinfo(CODESET)
-                if not result and sys.platform == 'darwin':
-                    # See above for explanation
-                    result = 'UTF-8'
+
+            if not result and sys.platform == 'darwin':
+                # nl_langinfo can return an empty string
+                # when the setting has an invalid value.
+                # Default to UTF-8 in that case because
+                # UTF-8 is the default charset on OSX and
+                # returning nothing will crash the
+                # interpreter.
+                result = 'UTF-8'
+            return result
 
 
 ### Database
