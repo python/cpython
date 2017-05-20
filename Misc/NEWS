@@ -327,6 +327,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30378: Fix the problem that logging.handlers.SysLogHandler cannot
+  handle IPv6 addresses.
+
 - bpo-30149: inspect.signature() now supports callables with
   variable-argument parameters wrapped with partialmethod.
   Patch by Dong-hee Na.

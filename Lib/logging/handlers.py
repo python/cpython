@@ -812,6 +812,7 @@ class SysLogHandler(logging.Handler):
         self.address = address
         self.facility = facility
         self.socktype = socktype
+        self.formatter = None
 
         if isinstance(address, str):
             self.unixsocket = True
@@ -827,11 +828,26 @@ class SysLogHandler(logging.Handler):
             self.unixsocket = False
             if socktype is None:
                 socktype = socket.SOCK_DGRAM
-            self.socket = socket.socket(socket.AF_INET, socktype)
-            if socktype == socket.SOCK_STREAM:
-                self.socket.connect(address)
-            self.socktype = socktype
-        self.formatter = None
+            host, port = address
+            err = None
+            for res in socket.getaddrinfo(host, port, 0, socktype):
+                af, socktype, proto, cannonname, sa = res
+                sock = None
+                try:
+                    sock = socket.socket(af, socktype, proto)
+                    if socktype == socket.SOCK_STREAM:
+                        sock.connect(sa)
+                    self.socket = sock
+                    self.socktype = socktype
+                    return
+                except OSError as _:
+                    err = _
+                    if sock is not None:
+                        sock.close()
+            if err is not None:
+                raise err
+            else:
+                raise socket.error("getaddrinfo returns an empty list")
 
     def _connect_unixsocket(self, address):
         use_socktype = self.socktype
