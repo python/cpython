@@ -881,7 +881,7 @@ calls these functions.
    .. versionchanged:: 3.3
       *timeout* was added.
 
-.. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, shell=False, timeout=None)
+.. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, shell=False, cwd=None, timeout=None)
 
    Run command with arguments.  Wait for command to complete. If the return
    code was zero then return, otherwise raise :exc:`CalledProcessError`. The
@@ -911,7 +911,7 @@ calls these functions.
 
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
-                           encoding=None, errors=None, \
+                           cwd=None, encoding=None, errors=None, \
                            universal_newlines=False, timeout=None)
 
    Run command with arguments and return its output.
