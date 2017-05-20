@@ -1741,7 +1741,7 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
 @unittest.skipUnless(support.IPV6_ENABLED,
                      'IPv6 support required for this test.')
 @unittest.skipUnless(threading, 'Threading required for this test.')
-class IPv6SyslogHandlerTest(SysLogHandlerTest):
+class IPv6SysLogHandlerTest(SysLogHandlerTest):
 
     """Test for SysLogHandler with IPv6 host."""
 
@@ -4422,7 +4422,7 @@ def test_main():
         QueueHandlerTest, ShutdownTest, ModuleLevelMiscTest, BasicConfigTest,
         LoggerAdapterTest, LoggerTest, SMTPHandlerTest, FileHandlerTest,
         RotatingFileHandlerTest,  LastResortTest, LogRecordTest,
-        ExceptionTest, SysLogHandlerTest, IPv6SyslogHandlerTest, HTTPHandlerTest,
+        ExceptionTest, SysLogHandlerTest, IPv6SysLogHandlerTest, HTTPHandlerTest,
         NTEventLogHandlerTest, TimedRotatingFileHandlerTest,
         UnixSocketHandlerTest, UnixDatagramHandlerTest, UnixSysLogHandlerTest,
         MiscTestCase
