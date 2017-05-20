@@ -446,9 +446,9 @@ class StructTest(unittest.TestCase):
 
         # Test overflows cause by large offset and value size (issue 30245)
         regex = (
-            r'pack_into requires a buffer of at least 9223372036854775811 '
-            r'bytes for packing 4 bytes at offset 9223372036854775807 '
-            r'\(actual buffer size is 10\)'
+            "pack_into requires a buffer of at least " + str(sys.maxsize + 4) +
+            " bytes for packing 4 bytes at offset " + str(sys.maxsize) +
+            " (actual buffer size is 10)"
         )
 
         with self.assertRaisesRegex(struct.error, regex):

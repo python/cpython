@@ -1934,7 +1934,7 @@ s_pack_into(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames
         assert(soself->s_size >= 0);
 
         PyErr_Format(StructError,
-                     "pack_into requires a buffer of at least %zd bytes for "
+                     "pack_into requires a buffer of at least %zu bytes for "
                      "packing %zd bytes at offset %zd "
                      "(actual buffer size is %zd)",
                      (size_t)soself->s_size + (size_t)offset,
