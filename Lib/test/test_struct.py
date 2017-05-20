@@ -444,6 +444,16 @@ class StructTest(unittest.TestCase):
         self.assertRaises((TypeError, struct.error), struct.pack_into, b'', sb,
                           None)
 
+        # Test overflows cause by large offset and value size (issue 30245)
+        regex = (
+            r'pack_into requires a buffer of at least 9223372036854775811 '
+            r'bytes for packing 4 bytes at offset 9223372036854775807 '
+            r'\(actual buffer size is 10\)'
+        )
+
+        with self.assertRaisesRegex(struct.error, regex):
+            struct.pack_into('I', bytearray(10), sys.maxsize, 1)
+
     def test_pack_into_fn(self):
         test_string = b'Reykjavik rocks, eow!'
         writable_buf = array.array('b', b' '*100)
