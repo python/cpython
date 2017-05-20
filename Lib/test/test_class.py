@@ -635,6 +635,49 @@ class ClassTests(unittest.TestCase):
             self.assertRaises(TypeError, type(c).__getattribute__, c, [])
             self.assertRaises(TypeError, type(c).__setattr__, c, [], [])
 
+    def testSetattrWrapperNameIntern(self):
+        # Issue #25794: __setattr__ should intern the attribute name
+        class A(object):
+            pass
+
+        def add(self, other):
+            return 'summa'
+
+        name = ''.join(list('__add__'))  # shouldn't be optimized
+        self.assertIsNot(name, '__add__')  # not interned
+        type.__setattr__(A, name, add)
+        self.assertEqual(A() + 1, 'summa')
+
+        name2 = ''.join(list('__add__'))
+        self.assertIsNot(name2, '__add__')
+        self.assertIsNot(name2, name)
+        type.__delattr__(A, name2)
+        with self.assertRaises(TypeError):
+            A() + 1
+
+    @test_support.requires_unicode
+    def testSetattrWrapperNameUnicode(self):
+        # Issue #25794: __setattr__ should intern the attribute name
+        class A(object):
+            pass
+
+        def add(self, other):
+            return 'summa'
+
+        type.__setattr__(A, u'__add__', add)
+        self.assertEqual(A() + 1, 'summa')
+
+        type.__delattr__(A, u'__add__')
+        with self.assertRaises(TypeError):
+            A() + 1
+
+    def testSetattrNonStringName(self):
+        class A(object):
+            pass
+
+        with self.assertRaises(TypeError):
+            type.__setattr__(A, bytearray(b'x'), None)
+
 def test_main():
     with test_support.check_py3k_warnings(
             (".+__(get|set|del)slice__ has been removed", DeprecationWarning),
