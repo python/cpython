@@ -3020,6 +3020,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
 static int
 type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 {
+    int res;
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         PyErr_Format(
             PyExc_TypeError,
@@ -3053,7 +3054,6 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     res = PyObject_GenericSetAttr((PyObject *)type, name, value);
     if (res == 0) {
         res = update_slot(type, name);
-        assert(_PyType_CheckConsistency(type));
     }
     Py_DECREF(name);
     return res;
