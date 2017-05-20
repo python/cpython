@@ -1090,6 +1090,9 @@ Documentation
 Build
 -----
 
+- bpo-30411: Fix git doesn't support "-C" args under 1.8.5.
+  Patch by Yuan Liu.
+
 - bpo-28787: Fix out-of-tree builds of Python when configured with
   ``--with--dtrace``.
 
