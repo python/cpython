@@ -787,56 +787,61 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
     PyDictKeyEntry *ep;
     assert(key != dummy);
 
+    Py_INCREF(key);
+    Py_INCREF(value);
     if (mp->ma_values != NULL && !PyUnicode_CheckExact(key)) {
         if (insertion_resize(mp) < 0)
-            return -1;
+            goto Fail;
     }
 
     ep = mp->ma_keys->dk_lookup(mp, key, hash, &value_addr);
-    if (ep == NULL) {
-        return -1;
-    }
+    if (ep == NULL)
+        goto Fail;
+
     assert(PyUnicode_CheckExact(key) || mp->ma_keys->dk_lookup == lookdict);
-    Py_INCREF(value);
     MAINTAIN_TRACKING(mp, key, value);
     old_value = *value_addr;
     if (old_value != NULL) {
         assert(ep->me_key != NULL && ep->me_key != dummy);
         *value_addr = value;
         Py_DECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
+        Py_DECREF(key);
     }
     else {
         if (ep->me_key == NULL) {
-            Py_INCREF(key);
             if (mp->ma_keys->dk_usable <= 0) {
                 /* Need to resize. */
-                if (insertion_resize(mp) < 0) {
-                    Py_DECREF(key);
-                    Py_DECREF(value);
-                    return -1;
-                }
+                if (insertion_resize(mp) < 0)
+                    goto Fail;
                 ep = find_empty_slot(mp, key, hash, &value_addr);
             }
+            mp->ma_used++;
+            *value_addr = value;
             mp->ma_keys->dk_usable--;
             assert(mp->ma_keys->dk_usable >= 0);
             ep->me_key = key;
             ep->me_hash = hash;
+            assert(ep->me_key != NULL && ep->me_key != dummy);
         }
         else {
+            mp->ma_used++;
+            *value_addr = value;
             if (ep->me_key == dummy) {
-                Py_INCREF(key);
                 ep->me_key = key;
                 ep->me_hash = hash;
                 Py_DECREF(dummy);
             } else {
                 assert(_PyDict_HasSplitTable(mp));
+                Py_DECREF(key);
             }
         }
-        mp->ma_used++;
-        *value_addr = value;
-        assert(ep->me_key != NULL && ep->me_key != dummy);
     }
     return 0;
+
+Fail:
+    Py_DECREF(value);
+    Py_DECREF(key);
+    return -1;
 }
 
 /*
@@ -2057,11 +2062,18 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
         /* Update/merge with this (key, value) pair. */
         key = PySequence_Fast_GET_ITEM(fast, 0);
         value = PySequence_Fast_GET_ITEM(fast, 1);
+        Py_INCREF(key);
+        Py_INCREF(value);
         if (override || PyDict_GetItem(d, key) == NULL) {
             int status = PyDict_SetItem(d, key, value);
-            if (status < 0)
+            if (status < 0) {
+                Py_DECREF(key);
+                Py_DECREF(value);
                 goto Fail;
+            }
         }
+        Py_DECREF(key);
+        Py_DECREF(value);
         Py_DECREF(fast);
         Py_DECREF(item);
     }
@@ -2320,14 +2332,15 @@ dict_equal(PyDictObject *a, PyDictObject *b)
                 bval = NULL;
             else
                 bval = *vaddr;
-            Py_DECREF(key);
             if (bval == NULL) {
+                Py_DECREF(key);
                 Py_DECREF(aval);
                 if (PyErr_Occurred())
                     return -1;
                 return 0;
             }
             cmp = PyObject_RichCompareBool(aval, bval, Py_EQ);
+            Py_DECREF(key);
             Py_DECREF(aval);
             if (cmp <= 0)  /* error or not equal */
                 return cmp;
@@ -3152,7 +3165,7 @@ PyTypeObject PyDictIterValue_Type = {
 
 static PyObject *dictiter_iternextitem(dictiterobject *di)
 {
-    PyObject *key, *value, *result = di->di_result;
+    PyObject *key, *value, *result;
     Py_ssize_t i, mask, offset;
     PyDictObject *d = di->di_dict;
     PyObject **value_ptr;
@@ -3188,22 +3201,27 @@ static PyObject *dictiter_iternextitem(dictiterobject *di)
     if (i > mask)
         goto fail;
 
-    if (result->ob_refcnt == 1) {
-        Py_INCREF(result);
-        Py_DECREF(PyTuple_GET_ITEM(result, 0));
-        Py_DECREF(PyTuple_GET_ITEM(result, 1));
-    } else {
-        result = PyTuple_New(2);
-        if (result == NULL)
-            return NULL;
-    }
     di->len--;
     key = d->ma_keys->dk_entries[i].me_key;
     value = *value_ptr;
     Py_INCREF(key);
     Py_INCREF(value);
-    PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
-    PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
+    result = di->di_result;
+    if (Py_REFCNT(result) == 1) {
+        PyObject *oldkey = PyTuple_GET_ITEM(result, 0);
+        PyObject *oldvalue = PyTuple_GET_ITEM(result, 1);
+        PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
+        PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
+        Py_INCREF(result);
+        Py_DECREF(oldkey);
+        Py_DECREF(oldvalue);
+    } else {
+        result = PyTuple_New(2);
+        if (result == NULL)
+            return NULL;
+        PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
+        PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
+    }
     return result;
 
 fail:
@@ -3696,6 +3714,7 @@ dictitems_iter(_PyDictViewObject *dv)
 static int
 dictitems_contains(_PyDictViewObject *dv, PyObject *obj)
 {
+    int result;
     PyObject *key, *value, *found;
     if (dv->dv_dict == NULL)
         return 0;
@@ -3709,7 +3728,10 @@ dictitems_contains(_PyDictViewObject *dv, PyObject *obj)
             return -1;
         return 0;
     }
-    return PyObject_RichCompareBool(value, found, Py_EQ);
+    Py_INCREF(found);
+    result = PyObject_RichCompareBool(value, found, Py_EQ);
+    Py_DECREF(found);
+    return result;
 }
 
 static PySequenceMethods dictitems_as_sequence = {
