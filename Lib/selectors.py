@@ -356,7 +356,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             poller_events |= self._EVENT_WRITE
         try:
             self._selector.register(key.fd, poller_events)
-        except BaseException:
+        except Exception:
             super().unregister(fileobj)
             raise
         return key
@@ -493,7 +493,7 @@ if hasattr(select, 'kqueue'):
                     kev = select.kevent(key.fd, select.KQ_FILTER_WRITE,
                                         select.KQ_EV_ADD)
                     self._selector.control([kev], 0, 0)
-            except BaseException:
+            except Exception:
                 super().unregister(fileobj)
                 raise
             return key
