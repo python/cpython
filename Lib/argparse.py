@@ -1591,6 +1591,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         - prefix_chars -- Characters that prefix optional arguments
         - fromfile_prefix_chars -- Characters that prefix files containing
             additional arguments
+        - fromfile_parent_relative -- Whether to treat paths of included
+            files as relative to the place they were included from or the
+            current working directory
         - argument_default -- The default value for all arguments
         - conflict_handler -- String indicating how to handle conflicts
         - add_help -- Add a -h/-help option
@@ -1606,6 +1609,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  formatter_class=HelpFormatter,
                  prefix_chars='-',
                  fromfile_prefix_chars=None,
+                 fromfile_parent_relative=False,
                  argument_default=None,
                  conflict_handler='error',
                  add_help=True,
@@ -1626,6 +1630,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.epilog = epilog
         self.formatter_class = formatter_class
         self.fromfile_prefix_chars = fromfile_prefix_chars
+        self.fromfile_parent_relative = fromfile_parent_relative
         self.add_help = add_help
         self.allow_abbrev = allow_abbrev
 
@@ -2025,17 +2030,27 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
             # replace arguments referencing files with the file content
             else:
+                arg_strings = []
+
                 try:
                     with open(arg_string[1:]) as args_file:
-                        arg_strings = []
                         for arg_line in args_file.read().splitlines():
                             for arg in self.convert_arg_line_to_args(arg_line):
+                                # make nested includes relative to their parent
+                                if self.fromfile_parent_relative and \
+                                   arg.startswith(self.fromfile_prefix_chars):
+                                    dirname = _os.path.dirname(arg_string[1:])
+                                    path = _os.path.join(dirname, arg[1:])
+                                    # eliminate ../a/../a constructs
+                                    path = _os.path.normpath(path)
+                                    arg = arg[0] + path
                                 arg_strings.append(arg)
-                        arg_strings = self._read_args_from_files(arg_strings)
-                        new_arg_strings.extend(arg_strings)
                 except OSError:
                     err = _sys.exc_info()[1]
                     self.error(str(err))
+
+                arg_strings = self._read_args_from_files(arg_strings)
+                new_arg_strings.extend(arg_strings)
 
         # return the modified argument list
         return new_arg_strings

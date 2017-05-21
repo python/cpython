@@ -141,6 +141,7 @@ ArgumentParser objects
                           epilog=None, parents=[], \
                           formatter_class=argparse.HelpFormatter, \
                           prefix_chars='-', fromfile_prefix_chars=None, \
+                          fromfile_parent_relative=False, \
                           argument_default=None, conflict_handler='error', \
                           add_help=True, allow_abbrev=True)
 
@@ -168,6 +169,11 @@ ArgumentParser objects
    * fromfile_prefix_chars_ - The set of characters that prefix files from
      which additional arguments should be read (default: ``None``)
 
+   * fromfile_parent_relative_ - Whether to treat paths of argument
+     files as relative to the location of the file they are specified in
+     (``True``) or to the current working directory (``False``) (default:
+     ``False``)
+
    * argument_default_ - The global default value for arguments
      (default: ``None``)
 
@@ -181,6 +187,9 @@ ArgumentParser objects
 
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
+
+   .. versionchanged:: TODO
+      *fromfile_parent_relative* parameter was added.
 
 The following sections describe how each of these are used.
 
@@ -489,7 +498,7 @@ disallowed.
 fromfile_prefix_chars
 ^^^^^^^^^^^^^^^^^^^^^
 
-Sometimes, for example when dealing with a particularly long argument lists, it
+Sometimes, for example when dealing with a particularly long argument list, it
 may make sense to keep the list of arguments in a file rather than typing it out
 at the command line.  If the ``fromfile_prefix_chars=`` argument is given to the
 :class:`ArgumentParser` constructor, then arguments that start with any of the
@@ -509,8 +518,24 @@ were in the same place as the original file referencing argument on the command
 line.  So in the example above, the expression ``['-f', 'foo', '@args.txt']``
 is considered equivalent to the expression ``['-f', 'foo', '-f', 'bar']``.
 
+Including argument files recursively is fine, as long as no infinite
+loops are produced.
+
 The ``fromfile_prefix_chars=`` argument defaults to ``None``, meaning that
 arguments will never be treated as file references.
+
+
+fromfile_parent_relative
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Before Python TODO, paths were always considered to be relative to the
+current working directory.  Now, when a file to include is specified
+inside another one, its path can be treated as being relative to
+the file it is contained in. To activate this behaviour, set the
+``fromfile_parent_relative=`` parameter to ``True``.  However, specifying
+absolute paths is and has always been possible as well.
+
+.. versionadded:: TODO
 
 
 argument_default
