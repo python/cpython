@@ -1,162 +1,162 @@
-:mod:`email.message`: Representing an email message
----------------------------------------------------
+.. _compat32_message:
+
+:mod:`email.message.Message`: Representing an email message using the :data:`~email.policy.compat32` API
+--------------------------------------------------------------------------------------------------------
 
 .. module:: email.message
-   :synopsis: The base class representing email messages.
-<<<<<<< HEAD
-=======
-.. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
-.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>,
-                   Barry A. Warsaw <barry@python.org>
-
-**Source code:** :source:`Lib/email/message.py`
-
---------------
-
-.. versionadded:: 3.6 [1]_
-
-The central class in the :mod:`email` package is the :class:`EmailMessage`
-class, imported from the :mod:`email.message` module.  It is the base class for
-the :mod:`email` object model.  :class:`EmailMessage` provides the core
-functionality for setting and querying header fields, for accessing message
-bodies, and for creating or modifying structured messages.
-
-An email message consists of *headers* and a *payload* (which is also referred
-to as the *content*).  Headers are :rfc:`5322` or :rfc:`6532` style field names
-and values, where the field name and value are separated by a colon.  The colon
-is not part of either the field name or the field value.  The payload may be a
-simple text message, or a binary object, or a structured sequence of
-sub-messages each with their own set of headers and their own payload.  The
-latter type of payload is indicated by the message having a MIME type such as
-:mimetype:`multipart/\*` or :mimetype:`message/rfc822`.
-
-The conceptual model provided by an :class:`EmailMessage` object is that of an
-ordered dictionary of headers coupled with a *payload* that represents the
-:rfc:`5322` body of the message, which might be a list of sub-``EmailMessage``
-objects.  In addition to the normal dictionary methods for accessing the header
-names and values, there are methods for accessing specialized information from
-the headers (for example the MIME content type), for operating on the payload,
-for generating a serialized version of the message, and for recursively walking
-over the object tree.
-
-The :class:`EmailMessage` dictionary-like interface is indexed by the header
-names, which must be ASCII values.  The values of the dictionary are strings
-with some extra methods.  Headers are stored and returned in case-preserving
-form, but field names are matched case-insensitively.  Unlike a real dict,
-there is an ordering to the keys, and there can be duplicate keys.  Additional
-methods are provided for working with headers that have duplicate keys.
-
-The *payload* is either a string or bytes object, in the case of simple message
-objects, or a list of :class:`EmailMessage` objects, for MIME container
-documents such as :mimetype:`multipart/\*` and :mimetype:`message/rfc822`
-message objects.
+   :synopsis: The base class representing email messages in a fashion
+              backward compatible with python3.2
 
 
-.. class:: EmailMessage(policy=default)
+The :class:`Message` class is very similar to the
+:class:`~email.message.EmailMessage` class, without the methods added by that
+class, and with the default behavior of certain other methods being slightly
+different.  We also document here some methods that, while supported by the
+:class:`~email.message.EmailMessage` class, are not recommended unless you are
+dealing with legacy code.
 
-   If *policy* is specified use the rules it specifies to update and serialize
-   the representation of the message.  If *policy* is not set, use the
-   :class:`~email.policy.default` policy, which follows the rules of the email
-   RFCs except for line endings (instead of the RFC mandated ``\r\n``, it uses
-   the Python standard ``\n`` line endings).  For more information see the
-   :mod:`~email.policy` documentation.
+The philosophy and structure of the two classes is otherwise the same.
 
-   .. method:: as_string(unixfrom=False, maxheaderlen=None, policy=None)
+This document describes the behavior under the default (for :class:`Message`)
+policy :attr:`~email.policy.Compat32`.  If you are going to use another policy,
+you should be using the :class:`~email.message.EmailMessage` class instead.
 
-      Return the entire message flattened as a string.  When optional
-      *unixfrom* is true, the envelope header is included in the returned
-      string.  *unixfrom* defaults to ``False``.  For backward compatibility
-      with the base :class:`~email.message.Message` class *maxheaderlen* is
-      accepted, but defaults to ``None``, which means that by default the line
-      length is controlled by the
-      :attr:`~email.policy.EmailPolicy.max_line_length` of the policy.  The
-      *policy* argument may be used to override the default policy obtained
-      from the message instance.  This can be used to control some of the
-      formatting produced by the method, since the specified *policy* will be
-      passed to the :class:`~email.generator.Generator`.
+An email message consists of *headers* and a *payload*.  Headers must be
+:rfc:`5233` style names and values, where the field name and value are
+separated by a colon.  The colon is not part of either the field name or the
+field value.  The payload may be a simple text message, or a binary object, or
+a structured sequence of sub-messages each with their own set of headers and
+their own payload.  The latter type of payload is indicated by the message
+having a MIME type such as :mimetype:`multipart/\*` or
+:mimetype:`message/rfc822`.
 
-      Flattening the message may trigger changes to the :class:`EmailMessage`
-      if defaults need to be filled in to complete the transformation to a
-      string (for example, MIME boundaries may be generated or modified).
+The conceptual model provided by a :class:`Message` object is that of an
+ordered dictionary of headers with additional methods for accessing both
+specialized information from the headers, for accessing the payload, for
+generating a serialized version of the message, and for recursively walking
+over the object tree.  Note that duplicate headers are supported but special
+methods must be used to access them.
 
-      Note that this method is provided as a convenience and may not be the
-      most useful way to serialize messages in your application, especially if
-      you are dealing with multiple messages.  See
-      :class:`email.generator.Generator` for a more flexible API for
-      serializing messages.  Note also that this method is restricted to
-      producing messages serialized as "7 bit clean" when
-      :attr:`~email.policy.EmailPolicy.utf8` is ``False``, which is the default.
-
-      .. versionchanged:: 3.6 the default behavior when *maxheaderlen*
-         is not specified was changed from defaulting to 0 to defaulting
-         to the value of *max_line_length* from the policy.
->>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
-
-
-The central class in the :mod:`email` package is the :class:`Message` class,
-imported from the :mod:`email.message` module.  It is the base class for the
-:mod:`email` object model.  :class:`Message` provides the core functionality for
-setting and querying header fields, and for accessing message bodies.
-
-Conceptually, a :class:`Message` object consists of *headers* and *payloads*.
-Headers are :rfc:`2822` style field names and values where the field name and
-value are separated by a colon.  The colon is not part of either the field name
-or the field value.
-
-Headers are stored and returned in case-preserving form but are matched
+The :class:`Message` pseudo-dictionary is indexed by the header names, which
+must be ASCII values.  The values of the dictionary are strings that are
+supposed to contain only ASCII characters; there is some special handling for
+non-ASCII input, but it doesn't always produce the correct results.  Headers
+are stored and returned in case-preserving form, but field names are matched
 case-insensitively.  There may also be a single envelope header, also known as
-the *Unix-From* header or the ``From_`` header.  The payload is either a string
-in the case of simple message objects or a list of :class:`Message` objects for
-MIME container documents (e.g. :mimetype:`multipart/\*` and
-:mimetype:`message/rfc822`).
-
-:class:`Message` objects provide a mapping style interface for accessing the
-message headers, and an explicit interface for accessing both the headers and
-the payload.  It provides convenience methods for generating a flat text
-representation of the message object tree, for accessing commonly used header
-parameters, and for recursively walking over the object tree.
+the *Unix-From* header or the ``From_`` header.  The *payload* is either a
+string or bytes, in the case of simple message objects, or a list of
+:class:`Message` objects, for MIME container documents (e.g.
+:mimetype:`multipart/\*` and :mimetype:`message/rfc822`).
 
 Here are the methods of the :class:`Message` class:
 
 
-.. class:: Message()
+.. class:: Message(policy=compat32)
 
-   The constructor takes no arguments.
+   If *policy* is specified (it must be an instance of a :mod:`~email.policy`
+   class) use the rules it specifies to update and serialize the representation
+   of the message.  If *policy* is not set, use the :class:`compat32
+   <email.policy.Compat32>` policy, which maintains backward compatibility with
+   the Python 3.2 version of the email package.  For more information see the
+   :mod:`~email.policy` documentation.
+
+   .. versionchanged:: 3.3 The *policy* keyword argument was added.
 
 
-   .. method:: as_string([unixfrom])
+   .. method:: as_string(unixfrom=False, maxheaderlen=0, policy=None)
 
       Return the entire message flattened as a string.  When optional *unixfrom*
-      is ``True``, the envelope header is included in the returned string.
-      *unixfrom* defaults to ``False``.  Flattening the message may trigger
-      changes to the :class:`Message` if defaults need to be filled in to
-      complete the transformation to a string (for example, MIME boundaries may
-      be generated or modified).
+      is true, the envelope header is included in the returned string.
+      *unixfrom* defaults to ``False``.  For backward compatibility reasons,
+      *maxheaderlen* defaults to ``0``, so if you want a different value you
+      must override it explicitly (the value specified for *max_line_length* in
+      the policy will be ignored by this method).  The *policy* argument may be
+      used to override the default policy obtained from the message instance.
+      This can be used to control some of the formatting produced by the
+      method, since the specified *policy* will be passed to the ``Generator``.
+
+      Flattening the message may trigger changes to the :class:`Message` if
+      defaults need to be filled in to complete the transformation to a string
+      (for example, MIME boundaries may be generated or modified).
 
       Note that this method is provided as a convenience and may not always
-      format the message the way you want.  For example, by default it mangles
-      lines that begin with ``From``.  For more flexibility, instantiate a
+      format the message the way you want.  For example, by default it does
+      not do the mangling of lines that begin with ``From`` that is
+      required by the unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.Generator` instance and use its
       :meth:`~email.generator.Generator.flatten` method directly.  For example::
 
-         from cStringIO import StringIO
+         from io import StringIO
          from email.generator import Generator
          fp = StringIO()
-         g = Generator(fp, mangle_from_=False, maxheaderlen=60)
+         g = Generator(fp, mangle_from_=True, maxheaderlen=60)
          g.flatten(msg)
          text = fp.getvalue()
+
+      If the message object contains binary data that is not encoded according
+      to RFC standards, the non-compliant data will be replaced by unicode
+      "unknown character" code points.  (See also :meth:`.as_bytes` and
+      :class:`~email.generator.BytesGenerator`.)
+
+      .. versionchanged:: 3.4 the *policy* keyword argument was added.
 
 
    .. method:: __str__()
 
-      Equivalent to ``as_string(unixfrom=True)``.
+      Equivalent to :meth:`.as_string()`.  Allows ``str(msg)`` to produce a
+      string containing the formatted message.
+
+
+   .. method:: as_bytes(unixfrom=False, policy=None)
+
+      Return the entire message flattened as a bytes object.  When optional
+      *unixfrom* is true, the envelope header is included in the returned
+      string.  *unixfrom* defaults to ``False``.  The *policy* argument may be
+      used to override the default policy obtained from the message instance.
+      This can be used to control some of the formatting produced by the
+      method, since the specified *policy* will be passed to the
+      ``BytesGenerator``.
+
+      Flattening the message may trigger changes to the :class:`Message` if
+      defaults need to be filled in to complete the transformation to a string
+      (for example, MIME boundaries may be generated or modified).
+
+      Note that this method is provided as a convenience and may not always
+      format the message the way you want.  For example, by default it does
+      not do the mangling of lines that begin with ``From`` that is
+      required by the unix mbox format.  For more flexibility, instantiate a
+      :class:`~email.generator.BytesGenerator` instance and use its
+      :meth:`~email.generator.BytesGenerator.flatten` method directly.
+      For example::
+
+         from io import BytesIO
+         from email.generator import BytesGenerator
+         fp = BytesIO()
+         g = BytesGenerator(fp, mangle_from_=True, maxheaderlen=60)
+         g.flatten(msg)
+         text = fp.getvalue()
+
+      .. versionadded:: 3.4
+
+
+   .. method:: __bytes__()
+
+      Equivalent to :meth:`.as_bytes()`.  Allows ``bytes(msg)`` to produce a
+      bytes object containing the formatted message.
+
+      .. versionadded:: 3.4
 
 
    .. method:: is_multipart()
 
       Return ``True`` if the message's payload is a list of sub-\
       :class:`Message` objects, otherwise return ``False``.  When
-      :meth:`is_multipart` returns ``False``, the payload should be a string object.
+      :meth:`is_multipart` returns ``False``, the payload should be a string
+      object (which might be a CTE encoded binary payload.  (Note that
+      :meth:`is_multipart` returning ``True`` does not necessarily mean that
+      "msg.get_content_maintype() == 'multipart'" will return the ``True``.
+      For example, ``is_multipart`` will return ``True`` when the
+      :class:`Message` is of type ``message/rfc822``.)
 
 
    .. method:: set_unixfrom(unixfrom)
@@ -178,8 +178,13 @@ Here are the methods of the :class:`Message` class:
       set the payload to a scalar object (e.g. a string), use
       :meth:`set_payload` instead.
 
+      This is a legacy method.  On the
+      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      replaced by :meth:`~email.message.EmailMessage.set_content` and the
+      related ``make`` and ``add`` methods.
 
-   .. method:: get_payload([i[, decode]])
+
+   .. method:: get_payload(i=None, decode=False)
 
       Return the current payload, which will be a list of
       :class:`Message` objects when :meth:`is_multipart` is ``True``, or a
@@ -198,20 +203,39 @@ Here are the methods of the :class:`Message` class:
       header. When ``True`` and the message is not a multipart, the payload will
       be decoded if this header's value is ``quoted-printable`` or ``base64``.
       If some other encoding is used, or :mailheader:`Content-Transfer-Encoding`
-      header is missing, or if the payload has bogus base64 data, the payload is
-      returned as-is (undecoded).  If the message is a multipart and the
-      *decode* flag is ``True``, then ``None`` is returned.  The default for
-      *decode* is ``False``.
+      header is missing, the payload is
+      returned as-is (undecoded).  In all cases the returned value is binary
+      data.  If the message is a multipart and the *decode* flag is ``True``,
+      then ``None`` is returned.  If the payload is base64 and it was not
+      perfectly formed (missing padding, characters outside the base64
+      alphabet), then an appropriate defect will be added to the message's
+      defect property (:class:`~email.errors.InvalidBase64PaddingDefect` or
+      :class:`~email.errors.InvalidBase64CharactersDefect`, respectively).
+
+      When *decode* is ``False`` (the default) the body is returned as a string
+      without decoding the :mailheader:`Content-Transfer-Encoding`.  However,
+      for a :mailheader:`Content-Transfer-Encoding` of 8bit, an attempt is made
+      to decode the original bytes using the ``charset`` specified by the
+      :mailheader:`Content-Type` header, using the ``replace`` error handler.
+      If no ``charset`` is specified, or if the ``charset`` given is not
+      recognized by the email package, the body is decoded using the default
+      ASCII charset.
+
+      This is a legacy method.  On the
+      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      replaced by :meth:`~email.message.EmailMessage.get_content` and
+      :meth:`~email.message.EmailMessage.iter_parts`.
 
 
-   .. method:: set_payload(payload[, charset])
+   .. method:: set_payload(payload, charset=None)
 
       Set the entire message object's payload to *payload*.  It is the client's
       responsibility to ensure the payload invariants.  Optional *charset* sets
       the message's default character set; see :meth:`set_charset` for details.
 
-      .. versionchanged:: 2.2.2
-         *charset* argument added.
+      This is a legacy method.  On the
+      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      replaced by :meth:`~email.message.EmailMessage.set_content`.
 
 
    .. method:: set_charset(charset)
@@ -238,15 +262,10 @@ Here are the methods of the :class:`Message` class:
       already exists, the payload is assumed to already be correctly encoded
       using that :mailheader:`Content-Transfer-Encoding` and is not modified.
 
-      The message will be assumed to be of type :mimetype:`text/\*`, with the
-      payload either in unicode or encoded with *charset.input_charset*.
-      It will be encoded or converted to *charset.output_charset*
-      and transfer encoded properly, if needed, when generating the plain text
-      representation of the message.  MIME headers (:mailheader:`MIME-Version`,
-      :mailheader:`Content-Type`, :mailheader:`Content-Transfer-Encoding`) will
-      be added as needed.
-
-      .. versionadded:: 2.2.2
+      This is a legacy method.  On the
+      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      replaced by the *charset* parameter of the
+      :meth:`email.emailmessage.EmailMessage.set_content` method.
 
 
    .. method:: get_charset()
@@ -254,7 +273,10 @@ Here are the methods of the :class:`Message` class:
       Return the :class:`~email.charset.Charset` instance associated with the
       message's payload.
 
-      .. versionadded:: 2.2.2
+      This is a legacy method.  On the
+      :class:`~email.emailmessage.EmailMessage` class it always returns
+      ``None``.
+
 
    The following methods implement a mapping-like interface for accessing the
    message's :rfc:`2822` headers.  Note that there are some semantic differences
@@ -272,6 +294,11 @@ Here are the methods of the :class:`Message` class:
    Note that in all cases, any envelope header present in the message is not
    included in the mapping interface.
 
+   In a model generated from bytes, any header values that (in contravention of
+   the RFCs) contain non-ASCII bytes will, when retrieved through this
+   interface, be represented as :class:`~email.header.Header` objects with
+   a charset of `unknown-8bit`.
+
 
    .. method:: __len__()
 
@@ -284,8 +311,8 @@ Here are the methods of the :class:`Message` class:
       done case-insensitively and *name* should not include the trailing colon.
       Used for the ``in`` operator, e.g.::
 
-         if 'message-id' in myMessage:
-             print 'Message-ID:', myMessage['message-id']
+           if 'message-id' in myMessage:
+              print('Message-ID:', myMessage['message-id'])
 
 
    .. method:: __getitem__(name)
@@ -312,27 +339,12 @@ Here are the methods of the :class:`Message` class:
          del msg['subject']
          msg['subject'] = 'Python roolz!'
 
-<<<<<<< HEAD
-=======
-      If the :mod:`policy` defines certain headers to be unique (as the standard
-      policies do), this method may raise a :exc:`ValueError` when an attempt
-      is made to assign a value to such a header when one already exists.  This
-      behavior is intentional for consistency's sake, but do not depend on it
-      as we may choose to make such assignments do an automatic deletion of the
-      existing header in the future.
-
->>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
 
    .. method:: __delitem__(name)
 
       Delete all occurrences of the field with name *name* from the message's
-      headers.  No exception is raised if the named field isn't present in the headers.
-
-
-   .. method:: has_key(name)
-
-      Return true if the message contains a header field named *name*, otherwise
-      return false.
+      headers.  No exception is raised if the named field isn't present in the
+      headers.
 
 
    .. method:: keys()
@@ -351,7 +363,7 @@ Here are the methods of the :class:`Message` class:
       values.
 
 
-   .. method:: get(name[, failobj])
+   .. method:: get(name, failobj=None)
 
       Return the value of the named header field.  This is identical to
       :meth:`__getitem__` except that optional *failobj* is returned if the
@@ -360,7 +372,7 @@ Here are the methods of the :class:`Message` class:
    Here are some additional useful methods:
 
 
-   .. method:: get_all(name[, failobj])
+   .. method:: get_all(name, failobj=None)
 
       Return a list of all the values for the field named *name*. If there are
       no such named headers in the message, *failobj* is returned (defaults to
@@ -379,11 +391,14 @@ Here are the methods of the :class:`Message` class:
       dashes are illegal in Python identifiers).  Normally, the parameter will
       be added as ``key="value"`` unless the value is ``None``, in which case
       only the key will be added.  If the value contains non-ASCII characters,
-      it must be specified as a three tuple in the format
+      it can be specified as a three tuple in the format
       ``(CHARSET, LANGUAGE, VALUE)``, where ``CHARSET`` is a string naming the
       charset to be used to encode the value, ``LANGUAGE`` can usually be set
-      to ``None`` or the empty string (see :RFC:`2231` for other possibilities),
-      and ``VALUE`` is the string value containing non-ASCII code points.
+      to ``None`` or the empty string (see :rfc:`2231` for other possibilities),
+      and ``VALUE`` is the string value containing non-ASCII code points.  If
+      a three tuple is not passed and the value contains non-ASCII characters,
+      it is automatically encoded in :rfc:`2231` format using a ``CHARSET``
+      of ``utf-8`` and a ``LANGUAGE`` of ``None``.
 
       Here's an example::
 
@@ -409,8 +424,6 @@ Here are the methods of the :class:`Message` class:
       matches *_name*, retaining header order and field name case.  If no
       matching header was found, a :exc:`KeyError` is raised.
 
-      .. versionadded:: 2.2.2
-
 
    .. method:: get_content_type()
 
@@ -427,23 +440,17 @@ Here are the methods of the :class:`Message` class:
       :mailheader:`Content-Type` header has an invalid type specification,
       :rfc:`2045` mandates that the default type be :mimetype:`text/plain`.
 
-      .. versionadded:: 2.2.2
-
 
    .. method:: get_content_maintype()
 
       Return the message's main content type.  This is the :mimetype:`maintype`
       part of the string returned by :meth:`get_content_type`.
 
-      .. versionadded:: 2.2.2
-
 
    .. method:: get_content_subtype()
 
       Return the message's sub-content type.  This is the :mimetype:`subtype`
       part of the string returned by :meth:`get_content_type`.
-
-      .. versionadded:: 2.2.2
 
 
    .. method:: get_default_type()
@@ -453,8 +460,6 @@ Here are the methods of the :class:`Message` class:
       :mimetype:`multipart/digest` containers.  Such subparts have a default
       content type of :mimetype:`message/rfc822`.
 
-      .. versionadded:: 2.2.2
-
 
    .. method:: set_default_type(ctype)
 
@@ -463,10 +468,8 @@ Here are the methods of the :class:`Message` class:
       enforced.  The default content type is not stored in the
       :mailheader:`Content-Type` header.
 
-      .. versionadded:: 2.2.2
 
-
-   .. method:: get_params([failobj[, header[, unquote]]])
+   .. method:: get_params(failobj=None, header='content-type', unquote=True)
 
       Return the message's :mailheader:`Content-Type` parameters, as a list.
       The elements of the returned list are 2-tuples of key/value pairs, as
@@ -480,11 +483,13 @@ Here are the methods of the :class:`Message` class:
       :mailheader:`Content-Type` header.  Optional *header* is the header to
       search instead of :mailheader:`Content-Type`.
 
-      .. versionchanged:: 2.2.2
-         *unquote* argument added.
+      This is a legacy method.  On the
+      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      replaced by the *params* property of the individual header objects
+      returned by the header access methods.
 
 
-   .. method:: get_param(param[, failobj[, header[, unquote]]])
+   .. method:: get_param(param, failobj=None, header='content-type', unquote=True)
 
       Return the value of the :mailheader:`Content-Type` header's parameter
       *param* as a string.  If the message has no :mailheader:`Content-Type`
@@ -516,11 +521,14 @@ Here are the methods of the :class:`Message` class:
       ``VALUE`` item in the 3-tuple) is always unquoted, unless *unquote* is set
       to ``False``.
 
-      .. versionchanged:: 2.2.2
-         *unquote* argument added, and 3-tuple return value possible.
+      This is a legacy method.  On the
+      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      replaced by the *params* property of the individual header objects
+      returned by the header access methods.
 
 
-   .. method:: set_param(param, value[, header[, requote[, charset[, language]]]])
+   .. method:: set_param(param, value, header='Content-Type', requote=True, \
+                         charset=None, language='', replace=False)
 
       Set a parameter in the :mailheader:`Content-Type` header.  If the
       parameter already exists in the header, its value will be replaced with
@@ -537,10 +545,14 @@ Here are the methods of the :class:`Message` class:
       language, defaulting to the empty string.  Both *charset* and *language*
       should be strings.
 
-      .. versionadded:: 2.2.2
+      If *replace* is ``False`` (the default) the header is moved to the
+      end of the list of headers.  If *replace* is ``True``, the header
+      will be updated in place.
+
+      .. versionchanged:: 3.4 ``replace`` keyword was added.
 
 
-   .. method:: del_param(param[, header[, requote]])
+   .. method:: del_param(param, header='content-type', requote=True)
 
       Remove the given parameter completely from the :mailheader:`Content-Type`
       header.  The header will be re-written in place without the parameter or
@@ -548,10 +560,8 @@ Here are the methods of the :class:`Message` class:
       ``False`` (the default is ``True``).  Optional *header* specifies an
       alternative to :mailheader:`Content-Type`.
 
-      .. versionadded:: 2.2.2
 
-
-   .. method:: set_type(type[, header][, requote])
+   .. method:: set_type(type, header='Content-Type', requote=True)
 
       Set the main type and subtype for the :mailheader:`Content-Type`
       header. *type* must be a string in the form :mimetype:`maintype/subtype`,
@@ -566,10 +576,12 @@ Here are the methods of the :class:`Message` class:
       :mailheader:`Content-Type` header is set a :mailheader:`MIME-Version`
       header is also added.
 
-      .. versionadded:: 2.2.2
+      This is a legacy method.  On the
+      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      replaced by the ``make_`` and ``add_`` methods.
 
 
-   .. method:: get_filename([failobj])
+   .. method:: get_filename(failobj=None)
 
       Return the value of the ``filename`` parameter of the
       :mailheader:`Content-Disposition` header of the message.  If the header
@@ -580,7 +592,7 @@ Here are the methods of the :class:`Message` class:
       :func:`email.utils.unquote`.
 
 
-   .. method:: get_boundary([failobj])
+   .. method:: get_boundary(failobj=None)
 
       Return the value of the ``boundary`` parameter of the
       :mailheader:`Content-Type` header of the message, or *failobj* if either
@@ -603,7 +615,7 @@ Here are the methods of the :class:`Message` class:
       have been present in the original :mailheader:`Content-Type` header.
 
 
-   .. method:: get_content_charset([failobj])
+   .. method:: get_content_charset(failobj=None)
 
       Return the ``charset`` parameter of the :mailheader:`Content-Type` header,
       coerced to lower case.  If there is no :mailheader:`Content-Type` header, or if
@@ -612,10 +624,8 @@ Here are the methods of the :class:`Message` class:
       Note that this method differs from :meth:`get_charset` which returns the
       :class:`~email.charset.Charset` instance for the default encoding of the message body.
 
-      .. versionadded:: 2.2.2
 
-
-   .. method:: get_charsets([failobj])
+   .. method:: get_charsets(failobj=None)
 
       Return a list containing the character set names in the message.  If the
       message is a :mimetype:`multipart`, then the list will contain one element
@@ -629,6 +639,15 @@ Here are the methods of the :class:`Message` class:
       will be *failobj*.
 
 
+   .. method:: get_content_disposition()
+
+      Return the lowercased value (without parameters) of the message's
+      :mailheader:`Content-Disposition` header if it has one, or ``None``.  The
+      possible values for this method are *inline*, *attachment* or ``None``
+      if the message follows :rfc:`2183`.
+
+      .. versionadded:: 3.5
+
    .. method:: walk()
 
       The :meth:`walk` method is an all-purpose generator which can be used to
@@ -637,18 +656,29 @@ Here are the methods of the :class:`Message` class:
       iterator in a ``for`` loop; each iteration returns the next subpart.
 
       Here's an example that prints the MIME type of every part of a multipart
-      message structure::
+      message structure:
+
+      .. testsetup::
+
+         import email
+         from email import message_from_binary_file
+         from os.path import join, dirname
+         lib_dir = dirname(dirname(email.__file__))
+         file_path = join(lib_dir, 'test/test_email/data/msg_16.txt')
+         with open(file_path, 'rb') as f:
+             msg = message_from_binary_file(f)
+         from email.iterators import _structure
+
+      .. doctest::
 
          >>> for part in msg.walk():
-         ...     print part.get_content_type()
+         ...     print(part.get_content_type())
          multipart/report
          text/plain
          message/delivery-status
          text/plain
          text/plain
          message/rfc822
-<<<<<<< HEAD
-=======
          text/plain
 
       ``walk`` iterates over the subparts of any part where
@@ -683,73 +713,6 @@ Here are the methods of the :class:`Message` class:
       into the subparts.
 
 
-   .. method:: get_body(preferencelist=('related', 'html', 'plain'))
-
-      Return the MIME part that is the best candidate to be the "body" of the
-      message.
-
-      *preferencelist* must be a sequence of strings from the set ``related``,
-      ``html``, and ``plain``, and indicates the order of preference for the
-      content type of the part returned.
-
-      Start looking for candidate matches with the object on which the
-      ``get_body`` method is called.
-
-      If ``related`` is not included in *preferencelist*, consider the root
-      part (or subpart of the root part) of any related encountered as a
-      candidate if the (sub-)part matches a preference.
-
-      When encountering a ``multipart/related``, check the ``start`` parameter
-      and if a part with a matching :mailheader:`Content-ID` is found, consider
-      only it when looking for candidate matches.  Otherwise consider only the
-      first (default root) part of the ``multipart/related``.
-
-      If a part has a :mailheader:`Content-Disposition` header, only consider
-      the part a candidate match if the value of the header is ``inline``.
-
-      If none of the candidates matches any of the preferences in
-      *preferencelist*, return ``None``.
-
-      Notes: (1) For most applications the only *preferencelist* combinations
-      that really make sense are ``('plain',)``, ``('html', 'plain')``, and the
-      default ``('related', 'html', 'plain')``.  (2) Because matching starts
-      with the object on which ``get_body`` is called, calling ``get_body`` on
-      a ``multipart/related`` will return the object itself unless
-      *preferencelist* has a non-default value. (3) Messages (or message parts)
-      that do not specify a :mailheader:`Content-Type` or whose
-      :mailheader:`Content-Type` header is invalid will be treated as if they
-      are of type ``text/plain``, which may occasionally cause ``get_body`` to
-      return unexpected results.
-
-
-   .. method:: iter_attachments()
-
-      Return an iterator over all of the immediate sub-parts of the message
-      that are not candidate "body" parts.  That is, skip the first occurrence
-      of each of ``text/plain``, ``text/html``, ``multipart/related``, or
-      ``multipart/alternative`` (unless they are explicitly marked as
-      attachments via :mailheader:`Content-Disposition: attachment`), and
-      return all remaining parts.  When applied directly to a
-      ``multipart/related``, return an iterator over the all the related parts
-      except the root part (ie: the part pointed to by the ``start`` parameter,
-      or the first part if there is no ``start`` parameter or the ``start``
-      parameter doesn't match the :mailheader:`Content-ID` of any of the
-      parts).  When applied directly to a ``multipart/alternative`` or a
-      non-``multipart``, return an empty iterator.
-
-
-   .. method:: iter_parts()
-
-      Return an iterator over all of the immediate sub-parts of the message,
-      which will be empty for a non-``multipart``.  (See also
-      :meth:`~email.message.EmailMessage.walk`.)
-
->>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
-
-   .. versionchanged:: 2.5
-      The previously deprecated methods :meth:`get_type`, :meth:`get_main_type`, and
-      :meth:`get_subtype` were removed.
-
    :class:`Message` objects can also optionally contain two instance attributes,
    which can be used when generating the plain text of a MIME message.
 
@@ -783,10 +746,9 @@ Here are the methods of the :class:`Message` class:
       except that it contains text that appears between the last boundary and
       the end of the message.
 
-      .. versionchanged:: 2.5
-         You do not need to set the epilogue to the empty string in order for the
-         :class:`~email.generator.Generator` to print a newline at the end of the
-         file.
+      You do not need to set the epilogue to the empty string in order for the
+      :class:`~email.generator.Generator` to print a newline at the end of the
+      file.
 
 
    .. attribute:: defects
@@ -794,22 +756,3 @@ Here are the methods of the :class:`Message` class:
       The *defects* attribute contains a list of all the problems found when
       parsing this message.  See :mod:`email.errors` for a detailed description
       of the possible parsing defects.
-
-      .. versionadded:: 2.4
-
-<<<<<<< HEAD
-=======
-.. class:: MIMEPart(policy=default)
-
-    This class represents a subpart of a MIME message.  It is identical to
-    :class:`EmailMessage`, except that no :mailheader:`MIME-Version` headers are
-    added when :meth:`~EmailMessage.set_content` is called, since sub-parts do
-    not need their own :mailheader:`MIME-Version` headers.
-
-
-.. rubric:: Footnotes
-
-.. [1] Originally added in 3.4 as a :term:`provisional module <provisional
-       package>`.  Docs for legacy message class moved to
-       :ref:`compat32_message`.
->>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)

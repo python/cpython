@@ -67,6 +67,16 @@ DOMEventStream Objects
 
    ...
 
+<<<<<<< HEAD
+=======
+      Return a tuple containing *event* and the current *node* as
+      :class:`xml.dom.minidom.Document` if event equals :data:`START_DOCUMENT`,
+      :class:`xml.dom.minidom.Element` if event equals :data:`START_ELEMENT` or
+      :data:`END_ELEMENT` or :class:`xml.dom.minidom.Text` if event equals
+      :data:`CHARACTERS`.
+      The current node does not contain information about its children, unless
+      :func:`expandNode` is called.
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
 
 .. method:: DOMEventStream.expandNode(node)
 

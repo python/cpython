@@ -290,7 +290,7 @@ is a separate error indicator for each thread.
    :c:data:`PyExc_Warning` is a subclass of :c:data:`PyExc_Exception`;
    the default warning category is :c:data:`PyExc_RuntimeWarning`. The standard
    Python warning categories are available as global variables whose names are
-   enumerated at :ref:`standarwarningcategories`.
+   enumerated at :ref:`standardwarningcategories`.
 
    For information about warning control, see the documentation for the
    :mod:`warnings` module and the :option:`-W` option in the command line
@@ -658,6 +658,7 @@ Notes:
    Only defined on Windows; protect code that uses this by testing that the
    preprocessor macro ``MS_WINDOWS`` is defined.
 
+<<<<<<< HEAD
 (4)
    .. versionadded:: 2.5
 
@@ -666,6 +667,9 @@ Notes:
    preprocessor macro ``__VMS`` is defined.
 
 .. _standarwarningcategories:
+=======
+.. _standardwarningcategories:
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
 
 Standard Warning Categories
 ===========================
@@ -678,7 +682,7 @@ the variables:
 .. index::
    single: PyExc_Warning
    single: PyExc_BytesWarning
-   single: PyExc_DepricationWarning
+   single: PyExc_DeprecationWarning
    single: PyExc_FutureWarning
    single: PyExc_ImportWarning
    single: PyExc_PendingDeprecationWarning
@@ -700,7 +704,7 @@ the variables:
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ImportWarning`            | :exc:`ImportWarning`            |          |
 +------------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_PendingDepricationWarning`| :exc:`PendingDeprecationWarning`|          |
+| :c:data:`PyExc_PendingDeprecationWarning`| :exc:`PendingDeprecationWarning`|          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_RuntimeWarning`           | :exc:`RuntimeWarning`           |          |
 +------------------------------------------+---------------------------------+----------+

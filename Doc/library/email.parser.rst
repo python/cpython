@@ -116,8 +116,14 @@ class.
       effectively non-strict.  You should simply stop passing a *strict* flag to
       the :class:`Parser` constructor.
 
+<<<<<<< HEAD
    .. versionchanged:: 2.2.2
       The *strict* flag was added.
+=======
+   Create a :class:`BytesParser` instance.  The *_class* and *policy*
+   arguments have the same meaning and semantics as the *_factory*
+   and *policy* arguments of :class:`BytesFeedParser`.
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
 
    .. versionchanged:: 2.4
       The *strict* flag was deprecated.

@@ -93,3 +93,13 @@ this class is *not* an exception!
   has this defect, its :meth:`~email.message.Message.is_multipart` method may
   return false even though its content type claims to be :mimetype:`multipart`.
 
+<<<<<<< HEAD
+=======
+* :class:`InvalidBase64PaddingDefect` -- When decoding a block of base64
+  encoded bytes, the padding was not correct.  Enough padding is added to
+  perform the decode, but the resulting decoded bytes may be invalid.
+
+* :class:`InvalidBase64CharactersDefect` -- When decoding a block of base64
+  encoded bytes, characters outside the base64 alphabet were encountered.
+  The characters are ignored, but the resulting decoded bytes may be invalid.
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
