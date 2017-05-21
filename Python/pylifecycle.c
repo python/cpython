@@ -334,8 +334,8 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
         Py_OptimizeFlag = add_flag(Py_OptimizeFlag, p);
     if ((p = Py_GETENV("PYTHONDONTWRITEBYTECODE")) && *p != '\0')
         Py_DontWriteBytecodeFlag = add_flag(Py_DontWriteBytecodeFlag, p);
-    /* The variable is only tested for existence here; _PyRandom_Init will
-       check its value further. */
+    /* The variable is only tested for existence here;
+       _Py_HashRandomization_Init will check its value further. */
     if ((p = Py_GETENV("PYTHONHASHSEED")) && *p != '\0')
         Py_HashRandomizationFlag = add_flag(Py_HashRandomizationFlag, p);
 #ifdef MS_WINDOWS
@@ -345,7 +345,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
         Py_LegacyWindowsStdioFlag = add_flag(Py_LegacyWindowsStdioFlag, p);
 #endif
 
-    _PyRandom_Init();
+    _Py_HashRandomization_Init();
 
     interp = PyInterpreterState_New();
     if (interp == NULL)
@@ -696,7 +696,7 @@ Py_FinalizeEx(void)
     PyDict_Fini();
     PySlice_Fini();
     _PyGC_Fini();
-    _PyRandom_Fini();
+    _Py_HashRandomization_Fini();
     _PyArg_Fini();
     PyAsyncGen_Fini();
 

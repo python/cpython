@@ -84,7 +84,7 @@ PyAPI_FUNC(void) _PyImportHooks_Init(void);
 PyAPI_FUNC(int) _PyFrame_Init(void);
 PyAPI_FUNC(int) _PyFloat_Init(void);
 PyAPI_FUNC(int) PyByteArray_Init(void);
-PyAPI_FUNC(void) _PyRandom_Init(void);
+PyAPI_FUNC(void) _Py_HashRandomization_Init(void);
 #endif
 
 /* Various internal finalizers */
@@ -106,7 +106,7 @@ PyAPI_FUNC(void) _PyGC_DumpShutdownStats(void);
 PyAPI_FUNC(void) _PyGC_Fini(void);
 PyAPI_FUNC(void) PySlice_Fini(void);
 PyAPI_FUNC(void) _PyType_Fini(void);
-PyAPI_FUNC(void) _PyRandom_Fini(void);
+PyAPI_FUNC(void) _Py_HashRandomization_Fini(void);
 PyAPI_FUNC(void) PyAsyncGen_Fini(void);
 
 PyAPI_DATA(PyThreadState *) _Py_Finalizing;
