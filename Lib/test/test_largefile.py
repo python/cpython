@@ -5,7 +5,7 @@ import os
 import stat
 import sys
 import unittest
-from test.support import TESTFN, requires, unlink
+from test.support import TESTFN, requires, unlink, bigmemtest, _2G
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
 
@@ -44,6 +44,19 @@ class LargeFileTest:
         if not os.stat(TESTFN)[stat.ST_SIZE] == 0:
             raise cls.failureException('File was not truncated by opening '
                                        'with mode "wb"')
+
+    def test_large_reads_writes(self):
+        # see issue #24658
+        requires('largefile',
+                 'test requires %s bytes and a long time to run' % size)
+        with self.open(TESTFN, "wb") as f:
+            b = b'x' * size
+            self.assertEqual(f.write(b), size)
+            self.assertEqual(f.tell(), size)
+
+        with self.open(TESTFN, "rb") as f:
+            f.read()
+            self.assertEqual(f.tell(), size)
 
     def test_osstat(self):
         self.assertEqual(os.stat(TESTFN)[stat.ST_SIZE], size+1)
