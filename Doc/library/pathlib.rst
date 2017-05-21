@@ -656,6 +656,18 @@ call fails (for example because the path doesn't exist):
    .. versionadded:: 3.5
 
 
+.. method:: Path.absolute()
+
+   Return an absolute version of this path based on the current working
+   directory.  This function works even if the path doesn't exist.
+
+   No normalization is done, i.e all ``'.'`` and ``'..'`` will not be
+   normalized.  Use :meth:`Path.resolve` to get the canonical path to a file.
+
+      >>> p = Path('pathlib')
+      >>> p.absolute()
+      PosixPath('/home/antoine/pathlib')
+
 .. method:: Path.stat()
 
    Return information about this path (similarly to :func:`os.stat`).
