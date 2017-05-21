@@ -108,9 +108,9 @@ this class is *not* an exception!
   return false even though its content type claims to be :mimetype:`multipart`.
 
 * :class:`InvalidBase64PaddingDefect` -- When decoding a block of base64
-  enocded bytes, the padding was not correct.  Enough padding is added to
+  encoded bytes, the padding was not correct.  Enough padding is added to
   perform the decode, but the resulting decoded bytes may be invalid.
 
 * :class:`InvalidBase64CharactersDefect` -- When decoding a block of base64
-  enocded bytes, characters outside the base64 alphebet were encountered.
+  encoded bytes, characters outside the base64 alphabet were encountered.
   The characters are ignored, but the resulting decoded bytes may be invalid.

@@ -240,10 +240,18 @@ added matters.  To illustrate::
 
       Return the maximum allowed number of headers named *name*.
 
+<<<<<<< HEAD
       Called when a header is added to a :class:`~email.message.Message`
       object.  If the returned value is not ``0`` or ``None``, and there are
       already a number of headers with the name *name* equal to the value
       returned, a :exc:`ValueError` is raised.
+=======
+      Called when a header is added to an :class:`~email.message.EmailMessage`
+      or :class:`~email.message.Message` object.  If the returned value is not
+      ``0`` or ``None``, and there are already a number of headers with the
+      name *name* greater than or equal to the value returned, a
+      :exc:`ValueError` is raised.
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
 
       Because the default behavior of ``Message.__setitem__`` is to append the
       value to the list of headers, it is easy to create duplicate headers
@@ -540,7 +548,7 @@ more closely to the RFCs relevant to their domains.
 
    The same as ``SMTP`` except that :attr:`~EmailPolicy.utf8` is ``True``.
    Useful for serializing messages to a message store without using encoded
-   words in the headers.  Should only be used for SMTP trasmission if the
+   words in the headers.  Should only be used for SMTP transmission if the
    sender or recipient addresses have non-ASCII characters (the
    :meth:`smtplib.SMTP.send_message` method handles this automatically).
 
@@ -581,3 +589,78 @@ the unicode string into the correct RFC encoded form.
 
 The header objects and their attributes are described in
 :mod:`~email.headerregistry`.
+<<<<<<< HEAD
+=======
+
+
+
+.. class:: Compat32(**kw)
+
+   This concrete :class:`Policy` is the backward compatibility policy.  It
+   replicates the behavior of the email package in Python 3.2.  The
+   :mod:`~email.policy` module also defines an instance of this class,
+   :const:`compat32`, that is used as the default policy.  Thus the default
+   behavior of the email package is to maintain compatibility with Python 3.2.
+
+   The following attributes have values that are different from the
+   :class:`Policy` default:
+
+
+   .. attribute:: mangle_from_
+
+      The default is ``True``.
+
+
+   The class provides the following concrete implementations of the
+   abstract methods of :class:`Policy`:
+
+
+   .. method:: header_source_parse(sourcelines)
+
+      The name is parsed as everything up to the '``:``' and returned
+      unmodified.  The value is determined by stripping leading whitespace off
+      the remainder of the first line, joining all subsequent lines together,
+      and stripping any trailing carriage return or linefeed characters.
+
+
+   .. method:: header_store_parse(name, value)
+
+      The name and value are returned unmodified.
+
+
+   .. method:: header_fetch_parse(name, value)
+
+      If the value contains binary data, it is converted into a
+      :class:`~email.header.Header` object using the ``unknown-8bit`` charset.
+      Otherwise it is returned unmodified.
+
+
+   .. method:: fold(name, value)
+
+      Headers are folded using the :class:`~email.header.Header` folding
+      algorithm, which preserves existing line breaks in the value, and wraps
+      each resulting line to the ``max_line_length``.  Non-ASCII binary data are
+      CTE encoded using the ``unknown-8bit`` charset.
+
+
+   .. method:: fold_binary(name, value)
+
+      Headers are folded using the :class:`~email.header.Header` folding
+      algorithm, which preserves existing line breaks in the value, and wraps
+      each resulting line to the ``max_line_length``.  If ``cte_type`` is
+      ``7bit``, non-ascii binary data is CTE encoded using the ``unknown-8bit``
+      charset.  Otherwise the original source header is used, with its existing
+      line breaks and any (RFC invalid) binary data it may contain.
+
+
+.. data:: compat32
+
+   An instance of :class:`Compat32`, providing  backward compatibility with the
+   behavior of the email package in Python 3.2.
+
+
+.. rubric:: Footnotes
+
+.. [1] Originally added in 3.3 as a :term:`provisional feature <provisional
+       package>`.
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)

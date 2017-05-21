@@ -231,6 +231,18 @@ The following exceptions are the exceptions that are usually raised.
    classes, abstract methods should raise this exception when they require derived
    classes to override the method.
 
+<<<<<<< HEAD
+=======
+      It should not be used to indicate that an operator or method is not
+      meant to be supported at all -- in that case either leave the operator /
+      method undefined or, if a subclass, set it to :data:`None`.
+
+   .. note::
+
+      ``NotImplementedError`` and ``NotImplemented`` are not interchangeable,
+      even though they have similar names and purposes.  See
+      :data:`NotImplemented` for details on when to use it.
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
 
 .. exception:: OSError([arg])
                OSError(errno, strerror[, filename[, winerror[, filename2]]])

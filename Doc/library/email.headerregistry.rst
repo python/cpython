@@ -454,3 +454,12 @@ construct structured values to assign to specific headers.
       ``display_name`` is none and there is a single ``Address`` in the
       ``addresses`` list, the ``str`` value will be the same as the ``str`` of
       that single ``Address``.
+<<<<<<< HEAD
+=======
+
+
+.. rubric:: Footnotes
+
+.. [1] Originally added in 3.3 as a :term:`provisional module <provisional
+       package>`
+>>>>>>> 3378b20... Fix typos in multiple `.rst` files (#1668)
