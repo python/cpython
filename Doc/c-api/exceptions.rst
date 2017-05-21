@@ -290,7 +290,7 @@ is a separate error indicator for each thread.
    :c:data:`PyExc_Warning` is a subclass of :c:data:`PyExc_Exception`;
    the default warning category is :c:data:`PyExc_RuntimeWarning`. The standard
    Python warning categories are available as global variables whose names are
-   enumerated at :ref:`standarwarningcategories`.
+   enumerated at :ref:`standardwarningcategories`.
 
    For information about warning control, see the documentation for the
    :mod:`warnings` module and the :option:`-W` option in the command line
@@ -665,7 +665,7 @@ Notes:
    Only defined on VMS; protect code that uses this by testing that the
    preprocessor macro ``__VMS`` is defined.
 
-.. _standarwarningcategories:
+.. _standardwarningcategories:
 
 Standard Warning Categories
 ===========================
@@ -678,7 +678,7 @@ the variables:
 .. index::
    single: PyExc_Warning
    single: PyExc_BytesWarning
-   single: PyExc_DepricationWarning
+   single: PyExc_DeprecationWarning
    single: PyExc_FutureWarning
    single: PyExc_ImportWarning
    single: PyExc_PendingDeprecationWarning
@@ -700,7 +700,7 @@ the variables:
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ImportWarning`            | :exc:`ImportWarning`            |          |
 +------------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_PendingDepricationWarning`| :exc:`PendingDeprecationWarning`|          |
+| :c:data:`PyExc_PendingDeprecationWarning`| :exc:`PendingDeprecationWarning`|          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_RuntimeWarning`           | :exc:`RuntimeWarning`           |          |
 +------------------------------------------+---------------------------------+----------+
