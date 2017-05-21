@@ -1607,8 +1607,13 @@ process(int argc, wchar_t ** argv)
         if (valid) {
             ip = locate_python(&p[1], FALSE);
             if (ip == NULL)
+            {
+                fwprintf(stdout, \
+                         L"Python %ls not found!\n", &p[1]);
+                show_python_list(argv);
                 error(RC_NO_PYTHON, L"Requested Python version (%ls) not \
 installed, use -0 for available pythons", &p[1]);
+            }
             executable = ip->executable;
             command += wcslen(p);
             command = skip_whitespace(command);
