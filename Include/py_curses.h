@@ -7,7 +7,7 @@
 ** On Mac OS X 10.2 [n]curses.h and stdlib.h use different guards
 ** against multiple definition of wchar_t.
 */
-#ifdef	_BSD_WCHAR_T_DEFINED_
+#ifdef  _BSD_WCHAR_T_DEFINED_
 #define _WCHAR_T
 #endif
 
@@ -22,7 +22,7 @@
 ** On FreeBSD, [n]curses.h and stdlib.h/wchar.h use different guards
 ** against multiple definition of wchar_t and wint_t.
 */
-#ifdef	_XOPEN_SOURCE_EXTENDED
+#ifdef  _XOPEN_SOURCE_EXTENDED
 #ifndef __FreeBSD_version
 #include <osreldate.h>
 #endif
@@ -45,6 +45,17 @@
 #endif
 
 #ifdef HAVE_NCURSES_H
+#if !defined(HAVE_CURSES_IS_PAD) && !defined(WINDOW_HAS_FLAGS)
+/* If ncurses doesn't have both is_pad function and _flags field of WINDOW,
+   there is no method to check whether WINDOW is a pad.  Therefore, add the
+   definitions to make WINDOW to non-opaque type before including ncurses.h.
+*/
+#define NCURSES_OPAQUE 0
+#define WINDOW_HAS_FLAGS 1
+#endif
+#endif
+
+#ifdef HAVE_NCURSES_H
 #include <ncurses.h>
 #else
 #include <curses.h>
@@ -57,9 +68,6 @@
 #ifdef HAVE_NCURSES_H
 /* configure was checking <curses.h>, but we will
    use <ncurses.h>, which has all these features. */
-#ifndef WINDOW_HAS_FLAGS
-#define WINDOW_HAS_FLAGS 1
-#endif
 #ifndef MVWDELCH_IS_EXPRESSION
 #define MVWDELCH_IS_EXPRESSION 1
 #endif
@@ -74,12 +82,12 @@ extern "C" {
 /* Type declarations */
 
 typedef struct {
-	PyObject_HEAD
-	WINDOW *win;
-	char *encoding;
+    PyObject_HEAD
+    WINDOW *win;
+    char *encoding;
 } PyCursesWindowObject;
 
-#define PyCursesWindow_Check(v)	 (Py_TYPE(v) == &PyCursesWindow_Type)
+#define PyCursesWindow_Check(v)  (Py_TYPE(v) == &PyCursesWindow_Type)
 
 #define PyCurses_CAPSULE_NAME "_curses._C_API"
 

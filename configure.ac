@@ -4989,6 +4989,18 @@ then
   [Define if mvwdelch in curses.h is an expression.])
 fi
 
+AC_MSG_CHECKING(for is_pad)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
+    bool b;
+    WINDOW *w;
+    b = is_pad(w);
+  ]])],
+  [AC_DEFINE(HAVE_CURSES_IS_PAD, 1,
+             [Define if you have the 'is_pad' function or macro.])
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
 AC_MSG_CHECKING(whether WINDOW has _flags)
 AC_CACHE_VAL(ac_cv_window_has_flags,
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
