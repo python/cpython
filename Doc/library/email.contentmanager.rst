@@ -62,7 +62,7 @@ this module.
 .. class:: EmailMessage(policy=default)
 
    If *policy* is specified (it must be an instance of a :mod:`~email.policy`
-   class) use the rules it specifies to udpate and serialize the representation
+   class) use the rules it specifies to update and serialize the representation
    of the message.  If *policy* is not set, use the
    :class:`~email.policy.default` policy, which follows the rules of the email
    RFCs except for line endings (instead of the RFC mandated ``\r\n``, it uses
@@ -108,7 +108,7 @@ this module.
       the part a candidate match if the value of the header is ``inline``.
 
       If none of the candidates matches any of the preferences in
-      *preferneclist*, return ``None``.
+      *preferencelist*, return ``None``.
 
       Notes: (1) For most applications the only *preferencelist* combinations
       that really make sense are ``('plain',)``, ``('html', 'plain')``, and the
@@ -396,7 +396,7 @@ Currently the email package provides only one concrete content manager,
        MIME charset name, use the standard charset instead.
 
        If *cte* is set, encode the payload using the specified content transfer
-       encoding, and set the :mailheader:`Content-Transfer-Endcoding` header to
+       encoding, and set the :mailheader:`Content-Transfer-Encoding` header to
        that value.  For ``str`` objects, if it is not set use heuristics to
        determine the most compact encoding.  Possible values for *cte* are
        ``quoted-printable``, ``base64``, ``7bit``, ``8bit``, and ``binary``.
