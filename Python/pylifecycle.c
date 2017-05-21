@@ -291,6 +291,9 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
 
     /* Install importlib as the implementation of import */
     value = PyObject_CallMethod(importlib, "_install", "OO", sysmod, impmod);
+    if (value != NULL)
+        value = PyObject_CallMethod(importlib,
+                                    "_install_external_importers", "");
     if (value == NULL) {
         PyErr_Print();
         Py_FatalError("Py_Initialize: importlib install failed");
