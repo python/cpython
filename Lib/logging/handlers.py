@@ -828,25 +828,25 @@ class SysLogHandler(logging.Handler):
             if socktype is None:
                 socktype = socket.SOCK_DGRAM
             host, port = address
-            err = None
-            for res in socket.getaddrinfo(host, port, 0, socktype):
+            ress = socket.getaddrinfo(host, port, 0, socktype)
+            if not ress:
+                raise OSError("getaddrinfo returns an empty list")
+            for res in ress:
                 af, socktype, proto, _, sa = res
-                sock = None
+                err = sock = None
                 try:
                     sock = socket.socket(af, socktype, proto)
                     if socktype == socket.SOCK_STREAM:
                         sock.connect(sa)
-                    self.socket = sock
-                    self.socktype = socktype
-                    return
-                except OSError as _:
-                    err = _
+                    break
+                except OSError as exc:
+                    err = exc
                     if sock is not None:
                         sock.close()
             if err is not None:
                 raise err
-            else:
-                raise OSError("getaddrinfo returns an empty list")
+            self.socket = sock
+            self.socktype = socktype
 
     def _connect_unixsocket(self, address):
         use_socktype = self.socktype
