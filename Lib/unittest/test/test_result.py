@@ -369,6 +369,7 @@ class Test_TestResult(unittest.TestCase):
                      "Docstrings are omitted with -O2 and above")
     def testGetDescriptionWithMultiLineDocstring(self):
         """Tests getDescription() for a method with a longer docstring.
+
         The second line of the docstring.
         """
         result = unittest.TextTestResult(None, True, 1)
@@ -383,6 +384,7 @@ class Test_TestResult(unittest.TestCase):
                      "Docstrings are omitted with -O2 and above")
     def testGetSubTestDescriptionWithMultiLineDocstring(self):
         """Tests getDescription() for a method with a longer docstring.
+
         The second line of the docstring.
         """
         result = unittest.TextTestResult(None, True, 1)
