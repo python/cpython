@@ -47,6 +47,15 @@ class TestDump:
         d[1337] = "true.dat"
         self.assertEqual(self.dumps(d, sort_keys=True), '{"1337": "true.dat"}')
 
+    def test_compact_dump(self):
+        sio = StringIO()
+        self.json.dump({'name': 'some name', 'value': 'some value'}, sio, separators=self.json.COMPACT)
+        self.assertEqual(sio.getvalue(), '{"name":"some name","value":"some value"}')
+
+    def test_compact_encode(self):
+        encoder = self.json.JSONEncoder(separators=self.json.COMPACT)
+        encoded = encoder.encode({'name': 'some name', 'value': 'some value'})
+        self.assertEqual(encoded, '{"name":"some name","value":"some value"}')
 
 class TestPyDump(TestDump, PyTest): pass
 

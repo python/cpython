@@ -43,7 +43,7 @@ Encoding basic Python object hierarchies::
 Compact encoding::
 
     >>> import json
-    >>> json.dumps([1,2,3,{'4': 5, '6': 7}], separators=(',', ':'))
+    >>> json.dumps([1,2,3,{'4': 5, '6': 7}], separators=json.COMPACT)
     '[1,2,3,{"4":5,"6":7}]'
 
 Pretty printing::
@@ -170,7 +170,7 @@ Basic Usage
    If specified, *separators* should be an ``(item_separator, key_separator)``
    tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
    ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
-   you should specify ``(',', ':')`` to eliminate whitespace.
+   you should specify :attr:`json.COMPACT` to eliminate whitespace.
 
    .. versionchanged:: 3.4
       Use ``(',', ': ')`` as default if *indent* is not ``None``.
@@ -281,6 +281,17 @@ Basic Usage
    .. versionchanged:: 3.6
       *s* can now be of type :class:`bytes` or :class:`bytearray`. The
       input encoding should be UTF-8, UTF-16 or UTF-32.
+
+
+Constants
+^^^^^^^^^
+
+.. data:: COMPACT
+
+   A constant that can be used as the *separators* argument
+   to emit a compact serialization.
+
+   .. versionadded:: 3.7
 
 
 Encoders and Decoders
@@ -448,7 +459,7 @@ Encoders and Decoders
    If specified, *separators* should be an ``(item_separator, key_separator)``
    tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
    ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
-   you should specify ``(',', ':')`` to eliminate whitespace.
+   you should specify :attr:`json.COMPACT` to eliminate whitespace.
 
    .. versionchanged:: 3.4
       Use ``(',', ': ')`` as default if *indent* is not ``None``.
