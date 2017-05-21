@@ -288,7 +288,8 @@ and off individually.  They are described here in more detail.
 
    Fixes duplicate types in the second argument of :func:`isinstance`.  For
    example, ``isinstance(x, (int, int))`` is converted to ``isinstance(x,
-   (int))``.
+   int)`` and ``isinstance(x, (int, float, int))`` is converted to
+   ``isinstance(x, (int, float))``.
 
 .. 2to3fixer:: itertools_imports
 
