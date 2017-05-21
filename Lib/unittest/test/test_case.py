@@ -577,7 +577,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def testShortDescriptionWithOneLineDocstring(self):
-        """Tests shortDescription() for a method with a docstring."""
+        """ Tests shortDescription() for a method with a docstring."""
         self.assertEqual(
                 self.shortDescription(),
                 'Tests shortDescription() for a method with a docstring.')
@@ -585,7 +585,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def testShortDescriptionWithMultiLineDocstring(self):
-        """Tests shortDescription() for a method with a longer docstring.
+        """ Tests shortDescription() for a method with a longer docstring.
 
         This method ensures that only the first line of a docstring is
         returned used in the short description, no matter how long the
@@ -595,16 +595,6 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 self.shortDescription(),
                  'Tests shortDescription() for a method with a longer '
                  'docstring.')
-
-    @unittest.skipIf(
-        sys.flags.optimize >= 2,
-        "Docstrings are omitted with -O2 and above")
-    def testShortDescriptionWithSurroundingSpaceOneLineDocstring(self):
-        """ Surrounding space should be stripped to get the shortDescription. """
-        expected_description = (
-            "Surrounding space should be stripped"
-            " to get the shortDescription.")
-        self.assertEqual(self.shortDescription(), expected_description)
 
     @unittest.skipIf(
         sys.flags.optimize >= 2,
