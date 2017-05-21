@@ -2781,18 +2781,21 @@ def supports_extended_attributes():
 
 @unittest.skipUnless(supports_extended_attributes(),
                      "no non-broken extended attribute support")
-# Kernels < 2.6.39 don't respect setxattr flags.
-@support.requires_linux_version(2, 6, 39)
 class ExtendedAttributeTests(unittest.TestCase):
 
     def _check_xattrs_str(self, s, getxattr, setxattr, removexattr, listxattr, **kwargs):
         fn = support.TESTFN
+        if sys.platform.startswith("freebsd"):
+            xattr_errno = errno.ENOATTR
+        else:
+            xattr_errno = errno.ENODATA
+
         self.addCleanup(support.unlink, fn)
         create_file(fn)
 
         with self.assertRaises(OSError) as cm:
             getxattr(fn, s("user.test"), **kwargs)
-        self.assertEqual(cm.exception.errno, errno.ENODATA)
+        self.assertEqual(cm.exception.errno, xattr_errno)
 
         init_xattr = listxattr(fn)
         self.assertIsInstance(init_xattr, list)
@@ -2811,7 +2814,7 @@ class ExtendedAttributeTests(unittest.TestCase):
 
         with self.assertRaises(OSError) as cm:
             setxattr(fn, s("user.test2"), b"bye", os.XATTR_REPLACE, **kwargs)
-        self.assertEqual(cm.exception.errno, errno.ENODATA)
+        self.assertEqual(cm.exception.errno, xattr_errno)
 
         setxattr(fn, s("user.test2"), b"foo", os.XATTR_CREATE, **kwargs)
         xattr.add("user.test2")
@@ -2820,7 +2823,7 @@ class ExtendedAttributeTests(unittest.TestCase):
 
         with self.assertRaises(OSError) as cm:
             getxattr(fn, s("user.test"), **kwargs)
-        self.assertEqual(cm.exception.errno, errno.ENODATA)
+        self.assertEqual(cm.exception.errno, xattr_errno)
 
         xattr.remove("user.test")
         self.assertEqual(set(listxattr(fn)), xattr)
@@ -2840,14 +2843,23 @@ class ExtendedAttributeTests(unittest.TestCase):
         self._check_xattrs_str(os.fsencode, *args, **kwargs)
         support.unlink(support.TESTFN)
 
+    # Kernels < 2.6.39 don't respect setxattr flags.
+    @support.requires_linux_version(2, 6, 39)
+    @support.requires_freebsd_version(5)
     def test_simple(self):
         self._check_xattrs(os.getxattr, os.setxattr, os.removexattr,
                            os.listxattr)
 
+    # Kernels < 2.6.39 don't respect setxattr flags.
+    @support.requires_linux_version(2, 6, 39)
+    @support.requires_freebsd_version(5)
     def test_lpath(self):
         self._check_xattrs(os.getxattr, os.setxattr, os.removexattr,
                            os.listxattr, follow_symlinks=False)
 
+    # Kernels < 2.6.39 don't respect setxattr flags.
+    @support.requires_linux_version(2, 6, 39)
+    @support.requires_freebsd_version(5)
     def test_fds(self):
         def getxattr(path, *args):
             with open(path, "rb") as fp:

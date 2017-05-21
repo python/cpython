@@ -1,0 +1,1 @@
+Add support for extended attributes on FreeBSD

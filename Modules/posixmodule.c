@@ -105,12 +105,422 @@ corresponding Unix manual entries for more information on calls.");
 #undef HAVE_SCHED_SETAFFINITY
 #endif
 
-#if defined(HAVE_SYS_XATTR_H) && defined(__GLIBC__) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
+#if defined(HAVE_SYS_XATTR_H) && defined(__GLIBC__) && !defined(__GNU__)
+#define USE_XATTRS
+#elif defined(HAVE_SYS_EXTATTR_H) && defined(__FreeBSD__)
 #define USE_XATTRS
 #endif
 
-#ifdef USE_XATTRS
+#if defined(USE_XATTRS) && defined(HAVE_SYS_XATTR_H)
 #include <sys/xattr.h>
+#elif defined(USE_XATTRS) && defined(HAVE_SYS_EXTATTR_H)
+#include <sys/extattr.h>
+#define XATTR_SIZE_MAX 4096
+#define XATTR_LIST_MAX 4096
+#define XATTR_CREATE 1
+#define XATTR_REPLACE 2
+#endif
+
+#if defined(USE_XATTRS) && defined(__FreeBSD__)
+
+/* Turns a qualified string into a namespace id on FreeBSD.
+ * This ensures that that the namespace is qualified
+ * ((user|system).<name>) and that <name> is non-null.
+ */
+static int
+xattrnamespace(int *namespace, const char *fullattr)
+{
+    char *sep = strchr(fullattr, '.');
+    size_t nslen = 0;
+    int ret = 0;
+
+    *namespace = -1;
+    // return ENOATTR on unqualified names
+    if (sep == NULL || *(sep + 1) == '\0')
+        return ENOATTR;
+
+    if (sep < fullattr)
+        return ENOATTR;
+
+    nslen = sep - fullattr + 1;
+
+    if (strncmp(fullattr, "user", (4 < nslen ? 4 : nslen)) == 0) {
+        *namespace = EXTATTR_NAMESPACE_USER;
+    } else if (strncmp(fullattr, "system", (6 < nslen ? 6 : nslen)) == 0) {
+        *namespace = EXTATTR_NAMESPACE_SYSTEM;
+    }
+
+    if (*namespace == -1)
+        ret = ENOATTR;
+
+    return ret;
+}
+
+/* xattr lists come back from FreeBSD without the leading namespace.
+ * We need to translate this into a linux-like format
+ */
+static ssize_t
+normalize_xattr_list(int namespace, char *attrs, size_t size, ssize_t extattr_ret)
+{
+    char *scratch = NULL, *scratch_ptr;
+    ssize_t ret = 0;
+    ssize_t i = 0, left = size, attr_size;
+
+    /* FreeBSD only returns the size of the attribute names, not including the
+     * namespaces. In order to guess a buffer size, we multiply the size
+     * returned by the longest possible prefix - "system.". This accounts for
+     * the case where each attribute is 1 character in length, and is a system
+     * attribute.
+     *
+     * This does unfortunately give us longer buffers than we need, but since
+     * the extattr(2) interface gives us no way to detect overflow, this is
+     * the best we can do to guess the size.
+     */
+    if (! attrs && extattr_ret) {
+        if (SSIZE_MAX / extattr_ret <= strlen("system.")) {
+            return -ERANGE;
+        }
+        return strlen("system.") * extattr_ret;
+    }
+
+    /* overflow */
+    if (size - SSIZE_MAX < SSIZE_MAX)
+        return -ERANGE;
+
+    if (! (scratch = calloc(1, size)))
+        return -ENOMEM;
+
+    scratch_ptr = scratch;
+
+    for (i = 0; i < size && attrs[i] != 0;) {
+        attr_size = attrs[i];
+        if (namespace == EXTATTR_NAMESPACE_USER) {
+            strncat(scratch_ptr, "user.", left);
+            scratch_ptr += strlen("user.");
+            left -= strlen("user.");
+        } else if (namespace == EXTATTR_NAMESPACE_SYSTEM) {
+            strncat(scratch_ptr, "system.", left);
+            scratch_ptr += strlen("system.");
+            left -= strlen("system.");
+        }
+
+        if (attr_size > left) {
+            ret = -ENOMEM;
+            goto bad;
+        }
+
+        memcpy(scratch_ptr, attrs + i + 1, attr_size);
+        scratch_ptr += attr_size + 1;
+        i += attr_size + 1;
+        left -= attr_size + 1;
+    }
+
+    memcpy(attrs, scratch, size);
+    ret = size - left;
+
+bad:
+    free(scratch);
+
+    return ret;
+}
+
+static ssize_t
+getxattr(const char *path, const char *name, void *value, size_t size)
+{
+    int nsid = 0;
+    int err = 0;
+    char *attr_name = NULL;
+
+    if ((err = xattrnamespace(&nsid, name))) {
+        errno = err;
+        return -1;
+    }
+
+    attr_name = strchr(name, '.') + 1;
+
+    return extattr_get_file(path, nsid, attr_name, value, size);
+}
+
+static ssize_t
+lgetxattr(const char *path, const char *name, void *value, size_t size)
+{
+    int nsid = 0;
+    int err = 0;
+    char *attr_name = NULL;
+
+    if ((err = xattrnamespace(&nsid, name))) {
+        errno = err;
+        return -1;
+    }
+
+    attr_name = strchr(name, '.') + 1;
+
+    return extattr_get_link(path, nsid, attr_name, value, size);
+}
+
+static ssize_t
+fgetxattr(int fd, const char *name, void *value, size_t size)
+{
+    int nsid = 0;
+    int err = 0;
+    char *attr_name = NULL;
+
+    if ((err = xattrnamespace(&nsid, name))) {
+        errno = err;
+        return -1;
+    }
+
+    attr_name = strchr(name, '.') + 1;
+
+    return extattr_get_fd(fd, nsid, attr_name, value, size);
+}
+
+static int
+setxattr(const char *path, const char *name, const void *value, size_t size, int flags)
+{
+    int nsid = 0;
+    int err = 0;
+    char *attr_name = NULL;
+    ssize_t get_ret = 0;
+
+    if ((err = xattrnamespace(&nsid, name))) {
+        errno = err;
+        return -1;
+    }
+
+    attr_name = strchr(name, '.') + 1;
+
+    if (flags) {
+        get_ret = extattr_get_file(path, nsid, attr_name, NULL, 0);
+        if (flags & XATTR_REPLACE && get_ret == -1) {
+            errno = ENOATTR;
+            return -1;
+        } else if (flags & XATTR_CREATE && get_ret >= 0) {
+            errno = EEXIST;
+            return -1;
+        }
+    }
+
+    if (extattr_set_file(path, nsid, attr_name, value, size) != -1)
+        return 0;
+    return -1;
+}
+
+static int
+lsetxattr(const char *path, const char *name, const void *value, size_t size, int flags)
+{
+    int nsid = 0;
+    int err = 0;
+    ssize_t get_ret = 0;
+    char *attr_name = NULL;
+
+    if ((err = xattrnamespace(&nsid, name))) {
+        errno = err;
+        return -1;
+    }
+
+    attr_name = strchr(name, '.') + 1;
+
+    if (flags) {
+        get_ret = extattr_get_link(path, nsid, attr_name, NULL, 0);
+        if (flags & XATTR_REPLACE && get_ret == -1) {
+            errno = ENOATTR;
+            return -1;
+        } else if (flags & XATTR_CREATE && get_ret >= 0) {
+            errno = EEXIST;
+            return -1;
+        }
+    }
+
+    if (extattr_set_link(path, nsid, attr_name, value, size) != -1)
+        return 0;
+    return -1;
+}
+
+static int
+fsetxattr(int fd, const char *name, const void *value, size_t size, int flags)
+{
+    int nsid = 0;
+    int err = 0;
+    ssize_t get_ret = 0;
+    char *attr_name = NULL;
+
+    if ((err = xattrnamespace(&nsid, name))) {
+        errno = err;
+        return -1;
+    }
+
+    attr_name = strchr(name, '.') + 1;
+
+    if (flags) {
+        get_ret = extattr_get_fd(fd, nsid, attr_name, NULL, 0);
+        if (flags & XATTR_REPLACE && get_ret == -1) {
+            errno = ENOATTR;
+            return -1;
+        } else if (flags & XATTR_CREATE && get_ret >= 0) {
+            errno = EEXIST;
+            return -1;
+        }
+    }
+
+    if (extattr_set_fd(fd, nsid, attr_name, value, size) != -1)
+        return 0;
+    return -1;
+}
+
+static int
+removexattr(const char *path, const char *name)
+{
+    int nsid = 0;
+    int err = 0;
+    char *attr_name = NULL;
+
+    if ((err = xattrnamespace(&nsid, name))) {
+        errno = err;
+        return -1;
+    }
+
+    attr_name = strchr(name, '.') + 1;
+
+    return extattr_delete_file(path, nsid, attr_name);
+}
+
+static int
+lremovexattr(const char *path, const char *name)
+{
+    int nsid = 0;
+    int err = 0;
+    char *attr_name = NULL;
+
+    if ((err = xattrnamespace(&nsid, name))) {
+        errno = err;
+        return -1;
+    }
+
+    attr_name = strchr(name, '.') + 1;
+
+    return extattr_delete_link(path, nsid, attr_name);
+}
+
+static int
+fremovexattr(int fd, const char *name)
+{
+    int nsid = 0;
+    int err = 0;
+    char *attr_name = NULL;
+
+    if ((err = xattrnamespace(&nsid, name))) {
+        errno = err;
+        return -1;
+    }
+
+    attr_name = strchr(name, '.') + 1;
+
+    return extattr_delete_fd(fd, nsid, attr_name);
+}
+
+static ssize_t
+listxattr(const char *path, char *list, size_t size)
+{
+    ssize_t ret = 0, retadder = 0;
+
+    memset(list, 0, size);
+    retadder = extattr_list_file(path, EXTATTR_NAMESPACE_SYSTEM, list, size);
+    if (retadder == -1 && errno != EPERM) {
+        return retadder;
+    } else if (retadder > 0) {
+        retadder = normalize_xattr_list(EXTATTR_NAMESPACE_SYSTEM, list, size, retadder);
+        if (retadder < 0)
+            return retadder;
+        ret += retadder;
+    }
+
+    retadder = extattr_list_file(path, EXTATTR_NAMESPACE_USER, list + ret, size - ret);
+    if (retadder == -1) {
+        return retadder;
+    } else {
+        retadder = normalize_xattr_list(EXTATTR_NAMESPACE_USER, list + ret, size - ret, retadder);
+        if (retadder < 0)
+            return retadder;
+        ret += retadder;
+    }
+
+    // empty
+    if (ret < 2) {
+        return 0;
+    }
+
+    return ret;
+}
+
+static ssize_t
+llistxattr(const char *path, char *list, size_t size)
+{
+    ssize_t ret = 0, retadder = 0;
+
+    memset(list, 0, size);
+    retadder = extattr_list_link(path, EXTATTR_NAMESPACE_SYSTEM, list, size);
+    if (retadder == -1 && errno != EPERM) {
+        return retadder;
+    } else if (retadder > 0) {
+        retadder = normalize_xattr_list(EXTATTR_NAMESPACE_SYSTEM, list, size, retadder);
+        if (retadder < 0)
+            return retadder;
+        ret += retadder;
+    }
+
+    retadder = extattr_list_link(path, EXTATTR_NAMESPACE_USER, list + ret, size - retadder);
+    if (retadder == -1) {
+        return retadder;
+    } else {
+        retadder = normalize_xattr_list(EXTATTR_NAMESPACE_USER, list + ret, size - ret, retadder);
+        if (retadder < 0)
+            return retadder;
+        ret += retadder;
+    }
+
+    // empty
+    if (ret < 2) {
+        return 0;
+    }
+
+    return ret;
+}
+
+static ssize_t
+flistxattr(int fd, char *list, size_t size)
+{
+    ssize_t ret = 0, retadder = 0;
+
+    memset(list, 0, size);
+    retadder = extattr_list_fd(fd, EXTATTR_NAMESPACE_SYSTEM, list, size);
+    if (retadder == -1 && errno != EPERM) {
+        return retadder;
+    } else if (retadder > 0) {
+        retadder = normalize_xattr_list(EXTATTR_NAMESPACE_SYSTEM, list, size, retadder);
+        if (retadder < 0)
+            return retadder;
+        ret += retadder;
+    }
+
+    retadder = extattr_list_fd(fd, EXTATTR_NAMESPACE_USER, list + ret, size - retadder);
+    if (retadder == -1) {
+        return retadder;
+    } else {
+        retadder = normalize_xattr_list(EXTATTR_NAMESPACE_USER, list + ret, size - ret, retadder);
+        if (retadder < 0)
+            return retadder;
+        ret += retadder;
+    }
+
+    // empty
+    if (ret < 2) {
+        return 0;
+    }
+
+    return ret;
+}
+
 #endif
 
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
@@ -11181,23 +11591,20 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
 {
     Py_ssize_t i;
     PyObject *buffer = NULL;
+    Py_ssize_t buffer_size = 0;
+    void *ptr = NULL;
 
     if (fd_and_follow_symlinks_invalid("getxattr", path->fd, follow_symlinks))
         return NULL;
 
-    for (i = 0; ; i++) {
-        void *ptr;
+    for (i = 0; i < 2; i++) {
         ssize_t result;
-        static const Py_ssize_t buffer_sizes[] = {128, XATTR_SIZE_MAX, 0};
-        Py_ssize_t buffer_size = buffer_sizes[i];
-        if (!buffer_size) {
-            path_error(path);
-            return NULL;
+        if (i) {
+            buffer = PyBytes_FromStringAndSize(NULL, buffer_size);
+            if (!buffer)
+                return NULL;
+            ptr = PyBytes_AS_STRING(buffer);
         }
-        buffer = PyBytes_FromStringAndSize(NULL, buffer_size);
-        if (!buffer)
-            return NULL;
-        ptr = PyBytes_AS_STRING(buffer);
 
         Py_BEGIN_ALLOW_THREADS;
         if (path->fd >= 0)
@@ -11209,18 +11616,16 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
         Py_END_ALLOW_THREADS;
 
         if (result < 0) {
-            Py_DECREF(buffer);
+            if (buffer)
+                Py_DECREF(buffer);
             if (errno == ERANGE)
                 continue;
             path_error(path);
             return NULL;
         }
 
-        if (result != buffer_size) {
-            /* Can only shrink. */
-            _PyBytes_Resize(&buffer, result);
-        }
-        break;
+        if (! buffer_size)
+            buffer_size = result;
     }
 
     return buffer;
@@ -11344,27 +11749,20 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
     Py_ssize_t i;
     PyObject *result = NULL;
     const char *name;
-    char *buffer = NULL;
+    char *buffer = NULL, *start, *end, *trace;
+    size_t buffer_size = 0;
+    ssize_t length = 0;
 
     if (fd_and_follow_symlinks_invalid("listxattr", path->fd, follow_symlinks))
         goto exit;
 
     name = path->narrow ? path->narrow : ".";
 
-    for (i = 0; ; i++) {
-        const char *start, *trace, *end;
-        ssize_t length;
-        static const Py_ssize_t buffer_sizes[] = { 256, XATTR_LIST_MAX, 0 };
-        Py_ssize_t buffer_size = buffer_sizes[i];
-        if (!buffer_size) {
-            /* ERANGE */
-            path_error(path);
-            break;
-        }
-        buffer = PyMem_MALLOC(buffer_size);
-        if (!buffer) {
-            PyErr_NoMemory();
-            break;
+    for (i = 0; i < 2; i++) {
+        if (i) {
+            buffer = PyMem_Malloc(buffer_size);
+            if (!buffer)
+                return NULL;
         }
 
         Py_BEGIN_ALLOW_THREADS;
@@ -11377,42 +11775,39 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
         Py_END_ALLOW_THREADS;
 
         if (length < 0) {
-            if (errno == ERANGE) {
-                PyMem_FREE(buffer);
-                buffer = NULL;
-                continue;
-            }
             path_error(path);
-            break;
-        }
-
-        result = PyList_New(0);
-        if (!result) {
             goto exit;
         }
 
-        end = buffer + length;
-        for (trace = start = buffer; trace != end; trace++) {
-            if (!*trace) {
-                int error;
-                PyObject *attribute = PyUnicode_DecodeFSDefaultAndSize(start,
-                                                                 trace - start);
-                if (!attribute) {
-                    Py_DECREF(result);
-                    result = NULL;
-                    goto exit;
-                }
-                error = PyList_Append(result, attribute);
-                Py_DECREF(attribute);
-                if (error) {
-                    Py_DECREF(result);
-                    result = NULL;
-                    goto exit;
-                }
-                start = trace + 1;
+        if (! i)
+            buffer_size = length;
+    }
+
+    result = PyList_New(0);
+    if (!result) {
+        goto exit;
+    }
+
+    end = buffer + length;
+    for (trace = start = buffer; trace != end; trace++) {
+        if (!*trace) {
+            int error;
+            PyObject *attribute = PyUnicode_DecodeFSDefaultAndSize(start,
+                                                             trace - start);
+            if (!attribute) {
+                Py_DECREF(result);
+                result = NULL;
+                goto exit;
             }
+            error = PyList_Append(result, attribute);
+            Py_DECREF(attribute);
+            if (error) {
+                Py_DECREF(result);
+                result = NULL;
+                goto exit;
+            }
+            start = trace + 1;
         }
-    break;
     }
 exit:
     if (buffer)
