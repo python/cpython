@@ -1403,6 +1403,7 @@ Launcher arguments:\n\n\
 -X-64  : Launch the latest 64bit Python X version", stdout);
     }
     fputws(L"\n-0     : List the available pythons", stdout);
+    fputws(L"\n-0p    : List with paths", stdout);
     fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
     fflush(stdout);
 }
@@ -1410,10 +1411,16 @@ Launcher arguments:\n\n\
 static void
 show_python_list(wchar_t ** argv)
 {
+    /*
+     * Display options -0
+     */
     INSTALLED_PYTHON * result = NULL;
     INSTALLED_PYTHON * ip = installed_pythons;
+    INSTALLED_PYTHON * defpy = locate_python(L"", FALSE);
     size_t i = 0;
-    wchar_t *fmt = L"\n -%ls-%d\t%ls";
+    wchar_t *p = argv[1];
+    wchar_t *fmt = L"\n -%ls-%d"; /* print VER-BITS */
+    wchar_t *defind = L" *"; /* Default indicator */
 
     /*
     * Output informational messages to stderr to keep output
@@ -1421,6 +1428,8 @@ show_python_list(wchar_t ** argv)
     */
     fwprintf(stderr,
              L"Installed Pythons found by %s Launcher for Windows", argv[0]);
+    if (!_wcsicmp(p, L"-0p")) /* Show path? */
+        fmt = L"\n -%ls-%d\t%ls"; /* print VER-BITS path */
 
     if (num_installed_pythons == 0)
         locate_all_pythons();
@@ -1431,16 +1440,16 @@ show_python_list(wchar_t ** argv)
     {
         for (i = 0; i < num_installed_pythons; i++, ip++) {
             fwprintf(stdout, fmt, ip->version, ip->bits, ip->executable);
+            /* If there is a default indicate it */
+            if ((defpy != NULL) && !_wcsicmp(ip->executable, defpy->executable))
+                fwprintf(stdout, defind);
         }
     }
 
     ip = locate_python(L"", FALSE);
-    if (ip == NULL)
+    if ((defpy == NULL) && (num_installed_pythons > 0))
+        /* We have pythons but none is the default */
         fwprintf(stderr, L"\n\nCan't find a Default Python.\n\n");
-    else
-        fwprintf(stderr, \
-                 L"\n\nDefault Python Version %ls (%d Bit) from %ls\n\n", \
-                 ip->version, ip->bits, ip->executable);
     exit(0);
 }
 
@@ -1453,6 +1462,7 @@ process(int argc, wchar_t ** argv)
     wchar_t * p;
     int rc = 0;
     size_t plen;
+    size_t slen;
     INSTALLED_PYTHON * ip;
     BOOL valid;
     DWORD size, attrs;
@@ -1588,8 +1598,11 @@ process(int argc, wchar_t ** argv)
     else {
         p = argv[1];
         plen = wcslen(p);
-        if ((argc == 2) && !_wcsicmp(p, L"-0"))
-            show_python_list(argv); /* Check for -0 FIRST */
+        if (argc == 2) {
+            slen = wcslen(L"-0");
+            if(!wcsncmp(p, L"-0", slen)) /* Starts with -0 */
+                show_python_list(argv); /* Check for -0 FIRST */
+        }
         valid = (*p == L'-') && validate_version(&p[1]);
         if (valid) {
             ip = locate_python(&p[1], FALSE);
