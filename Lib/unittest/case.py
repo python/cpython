@@ -477,7 +477,12 @@ class TestCase(object):
         return result.TestResult()
 
     def shortDescription(self):
-        """ Return a one-line description of the test, if any; otherwise None. """
+        """Returns a one-line description of the test, or None if no
+        description has been provided.
+
+        This method returns the summary line of
+        the specified test method's docstring, as per PEP-257.
+        """
         return _short_description_from_docstring(self._testMethodDoc)
 
     def id(self):
