@@ -339,7 +339,7 @@ class _AssertLogsContext(_BaseTestCaseContext):
                 .format(logging.getLevelName(self.level), self.logger.name))
 
 
-def short_description_from_docstring(text):
+def _short_description_from_docstring(text):
     # Return the summary line from a docstring.
     # If there is no summary line, return None.
     if text:
@@ -478,7 +478,7 @@ class TestCase(object):
 
     def shortDescription(self):
         """ Return a one-line description of the test, if any; otherwise None. """
-        return short_description_from_docstring(self._testMethodDoc)
+        return _short_description_from_docstring(self._testMethodDoc)
 
     def id(self):
         return "%s.%s" % (strclass(self.__class__), self._testMethodName)
@@ -1402,7 +1402,7 @@ class FunctionTestCase(TestCase):
     def shortDescription(self):
         if self._description is not None:
             return self._description
-        return short_description_from_docstring(self._testFunc.__doc__)
+        return _short_description_from_docstring(self._testFunc.__doc__)
 
 
 class _SubTest(TestCase):
