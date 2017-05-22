@@ -508,13 +508,11 @@ def unwrap(func, *, stop=None):
     # Memoise by id to tolerate non-hashable objects, but store objects to
     # ensure they aren't destroyed, which would allow their IDs to be reused.
     memo = {id(f): f}
-    unwrap_count = 0
     recursion_limit = sys.getrecursionlimit()
     while _is_wrapper(func):
         func = func.__wrapped__
         id_func = id(func)
-        unwrap_count += 1
-        if (id_func in memo) or (unwrap_count >= recursion_limit):
+        if (id_func in memo) or (len(memo) >= recursion_limit):
             raise ValueError('wrapper loop when unwrapping {!r}'.format(f))
         memo[id_func] = func
     return func
