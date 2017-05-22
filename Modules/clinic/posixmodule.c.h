@@ -1828,7 +1828,7 @@ exit:
 #if defined(HAVE_FORK)
 
 PyDoc_STRVAR(os_register_at_fork__doc__,
-"register_at_fork($module, /, func, when)\n"
+"register_at_fork($module, func, /, when)\n"
 "--\n"
 "\n"
 "Register a callable object to be called when forking.\n"
@@ -1852,7 +1852,7 @@ static PyObject *
 os_register_at_fork(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"func", "when", NULL};
+    static const char * const _keywords[] = {"", "when", NULL};
     static _PyArg_Parser _parser = {"Os:register_at_fork", _keywords, 0};
     PyObject *func;
     const char *when;
@@ -6541,4 +6541,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=cd8d75ba66526552 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=699e11c5579a104e input=a9049054013a1b77]*/

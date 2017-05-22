@@ -398,19 +398,33 @@ static int win32_can_symlink = 0;
 
 #ifdef HAVE_FORK
 static void
-run_at_forkers(PyObject *lst)
+run_at_forkers(PyObject *lst, int reverse)
 {
+    Py_ssize_t i;
+    PyObject *cpy;
+
     if (lst != NULL) {
-        Py_ssize_t i;
         assert(PyList_CheckExact(lst));
-        for (i = 0; i < PyList_GET_SIZE(lst); i++) {
-            PyObject *func, *res;
-            func = PyList_GET_ITEM(lst, i);
-            res = PyObject_CallObject(func, NULL);
-            if (res == NULL)
-                PyErr_WriteUnraisable(func);
-            else
-                Py_DECREF(res);
+
+        /* Use a list copy in case register_at_fork() is called from
+         * one of the callbacks.
+         */
+        cpy = PyList_GetSlice(lst, 0, PyList_GET_SIZE(lst));
+        if (cpy == NULL)
+            PyErr_WriteUnraisable(lst);
+        else {
+            if (reverse)
+                PyList_Reverse(cpy);
+            for (i = 0; i < PyList_GET_SIZE(cpy); i++) {
+                PyObject *func, *res;
+                func = PyList_GET_ITEM(cpy, i);
+                res = PyObject_CallObject(func, NULL);
+                if (res == NULL)
+                    PyErr_WriteUnraisable(func);
+                else
+                    Py_DECREF(res);
+            }
+            Py_DECREF(cpy);
         }
     }
 }
@@ -418,10 +432,7 @@ run_at_forkers(PyObject *lst)
 void
 PyOS_BeforeFork(void)
 {
-    /* NOTE callbacks are prepended in register_at_fork(), which is
-     * analogous to running them in reverse order.
-     */
-    run_at_forkers(PyThreadState_Get()->interp->before_forkers);
+    run_at_forkers(PyThreadState_Get()->interp->before_forkers, 1);
 
     _PyImport_AcquireLock();
 }
@@ -432,7 +443,7 @@ PyOS_AfterFork_Parent(void)
     if (_PyImport_ReleaseLock() <= 0)
         Py_FatalError("failed releasing import lock after fork");
 
-    run_at_forkers(PyThreadState_Get()->interp->after_forkers_parent);
+    run_at_forkers(PyThreadState_Get()->interp->after_forkers_parent, 0);
 }
 
 void
@@ -448,21 +459,18 @@ PyOS_AfterFork_Child(void)
 #endif
     _PySignal_AfterFork();
 
-    run_at_forkers(PyThreadState_Get()->interp->after_forkers_child);
+    run_at_forkers(PyThreadState_Get()->interp->after_forkers_child, 0);
 }
 
 static int
-register_at_forker(PyObject **lst, PyObject *func, int prepend)
+register_at_forker(PyObject **lst, PyObject *func)
 {
     if (*lst == NULL) {
         *lst = PyList_New(0);
         if (*lst == NULL)
             return -1;
     }
-    if (prepend)
-        return PyList_Insert(*lst, 0, func);
-    else
-        return PyList_Append(*lst, func);
+    return PyList_Append(*lst, func);
 }
 #endif
 
@@ -5316,6 +5324,7 @@ os.register_at_fork
 
     func: object
         Function or callable
+    /
     when: str
         'before', 'child' or 'parent'
 
@@ -5329,11 +5338,10 @@ Register a callable object to be called when forking.
 
 static PyObject *
 os_register_at_fork_impl(PyObject *module, PyObject *func, const char *when)
-/*[clinic end generated code: output=8943be81a644750c input=8c71bc84a53b8466]*/
+/*[clinic end generated code: output=8943be81a644750c input=5fc05efa4d42eb84]*/
 {
     PyInterpreterState *interp;
     PyObject **lst;
-    int prepend = 0;
 
     if (!PyCallable_Check(func)) {
         PyErr_Format(PyExc_TypeError,
@@ -5342,20 +5350,18 @@ os_register_at_fork_impl(PyObject *module, PyObject *func, const char *when)
     }
     interp = PyThreadState_Get()->interp;
 
-    if (!strcmp(when, "before")) {
+    if (!strcmp(when, "before"))
         lst = &interp->before_forkers;
-        prepend = 1;
-    }
     else if (!strcmp(when, "child"))
         lst = &interp->after_forkers_child;
     else if (!strcmp(when, "parent"))
         lst = &interp->after_forkers_parent;
     else {
-        PyErr_Format(PyExc_ValueError, "unexpected value for *when*: %R",
+        PyErr_Format(PyExc_ValueError, "unexpected value for `when`: '%s'",
                      when);
         return NULL;
     }
-    if (register_at_forker(lst, func, prepend))
+    if (register_at_forker(lst, func))
         return NULL;
     else
         Py_RETURN_NONE;
