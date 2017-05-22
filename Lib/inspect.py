@@ -505,7 +505,9 @@ def unwrap(func, *, stop=None):
         def _is_wrapper(f):
             return hasattr(f, '__wrapped__') and not stop(f)
     f = func  # remember the original func for error reporting
-    memo = {id(f)} # Memoise by id to tolerate non-hashable objects
+    # Memoise by id to tolerate non-hashable objects, but store objects to
+    # ensure they aren't destroyed, which would allow their IDs to be reused.
+    memo = {id(f): f}
     unwrap_count = 0
     recursion_limit = sys.getrecursionlimit()
     while _is_wrapper(func):
@@ -514,7 +516,7 @@ def unwrap(func, *, stop=None):
         unwrap_count += 1
         if (id_func in memo) or (unwrap_count >= recursion_limit):
             raise ValueError('wrapper loop when unwrapping {!r}'.format(f))
-        memo.add(id_func)
+        memo[id_func] = func
     return func
 
 # -------------------------------------------------- source code extraction
