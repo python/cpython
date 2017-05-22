@@ -49,6 +49,9 @@ Extension Modules
 Library
 -------
 
+- bpo-30003: Fix handling escape characters in HZ codec.  Based on patch
+  by Ma Lin.
+
 - bpo-30375: Warnings emitted when compile a regular expression now always
   point to the line in the user code.  Previously they could point into inners
   of the re module if emitted from inside of groups or conditionals.
