@@ -38,7 +38,13 @@ test_source = """\
 
 import sys
 import time
+import os
 from multiprocessing import Pool, set_start_method
+
+# Particular buildbots can be exceptionally slow.  Rather than raise timeouts
+# (necessary in some tests) across the board to accomodate them, sensible
+# timeout values may be scaled by this multiplier on such a buildbot.
+TIMEOUT_MULTIPLIER = float(os.getenv("CONF_TIMEOUT_MULTIPLIER", default=1))
 
 # We use this __main__ defined function in the map call below in order to
 # check that multiprocessing in correctly running the unguarded
@@ -58,7 +64,8 @@ if __name__ == '__main__':
     p = Pool(5)
     results = []
     p.map_async(f, [1, 2, 3], callback=results.extend)
-    deadline = time.time() + 60 # up to 60 s to report the results
+    wait_in_secs = 10 * TIMEOUT_MULTIPLIER # up to 10 s to report the results
+    deadline = time.time() + wait_in_secs
     while not results:
         time.sleep(0.05)
         if time.time() > deadline:
@@ -79,14 +86,21 @@ if __name__ != "__main__":
 
 import sys
 import time
+import os
 from multiprocessing import Pool, set_start_method
+
+# Particular buildbots can be exceptionally slow.  Rather than raise timeouts
+# (necessary in some tests) across the board to accomodate them, sensible
+# timeout values may be scaled by this multiplier on such a buildbot.
+TIMEOUT_MULTIPLIER = float(os.getenv("CONF_TIMEOUT_MULTIPLIER", default=1))
 
 start_method = sys.argv[1]
 set_start_method(start_method)
 p = Pool(5)
 results = []
 p.map_async(int, [1, 4, 9], callback=results.extend)
-deadline = time.time() + 10 # up to 10 s to report the results
+wait_in_secs = 10 * TIMEOUT_MULTIPLIER # up to 10 s to report the results
+deadline = time.time() + wait_in_secs
 while not results:
     time.sleep(0.05)
     if time.time() > deadline:

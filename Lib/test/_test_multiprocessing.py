@@ -98,6 +98,11 @@ try:
 except:
     MAXFD = 256
 
+# Particular buildbots can be exceptionally slow.  Rather than raise timeouts
+# (necessary in some tests) across the board to accomodate them, sensible
+# timeout values may be scaled by this multiplier on such a buildbot.
+TIMEOUT_MULTIPLIER = float(os.getenv("CONF_TIMEOUT_MULTIPLIER", default=1))
+
 # To speed up tests when using the forkserver, we can preload these:
 PRELOAD = ['__main__', 'test.test_multiprocessing_forkserver']
 
@@ -1206,10 +1211,10 @@ class _TestBarrier(BaseTestCase):
     Tests for Barrier objects.
     """
     N = 5
-    defaultTimeout = 30.0  # XXX Slow Windows buildbots need generous timeout
+    default_timeout = 30.0 * TIMEOUT_MULTIPLIER
 
     def setUp(self):
-        self.barrier = self.Barrier(self.N, timeout=self.defaultTimeout)
+        self.barrier = self.Barrier(self.N, timeout=self.default_timeout)
 
     def tearDown(self):
         self.barrier.abort()
@@ -1401,7 +1406,7 @@ class _TestBarrier(BaseTestCase):
 
     @classmethod
     def _test_default_timeout_f(cls, barrier, results):
-        i = barrier.wait(cls.defaultTimeout)
+        i = barrier.wait(cls.default_timeout)
         if i == cls.N//2:
             # One thread is later than the default timeout
             time.sleep(1.0)
