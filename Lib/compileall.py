@@ -16,6 +16,8 @@ import importlib.util
 import py_compile
 import struct
 
+from enum import Enum
+
 try:
     from concurrent.futures import ProcessPoolExecutor
 except ImportError:
@@ -23,6 +25,18 @@ except ImportError:
 from functools import partial
 
 __all__ = ["compile_dir","compile_file","compile_path"]
+
+
+class OptimizationLevel(Enum):
+    # optimization level of the interpreter as given by -O options
+    USE_CLI_PARAMETERS = -1
+    # no optimization; __debug__ is true
+    NONE = 0
+    # asserts are removed, __debug__ is false
+    REMOVE_ASSERT = 1
+    # asserts are removed, __debug__ is false, docstrings are removed too
+    REMOVE_ASSERT_AND_DOCSTRING = 2
+
 
 def _walk_dir(dir, ddir=None, maxlevels=10, quiet=0):
     if quiet < 2 and isinstance(dir, os.PathLike):
