@@ -200,11 +200,11 @@ def _run_module_as_main(mod_name, alter_argv=True):
     main_globals = sys.modules["__main__"].__dict__
     if alter_argv:
         sys.argv[0] = mod_spec.origin
-    if mod_spec.loader is not None and hasattr(mod_spec.loader, "exec_as_main"):
+    if mod_spec.loader is not None and hasattr(mod_spec.loader, "exec_in_module"):
         main_globals = _init_module_globals(main_globals, None,
                                            "__main__", mod_spec)
         try:
-            mod_spec.loader.exec_as_main(mod_spec, sys.modules["__main__"])
+            mod_spec.loader.exec_in_module(mod_spec, sys.modules["__main__"])
         except ImportError as exc:
             msg = "%s: %s" % (sys.executable, exc)
             sys.exit(msg)

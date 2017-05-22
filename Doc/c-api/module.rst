@@ -339,6 +339,30 @@ The available slot types are:
    If multiple ``Py_mod_exec`` slots are specified, they are processed in the
    order they appear in the *m_slots* array.
 
+   When an extension module is executed as a script using Python's
+   :ref:`-m option <m option>`, the function(s) specified by its
+   ```Py_mod_exec`` slots are executed on the ``__main__`` module.
+   To handle this case, the function can check if the module's ``__name__``
+   is ``"__main__"``, and react accordingly. For example:
+
+   .. code-block:: C
+
+       static int exec_module(PyObject *m)
+       {
+           const char *name = PyModule_GetName(m);
+           if (name == NULL) {
+               return -1;
+           }
+
+           if (!strcmp(name, "__main__")) {
+               printf("Running as a script");
+           }
+           return 0;
+       }
+
+   The ``-m`` option is not supported for modules that also define the
+   :c:data:`Py_mod_create` slot.
+
 See :PEP:`489` for more details on multi-phase initialization.
 
 Low-level module creation functions

@@ -356,6 +356,22 @@ class CmdLineTest(unittest.TestCase):
         expected = "This is a test module named __main__.\n"
         self.assertEqual(expected.encode('utf-8'), out)
 
+    def test_extension_module_state(self):
+        code = textwrap.dedent("""\
+            import sys
+            import runpy
+            import _testmultiphase
+            runpy._run_module_as_main('_testmultiphase')
+            store_int(123)
+            _testmultiphase.store_int(456)
+            print(load_int(), file=sys.stderr)
+            print(_testmultiphase.load_int(), file=sys.stderr)
+        """)
+        rc, out, err = assert_python_ok('-c', code, *example_args, __isolated=False)
+        self.assertEqual(b'This is a test module named __main__.\n', out)
+        self.assertEqual(b'123\n456', err)
+
+
     def test_issue8202(self):
         # Make sure package __init__ modules see "-m" in sys.argv0 while
         # searching for the module to execute

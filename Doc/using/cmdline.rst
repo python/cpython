@@ -71,6 +71,8 @@ source.
    level modules).
 
 
+.. _m option:
+
 .. cmdoption:: -m <module-name>
 
    Search :data:`sys.path` for the named module and execute its contents as
@@ -90,10 +92,10 @@ source.
 
    .. note::
 
-      This option cannot be used with built-in modules and extension modules
-      written in C, since they do not have Python module files. However, it
-      can still be used for precompiled modules, even if the original source
-      file is not available.
+      Many built-in modules and extension modules written in C do not support
+      being run with the -m option.
+      The option can be used for precompiled modules, even if the original
+      source file is not available.
 
    If this option is given, the first element of :data:`sys.argv` will be the
    full path to the module file (while the module file is being located, the
@@ -118,6 +120,10 @@ source.
 
    .. versionchanged:: 3.4
       namespace packages are also supported
+
+   .. versionchanged:: 3.7
+      The ``-m`` option can now be used with extension and built-in modules
+      that support :c:data:`multi-phase initialization <Py_mod_exec>`.
 
 
 .. describe:: -

@@ -932,9 +932,9 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
         _bootstrap._verbose_message('extension module {!r} executed from {!r}',
                          self.name, self.path)
 
-    def exec_as_main(self, spec, module):
+    def exec_in_module(self, spec, module):
         _bootstrap._call_with_frames_removed(
-            _imp.exec_as_main, spec, module)
+            _imp.exec_in_module, spec, module)
         _bootstrap._verbose_message('extension module {!r} executed from {!r}',
                          self.name, self.path)
 

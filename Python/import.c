@@ -2077,23 +2077,23 @@ exec_builtin_or_dynamic(PyObject *mod) {
 }
 
 /*[clinic input]
-_imp.exec_as_main
+_imp.exec_in_module
 
     spec: object
-    main_module: object
+    namespace_module: object
     /
 
-Execute an extension module as main module.
+Execute an extension module inside another module namespace.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_exec_as_main_impl(PyObject *module, PyObject *spec,
-                       PyObject *main_module)
-/*[clinic end generated code: output=c5752b9c9780fc89 input=ec723aa2cfb8452b]*/
+_imp_exec_in_module_impl(PyObject *module, PyObject *spec,
+                         PyObject *namespace_module)
+/*[clinic end generated code: output=66ae545a38510134 input=03c518635e1c6832]*/
 {
     PyModuleDef *m_def;
 
-    m_def = _PyImport_LoadDynamicModuleDef(spec, NULL);
+    m_def = (PyModuleDef *)_PyImport_LoadDynamicModuleDef(spec, NULL);
 
     if (!PyObject_TypeCheck(m_def, &PyModuleDef_Type)) {
         PyErr_Format(PyExc_ImportError,
@@ -2101,7 +2101,7 @@ _imp_exec_as_main_impl(PyObject *module, PyObject *spec,
         return NULL;
     }
 
-    if (PyModule_ExecMain(main_module, m_def)) {
+    if (PyModule_ExecInModule(namespace_module, m_def)) {
         return NULL;
     };
 
@@ -2220,7 +2220,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF
     _IMP__FIX_CO_FILENAME_METHODDEF
-    _IMP_EXEC_AS_MAIN_METHODDEF
+    _IMP_EXEC_IN_MODULE_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 

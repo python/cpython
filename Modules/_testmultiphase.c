@@ -155,6 +155,43 @@ call_state_registration_func(PyObject *mod, PyObject *args)
     Py_RETURN_NONE;
 }
 
+PyDoc_STRVAR(store_int_doc,
+"store_int(i)\n\
+\n\
+Store an int inside the module state");
+
+static PyObject *
+store_int(PyObject *self, PyObject *args) {
+    int to_store;
+    int *module_state = PyModule_GetState(self);
+    if (module_state == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "Module state is NULL.");
+        return NULL;
+    }
+    if (!PyArg_ParseTuple(args, "i:store_int", &to_store))
+        return NULL;
+    *module_state = to_store;
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(load_int_doc,
+"load_int()\n\
+\n\
+Load an int from the module state");
+
+static PyObject *
+load_int(PyObject *self, PyObject *args) {
+    if (!PyArg_ParseTuple(args, ""))
+        return NULL;
+    int *module_state = PyModule_GetState(self);
+    if (module_state == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "Module state is NULL.");
+        return NULL;
+    }
+    return PyLong_FromLong(*module_state);
+}
 
 static PyType_Slot Str_Type_slots[] = {
     {Py_tp_base, NULL}, /* filled out in module exec function */
@@ -174,12 +211,20 @@ static PyMethodDef testexport_methods[] = {
         testexport_foo_doc},
     {"call_state_registration_func",  call_state_registration_func,
         METH_VARARGS, call_state_registration_func_doc},
+    {"store_int",  store_int,
+        METH_VARARGS, store_int_doc},
+    {"load_int",  load_int,
+        METH_VARARGS, load_int_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
 static int execfunc(PyObject *m)
 {
     PyObject *temp = NULL;
+    const char *name = PyModule_GetName(m);
+    if (name == NULL) {
+        goto fail;
+    }
 
     /* Due to cross platform compiler issues the slots must be filled
      * here. It's required for portability to Windows without requiring
@@ -212,17 +257,13 @@ static int execfunc(PyObject *m)
 
     if (PyModule_AddStringConstant(m, "str_const", "something different") != 0)
         goto fail;
+    if (!strcmp(name, "__main__")) {
+        printf("This is a test module named %s.\n", name);
+    }
 
     return 0;
  fail:
     return -1;
-}
-
-static int mainfunc(PyObject *m)
-{
-    const char *name = PyModule_GetName(m);
-    printf("This is a test module named %s.\n", name);
-    return 0;
 }
 
 /* Helper for module definitions; there'll be a lot of them */
@@ -240,11 +281,20 @@ static int mainfunc(PyObject *m)
 
 PyModuleDef_Slot main_slots[] = {
     {Py_mod_exec, execfunc},
-    {Py_mod_main, mainfunc},
     {0, NULL},
 };
 
-static PyModuleDef main_def = TEST_MODULE_DEF("main", main_slots, testexport_methods);
+static PyModuleDef main_def = {
+    PyModuleDef_HEAD_INIT,                      /* m_base */
+    "main",                                     /* m_name */
+    PyDoc_STR("Test module main"),             /* m_doc */
+    sizeof(int),                                /* m_size */
+    testexport_methods,                         /* m_methods */
+    main_slots,                                 /* m_slots */
+    NULL,                                       /* m_traverse */
+    NULL,                                       /* m_clear */
+    NULL,                                       /* m_free */
+};
 
 PyMODINIT_FUNC
 PyInit__testmultiphase(PyObject *spec)

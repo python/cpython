@@ -355,53 +355,66 @@ error:
 }
 
 int
-PyModule_ExecMain(PyObject *module, PyModuleDef *def)
+PyModule_ExecInModule(PyObject *module, PyModuleDef *def)
 {
     PyModuleDef_Slot *cur_slot;
     const char *name;
-    int ret, existing = 0;
+    PyObject *nameobj;
 
-    name = PyModule_GetName(module);
+    if (!PyModule_Check(module)) {
+        PyErr_BadInternalCall();
+        goto error;
+    }
+
+    nameobj = PyModule_GetNameObject(module);
+    if (nameobj == NULL) {
+        goto error;
+    }
+
+    name = PyUnicode_AsUTF8(nameobj);
     if (name == NULL) {
-        return -1;
+        goto error;
+    }
+
+
+
+    if (((PyModuleObject *)module)->md_state != NULL) {
+        PyErr_Format(
+            PyExc_ImportError,
+            "Module already initialized.",
+            name);
+        goto error;
     }
 
     for (cur_slot = def->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
         if (cur_slot->slot == Py_mod_create) {
             /* Modules with Py_mod_create cannot be directly executed */
             PyErr_Format(
-            PyExc_ImportError,
-            "This module cannot be directly executed",
-            name);
-            return -1;
+                PyExc_ImportError,
+                "This module cannot be directly executed",
+                name);
+            goto error;
+        }
+    }
+
+    if (def->m_methods != NULL) {
+        if (_add_methods_to_object(module, nameobj, def->m_methods)) {
+            goto error;
+        }
+    }
+
+    if (def->m_doc != NULL) {
+        if (PyModule_SetDocString(module, def->m_doc)) {
+            goto error;
         }
     }
 
     PyModule_ExecDef(module, def);
-
-    for (cur_slot = def->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
-        if (cur_slot->slot == Py_mod_main) {
-            existing = 1;
-            ret = ((int (*)(PyObject *))cur_slot->value)(module);
-            if (ret != 0) {
-                if (!PyErr_Occurred()) {
-                    PyErr_Format(
-                        PyExc_SystemError,
-                        "execution of module %s failed without setting an exception",
-                        name);
-                }
-                return -1;
-            }
-        }
-    }
-    if (!existing) {
-        PyErr_Format(
-        PyExc_ImportError,
-        "This module cannot be directly executed",
-        name);
-        return -1;
-    }
+    Py_XDECREF(nameobj);
     return 0;
+error:
+    Py_XDECREF(nameobj);
+    return -1;
 }
 
 int
@@ -436,9 +449,8 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
 
     for (cur_slot = def->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
         switch (cur_slot->slot) {
-            case Py_mod_main:
             case Py_mod_create:
-                /* handled elsewhere */
+                /* handled in PyModule_FromDefAndSpec2 */
                 break;
             case Py_mod_exec:
                 ret = ((int (*)(PyObject *))cur_slot->value)(module);

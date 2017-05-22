@@ -260,32 +260,32 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_imp_exec_as_main__doc__,
-"exec_as_main($module, spec, main_module, /)\n"
+PyDoc_STRVAR(_imp_exec_in_module__doc__,
+"exec_in_module($module, spec, namespace_module, /)\n"
 "--\n"
 "\n"
-"Execute an extension module as main module.");
+"Execute an extension module inside another module namespace.");
 
-#define _IMP_EXEC_AS_MAIN_METHODDEF    \
-    {"exec_as_main", (PyCFunction)_imp_exec_as_main, METH_FASTCALL, _imp_exec_as_main__doc__},
-
-static PyObject *
-_imp_exec_as_main_impl(PyObject *module, PyObject *spec,
-                       PyObject *main_module);
+#define _IMP_EXEC_IN_MODULE_METHODDEF    \
+    {"exec_in_module", (PyCFunction)_imp_exec_in_module, METH_FASTCALL, _imp_exec_in_module__doc__},
 
 static PyObject *
-_imp_exec_as_main(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_imp_exec_in_module_impl(PyObject *module, PyObject *spec,
+                         PyObject *namespace_module);
+
+static PyObject *
+_imp_exec_in_module(PyObject *module, PyObject **args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *spec;
-    PyObject *main_module;
+    PyObject *namespace_module;
 
-    if (!_PyArg_UnpackStack(args, nargs, "exec_as_main",
+    if (!_PyArg_UnpackStack(args, nargs, "exec_in_module",
         2, 2,
-        &spec, &main_module)) {
+        &spec, &namespace_module)) {
         goto exit;
     }
-    return_value = _imp_exec_as_main_impl(module, spec, main_module);
+    return_value = _imp_exec_in_module_impl(module, spec, namespace_module);
 
 exit:
     return return_value;
@@ -392,4 +392,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=478e4884d4f3a652 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f86a1c434c5ba0de input=a9049054013a1b77]*/
