@@ -175,7 +175,7 @@ it's the base calendar for all computations.
 
    .. attribute:: cssclasses
 
-      A list of CSS styles used for each weekday. The default style list is::
+      A list of CSS classes used for each weekday. The default style list is::
 
          cssclasses = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
@@ -185,48 +185,51 @@ it's the base calendar for all computations.
 
       Note that the length of this list must be seven items.
 
-   .. attribute:: noday_classes
+   .. attribute:: noday_class
 
       The CSS class for a weekday occurring in the previous or coming month.
 
    .. attribute:: weekday_head_classes
 
-      A list of CSS styles used for each weekday. The default style list is
-      the same as :attr:`cssclasses`.
+      A list of CSS classes used for weekday names in the header row.
+      The default the same as :attr:`cssclasses`.
 
-   .. attribute:: month_head_classes
+   .. attribute:: month_head_class
 
-      A space separated list of styles for the month head, for example::
+      The month's head CSS class.
+      The default value is ``"month"``.
+
+
+   .. attribute:: month_class
+
+      The CSS class for the whole month's table.
+
+      The default value is ``"month"``.
+
+   .. attribute:: year_class
+
+      The CSS class for the whole year's table of tables (see: :meth:`formatyear`).
+      The default value is ``"year"``.
+
+   .. attribute:: year_head_class
+
+      The CSS class for the whole year's table of tables (see: :meth:`formatyear`).
+      The default value is ``"year"``.
+
+Note that although the the naming for the above described class attributes is
+singular (e.g. ``month_class`` ``noday_class``, one can replace the single CSS
+class with a space separated list of CSS classes, for example::
 
       "text-bold text-red"
-
-      The default value is ``"month"``.
-
-   .. attribute:: month_classes
-
-      A space separated list of styles for the whole table.
-      The default value is ``"month"``.
-
-   .. attribute:: year_classes
-
-      A space separated list of styles for the table when formatting the year
-      as a table of tables (see: :meth:`formatyear`).
-      The default value is ``"year"``.
-
-   .. attribute:: year_head_classes
-
-      A space separated list of styles for the table head when formatting the
-      year as a table of tables (see: :meth:`formatyear`).
-      The default value is ``"year"``.
 
 Here is an example how one can customize ``HTMLCalendar``::
 
     class CustomHTMLCal(calendar.HTMLCalendar):
         cssclasses = [style + " text-nowrap" for style in
                       calendar.HTMLCalendar.cssclasses]
-        month_head_classes = "text-center month-head"
-        month_classes = "text-center month"
-        year_classes = "lead"
+        month_head_class = "text-center month-head"
+        month_class = "text-center month"
+        year_class = "text-italic lead"
 
 
 .. class:: LocaleTextCalendar(firstweekday=0, locale=None)
