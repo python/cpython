@@ -45,7 +45,7 @@ class LargeFileTest:
             raise cls.failureException('File was not truncated by opening '
                                        'with mode "wb"')
 
-    def test_large_reads_writes(self):
+    def test_large_read(self):
         # bpo-24658: Test that a read greater than 2GB does not fail.
         with self.open(TESTFN, "rb") as f:
             self.assertEqual(len(f.read()), size + 1)
