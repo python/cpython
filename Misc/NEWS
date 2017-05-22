@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- bpo-30003: Fix handling escape characters in HZ codec.  Based on patch
+  by Ma Lin.
+
 - bpo-30301: Fix AttributeError when using SimpleQueue.empty() under
   *spawn* and *forkserver* start methods.
 
