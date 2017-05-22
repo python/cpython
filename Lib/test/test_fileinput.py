@@ -535,14 +535,12 @@ class FileInputTests(unittest.TestCase):
         t1 = None
         try:
             t1 = Path(writeTmp(1, ["Pathlib file."]))
-            fi = FileInput(t1)
-
-            line = fi.readline()
-            self.assertEqual(line, 'Pathlib file.')
-            self.assertEqual(fi.lineno(), 1)
-            self.assertEqual(fi.filelineno(), 1)
-            self.assertEqual(fi.filename(), os.fspath(t1))
-            fi.close()
+            with FileInput(t1) as fi:
+                line = fi.readline()
+                self.assertEqual(line, 'Pathlib file.')
+                self.assertEqual(fi.lineno(), 1)
+                self.assertEqual(fi.filelineno(), 1)
+                self.assertEqual(fi.filename(), os.fspath(t1))
         finally:
             remove_tempfiles(t1)
 
