@@ -1376,6 +1376,108 @@ objects that compare equal might have different :attr:`~range.start`,
    single: str (built-in class); (see also string)
    object: string
 
+.. _text-methods-summary:
+
+Text and Binary Sequence Type Methods Summary
+=============================================
+The following table summarizes the text and binary sequence types methods by
+category.
+
+
++--------------------------+------------------------------+------------------------------+
+| Category                 |  str methods                 |  bytes methods               |
++==========================+==============================+==============================+
+| Formatting               |  :meth:`str.format`          |                              |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.format_map`      |                              |
++--------------------------+------------------------------+------------------------------+
+| Searching and Replacing  |  :meth:`str.find`            |  :meth:`bytes.find`          |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.rfind`           |  :meth:`bytes.rfind`         |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.index`           |  :meth:`bytes.index`         |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.rindex`          |  :meth:`bytes.rindex`        |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.startswith`      |  :meth:`bytes.startswith`    |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.endswith`        |  :meth:`bytes.endswith`      |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.count`           |  :meth:`bytes.count`         |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.replace`         |  :meth:`bytes.replace`       |
++--------------------------+------------------------------+------------------------------+
+| Splitting and Joining    |  :meth:`str.split`           |  :meth:`bytes.split`         |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.splitlines`      |  :meth:`bytes.splitlines`    |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.rsplit`          |  :meth:`bytes.rsplit`        |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.partition`       |  :meth:`bytes.partition`     |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.rpartition`      |  :meth:`bytes.rpartition`    |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.join`            |  :meth:`bytes.join`          |
++--------------------------+------------------------------+------------------------------+
+| String Classification    |  :meth:`str.isalpha`         |  :meth:`bytes.isalpha`       |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.isdecimal`       |                              |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.isdigit`         |  :meth:`bytes.isdigit`       |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.isnumeric`       |                              |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.isalnum`         |  :meth:`bytes.isalnum`       |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.isidentifier`    |                              |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.islower`         |  :meth:`bytes.islower`       |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.isupper`         |  :meth:`bytes.isupper`       |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.istitle`         |  :meth:`bytes.istitle`       |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.isspace`         |  :meth:`bytes.isspace`       |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.isprintable`     |                              |
++--------------------------+------------------------------+------------------------------+
+| Case Manipulation        |  :meth:`str.lower`           |  :meth:`bytes.lower`         |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.upper`           |  :meth:`bytes.upper`         |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.casefold`        |                              |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.capitalize`      |  :meth:`bytes.capitalize`    |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.title`           |  :meth:`bytes.title`         |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.swapcase`        |  :meth:`bytes.swapcase`      |
++--------------------------+------------------------------+------------------------------+
+| Padding and Stripping    |  :meth:`str.ljust`           |  :meth:`bytes.ljust`         |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.rjust`           |  :meth:`bytes.rjust`         |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.center`          |  :meth:`bytes.center`        |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.zfill`           |  :meth:`bytes.zfill`         |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.expandtabs`      |  :meth:`bytes.expandtabs`    |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.strip`           |  :meth:`bytes.strip`         |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.lstrip`          |  :meth:`bytes.lstrip`        |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.rstrip`          |  :meth:`bytes.rstrip`        |
++--------------------------+------------------------------+------------------------------+
+| Translation and Encoding |  :meth:`str.translate`       |  :meth:`bytes.translate`     |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.maketrans`       |  :meth:`bytes.maketrans`     |
++                          +------------------------------+------------------------------+
+|                          |  :meth:`str.encode`          |                              |
++                          +------------------------------+------------------------------+
+|                          |                              |  :meth:`bytes.decode`        |
++--------------------------+------------------------------+------------------------------+
+
 .. _textseq:
 
 Text Sequence Type --- :class:`str`
@@ -1462,6 +1564,7 @@ multiple fragments.
    :ref:`textseq` and the :ref:`string-methods` section below.  To output
    formatted strings, see the :ref:`f-strings` and :ref:`formatstrings`
    sections.  In addition, see the :ref:`stringservices` section.
+
 
 
 .. index::
