@@ -53,6 +53,9 @@ Core and Builtins
 - bpo-24821: Fixed the slowing down to 25 times in the searching of some
   unlucky Unicode characters.
 
+- bpo-29102: Add a unique ID to PyInterpreterState.  This makes it easier
+  to identify each subinterpreter.
+
 - bpo-29894: The deprecation warning is emitted if __complex__ returns an
   instance of a strict subclass of complex.  In a future versions of Python
   this can be an error.
