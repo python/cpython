@@ -12125,7 +12125,7 @@ PyUnicode_IsIdentifier(PyObject *self)
     int kind;
     void *data;
     Py_ssize_t i;
-    Py_UCS4 first;
+    Py_UCS4 chr;
 
     if (PyUnicode_READY(self) == -1) {
         Py_FatalError("identifier not ready");
@@ -12146,13 +12146,17 @@ PyUnicode_IsIdentifier(PyObject *self)
        definition of XID_Start and XID_Continue, it is sufficient
        to check just for these, except that _ must be allowed
        as starting an identifier.  */
-    first = PyUnicode_READ(kind, data, 0);
-    if (!_PyUnicode_IsXidStart(first) && first != 0x5F /* LOW LINE */)
+    chr = PyUnicode_READ(kind, data, 0);
+    if (!_PyUnicode_IsXidStart(chr) && chr != 0x5F /* LOW LINE */ && chr != 0x1F40D)
         return 0;
 
     for (i = 1; i < PyUnicode_GET_LENGTH(self); i++)
-        if (!_PyUnicode_IsXidContinue(PyUnicode_READ(kind, data, i)))
+    {
+        chr = PyUnicode_READ(kind, data, i);
+        if (!_PyUnicode_IsXidContinue(chr) && chr != 0x1F40D)
             return 0;
+    }
+
     return 1;
 }
 
