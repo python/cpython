@@ -109,6 +109,16 @@ def coding_spec(data):
     return name
 
 
+def strip_trailing_whitespace_and_blankline(f):
+    def _strip(self, event, *args, **kwargs):
+        if idleConf.GetOption('extensions', 'TrimExtension',
+                              'enable_trim_on_save',
+                              type='bool', default=False):
+            self.editwin.text.event_generate('<<do-trim>>')
+        return f(self, event, *args, **kwargs)
+    return _strip
+
+
 class IOBinding:
 # One instance per editor Window so methods know which to save, close.
 # Open returns focus to self.editwin if aborted.
@@ -340,6 +350,7 @@ class IOBinding:
         self.text.focus_set()
         return reply
 
+    @strip_trailing_whitespace_and_blankline
     def save(self, event):
         if not self.filename:
             self.save_as(event)
@@ -353,6 +364,7 @@ class IOBinding:
         self.text.focus_set()
         return "break"
 
+    @strip_trailing_whitespace_and_blankline
     def save_as(self, event):
         filename = self.asksavefile()
         if filename:
@@ -367,6 +379,7 @@ class IOBinding:
         self.updaterecentfileslist(filename)
         return "break"
 
+    @strip_trailing_whitespace_and_blankline
     def save_a_copy(self, event):
         filename = self.asksavefile()
         if filename:

@@ -976,6 +976,7 @@ class EditorWindow(object):
         'ParenMatch': 'parenmatch',
         'RstripExtension': 'rstrip',
         'ScriptBinding': 'runscript',
+        'TrimExtension': 'trim',
         'ZoomHeight': 'zoomheight',
         }
 

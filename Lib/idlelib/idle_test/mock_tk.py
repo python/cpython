@@ -140,6 +140,10 @@ class Text:
             return lastline, len(self.data[lastline]) - 1
         elif index == 'end':
             return self._endex(endflag)
+        elif index.startswith('end-'):
+            a, b = index.split()
+            a = int(a[4: -1])
+            index = '%d.0' % (a + 1)
 
         line, char = index.split('.')
         line = int(line)
