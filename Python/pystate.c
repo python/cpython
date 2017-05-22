@@ -744,6 +744,10 @@ _PyGILState_Fini(void)
 void
 _PyGILState_Reinit(void)
 {
+#ifdef WITH_THREAD
+    head_mutex = NULL;
+    HEAD_INIT();
+#endif
     PyThreadState *tstate = PyGILState_GetThisThreadState();
     PyThread_delete_key(autoTLSkey);
     if ((autoTLSkey = PyThread_create_key()) == -1)
